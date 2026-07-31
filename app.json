@@ -10,7 +10,17 @@
     },
     "assetBundlePatterns": ["**/*"],
     "ios": { "supportsTablet": true, "bundleIdentifier": "com.plushcrush.app" },
-    "android": { "package": "com.plushcrush.app" },
-    "plugins": ["expo-av"]
+    "android": { "package": "com.plushcrush.app", "googleServicesFile": "./google-services.json" },
+    "plugins": [
+      "expo-av",
+      "@react-native-firebase/app",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+        }
+      ]
+    ]
   }
 }

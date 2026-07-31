@@ -1,0 +1,27 @@
+rules_version = '2';
+
+// Deploy via the Firebase Console (Firestore Database > Rules) or
+// `firebase deploy --only firestore:rules`. Not applied automatically —
+// nothing in this repo has credentials to push it for you.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Each user can only ever read/write their own profile document.
+    // NOTE: coins/ownedIds are written straight from the client — there's
+    // no Cloud Function validating *how much* a client credits itself, so
+    // treat this as prototype-grade trust, not a cheat-proof economy.
+    match /users/{userId} {
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // The creature catalog is shared/global. Any signed-in client can read
+    // it, and can create it once (this is what lets the app self-seed a
+    // starter catalog on first run — see src/firebase/seedCreatures.js).
+    // Once you've curated the real catalog, tighten `create` to false too.
+    match /creatures/{creatureId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if false;
+    }
+  }
+}
