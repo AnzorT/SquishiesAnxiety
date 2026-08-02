@@ -1,42 +1,11 @@
-import { Audio } from 'expo-av';
+import OneShotSound from './OneShotSound';
 
-// A short one-shot "ding" played each time a coin is earned. Uses
-// replayAsync so rapid squishing/dragging can retrigger it before the
-// previous play finishes, instead of queueing or getting dropped.
-
-export class CoinSound {
+// A short one-shot "ding" played each time a coin is earned. Built on
+// OneShotSound so rapid squishing/dragging plays each ding independently
+// instead of the newest grant cutting off the previous one.
+export class CoinSound extends OneShotSound {
   constructor() {
-    this.sound = null;
-  }
-
-  async load() {
-    try {
-      const { sound } = await Audio.Sound.createAsync(require('../../assets/audio/coin.mp3'), {
-        volume: 0.8,
-      });
-      this.sound = sound;
-    } catch (e) {
-      this.sound = null;
-    }
-  }
-
-  async play() {
-    if (!this.sound) return;
-    try {
-      await this.sound.replayAsync();
-    } catch (e) {
-      // no-op — audio hiccups shouldn't crash gameplay
-    }
-  }
-
-  async unload() {
-    if (!this.sound) return;
-    try {
-      await this.sound.unloadAsync();
-    } catch (e) {
-      // no-op
-    }
-    this.sound = null;
+    super(require('../../assets/audio/coin.mp3'), 0.8);
   }
 }
 

@@ -23,5 +23,13 @@ service cloud.firestore {
       allow create: if request.auth != null;
       allow update, delete: if false;
     }
+
+    // One-way mailbox: any signed-in user can drop a feedback note bearing
+    // their own uid, nobody can read, edit, or delete it back out via the
+    // client — reading happens from the Firebase console/admin SDK instead.
+    match /feedback/{feedbackId} {
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow read, update, delete: if false;
+    }
   }
 }

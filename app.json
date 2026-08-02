@@ -8,9 +8,17 @@
     "splash": {
       "backgroundColor": "#1A1326"
     },
-    "assetBundlePatterns": ["**/*"],
-    "ios": { "supportsTablet": true, "bundleIdentifier": "com.plushcrush.app" },
-    "android": { "package": "com.plushcrush.app", "googleServicesFile": "./google-services.json" },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.plushcrush.app"
+    },
+    "android": {
+      "package": "com.plushcrush.app",
+      "googleServicesFile": "./google-services.json"
+    },
     "plugins": [
       "expo-av",
       "@react-native-firebase/app",
@@ -20,7 +28,8 @@
           "androidAppId": "ca-app-pub-3940256099942544~3347511713",
           "iosAppId": "ca-app-pub-3940256099942544~1458002511"
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }

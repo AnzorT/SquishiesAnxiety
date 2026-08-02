@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, PanResponder, Pressable, Modal, Animated } from 'react-native';
+import { View, Text, StyleSheet, PanResponder, Animated, Switch, Pressable, Modal } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Canvas } from '@react-three/fiber';
-import SquishyToy, { COLOR_DEFS, FILLS } from '../components/SquishyToy';
+import SquishyToy, { COLOR_DEFS } from '../components/SquishyToy';
 import SquishSound from '../audio/SquishSound';
 import CoinSound from '../audio/CoinSound';
-import { colors, spacing, radii } from '../theme/tokens';
+import PopSound from '../audio/PopSound';
+import { colors, radii, spacing } from '../theme/tokens';
 import AdBanner from '../components/AdBanner';
 import WatchAdButton from '../components/WatchAdButton';
 import CoinPopup from '../components/CoinPopup';
@@ -27,12 +30,34 @@ import CoinPopup from '../components/CoinPopup';
 // Coins are applied to the local display instantly but only flushed to
 // Firestore every ~1.5s (and on unmount) so holding down doesn't spam
 // the network with a write per tick.
+//
+// The ad sits outside the padded content column (its own bottom-inset-only
+// wrapper), same as HomeScreen, so it lands flush against the screen edge.
 
 const STAGE_WIDTH = 360;
 const STAGE_HEIGHT = 360;
 const COIN_FLUSH_MS = 1500;
 const COIN_TICK_MS = 1500;
 const COIN_START_DELAY_MS = 500;
+const BOOST_DURATION_MS = 60 * 1000;
+const BOOST_TICK_MS = 250;
+// Popups spawn this far above the actual touch point so the fingertip isn't
+// covering the "+N" the moment it appears — without this the popup starts
+// out hidden under the finger and has only fully faded by the time it rises
+// clear of it.
+const COIN_POPUP_Y_OFFSET = 90;
+// How long the settings icon takes to rotate open/closed.
+const SETTINGS_SPIN_MS = 300;
+
+// Each creature has its own squish sample; Metro needs these require() calls
+// literal (no dynamic paths), so they're all listed up front and picked by
+// species below rather than built from a filename string.
+const DEFAULT_SQUISH_SOUND = require('../../assets/audio/slime.wav');
+const SQUISH_SOUND_BY_SPECIES = {
+  seal: require('../../assets/audio/squish-seal.mp3'),
+  cat: require('../../assets/audio/squish-cat.mp3'),
+  cheese: require('../../assets/audio/squish-cheese.mp3'),
+};
 
 function firstAllowedColorIndex(toy) {
   if (!toy.colors?.length) return toy.startingColorIndex ?? 0;
@@ -40,34 +65,62 @@ function firstAllowedColorIndex(toy) {
   return idx === -1 ? 0 : idx;
 }
 
-export default function SquishScreen({ toy, coins = 0, onBack, onEarnCoins }) {
+export default function SquishScreen({
+  toy,
+  coins = 0,
+  onBack,
+  onEarnCoins,
+  squishSoundEnabled = true,
+  onToggleSquishSound,
+  coinSoundEnabled = true,
+  onToggleCoinSound,
+  releaseSoundEnabled = true,
+  onToggleReleaseSound,
+}) {
+  const insets = useSafeAreaInsets();
   const toyRef = useRef(null);
   const soundRef = useRef(null);
   const coinSoundRef = useRef(null);
+  const popSoundRef = useRef(null);
   const lastTouch = useRef({ x: 0, y: 0 });
   const activeModeRef = useRef(false);
   const coinStartTimeoutRef = useRef(null);
   const coinTimerRef = useRef(null);
   const pendingCoinsRef = useRef(0);
-  const sessionCoinsRef = useRef(0);
   const popupIdRef = useRef(0);
   const coinScale = useRef(new Animated.Value(1)).current;
   const coinFirstRender = useRef(true);
+  const boostActiveRef = useRef(false);
+  const boostTimerRef = useRef(null);
+  const settingsAnim = useRef(new Animated.Value(0)).current;
   const [displayCoins, setDisplayCoins] = useState(coins);
-  const [sessionCoins, setSessionCoins] = useState(0);
+  const [boostSecondsLeft, setBoostSecondsLeft] = useState(0);
   const [popups, setPopups] = useState([]);
-  const [selected, setSelected] = useState(() => firstAllowedColorIndex(toy));
-  const [fillIndex, setFillIndex] = useState(1);
-  const [showFillSheet, setShowFillSheet] = useState(false);
+  const [selected] = useState(() => firstAllowedColorIndex(toy));
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const toggleSettings = useCallback(() => {
+    setSettingsOpen((open) => {
+      const next = !open;
+      Animated.timing(settingsAnim, {
+        toValue: next ? 1 : 0,
+        duration: SETTINGS_SPIN_MS,
+        useNativeDriver: true,
+      }).start();
+      return next;
+    });
+  }, [settingsAnim]);
+
+  const settingsSpin = settingsAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
 
   useEffect(() => {
     const sound = new SquishSound();
     soundRef.current = sound;
-    sound.load();
+    sound.load(SQUISH_SOUND_BY_SPECIES[toy.species] ?? DEFAULT_SQUISH_SOUND);
     return () => {
       sound.unload();
     };
-  }, []);
+  }, [toy.species]);
 
   useEffect(() => {
     const sound = new CoinSound();
@@ -77,6 +130,22 @@ export default function SquishScreen({ toy, coins = 0, onBack, onEarnCoins }) {
       sound.unload();
     };
   }, []);
+
+  useEffect(() => {
+    const sound = new PopSound();
+    popSoundRef.current = sound;
+    sound.load();
+    return () => {
+      sound.unload();
+    };
+  }, []);
+
+  // Toggling squish sound off mid-hold should cut it immediately, not just
+  // block the *next* start() — the coin/pop toggles don't need this since
+  // those are one-shot sounds, never mid-playback when the switch flips.
+  useEffect(() => {
+    if (!squishSoundEnabled) soundRef.current?.stop();
+  }, [squishSoundEnabled]);
 
   useEffect(() => {
     const flush = () => {
@@ -121,20 +190,19 @@ export default function SquishScreen({ toy, coins = 0, onBack, onEarnCoins }) {
 
   const grantCoins = useCallback(
     (amount, at) => {
-      pendingCoinsRef.current += amount;
-      sessionCoinsRef.current += amount;
-      setDisplayCoins((c) => c + amount);
-      setSessionCoins(sessionCoinsRef.current);
-      coinSoundRef.current?.play();
+      const finalAmount = boostActiveRef.current ? amount * 2 : amount;
+      pendingCoinsRef.current += finalAmount;
+      setDisplayCoins((c) => c + finalAmount);
+      if (coinSoundEnabled) coinSoundRef.current?.play();
       if (at) {
         const id = ++popupIdRef.current;
         setPopups((prev) => {
-          const next = [...prev, { id, amount, x: at.x, y: at.y }];
+          const next = [...prev, { id, amount: finalAmount, x: at.x, y: at.y - COIN_POPUP_Y_OFFSET }];
           return next.length > 12 ? next.slice(next.length - 12) : next;
         });
       }
     },
-    []
+    [coinSoundEnabled]
   );
 
   const startCoinTimer = useCallback(() => {
@@ -148,21 +216,35 @@ export default function SquishScreen({ toy, coins = 0, onBack, onEarnCoins }) {
     }, COIN_START_DELAY_MS);
   }, [grantCoins, stopCoinTimer]);
 
-  const handleAdReward = useCallback(() => {
-    const bonus = sessionCoinsRef.current;
-    if (bonus <= 0) return;
-    sessionCoinsRef.current = 0;
-    setSessionCoins(0);
-    pendingCoinsRef.current += bonus;
-    setDisplayCoins((c) => c + bonus);
-    coinSoundRef.current?.play();
+  const stopBoostTimer = useCallback(() => {
+    if (boostTimerRef.current) {
+      clearInterval(boostTimerRef.current);
+      boostTimerRef.current = null;
+    }
   }, []);
 
-  const selectFill = (i) => {
-    setFillIndex(i);
-    toyRef.current?.selectFill(i);
-    setShowFillSheet(false);
-  };
+  useEffect(() => stopBoostTimer, [stopBoostTimer]);
+
+  // Watching the ad starts a 1-minute window where every coin grant is
+  // doubled — the icon shows a live countdown for as long as it's active,
+  // and the ad can't be watched again until it runs out.
+  const handleAdReward = useCallback(() => {
+    if (coinSoundEnabled) coinSoundRef.current?.play();
+    boostActiveRef.current = true;
+    stopBoostTimer();
+    const endsAt = Date.now() + BOOST_DURATION_MS;
+    setBoostSecondsLeft(Math.ceil(BOOST_DURATION_MS / 1000));
+    boostTimerRef.current = setInterval(() => {
+      const remainingMs = endsAt - Date.now();
+      if (remainingMs <= 0) {
+        boostActiveRef.current = false;
+        setBoostSecondsLeft(0);
+        stopBoostTimer();
+      } else {
+        setBoostSecondsLeft(Math.ceil(remainingMs / 1000));
+      }
+    }, BOOST_TICK_MS);
+  }, [stopBoostTimer, coinSoundEnabled]);
 
   const ndcFromLocation = (locationX, locationY) => ({
     x: (locationX / STAGE_WIDTH) * 2 - 1,
@@ -173,6 +255,13 @@ export default function SquishScreen({ toy, coins = 0, onBack, onEarnCoins }) {
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
+      // Capture (not just bubble) phase — without this, the Canvas's
+      // underlying native GL view can hang onto the very first touch itself,
+      // so pointerDown only actually fires once a move forces the responder
+      // system to renegotiate. Claiming capture makes this view grab every
+      // touch immediately, before the GL view underneath ever sees it.
+      onStartShouldSetPanResponderCapture: () => true,
+      onMoveShouldSetPanResponderCapture: () => true,
       onPanResponderGrant: (evt) => {
         const { locationX, locationY, touches } = evt.nativeEvent;
         lastTouch.current = { x: locationX, y: locationY };
@@ -185,9 +274,11 @@ export default function SquishScreen({ toy, coins = 0, onBack, onEarnCoins }) {
         const rotate = touches.length >= 2;
         if (rotate !== activeModeRef.current) {
           // Finger count changed mid-gesture — restart the interaction in
-          // the new mode rather than mixing squish and orbit deltas.
+          // the new mode rather than mixing squish and orbit deltas. Pass
+          // `rotate` through so a poke torn down by a second finger joining
+          // (not an actual release) doesn't fire release-only feedback.
           activeModeRef.current = rotate;
-          toyRef.current?.pointerUp();
+          toyRef.current?.pointerUp(rotate);
           const ndc = ndcFromLocation(locationX, locationY);
           toyRef.current?.pointerDown(ndc.x, ndc.y, rotate);
           lastTouch.current = { x: locationX, y: locationY };
@@ -209,102 +300,121 @@ export default function SquishScreen({ toy, coins = 0, onBack, onEarnCoins }) {
   ).current;
 
   const current = COLOR_DEFS[selected];
-  const currentFill = FILLS[fillIndex];
 
   return (
-    <View style={[styles.container, { backgroundColor: current.light }]}>
-      <View style={styles.topBar}>
-        <Text onPress={onBack} style={[styles.back, { color: current.deep }]}>
-          ‹
-        </Text>
-        <Animated.Text
-          style={[styles.scoreText, { color: current.deep, transform: [] }]}
-        >
-          Coins: <Text style={styles.scoreValue}>{displayCoins}⊙</Text>
-        </Animated.Text>
-      </View>
-
-      <Pressable style={styles.fillPill} onPress={() => setShowFillSheet(true)}>
-        <View style={[styles.fillPillDot, { backgroundColor: currentFill.color }]} />
-        <Text style={styles.fillPillText}>Fill · {currentFill.name}</Text>
-        <Text style={styles.fillPillChevron}>▾</Text>
-      </Pressable>
-
-      <View style={styles.stage} {...panResponder.panHandlers}>
-        <Canvas flat camera={{ fov: 32, position: [0, 0.15, 4.4], near: 0.1, far: 100 }}>
-          <ambientLight intensity={0.62} />
-          <directionalLight color={0xfff2e0} intensity={1.35} position={[2.2, 3, 3]} />
-          <directionalLight color={0xcdd8ff} intensity={0.55} position={[-2.5, -1, 2]} />
-          <directionalLight color={0xffffff} intensity={0.4} position={[-1.5, 2, -3]} />
-          <SquishyToy
-            ref={toyRef}
-            startingColorIndex={selected}
-            startingFillIndex={fillIndex}
-            onSquish={() => {
-              soundRef.current?.start();
-              startCoinTimer();
-            }}
-            onRelease={() => {
-              soundRef.current?.stop();
-              stopCoinTimer();
-            }}
-          />
-        </Canvas>
-
-        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-          {popups.map((p) => (
-            <CoinPopup key={p.id} x={p.x} y={p.y} amount={p.amount} onDone={() => removePopup(p.id)} />
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.legend}>
-        <View style={styles.legendDivider} />
-        <View style={styles.legendRow}>
-          <Text style={styles.legendIcon}>☝️</Text>
-          <Text style={styles.legendArrow}>→</Text>
-          <Text style={styles.legendText}>squish squish</Text>
-        </View>
-        <View style={styles.legendRow}>
-          <Text style={styles.legendIcon}>✌️</Text>
-          <Text style={styles.legendArrow}>→</Text>
-          <Text style={styles.legendText}>rotate</Text>
-        </View>
-      </View>
-
-      <WatchAdButton onRewardEarned={handleAdReward} disabled={sessionCoins === 0} />
-      <AdBanner />
-
-      <Modal
-        visible={showFillSheet}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowFillSheet(false)}
-      >
-        <Pressable style={styles.sheetBackdrop} onPress={() => setShowFillSheet(false)}>
-          <Pressable style={styles.sheet} onPress={() => {}}>
-            <View style={styles.sheetHandle} />
-            <Text style={styles.sheetTitle}>Change fill</Text>
-            <Text style={styles.sheetSubtitle}>Each fill squishes differently.</Text>
-            {FILLS.map((fill, i) => (
-              <Pressable key={fill.key} style={styles.fillRow} onPress={() => selectFill(i)}>
-                <View style={[styles.fillDot, { backgroundColor: fill.color }]} />
-                <View style={styles.fillRowText}>
-                  <Text style={styles.fillName}>{fill.name}</Text>
-                  <Text style={styles.fillDesc}>{fill.desc}</Text>
-                </View>
-                {i === fillIndex && <Text style={styles.fillCheck}>✓</Text>}
-              </Pressable>
-            ))}
+    <View style={styles.container}>
+      <View style={styles.content}>
+        <View style={styles.topBar}>
+          <Text onPress={onBack} style={[styles.back, { color: current.deep }]}>
+            ‹
+          </Text>
+          <Animated.View style={[styles.coinPill, { transform: [{ scale: coinScale }] }]}>
+            <View style={styles.coinPillDot} />
+            <Text style={styles.coinPillText}>{displayCoins}</Text>
+          </Animated.View>
+          <View style={styles.topBarSpacer} />
+          <Pressable onPress={toggleSettings} style={styles.settingsButton} hitSlop={8}>
+            <Animated.View style={{ transform: [{ rotate: settingsSpin }] }}>
+              <MaterialIcons name="widgets" size={20} color={current.deep} />
+            </Animated.View>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </View>
+
+        <View style={styles.stage} {...panResponder.panHandlers}>
+          <Canvas flat camera={{ fov: 32, position: [0, 0.15, 4.4], near: 0.1, far: 100 }}>
+            <ambientLight intensity={0.62} />
+            <directionalLight color={0xfff2e0} intensity={1.35} position={[2.2, 3, 3]} />
+            <directionalLight color={0xcdd8ff} intensity={0.55} position={[-2.5, -1, 2]} />
+            <directionalLight color={0xffffff} intensity={0.4} position={[-1.5, 2, -3]} />
+            <SquishyToy
+              ref={toyRef}
+              startingColorIndex={selected}
+              species={toy.species}
+              onSquish={() => {
+                if (squishSoundEnabled) soundRef.current?.start();
+                startCoinTimer();
+              }}
+              onRelease={(_amount, switchingToOrbit) => {
+                soundRef.current?.stop();
+                if (!switchingToOrbit && releaseSoundEnabled) popSoundRef.current?.play();
+                stopCoinTimer();
+              }}
+            />
+          </Canvas>
+
+          <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+            {popups.map((p) => (
+              <CoinPopup key={p.id} x={p.x} y={p.y} amount={p.amount} onDone={() => removePopup(p.id)} />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.legend}>
+          <View style={styles.legendDivider} />
+          <View style={styles.legendRow}>
+            <Text style={styles.legendIcon}>☝️</Text>
+            <Text style={styles.legendArrow}>→</Text>
+            <Text style={styles.legendText}>squish squish</Text>
+          </View>
+          <View style={styles.legendRow}>
+            <Text style={styles.legendIcon}>✌️</Text>
+            <Text style={styles.legendArrow}>→</Text>
+            <Text style={styles.legendText}>rotate</Text>
+          </View>
+        </View>
+
+        <Modal visible={settingsOpen} transparent animationType="fade" onRequestClose={toggleSettings}>
+          <Pressable style={styles.settingsBackdrop} onPress={toggleSettings}>
+            <Pressable style={styles.settingsPopup} onPress={() => {}}>
+              <Text style={styles.settingsTitle}>Sound</Text>
+              <View style={styles.settingsRow}>
+                <Text style={styles.settingsLabel}>Squish</Text>
+                <Switch
+                  value={squishSoundEnabled}
+                  onValueChange={onToggleSquishSound}
+                  trackColor={{ false: colors.surfaceBorder, true: colors.accent }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+              <View style={styles.settingsRow}>
+                <Text style={styles.settingsLabel}>Coins</Text>
+                <Switch
+                  value={coinSoundEnabled}
+                  onValueChange={onToggleCoinSound}
+                  trackColor={{ false: colors.surfaceBorder, true: colors.accent }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+              <View style={styles.settingsRow}>
+                <Text style={styles.settingsLabel}>Release</Text>
+                <Switch
+                  value={releaseSoundEnabled}
+                  onValueChange={onToggleReleaseSound}
+                  trackColor={{ false: colors.surfaceBorder, true: colors.accent }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
+
+        <WatchAdButton
+          onRewardEarned={handleAdReward}
+          boostSecondsLeft={boostSecondsLeft}
+          boostTotalSeconds={BOOST_DURATION_MS / 1000}
+        />
+      </View>
+
+      <View style={{ paddingBottom: insets.bottom }}>
+        <AdBanner />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center' },
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { flex: 1, alignItems: 'center' },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -314,54 +424,49 @@ const styles = StyleSheet.create({
     paddingTop: spacing(12),
   },
   back: { fontSize: 26, fontWeight: '700' },
-  scoreText: { fontSize: 15, fontWeight: '600' },
-  scoreValue: {
-    fontWeight: '800',
-    color: colors.coinGoldDeep,
-    textShadowColor: colors.coinGoldShine,
-    textShadowRadius: 1,
-    textShadowOffset: { width: 0, height: -1 },
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '800',
-    marginTop: spacing(4),
-    letterSpacing: -0.5,
-  },
-  swatchRow: {
+  coinPill: {
     flexDirection: 'row',
-    gap: spacing(3),
-    marginTop: spacing(4),
+    alignItems: 'center',
+    gap: spacing(1.5),
+    backgroundColor: colors.surface,
+    borderRadius: 999,
+    paddingHorizontal: spacing(3.5),
+    paddingVertical: spacing(1.5),
+    shadowColor: colors.accent,
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
-  swatchBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    borderWidth: 3,
-    backgroundColor: '#FFFFFF',
+  coinPillDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.coinGold,
+    borderWidth: 2,
+    borderColor: colors.coinGoldDeep,
+  },
+  coinPillText: { fontSize: 14, fontWeight: '800', color: colors.textPrimary },
+  topBarSpacer: { flex: 1 },
+  settingsButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: colors.surface,
+    shadowColor: colors.accent,
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
-  swatchInner: { width: 26, height: 26, borderRadius: 13 },
-  fillPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: spacing(3),
-    backgroundColor: colors.glass,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing(4),
-    paddingVertical: spacing(2),
-  },
-  fillPillDot: { width: 14, height: 14, borderRadius: 7 },
-  fillPillText: { fontSize: 13, fontWeight: '700', color: colors.textPrimary },
-  fillPillChevron: { fontSize: 10, color: colors.textMuted },
   stage: { width: STAGE_WIDTH, height: STAGE_HEIGHT, marginTop: spacing(3) },
   legend: {
     width: '100%',
-    maxWidth: 300,
     marginTop: spacing(3),
-    alignItems: 'center',
+    paddingHorizontal: spacing(5),
+    alignItems: 'flex-start',
   },
   legendDivider: {
     width: '100%',
@@ -378,46 +483,39 @@ const styles = StyleSheet.create({
   legendIcon: { fontSize: 18 },
   legendArrow: { fontSize: 14, color: colors.textMuted },
   legendText: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
-  sheetBackdrop: {
+  settingsBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(58,46,77,0.4)',
-    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(58,46,77,0.35)',
+    alignItems: 'flex-end',
+    paddingTop: spacing(12) + 44,
+    paddingRight: spacing(5),
   },
-  sheet: {
-    width: '100%',
+  settingsPopup: {
+    minWidth: 190,
     backgroundColor: colors.surface,
-    borderTopLeftRadius: radii.lg,
-    borderTopRightRadius: radii.lg,
-    paddingTop: spacing(3),
-    paddingHorizontal: spacing(6),
-    paddingBottom: spacing(7),
-    shadowColor: '#6E46A0',
-    shadowOffset: { width: 0, height: -8 },
+    borderRadius: radii.md,
+    paddingVertical: spacing(3.5),
+    paddingHorizontal: spacing(4),
+    gap: spacing(3),
+    shadowColor: colors.accent,
     shadowOpacity: 0.2,
-    shadowRadius: 24,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
     elevation: 8,
   },
-  sheetHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.surfaceBorder,
-    alignSelf: 'center',
-    marginBottom: spacing(4),
+  settingsTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing(1),
   },
-  sheetTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing(1) },
-  sheetSubtitle: { fontSize: 13, color: colors.textMuted, marginBottom: spacing(2) },
-  fillRow: {
+  settingsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing(3.5),
-    paddingVertical: spacing(3),
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1E9FC',
+    justifyContent: 'space-between',
+    gap: spacing(4),
   },
-  fillDot: { width: 36, height: 36, borderRadius: 18, flexShrink: 0 },
-  fillRowText: { flex: 1 },
-  fillName: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
-  fillDesc: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  fillCheck: { color: colors.accent, fontSize: 18, fontWeight: '700' },
+  settingsLabel: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
 });

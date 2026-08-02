@@ -1,13 +1,14 @@
 // PlushCrush design tokens.
-// Palette lifted directly from the "Cute Squishies" reference design
-// (Cute Squishies (standalone).html) — soft lavender stage, glassy white
-// controls, plum text hierarchy.
+// Palette lifted directly from the "PlushCrush2" reference design
+// (PlushCrush2 (standalone).html) — soft lavender stage, glassy white
+// pill controls, deep-plum text hierarchy, gold coin accents.
 
 export const colors = {
   bg: '#F3EEFB',
   bgGradientTop: '#FBF7FF',
   bgGradientMid: '#F1E9FC',
   bgGradientBottom: '#E7DAF6',
+  splashBg: '#EFE0FF',
 
   surface: '#FFFFFF',
   surfaceBorder: '#E4D6F6',
@@ -21,8 +22,13 @@ export const colors = {
   iconStroke: '#C3AEDD',
   shadow: 'rgba(110,70,160,0.14)',
 
-  arrowActive: '#FFFFFF',
-  arrowInactive: '#B7A9CB',
+  // Deeper purple used specifically for primary pill CTAs (Log In / Create
+  // Account / squish-screen icons), with a darker "3D" bottom-border shade.
+  buttonPrimary: '#7C4FC0',
+  buttonPrimaryShadow: '#5E3894',
+
+  arrowActive: '#7C4FC0',
+  arrowInactive: '#C3AEDD',
 
   peach: '#FFC7A8',
   strawberry: '#FF9DB0',
@@ -39,10 +45,14 @@ export const colors = {
 
   // Coin currency — warm metallic gold, distinct from the purple/green UI
   // palette so coins read as "money" wherever they appear.
-  coinGold: '#F5B816',
-  coinGoldDeep: '#B9790A',
+  coinGold: '#F7C94C',
+  coinGoldDeep: '#E0A81E',
   coinGoldShine: '#FFF3C8',
   coinGoldBg: '#FFF6DE',
+
+  // Small circular "watch ad" icon button.
+  adIconBg: '#FCE38A',
+  adIconShadow: 'rgba(224,168,30,0.25)',
 };
 
 export const radii = {

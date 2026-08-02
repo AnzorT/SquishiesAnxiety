@@ -9,14 +9,18 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo-google-fonts/baloo-2": "^0.4.2",
+    "@expo-google-fonts/nunito": "^0.4.2",
     "@react-native-firebase/app": "^20.5.0",
     "@react-native-firebase/auth": "^20.5.0",
     "@react-native-firebase/firestore": "^20.5.0",
     "@react-three/fiber": "^8.16.8",
     "expo": "~51.0.0",
     "expo-av": "~14.0.7",
+    "expo-font": "~12.0.10",
     "expo-gl": "~14.0.2",
     "expo-haptics": "~13.0.1",
+    "expo-linear-gradient": "~13.0.2",
     "expo-status-bar": "~1.12.1",
     "react": "18.2.0",
     "react-native": "0.74.5",

@@ -12,11 +12,14 @@ function userDocRef(uid) {
   return firestore().collection('users').doc(uid);
 }
 
-export async function createUserProfile(uid, { email, age }) {
+export async function createUserProfile(uid, { email, age, nickname }) {
   await userDocRef(uid).set({
     email,
     age,
+    nickname: nickname?.trim() || 'Squisher',
     coins: 0,
+    totalEarned: 0,
+    adsFree: false,
     ownedIds: [STARTER_CREATURE_ID],
     createdAt: firestore.FieldValue.serverTimestamp(),
   });
@@ -31,7 +34,32 @@ export function subscribeToUserProfile(uid, onChange) {
 
 export async function addCoins(uid, amount) {
   if (!amount) return;
-  await userDocRef(uid).update({ coins: firestore.FieldValue.increment(amount) });
+  await userDocRef(uid).update({
+    coins: firestore.FieldValue.increment(amount),
+    // Cumulative lifetime total — unlike `coins` this never goes down on a
+    // purchase, so it's what the "earn N coins" achievements track.
+    totalEarned: firestore.FieldValue.increment(amount),
+  });
+}
+
+export async function updateNickname(uid, nickname) {
+  const trimmed = nickname?.trim();
+  if (!trimmed) return;
+  await userDocRef(uid).update({ nickname: trimmed });
+}
+
+export async function claimAdsFree(uid) {
+  await userDocRef(uid).update({ adsFree: true });
+}
+
+export async function submitFeedback(uid, text) {
+  const trimmed = text?.trim();
+  if (!trimmed) return;
+  await firestore().collection('feedback').add({
+    uid,
+    text: trimmed,
+    createdAt: firestore.FieldValue.serverTimestamp(),
+  });
 }
 
 export async function purchaseCreature(uid, creatureId, price) {
