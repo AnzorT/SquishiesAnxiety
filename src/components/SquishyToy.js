@@ -1,6 +1,8 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { Asset } from 'expo-asset';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 // Ported from the "Squish Buddies" design (Cute Squishies standalone.html) —
 // soft-body dent physics: a per-vertex spring field with grid diffusion
@@ -592,6 +594,225 @@ function buildToy(colorDefs, startIndex, fill, species = 'blob') {
   };
 }
 
+// ---- Imported-mesh species (e.g. Cloude, built from a real 3D scan/AI-
+// generated asset instead of the procedural sphere above) ----
+//
+// The procedural toys above all share one sphere geometry with a known
+// `rows x cols` UV-sphere vertex layout, which is what lets tickPhysics's
+// jelly-wave diffusion step look up each vertex's 4 grid neighbors by simple
+// index math. An imported mesh has no such structure — its vertices come in
+// whatever order the modeling tool exported them — so it needs its own
+// real adjacency list (built once from the mesh's triangle index buffer)
+// and a topology-agnostic diffusion step that walks that list instead of
+// assuming a grid. See the `s.neighbors` branch in tickPhysics below.
+//
+// Everything else (the per-vertex spring toward a Gaussian falloff dent
+// target, the global squash/wobble, blink, orbit) already only reasons
+// about vertex positions/distances, so it works unmodified on any mesh.
+
+const CLOUDE_ASSET = require('../../assets/models/cloude_3d.glb');
+
+// Cached at module scope — re-opening Cloude within the same app session
+// re-parses a fresh geometry (see buildCloudeToy) but doesn't re-fetch/
+// re-decode the same ~100KB glb off disk every time.
+let cloudeGltfPromise = null;
+function loadCloudeGltf() {
+  if (!cloudeGltfPromise) {
+    cloudeGltfPromise = (async () => {
+      const asset = Asset.fromModule(CLOUDE_ASSET);
+      await asset.downloadAsync();
+      const response = await fetch(asset.localUri || asset.uri);
+      const arrayBuffer = await response.arrayBuffer();
+      return new Promise((resolve, reject) => {
+        new GLTFLoader().parse(arrayBuffer, '', resolve, reject);
+      });
+    })();
+  }
+  return cloudeGltfPromise;
+}
+
+// One-time-per-load adjacency build: every vertex that shares a triangle
+// with vertex i is a "neighbor" of i, same relationship the sphere grid's
+// left/right/up/down look-up captures, just derived from real topology
+// instead of assumed row/col math.
+function buildAdjacency(indexArray, vertCount) {
+  const neighborSets = new Array(vertCount);
+  for (let i = 0; i < vertCount; i++) neighborSets[i] = new Set();
+  for (let t = 0; t < indexArray.length; t += 3) {
+    const a = indexArray[t];
+    const b = indexArray[t + 1];
+    const c = indexArray[t + 2];
+    neighborSets[a].add(b);
+    neighborSets[a].add(c);
+    neighborSets[b].add(a);
+    neighborSets[b].add(c);
+    neighborSets[c].add(a);
+    neighborSets[c].add(b);
+  }
+  return neighborSets.map((set) => Uint32Array.from(set));
+}
+
+async function buildCloudeToy(fill) {
+  const gltf = await loadCloudeGltf();
+  let sourceMesh = null;
+  gltf.scene.traverse((obj) => {
+    if (!sourceMesh && obj.isMesh) sourceMesh = obj;
+  });
+  if (!sourceMesh) throw new Error('cloude_3d.glb: no mesh found in scene');
+
+  // Cloned so a second concurrently-open Cloude (fast back-to-back visits)
+  // never shares — and fights over — the same live position buffer during
+  // dent physics.
+  const geo = sourceMesh.geometry.clone();
+  geo.computeBoundingBox();
+
+  // Recenter on the model's own bounding-box center and rescale to roughly
+  // the same on-screen size as the procedural toys (built on a radius-1
+  // sphere centered at the origin) — the raw export's pivot sits at its
+  // base (y from 0 upward, not centered) and is about half that size, so
+  // without this it renders small and low instead of where SquishScreen's
+  // camera actually frames the toy stage.
+  const rawCenter = new THREE.Vector3();
+  geo.boundingBox.getCenter(rawCenter);
+  const rawSize = new THREE.Vector3();
+  geo.boundingBox.getSize(rawSize);
+  const rawMaxDim = Math.max(rawSize.x, rawSize.y, rawSize.z) || 1;
+  const importScale = 2 / rawMaxDim;
+  const rawPos = geo.attributes.position.array;
+  for (let i = 0; i < rawPos.length; i += 3) {
+    rawPos[i] = (rawPos[i] - rawCenter.x) * importScale;
+    rawPos[i + 1] = (rawPos[i + 1] - rawCenter.y) * importScale;
+    rawPos[i + 2] = (rawPos[i + 2] - rawCenter.z) * importScale;
+  }
+  geo.attributes.position.needsUpdate = true;
+  geo.computeVertexNormals();
+  geo.computeBoundingBox();
+
+  const posAttr = geo.attributes.position;
+  const vertCount = posAttr.count;
+  const basePos = new Float32Array(posAttr.array);
+
+  const indexAttr = geo.getIndex();
+  const indexArray = indexAttr ? indexAttr.array : Uint32Array.from({ length: vertCount }, (_, i) => i);
+  const neighbors = buildAdjacency(indexArray, vertCount);
+
+  const dentAmt = new Float32Array(vertCount);
+  const dentTarget = new Float32Array(vertCount);
+  const dentVel = new Float32Array(vertCount);
+  const dentScratch = new Float32Array(vertCount);
+  const dentFall = new Float32Array(vertCount);
+
+  const sourceMap = sourceMesh.material && sourceMesh.material.map ? sourceMesh.material.map : null;
+  const bodyMat = new THREE.MeshStandardMaterial({
+    map: sourceMap,
+    color: 0xffffff,
+    roughness: 0.55,
+    metalness: 0,
+    side: THREE.DoubleSide,
+  });
+  const bodyMesh = new THREE.Mesh(geo, bodyMat);
+
+  const group = new THREE.Group();
+  group.add(bodyMesh);
+
+  // Invisible placeholders — tickPhysics unconditionally animates eyeL/
+  // eyeR (the blink) and raycastHit always tests noseTorus/eyeL/eyeR, so
+  // these need to exist even though Cloude's face is painted into its
+  // texture rather than built from separate meshes like the other species.
+  // Parked well clear of the body so nothing ever actually raycast-hits
+  // them — every tap on Cloude resolves to a normal squish poke rather
+  // than the nose-boop special case (there's no reliable way to know
+  // where the painted nose sits in mesh space without inspecting the UVs,
+  // so boop support is left for later rather than guessed at).
+  const invisMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
+  const invisGeo = new THREE.SphereGeometry(0.02, 4, 4);
+  const makeInvisible = () => {
+    const m = new THREE.Mesh(invisGeo, invisMat);
+    m.position.set(0, -1000, 0);
+    return m;
+  };
+  const eyeL = makeInvisible();
+  const eyeR = makeInvisible();
+  const glintL = makeInvisible();
+  const glintR = makeInvisible();
+  const noseGroup = new THREE.Group();
+  noseGroup.position.set(0, -1000, 0);
+  const noseTorus = makeInvisible();
+  noseGroup.add(noseTorus);
+  group.add(eyeL, eyeR, glintL, glintR, noseGroup);
+
+  // Same fixed shadow the default "blob" species uses — now that the
+  // geometry above is recentered/rescaled to that same ~2-unit-diameter
+  // convention, there's no need to derive this from Cloude's own bbox.
+  const shMat = new THREE.MeshBasicMaterial({ color: 0x5a3c82, transparent: true, opacity: 0.28, depthWrite: false });
+  const shadowMesh = new THREE.Mesh(new THREE.CircleGeometry(1, 32), shMat);
+  shadowMesh.scale.set(1.3, 0.5, 1);
+  shadowMesh.position.set(0, -1.35, -0.3);
+  shadowMesh.rotation.x = -Math.PI / 2.5;
+
+  return {
+    group,
+    shadowMesh,
+    bodyMesh,
+    bodyGeo: geo,
+    bodyMat,
+    noseGroup,
+    noseTorus,
+    noseMat: invisMat,
+    eyeL,
+    eyeR,
+    glintL,
+    glintR,
+    eyeAspectY: 1,
+    eyeAspectZ: 1,
+    appendages: [],
+    mouthMesh: null,
+    flecks: [],
+    basePos,
+    vertCount,
+    neighbors,
+    dentAmt,
+    dentTarget,
+    dentVel,
+    dentScratch,
+    dentFall,
+    normalsFrameToggle: false,
+    featureBases: [],
+    featureDentAmt: new Float32Array(0),
+    featureDentVel: new Float32Array(0),
+    featureDentTarget: new Float32Array(0),
+    featureDentFall: new Float32Array(0),
+    fill,
+    sparkleGroup: new THREE.Group(),
+    sparkles: [],
+    selected: 0,
+    mode: null,
+    dragStartWorld: null,
+    pressLocalSmoothed: null,
+    pressHoldTime: 0,
+    globalSquash: 0,
+    globalSquashV: 0,
+    globalSquashTarget: 0,
+    wobbleRotX: 0,
+    wobbleRotXV: 0,
+    wobbleRotZ: 0,
+    wobbleRotZV: 0,
+    userRotY: 0,
+    userRotX: 0,
+    orbitTargetY: 0,
+    orbitTargetX: 0,
+    orbitVelY: 0,
+    orbitVelX: 0,
+    idlePhase: Math.random() * 10,
+    blinkTimer: 2 + Math.random() * 3,
+    blinkAmt: 0,
+    noseSquash: 0,
+    noseSquashV: 0,
+    noseTarget: 0,
+    noseFeatureSquish: 1,
+  };
+}
+
 function spawnSparkles(s, localPoint) {
   for (let i = 0; i < 14; i++) {
     const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1 });
@@ -681,19 +902,36 @@ function tickPhysics(s, dt) {
 
   s.dentScratch.set(s.dentAmt);
   const prev = s.dentScratch;
-  const rows = s.rowCount;
-  const cols = s.colCount;
   const diffCoef = 0.024 * k;
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const idx = r * cols + c;
-      const cl = c === 0 ? cols - 1 : c - 1;
-      const cr = c === cols - 1 ? 0 : c + 1;
-      const left = prev[r * cols + cl];
-      const right = prev[r * cols + cr];
-      const up = r > 0 ? prev[(r - 1) * cols + c] : prev[idx];
-      const down = r < rows - 1 ? prev[(r + 1) * cols + c] : prev[idx];
-      s.dentAmt[idx] += ((left + right - 2 * prev[idx]) + (up + down - 2 * prev[idx])) * diffCoef;
+  if (s.neighbors) {
+    // Imported mesh (e.g. Cloude) — no assumed row/col grid, so diffuse
+    // across each vertex's real triangle-adjacency instead. Normalized by
+    // neighbor count so the diffusion rate doesn't swing with local mesh
+    // density, then rescaled by 4 to land in the same range the 4-neighbor
+    // grid case below produces, so `diffCoef` means roughly the same thing
+    // in both branches.
+    for (let i = 0; i < s.vertCount; i++) {
+      const nbrs = s.neighbors[i];
+      const n = nbrs.length;
+      if (!n) continue;
+      let sum = 0;
+      for (let ni = 0; ni < n; ni++) sum += prev[nbrs[ni]] - prev[i];
+      s.dentAmt[i] += (sum / n) * 4 * diffCoef;
+    }
+  } else {
+    const rows = s.rowCount;
+    const cols = s.colCount;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const idx = r * cols + c;
+        const cl = c === 0 ? cols - 1 : c - 1;
+        const cr = c === cols - 1 ? 0 : c + 1;
+        const left = prev[r * cols + cl];
+        const right = prev[r * cols + cr];
+        const up = r > 0 ? prev[(r - 1) * cols + c] : prev[idx];
+        const down = r < rows - 1 ? prev[(r + 1) * cols + c] : prev[idx];
+        s.dentAmt[idx] += ((left + right - 2 * prev[idx]) + (up + down - 2 * prev[idx])) * diffCoef;
+      }
     }
   }
 
@@ -843,19 +1081,67 @@ const SquishyToy = forwardRef(function SquishyToy(
   const { camera } = useThree();
   const toyRef = useRef(null);
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
+  // Procedural species build synchronously (unchanged); Cloude loads its
+  // mesh from disk first, so `built` starts null and the toy just isn't
+  // rendered/interactive for the brief window before that resolves — same
+  // "not ready yet" shape the rest of this file already null-guards for
+  // (toyRef.current starts null too, and every imperative-handle method
+  // already bails via `if (!s) return`).
+  const [built, setBuilt] = useState(null);
 
-  const built = useMemo(() => buildToy(COLOR_DEFS, startingColorIndex, FILLS[startingFillIndex], species), []);
   useEffect(() => {
-    toyRef.current = built;
+    let cancelled = false;
+    let builtResult = null;
+
+    const buildPromise =
+      species === 'cloude'
+        ? buildCloudeToy(FILLS[startingFillIndex])
+        : Promise.resolve(buildToy(COLOR_DEFS, startingColorIndex, FILLS[startingFillIndex], species));
+
+    buildPromise
+      .then((result) => {
+        if (cancelled) {
+          result.bodyGeo.dispose();
+          result.bodyMat.dispose();
+          return;
+        }
+        builtResult = result;
+        toyRef.current = result;
+        setBuilt(result);
+      })
+      .catch((err) => {
+        // Was previously unhandled — a failed load (bad asset resolution,
+        // fetch failure, GLTF parse error) left `built` stuck at null
+        // forever with zero indication why, since nothing rendered but
+        // nothing crashed either.
+        //
+        // Logging `err` as a second console.error argument only shows the
+        // call site of this catch itself in RN's error overlay — the
+        // actual throw site lives on the Error object's own `.stack`,
+        // which needs to be pulled out and printed as text explicitly to
+        // actually see it.
+        // eslint-disable-next-line no-console
+        console.error(
+          `[SquishyToy] failed to build "${species}": ${(err && err.stack) || err}`
+        );
+      });
+
     return () => {
-      built.bodyGeo.dispose();
-      built.bodyMat.dispose();
-      for (const sp of built.sparkles) {
-        sp.mat.dispose();
-        sp.mesh.geometry.dispose();
+      cancelled = true;
+      if (builtResult) {
+        builtResult.bodyGeo.dispose();
+        builtResult.bodyMat.dispose();
+        for (const sp of builtResult.sparkles) {
+          sp.mat.dispose();
+          sp.mesh.geometry.dispose();
+        }
+        toyRef.current = null;
       }
     };
-  }, [built]);
+    // Mirrors the original useMemo(..., []) — builds once per mount from
+    // whatever props it started with, not on every prop change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useImperativeHandle(
     ref,
@@ -958,6 +1244,8 @@ const SquishyToy = forwardRef(function SquishyToy(
     const dt = clamp(delta, 0, 0.05);
     tickPhysics(s, dt);
   });
+
+  if (!built) return null;
 
   return (
     <>

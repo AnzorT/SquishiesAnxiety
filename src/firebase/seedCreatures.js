@@ -10,6 +10,7 @@ export const DEFAULT_CREATURES = [
     name: 'Buddy',
     description: 'Soft and squishy, always up for a squeeze.',
     colors: ['#7EC3EE'],
+    species: 'cloude',
     price: 0,
     order: 0,
   },

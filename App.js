@@ -1,3 +1,10 @@
+// Must load before anything that touches GLTFLoader (see SquishyToy.js's
+// Cloude build path) — Hermes doesn't provide TextDecoder/TextEncoder,
+// which GLTFLoader needs to decode a GLB's embedded JSON chunk. Has to be
+// the first import in the app's entry file so its global.TextDecoder/
+// TextEncoder polyfill is in place before any other module (transitively
+// including SquishyToy.js) gets evaluated.
+import 'fast-text-encoding';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -27,6 +34,19 @@ import {
   submitFeedback,
 } from './src/firebase/firestore';
 import { ensureCreaturesSeeded, DEFAULT_CREATURES } from './src/firebase/seedCreatures';
+
+// GLTFParser's constructor (three.js, used by SquishyToy.js's Cloude build
+// path) sniffs navigator.userAgent to work around known Safari ImageBitmap
+// bugs (`userAgent.match(/Version\/(\d+)/)`). React Native's global
+// `navigator` exists but has no `userAgent` string, so that call throws
+// "Cannot read property 'match' of undefined" before parsing even gets to
+// Cloude's own mesh/texture data. A harmless placeholder string is enough
+// — the Safari-specific branch it's used for is a no-op on a value that
+// isn't actually Safari's UA anyway. Runs once here at app start, well
+// before any screen can trigger a GLTF load.
+if (typeof navigator !== 'undefined' && typeof navigator.userAgent === 'undefined') {
+  navigator.userAgent = 'ReactNative';
+}
 
 mobileAds()
   .initialize()
