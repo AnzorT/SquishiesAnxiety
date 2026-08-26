@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { squadColors, squadGradients, squadFonts, squadRadii } from '../theme/squadTheme';
 import { computeAchievements } from '../achievements';
 import IconButton from '../components/squad/IconButton';
-import SquishyThumbnail from '../components/SquishyThumbnail';
+import CreatureThumbnail from '../components/CreatureThumbnail';
 
 // Grid of achievement badges, matching the prototype's ACHIEVEMENTS screen.
 // See src/achievements.js for what's tracked and why.
@@ -33,7 +33,7 @@ function ShimmerRing({ done, children }) {
       style={[
         styles.badge,
         done
-          ? { backgroundColor: squadColors.panelAlt, shadowColor: squadColors.gold, shadowOpacity, shadowRadius, elevation: done ? 4 : 0 }
+          ? { backgroundColor: squadColors.panelBorder, shadowColor: squadColors.gold, shadowOpacity, shadowRadius, elevation: done ? 4 : 0 }
           : { backgroundColor: squadColors.inputBg },
       ]}
     >
@@ -42,9 +42,9 @@ function ShimmerRing({ done, children }) {
   );
 }
 
-export default function AchievementsScreen({ creatures = [], ownedIds = [], totalEarned = 0, onBack }) {
+export default function AchievementsScreen({ creatures = [], ownedIds = [], totalEarned = 0, achievements = {}, onBack }) {
   const insets = useSafeAreaInsets();
-  const entries = computeAchievements(creatures, ownedIds, totalEarned);
+  const entries = computeAchievements(creatures, ownedIds, totalEarned, achievements);
   const doneCount = entries.filter((e) => e.done).length;
 
   return (
@@ -60,9 +60,16 @@ export default function AchievementsScreen({ creatures = [], ownedIds = [], tota
           <View key={entry.key} style={[styles.card, { borderColor: entry.done ? '#ffcd3c55' : squadColors.panelBorder }]}>
             <ShimmerRing done={entry.done}>
               {entry.creature ? (
-                <SquishyThumbnail colorHex={entry.creature.colors?.[0] ?? squadColors.pinkLight} species={entry.creature.species} size={40} />
+                <CreatureThumbnail creatureId={entry.creature.id} mood={entry.done ? 'idle' : 'sleep'} size={46} locked={!entry.done} />
               ) : (
-                <Text style={[styles.badgeLabel, { color: entry.done ? squadColors.goldLight : squadColors.textDisabled }]}>{entry.badgeLabel}</Text>
+                <Text
+                  style={[
+                    styles.badgeLabel,
+                    { color: entry.done ? squadColors.goldLight : squadColors.textDisabled, opacity: entry.done ? 1 : 0.6 },
+                  ]}
+                >
+                  {entry.badgeLabel}
+                </Text>
               )}
             </ShimmerRing>
             <Text style={[styles.cardTitle, { color: entry.done ? squadColors.textWhite : '#7a6ba0' }]}>{entry.title}</Text>

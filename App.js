@@ -1,10 +1,3 @@
-// Must load before anything that touches GLTFLoader (see SquishyToy.js's
-// Cloude build path) — Hermes doesn't provide TextDecoder/TextEncoder,
-// which GLTFLoader needs to decode a GLB's embedded JSON chunk. Has to be
-// the first import in the app's entry file so its global.TextDecoder/
-// TextEncoder polyfill is in place before any other module (transitively
-// including SquishyToy.js) gets evaluated.
-import 'fast-text-encoding';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -28,25 +21,16 @@ import {
   subscribeToUserProfile,
   subscribeToCreatures,
   addCoins,
-  purchaseCreature,
+  buyKey,
+  unlockWithKey,
+  recordPress,
+  markAchievement,
   updateNickname,
   claimAdsFree,
   submitFeedback,
+  ensureStarterCreaturesOwned,
 } from './src/firebase/firestore';
 import { ensureCreaturesSeeded, DEFAULT_CREATURES } from './src/firebase/seedCreatures';
-
-// GLTFParser's constructor (three.js, used by SquishyToy.js's Cloude build
-// path) sniffs navigator.userAgent to work around known Safari ImageBitmap
-// bugs (`userAgent.match(/Version\/(\d+)/)`). React Native's global
-// `navigator` exists but has no `userAgent` string, so that call throws
-// "Cannot read property 'match' of undefined" before parsing even gets to
-// Cloude's own mesh/texture data. A harmless placeholder string is enough
-// — the Safari-specific branch it's used for is a no-op on a value that
-// isn't actually Safari's UA anyway. Runs once here at app start, well
-// before any screen can trigger a GLTF load.
-if (typeof navigator !== 'undefined' && typeof navigator.userAgent === 'undefined') {
-  navigator.userAgent = 'ReactNative';
-}
 
 mobileAds()
   .initialize()
@@ -103,6 +87,16 @@ export default function App() {
     return subscribeToUserProfile(authUser.uid, setProfile);
   }, [authUser]);
 
+  // One-time backward-compat migration for accounts created before the new
+  // 10-creature roster existed — see ensureStarterCreaturesOwned's comment.
+  useEffect(() => {
+    if (!authUser || !profile) return;
+    ensureStarterCreaturesOwned(authUser.uid, profile.ownedIds ?? []).catch(() => {});
+    // Only needs to run once per profile snapshot that's missing a starter;
+    // re-running after it succeeds is harmless (arrayUnion) but pointless.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser, profile?.ownedIds]);
+
   useEffect(() => {
     ensureCreaturesSeeded().catch(() => {});
     // Firestore may still hold retired creatures, or stale field values for
@@ -126,7 +120,7 @@ export default function App() {
   // from ownedIds/totalEarned (see src/achievements.js).
   useEffect(() => {
     if (!profile || !creatures.length) return;
-    const current = computeAchievements(creatures, profile.ownedIds ?? [], profile.totalEarned ?? 0);
+    const current = computeAchievements(creatures, profile.ownedIds ?? [], profile.totalEarned ?? 0, profile.achievements ?? {});
     const prev = prevAchievementsRef.current;
     if (prev) {
       const newlyDone = current.find((entry) => entry.done && !prev[entry.key]);
@@ -164,17 +158,41 @@ export default function App() {
     [authUser]
   );
 
-  const handlePurchase = useCallback(
+  const handleBuyKey = useCallback(
     async (creature) => {
       if (!authUser) return;
       try {
-        const result = await purchaseCreature(authUser.uid, creature.id, creature.price ?? 0);
+        const result = await buyKey(authUser.uid, creature.id, creature.price ?? 0);
         if (!result.ok) {
-          Alert.alert('Not enough coins', `You need ${creature.price}⊙ to unlock ${creature.name}.`);
+          Alert.alert('Not enough coins', `You need ${creature.price}⊙ for a ${creature.name} key.`);
         }
       } catch (e) {
         Alert.alert('Something went wrong', 'Could not complete the purchase — try again.');
       }
+    },
+    [authUser]
+  );
+
+  const handleUnlockWithKey = useCallback(
+    (creatureId) => {
+      if (!authUser) return;
+      unlockWithKey(authUser.uid, creatureId).catch(() => {});
+    },
+    [authUser]
+  );
+
+  const handleRecordPress = useCallback(
+    (creatureId, holdMs) => {
+      if (!authUser) return;
+      recordPress(authUser.uid, creatureId, holdMs).catch(() => {});
+    },
+    [authUser]
+  );
+
+  const handleMarkAchievement = useCallback(
+    (key) => {
+      if (!authUser) return;
+      markAchievement(authUser.uid, key).catch(() => {});
     },
     [authUser]
   );
@@ -205,6 +223,12 @@ export default function App() {
   }
 
   const ownedIds = profile?.ownedIds ?? [];
+  const keys = profile?.keys ?? {};
+  const stats = profile?.stats ?? { presses: 0, longestHoldMs: 0, playTime: {} };
+  const favoriteEntry = Object.entries(stats.playTime ?? {})
+    .filter(([, ms]) => ms > 0)
+    .reduce((best, entry) => (!best || entry[1] > best[1] ? entry : best), null);
+  const favoriteCreatureName = favoriteEntry ? creatures.find((c) => c.id === favoriteEntry[0])?.name ?? 'None yet' : 'None yet';
 
   let stage = 'splash';
   if (splashDone && authChecked) {
@@ -214,32 +238,33 @@ export default function App() {
     else stage = screen;
   }
 
-  // SquishScreen (and its light card-list styling) is intentionally
-  // untouched by the dark "Squish Squad" restyle, so it still needs the
-  // dark status-bar icons the rest of the app moved away from.
-  const statusBarStyle = stage === 'toy' ? 'dark' : 'light';
+  // Every screen, including SquishScreen, now uses the dark "Squish Squad"
+  // palette, so light status-bar icons read correctly everywhere.
+  const statusBarStyle = 'light';
 
   return (
     <SafeAreaProvider>
       <StatusBar style={statusBarStyle} />
-      {stage === 'splash' && (
-        <SplashScreen onFinish={() => setSplashDone(true)} creatures={creatures} ownedIds={ownedIds} />
-      )}
+      {stage === 'splash' && <SplashScreen onFinish={() => setSplashDone(true)} ownedIds={ownedIds} />}
       {stage === 'auth' && <AuthScreen />}
       {stage === 'home' && (
         <HomeScreen
           creatures={creatures}
-          ownedIds={profile?.ownedIds ?? ['buddy']}
+          ownedIds={ownedIds}
+          keys={keys}
           coins={profile?.coins ?? 0}
           index={homeIndex}
           onChangeIndex={setHomeIndex}
           onSelectToy={openToy}
-          onPurchase={handlePurchase}
+          onBuyKey={handleBuyKey}
+          onUnlockWithKey={handleUnlockWithKey}
           nickname={profile?.nickname ?? 'Squisher'}
           onSaveNickname={handleSaveNickname}
           adsFree={profile?.adsFree ?? false}
           onClaimAdsFree={handleClaimAdsFree}
           totalEarned={profile?.totalEarned ?? 0}
+          stats={stats}
+          favoriteCreatureName={favoriteCreatureName}
           onSubmitFeedback={handleSubmitFeedback}
           onLogout={handleLogout}
           onOpenAchievements={() => setScreen('achievements')}
@@ -251,6 +276,7 @@ export default function App() {
           creatures={creatures}
           ownedIds={ownedIds}
           totalEarned={profile?.totalEarned ?? 0}
+          achievements={profile?.achievements ?? {}}
           onBack={() => setScreen('home')}
         />
       )}
@@ -258,8 +284,9 @@ export default function App() {
         <StoreScreen
           creatures={creatures}
           ownedIds={ownedIds}
+          keys={keys}
           coins={profile?.coins ?? 0}
-          onPurchase={handlePurchase}
+          onBuyKey={handleBuyKey}
           onBack={() => setScreen('home')}
         />
       )}
@@ -270,6 +297,9 @@ export default function App() {
           coins={profile?.coins ?? 0}
           onBack={backToHome}
           onEarnCoins={handleEarnCoins}
+          onRecordPress={handleRecordPress}
+          achievements={profile?.achievements ?? {}}
+          onMarkAchievement={handleMarkAchievement}
           squishSoundEnabled={squishSoundEnabled}
           onToggleSquishSound={setSquishSoundEnabled}
           coinSoundEnabled={coinSoundEnabled}

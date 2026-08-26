@@ -3,29 +3,33 @@ import { View, Text, StyleSheet, Pressable, Animated, Easing } from 'react-nativ
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { squadColors, squadGradients, squadFonts } from '../theme/squadTheme';
-import SquishyThumbnail from '../components/SquishyThumbnail';
+import CreatureThumbnail from '../components/CreatureThumbnail';
 import GradientButton from '../components/squad/GradientButton';
 
-// First thing shown on launch — a scattered field of every creature in the
-// catalog (owned ones bright and full-size, locked ones dim and smaller, as
-// a collection teaser) behind the logo, mirroring the prototype's splash
-// exactly. Auto-advances to auth/home after a beat, but a tap anywhere — or
-// the pulsing CTA — skips straight there.
+// First thing shown on launch — matches "ASMR Creature Squash Game.html"'s
+// splash exactly: all 10 creatures scattered at fixed percent positions
+// (owned ones bright and full-size, locked ones dim and smaller), the
+// "SQUISH SQUAD" gradient wordmark, and the pulsing pink CTA. Stays up
+// until the player taps — no auto-advance timer.
 
-const AUTO_ADVANCE_MS = 2600;
+const MOODS = ['idle', 'jump', 'wobble'];
 
-// Percent-of-screen positions for up to 6 creatures, spread so nothing sits
-// under the centered title/button column.
+// Exact percent-of-screen positions from the design spec — one slot per
+// creature id (0-9).
 const SPLASH_SLOTS = [
-  { top: 9, left: 10, size: 74 },
-  { top: 15, left: 66, size: 60 },
-  { top: 30, left: 32, size: 84 },
-  { top: 47, left: 76, size: 60 },
-  { top: 60, left: 12, size: 68 },
-  { top: 68, left: 56, size: 54 },
+  { top: 8, left: 10, size: 70 },
+  { top: 14, left: 68, size: 60 },
+  { top: 26, left: 30, size: 80 },
+  { top: 38, left: 74, size: 66 },
+  { top: 44, left: 6, size: 64 },
+  { top: 56, left: 52, size: 58 },
+  { top: 64, left: 16, size: 72 },
+  { top: 70, left: 80, size: 56 },
+  { top: 80, left: 36, size: 68 },
+  { top: 86, left: 62, size: 60 },
 ];
 
-function FloatingCreature({ creature, unlocked, slot, delay }) {
+function FloatingCreature({ creatureId, unlocked, slot, delay, mood }) {
   const enter = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -52,24 +56,14 @@ function FloatingCreature({ creature, unlocked, slot, delay }) {
         transform: [{ scale: enter }],
       }}
     >
-      <SquishyThumbnail colorHex={creature.colors?.[0] ?? squadColors.pinkLight} species={creature.species} size={size} />
+      <CreatureThumbnail creatureId={creatureId} mood={mood} size={size} locked={!unlocked} />
     </Animated.View>
   );
 }
 
-export default function SplashScreen({ onFinish, creatures = [], ownedIds = [] }) {
+export default function SplashScreen({ onFinish, ownedIds = [] }) {
   const insets = useSafeAreaInsets();
   const finished = useRef(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!finished.current) {
-        finished.current = true;
-        onFinish();
-      }
-    }, AUTO_ADVANCE_MS);
-    return () => clearTimeout(timer);
-  }, [onFinish]);
 
   const skip = () => {
     if (finished.current) return;
@@ -80,19 +74,23 @@ export default function SplashScreen({ onFinish, creatures = [], ownedIds = [] }
   return (
     <Pressable style={styles.flex} onPress={skip}>
       <LinearGradient colors={squadGradients.splashBg.colors} start={squadGradients.splashBg.start} end={squadGradients.splashBg.end} style={styles.container}>
-        {creatures.slice(0, SPLASH_SLOTS.length).map((creature, i) => (
+        {SPLASH_SLOTS.map((slot, i) => (
           <FloatingCreature
-            key={creature.id}
-            creature={creature}
-            unlocked={ownedIds.includes(creature.id)}
-            slot={SPLASH_SLOTS[i]}
+            key={i}
+            creatureId={String(i)}
+            unlocked={ownedIds.includes(String(i))}
+            slot={slot}
             delay={i * 90}
+            mood={MOODS[i % 3]}
           />
         ))}
 
         <View style={styles.center}>
-          <Text style={styles.title}>PLUSH{'\n'}CRUSH</Text>
-          <Text style={styles.tagline}>Squish · Collect · Combo</Text>
+          <View>
+            <Text style={[styles.title, { color: squadColors.goldLight }]}>SQUISH</Text>
+            <Text style={[styles.title, { color: squadColors.goldAmber }]}>SQUAD</Text>
+          </View>
+          <Text style={styles.tagline}>Squash · Relax · Repeat</Text>
         </View>
 
         <GradientButton
@@ -122,15 +120,14 @@ const styles = StyleSheet.create({
     fontSize: 52,
     lineHeight: 50,
     textAlign: 'center',
-    color: squadColors.goldLight,
     letterSpacing: 1,
-    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowColor: 'rgba(0,0,0,0.25)',
     textShadowOffset: { width: 0, height: 6 },
     textShadowRadius: 0,
   },
   tagline: {
     marginTop: 10,
-    fontFamily: squadFonts.bodyExtraBold,
+    fontFamily: squadFonts.headingExtraBold,
     fontSize: 13,
     letterSpacing: 3,
     textTransform: 'uppercase',

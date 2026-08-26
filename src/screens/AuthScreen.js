@@ -89,7 +89,7 @@ export default function AuthScreen() {
     <LinearGradient colors={squadGradients.authBg.colors} start={squadGradients.authBg.start} end={squadGradients.authBg.end} style={styles.container}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <Text style={styles.title}>{isRegister ? 'Join the Squad!' : 'Welcome Back!'}</Text>
+          <Text style={styles.title}>Welcome Back!</Text>
 
           <View style={styles.tabRow}>
             <AuthTab label="LOGIN" active={!isRegister} onPress={() => switchMode('login')} />

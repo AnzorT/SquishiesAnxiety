@@ -6,13 +6,11 @@ import IconButton from '../components/squad/IconButton';
 import Toast from '../components/squad/Toast';
 
 // Bottom sheet opened from Home's gear icon — nickname editing, one-time
-// "remove ads" claim, a feedback note, real account stats, and logout, all
-// matching the prototype's SETTINGS panel. The prototype also tracks press
-// count / longest hold / favorite creature there, but those only exist as
-// events inside SquishScreen's squish gesture, which is explicitly out of
-// scope for this pass — so this sheet's stats row shows creatures
-// owned/total-earned/coins-spent instead, real numbers derived from the
-// same profile document rather than fabricated placeholders.
+// "remove ads" claim, a feedback note, real gameplay stats, and logout, all
+// matching the prototype's SETTINGS panel. The stats row shows total squish
+// presses, longest hold (seconds), and favorite creature — derived from
+// `stats` (tracked via recordPress in src/firebase/firestore.js) and the
+// pre-computed `favoriteCreatureName`, both passed down from App.js.
 export default function SettingsSheet({
   visible,
   onClose,
@@ -26,6 +24,8 @@ export default function SettingsSheet({
   totalCount,
   totalEarned = 0,
   coins = 0,
+  stats,
+  favoriteCreatureName,
 }) {
   const [nicknameEdit, setNicknameEdit] = useState(nickname || '');
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -63,7 +63,9 @@ export default function SettingsSheet({
     flash('Thanks for your feedback!');
   };
 
-  const spent = Math.max(0, totalEarned - coins);
+  const presses = stats?.presses ?? 0;
+  const longestHoldSeconds = ((stats?.longestHoldMs ?? 0) / 1000).toFixed(1);
+  const favorite = favoriteCreatureName || 'None yet';
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -118,16 +120,16 @@ export default function SettingsSheet({
           <View style={styles.card}>
             <Text style={styles.statsTitle}>YOUR STATS</Text>
             <View style={styles.statRow}>
-              <Text style={styles.statLabel}>Creatures Owned</Text>
-              <Text style={styles.statValue}>{ownedCount}/{totalCount}</Text>
+              <Text style={styles.statLabel}>Total Presses</Text>
+              <Text style={styles.statValue}>{presses}</Text>
             </View>
             <View style={styles.statRow}>
-              <Text style={styles.statLabel}>Total Coins Earned</Text>
-              <Text style={styles.statValue}>{totalEarned}</Text>
+              <Text style={styles.statLabel}>Longest Hold</Text>
+              <Text style={styles.statValue}>{longestHoldSeconds}s</Text>
             </View>
             <View style={[styles.statRow, styles.statRowLast]}>
-              <Text style={styles.statLabel}>Coins Spent</Text>
-              <Text style={styles.statValue}>{spent}</Text>
+              <Text style={styles.statLabel}>Favorite Creature</Text>
+              <Text style={styles.statValue}>{favorite}</Text>
             </View>
           </View>
 

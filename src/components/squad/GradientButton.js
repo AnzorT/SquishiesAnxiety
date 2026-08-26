@@ -74,6 +74,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontFamily: squadFonts.headingBold,
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
 });

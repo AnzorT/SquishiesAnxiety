@@ -1,34 +1,50 @@
-// Achievement list shared between AchievementsScreen (renders it) and
-// App.js (diffs it against the previous profile snapshot to fire a toast
-// the moment one flips to done) — kept in one place so the two can't drift.
+// Achievement list — matches "ASMR Creature Squash Game.html" exactly (10
+// fixed achievements: five per-creature unlocks, two coin-earned totals, a
+// full-collection badge, and two live SquishScreen events). Shared by
+// AchievementsScreen (renders it) and App.js (diffs it against the previous
+// snapshot to fire a toast the moment one flips to done).
 //
-// The prototype also has a couple of achievements that only make sense as
-// live SquishScreen events (60 taps in 60 seconds, watching a rewarded ad).
-// Instrumenting those means editing SquishScreen, which is out of scope for
-// this pass, so everything here is derived purely from the profile document
-// (ownedIds, totalEarned) instead.
+// unlock3..unlock7 / earn10k / earn100k / unlockAll are all derivable from
+// the profile document (ownedIds, totalEarned) the same way the rest of the
+// app is. speedTap (60 taps in 60s) and watchAd (watched a rewarded ad) are
+// live SquishScreen events with no natural profile field to derive them
+// from, so those two are tracked as an explicit `achievements` map on the
+// profile (see src/firebase/firestore.js's markAchievement) and passed in
+// here as `liveFlags`.
 
-const CREATURE_ACHIEVEMENTS = {
-  pebble: { title: 'Flipper Fanatic', desc: 'Unlock Pebble' },
-  suki: { title: 'Purrfectly Squishy', desc: 'Unlock Suki' },
-  glimmer: { title: 'Sparkle Squad', desc: 'Unlock Glimmer' },
-  gouda: { title: 'Big Cheese', desc: 'Unlock Gouda' },
-};
+import { CREATURES } from './data/creatures';
 
-export function computeAchievements(creatures = [], ownedIds = [], totalEarned = 0) {
-  const collectibles = creatures.filter((c) => (c.price ?? 0) > 0);
+const CREATURE_ACHIEVEMENTS = [
+  { key: 'unlock3', creatureId: '3', title: 'Egg-cellent!' },
+  { key: 'unlock4', creatureId: '4', title: 'Spiky Squish' },
+  { key: 'unlock5', creatureId: '5', title: 'Star Struck' },
+  { key: 'unlock6', creatureId: '6', title: 'Head in Clouds' },
+  { key: 'unlock7', creatureId: '7', title: 'Noodle Master' },
+];
 
-  const creatureEntries = collectibles.map((c) => {
-    const copy = CREATURE_ACHIEVEMENTS[c.id] ?? { title: `Unlock ${c.name}`, desc: `Unlock ${c.name}` };
-    return { key: c.id, done: ownedIds.includes(c.id), creature: c, ...copy };
+export function computeAchievements(creatures = CREATURES, ownedIds = [], totalEarned = 0, liveFlags = {}) {
+  const byId = new Map(creatures.map((c) => [c.id, c]));
+
+  const creatureEntries = CREATURE_ACHIEVEMENTS.map(({ key, creatureId, title }) => {
+    const creature = byId.get(creatureId);
+    return {
+      key,
+      done: ownedIds.includes(creatureId),
+      creature,
+      title,
+      desc: `Unlock ${creature ? creature.name : ''}`,
+    };
   });
 
-  const unlockAllDone = collectibles.length > 0 && collectibles.every((c) => ownedIds.includes(c.id));
+  const allCreatureIds = creatures.length ? creatures.map((c) => c.id) : CREATURES.map((c) => c.id);
+  const unlockAllDone = allCreatureIds.every((id) => ownedIds.includes(id));
 
   return [
     ...creatureEntries,
-    { key: 'unlockAll', done: unlockAllDone, badgeLabel: 'ALL', title: 'Collector Supreme', desc: `Unlock all ${collectibles.length} creatures` },
-    { key: 'earn10k', done: totalEarned >= 10000, badgeLabel: '10K', title: 'Pocket Change', desc: 'Earn 10,000 coins' },
-    { key: 'earn100k', done: totalEarned >= 100000, badgeLabel: '100K', title: 'Squish Tycoon', desc: 'Earn 100,000 coins' },
+    { key: 'earn10k', done: totalEarned >= 10000, badgeLabel: '10K', title: 'Pocket Change', desc: 'Earn 10,000 Squish Points' },
+    { key: 'earn100k', done: totalEarned >= 100000, badgeLabel: '100K', title: 'Squish Tycoon', desc: 'Earn 100,000 Squish Points' },
+    { key: 'unlockAll', done: unlockAllDone, badgeLabel: 'ALL', title: 'Collector Supreme', desc: 'Unlock all 10 creatures' },
+    { key: 'speedTap', done: !!liveFlags.speedTap, badgeLabel: '60', title: 'Speed Squisher', desc: 'Tap 60 times in 60 seconds' },
+    { key: 'watchAd', done: !!liveFlags.watchAd, badgeLabel: 'AD', title: 'Ad Enthusiast', desc: 'Watch a video ad' },
   ];
 }
