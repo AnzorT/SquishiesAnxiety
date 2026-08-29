@@ -1,6 +1,8 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { Asset } from 'expo-asset';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { CREATURE_VISUALS, PHYS } from '../data/creatures';
 
 // Soft-body dent physics engine — ported line-for-line from "ASMR Creature
@@ -198,6 +200,178 @@ function buildCreature(id) {
   };
 }
 
+// ---- Glorp: imported Tripo3D mesh instead of the procedural sphere ----
+//
+// Glorp (creature id 0) is the one creature this app renders from a real
+// AI-generated asset (assets/models/glorp_3d.glb, from Tripo3D) rather than
+// buildCreature's hand-built sphere. The rest of the roster is unchanged.
+//
+// The procedural toys share one UV-sphere with a known rows x cols vertex
+// layout, which is what lets tickPhysics's jelly-wave diffusion look up each
+// vertex's 4 grid neighbours by index math. An imported mesh has no such
+// structure, so it carries its own adjacency list (built once from the
+// triangle index buffer) and tickPhysics diffuses across that instead — see
+// the `s.neighbors` branch there. Everything else (per-vertex spring toward a
+// Gaussian dent target, global squash/wobble, release kick, drag-to-orbit)
+// only reasons about vertex positions, so it runs unmodified on any mesh.
+
+const GLORP_MODEL_ID = 0;
+const GLORP_ASSET = require('../../assets/models/glorp_3d.glb');
+// Glorp's geometry is normalised to the SAME 2-unit diameter as the
+// procedural sphere toys, so every physics constant (dent sigma, maxDent,
+// the squash clamps) behaves identically. On-screen size is then just a
+// uniform scale on the mesh — bump this to make Glorp bigger/smaller on the
+// squish stage without touching the physics. 2 == same size as the spheres.
+const GLORP_VISUAL = 2.5;
+
+// Cached at module scope — revisiting Glorp in the same session re-parses a
+// fresh geometry (so concurrent mounts never share one live position buffer)
+// but doesn't re-fetch/re-decode the same ~100KB glb off disk each time.
+let glorpGltfPromise = null;
+function loadGlorpGltf() {
+  if (!glorpGltfPromise) {
+    glorpGltfPromise = (async () => {
+      const asset = Asset.fromModule(GLORP_ASSET);
+      await asset.downloadAsync();
+      const response = await fetch(asset.localUri || asset.uri);
+      const arrayBuffer = await response.arrayBuffer();
+      return new Promise((resolve, reject) => {
+        new GLTFLoader().parse(arrayBuffer, '', resolve, reject);
+      });
+    })();
+  }
+  return glorpGltfPromise;
+}
+
+// Every vertex sharing a triangle with vertex i becomes a neighbour of i —
+// the same relationship the sphere grid's left/right/up/down lookup captures,
+// derived from real topology instead of assumed row/col math.
+function buildAdjacency(indexArray, vertCount) {
+  const sets = new Array(vertCount);
+  for (let i = 0; i < vertCount; i++) sets[i] = new Set();
+  for (let t = 0; t < indexArray.length; t += 3) {
+    const a = indexArray[t];
+    const b = indexArray[t + 1];
+    const c = indexArray[t + 2];
+    sets[a].add(b); sets[a].add(c);
+    sets[b].add(a); sets[b].add(c);
+    sets[c].add(a); sets[c].add(b);
+  }
+  return sets.map((set) => Uint32Array.from(set));
+}
+
+async function buildGlorpCreature() {
+  const gltf = await loadGlorpGltf();
+  let sourceMesh = null;
+  gltf.scene.traverse((obj) => {
+    if (!sourceMesh && obj.isMesh) sourceMesh = obj;
+  });
+  if (!sourceMesh) throw new Error('glorp_3d.glb: no mesh found in scene');
+
+  const geo = sourceMesh.geometry.clone();
+  geo.computeBoundingBox();
+
+  // The raw export's pivot sits at its base. Recenter on the bbox centre and
+  // normalise so the largest dimension is 2 units — the exact size of the
+  // procedural sphere (radius 1). Keeping the physics geometry at that size
+  // means the dent sigma / maxDent / squash clamps tuned for the sphere work
+  // unchanged; the actual on-screen size is a separate uniform scale on the
+  // mesh (GLORP_VISUAL), applied below.
+  const rawCenter = new THREE.Vector3();
+  geo.boundingBox.getCenter(rawCenter);
+  const rawSize = new THREE.Vector3();
+  geo.boundingBox.getSize(rawSize);
+  const normScale = 2 / (Math.max(rawSize.x, rawSize.y, rawSize.z) || 1);
+  const rawPos = geo.attributes.position.array;
+  for (let i = 0; i < rawPos.length; i += 3) {
+    rawPos[i] = (rawPos[i] - rawCenter.x) * normScale;
+    rawPos[i + 1] = (rawPos[i + 1] - rawCenter.y) * normScale;
+    rawPos[i + 2] = (rawPos[i + 2] - rawCenter.z) * normScale;
+  }
+  geo.attributes.position.needsUpdate = true;
+  geo.computeVertexNormals();
+
+  const posAttr = geo.attributes.position;
+  const count = posAttr.count;
+  const basePos = new Float32Array(posAttr.array);
+  const indexAttr = geo.getIndex();
+  const indexArray = indexAttr ? indexAttr.array : Uint32Array.from({ length: count }, (_, i) => i);
+  const neighbors = buildAdjacency(indexArray, count);
+
+  const bodyMat = new THREE.MeshStandardMaterial({
+    map: sourceMesh.material && sourceMesh.material.map ? sourceMesh.material.map : null,
+    color: sourceMesh.material && sourceMesh.material.map ? 0xffffff : new THREE.Color(CREATURE_VISUALS[0].color),
+    roughness: 0.5,
+    metalness: 0,
+    side: THREE.DoubleSide,
+  });
+  const bodyMesh = new THREE.Mesh(geo, bodyMat);
+  // Physics runs on the 2-unit geometry; this is the only thing that sets
+  // Glorp's real on-screen size. Raycasting goes through bodyMesh's world
+  // matrix so hit-testing stays correct at any scale.
+  bodyMesh.scale.setScalar(GLORP_VISUAL / 2);
+  const group = new THREE.Group();
+  group.add(bodyMesh);
+
+  const shMat = new THREE.MeshBasicMaterial({ color: 0x1a0e38, transparent: true, opacity: 0.35, depthWrite: false });
+  const shadowMesh = new THREE.Mesh(new THREE.CircleGeometry(1, 32), shMat);
+  shadowMesh.scale.set(GLORP_VISUAL * 0.62, GLORP_VISUAL * 0.26, 1);
+  shadowMesh.position.set(0, -GLORP_VISUAL * 0.52, -0.3);
+  shadowMesh.rotation.x = -Math.PI / 2.5;
+
+  return {
+    group,
+    shadowMesh,
+    bodyMesh,
+    bodyGeo: geo,
+    bodyMat,
+    basePos,
+    vertCount: count,
+    // Grid dims unused — the presence of `neighbors` routes tickPhysics down
+    // the topology-agnostic diffusion path instead.
+    colCount: 0,
+    rowCount: 0,
+    neighbors,
+    dentAmt: new Float32Array(count),
+    dentTarget: new Float32Array(count),
+    dentVel: new Float32Array(count),
+    dentScratch: new Float32Array(count),
+    dentFall: new Float32Array(count),
+    normalsFrameToggle: false,
+    // No separate face meshes — Glorp's face is in its texture.
+    featureBases: [],
+    featureMeshes: [],
+    featureScaleBase: [],
+    featureDentAmt: new Float32Array(0),
+    featureDentVel: new Float32Array(0),
+    featureDentTarget: new Float32Array(0),
+    featureDentFall: new Float32Array(0),
+    eyeL: null,
+    eyeR: null,
+    eyeStyle: 'none',
+    mode: null,
+    dragStartWorld: null,
+    pressLocalSmoothed: null,
+    pressHoldTime: 0,
+    globalSquash: 0,
+    globalSquashV: 0,
+    globalSquashTarget: 0,
+    wobbleRotX: 0,
+    wobbleRotXV: 0,
+    wobbleRotZ: 0,
+    wobbleRotZV: 0,
+    userRotY: 0,
+    userRotX: 0,
+    orbitTargetY: 0,
+    orbitTargetX: 0,
+    orbitVelY: 0,
+    orbitVelX: 0,
+    idlePhase: Math.random() * 10,
+    blinkTimer: 999,
+    blinkAmt: 0,
+  };
+}
+
 // The Gaussian falloff shape only depends on the touch point's position, not
 // how long it's been held, so — same RN-perf adaptation the rest of this
 // file's history has used — it's cached here and only recomputed when the
@@ -268,19 +442,35 @@ function tickPhysics(s, dt) {
 
   s.dentScratch.set(s.dentAmt);
   const prev = s.dentScratch;
-  const rows = s.rowCount;
-  const cols = s.colCount;
   const diffCoef = 0.03 * k;
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const idx = r * cols + c;
-      const cl = c === 0 ? cols - 1 : c - 1;
-      const cr = c === cols - 1 ? 0 : c + 1;
-      const left = prev[r * cols + cl];
-      const right = prev[r * cols + cr];
-      const up = r > 0 ? prev[(r - 1) * cols + c] : prev[idx];
-      const down = r < rows - 1 ? prev[(r + 1) * cols + c] : prev[idx];
-      s.dentAmt[idx] += (left + right - 2 * prev[idx] + (up + down - 2 * prev[idx])) * diffCoef;
+  if (s.neighbors) {
+    // Imported mesh (Glorp) — no assumed row/col grid, so diffuse across each
+    // vertex's real triangle-adjacency. Averaged over the neighbour count so
+    // the rate doesn't swing with local mesh density, then x4 to land in the
+    // same range the 4-neighbour grid branch below produces (so `diffCoef`
+    // means roughly the same thing either way).
+    for (let i = 0; i < s.vertCount; i++) {
+      const nbrs = s.neighbors[i];
+      const n = nbrs.length;
+      if (!n) continue;
+      let acc = 0;
+      for (let ni = 0; ni < n; ni++) acc += prev[nbrs[ni]] - prev[i];
+      s.dentAmt[i] += (acc / n) * 4 * diffCoef;
+    }
+  } else {
+    const rows = s.rowCount;
+    const cols = s.colCount;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const idx = r * cols + c;
+        const cl = c === 0 ? cols - 1 : c - 1;
+        const cr = c === cols - 1 ? 0 : c + 1;
+        const left = prev[r * cols + cl];
+        const right = prev[r * cols + cr];
+        const up = r > 0 ? prev[(r - 1) * cols + c] : prev[idx];
+        const down = r < rows - 1 ? prev[(r + 1) * cols + c] : prev[idx];
+        s.dentAmt[idx] += (left + right - 2 * prev[idx] + (up + down - 2 * prev[idx])) * diffCoef;
+      }
     }
   }
 
@@ -332,12 +522,18 @@ function tickPhysics(s, dt) {
   s.wobbleRotZV *= wobbleDamp;
   s.wobbleRotZ += s.wobbleRotZV;
 
-  const orbitDecay = Math.pow(0.93, k);
-  s.orbitVelY *= orbitDecay;
-  s.orbitVelX *= orbitDecay;
-  s.orbitTargetY += s.orbitVelY * k;
-  s.orbitTargetX += s.orbitVelX * k;
-  if (s.mode === null) s.orbitTargetY = Math.sin(s.idlePhase * 0.08) * 0.35;
+  // Rotation is a deliberate two-finger gesture only (see SquishScreen's
+  // PanResponder + the `orbit` handle below). No idle auto-spin — the toy
+  // holds still until the player actually turns it. While a two-finger drag
+  // is live (`mode === 'orbit'`) the momentum isn't decayed; after release it
+  // coasts to a stop.
+  if (s.mode !== 'orbit') {
+    const orbitDecay = Math.pow(0.93, k);
+    s.orbitVelY *= orbitDecay;
+    s.orbitVelX *= orbitDecay;
+    s.orbitTargetY += s.orbitVelY * k;
+    s.orbitTargetX += s.orbitVelX * k;
+  }
   const orbitCatchup = Math.min(1, 0.22 * k);
   s.userRotY += (s.orbitTargetY - s.userRotY) * orbitCatchup;
   s.userRotX += (s.orbitTargetX - s.userRotX) * orbitCatchup;
@@ -346,7 +542,7 @@ function tickPhysics(s, dt) {
   const sx = (1 + s.globalSquash * 0.14) * breathe;
   const sy = (1 - s.globalSquash * 0.26) * breathe;
   const sz = (1 + s.globalSquash * 0.14) * breathe;
-  s.group.rotation.y = s.userRotY + Math.sin(s.idlePhase * 0.2) * 0.03;
+  s.group.rotation.y = s.userRotY;
   s.group.rotation.x = s.userRotX + s.wobbleRotX;
   s.group.rotation.z = s.wobbleRotZ;
   s.group.scale.set(sx, sy, sz);
@@ -365,13 +561,60 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', onSquish, 
   const [built, setBuilt] = useState(null);
 
   useEffect(() => {
-    const result = buildCreature(Number(creatureId));
-    toyRef.current = result;
-    setBuilt(result);
-    return () => {
+    let cancelled = false;
+    let result = null;
+    const dispose = () => {
+      if (!result) return;
       result.bodyGeo.dispose();
       result.bodyMat.dispose();
+      if (result.shadowMesh) {
+        result.shadowMesh.geometry.dispose();
+        result.shadowMesh.material.dispose();
+      }
       toyRef.current = null;
+    };
+
+    // Procedural creatures build synchronously (unchanged). Glorp loads its
+    // Tripo mesh from disk first, so `built` stays null for the brief window
+    // before it resolves — every imperative-handle method and useFrame
+    // already bails while toyRef.current is null, so that window is safe.
+    const isGlorp = Number(creatureId) === GLORP_MODEL_ID;
+    const pending = isGlorp
+      ? buildGlorpCreature()
+      : Promise.resolve(buildCreature(Number(creatureId)));
+
+    pending
+      .then((r) => {
+        if (cancelled) {
+          result = r;
+          dispose();
+          return;
+        }
+        result = r;
+        toyRef.current = r;
+        setBuilt(r);
+      })
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error(`[SquishyToy] failed to build creature ${creatureId}: ${(err && err.stack) || err}`);
+        // Glorp's GLB failed to load/parse (e.g. a device fetch quirk) —
+        // fall back to the procedural sphere so the stage is never blank and
+        // stays fully interactive.
+        if (cancelled) return;
+        try {
+          const fallback = buildCreature(GLORP_MODEL_ID);
+          result = fallback;
+          toyRef.current = fallback;
+          setBuilt(fallback);
+        } catch (e2) {
+          // eslint-disable-next-line no-console
+          console.error(`[SquishyToy] procedural fallback also failed: ${(e2 && e2.stack) || e2}`);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      dispose();
     };
     // Builds once per mount from whichever creature it started with.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -384,25 +627,30 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', onSquish, 
         const s = toyRef.current;
         if (!s) return;
         const hit = raycastHit(s, camera, raycaster, ndcX, ndcY);
+        let local;
         if (hit) {
-          s.mode = 'poke';
-          const local = s.bodyMesh.worldToLocal(hit.point.clone());
-          s.dragStartWorld = local;
-          s.pressLocalSmoothed = local.clone();
-          s.pressHoldTime = 0;
-          computeDentFall(s, local);
-          applyDentScale(s, 1);
-          s.globalSquashTarget = 0.55;
-          onSquish && onSquish();
+          local = s.bodyMesh.worldToLocal(hit.point.clone());
         } else {
-          s.mode = null;
+          // Near-miss tap (edge of the body, thin geometry) — still squish.
+          // Unproject the touch into the scene and pull it onto the body so
+          // the dent lands on the side the finger is nearest to.
+          local = s.bodyMesh.worldToLocal(new THREE.Vector3(ndcX, ndcY, 0.5).unproject(camera));
+          if (local.length() > 0.85) local.setLength(0.85);
         }
+        s.mode = 'poke';
+        s.dragStartWorld = local;
+        s.pressLocalSmoothed = local.clone();
+        s.pressHoldTime = 0;
+        computeDentFall(s, local);
+        applyDentScale(s, 1);
+        s.globalSquashTarget = 0.55;
+        onSquish && onSquish();
       },
-      pointerMove: (ndcX, ndcY, dxScreen) => {
+      pointerMove: (ndcX, ndcY) => {
         const s = toyRef.current;
         if (!s || s.mode !== 'poke') return;
-        s.orbitTargetY += dxScreen * 0.008;
-        s.orbitVelY = s.orbitVelY * 0.5 + dxScreen * 0.0015;
+        // A one-finger drag only moves the dent around — it no longer spins
+        // the toy (rotation is the two-finger `orbit` gesture).
         const hit = raycastHit(s, camera, raycaster, ndcX, ndcY);
         const local = hit ? s.bodyMesh.worldToLocal(hit.point.clone()) : s.dragStartWorld;
         if (!local) return;
@@ -410,6 +658,32 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', onSquish, 
         s.pressLocalSmoothed.lerp(local, 0.7);
         s.dragStartWorld = local;
         computeDentFall(s, s.pressLocalSmoothed);
+      },
+      // Two-finger drag: turn the toy. dxScreen/dyScreen are the movement of
+      // the two fingers' midpoint since the last move event, in screen px.
+      orbit: (dxScreen, dyScreen) => {
+        const s = toyRef.current;
+        if (!s) return;
+        s.mode = 'orbit';
+        s.orbitTargetY += dxScreen * 0.01;
+        s.orbitTargetX += dyScreen * 0.006;
+        s.orbitVelY = s.orbitVelY * 0.5 + dxScreen * 0.002;
+        s.orbitVelX = s.orbitVelX * 0.5 + dyScreen * 0.0012;
+      },
+      endOrbit: () => {
+        const s = toyRef.current;
+        if (s && s.mode === 'orbit') s.mode = null;
+      },
+      // A second finger landed mid-poke — drop the dent without firing the
+      // release reward/wobble, so the gesture can become an orbit instead.
+      cancelPoke: () => {
+        const s = toyRef.current;
+        if (!s) return;
+        resetDentTargets(s);
+        s.globalSquashTarget = 0;
+        s.pressLocalSmoothed = null;
+        s.pressHoldTime = 0;
+        if (s.mode === 'poke') s.mode = null;
       },
       pointerUp: () => {
         const s = toyRef.current;
