@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing } from 'react-native';
-import Svg, { Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path } from 'react-native-svg';
+import Svg, { Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path, G } from 'react-native-svg';
 
 // Literal port of the "Creature" component decoded out of "ASMR Creature
 // Squash Game.html"'s own asset bundle (manifest entry 40fb4f7a…, the real
@@ -326,7 +326,6 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
   const { translateY, scale, rotate } = useMoodAnimation(mood, size, animate);
 
   const gradId = `body-${creatureId}`;
-  const glowId = `glow-${creatureId}`;
 
   const bodyBox = useMemo(() => insetBox(...spec.body.inset), [spec]);
 
@@ -340,6 +339,23 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
   if (spec.body.star) bodyPathD = polygonPath(bodyBox, STAR_POINTS);
   else if (spec.body.pentagon) bodyPathD = polygonPath(bodyBox, PENTAGON_POINTS);
   else bodyPathD = blobPath(bodyBox, spec.body.corners);
+
+  // --- the glow / drop-shadow around the body ---------------------------
+  // The source draws this with a CSS `box-shadow` (`0 14px 26px rgba(...)`,
+  // or `0 0 30px` for Ember) — a blur of the body's *own silhouette*, so it
+  // hugs the blob shape and feathers out smoothly. react-native-svg 15.2
+  // has no blur filter, and a radial-gradient disc doesn't follow the
+  // silhouette (it reads as a separate circle behind the creature). Instead
+  // we stack several copies of the body path, each scaled up a little more
+  // and drawn at a low opacity: where they overlap the alpha builds up, so
+  // the union is a soft shape-matched halo that fades to nothing at the rim.
+  const glowColor = gray ? grayscaleDim(spec.body.shadow) : spec.body.shadow;
+  const bcx = bodyBox.x + bodyBox.w / 2;
+  const bcy = bodyBox.y + bodyBox.h / 2;
+  const glowDy = spec.body.trueGlow ? 0 : 5; // match the source's 14px vertical offset
+  const glowLayers = spec.body.trueGlow
+    ? [[1.42, 0.04], [1.34, 0.05], [1.26, 0.06], [1.19, 0.07], [1.13, 0.08], [1.08, 0.1], [1.04, 0.12]]
+    : [[1.27, 0.035], [1.21, 0.045], [1.155, 0.055], [1.11, 0.07], [1.07, 0.085], [1.035, 0.1]];
 
   const eyesParentBox = spec.eyesOnWrapper ? { x: 0, y: 0, w: W, h: W } : bodyBox;
   const eyesSpec = spec.eyesOnWrapper || spec.eyes;
@@ -370,24 +386,6 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
               <Stop offset="100%" stopColor={gradTo} />
             </LinearGradient>
           )}
-          {(() => {
-            const glowColor = gray ? grayscaleDim(spec.body.shadow) : spec.body.shadow;
-            const peak = spec.body.trueGlow ? 0.55 : 0.4;
-            // A CSS `box-shadow: 0 14px 26px rgba(...)` (what the source uses
-            // for this halo) blurs with a Gaussian falloff — very soft at the
-            // core, feathering gradually to nothing. A 2-stop radial gradient
-            // is a straight linear opacity ramp instead, which reads as a
-            // hard-edged disc. Approximate the Gaussian curve with several
-            // stops so the edge dissolves smoothly.
-            const ramp = [[0, 1], [0.22, 0.72], [0.42, 0.44], [0.6, 0.22], [0.78, 0.08], [1, 0]];
-            return (
-              <RadialGradient id={glowId} cx="50%" cy={spec.body.trueGlow ? '50%' : '62%'} r="66%">
-                {ramp.map(([off, mult]) => (
-                  <Stop key={off} offset={`${off * 100}%`} stopColor={glowColor} stopOpacity={peak * mult} />
-                ))}
-              </RadialGradient>
-            );
-          })()}
           {String(creatureId) === '0' ? (
             <LinearGradient id="antennaGrad0" x1="50%" y1="0%" x2="50%" y2="100%">
               <Stop offset="0%" stopColor={gray ? grayscaleDim('#5eead4') : '#5eead4'} />
@@ -402,7 +400,11 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
           ) : null}
         </Defs>
 
-        <Circle cx={W / 2} cy={W / 2} r={54} fill={`url(#${glowId})`} />
+        {glowLayers.map(([s, op], i) => (
+          <G key={`glow-${i}`} scale={s} originX={bcx} originY={bcy} y={glowDy}>
+            <Path d={bodyPathD} fill={glowColor} opacity={op} />
+          </G>
+        ))}
 
         {spec.extras ? spec.extras(bodyBox, gray) : null}
 
