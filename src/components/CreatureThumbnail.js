@@ -354,8 +354,8 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
   const bcy = bodyBox.y + bodyBox.h / 2;
   const glowDy = spec.body.trueGlow ? 0 : 5; // match the source's 14px vertical offset
   const glowLayers = spec.body.trueGlow
-    ? [[1.42, 0.04], [1.34, 0.05], [1.26, 0.06], [1.19, 0.07], [1.13, 0.08], [1.08, 0.1], [1.04, 0.12]]
-    : [[1.27, 0.035], [1.21, 0.045], [1.155, 0.055], [1.11, 0.07], [1.07, 0.085], [1.035, 0.1]];
+    ? [[1.24, 0.06], [1.19, 0.08], [1.15, 0.1], [1.11, 0.13], [1.08, 0.16], [1.05, 0.19], [1.02, 0.22]]
+    : [[1.16, 0.06], [1.13, 0.08], [1.1, 0.11], [1.07, 0.14], [1.045, 0.17], [1.02, 0.2]];
 
   const eyesParentBox = spec.eyesOnWrapper ? { x: 0, y: 0, w: W, h: W } : bodyBox;
   const eyesSpec = spec.eyesOnWrapper || spec.eyes;
