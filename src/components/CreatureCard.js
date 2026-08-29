@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Defs, RadialGradient as SvgRadialGradient, Stop, Rect } from 'react-native-svg';
 import { squadColors, squadFonts } from '../theme/squadTheme';
 import CreatureThumbnail from './CreatureThumbnail';
 
@@ -148,7 +149,17 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
         style={[styles.card, { borderColor: cardBorderColor }]}
       >
         <View style={styles.imageArea}>
-          <View style={styles.imageAreaGlow} pointerEvents="none" />
+          <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+            <Defs>
+              {/* source: radial-gradient(circle at 50% 30%, rgba(255,255,255,0.06), transparent 70%) */}
+              <SvgRadialGradient id="imgAreaGlow" cx="50%" cy="30%" r="75%">
+                <Stop offset="0%" stopColor="#ffffff" stopOpacity={0.06} />
+                <Stop offset="55%" stopColor="#ffffff" stopOpacity={0.02} />
+                <Stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
+              </SvgRadialGradient>
+            </Defs>
+            <Rect x="0" y="0" width="100%" height="100%" fill="url(#imgAreaGlow)" />
+          </Svg>
           <CreatureThumbnail creatureId={creature.id} mood={mood} size={110} locked={!unlocked} />
 
           {showUnlockCelebration ? (
@@ -243,10 +254,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-  },
-  imageAreaGlow: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   overlayFill: {
     ...StyleSheet.absoluteFillObject,

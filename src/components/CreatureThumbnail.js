@@ -370,10 +370,24 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
               <Stop offset="100%" stopColor={gradTo} />
             </LinearGradient>
           )}
-          <RadialGradient id={glowId} cx="50%" cy={spec.body.trueGlow ? '50%' : '58%'} r="60%">
-            <Stop offset="0%" stopColor={gray ? grayscaleDim(spec.body.shadow) : spec.body.shadow} stopOpacity={spec.body.trueGlow ? 0.55 : 0.4} />
-            <Stop offset="100%" stopColor={gray ? grayscaleDim(spec.body.shadow) : spec.body.shadow} stopOpacity={0} />
-          </RadialGradient>
+          {(() => {
+            const glowColor = gray ? grayscaleDim(spec.body.shadow) : spec.body.shadow;
+            const peak = spec.body.trueGlow ? 0.55 : 0.4;
+            // A CSS `box-shadow: 0 14px 26px rgba(...)` (what the source uses
+            // for this halo) blurs with a Gaussian falloff — very soft at the
+            // core, feathering gradually to nothing. A 2-stop radial gradient
+            // is a straight linear opacity ramp instead, which reads as a
+            // hard-edged disc. Approximate the Gaussian curve with several
+            // stops so the edge dissolves smoothly.
+            const ramp = [[0, 1], [0.22, 0.72], [0.42, 0.44], [0.6, 0.22], [0.78, 0.08], [1, 0]];
+            return (
+              <RadialGradient id={glowId} cx="50%" cy={spec.body.trueGlow ? '50%' : '62%'} r="66%">
+                {ramp.map(([off, mult]) => (
+                  <Stop key={off} offset={`${off * 100}%`} stopColor={glowColor} stopOpacity={peak * mult} />
+                ))}
+              </RadialGradient>
+            );
+          })()}
           {String(creatureId) === '0' ? (
             <LinearGradient id="antennaGrad0" x1="50%" y1="0%" x2="50%" y2="100%">
               <Stop offset="0%" stopColor={gray ? grayscaleDim('#5eead4') : '#5eead4'} />
