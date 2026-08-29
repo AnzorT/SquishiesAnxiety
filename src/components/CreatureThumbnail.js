@@ -289,11 +289,17 @@ const MOOD_ANIM = {
   celebrate: { dur: 0.5, iterations: 3, kf: [[0, 0, 1, 0], [0.25, -30, 1.1, 0], [0.5, 0, 0.95, 0], [0.75, -30, 1.1, 0], [1, 0, 1, 0]] },
 };
 
-function useMoodAnimation(mood, size) {
+function useMoodAnimation(mood, size, animate = true) {
   const spec = MOOD_ANIM[mood] || MOOD_ANIM.idle;
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (!animate) {
+      // Held still — e.g. mounted inside SquishyToy2D, which drives its own
+      // squash/wobble transform on a wrapper around this SVG.
+      progress.setValue(0);
+      return undefined;
+    }
     progress.setValue(0);
     const single = Animated.timing(progress, {
       toValue: 1,
@@ -304,7 +310,7 @@ function useMoodAnimation(mood, size) {
     const looped = spec.iterations ? Animated.loop(single, { iterations: spec.iterations }) : Animated.loop(single);
     looped.start();
     return () => looped.stop();
-  }, [mood, progress, spec.dur, spec.iterations]);
+  }, [mood, progress, spec.dur, spec.iterations, animate]);
 
   const inputRange = spec.kf.map((k) => k[0]);
   const translateY = progress.interpolate({ inputRange, outputRange: spec.kf.map((k) => (k[1] / 100) * size) });
@@ -315,9 +321,9 @@ function useMoodAnimation(mood, size) {
 
 // ---- the component ------------------------------------------------------
 
-export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90, locked = false }) {
+export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90, locked = false, animate = true }) {
   const spec = CREATURES[creatureId] ?? CREATURES[0];
-  const { translateY, scale, rotate } = useMoodAnimation(mood, size);
+  const { translateY, scale, rotate } = useMoodAnimation(mood, size, animate);
 
   const gradId = `body-${creatureId}`;
   const glowId = `glow-${creatureId}`;
