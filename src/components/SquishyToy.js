@@ -1,3 +1,9 @@
+// @refresh reset
+// The creature is built once in a useEffect on mount (buildCreature /
+// buildGlorpCreature). Fast Refresh keeps the old built object when you edit
+// this file, so tuning changes to the builders or the physics wouldn't show
+// without a full reload — this directive makes Fast Refresh remount the
+// component (and rebuild the toy) whenever this file changes.
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -33,6 +39,7 @@ function buildCreature(id) {
   const count = posAttr.count;
   geo.computeVertexNormals();
   const basePos = new Float32Array(posAttr.array);
+  const baseNormals = new Float32Array(geo.attributes.normal.array);
 
   const bodyMat = new THREE.MeshStandardMaterial({
     color: new THREE.Color(vis.color),
@@ -158,6 +165,7 @@ function buildCreature(id) {
     bodyGeo: geo,
     bodyMat,
     basePos,
+    baseNormals,
     vertCount: count,
     colCount,
     rowCount,
@@ -222,7 +230,7 @@ const GLORP_ASSET = require('../../assets/models/glorp_3d.glb');
 // the squash clamps) behaves identically. On-screen size is then just a
 // uniform scale on the mesh — bump this to make Glorp bigger/smaller on the
 // squish stage without touching the physics. 2 == same size as the spheres.
-const GLORP_VISUAL = 2.5;
+const GLORP_VISUAL = 1.9;
 
 // Cached at module scope — revisiting Glorp in the same session re-parses a
 // fresh geometry (so concurrent mounts never share one live position buffer)
@@ -272,16 +280,14 @@ async function buildGlorpCreature() {
   geo.computeBoundingBox();
 
   // The raw export's pivot sits at its base. Recenter on the bbox centre and
-  // normalise so the largest dimension is 2 units — the exact size of the
-  // procedural sphere (radius 1). Keeping the physics geometry at that size
-  // means the dent sigma / maxDent / squash clamps tuned for the sphere work
-  // unchanged; the actual on-screen size is a separate uniform scale on the
-  // mesh (GLORP_VISUAL), applied below.
+  // bake the on-screen size straight into the geometry (largest dimension ->
+  // GLORP_VISUAL units). Glorp squishes via the group transform only, so
+  // there is no per-vertex physics that cares about the geometry's scale.
   const rawCenter = new THREE.Vector3();
   geo.boundingBox.getCenter(rawCenter);
   const rawSize = new THREE.Vector3();
   geo.boundingBox.getSize(rawSize);
-  const normScale = 2 / (Math.max(rawSize.x, rawSize.y, rawSize.z) || 1);
+  const normScale = GLORP_VISUAL / (Math.max(rawSize.x, rawSize.y, rawSize.z) || 1);
   const rawPos = geo.attributes.position.array;
   for (let i = 0; i < rawPos.length; i += 3) {
     rawPos[i] = (rawPos[i] - rawCenter.x) * normScale;
@@ -294,6 +300,7 @@ async function buildGlorpCreature() {
   const posAttr = geo.attributes.position;
   const count = posAttr.count;
   const basePos = new Float32Array(posAttr.array);
+  const baseNormals = new Float32Array(geo.attributes.normal.array);
   const indexAttr = geo.getIndex();
   const indexArray = indexAttr ? indexAttr.array : Uint32Array.from({ length: count }, (_, i) => i);
   const neighbors = buildAdjacency(indexArray, count);
@@ -303,15 +310,19 @@ async function buildGlorpCreature() {
     color: sourceMesh.material && sourceMesh.material.map ? 0xffffff : new THREE.Color(CREATURE_VISUALS[0].color),
     roughness: 0.5,
     metalness: 0,
-    side: THREE.DoubleSide,
+    // FrontSide only — DoubleSide let the mesh's back faces show through the
+    // front while it deformed, which read as "a second model behind it".
+    side: THREE.FrontSide,
+    flatShading: false,
   });
   const bodyMesh = new THREE.Mesh(geo, bodyMat);
-  // Physics runs on the 2-unit geometry; this is the only thing that sets
-  // Glorp's real on-screen size. Raycasting goes through bodyMesh's world
-  // matrix so hit-testing stays correct at any scale.
-  bodyMesh.scale.setScalar(GLORP_VISUAL / 2);
   const group = new THREE.Group();
   group.add(bodyMesh);
+  // Be explicit: R3F can leave automatic matrix updates off for objects it
+  // doesn't own (this group is mutated straight from tickPhysics), which is
+  // why the group transform wasn't rendering.
+  group.matrixAutoUpdate = true;
+  group.matrixWorldAutoUpdate = true;
 
   const shMat = new THREE.MeshBasicMaterial({ color: 0x1a0e38, transparent: true, opacity: 0.35, depthWrite: false });
   const shadowMesh = new THREE.Mesh(new THREE.CircleGeometry(1, 32), shMat);
@@ -326,12 +337,20 @@ async function buildGlorpCreature() {
     bodyGeo: geo,
     bodyMat,
     basePos,
+    baseNormals,
     vertCount: count,
     // Grid dims unused — the presence of `neighbors` routes tickPhysics down
     // the topology-agnostic diffusion path instead.
     colCount: 0,
     rowCount: 0,
     neighbors,
+    // Glorp squishes purely by the per-vertex dent (the only thing that
+    // renders per frame on the target device — see tickPhysics). These make
+    // it a wide, deep, gentle-floored dent like the original c9586dd build,
+    // vs the design sphere's shallow one.
+    dentSigma: 0.3,
+    dentStrength: 2.3,
+    dentFloor: 0.72,
     dentAmt: new Float32Array(count),
     dentTarget: new Float32Array(count),
     dentVel: new Float32Array(count),
@@ -380,7 +399,9 @@ async function buildGlorpCreature() {
 // (called every frame from tickPhysics) is then just a cheap rescale of that
 // cache by the current depthMul — mathematically identical to the source.
 function computeDentFall(s, localPoint) {
-  const sigma = 0.16;
+  // Per-creature dent width. Glorp (imported mesh) uses a wide 0.3 like the
+  // original c9586dd build; the procedural sphere keeps the design's 0.16.
+  const sigma = s.dentSigma ?? 0.16;
   const sigmaFactor = -1 / (2 * sigma * sigma);
   for (let i = 0; i < s.vertCount; i++) {
     const dx = s.basePos[i * 3] - localPoint.x;
@@ -400,7 +421,9 @@ function computeDentFall(s, localPoint) {
 }
 
 function applyDentScale(s, depthMul) {
-  const maxDent = 0.3 * PHYS.strength * depthMul;
+  // Glorp (dentStrength ~2.3) gets the deep c9586dd-era dent; the sphere keeps
+  // the design's shallower one.
+  const maxDent = 0.3 * PHYS.strength * depthMul * (s.dentStrength ?? 1);
   for (let i = 0; i < s.vertCount; i++) s.dentTarget[i] = maxDent * s.dentFall[i];
   for (let j = 0; j < s.featureBases.length; j++) s.featureDentTarget[j] = maxDent * s.featureDentFall[j] * 1.1;
 }
@@ -416,6 +439,54 @@ function raycastHit(s, camera, raycaster, ndcX, ndcY) {
   return hits.length ? hits[0] : null;
 }
 
+// Where on the body a tap landed, in the mesh's local space. Prefers a real
+// triangle raycast; when that misses (a tap just off the silhouette, or a
+// ray slipping through a hole in an imported mesh) it falls back to the
+// nearest *front-facing* base vertex in screen space — so a tap anywhere
+// near the toy always dents the surface closest to the finger instead of a
+// point floating in the air.
+const _pcV = new THREE.Vector3();
+function pickContactLocal(s, camera, raycaster, ndcX, ndcY) {
+  const hit = raycastHit(s, camera, raycaster, ndcX, ndcY);
+  if (hit) return s.bodyMesh.worldToLocal(hit.point.clone());
+
+  s.bodyMesh.updateWorldMatrix(true, false);
+  let minCam = Infinity;
+  let maxCam = -Infinity;
+  const camX = camera.position.x;
+  const camY = camera.position.y;
+  const camZ = camera.position.z;
+  for (let i = 0; i < s.vertCount; i++) {
+    _pcV.set(s.basePos[i * 3], s.basePos[i * 3 + 1], s.basePos[i * 3 + 2]).applyMatrix4(s.bodyMesh.matrixWorld);
+    const cd = (_pcV.x - camX) ** 2 + (_pcV.y - camY) ** 2 + (_pcV.z - camZ) ** 2;
+    if (cd < minCam) minCam = cd;
+    if (cd > maxCam) maxCam = cd;
+  }
+  const midCam = (minCam + maxCam) / 2;
+
+  let best = -1;
+  let bestScreen = Infinity;
+  let bestAny = -1;
+  let bestAnyScreen = Infinity;
+  for (let i = 0; i < s.vertCount; i++) {
+    _pcV.set(s.basePos[i * 3], s.basePos[i * 3 + 1], s.basePos[i * 3 + 2]).applyMatrix4(s.bodyMesh.matrixWorld);
+    const cd = (_pcV.x - camX) ** 2 + (_pcV.y - camY) ** 2 + (_pcV.z - camZ) ** 2;
+    _pcV.project(camera);
+    const sd = (_pcV.x - ndcX) ** 2 + (_pcV.y - ndcY) ** 2;
+    if (sd < bestAnyScreen) {
+      bestAnyScreen = sd;
+      bestAny = i;
+    }
+    if (cd <= midCam && sd < bestScreen) {
+      bestScreen = sd;
+      best = i;
+    }
+  }
+  const pick = best >= 0 ? best : bestAny;
+  if (pick < 0) return null;
+  return new THREE.Vector3(s.basePos[pick * 3], s.basePos[pick * 3 + 1], s.basePos[pick * 3 + 2]);
+}
+
 function tickPhysics(s, dt) {
   const k = dt * 60;
 
@@ -429,9 +500,15 @@ function tickPhysics(s, dt) {
 
   if (s.mode === 'poke' && s.pressLocalSmoothed) {
     s.pressHoldTime += dt;
-    applyDentScale(s, 1 + s.pressHoldTime * 2.5);
+    applyDentScale(s, 1 + s.pressHoldTime * 1.6);
   }
 
+  // ---- per-vertex soft body ----
+  // This is the ONLY deformation that renders on the target device (writing
+  // vertex positions + needsUpdate). Object/group .scale transforms are
+  // computed but never repainted here, so the squash IS this dent — a
+  // per-vertex pull toward the model centre around the touch point, spread by
+  // a jelly-wave diffusion. Same approach as the original c9586dd build.
   const dentStiff = 1 - Math.pow(1 - PHYS.stiff, k);
   const dentDamp = Math.pow(PHYS.damp, k);
   for (let i = 0; i < s.vertCount; i++) {
@@ -444,11 +521,8 @@ function tickPhysics(s, dt) {
   const prev = s.dentScratch;
   const diffCoef = 0.03 * k;
   if (s.neighbors) {
-    // Imported mesh (Glorp) — no assumed row/col grid, so diffuse across each
-    // vertex's real triangle-adjacency. Averaged over the neighbour count so
-    // the rate doesn't swing with local mesh density, then x4 to land in the
-    // same range the 4-neighbour grid branch below produces (so `diffCoef`
-    // means roughly the same thing either way).
+    // Imported mesh (Glorp): diffuse across real triangle-adjacency, averaged
+    // by neighbour count then x4 to match the grid branch's range.
     for (let i = 0; i < s.vertCount; i++) {
       const nbrs = s.neighbors[i];
       const n = nbrs.length;
@@ -479,20 +553,21 @@ function tickPhysics(s, dt) {
   const meanDent = sum / s.vertCount;
 
   const posAttr = s.bodyGeo.attributes.position;
+  const dentFloor = s.dentFloor ?? 0.45;
   for (let i = 0; i < s.vertCount; i++) {
     const bx = s.basePos[i * 3];
     const by = s.basePos[i * 3 + 1];
     const bz = s.basePos[i * 3 + 2];
-    const factor = clamp(1 - s.dentAmt[i] + meanDent * 0.2, 0.45, 1.14);
+    const factor = clamp(1 - s.dentAmt[i] + meanDent * 0.2, dentFloor, 1.14);
     posAttr.setXYZ(i, bx * factor, by * factor, bz * factor);
   }
   posAttr.needsUpdate = true;
-  // Recomputing normals for every vertex is the priciest call in this loop;
-  // the dent moves smoothly frame to frame so refreshing shading normals at
-  // half rate isn't noticeable but roughly halves that cost (same RN-perf
-  // adaptation this file has always made — see git history).
-  s.normalsFrameToggle = !s.normalsFrameToggle;
-  if (s.normalsFrameToggle) s.bodyGeo.computeVertexNormals();
+  if (s.neighbors) {
+    s.bodyGeo.computeVertexNormals();
+  } else {
+    s.normalsFrameToggle = !s.normalsFrameToggle;
+    if (s.normalsFrameToggle) s.bodyGeo.computeVertexNormals();
+  }
 
   for (let j = 0; j < s.featureBases.length; j++) {
     s.featureDentVel[j] += (s.featureDentTarget[j] - s.featureDentAmt[j]) * dentStiff;
@@ -626,17 +701,8 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', onSquish, 
       pointerDown: (ndcX, ndcY) => {
         const s = toyRef.current;
         if (!s) return;
-        const hit = raycastHit(s, camera, raycaster, ndcX, ndcY);
-        let local;
-        if (hit) {
-          local = s.bodyMesh.worldToLocal(hit.point.clone());
-        } else {
-          // Near-miss tap (edge of the body, thin geometry) — still squish.
-          // Unproject the touch into the scene and pull it onto the body so
-          // the dent lands on the side the finger is nearest to.
-          local = s.bodyMesh.worldToLocal(new THREE.Vector3(ndcX, ndcY, 0.5).unproject(camera));
-          if (local.length() > 0.85) local.setLength(0.85);
-        }
+        const local = pickContactLocal(s, camera, raycaster, ndcX, ndcY);
+        if (!local) return;
         s.mode = 'poke';
         s.dragStartWorld = local;
         s.pressLocalSmoothed = local.clone();
@@ -649,10 +715,9 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', onSquish, 
       pointerMove: (ndcX, ndcY) => {
         const s = toyRef.current;
         if (!s || s.mode !== 'poke') return;
-        // A one-finger drag only moves the dent around — it no longer spins
-        // the toy (rotation is the two-finger `orbit` gesture).
-        const hit = raycastHit(s, camera, raycaster, ndcX, ndcY);
-        const local = hit ? s.bodyMesh.worldToLocal(hit.point.clone()) : s.dragStartWorld;
+        // A one-finger drag only moves the contact point around — it no longer
+        // spins the toy (rotation is the two-finger `orbit` gesture).
+        const local = pickContactLocal(s, camera, raycaster, ndcX, ndcY) || s.dragStartWorld;
         if (!local) return;
         if (!s.pressLocalSmoothed) s.pressLocalSmoothed = local.clone();
         s.pressLocalSmoothed.lerp(local, 0.7);
@@ -695,6 +760,9 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', onSquish, 
         const holdSeconds = s.pressHoldTime;
         resetDentTargets(s);
         s.globalSquashTarget = 0;
+        // The under-damped spring (see tickPhysics) overshoots on its own —
+        // g springs from ~0.85 back through 0 into a tall stretch and bounces
+        // down to rest.
         const kick = PHYS.wobbleKick;
         s.wobbleRotXV += clamp((Math.random() - 0.5) * kick, -kick, kick);
         s.wobbleRotZV += clamp((Math.random() - 0.5) * kick, -kick, kick);
