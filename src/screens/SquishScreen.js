@@ -1,9 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, PanResponder, Animated, Pressable, Easing } from 'react-native';
+import { View, Text, StyleSheet, PanResponder, Animated, Pressable, Easing, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Canvas } from '@react-three/fiber';
 import SquishyToy from '../components/SquishyToy';
+import SquishyToy2D from '../components/SquishyToy2D';
+
+// Glorp (id 0) is the one creature rendered from a real Tripo3D mesh; every
+// other creature squishes as the 2D design art (see SquishyToy2D).
+const MODEL_3D_IDS = new Set(['0']);
 import SquishSound from '../audio/SquishSound';
 import CoinSound from '../audio/CoinSound';
 import PopSound from '../audio/PopSound';
@@ -21,8 +26,11 @@ import WatchAdButton from '../components/WatchAdButton';
 // (this.state.coins)`) rather than the old build's timed 2x-multiplier
 // window.
 
-const STAGE_SIZE = 220;
-const RIPPLE_LIFETIME_MS = 720;
+// The interactive play area (the "square"): a centred box the creature lives
+// in. Sized to the device rather than a fixed 220 so the creature reads big
+// on a real phone.
+const STAGE_SIZE = Math.min(Math.round(Dimensions.get('window').width - 32), 380);
+const RIPPLE_LIFETIME_MS = 620;
 const REWARD_VISIBLE_MS = 900;
 const INTERSTITIAL_CONTINUE_DELAY_MS = 1400;
 const DOUBLE_FLASH_MS = 1800;
@@ -33,6 +41,29 @@ const DEFAULT_SQUISH_SOUND = require('../../assets/audio/slime.wav');
 
 function rewardForHoldMs(holdMs) {
   return Math.min(60, Math.round(5 + holdMs / 40));
+}
+
+const RIPPLE_MAX = 120;
+
+// A soft ring that blooms out from the exact touch point and fades — the
+// tap feedback on the squish stage. Centred on (x, y) via a negative margin
+// of half its own final size.
+function Ripple({ x, y }) {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(t, { toValue: 1, duration: RIPPLE_LIFETIME_MS, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+  }, [t]);
+  const scale = t.interpolate({ inputRange: [0, 1], outputRange: [0.25, 1] });
+  const opacity = t.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 0.5, 0] });
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.ripple,
+        { left: x - RIPPLE_MAX / 2, top: y - RIPPLE_MAX / 2, opacity, transform: [{ scale }] },
+      ]}
+    />
+  );
 }
 
 function HandIcon({ color, fingers = 1, anim }) {
@@ -109,6 +140,9 @@ export default function SquishScreen({
   const holdStartRef = useRef(0);
   const rippleSeqRef = useRef(0);
   const tapTimestampsRef = useRef([]);
+  // 'none' | 'poke' (one finger, squishing) | 'orbit' (two fingers, turning)
+  const gestureModeRef = useRef('none');
+  const lastCentroidRef = useRef({ x: 0, y: 0 });
 
   const [displayCoins, setDisplayCoins] = useState(coins);
   const [ripples, setRipples] = useState([]);
@@ -209,12 +243,21 @@ export default function SquishScreen({
   });
 
   const spawnRipple = useCallback((locationX, locationY) => {
-    const px = Math.max(5, Math.min(95, (locationX / STAGE_SIZE) * 100));
-    const py = Math.max(5, Math.min(95, (locationY / STAGE_SIZE) * 100));
     const id = ++rippleSeqRef.current;
-    setRipples((prev) => [...prev, { id, x: px, y: py }]);
+    // pixel position of the touch inside the stage — the ripple centres on it
+    setRipples((prev) => [...prev, { id, x: locationX, y: locationY }]);
     setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), RIPPLE_LIFETIME_MS);
   }, []);
+
+  const centroidOf = (touches) => {
+    let sx = 0;
+    let sy = 0;
+    for (const t of touches) {
+      sx += t.locationX;
+      sy += t.locationY;
+    }
+    return { x: sx / touches.length, y: sy / touches.length };
+  };
 
   const panResponder = useRef(
     PanResponder.create({
@@ -223,6 +266,13 @@ export default function SquishScreen({
       onStartShouldSetPanResponderCapture: () => true,
       onMoveShouldSetPanResponderCapture: () => true,
       onPanResponderGrant: (evt) => {
+        const touches = evt.nativeEvent.touches || [];
+        if (touches.length >= 2) {
+          gestureModeRef.current = 'orbit';
+          lastCentroidRef.current = centroidOf(touches);
+          return;
+        }
+        gestureModeRef.current = 'poke';
         const { locationX, locationY } = evt.nativeEvent;
         lastTouch.current = { x: locationX, y: locationY };
         holdStartRef.current = Date.now();
@@ -231,13 +281,46 @@ export default function SquishScreen({
         spawnRipple(locationX, locationY);
       },
       onPanResponderMove: (evt) => {
+        const touches = evt.nativeEvent.touches || [];
+
+        if (touches.length >= 2) {
+          // Two fingers down — orbit. If a one-finger poke was in progress,
+          // drop it (no reward) so the gesture cleanly becomes a rotate.
+          if (gestureModeRef.current !== 'orbit') {
+            toyRef.current?.cancelPoke();
+            gestureModeRef.current = 'orbit';
+            lastCentroidRef.current = centroidOf(touches);
+            return;
+          }
+          const c = centroidOf(touches);
+          toyRef.current?.orbit(c.x - lastCentroidRef.current.x, c.y - lastCentroidRef.current.y);
+          lastCentroidRef.current = c;
+          return;
+        }
+
+        if (gestureModeRef.current === 'orbit') {
+          // Down to one finger but still an orbit gesture — keep turning with
+          // the remaining finger instead of suddenly denting the toy.
+          if (touches.length === 1) {
+            const c = { x: touches[0].locationX, y: touches[0].locationY };
+            toyRef.current?.orbit(c.x - lastCentroidRef.current.x, c.y - lastCentroidRef.current.y);
+            lastCentroidRef.current = c;
+          }
+          return;
+        }
+
         const { locationX, locationY } = evt.nativeEvent;
-        const dx = locationX - lastTouch.current.x;
         lastTouch.current = { x: locationX, y: locationY };
         const ndc = ndcFromLocation(locationX, locationY);
-        toyRef.current?.pointerMove(ndc.x, ndc.y, dx);
+        toyRef.current?.pointerMove(ndc.x, ndc.y);
       },
       onPanResponderRelease: () => {
+        const mode = gestureModeRef.current;
+        gestureModeRef.current = 'none';
+        if (mode === 'orbit') {
+          toyRef.current?.endOrbit();
+          return;
+        }
         const result = toyRef.current?.pointerUp();
         if (!result || !result.wasPoke) return;
         const { achievements: liveAchievements, releaseSoundEnabled: releaseSoundOn, toy: currentToy, onRecordPress: recordPress, onMarkAchievement: markAch } = latestRef.current;
@@ -264,6 +347,8 @@ export default function SquishScreen({
         if (releaseSoundOn) popSoundRef.current?.play();
       },
       onPanResponderTerminate: () => {
+        gestureModeRef.current = 'none';
+        toyRef.current?.endOrbit();
         toyRef.current?.pointerUp();
       },
     })
@@ -290,14 +375,28 @@ export default function SquishScreen({
         </Pressable>
 
         <View style={styles.stage} {...panResponder.panHandlers}>
-          <Canvas flat camera={{ fov: 30, position: [0, 0.1, 4.6], near: 0.1, far: 100 }}>
-            <ambientLight intensity={0.65} />
-            <directionalLight color={0xfff2e0} intensity={1.3} position={[2, 3, 3]} />
-            <directionalLight color={0xd8ccff} intensity={0.55} position={[-2.5, -1, 2]} />
-            <directionalLight color={0xffffff} intensity={0.35} position={[-1.5, 2, -3]} />
-            <SquishyToy
+          {MODEL_3D_IDS.has(String(toy.id)) ? (
+            <Canvas flat camera={{ fov: 30, position: [0, 0.1, 4.6], near: 0.1, far: 100 }}>
+              <ambientLight intensity={0.65} />
+              <directionalLight color={0xfff2e0} intensity={1.3} position={[2, 3, 3]} />
+              <directionalLight color={0xd8ccff} intensity={0.55} position={[-2.5, -1, 2]} />
+              <directionalLight color={0xffffff} intensity={0.35} position={[-1.5, 2, -3]} />
+              <SquishyToy
+                ref={toyRef}
+                creatureId={toy.id}
+                onSquish={() => {
+                  if (squishSoundEnabled) soundRef.current?.start();
+                }}
+                onRelease={() => {
+                  soundRef.current?.stop();
+                }}
+              />
+            </Canvas>
+          ) : (
+            <SquishyToy2D
               ref={toyRef}
               creatureId={toy.id}
+              size={STAGE_SIZE}
               onSquish={() => {
                 if (squishSoundEnabled) soundRef.current?.start();
               }}
@@ -305,11 +404,11 @@ export default function SquishScreen({
                 soundRef.current?.stop();
               }}
             />
-          </Canvas>
+          )}
 
           <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
             {ripples.map((r) => (
-              <View key={r.id} style={[styles.ripple, { left: `${r.x}%`, top: `${r.y}%` }]} />
+              <Ripple key={r.id} x={r.x} y={r.y} />
             ))}
             {showReward && (
               <Text key={rewardKey} style={styles.rewardText}>
@@ -436,7 +535,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   stage: { width: STAGE_SIZE, height: STAGE_SIZE },
-  ripple: { position: 'absolute', width: 180, height: 180, borderRadius: 90, borderWidth: 2.5, borderColor: 'rgba(255,255,255,0.6)' },
+  ripple: {
+    position: 'absolute',
+    width: RIPPLE_MAX,
+    height: RIPPLE_MAX,
+    borderRadius: RIPPLE_MAX / 2,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.7)',
+  },
   rewardText: {
     position: 'absolute',
     top: '20%',
