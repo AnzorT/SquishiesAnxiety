@@ -47,7 +47,10 @@ export async function ensureStarterCreaturesOwned(uid, ownedIds = []) {
 export function subscribeToUserProfile(uid, onChange) {
   return userDocRef(uid).onSnapshot(
     (snap) => onChange(snap.exists ? snap.data() : null),
-    () => onChange(null)
+    (error) => {
+      console.error('subscribeToUserProfile failed:', error);
+      onChange(null);
+    }
   );
 }
 
@@ -182,6 +185,9 @@ export function subscribeToCreatures(onChange) {
     .orderBy('order', 'asc')
     .onSnapshot(
       (snap) => onChange(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))),
-      () => onChange([])
+      (error) => {
+        console.error('subscribeToCreatures failed:', error);
+        onChange([]);
+      }
     );
 }

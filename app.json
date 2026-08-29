@@ -18,7 +18,11 @@
     },
     "android": {
       "package": "com.plushcrush.app",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icons/app_icon.png",
+        "backgroundColor": "#1A0E38"
+      }
     },
     "plugins": [
       "expo-av",

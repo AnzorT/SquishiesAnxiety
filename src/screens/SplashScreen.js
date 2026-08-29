@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: squadFonts.headingExtraBold,
     fontSize: 52,
-    lineHeight: 50,
+    lineHeight: 62,
     textAlign: 'center',
     letterSpacing: 1,
     textShadowColor: 'rgba(0,0,0,0.25)',
