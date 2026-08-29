@@ -143,6 +143,9 @@ export default function SquishScreen({
   // 'none' | 'poke' (one finger, squishing) | 'orbit' (two fingers, turning)
   const gestureModeRef = useRef('none');
   const lastCentroidRef = useRef({ x: 0, y: 0 });
+  // true once a gesture has had 2+ fingers at any point — such a gesture never
+  // plays the squish sound or grants coins, even after fingers are lifted.
+  const gestureHadTwoRef = useRef(false);
 
   const [displayCoins, setDisplayCoins] = useState(coins);
   const [ripples, setRipples] = useState([]);
@@ -265,8 +268,23 @@ export default function SquishScreen({
       onMoveShouldSetPanResponder: () => true,
       onStartShouldSetPanResponderCapture: () => true,
       onMoveShouldSetPanResponderCapture: () => true,
+      // Fires on the first touch AND every additional touch. A second finger
+      // landing (without moving) doesn't trigger onPanResponderMove, so this
+      // is where a poke -> orbit switch has to be caught to kill the squish
+      // sound immediately.
+      onPanResponderStart: (evt) => {
+        const touches = evt.nativeEvent.touches || [];
+        if (touches.length >= 2 && gestureModeRef.current !== 'orbit') {
+          gestureHadTwoRef.current = true;
+          toyRef.current?.cancelPoke();
+          soundRef.current?.stop();
+          gestureModeRef.current = 'orbit';
+          lastCentroidRef.current = centroidOf(touches);
+        }
+      },
       onPanResponderGrant: (evt) => {
         const touches = evt.nativeEvent.touches || [];
+        gestureHadTwoRef.current = touches.length >= 2;
         if (touches.length >= 2) {
           gestureModeRef.current = 'orbit';
           lastCentroidRef.current = centroidOf(touches);
@@ -284,10 +302,13 @@ export default function SquishScreen({
         const touches = evt.nativeEvent.touches || [];
 
         if (touches.length >= 2) {
+          gestureHadTwoRef.current = true;
           // Two fingers down — orbit. If a one-finger poke was in progress,
-          // drop it (no reward) so the gesture cleanly becomes a rotate.
+          // drop it (no reward) and silence the squish sound so the gesture
+          // cleanly becomes a rotate.
           if (gestureModeRef.current !== 'orbit') {
             toyRef.current?.cancelPoke();
+            soundRef.current?.stop();
             gestureModeRef.current = 'orbit';
             lastCentroidRef.current = centroidOf(touches);
             return;
@@ -316,9 +337,15 @@ export default function SquishScreen({
       },
       onPanResponderRelease: () => {
         const mode = gestureModeRef.current;
+        const hadTwo = gestureHadTwoRef.current;
         gestureModeRef.current = 'none';
-        if (mode === 'orbit') {
+        gestureHadTwoRef.current = false;
+        // A two-finger gesture (now or at any earlier point) is a rotate, not
+        // a squish: no reward, no release sound, and stop the squish loop.
+        if (mode === 'orbit' || hadTwo) {
           toyRef.current?.endOrbit();
+          toyRef.current?.pointerUp();
+          soundRef.current?.stop();
           return;
         }
         const result = toyRef.current?.pointerUp();
@@ -348,8 +375,10 @@ export default function SquishScreen({
       },
       onPanResponderTerminate: () => {
         gestureModeRef.current = 'none';
+        gestureHadTwoRef.current = false;
         toyRef.current?.endOrbit();
         toyRef.current?.pointerUp();
+        soundRef.current?.stop();
       },
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -376,7 +405,7 @@ export default function SquishScreen({
 
         <View style={styles.stage} {...panResponder.panHandlers}>
           {MODEL_3D_IDS.has(String(toy.id)) ? (
-            <Canvas flat camera={{ fov: 30, position: [0, 0.1, 4.6], near: 0.1, far: 100 }}>
+            <Canvas flat frameloop="always" camera={{ fov: 30, position: [0, 0.1, 4.6], near: 0.1, far: 100 }}>
               <ambientLight intensity={0.65} />
               <directionalLight color={0xfff2e0} intensity={1.3} position={[2, 3, 3]} />
               <directionalLight color={0xd8ccff} intensity={0.55} position={[-2.5, -1, 2]} />
