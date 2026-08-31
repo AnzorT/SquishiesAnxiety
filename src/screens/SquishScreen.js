@@ -3,12 +3,12 @@ import { View, Text, StyleSheet, PanResponder, Animated, Pressable, Easing, Dime
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Canvas } from '@react-three/fiber';
-import SquishyToy from '../components/SquishyToy';
+import SquishyToy, { MODEL_3D_IDS } from '../components/SquishyToy';
 import SquishyToy2D from '../components/SquishyToy2D';
 
-// Glorp (id 0) is the one creature rendered from a real Tripo3D mesh; every
-// other creature squishes as the 2D design art (see SquishyToy2D).
-const MODEL_3D_IDS = new Set(['0']);
+// Some creatures render from a real Tripo3D mesh (MODEL_3D_IDS, the single
+// source of truth in SquishyToy); every other creature squishes as the 2D
+// design art (see SquishyToy2D).
 import SquishSound from '../audio/SquishSound';
 import CoinSound from '../audio/CoinSound';
 import PopSound from '../audio/PopSound';

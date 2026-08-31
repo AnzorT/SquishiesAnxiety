@@ -1,6 +1,6 @@
 // @refresh reset
 // The creature is built once in a useEffect on mount (buildCreature /
-// buildGlorpCreature). Fast Refresh keeps the old built object when you edit
+// buildModelCreature). Fast Refresh keeps the old built object when you edit
 // this file, so tuning changes to the builders or the physics wouldn't show
 // without a full reload — this directive makes Fast Refresh remount the
 // component (and rebuild the toy) whenever this file changes.
@@ -208,11 +208,13 @@ function buildCreature(id) {
   };
 }
 
-// ---- Glorp: imported Tripo3D mesh instead of the procedural sphere ----
+// ---- Imported Tripo3D meshes instead of the procedural sphere ----
 //
-// Glorp (creature id 0) is the one creature this app renders from a real
-// AI-generated asset (assets/models/glorp_3d.glb, from Tripo3D) rather than
-// buildCreature's hand-built sphere. The rest of the roster is unchanged.
+// A few creatures render from a real AI-generated asset (a .glb from Tripo3D)
+// rather than buildCreature's hand-built sphere. The rest of the roster is
+// unchanged. `MODEL_3D` below is the single source of truth for which ids
+// take this path — SquishScreen imports `MODEL_3D_IDS` from here to decide
+// whether to mount the <Canvas>.
 //
 // The procedural toys share one UV-sphere with a known rows x cols vertex
 // layout, which is what lets tickPhysics's jelly-wave diffusion look up each
@@ -223,23 +225,41 @@ function buildCreature(id) {
 // Gaussian dent target, global squash/wobble, release kick, drag-to-orbit)
 // only reasons about vertex positions, so it runs unmodified on any mesh.
 
-const GLORP_MODEL_ID = 0;
-const GLORP_ASSET = require('../../assets/models/glorp_3d.glb');
-// Glorp's geometry is normalised to the SAME 2-unit diameter as the
-// procedural sphere toys, so every physics constant (dent sigma, maxDent,
-// the squash clamps) behaves identically. On-screen size is then just a
-// uniform scale on the mesh — bump this to make Glorp bigger/smaller on the
-// squish stage without touching the physics. 2 == same size as the spheres.
-const GLORP_VISUAL = 1.9;
+// Per-model config. `visual` bakes the on-stage size into the geometry (the
+// mesh is recentred + rescaled so its largest dimension == this many units;
+// 2 == same size as the procedural spheres). `dentSigma`/`dentStrength`/
+// `dentFloor` tune the dent to a wide/deep/gentle-floored feel (the original
+// c9586dd build) vs the design sphere's shallow one — see computeDentFall /
+// applyDentScale / tickPhysics.
+const MODEL_3D = {
+  0: {
+    asset: require('../../assets/models/glorp_3d.glb'),
+    visual: 1.9,
+    dentSigma: 0.3,
+    dentStrength: 2.3,
+    dentFloor: 0.72,
+  },
+  1: {
+    asset: require('../../assets/models/puffle_3d.glb'),
+    visual: 1.9,
+    dentSigma: 0.3,
+    dentStrength: 2.3,
+    dentFloor: 0.72,
+  },
+};
 
-// Cached at module scope — revisiting Glorp in the same session re-parses a
-// fresh geometry (so concurrent mounts never share one live position buffer)
-// but doesn't re-fetch/re-decode the same ~100KB glb off disk each time.
-let glorpGltfPromise = null;
-function loadGlorpGltf() {
-  if (!glorpGltfPromise) {
-    glorpGltfPromise = (async () => {
-      const asset = Asset.fromModule(GLORP_ASSET);
+export const MODEL_3D_IDS = new Set(Object.keys(MODEL_3D));
+const is3DModel = (creatureId) => MODEL_3D_IDS.has(String(creatureId));
+
+// Cached per id at module scope — revisiting a creature in the same session
+// re-parses a fresh geometry (so concurrent mounts never share one live
+// position buffer) but doesn't re-fetch/re-decode the same glb off disk each
+// time.
+const gltfPromises = {};
+function loadModelGltf(id) {
+  if (!gltfPromises[id]) {
+    gltfPromises[id] = (async () => {
+      const asset = Asset.fromModule(MODEL_3D[id].asset);
       await asset.downloadAsync();
       const response = await fetch(asset.localUri || asset.uri);
       const arrayBuffer = await response.arrayBuffer();
@@ -248,7 +268,7 @@ function loadGlorpGltf() {
       });
     })();
   }
-  return glorpGltfPromise;
+  return gltfPromises[id];
 }
 
 // Every vertex sharing a triangle with vertex i becomes a neighbour of i —
@@ -268,26 +288,27 @@ function buildAdjacency(indexArray, vertCount) {
   return sets.map((set) => Uint32Array.from(set));
 }
 
-async function buildGlorpCreature() {
-  const gltf = await loadGlorpGltf();
+async function buildModelCreature(id) {
+  const cfg = MODEL_3D[id];
+  const gltf = await loadModelGltf(id);
   let sourceMesh = null;
   gltf.scene.traverse((obj) => {
     if (!sourceMesh && obj.isMesh) sourceMesh = obj;
   });
-  if (!sourceMesh) throw new Error('glorp_3d.glb: no mesh found in scene');
+  if (!sourceMesh) throw new Error(`3D model ${id}: no mesh found in scene`);
 
   const geo = sourceMesh.geometry.clone();
   geo.computeBoundingBox();
 
   // The raw export's pivot sits at its base. Recenter on the bbox centre and
   // bake the on-screen size straight into the geometry (largest dimension ->
-  // GLORP_VISUAL units). Glorp squishes via the group transform only, so
+  // cfg.visual units). The mesh squishes via the group transform only, so
   // there is no per-vertex physics that cares about the geometry's scale.
   const rawCenter = new THREE.Vector3();
   geo.boundingBox.getCenter(rawCenter);
   const rawSize = new THREE.Vector3();
   geo.boundingBox.getSize(rawSize);
-  const normScale = GLORP_VISUAL / (Math.max(rawSize.x, rawSize.y, rawSize.z) || 1);
+  const normScale = cfg.visual / (Math.max(rawSize.x, rawSize.y, rawSize.z) || 1);
   const rawPos = geo.attributes.position.array;
   for (let i = 0; i < rawPos.length; i += 3) {
     rawPos[i] = (rawPos[i] - rawCenter.x) * normScale;
@@ -307,7 +328,7 @@ async function buildGlorpCreature() {
 
   const bodyMat = new THREE.MeshStandardMaterial({
     map: sourceMesh.material && sourceMesh.material.map ? sourceMesh.material.map : null,
-    color: sourceMesh.material && sourceMesh.material.map ? 0xffffff : new THREE.Color(CREATURE_VISUALS[0].color),
+    color: sourceMesh.material && sourceMesh.material.map ? 0xffffff : new THREE.Color((CREATURE_VISUALS[id] ?? CREATURE_VISUALS[0]).color),
     roughness: 0.5,
     metalness: 0,
     // FrontSide only — DoubleSide let the mesh's back faces show through the
@@ -326,8 +347,8 @@ async function buildGlorpCreature() {
 
   const shMat = new THREE.MeshBasicMaterial({ color: 0x1a0e38, transparent: true, opacity: 0.35, depthWrite: false });
   const shadowMesh = new THREE.Mesh(new THREE.CircleGeometry(1, 32), shMat);
-  shadowMesh.scale.set(GLORP_VISUAL * 0.62, GLORP_VISUAL * 0.26, 1);
-  shadowMesh.position.set(0, -GLORP_VISUAL * 0.52, -0.3);
+  shadowMesh.scale.set(cfg.visual * 0.62, cfg.visual * 0.26, 1);
+  shadowMesh.position.set(0, -cfg.visual * 0.52, -0.3);
   shadowMesh.rotation.x = -Math.PI / 2.5;
 
   return {
@@ -344,13 +365,14 @@ async function buildGlorpCreature() {
     colCount: 0,
     rowCount: 0,
     neighbors,
-    // Glorp squishes purely by the per-vertex dent (the only thing that
-    // renders per frame on the target device — see tickPhysics). These make
-    // it a wide, deep, gentle-floored dent like the original c9586dd build,
-    // vs the design sphere's shallow one.
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
+    // The imported meshes squish purely by the per-vertex dent (the only
+    // thing that renders per frame on the target device — see tickPhysics).
+    // These make it a wide, deep, gentle-floored dent like the original
+    // c9586dd build, vs the design sphere's shallow one. Per-model overrides
+    // live in MODEL_3D.
+    dentSigma: cfg.dentSigma,
+    dentStrength: cfg.dentStrength,
+    dentFloor: cfg.dentFloor,
     dentAmt: new Float32Array(count),
     dentTarget: new Float32Array(count),
     dentVel: new Float32Array(count),
@@ -649,14 +671,15 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', onSquish, 
       toyRef.current = null;
     };
 
-    // Procedural creatures build synchronously (unchanged). Glorp loads its
-    // Tripo mesh from disk first, so `built` stays null for the brief window
-    // before it resolves — every imperative-handle method and useFrame
-    // already bails while toyRef.current is null, so that window is safe.
-    const isGlorp = Number(creatureId) === GLORP_MODEL_ID;
-    const pending = isGlorp
-      ? buildGlorpCreature()
-      : Promise.resolve(buildCreature(Number(creatureId)));
+    // Procedural creatures build synchronously (unchanged). A 3D-model
+    // creature loads its Tripo mesh from disk first, so `built` stays null for
+    // the brief window before it resolves — every imperative-handle method and
+    // useFrame already bails while toyRef.current is null, so that window is
+    // safe.
+    const modelId = Number(creatureId);
+    const pending = is3DModel(creatureId)
+      ? buildModelCreature(modelId)
+      : Promise.resolve(buildCreature(modelId));
 
     pending
       .then((r) => {
@@ -672,12 +695,12 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', onSquish, 
       .catch((err) => {
         // eslint-disable-next-line no-console
         console.error(`[SquishyToy] failed to build creature ${creatureId}: ${(err && err.stack) || err}`);
-        // Glorp's GLB failed to load/parse (e.g. a device fetch quirk) —
-        // fall back to the procedural sphere so the stage is never blank and
-        // stays fully interactive.
+        // The GLB failed to load/parse (e.g. a device fetch quirk) — fall back
+        // to the procedural sphere for this creature so the stage is never
+        // blank and stays fully interactive.
         if (cancelled) return;
         try {
-          const fallback = buildCreature(GLORP_MODEL_ID);
+          const fallback = buildCreature(modelId);
           result = fallback;
           toyRef.current = fallback;
           setBuilt(fallback);
