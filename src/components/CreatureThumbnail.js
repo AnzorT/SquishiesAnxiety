@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing } from 'react-native';
-import Svg, { Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path, G } from 'react-native-svg';
+import Svg, { Defs, RadialGradient, LinearGradient, Stop, Circle, Ellipse, Path, G, ClipPath, Rect } from 'react-native-svg';
+
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
 // Literal port of the "Creature" component decoded out of "ASMR Creature
 // Squash Game.html"'s own asset bundle (manifest entry 40fb4f7a…, the real
@@ -174,7 +176,7 @@ const CREATURES = {
   0: { // Glorp
     body: { inset: [8, 8, 8, 8], corners: { tl: [60, 55], tr: [40, 45], br: [55, 60], bl: [45, 40] }, angle: 160, from: '#5eead4', to: '#0d9488', shadow: '#0d9488' },
     extras: (b, gray) => {
-      const antBox = rect({ x: 0, y: 0, w: W, h: W }, { left: 22, top: -6, width: 8, height: 18 });
+      const antBox = rect({ x: 0, y: 0, w: W, h: W }, { left: 22, top: -3, width: 8, height: 16 });
       return <Path key="ant" d={blobPath(antBox, { tl: [50, 60], tr: [50, 60], br: [50, 40], bl: [50, 40] })} fill={gray ? '#8a8a8a' : 'url(#antennaGrad0)'} />;
     },
     antGrad: { angle: 180, from: '#5eead4', to: '#2dd4bf' },
@@ -193,12 +195,12 @@ const CREATURES = {
     mouth: { leftPct: 38, topPct: 60, wPct: 24, hPct: 10, radiusPct: 50 },
     blush: { leftPct: 12, rightPct: 12, topPct: 52, wPct: 14, hPct: 9, color: '#f472b6' },
   },
-  2: { // Nubbin
+  2: { // Nubbin — two small horns near the crown (source: 3D `horns`, cones at ±0.36x, y0.98)
     body: { inset: [10, 10, 10, 10], corners: { tl: [48, 52], tr: [52, 48], br: [45, 52], bl: [55, 48] }, angle: 160, from: '#fdba74', to: '#ea580c', shadow: '#ea580c' },
     extras: (b, gray) => (
       <>
-        <Path key="hl" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { apexXPct: 16, topPct: 2, halfWPct: 7, heightPct: 16 })} fill={gray ? '#8a8a8a' : '#fb923c'} />
-        <Path key="hr" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { right: 16, topPct: 2, halfWPct: 7, heightPct: 16 })} fill={gray ? '#8a8a8a' : '#fb923c'} />
+        <Path key="hl" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { apexXPct: 34, topPct: -2, halfWPct: 5, heightPct: 14 })} fill={gray ? '#8a8a8a' : '#fb923c'} />
+        <Path key="hr" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { right: 34, topPct: -2, halfWPct: 5, heightPct: 14 })} fill={gray ? '#8a8a8a' : '#fb923c'} />
       </>
     ),
     eyes: { type: 'sleepy', leftPct: 28, rightPct: 28, topPct: 40, wPct: 16, hPct: 4 },
@@ -220,9 +222,9 @@ const CREATURES = {
     body: { inset: [10, 10, 10, 10], corners: CIRCLE, angle: 160, from: '#86efac', to: '#16a34a', shadow: '#16a34a' },
     extras: (b, gray) => (
       <>
-        <Path key="l1" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { apexXPct: 20, topPct: 0, halfWPct: 6, heightPct: 14 })} fill={gray ? '#8a8a8a' : '#22c55e'} />
-        <Path key="l2" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { apexXPct: 46, topPct: -4, halfWPct: 6, heightPct: 16 })} fill={gray ? '#8a8a8a' : '#22c55e'} />
-        <Path key="l3" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { right: 20, topPct: 0, halfWPct: 6, heightPct: 14 })} fill={gray ? '#8a8a8a' : '#22c55e'} />
+        <Path key="l1" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { apexXPct: 40, topPct: -3, halfWPct: 5, heightPct: 15 })} fill={gray ? '#8a8a8a' : '#22c55e'} />
+        <Path key="l2" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { apexXPct: 50, topPct: -8, halfWPct: 5, heightPct: 17 })} fill={gray ? '#8a8a8a' : '#22c55e'} />
+        <Path key="l3" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { right: 40, topPct: -3, halfWPct: 5, heightPct: 15 })} fill={gray ? '#8a8a8a' : '#22c55e'} />
       </>
     ),
     eyes: { type: 'pair', leftPct: 28, rightPct: 28, topPct: 38, sizePct: 14 },
@@ -233,39 +235,37 @@ const CREATURES = {
     eyesOnWrapper: { type: 'pair', leftPct: 34, rightPct: 34, topPct: 46, sizePct: 13 },
     mouthOnWrapper: { leftPct: 42, topPct: 66, wPct: 16, hPct: 8, radiusPct: 50 },
   },
-  6: { // Puffington — cloud: 2 plain side lobes + 1 front lobe carrying the face
-    body: { inset: [14, 16, 30, 16], corners: CIRCLE, angle: 160, from: '#f0f9ff', to: '#38bdf8', shadow: '#38bdf8' },
+  6: { // Puffington — cloud: a low wide body under three overlapping puffs, face on the body
+    body: { inset: [30, 10, 16, 10], corners: CIRCLE, angle: 160, from: '#f0f9ff', to: '#38bdf8', shadow: '#38bdf8' },
     extras: (b, gray) => (
       <>
-        <Circle key="lobeL" cx={6 + 22} cy={30 + 22} r={22} fill={gray ? '#a0a0a0' : 'url(#cloudSide6)'} />
-        <Circle key="lobeR" cx={100 - 6 - 22} cy={30 + 22} r={22} fill={gray ? '#a0a0a0' : 'url(#cloudSide6)'} />
+        <Circle key="lobeL" cx={26} cy={46} r={22} fill={gray ? '#a0a0a0' : 'url(#cloudSide6)'} />
+        <Circle key="lobeR" cx={74} cy={46} r={22} fill={gray ? '#a0a0a0' : 'url(#cloudSide6)'} />
+        <Circle key="lobeT" cx={50} cy={30} r={18} fill={gray ? '#a0a0a0' : 'url(#cloudSide6)'} />
       </>
     ),
-    eyes: { type: 'sleepy', leftPct: 30, rightPct: 30, topPct: 44, wPct: 12, hPct: 6 },
-    mouth: { leftPct: 42, topPct: 62, wPct: 16, hPct: 8, radiusPct: 50 },
+    eyes: { type: 'sleepy', leftPct: 30, rightPct: 30, topPct: 40, wPct: 13, hPct: 6 },
+    mouth: { leftPct: 42, topPct: 60, wPct: 16, hPct: 9, radiusPct: 50 },
   },
-  7: { // Noodle — flat-bottomed dome + tentacles, single cyclops eye
-    body: { inset: [10, 10, 24, 10], corners: { tl: [50, 60], tr: [50, 60], br: [45, 40], bl: [45, 40] }, angle: 160, from: '#c4b5fd', to: '#7c3aed', shadow: '#7c3aed' },
+  7: { // Noodle — rounded dome with tentacles tucked under it, single cyclops eye
+    body: { inset: [10, 10, 14, 10], corners: { tl: [50, 58], tr: [50, 58], br: [48, 46], bl: [48, 46] }, angle: 160, from: '#c4b5fd', to: '#7c3aed', shadow: '#7c3aed' },
     extras: (b, gray) => (
       <>
-        <Ellipse key="t1" cx={30 + (9 * W) / 100 / 2} cy={80 + (22 * W) / 100 / 2} rx={(9 * W) / 100 / 2} ry={(22 * W) / 100 / 2} fill={gray ? '#8a8a8a' : '#a78bfa'} />
-        <Ellipse key="t2" cx={46 + (9 * W) / 100 / 2} cy={82 + (26 * W) / 100 / 2} rx={(9 * W) / 100 / 2} ry={(26 * W) / 100 / 2} fill={gray ? '#8a8a8a' : '#a78bfa'} />
-        <Ellipse key="t3" cx={100 - 30 - (9 * W) / 100 / 2} cy={80 + (22 * W) / 100 / 2} rx={(9 * W) / 100 / 2} ry={(22 * W) / 100 / 2} fill={gray ? '#8a8a8a' : '#a78bfa'} />
+        <Ellipse key="t1" cx={35} cy={74 + (20 * W) / 100 / 2} rx={(10 * W) / 100 / 2} ry={(20 * W) / 100 / 2} fill={gray ? '#8a8a8a' : '#a78bfa'} />
+        <Ellipse key="t2" cx={51} cy={76 + (22 * W) / 100 / 2} rx={(10 * W) / 100 / 2} ry={(22 * W) / 100 / 2} fill={gray ? '#8a8a8a' : '#a78bfa'} />
+        <Ellipse key="t3" cx={65} cy={74 + (20 * W) / 100 / 2} rx={(10 * W) / 100 / 2} ry={(20 * W) / 100 / 2} fill={gray ? '#8a8a8a' : '#a78bfa'} />
       </>
     ),
-    eyes: { type: 'cyclops', leftPct: 36, topPct: 32, sizePct: 28 },
-    mouth: { leftPct: 42, topPct: 68, wPct: 16, hPct: 8, radiusPct: 50 },
+    eyes: { type: 'cyclops', leftPct: 36, topPct: 30, sizePct: 28 },
+    mouth: { leftPct: 42, topPct: 64, wPct: 16, hPct: 8, radiusPct: 50 },
   },
   8: { // Glimmer — faceted gem pentagon; eyes/mouth are siblings again
     body: { inset: [6, 6, 6, 6], pentagon: true, angle: 160, from: '#a5f3fc', to: '#06b6d4', shadow: '#06b6d4', noInsetShadow: true },
     eyesOnWrapper: { type: 'pair', leftPct: 34, rightPct: 34, topPct: 44, sizePct: 13 },
     mouthOnWrapper: { leftPct: 42, topPct: 64, wPct: 16, hPct: 8, radiusPct: 50 },
   },
-  9: { // Ember
+  9: { // Ember — no accessory; identity is the warm all-over glow (trueGlow)
     body: { inset: [10, 10, 10, 10], corners: CIRCLE, angle: 160, from: '#fca5a5', to: '#dc2626', shadow: '#f87171', trueGlow: true },
-    extras: (b, gray) => (
-      <Path key="flame" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { apexXPct: 38, topPct: -8, halfWPct: 9, heightPct: 20 })} fill={gray ? '#8a8a8a' : '#fbbf24'} />
-    ),
     eyes: { type: 'pair', leftPct: 28, rightPct: 28, topPct: 38, sizePct: 14 },
     mouth: { leftPct: 40, topPct: 64, wPct: 20, hPct: 9, radiusPct: 50 },
   },
@@ -365,6 +365,25 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
   const eyesSpec = spec.eyesOnWrapper || spec.eyes;
   const mouthSpec = spec.mouthOnWrapper || spec.mouth;
 
+  // --- Glimmer's shine: a bright band that sweeps across the gem, clipped to
+  // its silhouette, then pauses off-frame before the next pass (source: the
+  // crystal's `shine` accessory / the flash sweep in the design art). ---
+  const isGlimmer = String(creatureId) === '8';
+  const shimmer = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!isGlimmer || !animate) return undefined;
+    shimmer.setValue(0);
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(1100),
+        Animated.timing(shimmer, { toValue: 1, duration: 850, easing: Easing.in(Easing.quad), useNativeDriver: false }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [isGlimmer, animate, shimmer]);
+  const shimmerX = shimmer.interpolate({ inputRange: [0, 1], outputRange: [-W * 0.5, W * 1.05] });
+
   return (
     <Animated.View
       style={{
@@ -401,6 +420,18 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
               <Stop offset="0%" stopColor={gray ? grayscaleDim('#e0f2fe') : '#e0f2fe'} />
               <Stop offset="100%" stopColor={gray ? grayscaleDim('#7dd3fc') : '#7dd3fc'} />
             </LinearGradient>
+          ) : null}
+          {isGlimmer ? (
+            <>
+              <ClipPath id="glimmerClip">
+                <Path d={bodyPathD} />
+              </ClipPath>
+              <LinearGradient id="glimmerShine" x1="0%" y1="0%" x2="100%" y2="0%">
+                <Stop offset="0%" stopColor="#ffffff" stopOpacity={0} />
+                <Stop offset="50%" stopColor="#ffffff" stopOpacity={gray ? 0.35 : 0.75} />
+                <Stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
+              </LinearGradient>
+            </>
           ) : null}
         </Defs>
 
@@ -453,6 +484,19 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
           ellipse={mouthSpec.ellipse}
           gray={gray}
         />
+
+        {isGlimmer ? (
+          <G clipPath="url(#glimmerClip)">
+            <AnimatedRect
+              x={shimmerX}
+              y={-bleed - 6}
+              width={W * 0.34}
+              height={W + bleed * 2 + 12}
+              fill="url(#glimmerShine)"
+              opacity={0.9}
+            />
+          </G>
+        ) : null}
       </Svg>
     </Animated.View>
   );

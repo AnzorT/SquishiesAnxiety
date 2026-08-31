@@ -21,7 +21,7 @@ const HOLD_INTERVAL_MS = 30; // ~1s to fill (0.03 * ~33 ticks)
 const CELEBRATION_MS = 1700;
 const ENTRANCE_MS = 350;
 
-export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, onOpenStore, onUnlockWithKey }) {
+export default function CreatureCard({ creature, unlocked, hasKey, dimmed = false, onFocus, onSelectToy, onOpenStore, onUnlockWithKey }) {
   // --- card entrance (cardIn: fade + slide-up + scale-in, replayed on mount) ---
   const entranceOpacity = useRef(new Animated.Value(0)).current;
   const entranceY = useRef(new Animated.Value(18)).current;
@@ -61,7 +61,7 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
   );
 
   const handlePressIn = useCallback(() => {
-    if (unlocked || !hasKey) return;
+    if (dimmed || unlocked || !hasKey) return;
     clearHoldInterval();
     progressRef.current = 0;
     setUnlockProgress(0);
@@ -78,7 +78,7 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
         celebrationTimeoutRef.current = setTimeout(() => setShowUnlockCelebration(false), CELEBRATION_MS);
       }
     }, HOLD_INTERVAL_MS);
-  }, [unlocked, hasKey, creature.id, onUnlockWithKey, clearHoldInterval]);
+  }, [dimmed, unlocked, hasKey, creature.id, onUnlockWithKey, clearHoldInterval]);
 
   const handlePressOut = useCallback(() => {
     // Already completed (interval cleared itself) — no partial credit to undo.
@@ -94,7 +94,7 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
   const lockedHasKey = !unlocked && hasKey;
 
   useEffect(() => {
-    if (!lockedNoKey) return undefined;
+    if (!lockedNoKey || dimmed) return undefined;
     wobble.setValue(0);
     const loop = Animated.loop(
       Animated.sequence([
@@ -104,7 +104,7 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
     );
     loop.start();
     return () => loop.stop();
-  }, [lockedNoKey, wobble]);
+  }, [lockedNoKey, dimmed, wobble]);
 
   const wobbleRotate = wobble.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '9deg'] });
 
@@ -124,11 +124,16 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
   }, [showUnlockCelebration, popScale, popRotate]);
 
   const handleInfoPress = useCallback(() => {
+    // A half-visible neighbour: tapping it just brings it into focus.
+    if (dimmed) {
+      onFocus && onFocus();
+      return;
+    }
     if (unlocked) onSelectToy(creature);
     else if (!hasKey) onOpenStore();
     // else: has key but not yet unlocked — unlock only happens via the
     // hold gesture in the image area, so this is a deliberate no-op.
-  }, [unlocked, hasKey, creature, onSelectToy, onOpenStore]);
+  }, [dimmed, onFocus, unlocked, hasKey, creature, onSelectToy, onOpenStore]);
 
   const cardBorderColor = unlocked ? `${squadColors.gold}55` : `${squadColors.panelBorder}99`;
   const shaftLeft = 4 + unlockProgress * 32;
@@ -146,7 +151,7 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
         colors={['#2a1650', squadColors.inputBg]}
         start={{ x: 0.15, y: 0 }}
         end={{ x: 0.85, y: 1 }}
-        style={[styles.card, { borderColor: cardBorderColor }]}
+        style={[styles.card, { borderColor: cardBorderColor }, dimmed && styles.cardDimmed]}
       >
         <View style={styles.imageArea}>
           <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -160,7 +165,7 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
             </Defs>
             <Rect x="0" y="0" width="100%" height="100%" fill="url(#imgAreaGlow)" />
           </Svg>
-          <CreatureThumbnail creatureId={creature.id} mood={mood} size={110} locked={!unlocked} />
+          <CreatureThumbnail creatureId={creature.id} mood={mood} size={150} locked={!unlocked || dimmed} animate={!dimmed} bleed={20} />
         </View>
 
         <View style={styles.infoArea}>
@@ -179,7 +184,10 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
             ) : hasKey ? (
               <Text style={styles.keyReadyLabel}>KEY READY</Text>
             ) : (
-              <Text style={styles.lockedLabel}>LOCKED — GET KEY →</Text>
+              <>
+                <Text style={styles.lockedLabel}>LOCKED</Text>
+                <Text style={styles.getKeyLabel}>GET KEY →</Text>
+              </>
             )}
           </View>
         </View>
@@ -205,7 +213,12 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
             </Animated.View>
           </View>
         ) : lockedHasKey ? (
-          <Pressable style={styles.cardOverlay} onPressIn={handlePressIn} onPressOut={handlePressOut}>
+          <Pressable
+            style={styles.cardOverlay}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            pointerEvents={dimmed ? 'none' : 'auto'}
+          >
             <View style={styles.keyIconBox}>
               <View style={styles.keyBow} />
               <View style={styles.keyTeeth} />
@@ -235,7 +248,7 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
 }
 
 const styles = StyleSheet.create({
-  cardOuter: { width: '84%', height: '96%' },
+  cardOuter: { width: '84%', height: '100%' },
   pressableFill: { flex: 1 },
   card: {
     flex: 1,
@@ -249,8 +262,10 @@ const styles = StyleSheet.create({
     shadowRadius: 34,
     elevation: 10,
   },
+  // a half-visible neighbour in the carousel — greyed back so the focused card reads as the active one
+  cardDimmed: { opacity: 0.5 },
   imageArea: {
-    flex: 60,
+    flex: 66,
     minHeight: 0,
     overflow: 'hidden',
     alignItems: 'center',
@@ -339,7 +354,7 @@ const styles = StyleSheet.create({
 
   // info area
   infoArea: {
-    flex: 40,
+    flex: 34,
     minHeight: 0,
     paddingHorizontal: 16,
     paddingTop: 8,
@@ -358,6 +373,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   lockedLabel: { color: '#94a3b8', fontFamily: squadFonts.bodyExtraBold, fontSize: 12, letterSpacing: 1 },
+  getKeyLabel: { color: squadColors.gold, fontFamily: squadFonts.bodyExtraBold, fontSize: 12 },
   keyReadyLabel: { color: squadColors.gold, fontFamily: squadFonts.bodyExtraBold, fontSize: 12, letterSpacing: 1 },
   unlockedLabel: { color: squadColors.goldLight, fontFamily: squadFonts.bodyExtraBold, fontSize: 13, letterSpacing: 2 },
   tapToPlayLabel: { color: squadColors.teal, fontFamily: squadFonts.bodyExtraBold, fontSize: 12 },

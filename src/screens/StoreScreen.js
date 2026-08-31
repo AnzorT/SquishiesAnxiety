@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { squadColors, squadGradients, squadFonts, squadRadii } from '../theme/squadTheme';
+import { squadColors, squadGradients, squadFonts } from '../theme/squadTheme';
 import IconButton from '../components/squad/IconButton';
 import GradientButton from '../components/squad/GradientButton';
 import CreatureThumbnail from '../components/CreatureThumbnail';
@@ -64,13 +64,13 @@ export default function StoreScreen({ creatures = [], ownedIds = [], keys = {}, 
                 >
                   <CreatureThumbnail creatureId={creature.id} mood="idle" size={26} />
                 </LinearGradient>
-                <LinearGradient
-                  colors={[squadColors.gold, squadColors.goldDeep]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.keyBar}
-                />
-                <View style={styles.keyTeeth}>
+                <View style={styles.keyStem}>
+                  <LinearGradient
+                    colors={[squadColors.gold, squadColors.goldDeep]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.keyShaft}
+                  />
                   <View style={styles.keyTooth1} />
                   <View style={styles.keyTooth2} />
                 </View>
@@ -121,14 +121,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     backgroundColor: squadColors.panelAlt,
-    borderRadius: squadRadii.md,
+    borderRadius: 16,
     borderWidth: 1.5,
     borderColor: squadColors.panelBorder,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  // The creature's circular preview reads as the bow of a key — a gold
-  // gradient bar plus two stubby teeth trail off its right edge.
+  // The creature's circular preview is the bow of the key; a gold gradient
+  // shaft runs off its right edge with two teeth dropping from the far end.
+  // Transcribed 1:1 from the prototype's Key Shop row (38px bow, 28x4 shaft,
+  // 3x7 + 4x12 teeth).
   keyIconWrap: { flexDirection: 'row', alignItems: 'center', width: 66, flexShrink: 0 },
   avatarWrap: {
     width: 38,
@@ -145,18 +147,18 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 6,
   },
-  keyBar: {
-    width: 22,
-    height: 6,
-    borderTopLeftRadius: 0,
-    borderBottomLeftRadius: 0,
-    borderTopRightRadius: 3,
-    borderBottomRightRadius: 3,
-    marginLeft: -4,
+  keyStem: { position: 'relative', width: 28, height: 20, marginLeft: -3, flexShrink: 0 },
+  keyShaft: {
+    position: 'absolute',
+    left: 0,
+    top: 8,
+    width: 28,
+    height: 4,
+    borderTopRightRadius: 1,
+    borderBottomRightRadius: 1,
   },
-  keyTeeth: { marginLeft: -2, gap: 2 },
-  keyTooth1: { width: 6, height: 8, backgroundColor: squadColors.gold },
-  keyTooth2: { width: 9, height: 6, backgroundColor: squadColors.gold },
+  keyTooth1: { position: 'absolute', right: 13, top: 10, width: 3, height: 7, backgroundColor: squadColors.gold },
+  keyTooth2: { position: 'absolute', right: 5, top: 9, width: 4, height: 12, borderRadius: 1, backgroundColor: squadColors.gold },
   info: { flex: 1 },
   name: { color: squadColors.textWhite, fontFamily: squadFonts.headingBold, fontSize: 15 },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },

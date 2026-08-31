@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, PanResponder, Animated, Pressable, Easing, Dime
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Canvas } from '@react-three/fiber';
+import { MaterialIcons } from '@expo/vector-icons';
 import SquishyToy, { MODEL_3D_IDS } from '../components/SquishyToy';
 import SquishyToy2D from '../components/SquishyToy2D';
 
@@ -442,7 +443,7 @@ export default function SquishScreen({
 
         <Pressable onPress={toggleWheel} style={[styles.wheelButton, { top: insets.top + 14 }]} hitSlop={6}>
           <Animated.View style={{ transform: [{ rotate: wheelRotate }] }}>
-            <View style={styles.wheelGlyph} />
+            <MaterialIcons name="settings" size={20} color={squadColors.textMutedLavender} />
           </Animated.View>
         </Pressable>
 
@@ -612,14 +613,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  wheelGlyph: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 6,
-    borderColor: squadColors.textMutedLavender,
-    backgroundColor: 'transparent',
-  },
   stage: { width: STAGE_SIZE, height: STAGE_SIZE },
   ripple: {
     position: 'absolute',
@@ -708,12 +701,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   // Baloo has tall built-in font padding that shoves a short glyph like "×2"
-  // above the optical centre — kill the padding and pin the line box to the
-  // glyph so `justifyContent: 'center'` on the coin actually centres it.
+  // above the optical centre. Kill the padding and stretch the line box to the
+  // full height of the coin so the glyph sits vertically centred inside it,
+  // then let `justifyContent: 'center'` on the coin place that line box.
   bonusCoinText: {
     fontFamily: squadFonts.headingExtraBold,
     fontSize: 13,
-    lineHeight: 13,
+    lineHeight: 30,
+    width: 30,
+    textAlign: 'center',
     color: '#5a3a00',
     includeFontPadding: false,
     textAlignVertical: 'center',

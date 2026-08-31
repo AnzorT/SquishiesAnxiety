@@ -168,7 +168,16 @@ const styles = StyleSheet.create({
   },
   labelCol: { alignItems: 'flex-start', gap: 2 },
   labelTopRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  coinDot: { width: 14, height: 14, borderRadius: 7, overflow: 'hidden' },
-  x2: { fontFamily: squadFonts.headingExtraBold, fontSize: 16, lineHeight: 16, color: squadColors.gold, includeFontPadding: false, textAlignVertical: 'center' },
+  coinDot: { width: 16, height: 16, borderRadius: 8, overflow: 'hidden' },
+  // "×2" rides high on Baloo's tall metrics, so nudge it down with a little
+  // top padding to sit level with the coin.
+  x2: {
+    fontFamily: squadFonts.headingExtraBold,
+    fontSize: 15,
+    lineHeight: 16,
+    paddingTop: 7,
+    includeFontPadding: false,
+    color: squadColors.gold,
+  },
   subLabel: { color: squadColors.textLavender, fontFamily: squadFonts.bodyExtraBold, fontSize: 8, letterSpacing: 1.4 },
 });
