@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { squadColors, squadFonts } from '../theme/squadTheme';
 import CreatureThumbnail from '../components/CreatureThumbnail';
@@ -28,6 +28,20 @@ function Dot({ delay }) {
   }, [bounce, delay]);
   const translateY = bounce.interpolate({ inputRange: [0, 1], outputRange: [0, -6] });
   return <Animated.View style={[styles.dot, { transform: [{ translateY }] }]} />;
+}
+
+// The prototype's `popIn` keyframe: springs in from a small, tilted, invisible
+// state, overshoots to 1.12x / +3deg, then settles. Used for the "I AM READY!"
+// bubble (and mirrored by the "×2" flash on SquishScreen).
+function PopIn({ style, children }) {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(t, { toValue: 1, duration: 420, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+  }, [t]);
+  const opacity = t.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 1] });
+  const scale = t.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.4, 1.12, 1] });
+  const rotate = t.interpolate({ inputRange: [0, 0.6, 1], outputRange: ['-8deg', '3deg', '0deg'] });
+  return <Animated.View style={[style, { opacity, transform: [{ scale }, { rotate }] }]}>{children}</Animated.View>;
 }
 
 export default function LoadingScreen({ creature, onFinish }) {
@@ -62,9 +76,9 @@ export default function LoadingScreen({ creature, onFinish }) {
             </View>
           </View>
         ) : (
-          <View style={styles.readyBubble}>
+          <PopIn style={styles.readyBubble}>
             <Text style={styles.readyText}>I AM READY!</Text>
-          </View>
+          </PopIn>
         )}
       </LinearGradient>
     </Animated.View>

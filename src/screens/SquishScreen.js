@@ -20,11 +20,10 @@ import WatchAdButton from '../components/WatchAdButton';
 // finger both dents the creature *and* slowly spins it while dragging (no
 // separate two-finger orbit gesture, see SquishyToy.js), a lump-sum coin
 // reward lands on release scaled by how long you held (capped at 60, see
-// `rewardForHoldMs`), and every 100-coin milestone crossed pops a fake
-// "AD BREAK" interstitial the way the source's addCoins() does. Watching a
-// rewarded ad doubles the current coin total outright (source: `addCoins
-// (this.state.coins)`) rather than the old build's timed 2x-multiplier
-// window.
+// `rewardForHoldMs`). Watching a rewarded ad opens a 60s "double coins"
+// window (source: `startBonus()` / `BONUS_MS`): every squish reward is ×2
+// while it runs, a "×2 SQUISH POINTS!" flash pops on finish, and a live
+// countdown widget sits above the bottom panel until it expires.
 
 // The interactive play area (the "square"): a centred box the creature lives
 // in. Sized to the device rather than a fixed 220 so the creature reads big
@@ -32,8 +31,9 @@ import WatchAdButton from '../components/WatchAdButton';
 const STAGE_SIZE = Math.min(Math.round(Dimensions.get('window').width - 32), 380);
 const RIPPLE_LIFETIME_MS = 620;
 const REWARD_VISIBLE_MS = 900;
-const INTERSTITIAL_CONTINUE_DELAY_MS = 1400;
 const DOUBLE_FLASH_MS = 1800;
+// Watching a rewarded ad grants a 60s window where every squish reward is ×2.
+const BONUS_MS = 60000;
 const SPEED_TAP_WINDOW_MS = 60000;
 const SPEED_TAP_THRESHOLD = 60;
 
@@ -66,16 +66,39 @@ function Ripple({ x, y }) {
   );
 }
 
-function HandIcon({ color, fingers = 1, anim }) {
+// The prototype's `popIn` keyframe (see LoadingScreen): springs in from small +
+// tilted + invisible, overshoots, then settles. Re-mount (via `key`) to replay.
+function PopIn({ style, children }) {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(t, { toValue: 1, duration: 460, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+  }, [t]);
+  const opacity = t.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 1] });
+  const scale = t.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.4, 1.12, 1] });
+  const rotate = t.interpolate({ inputRange: [0, 0.6, 1], outputRange: ['-8deg', '3deg', '0deg'] });
+  return <Animated.View style={[style, { opacity, transform: [{ scale }, { rotate }] }]}>{children}</Animated.View>;
+}
+
+// The three bottom-panel hint hands, matching the prototype art: a rounded palm,
+// one or two finger bars, an angled thumb, and (single-finger hands only) two
+// small knuckle dots in the darker `accent` tone.
+function HandIcon({ color, accent, fingers = 1, anim }) {
   return (
     <Animated.View style={[styles.handIcon, anim]}>
       <View style={[styles.handPalm, { backgroundColor: color }]} />
       {fingers === 1 ? (
-        <View style={[styles.handFinger, { backgroundColor: color, left: 9 }]} />
+        <View style={[styles.handFinger, { backgroundColor: color, left: 8, top: 4, width: 7, height: 16 }]} />
       ) : (
         <>
-          <View style={[styles.handFinger, { backgroundColor: color, left: 7, width: 5 }]} />
-          <View style={[styles.handFinger, { backgroundColor: color, left: 14, width: 5 }]} />
+          <View style={[styles.handFinger, { backgroundColor: color, left: 8, top: 3, width: 6, height: 17 }]} />
+          <View style={[styles.handFinger, { backgroundColor: color, left: 15, top: 5, width: 6, height: 15 }]} />
+        </>
+      )}
+      <View style={[styles.handThumb, { backgroundColor: accent }]} />
+      {fingers === 1 && (
+        <>
+          <View style={[styles.handKnuckle, { backgroundColor: accent, top: 11, left: 16 }]} />
+          <View style={[styles.handKnuckle, { backgroundColor: accent, top: 15, left: 17 }]} />
         </>
       )}
     </Animated.View>
@@ -153,14 +176,35 @@ export default function SquishScreen({
   const [rewardAmount, setRewardAmount] = useState(0);
   const [rewardKey, setRewardKey] = useState(0);
   const [wheelOpen, setWheelOpen] = useState(false);
-  const [interstitial, setInterstitial] = useState(false);
-  const [interstitialReady, setInterstitialReady] = useState(false);
   const [doubleFlash, setDoubleFlash] = useState(false);
+  const [doubleFlashKey, setDoubleFlashKey] = useState(0);
+  // Timestamp the 60s double-coins window ends at (null while inactive), plus a
+  // `now` that ticks every 250ms so the countdown widget re-renders.
+  const [bonusEndsAt, setBonusEndsAt] = useState(null);
+  const [now, setNow] = useState(() => Date.now());
 
   const wheelAnim = useRef(new Animated.Value(0)).current;
   const handSway1 = useLoopAnim({ duration: 1400 });
   const handSway2 = useLoopAnim({ duration: 1400 });
   const tapPulseAnim = useLoopAnim({ duration: 900 });
+  const bonusCoinAnim = useLoopAnim({ duration: 1300 });
+
+  useEffect(() => {
+    if (!bonusEndsAt) return undefined;
+    const id = setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      if (t >= bonusEndsAt) setBonusEndsAt(null);
+    }, 250);
+    return () => clearInterval(id);
+  }, [bonusEndsAt]);
+
+  const bonusRemain = bonusEndsAt ? Math.max(0, bonusEndsAt - now) : 0;
+  const bonusActive = bonusRemain > 0;
+  const bonusSecs = Math.ceil(bonusRemain / 1000);
+  const bonusTimeText = `${Math.floor(bonusSecs / 60)}:${String(bonusSecs % 60).padStart(2, '0')}`;
+  const bonusPct = Math.max(0, Math.min(100, (bonusRemain / BONUS_MS) * 100));
+  const bonusCoinScale = bonusCoinAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] });
 
   useEffect(() => {
     const sound = new SquishSound();
@@ -215,30 +259,28 @@ export default function SquishScreen({
     onRecordPress,
     onEarnCoins,
     onMarkAchievement,
+    bonusEndsAt,
   };
 
   const grantReward = useCallback((amount) => {
     const { coinSoundEnabled: coinSoundOn, onEarnCoins: earnCoins } = latestRef.current;
-    setDisplayCoins((before) => {
-      const after = before + amount;
-      if (Math.floor(after / 100) > Math.floor(before / 100)) {
-        setInterstitial(true);
-        setInterstitialReady(false);
-        setTimeout(() => setInterstitialReady(true), INTERSTITIAL_CONTINUE_DELAY_MS);
-      }
-      return after;
-    });
+    setDisplayCoins((before) => before + amount);
     if (coinSoundOn) coinSoundRef.current?.play();
     earnCoins && earnCoins(amount);
   }, []);
 
+  // Finishing a rewarded ad doesn't pay out directly — it opens the 60s ×2
+  // window (see the reward calc in onPanResponderRelease) and pops the flash.
   const handleAdReward = useCallback(() => {
-    const { displayCoins: current, achievements: liveAchievements, onMarkAchievement: markAch } = latestRef.current;
-    grantReward(current);
+    const { achievements: liveAchievements, onMarkAchievement: markAch } = latestRef.current;
+    const t = Date.now();
+    setBonusEndsAt(t + BONUS_MS);
+    setNow(t);
     setDoubleFlash(true);
+    setDoubleFlashKey((k) => k + 1);
     setTimeout(() => setDoubleFlash(false), DOUBLE_FLASH_MS);
     if (!liveAchievements.watchAd) markAch && markAch('watchAd');
-  }, [grantReward]);
+  }, []);
 
   const ndcFromLocation = (locationX, locationY) => ({
     x: (locationX / STAGE_SIZE) * 2 - 1,
@@ -353,7 +395,8 @@ export default function SquishScreen({
         const { achievements: liveAchievements, releaseSoundEnabled: releaseSoundOn, toy: currentToy, onRecordPress: recordPress, onMarkAchievement: markAch } = latestRef.current;
 
         const holdMs = Date.now() - holdStartRef.current;
-        const reward = rewardForHoldMs(holdMs);
+        const bonusOn = !!latestRef.current.bonusEndsAt && latestRef.current.bonusEndsAt > Date.now();
+        const reward = rewardForHoldMs(holdMs) * (bonusOn ? 2 : 1);
 
         const now = Date.now();
         const timestamps = [...tapTimestampsRef.current, now].filter((t) => now - t < SPEED_TAP_WINDOW_MS);
@@ -465,12 +508,38 @@ export default function SquishScreen({
         )}
       </LinearGradient>
 
+      {bonusActive && (
+        <View style={styles.bonusBar}>
+          <View style={styles.bonusInner}>
+            <Animated.View style={[styles.bonusCoin, { transform: [{ scale: bonusCoinScale }] }]}>
+              <LinearGradient
+                colors={squadGradients.goldDot.colors}
+                start={squadGradients.goldDot.start}
+                end={squadGradients.goldDot.end}
+                style={StyleSheet.absoluteFillObject}
+              />
+              <Text style={styles.bonusCoinText}>×2</Text>
+            </Animated.View>
+            <View style={styles.bonusBody}>
+              <View style={styles.bonusTopRow}>
+                <Text style={styles.bonusLabel}>DOUBLE COINS ACTIVE</Text>
+                <Text style={styles.bonusTime}>{bonusTimeText}</Text>
+              </View>
+              <View style={styles.bonusTrack}>
+                <View style={[styles.bonusFill, { width: `${bonusPct}%` }]} />
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
+
       <View style={styles.bottomPanel}>
         <View style={styles.bottomRow}>
           <View style={styles.hints}>
             <View style={styles.hintRow}>
               <HandIcon
                 color="#ffb8dd"
+                accent="#ff9ecd"
                 anim={{ transform: [{ translateX: handSway1.interpolate({ inputRange: [0, 1], outputRange: [-8, 8] }) }, { rotate: handSway1.interpolate({ inputRange: [0, 1], outputRange: ['-6deg', '6deg'] }) }] }}
               />
               <Text style={styles.hintText}>FOR SQUASHING</Text>
@@ -478,6 +547,7 @@ export default function SquishScreen({
             <View style={styles.hintRow}>
               <HandIcon
                 color="#a5f3fc"
+                accent="#67e8f9"
                 fingers={2}
                 anim={{ transform: [{ translateX: handSway2.interpolate({ inputRange: [0, 1], outputRange: [-8, 8] }) }, { rotate: handSway2.interpolate({ inputRange: [0, 1], outputRange: ['-6deg', '6deg'] }) }] }}
               />
@@ -486,13 +556,14 @@ export default function SquishScreen({
             <View style={styles.hintRow}>
               <HandIcon
                 color="#ffe27a"
+                accent="#fcd34d"
                 anim={{ transform: [{ translateY: tapPulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 6] }) }, { scale: tapPulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0.9] }) }] }}
               />
               <Text style={styles.hintText}>FOR EARNING MORE COINS</Text>
             </View>
           </View>
 
-          <WatchAdButton onRewardEarned={handleAdReward} />
+          <WatchAdButton onRewardEarned={handleAdReward} bonusActive={bonusActive} />
         </View>
 
         <View style={[styles.adSlot, { paddingBottom: insets.bottom }]}>
@@ -500,25 +571,11 @@ export default function SquishScreen({
         </View>
       </View>
 
-      {interstitial && (
-        <View style={styles.overlay}>
-          <View style={styles.adBreakBox}>
-            <Text style={styles.adBreakText}>AD BREAK</Text>
-          </View>
-          <Text style={styles.adBreakSub}>100 coins earned — thanks for playing!</Text>
-          {interstitialReady && (
-            <Pressable onPress={() => setInterstitial(false)}>
-              <LinearGradient colors={squadGradients.ctaPink.colors} start={squadGradients.ctaPink.start} end={squadGradients.ctaPink.end} style={styles.continueButton}>
-                <Text style={styles.continueText}>CONTINUE</Text>
-              </LinearGradient>
-            </Pressable>
-          )}
-        </View>
-      )}
-
       {doubleFlash && (
-        <View style={styles.overlay} pointerEvents="none">
-          <Text style={styles.doubleFlashText}>×2 SQUISH POINTS!</Text>
+        <View style={styles.flashOverlay} pointerEvents="none">
+          <PopIn key={doubleFlashKey}>
+            <Text style={styles.doubleFlashText}>×2 SQUISH POINTS!</Text>
+          </PopIn>
         </View>
       )}
     </View>
@@ -600,32 +657,77 @@ const styles = StyleSheet.create({
   switchKnob: { position: 'absolute', top: 2, width: 18, height: 18, borderRadius: 9, backgroundColor: '#fff' },
   bottomPanel: { flex: 3, backgroundColor: '#150a2e', borderTopWidth: 1, borderTopColor: squadColors.panelBorder },
   bottomRow: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
-  hints: { gap: 10 },
+  hints: { gap: 10, flexShrink: 1 },
   hintRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  handIcon: { width: 26, height: 32 },
-  handPalm: { position: 'absolute', bottom: 0, left: 5, width: 16, height: 17, borderRadius: 8, borderBottomLeftRadius: 4, borderBottomRightRadius: 4 },
-  handFinger: { position: 'absolute', top: 0, width: 6, height: 13, borderRadius: 3 },
-  hintText: { color: squadColors.textLavender, fontFamily: squadFonts.bodyExtraBold, fontSize: 11 },
+  handIcon: { width: 28, height: 34 },
+  handPalm: {
+    position: 'absolute',
+    bottom: 0,
+    left: 5,
+    width: 18,
+    height: 17,
+    borderTopLeftRadius: 5,
+    borderTopRightRadius: 7,
+    borderBottomRightRadius: 9,
+    borderBottomLeftRadius: 9,
+  },
+  handFinger: { position: 'absolute', borderRadius: 3, borderWidth: 1, borderColor: 'rgba(21,10,46,0.55)' },
+  handThumb: {
+    position: 'absolute',
+    bottom: 6,
+    left: 1,
+    width: 8,
+    height: 7,
+    borderRadius: 4,
+    transform: [{ rotate: '-30deg' }],
+    borderWidth: 1,
+    borderColor: 'rgba(21,10,46,0.55)',
+  },
+  handKnuckle: { position: 'absolute', width: 6, height: 5, borderRadius: 3 },
+  hintText: { color: squadColors.textLavender, fontFamily: squadFonts.bodyExtraBold, fontSize: 11, flexShrink: 1 },
   adSlot: { alignItems: 'center' },
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(5,2,15,0.92)', alignItems: 'center', justifyContent: 'center', zIndex: 30 },
-  adBreakBox: {
-    width: '80%',
-    aspectRatio: 16 / 10,
-    backgroundColor: squadColors.panel,
-    borderWidth: 2,
-    borderColor: '#4c3a80',
-    borderStyle: 'dashed',
-    borderRadius: 20,
+  bonusBar: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: squadColors.bgDeepest },
+  bonusInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1.5,
+    borderColor: squadColors.goldAmber,
+    backgroundColor: '#2a1a08',
+    overflow: 'hidden',
+  },
+  bonusCoin: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  adBreakText: { color: squadColors.textFaint, fontFamily: squadFonts.headingExtraBold, letterSpacing: 2 },
-  adBreakSub: { marginTop: 16, color: squadColors.textMutedLavender, fontFamily: squadFonts.bodyBold, fontSize: 13 },
-  continueButton: { marginTop: 18, paddingVertical: 12, paddingHorizontal: 30, borderRadius: 14 },
-  continueText: { color: '#fff', fontFamily: squadFonts.headingExtraBold },
+  // Baloo has tall built-in font padding that shoves a short glyph like "×2"
+  // above the optical centre — kill the padding and pin the line box to the
+  // glyph so `justifyContent: 'center'` on the coin actually centres it.
+  bonusCoinText: {
+    fontFamily: squadFonts.headingExtraBold,
+    fontSize: 13,
+    lineHeight: 13,
+    color: '#5a3a00',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
+  bonusBody: { flex: 1, gap: 5 },
+  bonusTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  bonusLabel: { color: squadColors.goldLight, fontFamily: squadFonts.bodyExtraBold, fontSize: 9, letterSpacing: 1.4 },
+  bonusTime: { fontFamily: squadFonts.headingExtraBold, fontSize: 16, color: squadColors.textWhite },
+  bonusTrack: { height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.14)', overflow: 'hidden' },
+  bonusFill: { height: '100%', borderRadius: 3, backgroundColor: squadColors.goldAmber },
+  flashOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', zIndex: 32 },
   doubleFlashText: {
     fontFamily: squadFonts.headingExtraBold,
-    fontSize: 40,
+    fontSize: 44,
     color: squadColors.goldLight,
     textShadowColor: 'rgba(255,183,3,0.9)',
     textShadowRadius: 24,

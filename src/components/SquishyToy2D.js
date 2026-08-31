@@ -32,6 +32,13 @@ const SQUASH_Y = 0.26; // how much it flattens at full press
 const LEAN_DEG = 14; // max skew toward the contact point
 const SHIFT_PX = 26; // max translate toward the contact point
 
+// Extra viewBox room (in the SVG's 100-unit space) so antennae / flame / horns
+// / tentacles / the silhouette glow don't get clipped at the stage edges. We
+// scale the SVG up by the same factor so the *body* still fills `size` — only
+// the previously-clipped overhang spills (harmlessly) past the touch box.
+const ART_BLEED = 15;
+const BLEED_SCALE = (100 + ART_BLEED * 2) / 100;
+
 const SquishyToy2D = forwardRef(function SquishyToy2D({ creatureId = '0', size = 220, onSquish, onRelease }, ref) {
   const press = useSharedValue(0); // 0 rest .. 1 fully pressed
   const pressX = useSharedValue(0); // -0.5 .. 0.5 (contact offset from centre)
@@ -139,7 +146,12 @@ const SquishyToy2D = forwardRef(function SquishyToy2D({ creatureId = '0', size =
   return (
     <View style={[styles.stage, { width: size, height: size }]} pointerEvents="none">
       <Animated.View style={animatedStyle}>
-        <CreatureThumbnail creatureId={String(creatureId)} size={size} animate={false} />
+        <CreatureThumbnail
+          creatureId={String(creatureId)}
+          size={size * BLEED_SCALE}
+          bleed={ART_BLEED}
+          animate={false}
+        />
       </Animated.View>
     </View>
   );

@@ -85,7 +85,7 @@ export default function HomeScreen({
       <View style={[styles.content, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.nickname}>{nickname}</Text>
+            <Text style={styles.nickname}>Hey {nickname} 👋</Text>
             <View style={styles.pillsRow}>
               <View style={styles.pill}>
                 <LinearGradient
@@ -141,7 +141,7 @@ export default function HomeScreen({
         onClose={() => setSettingsOpen(false)}
         nickname={nickname}
         onSaveNickname={onSaveNickname}
-        adsFree={adsFree}
+        adsFree={true}
         onClaimAdsFree={onClaimAdsFree}
         onSubmitFeedback={onSubmitFeedback}
         onLogout={onLogout}

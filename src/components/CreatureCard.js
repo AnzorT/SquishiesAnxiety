@@ -161,49 +161,6 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
             <Rect x="0" y="0" width="100%" height="100%" fill="url(#imgAreaGlow)" />
           </Svg>
           <CreatureThumbnail creatureId={creature.id} mood={mood} size={110} locked={!unlocked} />
-
-          {showUnlockCelebration ? (
-            <View style={styles.overlayFill} pointerEvents="none">
-              <View style={styles.celebrationGlow} />
-              <Animated.Text
-                style={[styles.celebrationText, { transform: [{ scale: popScale }, { rotate: popRotate.interpolate({ inputRange: [-6, 0], outputRange: ['-6deg', '0deg'] }) }] }]}
-              >
-                UNLOCKED!
-              </Animated.Text>
-            </View>
-          ) : lockedNoKey ? (
-            <View style={styles.overlayFill} pointerEvents="none">
-              <Animated.View style={{ alignItems: 'center', transform: [{ rotate: wobbleRotate }] }}>
-                <View style={styles.padlockShackle} />
-                <LinearGradient colors={['#e2e8f0', '#94a3b8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.padlockBody}>
-                  <View style={styles.padlockDot} />
-                </LinearGradient>
-              </Animated.View>
-            </View>
-          ) : lockedHasKey ? (
-            <Pressable style={styles.overlayFill} onPressIn={handlePressIn} onPressOut={handlePressOut}>
-              <View style={styles.keyIconBox}>
-                <View style={styles.keyBow} />
-                <View style={styles.keyTeeth} />
-                <View style={[styles.keyRing, { left: shaftLeft - 8 }]} />
-                <LinearGradient
-                  colors={[squadColors.goldLight, squadColors.goldDeep]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[styles.keyShaft, { left: shaftLeft }]}
-                />
-              </View>
-              <Text style={styles.holdLabel}>HOLD TO UNLOCK</Text>
-              <View style={styles.progressTrack}>
-                <LinearGradient
-                  colors={[squadColors.gold, squadColors.pinkLight]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[styles.progressFill, { width: `${unlockProgress * 100}%` }]}
-                />
-              </View>
-            </Pressable>
-          ) : null}
         </View>
 
         <View style={styles.infoArea}>
@@ -226,6 +183,51 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
             )}
           </View>
         </View>
+
+        {/* Lock / key / celebration sit in an absolute layer over the WHOLE
+            card so they read as centred on the card, not just the image area. */}
+        {showUnlockCelebration ? (
+          <View style={styles.cardOverlay} pointerEvents="none">
+            <View style={styles.celebrationGlow} />
+            <Animated.Text
+              style={[styles.celebrationText, { transform: [{ scale: popScale }, { rotate: popRotate.interpolate({ inputRange: [-6, 0], outputRange: ['-6deg', '0deg'] }) }] }]}
+            >
+              UNLOCKED!
+            </Animated.Text>
+          </View>
+        ) : lockedNoKey ? (
+          <View style={styles.cardOverlay} pointerEvents="none">
+            <Animated.View style={{ alignItems: 'center', transform: [{ rotate: wobbleRotate }] }}>
+              <View style={styles.padlockShackle} />
+              <LinearGradient colors={['#e2e8f0', '#94a3b8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.padlockBody}>
+                <View style={styles.padlockDot} />
+              </LinearGradient>
+            </Animated.View>
+          </View>
+        ) : lockedHasKey ? (
+          <Pressable style={styles.cardOverlay} onPressIn={handlePressIn} onPressOut={handlePressOut}>
+            <View style={styles.keyIconBox}>
+              <View style={styles.keyBow} />
+              <View style={styles.keyTeeth} />
+              <View style={[styles.keyRing, { left: shaftLeft - 8 }]} />
+              <LinearGradient
+                colors={[squadColors.goldLight, squadColors.goldDeep]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.keyShaft, { left: shaftLeft }]}
+              />
+            </View>
+            <Text style={styles.holdLabel}>HOLD TO UNLOCK</Text>
+            <View style={styles.progressTrack}>
+              <LinearGradient
+                colors={[squadColors.gold, squadColors.pinkLight]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.progressFill, { width: `${unlockProgress * 100}%` }]}
+              />
+            </View>
+          </Pressable>
+        ) : null}
       </LinearGradient>
       </Pressable>
     </Animated.View>
@@ -255,7 +257,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
   },
-  overlayFill: {
+  cardOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',

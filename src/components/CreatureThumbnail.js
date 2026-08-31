@@ -321,7 +321,11 @@ function useMoodAnimation(mood, size, animate = true) {
 
 // ---- the component ------------------------------------------------------
 
-export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90, locked = false, animate = true }) {
+// `bleed` (viewBox units, 0 = off) pads the SVG viewport on every side so the
+// bits of art that sit outside the 100x100 body box — antennae, flame, horns,
+// Noodle's tentacles, the silhouette glow — aren't clipped at the edges. Only
+// the squish rig passes it; every other screen keeps the tight default framing.
+export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90, locked = false, animate = true, bleed = 0 }) {
   const spec = CREATURES[creatureId] ?? CREATURES[0];
   const { translateY, scale, rotate } = useMoodAnimation(mood, size, animate);
 
@@ -372,7 +376,7 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
         transform: [{ translateY }, { scale }, { rotate }],
       }}
     >
-      <Svg width={size} height={size} viewBox={`0 0 ${W} ${W}`}>
+      <Svg width={size} height={size} viewBox={`${-bleed} ${-bleed} ${W + bleed * 2} ${W + bleed * 2}`}>
         <Defs>
           {spec.body.radial ? (
             <RadialGradient id={gradId} cx={spec.body.radial.cx} cy={spec.body.radial.cy} r="75%">
