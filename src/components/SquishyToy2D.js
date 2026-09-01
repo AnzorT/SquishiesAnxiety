@@ -39,6 +39,12 @@ const SHIFT_PX = 26; // max translate toward the contact point
 const ART_BLEED = 15;
 const BLEED_SCALE = (100 + ART_BLEED * 2) / 100;
 
+// The squish-stage creature reads ~20% larger than its touch box. Only the
+// art scales up (it spills past the box like the bleed already does) — the
+// stage View, the PanResponder hit area and the NDC touch math in SquishScreen
+// stay on the original `size`.
+const ART_SCALE = 1.2;
+
 const SquishyToy2D = forwardRef(function SquishyToy2D({ creatureId = '0', size = 220, onSquish, onRelease }, ref) {
   const press = useSharedValue(0); // 0 rest .. 1 fully pressed
   const pressX = useSharedValue(0); // -0.5 .. 0.5 (contact offset from centre)
@@ -134,7 +140,7 @@ const SquishyToy2D = forwardRef(function SquishyToy2D({ creatureId = '0', size =
         // shift toward the finger, and drop as the body flattens so the
         // squash reads as anchored at the contact point rather than centred
         { translateX: pressX.value * SHIFT_PX * p },
-        { translateY: pressY.value * SHIFT_PX * 0.7 * p + (1 - scaleY) * size * 0.5 * pressY.value },
+        { translateY: pressY.value * SHIFT_PX * 0.7 * p + (1 - scaleY) * size * ART_SCALE * 0.5 * pressY.value },
         { rotateZ: `${rot.value + wobble.value}deg` },
         { skewX: `${pressX.value * LEAN_DEG * p}deg` },
         { scaleX },
@@ -148,9 +154,10 @@ const SquishyToy2D = forwardRef(function SquishyToy2D({ creatureId = '0', size =
       <Animated.View style={animatedStyle}>
         <CreatureThumbnail
           creatureId={String(creatureId)}
-          size={size * BLEED_SCALE}
+          size={size * BLEED_SCALE * ART_SCALE}
           bleed={ART_BLEED}
           animate={false}
+          glow={false}
         />
       </Animated.View>
     </View>

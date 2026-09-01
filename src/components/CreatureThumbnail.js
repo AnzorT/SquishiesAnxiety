@@ -325,7 +325,7 @@ function useMoodAnimation(mood, size, animate = true) {
 // bits of art that sit outside the 100x100 body box — antennae, flame, horns,
 // Noodle's tentacles, the silhouette glow — aren't clipped at the edges. Only
 // the squish rig passes it; every other screen keeps the tight default framing.
-export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90, locked = false, animate = true, bleed = 0 }) {
+export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90, locked = false, animate = true, bleed = 0, glow = true }) {
   const spec = CREATURES[creatureId] ?? CREATURES[0];
   const { translateY, scale, rotate } = useMoodAnimation(mood, size, animate);
 
@@ -345,6 +345,8 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
   else bodyPathD = blobPath(bodyBox, spec.body.corners);
 
   // --- the glow / drop-shadow around the body ---------------------------
+  // Skipped entirely when `glow={false}` (the squish stage passes this — the
+  // big centred creature there reads better without a halo).
   // The source draws this with a CSS `box-shadow` (`0 14px 26px rgba(...)`,
   // or `0 0 30px` for Ember) — a blur of the body's *own silhouette*, so it
   // hugs the blob shape and feathers out smoothly. react-native-svg 15.2
@@ -435,11 +437,13 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
           ) : null}
         </Defs>
 
-        {glowLayers.map(([s, op], i) => (
-          <G key={`glow-${i}`} scale={s} originX={bcx} originY={bcy} y={glowDy}>
-            <Path d={bodyPathD} fill={glowColor} opacity={op} />
-          </G>
-        ))}
+        {glow
+          ? glowLayers.map(([s, op], i) => (
+              <G key={`glow-${i}`} scale={s} originX={bcx} originY={bcy} y={glowDy}>
+                <Path d={bodyPathD} fill={glowColor} opacity={op} />
+              </G>
+            ))
+          : null}
 
         {spec.extras ? spec.extras(bodyBox, gray) : null}
 
