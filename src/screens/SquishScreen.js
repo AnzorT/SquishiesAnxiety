@@ -4,8 +4,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Canvas } from '@react-three/fiber';
 import { MaterialIcons } from '@expo/vector-icons';
+import { InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
 import SquishyToy, { MODEL_3D_IDS } from '../components/SquishyToy';
 import SquishyToy2D from '../components/SquishyToy2D';
+import { INTERSTITIAL_AD_UNIT_ID } from '../firebase/ads';
 
 // Some creatures render from a real Tripo3D mesh (MODEL_3D_IDS, the single
 // source of truth in SquishyToy); every other creature squishes as the 2D
@@ -17,14 +19,21 @@ import { squadColors, squadGradients, squadFonts } from '../theme/squadTheme';
 import AdBanner from '../components/AdBanner';
 import WatchAdButton from '../components/WatchAdButton';
 
-// Squish stage — matches "ASMR Creature Squash Game.html" exactly: a single
-// finger both dents the creature *and* slowly spins it while dragging (no
-// separate two-finger orbit gesture, see SquishyToy.js), a lump-sum coin
-// reward lands on release scaled by how long you held (capped at 60, see
-// `rewardForHoldMs`). Watching a rewarded ad opens a 60s "double coins"
-// window (source: `startBonus()` / `BONUS_MS`): every squish reward is ×2
-// while it runs, a "×2 SQUISH POINTS!" flash pops on finish, and a live
-// countdown widget sits above the bottom panel until it expires.
+// Squish stage — a single finger both dents the creature *and* slowly spins it
+// while dragging (no separate two-finger orbit gesture, see SquishyToy.js).
+//
+// Coin earning:
+//  - 3D-model creatures: you EARN WHILE YOU HOLD — ~2 coins/sec (EARN_PER_TICK
+//    every EARN_TICK_MS) for as long as a one-finger press is down; two fingers
+//    (rotate) earn nothing. The total banks to the profile on release.
+//  - 2D creatures: unchanged — a lump sum on release scaled by hold time
+//    (`rewardForHoldMs`, capped at 60).
+// Watching a rewarded ad opens a 60s "double coins" window (`BONUS_MS`) that
+// doubles every payout and pops a "×2 SQUISH POINTS!" flash.
+//
+// Touch-abuse guard: more than ABUSE_TAP_LIMIT quick jabs at a 3D model inside
+// ABUSE_WINDOW_MS pops the PunishmentModal — the only way out is to watch an
+// interstitial ad.
 
 // The interactive play area (the "square"): a centred box the creature lives
 // in. Sized to the device rather than a fixed 220 so the creature reads big
@@ -37,6 +46,18 @@ const DOUBLE_FLASH_MS = 1800;
 const BONUS_MS = 60000;
 const SPEED_TAP_WINDOW_MS = 60000;
 const SPEED_TAP_THRESHOLD = 60;
+
+// Passive earning: while you HOLD a one-finger press on a 3D-model creature you
+// bank coins over time (~2 / second, ticked every 850ms). Two fingers = rotate,
+// which earns nothing.
+const EARN_TICK_MS = 850;
+const EARN_PER_TICK = 2;
+
+// Touch-abuse guard: more than this many separate taps on a 3D model inside the
+// window pops the "you're tapping too much" punishment (an interstitial ad).
+const ABUSE_WINDOW_MS = 60000;
+const ABUSE_TAP_LIMIT = 5;
+const ABUSE_COOLDOWN_MS = 60000;
 
 const DEFAULT_SQUISH_SOUND = require('../../assets/audio/slime.wav');
 
@@ -140,6 +161,65 @@ function SoundSwitch({ value, onToggle }) {
   );
 }
 
+// Shown when the player hammers the 3D model too fast. There's exactly one way
+// out: "ACCEPT PUNISHMENT", which loads and shows a full-screen interstitial ad.
+// When the ad closes (or fails to load) the modal dismisses itself.
+function PunishmentModal({ visible, onDismiss }) {
+  const [loading, setLoading] = useState(false);
+  const adRef = useRef(null);
+  const unsubsRef = useRef([]);
+
+  useEffect(() => {
+    if (!visible) setLoading(false);
+    return () => {
+      unsubsRef.current.forEach((fn) => fn());
+      unsubsRef.current = [];
+    };
+  }, [visible]);
+
+  const acceptPunishment = useCallback(() => {
+    if (loading) return;
+    setLoading(true);
+    const ad = InterstitialAd.createForAdRequest(INTERSTITIAL_AD_UNIT_ID);
+    adRef.current = ad;
+    const done = () => {
+      unsubsRef.current.forEach((fn) => fn());
+      unsubsRef.current = [];
+      setLoading(false);
+      onDismiss();
+    };
+    unsubsRef.current = [
+      ad.addAdEventListener(AdEventType.LOADED, () => ad.show()),
+      ad.addAdEventListener(AdEventType.CLOSED, done),
+      ad.addAdEventListener(AdEventType.ERROR, done),
+    ];
+    // If the ad never loads, don't trap the player forever.
+    const t = setTimeout(done, 8000);
+    unsubsRef.current.push(() => clearTimeout(t));
+    ad.load();
+  }, [loading, onDismiss]);
+
+  if (!visible) return null;
+  return (
+    <View style={styles.punishOverlay}>
+      <View style={styles.punishCard}>
+        <Text style={styles.punishEmoji}>🚨</Text>
+        <Text style={styles.punishTitle}>WHOA THERE!</Text>
+        <Text style={styles.punishBody}>
+          You&apos;re tapping way too much.{'\n'}You will be punished.
+        </Text>
+        <Pressable
+          onPress={acceptPunishment}
+          disabled={loading}
+          style={({ pressed }) => [styles.punishButton, (pressed || loading) && styles.punishButtonDim]}
+        >
+          <Text style={styles.punishButtonText}>{loading ? 'LOADING…' : 'ACCEPT PUNISHMENT'}</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 export default function SquishScreen({
   toy,
   coins = 0,
@@ -164,6 +244,12 @@ export default function SquishScreen({
   const holdStartRef = useRef(0);
   const rippleSeqRef = useRef(0);
   const tapTimestampsRef = useRef([]);
+  // passive-earn interval + coins banked this hold (flushed to the profile on release)
+  const earnIntervalRef = useRef(null);
+  const earnAccumRef = useRef(0);
+  // touch-abuse guard: 3D-model tap timestamps + a cooldown so it can't spam
+  const abuseTapsRef = useRef([]);
+  const abuseCooldownUntilRef = useRef(0);
   // 'none' | 'poke' (one finger, squishing) | 'orbit' (two fingers, turning)
   const gestureModeRef = useRef('none');
   const lastCentroidRef = useRef({ x: 0, y: 0 });
@@ -177,6 +263,7 @@ export default function SquishScreen({
   const [rewardAmount, setRewardAmount] = useState(0);
   const [rewardKey, setRewardKey] = useState(0);
   const [wheelOpen, setWheelOpen] = useState(false);
+  const [punishOpen, setPunishOpen] = useState(false);
   const [doubleFlash, setDoubleFlash] = useState(false);
   const [doubleFlashKey, setDoubleFlashKey] = useState(0);
   // Timestamp the 60s double-coins window ends at (null while inactive), plus a
@@ -270,6 +357,66 @@ export default function SquishScreen({
     earnCoins && earnCoins(amount);
   }, []);
 
+  const is3DToy = useCallback(() => MODEL_3D_IDS.has(String(latestRef.current?.toy?.id)), []);
+
+  // Passive earning while a one-finger press is held on a 3D model: bank
+  // EARN_PER_TICK coins every EARN_TICK_MS (doubled while the bonus window is
+  // live), updating the on-screen counter + playing the coin ding each tick.
+  // The profile write is deferred to `stopEarning` so we don't hammer Firestore.
+  const startEarning = useCallback(() => {
+    if (earnIntervalRef.current) return;
+    earnAccumRef.current = 0;
+    earnIntervalRef.current = setInterval(() => {
+      const { bonusEndsAt: be, coinSoundEnabled: coinSoundOn } = latestRef.current;
+      const gain = EARN_PER_TICK * (be && be > Date.now() ? 2 : 1);
+      earnAccumRef.current += gain;
+      setDisplayCoins((c) => c + gain);
+      if (coinSoundOn) coinSoundRef.current?.play();
+    }, EARN_TICK_MS);
+  }, []);
+
+  const stopEarning = useCallback(() => {
+    if (earnIntervalRef.current) {
+      clearInterval(earnIntervalRef.current);
+      earnIntervalRef.current = null;
+    }
+    const earned = earnAccumRef.current;
+    earnAccumRef.current = 0;
+    if (earned > 0) {
+      const { onEarnCoins: earnCoins } = latestRef.current;
+      earnCoins && earnCoins(earned);
+      setRewardAmount(earned);
+      setShowReward(true);
+      setRewardKey((k) => k + 1);
+      setTimeout(() => setShowReward(false), REWARD_VISIBLE_MS);
+    }
+    return earned;
+  }, []);
+
+  useEffect(() => () => {
+    if (earnIntervalRef.current) clearInterval(earnIntervalRef.current);
+  }, []);
+
+  // Called on every completed one-finger tap of a 3D model. Trips the punishment
+  // once the tap count in the rolling window passes ABUSE_TAP_LIMIT (outside the
+  // post-punishment cooldown).
+  const registerAbuseTap = useCallback(() => {
+    const t = Date.now();
+    const taps = [...abuseTapsRef.current, t].filter((ts) => t - ts < ABUSE_WINDOW_MS);
+    abuseTapsRef.current = taps;
+    if (taps.length > ABUSE_TAP_LIMIT && t >= abuseCooldownUntilRef.current) {
+      abuseTapsRef.current = [];
+      abuseCooldownUntilRef.current = t + ABUSE_COOLDOWN_MS;
+      setPunishOpen(true);
+    }
+  }, []);
+
+  const dismissPunishment = useCallback(() => {
+    setPunishOpen(false);
+    abuseTapsRef.current = [];
+    abuseCooldownUntilRef.current = Date.now() + ABUSE_COOLDOWN_MS;
+  }, []);
+
   // Finishing a rewarded ad doesn't pay out directly — it opens the 60s ×2
   // window (see the reward calc in onPanResponderRelease) and pops the flash.
   const handleAdReward = useCallback(() => {
@@ -321,6 +468,7 @@ export default function SquishScreen({
           gestureHadTwoRef.current = true;
           toyRef.current?.cancelPoke();
           soundRef.current?.stop();
+          stopEarning();
           gestureModeRef.current = 'orbit';
           lastCentroidRef.current = centroidOf(touches);
         }
@@ -340,6 +488,8 @@ export default function SquishScreen({
         const ndc = ndcFromLocation(locationX, locationY);
         toyRef.current?.pointerDown(ndc.x, ndc.y);
         spawnRipple(locationX, locationY);
+        // One finger on a 3D model → start banking coins for as long as it's held.
+        if (is3DToy()) startEarning();
       },
       onPanResponderMove: (evt) => {
         const touches = evt.nativeEvent.touches || [];
@@ -352,6 +502,7 @@ export default function SquishScreen({
           if (gestureModeRef.current !== 'orbit') {
             toyRef.current?.cancelPoke();
             soundRef.current?.stop();
+            stopEarning();
             gestureModeRef.current = 'orbit';
             lastCentroidRef.current = centroidOf(touches);
             return;
@@ -389,16 +540,17 @@ export default function SquishScreen({
           toyRef.current?.endOrbit();
           toyRef.current?.pointerUp();
           soundRef.current?.stop();
+          stopEarning();
           return;
         }
         const result = toyRef.current?.pointerUp();
-        if (!result || !result.wasPoke) return;
+        if (!result || !result.wasPoke) {
+          stopEarning();
+          return;
+        }
         const { achievements: liveAchievements, releaseSoundEnabled: releaseSoundOn, toy: currentToy, onRecordPress: recordPress, onMarkAchievement: markAch } = latestRef.current;
 
         const holdMs = Date.now() - holdStartRef.current;
-        const bonusOn = !!latestRef.current.bonusEndsAt && latestRef.current.bonusEndsAt > Date.now();
-        const reward = rewardForHoldMs(holdMs) * (bonusOn ? 2 : 1);
-
         const now = Date.now();
         const timestamps = [...tapTimestampsRef.current, now].filter((t) => now - t < SPEED_TAP_WINDOW_MS);
         tapTimestampsRef.current = timestamps;
@@ -408,11 +560,21 @@ export default function SquishScreen({
 
         recordPress && recordPress(currentToy.id, holdMs);
 
-        setRewardAmount(reward);
-        setShowReward(true);
-        setRewardKey((k) => k + 1);
-        setTimeout(() => setShowReward(false), REWARD_VISIBLE_MS);
-        grantReward(reward);
+        if (MODEL_3D_IDS.has(String(currentToy.id))) {
+          // Passive earning already paid out over the hold — flush it + show the
+          // "+N" float. A quick jab (< 400ms, no full tick) earns nothing and
+          // counts toward the tap-abuse guard.
+          stopEarning();
+          if (holdMs < 400) registerAbuseTap();
+        } else {
+          const bonusOn = !!latestRef.current.bonusEndsAt && latestRef.current.bonusEndsAt > Date.now();
+          const reward = rewardForHoldMs(holdMs) * (bonusOn ? 2 : 1);
+          setRewardAmount(reward);
+          setShowReward(true);
+          setRewardKey((k) => k + 1);
+          setTimeout(() => setShowReward(false), REWARD_VISIBLE_MS);
+          grantReward(reward);
+        }
 
         soundRef.current?.stop();
         if (releaseSoundOn) popSoundRef.current?.play();
@@ -423,6 +585,7 @@ export default function SquishScreen({
         toyRef.current?.endOrbit();
         toyRef.current?.pointerUp();
         soundRef.current?.stop();
+        stopEarning();
       },
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -579,6 +742,8 @@ export default function SquishScreen({
           </PopIn>
         </View>
       )}
+
+      <PunishmentModal visible={punishOpen} onDismiss={dismissPunishment} />
     </View>
   );
 }
@@ -727,5 +892,56 @@ const styles = StyleSheet.create({
     color: squadColors.goldLight,
     textShadowColor: 'rgba(255,183,3,0.9)',
     textShadowRadius: 24,
+  },
+
+  punishOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,4,25,0.86)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 26,
+    zIndex: 60,
+  },
+  punishCard: {
+    width: '100%',
+    maxWidth: 340,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: squadColors.danger,
+    backgroundColor: squadColors.panelAlt,
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    alignItems: 'center',
+  },
+  punishEmoji: { fontSize: 44, marginBottom: 8 },
+  punishTitle: {
+    fontFamily: squadFonts.headingExtraBold,
+    fontSize: 22,
+    color: squadColors.danger,
+    letterSpacing: 1,
+    marginBottom: 10,
+  },
+  punishBody: {
+    fontFamily: squadFonts.bodyBold,
+    fontSize: 14,
+    lineHeight: 20,
+    color: squadColors.textLavender,
+    textAlign: 'center',
+    marginBottom: 22,
+  },
+  punishButton: {
+    backgroundColor: squadColors.danger,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+  },
+  punishButtonDim: { opacity: 0.6 },
+  punishButtonText: {
+    fontFamily: squadFonts.headingExtraBold,
+    fontSize: 15,
+    letterSpacing: 1,
+    color: '#ffffff',
   },
 });
