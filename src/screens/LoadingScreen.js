@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import { View, Text, Image, StyleSheet, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { squadColors, squadFonts } from '../theme/squadTheme';
 import CreatureThumbnail from '../components/CreatureThumbnail';
+import AssembleCreature from '../components/AssembleCreature';
 
 // Brief "getting the toy ready" beat between picking a card on Home and
 // SquishScreen actually mounting — matches the prototype's loading screen
@@ -65,7 +66,13 @@ export default function LoadingScreen({ creature, onFinish }) {
   return (
     <Animated.View style={[styles.flex, { opacity }]}>
       <LinearGradient colors={['#241250', '#100823']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.container}>
-        <CreatureThumbnail creatureId={creature?.id ?? '0'} mood="ready" size={170} />
+        {creature?.isCustom && creature.image ? (
+          <Image source={{ uri: creature.image }} style={styles.customArt} />
+        ) : creature?.isCustom && creature.build ? (
+          <AssembleCreature build={creature.build} size={170} />
+        ) : (
+          <CreatureThumbnail creatureId={creature?.id ?? '0'} mood="ready" size={170} />
+        )}
         {stage === 'prep' ? (
           <View style={styles.prepRow}>
             <Text style={styles.prepText}>Getting Ready</Text>
@@ -88,6 +95,7 @@ export default function LoadingScreen({ creature, onFinish }) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  customArt: { width: 170, height: 170, borderRadius: 85 },
   prepRow: { marginTop: 26, flexDirection: 'row', alignItems: 'center', gap: 10 },
   prepText: { color: squadColors.textMutedLavender, fontFamily: squadFonts.bodyExtraBold, fontSize: 14, letterSpacing: 0.5 },
   dots: { flexDirection: 'row', gap: 4 },

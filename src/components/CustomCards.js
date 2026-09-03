@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, Image, Pressable, StyleSheet, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { squadColors, squadFonts } from '../theme/squadTheme';
+import AssembleCreature from './AssembleCreature';
 
 // The two card types on Home's "MY CREATURES" tab, ported from the decoded
 // "ASMR Creature Squash Game.html": the dashed "Create your own squishy" card
@@ -51,8 +52,29 @@ export function CreateOwnCard({ onPress }) {
 }
 
 // --- a made creature ----------------------------------------------------
+//
+// `status`: 'pending' | 'running' (Tripo working, `progress` 0–100) |
+// 'ready' | 'failed'. Assemble-path creatures are always 'ready' with a
+// `build`; photo-path creatures show their source photo under a scan-line
+// while generating and become a real 3D squishy once done.
 
-export function CustomCreatureCard({ creature, onPlay, onDelete }) {
+function ScanLine() {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(Animated.timing(t, { toValue: 1, duration: 1500, easing: Easing.linear, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [t]);
+  const translateY = t.interpolate({ inputRange: [0, 1], outputRange: [-70, 70] });
+  return <Animated.View pointerEvents="none" style={[styles.scanLine, { transform: [{ translateY }] }]} />;
+}
+
+export function CustomCreatureCard({ creature, onPlay, onDelete, onRetry }) {
+  const status = creature.status || 'ready';
+  const busy = status === 'pending' || status === 'running';
+  const failed = status === 'failed';
+  const progress = Math.round(creature.progress || 0);
+
   return (
     <View style={styles.cardShell}>
       <LinearGradient
@@ -61,34 +83,66 @@ export function CustomCreatureCard({ creature, onPlay, onDelete }) {
         end={{ x: 0.85, y: 1 }}
         style={[styles.card, styles.cardCustom]}
       >
-        <View style={styles.customImageArea}>
-          {creature.image ? (
-            <Image source={{ uri: creature.image }} style={styles.customPhoto} />
-          ) : (
-            <View style={[styles.customPhoto, styles.customPhotoEmpty]} />
-          )}
-          {creature.audio ? (
-            <View style={styles.ownSoundBadge}>
-              <View style={styles.soundBars}>
-                <View style={[styles.soundBar, { height: 5 }]} />
-                <View style={[styles.soundBar, { height: 11 }]} />
-                <View style={[styles.soundBar, { height: 7 }]} />
+        <Pressable style={styles.cardBody} onPress={busy ? undefined : onPlay}>
+          <View style={styles.customImageArea}>
+            {creature.build ? (
+              <View style={[styles.customPhoto, styles.customPhotoEmpty]}>
+                <AssembleCreature build={creature.build} size={112} />
               </View>
-              <Text style={styles.ownSoundText}>OWN SOUND</Text>
-            </View>
-          ) : null}
-        </View>
+            ) : creature.sourceImageUrl ? (
+              <View style={styles.customPhotoWrap}>
+                <Image source={{ uri: creature.sourceImageUrl }} style={[styles.customPhoto, busy && styles.customPhotoDim]} />
+                {busy ? <ScanLine /> : null}
+              </View>
+            ) : (
+              <View style={[styles.customPhoto, styles.customPhotoEmpty]} />
+            )}
 
-        <Pressable style={styles.customInfoArea} onPress={onPlay}>
-          <Text style={styles.customName} numberOfLines={1}>
-            {creature.name}
-          </Text>
-          <Text style={styles.customMeta}>Your creation · made {creature.created}</Text>
-          <View style={styles.customStatusRow}>
-            <Pressable onPress={onDelete} hitSlop={8}>
-              <Text style={styles.deleteLabel}>DELETE</Text>
-            </Pressable>
-            <Text style={styles.tapToPlayLabel}>TAP TO PLAY →</Text>
+            {busy ? (
+              <View style={styles.genBadge}>
+                <Text style={styles.genBadgeText}>GENERATING 3D · {progress}%</Text>
+              </View>
+            ) : failed ? (
+              <View style={[styles.genBadge, styles.genBadgeFail]}>
+                <Text style={styles.genBadgeText}>GENERATION FAILED</Text>
+              </View>
+            ) : creature.audio ? (
+              <View style={styles.ownSoundBadge}>
+                <View style={styles.soundBars}>
+                  <View style={[styles.soundBar, { height: 5 }]} />
+                  <View style={[styles.soundBar, { height: 11 }]} />
+                  <View style={[styles.soundBar, { height: 7 }]} />
+                </View>
+                <Text style={styles.ownSoundText}>OWN SOUND</Text>
+              </View>
+            ) : null}
+          </View>
+
+          <View style={styles.customInfoArea}>
+            <Text style={styles.customName} numberOfLines={1}>
+              {creature.name}
+            </Text>
+            <Text style={styles.customMeta} numberOfLines={1}>
+              {busy
+                ? 'Building your 3D squishy…'
+                : failed
+                ? creature.error || 'Something went wrong'
+                : `Your creation · made ${creature.created}`}
+            </Text>
+            <View style={styles.customStatusRow}>
+              <Pressable onPress={onDelete} hitSlop={8}>
+                <Text style={styles.deleteLabel}>DELETE</Text>
+              </Pressable>
+              {busy ? (
+                <Text style={styles.busyLabel}>PLEASE WAIT…</Text>
+              ) : failed ? (
+                <Pressable onPress={onRetry} hitSlop={8}>
+                  <Text style={styles.retryLabel}>RETRY →</Text>
+                </Pressable>
+              ) : (
+                <Text style={styles.tapToPlayLabel}>TAP TO PLAY →</Text>
+              )}
+            </View>
           </View>
         </Pressable>
       </LinearGradient>
@@ -112,6 +166,8 @@ const styles = StyleSheet.create({
   },
   cardDashed: { borderStyle: 'dashed', borderColor: squadColors.pinkLight, alignItems: 'center', justifyContent: 'center' },
   cardCustom: { borderColor: 'rgba(34,224,208,0.33)' },
+  // whole custom card is tappable → play; the DELETE pill keeps its own handler
+  cardBody: { flex: 1, flexDirection: 'column' },
 
   // create-own
   createBody: { alignItems: 'center', justifyContent: 'center', gap: 9, padding: 16 },
@@ -155,7 +211,25 @@ const styles = StyleSheet.create({
     borderWidth: 2.5,
     borderColor: 'rgba(34,224,208,0.5)',
   },
-  customPhotoEmpty: { backgroundColor: squadColors.panel },
+  customPhotoEmpty: { backgroundColor: squadColors.panel, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  customPhotoWrap: { width: 118, height: 118, borderRadius: 59, overflow: 'hidden', borderWidth: 2.5, borderColor: 'rgba(34,224,208,0.5)' },
+  customPhotoDim: { opacity: 0.6, borderWidth: 0 },
+  scanLine: { position: 'absolute', left: 0, right: 0, height: 24, backgroundColor: 'rgba(34,224,208,0.4)' },
+  genBadge: {
+    position: 'absolute',
+    bottom: 10,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(21,10,46,0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(34,224,208,0.4)',
+    borderRadius: 999,
+    paddingHorizontal: 11,
+    paddingVertical: 4,
+  },
+  genBadgeFail: { borderColor: '#f87171' },
+  genBadgeText: { color: squadColors.teal, fontFamily: squadFonts.bodyExtraBold, fontSize: 9, letterSpacing: 1 },
+  busyLabel: { color: squadColors.textFaint, fontFamily: squadFonts.bodyExtraBold, fontSize: 11, letterSpacing: 1 },
+  retryLabel: { color: squadColors.gold, fontFamily: squadFonts.bodyExtraBold, fontSize: 12, letterSpacing: 1 },
   ownSoundBadge: {
     position: 'absolute',
     bottom: 10,

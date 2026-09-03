@@ -57,6 +57,8 @@ export default function HomeScreen({
   onOpenCreator = () => {},
   onSelectCustom = () => {},
   onDeleteCustom = () => {},
+  onRetryCustom = () => {},
+  focusMineToken = 0,
 }) {
   const insets = useSafeAreaInsets();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -126,6 +128,20 @@ export default function HomeScreen({
       useNativeDriver: true,
     }).start();
   }, [tab, listAnim]);
+
+  // App bumps focusMineToken right after a creature is created — jump to the
+  // MY CREATURES tab and to its last page (the new creature); `clampedMineIndex`
+  // pins the big index to the last real page once the Firestore snapshot lands.
+  const didMountFocus = useRef(false);
+  useEffect(() => {
+    if (!didMountFocus.current) {
+      didMountFocus.current = true;
+      return;
+    }
+    setListDir(1);
+    setTab('mine');
+    setMineIndex(9999);
+  }, [focusMineToken]);
   const listTranslateX = listAnim.interpolate({ inputRange: [0, 1], outputRange: [listDir > 0 ? 46 : -46, 0] });
 
   // --- sliding tab indicator ---
@@ -177,10 +193,11 @@ export default function HomeScreen({
           creature={custom}
           onPlay={() => onSelectCustom(custom)}
           onDelete={() => onDeleteCustom(custom)}
+          onRetry={() => onRetryCustom(custom)}
         />
       );
     },
-    [creatures, ownedIds, keys, customCreatures, onSelectToy, onOpenStore, onUnlockWithKey, onOpenCreator, onSelectCustom, onDeleteCustom]
+    [creatures, ownedIds, keys, customCreatures, onSelectToy, onOpenStore, onUnlockWithKey, onOpenCreator, onSelectCustom, onDeleteCustom, onRetryCustom]
   );
 
   if (!creatures.length) {

@@ -179,6 +179,73 @@ export async function markAchievement(uid, key) {
   await userDocRef(uid).update({ [`achievements.${key}`]: true });
 }
 
+// --- player-made creatures (the "Create your own squishy" flow) ---------
+//
+// Stored under users/{uid}/customCreatures. Two kinds:
+//  · photo path  — { sourceImageUrl, status: 'pending' }. The
+//    `generateCustomModel` Cloud Function (functions/index.js) picks it up,
+//    runs Tripo image-to-3D, and patches in { status: 'ready', modelUrl,
+//    modelPath } (or { status: 'failed', error }). `status` also goes
+//    'running' with a `progress` 0–100 while Tripo works.
+//  · assemble path — { build, status: 'ready' }. No Tripo; plays as the 2D
+//    assembled art.
+// `audio`, if present, is a small base64 data URL for the squish sound.
+
+function customCreaturesRef(uid) {
+  return userDocRef(uid).collection('customCreatures');
+}
+
+export function subscribeToCustomCreatures(uid, onChange) {
+  return customCreaturesRef(uid)
+    .orderBy('createdAt', 'asc')
+    .onSnapshot(
+      (snap) => onChange(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))),
+      (error) => {
+        console.error('subscribeToCustomCreatures failed:', error);
+        onChange([]);
+      }
+    );
+}
+
+// Create the doc. Pass a pre-generated `id` when the caller has already
+// uploaded customUploads/{uid}/{id}.jpg (so paths line up). Returns the id.
+export async function addCustomCreature(uid, { id, name, sourceImageUrl, sourceImagePath, build, audio }) {
+  const doc = {
+    name: name?.trim() || 'My Squishy',
+    audio: audio || null,
+    build: build || null,
+    sourceImageUrl: sourceImageUrl || null,
+    sourceImagePath: sourceImagePath || null,
+    // photo → Tripo has to run; assemble → nothing to generate.
+    status: sourceImageUrl ? 'pending' : 'ready',
+    progress: 0,
+    created: new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+    createdAt: firestore.FieldValue.serverTimestamp(),
+  };
+  if (id) {
+    await customCreaturesRef(uid).doc(id).set(doc);
+    return id;
+  }
+  const ref = await customCreaturesRef(uid).add(doc);
+  return ref.id;
+}
+
+// Re-arm a failed generation (the Cloud Function re-triggers on the write).
+export async function retryCustomCreature(uid, creatureId) {
+  await customCreaturesRef(uid).doc(creatureId).set(
+    { status: 'pending', progress: 0, error: firestore.FieldValue.delete() },
+    { merge: true }
+  );
+}
+
+export async function deleteCustomCreature(uid, creatureId) {
+  await customCreaturesRef(uid).doc(creatureId).delete();
+}
+
+export function newCustomCreatureId(uid) {
+  return customCreaturesRef(uid).doc().id;
+}
+
 export function subscribeToCreatures(onChange) {
   return firestore()
     .collection('creatures')

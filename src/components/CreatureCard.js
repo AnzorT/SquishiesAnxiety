@@ -133,6 +133,7 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
       end={{ x: 0.85, y: 1 }}
       style={[styles.card, { borderColor: cardBorderColor }]}
     >
+      <Pressable style={styles.cardBody} onPress={handleCardPress}>
       <View style={styles.imageArea}>
         <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
           <Defs>
@@ -209,7 +210,7 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
         ) : null}
       </View>
 
-      <Pressable style={styles.infoArea} onPress={handleCardPress}>
+      <View style={styles.infoArea}>
         <Text style={styles.cardName} numberOfLines={1}>
           {creature.name}
         </Text>
@@ -228,6 +229,7 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
             <Text style={styles.lockedLabel}>LOCKED — GET KEY →</Text>
           )}
         </View>
+      </View>
       </Pressable>
     </LinearGradient>
   );
@@ -248,6 +250,9 @@ const styles = StyleSheet.create({
     shadowRadius: 34,
     elevation: 10,
   },
+  // the whole card surface is one tap target (open toy / open store); the
+  // key-ready hold gesture still lives on its own overlay inside the image area.
+  cardBody: { flex: 1, flexDirection: 'column' },
   // image area grows; info area is a fixed 82px strip (source: `flex:60` on
   // the image div, `flex:0 0 82px` on the info div).
   imageArea: {

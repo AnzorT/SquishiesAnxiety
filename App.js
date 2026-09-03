@@ -36,8 +36,15 @@ import {
   claimAdsFree,
   submitFeedback,
   ensureStarterCreaturesOwned,
+  subscribeToCustomCreatures,
+  addCustomCreature,
+  deleteCustomCreature,
+  retryCustomCreature,
+  newCustomCreatureId,
 } from './src/firebase/firestore';
+import { uploadSourceImage, deleteCustomAssets } from './src/firebase/storage';
 import { ensureCreaturesSeeded, DEFAULT_CREATURES } from './src/firebase/seedCreatures';
+import CreateScreen from './src/screens/CreateScreen';
 
 // GLTFParser's constructor (three.js, used by SquishyToy.js's Glorp build
 // path) sniffs navigator.userAgent to work around known Safari ImageBitmap
@@ -71,8 +78,10 @@ export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [creatures, setCreatures] = useState([]);
+  const [customCreatures, setCustomCreatures] = useState([]);
+  const [mineFocusToken, setMineFocusToken] = useState(0);
   const [homeIndex, setHomeIndex] = useState(0);
-  const [screen, setScreen] = useState('home'); // 'home' | 'achievements' | 'store' — only relevant once signed in
+  const [screen, setScreen] = useState('home'); // 'home' | 'achievements' | 'store' | 'create' — only relevant once signed in
   // A card tap moves a creature into `loadingToy` (LoadingScreen's "getting
   // ready" beat) before it graduates to `activeToy` (SquishScreen actually
   // mounted) — kept as two separate slots so the transition screen has
@@ -104,6 +113,14 @@ export default function App() {
       return undefined;
     }
     return subscribeToUserProfile(authUser.uid, setProfile);
+  }, [authUser]);
+
+  useEffect(() => {
+    if (!authUser) {
+      setCustomCreatures([]);
+      return undefined;
+    }
+    return subscribeToCustomCreatures(authUser.uid, setCustomCreatures);
   }, [authUser]);
 
   // One-time backward-compat migration for accounts created before the new
@@ -160,6 +177,68 @@ export default function App() {
     setActiveToy(null);
     setScreen('home');
   }, []);
+
+  // --- custom creatures (the "Create your own squishy" flow) ---
+  const handleOpenCreator = useCallback(() => setScreen('create'), []);
+  const handleCreatureCreated = useCallback(
+    // Photo path: upload the resized JPEG to Storage, then write a
+    // `status: 'pending'` doc — the generateCustomModel Cloud Function runs
+    // Tripo from there. Assemble path: no upload, doc is born `ready`.
+    // Throws on failure so CreateScreen can surface it and stay put.
+    async ({ name, imageUri, build, audio }) => {
+      if (!authUser) return;
+      const uid = authUser.uid;
+      const id = newCustomCreatureId(uid);
+      let sourceImageUrl = null;
+      let sourceImagePath = null;
+      if (imageUri) {
+        const up = await uploadSourceImage(uid, imageUri, id);
+        sourceImageUrl = up.url;
+        sourceImagePath = up.path;
+      }
+      await addCustomCreature(uid, { id, name, sourceImageUrl, sourceImagePath, build, audio });
+      setMineFocusToken((t) => t + 1);
+      setScreen('home');
+    },
+    [authUser]
+  );
+  const handleRetryCustom = useCallback(
+    (custom) => {
+      if (authUser) retryCustomCreature(authUser.uid, custom.id).catch(() => {});
+    },
+    [authUser]
+  );
+  const handleSelectCustom = useCallback((custom) => {
+    // Not playable until generation finished (photo path). Assemble creatures
+    // and finished photo creatures both open.
+    if (custom.status && custom.status !== 'ready') return;
+    setLoadingToy({
+      id: `custom:${custom.id}`,
+      name: custom.name,
+      isCustom: true,
+      image: custom.sourceImageUrl || null,
+      build: custom.build || null,
+      modelUrl: custom.modelUrl || null,
+      audio: custom.audio || null,
+    });
+  }, []);
+  const handleDeleteCustom = useCallback(
+    (custom) => {
+      if (!authUser) return;
+      Alert.alert('Delete creature', `Delete ${custom.name}? This can't be undone.`, [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deleteCustomCreature(authUser.uid, custom.id).catch(() => {});
+            deleteCustomAssets({ sourceImagePath: custom.sourceImagePath, modelPath: custom.modelPath }).catch(() => {});
+          },
+        },
+      ]);
+    },
+    [authUser]
+  );
 
   const handleLogout = useCallback(async () => {
     setActiveToy(null);
@@ -288,8 +367,16 @@ export default function App() {
           onLogout={handleLogout}
           onOpenAchievements={() => setScreen('achievements')}
           onOpenStore={() => setScreen('store')}
-          onOpenCreator={() => Alert.alert('Almost there', 'The creature creator lands in the next update.')}
+          customCreatures={customCreatures}
+          onOpenCreator={handleOpenCreator}
+          onSelectCustom={handleSelectCustom}
+          onDeleteCustom={handleDeleteCustom}
+          onRetryCustom={handleRetryCustom}
+          focusMineToken={mineFocusToken}
         />
+      )}
+      {stage === 'create' && (
+        <CreateScreen onBack={() => setScreen('home')} onCreated={handleCreatureCreated} />
       )}
       {stage === 'achievements' && (
         <AchievementsScreen

@@ -297,8 +297,11 @@ export default function SquishScreen({
   useEffect(() => {
     const sound = new SquishSound();
     soundRef.current = sound;
-    sound.load(DEFAULT_SQUISH_SOUND);
+    // A custom creature can carry its own squish sound (a base64 data URL);
+    // fall back to the default sample if it has none or fails to load.
+    sound.load(toy?.audio ? { uri: toy.audio } : DEFAULT_SQUISH_SOUND);
     return () => sound.unload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -357,7 +360,10 @@ export default function SquishScreen({
     earnCoins && earnCoins(amount);
   }, []);
 
-  const is3DToy = useCallback(() => MODEL_3D_IDS.has(String(latestRef.current?.toy?.id)), []);
+  // A creature that renders on the 3D soft-body rig: a built-in Tripo mesh, or
+  // a player-made creature whose .glb has finished generating.
+  const toyIs3D = (t) => !!(t && ((t.isCustom && t.modelUrl) || MODEL_3D_IDS.has(String(t.id))));
+  const is3DToy = useCallback(() => toyIs3D(latestRef.current?.toy), []);
 
   // Passive earning while a one-finger press is held on a 3D model: bank
   // EARN_PER_TICK coins every EARN_TICK_MS (doubled while the bonus window is
@@ -560,7 +566,7 @@ export default function SquishScreen({
 
         recordPress && recordPress(currentToy.id, holdMs);
 
-        if (MODEL_3D_IDS.has(String(currentToy.id))) {
+        if (toyIs3D(currentToy)) {
           // Passive earning already paid out over the hold — flush it + show the
           // "+N" float. A quick jab (< 400ms, no full tick) earns nothing and
           // counts toward the tap-abuse guard.
@@ -611,7 +617,7 @@ export default function SquishScreen({
         </Pressable>
 
         <View style={styles.stage} {...panResponder.panHandlers}>
-          {MODEL_3D_IDS.has(String(toy.id)) ? (
+          {toyIs3D(toy) ? (
             <Canvas flat frameloop="always" camera={{ fov: 30, position: [0, 0.1, 4.6], near: 0.1, far: 100 }}>
               <ambientLight intensity={0.65} />
               <directionalLight color={0xfff2e0} intensity={1.3} position={[2, 3, 3]} />
@@ -620,6 +626,7 @@ export default function SquishScreen({
               <SquishyToy
                 ref={toyRef}
                 creatureId={toy.id}
+                modelUrl={toy.isCustom ? toy.modelUrl : undefined}
                 onSquish={() => {
                   if (squishSoundEnabled) soundRef.current?.start();
                 }}
@@ -632,6 +639,8 @@ export default function SquishScreen({
             <SquishyToy2D
               ref={toyRef}
               creatureId={toy.id}
+              imageUri={toy.isCustom ? toy.image : undefined}
+              build={toy.isCustom ? toy.build : undefined}
               size={STAGE_SIZE}
               onSquish={() => {
                 if (squishSoundEnabled) soundRef.current?.start();

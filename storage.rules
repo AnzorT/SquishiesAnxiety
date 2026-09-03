@@ -1,0 +1,24 @@
+rules_version = '2';
+
+// Deploy with `firebase deploy --only storage`. Requires a Cloud Storage
+// bucket on the Blaze plan.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Source photos the player uploads for the creature creator. Owner
+    // read/write; the Cloud Function (admin creds) also reads them.
+    match /customUploads/{uid}/{file} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // Generated .glb models. Written only by generateCustomModel (admin
+    // creds bypass rules); the owner may read theirs to load the mesh.
+    match /customModels/{uid}/{file} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+  }
+}

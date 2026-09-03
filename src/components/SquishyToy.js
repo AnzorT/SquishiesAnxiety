@@ -8,6 +8,7 @@ import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, use
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Asset } from 'expo-asset';
+import * as FileSystem from 'expo-file-system';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { CREATURE_VISUALS, PHYS } from '../data/creatures';
 
@@ -292,6 +293,49 @@ function loadModelGltf(id) {
   return gltfPromises[id];
 }
 
+// ---- Player-generated meshes (the "Create your own squishy" flow) --------
+//
+// A custom creature's .glb lives in Firebase Storage (uploaded by the
+// generateCustomModel Cloud Function). We download it once to the cache
+// directory, then load it from disk on subsequent plays. The soft-body
+// physics is identical to the built-in 3D creatures — these are the tuning
+// knobs every custom creature gets (same feel as Glorp/Spike).
+const CUSTOM_TUNING = { visual: 1.9, dentSigma: 0.3, dentStrength: 2.3, dentFloor: 0.72 };
+
+function hashKey(str) {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h) ^ str.charCodeAt(i);
+  return (h >>> 0).toString(36);
+}
+
+const remoteGltfPromises = new Map();
+function loadGltfFromUrl(url) {
+  if (!remoteGltfPromises.has(url)) {
+    remoteGltfPromises.set(
+      url,
+      (async () => {
+        const dir = `${FileSystem.cacheDirectory}customModels/`;
+        const path = `${dir}${hashKey(url)}.glb`;
+        try {
+          const info = await FileSystem.getInfoAsync(path);
+          if (!info.exists) {
+            await FileSystem.makeDirectoryAsync(dir, { intermediates: true }).catch(() => {});
+            await FileSystem.downloadAsync(url, path);
+          }
+        } catch (e) {
+          // fall through to a direct fetch of the URL below
+        }
+        const response = await fetch(path).catch(() => fetch(url));
+        const arrayBuffer = await response.arrayBuffer();
+        return new Promise((resolve, reject) => {
+          new GLTFLoader().parse(arrayBuffer, '', resolve, reject);
+        });
+      })()
+    );
+  }
+  return remoteGltfPromises.get(url);
+}
+
 // Every vertex sharing a triangle with vertex i becomes a neighbour of i —
 // the same relationship the sphere grid's left/right/up/down lookup captures,
 // derived from real topology instead of assumed row/col math.
@@ -309,9 +353,7 @@ function buildAdjacency(indexArray, vertCount) {
   return sets.map((set) => Uint32Array.from(set));
 }
 
-async function buildModelCreature(id) {
-  const cfg = MODEL_3D[id];
-  const gltf = await loadModelGltf(id);
+async function buildModelCreature(id, cfg, gltf) {
   let sourceMesh = null;
   gltf.scene.traverse((obj) => {
     if (!sourceMesh && obj.isMesh) sourceMesh = obj;
@@ -672,7 +714,7 @@ function tickPhysics(s, dt) {
   }
 }
 
-const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', onSquish, onRelease }, ref) {
+const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', modelUrl, onSquish, onRelease }, ref) {
   const { camera } = useThree();
   const toyRef = useRef(null);
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
@@ -693,14 +735,20 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', onSquish, 
     };
 
     // Procedural creatures build synchronously (unchanged). A 3D-model
-    // creature loads its Tripo mesh from disk first, so `built` stays null for
+    // creature loads its .glb (bundled asset, or — for a player-made creature
+    // — from Firebase Storage via `modelUrl`) first, so `built` stays null for
     // the brief window before it resolves — every imperative-handle method and
     // useFrame already bails while toyRef.current is null, so that window is
     // safe.
     const modelId = Number(creatureId);
-    const pending = is3DModel(creatureId)
-      ? buildModelCreature(modelId)
-      : Promise.resolve(buildCreature(modelId));
+    let pending;
+    if (modelUrl) {
+      pending = (async () => buildModelCreature(creatureId, CUSTOM_TUNING, await loadGltfFromUrl(modelUrl)))();
+    } else if (is3DModel(creatureId)) {
+      pending = (async () => buildModelCreature(modelId, MODEL_3D[modelId], await loadModelGltf(modelId)))();
+    } else {
+      pending = Promise.resolve(buildCreature(modelId));
+    }
 
     pending
       .then((r) => {
