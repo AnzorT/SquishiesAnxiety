@@ -1,6 +1,7 @@
 // Achievement list — matches "ASMR Creature Squash Game.html" exactly (10
 // fixed achievements: five per-creature unlocks, two coin-earned totals, a
-// full-collection badge, and two live SquishScreen events). Shared by
+// full-collection badge — now the full 20-creature roster — and two live
+// SquishScreen events). Shared by
 // AchievementsScreen (renders it) and App.js (diffs it against the previous
 // snapshot to fire a toast the moment one flips to done).
 //
@@ -43,7 +44,7 @@ export function computeAchievements(creatures = CREATURES, ownedIds = [], totalE
     ...creatureEntries,
     { key: 'earn10k', done: totalEarned >= 10000, badgeLabel: '10K', title: 'Pocket Change', desc: 'Earn 10,000 Squish Points' },
     { key: 'earn100k', done: totalEarned >= 100000, badgeLabel: '100K', title: 'Squish Tycoon', desc: 'Earn 100,000 Squish Points' },
-    { key: 'unlockAll', done: unlockAllDone, badgeLabel: 'ALL', title: 'Collector Supreme', desc: 'Unlock all 10 creatures' },
+    { key: 'unlockAll', done: unlockAllDone, badgeLabel: 'ALL', title: 'Collector Supreme', desc: 'Unlock all 20 creatures' },
     { key: 'speedTap', done: !!liveFlags.speedTap, badgeLabel: '60', title: 'Speed Squisher', desc: 'Tap 60 times in 60 seconds' },
     { key: 'watchAd', done: !!liveFlags.watchAd, badgeLabel: 'AD', title: 'Ad Enthusiast', desc: 'Watch a video ad' },
   ];

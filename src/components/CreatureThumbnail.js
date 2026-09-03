@@ -8,7 +8,7 @@ const AnimatedRect = Animated.createAnimatedComponent(Rect);
 // Squash Game.html"'s own asset bundle (manifest entry 40fb4f7a…, the real
 // dc-import source — not a re-derived approximation). Every inset/left/top/
 // width/height/border-radius/gradient/box-shadow value below is transcribed
-// straight from that file's per-creature `isC0`…`isC9` blocks, just
+// straight from that file's per-creature `isC0`…`isC19` blocks, just
 // converted from CSS-on-a-100x100-box to an SVG path in a 100x100 viewBox
 // (percentages of the wrapper carry over 1:1 as viewBox units) and from
 // `filter: grayscale(1) brightness(0.5)` (unsupported on RN Views) to a
@@ -96,6 +96,42 @@ function polygonPath(box, pointsPct) {
   );
 }
 
+// A rectangle centred on (cx, cy), rotated `angleDeg` about that centre —
+// stands in for the source's `transform: rotate()` on an absolutely-placed
+// bar (Grumps' eyebrows, Cinder's lava cracks, Sprout's stem).
+function rotRectPath(cx, cy, w, h, angleDeg) {
+  const rad = (angleDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const hw = w / 2;
+  const hh = h / 2;
+  return (
+    [
+      [-hw, -hh],
+      [hw, -hh],
+      [hw, hh],
+      [-hw, hh],
+    ]
+      .map(([px, py], i) => `${i === 0 ? 'M' : 'L'} ${cx + px * cos - py * sin},${cy + px * sin + py * cos}`)
+      .join(' ') + ' Z'
+  );
+}
+
+// A spiky ring (Fuzzball's fur) — `spikes` outer points at `outerR`, valleys
+// at `innerR`, all percent of the 100-unit box, centred on (50, 50). Stands
+// in for the source's `repeating-conic-gradient` fur halo.
+function spikyRingPath(spikes, outerR, innerR) {
+  const pts = [];
+  for (let i = 0; i < spikes * 2; i++) {
+    const a = (Math.PI / spikes) * i - Math.PI / 2;
+    const r = i % 2 === 0 ? outerR : innerR;
+    pts.push(`${i === 0 ? 'M' : 'L'} ${50 + Math.cos(a) * r},${50 + Math.sin(a) * r}`);
+  }
+  return pts.join(' ') + ' Z';
+}
+
+const WRAP = { x: 0, y: 0, w: W, h: W };
+
 function gradientVector(angleDeg) {
   const rad = (angleDeg * Math.PI) / 180;
   const dx = Math.sin(rad) * 0.5;
@@ -118,17 +154,22 @@ function grayscaleDim(hex, brightness = 0.5) {
 
 // ---- eyes / mouth (identical shape everywhere, just re-positioned) ----
 
-function EyePair({ parent, leftPct, rightPct, topPct, size, gray }) {
+function EyePair({ parent, leftPct, rightPct, topPct, size, gray, pupil = '#0f172a', sclera = '#ffffff', glow = null }) {
   const l = rect(parent, { left: leftPct, top: topPct, width: size, height: size });
   const r = rect(parent, { right: rightPct, top: topPct, width: size, height: size });
+  const scleraFill = gray ? '#c9c9c9' : sclera;
+  const pupilFill = gray ? '#3a3a3a' : pupil;
   return (
     <>
       {[l, r].map((box, i) => {
-        const pupil = rect(box, { left: 28, top: 28, width: 44, height: 44 });
+        const p = rect(box, { left: 28, top: 28, width: 44, height: 44 });
         return (
           <React.Fragment key={i}>
-            <Circle cx={box.x + box.w / 2} cy={box.y + box.h / 2} r={box.w / 2} fill={gray ? '#c9c9c9' : '#ffffff'} />
-            <Circle cx={pupil.x + pupil.w / 2} cy={pupil.y + pupil.h / 2} r={pupil.w / 2} fill="#0f172a" />
+            {glow && !gray ? (
+              <Circle cx={box.x + box.w / 2} cy={box.y + box.h / 2} r={box.w * 0.95} fill={glow} opacity={0.4} />
+            ) : null}
+            <Circle cx={box.x + box.w / 2} cy={box.y + box.h / 2} r={box.w / 2} fill={scleraFill} />
+            <Circle cx={p.x + p.w / 2} cy={p.y + p.h / 2} r={p.w / 2} fill={pupilFill} />
           </React.Fragment>
         );
       })}
@@ -148,10 +189,13 @@ function SleepyEyes({ parent, leftPct, rightPct, topPct, w, h, gray }) {
   );
 }
 
-function Mouth({ parent, leftPct, rightPct, topPct, wPct, hPct, radiusPct = 50, ellipse = false, gray }) {
+function Mouth({ parent, leftPct, rightPct, topPct, wPct, hPct, radiusPct = 50, ellipse = false, frown = false, poly = null, color: colorOverride, gray }) {
   const box = rect(parent, { left: leftPct, right: rightPct, top: topPct, width: wPct, height: hPct });
-  const color = gray ? '#3a3a3a' : '#0f172a';
+  const color = gray ? '#3a3a3a' : colorOverride || '#0f172a';
   if (ellipse) return <Ellipse cx={box.x + box.w / 2} cy={box.y + box.h / 2} rx={box.w / 2} ry={box.h / 2} fill={color} />;
+  if (poly) return <Path d={polygonPath(box, poly)} fill={color} />;
+  // frown: round top, flat bottom (source `border-radius:50% 50% 0 0`)
+  if (frown) return <Path d={blobPath(box, { tl: [radiusPct, radiusPct], tr: [radiusPct, radiusPct], br: [0, 0], bl: [0, 0] })} fill={color} />;
   return <Path d={mouthPath(box, radiusPct)} fill={color} />;
 }
 
@@ -235,17 +279,19 @@ const CREATURES = {
     eyesOnWrapper: { type: 'pair', leftPct: 34, rightPct: 34, topPct: 46, sizePct: 13 },
     mouthOnWrapper: { leftPct: 42, topPct: 66, wPct: 16, hPct: 8, radiusPct: 50 },
   },
-  6: { // Puffington — cloud: a low wide body under three overlapping puffs, face on the body
-    body: { inset: [30, 10, 16, 10], corners: CIRCLE, angle: 160, from: '#f0f9ff', to: '#38bdf8', shadow: '#38bdf8' },
+  6: { // Puffington — cloud: a wide ellipse body with two round puffs peeking
+    // out its lower corners; face sits on the ellipse (source isC6: body
+    // `left:16% top:14% w68% h56% border-radius:50%`, two lobes `w44% h44%`
+    // at `top:30%`, left:6% / right:6%).
+    body: { inset: [14, 16, 30, 16], corners: CIRCLE, angle: 160, from: '#f0f9ff', to: '#38bdf8', shadow: '#38bdf8' },
     extras: (b, gray) => (
       <>
-        <Circle key="lobeL" cx={26} cy={46} r={22} fill={gray ? '#a0a0a0' : 'url(#cloudSide6)'} />
-        <Circle key="lobeR" cx={74} cy={46} r={22} fill={gray ? '#a0a0a0' : 'url(#cloudSide6)'} />
-        <Circle key="lobeT" cx={50} cy={30} r={18} fill={gray ? '#a0a0a0' : 'url(#cloudSide6)'} />
+        <Circle key="lobeL" cx={28} cy={52} r={22} fill={gray ? '#a6a6a6' : 'url(#cloudSide6)'} />
+        <Circle key="lobeR" cx={72} cy={52} r={22} fill={gray ? '#a6a6a6' : 'url(#cloudSide6)'} />
       </>
     ),
-    eyes: { type: 'sleepy', leftPct: 30, rightPct: 30, topPct: 40, wPct: 13, hPct: 6 },
-    mouth: { leftPct: 42, topPct: 60, wPct: 16, hPct: 9, radiusPct: 50 },
+    eyes: { type: 'sleepy', leftPct: 30, rightPct: 30, topPct: 44, wPct: 12, hPct: 6 },
+    mouth: { leftPct: 42, topPct: 62, wPct: 16, hPct: 8, radiusPct: 50 },
   },
   7: { // Noodle — rounded dome with tentacles tucked under it, single cyclops eye
     body: { inset: [10, 10, 14, 10], corners: { tl: [50, 58], tr: [50, 58], br: [48, 46], bl: [48, 46] }, angle: 160, from: '#c4b5fd', to: '#7c3aed', shadow: '#7c3aed' },
@@ -261,6 +307,7 @@ const CREATURES = {
   },
   8: { // Glimmer — faceted gem pentagon; eyes/mouth are siblings again
     body: { inset: [6, 6, 6, 6], pentagon: true, angle: 160, from: '#a5f3fc', to: '#06b6d4', shadow: '#06b6d4', noInsetShadow: true },
+    shine: true,
     eyesOnWrapper: { type: 'pair', leftPct: 34, rightPct: 34, topPct: 44, sizePct: 13 },
     mouthOnWrapper: { leftPct: 42, topPct: 64, wPct: 16, hPct: 8, radiusPct: 50 },
   },
@@ -268,6 +315,145 @@ const CREATURES = {
     body: { inset: [10, 10, 10, 10], corners: CIRCLE, angle: 160, from: '#fca5a5', to: '#dc2626', shadow: '#f87171', trueGlow: true },
     eyes: { type: 'pair', leftPct: 28, rightPct: 28, topPct: 38, sizePct: 14 },
     mouth: { leftPct: 40, topPct: 64, wPct: 20, hPct: 9, radiusPct: 50 },
+  },
+  10: { // Mochi — soft dough blob, closed happy eyes, big blush
+    body: { inset: [12, 8, 14, 8], corners: { tl: [46, 62], tr: [54, 62], br: [50, 38], bl: [50, 38] }, angle: 160, from: '#ffe4f1', to: '#f9a8d4', shadow: '#f9a8d4' },
+    eyes: { type: 'sleepy', leftPct: 27, rightPct: 27, topPct: 42, wPct: 15, hPct: 5 },
+    mouth: { leftPct: 42, topPct: 58, wPct: 16, hPct: 10, radiusPct: 60 },
+    blush: { leftPct: 14, rightPct: 14, topPct: 52, wPct: 15, hPct: 9, color: '#fb7185' },
+  },
+  11: { // Zappy — static ball with a lightning bolt crown, zigzag mouth
+    body: { inset: [10, 10, 10, 10], corners: CIRCLE, radial: { cx: '34%', cy: '28%' }, from: '#fef9c3', to: '#facc15', shadow: '#facc15', trueGlow: true },
+    extras: (b, gray) => {
+      const box = rect(WRAP, { left: 40, top: -10, width: 24, height: 26 });
+      return (
+        <Path
+          key="bolt"
+          d={polygonPath(box, [[60, 0], [20, 52], [52, 52], [26, 100], [90, 40], [55, 40]])}
+          fill={gray ? '#8a8a8a' : '#fde047'}
+        />
+      );
+    },
+    eyes: { type: 'pair', leftPct: 26, rightPct: 26, topPct: 36, sizePct: 16 },
+    mouth: { leftPct: 36, topPct: 62, wPct: 28, hPct: 12, poly: [[0, 0], [100, 0], [84, 100], [62, 30], [42, 100], [20, 30]] },
+  },
+  12: { // Bubbles — water-balloon sphere with two glassy highlights
+    body: { inset: [9, 9, 9, 9], corners: CIRCLE, radial: { cx: '32%', cy: '26%', mid: [55, '#67e8f9'] }, from: '#ffffff', to: '#0891b2', shadow: '#0891b2' },
+    frontExtras: (b, gray) => {
+      const h1 = rect(b, { left: 18, top: 20, width: 14, height: 14 });
+      const h2 = rect(b, { right: 22, top: 26, width: 9, height: 9 });
+      return (
+        <>
+          <Circle key="h1" cx={h1.x + h1.w / 2} cy={h1.y + h1.h / 2} r={h1.w / 2} fill="#ffffff" opacity={gray ? 0.25 : 0.6} />
+          <Circle key="h2" cx={h2.x + h2.w / 2} cy={h2.y + h2.h / 2} r={h2.w / 2} fill="#ffffff" opacity={gray ? 0.2 : 0.45} />
+        </>
+      );
+    },
+    eyes: { type: 'pair', leftPct: 29, rightPct: 29, topPct: 44, sizePct: 14 },
+    mouth: { leftPct: 44, topPct: 66, wPct: 14, hPct: 14, ellipse: true },
+  },
+  13: { // Grumps — scowling indigo blob, angry brows, frown
+    body: { inset: [10, 10, 10, 10], corners: { tl: [52, 48], tr: [48, 52], br: [46, 48], bl: [54, 52] }, angle: 160, from: '#818cf8', to: '#3730a3', shadow: '#3730a3' },
+    frontExtras: (b, gray) => {
+      const l = rect(b, { left: 22, top: 30, width: 22, height: 6 });
+      const r = rect(b, { right: 22, top: 30, width: 22, height: 6 });
+      const fill = gray ? '#2a2a2a' : '#1e1b4b';
+      return (
+        <>
+          <Path key="bl" d={rotRectPath(l.x + l.w / 2, l.y + l.h / 2, l.w, l.h, 14)} fill={fill} />
+          <Path key="br" d={rotRectPath(r.x + r.w / 2, r.y + r.h / 2, r.w, r.h, -14)} fill={fill} />
+        </>
+      );
+    },
+    eyes: { type: 'pair', leftPct: 28, rightPct: 28, topPct: 42, sizePct: 14 },
+    mouth: { leftPct: 36, topPct: 68, wPct: 28, hPct: 7, radiusPct: 50, frown: true },
+  },
+  14: { // Sprout — seedling with a stem and two leaves
+    body: { inset: [12, 10, 10, 10], corners: { tl: [46, 56], tr: [54, 56], br: [52, 44], bl: [48, 44] }, angle: 160, from: '#d9f99d', to: '#65a30d', shadow: '#65a30d' },
+    extras: (b, gray) => {
+      const stem = rect(WRAP, { left: 47, top: -2, width: 5, height: 16 });
+      const leafL = rect(WRAP, { left: 30, top: 0, width: 20, height: 11 });
+      const leafR = rect(WRAP, { right: 30, top: 2, width: 18, height: 10 });
+      return (
+        <>
+          <Path key="stem" d={rotRectPath(stem.x + stem.w / 2, stem.y + stem.h / 2, stem.w, stem.h, 0)} fill={gray ? '#6a6a6a' : '#15803d'} />
+          <Path key="ll" d={blobPath(leafL, { tl: [70, 70], tr: [0, 0], br: [70, 70], bl: [0, 0] })} fill={gray ? '#8a8a8a' : '#4ade80'} />
+          <Path key="lr" d={blobPath(leafR, { tl: [0, 0], tr: [70, 70], br: [0, 0], bl: [70, 70] })} fill={gray ? '#7a7a7a' : '#22c55e'} />
+        </>
+      );
+    },
+    eyes: { type: 'pair', leftPct: 28, rightPct: 28, topPct: 40, sizePct: 15 },
+    mouth: { leftPct: 41, topPct: 64, wPct: 18, hPct: 9, radiusPct: 55 },
+  },
+  15: { // Cinder — cooled lava rock with two glowing cracks and ember eyes
+    body: { inset: [10, 10, 10, 10], corners: { tl: [50, 54], tr: [50, 54], br: [46, 46], bl: [46, 46] }, angle: 160, from: '#4b5563', to: '#1f2937', shadow: '#1f2937' },
+    frontExtras: (b, gray) => {
+      const c1 = rect(b, { left: 16, top: 24, width: 4, height: 34 });
+      const c2 = rect(b, { right: 20, top: 52, width: 4, height: 26 });
+      const glow1 = gray ? '#5a5a5a' : '#fb923c';
+      const glow2 = gray ? '#4a4a4a' : '#f97316';
+      return (
+        <>
+          {!gray ? <Path key="g1" d={rotRectPath(c1.x + c1.w / 2, c1.y + c1.h / 2, c1.w * 3, c1.h, 12)} fill={glow1} opacity={0.28} /> : null}
+          <Path key="c1" d={rotRectPath(c1.x + c1.w / 2, c1.y + c1.h / 2, c1.w, c1.h, 12)} fill={glow1} />
+          {!gray ? <Path key="g2" d={rotRectPath(c2.x + c2.w / 2, c2.y + c2.h / 2, c2.w * 3, c2.h, -16)} fill={glow2} opacity={0.28} /> : null}
+          <Path key="c2" d={rotRectPath(c2.x + c2.w / 2, c2.y + c2.h / 2, c2.w, c2.h, -16)} fill={glow2} />
+        </>
+      );
+    },
+    eyes: { type: 'pair', leftPct: 28, rightPct: 28, topPct: 38, sizePct: 14, sclera: '#fdba74', pupil: '#0f172a', glow: '#fb923c' },
+    mouth: { leftPct: 40, topPct: 64, wPct: 20, hPct: 8, radiusPct: 50 },
+  },
+  16: { // Pearla — iridescent shell, pale-violet pearl sheen + shine sweep
+    body: { inset: [8, 8, 8, 8], corners: { tl: [50, 58], tr: [50, 58], br: [44, 42], bl: [44, 42] }, radial: { cx: '34%', cy: '26%', mid: [46, '#e9d5ff'] }, from: '#ffffff', to: '#a5b4fc', shadow: '#a5b4fc' },
+    shine: true,
+    eyes: { type: 'pair', leftPct: 30, rightPct: 30, topPct: 42, sizePct: 14, pupil: '#3730a3' },
+    mouth: { leftPct: 43, topPct: 64, wPct: 14, hPct: 8, radiusPct: 55, color: '#3730a3' },
+  },
+  17: { // Tako — rosy dome with four dangling tentacles
+    body: { inset: [8, 12, 28, 12], corners: { tl: [52, 62], tr: [52, 62], br: [44, 38], bl: [44, 38] }, angle: 160, from: '#fecdd3', to: '#e11d48', shadow: '#e11d48' },
+    extras: (b, gray) => {
+      const legs = [
+        { box: rect(WRAP, { left: 22, top: 74, width: 11, height: 26 }), c: gray ? '#8a8a8a' : '#fb7185' },
+        { box: rect(WRAP, { left: 38, top: 78, width: 11, height: 22 }), c: gray ? '#7a7a7a' : '#f43f5e' },
+        { box: rect(WRAP, { right: 38, top: 78, width: 11, height: 22 }), c: gray ? '#7a7a7a' : '#f43f5e' },
+        { box: rect(WRAP, { right: 22, top: 74, width: 11, height: 26 }), c: gray ? '#8a8a8a' : '#fb7185' },
+      ];
+      return legs.map((l, i) => (
+        <Path key={`t${i}`} d={blobPath(l.box, { tl: [45, 45], tr: [45, 45], br: [50, 50], bl: [50, 50] })} fill={l.c} />
+      ));
+    },
+    eyes: { type: 'pair', leftPct: 26, rightPct: 26, topPct: 38, sizePct: 17 },
+    mouth: { leftPct: 43, topPct: 66, wPct: 14, hPct: 12, ellipse: true },
+  },
+  18: { // Fuzzball — all fluff: a spiky fur halo around a magenta core
+    body: { inset: [14, 14, 14, 14], corners: CIRCLE, radial: { cx: '34%', cy: '28%', mid: [72, '#c026d3'] }, from: '#f5d0fe', to: '#c026d3', shadow: '#c026d3' },
+    extras: (b, gray) => <Path key="fur" d={spikyRingPath(20, 50, 44)} fill={gray ? '#7a7a7a' : '#f0abfc'} />,
+    eyes: { type: 'pair', leftPct: 25, rightPct: 25, topPct: 36, sizePct: 17 },
+    mouth: { leftPct: 40, topPct: 66, wPct: 20, hPct: 11, radiusPct: 55 },
+  },
+  19: { // Cosmo — deep-violet void with a tilted ring and two star sparkles
+    body: { inset: [14, 14, 14, 14], corners: CIRCLE, radial: { cx: '32%', cy: '26%', mid: [78, '#2e1065'] }, from: '#6d28d9', to: '#2e1065', shadow: '#6d28d9', trueGlow: true },
+    extras: (b, gray) => (
+      // Tilted Saturn-style orbit ring (source: `left:-4%; top:52%; width:108%;
+      // height:16%; border-radius:50%; transform:rotate(-14deg)`), drawn behind
+      // the body so its near arc passes behind Cosmo.
+      <G key="ring" rotation={-14} originX={50} originY={60}>
+        <Ellipse cx={50} cy={60} rx={54} ry={8} stroke={gray ? 'rgba(160,160,160,0.6)' : 'rgba(196,181,253,0.75)'} strokeWidth={3} fill="none" />
+      </G>
+    ),
+    frontExtras: (b, gray) => {
+      const s1 = rect(b, { left: 22, top: 22, width: 7, height: 7 });
+      const s2 = rect(b, { right: 24, top: 30, width: 5, height: 5 });
+      return (
+        <>
+          <Circle key="s1" cx={s1.x + s1.w / 2} cy={s1.y + s1.h / 2} r={s1.w / 2} fill={gray ? '#c9c9c9' : '#fef3c7'} />
+          <Circle key="s2" cx={s2.x + s2.w / 2} cy={s2.y + s2.h / 2} r={s2.w / 2} fill={gray ? '#c9c9c9' : '#fef3c7'} />
+        </>
+      );
+    },
+    eyes: { type: 'pair', leftPct: 29, rightPct: 29, topPct: 44, sizePct: 15, pupil: '#1e1b4b' },
+    mouth: { leftPct: 42, topPct: 68, wPct: 16, hPct: 8, radiusPct: 55 },
   },
 };
 
@@ -367,13 +553,13 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
   const eyesSpec = spec.eyesOnWrapper || spec.eyes;
   const mouthSpec = spec.mouthOnWrapper || spec.mouth;
 
-  // --- Glimmer's shine: a bright band that sweeps across the gem, clipped to
-  // its silhouette, then pauses off-frame before the next pass (source: the
-  // crystal's `shine` accessory / the flash sweep in the design art). ---
-  const isGlimmer = String(creatureId) === '8';
+  // --- shine sweep: a bright band that crosses the body, clipped to its
+  // silhouette, then pauses off-frame before the next pass (source: the
+  // crystal's `shine` accessory / Pearla's `creShine` sweep). ---
+  const hasShine = !!spec.shine;
   const shimmer = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    if (!isGlimmer || !animate) return undefined;
+    if (!hasShine || !animate) return undefined;
     shimmer.setValue(0);
     const loop = Animated.loop(
       Animated.sequence([
@@ -383,7 +569,7 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
     );
     loop.start();
     return () => loop.stop();
-  }, [isGlimmer, animate, shimmer]);
+  }, [hasShine, animate, shimmer]);
   const shimmerX = shimmer.interpolate({ inputRange: [0, 1], outputRange: [-W * 0.5, W * 1.05] });
 
   return (
@@ -402,7 +588,14 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
           {spec.body.radial ? (
             <RadialGradient id={gradId} cx={spec.body.radial.cx} cy={spec.body.radial.cy} r="75%">
               <Stop offset="0%" stopColor={gradFrom} />
-              <Stop offset="70%" stopColor={gradTo} />
+              {spec.body.radial.mid ? (
+                <Stop
+                  offset={`${spec.body.radial.mid[0]}%`}
+                  stopColor={gray ? grayscaleDim(spec.body.radial.mid[1]) : spec.body.radial.mid[1]}
+                />
+              ) : (
+                <Stop offset="70%" stopColor={gradTo} />
+              )}
               <Stop offset="100%" stopColor={gradTo} />
             </RadialGradient>
           ) : (
@@ -423,7 +616,7 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
               <Stop offset="100%" stopColor={gray ? grayscaleDim('#7dd3fc') : '#7dd3fc'} />
             </LinearGradient>
           ) : null}
-          {isGlimmer ? (
+          {hasShine ? (
             <>
               <ClipPath id="glimmerClip">
                 <Path d={bodyPathD} />
@@ -437,26 +630,40 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
           ) : null}
         </Defs>
 
-        {glow
-          ? glowLayers.map(([s, op], i) => (
+        {glow ? (
+          // The soft halo under the creature — original silhouette-hugging
+          // size, whole stack held at 10% opacity.
+          <G opacity={0.1}>
+            {glowLayers.map(([s, op], i) => (
               <G key={`glow-${i}`} scale={s} originX={bcx} originY={bcy} y={glowDy}>
                 <Path d={bodyPathD} fill={glowColor} opacity={op} />
               </G>
-            ))
-          : null}
+            ))}
+          </G>
+        ) : null}
 
         {spec.extras ? spec.extras(bodyBox, gray) : null}
 
         <Path d={bodyPathD} fill={bodyFill} />
-        {/* soft glossy highlight to stand in for the source's inset light shadow */}
-        <Ellipse
-          cx={bodyBox.x + bodyBox.w * 0.34}
-          cy={bodyBox.y + bodyBox.h * 0.28}
-          rx={bodyBox.w * 0.22}
-          ry={bodyBox.h * 0.16}
-          fill="#ffffff"
-          opacity={gray ? 0.12 : 0.22}
-        />
+        {/* soft glossy highlight to stand in for the source's inset light
+            shadow. Star/pentagon bodies recede far inside their bounding box,
+            so the highlight is shrunk and pulled toward centre for those or it
+            spills past the silhouette. */}
+        {(() => {
+          const tight = spec.body.star || spec.body.pentagon;
+          return (
+            <Ellipse
+              cx={bodyBox.x + bodyBox.w * (tight ? 0.42 : 0.34)}
+              cy={bodyBox.y + bodyBox.h * (tight ? 0.4 : 0.28)}
+              rx={bodyBox.w * (tight ? 0.11 : 0.22)}
+              ry={bodyBox.h * (tight ? 0.08 : 0.16)}
+              fill="#ffffff"
+              opacity={gray ? 0.12 : 0.22}
+            />
+          );
+        })()}
+
+        {spec.frontExtras ? spec.frontExtras(bodyBox, gray) : null}
 
         {spec.blush
           ? (() => {
@@ -474,7 +681,17 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
         ) : eyesSpec.type === 'sleepy' ? (
           <SleepyEyes parent={eyesParentBox} leftPct={eyesSpec.leftPct} rightPct={eyesSpec.rightPct} topPct={eyesSpec.topPct} w={eyesSpec.wPct} h={eyesSpec.hPct} gray={gray} />
         ) : (
-          <EyePair parent={eyesParentBox} leftPct={eyesSpec.leftPct} rightPct={eyesSpec.rightPct} topPct={eyesSpec.topPct} size={eyesSpec.sizePct} gray={gray} />
+          <EyePair
+            parent={eyesParentBox}
+            leftPct={eyesSpec.leftPct}
+            rightPct={eyesSpec.rightPct}
+            topPct={eyesSpec.topPct}
+            size={eyesSpec.sizePct}
+            pupil={eyesSpec.pupil}
+            sclera={eyesSpec.sclera}
+            glow={eyesSpec.glow}
+            gray={gray}
+          />
         )}
 
         <Mouth
@@ -486,10 +703,13 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
           hPct={mouthSpec.hPct}
           radiusPct={mouthSpec.radiusPct}
           ellipse={mouthSpec.ellipse}
+          frown={mouthSpec.frown}
+          poly={mouthSpec.poly}
+          color={mouthSpec.color}
           gray={gray}
         />
 
-        {isGlimmer ? (
+        {hasShine ? (
           <G clipPath="url(#glimmerClip)">
             <AnimatedRect
               x={shimmerX}

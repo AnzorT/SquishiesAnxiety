@@ -288,6 +288,7 @@ export default function App() {
           onLogout={handleLogout}
           onOpenAchievements={() => setScreen('achievements')}
           onOpenStore={() => setScreen('store')}
+          onOpenCreator={() => Alert.alert('Almost there', 'The creature creator lands in the next update.')}
         />
       )}
       {stage === 'achievements' && (

@@ -1,40 +1,34 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Animated, Easing, Dimensions } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Animated, Easing, PanResponder } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { spacing } from '../theme/tokens';
-import { squadColors, squadGradients, squadFonts } from '../theme/squadTheme';
+import { squadColors, squadFonts } from '../theme/squadTheme';
 import CreatureCard from '../components/CreatureCard';
+import { CreateOwnCard, CustomCreatureCard } from '../components/CustomCards';
+import { PagedCard, GhostCard } from '../components/PagedCard';
 import AdBanner from '../components/AdBanner';
 import IconButton from '../components/squad/IconButton';
 import SettingsSheet from './SettingsSheet';
 
-// Home Screen — a vertical creature carousel. Every creature card lives in one
-// tall strip that slides on `index` change (the swipe animation); the focused
-// card sits centred in the viewport with ~half of each neighbour peeking above
-// and below. The two nav arrows overlay the FOCUSED card, straddling its top
-// and bottom edge — the up arrow only when there's a card above (index > 0),
-// the down arrow only when there's one below (index < n-1). The card itself
-// (image area / lock states / info area / hold-to-unlock) lives in CreatureCard.
+// Home — a two-tab creature shelf, ported from the decoded
+// "ASMR Creature Squash Game.html":
+//  · OUR CREATURES — the 20-strong roster, one card at a time
+//  · MY CREATURES  — a "Create your own squishy" card, then a card per
+//    custom creature the player has made
+// Switching tabs slides the whole list in from the side (listInLeft/Right);
+// paging within a tab plays the cardSlideUp/Down entrance while a ghost of
+// the outgoing card flies off (see components/PagedCard). The unlock-with-key
+// hold gesture and its UNLOCKED! burst live in CreatureCard.
 
-const CARD_GAP = 18;
-const EDGE_PAD = 14; // keeps the first / last card off the viewport edge
-const ARROW_H = 34;
-const WINDOW_H = Dimensions.get('window').height;
+const ARROW_H = 40;
+const AD_H = 52;
+const SWIPE_THRESHOLD = 46; // source: onTrackMove dy gate
 
-const clampN = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-
-// Card height for a given viewport: focused card full, ~half of each neighbour.
-function carouselGeo(vpH) {
-  const cardH = Math.max(150, (vpH - CARD_GAP * 2) / 2.1);
-  return { cardH, step: cardH + CARD_GAP };
-}
-
-function ArrowButton({ direction, onPress, style }) {
-  const isUp = direction === 'up';
+function ArrowButton({ direction, onPress, dim }) {
   return (
-    <Pressable style={[styles.arrowButton, style]} onPress={onPress} hitSlop={12}>
-      <View style={isUp ? styles.triangleUp : styles.triangleDown} />
+    <Pressable style={styles.arrowButton} onPress={onPress} hitSlop={10} disabled={dim}>
+      <View style={[direction === 'up' ? styles.triangleUp : styles.triangleDown, dim && styles.arrowDim]} />
     </Pressable>
   );
 }
@@ -59,97 +53,157 @@ export default function HomeScreen({
   onLogout,
   onOpenAchievements,
   onOpenStore,
+  customCreatures = [],
+  onOpenCreator = () => {},
+  onSelectCustom = () => {},
+  onDeleteCustom = () => {},
 }) {
   const insets = useSafeAreaInsets();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [viewportH, setViewportH] = useState(0);
+  const [tab, setTab] = useState('ours'); // 'ours' | 'mine'
+  const [mineIndex, setMineIndex] = useState(0);
+  const [cardTrackH, setCardTrackH] = useState(0);
+  const [tabBarW, setTabBarW] = useState(0);
 
-  const safeIndex = creatures.length ? Math.min(Math.max(index ?? 0, 0), creatures.length - 1) : 0;
+  const oursIndex = creatures.length ? Math.min(Math.max(index ?? 0, 0), creatures.length - 1) : 0;
+  const ownedCount = creatures.filter((c) => ownedIds.includes(c.id)).length;
+  const minePageCount = customCreatures.length + 1;
+  const clampedMineIndex = Math.min(Math.max(mineIndex, 0), minePageCount - 1);
+
+  const targetPage = tab === 'ours' ? oursIndex : clampedMineIndex;
+  const pageCount = tab === 'ours' ? creatures.length : minePageCount;
+
+  // --- card swap: `view` is what's on screen; a `ghost` clone of the card
+  // that just left flies off while the new one slides in (see PagedCard).
+  // Both are created in the SAME render (inside goTo) so there's no one-frame
+  // flash of the outgoing card popping back to centre. ---
+  const [view, setView] = useState({ index: targetPage, dir: 1 });
+  const [ghost, setGhost] = useState(null);
+  const page = view.index;
+
+  // An index/tab change that DIDN'T come from goTo (tab switch resetting to 0,
+  // a custom creature deleted, App resetting homeIndex) — snap, no ghost.
+  useEffect(() => {
+    if (view.index !== targetPage) {
+      setView((v) => ({ index: targetPage, dir: v.dir }));
+      setGhost(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetPage, tab]);
 
   const goTo = useCallback(
     (next) => {
-      if (!creatures.length) return;
-      const clamped = Math.min(Math.max(next, 0), creatures.length - 1);
-      if (clamped !== safeIndex) onChangeIndex(clamped);
+      const clamped = Math.min(Math.max(next, 0), pageCount - 1);
+      if (clamped === view.index) return;
+      const dir = clamped > view.index ? 1 : -1;
+      setGhost({ index: view.index, dir, id: Date.now() });
+      setView({ index: clamped, dir });
+      if (tab === 'ours') onChangeIndex && onChangeIndex(clamped);
+      else setMineIndex(clamped);
     },
-    [creatures.length, safeIndex, onChangeIndex]
+    [pageCount, view.index, tab, onChangeIndex]
   );
 
-  const ownedCount = creatures.filter((c) => ownedIds.includes(c.id)).length;
-
-  // Carousel geometry. Until the viewport has been measured we fall back to a
-  // sensible fraction of the window so the very first paint is close.
-  const count = creatures.length;
-  const vpH = viewportH || Math.round(WINDOW_H * 0.58);
-  const { cardH, step } = carouselGeo(vpH);
-
-  // Centre the focused card, but clamp so the first / last card hugs the
-  // viewport edge instead of leaving a big empty band.
-  const maxY = EDGE_PAD;
-  const minY = Math.min(maxY, vpH - EDGE_PAD - ((count - 1) * step + cardH));
-  const targetY = clampN(vpH / 2 - cardH / 2 - safeIndex * step, minY, maxY);
-
-  // The arrows overlay the focused card, straddling its top / bottom edge.
-  const focusedTop = targetY + safeIndex * step;
-  const upArrowTop = focusedTop - ARROW_H / 2;
-  const downArrowTop = focusedTop + cardH - ARROW_H / 2;
-
-  const slide = useRef(new Animated.Value(0)).current;
-  const prevIndexRef = useRef(safeIndex);
-  useEffect(() => {
-    const indexChanged = prevIndexRef.current !== safeIndex;
-    prevIndexRef.current = safeIndex;
-    if (indexChanged && viewportH > 0) {
-      Animated.timing(slide, {
-        toValue: targetY,
-        duration: 360,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }).start();
-    } else {
-      // first mount / viewport just measured — snap into place, no animation
-      slide.setValue(targetY);
-    }
-  }, [safeIndex, targetY, viewportH, slide]);
-
-  const onViewportLayout = useCallback(
-    (e) => {
-      const h = Math.round(e.nativeEvent.layout.height);
-      if (h <= 0 || h === viewportH) return;
-      // Position the strip for this exact height before the first paint that
-      // shows it, so it doesn't visibly jump from the window-fraction guess.
-      const g = carouselGeo(h);
-      const mY = EDGE_PAD;
-      const nY = Math.min(mY, h - EDGE_PAD - ((count - 1) * g.step + g.cardH));
-      slide.setValue(clampN(h / 2 - g.cardH / 2 - safeIndex * g.step, nY, mY));
-      setViewportH(h);
+  // --- list slide-in on tab switch (listInLeft / listInRight) ---
+  const listAnim = useRef(new Animated.Value(1)).current;
+  const [listDir, setListDir] = useState(1);
+  const switchTab = useCallback(
+    (next) => {
+      if (next === tab) return;
+      setListDir(next === 'mine' ? 1 : -1);
+      setTab(next);
+      if (next === 'mine') setMineIndex(0);
+      else onChangeIndex && onChangeIndex(0);
     },
-    [viewportH, safeIndex, slide, count]
+    [tab, onChangeIndex]
+  );
+  useEffect(() => {
+    listAnim.setValue(0);
+    Animated.timing(listAnim, {
+      toValue: 1,
+      duration: 340,
+      easing: Easing.bezier(0.2, 0.9, 0.25, 1),
+      useNativeDriver: true,
+    }).start();
+  }, [tab, listAnim]);
+  const listTranslateX = listAnim.interpolate({ inputRange: [0, 1], outputRange: [listDir > 0 ? 46 : -46, 0] });
+
+  // --- sliding tab indicator ---
+  const indicatorAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(indicatorAnim, {
+      toValue: tab === 'mine' ? 1 : 0,
+      duration: 340,
+      easing: Easing.bezier(0.65, 0, 0.35, 1),
+      useNativeDriver: true,
+    }).start();
+  }, [tab, indicatorAnim]);
+  const indicatorX = indicatorAnim.interpolate({ inputRange: [0, 1], outputRange: [0, tabBarW / 2] });
+
+  // --- vertical swipe paging on the card track ---
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 12 && Math.abs(g.dy) > Math.abs(g.dx),
+        onPanResponderRelease: (_e, g) => {
+          if (g.dy <= -SWIPE_THRESHOLD) goTo(page + 1);
+          else if (g.dy >= SWIPE_THRESHOLD) goTo(page - 1);
+        },
+      }),
+    [goTo, page]
+  );
+
+  const renderPage = useCallback(
+    (tabName, pageIndex) => {
+      if (tabName === 'ours') {
+        const c = creatures[pageIndex];
+        if (!c) return null;
+        return (
+          <CreatureCard
+            creature={c}
+            unlocked={ownedIds.includes(c.id)}
+            hasKey={!!keys[c.id]}
+            onSelectToy={onSelectToy}
+            onOpenStore={onOpenStore}
+            onUnlockWithKey={onUnlockWithKey}
+          />
+        );
+      }
+      if (pageIndex === 0) return <CreateOwnCard onPress={onOpenCreator} />;
+      const custom = customCreatures[pageIndex - 1];
+      if (!custom) return null;
+      return (
+        <CustomCreatureCard
+          creature={custom}
+          onPlay={() => onSelectCustom(custom)}
+          onDelete={() => onDeleteCustom(custom)}
+        />
+      );
+    },
+    [creatures, ownedIds, keys, customCreatures, onSelectToy, onOpenStore, onUnlockWithKey, onOpenCreator, onSelectCustom, onDeleteCustom]
   );
 
   if (!creatures.length) {
     return (
-      <LinearGradient colors={squadGradients.homeBg.colors} start={squadGradients.homeBg.start} end={squadGradients.homeBg.end} style={[styles.centered, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <LinearGradient colors={[squadColors.bgHomeTop, squadColors.bgHomeBottom]} style={[styles.centered, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <ActivityIndicator color={squadColors.pinkLight} />
         <Text style={styles.loadingText}>Loading your shelf…</Text>
       </LinearGradient>
     );
   }
 
+  const upDim = page === 0;
+  const mineBadge = customCreatures.length;
+
   return (
-    <LinearGradient colors={squadGradients.homeBg.colors} start={squadGradients.homeBg.start} end={squadGradients.homeBg.end} style={styles.container}>
+    <LinearGradient colors={[squadColors.bgHomeTop, squadColors.bgHomeBottom]} style={styles.container}>
       <View style={[styles.content, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <View>
             <Text style={styles.nickname}>{nickname}</Text>
             <View style={styles.pillsRow}>
               <View style={styles.pill}>
-                <LinearGradient
-                  colors={squadGradients.goldDot.colors}
-                  start={squadGradients.goldDot.start}
-                  end={squadGradients.goldDot.end}
-                  style={styles.coinDot}
-                />
+                <View style={styles.coinDot} />
                 <Text style={styles.coinText}>{coins}</Text>
               </View>
             </View>
@@ -161,49 +215,57 @@ export default function HomeScreen({
           </View>
         </View>
 
-        <View style={styles.stage}>
-          <View style={styles.viewport} onLayout={onViewportLayout}>
-            {viewportH > 0 && (
-              <>
-                <Animated.View style={[styles.strip, { transform: [{ translateY: slide }] }]}>
-                  {creatures.map((c, i) => (
-                    <View key={c.id} style={[styles.cardSlot, { height: cardH, marginBottom: CARD_GAP }]}>
-                      <CreatureCard
-                        creature={c}
-                        unlocked={ownedIds.includes(c.id)}
-                        hasKey={!!keys[c.id]}
-                        dimmed={i !== safeIndex}
-                        onFocus={() => goTo(i)}
-                        onSelectToy={onSelectToy}
-                        onOpenStore={onOpenStore}
-                        onUnlockWithKey={onUnlockWithKey}
-                      />
-                    </View>
-                  ))}
-                </Animated.View>
+        <View style={styles.tabBarWrap}>
+          <View style={styles.tabBar} onLayout={(e) => setTabBarW(e.nativeEvent.layout.width)}>
+            <Pressable style={styles.tabButton} onPress={() => switchTab('ours')}>
+              <Text style={[styles.tabLabel, tab === 'ours' ? styles.tabLabelActive : styles.tabLabelIdle]}>OUR CREATURES</Text>
+            </Pressable>
+            <Pressable style={styles.tabButton} onPress={() => switchTab('mine')}>
+              <Text style={[styles.tabLabel, tab === 'mine' ? styles.tabLabelActive : styles.tabLabelIdle]}>MY CREATURES</Text>
+              {mineBadge > 0 && (
+                <View style={styles.tabBadge}>
+                  <Text style={styles.tabBadgeText}>{mineBadge}</Text>
+                </View>
+              )}
+            </Pressable>
+            <Animated.View style={[styles.tabIndicator, { width: tabBarW / 2, transform: [{ translateX: indicatorX }] }]}>
+              <LinearGradient colors={[squadColors.pink, squadColors.teal]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFillObject} />
+            </Animated.View>
+          </View>
+        </View>
 
-                {safeIndex > 0 && (
-                  <ArrowButton
-                    direction="up"
-                    style={[styles.arrowOnCard, { top: upArrowTop }]}
-                    onPress={() => goTo(safeIndex - 1)}
-                  />
+        <Animated.View style={[styles.stage, { opacity: listAnim, transform: [{ translateX: listTranslateX }] }]}>
+          <View style={styles.arrowRow}>
+            <ArrowButton direction="up" onPress={() => goTo(page - 1)} dim={upDim} />
+          </View>
+
+          <View style={styles.cardTrack} onLayout={(e) => setCardTrackH(e.nativeEvent.layout.height)} {...panResponder.panHandlers}>
+            {cardTrackH > 0 && (
+              <>
+                {ghost && (
+                  <GhostCard key={ghost.id} direction={ghost.dir} cardH={cardTrackH} onDone={() => setGhost(null)}>
+                    {renderPage(tab, ghost.index)}
+                  </GhostCard>
                 )}
-                {safeIndex < count - 1 && (
-                  <ArrowButton
-                    direction="down"
-                    style={[styles.arrowOnCard, { top: downArrowTop }]}
-                    onPress={() => goTo(safeIndex + 1)}
-                  />
-                )}
+                <PagedCard key={`${tab}-${page}`} direction={view.dir} cardH={cardTrackH}>
+                  {renderPage(tab, page)}
+                </PagedCard>
               </>
             )}
           </View>
 
-          <View style={styles.adSection}>
-            <AdBanner />
+          <View style={styles.arrowRow}>
+            {/* source keeps the down arrow at full opacity even on the last
+                card (nextCard just clamps) — only the up arrow dims at 0 */}
+            <ArrowButton direction="down" onPress={() => goTo(page + 1)} />
           </View>
-        </View>
+
+          <View style={styles.adRow}>
+            <View style={styles.adInner}>
+              <AdBanner />
+            </View>
+          </View>
+        </Animated.View>
       </View>
 
       <SettingsSheet
@@ -239,9 +301,8 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingHorizontal: 16,
     paddingBottom: 10,
-    flexShrink: 0,
   },
-  nickname: { fontFamily: squadFonts.headingExtraBold, fontWeight: '800', color: squadColors.textWhite, fontSize: 17 },
+  nickname: { fontFamily: squadFonts.headingExtraBold, color: squadColors.textWhite, fontSize: 17 },
   pillsRow: { flexDirection: 'row', gap: 8, marginTop: 5 },
   pill: {
     flexDirection: 'row',
@@ -254,30 +315,63 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  coinDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    shadowColor: squadColors.goldAmber,
-    shadowOpacity: 0.7,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 0 },
-  },
-  coinText: { color: squadColors.gold, fontFamily: squadFonts.bodyExtraBold, fontWeight: '800', fontSize: 13 },
+  coinDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: squadColors.gold },
+  coinText: { color: squadColors.gold, fontFamily: squadFonts.bodyExtraBold, fontSize: 13 },
   headerIcons: { flexDirection: 'row', gap: 8 },
 
-  stage: { flex: 1, flexDirection: 'column', minHeight: 0 },
-  viewport: { flex: 1, overflow: 'hidden', minHeight: 0, position: 'relative' },
-  strip: { position: 'absolute', left: 0, right: 0, top: 0 },
-  cardSlot: { width: '100%', alignItems: 'center' },
-  adSection: { height: 66, alignItems: 'center', justifyContent: 'center', paddingBottom: 8, flexShrink: 0 },
+  tabBarWrap: { paddingHorizontal: 16, paddingBottom: 6 },
+  tabBar: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#2f1c5a',
+    position: 'relative',
+  },
+  tabButton: { flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6, paddingVertical: 7 },
+  tabLabel: { fontFamily: squadFonts.bodyExtraBold, fontSize: 11, letterSpacing: 1.6 },
+  tabLabelActive: { color: squadColors.textWhite },
+  tabLabelIdle: { color: squadColors.textFaint },
+  tabBadge: {
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    backgroundColor: squadColors.pink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabBadgeText: { color: '#fff', fontSize: 9, fontFamily: squadFonts.bodyExtraBold },
+  tabIndicator: {
+    position: 'absolute',
+    bottom: -1.5,
+    left: 0,
+    height: 3,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
 
-  arrowButton: { width: 64, height: ARROW_H, alignItems: 'center', justifyContent: 'center' },
-  arrowOnCard: { position: 'absolute', left: '50%', marginLeft: -32, zIndex: 5 },
+  stage: { flex: 1, minHeight: 0 },
+  arrowRow: { height: ARROW_H, alignItems: 'center', justifyContent: 'center' },
+  arrowButton: { width: 64, height: 34, alignItems: 'center', justifyContent: 'center' },
+  arrowDim: { opacity: 0.35 },
+  // NOTE: no `alignItems: 'center'` here — PagedCard needs to stretch to the
+  // full track width so CreatureCard's `width: 84%` is 84% of the screen, not
+  // of a collapsed parent. PagedCard itself centres the card horizontally.
+  cardTrack: { flex: 1, minHeight: 0, justifyContent: 'center', overflow: 'hidden' },
+  adRow: { height: AD_H, alignItems: 'center', justifyContent: 'center', paddingBottom: 8 },
+  adInner: {
+    width: '88%',
+    maxHeight: 64,
+    height: '100%',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+
   triangleUp: {
     width: 0,
     height: 0,
-    backgroundColor: 'transparent',
     borderStyle: 'solid',
     borderLeftWidth: 14,
     borderRightWidth: 14,
@@ -289,7 +383,6 @@ const styles = StyleSheet.create({
   triangleDown: {
     width: 0,
     height: 0,
-    backgroundColor: 'transparent',
     borderStyle: 'solid',
     borderLeftWidth: 14,
     borderRightWidth: 14,

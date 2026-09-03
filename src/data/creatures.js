@@ -1,4 +1,4 @@
-// Single source of truth for the 10-creature roster, matching "ASMR
+// Single source of truth for the 20-creature roster, matching "ASMR
 // Creature Squash Game.html" (the design spec this app is built from)
 // exactly — names, prices, descriptions, per-creature 3D visuals (used by
 // SquishyToy's procedural sphere builder), and the soft-body physics
@@ -17,6 +17,16 @@ export const CREATURES = [
   { id: '7', name: 'Noodle', description: 'Wobbly tentacles, world-class ASMR sounds.', price: 1300, order: 7 },
   { id: '8', name: 'Glimmer', description: 'Crystal-faceted and impossibly shiny.', price: 1600, order: 8 },
   { id: '9', name: 'Ember', description: 'Warm, glowing, and secretly ticklish.', price: 2000, order: 9 },
+  { id: '10', name: 'Mochi', description: 'Soft as fresh dough, blushes when squeezed.', price: 2400, order: 10 },
+  { id: '11', name: 'Zappy', description: 'Crackles with static on every squash.', price: 2800, order: 11 },
+  { id: '12', name: 'Bubbles', description: 'Half water balloon, half giggle.', price: 3200, order: 12 },
+  { id: '13', name: 'Grumps', description: 'Pretends to hate it. Secretly loves it.', price: 3600, order: 13 },
+  { id: '14', name: 'Sprout', description: 'A seedling pal who grows on you.', price: 4000, order: 14 },
+  { id: '15', name: 'Cinder', description: 'Cooled lava with a warm glow inside.', price: 4400, order: 15 },
+  { id: '16', name: 'Pearla', description: 'Iridescent shell, silkiest squish sound.', price: 4800, order: 16 },
+  { id: '17', name: 'Tako', description: 'Four tentacles, infinite wobble.', price: 5200, order: 17 },
+  { id: '18', name: 'Fuzzball', description: 'All fluff, no edges, maximum squish.', price: 5600, order: 18 },
+  { id: '19', name: 'Cosmo', description: 'Carries a tiny ringed galaxy inside.', price: 6000, order: 19 },
 ];
 
 // Starter creatures every new account already owns (unlocked, no key/coins
@@ -38,6 +48,16 @@ export const CREATURE_VISUALS = {
   7: { color: '#a78bfa', accent: '#7c3aed', accessory: 'tentacles', eye: 'round' },
   8: { color: '#22d3ee', accent: '#a5f3fc', accessory: 'shine', eye: 'round' },
   9: { color: '#f87171', accent: '#fbbf24', accessory: 'flame', eye: 'round' },
+  10: { color: '#f9a8d4', accent: '#ffe4f1', accessory: 'spots', eye: 'round' },
+  11: { color: '#facc15', accent: '#fde047', accessory: 'horns', eye: 'round' },
+  12: { color: '#67e8f9', accent: '#ffffff', accessory: 'shine', eye: 'round' },
+  13: { color: '#6366f1', accent: '#3730a3', accessory: 'horns', eye: 'slit' },
+  14: { color: '#a3e635', accent: '#4ade80', accessory: 'leaves', eye: 'round' },
+  15: { color: '#4b5563', accent: '#fb923c', accessory: 'flame', eye: 'round' },
+  16: { color: '#e9d5ff', accent: '#a5b4fc', accessory: 'sparkle', eye: 'round' },
+  17: { color: '#fb7185', accent: '#e11d48', accessory: 'tentacles', eye: 'round' },
+  18: { color: '#d946ef', accent: '#f0abfc', accessory: 'ears', eye: 'round' },
+  19: { color: '#6d28d9', accent: '#c4b5fd', accessory: 'sparkle', eye: 'round' },
 };
 
 // Soft-body dent physics constants — identical for every creature (the old
