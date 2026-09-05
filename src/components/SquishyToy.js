@@ -247,6 +247,13 @@ const MODEL_3D = {
     dentStrength: 2.3,
     dentFloor: 0.72,
   },
+  2: {
+    asset: require('../../assets/models/nubbin_3d.glb'),
+    visual: 1.9,
+    dentSigma: 0.3,
+    dentStrength: 2.3,
+    dentFloor: 0.72,
+  },
   3: {
     asset: require('../../assets/models/dotty_3d.glb'),
     visual: 1.9,
