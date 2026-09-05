@@ -294,7 +294,7 @@ const CREATURES = {
     mouth: { leftPct: 42, topPct: 62, wPct: 16, hPct: 8, radiusPct: 50 },
   },
   7: { // Noodle — rounded dome with tentacles tucked under it, single cyclops eye
-    body: { inset: [10, 10, 14, 10], corners: { tl: [50, 58], tr: [50, 58], br: [48, 46], bl: [48, 46] }, angle: 160, from: '#c4b5fd', to: '#7c3aed', shadow: '#7c3aed' },
+    body: { inset: [10, 10, 14, 10], corners: { tl: [50, 58], tr: [50, 58], br: [48, 46], bl: [48, 46] }, angle: 160, from: '#c4b5fd', to: '#7c3aed', shadow: '#7c3aed', noHighlight: true },
     extras: (b, gray) => (
       <>
         <Ellipse key="t1" cx={35} cy={74 + (20 * W) / 100 / 2} rx={(10 * W) / 100 / 2} ry={(20 * W) / 100 / 2} fill={gray ? '#8a8a8a' : '#a78bfa'} />
