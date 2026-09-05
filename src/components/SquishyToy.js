@@ -289,6 +289,13 @@ const MODEL_3D = {
     dentStrength: 2.3,
     dentFloor: 0.72,
   },
+  8: {
+    asset: require('../../assets/models/glimmer_3d.glb'),
+    visual: 1.9,
+    dentSigma: 0.3,
+    dentStrength: 2.3,
+    dentFloor: 0.72,
+  },
 };
 
 export const MODEL_3D_IDS = new Set(Object.keys(MODEL_3D));
