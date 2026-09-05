@@ -276,8 +276,8 @@ const CREATURES = {
   },
   5: { // Stellie — star; eyes/mouth are siblings of the (clipped) body, not nested
     body: { inset: [6, 6, 6, 6], star: true, angle: 160, from: '#fbcfe8', to: '#ec4899', shadow: '#ec4899', noInsetShadow: true },
-    eyesOnWrapper: { type: 'pair', leftPct: 34, rightPct: 34, topPct: 46, sizePct: 13 },
-    mouthOnWrapper: { leftPct: 42, topPct: 66, wPct: 16, hPct: 8, radiusPct: 50 },
+    eyesOnWrapper: { type: 'pair', leftPct: 34, rightPct: 34, topPct: 42, sizePct: 13 },
+    mouthOnWrapper: { leftPct: 42, topPct: 60, wPct: 16, hPct: 8, radiusPct: 50 },
   },
   6: { // Puffington — cloud: a wide ellipse body with two round puffs peeking
     // out its lower corners; face sits on the ellipse (source isC6: body
@@ -649,19 +649,21 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
             shadow. Star/pentagon bodies recede far inside their bounding box,
             so the highlight is shrunk and pulled toward centre for those or it
             spills past the silhouette. */}
-        {(() => {
-          const tight = spec.body.star || spec.body.pentagon;
-          return (
-            <Ellipse
-              cx={bodyBox.x + bodyBox.w * (tight ? 0.42 : 0.34)}
-              cy={bodyBox.y + bodyBox.h * (tight ? 0.4 : 0.28)}
-              rx={bodyBox.w * (tight ? 0.11 : 0.22)}
-              ry={bodyBox.h * (tight ? 0.08 : 0.16)}
-              fill="#ffffff"
-              opacity={gray ? 0.12 : 0.22}
-            />
-          );
-        })()}
+        {spec.body.star
+          ? null
+          : (() => {
+              const tight = spec.body.pentagon;
+              return (
+                <Ellipse
+                  cx={bodyBox.x + bodyBox.w * (tight ? 0.42 : 0.34)}
+                  cy={bodyBox.y + bodyBox.h * (tight ? 0.4 : 0.28)}
+                  rx={bodyBox.w * (tight ? 0.11 : 0.22)}
+                  ry={bodyBox.h * (tight ? 0.08 : 0.16)}
+                  fill="#ffffff"
+                  opacity={gray ? 0.12 : 0.22}
+                />
+              );
+            })()}
 
         {spec.frontExtras ? spec.frontExtras(bodyBox, gray) : null}
 
