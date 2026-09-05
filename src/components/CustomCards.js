@@ -72,7 +72,10 @@ function ScanLine() {
 export function CustomCreatureCard({ creature, onPlay, onDelete, onRetry }) {
   const status = creature.status || 'ready';
   const busy = status === 'pending' || status === 'running';
-  const failed = status === 'failed';
+  // 'capacity': the balance guard (or Tripo's own "insufficient credit" error)
+  // held the job back before spending anything — same retry UI as a failure,
+  // distinct only in its message.
+  const failed = status === 'failed' || status === 'capacity';
   const progress = Math.round(creature.progress || 0);
 
   return (
