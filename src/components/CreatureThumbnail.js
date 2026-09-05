@@ -240,11 +240,11 @@ const CREATURES = {
     blush: { leftPct: 12, rightPct: 12, topPct: 52, wPct: 14, hPct: 9, color: '#f472b6' },
   },
   2: { // Nubbin — two small horns near the crown (source: 3D `horns`, cones at ±0.36x, y0.98)
-    body: { inset: [10, 10, 10, 10], corners: { tl: [48, 52], tr: [52, 48], br: [45, 52], bl: [55, 48] }, angle: 160, from: '#fdba74', to: '#ea580c', shadow: '#ea580c' },
+    body: { inset: [10, 10, 10, 10], corners: { tl: [48, 52], tr: [52, 48], br: [45, 52], bl: [55, 48] }, angle: 160, from: '#fdba74', to: '#ea580c', shadow: '#ea580c', noHighlight: true },
     extras: (b, gray) => (
       <>
-        <Path key="hl" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { apexXPct: 34, topPct: -2, halfWPct: 5, heightPct: 14 })} fill={gray ? '#8a8a8a' : '#fb923c'} />
-        <Path key="hr" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { right: 34, topPct: -2, halfWPct: 5, heightPct: 14 })} fill={gray ? '#8a8a8a' : '#fb923c'} />
+        <Path key="hl" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { apexXPct: 34, topPct: 2, halfWPct: 5, heightPct: 14 })} fill={gray ? '#8a8a8a' : '#fb923c'} />
+        <Path key="hr" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { right: 34, topPct: 2, halfWPct: 5, heightPct: 14 })} fill={gray ? '#8a8a8a' : '#fb923c'} />
       </>
     ),
     eyes: { type: 'sleepy', leftPct: 28, rightPct: 28, topPct: 40, wPct: 16, hPct: 4 },
@@ -263,12 +263,12 @@ const CREATURES = {
     mouth: { leftPct: 40, topPct: 66, wPct: 20, hPct: 9, radiusPct: 50 },
   },
   4: { // Spike
-    body: { inset: [10, 10, 10, 10], corners: CIRCLE, angle: 160, from: '#86efac', to: '#16a34a', shadow: '#16a34a' },
+    body: { inset: [10, 10, 10, 10], corners: CIRCLE, angle: 160, from: '#86efac', to: '#16a34a', shadow: '#16a34a', noHighlight: true },
     extras: (b, gray) => (
       <>
-        <Path key="l1" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { apexXPct: 40, topPct: -3, halfWPct: 5, heightPct: 15 })} fill={gray ? '#8a8a8a' : '#22c55e'} />
-        <Path key="l2" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { apexXPct: 50, topPct: -8, halfWPct: 5, heightPct: 17 })} fill={gray ? '#8a8a8a' : '#22c55e'} />
-        <Path key="l3" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { right: 40, topPct: -3, halfWPct: 5, heightPct: 15 })} fill={gray ? '#8a8a8a' : '#22c55e'} />
+        <Path key="l1" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { apexXPct: 40, topPct: -1, halfWPct: 5, heightPct: 15 })} fill={gray ? '#8a8a8a' : '#22c55e'} />
+        <Path key="l2" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { apexXPct: 50, topPct: -5, halfWPct: 5, heightPct: 17 })} fill={gray ? '#8a8a8a' : '#22c55e'} />
+        <Path key="l3" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { right: 40, topPct: -1, halfWPct: 5, heightPct: 15 })} fill={gray ? '#8a8a8a' : '#22c55e'} />
       </>
     ),
     eyes: { type: 'pair', leftPct: 28, rightPct: 28, topPct: 38, sizePct: 14 },
@@ -649,7 +649,7 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
             shadow. Star/pentagon bodies recede far inside their bounding box,
             so the highlight is shrunk and pulled toward centre for those or it
             spills past the silhouette. */}
-        {spec.body.star
+        {spec.body.star || spec.body.noHighlight
           ? null
           : (() => {
               const tight = spec.body.pentagon;
