@@ -9,9 +9,7 @@ import SquishyToy, { MODEL_3D_IDS } from '../components/SquishyToy';
 import SquishyToy2D from '../components/SquishyToy2D';
 import { INTERSTITIAL_AD_UNIT_ID } from '../firebase/ads';
 
-// Some creatures render from a real Tripo3D mesh (MODEL_3D_IDS, the single
-// source of truth in SquishyToy); every other creature squishes as the 2D
-// design art (see SquishyToy2D).
+// 3D-mesh creatures use MODEL_3D_IDS; everything else is 2D art (SquishyToy2D).
 import SquishSound from '../audio/SquishSound';
 import CoinSound from '../audio/CoinSound';
 import PopSound from '../audio/PopSound';
@@ -19,57 +17,33 @@ import { squadColors, squadGradients, squadFonts } from '../theme/squadTheme';
 import AdBanner from '../components/AdBanner';
 import WatchAdButton from '../components/WatchAdButton';
 
-// Squish stage — a single finger both dents the creature *and* slowly spins it
-// while dragging (no separate two-finger orbit gesture, see SquishyToy.js).
-//
-// Coin earning:
-//  - 3D-model creatures: you EARN WHILE YOU HOLD — ~2 coins/sec (EARN_PER_TICK
-//    every EARN_TICK_MS) for as long as a one-finger press is down; two fingers
-//    (rotate) earn nothing. The total banks to the profile on release.
-//  - 2D creatures: unchanged — a lump sum on release scaled by hold time
-//    (`rewardForHoldMs`, capped at 60).
-// Watching a rewarded ad opens a 60s "double coins" window (`BONUS_MS`) that
-// doubles every payout and pops a "×2 SQUISH POINTS!" flash.
-//
-// Touch-abuse guard: more than ABUSE_TAP_LIMIT quick jabs at a 3D model inside
-// ABUSE_WINDOW_MS pops the PunishmentModal — the only way out is to watch an
-// interstitial ad.
-
-// The interactive play area (the "square"): a centred box the creature lives
-// in. Sized to the device rather than a fixed 220 so the creature reads big
-// on a real phone.
+// Stage size scales to the device, capped at 380.
 const STAGE_SIZE = Math.min(Math.round(Dimensions.get('window').width - 32), 380);
 const RIPPLE_LIFETIME_MS = 620;
-const REWARD_VISIBLE_MS = 900;
 const DOUBLE_FLASH_MS = 1800;
-// Watching a rewarded ad grants a 60s window where every squish reward is ×2.
+// 60s window where an ad-watch doubles squish rewards.
 const BONUS_MS = 60000;
 const SPEED_TAP_WINDOW_MS = 60000;
 const SPEED_TAP_THRESHOLD = 60;
 
-// Passive earning: while you HOLD a one-finger press on a 3D-model creature you
-// bank coins over time (~2 / second, ticked every 850ms). Two fingers = rotate,
-// which earns nothing.
-const EARN_TICK_MS = 850;
-const EARN_PER_TICK = 2;
+// Bank 1 coin every 1.5s while held; two fingers (rotate) earns nothing.
+const EARN_TICK_MS = 1500;
+const EARN_PER_TICK = 1;
+// Floating "+1" per tick: rises, spins, fades.
+const FLOATING_COIN_MS = 2200;
+const FLOATING_COIN_RISE = 100;
+const FLOATING_COIN_SIZE = 24;
 
-// Touch-abuse guard: more than this many separate taps on a 3D model inside the
-// window pops the "you're tapping too much" punishment (an interstitial ad).
+// Too many quick taps trips the punishment ad.
 const ABUSE_WINDOW_MS = 60000;
 const ABUSE_TAP_LIMIT = 5;
 const ABUSE_COOLDOWN_MS = 60000;
 
 const DEFAULT_SQUISH_SOUND = require('../../assets/audio/slime.wav');
 
-function rewardForHoldMs(holdMs) {
-  return Math.min(60, Math.round(5 + holdMs / 40));
-}
-
 const RIPPLE_MAX = 120;
 
-// A soft ring that blooms out from the exact touch point and fades — the
-// tap feedback on the squish stage. Centred on (x, y) via a negative margin
-// of half its own final size.
+// Ring that blooms from the touch point and fades.
 function Ripple({ x, y }) {
   const t = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -88,8 +62,35 @@ function Ripple({ x, y }) {
   );
 }
 
-// The prototype's `popIn` keyframe (see LoadingScreen): springs in from small +
-// tilted + invisible, overshoots, then settles. Re-mount (via `key`) to replay.
+// Coin that rises, spins, and fades — pops once per earn tick.
+function FloatingCoin({ x, y, amount }) {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(t, { toValue: 1, duration: FLOATING_COIN_MS, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+  }, [t]);
+  const translateY = t.interpolate({ inputRange: [0, 1], outputRange: [0, -FLOATING_COIN_RISE] });
+  const scale = t.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0.5, 1, 1] });
+  const opacity = t.interpolate({ inputRange: [0, 0.15, 0.55, 1], outputRange: [0, 1, 1, 0] });
+  const spin = t.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.floatingCoin, { left: x - 34, top: y - 46, opacity, transform: [{ translateY }, { scale }] }]}
+    >
+      <Animated.View style={[styles.floatingCoinBadge, { transform: [{ rotateY: spin }] }]}>
+        <LinearGradient
+          colors={squadGradients.goldDot.colors}
+          start={squadGradients.goldDot.start}
+          end={squadGradients.goldDot.end}
+          style={StyleSheet.absoluteFillObject}
+        />
+      </Animated.View>
+      <Text style={styles.floatingCoinText}>+{amount}</Text>
+    </Animated.View>
+  );
+}
+
+// Springs in small+tilted, overshoots, settles.
 function PopIn({ style, children }) {
   const t = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -101,9 +102,7 @@ function PopIn({ style, children }) {
   return <Animated.View style={[style, { opacity, transform: [{ scale }, { rotate }] }]}>{children}</Animated.View>;
 }
 
-// The three bottom-panel hint hands, matching the prototype art: a rounded palm,
-// one or two finger bars, an angled thumb, and (single-finger hands only) two
-// small knuckle dots in the darker `accent` tone.
+// Bottom-panel hint hand: palm, fingers, thumb, knuckles.
 function HandIcon({ color, accent, fingers = 1, anim }) {
   return (
     <Animated.View style={[styles.handIcon, anim]}>
@@ -161,9 +160,7 @@ function SoundSwitch({ value, onToggle }) {
   );
 }
 
-// Shown when the player hammers the 3D model too fast. There's exactly one way
-// out: "ACCEPT PUNISHMENT", which loads and shows a full-screen interstitial ad.
-// When the ad closes (or fails to load) the modal dismisses itself.
+// Forces an interstitial ad after too many quick taps.
 function PunishmentModal({ visible, onDismiss }) {
   const [loading, setLoading] = useState(false);
   const adRef = useRef(null);
@@ -244,30 +241,28 @@ export default function SquishScreen({
   const holdStartRef = useRef(0);
   const rippleSeqRef = useRef(0);
   const tapTimestampsRef = useRef([]);
-  // passive-earn interval + coins banked this hold (flushed to the profile on release)
+  // Coins banked this hold; flushed on release.
   const earnIntervalRef = useRef(null);
   const earnAccumRef = useRef(0);
-  // touch-abuse guard: 3D-model tap timestamps + a cooldown so it can't spam
+  // Tap timestamps + cooldown for the abuse guard.
   const abuseTapsRef = useRef([]);
   const abuseCooldownUntilRef = useRef(0);
-  // 'none' | 'poke' (one finger, squishing) | 'orbit' (two fingers, turning)
+  // gesture mode: none | poke | orbit
   const gestureModeRef = useRef('none');
   const lastCentroidRef = useRef({ x: 0, y: 0 });
-  // true once a gesture has had 2+ fingers at any point — such a gesture never
-  // plays the squish sound or grants coins, even after fingers are lifted.
+  // True once 2 fingers have touched — blocks sound/coins for the rest of the gesture.
   const gestureHadTwoRef = useRef(false);
+
+  const floatingCoinSeqRef = useRef(0);
 
   const [displayCoins, setDisplayCoins] = useState(coins);
   const [ripples, setRipples] = useState([]);
-  const [showReward, setShowReward] = useState(false);
-  const [rewardAmount, setRewardAmount] = useState(0);
-  const [rewardKey, setRewardKey] = useState(0);
+  const [floatingCoins, setFloatingCoins] = useState([]);
   const [wheelOpen, setWheelOpen] = useState(false);
   const [punishOpen, setPunishOpen] = useState(false);
   const [doubleFlash, setDoubleFlash] = useState(false);
   const [doubleFlashKey, setDoubleFlashKey] = useState(0);
-  // Timestamp the 60s double-coins window ends at (null while inactive), plus a
-  // `now` that ticks every 250ms so the countdown widget re-renders.
+  // Bonus window end time; `now` ticks for the countdown.
   const [bonusEndsAt, setBonusEndsAt] = useState(null);
   const [now, setNow] = useState(() => Date.now());
 
@@ -297,8 +292,7 @@ export default function SquishScreen({
   useEffect(() => {
     const sound = new SquishSound();
     soundRef.current = sound;
-    // A custom creature can carry its own squish sound (a base64 data URL);
-    // fall back to the default sample if it has none or fails to load.
+    // Custom creatures can carry their own squish sound.
     sound.load(toy?.audio ? { uri: toy.audio } : DEFAULT_SQUISH_SOUND);
     return () => sound.unload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -331,15 +325,7 @@ export default function SquishScreen({
   }, [wheelAnim]);
   const wheelRotate = wheelAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
 
-  // The PanResponder below is created exactly once (via useRef) so its
-  // touch handlers never see a stale closure over `toyRef`. But that same
-  // one-time creation means any *other* reactive value/callback it reads
-  // (current coin total, sound toggles, the achievements map, the parent's
-  // callback props) would otherwise be frozen at whatever they were on the
-  // very first render. `latestRef` is kept in sync on every render (a plain
-  // assignment during render is safe here — it never reads its own value
-  // mid-render) so those handlers can always read the current value via
-  // `latestRef.current.*` instead of capturing a stale one.
+  // Mirrors props/state so the once-created PanResponder always reads fresh values.
   const latestRef = useRef(null);
   latestRef.current = {
     displayCoins,
@@ -353,31 +339,20 @@ export default function SquishScreen({
     bonusEndsAt,
   };
 
-  const grantReward = useCallback((amount) => {
-    const { coinSoundEnabled: coinSoundOn, onEarnCoins: earnCoins } = latestRef.current;
-    setDisplayCoins((before) => before + amount);
-    if (coinSoundOn) coinSoundRef.current?.play();
-    earnCoins && earnCoins(amount);
-  }, []);
-
-  // A creature that renders on the 3D soft-body rig: a built-in Tripo mesh, or
-  // a player-made creature whose .glb has finished generating.
+  // True for 3D-mesh creatures; picks Canvas vs SquishyToy2D below.
   const toyIs3D = (t) => !!(t && ((t.isCustom && t.modelUrl) || MODEL_3D_IDS.has(String(t.id))));
-  const is3DToy = useCallback(() => toyIs3D(latestRef.current?.toy), []);
 
-  // Passive earning while a one-finger press is held on a 3D model: bank
-  // EARN_PER_TICK coins every EARN_TICK_MS (doubled while the bonus window is
-  // live), updating the on-screen counter + playing the coin ding each tick.
-  // The profile write is deferred to `stopEarning` so we don't hammer Firestore.
+  // Earn EARN_PER_TICK coins every EARN_TICK_MS while held.
   const startEarning = useCallback(() => {
     if (earnIntervalRef.current) return;
     earnAccumRef.current = 0;
     earnIntervalRef.current = setInterval(() => {
-      const { bonusEndsAt: be, coinSoundEnabled: coinSoundOn } = latestRef.current;
-      const gain = EARN_PER_TICK * (be && be > Date.now() ? 2 : 1);
+      const { coinSoundEnabled: coinSoundOn } = latestRef.current;
+      const gain = EARN_PER_TICK;
       earnAccumRef.current += gain;
       setDisplayCoins((c) => c + gain);
       if (coinSoundOn) coinSoundRef.current?.play();
+      spawnFloatingCoin(lastTouch.current.x, lastTouch.current.y, gain);
     }, EARN_TICK_MS);
   }, []);
 
@@ -391,10 +366,6 @@ export default function SquishScreen({
     if (earned > 0) {
       const { onEarnCoins: earnCoins } = latestRef.current;
       earnCoins && earnCoins(earned);
-      setRewardAmount(earned);
-      setShowReward(true);
-      setRewardKey((k) => k + 1);
-      setTimeout(() => setShowReward(false), REWARD_VISIBLE_MS);
     }
     return earned;
   }, []);
@@ -403,9 +374,7 @@ export default function SquishScreen({
     if (earnIntervalRef.current) clearInterval(earnIntervalRef.current);
   }, []);
 
-  // Called on every completed one-finger tap of a 3D model. Trips the punishment
-  // once the tap count in the rolling window passes ABUSE_TAP_LIMIT (outside the
-  // post-punishment cooldown).
+  // Trips the punishment after too many quick taps.
   const registerAbuseTap = useCallback(() => {
     const t = Date.now();
     const taps = [...abuseTapsRef.current, t].filter((ts) => t - ts < ABUSE_WINDOW_MS);
@@ -423,8 +392,7 @@ export default function SquishScreen({
     abuseCooldownUntilRef.current = Date.now() + ABUSE_COOLDOWN_MS;
   }, []);
 
-  // Finishing a rewarded ad doesn't pay out directly — it opens the 60s ×2
-  // window (see the reward calc in onPanResponderRelease) and pops the flash.
+  // Ad reward opens the 60s double-coins window and pops the flash.
   const handleAdReward = useCallback(() => {
     const { achievements: liveAchievements, onMarkAchievement: markAch } = latestRef.current;
     const t = Date.now();
@@ -443,9 +411,14 @@ export default function SquishScreen({
 
   const spawnRipple = useCallback((locationX, locationY) => {
     const id = ++rippleSeqRef.current;
-    // pixel position of the touch inside the stage — the ripple centres on it
     setRipples((prev) => [...prev, { id, x: locationX, y: locationY }]);
     setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), RIPPLE_LIFETIME_MS);
+  }, []);
+
+  const spawnFloatingCoin = useCallback((x, y, amount) => {
+    const id = ++floatingCoinSeqRef.current;
+    setFloatingCoins((prev) => [...prev, { id, x, y, amount }]);
+    setTimeout(() => setFloatingCoins((prev) => prev.filter((c) => c.id !== id)), FLOATING_COIN_MS);
   }, []);
 
   const centroidOf = (touches) => {
@@ -464,10 +437,7 @@ export default function SquishScreen({
       onMoveShouldSetPanResponder: () => true,
       onStartShouldSetPanResponderCapture: () => true,
       onMoveShouldSetPanResponderCapture: () => true,
-      // Fires on the first touch AND every additional touch. A second finger
-      // landing (without moving) doesn't trigger onPanResponderMove, so this
-      // is where a poke -> orbit switch has to be caught to kill the squish
-      // sound immediately.
+      // Catches a poke -> orbit switch on the second finger landing.
       onPanResponderStart: (evt) => {
         const touches = evt.nativeEvent.touches || [];
         if (touches.length >= 2 && gestureModeRef.current !== 'orbit') {
@@ -494,17 +464,14 @@ export default function SquishScreen({
         const ndc = ndcFromLocation(locationX, locationY);
         toyRef.current?.pointerDown(ndc.x, ndc.y);
         spawnRipple(locationX, locationY);
-        // One finger on a 3D model → start banking coins for as long as it's held.
-        if (is3DToy()) startEarning();
+        startEarning();
       },
       onPanResponderMove: (evt) => {
         const touches = evt.nativeEvent.touches || [];
 
         if (touches.length >= 2) {
           gestureHadTwoRef.current = true;
-          // Two fingers down — orbit. If a one-finger poke was in progress,
-          // drop it (no reward) and silence the squish sound so the gesture
-          // cleanly becomes a rotate.
+          // Second finger cancels any poke in progress and starts orbit.
           if (gestureModeRef.current !== 'orbit') {
             toyRef.current?.cancelPoke();
             soundRef.current?.stop();
@@ -520,8 +487,7 @@ export default function SquishScreen({
         }
 
         if (gestureModeRef.current === 'orbit') {
-          // Down to one finger but still an orbit gesture — keep turning with
-          // the remaining finger instead of suddenly denting the toy.
+          // Keep orbiting with the remaining finger.
           if (touches.length === 1) {
             const c = { x: touches[0].locationX, y: touches[0].locationY };
             toyRef.current?.orbit(c.x - lastCentroidRef.current.x, c.y - lastCentroidRef.current.y);
@@ -540,8 +506,7 @@ export default function SquishScreen({
         const hadTwo = gestureHadTwoRef.current;
         gestureModeRef.current = 'none';
         gestureHadTwoRef.current = false;
-        // A two-finger gesture (now or at any earlier point) is a rotate, not
-        // a squish: no reward, no release sound, and stop the squish loop.
+        // Orbit gestures never earn coins or play the release sound.
         if (mode === 'orbit' || hadTwo) {
           toyRef.current?.endOrbit();
           toyRef.current?.pointerUp();
@@ -566,21 +531,9 @@ export default function SquishScreen({
 
         recordPress && recordPress(currentToy.id, holdMs);
 
-        if (toyIs3D(currentToy)) {
-          // Passive earning already paid out over the hold — flush it + show the
-          // "+N" float. A quick jab (< 400ms, no full tick) earns nothing and
-          // counts toward the tap-abuse guard.
-          stopEarning();
-          if (holdMs < 400) registerAbuseTap();
-        } else {
-          const bonusOn = !!latestRef.current.bonusEndsAt && latestRef.current.bonusEndsAt > Date.now();
-          const reward = rewardForHoldMs(holdMs) * (bonusOn ? 2 : 1);
-          setRewardAmount(reward);
-          setShowReward(true);
-          setRewardKey((k) => k + 1);
-          setTimeout(() => setShowReward(false), REWARD_VISIBLE_MS);
-          grantReward(reward);
-        }
+        // Flush the banked total; quick jabs count toward the abuse guard.
+        stopEarning();
+        if (holdMs < 400) registerAbuseTap();
 
         soundRef.current?.stop();
         if (releaseSoundOn) popSoundRef.current?.play();
@@ -655,11 +608,9 @@ export default function SquishScreen({
             {ripples.map((r) => (
               <Ripple key={r.id} x={r.x} y={r.y} />
             ))}
-            {showReward && (
-              <Text key={rewardKey} style={styles.rewardText}>
-                +{rewardAmount}
-              </Text>
-            )}
+            {floatingCoins.map((c) => (
+              <FloatingCoin key={c.id} x={c.x} y={c.y} amount={c.amount} />
+            ))}
           </View>
         </View>
 
@@ -796,15 +747,19 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.7)',
   },
-  rewardText: {
-    position: 'absolute',
-    top: '20%',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
+  floatingCoin: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 4 },
+  floatingCoinBadge: {
+    width: FLOATING_COIN_SIZE,
+    height: FLOATING_COIN_SIZE,
+    borderRadius: FLOATING_COIN_SIZE / 2,
+    overflow: 'hidden',
+  },
+  floatingCoinText: {
     fontFamily: squadFonts.headingExtraBold,
-    fontSize: 26,
+    fontSize: 16,
     color: squadColors.goldLight,
+    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowRadius: 3,
   },
   wheelPopup: {
     position: 'absolute',
@@ -874,10 +829,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Baloo has tall built-in font padding that shoves a short glyph like "×2"
-  // above the optical centre. Kill the padding and stretch the line box to the
-  // full height of the coin so the glyph sits vertically centred inside it,
-  // then let `justifyContent: 'center'` on the coin place that line box.
+  // Kills Baloo's font padding so "×2" sits centred in the coin.
   bonusCoinText: {
     fontFamily: squadFonts.headingExtraBold,
     fontSize: 13,

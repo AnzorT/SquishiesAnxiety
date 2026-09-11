@@ -311,8 +311,9 @@ const CREATURES = {
     eyesOnWrapper: { type: 'pair', leftPct: 34, rightPct: 34, topPct: 44, sizePct: 13 },
     mouthOnWrapper: { leftPct: 42, topPct: 64, wPct: 16, hPct: 8, radiusPct: 50 },
   },
-  9: { // Ember — no accessory; identity is the warm all-over glow (trueGlow)
-    body: { inset: [10, 10, 10, 10], corners: CIRCLE, angle: 160, from: '#fca5a5', to: '#dc2626', shadow: '#f87171', trueGlow: true },
+  9: { // Ember — no accessory; identity is the warm all-over glow (trueGlow).
+    // No gloss highlight either — it read as a white patch on the head.
+    body: { inset: [10, 10, 10, 10], corners: CIRCLE, angle: 160, from: '#fca5a5', to: '#dc2626', shadow: '#f87171', trueGlow: true, noHighlight: true },
     eyes: { type: 'pair', leftPct: 28, rightPct: 28, topPct: 38, sizePct: 14 },
     mouth: { leftPct: 40, topPct: 64, wPct: 20, hPct: 9, radiusPct: 50 },
   },
