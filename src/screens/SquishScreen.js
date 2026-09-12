@@ -21,7 +21,6 @@ import WatchAdButton from '../components/WatchAdButton';
 // Stage size scales to the device, capped at 380.
 const STAGE_SIZE = Math.min(Math.round(Dimensions.get('window').width - 32), 380);
 const RIPPLE_LIFETIME_MS = 620;
-const DOUBLE_FLASH_MS = 1800;
 // 60s window where an ad-watch doubles squish rewards.
 const BONUS_MS = 60000;
 const SPEED_TAP_WINDOW_MS = 60000;
@@ -92,15 +91,26 @@ function FloatingCoin({ x, y, amount }) {
   );
 }
 
-// Springs in small+tilted, overshoots, settles.
-function PopIn({ style, children }) {
+// Springs in small+tilted, overshoots, settles, holds, then fades out —
+// onFadeOutDone fires right as it becomes invisible so the caller can
+// unmount it without an abrupt cut.
+function PopIn({ style, children, holdMs = 940, fadeOutMs = 400, onFadeOutDone }) {
   const t = useRef(new Animated.Value(0)).current;
+  const fade = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     Animated.timing(t, { toValue: 1, duration: 460, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
-  }, [t]);
-  const opacity = t.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 1] });
+    const holdTimer = setTimeout(() => {
+      Animated.timing(fade, { toValue: 0, duration: fadeOutMs, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(({ finished }) => {
+        if (finished) onFadeOutDone && onFadeOutDone();
+      });
+    }, 460 + holdMs);
+    return () => clearTimeout(holdTimer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const popOpacity = t.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 1] });
   const scale = t.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.4, 1.12, 1] });
   const rotate = t.interpolate({ inputRange: [0, 0.6, 1], outputRange: ['-8deg', '3deg', '0deg'] });
+  const opacity = Animated.multiply(popOpacity, fade);
   return <Animated.View style={[style, { opacity, transform: [{ scale }, { rotate }] }]}>{children}</Animated.View>;
 }
 
@@ -416,7 +426,6 @@ export default function SquishScreen({
     setNow(t);
     setDoubleFlash(true);
     setDoubleFlashKey((k) => k + 1);
-    setTimeout(() => setDoubleFlash(false), DOUBLE_FLASH_MS);
     if (!liveAchievements.watchAd) markAch && markAch('watchAd');
   }, []);
 
@@ -708,7 +717,7 @@ export default function SquishScreen({
 
       {doubleFlash && (
         <View style={styles.flashOverlay} pointerEvents="none">
-          <PopIn key={doubleFlashKey}>
+          <PopIn key={doubleFlashKey} onFadeOutDone={() => setDoubleFlash(false)}>
             <Text style={styles.doubleFlashText}>×2 SQUISH POINTS!</Text>
           </PopIn>
         </View>
