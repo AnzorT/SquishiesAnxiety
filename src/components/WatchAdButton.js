@@ -14,6 +14,7 @@ import { squadGradients, squadColors, squadFonts } from '../theme/squadTheme';
 // this component only loads/shows a real rewarded ad and reports back.
 export default function WatchAdButton({ onRewardEarned, disabled, bonusActive }) {
   const rewardedRef = useRef(null);
+  const earnedRef = useRef(false);
   const [ready, setReady] = useState(false);
   const breatheAnim = useRef(new Animated.Value(0)).current;
   const sheenAnim = useRef(new Animated.Value(0)).current;
@@ -46,11 +47,17 @@ export default function WatchAdButton({ onRewardEarned, disabled, bonusActive })
 
       unsub = [
         rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => setReady(true)),
+        // Fires while the ad is still on screen — just flag it and pay out on CLOSED
+        // so the double-coins flash animates in full once the app is visible again.
         rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
-          onRewardEarned && onRewardEarned();
+          earnedRef.current = true;
         }),
         rewarded.addAdEventListener(AdEventType.CLOSED, () => {
           setReady(false);
+          if (earnedRef.current) {
+            earnedRef.current = false;
+            onRewardEarned && onRewardEarned();
+          }
           load();
         }),
         rewarded.addAdEventListener(AdEventType.ERROR, () => setReady(false)),

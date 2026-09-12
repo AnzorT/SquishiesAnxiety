@@ -177,18 +177,6 @@ function EyePair({ parent, leftPct, rightPct, topPct, size, gray, pupil = '#0f17
   );
 }
 
-function SleepyEyes({ parent, leftPct, rightPct, topPct, w, h, gray }) {
-  const l = rect(parent, { left: leftPct, top: topPct, width: w, height: h });
-  const r = rect(parent, { right: rightPct, top: topPct, width: w, height: h });
-  const color = gray ? '#3a3a3a' : '#0f172a';
-  return (
-    <>
-      <Path d={blobPath(l, { tl: [30, 50], tr: [30, 50], br: [30, 50], bl: [30, 50] })} fill={color} />
-      <Path d={blobPath(r, { tl: [30, 50], tr: [30, 50], br: [30, 50], bl: [30, 50] })} fill={color} />
-    </>
-  );
-}
-
 function Mouth({ parent, leftPct, rightPct, topPct, wPct, hPct, radiusPct = 50, ellipse = false, frown = false, poly = null, color: colorOverride, gray }) {
   const box = rect(parent, { left: leftPct, right: rightPct, top: topPct, width: wPct, height: hPct });
   const color = gray ? '#3a3a3a' : colorOverride || '#0f172a';
@@ -218,7 +206,7 @@ function CyclopsEye({ parent, leftPct, topPct, sizePct, gray }) {
 
 const CREATURES = {
   0: { // Glorp
-    body: { inset: [8, 8, 8, 8], corners: { tl: [60, 55], tr: [40, 45], br: [55, 60], bl: [45, 40] }, angle: 160, from: '#5eead4', to: '#0d9488', shadow: '#0d9488' },
+    body: { inset: [8, 8, 8, 8], corners: { tl: [60, 55], tr: [40, 45], br: [55, 60], bl: [45, 40] }, angle: 160, from: '#5eead4', to: '#0d9488', shadow: '#0d9488', highlight: true },
     extras: (b, gray) => {
       const antBox = rect({ x: 0, y: 0, w: W, h: W }, { left: 22, top: -3, width: 8, height: 16 });
       return <Path key="ant" d={blobPath(antBox, { tl: [50, 60], tr: [50, 60], br: [50, 40], bl: [50, 40] })} fill={gray ? '#8a8a8a' : 'url(#antennaGrad0)'} />;
@@ -240,14 +228,14 @@ const CREATURES = {
     blush: { leftPct: 12, rightPct: 12, topPct: 52, wPct: 14, hPct: 9, color: '#f472b6' },
   },
   2: { // Nubbin — two small horns near the crown (source: 3D `horns`, cones at ±0.36x, y0.98)
-    body: { inset: [10, 10, 10, 10], corners: { tl: [48, 52], tr: [52, 48], br: [45, 52], bl: [55, 48] }, angle: 160, from: '#fdba74', to: '#ea580c', shadow: '#ea580c', noHighlight: true },
+    body: { inset: [10, 10, 10, 10], corners: { tl: [48, 52], tr: [52, 48], br: [45, 52], bl: [55, 48] }, angle: 160, from: '#fdba74', to: '#ea580c', shadow: '#ea580c' },
     extras: (b, gray) => (
       <>
         <Path key="hl" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { apexXPct: 34, topPct: 2, halfWPct: 5, heightPct: 14 })} fill={gray ? '#8a8a8a' : '#fb923c'} />
         <Path key="hr" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { right: 34, topPct: 2, halfWPct: 5, heightPct: 14 })} fill={gray ? '#8a8a8a' : '#fb923c'} />
       </>
     ),
-    eyes: { type: 'sleepy', leftPct: 28, rightPct: 28, topPct: 40, wPct: 16, hPct: 4 },
+    eyes: { type: 'pair', leftPct: 28, rightPct: 28, topPct: 40, sizePct: 14 },
     mouth: { leftPct: 38, topPct: 62, wPct: 24, hPct: 12, ellipse: true },
   },
   3: { // Dotty
@@ -263,7 +251,7 @@ const CREATURES = {
     mouth: { leftPct: 40, topPct: 66, wPct: 20, hPct: 9, radiusPct: 50 },
   },
   4: { // Spike
-    body: { inset: [10, 10, 10, 10], corners: CIRCLE, angle: 160, from: '#86efac', to: '#16a34a', shadow: '#16a34a', noHighlight: true },
+    body: { inset: [10, 10, 10, 10], corners: CIRCLE, angle: 160, from: '#86efac', to: '#16a34a', shadow: '#16a34a' },
     extras: (b, gray) => (
       <>
         <Path key="l1" d={trianglePath({ x: 0, y: 0, w: W, h: W }, { apexXPct: 40, topPct: -1, halfWPct: 5, heightPct: 15 })} fill={gray ? '#8a8a8a' : '#22c55e'} />
@@ -290,11 +278,11 @@ const CREATURES = {
         <Circle key="lobeR" cx={72} cy={52} r={22} fill={gray ? '#a6a6a6' : 'url(#cloudSide6)'} />
       </>
     ),
-    eyes: { type: 'sleepy', leftPct: 30, rightPct: 30, topPct: 44, wPct: 12, hPct: 6 },
+    eyes: { type: 'pair', leftPct: 30, rightPct: 30, topPct: 44, sizePct: 13 },
     mouth: { leftPct: 42, topPct: 62, wPct: 16, hPct: 8, radiusPct: 50 },
   },
   7: { // Noodle — rounded dome with tentacles tucked under it, single cyclops eye
-    body: { inset: [10, 10, 14, 10], corners: { tl: [50, 58], tr: [50, 58], br: [48, 46], bl: [48, 46] }, angle: 160, from: '#c4b5fd', to: '#7c3aed', shadow: '#7c3aed', noHighlight: true },
+    body: { inset: [10, 10, 14, 10], corners: { tl: [50, 58], tr: [50, 58], br: [48, 46], bl: [48, 46] }, angle: 160, from: '#c4b5fd', to: '#7c3aed', shadow: '#7c3aed' },
     extras: (b, gray) => (
       <>
         <Ellipse key="t1" cx={35} cy={74 + (20 * W) / 100 / 2} rx={(10 * W) / 100 / 2} ry={(20 * W) / 100 / 2} fill={gray ? '#8a8a8a' : '#a78bfa'} />
@@ -313,13 +301,13 @@ const CREATURES = {
   },
   9: { // Ember — no accessory; identity is the warm all-over glow (trueGlow).
     // No gloss highlight either — it read as a white patch on the head.
-    body: { inset: [10, 10, 10, 10], corners: CIRCLE, angle: 160, from: '#fca5a5', to: '#dc2626', shadow: '#f87171', trueGlow: true, noHighlight: true },
+    body: { inset: [10, 10, 10, 10], corners: CIRCLE, angle: 160, from: '#fca5a5', to: '#dc2626', shadow: '#f87171', trueGlow: true },
     eyes: { type: 'pair', leftPct: 28, rightPct: 28, topPct: 38, sizePct: 14 },
     mouth: { leftPct: 40, topPct: 64, wPct: 20, hPct: 9, radiusPct: 50 },
   },
   10: { // Mochi — soft dough blob, closed happy eyes, big blush
     body: { inset: [12, 8, 14, 8], corners: { tl: [46, 62], tr: [54, 62], br: [50, 38], bl: [50, 38] }, angle: 160, from: '#ffe4f1', to: '#f9a8d4', shadow: '#f9a8d4' },
-    eyes: { type: 'sleepy', leftPct: 27, rightPct: 27, topPct: 42, wPct: 15, hPct: 5 },
+    eyes: { type: 'pair', leftPct: 27, rightPct: 27, topPct: 42, sizePct: 15 },
     mouth: { leftPct: 42, topPct: 58, wPct: 16, hPct: 10, radiusPct: 60 },
     blush: { leftPct: 14, rightPct: 14, topPct: 52, wPct: 15, hPct: 9, color: '#fb7185' },
   },
@@ -646,25 +634,16 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
         {spec.extras ? spec.extras(bodyBox, gray) : null}
 
         <Path d={bodyPathD} fill={bodyFill} />
-        {/* soft glossy highlight to stand in for the source's inset light
-            shadow. Star/pentagon bodies recede far inside their bounding box,
-            so the highlight is shrunk and pulled toward centre for those or it
-            spills past the silhouette. */}
-        {spec.body.star || spec.body.noHighlight
-          ? null
-          : (() => {
-              const tight = spec.body.pentagon;
-              return (
-                <Ellipse
-                  cx={bodyBox.x + bodyBox.w * (tight ? 0.42 : 0.34)}
-                  cy={bodyBox.y + bodyBox.h * (tight ? 0.4 : 0.28)}
-                  rx={bodyBox.w * (tight ? 0.11 : 0.22)}
-                  ry={bodyBox.h * (tight ? 0.08 : 0.16)}
-                  fill="#ffffff"
-                  opacity={gray ? 0.12 : 0.22}
-                />
-              );
-            })()}
+        {spec.body.highlight ? (
+          <Ellipse
+            cx={bodyBox.x + bodyBox.w * 0.34}
+            cy={bodyBox.y + bodyBox.h * 0.28}
+            rx={bodyBox.w * 0.22}
+            ry={bodyBox.h * 0.16}
+            fill="#ffffff"
+            opacity={gray ? 0.12 : 0.22}
+          />
+        ) : null}
 
         {spec.frontExtras ? spec.frontExtras(bodyBox, gray) : null}
 
@@ -681,8 +660,6 @@ export default function CreatureThumbnail({ creatureId, mood = 'idle', size = 90
 
         {eyesSpec.type === 'cyclops' ? (
           <CyclopsEye parent={eyesParentBox} leftPct={eyesSpec.leftPct} topPct={eyesSpec.topPct} sizePct={eyesSpec.sizePct} gray={gray} />
-        ) : eyesSpec.type === 'sleepy' ? (
-          <SleepyEyes parent={eyesParentBox} leftPct={eyesSpec.leftPct} rightPct={eyesSpec.rightPct} topPct={eyesSpec.topPct} w={eyesSpec.wPct} h={eyesSpec.hPct} gray={gray} />
         ) : (
           <EyePair
             parent={eyesParentBox}

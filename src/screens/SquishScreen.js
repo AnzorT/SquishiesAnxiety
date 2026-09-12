@@ -34,9 +34,10 @@ const FLOATING_COIN_MS = 2200;
 const FLOATING_COIN_RISE = 100;
 const FLOATING_COIN_SIZE = 24;
 
-// Too many quick taps trips the punishment ad.
-const ABUSE_WINDOW_MS = 60000;
-const ABUSE_TAP_LIMIT = 5;
+// Too many quick taps trips the punishment ad — must be a rapid-fire burst
+// (6+ taps within 1s), not just several taps spread over a minute.
+const ABUSE_WINDOW_MS = 1000;
+const ABUSE_TAP_LIMIT = 6;
 const ABUSE_COOLDOWN_MS = 60000;
 
 const DEFAULT_SQUISH_SOUND = require('../../assets/audio/slime.wav');

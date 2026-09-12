@@ -268,29 +268,8 @@ const MODEL_3D = {
     dentStrength: 2.3,
     dentFloor: 0.72,
   },
-  6: {
-    asset: require('../../assets/models/puffington_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
   5: {
     asset: require('../../assets/models/stellie_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  7: {
-    asset: require('../../assets/models/noodle_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  8: {
-    asset: require('../../assets/models/glimmer_3d.glb'),
     visual: 1.9,
     dentSigma: 0.3,
     dentStrength: 2.3,
@@ -301,10 +280,11 @@ const MODEL_3D = {
 export const MODEL_3D_IDS = new Set(Object.keys(MODEL_3D));
 const is3DModel = (creatureId) => MODEL_3D_IDS.has(String(creatureId));
 
-// Cached per id at module scope — revisiting a creature in the same session
-// re-parses a fresh geometry (so concurrent mounts never share one live
-// position buffer) but doesn't re-fetch/re-decode the same glb off disk each
-// time.
+// Cached per id at module scope, so revisiting a creature in the same
+// session doesn't re-fetch/re-decode the same glb off disk. The heavier
+// geometry prep on top of this is cached separately below (loadModelData) —
+// concurrent toy instances still get their own live BufferGeometry each,
+// they just skip recomputing its contents.
 const gltfPromises = {};
 function loadModelGltf(id) {
   if (!gltfPromises[id]) {
@@ -364,6 +344,45 @@ function loadGltfFromUrl(url) {
   return remoteGltfPromises.get(url);
 }
 
+// Cached per id/url at module scope, one level up from the raw gltf caches
+// above — this is what actually makes preloadCreatureModel's promise mean
+// "ready to render instantly": it carries the fetch/parse *and*
+// prepareModelData's recentre/normals/weld/adjacency work (the CPU-bound part
+// that used to run fresh on every SquishScreen mount, after the loading
+// screen had already faded out). buildModelCreature then just does cheap
+// per-instance geometry/mesh construction from this cached data, so a
+// revisit — or the normal preload-then-mount path — never re-pays it.
+const modelDataPromises = {};
+function loadModelData(id) {
+  if (!modelDataPromises[id]) {
+    modelDataPromises[id] = loadModelGltf(id).then((gltf) => prepareModelData(id, MODEL_3D[id], gltf));
+  }
+  return modelDataPromises[id];
+}
+
+const remoteModelDataPromises = new Map();
+function loadModelDataFromUrl(creatureId, url) {
+  if (!remoteModelDataPromises.has(url)) {
+    remoteModelDataPromises.set(url, loadGltfFromUrl(url).then((gltf) => prepareModelData(creatureId, CUSTOM_TUNING, gltf)));
+  }
+  return remoteModelDataPromises.get(url);
+}
+
+// LoadingScreen calls this as soon as a creature is picked, so the .glb
+// fetch/parse and the geometry prep both run during the loading animation
+// instead of after SquishScreen mounts — otherwise SquishyToy's own
+// useEffect is the first thing to ever call loadModelData/
+// loadModelDataFromUrl, and the model pops in on the game screen instead of
+// the loading screen. Both loaders cache by id/url at module scope, so this
+// and SquishyToy's later call share the same in-flight/resolved promise — a
+// creature with no .glb (2D/procedural) resolves immediately.
+export function preloadCreatureModel(creature) {
+  if (!creature) return Promise.resolve();
+  if (creature.isCustom && creature.modelUrl) return loadModelDataFromUrl(creature.id, creature.modelUrl);
+  if (is3DModel(creature.id)) return loadModelData(Number(creature.id));
+  return Promise.resolve();
+}
+
 // Every vertex sharing a triangle with vertex i becomes a neighbour of i —
 // the same relationship the sphere grid's left/right/up/down lookup captures,
 // derived from real topology instead of assumed row/col math.
@@ -381,7 +400,53 @@ function buildAdjacency(indexArray, vertCount) {
   return sets.map((set) => Uint32Array.from(set));
 }
 
-async function buildModelCreature(id, cfg, gltf) {
+// Low-poly exports (Tripo retopo included) commonly split a vertex into two
+// indices with identical positions wherever a UV or normal seam crosses it,
+// so the mesh can still texture correctly. computeVertexNormals() only
+// blends face normals across shared indices, so those seam duplicates never
+// see each other's face and the seam reads as a hard facet crease. Group
+// same-position indices once so their normals can be re-averaged after every
+// computeVertexNormals() call, without touching UVs.
+function buildWeldGroups(basePos, vertCount) {
+  const byKey = new Map();
+  for (let i = 0; i < vertCount; i++) {
+    const key = `${basePos[i * 3].toFixed(4)},${basePos[i * 3 + 1].toFixed(4)},${basePos[i * 3 + 2].toFixed(4)}`;
+    let arr = byKey.get(key);
+    if (!arr) { arr = []; byKey.set(key, arr); }
+    arr.push(i);
+  }
+  const groups = [];
+  for (const arr of byKey.values()) {
+    if (arr.length > 1) groups.push(Uint32Array.from(arr));
+  }
+  return groups;
+}
+
+function weldNormals(normalAttr, weldGroups) {
+  for (const group of weldGroups) {
+    let nx = 0, ny = 0, nz = 0;
+    for (let k = 0; k < group.length; k++) {
+      nx += normalAttr.getX(group[k]);
+      ny += normalAttr.getY(group[k]);
+      nz += normalAttr.getZ(group[k]);
+    }
+    const len = Math.hypot(nx, ny, nz) || 1;
+    nx /= len; ny /= len; nz /= len;
+    for (let k = 0; k < group.length; k++) normalAttr.setXYZ(group[k], nx, ny, nz);
+  }
+  normalAttr.needsUpdate = true;
+}
+
+// The expensive, purely-deterministic half of turning a parsed .glb into a
+// squishable mesh: recentre/rescale, normals, weld-group + adjacency
+// computation. This is CPU-bound (Set/Map work over every vertex/triangle)
+// and depends only on the source asset + tuning config, never on a specific
+// toy instance — so it's cacheable per id/url (see loadModelData /
+// loadModelDataFromUrl below) and runs once, during LoadingScreen's preload,
+// instead of blocking SquishScreen's first mount. buildModelCreature (below)
+// does the remaining *cheap* per-instance work (fresh geometry + mesh) so a
+// revisit — or the normal preload-then-mount path — never re-pays this cost.
+function prepareModelData(id, cfg, gltf) {
   let sourceMesh = null;
   gltf.scene.traverse((obj) => {
     if (!sourceMesh && obj.isMesh) sourceMesh = obj;
@@ -410,16 +475,39 @@ async function buildModelCreature(id, cfg, gltf) {
   geo.computeVertexNormals();
 
   const posAttr = geo.attributes.position;
-  const count = posAttr.count;
+  const vertCount = posAttr.count;
   const basePos = new Float32Array(posAttr.array);
+  const weldGroups = buildWeldGroups(basePos, vertCount);
+  weldNormals(geo.attributes.normal, weldGroups);
   const baseNormals = new Float32Array(geo.attributes.normal.array);
+  const uvAttr = geo.attributes.uv;
+  const uvArray = uvAttr ? new Float32Array(uvAttr.array) : null;
   const indexAttr = geo.getIndex();
-  const indexArray = indexAttr ? indexAttr.array : Uint32Array.from({ length: count }, (_, i) => i);
-  const neighbors = buildAdjacency(indexArray, count);
+  const indexArray = indexAttr ? indexAttr.array : Uint32Array.from({ length: vertCount }, (_, i) => i);
+  const neighbors = buildAdjacency(indexArray, vertCount);
+  const map = sourceMesh.material && sourceMesh.material.map ? sourceMesh.material.map : null;
+  const fallbackColor = new THREE.Color((CREATURE_VISUALS[id] ?? CREATURE_VISUALS[0]).color);
+  geo.dispose();
+
+  return { basePos, baseNormals, uvArray, indexArray, neighbors, weldGroups, vertCount, map, fallbackColor };
+}
+
+// Cheap per-instance construction from prepareModelData's cached output: a
+// fresh BufferGeometry (position/normal copied since tickPhysics mutates them
+// every frame; index/uv shared directly since they're never written to) plus
+// fresh material/mesh/group. No clone/normalize/weld/adjacency work here.
+function buildModelCreature(id, cfg, modelData) {
+  const { basePos, baseNormals, uvArray, indexArray, neighbors, weldGroups, vertCount, map, fallbackColor } = modelData;
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(basePos), 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(baseNormals), 3));
+  if (uvArray) geo.setAttribute('uv', new THREE.BufferAttribute(uvArray, 2));
+  geo.setIndex(new THREE.BufferAttribute(indexArray, 1));
 
   const bodyMat = new THREE.MeshStandardMaterial({
-    map: sourceMesh.material && sourceMesh.material.map ? sourceMesh.material.map : null,
-    color: sourceMesh.material && sourceMesh.material.map ? 0xffffff : new THREE.Color((CREATURE_VISUALS[id] ?? CREATURE_VISUALS[0]).color),
+    map: map || null,
+    color: map ? 0xffffff : fallbackColor,
     roughness: 0.5,
     metalness: 0,
     // FrontSide only — DoubleSide let the mesh's back faces show through the
@@ -450,12 +538,13 @@ async function buildModelCreature(id, cfg, gltf) {
     bodyMat,
     basePos,
     baseNormals,
-    vertCount: count,
+    vertCount,
     // Grid dims unused — the presence of `neighbors` routes tickPhysics down
     // the topology-agnostic diffusion path instead.
     colCount: 0,
     rowCount: 0,
     neighbors,
+    weldGroups,
     // The imported meshes squish purely by the per-vertex dent (the only
     // thing that renders per frame on the target device — see tickPhysics).
     // These make it a wide, deep, gentle-floored dent like the original
@@ -464,11 +553,11 @@ async function buildModelCreature(id, cfg, gltf) {
     dentSigma: cfg.dentSigma,
     dentStrength: cfg.dentStrength,
     dentFloor: cfg.dentFloor,
-    dentAmt: new Float32Array(count),
-    dentTarget: new Float32Array(count),
-    dentVel: new Float32Array(count),
-    dentScratch: new Float32Array(count),
-    dentFall: new Float32Array(count),
+    dentAmt: new Float32Array(vertCount),
+    dentTarget: new Float32Array(vertCount),
+    dentVel: new Float32Array(vertCount),
+    dentScratch: new Float32Array(vertCount),
+    dentFall: new Float32Array(vertCount),
     normalsFrameToggle: false,
     // No separate face meshes — Glorp's face is in its texture.
     featureBases: [],
@@ -675,11 +764,10 @@ function tickPhysics(s, dt) {
     posAttr.setXYZ(i, bx * factor, by * factor, bz * factor);
   }
   posAttr.needsUpdate = true;
-  if (s.neighbors) {
+  s.normalsFrameToggle = !s.normalsFrameToggle;
+  if (s.normalsFrameToggle) {
     s.bodyGeo.computeVertexNormals();
-  } else {
-    s.normalsFrameToggle = !s.normalsFrameToggle;
-    if (s.normalsFrameToggle) s.bodyGeo.computeVertexNormals();
+    if (s.weldGroups && s.weldGroups.length) weldNormals(s.bodyGeo.attributes.normal, s.weldGroups);
   }
 
   for (let j = 0; j < s.featureBases.length; j++) {
@@ -743,7 +831,7 @@ function tickPhysics(s, dt) {
 }
 
 const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', modelUrl, onSquish, onRelease }, ref) {
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const toyRef = useRef(null);
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const [built, setBuilt] = useState(null);
@@ -771,9 +859,9 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', modelUrl, 
     const modelId = Number(creatureId);
     let pending;
     if (modelUrl) {
-      pending = (async () => buildModelCreature(creatureId, CUSTOM_TUNING, await loadGltfFromUrl(modelUrl)))();
+      pending = loadModelDataFromUrl(creatureId, modelUrl).then((modelData) => buildModelCreature(creatureId, CUSTOM_TUNING, modelData));
     } else if (is3DModel(creatureId)) {
-      pending = (async () => buildModelCreature(modelId, MODEL_3D[modelId], await loadModelGltf(modelId)))();
+      pending = loadModelData(modelId).then((modelData) => buildModelCreature(modelId, MODEL_3D[modelId], modelData));
     } else {
       pending = Promise.resolve(buildCreature(modelId));
     }
@@ -786,6 +874,13 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', modelUrl, 
           return;
         }
         result = r;
+        if (r.bodyMat.map) {
+          // Sharpens a lower-res texture at grazing angles/distance for
+          // free — filtering cost, not resolution, so it doesn't reintroduce
+          // the per-frame CPU cost the poly/texture downsizing fixed.
+          r.bodyMat.map.anisotropy = gl.capabilities.getMaxAnisotropy();
+          r.bodyMat.map.needsUpdate = true;
+        }
         toyRef.current = r;
         setBuilt(r);
       })

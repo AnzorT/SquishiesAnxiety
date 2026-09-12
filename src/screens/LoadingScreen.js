@@ -4,14 +4,22 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { squadColors, squadFonts } from '../theme/squadTheme';
 import CreatureThumbnail from '../components/CreatureThumbnail';
 import AssembleCreature from '../components/AssembleCreature';
+import { preloadCreatureModel } from '../components/SquishyToy';
 
 // Brief "getting the toy ready" beat between picking a card on Home and
 // SquishScreen actually mounting — matches the prototype's loading screen
-// timing (dots, then a "I AM READY!" bubble, then a fade to the toy).
+// timing (dots, then a "I AM READY!" bubble, then a fade to the toy). The
+// "ready" beat now also gates on the creature's .glb actually being
+// fetched/parsed (preloadCreatureModel, cached and shared with SquishyToy's
+// own loader) so "I AM READY!" is true, not just a timer — otherwise the
+// model could still be loading once SquishScreen mounts and pop in there.
 
 const PREP_MS = 1500;
 const READY_MS = 1000;
 const FADE_MS = 500;
+// Never block navigation forever on a slow/failed fetch — proceed anyway
+// after this, same as today's fixed-timer behavior in the worst case.
+const MAX_WAIT_MS = 8000;
 
 function Dot({ delay }) {
   const bounce = useRef(new Animated.Value(0)).current;
@@ -50,15 +58,28 @@ export default function LoadingScreen({ creature, onFinish }) {
   const opacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    const t1 = setTimeout(() => setStage('ready'), PREP_MS);
-    const t2 = setTimeout(() => {
+    let cancelled = false;
+    const timers = [];
+    const wait = (ms) => new Promise((resolve) => { timers.push(setTimeout(resolve, ms)); });
+
+    (async () => {
+      const modelReady = preloadCreatureModel(creature).catch(() => {});
+      // Dots show for at least PREP_MS, and longer still if the model isn't
+      // loaded yet — but never past MAX_WAIT_MS total.
+      await Promise.race([Promise.all([wait(PREP_MS), modelReady]), wait(MAX_WAIT_MS)]);
+      if (cancelled) return;
+      setStage('ready');
+      await wait(READY_MS);
+      if (cancelled) return;
       Animated.timing(opacity, { toValue: 0, duration: FADE_MS, useNativeDriver: true }).start();
-    }, PREP_MS + READY_MS);
-    const t3 = setTimeout(onFinish, PREP_MS + READY_MS + FADE_MS);
+      await wait(FADE_MS);
+      if (cancelled) return;
+      onFinish();
+    })();
+
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
+      cancelled = true;
+      timers.forEach(clearTimeout);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
