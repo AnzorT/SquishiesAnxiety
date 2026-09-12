@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Canvas } from '@react-three/fiber';
 import { MaterialIcons } from '@expo/vector-icons';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
 import SquishyToy, { MODEL_3D_IDS } from '../components/SquishyToy';
 import SquishyToy2D from '../components/SquishyToy2D';
@@ -103,27 +104,36 @@ function PopIn({ style, children }) {
   return <Animated.View style={[style, { opacity, transform: [{ scale }, { rotate }] }]}>{children}</Animated.View>;
 }
 
-// Bottom-panel hint hand: palm, fingers, thumb, knuckles.
-function HandIcon({ color, accent, fingers = 1, anim }) {
+// One-time gesture tutorial, overlaid on the stage itself (replaces the old
+// permanent bottom-panel hint list) — a squish hand on the left, a rotate
+// hand on the right, each with a pulsing touch-point ring, fading out the
+// first time the player actually touches the toy (see gestureHintOpacity).
+const SQUISH_HAND_D =
+  'M24 17A6 6 0 0 1 36 17L36 42C37 39 41 37.5 44 39C47.4 40.4 48.4 44 47.4 47C48.4 44 51.4 42.4 54.4 43.6C57.8 45 58.8 48.4 57.8 51.6C59.4 49.4 62.6 48.8 64.8 50.6C67.4 52.6 67.8 55.8 67 59L65.4 69C63.8 81.4 54.8 90.6 42.8 90.6L35.8 90.6C23.4 90.6 15.2 81.6 13.8 69.2L12.8 60.6L5.8 50.6C2.8 46.2 9.2 41.6 12.8 46.2L19.4 55.2C20.6 56.8 22.2 57.4 24 57.4Z';
+const SQUISH_HAND_CREASE_D = 'M47.4 47c-2.6.6-5.4.2-7.6-1.2M57.8 51.6c-2.6.8-5.6.4-8-1';
+const ROTATE_HAND_D =
+  'M18 22A6 6 0 0 1 30 22L30 44L32 44L32 15A6 6 0 0 1 44 15L44 47C45.4 44 49 42.6 52 44.2C55.4 45.8 56.2 49.4 55 52.6C56.8 50.4 60 50 62.2 52C64.8 54.2 65 57.4 64 60.4L62.6 69.6C61 82 52 90.6 40 90.6L33 90.6C21 90.6 13 81.6 11.8 69.4L10.8 61L4 51C1 46.6 7.4 42 11 46.6L17 55.4C17.6 56.4 17.8 56.6 18 57Z';
+const ROTATE_HAND_CREASE_D = 'M55 52.6c-2.6.8-5.6.4-8-1M31 44.4c-.2 4 .4 8 1.8 11.6';
+
+function GestureHint({ side, d, creaseD, label, touchAnim, gestureAnim }) {
+  const sideStyle = side === 'left' ? { left: '12%' } : { right: '12%' };
   return (
-    <Animated.View style={[styles.handIcon, anim]}>
-      <View style={[styles.handPalm, { backgroundColor: color }]} />
-      {fingers === 1 ? (
-        <View style={[styles.handFinger, { backgroundColor: color, left: 8, top: 4, width: 7, height: 16 }]} />
-      ) : (
-        <>
-          <View style={[styles.handFinger, { backgroundColor: color, left: 8, top: 3, width: 6, height: 17 }]} />
-          <View style={[styles.handFinger, { backgroundColor: color, left: 15, top: 5, width: 6, height: 15 }]} />
-        </>
-      )}
-      <View style={[styles.handThumb, { backgroundColor: accent }]} />
-      {fingers === 1 && (
-        <>
-          <View style={[styles.handKnuckle, { backgroundColor: accent, top: 11, left: 16 }]} />
-          <View style={[styles.handKnuckle, { backgroundColor: accent, top: 15, left: 17 }]} />
-        </>
-      )}
-    </Animated.View>
+    <View style={[styles.gestureHint, sideStyle]} pointerEvents="none">
+      <Animated.View style={[styles.gestureHandWrap, { transform: gestureAnim }]}>
+        <Animated.View
+          style={[
+            styles.gestureTouchRing,
+            side === 'left' ? { left: 10 } : { left: 8 },
+            { opacity: touchAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.9, 0.2, 0.9] }), transform: [{ scale: touchAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.25] }) }] },
+          ]}
+        />
+        <Svg width={46} height={62} viewBox="0 0 72 96" style={styles.gestureSvg}>
+          <Path d={d} fill="rgba(255,255,255,0.28)" stroke="#ffffff" strokeWidth={2.8} strokeLinejoin="round" />
+          <Path d={creaseD} stroke="rgba(255,255,255,0.75)" strokeWidth={2} strokeLinecap="round" fill="none" />
+        </Svg>
+      </Animated.View>
+      <Text style={styles.gestureHintText}>{label}</Text>
+    </View>
   );
 }
 
@@ -268,9 +278,14 @@ export default function SquishScreen({
   const [now, setNow] = useState(() => Date.now());
 
   const wheelAnim = useRef(new Animated.Value(0)).current;
-  const handSway1 = useLoopAnim({ duration: 1400 });
-  const handSway2 = useLoopAnim({ duration: 1400 });
-  const tapPulseAnim = useLoopAnim({ duration: 900 });
+  const gestureSquishAnim = useLoopAnim({ duration: 1700 });
+  const gestureRotateAnim = useLoopAnim({ duration: 1700 });
+  const gestureTouchAnim = useLoopAnim({ duration: 1700 });
+  // Fades the on-stage gesture tutorial out the first time the player
+  // actually touches the toy — see onPanResponderGrant below. Stays hidden
+  // for the rest of this screen's lifetime (hintDismissedRef).
+  const gestureHintOpacity = useRef(new Animated.Value(1)).current;
+  const hintDismissedRef = useRef(false);
   const bonusCoinAnim = useLoopAnim({ duration: 1300 });
 
   useEffect(() => {
@@ -451,6 +466,10 @@ export default function SquishScreen({
         }
       },
       onPanResponderGrant: (evt) => {
+        if (!hintDismissedRef.current) {
+          hintDismissedRef.current = true;
+          Animated.timing(gestureHintOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start();
+        }
         const touches = evt.nativeEvent.touches || [];
         gestureHadTwoRef.current = touches.length >= 2;
         if (touches.length >= 2) {
@@ -613,6 +632,25 @@ export default function SquishScreen({
               <FloatingCoin key={c.id} x={c.x} y={c.y} amount={c.amount} />
             ))}
           </View>
+
+          <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: gestureHintOpacity }]} pointerEvents="none">
+            <GestureHint
+              side="left"
+              d={SQUISH_HAND_D}
+              creaseD={SQUISH_HAND_CREASE_D}
+              label="HOLD TO SQUISH"
+              touchAnim={gestureTouchAnim}
+              gestureAnim={[{ translateY: gestureSquishAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 8, 0] }) }]}
+            />
+            <GestureHint
+              side="right"
+              d={ROTATE_HAND_D}
+              creaseD={ROTATE_HAND_CREASE_D}
+              label="HOLD TO ROTATE"
+              touchAnim={gestureTouchAnim}
+              gestureAnim={[{ rotate: gestureRotateAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['0deg', '-14deg', '0deg'] }) }]}
+            />
+          </Animated.View>
         </View>
 
         {wheelOpen && (
@@ -660,34 +698,6 @@ export default function SquishScreen({
 
       <View style={styles.bottomPanel}>
         <View style={styles.bottomRow}>
-          <View style={styles.hints}>
-            <View style={styles.hintRow}>
-              <HandIcon
-                color="#ffb8dd"
-                accent="#ff9ecd"
-                anim={{ transform: [{ translateX: handSway1.interpolate({ inputRange: [0, 1], outputRange: [-8, 8] }) }, { rotate: handSway1.interpolate({ inputRange: [0, 1], outputRange: ['-6deg', '6deg'] }) }] }}
-              />
-              <Text style={styles.hintText}>FOR SQUASHING</Text>
-            </View>
-            <View style={styles.hintRow}>
-              <HandIcon
-                color="#a5f3fc"
-                accent="#67e8f9"
-                fingers={2}
-                anim={{ transform: [{ translateX: handSway2.interpolate({ inputRange: [0, 1], outputRange: [-8, 8] }) }, { rotate: handSway2.interpolate({ inputRange: [0, 1], outputRange: ['-6deg', '6deg'] }) }] }}
-              />
-              <Text style={styles.hintText}>FOR ROTATING {(toy.name || '').toUpperCase()}</Text>
-            </View>
-            <View style={styles.hintRow}>
-              <HandIcon
-                color="#ffe27a"
-                accent="#fcd34d"
-                anim={{ transform: [{ translateY: tapPulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 6] }) }, { scale: tapPulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0.9] }) }] }}
-              />
-              <Text style={styles.hintText}>FOR EARNING MORE COINS</Text>
-            </View>
-          </View>
-
           <WatchAdButton onRewardEarned={handleAdReward} bonusActive={bonusActive} />
         </View>
 
@@ -711,7 +721,9 @@ export default function SquishScreen({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: squadColors.bgDeepest },
-  stageArea: { flex: 7, position: 'relative', alignItems: 'center', justifyContent: 'center' },
+  // Bottom panel no longer carries a tall hint list, so the stage claims
+  // whatever's left instead of a fixed 70/30 split (see bottomPanel below).
+  stageArea: { flex: 1, position: 'relative', alignItems: 'center', justifyContent: 'center' },
   topLeft: { position: 'absolute', left: 14, flexDirection: 'row', alignItems: 'center', gap: 8, zIndex: 3 },
   backButton: { width: 34, height: 34, borderRadius: 12, backgroundColor: '#241243cc', alignItems: 'center', justifyContent: 'center' },
   backGlyph: { color: '#fff', fontSize: 18, fontWeight: '800' },
@@ -778,36 +790,29 @@ const styles = StyleSheet.create({
   wheelLabel: { color: squadColors.textLavender, fontFamily: squadFonts.bodyBold, fontSize: 12.5 },
   switchTrack: { width: 38, height: 22, borderRadius: 11, overflow: 'hidden' },
   switchKnob: { position: 'absolute', top: 2, width: 18, height: 18, borderRadius: 9, backgroundColor: '#fff' },
-  bottomPanel: { flex: 3, backgroundColor: '#150a2e', borderTopWidth: 1, borderTopColor: squadColors.panelBorder },
-  bottomRow: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
-  hints: { gap: 10, flexShrink: 1 },
-  hintRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  handIcon: { width: 28, height: 34 },
-  handPalm: {
+  bottomPanel: { backgroundColor: '#150a2e', borderTopWidth: 1, borderTopColor: squadColors.panelBorder },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingHorizontal: 16, paddingVertical: 10 },
+  gestureHint: { position: 'absolute', top: '52%', alignItems: 'center', gap: 6 },
+  gestureHandWrap: { width: 46, height: 62, alignItems: 'center', justifyContent: 'center' },
+  gestureSvg: { position: 'absolute' },
+  gestureTouchRing: {
     position: 'absolute',
-    bottom: 0,
-    left: 5,
-    width: 18,
-    height: 17,
-    borderTopLeftRadius: 5,
-    borderTopRightRadius: 7,
-    borderBottomRightRadius: 9,
-    borderBottomLeftRadius: 9,
+    top: -3,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.85)',
   },
-  handFinger: { position: 'absolute', borderRadius: 3, borderWidth: 1, borderColor: 'rgba(21,10,46,0.55)' },
-  handThumb: {
-    position: 'absolute',
-    bottom: 6,
-    left: 1,
-    width: 8,
-    height: 7,
-    borderRadius: 4,
-    transform: [{ rotate: '-30deg' }],
-    borderWidth: 1,
-    borderColor: 'rgba(21,10,46,0.55)',
+  gestureHintText: {
+    color: '#ffffff',
+    fontFamily: squadFonts.bodyExtraBold,
+    fontSize: 9,
+    letterSpacing: 1.1,
+    textShadowColor: 'rgba(0,0,0,0.85)',
+    textShadowRadius: 4,
+    textShadowOffset: { width: 0, height: 1 },
   },
-  handKnuckle: { position: 'absolute', width: 6, height: 5, borderRadius: 3 },
-  hintText: { color: squadColors.textLavender, fontFamily: squadFonts.bodyExtraBold, fontSize: 11, flexShrink: 1 },
   adSlot: { alignItems: 'center' },
   bonusBar: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: squadColors.bgDeepest },
   bonusInner: {
