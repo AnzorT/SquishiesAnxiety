@@ -34,11 +34,16 @@ const FLOATING_COIN_MS = 2200;
 const FLOATING_COIN_RISE = 100;
 const FLOATING_COIN_SIZE = 24;
 
-// Too many quick taps trips the punishment ad — must be a rapid-fire burst
-// (6+ taps within 1s), not just several taps spread over a minute.
-const ABUSE_WINDOW_MS = 1000;
-const ABUSE_TAP_LIMIT = 6;
-const ABUSE_COOLDOWN_MS = 60000;
+// Too many quick taps trips the punishment ad — must be a rapid-fire burst,
+// not just several taps spread over a minute. Each rule is a rate limit
+// (limit taps per windowMs); a burst trips the alarm the moment ANY rule's
+// tap-rate crosses 100% of its allowance, so e.g. either 5 taps/1s or
+// 7 taps/2s (whichever is hit first) counts as abuse.
+const ABUSE_RULES = [
+  { windowMs: 1000, limit: 5 },
+  { windowMs: 2000, limit: 7 },
+];
+const ABUSE_MAX_WINDOW_MS = Math.max(...ABUSE_RULES.map((r) => r.windowMs));
 
 const DEFAULT_SQUISH_SOUND = require('../../assets/audio/slime.wav');
 
@@ -265,9 +270,10 @@ export default function SquishScreen({
   // Coins banked this hold; flushed on release.
   const earnIntervalRef = useRef(null);
   const earnAccumRef = useRef(0);
-  // Tap timestamps + cooldown for the abuse guard.
+  // Tap timestamps for the abuse guard; mirrors punishOpen so the
+  // tap-rate check (a stable useCallback) always sees the latest value.
   const abuseTapsRef = useRef([]);
-  const abuseCooldownUntilRef = useRef(0);
+  const punishOpenRef = useRef(false);
   // gesture mode: none | poke | orbit
   const gestureModeRef = useRef('none');
   const lastCentroidRef = useRef({ x: 0, y: 0 });
@@ -400,22 +406,32 @@ export default function SquishScreen({
     if (earnIntervalRef.current) clearInterval(earnIntervalRef.current);
   }, []);
 
-  // Trips the punishment after too many quick taps.
+  // Trips the punishment after too many quick taps. Every rule's tap-rate is
+  // expressed as a percentage of its allowance (count / limit); crossing
+  // 100% on any rule counts as abuse. Not gated by a cooldown — the alarm
+  // is meant to reappear every single time the player abuses again, not
+  // just the first time.
   const registerAbuseTap = useCallback(() => {
+    if (punishOpenRef.current) return;
     const t = Date.now();
-    const taps = [...abuseTapsRef.current, t].filter((ts) => t - ts < ABUSE_WINDOW_MS);
+    const taps = [...abuseTapsRef.current, t].filter((ts) => t - ts < ABUSE_MAX_WINDOW_MS);
     abuseTapsRef.current = taps;
-    if (taps.length > ABUSE_TAP_LIMIT && t >= abuseCooldownUntilRef.current) {
+    const violated = ABUSE_RULES.some(({ windowMs, limit }) => {
+      const count = taps.filter((ts) => t - ts < windowMs).length;
+      const pctOfLimit = (count / limit) * 100;
+      return pctOfLimit >= 100;
+    });
+    if (violated) {
       abuseTapsRef.current = [];
-      abuseCooldownUntilRef.current = t + ABUSE_COOLDOWN_MS;
+      punishOpenRef.current = true;
       setPunishOpen(true);
     }
   }, []);
 
   const dismissPunishment = useCallback(() => {
+    punishOpenRef.current = false;
     setPunishOpen(false);
     abuseTapsRef.current = [];
-    abuseCooldownUntilRef.current = Date.now() + ABUSE_COOLDOWN_MS;
   }, []);
 
   // Ad reward opens the 60s double-coins window and pops the flash.
@@ -600,9 +616,13 @@ export default function SquishScreen({
 
         <View style={styles.stage} {...panResponder.panHandlers}>
           {toyIs3D(toy) ? (
-            <Canvas flat frameloop="always" camera={{ fov: 30, position: [0, 0.1, 4.6], near: 0.1, far: 100 }}>
-              <ambientLight intensity={0.65} />
-              <directionalLight color={0xfff2e0} intensity={1.3} position={[2, 3, 3]} />
+            <Canvas
+              frameloop="always"
+              camera={{ fov: 30, position: [0, 0.1, 4.6], near: 0.1, far: 100 }}
+              gl={{ toneMappingExposure: 1.4 }}
+            >
+              <ambientLight intensity={0.25} />
+              <directionalLight color={0xfff2e0} intensity={2.2} position={[2, 3, 3]} />
               <directionalLight color={0xd8ccff} intensity={0.55} position={[-2.5, -1, 2]} />
               <directionalLight color={0xffffff} intensity={0.35} position={[-1.5, 2, -3]} />
               <SquishyToy

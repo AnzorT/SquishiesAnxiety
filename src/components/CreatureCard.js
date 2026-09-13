@@ -5,6 +5,8 @@ import Svg, { Defs, RadialGradient as SvgRadialGradient, Stop, Rect, Circle, Pat
 import { squadColors, squadFonts } from '../theme/squadTheme';
 import CreatureThumbnail from './CreatureThumbnail';
 
+const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
+
 // The single creature card shown on Home's "OUR CREATURES" carousel — a
 // literal port of the decoded "ASMR Creature Squash Game.html" `isDefaultCard`
 // block. HomeScreen mounts exactly one of these at a time, keyed by
@@ -16,9 +18,9 @@ import CreatureThumbnail from './CreatureThumbnail';
 // the creature does its `celebrate` bounce. HomeScreen only tells it whether
 // the creature is unlocked / has a key waiting.
 
-const HOLD_STEP = 0.03;
-const HOLD_INTERVAL_MS = 30; // ~1s to fill, matching the source's setInterval(…,30)
+const HOLD_DURATION_MS = 1000; // ~1s to fill, matching the source's setInterval(…,30) timing
 const CELEBRATION_MS = 1700;
+const CELEBRATION_FADE_MS = 450; // how long the "UNLOCKED!" screen takes to fade out afterward
 
 // The padlock keyhole, ported 1:1 from the source: a 14x14 disc
 // (`border-radius:50%`) over a downward-flaring slot
@@ -38,53 +40,90 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
   const lockedHasKey = !unlocked && hasKey;
 
   // --- hold-to-unlock ---
-  const [unlockProgress, setUnlockProgress] = useState(0);
+  // Driven by a single Animated.Value ticking at native frame rate via
+  // Animated.timing, rather than a setInterval nudging React state every
+  // 30ms — the old approach re-rendered (and re-reconciled the whole card,
+  // SVG creature included) on every tick, which is what made the bar look
+  // stepped/janky instead of smooth.
   const [showCelebration, setShowCelebration] = useState(false);
-  const holdIntervalRef = useRef(null);
-  const progressRef = useRef(0);
+  const holdProgress = useRef(new Animated.Value(0)).current;
+  const holdAnimRef = useRef(null);
   const celebrationTimeoutRef = useRef(null);
+  // fades the whole "UNLOCKED!" screen out instead of it cutting off instantly
+  const celebrationFade = useRef(new Animated.Value(1)).current;
+  const celebrationFadeAnimRef = useRef(null);
 
-  const clearHold = useCallback(() => {
-    if (holdIntervalRef.current) {
-      clearInterval(holdIntervalRef.current);
-      holdIntervalRef.current = null;
-    }
-  }, []);
+  // --- grey -> full-color reveal, crossfaded rather than snapped the instant
+  // `unlocked` flips true (which happens the moment the hold completes) ---
+  const [colorTransitioning, setColorTransitioning] = useState(false);
+  const colorFade = useRef(new Animated.Value(unlocked ? 1 : 0)).current;
+  const colorFadeAnimRef = useRef(null);
 
   useEffect(
     () => () => {
-      clearHold();
+      if (holdAnimRef.current) holdAnimRef.current.stop();
       if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
+      if (colorFadeAnimRef.current) colorFadeAnimRef.current.stop();
+      if (celebrationFadeAnimRef.current) celebrationFadeAnimRef.current.stop();
     },
-    [clearHold]
+    []
   );
 
   const handlePressIn = useCallback(() => {
     if (!lockedHasKey) return;
-    clearHold();
-    progressRef.current = 0;
-    setUnlockProgress(0);
-    holdIntervalRef.current = setInterval(() => {
-      progressRef.current = Math.min(1, progressRef.current + HOLD_STEP);
-      setUnlockProgress(progressRef.current);
-      if (progressRef.current >= 1) {
-        clearHold();
-        progressRef.current = 0;
-        setUnlockProgress(0);
-        setShowCelebration(true);
-        onUnlockWithKey(creature.id);
-        if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
-        celebrationTimeoutRef.current = setTimeout(() => setShowCelebration(false), CELEBRATION_MS);
-      }
-    }, HOLD_INTERVAL_MS);
-  }, [lockedHasKey, creature.id, onUnlockWithKey, clearHold]);
+    if (holdAnimRef.current) holdAnimRef.current.stop();
+    holdProgress.setValue(0);
+    holdAnimRef.current = Animated.timing(holdProgress, {
+      toValue: 1,
+      duration: HOLD_DURATION_MS,
+      easing: Easing.linear,
+      useNativeDriver: false, // drives `left` / `width`, which the native driver can't touch
+    });
+    holdAnimRef.current.start(({ finished }) => {
+      if (!finished) return; // released early — handlePressOut already reset the bar
+      setShowCelebration(true);
+      celebrationFade.setValue(1);
+      onUnlockWithKey(creature.id);
+
+      // Let the "UNLOCKED!" screen register on its own for a beat, then
+      // crossfade the creature from grey to full color instead of it
+      // snapping the instant `unlocked` flips true.
+      setColorTransitioning(true);
+      colorFade.setValue(0);
+      if (colorFadeAnimRef.current) colorFadeAnimRef.current.stop();
+      colorFadeAnimRef.current = Animated.timing(colorFade, {
+        toValue: 1,
+        duration: 900,
+        delay: 450,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      });
+      colorFadeAnimRef.current.start(({ finished: colorFinished }) => {
+        if (colorFinished) setColorTransitioning(false);
+      });
+
+      if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
+      celebrationTimeoutRef.current = setTimeout(() => {
+        if (celebrationFadeAnimRef.current) celebrationFadeAnimRef.current.stop();
+        celebrationFadeAnimRef.current = Animated.timing(celebrationFade, {
+          toValue: 0,
+          duration: CELEBRATION_FADE_MS,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        });
+        celebrationFadeAnimRef.current.start(({ finished: fadeFinished }) => {
+          if (fadeFinished) setShowCelebration(false);
+        });
+      }, CELEBRATION_MS);
+    });
+  }, [lockedHasKey, creature.id, onUnlockWithKey, holdProgress, celebrationFade, colorFade]);
 
   const handlePressOut = useCallback(() => {
-    if (!holdIntervalRef.current) return; // already completed
-    clearHold();
-    progressRef.current = 0;
-    setUnlockProgress(0);
-  }, [clearHold]);
+    if (!holdAnimRef.current) return; // already completed
+    holdAnimRef.current.stop();
+    holdAnimRef.current = null;
+    holdProgress.setValue(0);
+  }, [holdProgress]);
 
   // --- lockTilt wobble (0deg -> 9deg -> 0, 2.2s loop) for the no-key padlock ---
   const wobble = useRef(new Animated.Value(0)).current;
@@ -124,7 +163,17 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
 
   const cardBorderColor = unlocked ? `${squadColors.gold}55` : `${squadColors.panelBorder}99`;
   const mood = showCelebration ? 'celebrate' : unlocked ? 'idle' : 'sleep';
-  const keyLeftPct = 2 + unlockProgress * 54; // source: keySlideLeft
+  // Key and padlock both travel toward the stage's center as the hold fills.
+  // The padlock's keyhole lands at x=100 (stage-relative) at progress=1
+  // (160 - 60). The key's tip (keyRing 22 + keyBitWrap's -3 margin + its
+  // 28-wide shaft = 47px past the slider's own left edge) needs to land on
+  // that same x=100 at progress=1 and not a moment before — otherwise the
+  // two visually overlap well before the hold finishes and it reads as the
+  // animation "still going" after they've already touched. Solving
+  // 4 + 2*coef + 47 = 100 gives coef ≈ 24.5.
+  const keyLeftPct = holdProgress.interpolate({ inputRange: [0, 1], outputRange: ['2%', '26.5%'] });
+  const padlockTranslateX = holdProgress.interpolate({ inputRange: [0, 1], outputRange: [0, -60] });
+  const progressFillWidth = holdProgress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
 
   return (
     <LinearGradient
@@ -148,11 +197,25 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
 
         {/* size 252 + bleed 16 -> ~190px of visible body, matching the
             design's `<dc-import Creature size="190">` while leaving room for
-            antennae / bolts / stems that sit above the 100-unit body box */}
-        <CreatureThumbnail creatureId={creature.id} mood={mood} size={252} locked={!unlocked} animate bleed={16} />
+            antennae / bolts / stems that sit above the 100-unit body box.
+            While colorTransitioning, two copies are crossfaded (grey ->
+            color) instead of the single copy just snapping its `locked`
+            flag the instant `unlocked` turns true. */}
+        {colorTransitioning ? (
+          <>
+            <Animated.View style={[styles.thumbLayer, { opacity: colorFade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }]}>
+              <CreatureThumbnail creatureId={creature.id} mood={mood} size={252} locked animate bleed={16} />
+            </Animated.View>
+            <Animated.View style={[styles.thumbLayer, { opacity: colorFade }]}>
+              <CreatureThumbnail creatureId={creature.id} mood={mood} size={252} locked={false} animate bleed={16} />
+            </Animated.View>
+          </>
+        ) : (
+          <CreatureThumbnail creatureId={creature.id} mood={mood} size={252} locked={!unlocked} animate bleed={16} />
+        )}
 
         {showCelebration ? (
-          <View style={styles.overlay} pointerEvents="none">
+          <Animated.View style={[styles.overlay, { opacity: celebrationFade }]} pointerEvents="none">
             <View style={styles.celebrationGlow} />
             <Animated.Text
               style={[
@@ -162,7 +225,7 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
             >
               UNLOCKED!
             </Animated.Text>
-          </View>
+          </Animated.View>
         ) : lockedNoKey ? (
           <View style={styles.overlay} pointerEvents="none">
             <Animated.View style={{ alignItems: 'center', transform: [{ rotate: wobbleRotate }] }}>
@@ -175,15 +238,15 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
         ) : lockedHasKey ? (
           <Pressable style={styles.overlay} onPressIn={handlePressIn} onPressOut={handlePressOut}>
             <View style={styles.keyStage}>
-              {/* padlock parked on the right */}
-              <View style={styles.keyStagePadlock}>
+              {/* padlock starts parked on the right, then slides in to meet the key */}
+              <Animated.View style={[styles.keyStagePadlock, { transform: [{ translateX: padlockTranslateX }] }]}>
                 <View style={styles.padlockShackle} />
                 <LinearGradient colors={['#e2e8f0', '#94a3b8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.padlockBody}>
                   <Keyhole />
                 </LinearGradient>
-              </View>
+              </Animated.View>
               {/* key that slides right into it as the hold fills */}
-              <View style={[styles.keySlider, { left: `${keyLeftPct}%` }]}>
+              <Animated.View style={[styles.keySlider, { left: keyLeftPct }]}>
                 <View style={styles.keyRing} />
                 <View style={styles.keyBitWrap}>
                   <LinearGradient
@@ -195,15 +258,15 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
                   <View style={styles.keyTooth1} />
                   <View style={styles.keyTooth2} />
                 </View>
-              </View>
+              </Animated.View>
             </View>
             <Text style={styles.holdLabel}>HOLD TO UNLOCK</Text>
             <View style={styles.progressTrack}>
-              <LinearGradient
+              <AnimatedLinearGradient
                 colors={[squadColors.gold, squadColors.pinkLight]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={[styles.progressFill, { width: `${unlockProgress * 100}%` }]}
+                style={[styles.progressFill, { width: progressFillWidth }]}
               />
             </View>
           </Pressable>
@@ -264,6 +327,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   overlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  // stacked during the grey->color crossfade so both copies sit in the same spot
+  thumbLayer: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
 
   // shared padlock (source: 34x26 shackle, 62x49 body — scaled to ~0.9)
   padlockShackle: {
@@ -286,7 +351,7 @@ const styles = StyleSheet.create({
   // hold-to-unlock key stage (source: 150x78 relative box)
   keyStage: { width: 200, height: 84, position: 'relative', alignItems: 'center' },
   keyStagePadlock: { position: 'absolute', right: 12, top: 0, alignItems: 'center' },
-  keySlider: { position: 'absolute', top: 40, flexDirection: 'row', alignItems: 'center' },
+  keySlider: { position: 'absolute', top: 30, flexDirection: 'row', alignItems: 'center' }, // 10dp up from 40 to line up with the padlock's keyhole
   keyRing: {
     width: 22,
     height: 22,
@@ -298,7 +363,7 @@ const styles = StyleSheet.create({
   keyBitWrap: { position: 'relative', width: 30, height: 20, marginLeft: -3 },
   keyShaft: { position: 'absolute', left: 0, top: 8, width: 28, height: 4, borderTopRightRadius: 1, borderBottomRightRadius: 1 },
   keyTooth1: { position: 'absolute', right: 13, top: 10, width: 3, height: 7, backgroundColor: squadColors.gold },
-  keyTooth2: { position: 'absolute', right: 5, top: 9, width: 4, height: 12, borderRadius: 1, backgroundColor: squadColors.gold },
+  keyTooth2: { position: 'absolute', right: 5, top: 9, width: 4, height: 12, borderRadius: 1, backgroundColor: squadColors.goldDeep },
 
   holdLabel: { marginTop: 10, fontFamily: squadFonts.headingBold, fontSize: 12, color: squadColors.goldLight, letterSpacing: 1 },
   progressTrack: {

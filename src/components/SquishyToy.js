@@ -10,7 +10,39 @@ import * as THREE from 'three';
 import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { CREATURE_VISUALS, PHYS } from '../data/creatures';
+
+// Tripo's viewer lights models with an HDRI-style environment (reflections +
+// ambient fill from every direction), which is most of why the same texture
+// looks richer there than under our 3 bare directional lights. RoomEnvironment
+// is a plain three.js scene (boxes + emissive panels, no image loading), so
+// PMREMGenerator can prefilter it straight through the same WebGL context
+// expo-gl gives us — no DOM/HDR-file dependency that would break on native.
+// Cached per-`gl` (module-level, survives remounts) since prefiltering it is
+// not free and the result is identical every time.
+let cachedEnvTexture = null;
+let cachedEnvGl = null;
+function getEnvironmentTexture(gl) {
+  if (cachedEnvTexture && cachedEnvGl === gl) return cachedEnvTexture;
+  try {
+    const pmrem = new THREE.PMREMGenerator(gl);
+    const envScene = new RoomEnvironment();
+    const renderTarget = pmrem.fromScene(envScene, 0.035);
+    pmrem.dispose();
+    envScene.dispose();
+    cachedEnvTexture = renderTarget.texture;
+    cachedEnvGl = gl;
+    // eslint-disable-next-line no-console
+    console.log('[SquishyToy] environment map generated OK');
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('[SquishyToy] environment map generation failed, continuing without it', err);
+    cachedEnvTexture = null;
+    cachedEnvGl = null;
+  }
+  return cachedEnvTexture;
+}
 
 // Soft-body dent physics engine — ported line-for-line from "ASMR Creature
 // Squash Game.html"'s buildCreature/tickPhysics/applyDentAtLocalPoint (the
@@ -46,6 +78,7 @@ function buildCreature(id) {
     color: new THREE.Color(vis.color),
     roughness: id === 8 ? 0.12 : 0.34,
     metalness: id === 8 ? 0.25 : 0,
+    envMapIntensity: 1.4,
     transparent: false,
     opacity: 1,
     side: THREE.FrontSide,
@@ -303,6 +336,69 @@ const MODEL_3D = {
     dentStrength: 2.3,
     dentFloor: 0.72,
   },
+  10: {
+    asset: require('../../assets/models/mochi_3d.glb'),
+    visual: 1.9,
+    dentSigma: 0.3,
+    dentStrength: 2.3,
+    dentFloor: 0.72,
+  },
+  11: {
+    asset: require('../../assets/models/zappy_3d.glb'),
+    visual: 1.9,
+    dentSigma: 0.3,
+    dentStrength: 2.3,
+    dentFloor: 0.72,
+  },
+  12: {
+    asset: require('../../assets/models/bubbles_3d.glb'),
+    visual: 1.9,
+    dentSigma: 0.3,
+    dentStrength: 2.3,
+    dentFloor: 0.72,
+  },
+  13: {
+    asset: require('../../assets/models/grumps_3d.glb'),
+    visual: 1.9,
+    dentSigma: 0.3,
+    dentStrength: 2.3,
+    dentFloor: 0.72,
+  },
+  14: {
+    asset: require('../../assets/models/sprout_3d.glb'),
+    visual: 1.9,
+    dentSigma: 0.3,
+    dentStrength: 2.3,
+    dentFloor: 0.72,
+  },
+  15: {
+    asset: require('../../assets/models/cinder_3d.glb'),
+    visual: 1.9,
+    dentSigma: 0.3,
+    dentStrength: 2.3,
+    dentFloor: 0.72,
+  },
+  16: {
+    asset: require('../../assets/models/pearla_3d.glb'),
+    visual: 1.9,
+    dentSigma: 0.3,
+    dentStrength: 2.3,
+    dentFloor: 0.72,
+  },
+  17: {
+    asset: require('../../assets/models/tako_3d.glb'),
+    visual: 1.9,
+    dentSigma: 0.3,
+    dentStrength: 2.3,
+    dentFloor: 0.72,
+  },
+  18: {
+    asset: require('../../assets/models/fuzzball_3d.glb'),
+    visual: 1.9,
+    dentSigma: 0.3,
+    dentStrength: 2.3,
+    dentFloor: 0.72,
+  },
 };
 
 export const MODEL_3D_IDS = new Set(Object.keys(MODEL_3D));
@@ -538,6 +634,7 @@ function buildModelCreature(id, cfg, modelData) {
     color: map ? 0xffffff : fallbackColor,
     roughness: 0.5,
     metalness: 0,
+    envMapIntensity: 1.4,
     // FrontSide only — DoubleSide let the mesh's back faces show through the
     // front while it deformed, which read as "a second model behind it".
     side: THREE.FrontSide,
@@ -859,10 +956,15 @@ function tickPhysics(s, dt) {
 }
 
 const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', modelUrl, onSquish, onRelease }, ref) {
-  const { camera, gl } = useThree();
+  const { camera, gl, scene } = useThree();
   const toyRef = useRef(null);
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const [built, setBuilt] = useState(null);
+
+  useEffect(() => {
+    const envTex = getEnvironmentTexture(gl);
+    if (envTex) scene.environment = envTex;
+  }, [gl, scene]);
 
   useEffect(() => {
     let cancelled = false;

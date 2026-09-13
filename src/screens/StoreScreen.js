@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 1,
   },
   keyTooth1: { position: 'absolute', right: 13, top: 10, width: 3, height: 7, backgroundColor: squadColors.gold },
-  keyTooth2: { position: 'absolute', right: 5, top: 9, width: 4, height: 12, borderRadius: 1, backgroundColor: squadColors.gold },
+  keyTooth2: { position: 'absolute', right: 5, top: 9, width: 4, height: 12, borderRadius: 1, backgroundColor: squadColors.goldDeep },
   info: { flex: 1 },
   name: { color: squadColors.textWhite, fontFamily: squadFonts.headingBold, fontSize: 15 },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },

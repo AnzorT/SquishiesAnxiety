@@ -423,19 +423,28 @@ const CREATURES = {
   },
   19: { // Cosmo — deep-violet void with a tilted ring and two star sparkles
     body: { inset: [14, 14, 14, 14], corners: CIRCLE, radial: { cx: '32%', cy: '26%', mid: [78, '#2e1065'] }, from: '#6d28d9', to: '#2e1065', shadow: '#6d28d9', trueGlow: true },
-    extras: (b, gray) => (
+    extras: (b, gray) => {
       // Tilted Saturn-style orbit ring (source: `left:-4%; top:52%; width:108%;
-      // height:16%; border-radius:50%; transform:rotate(-14deg)`), drawn behind
-      // the body so its near arc passes behind Cosmo.
-      <G key="ring" rotation={-14} originX={50} originY={60}>
-        <Ellipse cx={50} cy={60} rx={54} ry={8} stroke={gray ? 'rgba(160,160,160,0.6)' : 'rgba(196,181,253,0.75)'} strokeWidth={3} fill="none" />
-      </G>
-    ),
+      // height:16%; border-radius:50%; transform:rotate(-14deg)`), split into
+      // a back half-arc (here, behind the body) and a front half-arc (in
+      // frontExtras, painted after the body) so the ring actually reads as
+      // wrapping around Cosmo instead of floating entirely behind it.
+      const stroke = gray ? 'rgba(160,160,160,0.6)' : 'rgba(196,181,253,0.75)';
+      return (
+        <G key="ring-back" rotation={-14} originX={50} originY={60}>
+          <Path d="M -4,60 A 54,8 0 0,0 104,60" stroke={stroke} strokeWidth={3} fill="none" />
+        </G>
+      );
+    },
     frontExtras: (b, gray) => {
+      const stroke = gray ? 'rgba(160,160,160,0.6)' : 'rgba(196,181,253,0.75)';
       const s1 = rect(b, { left: 22, top: 22, width: 7, height: 7 });
       const s2 = rect(b, { right: 24, top: 30, width: 5, height: 5 });
       return (
         <>
+          <G key="ring-front" rotation={-14} originX={50} originY={60}>
+            <Path d="M -4,60 A 54,8 0 0,1 104,60" stroke={stroke} strokeWidth={3} fill="none" />
+          </G>
           <Circle key="s1" cx={s1.x + s1.w / 2} cy={s1.y + s1.h / 2} r={s1.w / 2} fill={gray ? '#c9c9c9' : '#fef3c7'} />
           <Circle key="s2" cx={s2.x + s2.w / 2} cy={s2.y + s2.h / 2} r={s2.w / 2} fill={gray ? '#c9c9c9' : '#fef3c7'} />
         </>
