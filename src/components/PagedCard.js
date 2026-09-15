@@ -12,13 +12,23 @@ import { Animated, Easing, StyleSheet } from 'react-native';
 const DURATION = 400;
 // cubic-bezier(0.4, 0, 0.2, 1) ~ Material standard easing
 const EASING = Easing.bezier(0.4, 0, 0.2, 1);
+// Exported so HomeScreen's drag-to-swipe can finish an in-progress drag with
+// the same easing feel once the finger lifts past the commit threshold.
+export const PAGED_CARD_EASING = EASING;
 
-export function PagedCard({ direction, cardH, children }) {
-  const t = useRef(new Animated.Value(0)).current;
+export function PagedCard({ direction, cardH, instant, children }) {
+  const t = useRef(new Animated.Value(instant ? 1 : 0)).current;
 
   useLayoutEffect(() => {
+    // A page change that a real-time drag already animated into place (see
+    // HomeScreen's pan responder) arrives here `instant` — the card is
+    // already sitting at rest, so replaying the slide-in would yank it back
+    // off-screen first. Only play the timed entrance for button/programmatic
+    // page changes.
+    if (instant) return;
     t.setValue(0);
     Animated.timing(t, { toValue: 1, duration: DURATION, easing: EASING, useNativeDriver: true }).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t]);
 
   const from = (direction >= 0 ? 1 : -1) * cardH * 1.08;

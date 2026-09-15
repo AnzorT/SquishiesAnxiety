@@ -6,7 +6,7 @@ import { spacing } from '../theme/tokens';
 import { squadColors, squadFonts } from '../theme/squadTheme';
 import CreatureCard from '../components/CreatureCard';
 import { CreateOwnCard, CustomCreatureCard } from '../components/CustomCards';
-import { PagedCard, GhostCard } from '../components/PagedCard';
+import { PagedCard, GhostCard, PAGED_CARD_EASING } from '../components/PagedCard';
 import AdBanner from '../components/AdBanner';
 import IconButton from '../components/squad/IconButton';
 import SettingsSheet from './SettingsSheet';
@@ -94,12 +94,16 @@ export default function HomeScreen({
   }, [targetPage, tab]);
 
   const goTo = useCallback(
-    (next) => {
+    (next, opts = {}) => {
       const clamped = Math.min(Math.max(next, 0), pageCount - 1);
       if (clamped === view.index) return;
       const dir = clamped > view.index ? 1 : -1;
-      setGhost({ index: view.index, dir, id: Date.now() });
-      setView({ index: clamped, dir });
+      // `instant` means a real-time drag (see panResponder below) already
+      // animated the card into its resting position — skip the timed
+      // slide-in/ghost-exit for this transition so it doesn't yank back
+      // off-screen and replay.
+      setGhost(opts.instant ? null : { index: view.index, dir, id: Date.now() });
+      setView({ index: clamped, dir, instant: !!opts.instant });
       if (tab === 'ours') onChangeIndex && onChangeIndex(clamped);
       else setMineIndex(clamped);
     },
@@ -157,16 +161,80 @@ export default function HomeScreen({
   const indicatorX = indicatorAnim.interpolate({ inputRange: [0, 1], outputRange: [0, tabBarW / 2] });
 
   // --- vertical swipe paging on the card track ---
+  // Two separate problems compounded here. (1) A finger drag used to do
+  // nothing until release, so the card sat frozen under your thumb for the
+  // whole gesture. Fixed by having `dragY` track the raw touch offset every
+  // frame. (2) Even after that, the *first* drag on a given page still felt
+  // like it took a beat to "notice" you — because the neighbouring card was
+  // only ever mounted once a drag actually started (inside `dragState`),
+  // so React had to build that whole card (a fresh CreatureCard instance,
+  // its SVG thumbnail, its animated values) in the middle of your gesture.
+  // The fix is to always keep the previous/next card mounted (see the
+  // prev/next slots in cardTrack below, rendered whenever that neighbour
+  // page exists) so there's nothing left to build when a drag begins —
+  // only their position changes, driven by `dragY`.
+  const dragY = useRef(new Animated.Value(0)).current;
+  const pageRef = useRef(page);
+  pageRef.current = page;
+  const pageCountRef = useRef(pageCount);
+  pageCountRef.current = pageCount;
+  const cardTrackHRef = useRef(cardTrackH);
+  cardTrackHRef.current = cardTrackH;
+
   const panResponder = useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 12 && Math.abs(g.dy) > Math.abs(g.dx),
+        // CreatureCard's Pressable (hold-to-unlock) claims the responder the
+        // instant a touch lands on it, on the bubble phase — so a *bubble*
+        // onMoveShouldSetPanResponder here never even gets asked once that
+        // happens, and the swipe only "woke up" if you dragged off the card
+        // entirely. The *capture* phase is evaluated top-down on every move,
+        // before the touch reaches the Pressable, so it can reliably steal
+        // the gesture away the moment real vertical dragging starts.
+        onStartShouldSetPanResponderCapture: () => false,
+        onMoveShouldSetPanResponderCapture: (_e, g) => Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx),
+        onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx),
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderGrant: () => {
+          dragY.setValue(0);
+        },
+        onPanResponderMove: (_e, g) => {
+          const dir = g.dy < 0 ? 1 : -1;
+          const peekIndex = pageRef.current + dir;
+          const hasPeek = peekIndex >= 0 && peekIndex <= pageCountRef.current - 1;
+          // Rubber-band: at the end of the list there's nowhere to reveal, so
+          // let the current card drift a little (feedback that you dragged)
+          // instead of tracking 1:1 forever.
+          dragY.setValue(hasPeek ? g.dy : g.dy * 0.25);
+        },
         onPanResponderRelease: (_e, g) => {
-          if (g.dy <= -SWIPE_THRESHOLD) goTo(page + 1);
-          else if (g.dy >= SWIPE_THRESHOLD) goTo(page - 1);
+          const dir = g.dy < 0 ? 1 : -1;
+          const peekIndex = pageRef.current + dir;
+          const hasPeek = peekIndex >= 0 && peekIndex <= pageCountRef.current - 1;
+          const committed = hasPeek && Math.abs(g.dy) >= SWIPE_THRESHOLD;
+          if (committed) {
+            const trackH = cardTrackHRef.current || 1;
+            const target = dir > 0 ? -trackH : trackH;
+            Animated.timing(dragY, {
+              toValue: target,
+              duration: 180,
+              easing: PAGED_CARD_EASING,
+              useNativeDriver: false,
+            }).start(() => {
+              goTo(peekIndex, { instant: true });
+              dragY.setValue(0);
+            });
+          } else {
+            Animated.spring(dragY, {
+              toValue: 0,
+              useNativeDriver: false,
+              friction: 9,
+              tension: 80,
+            }).start();
+          }
         },
       }),
-    [goTo, page]
+    [goTo, dragY]
   );
 
   const renderPage = useCallback(
@@ -210,6 +278,7 @@ export default function HomeScreen({
   }
 
   const upDim = page === 0;
+  const downDim = page === pageCount - 1;
   const mineBadge = customCreatures.length;
 
   return (
@@ -259,22 +328,69 @@ export default function HomeScreen({
           <View style={styles.cardTrack} onLayout={(e) => setCardTrackH(e.nativeEvent.layout.height)} {...panResponder.panHandlers}>
             {cardTrackH > 0 && (
               <>
-                {ghost && (
-                  <GhostCard key={ghost.id} direction={ghost.dir} cardH={cardTrackH} onDone={() => setGhost(null)}>
-                    {renderPage(tab, ghost.index)}
-                  </GhostCard>
+                {/* The current page's own live position — dragY rides on top
+                    of PagedCard's normal button-triggered slide (0 whenever
+                    that's playing, since a live drag and a button transition
+                    never happen at the same time), so no separate "current"
+                    copy is needed. */}
+                <Animated.View style={[styles.wrapFill, { transform: [{ translateY: dragY }] }]}>
+                  {ghost && (
+                    <GhostCard key={ghost.id} direction={ghost.dir} cardH={cardTrackH} onDone={() => setGhost(null)}>
+                      {renderPage(tab, ghost.index)}
+                    </GhostCard>
+                  )}
+                  <PagedCard key={`${tab}-${page}`} direction={view.dir} cardH={cardTrackH} instant={view.instant}>
+                    {renderPage(tab, page)}
+                  </PagedCard>
+                </Animated.View>
+
+                {/* Always mounted (keyed by page, so it's swapped for a
+                    fresh neighbour right after a commit settles — never in
+                    the middle of a drag) so the very first swipe from a
+                    freshly-landed page already has something to reveal,
+                    instead of mounting it on demand when the drag starts. */}
+                {page > 0 && (
+                  <Animated.View
+                    key={`prev-${tab}-${page - 1}`}
+                    pointerEvents="none"
+                    style={[
+                      styles.dragLayerFill,
+                      {
+                        opacity: dragY.interpolate({ inputRange: [0, cardTrackH], outputRange: [0.5, 1], extrapolate: 'clamp' }),
+                        transform: [
+                          { translateY: Animated.add(dragY, -cardTrackH) },
+                          { scale: dragY.interpolate({ inputRange: [0, cardTrackH], outputRange: [0.94, 1], extrapolate: 'clamp' }) },
+                        ],
+                      },
+                    ]}
+                  >
+                    {renderPage(tab, page - 1)}
+                  </Animated.View>
                 )}
-                <PagedCard key={`${tab}-${page}`} direction={view.dir} cardH={cardTrackH}>
-                  {renderPage(tab, page)}
-                </PagedCard>
+                {page < pageCount - 1 && (
+                  <Animated.View
+                    key={`next-${tab}-${page + 1}`}
+                    pointerEvents="none"
+                    style={[
+                      styles.dragLayerFill,
+                      {
+                        opacity: dragY.interpolate({ inputRange: [-cardTrackH, 0], outputRange: [1, 0.5], extrapolate: 'clamp' }),
+                        transform: [
+                          { translateY: Animated.add(dragY, cardTrackH) },
+                          { scale: dragY.interpolate({ inputRange: [-cardTrackH, 0], outputRange: [1, 0.94], extrapolate: 'clamp' }) },
+                        ],
+                      },
+                    ]}
+                  >
+                    {renderPage(tab, page + 1)}
+                  </Animated.View>
+                )}
               </>
             )}
           </View>
 
           <View style={styles.arrowRow}>
-            {/* source keeps the down arrow at full opacity even on the last
-                card (nextCard just clamps) — only the up arrow dims at 0 */}
-            <ArrowButton direction="down" onPress={() => goTo(page + 1)} />
+            <ArrowButton direction="down" onPress={() => goTo(page + 1)} dim={downDim} />
           </View>
 
           <View style={styles.adRow}>
@@ -375,6 +491,14 @@ const styles = StyleSheet.create({
   // full track width so CreatureCard's `width: 84%` is 84% of the screen, not
   // of a collapsed parent. PagedCard itself centres the card horizontally.
   cardTrack: { flex: 1, minHeight: 0, justifyContent: 'center', overflow: 'hidden' },
+  // Same "don't centre here" rule as cardTrack above — this just needs to
+  // stretch to full width so PagedCard's flex:1 (and in turn CreatureCard's
+  // 84%) resolve against the real track width, not a shrink-wrapped one.
+  wrapFill: { ...StyleSheet.absoluteFillObject },
+  // The drag layer wraps renderPage()'s output directly (no PagedCard in
+  // between to centre it), so this one DOES need alignItems: 'center' to
+  // centre the 84%-wide card horizontally.
+  dragLayerFill: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   adRow: { height: AD_H, alignItems: 'center', justifyContent: 'center', paddingBottom: 8 },
   adInner: {
     width: '88%',
