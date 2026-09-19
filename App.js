@@ -43,7 +43,7 @@ import {
   newCustomCreatureId,
 } from './src/firebase/firestore';
 import { uploadSourceImage, deleteCustomAssets } from './src/firebase/storage';
-import { ensureCreaturesSeeded, DEFAULT_CREATURES } from './src/firebase/seedCreatures';
+import { loadCachedCreatures, saveCreaturesToCache } from './src/data/creatureCache';
 import CreateScreen from './src/screens/CreateScreen';
 
 // GLTFParser's constructor (three.js, used by SquishyToy.js's Glorp build
@@ -133,21 +133,25 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser, profile?.ownedIds]);
 
+  // Seeds `creatures` from the on-device cache immediately (before auth even
+  // resolves — SplashScreen needs something to render at cold start), then
+  // the live Firestore subscription below takes over once signed in and
+  // refreshes the cache for next time.
   useEffect(() => {
-    ensureCreaturesSeeded().catch(() => {});
-    // Firestore may still hold retired creatures, or stale field values for
-    // ones that still exist (e.g. an old color list), from earlier in
-    // development — client-side updates/deletes are both blocked by
-    // firestore.rules (see src/firebase/seedCreatures.js), so the fetched
-    // list is filtered down to creatures still in DEFAULT_CREATURES and
-    // each one's fields are overridden with that current definition rather
-    // than trusted as-is from the database.
-    const knownCreatures = new Map(DEFAULT_CREATURES.map((c) => [c.id, c]));
-    return subscribeToCreatures((list) =>
-      setCreatures(
-        list.filter((c) => knownCreatures.has(c.id)).map((c) => ({ ...c, ...knownCreatures.get(c.id) }))
-      )
-    );
+    loadCachedCreatures().then(setCreatures);
+  }, []);
+
+  useEffect(() => {
+    return subscribeToCreatures((list) => {
+      if (list.length) {
+        setCreatures(list);
+        saveCreaturesToCache(list);
+      }
+      // An empty list here means either a logged-out read (denied by
+      // firestore.rules) or a transient error — keep whatever the cache (or
+      // a prior successful fetch) already put in state rather than blanking
+      // the roster out from under the UI.
+    });
   }, []);
 
   // Fires a top-banner toast the instant an achievement flips from
@@ -343,7 +347,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style={statusBarStyle} />
-      {stage === 'splash' && <SplashScreen onFinish={() => setSplashDone(true)} ownedIds={ownedIds} />}
+      {stage === 'splash' && <SplashScreen onFinish={() => setSplashDone(true)} ownedIds={ownedIds} creatures={creatures} />}
       {stage === 'auth' && <AuthScreen />}
       {stage === 'home' && (
         <HomeScreen

@@ -204,14 +204,14 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
         {colorTransitioning ? (
           <>
             <Animated.View style={[styles.thumbLayer, { opacity: colorFade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }]}>
-              <CreatureThumbnail creatureId={creature.id} mood={mood} size={252} locked animate bleed={16} />
+              <CreatureThumbnail creature={creature} mood={mood} size={252} locked animate bleed={16} />
             </Animated.View>
             <Animated.View style={[styles.thumbLayer, { opacity: colorFade }]}>
-              <CreatureThumbnail creatureId={creature.id} mood={mood} size={252} locked={false} animate bleed={16} />
+              <CreatureThumbnail creature={creature} mood={mood} size={252} locked={false} animate bleed={16} />
             </Animated.View>
           </>
         ) : (
-          <CreatureThumbnail creatureId={creature.id} mood={mood} size={252} locked={!unlocked} animate bleed={16} />
+          <CreatureThumbnail creature={creature} mood={mood} size={252} locked={!unlocked} animate bleed={16} />
         )}
 
         {showCelebration ? (

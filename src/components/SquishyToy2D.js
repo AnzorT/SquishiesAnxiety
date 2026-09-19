@@ -12,8 +12,11 @@ import Animated, {
 import CreatureThumbnail from './CreatureThumbnail';
 import AssembleCreature from './AssembleCreature';
 
-// The 2D squish rig, used for every creature on the squish stage EXCEPT
-// Glorp (id 0), which mounts the real Tripo3D mesh via SquishyToy.js.
+// The 2D squish rig. Every premade creature now has a 3D model (SquishyToy.js
+// handles all of them), so in practice this only ever mounts for a custom
+// creature — a player's photo (`imageUri`) or an assembled build (`build`).
+// The `creature` fallback path below is a last resort for a custom creature
+// with neither.
 //
 // Instead of deforming a mesh, this wraps the exact 2D design art
 // (CreatureThumbnail — the literal SVG port of Claude Design's
@@ -49,7 +52,7 @@ const ART_SCALE = 1.2;
 // `imageUri` (a player's uploaded photo) or `build` (an assembled creature)
 // swap out the roster art for a custom creature; the jelly transform is
 // identical either way.
-const SquishyToy2D = forwardRef(function SquishyToy2D({ creatureId = '0', imageUri, build, size = 220, onSquish, onRelease }, ref) {
+const SquishyToy2D = forwardRef(function SquishyToy2D({ creature, imageUri, build, size = 220, onSquish, onRelease }, ref) {
   const press = useSharedValue(0); // 0 rest .. 1 fully pressed
   const pressX = useSharedValue(0); // -0.5 .. 0.5 (contact offset from centre)
   const pressY = useSharedValue(0);
@@ -164,7 +167,7 @@ const SquishyToy2D = forwardRef(function SquishyToy2D({ creatureId = '0', imageU
           <AssembleCreature build={build} size={artSize} />
         ) : (
           <CreatureThumbnail
-            creatureId={String(creatureId)}
+            creature={creature}
             size={size * BLEED_SCALE * ART_SCALE}
             bleed={ART_BLEED}
             animate={false}

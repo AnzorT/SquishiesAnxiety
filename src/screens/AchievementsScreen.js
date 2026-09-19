@@ -60,7 +60,7 @@ export default function AchievementsScreen({ creatures = [], ownedIds = [], tota
           <View key={entry.key} style={[styles.card, { borderColor: entry.done ? '#ffcd3c55' : squadColors.panelBorder }]}>
             <ShimmerRing done={entry.done}>
               {entry.creature ? (
-                <CreatureThumbnail creatureId={entry.creature.id} mood={entry.done ? 'idle' : 'sleep'} size={46} locked={!entry.done} />
+                <CreatureThumbnail creature={entry.creature} mood={entry.done ? 'idle' : 'sleep'} size={46} locked={!entry.done} />
               ) : (
                 <Text
                   style={[

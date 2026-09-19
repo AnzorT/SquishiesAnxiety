@@ -7,15 +7,24 @@ import CreatureThumbnail from '../components/CreatureThumbnail';
 import GradientButton from '../components/squad/GradientButton';
 
 // First thing shown on launch — matches "ASMR Creature Squash Game.html"'s
-// splash exactly: all 10 creatures scattered at fixed percent positions
-// (owned ones bright and full-size, locked ones dim and smaller), the
-// "SQUISH SQUAD" gradient wordmark, and the pulsing pink CTA. Stays up
-// until the player taps — no auto-advance timer.
+// splash (all creatures scattered at fixed percent positions, owned ones
+// bright and full-size, locked ones dim and smaller), the "SQUISH SQUAD"
+// gradient wordmark, and the pulsing pink CTA. Stays up until the player
+// taps — no auto-advance timer.
+//
+// `creatures` now comes from App.js's on-device cache of the Firestore
+// catalog (see src/data/creatureCache.js), not bundled data — on a
+// brand-new install, before anyone has ever logged in, there's no cache yet
+// and this array is empty on purpose: the splash just shows no floaters
+// that one time, rather than reaching Firestore before auth exists. Once a
+// cache has been written (first successful login), every future launch has
+// it immediately, before auth even resolves.
 
 const MOODS = ['idle', 'jump', 'wobble'];
 
-// Exact percent-of-screen positions from the design spec — one slot per
-// creature id (0-9).
+// Exact percent-of-screen positions from the design spec for creatures 0-9;
+// 10-19 are additional slots in the same scattered style, since the
+// original design only ever covered a 10-creature roster.
 const SPLASH_SLOTS = [
   { top: 8, left: 10, size: 70 },
   { top: 14, left: 68, size: 60 },
@@ -27,9 +36,19 @@ const SPLASH_SLOTS = [
   { top: 70, left: 80, size: 56 },
   { top: 80, left: 36, size: 68 },
   { top: 86, left: 62, size: 60 },
+  { top: 4, left: 42, size: 50 },
+  { top: 10, left: 88, size: 46 },
+  { top: 20, left: 4, size: 54 },
+  { top: 32, left: 90, size: 50 },
+  { top: 48, left: 28, size: 56 },
+  { top: 50, left: 86, size: 48 },
+  { top: 62, left: 46, size: 52 },
+  { top: 74, left: 4, size: 50 },
+  { top: 88, left: 12, size: 46 },
+  { top: 92, left: 84, size: 44 },
 ];
 
-function FloatingCreature({ creatureId, unlocked, slot, delay, mood }) {
+function FloatingCreature({ creature, unlocked, slot, delay, mood }) {
   const enter = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -56,12 +75,15 @@ function FloatingCreature({ creatureId, unlocked, slot, delay, mood }) {
         transform: [{ scale: enter }],
       }}
     >
-      <CreatureThumbnail creatureId={creatureId} mood={mood} size={size} locked={!unlocked} />
+      {/* Locked creatures stay still — no bounce/wobble — so the splash
+          scatter reads as "these are the ones you haven't earned yet"
+          rather than inviting a tap on something not actually playable. */}
+      <CreatureThumbnail creature={creature} mood={mood} size={size} locked={!unlocked} animate={unlocked} />
     </Animated.View>
   );
 }
 
-export default function SplashScreen({ onFinish, ownedIds = [] }) {
+export default function SplashScreen({ onFinish, ownedIds = [], creatures = [] }) {
   const insets = useSafeAreaInsets();
   const finished = useRef(false);
 
@@ -74,16 +96,19 @@ export default function SplashScreen({ onFinish, ownedIds = [] }) {
   return (
     <Pressable style={styles.flex} onPress={skip}>
       <LinearGradient colors={squadGradients.splashBg.colors} start={squadGradients.splashBg.start} end={squadGradients.splashBg.end} style={styles.container}>
-        {SPLASH_SLOTS.map((slot, i) => (
-          <FloatingCreature
-            key={i}
-            creatureId={String(i)}
-            unlocked={ownedIds.includes(String(i))}
-            slot={slot}
-            delay={i * 90}
-            mood={MOODS[i % 3]}
-          />
-        ))}
+        {creatures.map((creature, i) => {
+          const slot = SPLASH_SLOTS[i % SPLASH_SLOTS.length];
+          return (
+            <FloatingCreature
+              key={creature.id}
+              creature={creature}
+              unlocked={ownedIds.includes(String(creature.id))}
+              slot={slot}
+              delay={i * 90}
+              mood={MOODS[i % 3]}
+            />
+          );
+        })}
 
         <View style={styles.center}>
           <View>

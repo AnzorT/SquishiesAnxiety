@@ -6,11 +6,13 @@ import { Canvas } from '@react-three/fiber';
 import { MaterialIcons } from '@expo/vector-icons';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
-import SquishyToy, { MODEL_3D_IDS } from '../components/SquishyToy';
+import SquishyToy from '../components/SquishyToy';
 import SquishyToy2D from '../components/SquishyToy2D';
 import { INTERSTITIAL_AD_UNIT_ID } from '../firebase/ads';
 
-// 3D-mesh creatures use MODEL_3D_IDS; everything else is 2D art (SquishyToy2D).
+// A creature with a `modelUrl` (every premade creature, plus a photo-path
+// custom one) mounts the 3D mesh; everything else falls back to 2D art
+// (SquishyToy2D).
 import SquishSound from '../audio/SquishSound';
 import CoinSound from '../audio/CoinSound';
 import PopSound from '../audio/PopSound';
@@ -178,7 +180,7 @@ function SoundSwitch({ value, onToggle }) {
     <Pressable onPress={onToggle}>
       <View style={[styles.switchTrack, { backgroundColor: value ? undefined : squadColors.panelBorder }]}>
         {value && (
-          <LinearGradient colors={squadGradients.ctaTeal.colors} start={squadGradients.ctaTeal.start} end={squadGradients.ctaTeal.end} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={squadGradients.goldDot.colors} start={squadGradients.goldDot.start} end={squadGradients.goldDot.end} style={StyleSheet.absoluteFillObject} />
         )}
         <Animated.View style={[styles.switchKnob, { left: knobLeft }]} />
       </View>
@@ -372,7 +374,7 @@ export default function SquishScreen({
   };
 
   // True for 3D-mesh creatures; picks Canvas vs SquishyToy2D below.
-  const toyIs3D = (t) => !!(t && ((t.isCustom && t.modelUrl) || MODEL_3D_IDS.has(String(t.id))));
+  const toyIs3D = (t) => !!(t && t.modelUrl);
 
   // Earn EARN_PER_TICK coins every EARN_TICK_MS while held.
   const startEarning = useCallback(() => {
@@ -628,7 +630,8 @@ export default function SquishScreen({
               <SquishyToy
                 ref={toyRef}
                 creatureId={toy.id}
-                modelUrl={toy.isCustom ? toy.modelUrl : undefined}
+                modelUrl={toy.modelUrl}
+                visual={toy.visual}
                 onSquish={() => {
                   if (squishSoundEnabled) soundRef.current?.start();
                 }}
@@ -640,7 +643,7 @@ export default function SquishScreen({
           ) : (
             <SquishyToy2D
               ref={toyRef}
-              creatureId={toy.id}
+              creature={toy}
               imageUri={toy.isCustom ? toy.image : undefined}
               build={toy.isCustom ? toy.build : undefined}
               size={STAGE_SIZE}

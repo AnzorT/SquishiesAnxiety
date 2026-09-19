@@ -93,7 +93,7 @@ export default function WatchAdButton({ onRewardEarned, disabled, bonusActive })
           />
 
           <View style={styles.monitor}>
-            <LinearGradient colors={['#22e0d0', '#0b8f83']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
+            <LinearGradient colors={[squadColors.goldLight, squadColors.goldAmber]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
             <View style={[styles.sprockets, styles.sprocketsLeft]}>
               <View style={styles.sprocket} />
               <View style={styles.sprocket} />
@@ -138,9 +138,9 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: squadColors.teal,
+    borderColor: squadColors.gold,
     overflow: 'hidden',
-    shadowColor: squadColors.teal,
+    shadowColor: squadColors.gold,
     shadowOpacity: 0.28,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 8 },

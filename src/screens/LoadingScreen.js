@@ -92,7 +92,7 @@ export default function LoadingScreen({ creature, onFinish }) {
         ) : creature?.isCustom && creature.build ? (
           <AssembleCreature build={creature.build} size={170} />
         ) : (
-          <CreatureThumbnail creatureId={creature?.id ?? '0'} mood="ready" size={224} bleed={16} />
+          <CreatureThumbnail creature={creature} mood="ready" size={224} bleed={16} />
         )}
         {stage === 'prep' ? (
           <View style={styles.prepRow}>

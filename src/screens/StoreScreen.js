@@ -62,7 +62,7 @@ export default function StoreScreen({ creatures = [], ownedIds = [], keys = {}, 
                   end={{ x: 0.8, y: 1 }}
                   style={styles.avatarWrap}
                 >
-                  <CreatureThumbnail creatureId={creature.id} mood="idle" size={26} />
+                  <CreatureThumbnail creature={creature} mood="idle" size={26} />
                 </LinearGradient>
                 <View style={styles.keyStem}>
                   <LinearGradient

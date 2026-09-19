@@ -7,11 +7,16 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { CREATURE_VISUALS, PHYS } from '../data/creatures';
+import { PHYS } from '../data/creatures';
+
+// Used by buildCreature's procedural-sphere path (and prepareModelData's
+// no-texture-map fallback tint) whenever the caller doesn't have a real
+// visual spec handy — e.g. a GLB that fails to load before its Firestore
+// creature doc's `visual` field made it into scope. Matches Glorp's teal.
+const DEFAULT_VISUAL = { color: '#2dd4bf', accent: '#0d9488', accessory: 'antenna', eye: 'round' };
 
 // Tripo's viewer lights models with an HDRI-style environment (reflections +
 // ambient fill from every direction), which is most of why the same texture
@@ -60,8 +65,8 @@ function getEnvironmentTexture(gl) {
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-function buildCreature(id) {
-  const vis = CREATURE_VISUALS[id] ?? CREATURE_VISUALS[0];
+function buildCreature(id, visual) {
+  const vis = visual ?? DEFAULT_VISUAL;
   const group = new THREE.Group();
   const widthSeg = 40;
   const heightSeg = 28;
@@ -244,11 +249,12 @@ function buildCreature(id) {
 
 // ---- Imported Tripo3D meshes instead of the procedural sphere ----
 //
-// A few creatures render from a real AI-generated asset (a .glb from Tripo3D)
-// rather than buildCreature's hand-built sphere. The rest of the roster is
-// unchanged. `MODEL_3D` below is the single source of truth for which ids
-// take this path — SquishScreen imports `MODEL_3D_IDS` from here to decide
-// whether to mount the <Canvas>.
+// Every premade creature (plus a photo-path custom one) renders from a real
+// AI-generated asset (a .glb) rather than buildCreature's hand-built sphere.
+// The .glb itself now always lives in Firebase Storage — a creature's
+// Firestore doc carries its `modelUrl` — rather than being bundled into the
+// app; loadGltfFromUrl below caches each one to disk on first use so it's
+// still fully playable offline afterward, same as before the migration.
 //
 // The procedural toys share one UV-sphere with a known rows x cols vertex
 // layout, which is what lets tickPhysics's jelly-wave diffusion look up each
@@ -259,187 +265,15 @@ function buildCreature(id) {
 // Gaussian dent target, global squash/wobble, release kick, drag-to-orbit)
 // only reasons about vertex positions, so it runs unmodified on any mesh.
 
-// Per-model config. `visual` bakes the on-stage size into the geometry (the
-// mesh is recentred + rescaled so its largest dimension == this many units;
-// 2 == same size as the procedural spheres). `dentSigma`/`dentStrength`/
-// `dentFloor` tune the dent to a wide/deep/gentle-floored feel (the original
-// c9586dd build) vs the design sphere's shallow one — see computeDentFall /
-// applyDentScale / tickPhysics.
-const MODEL_3D = {
-  0: {
-    asset: require('../../assets/models/glorp_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  1: {
-    asset: require('../../assets/models/puffle_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  2: {
-    asset: require('../../assets/models/nubbin_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  3: {
-    asset: require('../../assets/models/dotty_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  4: {
-    asset: require('../../assets/models/spike_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  5: {
-    asset: require('../../assets/models/stellie_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  6: {
-    asset: require('../../assets/models/puffington_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  7: {
-    asset: require('../../assets/models/noodle_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  8: {
-    asset: require('../../assets/models/glimmer_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  9: {
-    asset: require('../../assets/models/ember_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  10: {
-    asset: require('../../assets/models/mochi_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  11: {
-    asset: require('../../assets/models/zappy_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  12: {
-    asset: require('../../assets/models/bubbles_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  13: {
-    asset: require('../../assets/models/grumps_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  14: {
-    asset: require('../../assets/models/sprout_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  15: {
-    asset: require('../../assets/models/cinder_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  16: {
-    asset: require('../../assets/models/pearla_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  17: {
-    asset: require('../../assets/models/tako_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  18: {
-    asset: require('../../assets/models/fuzzball_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-  19: {
-    asset: require('../../assets/models/cosmo_3d.glb'),
-    visual: 1.9,
-    dentSigma: 0.3,
-    dentStrength: 2.3,
-    dentFloor: 0.72,
-  },
-};
-
-export const MODEL_3D_IDS = new Set(Object.keys(MODEL_3D));
-const is3DModel = (creatureId) => MODEL_3D_IDS.has(String(creatureId));
-
-// Cached per id at module scope, so revisiting a creature in the same
-// session doesn't re-fetch/re-decode the same glb off disk. The heavier
-// geometry prep on top of this is cached separately below (loadModelData) —
-// concurrent toy instances still get their own live BufferGeometry each,
-// they just skip recomputing its contents.
-const gltfPromises = {};
-function loadModelGltf(id) {
-  if (!gltfPromises[id]) {
-    gltfPromises[id] = (async () => {
-      const asset = Asset.fromModule(MODEL_3D[id].asset);
-      await asset.downloadAsync();
-      const response = await fetch(asset.localUri || asset.uri);
-      const arrayBuffer = await response.arrayBuffer();
-      return new Promise((resolve, reject) => {
-        new GLTFLoader().parse(arrayBuffer, '', resolve, reject);
-      });
-    })();
-  }
-  return gltfPromises[id];
-}
-
-// ---- Player-generated meshes (the "Create your own squishy" flow) --------
-//
-// A custom creature's .glb lives in Firebase Storage (uploaded by the
-// generateCustomModel Cloud Function). We download it once to the cache
-// directory, then load it from disk on subsequent plays. The soft-body
-// physics is identical to the built-in 3D creatures — these are the tuning
-// knobs every custom creature gets (same feel as Glorp/Spike).
-const CUSTOM_TUNING = { visual: 1.9, dentSigma: 0.3, dentStrength: 2.3, dentFloor: 0.72 };
+// Every model creature — premade or custom — uses this same tuning: `visual`
+// bakes the on-stage size into the geometry (the mesh is recentred +
+// rescaled so its largest dimension == this many units; 2 == same size as
+// the procedural spheres); `dentSigma`/`dentStrength`/`dentFloor` give it a
+// wide/deep/gentle-floored dent feel (the original c9586dd build) vs the
+// design sphere's shallow one — see computeDentFall/applyDentScale/
+// tickPhysics. `fallbackColor` only matters for the rare mesh with no baked
+// texture map (see prepareModelData).
+const MODEL_TUNING = { visual: 1.9, dentSigma: 0.3, dentStrength: 2.3, dentFloor: 0.72, fallbackColor: '#2dd4bf' };
 
 function hashKey(str) {
   let h = 5381;
@@ -453,7 +287,7 @@ function loadGltfFromUrl(url) {
     remoteGltfPromises.set(
       url,
       (async () => {
-        const dir = `${FileSystem.cacheDirectory}customModels/`;
+        const dir = `${FileSystem.cacheDirectory}creatureModels/`;
         const path = `${dir}${hashKey(url)}.glb`;
         try {
           const info = await FileSystem.getInfoAsync(path);
@@ -475,7 +309,7 @@ function loadGltfFromUrl(url) {
   return remoteGltfPromises.get(url);
 }
 
-// Cached per id/url at module scope, one level up from the raw gltf caches
+// Cached per url at module scope, one level up from the raw gltf cache
 // above — this is what actually makes preloadCreatureModel's promise mean
 // "ready to render instantly": it carries the fetch/parse *and*
 // prepareModelData's recentre/normals/weld/adjacency work (the CPU-bound part
@@ -483,18 +317,10 @@ function loadGltfFromUrl(url) {
 // screen had already faded out). buildModelCreature then just does cheap
 // per-instance geometry/mesh construction from this cached data, so a
 // revisit — or the normal preload-then-mount path — never re-pays it.
-const modelDataPromises = {};
-function loadModelData(id) {
-  if (!modelDataPromises[id]) {
-    modelDataPromises[id] = loadModelGltf(id).then((gltf) => prepareModelData(id, MODEL_3D[id], gltf));
-  }
-  return modelDataPromises[id];
-}
-
 const remoteModelDataPromises = new Map();
 function loadModelDataFromUrl(creatureId, url) {
   if (!remoteModelDataPromises.has(url)) {
-    remoteModelDataPromises.set(url, loadGltfFromUrl(url).then((gltf) => prepareModelData(creatureId, CUSTOM_TUNING, gltf)));
+    remoteModelDataPromises.set(url, loadGltfFromUrl(url).then((gltf) => prepareModelData(creatureId, MODEL_TUNING, gltf)));
   }
   return remoteModelDataPromises.get(url);
 }
@@ -502,16 +328,14 @@ function loadModelDataFromUrl(creatureId, url) {
 // LoadingScreen calls this as soon as a creature is picked, so the .glb
 // fetch/parse and the geometry prep both run during the loading animation
 // instead of after SquishScreen mounts — otherwise SquishyToy's own
-// useEffect is the first thing to ever call loadModelData/
-// loadModelDataFromUrl, and the model pops in on the game screen instead of
-// the loading screen. Both loaders cache by id/url at module scope, so this
-// and SquishyToy's later call share the same in-flight/resolved promise — a
-// creature with no .glb (2D/procedural) resolves immediately.
+// useEffect is the first thing to ever call loadModelDataFromUrl, and the
+// model pops in on the game screen instead of the loading screen. The loader
+// caches by url at module scope, so this and SquishyToy's later call share
+// the same in-flight/resolved promise — a creature with no modelUrl
+// (2D/procedural) resolves immediately.
 export function preloadCreatureModel(creature) {
-  if (!creature) return Promise.resolve();
-  if (creature.isCustom && creature.modelUrl) return loadModelDataFromUrl(creature.id, creature.modelUrl);
-  if (is3DModel(creature.id)) return loadModelData(Number(creature.id));
-  return Promise.resolve();
+  if (!creature || !creature.modelUrl) return Promise.resolve();
+  return loadModelDataFromUrl(creature.id, creature.modelUrl);
 }
 
 // Every vertex sharing a triangle with vertex i becomes a neighbour of i —
@@ -617,7 +441,7 @@ function prepareModelData(id, cfg, gltf) {
   const indexArray = indexAttr ? indexAttr.array : Uint32Array.from({ length: vertCount }, (_, i) => i);
   const neighbors = buildAdjacency(indexArray, vertCount);
   const map = sourceMesh.material && sourceMesh.material.map ? sourceMesh.material.map : null;
-  const fallbackColor = new THREE.Color((CREATURE_VISUALS[id] ?? CREATURE_VISUALS[0]).color);
+  const fallbackColor = new THREE.Color(cfg.fallbackColor);
   geo.dispose();
 
   return { basePos, baseNormals, uvArray, indexArray, neighbors, weldGroups, vertCount, map, fallbackColor };
@@ -680,8 +504,7 @@ function buildModelCreature(id, cfg, modelData) {
     // The imported meshes squish purely by the per-vertex dent (the only
     // thing that renders per frame on the target device — see tickPhysics).
     // These make it a wide, deep, gentle-floored dent like the original
-    // c9586dd build, vs the design sphere's shallow one. Per-model overrides
-    // live in MODEL_3D.
+    // c9586dd build, vs the design sphere's shallow one — see MODEL_TUNING.
     dentSigma: cfg.dentSigma,
     dentStrength: cfg.dentStrength,
     dentFloor: cfg.dentFloor,
@@ -962,7 +785,7 @@ function tickPhysics(s, dt) {
   }
 }
 
-const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', modelUrl, onSquish, onRelease }, ref) {
+const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', modelUrl, visual, onSquish, onRelease }, ref) {
   const { camera, gl, scene } = useThree();
   const toyRef = useRef(null);
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
@@ -987,20 +810,19 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', modelUrl, 
       toyRef.current = null;
     };
 
-    // Procedural creatures build synchronously (unchanged). A 3D-model
-    // creature loads its .glb (bundled asset, or — for a player-made creature
-    // — from Firebase Storage via `modelUrl`) first, so `built` stays null for
-    // the brief window before it resolves — every imperative-handle method and
-    // useFrame already bails while toyRef.current is null, so that window is
-    // safe.
+    // A 3D-model creature (every premade one, plus a photo-path custom one)
+    // loads its .glb from Firebase Storage via `modelUrl` first, so `built`
+    // stays null for the brief window before it resolves — every
+    // imperative-handle method and useFrame already bails while
+    // toyRef.current is null, so that window is safe. Anything without a
+    // modelUrl falls back to the procedural sphere, which builds
+    // synchronously.
     const modelId = Number(creatureId);
     let pending;
     if (modelUrl) {
-      pending = loadModelDataFromUrl(creatureId, modelUrl).then((modelData) => buildModelCreature(creatureId, CUSTOM_TUNING, modelData));
-    } else if (is3DModel(creatureId)) {
-      pending = loadModelData(modelId).then((modelData) => buildModelCreature(modelId, MODEL_3D[modelId], modelData));
+      pending = loadModelDataFromUrl(creatureId, modelUrl).then((modelData) => buildModelCreature(creatureId, MODEL_TUNING, modelData));
     } else {
-      pending = Promise.resolve(buildCreature(modelId));
+      pending = Promise.resolve(buildCreature(modelId, visual));
     }
 
     pending
@@ -1029,7 +851,7 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', modelUrl, 
         // blank and stays fully interactive.
         if (cancelled) return;
         try {
-          const fallback = buildCreature(modelId);
+          const fallback = buildCreature(modelId, visual);
           result = fallback;
           toyRef.current = fallback;
           setBuilt(fallback);
