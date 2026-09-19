@@ -5,21 +5,39 @@ import { RewardedAd, RewardedAdEventType, AdEventType } from 'react-native-googl
 import { REWARDED_AD_UNIT_ID } from '../firebase/ads';
 import { squadGradients, squadColors, squadFonts } from '../theme/squadTheme';
 
-// "Watch ad" CTA at the bottom of SquishScreen, restyled to match the prototype:
-// a teal-outlined dark pill with a little "ad monitor" glyph (play triangle +
-// film sprockets) and a "×2 / WATCH AD" label. It breathes (a slow scale pulse,
-// the spec's `adBreathe`) and a light bar sweeps across it (`adSheen`). While a
-// double-coins window is running it dims to a passive "×2 ACTIVE" state.
-// A reward earned here opens SquishScreen's 60s ×2 window (see handleAdReward);
-// this component only loads/shows a real rewarded ad and reports back.
-export default function WatchAdButton({ onRewardEarned, disabled, bonusActive }) {
+// One "watch ad for a coin multiplier" CTA at the bottom of SquishScreen —
+// there are three of these side by side (×2/×3/×4, see SquishScreen.js),
+// each holding its own independently-loaded rewarded ad. A dark pill with a
+// little "ad monitor" glyph (play triangle + film sprockets) and a
+// "×N / WATCH AD" label. It breathes (a slow scale pulse) and a light bar
+// sweeps across it, but ONLY while it's actually tappable — see `isStill`
+// below. A reward earned here opens SquishScreen's 60s ×N window (see
+// handleAdReward); this component only loads/shows a real rewarded ad and
+// reports back.
+//
+// `activeMultiplier` is the multiplier currently running (or null) — shared
+// across all three buttons, from SquishScreen. Only one bonus window can run
+// at a time: whichever button isn't the active one is locked out entirely
+// (greyed out, unpressable, no animation) until the active window's timer
+// ends, regardless of whether that button's own ad happens to be loaded.
+export default function WatchAdButton({ multiplier, onRewardEarned, activeMultiplier }) {
   const rewardedRef = useRef(null);
   const earnedRef = useRef(false);
   const [ready, setReady] = useState(false);
   const breatheAnim = useRef(new Animated.Value(0)).current;
   const sheenAnim = useRef(new Animated.Value(0)).current;
 
+  const isThisActive = activeMultiplier === multiplier;
+  const isLockedByOther = activeMultiplier != null && !isThisActive;
+  // "Still": no ad ready yet, or another multiplier's window is running —
+  // the two cases the button must go grey + unpressable + animation-frozen
+  // for, treated identically. The active button itself keeps its own look
+  // (the "ACTIVE" label below) rather than going grey.
+  const isStill = !ready || isLockedByOther;
+  const isDisabled = isStill || isThisActive;
+
   useEffect(() => {
+    if (isStill) return undefined;
     const breathe = Animated.loop(
       Animated.sequence([
         Animated.timing(breatheAnim, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
@@ -34,8 +52,12 @@ export default function WatchAdButton({ onRewardEarned, disabled, bonusActive })
     return () => {
       breathe.stop();
       sheen.stop();
+      // Reset so a re-render while still frozen doesn't briefly show a
+      // mid-cycle pose from the last time it was animating.
+      breatheAnim.setValue(0);
+      sheenAnim.setValue(0);
     };
-  }, [breatheAnim, sheenAnim]);
+  }, [isStill, breatheAnim, sheenAnim]);
 
   useEffect(() => {
     let unsub = [];
@@ -48,7 +70,7 @@ export default function WatchAdButton({ onRewardEarned, disabled, bonusActive })
       unsub = [
         rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => setReady(true)),
         // Fires while the ad is still on screen — just flag it and pay out on CLOSED
-        // so the double-coins flash animates in full once the app is visible again.
+        // so the coin-multiplier flash animates in full once the app is visible again.
         rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
           earnedRef.current = true;
         }),
@@ -72,20 +94,19 @@ export default function WatchAdButton({ onRewardEarned, disabled, bonusActive })
   }, []);
 
   const handlePress = useCallback(() => {
-    if (!ready || !rewardedRef.current) return;
+    if (!ready || isDisabled || !rewardedRef.current) return;
     rewardedRef.current.show();
-  }, [ready]);
+  }, [ready, isDisabled]);
 
-  const isDisabled = !ready || disabled;
   const scale = breatheAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.035] });
   // Sweep the light bar across in the first 60% of the loop, then hold it off
-  // the right edge for the remaining 40% (the spec's `adSheen` timing).
+  // the right edge for the remaining 40%.
   const sheenX = sheenAnim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [-40, 150, 150] });
 
   return (
     <View style={styles.wrap}>
       <Animated.View style={{ transform: [{ scale }] }}>
-        <Pressable onPress={handlePress} disabled={isDisabled} style={[styles.button, isDisabled && !bonusActive && styles.dim]}>
+        <Pressable onPress={handlePress} disabled={isDisabled} style={[styles.button, isStill && styles.dim]}>
           <LinearGradient colors={['#2a1650', '#170c33']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
           <Animated.View
             pointerEvents="none"
@@ -117,9 +138,9 @@ export default function WatchAdButton({ onRewardEarned, disabled, bonusActive })
                   style={StyleSheet.absoluteFillObject}
                 />
               </View>
-              <Text style={styles.x2}>×2</Text>
+              <Text style={styles.x2}>×{multiplier}</Text>
             </View>
-            <Text style={styles.subLabel}>{bonusActive ? 'ACTIVE' : 'WATCH AD'}</Text>
+            <Text style={styles.subLabel}>{isThisActive ? 'ACTIVE' : 'WATCH AD'}</Text>
           </View>
         </Pressable>
       </Animated.View>
@@ -128,63 +149,63 @@ export default function WatchAdButton({ onRewardEarned, disabled, bonusActive })
 }
 
 const styles = StyleSheet.create({
-  wrap: { flexShrink: 0, alignItems: 'center', justifyContent: 'center' },
+  wrap: { flexShrink: 1, alignItems: 'center', justifyContent: 'center' },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 9,
-    paddingLeft: 8,
-    paddingRight: 12,
-    paddingVertical: 7,
-    borderRadius: 18,
+    gap: 6,
+    paddingLeft: 6,
+    paddingRight: 9,
+    paddingVertical: 6,
+    borderRadius: 16,
     borderWidth: 1.5,
     borderColor: squadColors.gold,
     overflow: 'hidden',
     shadowColor: squadColors.gold,
     shadowOpacity: 0.28,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 8,
   },
   dim: { opacity: 0.5 },
-  sheen: { position: 'absolute', top: 0, bottom: 0, width: 26, backgroundColor: 'rgba(255,255,255,0.16)' },
+  sheen: { position: 'absolute', top: 0, bottom: 0, width: 22, backgroundColor: 'rgba(255,255,255,0.16)' },
   monitor: {
-    width: 44,
-    height: 32,
-    borderRadius: 9,
+    width: 36,
+    height: 26,
+    borderRadius: 8,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sprockets: { position: 'absolute', top: 4, bottom: 4, width: 4, justifyContent: 'space-between' },
-  sprocketsLeft: { left: 3 },
-  sprocketsRight: { right: 3 },
-  sprocket: { width: 4, height: 4, borderRadius: 1, backgroundColor: 'rgba(13,6,32,0.45)' },
+  sprockets: { position: 'absolute', top: 3, bottom: 3, width: 3, justifyContent: 'space-between' },
+  sprocketsLeft: { left: 2 },
+  sprocketsRight: { right: 2 },
+  sprocket: { width: 3, height: 3, borderRadius: 1, backgroundColor: 'rgba(13,6,32,0.45)' },
   monitorTriangle: {
     width: 0,
     height: 0,
-    marginLeft: 3,
+    marginLeft: 2,
     backgroundColor: 'transparent',
     borderStyle: 'solid',
-    borderTopWidth: 8,
-    borderBottomWidth: 8,
-    borderLeftWidth: 13,
+    borderTopWidth: 6,
+    borderBottomWidth: 6,
+    borderLeftWidth: 10,
     borderTopColor: 'transparent',
     borderBottomColor: 'transparent',
     borderLeftColor: squadColors.bgDeepest,
   },
-  labelCol: { alignItems: 'flex-start', gap: 2 },
-  labelTopRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  coinDot: { width: 16, height: 16, borderRadius: 8, overflow: 'hidden' },
-  // "×2" rides high on Baloo's tall metrics, so nudge it down with a little
+  labelCol: { alignItems: 'flex-start', gap: 1 },
+  labelTopRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  coinDot: { width: 13, height: 13, borderRadius: 6.5, overflow: 'hidden' },
+  // "×N" rides high on Baloo's tall metrics, so nudge it down with a little
   // top padding to sit level with the coin.
   x2: {
     fontFamily: squadFonts.headingExtraBold,
-    fontSize: 15,
-    lineHeight: 16,
-    paddingTop: 7,
+    fontSize: 13,
+    lineHeight: 14,
+    paddingTop: 6,
     includeFontPadding: false,
     color: squadColors.gold,
   },
-  subLabel: { color: squadColors.textLavender, fontFamily: squadFonts.bodyExtraBold, fontSize: 8, letterSpacing: 1.4 },
+  subLabel: { color: squadColors.textLavender, fontFamily: squadFonts.bodyExtraBold, fontSize: 7, letterSpacing: 1.1 },
 });

@@ -77,12 +77,12 @@ function useMoodAnimation(mood, size, animate = true) {
 
 // ---- the component ------------------------------------------------------
 
-// `bleed` (viewBox units, 0 = off) pads the visible canvas on every side so
-// bits of art that sit outside the 100x100 body box — antennae, flame,
-// horns, Noodle's tentacles, Cosmo's ring — aren't clipped at the edges.
-// Only the squish rig and a few close-up cards pass it; every other screen
-// keeps the tight default framing (matches the pre-migration behavior
-// exactly — see generateCreatureSvg.js's `overflow="visible"` note).
+// `bleed` (0 = off, >0 = on) lets bits of art that sit outside the 100x100
+// body box — antennae, flame, horns, Noodle's tentacles, Cosmo's ring —
+// spill past the nominal size instead of being clipped at the edges (see
+// the `overflow` note below for how). Only the squish rig and a few
+// close-up cards pass it; every other screen keeps the tight default
+// framing.
 export default function CreatureThumbnail({ creature, mood = 'idle', size = 90, locked = false, animate = true, bleed = 0, glow = true }) {
   const { translateY, scale, rotate } = useMoodAnimation(mood, size, animate);
 
@@ -133,6 +133,17 @@ export default function CreatureThumbnail({ creature, mood = 'idle', size = 90, 
 
   const clipId = `shineClip-${creature.id}`;
   const shineGradId = `shineGrad-${creature.id}`;
+  // Nesting the baked <SvgXml> inside a manually-built <Svg viewBox="-bleed
+  // ...")> turned out unreliable — react-native-svg still clips at the
+  // *inner* svg's own 0-100 viewport regardless of its `overflow="visible"`
+  // attribute, so anything genuinely outside the 0-100 box (Glorp's antenna,
+  // Zappy's bolt, Cosmo's ring) got cut off in a hard rectangle no matter
+  // what `bleed` was. Fix: every layer below keeps a fixed, identical
+  // viewBox/size (scale is always exactly size/100, bleed never touches it)
+  // and `bleed` instead toggles plain View-level overflow — a much better-
+  // tested mechanism than nested-SVG clipping, and it's the *outer* box that
+  // decides whether spillover is visible, not each inner layer.
+  const overflow = bleed > 0 ? 'visible' : 'hidden';
 
   return (
     <Animated.View
@@ -145,26 +156,27 @@ export default function CreatureThumbnail({ creature, mood = 'idle', size = 90, 
         transform: [{ translateY }, { scale }, { rotate }],
       }}
     >
-      <Svg width={size} height={size} viewBox={`${-bleed} ${-bleed} ${W + bleed * 2} ${W + bleed * 2}`}>
+      <View style={{ width: size, height: size, overflow }}>
         {glow && glowColor ? (
-          <G opacity={0.1}>
-            {glowLayers.map(([s, op], i) => (
-              <G key={`glow-${i}`} scale={s} originX={bcx} originY={bcy} y={glowDy}>
-                <Path d={outlineD} fill={glowColor} opacity={op} />
-              </G>
-            ))}
-          </G>
+          <Svg width={size} height={size} viewBox={`0 0 ${W} ${W}`} style={{ position: 'absolute', top: 0, left: 0 }}>
+            <G opacity={0.1}>
+              {glowLayers.map(([s, op], i) => (
+                <G key={`glow-${i}`} scale={s} originX={bcx} originY={bcy} y={glowDy}>
+                  <Path d={outlineD} fill={glowColor} opacity={op} />
+                </G>
+              ))}
+            </G>
+          </Svg>
         ) : null}
 
         {/* The baked per-creature art — a self-contained "<svg viewBox='0 0
-            100 100' overflow='visible'>...</svg>" string. Nesting it here
-            (rather than as a sibling) keeps it in the exact same coordinate
-            system as the glow/shine layers above/below, so bleed lines up
-            pixel-for-pixel with all three. */}
-        <SvgXml xml={xml} x={0} y={0} width={W} height={W} />
+            100 100'>...</svg>" string, rendered at its native 1:1 scale
+            (size px == 100 units) as its own top-level element rather than
+            nested inside another Svg — see the note above. */}
+        <SvgXml xml={xml} width={size} height={size} style={{ position: 'absolute', top: 0, left: 0 }} />
 
         {hasShine ? (
-          <G>
+          <Svg width={size} height={size} viewBox={`0 0 ${W} ${W}`} style={{ position: 'absolute', top: 0, left: 0 }}>
             <Defs>
               <ClipPath id={clipId}>
                 <Path d={outlineD} />
@@ -176,18 +188,11 @@ export default function CreatureThumbnail({ creature, mood = 'idle', size = 90, 
               </LinearGradient>
             </Defs>
             <G clipPath={`url(#${clipId})`}>
-              <AnimatedRect
-                x={shimmerX}
-                y={-bleed - 6}
-                width={W * 0.34}
-                height={W + bleed * 2 + 12}
-                fill={`url(#${shineGradId})`}
-                opacity={0.9}
-              />
+              <AnimatedRect x={shimmerX} y={-6} width={W * 0.34} height={W + 12} fill={`url(#${shineGradId})`} opacity={0.9} />
             </G>
-          </G>
+          </Svg>
         ) : null}
-      </Svg>
+      </View>
     </Animated.View>
   );
 }

@@ -291,8 +291,11 @@ export default function SquishScreen({
   const [punishOpen, setPunishOpen] = useState(false);
   const [doubleFlash, setDoubleFlash] = useState(false);
   const [doubleFlashKey, setDoubleFlashKey] = useState(0);
-  // Bonus window end time; `now` ticks for the countdown.
+  // Bonus window end time + which of the three ad buttons opened it (2/3/4);
+  // `now` ticks for the countdown. Only one window can run at a time — see
+  // WatchAdButton's `activeMultiplier` handling.
   const [bonusEndsAt, setBonusEndsAt] = useState(null);
+  const [bonusMultiplier, setBonusMultiplier] = useState(2);
   const [now, setNow] = useState(() => Date.now());
 
   const wheelAnim = useRef(new Animated.Value(0)).current;
@@ -371,6 +374,7 @@ export default function SquishScreen({
     onEarnCoins,
     onMarkAchievement,
     bonusEndsAt,
+    bonusMultiplier,
   };
 
   // True for 3D-mesh creatures; picks Canvas vs SquishyToy2D below.
@@ -381,8 +385,9 @@ export default function SquishScreen({
     if (earnIntervalRef.current) return;
     earnAccumRef.current = 0;
     earnIntervalRef.current = setInterval(() => {
-      const { coinSoundEnabled: coinSoundOn } = latestRef.current;
-      const gain = EARN_PER_TICK;
+      const { coinSoundEnabled: coinSoundOn, bonusEndsAt: liveBonusEndsAt, bonusMultiplier: liveMultiplier } = latestRef.current;
+      const bonusIsLive = !!liveBonusEndsAt && Date.now() < liveBonusEndsAt;
+      const gain = EARN_PER_TICK * (bonusIsLive ? liveMultiplier : 1);
       earnAccumRef.current += gain;
       setDisplayCoins((c) => c + gain);
       if (coinSoundOn) coinSoundRef.current?.play();
@@ -436,11 +441,14 @@ export default function SquishScreen({
     abuseTapsRef.current = [];
   }, []);
 
-  // Ad reward opens the 60s double-coins window and pops the flash.
-  const handleAdReward = useCallback(() => {
+  // Ad reward opens the 60s ×N-coins window and pops the flash. `multiplier`
+  // is which of the three ad buttons was watched (2, 3, or 4) — only one
+  // window runs at a time, so this simply (re)starts it at the new value.
+  const handleAdReward = useCallback((multiplier) => {
     const { achievements: liveAchievements, onMarkAchievement: markAch } = latestRef.current;
     const t = Date.now();
     setBonusEndsAt(t + BONUS_MS);
+    setBonusMultiplier(multiplier);
     setNow(t);
     setDoubleFlash(true);
     setDoubleFlashKey((k) => k + 1);
@@ -713,11 +721,11 @@ export default function SquishScreen({
                 end={squadGradients.goldDot.end}
                 style={StyleSheet.absoluteFillObject}
               />
-              <Text style={styles.bonusCoinText}>×2</Text>
+              <Text style={styles.bonusCoinText}>×{bonusMultiplier}</Text>
             </Animated.View>
             <View style={styles.bonusBody}>
               <View style={styles.bonusTopRow}>
-                <Text style={styles.bonusLabel}>DOUBLE COINS ACTIVE</Text>
+                <Text style={styles.bonusLabel}>×{bonusMultiplier} COINS ACTIVE</Text>
                 <Text style={styles.bonusTime}>{bonusTimeText}</Text>
               </View>
               <View style={styles.bonusTrack}>
@@ -730,7 +738,9 @@ export default function SquishScreen({
 
       <View style={styles.bottomPanel}>
         <View style={styles.bottomRow}>
-          <WatchAdButton onRewardEarned={handleAdReward} bonusActive={bonusActive} />
+          <WatchAdButton multiplier={4} onRewardEarned={() => handleAdReward(4)} activeMultiplier={bonusActive ? bonusMultiplier : null} />
+          <WatchAdButton multiplier={3} onRewardEarned={() => handleAdReward(3)} activeMultiplier={bonusActive ? bonusMultiplier : null} />
+          <WatchAdButton multiplier={2} onRewardEarned={() => handleAdReward(2)} activeMultiplier={bonusActive ? bonusMultiplier : null} />
         </View>
 
         <View style={[styles.adSlot, { paddingBottom: insets.bottom }]}>
@@ -741,7 +751,7 @@ export default function SquishScreen({
       {doubleFlash && (
         <View style={styles.flashOverlay} pointerEvents="none">
           <PopIn key={doubleFlashKey} onFadeOutDone={() => setDoubleFlash(false)}>
-            <Text style={styles.doubleFlashText}>×2 SQUISH POINTS!</Text>
+            <Text style={styles.doubleFlashText}>×{bonusMultiplier} SQUISH POINTS!</Text>
           </PopIn>
         </View>
       )}
@@ -823,7 +833,7 @@ const styles = StyleSheet.create({
   switchTrack: { width: 38, height: 22, borderRadius: 11, overflow: 'hidden' },
   switchKnob: { position: 'absolute', top: 2, width: 18, height: 18, borderRadius: 9, backgroundColor: '#fff' },
   bottomPanel: { backgroundColor: '#150a2e', borderTopWidth: 1, borderTopColor: squadColors.panelBorder },
-  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingHorizontal: 16, paddingVertical: 10 },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 10 },
   gestureHint: { position: 'absolute', top: '52%', alignItems: 'center', gap: 6 },
   gestureHandWrap: { width: 46, height: 62, alignItems: 'center', justifyContent: 'center' },
   gestureSvg: { position: 'absolute' },
