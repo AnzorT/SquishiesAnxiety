@@ -14,7 +14,8 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.plushcrush.app"
+      "bundleIdentifier": "com.plushcrush.app",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "package": "com.plushcrush.app",
