@@ -4,7 +4,7 @@
 // this file, so tuning changes to the builders or the physics wouldn't show
 // without a full reload — this directive makes Fast Refresh remount the
 // component (and rebuild the toy) whenever this file changes.
-import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import React, { forwardRef, memo, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import * as FileSystem from 'expo-file-system';
@@ -64,6 +64,21 @@ function getEnvironmentTexture(gl) {
 // the source.
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+// Upper clamp on tickPhysics's per-vertex radial factor — also bounds how far
+// the deformed surface can reach, which raycastLocal's early-out relies on.
+const MAX_BULGE = 1.14;
+
+// Radius of a sphere about the origin that contains the body at any
+// deformation (every vertex is base * factor, factor <= MAX_BULGE).
+function computeBoundRadius(basePos) {
+  let r2 = 0;
+  for (let i = 0; i < basePos.length; i += 3) {
+    const d2 = basePos[i] * basePos[i] + basePos[i + 1] * basePos[i + 1] + basePos[i + 2] * basePos[i + 2];
+    if (d2 > r2) r2 = d2;
+  }
+  return Math.sqrt(r2) * MAX_BULGE * 1.01;
+}
 
 function buildCreature(id, visual) {
   const vis = visual ?? DEFAULT_VISUAL;
@@ -205,6 +220,8 @@ function buildCreature(id, visual) {
     bodyMat,
     basePos,
     baseNormals,
+    indexArray: geo.index.array,
+    boundRadius: computeBoundRadius(basePos),
     vertCount: count,
     colCount,
     rowCount,
@@ -213,6 +230,10 @@ function buildCreature(id, visual) {
     dentVel: new Float32Array(count),
     dentScratch: new Float32Array(count),
     dentFall: new Float32Array(count),
+    dentTargetActive: false,
+    atRest: true,
+    pendingMove: null,
+    pickScratch: null,
     normalsFrameToggle: false,
     featureBases,
     featureMeshes,
@@ -444,6 +465,17 @@ function prepareModelData(id, cfg, gltf) {
   const fallbackColor = new THREE.Color(cfg.fallbackColor);
   geo.dispose();
 
+  // weldGroups' total vertex count (not just triangle/vertex count) drives
+  // tickPhysics's per-frame weldNormals cost — a Tripo photo-to-3D mesh can
+  // have far messier UV-seam topology than the curated premade roster even
+  // at the same face_limit, so this is the number that actually predicts
+  // whether a given model will feel laggy on the squish stage.
+  const weldedVertCount = weldGroups.reduce((sum, g) => sum + g.length, 0);
+  console.log(
+    `[SquishyToy] ${id}: ${vertCount} verts, ${indexArray.length / 3} tris, ` +
+      `${weldGroups.length} weld groups (${weldedVertCount} verts welded)`
+  );
+
   return { basePos, baseNormals, uvArray, indexArray, neighbors, weldGroups, vertCount, map, fallbackColor };
 }
 
@@ -494,6 +526,8 @@ function buildModelCreature(id, cfg, modelData) {
     bodyMat,
     basePos,
     baseNormals,
+    indexArray,
+    boundRadius: computeBoundRadius(basePos),
     vertCount,
     // Grid dims unused — the presence of `neighbors` routes tickPhysics down
     // the topology-agnostic diffusion path instead.
@@ -513,6 +547,10 @@ function buildModelCreature(id, cfg, modelData) {
     dentVel: new Float32Array(vertCount),
     dentScratch: new Float32Array(vertCount),
     dentFall: new Float32Array(vertCount),
+    dentTargetActive: false,
+    atRest: true,
+    pendingMove: null,
+    pickScratch: null,
     normalsFrameToggle: false,
     // No separate face meshes — Glorp's face is in its texture.
     featureBases: [],
@@ -560,11 +598,19 @@ function computeDentFall(s, localPoint) {
   // original c9586dd build; the procedural sphere keeps the design's 0.16.
   const sigma = s.dentSigma ?? 0.16;
   const sigmaFactor = -1 / (2 * sigma * sigma);
+  // Arrays hoisted into locals throughout the per-frame/per-touch paths:
+  // Hermes has no JIT, so a repeated `s.foo[i]` property lookup inside a
+  // hot loop is a real per-vertex cost, not something that gets optimized away.
+  const base = s.basePos;
+  const fall = s.dentFall;
+  const px = localPoint.x;
+  const py = localPoint.y;
+  const pz = localPoint.z;
   for (let i = 0; i < s.vertCount; i++) {
-    const dx = s.basePos[i * 3] - localPoint.x;
-    const dy = s.basePos[i * 3 + 1] - localPoint.y;
-    const dz = s.basePos[i * 3 + 2] - localPoint.z;
-    s.dentFall[i] = Math.exp((dx * dx + dy * dy + dz * dz) * sigmaFactor);
+    const dx = base[i * 3] - px;
+    const dy = base[i * 3 + 1] - py;
+    const dz = base[i * 3 + 2] - pz;
+    fall[i] = Math.exp((dx * dx + dy * dy + dz * dz) * sigmaFactor);
   }
   const featureSigma = 0.24;
   const featureSigmaFactor = -1 / (2 * featureSigma * featureSigma);
@@ -581,19 +627,83 @@ function applyDentScale(s, depthMul) {
   // Glorp (dentStrength ~2.3) gets the deep c9586dd-era dent; the sphere keeps
   // the design's shallower one.
   const maxDent = 0.3 * PHYS.strength * depthMul * (s.dentStrength ?? 1);
-  for (let i = 0; i < s.vertCount; i++) s.dentTarget[i] = maxDent * s.dentFall[i];
+  const target = s.dentTarget;
+  const fall = s.dentFall;
+  for (let i = 0; i < s.vertCount; i++) target[i] = maxDent * fall[i];
   for (let j = 0; j < s.featureBases.length; j++) s.featureDentTarget[j] = maxDent * s.featureDentFall[j] * 1.1;
+  s.dentTargetActive = true;
+  s.atRest = false;
 }
 
 function resetDentTargets(s) {
   s.dentTarget.fill(0);
   s.featureDentTarget.fill(0);
+  s.dentTargetActive = false;
 }
 
-function raycastHit(s, camera, raycaster, ndcX, ndcY) {
+// Nearest front-facing hit on the body's current (deformed) surface, in the
+// mesh's local space — the same answer raycaster.intersectObject gives
+// (Möller–Trumbore with FrontSide back-face culling, ported from three's
+// Ray.intersectTriangle), but as one flat loop over the typed arrays instead
+// of three's per-triangle Vector3 calls and per-hit object allocation, which
+// cost several ms per touch event on Hermes.
+const _ray = new THREE.Ray();
+const _invWorld = new THREE.Matrix4();
+function raycastLocal(s, camera, raycaster, ndcX, ndcY) {
   raycaster.setFromCamera({ x: ndcX, y: ndcY }, camera);
-  const hits = raycaster.intersectObject(s.bodyMesh, false);
-  return hits.length ? hits[0] : null;
+  _ray.copy(raycaster.ray).applyMatrix4(_invWorld.copy(s.bodyMesh.matrixWorld).invert());
+  const ox = _ray.origin.x;
+  const oy = _ray.origin.y;
+  const oz = _ray.origin.z;
+  const dx = _ray.direction.x;
+  const dy = _ray.direction.y;
+  const dz = _ray.direction.z;
+
+  // Ray passes wide of the body's bounding sphere -> no triangle can be hit.
+  const tc = -(ox * dx + oy * dy + oz * dz);
+  const cx = ox + dx * tc;
+  const cy = oy + dy * tc;
+  const cz = oz + dz * tc;
+  if (cx * cx + cy * cy + cz * cz > s.boundRadius * s.boundRadius) return null;
+
+  const pos = s.bodyGeo.attributes.position.array;
+  const index = s.indexArray;
+  let bestT = Infinity;
+  for (let t = 0; t < index.length; t += 3) {
+    const a = index[t] * 3;
+    const b = index[t + 1] * 3;
+    const c = index[t + 2] * 3;
+    const ax = pos[a];
+    const ay = pos[a + 1];
+    const az = pos[a + 2];
+    const e1x = pos[b] - ax;
+    const e1y = pos[b + 1] - ay;
+    const e1z = pos[b + 2] - az;
+    const e2x = pos[c] - ax;
+    const e2y = pos[c + 1] - ay;
+    const e2z = pos[c + 2] - az;
+    const nx = e1y * e2z - e1z * e2y;
+    const ny = e1z * e2x - e1x * e2z;
+    const nz = e1x * e2y - e1y * e2x;
+    let DdN = dx * nx + dy * ny + dz * nz;
+    // >= 0: back-facing (culled — the body is FrontSide) or edge-on.
+    if (DdN >= 0) continue;
+    DdN = -DdN;
+    const qx = ox - ax;
+    const qy = oy - ay;
+    const qz = oz - az;
+    const DdQxE2 = -(dx * (qy * e2z - qz * e2y) + dy * (qz * e2x - qx * e2z) + dz * (qx * e2y - qy * e2x));
+    if (DdQxE2 < 0) continue;
+    const DdE1xQ = -(dx * (e1y * qz - e1z * qy) + dy * (e1z * qx - e1x * qz) + dz * (e1x * qy - e1y * qx));
+    if (DdE1xQ < 0) continue;
+    if (DdQxE2 + DdE1xQ > DdN) continue;
+    const QdN = qx * nx + qy * ny + qz * nz;
+    if (QdN < 0) continue;
+    const hitT = QdN / DdN;
+    if (hitT < bestT) bestT = hitT;
+  }
+  if (bestT === Infinity) return null;
+  return new THREE.Vector3(ox + dx * bestT, oy + dy * bestT, oz + dz * bestT);
 }
 
 // Where on the body a tap landed, in the mesh's local space. Prefers a real
@@ -602,22 +712,53 @@ function raycastHit(s, camera, raycaster, ndcX, ndcY) {
 // nearest *front-facing* base vertex in screen space — so a tap anywhere
 // near the toy always dents the surface closest to the finger instead of a
 // point floating in the air.
-const _pcV = new THREE.Vector3();
 function pickContactLocal(s, camera, raycaster, ndcX, ndcY) {
-  const hit = raycastHit(s, camera, raycaster, ndcX, ndcY);
-  if (hit) return s.bodyMesh.worldToLocal(hit.point.clone());
+  const hit = raycastLocal(s, camera, raycaster, ndcX, ndcY);
+  if (hit) return hit;
 
+  // Fallback: the same math as Vector3.applyMatrix4(matrixWorld) and
+  // .project(camera) per vertex, written out inline, in one pass that caches
+  // each vertex's camera distance + screen distance for the selection below.
+  // A drag that slides off the toy's edge lands here on every move, so this
+  // used to be the single most expensive touch path.
   s.bodyMesh.updateWorldMatrix(true, false);
+  const m = s.bodyMesh.matrixWorld.elements;
+  const v = camera.matrixWorldInverse.elements;
+  const p = camera.projectionMatrix.elements;
+  const base = s.basePos;
+  const n = s.vertCount;
+  if (!s.pickScratch) s.pickScratch = new Float64Array(n * 2);
+  const scratch = s.pickScratch;
   let minCam = Infinity;
   let maxCam = -Infinity;
   const camX = camera.position.x;
   const camY = camera.position.y;
   const camZ = camera.position.z;
-  for (let i = 0; i < s.vertCount; i++) {
-    _pcV.set(s.basePos[i * 3], s.basePos[i * 3 + 1], s.basePos[i * 3 + 2]).applyMatrix4(s.bodyMesh.matrixWorld);
-    const cd = (_pcV.x - camX) ** 2 + (_pcV.y - camY) ** 2 + (_pcV.z - camZ) ** 2;
+  for (let i = 0; i < n; i++) {
+    const x = base[i * 3];
+    const y = base[i * 3 + 1];
+    const z = base[i * 3 + 2];
+    let w = 1 / (m[3] * x + m[7] * y + m[11] * z + m[15]);
+    const wx = (m[0] * x + m[4] * y + m[8] * z + m[12]) * w;
+    const wy = (m[1] * x + m[5] * y + m[9] * z + m[13]) * w;
+    const wz = (m[2] * x + m[6] * y + m[10] * z + m[14]) * w;
+    const ex = wx - camX;
+    const ey = wy - camY;
+    const ez = wz - camZ;
+    const cd = ex * ex + ey * ey + ez * ez;
     if (cd < minCam) minCam = cd;
     if (cd > maxCam) maxCam = cd;
+    w = 1 / (v[3] * wx + v[7] * wy + v[11] * wz + v[15]);
+    const vx = (v[0] * wx + v[4] * wy + v[8] * wz + v[12]) * w;
+    const vy = (v[1] * wx + v[5] * wy + v[9] * wz + v[13]) * w;
+    const vz = (v[2] * wx + v[6] * wy + v[10] * wz + v[14]) * w;
+    w = 1 / (p[3] * vx + p[7] * vy + p[11] * vz + p[15]);
+    const sx = (p[0] * vx + p[4] * vy + p[8] * vz + p[12]) * w;
+    const sy = (p[1] * vx + p[5] * vy + p[9] * vz + p[13]) * w;
+    const qx = sx - ndcX;
+    const qy = sy - ndcY;
+    scratch[i * 2] = cd;
+    scratch[i * 2 + 1] = qx * qx + qy * qy;
   }
   const midCam = (minCam + maxCam) / 2;
 
@@ -625,11 +766,9 @@ function pickContactLocal(s, camera, raycaster, ndcX, ndcY) {
   let bestScreen = Infinity;
   let bestAny = -1;
   let bestAnyScreen = Infinity;
-  for (let i = 0; i < s.vertCount; i++) {
-    _pcV.set(s.basePos[i * 3], s.basePos[i * 3 + 1], s.basePos[i * 3 + 2]).applyMatrix4(s.bodyMesh.matrixWorld);
-    const cd = (_pcV.x - camX) ** 2 + (_pcV.y - camY) ** 2 + (_pcV.z - camZ) ** 2;
-    _pcV.project(camera);
-    const sd = (_pcV.x - ndcX) ** 2 + (_pcV.y - ndcY) ** 2;
+  for (let i = 0; i < n; i++) {
+    const cd = scratch[i * 2];
+    const sd = scratch[i * 2 + 1];
     if (sd < bestAnyScreen) {
       bestAnyScreen = sd;
       bestAny = i;
@@ -642,6 +781,116 @@ function pickContactLocal(s, camera, raycaster, ndcX, ndcY) {
   const pick = best >= 0 ? best : bestAny;
   if (pick < 0) return null;
   return new THREE.Vector3(s.basePos[pick * 3], s.basePos[pick * 3 + 1], s.basePos[pick * 3 + 2]);
+}
+
+// The drag half of a poke. pointerMove only records the latest finger
+// position; this does the pick + dent reshape at most once per rendered frame
+// (from useFrame), so a burst of touch events can never queue several picks
+// between two frames and snowball into lag.
+function applyPendingMove(s, camera, raycaster) {
+  const move = s.pendingMove;
+  if (!move) return;
+  s.pendingMove = null;
+  if (s.mode !== 'poke') return;
+  // A one-finger drag only moves the contact point around — it no longer
+  // spins the toy (rotation is the two-finger `orbit` gesture).
+  const local = pickContactLocal(s, camera, raycaster, move.x, move.y) || s.dragStartWorld;
+  if (!local) return;
+  if (!s.pressLocalSmoothed) s.pressLocalSmoothed = local.clone();
+  s.pressLocalSmoothed.lerp(local, 0.7);
+  s.dragStartWorld = local;
+  computeDentFall(s, s.pressLocalSmoothed);
+}
+
+// bodyGeo.computeVertexNormals() followed by weldNormals(), written as plain
+// typed-array arithmetic in the exact same operation order (so the result is
+// bit-identical) — without three's per-triangle Vector3/BufferAttribute
+// method calls, which made this the most expensive part of every frame.
+function computeNormals(s) {
+  const pos = s.bodyGeo.attributes.position.array;
+  const normalAttr = s.bodyGeo.attributes.normal;
+  const nrm = normalAttr.array;
+  const index = s.indexArray;
+  nrm.fill(0);
+  for (let t = 0; t < index.length; t += 3) {
+    const a = index[t] * 3;
+    const b = index[t + 1] * 3;
+    const c = index[t + 2] * 3;
+    const bx = pos[b];
+    const by = pos[b + 1];
+    const bz = pos[b + 2];
+    const cbx = pos[c] - bx;
+    const cby = pos[c + 1] - by;
+    const cbz = pos[c + 2] - bz;
+    const abx = pos[a] - bx;
+    const aby = pos[a + 1] - by;
+    const abz = pos[a + 2] - bz;
+    const nx = cby * abz - cbz * aby;
+    const ny = cbz * abx - cbx * abz;
+    const nz = cbx * aby - cby * abx;
+    nrm[a] += nx;
+    nrm[a + 1] += ny;
+    nrm[a + 2] += nz;
+    nrm[b] += nx;
+    nrm[b + 1] += ny;
+    nrm[b + 2] += nz;
+    nrm[c] += nx;
+    nrm[c + 1] += ny;
+    nrm[c + 2] += nz;
+  }
+  for (let i = 0; i < nrm.length; i += 3) {
+    const x = nrm[i];
+    const y = nrm[i + 1];
+    const z = nrm[i + 2];
+    const inv = 1 / (Math.sqrt(x * x + y * y + z * z) || 1);
+    nrm[i] = x * inv;
+    nrm[i + 1] = y * inv;
+    nrm[i + 2] = z * inv;
+  }
+  const weldGroups = s.weldGroups;
+  if (weldGroups) {
+    for (let g = 0; g < weldGroups.length; g++) {
+      const group = weldGroups[g];
+      let nx = 0;
+      let ny = 0;
+      let nz = 0;
+      for (let k = 0; k < group.length; k++) {
+        const o = group[k] * 3;
+        nx += nrm[o];
+        ny += nrm[o + 1];
+        nz += nrm[o + 2];
+      }
+      const len = Math.hypot(nx, ny, nz) || 1;
+      nx /= len;
+      ny /= len;
+      nz /= len;
+      for (let k = 0; k < group.length; k++) {
+        const o = group[k] * 3;
+        nrm[o] = nx;
+        nrm[o + 1] = ny;
+        nrm[o + 2] = nz;
+      }
+    }
+  }
+  normalAttr.needsUpdate = true;
+}
+
+// Once released, the dent springs ring down to effectively nothing within
+// about a second. Below this they're far under a pixel, so tickPhysics snaps
+// them to exact rest and stops rewriting/re-uploading the vertex + normal
+// buffers every frame until the next press (applyDentScale wakes it).
+const REST_EPS = 1e-4;
+
+function settleToRest(s) {
+  s.dentAmt.fill(0);
+  s.dentVel.fill(0);
+  const posAttr = s.bodyGeo.attributes.position;
+  posAttr.array.set(s.basePos);
+  posAttr.needsUpdate = true;
+  const normalAttr = s.bodyGeo.attributes.normal;
+  normalAttr.array.set(s.baseNormals);
+  normalAttr.needsUpdate = true;
+  s.atRest = true;
 }
 
 function tickPhysics(s, dt) {
@@ -668,61 +917,89 @@ function tickPhysics(s, dt) {
   // a jelly-wave diffusion. Same approach as the original c9586dd build.
   const dentStiff = 1 - Math.pow(1 - PHYS.stiff, k);
   const dentDamp = Math.pow(PHYS.damp, k);
-  for (let i = 0; i < s.vertCount; i++) {
-    s.dentVel[i] += (s.dentTarget[i] - s.dentAmt[i]) * dentStiff;
-    s.dentVel[i] *= dentDamp;
-    s.dentAmt[i] += s.dentVel[i];
-  }
-
-  s.dentScratch.set(s.dentAmt);
-  const prev = s.dentScratch;
-  const diffCoef = 0.03 * k;
-  if (s.neighbors) {
-    // Imported mesh (Glorp): diffuse across real triangle-adjacency, averaged
-    // by neighbour count then x4 to match the grid branch's range.
-    for (let i = 0; i < s.vertCount; i++) {
-      const nbrs = s.neighbors[i];
-      const n = nbrs.length;
-      if (!n) continue;
-      let acc = 0;
-      for (let ni = 0; ni < n; ni++) acc += prev[nbrs[ni]] - prev[i];
-      s.dentAmt[i] += (acc / n) * 4 * diffCoef;
+  let meanDent = 0;
+  // Skipped entirely while the body is settled (see REST_EPS/settleToRest) —
+  // nothing below changes a single vertex then, so there's no reason to spend
+  // the frame recomputing and re-uploading an unchanged mesh.
+  if (!s.atRest) {
+    const n = s.vertCount;
+    const amt = s.dentAmt;
+    const vel = s.dentVel;
+    const target = s.dentTarget;
+    let motion = 0;
+    for (let i = 0; i < n; i++) {
+      vel[i] += (target[i] - amt[i]) * dentStiff;
+      vel[i] *= dentDamp;
+      amt[i] += vel[i];
+      const av = amt[i];
+      const vv = vel[i];
+      if (av > motion) motion = av;
+      else if (-av > motion) motion = -av;
+      if (vv > motion) motion = vv;
+      else if (-vv > motion) motion = -vv;
     }
-  } else {
-    const rows = s.rowCount;
-    const cols = s.colCount;
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const idx = r * cols + c;
-        const cl = c === 0 ? cols - 1 : c - 1;
-        const cr = c === cols - 1 ? 0 : c + 1;
-        const left = prev[r * cols + cl];
-        const right = prev[r * cols + cr];
-        const up = r > 0 ? prev[(r - 1) * cols + c] : prev[idx];
-        const down = r < rows - 1 ? prev[(r + 1) * cols + c] : prev[idx];
-        s.dentAmt[idx] += (left + right - 2 * prev[idx] + (up + down - 2 * prev[idx])) * diffCoef;
+
+    s.dentScratch.set(amt);
+    const prev = s.dentScratch;
+    const diffCoef = 0.03 * k;
+    if (s.neighbors) {
+      // Imported mesh (Glorp): diffuse across real triangle-adjacency, averaged
+      // by neighbour count then x4 to match the grid branch's range.
+      const neighbors = s.neighbors;
+      for (let i = 0; i < n; i++) {
+        const nbrs = neighbors[i];
+        const nn = nbrs.length;
+        if (!nn) continue;
+        const pi = prev[i];
+        let acc = 0;
+        for (let ni = 0; ni < nn; ni++) acc += prev[nbrs[ni]] - pi;
+        amt[i] += (acc / nn) * 4 * diffCoef;
+      }
+    } else {
+      const rows = s.rowCount;
+      const cols = s.colCount;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const idx = r * cols + c;
+          const cl = c === 0 ? cols - 1 : c - 1;
+          const cr = c === cols - 1 ? 0 : c + 1;
+          const left = prev[r * cols + cl];
+          const right = prev[r * cols + cr];
+          const up = r > 0 ? prev[(r - 1) * cols + c] : prev[idx];
+          const down = r < rows - 1 ? prev[(r + 1) * cols + c] : prev[idx];
+          amt[idx] += (left + right - 2 * prev[idx] + (up + down - 2 * prev[idx])) * diffCoef;
+        }
       }
     }
-  }
 
-  let sum = 0;
-  for (let i = 0; i < s.vertCount; i++) sum += s.dentAmt[i];
-  const meanDent = sum / s.vertCount;
+    let sum = 0;
+    for (let i = 0; i < n; i++) sum += amt[i];
+    meanDent = sum / n;
 
-  const posAttr = s.bodyGeo.attributes.position;
-  const dentFloor = s.dentFloor ?? 0.45;
-  for (let i = 0; i < s.vertCount; i++) {
-    const bx = s.basePos[i * 3];
-    const by = s.basePos[i * 3 + 1];
-    const bz = s.basePos[i * 3 + 2];
-    const factor = clamp(1 - s.dentAmt[i] + meanDent * 0.2, dentFloor, 1.14);
-    posAttr.setXYZ(i, bx * factor, by * factor, bz * factor);
-  }
-  posAttr.needsUpdate = true;
-  s.normalsFrameToggle = !s.normalsFrameToggle;
-  if (s.normalsFrameToggle) {
-    s.bodyGeo.computeVertexNormals();
-    if (s.weldGroups && s.weldGroups.length) weldNormals(s.bodyGeo.attributes.normal, s.weldGroups);
+    // Written straight into the attribute's array (what setXYZ does, minus
+    // the method call per vertex).
+    const posAttr = s.bodyGeo.attributes.position;
+    const pos = posAttr.array;
+    const base = s.basePos;
+    const dentFloor = s.dentFloor ?? 0.45;
+    const meanLift = meanDent * 0.2;
+    for (let i = 0; i < n; i++) {
+      const o = i * 3;
+      let factor = 1 - amt[i] + meanLift;
+      if (factor > MAX_BULGE) factor = MAX_BULGE;
+      if (factor < dentFloor) factor = dentFloor;
+      pos[o] = base[o] * factor;
+      pos[o + 1] = base[o + 1] * factor;
+      pos[o + 2] = base[o + 2] * factor;
+    }
+    posAttr.needsUpdate = true;
+    s.normalsFrameToggle = !s.normalsFrameToggle;
+    if (s.normalsFrameToggle) computeNormals(s);
+
+    if (!s.dentTargetActive && motion < REST_EPS) {
+      settleToRest(s);
+      meanDent = 0;
+    }
   }
 
   for (let j = 0; j < s.featureBases.length; j++) {
@@ -785,7 +1062,10 @@ function tickPhysics(s, dt) {
   }
 }
 
-const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', modelUrl, visual, onSquish, onRelease }, ref) {
+// Memoized so a parent re-render triggered by unrelated state (coin counters,
+// timers, etc.) doesn't force React to reconcile this subtree — the per-frame
+// squish physics already runs in useFrame and shouldn't compete with that.
+const SquishyToy = memo(forwardRef(function SquishyToy({ creatureId = '0', modelUrl, visual, onSquish, onRelease }, ref) {
   const { camera, gl, scene } = useThree();
   const toyRef = useRef(null);
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
@@ -881,22 +1161,18 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', modelUrl, 
         s.dragStartWorld = local;
         s.pressLocalSmoothed = local.clone();
         s.pressHoldTime = 0;
+        s.pendingMove = null;
         computeDentFall(s, local);
         applyDentScale(s, 1);
         s.globalSquashTarget = 0.55;
         onSquish && onSquish();
       },
+      // Only records where the finger is now — applyPendingMove (in useFrame)
+      // does the actual pick + dent reshape once per frame.
       pointerMove: (ndcX, ndcY) => {
         const s = toyRef.current;
         if (!s || s.mode !== 'poke') return;
-        // A one-finger drag only moves the contact point around — it no longer
-        // spins the toy (rotation is the two-finger `orbit` gesture).
-        const local = pickContactLocal(s, camera, raycaster, ndcX, ndcY) || s.dragStartWorld;
-        if (!local) return;
-        if (!s.pressLocalSmoothed) s.pressLocalSmoothed = local.clone();
-        s.pressLocalSmoothed.lerp(local, 0.7);
-        s.dragStartWorld = local;
-        computeDentFall(s, s.pressLocalSmoothed);
+        s.pendingMove = { x: ndcX, y: ndcY };
       },
       // Two-finger drag: turn the toy. dxScreen/dyScreen are the movement of
       // the two fingers' midpoint since the last move event, in screen px.
@@ -922,6 +1198,7 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', modelUrl, 
         s.globalSquashTarget = 0;
         s.pressLocalSmoothed = null;
         s.pressHoldTime = 0;
+        s.pendingMove = null;
         if (s.mode === 'poke') s.mode = null;
       },
       pointerUp: () => {
@@ -942,6 +1219,7 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', modelUrl, 
         s.wobbleRotZV += clamp((Math.random() - 0.5) * kick, -kick, kick);
         s.pressLocalSmoothed = null;
         s.pressHoldTime = 0;
+        s.pendingMove = null;
         s.mode = null;
         onRelease && onRelease(holdSeconds);
         return { wasPoke: true, holdSeconds };
@@ -953,6 +1231,7 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', modelUrl, 
   useFrame((_, delta) => {
     const s = toyRef.current;
     if (!s) return;
+    applyPendingMove(s, camera, raycaster);
     tickPhysics(s, clamp(delta, 0, 0.05));
   });
 
@@ -964,6 +1243,6 @@ const SquishyToy = forwardRef(function SquishyToy({ creatureId = '0', modelUrl, 
       <primitive object={built.shadowMesh} />
     </>
   );
-});
+}));
 
 export default SquishyToy;

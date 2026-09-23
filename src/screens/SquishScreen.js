@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { View, Text, StyleSheet, PanResponder, Animated, Pressable, Easing, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -51,8 +51,13 @@ const DEFAULT_SQUISH_SOUND = require('../../assets/audio/slime.wav');
 
 const RIPPLE_MAX = 120;
 
-// Ring that blooms from the touch point and fades.
-function Ripple({ x, y }) {
+// True for 3D-mesh creatures; picks Canvas vs SquishyToy2D in SquishStage.
+const toyIs3D = (t) => !!(t && t.modelUrl);
+
+// Ring that blooms from the touch point and fades. Memoized (like
+// FloatingCoin) so spawning a new one doesn't re-render the ones already
+// mid-animation.
+const Ripple = memo(function Ripple({ x, y }) {
   const t = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(t, { toValue: 1, duration: RIPPLE_LIFETIME_MS, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
@@ -68,10 +73,10 @@ function Ripple({ x, y }) {
       ]}
     />
   );
-}
+});
 
 // Coin that rises, spins, and fades — pops once per earn tick.
-function FloatingCoin({ x, y, amount }) {
+const FloatingCoin = memo(function FloatingCoin({ x, y, amount }) {
   const t = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(t, { toValue: 1, duration: FLOATING_COIN_MS, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
@@ -95,6 +100,97 @@ function FloatingCoin({ x, y, amount }) {
       </Animated.View>
       <Text style={styles.floatingCoinText}>+{amount}</Text>
     </Animated.View>
+  );
+});
+
+// Touch ripples + floating "+N" coins. Owns its own lists (driven through
+// the ref) so spawning/expiring them re-renders only this overlay — not
+// SquishScreen — since a ripple spawns on the very touch that starts a squish.
+const StageEffects = memo(forwardRef(function StageEffects(_props, ref) {
+  const [ripples, setRipples] = useState([]);
+  const [floatingCoins, setFloatingCoins] = useState([]);
+  const seqRef = useRef(0);
+  useImperativeHandle(
+    ref,
+    () => ({
+      spawnRipple: (x, y) => {
+        const id = ++seqRef.current;
+        setRipples((prev) => [...prev, { id, x, y }]);
+        setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), RIPPLE_LIFETIME_MS);
+      },
+      spawnFloatingCoin: (x, y, amount) => {
+        const id = ++seqRef.current;
+        setFloatingCoins((prev) => [...prev, { id, x, y, amount }]);
+        setTimeout(() => setFloatingCoins((prev) => prev.filter((c) => c.id !== id)), FLOATING_COIN_MS);
+      },
+    }),
+    []
+  );
+  return (
+    <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+      {ripples.map((r) => (
+        <Ripple key={r.id} x={r.x} y={r.y} />
+      ))}
+      {floatingCoins.map((c) => (
+        <FloatingCoin key={c.id} x={c.x} y={c.y} amount={c.amount} />
+      ))}
+    </View>
+  );
+}));
+
+// Top-bar coin pill. Counts up through its ref on each earn tick, so the
+// tick re-renders only this pill instead of the whole screen mid-squish.
+const CoinCounter = memo(forwardRef(function CoinCounter({ initial }, ref) {
+  const [value, setValue] = useState(initial);
+  useImperativeHandle(ref, () => ({ add: (n) => setValue((c) => c + n) }), []);
+  return (
+    <View style={styles.coinPill}>
+      <View style={styles.coinDot} />
+      <Text style={styles.coinPillText}>{value}</Text>
+    </View>
+  );
+}));
+
+// Live ×N-coins countdown bar. Ticks its own `now` every 250ms in isolation
+// so that redraw stays scoped to this small subtree instead of re-rendering
+// the whole SquishScreen (which would otherwise drag the 3D Canvas/SquishyToy
+// tree and its inline props through reconciliation 4x/sec, competing with the
+// per-frame squish physics on the JS thread and making the squish feel
+// laggy while a bonus window is running).
+function BonusBanner({ endsAt, multiplier, coinAnim }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, []);
+  const remain = Math.max(0, endsAt - now);
+  const secs = Math.ceil(remain / 1000);
+  const timeText = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+  const pct = Math.max(0, Math.min(100, (remain / BONUS_MS) * 100));
+  const coinScale = coinAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] });
+  return (
+    <View style={styles.bonusBar}>
+      <View style={styles.bonusInner}>
+        <Animated.View style={[styles.bonusCoin, { transform: [{ scale: coinScale }] }]}>
+          <LinearGradient
+            colors={squadGradients.goldDot.colors}
+            start={squadGradients.goldDot.start}
+            end={squadGradients.goldDot.end}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <Text style={styles.bonusCoinText}>×{multiplier}</Text>
+        </Animated.View>
+        <View style={styles.bonusBody}>
+          <View style={styles.bonusTopRow}>
+            <Text style={styles.bonusLabel}>×{multiplier} COINS ACTIVE</Text>
+            <Text style={styles.bonusTime}>{timeText}</Text>
+          </View>
+          <View style={styles.bonusTrack}>
+            <View style={[styles.bonusFill, { width: `${pct}%` }]} />
+          </View>
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -169,6 +265,80 @@ function useLoopAnim(config) {
   }, []);
   return anim;
 }
+
+// The stage itself: touch surface, 3D Canvas (or the 2D rig), touch effects
+// and the gesture tutorial. Every prop is stable for the screen's lifetime,
+// so the memo keeps SquishScreen re-renders (the Firestore profile update
+// after each release, the bonus window, the settings wheel) from ever
+// reconciling the Canvas subtree — see project perf notes on SquishScreen.
+const SquishStage = memo(function SquishStage({
+  toy,
+  toyRef,
+  effectsRef,
+  panHandlers,
+  onSquish,
+  onRelease,
+  hintOpacity,
+  squishAnim,
+  rotateAnim,
+  touchAnim,
+}) {
+  return (
+    <View style={styles.stage} {...panHandlers}>
+      {toyIs3D(toy) ? (
+        <Canvas
+          frameloop="always"
+          camera={{ fov: 30, position: [0, 0.1, 4.6], near: 0.1, far: 100 }}
+          gl={{ toneMappingExposure: 1.4 }}
+        >
+          <ambientLight intensity={0.25} />
+          <directionalLight color={0xfff2e0} intensity={2.2} position={[2, 3, 3]} />
+          <directionalLight color={0xd8ccff} intensity={0.55} position={[-2.5, -1, 2]} />
+          <directionalLight color={0xffffff} intensity={0.35} position={[-1.5, 2, -3]} />
+          <SquishyToy
+            ref={toyRef}
+            creatureId={toy.id}
+            modelUrl={toy.modelUrl}
+            visual={toy.visual}
+            onSquish={onSquish}
+            onRelease={onRelease}
+          />
+        </Canvas>
+      ) : (
+        <SquishyToy2D
+          ref={toyRef}
+          creature={toy}
+          imageUri={toy.isCustom ? toy.image : undefined}
+          build={toy.isCustom ? toy.build : undefined}
+          size={STAGE_SIZE}
+          onSquish={onSquish}
+          onRelease={onRelease}
+        />
+      )}
+
+      <StageEffects ref={effectsRef} />
+
+      <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: hintOpacity }]} pointerEvents="none">
+        <GestureHint
+          side="left"
+          d={SQUISH_HAND_D}
+          creaseD={SQUISH_HAND_CREASE_D}
+          label="HOLD TO SQUISH"
+          touchAnim={touchAnim}
+          gestureAnim={[{ translateY: squishAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 8, 0] }) }]}
+        />
+        <GestureHint
+          side="right"
+          d={ROTATE_HAND_D}
+          creaseD={ROTATE_HAND_CREASE_D}
+          label="HOLD TO ROTATE"
+          touchAnim={touchAnim}
+          gestureAnim={[{ rotate: rotateAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['0deg', '-14deg', '0deg'] }) }]}
+        />
+      </Animated.View>
+    </View>
+  );
+});
 
 function SoundSwitch({ value, onToggle }) {
   const anim = useRef(new Animated.Value(value ? 1 : 0)).current;
@@ -267,7 +437,8 @@ export default function SquishScreen({
   const popSoundRef = useRef(null);
   const lastTouch = useRef({ x: 0, y: 0 });
   const holdStartRef = useRef(0);
-  const rippleSeqRef = useRef(0);
+  const effectsRef = useRef(null);
+  const coinCounterRef = useRef(null);
   const tapTimestampsRef = useRef([]);
   // Coins banked this hold; flushed on release.
   const earnIntervalRef = useRef(null);
@@ -282,21 +453,18 @@ export default function SquishScreen({
   // True once 2 fingers have touched — blocks sound/coins for the rest of the gesture.
   const gestureHadTwoRef = useRef(false);
 
-  const floatingCoinSeqRef = useRef(0);
-
-  const [displayCoins, setDisplayCoins] = useState(coins);
-  const [ripples, setRipples] = useState([]);
-  const [floatingCoins, setFloatingCoins] = useState([]);
   const [wheelOpen, setWheelOpen] = useState(false);
   const [punishOpen, setPunishOpen] = useState(false);
   const [doubleFlash, setDoubleFlash] = useState(false);
   const [doubleFlashKey, setDoubleFlashKey] = useState(0);
-  // Bonus window end time + which of the three ad buttons opened it (2/3/4);
-  // `now` ticks for the countdown. Only one window can run at a time — see
-  // WatchAdButton's `activeMultiplier` handling.
+  // Bonus window end time + which of the three ad buttons opened it (2/3/4).
+  // Only one window can run at a time — see WatchAdButton's `activeMultiplier`
+  // handling. The live countdown (text/progress bar, ticking every 250ms)
+  // lives in the BonusBanner child below so that its frequent re-renders stay
+  // scoped to that small subtree instead of the whole screen (which includes
+  // the 3D Canvas/SquishyToy tree and its per-frame squish physics).
   const [bonusEndsAt, setBonusEndsAt] = useState(null);
   const [bonusMultiplier, setBonusMultiplier] = useState(2);
-  const [now, setNow] = useState(() => Date.now());
 
   const wheelAnim = useRef(new Animated.Value(0)).current;
   const gestureSquishAnim = useLoopAnim({ duration: 1700 });
@@ -309,22 +477,20 @@ export default function SquishScreen({
   const hintDismissedRef = useRef(false);
   const bonusCoinAnim = useLoopAnim({ duration: 1300 });
 
+  // Only re-renders SquishScreen once, when the window actually expires —
+  // the per-250ms countdown tick lives inside BonusBanner instead.
   useEffect(() => {
     if (!bonusEndsAt) return undefined;
-    const id = setInterval(() => {
-      const t = Date.now();
-      setNow(t);
-      if (t >= bonusEndsAt) setBonusEndsAt(null);
-    }, 250);
-    return () => clearInterval(id);
+    const remain = bonusEndsAt - Date.now();
+    if (remain <= 0) {
+      setBonusEndsAt(null);
+      return undefined;
+    }
+    const id = setTimeout(() => setBonusEndsAt(null), remain);
+    return () => clearTimeout(id);
   }, [bonusEndsAt]);
 
-  const bonusRemain = bonusEndsAt ? Math.max(0, bonusEndsAt - now) : 0;
-  const bonusActive = bonusRemain > 0;
-  const bonusSecs = Math.ceil(bonusRemain / 1000);
-  const bonusTimeText = `${Math.floor(bonusSecs / 60)}:${String(bonusSecs % 60).padStart(2, '0')}`;
-  const bonusPct = Math.max(0, Math.min(100, (bonusRemain / BONUS_MS) * 100));
-  const bonusCoinScale = bonusCoinAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] });
+  const bonusActive = !!bonusEndsAt;
 
   useEffect(() => {
     const sound = new SquishSound();
@@ -365,10 +531,10 @@ export default function SquishScreen({
   // Mirrors props/state so the once-created PanResponder always reads fresh values.
   const latestRef = useRef(null);
   latestRef.current = {
-    displayCoins,
     achievements,
     releaseSoundEnabled,
     coinSoundEnabled,
+    squishSoundEnabled,
     toy,
     onRecordPress,
     onEarnCoins,
@@ -377,8 +543,15 @@ export default function SquishScreen({
     bonusMultiplier,
   };
 
-  // True for 3D-mesh creatures; picks Canvas vs SquishyToy2D below.
-  const toyIs3D = (t) => !!(t && t.modelUrl);
+  // Stable identity (deps: []) so SquishyToy/SquishyToy2D's React.memo isn't
+  // defeated by a fresh closure on every SquishScreen re-render — see
+  // BonusBanner above for why keeping that subtree from reconciling matters.
+  const handleToySquish = useCallback(() => {
+    if (latestRef.current.squishSoundEnabled) soundRef.current?.start();
+  }, []);
+  const handleToyRelease = useCallback(() => {
+    soundRef.current?.stop();
+  }, []);
 
   // Earn EARN_PER_TICK coins every EARN_TICK_MS while held.
   const startEarning = useCallback(() => {
@@ -389,9 +562,9 @@ export default function SquishScreen({
       const bonusIsLive = !!liveBonusEndsAt && Date.now() < liveBonusEndsAt;
       const gain = EARN_PER_TICK * (bonusIsLive ? liveMultiplier : 1);
       earnAccumRef.current += gain;
-      setDisplayCoins((c) => c + gain);
+      coinCounterRef.current?.add(gain);
       if (coinSoundOn) coinSoundRef.current?.play();
-      spawnFloatingCoin(lastTouch.current.x, lastTouch.current.y, gain);
+      effectsRef.current?.spawnFloatingCoin(lastTouch.current.x, lastTouch.current.y, gain);
     }, EARN_TICK_MS);
   }, []);
 
@@ -446,10 +619,8 @@ export default function SquishScreen({
   // window runs at a time, so this simply (re)starts it at the new value.
   const handleAdReward = useCallback((multiplier) => {
     const { achievements: liveAchievements, onMarkAchievement: markAch } = latestRef.current;
-    const t = Date.now();
-    setBonusEndsAt(t + BONUS_MS);
+    setBonusEndsAt(Date.now() + BONUS_MS);
     setBonusMultiplier(multiplier);
-    setNow(t);
     setDoubleFlash(true);
     setDoubleFlashKey((k) => k + 1);
     if (!liveAchievements.watchAd) markAch && markAch('watchAd');
@@ -459,18 +630,6 @@ export default function SquishScreen({
     x: (locationX / STAGE_SIZE) * 2 - 1,
     y: -((locationY / STAGE_SIZE) * 2 - 1),
   });
-
-  const spawnRipple = useCallback((locationX, locationY) => {
-    const id = ++rippleSeqRef.current;
-    setRipples((prev) => [...prev, { id, x: locationX, y: locationY }]);
-    setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), RIPPLE_LIFETIME_MS);
-  }, []);
-
-  const spawnFloatingCoin = useCallback((x, y, amount) => {
-    const id = ++floatingCoinSeqRef.current;
-    setFloatingCoins((prev) => [...prev, { id, x, y, amount }]);
-    setTimeout(() => setFloatingCoins((prev) => prev.filter((c) => c.id !== id)), FLOATING_COIN_MS);
-  }, []);
 
   const centroidOf = (touches) => {
     let sx = 0;
@@ -518,7 +677,7 @@ export default function SquishScreen({
         holdStartRef.current = Date.now();
         const ndc = ndcFromLocation(locationX, locationY);
         toyRef.current?.pointerDown(ndc.x, ndc.y);
-        spawnRipple(locationX, locationY);
+        effectsRef.current?.spawnRipple(locationX, locationY);
         startEarning();
       },
       onPanResponderMove: (evt) => {
@@ -612,10 +771,7 @@ export default function SquishScreen({
           <Pressable onPress={onBack} style={styles.backButton} hitSlop={8}>
             <Text style={styles.backGlyph}>‹</Text>
           </Pressable>
-          <View style={styles.coinPill}>
-            <View style={styles.coinDot} />
-            <Text style={styles.coinPillText}>{displayCoins}</Text>
-          </View>
+          <CoinCounter ref={coinCounterRef} initial={coins} />
         </View>
 
         <Pressable onPress={toggleWheel} style={[styles.wheelButton, { top: insets.top + 14 }]} hitSlop={6}>
@@ -624,74 +780,18 @@ export default function SquishScreen({
           </Animated.View>
         </Pressable>
 
-        <View style={styles.stage} {...panResponder.panHandlers}>
-          {toyIs3D(toy) ? (
-            <Canvas
-              frameloop="always"
-              camera={{ fov: 30, position: [0, 0.1, 4.6], near: 0.1, far: 100 }}
-              gl={{ toneMappingExposure: 1.4 }}
-            >
-              <ambientLight intensity={0.25} />
-              <directionalLight color={0xfff2e0} intensity={2.2} position={[2, 3, 3]} />
-              <directionalLight color={0xd8ccff} intensity={0.55} position={[-2.5, -1, 2]} />
-              <directionalLight color={0xffffff} intensity={0.35} position={[-1.5, 2, -3]} />
-              <SquishyToy
-                ref={toyRef}
-                creatureId={toy.id}
-                modelUrl={toy.modelUrl}
-                visual={toy.visual}
-                onSquish={() => {
-                  if (squishSoundEnabled) soundRef.current?.start();
-                }}
-                onRelease={() => {
-                  soundRef.current?.stop();
-                }}
-              />
-            </Canvas>
-          ) : (
-            <SquishyToy2D
-              ref={toyRef}
-              creature={toy}
-              imageUri={toy.isCustom ? toy.image : undefined}
-              build={toy.isCustom ? toy.build : undefined}
-              size={STAGE_SIZE}
-              onSquish={() => {
-                if (squishSoundEnabled) soundRef.current?.start();
-              }}
-              onRelease={() => {
-                soundRef.current?.stop();
-              }}
-            />
-          )}
-
-          <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-            {ripples.map((r) => (
-              <Ripple key={r.id} x={r.x} y={r.y} />
-            ))}
-            {floatingCoins.map((c) => (
-              <FloatingCoin key={c.id} x={c.x} y={c.y} amount={c.amount} />
-            ))}
-          </View>
-
-          <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: gestureHintOpacity }]} pointerEvents="none">
-            <GestureHint
-              side="left"
-              d={SQUISH_HAND_D}
-              creaseD={SQUISH_HAND_CREASE_D}
-              label="HOLD TO SQUISH"
-              touchAnim={gestureTouchAnim}
-              gestureAnim={[{ translateY: gestureSquishAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 8, 0] }) }]}
-            />
-            <GestureHint
-              side="right"
-              d={ROTATE_HAND_D}
-              creaseD={ROTATE_HAND_CREASE_D}
-              label="HOLD TO ROTATE"
-              touchAnim={gestureTouchAnim}
-              gestureAnim={[{ rotate: gestureRotateAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['0deg', '-14deg', '0deg'] }) }]}
-            />
-          </Animated.View>
-        </View>
+        <SquishStage
+          toy={toy}
+          toyRef={toyRef}
+          effectsRef={effectsRef}
+          panHandlers={panResponder.panHandlers}
+          onSquish={handleToySquish}
+          onRelease={handleToyRelease}
+          hintOpacity={gestureHintOpacity}
+          squishAnim={gestureSquishAnim}
+          rotateAnim={gestureRotateAnim}
+          touchAnim={gestureTouchAnim}
+        />
 
         {wheelOpen && (
           <View style={[styles.wheelPopup, { top: insets.top + 62 }]}>
@@ -711,30 +811,7 @@ export default function SquishScreen({
         )}
       </LinearGradient>
 
-      {bonusActive && (
-        <View style={styles.bonusBar}>
-          <View style={styles.bonusInner}>
-            <Animated.View style={[styles.bonusCoin, { transform: [{ scale: bonusCoinScale }] }]}>
-              <LinearGradient
-                colors={squadGradients.goldDot.colors}
-                start={squadGradients.goldDot.start}
-                end={squadGradients.goldDot.end}
-                style={StyleSheet.absoluteFillObject}
-              />
-              <Text style={styles.bonusCoinText}>×{bonusMultiplier}</Text>
-            </Animated.View>
-            <View style={styles.bonusBody}>
-              <View style={styles.bonusTopRow}>
-                <Text style={styles.bonusLabel}>×{bonusMultiplier} COINS ACTIVE</Text>
-                <Text style={styles.bonusTime}>{bonusTimeText}</Text>
-              </View>
-              <View style={styles.bonusTrack}>
-                <View style={[styles.bonusFill, { width: `${bonusPct}%` }]} />
-              </View>
-            </View>
-          </View>
-        </View>
-      )}
+      {bonusActive && <BonusBanner endsAt={bonusEndsAt} multiplier={bonusMultiplier} coinAnim={bonusCoinAnim} />}
 
       <View style={styles.bottomPanel}>
         <View style={styles.bottomRow}>
@@ -750,8 +827,10 @@ export default function SquishScreen({
 
       {doubleFlash && (
         <View style={styles.flashOverlay} pointerEvents="none">
-          <PopIn key={doubleFlashKey} onFadeOutDone={() => setDoubleFlash(false)}>
-            <Text style={styles.doubleFlashText}>×{bonusMultiplier} SQUISH POINTS!</Text>
+          <PopIn key={doubleFlashKey} onFadeOutDone={() => setDoubleFlash(false)} style={styles.doubleFlashPop}>
+            <Text style={styles.doubleFlashText} numberOfLines={1} adjustsFontSizeToFit>
+              ×{bonusMultiplier} SQUISH POINTS!
+            </Text>
           </PopIn>
         </View>
       )}
@@ -894,13 +973,26 @@ const styles = StyleSheet.create({
   bonusTime: { fontFamily: squadFonts.headingExtraBold, fontSize: 16, color: squadColors.textWhite },
   bonusTrack: { height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.14)', overflow: 'hidden' },
   bonusFill: { height: '100%', borderRadius: 3, backgroundColor: squadColors.goldAmber },
-  flashOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', zIndex: 32 },
+  flashOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    zIndex: 32,
+  },
+  // Gives the flashed text a definite width to shrink-to-fit within (see
+  // doubleFlashText's numberOfLines/adjustsFontSizeToFit) — without this the
+  // Animated.View sizes to its content and there's nothing concrete for the
+  // text to measure itself against, so it wraps to 2 lines instead of
+  // shrinking to stay on 1.
+  doubleFlashPop: { width: '100%' },
   doubleFlashText: {
     fontFamily: squadFonts.headingExtraBold,
     fontSize: 44,
     color: squadColors.goldLight,
     textShadowColor: 'rgba(255,183,3,0.9)',
     textShadowRadius: 24,
+    textAlign: 'center',
   },
 
   punishOverlay: {

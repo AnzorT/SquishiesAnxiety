@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import React, { forwardRef, memo, useEffect, useImperativeHandle, useRef } from 'react';
 import { View, Image, StyleSheet } from 'react-native';
 import Animated, {
   cancelAnimation,
@@ -52,7 +52,9 @@ const ART_SCALE = 1.2;
 // `imageUri` (a player's uploaded photo) or `build` (an assembled creature)
 // swap out the roster art for a custom creature; the jelly transform is
 // identical either way.
-const SquishyToy2D = forwardRef(function SquishyToy2D({ creature, imageUri, build, size = 220, onSquish, onRelease }, ref) {
+// Memoized so unrelated parent re-renders (coin counters, bonus timer, etc.)
+// don't force this subtree to reconcile every tick.
+const SquishyToy2D = memo(forwardRef(function SquishyToy2D({ creature, imageUri, build, size = 220, onSquish, onRelease }, ref) {
   const press = useSharedValue(0); // 0 rest .. 1 fully pressed
   const pressX = useSharedValue(0); // -0.5 .. 0.5 (contact offset from centre)
   const pressY = useSharedValue(0);
@@ -177,7 +179,7 @@ const SquishyToy2D = forwardRef(function SquishyToy2D({ creature, imageUri, buil
       </Animated.View>
     </View>
   );
-});
+}));
 
 const styles = StyleSheet.create({
   stage: { alignItems: 'center', justifyContent: 'center' },
