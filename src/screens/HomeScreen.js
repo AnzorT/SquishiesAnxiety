@@ -59,6 +59,8 @@ export default function HomeScreen({
   onDeleteCustom = () => {},
   onRetryCustom = () => {},
   focusMineToken = 0,
+  generationCredits = 1,
+  priceLabel = '$4.99',
 }) {
   const insets = useSafeAreaInsets();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -253,7 +255,7 @@ export default function HomeScreen({
           />
         );
       }
-      if (pageIndex === 0) return <CreateOwnCard onPress={onOpenCreator} />;
+      if (pageIndex === 0) return <CreateOwnCard onPress={onOpenCreator} generationCredits={generationCredits} priceLabel={priceLabel} />;
       const custom = customCreatures[pageIndex - 1];
       if (!custom) return null;
       return (
@@ -265,7 +267,7 @@ export default function HomeScreen({
         />
       );
     },
-    [creatures, ownedIds, keys, customCreatures, onSelectToy, onOpenStore, onUnlockWithKey, onOpenCreator, onSelectCustom, onDeleteCustom, onRetryCustom]
+    [creatures, ownedIds, keys, customCreatures, onSelectToy, onOpenStore, onUnlockWithKey, onOpenCreator, onSelectCustom, onDeleteCustom, onRetryCustom, generationCredits, priceLabel]
   );
 
   if (!creatures.length) {
@@ -285,19 +287,17 @@ export default function HomeScreen({
     <LinearGradient colors={[squadColors.bgHomeTop, squadColors.bgHomeBottom]} style={styles.container}>
       <View style={[styles.content, { paddingTop: insets.top }]}>
         <View style={styles.header}>
-          <View>
+          <View style={styles.nameRow}>
             <Text style={styles.nickname}>{nickname}</Text>
-            <View style={styles.pillsRow}>
-              <View style={styles.pill}>
-                <View style={styles.coinDot} />
-                <Text style={styles.coinText}>{coins}</Text>
-              </View>
+            <View style={styles.pill}>
+              <View style={styles.coinDot} />
+              <Text style={styles.coinText}>{coins}</Text>
             </View>
           </View>
           <View style={styles.headerIcons}>
-            <IconButton name="emoji-events" onPress={onOpenAchievements} />
-            <IconButton name="storefront" onPress={onOpenStore} />
-            <IconButton name="settings" onPress={() => setSettingsOpen(true)} />
+            <IconButton name="emoji-events" onPress={onOpenAchievements} size={33} iconSize={17} />
+            <IconButton name="storefront" onPress={onOpenStore} size={33} iconSize={17} />
+            <IconButton name="settings" onPress={() => setSettingsOpen(true)} size={33} iconSize={17} />
           </View>
         </View>
 
@@ -431,12 +431,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 14,
+    paddingTop: 10,
     paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingBottom: 8,
   },
-  nickname: { fontFamily: squadFonts.headingExtraBold, color: squadColors.textWhite, fontSize: 17 },
-  pillsRow: { flexDirection: 'row', gap: 8, marginTop: 5 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 9, flexShrink: 1 },
+  nickname: { fontFamily: squadFonts.headingExtraBold, color: squadColors.textWhite, fontSize: 16 },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -448,9 +448,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  coinDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: squadColors.gold },
-  coinText: { color: squadColors.gold, fontFamily: squadFonts.bodyExtraBold, fontSize: 13 },
-  headerIcons: { flexDirection: 'row', gap: 8 },
+  coinDot: { width: 13, height: 13, borderRadius: 6.5, backgroundColor: squadColors.gold },
+  coinText: { color: squadColors.gold, fontFamily: squadFonts.bodyExtraBold, fontSize: 12 },
+  headerIcons: { flexDirection: 'row', gap: 6 },
 
   tabBarWrap: { paddingHorizontal: 16, paddingBottom: 6 },
   tabBar: {

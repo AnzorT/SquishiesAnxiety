@@ -21,12 +21,14 @@ import StoreScreen from './src/screens/StoreScreen';
 import LoadingScreen from './src/screens/LoadingScreen';
 import SquishScreen from './src/screens/SquishScreen';
 import AchievementToast from './src/components/squad/AchievementToast';
+import ForcedInterstitialAd from './src/components/ForcedInterstitialAd';
 import { squadColors } from './src/theme/squadTheme';
 import { computeAchievements } from './src/achievements';
 import { subscribeToAuthUser, logout } from './src/firebase/auth';
 import {
   subscribeToUserProfile,
   subscribeToCreatures,
+  subscribeToPricingConfig,
   addCoins,
   buyKey,
   unlockWithKey,
@@ -77,6 +79,7 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [authUser, setAuthUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [pricing, setPricing] = useState(null);
   const [creatures, setCreatures] = useState([]);
   const [customCreatures, setCustomCreatures] = useState([]);
   const [mineFocusToken, setMineFocusToken] = useState(0);
@@ -90,6 +93,10 @@ export default function App() {
   const [activeToy, setActiveToy] = useState(null);
   const [achToast, setAchToast] = useState(null);
   const [achToastKey, setAchToastKey] = useState(0);
+  // Bumped by handleCreatureCreated whenever a creature was just made using
+  // a free generation credit — ForcedInterstitialAd fires once per bump.
+  // Paid creations (once real IAP exists) never bump this.
+  const [freeGenAdTrigger, setFreeGenAdTrigger] = useState(0);
   // Sound preferences — kept here (not local to SquishScreen) so a toggle
   // sticks across leaving and reopening a toy, not just within one visit.
   const [squishSoundEnabled, setSquishSoundEnabled] = useState(true);
@@ -123,6 +130,17 @@ export default function App() {
     return subscribeToCustomCreatures(authUser.uid, setCustomCreatures);
   }, [authUser]);
 
+  // Hand-edited config/pricing doc (see firestore.rules) — read-only,
+  // signed-in-only. `pricing` stays null until it loads/exists; callers fall
+  // back to a hardcoded default so nothing breaks before the doc is created.
+  useEffect(() => {
+    if (!authUser) {
+      setPricing(null);
+      return undefined;
+    }
+    return subscribeToPricingConfig(setPricing);
+  }, [authUser]);
+
   // One-time backward-compat migration for accounts created before the new
   // 10-creature roster existed — see ensureStarterCreaturesOwned's comment.
   useEffect(() => {
@@ -142,17 +160,22 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    // firestore.rules requires auth for `creatures`, and a permission-denied
+    // listen error doesn't auto-retry the way a transient one would — so
+    // this must wait for authUser (and re-subscribe on sign-in/out) rather
+    // than firing once at mount, or it dies before login ever happens and
+    // never comes back, leaving Home stuck on "Loading your shelf…" forever.
+    if (!authUser) return undefined;
     return subscribeToCreatures((list) => {
       if (list.length) {
         setCreatures(list);
         saveCreaturesToCache(list);
       }
-      // An empty list here means either a logged-out read (denied by
-      // firestore.rules) or a transient error — keep whatever the cache (or
-      // a prior successful fetch) already put in state rather than blanking
-      // the roster out from under the UI.
+      // An empty list here means a transient error — keep whatever the
+      // cache (or a prior successful fetch) already put in state rather
+      // than blanking the roster out from under the UI.
     });
-  }, []);
+  }, [authUser]);
 
   // Fires a top-banner toast the instant an achievement flips from
   // not-done to done — diffed against the previous profile snapshot rather
@@ -191,6 +214,9 @@ export default function App() {
     // Throws on failure so CreateScreen can surface it and stay put.
     async ({ name, imageUri, build, audio }) => {
       if (!authUser) return;
+      // Captured before the writes below spend it, so the ad trigger below
+      // reflects whether *this* creation was free — see ForcedInterstitialAd.
+      const hadFreeCredit = (profile?.generationCredits ?? 1) > 0;
       const uid = authUser.uid;
       const id = newCustomCreatureId(uid);
       let sourceImageUrl = null;
@@ -203,8 +229,10 @@ export default function App() {
       await addCustomCreature(uid, { id, name, sourceImageUrl, sourceImagePath, build, audio });
       setMineFocusToken((t) => t + 1);
       setScreen('home');
+      // Forced ad only on the house, never after a real (future) purchase.
+      if (hadFreeCredit) setFreeGenAdTrigger((t) => t + 1);
     },
-    [authUser]
+    [authUser, profile]
   );
   const handleRetryCustom = useCallback(
     (custom) => {
@@ -331,6 +359,9 @@ export default function App() {
     .filter(([, ms]) => ms > 0)
     .reduce((best, entry) => (!best || entry[1] > best[1] ? entry : best), null);
   const favoriteCreatureName = favoriteEntry ? creatures.find((c) => c.id === favoriteEntry[0])?.name ?? 'None yet' : 'None yet';
+  // config/pricing.amountUsd (hand-edited in the Firebase console) falls
+  // back to today's flat rate until that doc exists — see firestore.rules.
+  const priceLabel = `$${(typeof pricing?.amountUsd === 'number' ? pricing.amountUsd : 4.99).toFixed(2)}`;
 
   let stage = 'splash';
   if (splashDone && authChecked) {
@@ -377,10 +408,17 @@ export default function App() {
           onDeleteCustom={handleDeleteCustom}
           onRetryCustom={handleRetryCustom}
           focusMineToken={mineFocusToken}
+          generationCredits={profile?.generationCredits ?? 1}
+          priceLabel={priceLabel}
         />
       )}
       {stage === 'create' && (
-        <CreateScreen onBack={() => setScreen('home')} onCreated={handleCreatureCreated} />
+        <CreateScreen
+          onBack={() => setScreen('home')}
+          onCreated={handleCreatureCreated}
+          generationCredits={profile?.generationCredits ?? 1}
+          priceLabel={priceLabel}
+        />
       )}
       {stage === 'achievements' && (
         <AchievementsScreen
@@ -420,6 +458,7 @@ export default function App() {
         />
       )}
       <AchievementToast title={achToast} messageKey={achToastKey} />
+      <ForcedInterstitialAd trigger={freeGenAdTrigger} />
     </SafeAreaProvider>
   );
 }

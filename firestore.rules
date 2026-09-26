@@ -10,8 +10,19 @@ service cloud.firestore {
     // no Cloud Function validating *how much* a client credits itself, so
     // treat this as prototype-grade trust, not a cheat-proof economy.
     match /users/{userId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // generationCredits pays for real Tripo API spend, so — unlike
+      // coins/ownedIds above — the client is never allowed to touch it
+      // directly; only generateCustomModel (admin SDK, bypasses rules) may
+      // spend or refund it, and a purchase is reconciled by hand for now by
+      // setting it from the Firebase console/admin SDK.
+      allow update: if request.auth != null && request.auth.uid == userId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['generationCredits']);
+      // A fresh profile may only ever start with its one free generation
+      // (or none set, which the Cloud Function also treats as 1) — never a
+      // self-granted stack of them.
+      allow create: if request.auth != null && request.auth.uid == userId
+        && (!('generationCredits' in request.resource.data) || request.resource.data.generationCredits == 1);
 
       // Player-made creatures (image-to-3D via the creator flow). Fully
       // owned by that user — nobody else reads or writes them.
@@ -25,6 +36,14 @@ service cloud.firestore {
     // including create; the app used to self-seed a starter catalog on
     // first run, but that path is gone now that the real catalog exists.
     match /creatures/{creatureId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if false;
+    }
+
+    // Server-driven config (currently just the generation price) — read by
+    // every signed-in client, edited by hand from the Firebase console (same
+    // "reconciled by hand" pattern as users/{uid}.generationCredits above).
+    match /config/{doc} {
       allow read: if request.auth != null;
       allow create, update, delete: if false;
     }

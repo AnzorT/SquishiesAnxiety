@@ -73,7 +73,11 @@ export class SquishSound {
       if (step >= steps) {
         this._clearFade();
         try {
-          await sound.stopAsync();
+          // pauseAsync (not stopAsync) — stopAsync resets the playhead to 0,
+          // which would restart the loop from the top on every re-squish.
+          // Pausing keeps position so the next start() resumes right where
+          // this squish left off.
+          await sound.pauseAsync();
           await sound.setVolumeAsync(1);
         } catch (e) {
           // no-op

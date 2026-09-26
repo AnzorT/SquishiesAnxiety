@@ -19,6 +19,13 @@ export async function createUserProfile(uid, { email, age, nickname }) {
     coins: 250,
     totalEarned: 250,
     adsFree: false,
+    // One free "photo → 3D" creature generation per profile. Spent (and, if
+    // the job fails through no fault of the player's, refunded) only by the
+    // generateCustomModel Cloud Function — see functions/index.js and the
+    // firestore.rules guard that blocks the client from writing this field
+    // itself. More come from a real-money purchase, reconciled by hand for
+    // now by setting this directly in the Firebase console.
+    generationCredits: 1,
     ownedIds: STARTER_CREATURE_IDS,
     // Creature ids a key has been bought for but not yet redeemed via the
     // Home card's hold-to-unlock gesture — see buyKey/unlockWithKey below.
@@ -255,6 +262,21 @@ export function subscribeToCreatures(onChange) {
       (error) => {
         console.error('subscribeToCreatures failed:', error);
         onChange([]);
+      }
+    );
+}
+
+// Server-driven generation price — a hand-edited doc (see firestore.rules),
+// not a client write. `onChange` gets null until the doc exists/loads.
+export function subscribeToPricingConfig(onChange) {
+  return firestore()
+    .collection('config')
+    .doc('pricing')
+    .onSnapshot(
+      (snap) => onChange(snap.exists ? snap.data() : null),
+      (error) => {
+        console.error('subscribeToPricingConfig failed:', error);
+        onChange(null);
       }
     );
 }

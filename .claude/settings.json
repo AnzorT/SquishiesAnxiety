@@ -94,7 +94,8 @@
       "Bash(node -e \"console.log\\(require\\('path'\\).resolve\\('decoded_template.html'\\)\\)\")",
       "Read(//c/Users/R6 Siege/AppData/Local/Temp/extract/**)",
       "Bash(node -e \"console.log\\(Object.keys\\(require\\('@expo-google-fonts/baloo-2'\\)\\)\\)\")",
-      "Bash(node -e \"console.log\\(Object.keys\\(require\\('@expo-google-fonts/nunito'\\)\\).filter\\(k=>/^Nunito_\\(400|500|600|700|800|900\\)/.test\\(k\\)\\)\\)\")"
+      "Bash(node -e \"console.log\\(Object.keys\\(require\\('@expo-google-fonts/nunito'\\)\\).filter\\(k=>/^Nunito_\\(400|500|600|700|800|900\\)/.test\\(k\\)\\)\\)\")",
+      "Bash(node -c index.js)"
     ],
     "additionalDirectories": [
       "C:\\Users\\R6 Siege\\Desktop"

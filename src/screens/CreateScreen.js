@@ -28,7 +28,7 @@ const ASSEMBLE_ROWS = [
   { key: 'extra', label: 'EXTRA', options: [['none', 'None'], ['antenna', 'Antenna'], ['ears', 'Ears'], ['horns', 'Horns']] },
 ];
 
-export default function CreateScreen({ onBack, onCreated }) {
+export default function CreateScreen({ onBack, onCreated, generationCredits = 1, priceLabel = '$4.99' }) {
   const insets = useSafeAreaInsets();
 
   const [name, setName] = useState('');
@@ -54,7 +54,15 @@ export default function CreateScreen({ onBack, onCreated }) {
   useEffect(() => {
     if (!converting) return undefined;
     scan.setValue(0);
-    const loop = Animated.loop(Animated.timing(scan, { toValue: 1, duration: 1600, easing: Easing.linear, useNativeDriver: true }));
+    // Drives `top` (see scanTop below) — the native driver only supports
+    // transform/opacity, never layout props. Declaring this true anyway left
+    // the native animated node half-set-up, and once this overlay unmounts
+    // (App swaps CreateScreen for Home right after onCreated resolves) later
+    // attach/detach calls reference a tag that was never valid, surfacing as
+    // "disconnectAnimatedNodeFromView: Animated node with tag X does not
+    // exist". Same class of bug CreatureCard.js's hold-to-unlock bar already
+    // works around (see its useNativeDriver: false comment).
+    const loop = Animated.loop(Animated.timing(scan, { toValue: 1, duration: 1600, easing: Easing.linear, useNativeDriver: false }));
     loop.start();
     return () => loop.stop();
   }, [converting, scan]);
@@ -141,7 +149,12 @@ export default function CreateScreen({ onBack, onCreated }) {
 
   const nameOk = !!name.trim();
   const imgOk = source === 'assemble' || !!imageUri;
-  const ready = nameOk && imgOk && !converting;
+  // One free generation credit covers either path — the assemble path has no
+  // Tripo/backend cost, but it's still gated the same way so it actually
+  // consumes the shared credit (see generateCustomModel's assemble-path
+  // branch in functions/index.js) instead of always reading as free.
+  const hasCredit = generationCredits > 0;
+  const ready = nameOk && imgOk && !converting && hasCredit;
 
   const submit = useCallback(async () => {
     if (!ready) return;
@@ -160,7 +173,13 @@ export default function CreateScreen({ onBack, onCreated }) {
       });
     } catch (e) {
       setConverting(false);
-      setSubmitError('Upload failed — check your connection and try again.');
+      // Was silently swallowed into a generic message before — logging the
+      // real error (Storage/Firestore error code, permission-denied, etc.)
+      // so it shows up in Metro/logcat instead of being a dead end.
+      // eslint-disable-next-line no-console
+      console.error('[CreateScreen] submit failed:', (e && e.stack) || e);
+      const detail = e?.code || e?.message;
+      setSubmitError(detail ? `Upload failed — ${detail}` : 'Upload failed — check your connection and try again.');
     }
   }, [ready, name, source, build, imageUri, audio, onCreated]);
 
@@ -284,8 +303,11 @@ export default function CreateScreen({ onBack, onCreated }) {
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
         {submitError ? <Text style={styles.errorText}>{submitError}</Text> : null}
+        {!hasCredit ? (
+          <Text style={styles.noCreditText}>No generations left — purchases aren&apos;t available yet, check back soon.</Text>
+        ) : null}
         <Pressable disabled={!ready} onPress={submit} style={[styles.createBtn, !ready && styles.createBtnDim]}>
-          <Text style={styles.createPrice}>$4.99</Text>
+          <Text style={styles.createPrice}>{hasCredit ? 'FREE' : priceLabel}</Text>
           <View style={styles.createDivider} />
           <Text style={styles.createLabel}>{source === 'assemble' ? 'CREATE' : 'CREATE IN 3D'}</Text>
         </Pressable>
@@ -294,9 +316,11 @@ export default function CreateScreen({ onBack, onCreated }) {
             ? 'Add a name to continue'
             : !imgOk
             ? 'Add a picture to continue'
+            : !hasCredit
+            ? "You'll be able to buy more soon"
             : source === 'assemble'
-            ? 'One-time purchase · plays as your assembled art'
-            : 'One-time purchase · we turn your photo into a 3D squishy'}
+            ? 'Uses one creature generation · plays as your assembled art'
+            : 'Uses one creature generation · we turn your photo into a 3D squishy'}
         </Text>
       </View>
 
@@ -431,6 +455,7 @@ const styles = StyleSheet.create({
   createDivider: { width: 1.5, height: 16, backgroundColor: 'rgba(13,6,32,0.3)' },
   createLabel: { color: squadColors.bgDeepest, fontFamily: squadFonts.bodyExtraBold, fontSize: 12, letterSpacing: 1.6 },
   footerHint: { color: squadColors.textFaint, fontFamily: squadFonts.bodyBold, fontSize: 10, textAlign: 'center' },
+  noCreditText: { color: '#f87171', fontFamily: squadFonts.bodyExtraBold, fontSize: 11, textAlign: 'center' },
 
   convertOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(13,6,32,0.94)', alignItems: 'center', justifyContent: 'center', gap: 22, padding: 32 },
   convertFrame: {

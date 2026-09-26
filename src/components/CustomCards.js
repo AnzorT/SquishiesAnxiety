@@ -10,7 +10,7 @@ import AssembleCreature from './AssembleCreature';
 
 // --- "Create your own squishy" -------------------------------------------
 
-export function CreateOwnCard({ onPress }) {
+export function CreateOwnCard({ onPress, generationCredits = 0, priceLabel = '$4.99' }) {
   // createPulse: scale 1 -> 1.07 -> 1 with a widening glow, 2.4s loop
   const pulse = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -41,10 +41,16 @@ export function CreateOwnCard({ onPress }) {
           </Animated.View>
           <Text style={styles.createTitle}>Create your own squishy</Text>
           <Text style={styles.createSub}>Upload or draw a picture, add a squish sound, and we turn it into 3D.</Text>
-          <View style={styles.pricePill}>
-            <Text style={styles.priceAmount}>$4.99</Text>
-            <Text style={styles.priceUnit}>PER CREATURE</Text>
-          </View>
+          {generationCredits > 0 ? (
+            <View style={styles.freePill}>
+              <Text style={styles.freePillText}>✓ {generationCredits} FREE GENERATION{generationCredits === 1 ? '' : 'S'} AVAILABLE</Text>
+            </View>
+          ) : (
+            <View style={styles.pricePill}>
+              <Text style={styles.priceAmount}>{priceLabel}</Text>
+              <Text style={styles.priceUnit}>PER CREATURE</Text>
+            </View>
+          )}
         </View>
       </LinearGradient>
     </Pressable>
@@ -73,9 +79,10 @@ export function CustomCreatureCard({ creature, onPlay, onDelete, onRetry }) {
   const status = creature.status || 'ready';
   const busy = status === 'pending' || status === 'running';
   // 'capacity': the balance guard (or Tripo's own "insufficient credit" error)
-  // held the job back before spending anything — same retry UI as a failure,
-  // distinct only in its message.
-  const failed = status === 'failed' || status === 'capacity';
+  // held the job back before spending anything. 'blocked': the player had no
+  // generation credit left. Both share the failure UI, distinct only in
+  // their message — RETRY re-arms the job once they have a credit again.
+  const failed = status === 'failed' || status === 'capacity' || status === 'blocked';
   const progress = Math.round(creature.progress || 0);
 
   return (
@@ -204,6 +211,16 @@ const styles = StyleSheet.create({
   },
   priceAmount: { fontFamily: squadFonts.headingExtraBold, fontSize: 15, color: squadColors.gold },
   priceUnit: { color: squadColors.textLavender, fontFamily: squadFonts.bodyExtraBold, fontSize: 9, letterSpacing: 1.4 },
+  freePill: {
+    marginTop: 2,
+    backgroundColor: squadColors.bgDeepest,
+    borderWidth: 1.5,
+    borderColor: squadColors.teal,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  freePillText: { color: squadColors.teal, fontFamily: squadFonts.bodyExtraBold, fontSize: 10, letterSpacing: 1 },
 
   // custom creature
   customImageArea: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center', position: 'relative' },

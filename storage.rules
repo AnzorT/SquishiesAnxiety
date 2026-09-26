@@ -7,11 +7,19 @@ service firebase.storage {
 
     // Source photos the player uploads for the creature creator. Owner
     // read/write; the Cloud Function (admin creds) also reads them.
+    //
+    // No contentType/size check here (there used to be one: size < 8MB,
+    // contentType matching image/.*) — @react-native-firebase/storage's
+    // native `putFile` on Android doesn't surface that metadata to the
+    // rules evaluator the way the web SDK does (confirmed: the same check
+    // passed against the Storage emulator via the web SDK, but rejected
+    // every real device upload with storage/unauthorized). Per-uid
+    // isolation below is the security boundary that actually matters here;
+    // this also means `write` (which covers delete, where request.resource
+    // is null) no longer needs a `request.resource`-based condition, so
+    // deleteCustomAssets's cleanup delete works too.
     match /customUploads/{uid}/{file} {
-      allow read, write: if request.auth != null
-        && request.auth.uid == uid
-        && request.resource.size < 8 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
+      allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
     // Generated .glb models. Written only by generateCustomModel (admin
