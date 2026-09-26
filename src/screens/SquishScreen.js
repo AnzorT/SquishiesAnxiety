@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, PanResponder, Animated, Pressable, Easing, Dime
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Canvas } from '@react-three/fiber';
+import { NeutralToneMapping } from 'three';
 import { MaterialIcons } from '@expo/vector-icons';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
 import SquishyToy from '../components/SquishyToy';
 import SquishyToy2D from '../components/SquishyToy2D';
+import Supersample from '../components/Supersample';
 import { INTERSTITIAL_AD_UNIT_ID } from '../firebase/ads';
 
 // A creature with a `modelUrl` (every premade creature, plus a photo-path
@@ -151,6 +153,40 @@ const CoinCounter = memo(forwardRef(function CoinCounter({ initial }, ref) {
   );
 }));
 
+// Live frames-per-second pill. Counts requestAnimationFrame callbacks — the
+// same JS-thread frame loop the 3D stage renders on, so a slow squish frame
+// shows up here — and redraws twice a second in its own leaf, so it never
+// re-renders SquishScreen.
+function FpsCounter() {
+  const [fps, setFps] = useState(null);
+  useEffect(() => {
+    let frames = 0;
+    let raf = 0;
+    let last = performance.now();
+    const loop = () => {
+      frames += 1;
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    const id = setInterval(() => {
+      const t = performance.now();
+      setFps(Math.round((frames * 1000) / (t - last)));
+      frames = 0;
+      last = t;
+    }, 500);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearInterval(id);
+    };
+  }, []);
+  const color = fps == null ? squadColors.textLavender : fps >= 55 ? '#4ade80' : fps >= 40 ? '#facc15' : '#f87171';
+  return (
+    <View style={styles.fpsPill}>
+      <Text style={[styles.fpsText, { color }]}>{fps == null ? '–' : fps} FPS</Text>
+    </View>
+  );
+}
+
 // Live ×N-coins countdown bar. Ticks its own `now` every 250ms in isolation
 // so that redraw stays scoped to this small subtree instead of re-rendering
 // the whole SquishScreen (which would otherwise drag the 3D Canvas/SquishyToy
@@ -289,12 +325,22 @@ const SquishStage = memo(function SquishStage({
         <Canvas
           frameloop="always"
           camera={{ fov: 30, position: [0, 0.1, 4.6], near: 0.1, far: 100 }}
-          gl={{ toneMappingExposure: 1.4 }}
+          // Khronos "PBR Neutral" tone mapping keeps each creature's texture
+          // colours true to how Tripo shows them. R3F's default (ACES) washed
+          // saturated colours (Bubbles' cyan, Tako's pink) out to pastels.
+          gl={{ toneMapping: NeutralToneMapping, toneMappingExposure: 1 }}
         >
-          <ambientLight intensity={0.25} />
-          <directionalLight color={0xfff2e0} intensity={2.2} position={[2, 3, 3]} />
-          <directionalLight color={0xd8ccff} intensity={0.55} position={[-2.5, -1, 2]} />
+          {/* Tuned to match Tripo's viewer with plain lights only: the old
+              RoomEnvironment reflection map renders black on the phone (see
+              SquishyToy.js), so nothing here may depend on it. The strong
+              sky/ground hemisphere is the soft all-round fill it used to give. */}
+          <ambientLight intensity={0.6} />
+          <hemisphereLight args={[0xffffff, 0x9aa8bc, 3.5]} />
+          <directionalLight color={0xffffff} intensity={1.2} position={[2, 3, 3]} />
+          <directionalLight color={0xd8ccff} intensity={0.3} position={[-2.5, -1, 2]} />
           <directionalLight color={0xffffff} intensity={0.35} position={[-1.5, 2, -3]} />
+          {/* Anti-aliasing, which expo-gl doesn't provide on Android. */}
+          <Supersample factor={2} />
           <SquishyToy
             ref={toyRef}
             creatureId={toy.id}
@@ -772,6 +818,7 @@ export default function SquishScreen({
             <Text style={styles.backGlyph}>‹</Text>
           </Pressable>
           <CoinCounter ref={coinCounterRef} initial={coins} />
+          <FpsCounter />
         </View>
 
         <Pressable onPress={toggleWheel} style={[styles.wheelButton, { top: insets.top + 14 }]} hitSlop={6}>
@@ -861,6 +908,15 @@ const styles = StyleSheet.create({
   },
   coinDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: squadColors.gold },
   coinPillText: { color: squadColors.gold, fontFamily: squadFonts.bodyExtraBold, fontSize: 13 },
+  fpsPill: {
+    backgroundColor: '#241243cc',
+    borderWidth: 1,
+    borderColor: squadColors.panelBorder,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  fpsText: { fontFamily: squadFonts.bodyExtraBold, fontSize: 12 },
   wheelButton: {
     position: 'absolute',
     right: 14,

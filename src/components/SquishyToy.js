@@ -9,7 +9,6 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import * as FileSystem from 'expo-file-system';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { PHYS } from '../data/creatures';
 
 // Used by buildCreature's procedural-sphere path (and prepareModelData's
@@ -18,36 +17,12 @@ import { PHYS } from '../data/creatures';
 // creature doc's `visual` field made it into scope. Matches Glorp's teal.
 const DEFAULT_VISUAL = { color: '#2dd4bf', accent: '#0d9488', accessory: 'antenna', eye: 'round' };
 
-// Tripo's viewer lights models with an HDRI-style environment (reflections +
-// ambient fill from every direction), which is most of why the same texture
-// looks richer there than under our 3 bare directional lights. RoomEnvironment
-// is a plain three.js scene (boxes + emissive panels, no image loading), so
-// PMREMGenerator can prefilter it straight through the same WebGL context
-// expo-gl gives us — no DOM/HDR-file dependency that would break on native.
-// Cached per-`gl` (module-level, survives remounts) since prefiltering it is
-// not free and the result is identical every time.
-let cachedEnvTexture = null;
-let cachedEnvGl = null;
-function getEnvironmentTexture(gl) {
-  if (cachedEnvTexture && cachedEnvGl === gl) return cachedEnvTexture;
-  try {
-    const pmrem = new THREE.PMREMGenerator(gl);
-    const envScene = new RoomEnvironment();
-    const renderTarget = pmrem.fromScene(envScene, 0.035);
-    pmrem.dispose();
-    envScene.dispose();
-    cachedEnvTexture = renderTarget.texture;
-    cachedEnvGl = gl;
-    // eslint-disable-next-line no-console
-    console.log('[SquishyToy] environment map generated OK');
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.warn('[SquishyToy] environment map generation failed, continuing without it', err);
-    cachedEnvTexture = null;
-    cachedEnvGl = null;
-  }
-  return cachedEnvTexture;
-}
+// No environment (reflection) map on purpose. A RoomEnvironment/PMREM map
+// used to provide most of the ambient fill here, but on the target phone it
+// renders black (it generated without error, yet the creatures came out dark
+// and matched a no-environment render exactly), so desktop previews and the
+// phone disagreed. The stage is lit by plain lights in SquishScreen instead,
+// which every device draws the same way.
 
 // Soft-body dent physics engine — ported line-for-line from "ASMR Creature
 // Squash Game.html"'s buildCreature/tickPhysics/applyDentAtLocalPoint (the
@@ -296,6 +271,12 @@ function buildCreature(id, visual) {
 // texture map (see prepareModelData).
 const MODEL_TUNING = { visual: 1.9, dentSigma: 0.3, dentStrength: 2.3, dentFloor: 0.72, fallbackColor: '#2dd4bf' };
 
+// Creatures that get a soft glossy sheen over their texture, like Tripo's
+// viewer shows them. Tripo exports carry no shine data (just a colour
+// texture marked matte), so the gloss comes from here. Keyed by Firestore
+// creature id: '12' = Bubbles.
+const SHINY_CREATURE_IDS = new Set(['12']);
+
 function hashKey(str) {
   let h = 5381;
   for (let i = 0; i < str.length; i++) h = ((h << 5) + h) ^ str.charCodeAt(i);
@@ -422,6 +403,19 @@ function weldNormals(normalAttr, weldGroups) {
 // instead of blocking SquishScreen's first mount. buildModelCreature (below)
 // does the remaining *cheap* per-instance work (fresh geometry + mesh) so a
 // revisit — or the normal preload-then-mount path — never re-pays this cost.
+// Plain packed copy of an interleaved attribute (same values, type and
+// normalization).
+function deinterleave(attr) {
+  const { itemSize, count, offset } = attr;
+  const stride = attr.data.stride;
+  const src = attr.data.array;
+  const out = new src.constructor(count * itemSize);
+  for (let i = 0; i < count; i++) {
+    for (let k = 0; k < itemSize; k++) out[i * itemSize + k] = src[i * stride + offset + k];
+  }
+  return new THREE.BufferAttribute(out, itemSize, attr.normalized);
+}
+
 function prepareModelData(id, cfg, gltf) {
   let sourceMesh = null;
   gltf.scene.traverse((obj) => {
@@ -430,6 +424,30 @@ function prepareModelData(id, cfg, gltf) {
   if (!sourceMesh) throw new Error(`3D model ${id}: no mesh found in scene`);
 
   const geo = sourceMesh.geometry.clone();
+  // Some exporters (glTF-Transform, for one) interleave vertex attributes in
+  // one shared buffer. On those, `attribute.array` is that whole shared
+  // buffer rather than this attribute's own values, and everything below
+  // reads/writes `.array` directly — which scrambled every vertex into
+  // shards. Tripo exports are already packed, so this is a no-op for them.
+  for (const name of Object.keys(geo.attributes)) {
+    const attr = geo.attributes[name];
+    if (attr.isInterleavedBufferAttribute) geo.setAttribute(name, deinterleave(attr));
+  }
+  // Tripo exports carry authored smooth normals, which is what Tripo's own
+  // viewer shades with. Normals recomputed from the triangles (below) bring
+  // out every facet, so the file's are what gets displayed; the recomputed
+  // set is only used to measure how much a squish bends the surface (see
+  // computeNormals). Unaffected by the recentre/rescale below.
+  let fileNormals = null;
+  if (geo.attributes.normal) {
+    fileNormals = new Float32Array(geo.attributes.normal.array);
+    for (let i = 0; i < fileNormals.length; i += 3) {
+      const inv = 1 / (Math.hypot(fileNormals[i], fileNormals[i + 1], fileNormals[i + 2]) || 1);
+      fileNormals[i] *= inv;
+      fileNormals[i + 1] *= inv;
+      fileNormals[i + 2] *= inv;
+    }
+  }
   geo.computeBoundingBox();
 
   // The raw export's pivot sits at its base. Recenter on the bbox centre and
@@ -476,7 +494,21 @@ function prepareModelData(id, cfg, gltf) {
       `${weldGroups.length} weld groups (${weldedVertCount} verts welded)`
   );
 
-  return { basePos, baseNormals, uvArray, indexArray, neighbors, weldGroups, vertCount, map, fallbackColor };
+  return {
+    basePos,
+    // What's displayed at rest: the file's own normals when it has them.
+    baseNormals: fileNormals || baseNormals,
+    // Recomputed normals of the undeformed mesh — the reference computeNormals
+    // measures a squish's bending against (only needed alongside file normals).
+    computedRestNormals: fileNormals ? baseNormals : null,
+    uvArray,
+    indexArray,
+    neighbors,
+    weldGroups,
+    vertCount,
+    map,
+    fallbackColor,
+  };
 }
 
 // Cheap per-instance construction from prepareModelData's cached output: a
@@ -484,7 +516,7 @@ function prepareModelData(id, cfg, gltf) {
 // every frame; index/uv shared directly since they're never written to) plus
 // fresh material/mesh/group. No clone/normalize/weld/adjacency work here.
 function buildModelCreature(id, cfg, modelData) {
-  const { basePos, baseNormals, uvArray, indexArray, neighbors, weldGroups, vertCount, map, fallbackColor } = modelData;
+  const { basePos, baseNormals, computedRestNormals, uvArray, indexArray, neighbors, weldGroups, vertCount, map, fallbackColor } = modelData;
 
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(basePos), 3));
@@ -492,17 +524,21 @@ function buildModelCreature(id, cfg, modelData) {
   if (uvArray) geo.setAttribute('uv', new THREE.BufferAttribute(uvArray, 2));
   geo.setIndex(new THREE.BufferAttribute(indexArray, 1));
 
-  const bodyMat = new THREE.MeshStandardMaterial({
+  const shiny = SHINY_CREATURE_IDS.has(String(id));
+  const matParams = {
     map: map || null,
     color: map ? 0xffffff : fallbackColor,
-    roughness: 0.5,
+    roughness: shiny ? 0.3 : 0.5,
     metalness: 0,
     envMapIntensity: 1.4,
     // FrontSide only — DoubleSide let the mesh's back faces show through the
     // front while it deformed, which read as "a second model behind it".
     side: THREE.FrontSide,
     flatShading: false,
-  });
+  };
+  const bodyMat = shiny
+    ? new THREE.MeshPhysicalMaterial({ ...matParams, clearcoat: 0.6, clearcoatRoughness: 0.25 })
+    : new THREE.MeshStandardMaterial(matParams);
   const bodyMesh = new THREE.Mesh(geo, bodyMat);
   const group = new THREE.Group();
   group.add(bodyMesh);
@@ -526,6 +562,7 @@ function buildModelCreature(id, cfg, modelData) {
     bodyMat,
     basePos,
     baseNormals,
+    computedRestNormals,
     indexArray,
     boundRadius: computeBoundRadius(basePos),
     vertCount,
@@ -872,6 +909,23 @@ function computeNormals(s) {
       }
     }
   }
+  // Model shaded with its file's own smooth normals (see prepareModelData):
+  // keep those as the base and add only how far the squish has bent each
+  // recomputed normal away from its undeformed value, so shading stays
+  // smooth and doesn't jump when a press starts or ends.
+  const rest = s.computedRestNormals;
+  if (rest) {
+    const shade = s.baseNormals;
+    for (let i = 0; i < nrm.length; i += 3) {
+      const x = shade[i] + nrm[i] - rest[i];
+      const y = shade[i + 1] + nrm[i + 1] - rest[i + 1];
+      const z = shade[i + 2] + nrm[i + 2] - rest[i + 2];
+      const inv = 1 / (Math.sqrt(x * x + y * y + z * z) || 1);
+      nrm[i] = x * inv;
+      nrm[i + 1] = y * inv;
+      nrm[i + 2] = z * inv;
+    }
+  }
   normalAttr.needsUpdate = true;
 }
 
@@ -972,6 +1026,30 @@ function tickPhysics(s, dt) {
       }
     }
 
+    // Texture-seam duplicates (same position, split only for UVs; see
+    // buildWeldGroups) aren't each other's diffusion neighbours, so their
+    // dents drifted apart and the surface cracked open along every seam
+    // mid-squish. Keep each group's dent and velocity identical.
+    const weldGroups = s.weldGroups;
+    if (weldGroups) {
+      for (let g = 0; g < weldGroups.length; g++) {
+        const group = weldGroups[g];
+        const gl = group.length;
+        let ga = 0;
+        let gv = 0;
+        for (let k = 0; k < gl; k++) {
+          ga += amt[group[k]];
+          gv += vel[group[k]];
+        }
+        ga /= gl;
+        gv /= gl;
+        for (let k = 0; k < gl; k++) {
+          amt[group[k]] = ga;
+          vel[group[k]] = gv;
+        }
+      }
+    }
+
     let sum = 0;
     for (let i = 0; i < n; i++) sum += amt[i];
     meanDent = sum / n;
@@ -1066,15 +1144,10 @@ function tickPhysics(s, dt) {
 // timers, etc.) doesn't force React to reconcile this subtree — the per-frame
 // squish physics already runs in useFrame and shouldn't compete with that.
 const SquishyToy = memo(forwardRef(function SquishyToy({ creatureId = '0', modelUrl, visual, onSquish, onRelease }, ref) {
-  const { camera, gl, scene } = useThree();
+  const { camera, gl } = useThree();
   const toyRef = useRef(null);
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const [built, setBuilt] = useState(null);
-
-  useEffect(() => {
-    const envTex = getEnvironmentTexture(gl);
-    if (envTex) scene.environment = envTex;
-  }, [gl, scene]);
 
   useEffect(() => {
     let cancelled = false;
