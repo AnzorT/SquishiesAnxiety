@@ -102,6 +102,11 @@ export default function App() {
   const [squishSoundEnabled, setSquishSoundEnabled] = useState(true);
   const [coinSoundEnabled, setCoinSoundEnabled] = useState(true);
   const [releaseSoundEnabled, setReleaseSoundEnabled] = useState(true);
+  // Squish-screen settings popup: FPS pill, poke strength (1-5, 3 = the
+  // tuned default depth) and poke direction (push in / pop out).
+  const [showFps, setShowFps] = useState(true);
+  const [pokeStrength, setPokeStrength] = useState(3);
+  const [pokeOutward, setPokeOutward] = useState(false);
 
   const prevAchievementsRef = useRef(null);
 
@@ -455,6 +460,12 @@ export default function App() {
           onToggleCoinSound={setCoinSoundEnabled}
           releaseSoundEnabled={releaseSoundEnabled}
           onToggleReleaseSound={setReleaseSoundEnabled}
+          showFps={showFps}
+          onToggleShowFps={setShowFps}
+          pokeStrength={pokeStrength}
+          onChangePokeStrength={setPokeStrength}
+          pokeOutward={pokeOutward}
+          onChangePokeOutward={setPokeOutward}
         />
       )}
       <AchievementToast title={achToast} messageKey={achToastKey} />

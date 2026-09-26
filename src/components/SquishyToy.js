@@ -24,19 +24,13 @@ const DEFAULT_VISUAL = { color: '#2dd4bf', accent: '#0d9488', accessory: 'antenn
 // phone disagreed. The stage is lit by plain lights in SquishScreen instead,
 // which every device draws the same way.
 
-// Soft-body dent physics engine — ported line-for-line from "ASMR Creature
-// Squash Game.html"'s buildCreature/tickPhysics/applyDentAtLocalPoint (the
-// design spec this app now matches exactly): a procedural sphere per
-// creature, a per-vertex spring toward a Gaussian dent target with grid
-// diffusion (the "jelly wave"), a global squash spring, release wobble, and
-// drag-to-orbit — a single-finger drag both dents the body *and* slowly
-// spins it (there's no separate two-finger orbit gesture in this design).
-// Only the physics-irrelevant plumbing (renderer/canvas setup, replaced by
-// @react-three/fiber's <Canvas> in SquishScreen; and the Gaussian dent-shape
-// caching, an RN-perf-only optimization — see computeDentFall/applyDentScale
-// below — mathematically identical to calling the spec's
-// applyDentAtLocalPoint fresh every frame with the same point) differ from
-// the source.
+// Soft-body dent physics engine, originally ported from "ASMR Creature
+// Squash Game.html"'s buildCreature/tickPhysics/applyDentAtLocalPoint: a
+// per-vertex spring toward a dent target with diffusion (the "jelly wave"),
+// a global squash spring, release wobble, and orbit. The dent itself has
+// since been reshaped from the spec's radial Gaussian into a pointed funnel
+// pushed along the press direction (see computeDentFall), and the dent-shape
+// is cached per touch point as an RN-perf optimization.
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
@@ -205,6 +199,15 @@ function buildCreature(id, visual) {
     dentVel: new Float32Array(count),
     dentScratch: new Float32Array(count),
     dentFall: new Float32Array(count),
+    // Dent shape for the unit-radius procedural sphere — see MODEL_TUNING.
+    dentDepth: 0.6,
+    dentRadius: 0.14,
+    dentTip: 0.05,
+    // Player settings (see the SquishyToy props): depth multiplier, and
+    // 1 = push in / -1 = pop out.
+    dentUserScale: 1,
+    dentSign: 1,
+    pressDir: new THREE.Vector3(0, 0, -1),
     dentTargetActive: false,
     atRest: true,
     pendingMove: null,
@@ -258,18 +261,20 @@ function buildCreature(id, visual) {
 // structure, so it carries its own adjacency list (built once from the
 // triangle index buffer) and tickPhysics diffuses across that instead — see
 // the `s.neighbors` branch there. Everything else (per-vertex spring toward a
-// Gaussian dent target, global squash/wobble, release kick, drag-to-orbit)
+// dent target, global squash/wobble, release kick, drag-to-orbit)
 // only reasons about vertex positions, so it runs unmodified on any mesh.
 
 // Every model creature — premade or custom — uses this same tuning: `visual`
 // bakes the on-stage size into the geometry (the mesh is recentred +
 // rescaled so its largest dimension == this many units; 2 == same size as
-// the procedural spheres); `dentSigma`/`dentStrength`/`dentFloor` give it a
-// wide/deep/gentle-floored dent feel (the original c9586dd build) vs the
-// design sphere's shallow one — see computeDentFall/applyDentScale/
-// tickPhysics. `fallbackColor` only matters for the rare mesh with no baked
-// texture map (see prepareModelData).
-const MODEL_TUNING = { visual: 1.9, dentSigma: 0.3, dentStrength: 2.3, dentFloor: 0.72, fallbackColor: '#2dd4bf' };
+// the procedural spheres). The dent is a pointed funnel pushed in along the
+// press direction, like a finger or spear poking in (see computeDentFall /
+// applyDentScale / tickPhysics): `dentDepth` is how deep the tip goes when
+// held (model units), `dentRadius` how quickly it fades away from the tip,
+// and `dentTip` rounds the very tip so it isn't a single-vertex spike.
+// `fallbackColor` only matters for the rare mesh with no baked texture map
+// (see prepareModelData).
+const MODEL_TUNING = { visual: 1.9, dentDepth: 0.6, dentRadius: 0.14, dentTip: 0.05, fallbackColor: '#2dd4bf' };
 
 // Creatures that get a soft glossy sheen over their texture, like Tripo's
 // viewer shows them. Tripo exports carry no shine data (just a colour
@@ -572,13 +577,15 @@ function buildModelCreature(id, cfg, modelData) {
     rowCount: 0,
     neighbors,
     weldGroups,
-    // The imported meshes squish purely by the per-vertex dent (the only
-    // thing that renders per frame on the target device — see tickPhysics).
-    // These make it a wide, deep, gentle-floored dent like the original
-    // c9586dd build, vs the design sphere's shallow one — see MODEL_TUNING.
-    dentSigma: cfg.dentSigma,
-    dentStrength: cfg.dentStrength,
-    dentFloor: cfg.dentFloor,
+    // Dent shape — see MODEL_TUNING.
+    dentDepth: cfg.dentDepth,
+    dentRadius: cfg.dentRadius,
+    dentTip: cfg.dentTip,
+    // Player settings (see the SquishyToy props): depth multiplier, and
+    // 1 = push in / -1 = pop out.
+    dentUserScale: 1,
+    dentSign: 1,
+    pressDir: new THREE.Vector3(0, 0, -1),
     dentAmt: new Float32Array(vertCount),
     dentTarget: new Float32Array(vertCount),
     dentVel: new Float32Array(vertCount),
@@ -623,18 +630,19 @@ function buildModelCreature(id, cfg, modelData) {
   };
 }
 
-// The Gaussian falloff shape only depends on the touch point's position, not
-// how long it's been held, so — same RN-perf adaptation the rest of this
-// file's history has used — it's cached here and only recomputed when the
-// point actually moves (pointerDown / pointerMove), instead of every
-// rendered frame like the source's applyDentAtLocalPoint does. applyDentScale
-// (called every frame from tickPhysics) is then just a cheap rescale of that
-// cache by the current depthMul — mathematically identical to the source.
+// The dent's shape only depends on the touch point, not on how long it's
+// been held, so it's cached here and only recomputed when the point moves
+// (pointerDown / pointerMove). applyDentScale (every frame) then just scales
+// it by the current depth.
+//
+// Shape: a pointed funnel, deepest right under the finger and fading
+// exponentially (a cusp, not a bell) with distance, so it reads as something
+// poking *in*. The old Gaussian bell pulled toward a clamped floor instead,
+// which flattened the whole pressed patch into a shrunken copy of the
+// surface: the "small ball inside the creature" with a hard rim.
 function computeDentFall(s, localPoint) {
-  // Per-creature dent width. Glorp (imported mesh) uses a wide 0.3 like the
-  // original c9586dd build; the procedural sphere keeps the design's 0.16.
-  const sigma = s.dentSigma ?? 0.16;
-  const sigmaFactor = -1 / (2 * sigma * sigma);
+  const radius = s.dentRadius;
+  const tip = s.dentTip;
   // Arrays hoisted into locals throughout the per-frame/per-touch paths:
   // Hermes has no JIT, so a repeated `s.foo[i]` property lookup inside a
   // hot loop is a real per-vertex cost, not something that gets optimized away.
@@ -647,8 +655,14 @@ function computeDentFall(s, localPoint) {
     const dx = base[i * 3] - px;
     const dy = base[i * 3 + 1] - py;
     const dz = base[i * 3 + 2] - pz;
-    fall[i] = Math.exp((dx * dx + dy * dy + dz * dz) * sigmaFactor);
+    // sqrt(d² + tip²) - tip: ~d away from the tip, but smooth right at it.
+    fall[i] = Math.exp(-(Math.sqrt(dx * dx + dy * dy + dz * dz + tip * tip) - tip) / radius);
   }
+  // Push direction: from the touch point straight in toward the body's
+  // centre. Every dented vertex moves along this one direction (see
+  // tickPhysics), which is what makes it a funnel rather than a shrink.
+  const len = Math.hypot(px, py, pz);
+  if (len > 1e-6) s.pressDir.set(-px / len, -py / len, -pz / len);
   const featureSigma = 0.24;
   const featureSigmaFactor = -1 / (2 * featureSigma * featureSigma);
   for (let j = 0; j < s.featureBases.length; j++) {
@@ -660,14 +674,15 @@ function computeDentFall(s, localPoint) {
   }
 }
 
-function applyDentScale(s, depthMul) {
-  // Glorp (dentStrength ~2.3) gets the deep c9586dd-era dent; the sphere keeps
-  // the design's shallower one.
-  const maxDent = 0.3 * PHYS.strength * depthMul * (s.dentStrength ?? 1);
+// A press goes straight to 60% of the full depth, then sinks the rest of the
+// way in over about a second of holding. The whole funnel scales together,
+// so it only ever gets deeper, never flattens into a plateau.
+function applyDentScale(s, holdSeconds) {
+  const tipDepth = s.dentDepth * s.dentUserScale * (0.6 + 0.4 * (1 - Math.exp(-holdSeconds * 1.5)));
   const target = s.dentTarget;
   const fall = s.dentFall;
-  for (let i = 0; i < s.vertCount; i++) target[i] = maxDent * fall[i];
-  for (let j = 0; j < s.featureBases.length; j++) s.featureDentTarget[j] = maxDent * s.featureDentFall[j] * 1.1;
+  for (let i = 0; i < s.vertCount; i++) target[i] = tipDepth * fall[i];
+  for (let j = 0; j < s.featureBases.length; j++) s.featureDentTarget[j] = tipDepth * s.featureDentFall[j] * 1.1;
   s.dentTargetActive = true;
   s.atRest = false;
 }
@@ -678,12 +693,14 @@ function resetDentTargets(s) {
   s.dentTargetActive = false;
 }
 
-// Nearest front-facing hit on the body's current (deformed) surface, in the
-// mesh's local space — the same answer raycaster.intersectObject gives
-// (Möller–Trumbore with FrontSide back-face culling, ported from three's
-// Ray.intersectTriangle), but as one flat loop over the typed arrays instead
-// of three's per-triangle Vector3 calls and per-hit object allocation, which
-// cost several ms per touch event on Hermes.
+// Nearest front-facing hit on the body's REST (undeformed) surface, in the
+// mesh's local space. The dent is measured against the rest positions, and
+// picking against the deformed surface let a deep dent "run away" from the
+// finger: the ray hit the funnel's floor, deep inside, which weakened the
+// dent. Möller–Trumbore with FrontSide back-face culling, ported from
+// three's Ray.intersectTriangle, as one flat loop over the typed arrays
+// instead of three's per-triangle Vector3 calls and per-hit allocations,
+// which cost several ms per touch event on Hermes.
 const _ray = new THREE.Ray();
 const _invWorld = new THREE.Matrix4();
 function raycastLocal(s, camera, raycaster, ndcX, ndcY) {
@@ -703,7 +720,7 @@ function raycastLocal(s, camera, raycaster, ndcX, ndcY) {
   const cz = oz + dz * tc;
   if (cx * cx + cy * cy + cz * cz > s.boundRadius * s.boundRadius) return null;
 
-  const pos = s.bodyGeo.attributes.position.array;
+  const pos = s.basePos;
   const index = s.indexArray;
   let bestT = Infinity;
   for (let t = 0; t < index.length; t += 3) {
@@ -960,7 +977,7 @@ function tickPhysics(s, dt) {
 
   if (s.mode === 'poke' && s.pressLocalSmoothed) {
     s.pressHoldTime += dt;
-    applyDentScale(s, 1 + s.pressHoldTime * 1.6);
+    applyDentScale(s, s.pressHoldTime);
   }
 
   // ---- per-vertex soft body ----
@@ -1054,21 +1071,30 @@ function tickPhysics(s, dt) {
     for (let i = 0; i < n; i++) sum += amt[i];
     meanDent = sum / n;
 
-    // Written straight into the attribute's array (what setXYZ does, minus
-    // the method call per vertex).
+    // Each vertex moves along the one press direction by its own
+    // spring-driven depth (a funnel, see computeDentFall): inward, or outward
+    // when the player picked "pop out" (dentSign -1). The whole body puffs up
+    // slightly with the average push-in (or shrinks slightly with a pop-out),
+    // as if that volume went somewhere. Written straight into the attribute's
+    // array (what setXYZ does, minus the method call per vertex).
     const posAttr = s.bodyGeo.attributes.position;
     const pos = posAttr.array;
     const base = s.basePos;
-    const dentFloor = s.dentFloor ?? 0.45;
-    const meanLift = meanDent * 0.2;
+    const sign = s.dentSign;
+    const lift = Math.min(1 + sign * meanDent * 0.2, MAX_BULGE);
+    const dirX = s.pressDir.x * sign;
+    const dirY = s.pressDir.y * sign;
+    const dirZ = s.pressDir.z * sign;
+    // Only a guard against runaway spring overshoot; a normal press stays
+    // well under it, so it never flattens the tip.
+    const maxDepth = s.dentDepth * s.dentUserScale * 1.5;
     for (let i = 0; i < n; i++) {
       const o = i * 3;
-      let factor = 1 - amt[i] + meanLift;
-      if (factor > MAX_BULGE) factor = MAX_BULGE;
-      if (factor < dentFloor) factor = dentFloor;
-      pos[o] = base[o] * factor;
-      pos[o + 1] = base[o + 1] * factor;
-      pos[o + 2] = base[o + 2] * factor;
+      let depth = amt[i];
+      if (depth > maxDepth) depth = maxDepth;
+      pos[o] = base[o] * lift + dirX * depth;
+      pos[o + 1] = base[o + 1] * lift + dirY * depth;
+      pos[o + 2] = base[o + 2] * lift + dirZ * depth;
     }
     posAttr.needsUpdate = true;
     s.normalsFrameToggle = !s.normalsFrameToggle;
@@ -1084,7 +1110,7 @@ function tickPhysics(s, dt) {
     s.featureDentVel[j] += (s.featureDentTarget[j] - s.featureDentAmt[j]) * dentStiff;
     s.featureDentVel[j] *= dentDamp;
     s.featureDentAmt[j] += s.featureDentVel[j];
-    const factor = clamp(1 - s.featureDentAmt[j] * 1.5 + meanDent * 0.2, 0.5, 1.2);
+    const factor = clamp(1 - s.dentSign * (s.featureDentAmt[j] * 1.5 - meanDent * 0.2), 0.5, 1.2);
     const squish = clamp(1 - s.featureDentAmt[j] * 0.75, 0.62, 1);
     const b = s.featureBases[j];
     const mesh = s.featureMeshes[j];
@@ -1143,7 +1169,10 @@ function tickPhysics(s, dt) {
 // Memoized so a parent re-render triggered by unrelated state (coin counters,
 // timers, etc.) doesn't force React to reconcile this subtree — the per-frame
 // squish physics already runs in useFrame and shouldn't compete with that.
-const SquishyToy = memo(forwardRef(function SquishyToy({ creatureId = '0', modelUrl, visual, onSquish, onRelease }, ref) {
+const SquishyToy = memo(forwardRef(function SquishyToy(
+  { creatureId = '0', modelUrl, visual, onSquish, onRelease, dentScale = 1, dentOutward = false },
+  ref
+) {
   const { camera, gl } = useThree();
   const toyRef = useRef(null);
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
@@ -1222,6 +1251,15 @@ const SquishyToy = memo(forwardRef(function SquishyToy({ creatureId = '0', model
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // The player's poke settings (the squish screen's settings popup). Applied
+  // live: a change takes effect on the next press, or the current one.
+  useEffect(() => {
+    const s = toyRef.current;
+    if (!s) return;
+    s.dentUserScale = dentScale;
+    s.dentSign = dentOutward ? -1 : 1;
+  }, [built, dentScale, dentOutward]);
+
   useImperativeHandle(
     ref,
     () => ({
@@ -1236,8 +1274,9 @@ const SquishyToy = memo(forwardRef(function SquishyToy({ creatureId = '0', model
         s.pressHoldTime = 0;
         s.pendingMove = null;
         computeDentFall(s, local);
-        applyDentScale(s, 1);
-        s.globalSquashTarget = 0.55;
+        applyDentScale(s, 0);
+        // A push-in flattens the whole body; a pop-out stretches it instead.
+        s.globalSquashTarget = 0.55 * s.dentSign;
         onSquish && onSquish();
       },
       // Only records where the finger is now — applyPendingMove (in useFrame)

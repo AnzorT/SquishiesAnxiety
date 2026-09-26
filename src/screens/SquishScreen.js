@@ -303,9 +303,10 @@ function useLoopAnim(config) {
 }
 
 // The stage itself: touch surface, 3D Canvas (or the 2D rig), touch effects
-// and the gesture tutorial. Every prop is stable for the screen's lifetime,
-// so the memo keeps SquishScreen re-renders (the Firestore profile update
-// after each release, the bonus window, the settings wheel) from ever
+// and the gesture tutorial. Every prop is stable for the screen's lifetime
+// except the poke settings (which only change from the settings popup), so
+// the memo keeps SquishScreen re-renders (the Firestore profile update
+// after each release, the bonus window, the settings popup) from ever
 // reconciling the Canvas subtree — see project perf notes on SquishScreen.
 const SquishStage = memo(function SquishStage({
   toy,
@@ -318,6 +319,8 @@ const SquishStage = memo(function SquishStage({
   squishAnim,
   rotateAnim,
   touchAnim,
+  dentScale,
+  dentOutward,
 }) {
   return (
     <View style={styles.stage} {...panHandlers}>
@@ -348,6 +351,8 @@ const SquishStage = memo(function SquishStage({
             visual={toy.visual}
             onSquish={onSquish}
             onRelease={onRelease}
+            dentScale={dentScale}
+            dentOutward={dentOutward}
           />
         </Canvas>
       ) : (
@@ -386,7 +391,7 @@ const SquishStage = memo(function SquishStage({
   );
 });
 
-function SoundSwitch({ value, onToggle }) {
+function ToggleSwitch({ value, onToggle }) {
   const anim = useRef(new Animated.Value(value ? 1 : 0)).current;
   useEffect(() => {
     Animated.timing(anim, { toValue: value ? 1 : 0, duration: 150, useNativeDriver: false }).start();
@@ -401,6 +406,99 @@ function SoundSwitch({ value, onToggle }) {
         <Animated.View style={[styles.switchKnob, { left: knobLeft }]} />
       </View>
     </Pressable>
+  );
+}
+
+// Row of buttons where exactly one is selected.
+function Segmented({ options, value, onChange }) {
+  return (
+    <View style={styles.segmented}>
+      {options.map((option) => {
+        const active = option.value === value;
+        return (
+          <Pressable
+            key={String(option.value)}
+            onPress={() => onChange(option.value)}
+            style={[styles.segment, active && styles.segmentActive]}
+          >
+            <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{option.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+// Poke strength setting (1-5) -> multiplier on SquishyToy's tuned dent depth.
+// 3 is the tuned default.
+const POKE_STRENGTH_SCALES = [0.5, 0.75, 1, 1.25, 1.5];
+const POKE_STRENGTH_OPTIONS = [1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) }));
+const POKE_DIRECTION_OPTIONS = [
+  { value: false, label: 'Push in' },
+  { value: true, label: 'Pop out' },
+];
+
+function SettingsRow({ label, children }) {
+  return (
+    <View style={styles.settingsRow}>
+      <Text style={styles.settingsLabel}>{label}</Text>
+      {children}
+    </View>
+  );
+}
+
+// Settings popup opened from the gear. Tapping outside the card or the X
+// closes it.
+function SettingsModal({
+  onClose,
+  squishSoundEnabled,
+  onToggleSquishSound,
+  coinSoundEnabled,
+  onToggleCoinSound,
+  releaseSoundEnabled,
+  onToggleReleaseSound,
+  showFps,
+  onToggleShowFps,
+  pokeStrength,
+  onChangePokeStrength,
+  pokeOutward,
+  onChangePokeOutward,
+}) {
+  return (
+    <View style={styles.settingsOverlay}>
+      <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+      <View style={styles.settingsCard}>
+        <View style={styles.settingsHeader}>
+          <Text style={styles.settingsTitle}>SETTINGS</Text>
+          <Pressable onPress={onClose} hitSlop={10} style={styles.settingsClose}>
+            <MaterialIcons name="close" size={20} color={squadColors.textLavender} />
+          </Pressable>
+        </View>
+
+        <Text style={styles.settingsSection}>SOUND</Text>
+        <SettingsRow label="Squish sound">
+          <ToggleSwitch value={squishSoundEnabled} onToggle={() => onToggleSquishSound(!squishSoundEnabled)} />
+        </SettingsRow>
+        <SettingsRow label="Coin sound">
+          <ToggleSwitch value={coinSoundEnabled} onToggle={() => onToggleCoinSound(!coinSoundEnabled)} />
+        </SettingsRow>
+        <SettingsRow label="Release sound">
+          <ToggleSwitch value={releaseSoundEnabled} onToggle={() => onToggleReleaseSound(!releaseSoundEnabled)} />
+        </SettingsRow>
+
+        <Text style={styles.settingsSection}>DISPLAY</Text>
+        <SettingsRow label="Show FPS">
+          <ToggleSwitch value={showFps} onToggle={() => onToggleShowFps(!showFps)} />
+        </SettingsRow>
+
+        <Text style={styles.settingsSection}>SQUISH</Text>
+        <Text style={styles.settingsLabel}>Poke strength</Text>
+        <Segmented options={POKE_STRENGTH_OPTIONS} value={pokeStrength} onChange={onChangePokeStrength} />
+        <Text style={styles.settingsHint}>1 = gentle · 5 = deepest</Text>
+        <Text style={[styles.settingsLabel, styles.settingsLabelSpaced]}>Poke direction</Text>
+        <Segmented options={POKE_DIRECTION_OPTIONS} value={pokeOutward} onChange={onChangePokeOutward} />
+      </View>
+    </View>
   );
 }
 
@@ -475,6 +573,12 @@ export default function SquishScreen({
   onToggleCoinSound,
   releaseSoundEnabled = true,
   onToggleReleaseSound,
+  showFps = true,
+  onToggleShowFps,
+  pokeStrength = 3,
+  onChangePokeStrength,
+  pokeOutward = false,
+  onChangePokeOutward,
 }) {
   const insets = useSafeAreaInsets();
   const toyRef = useRef(null);
@@ -499,7 +603,7 @@ export default function SquishScreen({
   // True once 2 fingers have touched — blocks sound/coins for the rest of the gesture.
   const gestureHadTwoRef = useRef(false);
 
-  const [wheelOpen, setWheelOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [punishOpen, setPunishOpen] = useState(false);
   const [doubleFlash, setDoubleFlash] = useState(false);
   const [doubleFlashKey, setDoubleFlashKey] = useState(0);
@@ -565,14 +669,19 @@ export default function SquishScreen({
     if (!squishSoundEnabled) soundRef.current?.stop();
   }, [squishSoundEnabled]);
 
-  const toggleWheel = useCallback(() => {
-    setWheelOpen((open) => {
-      const next = !open;
-      Animated.timing(wheelAnim, { toValue: next ? 1 : 0, duration: 400, useNativeDriver: true }).start();
-      return next;
-    });
-  }, [wheelAnim]);
+  // The gear turns half a revolution as the settings popup opens, and back
+  // as it closes.
+  const setSettingsVisible = useCallback(
+    (visible) => {
+      setSettingsOpen(visible);
+      Animated.timing(wheelAnim, { toValue: visible ? 1 : 0, duration: 400, useNativeDriver: true }).start();
+    },
+    [wheelAnim]
+  );
+  const openSettings = useCallback(() => setSettingsVisible(true), [setSettingsVisible]);
+  const closeSettings = useCallback(() => setSettingsVisible(false), [setSettingsVisible]);
   const wheelRotate = wheelAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
+  const dentScale = POKE_STRENGTH_SCALES[pokeStrength - 1] ?? 1;
 
   // Mirrors props/state so the once-created PanResponder always reads fresh values.
   const latestRef = useRef(null);
@@ -818,10 +927,10 @@ export default function SquishScreen({
             <Text style={styles.backGlyph}>‹</Text>
           </Pressable>
           <CoinCounter ref={coinCounterRef} initial={coins} />
-          <FpsCounter />
+          {showFps && <FpsCounter />}
         </View>
 
-        <Pressable onPress={toggleWheel} style={[styles.wheelButton, { top: insets.top + 14 }]} hitSlop={6}>
+        <Pressable onPress={openSettings} style={[styles.wheelButton, { top: insets.top + 14 }]} hitSlop={6}>
           <Animated.View style={{ transform: [{ rotate: wheelRotate }] }}>
             <MaterialIcons name="settings" size={20} color={squadColors.textMutedLavender} />
           </Animated.View>
@@ -838,24 +947,9 @@ export default function SquishScreen({
           squishAnim={gestureSquishAnim}
           rotateAnim={gestureRotateAnim}
           touchAnim={gestureTouchAnim}
+          dentScale={dentScale}
+          dentOutward={pokeOutward}
         />
-
-        {wheelOpen && (
-          <View style={[styles.wheelPopup, { top: insets.top + 62 }]}>
-            <View style={styles.wheelRow}>
-              <Text style={styles.wheelLabel}>Sound</Text>
-              <SoundSwitch value={squishSoundEnabled} onToggle={() => onToggleSquishSound(!squishSoundEnabled)} />
-            </View>
-            <View style={styles.wheelRow}>
-              <Text style={styles.wheelLabel}>Coin Sound</Text>
-              <SoundSwitch value={coinSoundEnabled} onToggle={() => onToggleCoinSound(!coinSoundEnabled)} />
-            </View>
-            <View style={[styles.wheelRow, styles.wheelRowLast]}>
-              <Text style={styles.wheelLabel}>Release Sound</Text>
-              <SoundSwitch value={releaseSoundEnabled} onToggle={() => onToggleReleaseSound(!releaseSoundEnabled)} />
-            </View>
-          </View>
-        )}
       </LinearGradient>
 
       {bonusActive && <BonusBanner endsAt={bonusEndsAt} multiplier={bonusMultiplier} coinAnim={bonusCoinAnim} />}
@@ -880,6 +974,24 @@ export default function SquishScreen({
             </Text>
           </PopIn>
         </View>
+      )}
+
+      {settingsOpen && (
+        <SettingsModal
+          onClose={closeSettings}
+          squishSoundEnabled={squishSoundEnabled}
+          onToggleSquishSound={onToggleSquishSound}
+          coinSoundEnabled={coinSoundEnabled}
+          onToggleCoinSound={onToggleCoinSound}
+          releaseSoundEnabled={releaseSoundEnabled}
+          onToggleReleaseSound={onToggleReleaseSound}
+          showFps={showFps}
+          onToggleShowFps={onToggleShowFps}
+          pokeStrength={pokeStrength}
+          onChangePokeStrength={onChangePokeStrength}
+          pokeOutward={pokeOutward}
+          onChangePokeOutward={onChangePokeOutward}
+        />
       )}
 
       <PunishmentModal visible={punishOpen} onDismiss={dismissPunishment} />
@@ -951,20 +1063,60 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.35)',
     textShadowRadius: 3,
   },
-  wheelPopup: {
-    position: 'absolute',
-    right: 14,
-    width: 200,
+  settingsOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,4,25,0.78)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    zIndex: 40,
+  },
+  settingsCard: {
+    width: '100%',
+    maxWidth: 360,
     backgroundColor: squadColors.panelAlt,
-    borderRadius: 16,
+    borderRadius: 22,
     borderWidth: 1.5,
     borderColor: squadColors.panelBorder,
-    padding: 14,
-    zIndex: 15,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 20,
   },
-  wheelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  wheelRowLast: { marginBottom: 0 },
-  wheelLabel: { color: squadColors.textLavender, fontFamily: squadFonts.bodyBold, fontSize: 12.5 },
+  settingsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  settingsTitle: { fontFamily: squadFonts.headingExtraBold, fontSize: 20, letterSpacing: 1, color: squadColors.textWhite },
+  settingsClose: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#241243',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingsSection: {
+    marginTop: 16,
+    marginBottom: 4,
+    color: squadColors.goldLight,
+    fontFamily: squadFonts.bodyExtraBold,
+    fontSize: 10,
+    letterSpacing: 1.4,
+  },
+  settingsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 7 },
+  settingsLabel: { color: squadColors.textLavender, fontFamily: squadFonts.bodyBold, fontSize: 13 },
+  settingsLabelSpaced: { marginTop: 12 },
+  settingsHint: { marginTop: 4, color: squadColors.textMutedLavender, fontFamily: squadFonts.bodyBold, fontSize: 10.5 },
+  segmented: { flexDirection: 'row', gap: 6, marginTop: 8 },
+  segment: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: squadColors.panelBorder,
+    backgroundColor: '#241243',
+    alignItems: 'center',
+  },
+  segmentActive: { backgroundColor: squadColors.goldAmber, borderColor: squadColors.goldAmber },
+  segmentText: { color: squadColors.textWhite, fontFamily: squadFonts.bodyExtraBold, fontSize: 12.5 },
+  segmentTextActive: { color: '#3a2400' },
   switchTrack: { width: 38, height: 22, borderRadius: 11, overflow: 'hidden' },
   switchKnob: { position: 'absolute', top: 2, width: 18, height: 18, borderRadius: 9, backgroundColor: '#fff' },
   bottomPanel: { backgroundColor: '#150a2e', borderTopWidth: 1, borderTopColor: squadColors.panelBorder },
