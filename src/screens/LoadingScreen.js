@@ -1,14 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Image, StyleSheet, Animated, Easing } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { squadColors, squadFonts } from '../theme/squadTheme';
+import { View, Image, StyleSheet, Animated, Easing } from 'react-native';
+import { candyFonts } from '../theme/candyTheme';
 import CreatureThumbnail from '../components/CreatureThumbnail';
+import CandyBackground from '../components/candy/CandyBackground';
+import OutlinedTitle, { HaloText } from '../components/candy/OutlinedTitle';
+import { Twinkle } from '../components/candy/Sparkles';
 import AssembleCreature from '../components/AssembleCreature';
 import { preloadCreatureModel } from '../components/SquishyToy';
 
 // Brief "getting the toy ready" beat between picking a card on Home and
-// SquishScreen actually mounting — matches the prototype's loading screen
-// timing (dots, then a "I AM READY!" bubble, then a fade to the toy). The
+// SquishScreen actually mounting — the v3 loading screen: the creature
+// bouncing on the candy stage over "Getting Ready" and bouncing dots, then a
+// wobbling pink "✦ I AM READY! ✦" sticker, then a fade to the toy. The
 // "ready" beat now also gates on the creature's .glb actually being
 // fetched/parsed (preloadCreatureModel, cached and shared with SquishyToy's
 // own loader) so "I AM READY!" is true, not just a timer — otherwise the
@@ -39,9 +42,9 @@ function Dot({ delay }) {
   return <Animated.View style={[styles.dot, { transform: [{ translateY }] }]} />;
 }
 
-// The prototype's `popIn` keyframe: springs in from a small, tilted, invisible
-// state, overshoots to 1.12x / +3deg, then settles. Used for the "I AM READY!"
-// bubble (and mirrored by the "×2" flash on SquishScreen).
+// The design's `popIn` keyframe: springs in from a small, tilted, invisible
+// state, overshoots to 1.12x / +3deg, then settles. Used for "I AM READY!"
+// (and mirrored by the "×N COINS!" flash on SquishScreen).
 function PopIn({ style, children }) {
   const t = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -86,7 +89,7 @@ export default function LoadingScreen({ creature, onFinish }) {
 
   return (
     <Animated.View style={[styles.flex, { opacity }]}>
-      <LinearGradient colors={['#241250', '#100823']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.container}>
+      <CandyBackground style={styles.container}>
         {creature?.isCustom && creature.image ? (
           <Image source={{ uri: creature.image }} style={styles.customArt} />
         ) : creature?.isCustom && creature.build ? (
@@ -96,7 +99,7 @@ export default function LoadingScreen({ creature, onFinish }) {
         )}
         {stage === 'prep' ? (
           <View style={styles.prepRow}>
-            <Text style={styles.prepText}>Getting Ready</Text>
+            <HaloText style={styles.prepText}>Getting Ready</HaloText>
             <View style={styles.dots}>
               <Dot delay={0} />
               <Dot delay={150} />
@@ -104,11 +107,13 @@ export default function LoadingScreen({ creature, onFinish }) {
             </View>
           </View>
         ) : (
-          <PopIn style={styles.readyBubble}>
-            <Text style={styles.readyText}>I AM READY!</Text>
+          <PopIn style={styles.readyRow}>
+            <Twinkle size={18} duration={1.4} />
+            <OutlinedTitle text="I AM READY!" fill="pink" size={30} wobble />
+            <Twinkle size={18} duration={1.4} delay={0.7} />
           </PopIn>
         )}
-      </LinearGradient>
+      </CandyBackground>
     </Animated.View>
   );
 }
@@ -118,16 +123,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   customArt: { width: 170, height: 170, borderRadius: 85 },
   prepRow: { marginTop: 26, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  prepText: { color: squadColors.textMutedLavender, fontFamily: squadFonts.bodyExtraBold, fontSize: 14, letterSpacing: 0.5 },
+  prepText: { fontFamily: candyFonts.bodyHeavy, fontSize: 14, letterSpacing: 1 },
   dots: { flexDirection: 'row', gap: 4 },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: squadColors.pinkLight },
-  readyBubble: {
-    marginTop: 22,
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 26,
-    paddingVertical: 12,
-    borderRadius: 20,
-    borderBottomLeftRadius: 4,
-  },
-  readyText: { color: squadColors.bgDeepest, fontFamily: squadFonts.headingExtraBold, fontSize: 18 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#ff8bd0' },
+  readyRow: { marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 6 },
 });

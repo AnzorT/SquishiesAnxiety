@@ -12,7 +12,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import mobileAds from 'react-native-google-mobile-ads';
 import { useFonts } from 'expo-font';
 import { Baloo2_500Medium, Baloo2_700Bold, Baloo2_800ExtraBold } from '@expo-google-fonts/baloo-2';
-import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
+import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black } from '@expo-google-fonts/nunito';
+import { Fredoka_500Medium, Fredoka_600SemiBold, Fredoka_700Bold } from '@expo-google-fonts/fredoka';
 import SplashScreen from './src/screens/SplashScreen';
 import AuthScreen from './src/screens/AuthScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -22,7 +23,6 @@ import LoadingScreen from './src/screens/LoadingScreen';
 import SquishScreen from './src/screens/SquishScreen';
 import AchievementToast from './src/components/squad/AchievementToast';
 import ForcedInterstitialAd from './src/components/ForcedInterstitialAd';
-import { squadColors } from './src/theme/squadTheme';
 import { computeAchievements } from './src/achievements';
 import { subscribeToAuthUser, logout } from './src/firebase/auth';
 import {
@@ -73,6 +73,10 @@ export default function App() {
     Nunito_600SemiBold,
     Nunito_700Bold,
     Nunito_800ExtraBold,
+    Nunito_900Black,
+    Fredoka_500Medium,
+    Fredoka_600SemiBold,
+    Fredoka_700Bold,
   });
 
   const [splashDone, setSplashDone] = useState(false);
@@ -354,7 +358,7 @@ export default function App() {
   );
 
   if (!fontsLoaded) {
-    return <View style={{ flex: 1, backgroundColor: squadColors.bgDeepest }} />;
+    return <View style={{ flex: 1, backgroundColor: '#b24fe6' }} />;
   }
 
   const ownedIds = profile?.ownedIds ?? [];
@@ -376,8 +380,8 @@ export default function App() {
     else stage = screen;
   }
 
-  // Every screen, including SquishScreen, now uses the dark "Squish Squad"
-  // palette, so light status-bar icons read correctly everywhere.
+  // Every screen sits on the v3 candy stage (pink at the top), where light
+  // status-bar icons still read clearly.
   const statusBarStyle = 'light';
 
   return (

@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Pressable, Modal, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { squadColors, squadGradients, squadFonts, squadRadii } from '../theme/squadTheme';
-import GradientButton from '../components/squad/GradientButton';
-import IconButton from '../components/squad/IconButton';
+import { View, Text, TextInput, Pressable, Modal, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { candyColors, candyFonts } from '../theme/candyTheme';
+import CandyButton from '../components/candy/CandyButton';
+import RoundButton, { CloseGlyph } from '../components/candy/RoundButton';
 import Toast from '../components/squad/Toast';
 
 // Bottom sheet opened from Home's gear icon — nickname editing, one-time
-// "remove ads" claim, a feedback note, real gameplay stats, and logout, all
-// matching the prototype's SETTINGS panel. The stats row shows total squish
-// presses, longest hold (seconds), and favorite creature — derived from
-// `stats` (tracked via recordPress in src/firebase/firestore.js) and the
-// pre-computed `favoriteCreatureName`, both passed down from App.js.
+// "remove ads" claim, a feedback note, real gameplay stats, and logout, in
+// the v3 look: a pale pink sheet of white cards, candy SAVE/LOG OUT buttons.
+// The stats show total squish presses, longest hold (seconds), and favorite
+// creature — derived from `stats` (tracked via recordPress in
+// src/firebase/firestore.js) and the pre-computed `favoriteCreatureName`,
+// both passed down from App.js.
 export default function SettingsSheet({
   visible,
   onClose,
@@ -20,10 +22,6 @@ export default function SettingsSheet({
   onClaimAdsFree,
   onSubmitFeedback,
   onLogout,
-  ownedCount,
-  totalCount,
-  totalEarned = 0,
-  coins = 0,
   stats,
   favoriteCreatureName,
 }) {
@@ -68,119 +66,89 @@ export default function SettingsSheet({
   const favorite = favoriteCreatureName || 'None yet';
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.sheet} onPress={() => {}}>
-          <View style={styles.headerRow}>
-            <Text style={styles.title}>SETTINGS</Text>
-            <IconButton name="close" onPress={onClose} size={32} iconSize={16} color={squadColors.textWhite} style={styles.closeButton} />
-          </View>
+          <ScrollView bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.sheetContent}>
+            <View style={styles.headerRow}>
+              <Text style={styles.title}>SETTINGS</Text>
+              <RoundButton size={32} onPress={onClose} style={styles.closeButton}>
+                <CloseGlyph />
+              </RoundButton>
+            </View>
 
-          <View style={styles.card}>
-            <View style={styles.cardRow}>
+            <View style={[styles.card, styles.cardRow]}>
               <View>
                 <Text style={styles.cardLabel}>Remove Ads</Text>
                 <Text style={styles.cardSublabel}>One-time free removal</Text>
               </View>
-              <GradientButton
-                label={adsFree ? 'REMOVED ✓' : 'CLAIM FREE'}
-                onPress={claimAds}
-                disabled={adsFree}
-                colors={squadGradients.ctaGoldPink.colors}
-                start={squadGradients.ctaGoldPink.start}
-                end={squadGradients.ctaGoldPink.end}
-                fontSize={11}
-                pillStyle={styles.smallPill}
-              />
+              <Pressable onPress={claimAds} disabled={adsFree}>
+                {adsFree ? (
+                  <View style={[styles.flatPill, styles.flatPillDone]}>
+                    <Text style={[styles.flatPillText, styles.flatPillTextDone]}>REMOVED ✓</Text>
+                  </View>
+                ) : (
+                  <LinearGradient colors={['#ffe27a', '#ff9fd6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.flatPill}>
+                    <Text style={styles.flatPillText}>CLAIM FREE</Text>
+                  </LinearGradient>
+                )}
+              </Pressable>
             </View>
-          </View>
 
-          <View style={styles.card}>
-            <Text style={styles.cardLabel}>Nickname</Text>
-            <View style={styles.nicknameRow}>
-              <TextInput
-                style={styles.input}
-                value={nicknameEdit}
-                onChangeText={setNicknameEdit}
-                placeholderTextColor={squadColors.textFaint}
-              />
-              <GradientButton
-                label="SAVE"
-                onPress={saveNickname}
-                colors={squadGradients.ctaTeal.colors}
-                start={squadGradients.ctaTeal.start}
-                end={squadGradients.ctaTeal.end}
-                textColor={squadColors.bgDeepest}
-                fontSize={12}
-                pillStyle={styles.smallPill}
-              />
+            <View style={styles.card}>
+              <Text style={styles.cardLabel}>Nickname</Text>
+              <View style={styles.nicknameRow}>
+                <TextInput style={styles.input} value={nicknameEdit} onChangeText={setNicknameEdit} placeholderTextColor="#a98bc9" />
+                <CandyButton label="SAVE" variant="blue" size="sm" onPress={saveNickname} />
+              </View>
             </View>
-          </View>
 
-          <View style={styles.card}>
-            <Text style={styles.statsTitle}>YOUR STATS</Text>
-            <View style={styles.statRow}>
-              <Text style={styles.statLabel}>Total Presses</Text>
-              <Text style={styles.statValue}>{presses}</Text>
+            <View style={styles.card}>
+              <Text style={styles.statsTitle}>YOUR STATS</Text>
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>Total Presses</Text>
+                <Text style={styles.statValue}>{presses}</Text>
+              </View>
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>Longest Hold</Text>
+                <Text style={styles.statValue}>{longestHoldSeconds}s</Text>
+              </View>
+              <View style={[styles.statRow, styles.statRowLast]}>
+                <Text style={styles.statLabel}>Favorite Creature</Text>
+                <Text style={styles.statValue}>{favorite}</Text>
+              </View>
             </View>
-            <View style={styles.statRow}>
-              <Text style={styles.statLabel}>Longest Hold</Text>
-              <Text style={styles.statValue}>{longestHoldSeconds}s</Text>
-            </View>
-            <View style={[styles.statRow, styles.statRowLast]}>
-              <Text style={styles.statLabel}>Favorite Creature</Text>
-              <Text style={styles.statValue}>{favorite}</Text>
-            </View>
-          </View>
 
-          <Pressable style={styles.feedbackButton} onPress={() => setFeedbackOpen(true)}>
-            <Text style={styles.feedbackButtonText}>SEND FEEDBACK</Text>
-          </Pressable>
+            <Pressable style={styles.feedbackButton} onPress={() => setFeedbackOpen(true)}>
+              <Text style={styles.feedbackButtonText}>SEND FEEDBACK</Text>
+            </Pressable>
 
-          <GradientButton
-            label="LOG OUT"
-            onPress={onLogout}
-            colors={squadGradients.ctaLogout.colors}
-            start={squadGradients.ctaLogout.start}
-            end={squadGradients.ctaLogout.end}
-            textColor="#ffffff"
-            fontSize={14}
-            style={styles.logoutButton}
-          />
+            <CandyButton label="LOG OUT" variant="pink" size="md" onPress={onLogout} style={styles.logoutButton} textStyle={styles.logoutText} />
+          </ScrollView>
 
           <Toast message={toast} messageKey={toastKey} />
         </Pressable>
       </Pressable>
 
-      <Modal visible={feedbackOpen} transparent animationType="fade" onRequestClose={() => setFeedbackOpen(false)}>
-        <KeyboardAvoidingView
-          style={styles.feedbackBackdrop}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
+      <Modal visible={feedbackOpen} transparent animationType="fade" onRequestClose={() => setFeedbackOpen(false)} statusBarTranslucent>
+        <KeyboardAvoidingView style={styles.feedbackBackdrop} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.feedbackCard}>
-            <View style={styles.headerRow}>
+            <View style={styles.feedbackHeader}>
               <Text style={styles.feedbackTitle}>Feedback</Text>
-              <IconButton name="close" onPress={() => setFeedbackOpen(false)} size={28} iconSize={14} color={squadColors.textWhite} style={styles.closeButton} />
+              <RoundButton size={28} onPress={() => setFeedbackOpen(false)} style={styles.closeButton}>
+                <CloseGlyph size={12} />
+              </RoundButton>
             </View>
             <TextInput
               style={styles.textarea}
               value={feedbackText}
               onChangeText={setFeedbackText}
               placeholder="Tell us what you think..."
-              placeholderTextColor={squadColors.textFaint}
+              placeholderTextColor="#a98bc9"
               multiline
               textAlignVertical="top"
             />
-            <GradientButton
-              label="SUBMIT"
-              onPress={submitFeedback}
-              colors={squadGradients.ctaTeal.colors}
-              start={squadGradients.ctaTeal.start}
-              end={squadGradients.ctaTeal.end}
-              textColor={squadColors.bgDeepest}
-              fontSize={13}
-              style={styles.feedbackSubmit}
-            />
+            <CandyButton label="SUBMIT" variant="blue" size="md" onPress={submitFeedback} style={styles.feedbackSubmit} textStyle={styles.submitText} />
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -189,66 +157,74 @@ export default function SettingsSheet({
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(10,4,25,0.7)', justifyContent: 'flex-end' },
+  backdrop: { flex: 1, backgroundColor: candyColors.scrim, justifyContent: 'flex-end' },
   sheet: {
     maxHeight: '82%',
-    backgroundColor: squadColors.sheetBg,
-    borderTopLeftRadius: squadRadii.xl,
-    borderTopRightRadius: squadRadii.xl,
+    backgroundColor: candyColors.sheet,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
     borderTopWidth: 2,
-    borderColor: squadColors.panelBorder,
+    borderColor: candyColors.inkSoft,
     padding: 20,
+    paddingBottom: 28,
   },
-  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  title: { fontFamily: squadFonts.headingExtraBold, fontSize: 20, color: squadColors.textWhite },
+  sheetContent: { paddingBottom: 8 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+  title: { fontFamily: candyFonts.display, fontSize: 20, color: candyColors.ink },
   closeButton: { marginLeft: 'auto' },
-  card: { backgroundColor: squadColors.panelAlt, borderRadius: squadRadii.md, padding: 14, marginBottom: 12 },
+  card: { backgroundColor: '#ffffff', borderRadius: 16, padding: 14, marginBottom: 12 },
   cardRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  cardLabel: { color: squadColors.textWhite, fontFamily: squadFonts.bodyExtraBold, fontSize: 13, marginBottom: 4 },
-  cardSublabel: { color: squadColors.textMuted, fontFamily: squadFonts.bodyBold, fontSize: 11 },
-  smallPill: { paddingVertical: 9, paddingHorizontal: 14 },
-  nicknameRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  cardLabel: { color: candyColors.ink, fontFamily: candyFonts.bodyHeavy, fontSize: 13 },
+  cardSublabel: { color: candyColors.mutedLight, fontFamily: candyFonts.body, fontSize: 11 },
+  flatPill: { borderRadius: 10, paddingVertical: 9, paddingHorizontal: 14 },
+  flatPillDone: { backgroundColor: '#ece4f5' },
+  flatPillText: { color: candyColors.ink, fontFamily: candyFonts.bodyHeavy, fontSize: 11 },
+  flatPillTextDone: { color: '#a898bf' },
+  nicknameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   input: {
     flex: 1,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: squadColors.panelBorder,
-    backgroundColor: '#150a2e',
-    color: squadColors.textWhite,
-    fontFamily: squadFonts.bodyBold,
+    borderColor: candyColors.inkSoft,
+    backgroundColor: candyColors.paper,
+    color: candyColors.ink,
+    fontFamily: candyFonts.body,
     fontSize: 13,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 9,
   },
-  statsTitle: { color: squadColors.gold, fontFamily: squadFonts.bodyExtraBold, fontSize: 12, letterSpacing: 1, marginBottom: 10 },
+  statsTitle: { color: candyColors.goldInk, fontFamily: candyFonts.bodyHeavy, fontSize: 12, letterSpacing: 1, marginBottom: 10 },
   statRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 },
   statRowLast: { marginBottom: 0 },
-  statLabel: { color: squadColors.textLavender, fontFamily: squadFonts.bodyBold, fontSize: 12.5 },
-  statValue: { color: squadColors.textWhite, fontFamily: squadFonts.bodyBold, fontSize: 12.5 },
+  statLabel: { color: candyColors.inkSoft, fontFamily: candyFonts.body, fontSize: 12.5 },
+  statValue: { color: candyColors.ink, fontFamily: candyFonts.body, fontSize: 12.5 },
   feedbackButton: {
     width: '100%',
-    borderRadius: squadRadii.md,
-    backgroundColor: squadColors.panel,
+    borderRadius: 14,
+    backgroundColor: '#ffffff',
     paddingVertical: 13,
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
-  feedbackButtonText: { color: squadColors.textWhite, fontFamily: squadFonts.headingBold, fontSize: 14 },
+  feedbackButtonText: { color: candyColors.ink, fontFamily: candyFonts.display, fontSize: 14 },
   logoutButton: { width: '100%' },
-  feedbackBackdrop: { flex: 1, backgroundColor: 'rgba(10,4,25,0.75)', alignItems: 'center', justifyContent: 'center', padding: 30 },
-  feedbackCard: { width: '100%', backgroundColor: squadColors.sheetBg, borderRadius: squadRadii.lg, borderWidth: 2, borderColor: squadColors.panelBorder, padding: 20 },
-  feedbackTitle: { fontFamily: squadFonts.headingExtraBold, fontSize: 17, color: squadColors.textWhite },
+  logoutText: { fontSize: 14 },
+  feedbackBackdrop: { flex: 1, backgroundColor: candyColors.scrim, alignItems: 'center', justifyContent: 'center', padding: 30 },
+  feedbackCard: { width: '100%', backgroundColor: candyColors.sheet, borderRadius: 20, borderWidth: 2, borderColor: candyColors.inkSoft, padding: 20 },
+  feedbackHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  feedbackTitle: { fontFamily: candyFonts.display, fontSize: 17, color: candyColors.ink },
   textarea: {
     width: '100%',
     height: 90,
-    borderRadius: squadRadii.md,
+    borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: squadColors.panelBorder,
-    backgroundColor: '#150a2e',
-    color: squadColors.textWhite,
-    fontFamily: squadFonts.bodySemiBold,
+    borderColor: candyColors.inkSoft,
+    backgroundColor: candyColors.paper,
+    color: candyColors.ink,
+    fontFamily: candyFonts.bodySemi,
     fontSize: 13,
     padding: 10,
   },
-  feedbackSubmit: { width: '100%', marginTop: 10 },
+  feedbackSubmit: { width: '100%', marginTop: 12 },
+  submitText: { fontSize: 13 },
 });

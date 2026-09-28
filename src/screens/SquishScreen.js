@@ -4,8 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Canvas } from '@react-three/fiber';
 import { NeutralToneMapping } from 'three';
-import { MaterialIcons } from '@expo/vector-icons';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
 import SquishyToy from '../components/SquishyToy';
 import SquishyToy2D from '../components/SquishyToy2D';
@@ -18,9 +17,14 @@ import { INTERSTITIAL_AD_UNIT_ID } from '../firebase/ads';
 import SquishSound from '../audio/SquishSound';
 import CoinSound from '../audio/CoinSound';
 import PopSound from '../audio/PopSound';
-import { squadColors, squadGradients, squadFonts } from '../theme/squadTheme';
+import { candyColors, candyFonts, BUTTON_VARIANTS } from '../theme/candyTheme';
 import AdBanner from '../components/AdBanner';
 import WatchAdButton from '../components/WatchAdButton';
+import CandyBackground from '../components/candy/CandyBackground';
+import CandyButton, { Shine } from '../components/candy/CandyButton';
+import RoundButton, { BackGlyph, CloseGlyph, GearIcon } from '../components/candy/RoundButton';
+import { CoinIcon, GlassPill } from '../components/candy/Coin';
+import OutlinedTitle from '../components/candy/OutlinedTitle';
 
 // Stage size scales to the device, capped at 380.
 const STAGE_SIZE = Math.min(Math.round(Dimensions.get('window').width - 32), 380);
@@ -34,9 +38,9 @@ const SPEED_TAP_THRESHOLD = 60;
 const EARN_TICK_MS = 1500;
 const EARN_PER_TICK = 1;
 // Floating "+1" per tick: rises, spins, fades.
-const FLOATING_COIN_MS = 2200;
-const FLOATING_COIN_RISE = 100;
-const FLOATING_COIN_SIZE = 24;
+const FLOATING_COIN_MS = 1650;
+const FLOATING_COIN_RISE = 72;
+const FLOATING_COIN_SIZE = 30;
 
 // Too many quick taps trips the punishment ad — must be a rapid-fire burst,
 // not just several taps spread over a minute. Each rule is a rate limit
@@ -51,7 +55,7 @@ const ABUSE_MAX_WINDOW_MS = Math.max(...ABUSE_RULES.map((r) => r.windowMs));
 
 const DEFAULT_SQUISH_SOUND = require('../../assets/audio/slime.wav');
 
-const RIPPLE_MAX = 120;
+const RIPPLE_MAX = 180;
 
 // True for 3D-mesh creatures; picks Canvas vs SquishyToy2D in SquishStage.
 const toyIs3D = (t) => !!(t && t.modelUrl);
@@ -77,30 +81,25 @@ const Ripple = memo(function Ripple({ x, y }) {
   );
 });
 
-// Coin that rises, spins, and fades — pops once per earn tick.
+// A spinning gold coin and a sticker "+N" that rise and fade — pops once per
+// earn tick (the design's coinRise / coinSpin / coinFade).
 const FloatingCoin = memo(function FloatingCoin({ x, y, amount }) {
   const t = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.timing(t, { toValue: 1, duration: FLOATING_COIN_MS, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+    Animated.timing(t, { toValue: 1, duration: FLOATING_COIN_MS, easing: Easing.bezier(0.25, 0.6, 0.35, 1), useNativeDriver: true }).start();
   }, [t]);
-  const translateY = t.interpolate({ inputRange: [0, 1], outputRange: [0, -FLOATING_COIN_RISE] });
-  const scale = t.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0.5, 1, 1] });
-  const opacity = t.interpolate({ inputRange: [0, 0.15, 0.55, 1], outputRange: [0, 1, 1, 0] });
+  const translateY = t.interpolate({ inputRange: [0, 1], outputRange: [8, -FLOATING_COIN_RISE] });
+  const opacity = t.interpolate({ inputRange: [0, 0.15, 0.75, 1], outputRange: [0, 1, 1, 0] });
   const spin = t.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
   return (
     <Animated.View
       pointerEvents="none"
-      style={[styles.floatingCoin, { left: x - 34, top: y - 46, opacity, transform: [{ translateY }, { scale }] }]}
+      style={[styles.floatingCoin, { left: x - 40, top: y - 60, opacity, transform: [{ translateY }] }]}
     >
-      <Animated.View style={[styles.floatingCoinBadge, { transform: [{ rotateY: spin }] }]}>
-        <LinearGradient
-          colors={squadGradients.goldDot.colors}
-          start={squadGradients.goldDot.start}
-          end={squadGradients.goldDot.end}
-          style={StyleSheet.absoluteFillObject}
-        />
+      <Animated.View style={{ transform: [{ perspective: 200 }, { rotateY: spin }] }}>
+        <CoinIcon size={FLOATING_COIN_SIZE} glow />
       </Animated.View>
-      <Text style={styles.floatingCoinText}>+{amount}</Text>
+      <OutlinedTitle text={`+${amount}`} fill="gold" size={26} outline={2.5} letterSpacing={0} />
     </Animated.View>
   );
 });
@@ -146,10 +145,10 @@ const CoinCounter = memo(forwardRef(function CoinCounter({ initial }, ref) {
   const [value, setValue] = useState(initial);
   useImperativeHandle(ref, () => ({ add: (n) => setValue((c) => c + n) }), []);
   return (
-    <View style={styles.coinPill}>
-      <View style={styles.coinDot} />
+    <GlassPill style={styles.coinPill}>
+      <CoinIcon size={14} />
       <Text style={styles.coinPillText}>{value}</Text>
-    </View>
+    </GlassPill>
   );
 }));
 
@@ -179,11 +178,11 @@ function FpsCounter() {
       clearInterval(id);
     };
   }, []);
-  const color = fps == null ? squadColors.textLavender : fps >= 55 ? '#4ade80' : fps >= 40 ? '#facc15' : '#f87171';
+  const color = fps == null ? '#ffffff' : fps >= 55 ? '#7dffb0' : fps >= 40 ? '#fff3a0' : '#ffb3b3';
   return (
-    <View style={styles.fpsPill}>
+    <GlassPill style={styles.fpsPill}>
       <Text style={[styles.fpsText, { color }]}>{fps == null ? '–' : fps} FPS</Text>
-    </View>
+    </GlassPill>
   );
 }
 
@@ -204,27 +203,27 @@ function BonusBanner({ endsAt, multiplier, coinAnim }) {
   const timeText = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
   const pct = Math.max(0, Math.min(100, (remain / BONUS_MS) * 100));
   const coinScale = coinAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] });
+  const gold = BUTTON_VARIANTS.gold;
   return (
     <View style={styles.bonusBar}>
-      <View style={styles.bonusInner}>
-        <Animated.View style={[styles.bonusCoin, { transform: [{ scale: coinScale }] }]}>
-          <LinearGradient
-            colors={squadGradients.goldDot.colors}
-            start={squadGradients.goldDot.start}
-            end={squadGradients.goldDot.end}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <Text style={styles.bonusCoinText}>×{multiplier}</Text>
-        </Animated.View>
-        <View style={styles.bonusBody}>
-          <View style={styles.bonusTopRow}>
-            <Text style={styles.bonusLabel}>×{multiplier} COINS ACTIVE</Text>
-            <Text style={styles.bonusTime}>{timeText}</Text>
+      <View style={styles.bonusLip} />
+      <View style={styles.bonusRing}>
+        <LinearGradient colors={gold.colors} locations={gold.locations} style={styles.bonusInner}>
+          <Shine radius={14} />
+          <Animated.View style={[styles.bonusCoin, { transform: [{ scale: coinScale }] }]}>
+            <LinearGradient colors={['#fffbe0', '#ffe45c', '#ffc21a', '#e08a00']} locations={[0, 0.3, 0.62, 1]} style={StyleSheet.absoluteFillObject} />
+            <Text style={styles.bonusCoinText}>×{multiplier}</Text>
+          </Animated.View>
+          <View style={styles.bonusBody}>
+            <View style={styles.bonusTopRow}>
+              <Text style={styles.bonusLabel}>×{multiplier} COINS ACTIVE</Text>
+              <Text style={styles.bonusTime}>{timeText}</Text>
+            </View>
+            <View style={styles.bonusTrack}>
+              <LinearGradient colors={['#ffffff', '#fff3a0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.bonusFill, { width: `${pct}%` }]} />
+            </View>
           </View>
-          <View style={styles.bonusTrack}>
-            <View style={[styles.bonusFill, { width: `${pct}%` }]} />
-          </View>
-        </View>
+        </LinearGradient>
       </View>
     </View>
   );
@@ -277,8 +276,9 @@ function GestureHint({ side, d, creaseD, label, touchAnim, gestureAnim }) {
           ]}
         />
         <Svg width={46} height={62} viewBox="0 0 72 96" style={styles.gestureSvg}>
-          <Path d={d} fill="rgba(255,255,255,0.28)" stroke="#ffffff" strokeWidth={2.8} strokeLinejoin="round" />
-          <Path d={creaseD} stroke="rgba(255,255,255,0.75)" strokeWidth={2} strokeLinecap="round" fill="none" />
+          <Path d={d} fill="rgba(107,63,160,0.22)" transform="translate(0,4)" />
+          <Path d={d} fill="rgba(255,255,255,0.9)" stroke={candyColors.inkSoft} strokeWidth={2.8} strokeLinejoin="round" />
+          <Path d={creaseD} stroke="rgba(107,63,160,0.6)" strokeWidth={2} strokeLinecap="round" fill="none" />
         </Svg>
       </Animated.View>
       <Text style={styles.gestureHintText}>{label}</Text>
@@ -398,10 +398,10 @@ function ToggleSwitch({ value, onToggle }) {
   }, [value, anim]);
   const knobLeft = anim.interpolate({ inputRange: [0, 1], outputRange: [2, 18] });
   return (
-    <Pressable onPress={onToggle}>
-      <View style={[styles.switchTrack, { backgroundColor: value ? undefined : squadColors.panelBorder }]}>
+    <Pressable onPress={onToggle} hitSlop={6}>
+      <View style={[styles.switchTrack, { backgroundColor: value ? undefined : candyColors.inkSoft }]}>
         {value && (
-          <LinearGradient colors={squadGradients.goldDot.colors} start={squadGradients.goldDot.start} end={squadGradients.goldDot.end} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={['#9ff7ea', '#2fd4c2']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
         )}
         <Animated.View style={[styles.switchKnob, { left: knobLeft }]} />
       </View>
@@ -416,11 +416,10 @@ function Segmented({ options, value, onChange }) {
       {options.map((option) => {
         const active = option.value === value;
         return (
-          <Pressable
-            key={String(option.value)}
-            onPress={() => onChange(option.value)}
-            style={[styles.segment, active && styles.segmentActive]}
-          >
+          <Pressable key={String(option.value)} onPress={() => onChange(option.value)} style={[styles.segment, active && styles.segmentActive]}>
+            {active ? (
+              <LinearGradient colors={BUTTON_VARIANTS.pink.colors} locations={BUTTON_VARIANTS.pink.locations} style={StyleSheet.absoluteFill} />
+            ) : null}
             <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{option.label}</Text>
           </Pressable>
         );
@@ -470,9 +469,9 @@ function SettingsModal({
       <View style={styles.settingsCard}>
         <View style={styles.settingsHeader}>
           <Text style={styles.settingsTitle}>SETTINGS</Text>
-          <Pressable onPress={onClose} hitSlop={10} style={styles.settingsClose}>
-            <MaterialIcons name="close" size={20} color={squadColors.textLavender} />
-          </Pressable>
+          <RoundButton size={32} onPress={onClose} hitSlop={10}>
+            <CloseGlyph />
+          </RoundButton>
         </View>
 
         <Text style={styles.settingsSection}>SOUND</Text>
@@ -541,22 +540,65 @@ function PunishmentModal({ visible, onDismiss }) {
   if (!visible) return null;
   return (
     <View style={styles.punishOverlay}>
-      <View style={styles.punishCard}>
-        <Text style={styles.punishEmoji}>🚨</Text>
-        <Text style={styles.punishTitle}>WHOA THERE!</Text>
+      <PunishCard>
+        <Siren />
+        <OutlinedTitle text="WHOA THERE!" fill={PUNISH_FILL} size={30} />
         <Text style={styles.punishBody}>
           You&apos;re tapping way too much.{'\n'}You will be punished.
         </Text>
-        <Pressable
+        <CandyButton
+          label={loading ? 'LOADING…' : 'ACCEPT PUNISHMENT'}
+          variant="pink"
+          size="md"
           onPress={acceptPunishment}
           disabled={loading}
-          style={({ pressed }) => [styles.punishButton, (pressed || loading) && styles.punishButtonDim]}
-        >
-          <Text style={styles.punishButtonText}>{loading ? 'LOADING…' : 'ACCEPT PUNISHMENT'}</Text>
-        </Pressable>
-      </View>
+          dim={loading}
+          style={styles.punishButton}
+          textStyle={styles.punishButtonText}
+        />
+      </PunishCard>
     </View>
   );
+}
+
+// Red sticker fill for the "WHOA THERE!" title.
+const PUNISH_FILL = { colors: ['#ffe0e6', '#ff5c7a', '#d3173d'], locations: [0, 0.5, 1] };
+
+// The punishment card springs in (popIn) inside a red candy rim.
+function PunishCard({ children }) {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.spring(t, { toValue: 1, friction: 5, tension: 120, useNativeDriver: true }).start();
+  }, [t]);
+  const scale = t.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
+  const rotate = t.interpolate({ inputRange: [0, 1], outputRange: ['-8deg', '0deg'] });
+  return (
+    <Animated.View style={[styles.punishRing, { opacity: t, transform: [{ scale }, { rotate }] }]}>
+      <View style={styles.punishWhite}>
+        <LinearGradient colors={['#fff6fd', '#ffdcf4', '#f5cbff']} locations={[0, 0.6, 1]} style={styles.punishFace}>
+          {children}
+        </LinearGradient>
+      </View>
+    </Animated.View>
+  );
+}
+
+// 🚨 that won't sit still (the design's hintShake, looped).
+function Siren() {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(t, { toValue: 1, duration: 360, easing: Easing.linear, useNativeDriver: true }),
+        Animated.delay(420),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [t]);
+  const translateX = t.interpolate({ inputRange: [0, 0.25, 0.75, 1], outputRange: [0, -6, 6, 0] });
+  const rotate = t.interpolate({ inputRange: [0, 0.25, 0.75, 1], outputRange: ['0deg', '-10deg', '10deg', '0deg'] });
+  return <Animated.Text style={[styles.punishEmoji, { transform: [{ translateX }, { rotate }] }]}>🚨</Animated.Text>;
 }
 
 export default function SquishScreen({
@@ -920,21 +962,21 @@ export default function SquishScreen({
   ).current;
 
   return (
-    <View style={styles.container}>
-      <LinearGradient colors={squadGradients.homeBg.colors} start={squadGradients.homeBg.start} end={squadGradients.homeBg.end} style={styles.stageArea}>
+    <CandyBackground style={styles.container}>
+      <View style={styles.stageArea}>
         <View style={[styles.topLeft, { top: insets.top + 14 }]}>
-          <Pressable onPress={onBack} style={styles.backButton} hitSlop={8}>
-            <Text style={styles.backGlyph}>‹</Text>
-          </Pressable>
+          <RoundButton size={34} onPress={onBack} hitSlop={8}>
+            <BackGlyph />
+          </RoundButton>
           <CoinCounter ref={coinCounterRef} initial={coins} />
           {showFps && <FpsCounter />}
         </View>
 
-        <Pressable onPress={openSettings} style={[styles.wheelButton, { top: insets.top + 14 }]} hitSlop={6}>
+        <RoundButton size={42} onPress={openSettings} style={[styles.wheelButton, { top: insets.top + 14 }]}>
           <Animated.View style={{ transform: [{ rotate: wheelRotate }] }}>
-            <MaterialIcons name="settings" size={20} color={squadColors.textMutedLavender} />
+            <GearIcon />
           </Animated.View>
-        </Pressable>
+        </RoundButton>
 
         <SquishStage
           toy={toy}
@@ -950,28 +992,31 @@ export default function SquishScreen({
           dentScale={dentScale}
           dentOutward={pokeOutward}
         />
-      </LinearGradient>
+      </View>
 
       {bonusActive && <BonusBanner endsAt={bonusEndsAt} multiplier={bonusMultiplier} coinAnim={bonusCoinAnim} />}
 
       <View style={styles.bottomPanel}>
         <View style={styles.bottomRow}>
-          <WatchAdButton multiplier={4} onRewardEarned={() => handleAdReward(4)} activeMultiplier={bonusActive ? bonusMultiplier : null} />
-          <WatchAdButton multiplier={3} onRewardEarned={() => handleAdReward(3)} activeMultiplier={bonusActive ? bonusMultiplier : null} />
           <WatchAdButton multiplier={2} onRewardEarned={() => handleAdReward(2)} activeMultiplier={bonusActive ? bonusMultiplier : null} />
+          <WatchAdButton multiplier={3} onRewardEarned={() => handleAdReward(3)} activeMultiplier={bonusActive ? bonusMultiplier : null} />
+          <WatchAdButton multiplier={4} onRewardEarned={() => handleAdReward(4)} activeMultiplier={bonusActive ? bonusMultiplier : null} />
         </View>
 
-        <View style={[styles.adSlot, { paddingBottom: insets.bottom }]}>
-          <AdBanner />
+        <View style={[styles.adSlot, { paddingBottom: Math.max(8, insets.bottom) }]}>
+          <View style={styles.adFrame}>
+            <Text style={styles.adLabel}>ADVERTISEMENT</Text>
+            <View style={StyleSheet.absoluteFill}>
+              <AdBanner />
+            </View>
+          </View>
         </View>
       </View>
 
       {doubleFlash && (
         <View style={styles.flashOverlay} pointerEvents="none">
           <PopIn key={doubleFlashKey} onFadeOutDone={() => setDoubleFlash(false)} style={styles.doubleFlashPop}>
-            <Text style={styles.doubleFlashText} numberOfLines={1} adjustsFontSizeToFit>
-              ×{bonusMultiplier} SQUISH POINTS!
-            </Text>
+            <OutlinedTitle text={`×${bonusMultiplier} COINS!`} fill="gold" size={44} outline={4} />
           </PopIn>
         </View>
       )}
@@ -995,77 +1040,48 @@ export default function SquishScreen({
       )}
 
       <PunishmentModal visible={punishOpen} onDismiss={dismissPunishment} />
-    </View>
+    </CandyBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: squadColors.bgDeepest },
+  container: { flex: 1 },
   // Bottom panel no longer carries a tall hint list, so the stage claims
   // whatever's left instead of a fixed 70/30 split (see bottomPanel below).
   stageArea: { flex: 1, position: 'relative', alignItems: 'center', justifyContent: 'center' },
   topLeft: { position: 'absolute', left: 14, flexDirection: 'row', alignItems: 'center', gap: 8, zIndex: 3 },
-  backButton: { width: 34, height: 34, borderRadius: 12, backgroundColor: '#241243cc', alignItems: 'center', justifyContent: 'center' },
-  backGlyph: { color: '#fff', fontSize: 18, fontWeight: '800' },
-  coinPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#241243cc',
-    borderWidth: 1,
-    borderColor: squadColors.panelBorder,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+  coinPill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 4 },
+  coinPillText: {
+    color: candyColors.goldText,
+    fontFamily: candyFonts.bodyHeavy,
+    fontSize: 13,
+    textShadowColor: candyColors.outline,
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
   },
-  coinDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: squadColors.gold },
-  coinPillText: { color: squadColors.gold, fontFamily: squadFonts.bodyExtraBold, fontSize: 13 },
-  fpsPill: {
-    backgroundColor: '#241243cc',
-    borderWidth: 1,
-    borderColor: squadColors.panelBorder,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+  fpsPill: { paddingHorizontal: 10, paddingVertical: 4 },
+  fpsText: {
+    fontFamily: candyFonts.bodyHeavy,
+    fontSize: 12,
+    textShadowColor: candyColors.outline,
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
   },
-  fpsText: { fontFamily: squadFonts.bodyExtraBold, fontSize: 12 },
-  wheelButton: {
-    position: 'absolute',
-    right: 14,
-    zIndex: 3,
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: '#241243cc',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  wheelButton: { position: 'absolute', right: 14, zIndex: 3 },
   stage: { width: STAGE_SIZE, height: STAGE_SIZE },
   ripple: {
     position: 'absolute',
     width: RIPPLE_MAX,
     height: RIPPLE_MAX,
     borderRadius: RIPPLE_MAX / 2,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.7)',
+    borderWidth: 3,
+    borderColor: 'rgba(255,111,189,0.7)',
   },
-  floatingCoin: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 4 },
-  floatingCoinBadge: {
-    width: FLOATING_COIN_SIZE,
-    height: FLOATING_COIN_SIZE,
-    borderRadius: FLOATING_COIN_SIZE / 2,
-    overflow: 'hidden',
-  },
-  floatingCoinText: {
-    fontFamily: squadFonts.headingExtraBold,
-    fontSize: 16,
-    color: squadColors.goldLight,
-    textShadowColor: 'rgba(0,0,0,0.35)',
-    textShadowRadius: 3,
-  },
+  floatingCoin: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 2, zIndex: 6 },
+
   settingsOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,4,25,0.78)',
+    backgroundColor: candyColors.scrim,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
@@ -1074,53 +1090,52 @@ const styles = StyleSheet.create({
   settingsCard: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: squadColors.panelAlt,
+    backgroundColor: candyColors.sheet,
     borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: squadColors.panelBorder,
+    borderWidth: 2,
+    borderColor: candyColors.inkSoft,
     paddingHorizontal: 18,
     paddingTop: 16,
     paddingBottom: 20,
+    shadowColor: '#6b3fa0',
+    shadowOpacity: 0.28,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 10,
   },
   settingsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  settingsTitle: { fontFamily: squadFonts.headingExtraBold, fontSize: 20, letterSpacing: 1, color: squadColors.textWhite },
-  settingsClose: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#241243',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  settingsTitle: { fontFamily: candyFonts.display, fontSize: 20, letterSpacing: 1, color: candyColors.ink },
   settingsSection: {
-    marginTop: 16,
+    marginTop: 14,
     marginBottom: 4,
-    color: squadColors.goldLight,
-    fontFamily: squadFonts.bodyExtraBold,
-    fontSize: 10,
+    color: candyColors.goldInk,
+    fontFamily: candyFonts.bodyHeavy,
+    fontSize: 10.5,
     letterSpacing: 1.4,
   },
   settingsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 7 },
-  settingsLabel: { color: squadColors.textLavender, fontFamily: squadFonts.bodyBold, fontSize: 13 },
+  settingsLabel: { color: candyColors.inkSoft, fontFamily: candyFonts.body, fontSize: 13 },
   settingsLabelSpaced: { marginTop: 12 },
-  settingsHint: { marginTop: 4, color: squadColors.textMutedLavender, fontFamily: squadFonts.bodyBold, fontSize: 10.5 },
+  settingsHint: { marginTop: 4, color: candyColors.mutedLight, fontFamily: candyFonts.body, fontSize: 10.5 },
   segmented: { flexDirection: 'row', gap: 6, marginTop: 8 },
   segment: {
     flex: 1,
     paddingVertical: 9,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: squadColors.panelBorder,
-    backgroundColor: '#241243',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#e3cff5',
+    backgroundColor: '#ffffff',
     alignItems: 'center',
+    overflow: 'hidden',
   },
-  segmentActive: { backgroundColor: squadColors.goldAmber, borderColor: squadColors.goldAmber },
-  segmentText: { color: squadColors.textWhite, fontFamily: squadFonts.bodyExtraBold, fontSize: 12.5 },
-  segmentTextActive: { color: '#3a2400' },
+  segmentActive: { borderColor: '#ffffff' },
+  segmentText: { color: candyColors.ink, fontFamily: candyFonts.display, fontSize: 13 },
+  segmentTextActive: { color: '#ffffff', textShadowColor: candyColors.pinkRing, textShadowOffset: { width: 0, height: 1.5 }, textShadowRadius: 1 },
   switchTrack: { width: 38, height: 22, borderRadius: 11, overflow: 'hidden' },
   switchKnob: { position: 'absolute', top: 2, width: 18, height: 18, borderRadius: 9, backgroundColor: '#fff' },
-  bottomPanel: { backgroundColor: '#150a2e', borderTopWidth: 1, borderTopColor: squadColors.panelBorder },
-  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 10 },
+
+  bottomPanel: { backgroundColor: 'rgba(70,10,130,0.35)', borderTopWidth: 2, borderTopColor: 'rgba(255,255,255,0.6)' },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 6 },
   gestureHint: { position: 'absolute', top: '52%', alignItems: 'center', gap: 6 },
   gestureHandWrap: { width: 46, height: 62, alignItems: 'center', justifyContent: 'center' },
   gestureSvg: { position: 'absolute' },
@@ -1130,30 +1145,53 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.85)',
+    borderWidth: 2.5,
+    borderColor: '#ff6fbd',
   },
   gestureHintText: {
-    color: '#ffffff',
-    fontFamily: squadFonts.bodyExtraBold,
+    color: candyColors.ink,
+    fontFamily: candyFonts.bodyBlack,
     fontSize: 9,
     letterSpacing: 1.1,
-    textShadowColor: 'rgba(0,0,0,0.85)',
-    textShadowRadius: 4,
-    textShadowOffset: { width: 0, height: 1 },
+    textShadowColor: '#ffffff',
+    textShadowRadius: 5,
+    textShadowOffset: { width: 0, height: 0 },
   },
-  adSlot: { alignItems: 'center' },
-  bonusBar: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: squadColors.bgDeepest },
+  adSlot: { alignItems: 'stretch', paddingHorizontal: 16, paddingTop: 2 },
+  adFrame: {
+    height: 54,
+    borderRadius: 14,
+    backgroundColor: candyColors.paper,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: '#c9a8e8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  adLabel: { color: '#a283c9', fontFamily: candyFonts.bodyHeavy, fontSize: 10, letterSpacing: 2 },
+
+  bonusBar: { marginHorizontal: 16, marginBottom: 8, paddingBottom: 4 },
+  bonusLip: { position: 'absolute', left: 0, right: 0, top: 4, bottom: 0, borderRadius: 21, backgroundColor: '#9c4d06' },
+  bonusRing: {
+    borderRadius: 21,
+    padding: 2.5,
+    backgroundColor: '#9c4d06',
+    shadowColor: '#ffd23c',
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
+  },
   bonusInner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    borderRadius: 16,
+    borderRadius: 18,
+    borderWidth: 3,
+    borderColor: '#ffffff',
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1.5,
-    borderColor: squadColors.goldAmber,
-    backgroundColor: '#2a1a08',
+    paddingVertical: 7,
     overflow: 'hidden',
   },
   bonusCoin: {
@@ -1161,26 +1199,39 @@ const styles = StyleSheet.create({
     height: 30,
     borderRadius: 15,
     overflow: 'hidden',
+    borderWidth: 2.5,
+    borderColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Kills Baloo's font padding so "×2" sits centred in the coin.
   bonusCoinText: {
-    fontFamily: squadFonts.headingExtraBold,
-    fontSize: 13,
-    lineHeight: 30,
-    width: 30,
-    textAlign: 'center',
+    fontFamily: candyFonts.display,
+    fontSize: 12,
     color: '#5a3a00',
     includeFontPadding: false,
     textAlignVertical: 'center',
   },
   bonusBody: { flex: 1, gap: 5 },
   bonusTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  bonusLabel: { color: squadColors.goldLight, fontFamily: squadFonts.bodyExtraBold, fontSize: 9, letterSpacing: 1.4 },
-  bonusTime: { fontFamily: squadFonts.headingExtraBold, fontSize: 16, color: squadColors.textWhite },
-  bonusTrack: { height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.14)', overflow: 'hidden' },
-  bonusFill: { height: '100%', borderRadius: 3, backgroundColor: squadColors.goldAmber },
+  bonusLabel: {
+    color: '#ffffff',
+    fontFamily: candyFonts.display,
+    fontSize: 12,
+    letterSpacing: 1,
+    textShadowColor: '#9c4d06',
+    textShadowOffset: { width: 0, height: 1.5 },
+    textShadowRadius: 1,
+  },
+  bonusTime: {
+    fontFamily: candyFonts.display,
+    fontSize: 17,
+    color: '#ffffff',
+    textShadowColor: '#9c4d06',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 1,
+  },
+  bonusTrack: { height: 8, borderRadius: 4, backgroundColor: 'rgba(156,77,6,0.35)', borderWidth: 1.5, borderColor: '#ffffff', overflow: 'hidden' },
+  bonusFill: { height: '100%', borderRadius: 3 },
   flashOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
@@ -1188,69 +1239,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     zIndex: 32,
   },
-  // Gives the flashed text a definite width to shrink-to-fit within (see
-  // doubleFlashText's numberOfLines/adjustsFontSizeToFit) — without this the
-  // Animated.View sizes to its content and there's nothing concrete for the
-  // text to measure itself against, so it wraps to 2 lines instead of
-  // shrinking to stay on 1.
-  doubleFlashPop: { width: '100%' },
-  doubleFlashText: {
-    fontFamily: squadFonts.headingExtraBold,
-    fontSize: 44,
-    color: squadColors.goldLight,
-    textShadowColor: 'rgba(255,183,3,0.9)',
-    textShadowRadius: 24,
-    textAlign: 'center',
-  },
+  doubleFlashPop: { alignItems: 'center' },
 
   punishOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,4,25,0.86)',
+    backgroundColor: 'rgba(74,26,115,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 26,
     zIndex: 60,
   },
-  punishCard: {
+  punishRing: {
     width: '100%',
     maxWidth: 340,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: squadColors.danger,
-    backgroundColor: squadColors.panelAlt,
-    paddingHorizontal: 24,
-    paddingVertical: 28,
-    alignItems: 'center',
+    borderRadius: 31,
+    padding: 3,
+    backgroundColor: candyColors.danger,
+    shadowColor: '#320064',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.5,
+    shadowRadius: 18,
+    elevation: 14,
   },
-  punishEmoji: { fontSize: 44, marginBottom: 8 },
-  punishTitle: {
-    fontFamily: squadFonts.headingExtraBold,
-    fontSize: 22,
-    color: squadColors.danger,
-    letterSpacing: 1,
-    marginBottom: 10,
-  },
+  punishWhite: { borderRadius: 28, borderWidth: 4, borderColor: '#ffffff', overflow: 'hidden' },
+  punishFace: { paddingHorizontal: 22, paddingTop: 22, paddingBottom: 20, alignItems: 'center' },
+  punishEmoji: { fontSize: 46, marginBottom: 2 },
   punishBody: {
-    fontFamily: squadFonts.bodyBold,
-    fontSize: 14,
-    lineHeight: 20,
-    color: squadColors.textLavender,
-    textAlign: 'center',
-    marginBottom: 22,
-  },
-  punishButton: {
-    backgroundColor: squadColors.danger,
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    alignSelf: 'stretch',
-    alignItems: 'center',
-  },
-  punishButtonDim: { opacity: 0.6 },
-  punishButtonText: {
-    fontFamily: squadFonts.headingExtraBold,
+    fontFamily: candyFonts.body,
     fontSize: 15,
-    letterSpacing: 1,
-    color: '#ffffff',
+    lineHeight: 21,
+    color: candyColors.ink,
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 20,
   },
+  punishButton: { alignSelf: 'stretch' },
+  punishButtonText: { fontSize: 15 },
 });

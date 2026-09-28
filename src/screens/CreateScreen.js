@@ -6,12 +6,16 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as DocumentPicker from 'expo-document-picker';
 import { Audio } from 'expo-av';
-import { squadColors, squadFonts } from '../theme/squadTheme';
+import { candyColors, candyFonts } from '../theme/candyTheme';
+import CandyBackground from '../components/candy/CandyBackground';
+import CandyButton, { ButtonText } from '../components/candy/CandyButton';
+import RoundButton, { BackGlyph } from '../components/candy/RoundButton';
+import OutlinedTitle from '../components/candy/OutlinedTitle';
 import AssembleCreature, { ASSEMBLE_BODY_COLORS, ASSEMBLE_DEFAULT } from '../components/AssembleCreature';
 
-// CREATE A SQUISHY — the creator flow, ported from the decoded
-// "ASMR Creature Squash Game.html". Name, then a picture (upload a photo or
-// assemble one from parts), an optional short squish sound.
+// CREATE A SQUISHY — the creator flow in the v3 candy look. Name, then a
+// picture (upload a photo or assemble one from parts), an optional short
+// squish sound.
 //
 // On submit this hands a payload to `onCreated` (App): for a photo it uploads
 // the resized JPEG to Storage and creates a `status: 'pending'` doc — the
@@ -188,36 +192,35 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
   const scanTop = scan.interpolate({ inputRange: [0, 1], outputRange: ['-14%', '104%'] });
 
   return (
-    <LinearGradient colors={[squadColors.bgHomeTop, squadColors.bgHomeBottom]} style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={onBack} style={styles.backBtn} hitSlop={8}>
-          <Text style={styles.backGlyph}>‹</Text>
-        </Pressable>
-        <Text style={styles.title}>CREATE A SQUISHY</Text>
+    <CandyBackground style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <RoundButton size={36} onPress={onBack} hitSlop={8}>
+          <BackGlyph />
+        </RoundButton>
+        <OutlinedTitle text="CREATE A SQUISHY" fill="pink" size={19} outline={3} />
       </View>
 
-      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 20 }]} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 20 }]} keyboardShouldPersistTaps="handled">
         <View style={styles.field}>
           <Text style={styles.fieldLabel}>TOY NAME</Text>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g. Sir Wobbles"
-            placeholderTextColor={squadColors.textFaint}
-            maxLength={18}
-            style={styles.input}
-          />
+          <TextInput value={name} onChangeText={setName} placeholder="e.g. Sir Wobbles" placeholderTextColor="#a98bc9" maxLength={18} style={styles.input} />
         </View>
 
         <View style={styles.field}>
           <Text style={styles.fieldLabel}>PICTURE</Text>
           <View style={styles.segment}>
-            <Pressable style={[styles.segBtn, source === 'upload' && styles.segBtnOn]} onPress={() => setSource('upload')}>
-              <Text style={[styles.segText, source === 'upload' && styles.segTextOn]}>UPLOAD</Text>
-            </Pressable>
-            <Pressable style={[styles.segBtn, source === 'assemble' && styles.segBtnOn]} onPress={() => setSource('assemble')}>
-              <Text style={[styles.segText, source === 'assemble' && styles.segTextOn]}>CREATE ONE</Text>
-            </Pressable>
+            {[
+              ['upload', 'UPLOAD'],
+              ['assemble', 'CREATE ONE'],
+            ].map(([val, label]) => {
+              const on = source === val;
+              return (
+                <Pressable key={val} style={styles.segBtn} onPress={() => setSource(val)}>
+                  {on ? <LinearGradient colors={['#ff8fd8', '#ff3ea5']} style={StyleSheet.absoluteFill} /> : null}
+                  <Text style={[styles.segText, on && styles.segTextOn]}>{label}</Text>
+                </Pressable>
+              );
+            })}
           </View>
 
           {source === 'upload' ? (
@@ -226,7 +229,10 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
                 {imageUri ? (
                   <Image source={{ uri: imageUri }} style={styles.uploadPreview} />
                 ) : (
-                  <View style={styles.dropIcon} />
+                  <View style={styles.dropIcon}>
+                    <View style={styles.dropSun} />
+                    <View style={styles.dropHill} />
+                  </View>
                 )}
                 <Text style={styles.dropLabel}>{imageUri ? 'Picture added — tap to replace' : 'Tap to choose a picture'}</Text>
                 <Text style={styles.dropHint}>PNG or JPG · we crop it square</Text>
@@ -293,7 +299,13 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
               <Pressable style={[styles.smallBtn, styles.smallBtnTeal]} onPress={previewAudio}>
                 <Text style={styles.smallBtnTealText}>▶ PREVIEW</Text>
               </Pressable>
-              <Pressable style={styles.smallBtn} onPress={() => { setAudio(null); setAudioError(null); }}>
+              <Pressable
+                style={styles.smallBtn}
+                onPress={() => {
+                  setAudio(null);
+                  setAudioError(null);
+                }}
+              >
                 <Text style={styles.smallBtnRedText}>REMOVE</Text>
               </Pressable>
             </View>
@@ -303,14 +315,18 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
         {submitError ? <Text style={styles.errorText}>{submitError}</Text> : null}
-        {!hasCredit ? (
-          <Text style={styles.noCreditText}>No generations left — purchases aren&apos;t available yet, check back soon.</Text>
-        ) : null}
-        <Pressable disabled={!ready} onPress={submit} style={[styles.createBtn, !ready && styles.createBtnDim]}>
-          <Text style={styles.createPrice}>{hasCredit ? 'FREE' : priceLabel}</Text>
-          <View style={styles.createDivider} />
-          <Text style={styles.createLabel}>{source === 'assemble' ? 'CREATE' : 'CREATE IN 3D'}</Text>
-        </Pressable>
+        {!hasCredit ? <Text style={styles.noCreditText}>No generations left — purchases aren&apos;t available yet, check back soon.</Text> : null}
+        <CandyButton variant={ready ? 'pink' : 'grey'} size="md" radius={18} onPress={submit} disabled={!ready} dim={!ready} style={styles.createBtn}>
+          <View style={styles.createRow}>
+            <ButtonText ring={ready ? '#8e1580' : '#5a4a80'} size={17}>
+              {hasCredit ? 'FREE' : priceLabel}
+            </ButtonText>
+            <View style={styles.createDivider} />
+            <ButtonText ring={ready ? '#8e1580' : '#5a4a80'} size={13} style={styles.createLabel}>
+              {source === 'assemble' ? 'CREATE' : 'CREATE IN 3D'}
+            </ButtonText>
+          </View>
+        </CandyButton>
         <Text style={styles.footerHint}>
           {!nameOk
             ? 'Add a name to continue'
@@ -328,7 +344,9 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
         <View style={styles.convertOverlay}>
           <View style={styles.convertFrame}>
             {imageUri ? <Image source={{ uri: imageUri }} style={styles.convertImg} /> : null}
-            <Animated.View style={[styles.scanLine, { top: scanTop }]} />
+            <Animated.View style={[styles.scanLine, { top: scanTop }]}>
+              <LinearGradient colors={['rgba(34,224,208,0)', 'rgba(34,224,208,0.75)', 'rgba(34,224,208,0)']} style={StyleSheet.absoluteFill} />
+            </Animated.View>
           </View>
           <View style={styles.convertMeta}>
             <Text style={styles.convertStage}>Uploading your picture…</Text>
@@ -336,88 +354,116 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
           </View>
         </View>
       ) : null}
-    </LinearGradient>
+    </CandyBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: squadColors.panel, alignItems: 'center', justifyContent: 'center' },
-  backGlyph: { color: '#fff', fontSize: 20, fontFamily: squadFonts.headingExtraBold },
-  title: { fontFamily: squadFonts.headingExtraBold, fontSize: 19, color: '#fff' },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingBottom: 10 },
 
   body: { paddingHorizontal: 16, gap: 16 },
   field: { gap: 8 },
-  fieldLabel: { color: '#b7a3e0', fontFamily: squadFonts.bodyExtraBold, fontSize: 10, letterSpacing: 1.6 },
+  fieldLabel: {
+    color: '#ffffff',
+    fontFamily: candyFonts.bodyBlack,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    textShadowColor: candyColors.outline,
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
+  },
   rowBetween: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   optionalTag: {
-    color: squadColors.textFaint,
-    fontFamily: squadFonts.bodyExtraBold,
+    color: '#a283c9',
+    fontFamily: candyFonts.bodyHeavy,
     fontSize: 9,
     letterSpacing: 1,
-    backgroundColor: squadColors.panel,
+    backgroundColor: '#ffffff',
     borderRadius: 6,
+    overflow: 'hidden',
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   input: {
-    backgroundColor: squadColors.panel,
+    backgroundColor: '#ffffff',
     borderWidth: 1.5,
-    borderColor: squadColors.panelBorder,
+    borderColor: candyColors.inkSoft,
     borderRadius: 12,
     paddingHorizontal: 13,
     paddingVertical: 11,
-    color: '#fff',
-    fontFamily: squadFonts.bodyExtraBold,
+    color: candyColors.ink,
+    fontFamily: candyFonts.bodyHeavy,
     fontSize: 14,
   },
 
-  segment: { flexDirection: 'row', gap: 8, backgroundColor: squadColors.inputBg, borderWidth: 1, borderColor: '#2f1c5a', borderRadius: 13, padding: 4 },
-  segBtn: { flex: 1, borderRadius: 10, paddingVertical: 9, alignItems: 'center' },
-  segBtnOn: { backgroundColor: squadColors.pink },
-  segText: { color: '#b7a3e0', fontFamily: squadFonts.bodyExtraBold, fontSize: 11, letterSpacing: 1.2 },
+  segment: { flexDirection: 'row', gap: 8, backgroundColor: candyColors.paper, borderWidth: 1, borderColor: '#e3cff5', borderRadius: 13, padding: 4 },
+  segBtn: { flex: 1, borderRadius: 10, paddingVertical: 9, alignItems: 'center', overflow: 'hidden' },
+  segText: { color: candyColors.inkSoft, fontFamily: candyFonts.bodyBlack, fontSize: 11, letterSpacing: 1.2 },
   segTextOn: { color: '#fff' },
 
   dropZone: {
     minHeight: 150,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#4c3a80',
+    borderColor: '#c9a8e8',
     borderStyle: 'dashed',
-    backgroundColor: squadColors.inputBg,
+    backgroundColor: candyColors.paper,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     padding: 16,
   },
-  dropIcon: { width: 44, height: 36, borderWidth: 2, borderColor: squadColors.textFaint, borderRadius: 6 },
-  dropLabel: { color: squadColors.textLavender, fontFamily: squadFonts.bodyExtraBold, fontSize: 12 },
-  dropHint: { color: squadColors.textFaint, fontFamily: squadFonts.bodyBold, fontSize: 10 },
-  uploadPreview: { width: 104, height: 104, borderRadius: 14, borderWidth: 2, borderColor: squadColors.panelBorder },
-  errorText: { color: '#f87171', fontFamily: squadFonts.bodyExtraBold, fontSize: 11 },
+  dropIcon: { width: 44, height: 36, borderWidth: 2, borderColor: '#a283c9', borderRadius: 6, overflow: 'hidden' },
+  dropSun: { position: 'absolute', left: 6, bottom: 5, width: 12, height: 12, borderRadius: 6, backgroundColor: '#a283c9' },
+  dropHill: {
+    position: 'absolute',
+    right: 5,
+    bottom: 4,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 11,
+    borderRightWidth: 11,
+    borderBottomWidth: 15,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: '#a283c9',
+  },
+  dropLabel: { color: candyColors.inkSoft, fontFamily: candyFonts.bodyHeavy, fontSize: 12 },
+  dropHint: { color: '#a283c9', fontFamily: candyFonts.body, fontSize: 10 },
+  uploadPreview: { width: 104, height: 104, borderRadius: 14, borderWidth: 2, borderColor: candyColors.inkSoft },
+  errorText: {
+    color: '#ffffff',
+    backgroundColor: 'rgba(229,72,77,0.85)',
+    borderRadius: 8,
+    overflow: 'hidden',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    fontFamily: candyFonts.bodyHeavy,
+    fontSize: 11,
+  },
 
-  assembleWrap: { gap: 11 },
+  assembleWrap: { gap: 11, backgroundColor: candyColors.paper, borderRadius: 16, padding: 12 },
   assemblePreview: {
     alignSelf: 'center',
     width: 170,
     height: 170,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: squadColors.panelBorder,
-    backgroundColor: '#f6f2ff',
+    borderColor: candyColors.inkSoft,
+    backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
   },
   assembleRow: { gap: 6 },
-  assembleRowLabel: { color: squadColors.textFaint, fontFamily: squadFonts.bodyExtraBold, fontSize: 9, letterSpacing: 1.2 },
+  assembleRowLabel: { color: '#a283c9', fontFamily: candyFonts.bodyBlack, fontSize: 9, letterSpacing: 1.2 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  chip: { borderWidth: 1.5, borderColor: squadColors.panelBorder, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 7, backgroundColor: squadColors.panel },
-  chipOn: { borderColor: squadColors.pinkLight, backgroundColor: '#3b1d63' },
-  chipText: { color: '#b7a3e0', fontFamily: squadFonts.bodyExtraBold, fontSize: 10 },
-  chipTextOn: { color: '#fff' },
+  chip: { borderWidth: 1.5, borderColor: '#e3cff5', borderRadius: 10, paddingHorizontal: 11, paddingVertical: 7, backgroundColor: '#ffffff' },
+  chipOn: { borderColor: candyColors.inkSoft, backgroundColor: '#ffe4f5' },
+  chipText: { color: candyColors.inkSoft, fontFamily: candyFonts.bodyHeavy, fontSize: 10 },
+  chipTextOn: { color: candyColors.ink },
   swatch: { width: 26, height: 26, borderRadius: 13, borderWidth: 2.5, borderColor: 'transparent' },
-  swatchOn: { borderColor: '#ffffff' },
+  swatchOn: { borderColor: candyColors.inkSoft },
 
   audioZone: {
     flexDirection: 'row',
@@ -425,55 +471,51 @@ const styles = StyleSheet.create({
     gap: 11,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: '#4c3a80',
+    borderColor: '#c9a8e8',
     borderStyle: 'dashed',
-    backgroundColor: squadColors.inputBg,
+    backgroundColor: candyColors.paper,
     padding: 12,
   },
-  audioIcon: { width: 34, height: 34, borderRadius: 11, backgroundColor: squadColors.panel, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 2.5 },
-  audioBar: { width: 2.5, borderRadius: 1, backgroundColor: squadColors.teal },
+  audioIcon: { width: 34, height: 34, borderRadius: 11, backgroundColor: '#ffffff', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 2.5 },
+  audioBar: { width: 2.5, borderRadius: 1, backgroundColor: candyColors.teal },
   audioTextWrap: { flex: 1, gap: 2 },
-  audioName: { color: squadColors.textLavender, fontFamily: squadFonts.bodyExtraBold, fontSize: 12 },
+  audioName: { color: candyColors.inkSoft, fontFamily: candyFonts.bodyHeavy, fontSize: 12 },
   audioActions: { flexDirection: 'row', gap: 8 },
-  smallBtn: { flex: 1, borderWidth: 1.5, borderColor: squadColors.panelBorder, borderRadius: 11, paddingVertical: 9, alignItems: 'center', backgroundColor: squadColors.panel },
-  smallBtnTeal: { borderColor: squadColors.teal, backgroundColor: '#152b33' },
-  smallBtnTealText: { color: squadColors.teal, fontFamily: squadFonts.bodyExtraBold, fontSize: 10, letterSpacing: 1.2 },
-  smallBtnRedText: { color: '#f87171', fontFamily: squadFonts.bodyExtraBold, fontSize: 10, letterSpacing: 1.2 },
+  smallBtn: { flex: 1, borderWidth: 1.5, borderColor: candyColors.inkSoft, borderRadius: 11, paddingVertical: 9, alignItems: 'center', backgroundColor: '#ffffff' },
+  smallBtnTeal: { borderColor: candyColors.teal, backgroundColor: '#e0fbf7' },
+  smallBtnTealText: { color: '#0f9d90', fontFamily: candyFonts.bodyBlack, fontSize: 10, letterSpacing: 1.2 },
+  smallBtnRedText: { color: candyColors.danger, fontFamily: candyFonts.bodyBlack, fontSize: 10, letterSpacing: 1.2 },
 
-  footer: { paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2f1c5a', backgroundColor: squadColors.bgDeepest, gap: 8 },
-  createBtn: {
-    flexDirection: 'row',
+  footer: { paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#e3cff5', backgroundColor: candyColors.paper, gap: 8 },
+  createBtn: { width: '100%' },
+  createRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  createDivider: { width: 1.5, height: 16, backgroundColor: 'rgba(74,26,115,0.3)' },
+  createLabel: { letterSpacing: 1.6 },
+  footerHint: { color: '#a283c9', fontFamily: candyFonts.body, fontSize: 10, textAlign: 'center' },
+  noCreditText: { color: candyColors.danger, fontFamily: candyFonts.bodyHeavy, fontSize: 11, textAlign: 'center' },
+
+  convertOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,236,247,0.96)',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
-    borderRadius: 16,
-    paddingVertical: 14,
-    backgroundColor: squadColors.gold,
+    gap: 22,
+    padding: 32,
   },
-  createBtnDim: { opacity: 0.45 },
-  createPrice: { fontFamily: squadFonts.headingExtraBold, fontSize: 17, color: squadColors.bgDeepest },
-  createDivider: { width: 1.5, height: 16, backgroundColor: 'rgba(13,6,32,0.3)' },
-  createLabel: { color: squadColors.bgDeepest, fontFamily: squadFonts.bodyExtraBold, fontSize: 12, letterSpacing: 1.6 },
-  footerHint: { color: squadColors.textFaint, fontFamily: squadFonts.bodyBold, fontSize: 10, textAlign: 'center' },
-  noCreditText: { color: '#f87171', fontFamily: squadFonts.bodyExtraBold, fontSize: 11, textAlign: 'center' },
-
-  convertOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(13,6,32,0.94)', alignItems: 'center', justifyContent: 'center', gap: 22, padding: 32 },
   convertFrame: {
     width: 150,
     height: 150,
     borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1.5,
-    borderColor: squadColors.panelBorder,
-    backgroundColor: squadColors.inputBg,
+    borderColor: candyColors.inkSoft,
+    backgroundColor: candyColors.paper,
     alignItems: 'center',
     justifyContent: 'center',
   },
   convertImg: { width: '100%', height: '100%', opacity: 0.85 },
-  scanLine: { position: 'absolute', left: 0, right: 0, height: '14%', backgroundColor: 'rgba(34,224,208,0.55)' },
+  scanLine: { position: 'absolute', left: 0, right: 0, height: '14%' },
   convertMeta: { alignItems: 'center', gap: 12, width: '100%', maxWidth: 260 },
-  convertStage: { fontFamily: squadFonts.headingExtraBold, fontSize: 17, color: '#fff', textAlign: 'center' },
-  convertTrack: { width: '100%', height: 6, borderRadius: 3, backgroundColor: squadColors.panel, overflow: 'hidden' },
-  convertFill: { height: '100%', borderRadius: 3, backgroundColor: squadColors.teal },
-  convertPctText: { color: squadColors.textFaint, fontFamily: squadFonts.bodyExtraBold, fontSize: 10, letterSpacing: 1.4 },
+  convertStage: { fontFamily: candyFonts.display, fontSize: 17, color: candyColors.ink, textAlign: 'center' },
+  convertPctText: { color: '#a283c9', fontFamily: candyFonts.bodyHeavy, fontSize: 10, letterSpacing: 1.4, textAlign: 'center' },
 });

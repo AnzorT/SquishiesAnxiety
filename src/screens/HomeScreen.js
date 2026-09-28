@@ -1,18 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Animated, Easing, PanResponder } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, ActivityIndicator, Animated, Easing, PanResponder } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { spacing } from '../theme/tokens';
-import { squadColors, squadFonts } from '../theme/squadTheme';
+import { candyFonts } from '../theme/candyTheme';
 import CreatureCard from '../components/CreatureCard';
 import { CreateOwnCard, CustomCreatureCard } from '../components/CustomCards';
 import { PagedCard, GhostCard, PAGED_CARD_EASING } from '../components/PagedCard';
 import AdBanner from '../components/AdBanner';
-import IconButton from '../components/squad/IconButton';
+import CandyBackground from '../components/candy/CandyBackground';
+import CandyTabs from '../components/candy/CandyTabs';
+import RoundButton, { TrophyIcon, BagIcon, GearIcon, Triangle } from '../components/candy/RoundButton';
+import { CoinPill } from '../components/candy/Coin';
+import { HaloText } from '../components/candy/OutlinedTitle';
 import SettingsSheet from './SettingsSheet';
 
-// Home — a two-tab creature shelf, ported from the decoded
-// "ASMR Creature Squash Game.html":
+// Home — a two-tab creature shelf on the v3 candy stage:
 //  · OUR CREATURES — the 20-strong roster, one card at a time
 //  · MY CREATURES  — a "Create your own squishy" card, then a card per
 //    custom creature the player has made
@@ -21,15 +22,19 @@ import SettingsSheet from './SettingsSheet';
 // the outgoing card flies off (see components/PagedCard). The unlock-with-key
 // hold gesture and its UNLOCKED! burst live in CreatureCard.
 
-const ARROW_H = 40;
-const AD_H = 52;
+const ARROW_H = 44;
 const SWIPE_THRESHOLD = 46; // source: onTrackMove dy gate
+
+const HOME_TABS = [
+  { value: 'ours', label: 'OUR CREATURES' },
+  { value: 'mine', label: 'MY CREATURES' },
+];
 
 function ArrowButton({ direction, onPress, dim }) {
   return (
-    <Pressable style={styles.arrowButton} onPress={onPress} hitSlop={10} disabled={dim}>
-      <View style={[direction === 'up' ? styles.triangleUp : styles.triangleDown, dim && styles.arrowDim]} />
-    </Pressable>
+    <RoundButton size={28} lip={3} onPress={onPress} disabled={dim} dim={dim} hitSlop={10}>
+      <Triangle dir={direction} size={7} />
+    </RoundButton>
   );
 }
 
@@ -67,7 +72,6 @@ export default function HomeScreen({
   const [tab, setTab] = useState('ours'); // 'ours' | 'mine'
   const [mineIndex, setMineIndex] = useState(0);
   const [cardTrackH, setCardTrackH] = useState(0);
-  const [tabBarW, setTabBarW] = useState(0);
 
   const oursIndex = creatures.length ? Math.min(Math.max(index ?? 0, 0), creatures.length - 1) : 0;
   const ownedCount = creatures.filter((c) => ownedIds.includes(c.id)).length;
@@ -149,18 +153,6 @@ export default function HomeScreen({
     setMineIndex(9999);
   }, [focusMineToken]);
   const listTranslateX = listAnim.interpolate({ inputRange: [0, 1], outputRange: [listDir > 0 ? 46 : -46, 0] });
-
-  // --- sliding tab indicator ---
-  const indicatorAnim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.timing(indicatorAnim, {
-      toValue: tab === 'mine' ? 1 : 0,
-      duration: 340,
-      easing: Easing.bezier(0.65, 0, 0.35, 1),
-      useNativeDriver: true,
-    }).start();
-  }, [tab, indicatorAnim]);
-  const indicatorX = indicatorAnim.interpolate({ inputRange: [0, 1], outputRange: [0, tabBarW / 2] });
 
   // --- vertical swipe paging on the card track ---
   // Two separate problems compounded here. (1) A finger drag used to do
@@ -272,10 +264,10 @@ export default function HomeScreen({
 
   if (!creatures.length) {
     return (
-      <LinearGradient colors={[squadColors.bgHomeTop, squadColors.bgHomeBottom]} style={[styles.centered, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <ActivityIndicator color={squadColors.pinkLight} />
-        <Text style={styles.loadingText}>Loading your shelf…</Text>
-      </LinearGradient>
+      <CandyBackground style={[styles.centered, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <ActivityIndicator color="#ffffff" />
+        <HaloText style={styles.loadingText}>Loading your shelf…</HaloText>
+      </CandyBackground>
     );
   }
 
@@ -284,40 +276,30 @@ export default function HomeScreen({
   const mineBadge = customCreatures.length;
 
   return (
-    <LinearGradient colors={[squadColors.bgHomeTop, squadColors.bgHomeBottom]} style={styles.container}>
+    <CandyBackground sparkles style={styles.container}>
       <View style={[styles.content, { paddingTop: insets.top }]}>
         <View style={styles.header}>
-          <View style={styles.nameRow}>
-            <Text style={styles.nickname}>{nickname}</Text>
-            <View style={styles.pill}>
-              <View style={styles.coinDot} />
-              <Text style={styles.coinText}>{coins}</Text>
-            </View>
+          <View style={styles.nameCol}>
+            <HaloText style={styles.nickname} numberOfLines={1}>
+              {nickname}
+            </HaloText>
+            <CoinPill coins={coins} style={styles.coinPill} />
           </View>
           <View style={styles.headerIcons}>
-            <IconButton name="emoji-events" onPress={onOpenAchievements} size={33} iconSize={17} />
-            <IconButton name="storefront" onPress={onOpenStore} size={33} iconSize={17} />
-            <IconButton name="settings" onPress={() => setSettingsOpen(true)} size={33} iconSize={17} />
+            <RoundButton size={42} onPress={onOpenAchievements}>
+              <TrophyIcon />
+            </RoundButton>
+            <RoundButton size={42} onPress={onOpenStore}>
+              <BagIcon />
+            </RoundButton>
+            <RoundButton size={42} onPress={() => setSettingsOpen(true)}>
+              <GearIcon />
+            </RoundButton>
           </View>
         </View>
 
         <View style={styles.tabBarWrap}>
-          <View style={styles.tabBar} onLayout={(e) => setTabBarW(e.nativeEvent.layout.width)}>
-            <Pressable style={styles.tabButton} onPress={() => switchTab('ours')}>
-              <Text style={[styles.tabLabel, tab === 'ours' ? styles.tabLabelActive : styles.tabLabelIdle]}>OUR CREATURES</Text>
-            </Pressable>
-            <Pressable style={styles.tabButton} onPress={() => switchTab('mine')}>
-              <Text style={[styles.tabLabel, tab === 'mine' ? styles.tabLabelActive : styles.tabLabelIdle]}>MY CREATURES</Text>
-              {mineBadge > 0 && (
-                <View style={styles.tabBadge}>
-                  <Text style={styles.tabBadgeText}>{mineBadge}</Text>
-                </View>
-              )}
-            </Pressable>
-            <Animated.View style={[styles.tabIndicator, { width: tabBarW / 2, transform: [{ translateX: indicatorX }] }]}>
-              <LinearGradient colors={[squadColors.pink, squadColors.teal]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFillObject} />
-            </Animated.View>
-          </View>
+          <CandyTabs options={HOME_TABS} value={tab} onChange={switchTab} fontSize={13} padV={9} badges={[0, mineBadge]} />
         </View>
 
         <Animated.View style={[styles.stage, { opacity: listAnim, transform: [{ translateX: listTranslateX }] }]}>
@@ -393,9 +375,12 @@ export default function HomeScreen({
             <ArrowButton direction="down" onPress={() => goTo(page + 1)} dim={downDim} />
           </View>
 
-          <View style={styles.adRow}>
+          <View style={[styles.adRow, { paddingBottom: Math.max(6, insets.bottom) }]}>
             <View style={styles.adInner}>
-              <AdBanner />
+              <Text style={styles.adLabel}>ADVERTISEMENT</Text>
+              <View style={StyleSheet.absoluteFill}>
+                <AdBanner />
+              </View>
             </View>
           </View>
         </Animated.View>
@@ -417,7 +402,7 @@ export default function HomeScreen({
         stats={stats}
         favoriteCreatureName={favoriteCreatureName}
       />
-    </LinearGradient>
+    </CandyBackground>
   );
 }
 
@@ -425,68 +410,25 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loadingText: { marginTop: spacing(3), color: squadColors.textLavender, fontSize: 13, fontFamily: squadFonts.bodyBold },
+  loadingText: { marginTop: 12, fontSize: 14 },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 10,
+    paddingTop: 12,
     paddingHorizontal: 16,
     paddingBottom: 8,
   },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 9, flexShrink: 1 },
-  nickname: { fontFamily: squadFonts.headingExtraBold, color: squadColors.textWhite, fontSize: 16 },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: squadColors.panel,
-    borderWidth: 1,
-    borderColor: squadColors.panelBorder,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  coinDot: { width: 13, height: 13, borderRadius: 6.5, backgroundColor: squadColors.gold },
-  coinText: { color: squadColors.gold, fontFamily: squadFonts.bodyExtraBold, fontSize: 12 },
-  headerIcons: { flexDirection: 'row', gap: 6 },
+  nameCol: { flexShrink: 1, alignItems: 'flex-start' },
+  nickname: { fontSize: 17 },
+  coinPill: { marginTop: 5 },
+  headerIcons: { flexDirection: 'row', gap: 8 },
 
-  tabBarWrap: { paddingHorizontal: 16, paddingBottom: 6 },
-  tabBar: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    borderBottomWidth: 1.5,
-    borderBottomColor: '#2f1c5a',
-    position: 'relative',
-  },
-  tabButton: { flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6, paddingVertical: 7 },
-  tabLabel: { fontFamily: squadFonts.bodyExtraBold, fontSize: 11, letterSpacing: 1.6 },
-  tabLabelActive: { color: squadColors.textWhite },
-  tabLabelIdle: { color: squadColors.textFaint },
-  tabBadge: {
-    minWidth: 16,
-    height: 16,
-    paddingHorizontal: 4,
-    borderRadius: 8,
-    backgroundColor: squadColors.pink,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabBadgeText: { color: '#fff', fontSize: 9, fontFamily: squadFonts.bodyExtraBold },
-  tabIndicator: {
-    position: 'absolute',
-    bottom: -1.5,
-    left: 0,
-    height: 3,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
+  tabBarWrap: { paddingHorizontal: 16, paddingBottom: 2 },
 
   stage: { flex: 1, minHeight: 0 },
   arrowRow: { height: ARROW_H, alignItems: 'center', justifyContent: 'center' },
-  arrowButton: { width: 64, height: 34, alignItems: 'center', justifyContent: 'center' },
-  arrowDim: { opacity: 0.35 },
   // NOTE: no `alignItems: 'center'` here — PagedCard needs to stretch to the
   // full track width so CreatureCard's `width: 84%` is 84% of the screen, not
   // of a collapsed parent. PagedCard itself centres the card horizontally.
@@ -499,37 +441,16 @@ const styles = StyleSheet.create({
   // between to centre it), so this one DOES need alignItems: 'center' to
   // centre the 84%-wide card horizontally.
   dragLayerFill: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
-  adRow: { height: AD_H, alignItems: 'center', justifyContent: 'center', paddingBottom: 8 },
+  adRow: { paddingHorizontal: 10, paddingTop: 2 },
   adInner: {
-    width: '88%',
-    maxHeight: 64,
-    height: '100%',
-    borderRadius: 16,
+    height: 54,
+    borderRadius: 14,
+    backgroundColor: 'rgba(80,12,140,0.4)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.85)',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
-
-  triangleUp: {
-    width: 0,
-    height: 0,
-    borderStyle: 'solid',
-    borderLeftWidth: 14,
-    borderRightWidth: 14,
-    borderBottomWidth: 20,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: squadColors.pinkLight,
-  },
-  triangleDown: {
-    width: 0,
-    height: 0,
-    borderStyle: 'solid',
-    borderLeftWidth: 14,
-    borderRightWidth: 14,
-    borderTopWidth: 20,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: squadColors.pinkLight,
-  },
+  adLabel: { color: 'rgba(255,255,255,0.85)', fontFamily: candyFonts.displaySemi, fontSize: 11, letterSpacing: 2 },
 });

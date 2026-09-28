@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, Easing } from 'react-native';
-import Svg, { Defs, ClipPath, LinearGradient, Stop, Path, G, Rect, SvgXml } from 'react-native-svg';
+import Svg, { Defs, ClipPath, LinearGradient, RadialGradient, Stop, Path, G, Rect, Ellipse, Circle, SvgXml } from 'react-native-svg';
+import { Twinkle } from './candy/Sparkles';
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
@@ -75,6 +76,20 @@ function useMoodAnimation(mood, size, animate = true) {
   return { translateY, scale, rotate };
 }
 
+// ---- plush finish (v3 "Creature Plush") ---------------------------------
+//
+// The redesign keeps every creature's shape but finishes it like a plush
+// sticker: a white sticker outline and soft purple drop shadow, a pale inner
+// highlight with a pinkish shade toward the bottom-right, a glossy streak and
+// catch-light dot, rosy cheeks, and two twinkling sparkles. Locked creatures
+// become a purple-tinted silhouette with a thin white edge instead of plain
+// grey. All of it is drawn here from the creature's own `outline` path, so
+// the baked Firestore art itself stays untouched.
+
+// Creatures whose faces don't sit where the generic cheeks go (Puffle's fur,
+// Mochi's own blush, Cinder's glow) — same exclusions as the design.
+const NO_BLUSH_IDS = new Set(['1', '10', '15']);
+
 // ---- the component ------------------------------------------------------
 
 // `bleed` (0 = off, >0 = on) lets bits of art that sit outside the 100x100
@@ -82,8 +97,8 @@ function useMoodAnimation(mood, size, animate = true) {
 // spill past the nominal size instead of being clipped at the edges (see
 // the `overflow` note below for how). Only the squish rig and a few
 // close-up cards pass it; every other screen keeps the tight default
-// framing.
-export default function CreatureThumbnail({ creature, mood = 'idle', size = 90, locked = false, animate = true, bleed = 0, glow = true }) {
+// framing. `plush` (default on) adds the v3 finish described above.
+export default function CreatureThumbnail({ creature, mood = 'idle', size = 90, locked = false, animate = true, bleed = 0, glow = true, plush = true }) {
   const { translateY, scale, rotate } = useMoodAnimation(mood, size, animate);
 
   const gray = locked;
@@ -148,6 +163,15 @@ export default function CreatureThumbnail({ creature, mood = 'idle', size = 90, 
   // "0 0 100 100" without touching the stored data at all. All three layers
   // share the exact same viewBox so bleed lines up pixel-for-pixel.
   const viewBox = bleed > 0 ? `${-bleed} ${-bleed} ${W + bleed * 2} ${W + bleed * 2}` : `0 0 ${W} ${W}`;
+  // viewBox units per screen pixel, for strokes that should be N px wide.
+  const unitsPerPx = (W + bleed * 2) / size;
+
+  const plushOn = plush && hasOutline;
+  const stickerPx = Math.max(1, Math.round(size / 70));
+  const showBlush = plushOn && !gray && size >= 40 && !NO_BLUSH_IDS.has(String(creature.id));
+  const showSparkles = plushOn && !gray && animate && size >= 60;
+  const plushId = `plush-${creature.id}`;
+  const showOverlay = hasShine || plushOn;
 
   return (
     <Animated.View
@@ -161,15 +185,38 @@ export default function CreatureThumbnail({ creature, mood = 'idle', size = 90, 
       }}
     >
       <View style={{ width: size, height: size }}>
-        {glow && glowColor ? (
+        {(glow && glowColor && !plushOn) || plushOn ? (
           <Svg width={size} height={size} viewBox={viewBox} style={{ position: 'absolute', top: 0, left: 0 }}>
-            <G opacity={0.1}>
-              {glowLayers.map(([s, op], i) => (
-                <G key={`glow-${i}`} scale={s} originX={bcx} originY={bcy} y={glowDy}>
-                  <Path d={outlineD} fill={glowColor} opacity={op} />
-                </G>
-              ))}
-            </G>
+            {plushOn ? (
+              <>
+                {/* soft purple drop shadow under the sticker */}
+                {glow && !gray ? (
+                  <G opacity={0.3}>
+                    {[[1.06, 0.25], [1.03, 0.35], [1.0, 0.45]].map(([s, op], i) => (
+                      <G key={`drop-${i}`} scale={s} originX={bcx} originY={bcy} y={stickerPx * 3 * unitsPerPx}>
+                        <Path d={outlineD} fill="#5a0078" opacity={op} />
+                      </G>
+                    ))}
+                  </G>
+                ) : null}
+                {/* white sticker edge */}
+                <Path
+                  d={outlineD}
+                  fill={gray ? 'rgba(255,255,255,0.7)' : '#ffffff'}
+                  stroke={gray ? 'rgba(255,255,255,0.7)' : '#ffffff'}
+                  strokeWidth={(gray ? 2 : stickerPx) * 2 * unitsPerPx}
+                  strokeLinejoin="round"
+                />
+              </>
+            ) : (
+              <G opacity={0.1}>
+                {glowLayers.map(([s, op], i) => (
+                  <G key={`glow-${i}`} scale={s} originX={bcx} originY={bcy} y={glowDy}>
+                    <Path d={outlineD} fill={glowColor} opacity={op} />
+                  </G>
+                ))}
+              </G>
+            )}
           </Svg>
         ) : null}
 
@@ -178,7 +225,7 @@ export default function CreatureThumbnail({ creature, mood = 'idle', size = 90, 
             match the other two layers — see the note above. */}
         <SvgXml xml={xml} width={size} height={size} viewBox={viewBox} style={{ position: 'absolute', top: 0, left: 0 }} />
 
-        {hasShine ? (
+        {showOverlay ? (
           <Svg width={size} height={size} viewBox={viewBox} style={{ position: 'absolute', top: 0, left: 0 }}>
             <Defs>
               <ClipPath id={clipId}>
@@ -189,11 +236,61 @@ export default function CreatureThumbnail({ creature, mood = 'idle', size = 90, 
                 <Stop offset="50%" stopColor="#ffffff" stopOpacity={gray ? 0.35 : 0.75} />
                 <Stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
               </LinearGradient>
+              {plushOn ? (
+                <>
+                  <RadialGradient id={`${plushId}-hi`} cx={bcx - 14} cy={bcy - 18} r={36} gradientUnits="userSpaceOnUse">
+                    <Stop offset="0" stopColor="#ffffff" stopOpacity={0.5} />
+                    <Stop offset="1" stopColor="#ffffff" stopOpacity={0} />
+                  </RadialGradient>
+                  <RadialGradient id={`${plushId}-shade`} cx={bcx - 8} cy={bcy - 12} r={62} gradientUnits="userSpaceOnUse">
+                    <Stop offset="0.62" stopColor="#781e6e" stopOpacity={0} />
+                    <Stop offset="1" stopColor="#781e6e" stopOpacity={0.32} />
+                  </RadialGradient>
+                  <RadialGradient id={`${plushId}-gloss`} cx="50%" cy="50%" r="50%">
+                    <Stop offset="0" stopColor="#ffffff" stopOpacity={0.9} />
+                    <Stop offset="0.55" stopColor="#ffffff" stopOpacity={0.35} />
+                    <Stop offset="0.72" stopColor="#ffffff" stopOpacity={0} />
+                  </RadialGradient>
+                  <RadialGradient id={`${plushId}-blush`} cx="50%" cy="50%" r="50%">
+                    <Stop offset="0" stopColor="#ff69aa" stopOpacity={0.75} />
+                    <Stop offset="0.7" stopColor="#ff69aa" stopOpacity={0} />
+                  </RadialGradient>
+                </>
+              ) : null}
             </Defs>
             <G clipPath={`url(#${clipId})`}>
-              <AnimatedRect x={shimmerX} y={-bleed - 6} width={W * 0.34} height={W + bleed * 2 + 12} fill={`url(#${shineGradId})`} opacity={0.9} />
+              {plushOn && gray ? <Path d={outlineD} fill="#6a2fc0" opacity={0.42} /> : null}
+              {plushOn && !gray ? (
+                <>
+                  <Rect x={-bleed} y={-bleed} width={W + bleed * 2} height={W + bleed * 2} fill={`url(#${plushId}-shade)`} />
+                  <Rect x={-bleed} y={-bleed} width={W + bleed * 2} height={W + bleed * 2} fill={`url(#${plushId}-hi)`} />
+                  <Path d={outlineD} fill="none" stroke="#ffffff" strokeOpacity={0.3} strokeWidth={6 * unitsPerPx} />
+                  <Ellipse cx={35} cy={22} rx={13} ry={7} fill={`url(#${plushId}-gloss)`} transform="rotate(-28 35 22)" />
+                  <Circle cx={65.5} cy={23.5} r={3.5} fill="#ffffff" opacity={0.75} />
+                  {showBlush ? (
+                    <>
+                      <Ellipse cx={25.5} cy={60} rx={8.5} ry={5} fill={`url(#${plushId}-blush)`} />
+                      <Ellipse cx={74.5} cy={60} rx={8.5} ry={5} fill={`url(#${plushId}-blush)`} />
+                    </>
+                  ) : null}
+                </>
+              ) : null}
+              {hasShine ? (
+                <AnimatedRect x={shimmerX} y={-bleed - 6} width={W * 0.34} height={W + bleed * 2 + 12} fill={`url(#${shineGradId})`} opacity={0.9} />
+              ) : null}
             </G>
           </Svg>
+        ) : null}
+
+        {showSparkles ? (
+          <>
+            <View pointerEvents="none" style={{ position: 'absolute', right: '2%', top: '4%' }}>
+              <Twinkle size={Math.round(size * 0.13)} duration={2.2} />
+            </View>
+            <View pointerEvents="none" style={{ position: 'absolute', left: '4%', bottom: '14%' }}>
+              <Twinkle size={Math.round(size * 0.09)} color="#fff6c0" duration={2.2} delay={1.1} />
+            </View>
+          </>
         ) : null}
       </View>
     </Animated.View>

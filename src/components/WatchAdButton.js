@@ -3,23 +3,26 @@ import { View, Text, Pressable, StyleSheet, Animated, Easing } from 'react-nativ
 import { LinearGradient } from 'expo-linear-gradient';
 import { RewardedAd, RewardedAdEventType, AdEventType } from 'react-native-google-mobile-ads';
 import { REWARDED_AD_UNIT_ID } from '../firebase/ads';
-import { squadGradients, squadColors, squadFonts } from '../theme/squadTheme';
+import { BUTTON_VARIANTS, candyFonts } from '../theme/candyTheme';
+import { Shine } from './candy/CandyButton';
 
 // One "watch ad for a coin multiplier" CTA at the bottom of SquishScreen —
 // there are three of these side by side (×2/×3/×4, see SquishScreen.js),
-// each holding its own independently-loaded rewarded ad. A dark pill with a
-// little "ad monitor" glyph (play triangle + film sprockets) and a
-// "×N / WATCH AD" label. It breathes (a slow scale pulse) and a light bar
-// sweeps across it, but ONLY while it's actually tappable — see `isStill`
-// below. A reward earned here opens SquishScreen's 60s ×N window (see
-// handleAdReward); this component only loads/shows a real rewarded ad and
-// reports back.
+// each holding its own independently-loaded rewarded ad. In the v3 look it's
+// a gold candy button: a little play-screen badge beside a big "×N", and
+// "WATCH AD" / "LONG AD" underneath. It breathes (a slow scale pulse) and a
+// light streak sweeps across it, but ONLY while it's actually tappable — see
+// `isStill` below. A reward earned here opens SquishScreen's 60s ×N window
+// (see handleAdReward); this component only loads/shows a real rewarded ad
+// and reports back.
 //
 // `activeMultiplier` is the multiplier currently running (or null) — shared
 // across all three buttons, from SquishScreen. Only one bonus window can run
 // at a time: whichever button isn't the active one is locked out entirely
-// (greyed out, unpressable, no animation) until the active window's timer
-// ends, regardless of whether that button's own ad happens to be loaded.
+// (dimmed, unpressable, no animation) until the active window's timer ends,
+// regardless of whether that button's own ad happens to be loaded.
+const GOLD = BUTTON_VARIANTS.gold;
+
 export default function WatchAdButton({ multiplier, onRewardEarned, activeMultiplier }) {
   const rewardedRef = useRef(null);
   const earnedRef = useRef(false);
@@ -99,113 +102,99 @@ export default function WatchAdButton({ multiplier, onRewardEarned, activeMultip
   }, [ready, isDisabled]);
 
   const scale = breatheAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.035] });
-  // Sweep the light bar across in the first 60% of the loop, then hold it off
-  // the right edge for the remaining 40%.
-  const sheenX = sheenAnim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [-40, 150, 150] });
+  // Sweep the light streak across in the first 60% of the loop, then hold it
+  // off the right edge for the remaining 40%.
+  const sheenX = sheenAnim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [-70, 160, 160] });
+  const sub = isThisActive ? 'ACTIVE' : multiplier >= 4 ? 'LONG AD' : 'WATCH AD';
 
   return (
-    <View style={styles.wrap}>
-      <Animated.View style={{ transform: [{ scale }] }}>
-        <Pressable onPress={handlePress} disabled={isDisabled} style={[styles.button, isStill && styles.dim]}>
-          <LinearGradient colors={['#2a1650', '#170c33']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
-          <Animated.View
-            pointerEvents="none"
-            style={[styles.sheen, { transform: [{ translateX: sheenX }, { skewX: '-20deg' }] }]}
-          />
-
-          <View style={styles.monitor}>
-            <LinearGradient colors={[squadColors.goldLight, squadColors.goldAmber]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
-            <View style={[styles.sprockets, styles.sprocketsLeft]}>
-              <View style={styles.sprocket} />
-              <View style={styles.sprocket} />
-              <View style={styles.sprocket} />
-            </View>
-            <View style={[styles.sprockets, styles.sprocketsRight]}>
-              <View style={styles.sprocket} />
-              <View style={styles.sprocket} />
-              <View style={styles.sprocket} />
-            </View>
-            <View style={styles.monitorTriangle} />
-          </View>
-
-          <View style={styles.labelCol}>
-            <View style={styles.labelTopRow}>
-              <View style={styles.coinDot}>
-                <LinearGradient
-                  colors={squadGradients.goldDot.colors}
-                  start={squadGradients.goldDot.start}
-                  end={squadGradients.goldDot.end}
-                  style={StyleSheet.absoluteFillObject}
-                />
+    <Animated.View style={[styles.wrap, { transform: [{ scale }] }, isStill && styles.dim]}>
+      <Pressable onPress={handlePress} disabled={isDisabled} style={styles.press}>
+        <View style={styles.lip} />
+        <View style={styles.ring}>
+          <LinearGradient colors={GOLD.colors} locations={GOLD.locations} style={styles.face}>
+            <Shine radius={14} inset="8%" height="42%" />
+            <Animated.View pointerEvents="none" style={[styles.sheen, { transform: [{ translateX: sheenX }, { skewX: '-20deg' }] }]} />
+            <View style={styles.topRow}>
+              <View style={styles.screen}>
+                <View style={styles.play} />
               </View>
-              <Text style={styles.x2}>×{multiplier}</Text>
+              <Text style={styles.mult}>×{multiplier}</Text>
             </View>
-            <Text style={styles.subLabel}>{isThisActive ? 'ACTIVE' : 'WATCH AD'}</Text>
-          </View>
-        </Pressable>
-      </Animated.View>
-    </View>
+            <Text style={styles.sub}>{sub}</Text>
+          </LinearGradient>
+        </View>
+      </Pressable>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { flexShrink: 1, alignItems: 'center', justifyContent: 'center' },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingLeft: 6,
-    paddingRight: 9,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: squadColors.gold,
-    overflow: 'hidden',
-    shadowColor: squadColors.gold,
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
-  },
+  wrap: { flex: 1, minWidth: 0 },
   dim: { opacity: 0.5 },
-  sheen: { position: 'absolute', top: 0, bottom: 0, width: 22, backgroundColor: 'rgba(255,255,255,0.16)' },
-  monitor: {
-    width: 36,
-    height: 26,
-    borderRadius: 8,
+  press: { paddingBottom: 5 },
+  lip: { position: 'absolute', left: 0, right: 0, top: 5, bottom: 0, borderRadius: 22, backgroundColor: GOLD.ring },
+  ring: {
+    borderRadius: 22,
+    padding: 2.5,
+    backgroundColor: GOLD.ring,
+    shadowColor: '#320064',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 9,
+    elevation: 6,
+  },
+  face: {
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: '#ffffff',
     overflow: 'hidden',
+    alignItems: 'center',
+    paddingTop: 6,
+    paddingBottom: 7,
+    paddingHorizontal: 4,
+    gap: 2,
+  },
+  sheen: { position: 'absolute', top: 0, bottom: 0, width: 30, backgroundColor: 'rgba(255,255,255,0.55)' },
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  screen: {
+    width: 28,
+    height: 20,
+    borderRadius: 6,
+    backgroundColor: '#f2b52a',
+    borderWidth: 2,
+    borderColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sprockets: { position: 'absolute', top: 3, bottom: 3, width: 3, justifyContent: 'space-between' },
-  sprocketsLeft: { left: 2 },
-  sprocketsRight: { right: 2 },
-  sprocket: { width: 3, height: 3, borderRadius: 1, backgroundColor: 'rgba(13,6,32,0.45)' },
-  monitorTriangle: {
+  play: {
     width: 0,
     height: 0,
     marginLeft: 2,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
-    borderTopWidth: 6,
-    borderBottomWidth: 6,
-    borderLeftWidth: 10,
+    borderTopWidth: 5,
+    borderBottomWidth: 5,
+    borderLeftWidth: 8,
     borderTopColor: 'transparent',
     borderBottomColor: 'transparent',
-    borderLeftColor: squadColors.bgDeepest,
+    borderLeftColor: '#ffffff',
   },
-  labelCol: { alignItems: 'flex-start', gap: 1 },
-  labelTopRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  coinDot: { width: 13, height: 13, borderRadius: 6.5, overflow: 'hidden' },
-  // "×N" rides high on Baloo's tall metrics, so nudge it down with a little
-  // top padding to sit level with the coin.
-  x2: {
-    fontFamily: squadFonts.headingExtraBold,
-    fontSize: 13,
-    lineHeight: 14,
-    paddingTop: 6,
+  mult: {
+    fontFamily: candyFonts.display,
+    fontSize: 22,
+    lineHeight: 24,
+    color: '#ffffff',
     includeFontPadding: false,
-    color: squadColors.gold,
+    textShadowColor: GOLD.ring,
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 1,
   },
-  subLabel: { color: squadColors.textLavender, fontFamily: squadFonts.bodyExtraBold, fontSize: 7, letterSpacing: 1.1 },
+  sub: {
+    fontFamily: candyFonts.display,
+    fontSize: 10,
+    letterSpacing: 0.8,
+    color: '#ffffff',
+    textShadowColor: GOLD.ring,
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
+  },
 });

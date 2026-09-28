@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Text, StyleSheet } from 'react-native';
-import { squadColors, squadFonts } from '../../theme/squadTheme';
+import { candyColors, candyFonts } from '../../theme/candyTheme';
 
 // Small bottom-center pill notification — mirrors the prototype's toastIn
 // keyframe (fade + rise 10px). The parent owns the show/auto-hide timer
@@ -31,16 +31,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 24,
     alignSelf: 'center',
-    backgroundColor: squadColors.panel,
+    backgroundColor: '#ffffff',
     borderWidth: 1.5,
-    borderColor: squadColors.panelBorder,
+    borderColor: candyColors.inkSoft,
     borderRadius: 999,
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
   text: {
-    color: squadColors.textWhite,
-    fontFamily: squadFonts.bodyBold,
+    color: candyColors.ink,
+    fontFamily: candyFonts.body,
     fontSize: 12.5,
   },
 });

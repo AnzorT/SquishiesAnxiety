@@ -1,16 +1,17 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated, Easing } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, StyleSheet, Pressable, Animated, Easing } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { squadColors, squadGradients, squadFonts } from '../theme/squadTheme';
+import { candyFonts } from '../theme/candyTheme';
 import CreatureThumbnail from '../components/CreatureThumbnail';
-import GradientButton from '../components/squad/GradientButton';
+import CandyBackground from '../components/candy/CandyBackground';
+import CandyButton from '../components/candy/CandyButton';
+import OutlinedTitle, { HaloText } from '../components/candy/OutlinedTitle';
 
-// First thing shown on launch — matches "ASMR Creature Squash Game.html"'s
-// splash (all creatures scattered at fixed percent positions, owned ones
-// bright and full-size, locked ones dim and smaller), the "SQUISH SQUAD"
-// gradient wordmark, and the pulsing pink CTA. Stays up until the player
-// taps — no auto-advance timer.
+// First thing shown on launch — the v3 splash: every creature scattered at
+// fixed percent positions (owned ones bright and full-size, locked ones dim
+// and smaller) over the candy stage with its sparkles, the wobbling
+// gold/pink "SQUISH SQUAD" sticker wordmark, and the pulsing pink CTA. Stays
+// up until the player taps — no auto-advance timer.
 //
 // `creatures` now comes from App.js's on-device cache of the Firestore
 // catalog (see src/data/creatureCache.js), not bundled data — on a
@@ -95,7 +96,7 @@ export default function SplashScreen({ onFinish, ownedIds = [], creatures = [] }
 
   return (
     <Pressable style={styles.flex} onPress={skip}>
-      <LinearGradient colors={squadGradients.splashBg.colors} start={squadGradients.splashBg.start} end={squadGradients.splashBg.end} style={styles.container}>
+      <CandyBackground sparkles sparkleOpacity={1} style={styles.container}>
         {creatures.map((creature, i) => {
           const slot = SPLASH_SLOTS[i % SPLASH_SLOTS.length];
           return (
@@ -111,52 +112,48 @@ export default function SplashScreen({ onFinish, ownedIds = [], creatures = [] }
         })}
 
         <View style={styles.center}>
-          <View>
-            <Text style={[styles.title, { color: squadColors.goldLight }]}>SQUISH</Text>
-            <Text style={[styles.title, { color: squadColors.goldAmber }]}>SQUAD</Text>
-          </View>
-          <Text style={styles.tagline}>Squash · Relax · Repeat</Text>
+          <Wordmark />
+          <HaloText style={styles.tagline}>Squash · Relax · Repeat</HaloText>
         </View>
 
-        <GradientButton
-          label="TAP TO START"
-          onPress={skip}
-          pulse
-          colors={squadGradients.ctaPink.colors}
-          start={squadGradients.ctaPink.start}
-          end={squadGradients.ctaPink.end}
-          shadowColor={squadColors.pink}
-          textColor="#ffffff"
-          fontSize={19}
-          pillStyle={styles.cta}
-          style={{ marginBottom: insets.bottom + 40 }}
-        />
-      </LinearGradient>
+        <CandyButton label="TAP TO START" onPress={skip} pulse="cta" size="lg" style={{ marginBottom: insets.bottom + 48 }} />
+      </CandyBackground>
     </Pressable>
+  );
+}
+
+// "SQUISH" (gold) over "SQUAD" (pink), wobbling together as one sticker.
+function Wordmark() {
+  const wob = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(wob, { toValue: 1, duration: 1300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(wob, { toValue: 0, duration: 1300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [wob]);
+  const rotate = wob.interpolate({ inputRange: [0, 1], outputRange: ['-3deg', '3deg'] });
+  const scale = wob.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] });
+  return (
+    <Animated.View style={{ alignItems: 'center', transform: [{ rotate }, { scale }] }}>
+      <OutlinedTitle text="SQUISH" fill="gold" size={52} outline={4} />
+      <OutlinedTitle text="SQUAD" fill="pink" size={52} outline={4} style={{ marginTop: -14 }} />
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  container: { flex: 1, alignItems: 'center', overflow: 'hidden' },
+  container: { flex: 1, alignItems: 'center' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  title: {
-    fontFamily: squadFonts.headingExtraBold,
-    fontSize: 52,
-    lineHeight: 62,
-    textAlign: 'center',
-    letterSpacing: 1,
-    textShadowColor: 'rgba(0,0,0,0.25)',
-    textShadowOffset: { width: 0, height: 6 },
-    textShadowRadius: 0,
-  },
   tagline: {
-    marginTop: 10,
-    fontFamily: squadFonts.headingExtraBold,
+    marginTop: 6,
+    fontFamily: candyFonts.bodyHeavy,
     fontSize: 13,
     letterSpacing: 3,
     textTransform: 'uppercase',
-    color: squadColors.textLavender,
   },
-  cta: { paddingHorizontal: 44 },
 });

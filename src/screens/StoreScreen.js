@@ -1,30 +1,32 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { squadColors, squadGradients, squadFonts } from '../theme/squadTheme';
-import IconButton from '../components/squad/IconButton';
-import GradientButton from '../components/squad/GradientButton';
+import { LinearGradient } from 'expo-linear-gradient';
+import { candyColors, candyFonts } from '../theme/candyTheme';
+import CandyBackground from '../components/candy/CandyBackground';
+import CandyButton from '../components/candy/CandyButton';
+import RoundButton, { BackGlyph, KeyIcon } from '../components/candy/RoundButton';
+import { CoinIcon, CoinPill } from '../components/candy/Coin';
+import OutlinedTitle from '../components/candy/OutlinedTitle';
 import CreatureThumbnail from '../components/CreatureThumbnail';
 
-// The prototype's Key Shop no longer unlocks a creature directly — it sells
-// a *key* (onBuyKey). Redeeming that key is a hold-to-unlock gesture that
-// lives on the Home card (CreatureCard), out of scope here. So a row's CTA
-// reflects one of four states: already unlocked, key already bought and
-// waiting to be redeemed on Home, too poor to afford it yet, or buyable.
+// The Key Shop sells a *key*, not the creature itself — redeeming it is the
+// hold-to-unlock gesture on the Home card (CreatureCard). So a row's candy
+// button reflects one of four states: already owned (purple ★ OWNED), key
+// bought and waiting on Home (gold KEY READY), too poor (grey, dimmed), or
+// buyable (pink BUY, gently pulsing).
 export default function StoreScreen({ creatures = [], ownedIds = [], keys = {}, coins = 0, onBuyKey, onBack }) {
   const insets = useSafeAreaInsets();
   const items = creatures.filter((c) => (c.price ?? 0) > 0);
 
   return (
-    <LinearGradient colors={squadGradients.homeBg.colors} start={squadGradients.homeBg.start} end={squadGradients.homeBg.end} style={[styles.container, { paddingTop: insets.top }]}>
+    <CandyBackground style={{ paddingTop: insets.top }}>
       <View style={styles.header}>
-        <IconButton name="chevron-left" onPress={onBack} iconSize={22} />
-        <Text style={styles.headerTitle}>KEY SHOP</Text>
-        <View style={styles.coinPill}>
-          <View style={styles.coinDot} />
-          <Text style={styles.coinText}>{coins}</Text>
-        </View>
+        <RoundButton size={36} onPress={onBack}>
+          <BackGlyph />
+        </RoundButton>
+        <OutlinedTitle text="KEY SHOP" fill="pink" size={20} outline={3} />
+        <CoinPill coins={coins} style={styles.coinPill} />
       </View>
 
       <ScrollView contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 20 }]}>
@@ -34,134 +36,107 @@ export default function StoreScreen({ creatures = [], ownedIds = [], keys = {}, 
           const afford = coins >= creature.price;
 
           let label = 'BUY';
-          let disabled = false;
-          let pillColors = squadGradients.ctaGoldPink.colors;
-          let textColor = '#0d0620';
+          let variant = 'pink';
+          let pulse = 'soft';
+          let dim = false;
           let onPress = () => onBuyKey(creature);
-
           if (owned) {
-            label = 'UNLOCKED';
-            disabled = true;
+            label = '★ OWNED';
+            variant = 'purple';
+            pulse = false;
             onPress = undefined;
           } else if (hasKey) {
             label = 'KEY READY';
-            pillColors = [squadColors.keyReadyBg, squadColors.keyReadyBg];
-            textColor = squadColors.keyReadyText;
+            variant = 'gold';
+            pulse = false;
             onPress = undefined;
           } else if (!afford) {
-            disabled = true;
+            variant = 'grey';
+            pulse = false;
+            dim = true;
             onPress = undefined;
           }
 
           return (
-            <View key={creature.id} style={styles.row}>
-              <View style={styles.keyIconWrap}>
-                <LinearGradient
-                  colors={[squadColors.panelBorder, squadColors.panelAlt]}
-                  start={{ x: 0.2, y: 0 }}
-                  end={{ x: 0.8, y: 1 }}
-                  style={styles.avatarWrap}
-                >
-                  <CreatureThumbnail creature={creature} mood="idle" size={26} />
-                </LinearGradient>
-                <View style={styles.keyStem}>
-                  <LinearGradient
-                    colors={[squadColors.gold, squadColors.goldDeep]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.keyShaft}
+            <View key={creature.id} style={styles.rowRing}>
+              <View style={styles.rowWhite}>
+                <LinearGradient colors={['#fff6fd', '#ffdcf4', '#f5cbff']} locations={[0, 0.6, 1]} style={styles.row}>
+                  <View style={styles.keyArt}>
+                    <View style={styles.bowRing}>
+                      <View style={styles.bowGold}>
+                        <View style={styles.bowInner}>
+                          <CreatureThumbnail creature={creature} mood="idle" size={28} glow={false} />
+                        </View>
+                      </View>
+                    </View>
+                    <View style={styles.keyBit}>
+                      <KeyIcon width={28} />
+                    </View>
+                  </View>
+                  <View style={styles.info}>
+                    <Text style={styles.name} numberOfLines={1}>
+                      {creature.name} Key
+                    </Text>
+                    <View style={styles.priceRow}>
+                      <CoinIcon size={11} />
+                      <Text style={styles.priceText}>{creature.price}</Text>
+                    </View>
+                  </View>
+                  <CandyButton
+                    label={label}
+                    variant={variant}
+                    size="xs"
+                    pulse={pulse}
+                    dim={dim}
+                    onPress={onPress}
+                    disabled={!onPress}
+                    faceStyle={styles.buyFace}
                   />
-                  <View style={styles.keyTooth1} />
-                  <View style={styles.keyTooth2} />
-                </View>
+                </LinearGradient>
               </View>
-              <View style={styles.info}>
-                <Text style={styles.name}>{creature.name} Key</Text>
-                <View style={styles.priceRow}>
-                  <View style={styles.coinDot} />
-                  <Text style={styles.priceText}>{creature.price}</Text>
-                </View>
-              </View>
-              <GradientButton
-                label={label}
-                onPress={onPress}
-                disabled={disabled}
-                colors={pillColors}
-                textColor={textColor}
-                fontSize={12}
-                pillStyle={styles.buyPill}
-              />
             </View>
           );
         })}
       </ScrollView>
-    </LinearGradient>
+    </CandyBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 16 },
-  headerTitle: { fontFamily: squadFonts.headingExtraBold, fontSize: 20, color: squadColors.textWhite },
-  coinPill: {
-    marginLeft: 'auto',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: squadColors.panel,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  coinDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: squadColors.gold },
-  coinText: { color: squadColors.gold, fontFamily: squadFonts.bodyExtraBold, fontSize: 13 },
-  list: { paddingHorizontal: 16, paddingTop: 4, gap: 12 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: squadColors.panelAlt,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: squadColors.panelBorder,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  // The creature's circular preview is the bow of the key; a gold gradient
-  // shaft runs off its right edge with two teeth dropping from the far end.
-  // Transcribed 1:1 from the prototype's Key Shop row (38px bow, 28x4 shaft,
-  // 3x7 + 4x12 teeth).
-  keyIconWrap: { flexDirection: 'row', alignItems: 'center', width: 66, flexShrink: 0 },
-  avatarWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 4,
-    borderColor: squadColors.gold,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  coinPill: { marginLeft: 'auto' },
+  list: { paddingHorizontal: 16, paddingTop: 6, gap: 12 },
+  rowRing: {
+    borderRadius: 23,
+    padding: 2.5,
+    backgroundColor: candyColors.cardRing,
+    shadowColor: '#320064',
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
-    shadowRadius: 10,
+    shadowRadius: 9,
     elevation: 6,
   },
-  keyStem: { position: 'relative', width: 28, height: 20, marginLeft: -3, flexShrink: 0 },
-  keyShaft: {
-    position: 'absolute',
-    left: 0,
-    top: 8,
-    width: 28,
-    height: 4,
-    borderTopRightRadius: 1,
-    borderBottomRightRadius: 1,
+  rowWhite: { borderRadius: 20, borderWidth: 3, borderColor: '#ffffff', overflow: 'hidden' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 9 },
+  // The creature sits in a gold-ringed bow; a small gold key shaft runs off
+  // its right edge.
+  keyArt: { flexDirection: 'row', alignItems: 'center', width: 78, flexShrink: 0 },
+  bowRing: { width: 46, height: 46, borderRadius: 23, backgroundColor: '#a0520a', padding: 2 },
+  bowGold: { flex: 1, borderRadius: 21, backgroundColor: '#ffd23a', padding: 2 },
+  bowInner: {
+    flex: 1,
+    borderRadius: 19,
+    backgroundColor: '#fff2fb',
+    borderWidth: 2.5,
+    borderColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
-  keyTooth1: { position: 'absolute', right: 13, top: 10, width: 3, height: 7, backgroundColor: squadColors.gold },
-  keyTooth2: { position: 'absolute', right: 5, top: 9, width: 4, height: 12, borderRadius: 1, backgroundColor: squadColors.goldDeep },
+  keyBit: { marginLeft: 3 },
   info: { flex: 1 },
-  name: { color: squadColors.textWhite, fontFamily: squadFonts.headingBold, fontSize: 15 },
+  name: { color: candyColors.ink, fontFamily: candyFonts.display, fontSize: 15 },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  priceText: { color: squadColors.gold, fontFamily: squadFonts.bodyExtraBold, fontSize: 12 },
-  buyPill: { paddingVertical: 9, paddingHorizontal: 16 },
+  priceText: { color: candyColors.goldInk, fontFamily: candyFonts.bodyHeavy, fontSize: 12 },
+  buyFace: { minWidth: 76 },
 });
