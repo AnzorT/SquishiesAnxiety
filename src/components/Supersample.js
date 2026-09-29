@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import perf from '../perfProbe';
 
 // Android gets no anti-aliasing from expo-gl: GLView only forwards
 // `msaaSamples` on iOS, and `renderbufferStorageMultisample` is
@@ -20,13 +21,35 @@ import * as THREE from 'three';
 // A power of two, so dividing and restoring intensities is exact.
 const HEADROOM = 4;
 
+// Adaptive quality. Rendering at 2x is four times the pixels of a direct
+// render, which a mid-range GPU may not finish within a frame; the JS thread
+// can't tell, because expo-gl queues GL work to its own thread and never
+// waits. So once every PROBE_EVERY frames, right before drawing, one
+// blocking GL call (getError, which expo-gl only answers after the GL thread
+// has run everything queued before it) measures how far behind that thread
+// is. A GPU that keeps up answers in well under a millisecond; one still
+// busy with the previous frame takes most of a frame. Two slow probes in a
+// row step the factor down (2 → 1.5 → 1); a long clean run steps it back up.
+const PROBE_EVERY = 60;
+const PROBE_WARMUP = 3; // probes skipped after (re)start: shader compiles, texture uploads
+const SLOW_MS = 6;
+const CLEAN_MS = 2;
+const SLOW_STREAK = 2;
+const CLEAN_STREAK = 8;
+const FACTOR_STEPS = [2, 1.5, 1];
+
 function scaleLights(scene, factor) {
   scene.traverse((obj) => {
     if (obj.isLight) obj.intensity *= factor;
   });
 }
 
-export function createSupersampler(renderer, factor) {
+export function createSupersampler(renderer, requestedFactor, adaptive = true) {
+  const steps = FACTOR_STEPS.filter((f) => f <= requestedFactor);
+  if (!steps.length || steps[0] !== requestedFactor) steps.unshift(requestedFactor);
+  let stepIndex = 0;
+  let factor = steps[0];
+
   const target = new THREE.WebGLRenderTarget(1, 1, {
     minFilter: THREE.LinearFilter,
     magFilter: THREE.LinearFilter,
@@ -94,13 +117,52 @@ export function createSupersampler(renderer, factor) {
 
   const bufferSize = new THREE.Vector2();
   let supported = null; // unknown until the first frame
+  let frames = 0;
+  let probes = 0;
+  let slowStreak = 0;
+  let cleanStreak = 0;
+
+  const setStep = (index, why) => {
+    stepIndex = index;
+    factor = steps[stepIndex];
+    slowStreak = 0;
+    cleanStreak = 0;
+    probes = 0; // warm up again after a resize
+    perf.set('ssFactor', factor);
+    // eslint-disable-next-line no-console
+    console.log(`[Supersample] ${why}: now ${factor}x`);
+  };
+
+  const probe = () => {
+    if (!adaptive || !ctx.endFrameEXP || steps.length < 2) return;
+    if (++frames % PROBE_EVERY !== 0) return;
+    const t0 = performance.now();
+    ctx.getError();
+    const wait = performance.now() - t0;
+    perf.set('glWait', wait);
+    if (++probes <= PROBE_WARMUP) return;
+    if (wait > SLOW_MS) {
+      cleanStreak = 0;
+      if (++slowStreak >= SLOW_STREAK && stepIndex < steps.length - 1) setStep(stepIndex + 1, `GPU ${wait.toFixed(0)} ms behind`);
+    } else if (wait < CLEAN_MS) {
+      slowStreak = 0;
+      if (++cleanStreak >= CLEAN_STREAK && stepIndex > 0) setStep(stepIndex - 1, 'GPU keeping up');
+    } else {
+      slowStreak = 0;
+      cleanStreak = 0;
+    }
+  };
 
   return {
+    get factor() {
+      return factor;
+    },
     render(scene, camera) {
       if (supported === false) {
         renderer.render(scene, camera);
         return;
       }
+      probe();
       renderer.getDrawingBufferSize(bufferSize);
       const width = Math.round(bufferSize.x * factor);
       const height = Math.round(bufferSize.y * factor);
@@ -116,6 +178,7 @@ export function createSupersampler(renderer, factor) {
           renderer.render(scene, camera);
           return;
         }
+        perf.set('ssFactor', factor);
       }
       scaleLights(scene, 1 / HEADROOM);
       try {
@@ -134,11 +197,18 @@ export function createSupersampler(renderer, factor) {
 }
 
 // Drop inside a <Canvas>: takes over R3F's render step (a priority-1
-// useFrame stops R3F's own automatic render) and draws supersampled.
-export default function Supersample({ factor = 2 }) {
+// useFrame stops R3F's own automatic render) and draws supersampled at up to
+// `factor`, stepping down on a GPU that can't keep up (see above) unless
+// `adaptive` is false.
+export default function Supersample({ factor = 2, adaptive = true }) {
   const gl = useThree((state) => state.gl);
-  const supersampler = useMemo(() => createSupersampler(gl, factor), [gl, factor]);
+  const supersampler = useMemo(() => createSupersampler(gl, factor, adaptive), [gl, factor, adaptive]);
   useEffect(() => () => supersampler.dispose(), [supersampler]);
-  useFrame(({ scene, camera }) => supersampler.render(scene, camera), 1);
+  useFrame(({ scene, camera }) => {
+    perf.frame();
+    const t0 = performance.now();
+    supersampler.render(scene, camera);
+    perf.add('render', performance.now() - t0);
+  }, 1);
   return null;
 }

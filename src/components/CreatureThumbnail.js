@@ -173,6 +173,7 @@ function CreatureSparkle({ size, color, delay, style }) {
   return (
     <Animated.Text
       pointerEvents="none"
+      renderToHardwareTextureAndroid
       style={[
         styles.sparkle,
         {

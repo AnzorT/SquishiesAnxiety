@@ -63,41 +63,63 @@ const RIPPLE_MAX = 180;
 // True for 3D-mesh creatures; picks Canvas vs SquishyToy2D in SquishStage.
 const toyIs3D = (t) => !!(t && t.modelUrl);
 
-// Ring that blooms from the touch point and fades. Memoized (like
-// FloatingCoin) so spawning a new one doesn't re-render the ones already
-// mid-animation.
-const Ripple = memo(function Ripple({ x, y }) {
-  const t = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.timing(t, { toValue: 1, duration: RIPPLE_LIFETIME_MS, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
-  }, [t]);
+// Ring that blooms from the touch point and fades. Pooled: a few of these
+// stay mounted (invisible when finished) and `play` just moves one to the
+// touch point and restarts its animation, so a touch never mounts views.
+const Ripple = memo(forwardRef(function Ripple(_props, ref) {
+  const t = useRef(new Animated.Value(1)).current;
+  const x = useRef(new Animated.Value(0)).current;
+  const y = useRef(new Animated.Value(0)).current;
+  useImperativeHandle(
+    ref,
+    () => ({
+      play: (px, py) => {
+        x.setValue(px - RIPPLE_MAX / 2);
+        y.setValue(py - RIPPLE_MAX / 2);
+        t.setValue(0);
+        Animated.timing(t, { toValue: 1, duration: RIPPLE_LIFETIME_MS, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+      },
+    }),
+    [t, x, y]
+  );
   const scale = t.interpolate({ inputRange: [0, 1], outputRange: [0.25, 1] });
   const opacity = t.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 0.5, 0] });
   return (
     <Animated.View
       pointerEvents="none"
-      style={[
-        styles.ripple,
-        { left: x - RIPPLE_MAX / 2, top: y - RIPPLE_MAX / 2, opacity, transform: [{ scale }] },
-      ]}
+      style={[styles.ripple, { opacity, transform: [{ translateX: x }, { translateY: y }, { scale }] }]}
     />
   );
-});
+}));
 
 // A spinning gold coin and a sticker "+N" that rise and fade — pops once per
-// earn tick (the design's coinRise / coinSpin / coinFade).
-const FloatingCoin = memo(function FloatingCoin({ x, y, amount }) {
-  const t = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.timing(t, { toValue: 1, duration: FLOATING_COIN_MS, easing: Easing.bezier(0.25, 0.6, 0.35, 1), useNativeDriver: true }).start();
-  }, [t]);
+// earn tick (the design's coinRise / coinSpin / coinFade). Pooled like the
+// ripple; only a changed amount (a new ×N boost) re-renders the sticker.
+const FloatingCoin = memo(forwardRef(function FloatingCoin(_props, ref) {
+  const t = useRef(new Animated.Value(1)).current;
+  const x = useRef(new Animated.Value(0)).current;
+  const y = useRef(new Animated.Value(0)).current;
+  const [amount, setAmount] = useState(1);
+  useImperativeHandle(
+    ref,
+    () => ({
+      play: (px, py, n) => {
+        setAmount((cur) => (cur === n ? cur : n));
+        x.setValue(px - 40);
+        y.setValue(py - 60);
+        t.setValue(0);
+        Animated.timing(t, { toValue: 1, duration: FLOATING_COIN_MS, easing: Easing.bezier(0.25, 0.6, 0.35, 1), useNativeDriver: true }).start();
+      },
+    }),
+    [t, x, y]
+  );
   const translateY = t.interpolate({ inputRange: [0, 1], outputRange: [8, -FLOATING_COIN_RISE] });
   const opacity = t.interpolate({ inputRange: [0, 0.15, 0.75, 1], outputRange: [0, 1, 1, 0] });
   const spin = t.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
   return (
     <Animated.View
       pointerEvents="none"
-      style={[styles.floatingCoin, { left: x - 40, top: y - 60, opacity, transform: [{ translateY }] }]}
+      style={[styles.floatingCoin, { opacity, transform: [{ translateX: x }, { translateY: y }, { translateY }] }]}
     >
       <Animated.View style={{ transform: [{ perspective: 200 }, { rotateY: spin }] }}>
         <CoinIcon size={FLOATING_COIN_SIZE} glow />
@@ -105,38 +127,41 @@ const FloatingCoin = memo(function FloatingCoin({ x, y, amount }) {
       <OutlinedTitle text={`+${amount}`} fill="gold" size={26} outline={2.5} letterSpacing={0} />
     </Animated.View>
   );
-});
+}));
 
-// Touch ripples + floating "+N" coins. Owns its own lists (driven through
-// the ref) so spawning/expiring them re-renders only this overlay — not
-// SquishScreen — since a ripple spawns on the very touch that starts a squish.
+const RIPPLE_POOL = 3;
+const COIN_POOL = 3;
+
+// Touch ripples + floating "+N" coins, driven through the ref. Both pools
+// are mounted once, so spawning one is a couple of native-driver setValues —
+// no React work on the very touch that starts a squish, and none on each
+// earn tick mid-squish.
 const StageEffects = memo(forwardRef(function StageEffects(_props, ref) {
-  const [ripples, setRipples] = useState([]);
-  const [floatingCoins, setFloatingCoins] = useState([]);
-  const seqRef = useRef(0);
+  const ripples = useRef([]);
+  const coins = useRef([]);
+  const nextRipple = useRef(0);
+  const nextCoin = useRef(0);
   useImperativeHandle(
     ref,
     () => ({
       spawnRipple: (x, y) => {
-        const id = ++seqRef.current;
-        setRipples((prev) => [...prev, { id, x, y }]);
-        setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), RIPPLE_LIFETIME_MS);
+        const r = ripples.current[nextRipple.current++ % RIPPLE_POOL];
+        r && r.play(x, y);
       },
       spawnFloatingCoin: (x, y, amount) => {
-        const id = ++seqRef.current;
-        setFloatingCoins((prev) => [...prev, { id, x, y, amount }]);
-        setTimeout(() => setFloatingCoins((prev) => prev.filter((c) => c.id !== id)), FLOATING_COIN_MS);
+        const c = coins.current[nextCoin.current++ % COIN_POOL];
+        c && c.play(x, y, amount);
       },
     }),
     []
   );
   return (
     <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-      {ripples.map((r) => (
-        <Ripple key={r.id} x={r.x} y={r.y} />
+      {Array.from({ length: RIPPLE_POOL }, (_, i) => (
+        <Ripple key={`r${i}`} ref={(el) => { ripples.current[i] = el; }} />
       ))}
-      {floatingCoins.map((c) => (
-        <FloatingCoin key={c.id} x={c.x} y={c.y} amount={c.amount} />
+      {Array.from({ length: COIN_POOL }, (_, i) => (
+        <FloatingCoin key={`c${i}`} ref={(el) => { coins.current[i] = el; }} />
       ))}
     </View>
   );
@@ -319,6 +344,7 @@ const SquishStage = memo(function SquishStage({
   onSquish,
   onRelease,
   hintOpacity,
+  showHints,
   squishAnim,
   rotateAnim,
   touchAnim,
@@ -372,6 +398,9 @@ const SquishStage = memo(function SquishStage({
 
       <StageEffects ref={effectsRef} />
 
+      {/* Gone for good once faded: its three pulse loops would otherwise
+          keep animating an invisible layer for the rest of the session. */}
+      {showHints && (
       <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: hintOpacity }]} pointerEvents="none">
         <GestureHint
           side="left"
@@ -390,6 +419,7 @@ const SquishStage = memo(function SquishStage({
           gestureAnim={[{ rotate: rotateAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['0deg', '-14deg', '0deg'] }) }]}
         />
       </Animated.View>
+      )}
     </View>
   );
 });
@@ -660,6 +690,7 @@ export default function SquishScreen({
   // for the rest of this screen's lifetime (hintDismissedRef).
   const gestureHintOpacity = useRef(new Animated.Value(1)).current;
   const hintDismissedRef = useRef(false);
+  const [showHints, setShowHints] = useState(true);
   const bonusCoinAnim = useLoopAnim({ duration: 1300 });
 
   // Only re-renders SquishScreen once, when the window actually expires —
@@ -863,7 +894,9 @@ export default function SquishScreen({
       onPanResponderGrant: (evt) => {
         if (!hintDismissedRef.current) {
           hintDismissedRef.current = true;
-          Animated.timing(gestureHintOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start();
+          Animated.timing(gestureHintOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start(({ finished }) => {
+            if (finished) setShowHints(false);
+          });
         }
         const touches = evt.nativeEvent.touches || [];
         gestureHadTwoRef.current = touches.length >= 2;
@@ -990,6 +1023,7 @@ export default function SquishScreen({
           onSquish={handleToySquish}
           onRelease={handleToyRelease}
           hintOpacity={gestureHintOpacity}
+          showHints={showHints}
           squishAnim={gestureSquishAnim}
           rotateAnim={gestureRotateAnim}
           touchAnim={gestureTouchAnim}
@@ -1076,13 +1110,15 @@ const styles = StyleSheet.create({
   stage: { width: STAGE_SIZE, height: STAGE_SIZE },
   ripple: {
     position: 'absolute',
+    left: 0,
+    top: 0,
     width: RIPPLE_MAX,
     height: RIPPLE_MAX,
     borderRadius: RIPPLE_MAX / 2,
     borderWidth: 3,
     borderColor: 'rgba(255,111,189,0.7)',
   },
-  floatingCoin: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 2, zIndex: 6 },
+  floatingCoin: { position: 'absolute', left: 0, top: 0, flexDirection: 'row', alignItems: 'center', gap: 2, zIndex: 6 },
 
   settingsOverlay: {
     ...StyleSheet.absoluteFillObject,

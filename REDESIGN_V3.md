@@ -336,6 +336,10 @@ The earlier research (same day) led to Round 5's creature tokens / $0.99 and pai
 - **Economy is still client-trusted:** coins, tokens and `ownedIds` are written by the app, guarded only by the rules. Paid things (`adsFree`, purchased keys) go through the server. Moving box pulls and key purchases into Cloud Functions would close the rest.
 - **iOS:** there is no iOS app yet. Purchases are written for it (StoreKit 2, `src/billing/index.ios.js`) but have never run. Other iOS gaps: Ogg audio doesn't play on iOS (`tools/audio/encode.py` needs AAC), and the AdMob iOS app id in `app.json` is Google's test id.
 
+## Performance (2026-09-29)
+
+Profiled on the Galaxy A15 and rebuilt the squish stage's hot paths: the dent now runs in the vertex shader, touch picking uses a grid, sounds are pooled, and the heavy UI layers are cached as GPU textures. Squishing went from 44 fps (release) / 25 fps (debug) to 80-88 fps on that phone. Details, numbers and how to measure: [PERFORMANCE.md](PERFORMANCE.md). Judge smoothness on a **release** build — the debug build the emulator runs is several times slower.
+
 ## Notes for whoever picks this up
 
 - react-native-svg ignores gradient `<Stop>`s wrapped in a React fragment; the shape renders black. Keep stops as direct children.

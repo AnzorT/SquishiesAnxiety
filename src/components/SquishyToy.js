@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import * as FileSystem from 'expo-file-system';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { PHYS } from '../data/creatures';
+import perf from '../perfProbe';
 
 // Used by buildCreature's procedural-sphere path (and prepareModelData's
 // no-texture-map fallback tint) whenever the caller doesn't have a real
@@ -24,13 +25,14 @@ const DEFAULT_VISUAL = { color: '#2dd4bf', accent: '#0d9488', accessory: 'antenn
 // phone disagreed. The stage is lit by plain lights in SquishScreen instead,
 // which every device draws the same way.
 
-// Soft-body dent physics engine, originally ported from "ASMR Creature
-// Squash Game.html"'s buildCreature/tickPhysics/applyDentAtLocalPoint: a
-// per-vertex spring toward a dent target with diffusion (the "jelly wave"),
-// a global squash spring, release wobble, and orbit. The dent itself has
-// since been reshaped from the spec's radial Gaussian into a pointed funnel
-// pushed along the press direction (see computeDentFall), and the dent-shape
-// is cached per touch point as an RN-perf optimization.
+// Soft-body dent physics, originally ported from "ASMR Creature Squash
+// Game.html"'s buildCreature/tickPhysics/applyDentAtLocalPoint: a spring
+// toward a dent target (the "jelly" lag), a global squash spring, release
+// wobble, and orbit. The dent has since been reshaped from the spec's radial
+// Gaussian into a pointed funnel pushed along the press direction, and it
+// now runs on the GPU: the vertex shader evaluates the funnel per vertex
+// from a short list of press points, each driven by one scalar spring on the
+// JS thread (see "the squish itself" below).
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
@@ -56,12 +58,9 @@ function buildCreature(id, visual) {
   const heightSeg = 28;
   const geo = new THREE.SphereGeometry(1, widthSeg, heightSeg);
   const posAttr = geo.attributes.position;
-  const colCount = widthSeg + 1;
-  const rowCount = heightSeg + 1;
   const count = posAttr.count;
   geo.computeVertexNormals();
   const basePos = new Float32Array(posAttr.array);
-  const baseNormals = new Float32Array(geo.attributes.normal.array);
 
   const bodyMat = new THREE.MeshStandardMaterial({
     color: new THREE.Color(vis.color),
@@ -181,38 +180,22 @@ function buildCreature(id, visual) {
   shadowMesh.position.set(0, -1.3, -0.3);
   shadowMesh.rotation.x = -Math.PI / 2.5;
 
-  return {
+  const s = {
     group,
     shadowMesh,
     bodyMesh,
     bodyGeo: geo,
     bodyMat,
     basePos,
-    baseNormals,
     indexArray: geo.index.array,
+    grid: null,
     boundRadius: computeBoundRadius(basePos),
     vertCount: count,
-    colCount,
-    rowCount,
-    dentAmt: new Float32Array(count),
-    dentTarget: new Float32Array(count),
-    dentVel: new Float32Array(count),
-    dentScratch: new Float32Array(count),
-    dentFall: new Float32Array(count),
+    sampleStride: 1,
     // Dent shape for the unit-radius procedural sphere — see MODEL_TUNING.
     dentDepth: 0.6,
     dentRadius: 0.14,
     dentTip: 0.05,
-    // Player settings (see the SquishyToy props): depth multiplier, and
-    // 1 = push in / -1 = pop out.
-    dentUserScale: 1,
-    dentSign: 1,
-    pressDir: new THREE.Vector3(0, 0, -1),
-    dentTargetActive: false,
-    atRest: true,
-    pendingMove: null,
-    pickScratch: null,
-    normalsFrameToggle: false,
     featureBases,
     featureMeshes,
     featureScaleBase,
@@ -223,27 +206,11 @@ function buildCreature(id, visual) {
     eyeL,
     eyeR,
     eyeStyle,
-    mode: null,
-    dragStartWorld: null,
-    pressLocalSmoothed: null,
-    pressHoldTime: 0,
-    globalSquash: 0,
-    globalSquashV: 0,
-    globalSquashTarget: 0,
-    wobbleRotX: 0,
-    wobbleRotXV: 0,
-    wobbleRotZ: 0,
-    wobbleRotZV: 0,
-    userRotY: 0,
-    userRotX: 0,
-    orbitTargetY: 0,
-    orbitTargetX: 0,
-    orbitVelY: 0,
-    orbitVelX: 0,
-    idlePhase: Math.random() * 10,
     blinkTimer: 2 + Math.random() * 3,
-    blinkAmt: 0,
+    ...makeSquishState(),
   };
+  installSquishShader(bodyMat, s);
+  return s;
 }
 
 // ---- Imported Tripo3D meshes instead of the procedural sphere ----
@@ -345,30 +312,13 @@ export function preloadCreatureModel(creature) {
   return loadModelDataFromUrl(creature.id, creature.modelUrl);
 }
 
-// Every vertex sharing a triangle with vertex i becomes a neighbour of i —
-// the same relationship the sphere grid's left/right/up/down lookup captures,
-// derived from real topology instead of assumed row/col math.
-function buildAdjacency(indexArray, vertCount) {
-  const sets = new Array(vertCount);
-  for (let i = 0; i < vertCount; i++) sets[i] = new Set();
-  for (let t = 0; t < indexArray.length; t += 3) {
-    const a = indexArray[t];
-    const b = indexArray[t + 1];
-    const c = indexArray[t + 2];
-    sets[a].add(b); sets[a].add(c);
-    sets[b].add(a); sets[b].add(c);
-    sets[c].add(a); sets[c].add(b);
-  }
-  return sets.map((set) => Uint32Array.from(set));
-}
-
 // Low-poly exports (Tripo retopo included) commonly split a vertex into two
 // indices with identical positions wherever a UV or normal seam crosses it,
 // so the mesh can still texture correctly. computeVertexNormals() only
 // blends face normals across shared indices, so those seam duplicates never
-// see each other's face and the seam reads as a hard facet crease. Group
-// same-position indices once so their normals can be re-averaged after every
-// computeVertexNormals() call, without touching UVs.
+// see each other's face and the seam reads as a hard facet crease. For a
+// file without authored normals, group same-position indices so the
+// computed rest normals can be re-averaged across the seam.
 function buildWeldGroups(basePos, vertCount) {
   const byKey = new Map();
   for (let i = 0; i < vertCount; i++) {
@@ -399,15 +349,76 @@ function weldNormals(normalAttr, weldGroups) {
   normalAttr.needsUpdate = true;
 }
 
-// The expensive, purely-deterministic half of turning a parsed .glb into a
-// squishable mesh: recentre/rescale, normals, weld-group + adjacency
-// computation. This is CPU-bound (Set/Map work over every vertex/triangle)
-// and depends only on the source asset + tuning config, never on a specific
-// toy instance — so it's cacheable per id/url (see loadModelData /
-// loadModelDataFromUrl below) and runs once, during LoadingScreen's preload,
-// instead of blocking SquishScreen's first mount. buildModelCreature (below)
-// does the remaining *cheap* per-instance work (fresh geometry + mesh) so a
-// revisit — or the normal preload-then-mount path — never re-pays this cost.
+// Uniform grid over the rest mesh's triangles, for raycastGrid: each cell
+// lists the triangles whose bounding box overlaps it, so a touch only tests
+// the few hundred triangles along the finger's ray instead of all ten
+// thousand (which cost several ms per touch event on Hermes).
+function buildTriangleGrid(basePos, indexArray) {
+  const triCount = indexArray.length / 3;
+  let minX = Infinity;
+  let minY = Infinity;
+  let minZ = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  let maxZ = -Infinity;
+  for (let i = 0; i < basePos.length; i += 3) {
+    const x = basePos[i];
+    const y = basePos[i + 1];
+    const z = basePos[i + 2];
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+    if (z < minZ) minZ = z;
+    if (z > maxZ) maxZ = z;
+  }
+  const pad = 1e-3;
+  minX -= pad; minY -= pad; minZ -= pad;
+  maxX += pad; maxY += pad; maxZ += pad;
+  const n = Math.max(6, Math.min(28, Math.round(Math.cbrt(triCount) * 0.8)));
+  const csX = (maxX - minX) / n;
+  const csY = (maxY - minY) / n;
+  const csZ = (maxZ - minZ) / n;
+  const cellCount = n * n * n;
+  const cellOffsets = new Uint32Array(cellCount + 1);
+  const bounds = new Int32Array(triCount * 6);
+  const cellOf = (v, lo, cs) => Math.max(0, Math.min(n - 1, Math.floor((v - lo) / cs)));
+  for (let t = 0; t < triCount; t++) {
+    const a = indexArray[t * 3] * 3;
+    const b = indexArray[t * 3 + 1] * 3;
+    const c = indexArray[t * 3 + 2] * 3;
+    const x0 = cellOf(Math.min(basePos[a], basePos[b], basePos[c]), minX, csX);
+    const x1 = cellOf(Math.max(basePos[a], basePos[b], basePos[c]), minX, csX);
+    const y0 = cellOf(Math.min(basePos[a + 1], basePos[b + 1], basePos[c + 1]), minY, csY);
+    const y1 = cellOf(Math.max(basePos[a + 1], basePos[b + 1], basePos[c + 1]), minY, csY);
+    const z0 = cellOf(Math.min(basePos[a + 2], basePos[b + 2], basePos[c + 2]), minZ, csZ);
+    const z1 = cellOf(Math.max(basePos[a + 2], basePos[b + 2], basePos[c + 2]), minZ, csZ);
+    bounds[t * 6] = x0; bounds[t * 6 + 1] = x1;
+    bounds[t * 6 + 2] = y0; bounds[t * 6 + 3] = y1;
+    bounds[t * 6 + 4] = z0; bounds[t * 6 + 5] = z1;
+    for (let ix = x0; ix <= x1; ix++) {
+      for (let iy = y0; iy <= y1; iy++) {
+        for (let iz = z0; iz <= z1; iz++) cellOffsets[(ix * n + iy) * n + iz + 1]++;
+      }
+    }
+  }
+  for (let c = 0; c < cellCount; c++) cellOffsets[c + 1] += cellOffsets[c];
+  const cursor = new Uint32Array(cellCount);
+  const cellTris = new Uint32Array(cellOffsets[cellCount]);
+  for (let t = 0; t < triCount; t++) {
+    for (let ix = bounds[t * 6]; ix <= bounds[t * 6 + 1]; ix++) {
+      for (let iy = bounds[t * 6 + 2]; iy <= bounds[t * 6 + 3]; iy++) {
+        for (let iz = bounds[t * 6 + 4]; iz <= bounds[t * 6 + 5]; iz++) {
+          const cell = (ix * n + iy) * n + iz;
+          cellTris[cellOffsets[cell] + cursor[cell]] = t;
+          cursor[cell]++;
+        }
+      }
+    }
+  }
+  return { n, minX, minY, minZ, maxX, maxY, maxZ, csX, csY, csZ, cellOffsets, cellTris };
+}
+
 // Plain packed copy of an interleaved attribute (same values, type and
 // normalization).
 function deinterleave(attr) {
@@ -421,6 +432,14 @@ function deinterleave(attr) {
   return new THREE.BufferAttribute(out, itemSize, attr.normalized);
 }
 
+// The expensive, purely-deterministic half of turning a parsed .glb into a
+// squishable mesh: recentre/rescale, rest normals, the pick grid. It depends
+// only on the source asset + tuning config, never on a specific toy
+// instance — so it's cacheable per id/url (see loadModelData /
+// loadModelDataFromUrl below) and runs once, during LoadingScreen's preload,
+// instead of blocking SquishScreen's first mount. buildModelCreature (below)
+// does the remaining *cheap* per-instance work (geometry + mesh) so a
+// revisit — or the normal preload-then-mount path — never re-pays this cost.
 function prepareModelData(id, cfg, gltf) {
   let sourceMesh = null;
   gltf.scene.traverse((obj) => {
@@ -439,10 +458,10 @@ function prepareModelData(id, cfg, gltf) {
     if (attr.isInterleavedBufferAttribute) geo.setAttribute(name, deinterleave(attr));
   }
   // Tripo exports carry authored smooth normals, which is what Tripo's own
-  // viewer shades with. Normals recomputed from the triangles (below) bring
-  // out every facet, so the file's are what gets displayed; the recomputed
-  // set is only used to measure how much a squish bends the surface (see
-  // computeNormals). Unaffected by the recentre/rescale below.
+  // viewer shades with, so those are what gets displayed (the squish tilts
+  // them analytically in the vertex shader — see SQUISH_VERTEX_GLSL).
+  // Normals recomputed from the triangles would bring out every facet, so
+  // they're only the fallback for a file without any.
   let fileNormals = null;
   if (geo.attributes.normal) {
     fileNormals = new Float32Array(geo.attributes.normal.array);
@@ -457,8 +476,7 @@ function prepareModelData(id, cfg, gltf) {
 
   // The raw export's pivot sits at its base. Recenter on the bbox centre and
   // bake the on-screen size straight into the geometry (largest dimension ->
-  // cfg.visual units). The mesh squishes via the group transform only, so
-  // there is no per-vertex physics that cares about the geometry's scale.
+  // cfg.visual units).
   const rawCenter = new THREE.Vector3();
   geo.boundingBox.getCenter(rawCenter);
   const rawSize = new THREE.Vector3();
@@ -471,61 +489,168 @@ function prepareModelData(id, cfg, gltf) {
     rawPos[i + 2] = (rawPos[i + 2] - rawCenter.z) * normScale;
   }
   geo.attributes.position.needsUpdate = true;
-  geo.computeVertexNormals();
 
   const posAttr = geo.attributes.position;
   const vertCount = posAttr.count;
   const basePos = new Float32Array(posAttr.array);
-  const weldGroups = buildWeldGroups(basePos, vertCount);
-  weldNormals(geo.attributes.normal, weldGroups);
-  const baseNormals = new Float32Array(geo.attributes.normal.array);
+  let baseNormals = fileNormals;
+  if (!baseNormals) {
+    geo.computeVertexNormals();
+    weldNormals(geo.attributes.normal, buildWeldGroups(basePos, vertCount));
+    baseNormals = new Float32Array(geo.attributes.normal.array);
+  }
   const uvAttr = geo.attributes.uv;
   const uvArray = uvAttr ? new Float32Array(uvAttr.array) : null;
   const indexAttr = geo.getIndex();
   const indexArray = indexAttr ? indexAttr.array : Uint32Array.from({ length: vertCount }, (_, i) => i);
-  const neighbors = buildAdjacency(indexArray, vertCount);
+  const grid = buildTriangleGrid(basePos, indexArray);
   const map = sourceMesh.material && sourceMesh.material.map ? sourceMesh.material.map : null;
   const fallbackColor = new THREE.Color(cfg.fallbackColor);
   geo.dispose();
 
-  // weldGroups' total vertex count (not just triangle/vertex count) drives
-  // tickPhysics's per-frame weldNormals cost — a Tripo photo-to-3D mesh can
-  // have far messier UV-seam topology than the curated premade roster even
-  // at the same face_limit, so this is the number that actually predicts
-  // whether a given model will feel laggy on the squish stage.
-  const weldedVertCount = weldGroups.reduce((sum, g) => sum + g.length, 0);
-  console.log(
-    `[SquishyToy] ${id}: ${vertCount} verts, ${indexArray.length / 3} tris, ` +
-      `${weldGroups.length} weld groups (${weldedVertCount} verts welded)`
-  );
+  console.log(`[SquishyToy] ${id}: ${vertCount} verts, ${indexArray.length / 3} tris, ${grid.n}³ pick grid`);
 
+  return { basePos, baseNormals, uvArray, indexArray, grid, vertCount, map, fallbackColor };
+}
+
+// ---- the squish itself: a vertex shader ----
+//
+// The dent is a pointed funnel pushed in along the press direction — deepest
+// right under the finger and fading exponentially (a cusp, not a bell) with
+// distance, like a finger or spear poking in. Its depth follows the finger
+// through a damped spring, and when the finger slides, the old spot's funnel
+// springs back while the new one grows (that superposition is the "jelly"
+// lag). Every vertex used to be its own spring, updated on the JS thread and
+// re-uploaded every frame, with the normals recomputed from the triangles:
+// 10-20 ms a frame on a 6k-vertex Tripo mesh under Hermes (no JIT), which
+// is what made squishing drop to 25-45 fps on a mid-range phone.
+//
+// Now the mesh never changes on the CPU. The GPU evaluates the same funnel
+// per vertex from a short list of press points (position + spring
+// amplitude, uSquishPress), and tilts the authored normal by the exact
+// Jacobian of that displacement, so shading follows the dent without any
+// normal recomputation. tickPhysics only advances one scalar spring per
+// press point. The old per-vertex simulation also diffused the dent across
+// neighbouring vertices; measured at equilibrium on the real meshes, that
+// changed the profile by under 1% (RMS 4e-4 units), so the plain funnel is
+// used as is.
+const SQUISH_MAX_PRESSES = 24;
+
+const SQUISH_VERTEX_GLSL = `
+#define SQUISH_MAX ${SQUISH_MAX_PRESSES}
+uniform vec4 uSquishPress[SQUISH_MAX];
+uniform int uSquishCount;
+uniform vec3 uSquishDir;
+uniform vec4 uSquishDent;
+vec3 squishGrad;
+float squishDepth(vec3 p) {
+  float depth = 0.0;
+  squishGrad = vec3(0.0);
+  float tip = uSquishDent.y;
+  float invRadius = 1.0 / uSquishDent.x;
+  for (int j = 0; j < SQUISH_MAX; j++) {
+    if (j >= uSquishCount) break;
+    vec3 q = p - uSquishPress[j].xyz;
+    float rt = sqrt(dot(q, q) + tip * tip);
+    float f = exp(-(rt - tip) * invRadius) * uSquishPress[j].w;
+    depth += f;
+    squishGrad -= q * (f * invRadius / rt);
+  }
+  return depth;
+}
+`;
+
+// After three's own "objectNormal = normal": the displaced surface's normal
+// is J^-T · normal for the displacement's Jacobian J = I + dir ⊗ ∇depth
+// (Sherman–Morrison gives the closed form). The denominator is kept away
+// from zero so an extreme fold never flips the shading.
+const SQUISH_NORMAL_GLSL = `
+#include <beginnormal_vertex>
+float squishD = squishDepth(position);
+{
+  float dn = dot(uSquishDir, objectNormal);
+  float den = max(1.0 + dot(uSquishDir, squishGrad), 0.15);
+  objectNormal = normalize(objectNormal - squishGrad * (dn / den));
+}
+`;
+
+// After three's "transformed = position": push the vertex in. uSquishDir
+// already carries the press direction, the push-in/pop-out sign and the
+// 1/lift factor; uSquishDent.z is the overshoot guard on the depth.
+const SQUISH_POSITION_GLSL = `
+#include <begin_vertex>
+transformed += uSquishDir * min(squishD, uSquishDent.z);
+`;
+
+// Hooks the squish into a body material's vertex shader and hands the state
+// its uniforms (they exist once three compiles the program — on the first
+// render — so tickPhysics writes into them only from then on).
+function installSquishShader(material, s) {
+  material.customProgramCacheKey = () => 'squish';
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uSquishPress = { value: s.pressUniform };
+    shader.uniforms.uSquishCount = { value: 0 };
+    shader.uniforms.uSquishDir = { value: new THREE.Vector3(0, 0, -1) };
+    shader.uniforms.uSquishDent = { value: new THREE.Vector4(s.dentRadius, s.dentTip, s.dentDepth * 1.5, 0) };
+    shader.vertexShader = shader.vertexShader
+      .replace('void main() {', `${SQUISH_VERTEX_GLSL}\nvoid main() {`)
+      .replace('#include <beginnormal_vertex>', SQUISH_NORMAL_GLSL)
+      .replace('#include <begin_vertex>', SQUISH_POSITION_GLSL);
+    s.squishUniforms = shader.uniforms;
+  };
+}
+
+// The per-toy squish state shared by both builders: the live press points
+// (each a spring: `amp` is its funnel's tip depth, `meanF` the funnel's mean
+// over the mesh, for the whole-body puff), the shader's uniform storage, and
+// the gesture bookkeeping.
+function makeSquishState() {
   return {
-    basePos,
-    // What's displayed at rest: the file's own normals when it has them.
-    baseNormals: fileNormals || baseNormals,
-    // Recomputed normals of the undeformed mesh — the reference computeNormals
-    // measures a squish's bending against (only needed alongside file normals).
-    computedRestNormals: fileNormals ? baseNormals : null,
-    uvArray,
-    indexArray,
-    neighbors,
-    weldGroups,
-    vertCount,
-    map,
-    fallbackColor,
+    presses: [],
+    pressUniform: new Float32Array(SQUISH_MAX_PRESSES * 4),
+    squishUniforms: null,
+    // Player settings (see the SquishyToy props): depth multiplier, and
+    // 1 = push in / -1 = pop out.
+    dentUserScale: 1,
+    dentSign: 1,
+    pressDir: new THREE.Vector3(0, 0, -1),
+    // Whole-body puff from the mean push-in, applied on the group transform.
+    lift: 1,
+    dentTargetActive: false,
+    atRest: true,
+    pendingMove: null,
+    pickScratch: null,
+    mode: null,
+    dragStartWorld: null,
+    pressLocalSmoothed: null,
+    pressHoldTime: 0,
+    globalSquash: 0,
+    globalSquashV: 0,
+    globalSquashTarget: 0,
+    wobbleRotX: 0,
+    wobbleRotXV: 0,
+    wobbleRotZ: 0,
+    wobbleRotZV: 0,
+    userRotY: 0,
+    userRotX: 0,
+    orbitTargetY: 0,
+    orbitTargetX: 0,
+    orbitVelY: 0,
+    orbitVelX: 0,
+    idlePhase: Math.random() * 10,
+    blinkAmt: 0,
   };
 }
 
 // Cheap per-instance construction from prepareModelData's cached output: a
-// fresh BufferGeometry (position/normal copied since tickPhysics mutates them
-// every frame; index/uv shared directly since they're never written to) plus
-// fresh material/mesh/group. No clone/normalize/weld/adjacency work here.
+// BufferGeometry over the cached arrays (nothing here is ever written to —
+// the squish happens in the shader) plus fresh material/mesh/group.
 function buildModelCreature(id, cfg, modelData) {
-  const { basePos, baseNormals, computedRestNormals, uvArray, indexArray, neighbors, weldGroups, vertCount, map, fallbackColor } = modelData;
+  const { basePos, baseNormals, uvArray, indexArray, grid, vertCount, map, fallbackColor } = modelData;
 
   const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(basePos), 3));
-  geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(baseNormals), 3));
+  geo.setAttribute('position', new THREE.BufferAttribute(basePos, 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(baseNormals, 3));
   if (uvArray) geo.setAttribute('uv', new THREE.BufferAttribute(uvArray, 2));
   geo.setIndex(new THREE.BufferAttribute(indexArray, 1));
 
@@ -559,43 +684,24 @@ function buildModelCreature(id, cfg, modelData) {
   shadowMesh.position.set(0, -cfg.visual * 0.52, -0.3);
   shadowMesh.rotation.x = -Math.PI / 2.5;
 
-  return {
+  const s = {
     group,
     shadowMesh,
     bodyMesh,
     bodyGeo: geo,
     bodyMat,
     basePos,
-    baseNormals,
-    computedRestNormals,
     indexArray,
+    grid,
     boundRadius: computeBoundRadius(basePos),
     vertCount,
-    // Grid dims unused — the presence of `neighbors` routes tickPhysics down
-    // the topology-agnostic diffusion path instead.
-    colCount: 0,
-    rowCount: 0,
-    neighbors,
-    weldGroups,
+    // Vertices sampled for a press point's mean funnel (the puff): about
+    // 1500 of them, whatever the mesh size.
+    sampleStride: Math.max(1, Math.ceil(vertCount / 1500)),
     // Dent shape — see MODEL_TUNING.
     dentDepth: cfg.dentDepth,
     dentRadius: cfg.dentRadius,
     dentTip: cfg.dentTip,
-    // Player settings (see the SquishyToy props): depth multiplier, and
-    // 1 = push in / -1 = pop out.
-    dentUserScale: 1,
-    dentSign: 1,
-    pressDir: new THREE.Vector3(0, 0, -1),
-    dentAmt: new Float32Array(vertCount),
-    dentTarget: new Float32Array(vertCount),
-    dentVel: new Float32Array(vertCount),
-    dentScratch: new Float32Array(vertCount),
-    dentFall: new Float32Array(vertCount),
-    dentTargetActive: false,
-    atRest: true,
-    pendingMove: null,
-    pickScratch: null,
-    normalsFrameToggle: false,
     // No separate face meshes — Glorp's face is in its texture.
     featureBases: [],
     featureMeshes: [],
@@ -607,60 +713,94 @@ function buildModelCreature(id, cfg, modelData) {
     eyeL: null,
     eyeR: null,
     eyeStyle: 'none',
-    mode: null,
-    dragStartWorld: null,
-    pressLocalSmoothed: null,
-    pressHoldTime: 0,
-    globalSquash: 0,
-    globalSquashV: 0,
-    globalSquashTarget: 0,
-    wobbleRotX: 0,
-    wobbleRotXV: 0,
-    wobbleRotZ: 0,
-    wobbleRotZV: 0,
-    userRotY: 0,
-    userRotX: 0,
-    orbitTargetY: 0,
-    orbitTargetX: 0,
-    orbitVelY: 0,
-    orbitVelX: 0,
-    idlePhase: Math.random() * 10,
     blinkTimer: 999,
-    blinkAmt: 0,
+    ...makeSquishState(),
   };
+  installSquishShader(bodyMat, s);
+  return s;
 }
 
-// The dent's shape only depends on the touch point, not on how long it's
-// been held, so it's cached here and only recomputed when the point moves
-// (pointerDown / pointerMove). applyDentScale (every frame) then just scales
-// it by the current depth.
-//
-// Shape: a pointed funnel, deepest right under the finger and fading
-// exponentially (a cusp, not a bell) with distance, so it reads as something
-// poking *in*. The old Gaussian bell pulled toward a clamped floor instead,
-// which flattened the whole pressed patch into a shrunken copy of the
-// surface: the "small ball inside the creature" with a hard rim.
-function computeDentFall(s, localPoint) {
+// The funnel's mean over the mesh for a press at (px, py, pz) — what the
+// whole-body puff (lift) is driven by. Sampled every `sampleStride`th
+// vertex; past FALL_REACH the funnel is under 0.2% of its tip and skipped.
+const FALL_EPS = 2e-3;
+function meanFunnel(s, px, py, pz) {
   const radius = s.dentRadius;
   const tip = s.dentTip;
-  // Arrays hoisted into locals throughout the per-frame/per-touch paths:
-  // Hermes has no JIT, so a repeated `s.foo[i]` property lookup inside a
-  // hot loop is a real per-vertex cost, not something that gets optimized away.
+  const tip2 = tip * tip;
+  const reach = tip + radius * Math.log(1 / FALL_EPS);
+  const reach2 = reach * reach;
   const base = s.basePos;
-  const fall = s.dentFall;
-  const px = localPoint.x;
-  const py = localPoint.y;
-  const pz = localPoint.z;
-  for (let i = 0; i < s.vertCount; i++) {
+  const n = s.vertCount;
+  const stride = s.sampleStride;
+  let sum = 0;
+  let count = 0;
+  for (let i = 0; i < n; i += stride) {
     const dx = base[i * 3] - px;
     const dy = base[i * 3 + 1] - py;
     const dz = base[i * 3 + 2] - pz;
-    // sqrt(d² + tip²) - tip: ~d away from the tip, but smooth right at it.
-    fall[i] = Math.exp(-(Math.sqrt(dx * dx + dy * dy + dz * dz + tip * tip) - tip) / radius);
+    const d2 = dx * dx + dy * dy + dz * dz;
+    if (d2 < reach2) sum += Math.exp(-(Math.sqrt(d2 + tip2) - tip) / radius);
+    count++;
+  }
+  return count ? sum / count : 0;
+}
+
+// A finger that slides less than this (model units; the body is ~1.9
+// across) just moves the current press point along. Further than that and
+// a new press point starts while the old one springs back — the lag the
+// per-vertex springs used to give.
+const PRESS_MOVE_EPS = 0.008;
+
+// The press point moved (pointerDown / the once-per-frame pointerMove).
+function computeDentFall(s, localPoint) {
+  const px = localPoint.x;
+  const py = localPoint.y;
+  const pz = localPoint.z;
+  const presses = s.presses;
+  let current = null;
+  for (let j = 0; j < presses.length; j++) if (presses[j].driven) current = presses[j];
+  if (current) {
+    const dx = current.x - px;
+    const dy = current.y - py;
+    const dz = current.z - pz;
+    if (dx * dx + dy * dy + dz * dz < PRESS_MOVE_EPS * PRESS_MOVE_EPS) {
+      current.x = px;
+      current.y = py;
+      current.z = pz;
+      current.meanF = meanFunnel(s, px, py, pz);
+    } else {
+      current.driven = false;
+      current = null;
+    }
+  }
+  if (!current) {
+    if (presses.length >= SQUISH_MAX_PRESSES) {
+      // Full (a long fast drag): fold the faintest old press into its
+      // nearest neighbour rather than dropping its depth outright.
+      let weakest = 0;
+      for (let j = 1; j < presses.length; j++) {
+        if (Math.abs(presses[j].amp) + Math.abs(presses[j].vel) < Math.abs(presses[weakest].amp) + Math.abs(presses[weakest].vel)) weakest = j;
+      }
+      const w = presses[weakest];
+      let nearest = -1;
+      let nearestD = Infinity;
+      for (let j = 0; j < presses.length; j++) {
+        if (j === weakest) continue;
+        const d = (presses[j].x - w.x) ** 2 + (presses[j].y - w.y) ** 2 + (presses[j].z - w.z) ** 2;
+        if (d < nearestD) { nearestD = d; nearest = j; }
+      }
+      if (nearest >= 0) {
+        presses[nearest].amp += w.amp;
+        presses[nearest].vel += w.vel;
+      }
+      presses.splice(weakest, 1);
+    }
+    presses.push({ x: px, y: py, z: pz, amp: 0, vel: 0, target: 0, meanF: meanFunnel(s, px, py, pz), driven: true });
   }
   // Push direction: from the touch point straight in toward the body's
-  // centre. Every dented vertex moves along this one direction (see
-  // tickPhysics), which is what makes it a funnel rather than a shrink.
+  // centre. Every dented vertex moves along this one direction, which is
+  // what makes it a funnel rather than a shrink.
   const len = Math.hypot(px, py, pz);
   if (len > 1e-6) s.pressDir.set(-px / len, -py / len, -pz / len);
   const featureSigma = 0.24;
@@ -679,28 +819,157 @@ function computeDentFall(s, localPoint) {
 // so it only ever gets deeper, never flattens into a plateau.
 function applyDentScale(s, holdSeconds) {
   const tipDepth = s.dentDepth * s.dentUserScale * (0.6 + 0.4 * (1 - Math.exp(-holdSeconds * 1.5)));
-  const target = s.dentTarget;
-  const fall = s.dentFall;
-  for (let i = 0; i < s.vertCount; i++) target[i] = tipDepth * fall[i];
+  const presses = s.presses;
+  for (let j = 0; j < presses.length; j++) presses[j].target = presses[j].driven ? tipDepth : 0;
   for (let j = 0; j < s.featureBases.length; j++) s.featureDentTarget[j] = tipDepth * s.featureDentFall[j] * 1.1;
   s.dentTargetActive = true;
   s.atRest = false;
 }
 
 function resetDentTargets(s) {
-  s.dentTarget.fill(0);
+  const presses = s.presses;
+  for (let j = 0; j < presses.length; j++) {
+    presses[j].driven = false;
+    presses[j].target = 0;
+  }
   s.featureDentTarget.fill(0);
   s.dentTargetActive = false;
+}
+
+// Möller–Trumbore for one triangle with FrontSide back-face culling, ported
+// from three's Ray.intersectTriangle on the flat typed arrays: the ray's
+// distance to the hit, or Infinity for a miss.
+function triHit(pos, index, t, ox, oy, oz, dx, dy, dz) {
+  const a = index[t * 3] * 3;
+  const b = index[t * 3 + 1] * 3;
+  const c = index[t * 3 + 2] * 3;
+  const ax = pos[a];
+  const ay = pos[a + 1];
+  const az = pos[a + 2];
+  const e1x = pos[b] - ax;
+  const e1y = pos[b + 1] - ay;
+  const e1z = pos[b + 2] - az;
+  const e2x = pos[c] - ax;
+  const e2y = pos[c + 1] - ay;
+  const e2z = pos[c + 2] - az;
+  const nx = e1y * e2z - e1z * e2y;
+  const ny = e1z * e2x - e1x * e2z;
+  const nz = e1x * e2y - e1y * e2x;
+  let DdN = dx * nx + dy * ny + dz * nz;
+  // >= 0: back-facing (culled — the body is FrontSide) or edge-on.
+  if (DdN >= 0) return Infinity;
+  DdN = -DdN;
+  const qx = ox - ax;
+  const qy = oy - ay;
+  const qz = oz - az;
+  const DdQxE2 = -(dx * (qy * e2z - qz * e2y) + dy * (qz * e2x - qx * e2z) + dz * (qx * e2y - qy * e2x));
+  if (DdQxE2 < 0) return Infinity;
+  const DdE1xQ = -(dx * (e1y * qz - e1z * qy) + dy * (e1z * qx - e1x * qz) + dz * (e1x * qy - e1y * qx));
+  if (DdE1xQ < 0) return Infinity;
+  if (DdQxE2 + DdE1xQ > DdN) return Infinity;
+  const QdN = qx * nx + qy * ny + qz * nz;
+  if (QdN < 0) return Infinity;
+  return QdN / DdN;
+}
+
+// Nearest front-facing hit along a ray (mesh-local space) using the rest
+// mesh's triangle grid: the ray is clipped to the grid's box, then walks the
+// cells it passes through in order (Amanatides–Woo), testing each cell's
+// triangles once. It can stop as soon as the nearest hit so far is closer
+// than the next cell boundary, since everything not yet tested lies beyond.
+function raycastGrid(s, ox, oy, oz, dx, dy, dz) {
+  const g = s.grid;
+  const n = g.n;
+  let tEnter = 0;
+  let tExit = Infinity;
+  if (dx !== 0) {
+    let t1 = (g.minX - ox) / dx;
+    let t2 = (g.maxX - ox) / dx;
+    if (t1 > t2) { const tmp = t1; t1 = t2; t2 = tmp; }
+    if (t1 > tEnter) tEnter = t1;
+    if (t2 < tExit) tExit = t2;
+  } else if (ox < g.minX || ox > g.maxX) return Infinity;
+  if (dy !== 0) {
+    let t1 = (g.minY - oy) / dy;
+    let t2 = (g.maxY - oy) / dy;
+    if (t1 > t2) { const tmp = t1; t1 = t2; t2 = tmp; }
+    if (t1 > tEnter) tEnter = t1;
+    if (t2 < tExit) tExit = t2;
+  } else if (oy < g.minY || oy > g.maxY) return Infinity;
+  if (dz !== 0) {
+    let t1 = (g.minZ - oz) / dz;
+    let t2 = (g.maxZ - oz) / dz;
+    if (t1 > t2) { const tmp = t1; t1 = t2; t2 = tmp; }
+    if (t1 > tEnter) tEnter = t1;
+    if (t2 < tExit) tExit = t2;
+  } else if (oz < g.minZ || oz > g.maxZ) return Infinity;
+  if (tEnter > tExit) return Infinity;
+
+  const px = ox + dx * tEnter;
+  const py = oy + dy * tEnter;
+  const pz = oz + dz * tEnter;
+  let ix = Math.max(0, Math.min(n - 1, Math.floor((px - g.minX) / g.csX)));
+  let iy = Math.max(0, Math.min(n - 1, Math.floor((py - g.minY) / g.csY)));
+  let iz = Math.max(0, Math.min(n - 1, Math.floor((pz - g.minZ) / g.csZ)));
+  const stepX = dx > 0 ? 1 : -1;
+  const stepY = dy > 0 ? 1 : -1;
+  const stepZ = dz > 0 ? 1 : -1;
+  const adx = Math.abs(dx);
+  const ady = Math.abs(dy);
+  const adz = Math.abs(dz);
+  const tDeltaX = adx > 0 ? g.csX / adx : Infinity;
+  const tDeltaY = ady > 0 ? g.csY / ady : Infinity;
+  const tDeltaZ = adz > 0 ? g.csZ / adz : Infinity;
+  let tMaxX = adx > 0 ? tEnter + (dx > 0 ? g.minX + (ix + 1) * g.csX - px : px - (g.minX + ix * g.csX)) / adx : Infinity;
+  let tMaxY = ady > 0 ? tEnter + (dy > 0 ? g.minY + (iy + 1) * g.csY - py : py - (g.minY + iy * g.csY)) / ady : Infinity;
+  let tMaxZ = adz > 0 ? tEnter + (dz > 0 ? g.minZ + (iz + 1) * g.csZ - pz : pz - (g.minZ + iz * g.csZ)) / adz : Infinity;
+
+  const pos = s.basePos;
+  const index = s.indexArray;
+  const cellOffsets = g.cellOffsets;
+  const cellTris = g.cellTris;
+  if (!s.rayStamp) s.rayStamp = new Uint32Array(index.length / 3);
+  const stamps = s.rayStamp;
+  const stamp = (s.rayStampCounter = (s.rayStampCounter || 0) + 1);
+  let bestT = Infinity;
+  for (let guard = 3 * n + 3; guard > 0; guard--) {
+    const cell = (ix * n + iy) * n + iz;
+    for (let k = cellOffsets[cell], k1 = cellOffsets[cell + 1]; k < k1; k++) {
+      const tri = cellTris[k];
+      if (stamps[tri] === stamp) continue;
+      stamps[tri] = stamp;
+      const h = triHit(pos, index, tri, ox, oy, oz, dx, dy, dz);
+      if (h < bestT) bestT = h;
+    }
+    let axis;
+    let tNext;
+    if (tMaxX < tMaxY) {
+      if (tMaxX < tMaxZ) { axis = 0; tNext = tMaxX; } else { axis = 2; tNext = tMaxZ; }
+    } else if (tMaxY < tMaxZ) { axis = 1; tNext = tMaxY; } else { axis = 2; tNext = tMaxZ; }
+    if (bestT <= tNext || tNext > tExit) break;
+    if (axis === 0) {
+      ix += stepX;
+      if (ix < 0 || ix >= n) break;
+      tMaxX += tDeltaX;
+    } else if (axis === 1) {
+      iy += stepY;
+      if (iy < 0 || iy >= n) break;
+      tMaxY += tDeltaY;
+    } else {
+      iz += stepZ;
+      if (iz < 0 || iz >= n) break;
+      tMaxZ += tDeltaZ;
+    }
+  }
+  return bestT;
 }
 
 // Nearest front-facing hit on the body's REST (undeformed) surface, in the
 // mesh's local space. The dent is measured against the rest positions, and
 // picking against the deformed surface let a deep dent "run away" from the
 // finger: the ray hit the funnel's floor, deep inside, which weakened the
-// dent. Möller–Trumbore with FrontSide back-face culling, ported from
-// three's Ray.intersectTriangle, as one flat loop over the typed arrays
-// instead of three's per-triangle Vector3 calls and per-hit allocations,
-// which cost several ms per touch event on Hermes.
+// dent. Imported meshes go through their triangle grid (raycastGrid); the
+// procedural sphere just tests every triangle.
 const _ray = new THREE.Ray();
 const _invWorld = new THREE.Matrix4();
 function raycastLocal(s, camera, raycaster, ndcX, ndcY) {
@@ -720,41 +989,16 @@ function raycastLocal(s, camera, raycaster, ndcX, ndcY) {
   const cz = oz + dz * tc;
   if (cx * cx + cy * cy + cz * cz > s.boundRadius * s.boundRadius) return null;
 
-  const pos = s.basePos;
-  const index = s.indexArray;
   let bestT = Infinity;
-  for (let t = 0; t < index.length; t += 3) {
-    const a = index[t] * 3;
-    const b = index[t + 1] * 3;
-    const c = index[t + 2] * 3;
-    const ax = pos[a];
-    const ay = pos[a + 1];
-    const az = pos[a + 2];
-    const e1x = pos[b] - ax;
-    const e1y = pos[b + 1] - ay;
-    const e1z = pos[b + 2] - az;
-    const e2x = pos[c] - ax;
-    const e2y = pos[c + 1] - ay;
-    const e2z = pos[c + 2] - az;
-    const nx = e1y * e2z - e1z * e2y;
-    const ny = e1z * e2x - e1x * e2z;
-    const nz = e1x * e2y - e1y * e2x;
-    let DdN = dx * nx + dy * ny + dz * nz;
-    // >= 0: back-facing (culled — the body is FrontSide) or edge-on.
-    if (DdN >= 0) continue;
-    DdN = -DdN;
-    const qx = ox - ax;
-    const qy = oy - ay;
-    const qz = oz - az;
-    const DdQxE2 = -(dx * (qy * e2z - qz * e2y) + dy * (qz * e2x - qx * e2z) + dz * (qx * e2y - qy * e2x));
-    if (DdQxE2 < 0) continue;
-    const DdE1xQ = -(dx * (e1y * qz - e1z * qy) + dy * (e1z * qx - e1x * qz) + dz * (e1x * qy - e1y * qx));
-    if (DdE1xQ < 0) continue;
-    if (DdQxE2 + DdE1xQ > DdN) continue;
-    const QdN = qx * nx + qy * ny + qz * nz;
-    if (QdN < 0) continue;
-    const hitT = QdN / DdN;
-    if (hitT < bestT) bestT = hitT;
+  if (s.grid) {
+    bestT = raycastGrid(s, ox, oy, oz, dx, dy, dz);
+  } else {
+    const pos = s.basePos;
+    const index = s.indexArray;
+    for (let t = 0, triCount = index.length / 3; t < triCount; t++) {
+      const h = triHit(pos, index, t, ox, oy, oz, dx, dy, dz);
+      if (h < bestT) bestT = h;
+    }
   }
   if (bestT === Infinity) return null;
   return new THREE.Vector3(ox + dx * bestT, oy + dy * bestT, oz + dz * bestT);
@@ -774,13 +1018,15 @@ function pickContactLocal(s, camera, raycaster, ndcX, ndcY) {
   // .project(camera) per vertex, written out inline, in one pass that caches
   // each vertex's camera distance + screen distance for the selection below.
   // A drag that slides off the toy's edge lands here on every move, so this
-  // used to be the single most expensive touch path.
+  // used to be the single most expensive touch path. On a dense mesh every
+  // other vertex is close enough (the press point is smoothed anyway).
   s.bodyMesh.updateWorldMatrix(true, false);
   const m = s.bodyMesh.matrixWorld.elements;
   const v = camera.matrixWorldInverse.elements;
   const p = camera.projectionMatrix.elements;
   const base = s.basePos;
   const n = s.vertCount;
+  const stride = n > 3000 ? 2 : 1;
   if (!s.pickScratch) s.pickScratch = new Float64Array(n * 2);
   const scratch = s.pickScratch;
   let minCam = Infinity;
@@ -788,7 +1034,7 @@ function pickContactLocal(s, camera, raycaster, ndcX, ndcY) {
   const camX = camera.position.x;
   const camY = camera.position.y;
   const camZ = camera.position.z;
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < n; i += stride) {
     const x = base[i * 3];
     const y = base[i * 3 + 1];
     const z = base[i * 3 + 2];
@@ -820,7 +1066,7 @@ function pickContactLocal(s, camera, raycaster, ndcX, ndcY) {
   let bestScreen = Infinity;
   let bestAny = -1;
   let bestAnyScreen = Infinity;
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < n; i += stride) {
     const cd = scratch[i * 2];
     const sd = scratch[i * 2 + 1];
     if (sd < bestAnyScreen) {
@@ -856,112 +1102,37 @@ function applyPendingMove(s, camera, raycaster) {
   computeDentFall(s, s.pressLocalSmoothed);
 }
 
-// bodyGeo.computeVertexNormals() followed by weldNormals(), written as plain
-// typed-array arithmetic in the exact same operation order (so the result is
-// bit-identical) — without three's per-triangle Vector3/BufferAttribute
-// method calls, which made this the most expensive part of every frame.
-function computeNormals(s) {
-  const pos = s.bodyGeo.attributes.position.array;
-  const normalAttr = s.bodyGeo.attributes.normal;
-  const nrm = normalAttr.array;
-  const index = s.indexArray;
-  nrm.fill(0);
-  for (let t = 0; t < index.length; t += 3) {
-    const a = index[t] * 3;
-    const b = index[t + 1] * 3;
-    const c = index[t + 2] * 3;
-    const bx = pos[b];
-    const by = pos[b + 1];
-    const bz = pos[b + 2];
-    const cbx = pos[c] - bx;
-    const cby = pos[c + 1] - by;
-    const cbz = pos[c + 2] - bz;
-    const abx = pos[a] - bx;
-    const aby = pos[a + 1] - by;
-    const abz = pos[a + 2] - bz;
-    const nx = cby * abz - cbz * aby;
-    const ny = cbz * abx - cbx * abz;
-    const nz = cbx * aby - cby * abx;
-    nrm[a] += nx;
-    nrm[a + 1] += ny;
-    nrm[a + 2] += nz;
-    nrm[b] += nx;
-    nrm[b + 1] += ny;
-    nrm[b + 2] += nz;
-    nrm[c] += nx;
-    nrm[c + 1] += ny;
-    nrm[c + 2] += nz;
-  }
-  for (let i = 0; i < nrm.length; i += 3) {
-    const x = nrm[i];
-    const y = nrm[i + 1];
-    const z = nrm[i + 2];
-    const inv = 1 / (Math.sqrt(x * x + y * y + z * z) || 1);
-    nrm[i] = x * inv;
-    nrm[i + 1] = y * inv;
-    nrm[i + 2] = z * inv;
-  }
-  const weldGroups = s.weldGroups;
-  if (weldGroups) {
-    for (let g = 0; g < weldGroups.length; g++) {
-      const group = weldGroups[g];
-      let nx = 0;
-      let ny = 0;
-      let nz = 0;
-      for (let k = 0; k < group.length; k++) {
-        const o = group[k] * 3;
-        nx += nrm[o];
-        ny += nrm[o + 1];
-        nz += nrm[o + 2];
-      }
-      const len = Math.hypot(nx, ny, nz) || 1;
-      nx /= len;
-      ny /= len;
-      nz /= len;
-      for (let k = 0; k < group.length; k++) {
-        const o = group[k] * 3;
-        nrm[o] = nx;
-        nrm[o + 1] = ny;
-        nrm[o + 2] = nz;
-      }
-    }
-  }
-  // Model shaded with its file's own smooth normals (see prepareModelData):
-  // keep those as the base and add only how far the squish has bent each
-  // recomputed normal away from its undeformed value, so shading stays
-  // smooth and doesn't jump when a press starts or ends.
-  const rest = s.computedRestNormals;
-  if (rest) {
-    const shade = s.baseNormals;
-    for (let i = 0; i < nrm.length; i += 3) {
-      const x = shade[i] + nrm[i] - rest[i];
-      const y = shade[i + 1] + nrm[i + 1] - rest[i + 1];
-      const z = shade[i + 2] + nrm[i + 2] - rest[i + 2];
-      const inv = 1 / (Math.sqrt(x * x + y * y + z * z) || 1);
-      nrm[i] = x * inv;
-      nrm[i + 1] = y * inv;
-      nrm[i + 2] = z * inv;
-    }
-  }
-  normalAttr.needsUpdate = true;
-}
-
-// Once released, the dent springs ring down to effectively nothing within
-// about a second. Below this they're far under a pixel, so tickPhysics snaps
-// them to exact rest and stops rewriting/re-uploading the vertex + normal
-// buffers every frame until the next press (applyDentScale wakes it).
+// Once released, a press point's spring rings down to effectively nothing
+// within about a second. Below this it's far under a pixel, so it's dropped;
+// with none left the body is at rest and the shader gets zero press points.
 const REST_EPS = 1e-4;
 
 function settleToRest(s) {
-  s.dentAmt.fill(0);
-  s.dentVel.fill(0);
-  const posAttr = s.bodyGeo.attributes.position;
-  posAttr.array.set(s.basePos);
-  posAttr.needsUpdate = true;
-  const normalAttr = s.bodyGeo.attributes.normal;
-  normalAttr.array.set(s.baseNormals);
-  normalAttr.needsUpdate = true;
+  s.presses.length = 0;
+  s.lift = 1;
   s.atRest = true;
+}
+
+// Writes the live press points into the shader's uniforms (once they exist).
+function uploadSquish(s) {
+  const u = s.squishUniforms;
+  if (!u) return;
+  const presses = s.presses;
+  const arr = s.pressUniform;
+  for (let j = 0; j < presses.length; j++) {
+    const pr = presses[j];
+    arr[j * 4] = pr.x;
+    arr[j * 4 + 1] = pr.y;
+    arr[j * 4 + 2] = pr.z;
+    arr[j * 4 + 3] = pr.amp;
+  }
+  u.uSquishCount.value = presses.length;
+  const sign = s.dentSign;
+  const invLift = 1 / s.lift;
+  u.uSquishDir.value.set(s.pressDir.x * sign * invLift, s.pressDir.y * sign * invLift, s.pressDir.z * sign * invLift);
+  // Only a guard against runaway spring overshoot; a normal press stays
+  // well under it, so it never flattens the tip.
+  u.uSquishDent.value.set(s.dentRadius, s.dentTip, s.dentDepth * s.dentUserScale * 1.5, 0);
 }
 
 function tickPhysics(s, dt) {
@@ -980,130 +1151,39 @@ function tickPhysics(s, dt) {
     applyDentScale(s, s.pressHoldTime);
   }
 
-  // ---- per-vertex soft body ----
-  // This is the ONLY deformation that renders on the target device (writing
-  // vertex positions + needsUpdate). Object/group .scale transforms are
-  // computed but never repainted here, so the squash IS this dent — a
-  // per-vertex pull toward the model centre around the touch point, spread by
-  // a jelly-wave diffusion. Same approach as the original c9586dd build.
+  // ---- the dent: one damped spring per press point (see the shader notes
+  // above). Its depth chases the target while the finger holds it, then
+  // rings back to zero — the same spring every vertex used to run.
   const dentStiff = 1 - Math.pow(1 - PHYS.stiff, k);
   const dentDamp = Math.pow(PHYS.damp, k);
   let meanDent = 0;
-  // Skipped entirely while the body is settled (see REST_EPS/settleToRest) —
-  // nothing below changes a single vertex then, so there's no reason to spend
-  // the frame recomputing and re-uploading an unchanged mesh.
   if (!s.atRest) {
-    const n = s.vertCount;
-    const amt = s.dentAmt;
-    const vel = s.dentVel;
-    const target = s.dentTarget;
+    const presses = s.presses;
     let motion = 0;
-    for (let i = 0; i < n; i++) {
-      vel[i] += (target[i] - amt[i]) * dentStiff;
-      vel[i] *= dentDamp;
-      amt[i] += vel[i];
-      const av = amt[i];
-      const vv = vel[i];
+    for (let j = presses.length - 1; j >= 0; j--) {
+      const pr = presses[j];
+      pr.vel += (pr.target - pr.amp) * dentStiff;
+      pr.vel *= dentDamp;
+      pr.amp += pr.vel;
+      const aa = Math.abs(pr.amp);
+      const av = Math.abs(pr.vel);
+      if (!pr.driven && aa < REST_EPS && av < REST_EPS) {
+        presses.splice(j, 1);
+        continue;
+      }
+      if (aa > motion) motion = aa;
       if (av > motion) motion = av;
-      else if (-av > motion) motion = -av;
-      if (vv > motion) motion = vv;
-      else if (-vv > motion) motion = -vv;
+      meanDent += pr.amp * pr.meanF;
     }
-
-    s.dentScratch.set(amt);
-    const prev = s.dentScratch;
-    const diffCoef = 0.03 * k;
-    if (s.neighbors) {
-      // Imported mesh (Glorp): diffuse across real triangle-adjacency, averaged
-      // by neighbour count then x4 to match the grid branch's range.
-      const neighbors = s.neighbors;
-      for (let i = 0; i < n; i++) {
-        const nbrs = neighbors[i];
-        const nn = nbrs.length;
-        if (!nn) continue;
-        const pi = prev[i];
-        let acc = 0;
-        for (let ni = 0; ni < nn; ni++) acc += prev[nbrs[ni]] - pi;
-        amt[i] += (acc / nn) * 4 * diffCoef;
-      }
-    } else {
-      const rows = s.rowCount;
-      const cols = s.colCount;
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const idx = r * cols + c;
-          const cl = c === 0 ? cols - 1 : c - 1;
-          const cr = c === cols - 1 ? 0 : c + 1;
-          const left = prev[r * cols + cl];
-          const right = prev[r * cols + cr];
-          const up = r > 0 ? prev[(r - 1) * cols + c] : prev[idx];
-          const down = r < rows - 1 ? prev[(r + 1) * cols + c] : prev[idx];
-          amt[idx] += (left + right - 2 * prev[idx] + (up + down - 2 * prev[idx])) * diffCoef;
-        }
-      }
-    }
-
-    // Texture-seam duplicates (same position, split only for UVs; see
-    // buildWeldGroups) aren't each other's diffusion neighbours, so their
-    // dents drifted apart and the surface cracked open along every seam
-    // mid-squish. Keep each group's dent and velocity identical.
-    const weldGroups = s.weldGroups;
-    if (weldGroups) {
-      for (let g = 0; g < weldGroups.length; g++) {
-        const group = weldGroups[g];
-        const gl = group.length;
-        let ga = 0;
-        let gv = 0;
-        for (let k = 0; k < gl; k++) {
-          ga += amt[group[k]];
-          gv += vel[group[k]];
-        }
-        ga /= gl;
-        gv /= gl;
-        for (let k = 0; k < gl; k++) {
-          amt[group[k]] = ga;
-          vel[group[k]] = gv;
-        }
-      }
-    }
-
-    let sum = 0;
-    for (let i = 0; i < n; i++) sum += amt[i];
-    meanDent = sum / n;
-
-    // Each vertex moves along the one press direction by its own
-    // spring-driven depth (a funnel, see computeDentFall): inward, or outward
-    // when the player picked "pop out" (dentSign -1). The whole body puffs up
-    // slightly with the average push-in (or shrinks slightly with a pop-out),
-    // as if that volume went somewhere. Written straight into the attribute's
-    // array (what setXYZ does, minus the method call per vertex).
-    const posAttr = s.bodyGeo.attributes.position;
-    const pos = posAttr.array;
-    const base = s.basePos;
-    const sign = s.dentSign;
-    const lift = Math.min(1 + sign * meanDent * 0.2, MAX_BULGE);
-    const dirX = s.pressDir.x * sign;
-    const dirY = s.pressDir.y * sign;
-    const dirZ = s.pressDir.z * sign;
-    // Only a guard against runaway spring overshoot; a normal press stays
-    // well under it, so it never flattens the tip.
-    const maxDepth = s.dentDepth * s.dentUserScale * 1.5;
-    for (let i = 0; i < n; i++) {
-      const o = i * 3;
-      let depth = amt[i];
-      if (depth > maxDepth) depth = maxDepth;
-      pos[o] = base[o] * lift + dirX * depth;
-      pos[o + 1] = base[o + 1] * lift + dirY * depth;
-      pos[o + 2] = base[o + 2] * lift + dirZ * depth;
-    }
-    posAttr.needsUpdate = true;
-    s.normalsFrameToggle = !s.normalsFrameToggle;
-    if (s.normalsFrameToggle) computeNormals(s);
-
-    if (!s.dentTargetActive && motion < REST_EPS) {
+    // The whole body puffs up slightly with the average push-in (or shrinks
+    // slightly with a pop-out), as if that volume went somewhere — on the
+    // group transform, below.
+    s.lift = Math.min(1 + s.dentSign * meanDent * 0.2, MAX_BULGE);
+    if (!s.dentTargetActive && (presses.length === 0 || motion < REST_EPS)) {
       settleToRest(s);
       meanDent = 0;
     }
+    uploadSquish(s);
   }
 
   for (let j = 0; j < s.featureBases.length; j++) {
@@ -1150,10 +1230,15 @@ function tickPhysics(s, dt) {
   s.userRotY += (s.orbitTargetY - s.userRotY) * orbitCatchup;
   s.userRotX += (s.orbitTargetX - s.userRotX) * orbitCatchup;
 
+  // The whole-body squash (flatten on push-in, stretch on pop-out), the
+  // puff, breathing, wobble and orbit all ride on the group transform (the
+  // group has matrixAutoUpdate on — see buildModelCreature; without it these
+  // never repainted).
   const breathe = 1 + Math.sin(s.idlePhase * 0.45) * 0.012;
-  const sx = (1 + s.globalSquash * 0.14) * breathe;
-  const sy = (1 - s.globalSquash * 0.26) * breathe;
-  const sz = (1 + s.globalSquash * 0.14) * breathe;
+  const lift = s.lift;
+  const sx = (1 + s.globalSquash * 0.14) * breathe * lift;
+  const sy = (1 - s.globalSquash * 0.26) * breathe * lift;
+  const sz = (1 + s.globalSquash * 0.14) * breathe * lift;
   s.group.rotation.y = s.userRotY;
   s.group.rotation.x = s.userRotX + s.wobbleRotX;
   s.group.rotation.z = s.wobbleRotZ;
@@ -1343,8 +1428,12 @@ const SquishyToy = memo(forwardRef(function SquishyToy(
   useFrame((_, delta) => {
     const s = toyRef.current;
     if (!s) return;
+    const t0 = performance.now();
     applyPendingMove(s, camera, raycaster);
+    const t1 = performance.now();
     tickPhysics(s, clamp(delta, 0, 0.05));
+    perf.add('pick', t1 - t0);
+    perf.add('physics', performance.now() - t1);
   });
 
   if (!built) return null;

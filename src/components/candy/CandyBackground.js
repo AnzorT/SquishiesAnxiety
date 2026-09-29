@@ -16,9 +16,13 @@ import Sparkles from './Sparkles';
 // later resize (e.g. the system nav bar settling) left a bare strip at the
 // bottom.
 
+// Kept as one hardware layer on Android: without it, every frame that has
+// anything moving over it (sparkles, a pulsing button, the 3D stage's
+// texture) re-runs all six full-screen gradient and pattern fills for the
+// dirty region on the GPU. As a layer it's a single texture read.
 const Stage = memo(function Stage({ width, height }) {
   return (
-    <Svg style={StyleSheet.absoluteFill} width={width} height={height}>
+    <Svg style={StyleSheet.absoluteFill} width={width} height={height} renderToHardwareTextureAndroid>
       <Defs>
         <LinearGradient id="stageBg" x1="0" y1="0" x2="0" y2="1">
           {candyBg.colors.map((c, i) => (

@@ -36,9 +36,12 @@ export function Twinkle({ size = 14, color = '#ffffff', duration = 2, delay = 0,
   const opacity = t.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] });
   const scale = t.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1.1] });
   const rotate = t.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '20deg'] });
+  // A hardware layer: the blurred glow is rasterised once and the loop only
+  // moves the texture, instead of re-blurring the glyph at every new scale.
   return (
     <Animated.Text
       pointerEvents="none"
+      renderToHardwareTextureAndroid
       style={[
         styles.glyph,
         { fontSize: size, lineHeight: size * 1.1, color, opacity, transform: [{ scale }, { rotate }] },

@@ -52,6 +52,8 @@ export function RaysSpin({ size = 260, durationMs = 14000, rayDeg = 8, gapDeg = 
   return (
     <Animated.View
       pointerEvents="none"
+      // rasterised once; the spin only rotates the texture
+      renderToHardwareTextureAndroid
       style={[{ position: 'absolute', width: size, height: size, transform: [{ rotate }] }, style]}
     >
       <RaysArt size={size} rayDeg={rayDeg} gapDeg={gapDeg} opacity={opacity} fadeStart={fadeStart} fadeEnd={fadeEnd} color={color} />

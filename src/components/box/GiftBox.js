@@ -158,6 +158,7 @@ const Orbiter = memo(function Orbiter({ color, size, offset }) {
       ]}
     >
       <Text
+        renderToHardwareTextureAndroid
         style={[
           styles.orbitGlyph,
           {
