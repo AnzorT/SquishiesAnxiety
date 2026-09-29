@@ -46,10 +46,16 @@ const SPEED_TAP_THRESHOLD = 60;
 // where it last counted, so touch jitter on a resting finger stays silent.
 const SOUND_MOTION_DP = 3;
 
-// Bank 5 coins every 1.5s while held (was 1 until 2026-09-29); two fingers
-// (rotate) earns nothing. A ×N boost multiplies this.
+// Bank 5 coins for every 1.5 s the finger spends MOVING on the toy (was 1
+// coin per 1.5 s of holding until 2026-09-29). Coins follow the squish
+// sound's rule: a finger that holds still earns nothing, just as the sound
+// fades. Moving time is the gaps between counted movements (see
+// SOUND_MOTION_DP), each capped at MOTION_GAP_MS — a longer gap means the
+// finger rested (SquishSound's IDLE_PAUSE_MS). Two fingers (rotate) earn
+// nothing. A ×N boost multiplies this.
 const EARN_TICK_MS = 1500;
 const EARN_PER_TICK = 5;
+const MOTION_GAP_MS = 180;
 // Floating "+1" per tick: rises, spins, fades.
 const FLOATING_COIN_MS = 1650;
 const FLOATING_COIN_RISE = 72;
@@ -779,9 +785,13 @@ export default function SquishScreen({
   const effectsRef = useRef(null);
   const coinCounterRef = useRef(null);
   const tapTimestampsRef = useRef([]);
-  // Coins banked this hold; flushed on release.
-  const earnIntervalRef = useRef(null);
+  // Coins banked this hold; flushed on release. While a poke is on:
+  // earningRef, the moving time towards the next tick, and when the last
+  // counted movement was.
+  const earningRef = useRef(false);
   const earnAccumRef = useRef(0);
+  const movingMsRef = useRef(0);
+  const lastMotionAtRef = useRef(0);
   // Tap timestamps for the abuse guard; mirrors punishOpen so the
   // tap-rate check (a stable useCallback) always sees the latest value.
   const abuseTapsRef = useRef([]);
@@ -930,26 +940,37 @@ export default function SquishScreen({
     soundRef.current?.stop();
   }, []);
 
-  // Earn EARN_PER_TICK coins every EARN_TICK_MS while held.
+  // A poke starts: coins now come from moving the finger (noteEarnMotion).
   const startEarning = useCallback(() => {
-    if (earnIntervalRef.current) return;
+    if (earningRef.current) return;
+    earningRef.current = true;
     earnAccumRef.current = 0;
-    earnIntervalRef.current = setInterval(() => {
+    movingMsRef.current = 0;
+    lastMotionAtRef.current = Date.now();
+  }, []);
+
+  // A counted movement: adds the moving time since the last one, and banks
+  // EARN_PER_TICK coins for every EARN_TICK_MS of it.
+  const noteEarnMotion = useCallback(() => {
+    if (!earningRef.current) return;
+    const now = Date.now();
+    movingMsRef.current += Math.min(now - lastMotionAtRef.current, MOTION_GAP_MS);
+    lastMotionAtRef.current = now;
+    while (movingMsRef.current >= EARN_TICK_MS) {
+      movingMsRef.current -= EARN_TICK_MS;
       const { coinSoundEnabled: coinSoundOn, bonusEndsAt: liveBonusEndsAt, bonusMultiplier: liveMultiplier } = latestRef.current;
-      const bonusIsLive = !!liveBonusEndsAt && Date.now() < liveBonusEndsAt;
+      const bonusIsLive = !!liveBonusEndsAt && now < liveBonusEndsAt;
       const gain = EARN_PER_TICK * (bonusIsLive ? liveMultiplier : 1);
       earnAccumRef.current += gain;
       coinCounterRef.current?.add(gain);
       if (coinSoundOn) coinSoundRef.current?.play();
       effectsRef.current?.spawnFloatingCoin(lastTouch.current.x, lastTouch.current.y, gain);
-    }, EARN_TICK_MS);
+    }
   }, []);
 
   const stopEarning = useCallback(() => {
-    if (earnIntervalRef.current) {
-      clearInterval(earnIntervalRef.current);
-      earnIntervalRef.current = null;
-    }
+    earningRef.current = false;
+    movingMsRef.current = 0;
     const earned = earnAccumRef.current;
     earnAccumRef.current = 0;
     if (earned > 0) {
@@ -959,9 +980,6 @@ export default function SquishScreen({
     return earned;
   }, []);
 
-  useEffect(() => () => {
-    if (earnIntervalRef.current) clearInterval(earnIntervalRef.current);
-  }, []);
 
   // Trips the punishment after too many quick taps. Every rule's tap-rate is
   // expressed as a percentage of its allowance (count / limit); crossing
@@ -1101,11 +1119,13 @@ export default function SquishScreen({
         lastTouch.current = { x: locationX, y: locationY };
         const ndc = ndcFromLocation(locationX, locationY);
         toyRef.current?.pointerMove(ndc.x, ndc.y);
-        // Real movement (not jitter) keeps the squish sound going.
+        // Real movement (not jitter) keeps the squish sound going and earns
+        // coins.
         const ax = locationX - soundAnchorRef.current.x;
         const ay = locationY - soundAnchorRef.current.y;
         if (ax * ax + ay * ay >= SOUND_MOTION_DP * SOUND_MOTION_DP) {
           soundAnchorRef.current = { x: locationX, y: locationY };
+          noteEarnMotion();
           if (latestRef.current.squishSoundEnabled) soundRef.current?.noteMotion();
           if (latestRef.current.vibrationEnabled) moveHaptic(latestRef.current.pokeStrength);
         }
