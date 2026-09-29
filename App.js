@@ -18,6 +18,7 @@ import SplashScreen from './src/screens/SplashScreen';
 import AuthScreen from './src/screens/AuthScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import AchievementsScreen from './src/screens/AchievementsScreen';
+import StatsScreen from './src/screens/StatsScreen';
 import StoreScreen from './src/screens/StoreScreen';
 import MysteryBoxScreen from './src/screens/MysteryBoxScreen';
 import DailySpinScreen from './src/screens/DailySpinScreen';
@@ -92,6 +93,7 @@ const MUSIC_FOR_STAGE = {
   home: 'cozy',
   store: 'cozy',
   achievements: 'cozy',
+  stats: 'cozy',
   create: 'cozy',
   loading: 'calm',
   toy: 'calm',
@@ -128,7 +130,7 @@ export default function App() {
   const setHomeIndex = useCallback((i) => {
     homeIndexRef.current = i;
   }, []);
-  const [screen, setScreen] = useState('home'); // 'home' | 'achievements' | 'store' | 'create' | 'box' — only relevant once signed in
+  const [screen, setScreen] = useState('home'); // 'home' | 'achievements' | 'stats' | 'store' | 'create' | 'box' — only relevant once signed in
   // A card tap moves a creature into `loadingToy` (LoadingScreen's "getting
   // ready" beat) before it graduates to `activeToy` (SquishScreen actually
   // mounted) — kept as two separate slots so the transition screen has
@@ -360,6 +362,7 @@ export default function App() {
   // --- custom creatures (the "Create your own squishy" flow) ---
   const handleOpenCreator = useCallback(() => setScreen('create'), []);
   const openAchievements = useCallback(() => setScreen('achievements'), []);
+  const openStats = useCallback(() => setScreen('stats'), []);
   const openStore = useCallback(() => {
     setStoreFocusId(null);
     setScreen('store');
@@ -634,11 +637,6 @@ export default function App() {
 
   const ownedIds = profile?.ownedIds ?? [];
   const keys = profile?.keys ?? {};
-  const stats = profile?.stats ?? { presses: 0, longestHoldMs: 0, playTime: {} };
-  const favoriteEntry = Object.entries(stats.playTime ?? {})
-    .filter(([, ms]) => ms > 0)
-    .reduce((best, entry) => (!best || entry[1] > best[1] ? entry : best), null);
-  const favoriteCreatureName = favoriteEntry ? creatures.find((c) => c.id === favoriteEntry[0])?.name ?? 'None yet' : 'None yet';
   // back to today's flat rate until that doc exists — see firestore.rules.
   // A Daily Spin CREATE prize takes creationDiscountPct (15) off it.
   // A creation's price comes from the store (the 15%-off product while the
@@ -679,12 +677,10 @@ export default function App() {
           adsFree={adsFree}
           removeAdsPrice={removeAdsPrice}
           onOpenRemoveAds={openRemoveAds}
-          totalEarned={profile?.totalEarned ?? 0}
-          stats={stats}
-          favoriteCreatureName={favoriteCreatureName}
           onSubmitFeedback={handleSubmitFeedback}
           onLogout={handleLogout}
           onOpenAchievements={openAchievements}
+          onOpenStats={openStats}
           onOpenStore={openStore}
           customCreatures={customCreatures}
           onOpenCreator={handleOpenCreator}
@@ -730,6 +726,9 @@ export default function App() {
       )}
       {stage === 'achievements' && (
         <AchievementsScreen creatures={creatures} profile={profile} customCount={customCreatures.length} onBack={() => setScreen('home')} />
+      )}
+      {stage === 'stats' && (
+        <StatsScreen creatures={creatures} customCreatures={customCreatures} profile={profile} onBack={() => setScreen('home')} />
       )}
       {stage === 'store' && (
         <StoreScreen

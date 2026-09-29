@@ -10,7 +10,7 @@ import MysteryBoxBanner from '../components/box/MysteryBoxBanner';
 import { RemoveAdsButton } from '../components/RemoveAds';
 import CandyBackground from '../components/candy/CandyBackground';
 import CandyTabs from '../components/candy/CandyTabs';
-import RoundButton, { TrophyIcon, BagIcon, GearIcon } from '../components/candy/RoundButton';
+import RoundButton, { StatsIcon, TrophyIcon, BagIcon, GearIcon } from '../components/candy/RoundButton';
 import { CoinPill } from '../components/candy/Coin';
 import { HaloText } from '../components/candy/OutlinedTitle';
 import SettingsSheet from './SettingsSheet';
@@ -61,11 +61,9 @@ export default function HomeScreen({
   nickname,
   onSaveNickname,
   adsFree,
-  totalEarned,
-  stats,
-  favoriteCreatureName,
   onSubmitFeedback,
   onLogout,
+  onOpenStats,
   onOpenAchievements,
   onOpenStore,
   customCreatures = [],
@@ -175,7 +173,6 @@ export default function HomeScreen({
   );
   const mineKey = useCallback((i) => (i === 0 ? 'create' : customCreatures[i - 1] ? `m-${customCreatures[i - 1].id}` : `m-${i}`), [customCreatures]);
 
-  const ownedCount = creatures.filter((c) => ownedSet.has(c.id)).length;
   const paneStyles = useMemo(() => {
     const shift = listW * 1.05;
     return {
@@ -201,6 +198,9 @@ export default function HomeScreen({
             <CoinPill coins={coins} style={styles.wallet} />
           </View>
           <View style={styles.headerIcons}>
+            <RoundButton size={42} onPress={onOpenStats}>
+              <StatsIcon />
+            </RoundButton>
             <RoundButton size={42} onPress={onOpenAchievements}>
               <TrophyIcon />
             </RoundButton>
@@ -258,20 +258,8 @@ export default function HomeScreen({
         onClose={() => setSettingsOpen(false)}
         nickname={nickname}
         onSaveNickname={onSaveNickname}
-        adsFree={adsFree}
-        removeAdsPrice={removeAdsPrice}
-        onOpenRemoveAds={() => {
-          setSettingsOpen(false);
-          onOpenRemoveAds();
-        }}
         onSubmitFeedback={onSubmitFeedback}
         onLogout={onLogout}
-        ownedCount={ownedCount}
-        totalCount={creatures.length}
-        totalEarned={totalEarned}
-        coins={coins}
-        stats={stats}
-        favoriteCreatureName={favoriteCreatureName}
       />
     </CandyBackground>
   );

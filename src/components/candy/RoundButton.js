@@ -122,6 +122,51 @@ export function TrophyIcon({ size = 24 }) {
   );
 }
 
+// A rising three-bar chart (the Stats screen): blue, pink and gold bars
+// drawn like the trophy — dark outline with a drop, white edge, glossy fill.
+const statBar = (x, top) => `M${x} ${top + 1.6} a1.6 1.6 0 0 1 1.6 -1.6 h1.4 a1.6 1.6 0 0 1 1.6 1.6 V20.5 H${x} Z`;
+const STAT_BARS = [
+  [statBar(3.2, 12.5), 'url(#icoStatBlue)'],
+  [statBar(9.8, 7.5), 'url(#icoStatPink)'],
+  [statBar(16.4, 3), 'url(#icoStatGold)'],
+];
+
+export function StatsIcon({ size = 24 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Defs>
+        <LinearGradient id="icoStatBlue" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#b0fbff" />
+          <Stop offset="0.55" stopColor="#3fd7f6" />
+          <Stop offset="1" stopColor="#1695d6" />
+        </LinearGradient>
+        <LinearGradient id="icoStatPink" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#ffc2ee" />
+          <Stop offset="0.55" stopColor="#ff4fbf" />
+          <Stop offset="1" stopColor="#d3179a" />
+        </LinearGradient>
+        <LinearGradient id="icoStatGold" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#fff7b0" />
+          <Stop offset="0.5" stopColor="#ffd23a" />
+          <Stop offset="1" stopColor="#ff9c0a" />
+        </LinearGradient>
+      </Defs>
+      <G transform="translate(0,1.5)">
+        {STAT_BARS.map(([d]) => (
+          <Path key={d} d={d} stroke={RING} strokeWidth={4.2} strokeLinejoin="round" fill="none" />
+        ))}
+      </G>
+      {STAT_BARS.map(([d]) => (
+        <Path key={d} d={d} stroke={RING} strokeWidth={4.2} strokeLinejoin="round" fill="none" />
+      ))}
+      {STAT_BARS.map(([d, fill]) => (
+        <Path key={`f${d}`} d={d} stroke="#ffffff" strokeWidth={1.8} strokeLinejoin="round" fill={fill} />
+      ))}
+      <Path d="M18 5.2 V8.5" stroke="#ffffff" strokeWidth={1.4} strokeLinecap="round" opacity={0.9} />
+    </Svg>
+  );
+}
+
 export function BagIcon({ size = 24 }) {
   const handle = 'M8.5 9 V7 a3.5 3.5 0 0 1 7 0 V9';
   const body = 'M4.5 8 H19.5 L18.5 20.5 H5.5 Z';

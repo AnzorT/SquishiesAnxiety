@@ -1,34 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, Pressable, Modal, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { candyColors, candyFonts } from '../theme/candyTheme';
-import CandyButton, { CandyPill } from '../components/candy/CandyButton';
-import { NoAdsIcon } from '../components/RemoveAds';
+import CandyButton from '../components/candy/CandyButton';
 import RoundButton, { CloseGlyph } from '../components/candy/RoundButton';
 import Toast from '../components/squad/Toast';
 import ToggleSwitch from '../components/candy/ToggleSwitch';
 import sfx from '../audio/sfx';
 
-// Bottom sheet opened from Home's gear icon — nickname editing, Remove Ads
-// (opens the $1.99 purchase popup), a feedback note, real gameplay stats,
-// music / sound switches, and logout, in
-// the v3 look: a pale pink sheet of white cards, candy SAVE/LOG OUT buttons.
-// The stats show total squish presses, longest hold (seconds), and favorite
-// creature — derived from `stats` (tracked via recordPress in
-// src/firebase/firestore.js) and the pre-computed `favoriteCreatureName`,
-// both passed down from App.js.
-export default function SettingsSheet({
-  visible,
-  onClose,
-  nickname,
-  onSaveNickname,
-  adsFree,
-  removeAdsPrice,
-  onOpenRemoveAds,
-  onSubmitFeedback,
-  onLogout,
-  stats,
-  favoriteCreatureName,
-}) {
+// Bottom sheet opened from Home's gear icon — music / sound switches,
+// nickname editing, a feedback note and logout, in the v3 look: a pale pink
+// sheet of white cards, candy SAVE/LOG OUT buttons. (Remove Ads lives on
+// Home's NO ADS button; the stats have their own screen, StatsScreen.)
+//
+// The sheet scrolls when it's taller than 82% of the screen (small phones,
+// large system font). The tap-to-close backdrop is a sibling behind the
+// sheet, not its parent, so no touchable sits between the finger and the
+// ScrollView.
+export default function SettingsSheet({ visible, onClose, nickname, onSaveNickname, onSubmitFeedback, onLogout }) {
   const [nicknameEdit, setNicknameEdit] = useState(nickname || '');
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
@@ -70,15 +58,12 @@ export default function SettingsSheet({
     flash('Thanks for your feedback!');
   };
 
-  const presses = stats?.presses ?? 0;
-  const longestHoldSeconds = ((stats?.longestHoldMs ?? 0) / 1000).toFixed(1);
-  const favorite = favoriteCreatureName || 'None yet';
-
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={() => {}}>
-          <ScrollView bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.sheetContent}>
+      <View style={styles.backdrop}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.sheet}>
+          <ScrollView style={styles.scroll} showsVerticalScrollIndicator keyboardShouldPersistTaps="handled" contentContainerStyle={styles.sheetContent}>
             <View style={styles.headerRow}>
               <Text style={styles.title}>SETTINGS</Text>
               <RoundButton size={32} onPress={onClose} style={styles.closeButton}>
@@ -86,25 +71,12 @@ export default function SettingsSheet({
               </RoundButton>
             </View>
 
-            <View style={[styles.card, styles.cardRow]}>
-              <NoAdsIcon size={34} />
-              <View style={styles.flex}>
-                <Text style={styles.cardLabel}>Remove Ads</Text>
-                <Text style={styles.cardSublabel}>{adsFree ? 'Thanks for your support!' : 'No banners, no ad breaks, free daily boxes'}</Text>
-              </View>
-              {adsFree ? (
-                <CandyPill variant="purple" label="★ DONE" fontSize={12} padV={4} padH={12} />
-              ) : (
-                <CandyButton label={removeAdsPrice} variant="gold" size="sm" pulse="soft" onPress={onOpenRemoveAds} />
-              )}
-            </View>
-
             <View style={styles.card}>
-              <View style={[styles.statRow, styles.soundRow]}>
+              <View style={styles.soundRow}>
                 <Text style={styles.cardLabel}>Music</Text>
                 <ToggleSwitch value={sound.music} onToggle={() => sfx.setMusicOn(!sound.music)} />
               </View>
-              <View style={[styles.statRow, styles.statRowLast, styles.soundRow]}>
+              <View style={[styles.soundRow, styles.soundRowLast]}>
                 <Text style={styles.cardLabel}>Sound effects</Text>
                 <ToggleSwitch value={sound.effects} onToggle={() => sfx.setEffectsOn(!sound.effects)} />
               </View>
@@ -118,22 +90,6 @@ export default function SettingsSheet({
               </View>
             </View>
 
-            <View style={styles.card}>
-              <Text style={styles.statsTitle}>YOUR STATS</Text>
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Total Presses</Text>
-                <Text style={styles.statValue}>{presses}</Text>
-              </View>
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Longest Hold</Text>
-                <Text style={styles.statValue}>{longestHoldSeconds}s</Text>
-              </View>
-              <View style={[styles.statRow, styles.statRowLast]}>
-                <Text style={styles.statLabel}>Favorite Creature</Text>
-                <Text style={styles.statValue}>{favorite}</Text>
-              </View>
-            </View>
-
             <Pressable style={styles.feedbackButton} onPress={() => setFeedbackOpen(true)}>
               <Text style={styles.feedbackButtonText}>SEND FEEDBACK</Text>
             </Pressable>
@@ -142,8 +98,8 @@ export default function SettingsSheet({
           </ScrollView>
 
           <Toast message={toast} messageKey={toastKey} />
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
 
       <Modal visible={feedbackOpen} transparent animationType="fade" onRequestClose={() => setFeedbackOpen(false)} statusBarTranslucent>
         <KeyboardAvoidingView style={styles.feedbackBackdrop} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -183,15 +139,13 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 28,
   },
+  scroll: { flexGrow: 0, flexShrink: 1 },
   sheetContent: { paddingBottom: 8 },
   headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
   title: { fontFamily: candyFonts.display, fontSize: 20, color: candyColors.ink },
   closeButton: { marginLeft: 'auto' },
   card: { backgroundColor: '#ffffff', borderRadius: 16, padding: 14, marginBottom: 12 },
-  cardRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  flex: { flex: 1 },
   cardLabel: { color: candyColors.ink, fontFamily: candyFonts.bodyHeavy, fontSize: 13 },
-  cardSublabel: { color: candyColors.mutedLight, fontFamily: candyFonts.body, fontSize: 11 },
   nicknameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   input: {
     flex: 1,
@@ -205,12 +159,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 9,
   },
-  statsTitle: { color: candyColors.goldInk, fontFamily: candyFonts.bodyHeavy, fontSize: 12, letterSpacing: 1, marginBottom: 10 },
-  statRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 },
-  statRowLast: { marginBottom: 0 },
-  soundRow: { alignItems: 'center', marginBottom: 12 },
-  statLabel: { color: candyColors.inkSoft, fontFamily: candyFonts.body, fontSize: 12.5 },
-  statValue: { color: candyColors.ink, fontFamily: candyFonts.body, fontSize: 12.5 },
+  soundRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  soundRowLast: { marginBottom: 0 },
   feedbackButton: {
     width: '100%',
     borderRadius: 14,
