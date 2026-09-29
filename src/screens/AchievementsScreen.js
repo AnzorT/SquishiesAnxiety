@@ -12,6 +12,7 @@ import { CandyProgress, RaysSpin } from '../components/candy/Decor';
 import OutlinedTitle from '../components/candy/OutlinedTitle';
 import ShadowText, { outline3 } from '../components/candy/ShadowText';
 import CreatureThumbnail from '../components/CreatureThumbnail';
+import AdStrip from '../components/AdStrip';
 import sfx from '../audio/sfx';
 
 // Achievements, as the v3 design's carousel: one big badge at a time under
@@ -212,6 +213,7 @@ function Details({ entry, index, total }) {
 export default function AchievementsScreen({ creatures = [], profile = null, customCount = 0, onBack }) {
   const insets = useSafeAreaInsets();
   const entries = useMemo(() => computeAchievements(creatures, profile || {}, customCount), [creatures, profile, customCount]);
+  const adsFree = !!profile?.adsFree;
   const doneCount = entries.filter((e) => e.done).length;
 
   // opens on the first achievement still to do, like the design
@@ -310,10 +312,12 @@ export default function AchievementsScreen({ creatures = [], profile = null, cus
       </View>
 
       {current ? (
-        <View style={{ paddingBottom: 26 + insets.bottom }}>
+        <View style={{ paddingBottom: adsFree ? 26 + insets.bottom : 16 }}>
           <Details key={current.key} entry={current} index={index} total={entries.length} />
         </View>
       ) : null}
+      {/* the ad strip along the bottom, as on Home (none with Remove Ads) */}
+      {adsFree ? null : <AdStrip />}
     </CandyBackground>
   );
 }

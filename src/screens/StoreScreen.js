@@ -12,6 +12,7 @@ import { SoftPulse } from '../components/candy/Decor';
 import CreatureToken from '../components/candy/Tokens';
 import { CandyProgress } from '../components/candy/Decor';
 import { isUnlockable, tokenCount, tokenPrice } from '../economy';
+import AdStrip from '../components/AdStrip';
 
 // The Key Shop sells a creature's *key*, not the creature itself — redeeming
 // it is the hold-to-unlock gesture on the Home card (CreatureCard). Every
@@ -91,6 +92,7 @@ export default function StoreScreen({
   onBack,
 }) {
   const insets = useSafeAreaInsets();
+  const adsFree = !!profile?.adsFree;
   const items = useMemo(() => creatures.filter(isUnlockable), [creatures]);
   const ownedIds = profile?.ownedIds;
   const keys = profile?.keys;
@@ -131,8 +133,10 @@ export default function StoreScreen({
         initialNumToRender={6}
         maxToRenderPerBatch={4}
         windowSize={5}
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 20 }]}
+        contentContainerStyle={[styles.list, { paddingBottom: adsFree ? insets.bottom + 20 : 20 }]}
       />
+      {/* the ad strip along the bottom, as on Home (none with Remove Ads) */}
+      {adsFree ? null : <AdStrip />}
     </CandyBackground>
   );
 }

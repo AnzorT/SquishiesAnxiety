@@ -18,6 +18,7 @@ import { SoftPulse } from '../components/candy/Decor';
 import GiftBox from '../components/box/GiftBox';
 import BoxReveal, { OUTLINE_8 } from '../components/box/BoxReveal';
 import Toast from '../components/squad/Toast';
+import AdStrip, { AD_H } from '../components/AdStrip';
 import useRewardedAd from '../components/useRewardedAd';
 import { BOX_PRICE, BOX_TAPS, DAILY_BOXES, SECRET, boxDailyUsed, boxPayMode, boxRoster, ownedCount, pullIsPlayable, rollBox, untilNewBoxes } from '../mysteryBox';
 import sfx from '../audio/sfx';
@@ -36,6 +37,8 @@ import sfx from '../audio/sfx';
 // firebase/firestore.js); App's onOpen (openBox) hands out the pull in one
 // write when the box bursts. None of them waits on the network: the writes
 // land in Firestore's local cache.
+// Like Home and the squish screen, the ad strip runs along the bottom until
+// Remove Ads is bought.
 
 const TAP_WINDOW_MS = 400;
 const OPEN_MS = 650;
@@ -659,7 +662,7 @@ export default function MysteryBoxScreen({ profile, creatures = [], onBack, onOp
         </View>
       </View>
 
-      <View style={[styles.bottom, { paddingBottom: 22 + insets.bottom }]}>
+      <View style={[styles.bottom, { paddingBottom: adsFree ? 22 + insets.bottom : 14 }]}>
         <View style={styles.collectionRow}>
           <ShadowText style={styles.collectionText} shadows={OUTLINE_8('#45107a')}>
             COLLECTION
@@ -717,7 +720,11 @@ export default function MysteryBoxScreen({ profile, creatures = [], onBack, onOp
         secretCreature={creatures.find((c) => c.id === SECRET.id)}
         onClose={closeSecret}
       />
-      <Toast message={toast} messageKey={toastKey} />
+      {adsFree ? null : <AdStrip />}
+      {/* above the ad strip */}
+      <View pointerEvents="none" style={[styles.toastAt, { bottom: adsFree ? 0 : AD_H + insets.bottom }]}>
+        <Toast message={toast} messageKey={toastKey} />
+      </View>
     </CandyBackground>
   );
 }
@@ -844,6 +851,7 @@ const styles = StyleSheet.create({
   },
   flash: { zIndex: 20 },
   bottom: { paddingHorizontal: 18, gap: 12 },
+  toastAt: { position: 'absolute', left: 0, right: 0, height: 0, zIndex: 30 },
   collectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   odds: { gap: 6, paddingHorizontal: 14, paddingBottom: 4, paddingTop: 2 },
   secretArt: { width: 130, height: 120, alignItems: 'center', justifyContent: 'center' },
