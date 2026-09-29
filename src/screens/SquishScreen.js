@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Canvas } from '@react-three/fiber';
 import { NeutralToneMapping } from 'three';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Defs, LinearGradient as SvgGradient, Stop, Path } from 'react-native-svg';
 import { InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
 import SquishyToy from '../components/SquishyToy';
 import SquishyToy2D from '../components/SquishyToy2D';
@@ -28,6 +28,7 @@ import CandyButton, { Shine } from '../components/candy/CandyButton';
 import RoundButton, { BackGlyph, CloseGlyph, GearIcon } from '../components/candy/RoundButton';
 import { CoinIcon, GlassPill } from '../components/candy/Coin';
 import OutlinedTitle from '../components/candy/OutlinedTitle';
+import ShadowText from '../components/candy/ShadowText';
 import ToggleSwitch from '../components/candy/ToggleSwitch';
 import sfx from '../audio/sfx';
 
@@ -295,36 +296,134 @@ function PopIn({ style, children, holdMs = 940, fadeOutMs = 400, onFadeOutDone }
 }
 
 // One-time gesture tutorial, overlaid on the stage itself (replaces the old
-// permanent bottom-panel hint list) — a squish hand on the left, a rotate
-// hand on the right, each with a pulsing touch-point ring, fading out the
-// first time the player actually touches the toy (see gestureHintOpacity).
+// permanent bottom-panel hint list) — a squish hand on the left, a
+// two-finger rotate hand on the right, each with a pulsing touch ring,
+// fading out the first time the player actually touches the toy (see
+// gestureHintOpacity). A third hand under the gear points at the gameplay
+// settings (SettingsHint). All three are drawn in the candy style: white
+// hands with the header icons' dark outline and drop, pink-and-white touch
+// rings, and the Mystery Box's glass hint pill for the caption.
 const SQUISH_HAND_D =
   'M24 17A6 6 0 0 1 36 17L36 42C37 39 41 37.5 44 39C47.4 40.4 48.4 44 47.4 47C48.4 44 51.4 42.4 54.4 43.6C57.8 45 58.8 48.4 57.8 51.6C59.4 49.4 62.6 48.8 64.8 50.6C67.4 52.6 67.8 55.8 67 59L65.4 69C63.8 81.4 54.8 90.6 42.8 90.6L35.8 90.6C23.4 90.6 15.2 81.6 13.8 69.2L12.8 60.6L5.8 50.6C2.8 46.2 9.2 41.6 12.8 46.2L19.4 55.2C20.6 56.8 22.2 57.4 24 57.4Z';
 const SQUISH_HAND_CREASE_D = 'M47.4 47c-2.6.6-5.4.2-7.6-1.2M57.8 51.6c-2.6.8-5.6.4-8-1';
 const ROTATE_HAND_D =
   'M18 22A6 6 0 0 1 30 22L30 44L32 44L32 15A6 6 0 0 1 44 15L44 47C45.4 44 49 42.6 52 44.2C55.4 45.8 56.2 49.4 55 52.6C56.8 50.4 60 50 62.2 52C64.8 54.2 65 57.4 64 60.4L62.6 69.6C61 82 52 90.6 40 90.6L33 90.6C21 90.6 13 81.6 11.8 69.4L10.8 61L4 51C1 46.6 7.4 42 11 46.6L17 55.4C17.6 56.4 17.8 56.6 18 57Z';
 const ROTATE_HAND_CREASE_D = 'M55 52.6c-2.6.8-5.6.4-8-1M31 44.4c-.2 4 .4 8 1.8 11.6';
+// The hand paths live in a 72×96 box; the viewBox leaves room for the
+// outline and its drop.
+const HAND_VIEWBOX = '-5 -5 82 110';
+const HAND_ASPECT = 110 / 82;
+// fingertip of each hand, in path units — where its touch ring sits
+const SQUISH_TIP = { x: 30, y: 11 };
+const ROTATE_TIP = { x: 31, y: 12 };
+const HINT_INK = '#45189a';
+const HINT_TEXT_SHADOWS = [
+  [0, 2, HINT_INK],
+  [1, 0, HINT_INK],
+  [-1, 0, HINT_INK],
+];
 
-function GestureHint({ side, d, creaseD, label, touchAnim, gestureAnim }) {
-  const sideStyle = side === 'left' ? { left: '12%' } : { right: '12%' };
+function CandyHand({ d, creaseD, width }) {
+  return (
+    <Svg width={width} height={width * HAND_ASPECT} viewBox={HAND_VIEWBOX}>
+      <Defs>
+        <SvgGradient id="candyHand" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#ffffff" />
+          <Stop offset="1" stopColor="#f0dcff" />
+        </SvgGradient>
+      </Defs>
+      <Path d={d} fill={HINT_INK} stroke={HINT_INK} strokeWidth={7} strokeLinejoin="round" transform="translate(0,4)" />
+      <Path d={d} fill={HINT_INK} stroke={HINT_INK} strokeWidth={7} strokeLinejoin="round" />
+      <Path d={d} fill="url(#candyHand)" stroke="#ffffff" strokeWidth={2.4} strokeLinejoin="round" />
+      <Path d={creaseD} stroke="#c28cf0" strokeWidth={2.4} strokeLinecap="round" fill="none" />
+    </Svg>
+  );
+}
+
+// Pink ring with a white rim, pulsing where the finger lands.
+function TouchRing({ anim, style }) {
+  return (
+    <Animated.View
+      style={[
+        styles.touchRing,
+        style,
+        {
+          opacity: anim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.95, 0.35, 0.95] }),
+          transform: [{ scale: anim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }) }],
+        },
+      ]}
+    >
+      <View style={styles.touchRingInner} />
+    </Animated.View>
+  );
+}
+
+// The glass caption pill (the Mystery Box's hint look).
+function HintPill({ label, sub, align = 'center' }) {
+  return (
+    <View style={[styles.hintPill, { alignItems: align === 'right' ? 'flex-end' : 'center' }]}>
+      <ShadowText style={styles.hintPillText} shadows={HINT_TEXT_SHADOWS} numberOfLines={1}>
+        {label}
+      </ShadowText>
+      {sub ? (
+        <Text style={styles.hintPillSub} numberOfLines={1}>
+          {sub}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+const HAND_W = 50;
+
+function GestureHint({ side, d, creaseD, tip, label, touchAnim, gestureAnim }) {
+  const sideStyle = side === 'left' ? { left: '4%' } : { right: '4%' };
+  const k = HAND_W / 82;
+  const ring = { left: (tip.x + 5) * k - 14, top: (tip.y + 5) * k - 14 };
   return (
     <View style={[styles.gestureHint, sideStyle]} pointerEvents="none">
       <Animated.View style={[styles.gestureHandWrap, { transform: gestureAnim }]}>
-        <Animated.View
-          style={[
-            styles.gestureTouchRing,
-            side === 'left' ? { left: 10 } : { left: 8 },
-            { opacity: touchAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.9, 0.2, 0.9] }), transform: [{ scale: touchAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.25] }) }] },
-          ]}
-        />
-        <Svg width={46} height={62} viewBox="0 0 72 96" style={styles.gestureSvg}>
-          <Path d={d} fill="rgba(107,63,160,0.22)" transform="translate(0,4)" />
-          <Path d={d} fill="rgba(255,255,255,0.9)" stroke={candyColors.inkSoft} strokeWidth={2.8} strokeLinejoin="round" />
-          <Path d={creaseD} stroke="rgba(107,63,160,0.6)" strokeWidth={2} strokeLinecap="round" fill="none" />
-        </Svg>
+        <CandyHand d={d} creaseD={creaseD} width={HAND_W} />
+        <TouchRing anim={touchAnim} style={ring} />
       </Animated.View>
-      <Text style={styles.gestureHintText}>{label}</Text>
+      <HintPill label={label} />
     </View>
+  );
+}
+
+// The settings pointer: a hand under the gear, bobbing up at it, a pink halo
+// pulsing round the gear, and a GAMEPLAY SETTINGS pill saying what's inside.
+// It stays a little longer than the stage hints — until the gear is opened,
+// or a few seconds after the first squish (see settingsHintOpacity).
+const POINT_HAND_W = 44;
+const GEAR_SIZE = 42;
+const GEAR_RIGHT = 14;
+
+function SettingsHint({ top, opacity, bobAnim, pulseAnim }) {
+  const k = POINT_HAND_W / 82;
+  // put the fingertip right under the gear's centre
+  const handRight = GEAR_RIGHT + GEAR_SIZE / 2 - (POINT_HAND_W - (SQUISH_TIP.x + 5) * k);
+  const translateY = bobAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -7] });
+  return (
+    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.settingsHintLayer, { opacity }]}>
+      <Animated.View
+        style={[
+          styles.gearHalo,
+          {
+            top: top - 5,
+            right: GEAR_RIGHT - 5,
+            opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 0.15] }),
+            transform: [{ scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.28] }) }],
+          },
+        ]}
+      />
+      <View style={[styles.gearHint, { top: top + GEAR_SIZE + 8 }]}>
+        <Animated.View style={{ marginRight: handRight - 10, transform: [{ translateY }] }}>
+          <CandyHand d={SQUISH_HAND_D} creaseD={SQUISH_HAND_CREASE_D} width={POINT_HAND_W} />
+        </Animated.View>
+        <HintPill label="GAMEPLAY SETTINGS" sub="Sound · vibration · poke" align="right" />
+      </View>
+    </Animated.View>
   );
 }
 
@@ -420,6 +519,7 @@ const SquishStage = memo(function SquishStage({
           side="left"
           d={SQUISH_HAND_D}
           creaseD={SQUISH_HAND_CREASE_D}
+          tip={SQUISH_TIP}
           label="HOLD TO SQUISH"
           touchAnim={touchAnim}
           gestureAnim={[{ translateY: squishAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 8, 0] }) }]}
@@ -428,7 +528,8 @@ const SquishStage = memo(function SquishStage({
           side="right"
           d={ROTATE_HAND_D}
           creaseD={ROTATE_HAND_CREASE_D}
-          label="HOLD TO ROTATE"
+          tip={ROTATE_TIP}
+          label="2 FINGERS TO ROTATE"
           touchAnim={touchAnim}
           gestureAnim={[{ rotate: rotateAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['0deg', '-14deg', '0deg'] }) }]}
         />
@@ -658,7 +759,7 @@ export default function SquishScreen({
   onToggleReleaseSound,
   vibrationEnabled = true,
   onToggleVibration,
-  showFps = true,
+  showFps = false,
   onToggleShowFps,
   pokeStrength = 3,
   onChangePokeStrength,
@@ -714,6 +815,23 @@ export default function SquishScreen({
   const gestureHintOpacity = useRef(new Animated.Value(1)).current;
   const hintDismissedRef = useRef(false);
   const [showHints, setShowHints] = useState(true);
+  // The settings pointer fades when the gear is opened, or 4 s after the
+  // first squish, then unmounts (its loops stop with it).
+  const settingsHintOpacity = useRef(new Animated.Value(1)).current;
+  const [showSettingsHint, setShowSettingsHint] = useState(true);
+  const settingsHintTimerRef = useRef(null);
+  const settingsPointAnim = useLoopAnim({ duration: 650 });
+  const gearPulseAnim = useLoopAnim({ duration: 900 });
+  const settingsHintGoneRef = useRef(false);
+  const dismissSettingsHint = useCallback(() => {
+    if (settingsHintGoneRef.current) return;
+    settingsHintGoneRef.current = true;
+    clearTimeout(settingsHintTimerRef.current);
+    Animated.timing(settingsHintOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start(({ finished }) => {
+      if (finished) setShowSettingsHint(false);
+    });
+  }, [settingsHintOpacity]);
+  useEffect(() => () => clearTimeout(settingsHintTimerRef.current), []);
   const bonusCoinAnim = useLoopAnim({ duration: 1300 });
 
   // Only re-renders SquishScreen once, when the window actually expires —
@@ -772,10 +890,16 @@ export default function SquishScreen({
     },
     [wheelAnim]
   );
-  const openSettings = useCallback(() => setSettingsVisible(true), [setSettingsVisible]);
+  const openSettings = useCallback(() => {
+    dismissSettingsHint();
+    setSettingsVisible(true);
+  }, [setSettingsVisible, dismissSettingsHint]);
   const closeSettings = useCallback(() => setSettingsVisible(false), [setSettingsVisible]);
   const wheelRotate = wheelAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
   const dentScale = POKE_STRENGTH_SCALES[pokeStrength - 1] ?? 1;
+
+  const dismissSettingsHintRef = useRef(dismissSettingsHint);
+  dismissSettingsHintRef.current = dismissSettingsHint;
 
   // Mirrors props/state so the once-created PanResponder always reads fresh values.
   const latestRef = useRef(null);
@@ -923,6 +1047,7 @@ export default function SquishScreen({
           Animated.timing(gestureHintOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start(({ finished }) => {
             if (finished) setShowHints(false);
           });
+          settingsHintTimerRef.current = setTimeout(() => dismissSettingsHintRef.current(), 4000);
         }
         const touches = evt.nativeEvent.touches || [];
         gestureHadTwoRef.current = touches.length >= 2;
@@ -1046,7 +1171,11 @@ export default function SquishScreen({
           {showFps && <FpsCounter />}
         </View>
 
-        <RoundButton size={42} onPress={openSettings} style={[styles.wheelButton, { top: insets.top + 14 }]}>
+        {showSettingsHint ? (
+          <SettingsHint top={insets.top + 14} opacity={settingsHintOpacity} bobAnim={settingsPointAnim} pulseAnim={gearPulseAnim} />
+        ) : null}
+
+        <RoundButton size={GEAR_SIZE} onPress={openSettings} style={[styles.wheelButton, { top: insets.top + 14 }]}>
           <Animated.View style={{ transform: [{ rotate: wheelRotate }] }}>
             <GearIcon />
           </Animated.View>
@@ -1145,7 +1274,17 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 1,
   },
-  wheelButton: { position: 'absolute', right: 14, zIndex: 3 },
+  wheelButton: { position: 'absolute', right: GEAR_RIGHT, zIndex: 3 },
+  settingsHintLayer: { zIndex: 4 },
+  gearHalo: {
+    position: 'absolute',
+    width: GEAR_SIZE + 10,
+    height: GEAR_SIZE + 10,
+    borderRadius: (GEAR_SIZE + 10) / 2,
+    borderWidth: 3,
+    borderColor: '#ff4fbf',
+  },
+  gearHint: { position: 'absolute', right: 10, alignItems: 'flex-end', gap: 4 },
   stage: { width: STAGE_SIZE, height: STAGE_SIZE },
   ripple: {
     position: 'absolute',
@@ -1214,27 +1353,27 @@ const styles = StyleSheet.create({
 
   bottomPanel: { backgroundColor: 'rgba(70,10,130,0.35)', borderTopWidth: 2, borderTopColor: 'rgba(255,255,255,0.6)' },
   bottomRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10 },
-  gestureHint: { position: 'absolute', top: '52%', alignItems: 'center', gap: 6 },
-  gestureHandWrap: { width: 46, height: 62, alignItems: 'center', justifyContent: 'center' },
-  gestureSvg: { position: 'absolute' },
-  gestureTouchRing: {
+  gestureHint: { position: 'absolute', top: '50%', alignItems: 'center', gap: 6 },
+  gestureHandWrap: { width: HAND_W, height: HAND_W * HAND_ASPECT },
+  touchRing: {
     position: 'absolute',
-    top: -3,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 2.5,
-    borderColor: '#ff6fbd',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 3,
+    borderColor: '#ff4fbf',
   },
-  gestureHintText: {
-    color: candyColors.ink,
-    fontFamily: candyFonts.bodyBlack,
-    fontSize: 9,
-    letterSpacing: 1.1,
-    textShadowColor: '#ffffff',
-    textShadowRadius: 5,
-    textShadowOffset: { width: 0, height: 0 },
+  touchRingInner: { flex: 1, borderRadius: 11, borderWidth: 2, borderColor: '#ffffff' },
+  hintPill: {
+    borderRadius: 14,
+    backgroundColor: 'rgba(60,8,110,0.45)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.75)',
+    paddingVertical: 4,
+    paddingHorizontal: 11,
   },
+  hintPillText: { color: '#ffffff', fontFamily: candyFonts.display, fontSize: 12, letterSpacing: 0.8, includeFontPadding: false },
+  hintPillSub: { color: '#ffe6fa', fontFamily: candyFonts.bodyHeavy, fontSize: 10.5, marginTop: 1 },
   bonusBar: { marginHorizontal: 16, marginBottom: 8, paddingBottom: 4 },
   bonusHidden: { opacity: 0 },
   bonusLip: { position: 'absolute', left: 0, right: 0, top: 4, bottom: 0, borderRadius: 21, backgroundColor: '#9c4d06' },

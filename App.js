@@ -150,9 +150,10 @@ export default function App() {
   const [releaseSoundEnabled, setReleaseSoundEnabled] = useState(true);
   // Vibration on the squish stage (its strength follows pokeStrength).
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
-  // Squish-screen settings popup: FPS pill, poke strength (1-5, 3 = the
-  // tuned default depth) and poke direction (push in / pop out).
-  const [showFps, setShowFps] = useState(true);
+  // Squish-screen settings popup: FPS pill (off until switched on), poke
+  // strength (1-5, 3 = the tuned default depth) and poke direction (push
+  // in / pop out).
+  const [showFps, setShowFps] = useState(false);
   const [pokeStrength, setPokeStrength] = useState(3);
   const [pokeOutward, setPokeOutward] = useState(false);
 
