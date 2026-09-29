@@ -135,15 +135,19 @@ export function TierChip({ tier, pulse = true, style, fontSize = 9 }) {
   const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] });
   return (
     <Animated.View style={[styles.chipRing, { transform: [{ scale }] }, style]}>
-      <LinearGradient colors={t.bg} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0.4 }} style={styles.chipFace}>
-        <Text style={[styles.chipText, { color: t.color, fontSize }]}>{t.label}</Text>
-      </LinearGradient>
+      {/* white rim as its own layer — on Android a gradient view paints over
+          part of its own border */}
+      <View style={styles.chipRim}>
+        <LinearGradient colors={t.bg} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0.4 }} style={styles.chipFace}>
+          <Text style={[styles.chipText, { color: t.color, fontSize, lineHeight: Math.round(fontSize * 1.36) }]}>{t.label}</Text>
+        </LinearGradient>
+      </View>
     </Animated.View>
   );
 }
 
 // ---- a gentle 1→1.04 breathing wrapper ---------------------------------
-export function SoftPulse({ children, to = 1.04, halfMs = 800, style, active = true }) {
+export function SoftPulse({ children, to = 1.04, halfMs = 800, style, active = true, onLayout }) {
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (!active) return undefined;
@@ -157,7 +161,11 @@ export function SoftPulse({ children, to = 1.04, halfMs = 800, style, active = t
     return () => loop.stop();
   }, [anim, halfMs, active]);
   const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [1, to] });
-  return <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>;
+  return (
+    <Animated.View style={[style, { transform: [{ scale }] }]} onLayout={onLayout}>
+      {children}
+    </Animated.View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -179,6 +187,7 @@ const styles = StyleSheet.create({
   progTrack: { borderWidth: 2.5, borderColor: '#ffffff', backgroundColor: 'rgba(80,12,140,0.45)', overflow: 'hidden' },
 
   chipRing: { borderRadius: 999, backgroundColor: candyColors.cardRing, padding: 1.5 },
-  chipFace: { borderRadius: 999, borderWidth: 2, borderColor: '#ffffff', paddingHorizontal: 8, paddingVertical: 1 },
-  chipText: { fontFamily: candyFonts.bodyBlack, letterSpacing: 1.2 },
+  chipRim: { borderRadius: 999, padding: 2, backgroundColor: '#ffffff' },
+  chipFace: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 1 },
+  chipText: { fontFamily: candyFonts.bodyBlack, letterSpacing: 1.2, includeFontPadding: false },
 });

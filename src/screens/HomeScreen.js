@@ -1,42 +1,48 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Animated, Easing, PanResponder } from 'react-native';
+import { View, StyleSheet, Animated, Easing, InteractionManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { candyFonts } from '../theme/candyTheme';
 import CreatureCard from '../components/CreatureCard';
 import { CreateOwnCard, CustomCreatureCard } from '../components/CustomCards';
-import { PagedCard, GhostCard, PAGED_CARD_EASING } from '../components/PagedCard';
-import AdBanner from '../components/AdBanner';
+import CardPager from '../components/CardPager';
+import SkeletonCard from '../components/SkeletonCard';
+import AdStrip from '../components/AdStrip';
+import MysteryBoxBanner from '../components/box/MysteryBoxBanner';
+import { RemoveAdsButton } from '../components/RemoveAds';
 import CandyBackground from '../components/candy/CandyBackground';
 import CandyTabs from '../components/candy/CandyTabs';
-import RoundButton, { TrophyIcon, BagIcon, GearIcon, Triangle } from '../components/candy/RoundButton';
+import RoundButton, { TrophyIcon, BagIcon, GearIcon } from '../components/candy/RoundButton';
 import { CoinPill } from '../components/candy/Coin';
 import { HaloText } from '../components/candy/OutlinedTitle';
 import SettingsSheet from './SettingsSheet';
+import sfx from '../audio/sfx';
 
 // Home — a two-tab creature shelf on the v3 candy stage:
 //  · OUR CREATURES — the 20-strong roster, one card at a time
 //  · MY CREATURES  — a "Create your own squishy" card, then a card per
 //    custom creature the player has made
-// Switching tabs slides the whole list in from the side (listInLeft/Right);
-// paging within a tab plays the cardSlideUp/Down entrance while a ghost of
-// the outgoing card flies off (see components/PagedCard). The unlock-with-key
-// hold gesture and its UNLOCKED! burst live in CreatureCard.
-
-const ARROW_H = 44;
-const SWIPE_THRESHOLD = 46; // source: onTrackMove dy gate
+//
+// Both lists stay mounted side by side once built, so switching tabs is
+// only an animation: the current list slides out one way while the other
+// slides in from the opposite side (the design's ghostList + listInLeft/
+// listInRight — going to the left tab, the old list leaves to the right and
+// the new one enters from the left; going right, the reverse). The header,
+// tabs and ad bar stay put. A list whose cards aren't built yet shows a
+// placeholder card rather than holding the switch back.
+//
+// Paging within a list lives in CardPager; the unlock-with-key hold gesture
+// lives in CreatureCard. Until Remove Ads is bought, a NO ADS button floats
+// in the lists' bottom-right corner (beside the down arrow) and the ad strip
+// sits at the bottom; afterwards both are gone.
 
 const HOME_TABS = [
   { value: 'ours', label: 'OUR CREATURES' },
   { value: 'mine', label: 'MY CREATURES' },
 ];
 
-function ArrowButton({ direction, onPress, dim }) {
-  return (
-    <RoundButton size={28} lip={3} onPress={onPress} disabled={dim} dim={dim} hitSlop={10}>
-      <Triangle dir={direction} size={7} />
-    </RoundButton>
-  );
-}
+// one shared element, so the memoized pagers don't see a new prop each render
+const SKELETON = <SkeletonCard />;
+
+const LIST_SLIDE = { duration: 420, easing: Easing.bezier(0.3, 0.9, 0.3, 1) };
 
 export default function HomeScreen({
   creatures = [],
@@ -47,10 +53,14 @@ export default function HomeScreen({
   onChangeIndex,
   onSelectToy,
   onUnlockWithKey,
+  tokens = {}, // creature id → its tokens so far
+  boxConfigVersion = 0, // bumps when config/mysteryBox (token prices) changes
+  onShowUnlock = () => {},
+  removeAdsPrice = '',
+  onOpenRemoveAds = () => {},
   nickname,
   onSaveNickname,
   adsFree,
-  onClaimAdsFree,
   totalEarned,
   stats,
   favoriteCreatureName,
@@ -66,214 +76,119 @@ export default function HomeScreen({
   focusMineToken = 0,
   generationCredits = 1,
   priceLabel = '$4.99',
+  discountPct = 0, // a Daily Spin CREATE prize: shown as "−15%" by the price
+  // the Mystery Box banner: "3/20 · FIND THE SECRET", FREE/VIDEO/500/READY
+  boxLabel = '',
+  boxPrice = '',
+  boxVideos = 0,
+  boxCoins = false,
+  onOpenBox = () => {},
 }) {
   const insets = useSafeAreaInsets();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [tab, setTab] = useState('ours'); // 'ours' | 'mine'
-  const [mineIndex, setMineIndex] = useState(0);
-  const [cardTrackH, setCardTrackH] = useState(0);
+  const [listW, setListW] = useState(0);
 
-  const oursIndex = creatures.length ? Math.min(Math.max(index ?? 0, 0), creatures.length - 1) : 0;
-  const ownedCount = creatures.filter((c) => ownedIds.includes(c.id)).length;
-  const minePageCount = customCreatures.length + 1;
-  const clampedMineIndex = Math.min(Math.max(mineIndex, 0), minePageCount - 1);
-
-  const targetPage = tab === 'ours' ? oursIndex : clampedMineIndex;
-  const pageCount = tab === 'ours' ? creatures.length : minePageCount;
-
-  // --- card swap: `view` is what's on screen; a `ghost` clone of the card
-  // that just left flies off while the new one slides in (see PagedCard).
-  // Both are created in the SAME render (inside goTo) so there's no one-frame
-  // flash of the outgoing card popping back to centre. ---
-  const [view, setView] = useState({ index: targetPage, dir: 1 });
-  const [ghost, setGhost] = useState(null);
-  const page = view.index;
-
-  // An index/tab change that DIDN'T come from goTo (tab switch resetting to 0,
-  // a custom creature deleted, App resetting homeIndex) — snap, no ghost.
-  useEffect(() => {
-    if (view.index !== targetPage) {
-      setView((v) => ({ index: targetPage, dir: v.dir }));
-      setGhost(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetPage, tab]);
-
-  const goTo = useCallback(
-    (next, opts = {}) => {
-      const clamped = Math.min(Math.max(next, 0), pageCount - 1);
-      if (clamped === view.index) return;
-      const dir = clamped > view.index ? 1 : -1;
-      // `instant` means a real-time drag (see panResponder below) already
-      // animated the card into its resting position — skip the timed
-      // slide-in/ghost-exit for this transition so it doesn't yank back
-      // off-screen and replay.
-      setGhost(opts.instant ? null : { index: view.index, dir, id: Date.now() });
-      setView({ index: clamped, dir, instant: !!opts.instant });
-      if (tab === 'ours') onChangeIndex && onChangeIndex(clamped);
-      else setMineIndex(clamped);
+  // --- list slide: 0 = OUR CREATURES in view, 1 = MY CREATURES in view ---
+  const tabPos = useRef(new Animated.Value(0)).current;
+  const slideTo = useCallback(
+    (next) => {
+      Animated.timing(tabPos, { toValue: next === 'mine' ? 1 : 0, ...LIST_SLIDE, useNativeDriver: true }).start();
     },
-    [pageCount, view.index, tab, onChangeIndex]
+    [tabPos]
   );
 
-  // --- list slide-in on tab switch (listInLeft / listInRight) ---
-  const listAnim = useRef(new Animated.Value(1)).current;
-  const [listDir, setListDir] = useState(1);
+  // MY CREATURES is built quietly once Home has settled, so the first switch
+  // is already instant; switching before that shows the placeholder card.
+  const [mineReady, setMineReady] = useState(false);
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => setMineReady(true));
+    return () => task.cancel();
+  }, []);
+
   const switchTab = useCallback(
     (next) => {
       if (next === tab) return;
-      setListDir(next === 'mine' ? 1 : -1);
+      slideTo(next); // start moving first — the re-render below can't hold it up
+      sfx.play('swipe');
       setTab(next);
-      if (next === 'mine') setMineIndex(0);
-      else onChangeIndex && onChangeIndex(0);
+      if (next === 'mine' && !mineReady) requestAnimationFrame(() => setMineReady(true));
     },
-    [tab, onChangeIndex]
+    [tab, slideTo, mineReady]
   );
-  useEffect(() => {
-    listAnim.setValue(0);
-    Animated.timing(listAnim, {
-      toValue: 1,
-      duration: 340,
-      easing: Easing.bezier(0.2, 0.9, 0.25, 1),
-      useNativeDriver: true,
-    }).start();
-  }, [tab, listAnim]);
 
-  // App bumps focusMineToken right after a creature is created — jump to the
-  // MY CREATURES tab and to its last page (the new creature); `clampedMineIndex`
-  // pins the big index to the last real page once the Firestore snapshot lands.
+  // App bumps focusMineToken right after a creature is created — jump to MY
+  // CREATURES and to its last page (the new creature).
+  const [mineJump, setMineJump] = useState(null);
   const didMountFocus = useRef(false);
   useEffect(() => {
     if (!didMountFocus.current) {
       didMountFocus.current = true;
       return;
     }
-    setListDir(1);
+    setMineReady(true);
     setTab('mine');
-    setMineIndex(9999);
+    slideTo('mine');
+    setMineJump({ page: customCreatures.length, token: focusMineToken, until: Date.now() + 8000 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusMineToken]);
-  const listTranslateX = listAnim.interpolate({ inputRange: [0, 1], outputRange: [listDir > 0 ? 46 : -46, 0] });
+  // The new creature's doc can land a moment after the token — for a few
+  // seconds, keep the jump target on the last page as the list grows.
+  useEffect(() => {
+    if (mineJump && Date.now() < mineJump.until && mineJump.page !== customCreatures.length) {
+      setMineJump({ ...mineJump, page: customCreatures.length, token: mineJump.token + 0.5 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customCreatures.length]);
 
-  // --- vertical swipe paging on the card track ---
-  // Two separate problems compounded here. (1) A finger drag used to do
-  // nothing until release, so the card sat frozen under your thumb for the
-  // whole gesture. Fixed by having `dragY` track the raw touch offset every
-  // frame. (2) Even after that, the *first* drag on a given page still felt
-  // like it took a beat to "notice" you — because the neighbouring card was
-  // only ever mounted once a drag actually started (inside `dragState`),
-  // so React had to build that whole card (a fresh CreatureCard instance,
-  // its SVG thumbnail, its animated values) in the middle of your gesture.
-  // The fix is to always keep the previous/next card mounted (see the
-  // prev/next slots in cardTrack below, rendered whenever that neighbour
-  // page exists) so there's nothing left to build when a drag begins —
-  // only their position changes, driven by `dragY`.
-  const dragY = useRef(new Animated.Value(0)).current;
-  const pageRef = useRef(page);
-  pageRef.current = page;
-  const pageCountRef = useRef(pageCount);
-  pageCountRef.current = pageCount;
-  const cardTrackHRef = useRef(cardTrackH);
-  cardTrackHRef.current = cardTrackH;
-
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        // CreatureCard's Pressable (hold-to-unlock) claims the responder the
-        // instant a touch lands on it, on the bubble phase — so a *bubble*
-        // onMoveShouldSetPanResponder here never even gets asked once that
-        // happens, and the swipe only "woke up" if you dragged off the card
-        // entirely. The *capture* phase is evaluated top-down on every move,
-        // before the touch reaches the Pressable, so it can reliably steal
-        // the gesture away the moment real vertical dragging starts.
-        onStartShouldSetPanResponderCapture: () => false,
-        onMoveShouldSetPanResponderCapture: (_e, g) => Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx),
-        onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx),
-        onPanResponderTerminationRequest: () => false,
-        onPanResponderGrant: () => {
-          dragY.setValue(0);
-        },
-        onPanResponderMove: (_e, g) => {
-          const dir = g.dy < 0 ? 1 : -1;
-          const peekIndex = pageRef.current + dir;
-          const hasPeek = peekIndex >= 0 && peekIndex <= pageCountRef.current - 1;
-          // Rubber-band: at the end of the list there's nowhere to reveal, so
-          // let the current card drift a little (feedback that you dragged)
-          // instead of tracking 1:1 forever.
-          dragY.setValue(hasPeek ? g.dy : g.dy * 0.25);
-        },
-        onPanResponderRelease: (_e, g) => {
-          const dir = g.dy < 0 ? 1 : -1;
-          const peekIndex = pageRef.current + dir;
-          const hasPeek = peekIndex >= 0 && peekIndex <= pageCountRef.current - 1;
-          const committed = hasPeek && Math.abs(g.dy) >= SWIPE_THRESHOLD;
-          if (committed) {
-            const trackH = cardTrackHRef.current || 1;
-            const target = dir > 0 ? -trackH : trackH;
-            Animated.timing(dragY, {
-              toValue: target,
-              duration: 180,
-              easing: PAGED_CARD_EASING,
-              useNativeDriver: false,
-            }).start(() => {
-              goTo(peekIndex, { instant: true });
-              dragY.setValue(0);
-            });
-          } else {
-            Animated.spring(dragY, {
-              toValue: 0,
-              useNativeDriver: false,
-              friction: 9,
-              tension: 80,
-            }).start();
-          }
-        },
-      }),
-    [goTo, dragY]
-  );
-
-  const renderPage = useCallback(
-    (tabName, pageIndex) => {
-      if (tabName === 'ours') {
-        const c = creatures[pageIndex];
-        if (!c) return null;
-        return (
-          <CreatureCard
-            creature={c}
-            unlocked={ownedIds.includes(c.id)}
-            hasKey={!!keys[c.id]}
-            onSelectToy={onSelectToy}
-            onOpenStore={onOpenStore}
-            onUnlockWithKey={onUnlockWithKey}
-          />
-        );
-      }
-      if (pageIndex === 0) return <CreateOwnCard onPress={onOpenCreator} generationCredits={generationCredits} priceLabel={priceLabel} />;
-      const custom = customCreatures[pageIndex - 1];
-      if (!custom) return null;
+  // --- pages ---
+  const ownedSet = useMemo(() => new Set(ownedIds), [ownedIds]);
+  const renderOurs = useCallback(
+    (i) => {
+      const c = creatures[i];
+      if (!c) return null;
       return (
-        <CustomCreatureCard
-          creature={custom}
-          onPlay={() => onSelectCustom(custom)}
-          onDelete={() => onDeleteCustom(custom)}
-          onRetry={() => onRetryCustom(custom)}
+        <CreatureCard
+          creature={c}
+          unlocked={ownedSet.has(c.id)}
+          hasKey={!!keys[c.id]}
+          tokens={tokens[c.id] || 0}
+          priceVersion={boxConfigVersion}
+          onSelectToy={onSelectToy}
+          onShowUnlock={onShowUnlock}
+          onUnlockWithKey={onUnlockWithKey}
         />
       );
     },
-    [creatures, ownedIds, keys, customCreatures, onSelectToy, onOpenStore, onUnlockWithKey, onOpenCreator, onSelectCustom, onDeleteCustom, onRetryCustom, generationCredits, priceLabel]
+    [creatures, ownedSet, keys, tokens, boxConfigVersion, onSelectToy, onShowUnlock, onUnlockWithKey]
   );
+  const oursKey = useCallback((i) => (creatures[i] ? `c-${creatures[i].id}` : `c-${i}`), [creatures]);
 
-  if (!creatures.length) {
-    return (
-      <CandyBackground style={[styles.centered, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <ActivityIndicator color="#ffffff" />
-        <HaloText style={styles.loadingText}>Loading your shelf…</HaloText>
-      </CandyBackground>
-    );
-  }
+  const renderMine = useCallback(
+    (i) => {
+      if (i === 0) return <CreateOwnCard onPress={onOpenCreator} generationCredits={generationCredits} priceLabel={priceLabel} discountPct={discountPct} />;
+      const custom = customCreatures[i - 1];
+      if (!custom) return null;
+      return <CustomPage custom={custom} onSelect={onSelectCustom} onDelete={onDeleteCustom} onRetry={onRetryCustom} />;
+    },
+    [customCreatures, onOpenCreator, generationCredits, priceLabel, discountPct, onSelectCustom, onDeleteCustom, onRetryCustom]
+  );
+  const mineKey = useCallback((i) => (i === 0 ? 'create' : customCreatures[i - 1] ? `m-${customCreatures[i - 1].id}` : `m-${i}`), [customCreatures]);
 
-  const upDim = page === 0;
-  const downDim = page === pageCount - 1;
-  const mineBadge = customCreatures.length;
+  const ownedCount = creatures.filter((c) => ownedSet.has(c.id)).length;
+  const paneStyles = useMemo(() => {
+    const shift = listW * 1.05;
+    return {
+      ours: {
+        opacity: tabPos.interpolate({ inputRange: [0, 1], outputRange: [1, 0.4] }),
+        transform: [{ translateX: tabPos.interpolate({ inputRange: [0, 1], outputRange: [0, -shift] }) }],
+      },
+      mine: {
+        opacity: tabPos.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }),
+        transform: [{ translateX: tabPos.interpolate({ inputRange: [0, 1], outputRange: [shift, 0] }) }],
+      },
+    };
+  }, [tabPos, listW]);
 
   return (
     <CandyBackground sparkles style={styles.container}>
@@ -283,7 +198,7 @@ export default function HomeScreen({
             <HaloText style={styles.nickname} numberOfLines={1}>
               {nickname}
             </HaloText>
-            <CoinPill coins={coins} style={styles.coinPill} />
+            <CoinPill coins={coins} style={styles.wallet} />
           </View>
           <View style={styles.headerIcons}>
             <RoundButton size={42} onPress={onOpenAchievements}>
@@ -299,92 +214,44 @@ export default function HomeScreen({
         </View>
 
         <View style={styles.tabBarWrap}>
-          <CandyTabs options={HOME_TABS} value={tab} onChange={switchTab} fontSize={13} padV={9} badges={[0, mineBadge]} />
+          <CandyTabs options={HOME_TABS} value={tab} onChange={switchTab} fontSize={13} padV={9} badges={[0, customCreatures.length]} />
         </View>
 
-        <Animated.View style={[styles.stage, { opacity: listAnim, transform: [{ translateX: listTranslateX }] }]}>
-          <View style={styles.arrowRow}>
-            <ArrowButton direction="up" onPress={() => goTo(page - 1)} dim={upDim} />
-          </View>
-
-          <View style={styles.cardTrack} onLayout={(e) => setCardTrackH(e.nativeEvent.layout.height)} {...panResponder.panHandlers}>
-            {cardTrackH > 0 && (
-              <>
-                {/* The current page's own live position — dragY rides on top
-                    of PagedCard's normal button-triggered slide (0 whenever
-                    that's playing, since a live drag and a button transition
-                    never happen at the same time), so no separate "current"
-                    copy is needed. */}
-                <Animated.View style={[styles.wrapFill, { transform: [{ translateY: dragY }] }]}>
-                  {ghost && (
-                    <GhostCard key={ghost.id} direction={ghost.dir} cardH={cardTrackH} onDone={() => setGhost(null)}>
-                      {renderPage(tab, ghost.index)}
-                    </GhostCard>
-                  )}
-                  <PagedCard key={`${tab}-${page}`} direction={view.dir} cardH={cardTrackH} instant={view.instant}>
-                    {renderPage(tab, page)}
-                  </PagedCard>
-                </Animated.View>
-
-                {/* Always mounted (keyed by page, so it's swapped for a
-                    fresh neighbour right after a commit settles — never in
-                    the middle of a drag) so the very first swipe from a
-                    freshly-landed page already has something to reveal,
-                    instead of mounting it on demand when the drag starts. */}
-                {page > 0 && (
-                  <Animated.View
-                    key={`prev-${tab}-${page - 1}`}
-                    pointerEvents="none"
-                    style={[
-                      styles.dragLayerFill,
-                      {
-                        opacity: dragY.interpolate({ inputRange: [0, cardTrackH], outputRange: [0.5, 1], extrapolate: 'clamp' }),
-                        transform: [
-                          { translateY: Animated.add(dragY, -cardTrackH) },
-                          { scale: dragY.interpolate({ inputRange: [0, cardTrackH], outputRange: [0.94, 1], extrapolate: 'clamp' }) },
-                        ],
-                      },
-                    ]}
-                  >
-                    {renderPage(tab, page - 1)}
-                  </Animated.View>
-                )}
-                {page < pageCount - 1 && (
-                  <Animated.View
-                    key={`next-${tab}-${page + 1}`}
-                    pointerEvents="none"
-                    style={[
-                      styles.dragLayerFill,
-                      {
-                        opacity: dragY.interpolate({ inputRange: [-cardTrackH, 0], outputRange: [1, 0.5], extrapolate: 'clamp' }),
-                        transform: [
-                          { translateY: Animated.add(dragY, cardTrackH) },
-                          { scale: dragY.interpolate({ inputRange: [-cardTrackH, 0], outputRange: [1, 0.94], extrapolate: 'clamp' }) },
-                        ],
-                      },
-                    ]}
-                  >
-                    {renderPage(tab, page + 1)}
-                  </Animated.View>
-                )}
-              </>
-            )}
-          </View>
-
-          <View style={styles.arrowRow}>
-            <ArrowButton direction="down" onPress={() => goTo(page + 1)} dim={downDim} />
-          </View>
-
-          <View style={[styles.adRow, { paddingBottom: Math.max(6, insets.bottom) }]}>
-            <View style={styles.adInner}>
-              <Text style={styles.adLabel}>ADVERTISEMENT</Text>
-              <View style={StyleSheet.absoluteFill}>
-                <AdBanner />
-              </View>
-            </View>
-          </View>
-        </Animated.View>
+        <View style={styles.lists} onLayout={(e) => setListW(e.nativeEvent.layout.width)}>
+          {listW > 0 ? (
+            <>
+              <Animated.View style={[styles.pane, paneStyles.ours]} pointerEvents={tab === 'ours' ? 'auto' : 'none'}>
+                <CardPager
+                  pageCount={creatures.length}
+                  initialPage={index ?? 0}
+                  onPageChange={onChangeIndex}
+                  renderPage={renderOurs}
+                  pageKey={oursKey}
+                  ready={creatures.length > 0}
+                  placeholder={SKELETON}
+                />
+              </Animated.View>
+              <Animated.View style={[styles.pane, paneStyles.mine]} pointerEvents={tab === 'mine' ? 'auto' : 'none'}>
+                <CardPager
+                  pageCount={customCreatures.length + 1}
+                  renderPage={renderMine}
+                  pageKey={mineKey}
+                  jump={mineJump}
+                  ready={mineReady}
+                  placeholder={SKELETON}
+                />
+              </Animated.View>
+            </>
+          ) : null}
+          {adsFree ? null : <RemoveAdsButton price={removeAdsPrice} onPress={onOpenRemoveAds} style={styles.noAds} />}
+        </View>
       </View>
+
+      <MysteryBoxBanner collectedLabel={boxLabel} priceLabel={boxPrice} videos={boxVideos} coins={boxCoins} onPress={onOpenBox} />
+
+      {/* Full-width ad strip flush with the bottom edge (under the gesture
+          bar too); not part of the list animation. */}
+      {adsFree ? <View style={{ height: insets.bottom }} /> : <AdStrip />}
 
       <SettingsSheet
         visible={settingsOpen}
@@ -392,7 +259,11 @@ export default function HomeScreen({
         nickname={nickname}
         onSaveNickname={onSaveNickname}
         adsFree={adsFree}
-        onClaimAdsFree={onClaimAdsFree}
+        removeAdsPrice={removeAdsPrice}
+        onOpenRemoveAds={() => {
+          setSettingsOpen(false);
+          onOpenRemoveAds();
+        }}
         onSubmitFeedback={onSubmitFeedback}
         onLogout={onLogout}
         ownedCount={ownedCount}
@@ -406,51 +277,36 @@ export default function HomeScreen({
   );
 }
 
+// Binds a custom creature to its callbacks once, so the memoized card only
+// re-renders when that creature's own data changes.
+const CustomPage = React.memo(function CustomPage({ custom, onSelect, onDelete, onRetry }) {
+  const play = useCallback(() => onSelect(custom), [onSelect, custom]);
+  const del = useCallback(() => onDelete(custom), [onDelete, custom]);
+  const retry = useCallback(() => onRetry(custom), [onRetry, custom]);
+  return <CustomCreatureCard creature={custom} onPlay={play} onDelete={del} onRetry={retry} />;
+});
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { flex: 1 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loadingText: { marginTop: 12, fontSize: 14 },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 12,
+    paddingTop: 14,
     paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingBottom: 10,
   },
   nameCol: { flexShrink: 1, alignItems: 'flex-start' },
   nickname: { fontSize: 17 },
-  coinPill: { marginTop: 5 },
+  wallet: { marginTop: 5 },
   headerIcons: { flexDirection: 'row', gap: 8 },
 
-  tabBarWrap: { paddingHorizontal: 16, paddingBottom: 2 },
+  tabBarWrap: { paddingHorizontal: 16, paddingBottom: 6 },
 
-  stage: { flex: 1, minHeight: 0 },
-  arrowRow: { height: ARROW_H, alignItems: 'center', justifyContent: 'center' },
-  // NOTE: no `alignItems: 'center'` here — PagedCard needs to stretch to the
-  // full track width so CreatureCard's `width: 84%` is 84% of the screen, not
-  // of a collapsed parent. PagedCard itself centres the card horizontally.
-  cardTrack: { flex: 1, minHeight: 0, justifyContent: 'center', overflow: 'hidden' },
-  // Same "don't centre here" rule as cardTrack above — this just needs to
-  // stretch to full width so PagedCard's flex:1 (and in turn CreatureCard's
-  // 84%) resolve against the real track width, not a shrink-wrapped one.
-  wrapFill: { ...StyleSheet.absoluteFillObject },
-  // The drag layer wraps renderPage()'s output directly (no PagedCard in
-  // between to centre it), so this one DOES need alignItems: 'center' to
-  // centre the 84%-wide card horizontally.
-  dragLayerFill: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
-  adRow: { paddingHorizontal: 10, paddingTop: 2 },
-  adInner: {
-    height: 54,
-    borderRadius: 14,
-    backgroundColor: 'rgba(80,12,140,0.4)',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.85)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  adLabel: { color: 'rgba(255,255,255,0.85)', fontFamily: candyFonts.displaySemi, fontSize: 11, letterSpacing: 2 },
+  lists: { flex: 1, minHeight: 0, overflow: 'hidden' },
+  // in the down arrow's row, right of the arrow
+  noAds: { position: 'absolute', right: 12, bottom: 6 },
+  pane: { ...StyleSheet.absoluteFillObject },
 });

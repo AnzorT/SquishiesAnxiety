@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, RadialGradient, LinearGradient, Stop, Circle, Path, G } from 'react-native-svg';
 import { Shine } from './CandyButton';
+import sfx from '../../audio/sfx';
 
 // Purple glossy circle button (header icons, back, close, carousel arrows):
 // radial violet face, white border, dark ring + 4px lip, sinks when pressed.
@@ -19,7 +20,11 @@ export default function RoundButton({ size = 42, onPress, children, disabled = f
   return (
     <Pressable
       onPress={onPress}
-      onPressIn={() => !disabled && sink(1)}
+      onPressIn={() => {
+        if (disabled) return;
+        sink(1);
+        sfx.play('tap');
+      }}
       onPressOut={() => sink(0)}
       disabled={disabled}
       hitSlop={hitSlop}
@@ -43,7 +48,7 @@ export default function RoundButton({ size = 42, onPress, children, disabled = f
             </Defs>
             <Circle cx={inner / 2} cy={inner / 2} r={inner} fill="url(#violet)" />
           </Svg>
-          <Shine />
+          <Shine inset="9%" />
           <View style={styles.content}>{children}</View>
         </View>
       </Animated.View>

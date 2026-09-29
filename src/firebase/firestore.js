@@ -1,5 +1,7 @@
 import firestore from '@react-native-firebase/firestore';
 import { STARTER_CREATURE_IDS } from '../data/creatures';
+import { BOX_PRICE, boxPayMode, dailyBoxUse } from '../mysteryBox';
+import { tokenPrice } from '../economy';
 
 // Coins and unlocks are client-authoritative (writes go straight from the
 // device to Firestore, guarded only by firestore.rules) — fine for a
@@ -28,7 +30,8 @@ export async function createUserProfile(uid, { email, age, nickname }) {
     generationCredits: 1,
     ownedIds: STARTER_CREATURE_IDS,
     // Creature ids a key has been bought for but not yet redeemed via the
-    // Home card's hold-to-unlock gesture — see buyKey/unlockWithKey below.
+    // Home card's hold-to-unlock gesture — see openBox (a full set of a
+    // creature's tokens) and unlockWithKey below.
     keys: {},
     stats: { presses: 0, longestHoldMs: 0, playTime: {} },
     // The two achievements with no natural profile-derived signal (the rest
@@ -39,12 +42,12 @@ export async function createUserProfile(uid, { email, age, nickname }) {
   });
 }
 
-// Accounts created before this app matched the new 10-creature roster have
-// an `ownedIds` that predates STARTER_CREATURE_IDS (e.g. the old single
-// 'buddy' starter) — without this, every one of the new roster's 3 free
-// starters (Glorp/Puffle/Nubbin) would show up locked for them. Called once
-// per profile load from App.js; idempotent and additive-only (arrayUnion),
-// so it's a no-op once an account already has all three.
+// Accounts created before this app matched the new roster have an
+// `ownedIds` that predates STARTER_CREATURE_IDS (e.g. the old single 'buddy'
+// starter) — without this, the free starter (Glorp) would show up locked for
+// them. Called once per profile load from App.js; idempotent and
+// additive-only (arrayUnion), so it never takes a creature away (accounts
+// from when Puffle and Nubbin were free starters keep them).
 export async function ensureStarterCreaturesOwned(uid, ownedIds = []) {
   const missing = STARTER_CREATURE_IDS.filter((id) => !ownedIds.includes(id));
   if (!missing.length) return;
@@ -77,10 +80,6 @@ export async function updateNickname(uid, nickname) {
   await userDocRef(uid).update({ nickname: trimmed });
 }
 
-export async function claimAdsFree(uid) {
-  await userDocRef(uid).update({ adsFree: true });
-}
-
 export async function submitFeedback(uid, text) {
   const trimmed = text?.trim();
   if (!trimmed) return;
@@ -88,49 +87,6 @@ export async function submitFeedback(uid, text) {
     uid,
     text: trimmed,
     createdAt: firestore.FieldValue.serverTimestamp(),
-  });
-}
-
-export async function purchaseCreature(uid, creatureId, price) {
-  const ref = userDocRef(uid);
-  return firestore().runTransaction(async (transaction) => {
-    const snap = await transaction.get(ref);
-    const data = snap.data() || {};
-    const coins = data.coins ?? 0;
-    const ownedIds = data.ownedIds ?? [];
-
-    if (ownedIds.includes(creatureId)) return { ok: true };
-    if (coins < price) return { ok: false, reason: 'insufficient_coins' };
-
-    transaction.update(ref, {
-      coins: firestore.FieldValue.increment(-price),
-      ownedIds: firestore.FieldValue.arrayUnion(creatureId),
-    });
-    return { ok: true };
-  });
-}
-
-// Store screen sells a *key*, not the creature itself — the creature only
-// actually unlocks once its key is redeemed via the Home card's
-// hold-to-unlock gesture (see unlockWithKey). Mirrors purchaseCreature's
-// shape/guards, just writes to `keys` instead of `ownedIds`.
-export async function buyKey(uid, creatureId, price) {
-  const ref = userDocRef(uid);
-  return firestore().runTransaction(async (transaction) => {
-    const snap = await transaction.get(ref);
-    const data = snap.data() || {};
-    const coins = data.coins ?? 0;
-    const ownedIds = data.ownedIds ?? [];
-    const keys = data.keys ?? {};
-
-    if (ownedIds.includes(creatureId) || keys[creatureId]) return { ok: true };
-    if (coins < price) return { ok: false, reason: 'insufficient_coins' };
-
-    transaction.update(ref, {
-      coins: firestore.FieldValue.increment(-price),
-      [`keys.${creatureId}`]: true,
-    });
-    return { ok: true };
   });
 }
 
@@ -184,6 +140,66 @@ export async function recordPress(uid, creatureId, holdMs) {
 // src/achievements.js.
 export async function markAchievement(uid, key) {
   await userDocRef(uid).update({ [`achievements.${key}`]: true });
+}
+
+// A rewarded ad finished — the running total and the biggest boost ever
+// taken feed the "Movie Night" (5 ads) and "Max Boost" (×4) achievements.
+// An ad-free boost (Remove Ads bought) passes watched = false: it still
+// counts toward Max Boost, not toward the ads.
+export async function recordAdWatched(uid, multiplier, currentMaxMult = 0, watched = true) {
+  const update = {};
+  if (watched) update.adsWatched = firestore.FieldValue.increment(1);
+  if (multiplier > currentMaxMult) update.maxMult = multiplier;
+  if (Object.keys(update).length) await userDocRef(uid).update(update);
+}
+
+// --- Mystery Box (rules in src/mysteryBox.js) ---------------------------
+//
+// These work from the profile the app already has and skip the transaction:
+// Firestore applies a write to its local cache at once (and queues it while
+// offline), so the box never waits on the network. Like the rest of the
+// economy above, this is client-trusted.
+
+const inc = (n) => firestore.FieldValue.increment(n);
+const logFail = (what) => (e) => console.warn(`${what} failed:`, e);
+
+// A daily box's video was watched: that box is paid for (one of today's
+// DAILY_BOXES used) and waits as `boxPending` until it's opened, even if the
+// player leaves first.
+export function payBoxWithAd(uid, profile) {
+  userDocRef(uid)
+    .update({ boxPending: true, ...dailyBoxUse(profile) })
+    .catch(logFail('payBoxWithAd'));
+}
+
+// Today's boxes are used up: charge BOX_PRICE and set the box up to be
+// opened. False if there aren't enough coins.
+export function payBoxWithCoins(uid, profile) {
+  if ((profile?.coins ?? 0) < BOX_PRICE) return false;
+  userDocRef(uid).update({ coins: inc(-BOX_PRICE), boxPending: true }).catch(logFail('payBoxWithCoins'));
+  return true;
+}
+
+// Opens a box in one write and hands out `pull` (rolled beforehand with
+// rollBox, see MysteryBoxScreen): a creature's tokens — a full set puts its
+// key on its Home card (the other way to a key is $0.99, src/billing; coins
+// only buy boxes) — or coins, or the Secret. A free daily box (Remove Ads) uses up one of today's boxes
+// here; a paid one was settled when it was paid for. `paidAhead` covers a
+// payment made a moment ago that the profile passed in doesn't show yet.
+// Returns false if this box still has to be paid for.
+export function openBox(uid, profile, pull, paidAhead = false) {
+  const mode = paidAhead ? 'paid' : boxPayMode(profile);
+  if (!pull || (mode !== 'free' && mode !== 'paid')) return false;
+  const update = { boxPending: false, boxOpens: inc(1), [`tierPulls.${pull.tier}`]: inc(1) };
+  if (mode === 'free') Object.assign(update, dailyBoxUse(profile));
+  if (pull.kind === 'secret') update.secretFound = true;
+  else if (pull.kind === 'coins') update.coins = inc(pull.amount);
+  else if (pull.complete) {
+    update[`keys.${pull.id}`] = true;
+    update[`tokens.${pull.id}`] = tokenPrice(pull.id);
+  } else update[`tokens.${pull.id}`] = inc(pull.amount);
+  userDocRef(uid).update(update).catch(logFail('openBox'));
+  return true;
 }
 
 // --- player-made creatures (the "Create your own squishy" flow) ---------
@@ -266,16 +282,17 @@ export function subscribeToCreatures(onChange) {
     );
 }
 
-// Server-driven generation price — a hand-edited doc (see firestore.rules),
-// not a client write. `onChange` gets null until the doc exists/loads.
-export function subscribeToPricingConfig(onChange) {
+// The Mystery Box numbers (rarity odds, token odds, token prices) — a
+// hand-edited doc, config/mysteryBox (see BOX_DEFAULTS in src/economy.js).
+// `onChange` gets null until it exists.
+export function subscribeToBoxConfig(onChange) {
   return firestore()
     .collection('config')
-    .doc('pricing')
+    .doc('mysteryBox')
     .onSnapshot(
       (snap) => onChange(snap.exists ? snap.data() : null),
       (error) => {
-        console.error('subscribeToPricingConfig failed:', error);
+        console.error('subscribeToBoxConfig failed:', error);
         onChange(null);
       }
     );

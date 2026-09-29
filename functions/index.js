@@ -323,3 +323,113 @@ exports.generateCustomModel = onDocumentWritten(
 );
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// --- Daily Spin ---------------------------------------------------------
+// One free spin of the wheel per calendar day (the player's own day — the
+// app sends its UTC offset). The server rolls the prize and hands it out in
+// the same transaction, because one prize — 15% off the next custom
+// creature, which costs real money — must not be something the app can
+// grant itself (firestore.rules stops the client writing `lastSpinDay`,
+// `creationDiscountPct`, `spins` and `wheelJackpot`). Rules and odds live in
+// dailySpin.js. The app calls this over plain HTTPS with its ID token
+// (src/firebase/callFunction.js), so it needs no extra native module.
+//
+// Returns { already: true } if today's spin is used, otherwise the prize:
+// { index, kind: 'coins' | 'create' | 'unlock', amount?, discountPct?,
+//   creatureId?, lockedIds?, allOwned? }.
+//
+// `creationDiscountPct` is only recorded for now: there's no purchase flow
+// yet. Whatever sells a creation later must charge 15% less while it's set
+// and clear it once used.
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { FieldValue } = require('firebase-admin/firestore');
+const { WHEEL, rollWheel, dayKey, spinOutcome } = require('./dailySpin');
+
+exports.spinWheel = onCall(async (request) => {
+  const uid = request.auth && request.auth.uid;
+  if (!uid) throw new HttpsError('unauthenticated', 'Sign in to spin.');
+  const db = admin.firestore();
+  const day = dayKey(Date.now(), request.data && request.data.tzOffsetMinutes);
+  const index = rollWheel();
+  // The FREE creature needs the catalog (the numbered roster, 0–19).
+  const rosterIds =
+    WHEEL[index].kind === 'unlock'
+      ? (await db.collection('creatures').select().get()).docs.map((d) => d.id).filter((id) => /^\d+$/.test(id) && Number(id) < 20)
+      : [];
+
+  const userRef = db.collection('users').doc(uid);
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(userRef);
+    if (!snap.exists) throw new HttpsError('failed-precondition', 'No profile.');
+    const profile = snap.data();
+    if (profile.lastSpinDay && day <= profile.lastSpinDay) return { already: true, day };
+
+    const { result, changes } = spinOutcome({ profile, rosterIds, day, index });
+    const update = { lastSpinDay: changes.lastSpinDay, spins: FieldValue.increment(changes.spins) };
+    if (changes.coins) {
+      update.coins = FieldValue.increment(changes.coins);
+      update.totalEarned = FieldValue.increment(changes.coins);
+    }
+    if (changes.jackpot) update.wheelJackpot = true;
+    if (changes.discountPct) update.creationDiscountPct = changes.discountPct;
+    if (changes.unlockId) {
+      update.ownedIds = FieldValue.arrayUnion(changes.unlockId);
+      update[`keys.${changes.unlockId}`] = false;
+    }
+    tx.update(userRef, update);
+    logger.info(`[${uid}] daily spin ${day}: ${result.kind}`, result);
+    return result;
+  });
+});
+
+// --- In-app purchases -------------------------------------------------------
+//
+// The app sends every Google Play / App Store purchase to verifyPurchase
+// (the handler and its rules: verifyPurchase.js, purchases.js). Here it's
+// wired to the real stores.
+//
+// Setup, Google Play (once): enable the "Google Play Android Developer API"
+// in this Firebase project's Google Cloud console, and in the Play Console →
+// Users and permissions, invite the functions' service account (the Compute
+// Engine default one, PROJECT_NUMBER-compute@developer.gserviceaccount.com)
+// with "View financial data" and "Manage orders and subscriptions".
+//
+// Setup, App Store (once): set APPLE_APP_ID to the app's numeric Apple ID
+// (App Store Connect → the app → App Information), e.g. in functions/.env:
+//   APPLE_APP_ID=1234567890
+// Apple signs every StoreKit 2 transaction; they're checked against Apple's
+// root certificate (apple/AppleRootCA-G3.cer, from
+// https://www.apple.com/certificateauthority/), with online revocation
+// checks. Sandbox purchases (TestFlight, sandbox testers) verify without the
+// app id; live ones need it.
+const fs = require('fs');
+const path = require('path');
+const { GoogleAuth } = require('google-auth-library');
+const { defineString } = require('firebase-functions/params');
+const { PACKAGE_NAME } = require('./purchases');
+const { makeVerifyPurchase, makeVerifyApple } = require('./verifyPurchase');
+
+const APPLE_APP_ID = defineString('APPLE_APP_ID', { default: '' });
+const playAuth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/androidpublisher'] });
+
+async function playApi(tokenPath, method = 'GET') {
+  const client = await playAuth.getClient();
+  const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/purchases/products/${tokenPath}`;
+  const res = await client.request({ url, method, data: method === 'POST' ? {} : undefined, validateStatus: () => true });
+  if (res.status >= 300) {
+    const err = new Error(`Play API ${method} ${tokenPath.split('/')[0]}: HTTP ${res.status} ${JSON.stringify(res.data && res.data.error && res.data.error.message)}`);
+    err.status = res.status;
+    throw err;
+  }
+  return res.data || {};
+}
+
+let appleRoots = null;
+const verifyApple = makeVerifyApple({
+  roots: () => (appleRoots = appleRoots || [fs.readFileSync(path.join(__dirname, 'apple', 'AppleRootCA-G3.cer'))]),
+  appAppleId: () => APPLE_APP_ID.value(),
+});
+
+exports.verifyPurchase = onCall(
+  makeVerifyPurchase({ db: admin.firestore(), FieldValue, HttpsError, logger, playApi, verifyApple })
+);

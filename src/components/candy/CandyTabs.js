@@ -3,6 +3,8 @@ import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BUTTON_VARIANTS, candyColors, candyFonts } from '../../theme/candyTheme';
 import { Shine } from './CandyButton';
+import ShadowText, { outline3 } from './ShadowText';
+import sfx from '../../audio/sfx';
 
 // Two-option glass tab bar with a glossy pink pill that springs between the
 // options (the design's cubic-bezier(0.34,1.4,0.5,1) overshoot). Used for
@@ -32,10 +34,10 @@ export default function CandyTabs({ options, value, onChange, fontSize = 16, pad
       {options.map((o, i) => {
         const active = i === index;
         return (
-          <Pressable key={String(o.value)} style={[styles.tab, { paddingVertical: padV }]} onPress={() => onChange(o.value)}>
-            <Text style={[styles.label, { fontSize, color: active ? '#ffffff' : 'rgba(255,255,255,0.72)' }]} numberOfLines={1}>
+          <Pressable key={String(o.value)} style={[styles.tab, { paddingVertical: padV }]} onPressIn={() => sfx.play('tap')} onPress={() => onChange(o.value)}>
+            <ShadowText style={[styles.label, { fontSize, color: active ? '#ffffff' : 'rgba(255,255,255,0.72)' }]} shadows={outline3(candyColors.pinkRing)} numberOfLines={1}>
               {o.label}
-            </Text>
+            </ShadowText>
             {badges[i] ? (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{badges[i]}</Text>
@@ -71,9 +73,7 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: candyFonts.display,
     letterSpacing: 0.8,
-    textShadowColor: candyColors.pinkRing,
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 1,
+    includeFontPadding: false,
   },
   badge: {
     minWidth: 16,

@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, Pressable, Modal, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { candyColors, candyFonts } from '../theme/candyTheme';
-import CandyButton from '../components/candy/CandyButton';
+import CandyButton, { CandyPill } from '../components/candy/CandyButton';
+import { NoAdsIcon } from '../components/RemoveAds';
 import RoundButton, { CloseGlyph } from '../components/candy/RoundButton';
 import Toast from '../components/squad/Toast';
+import ToggleSwitch from '../components/candy/ToggleSwitch';
+import sfx from '../audio/sfx';
 
-// Bottom sheet opened from Home's gear icon — nickname editing, one-time
-// "remove ads" claim, a feedback note, real gameplay stats, and logout, in
+// Bottom sheet opened from Home's gear icon — nickname editing, Remove Ads
+// (opens the $1.99 purchase popup), a feedback note, real gameplay stats,
+// music / sound switches, and logout, in
 // the v3 look: a pale pink sheet of white cards, candy SAVE/LOG OUT buttons.
 // The stats show total squish presses, longest hold (seconds), and favorite
 // creature — derived from `stats` (tracked via recordPress in
@@ -19,7 +22,8 @@ export default function SettingsSheet({
   nickname,
   onSaveNickname,
   adsFree,
-  onClaimAdsFree,
+  removeAdsPrice,
+  onOpenRemoveAds,
   onSubmitFeedback,
   onLogout,
   stats,
@@ -35,6 +39,17 @@ export default function SettingsSheet({
     if (visible) setNicknameEdit(nickname || '');
   }, [visible, nickname]);
 
+  // pop sounds as the sheet opens and closes (not on first mount)
+  const shownRef = useRef(visible);
+  useEffect(() => {
+    if (shownRef.current === visible) return;
+    shownRef.current = visible;
+    sfx.play(visible ? 'popOpen' : 'popClose');
+  }, [visible]);
+
+  const [sound, setSound] = useState({ music: true, effects: true });
+  useEffect(() => sfx.subscribe(setSound), []);
+
   const flash = (message) => {
     setToast(message);
     setToastKey((k) => k + 1);
@@ -45,12 +60,6 @@ export default function SettingsSheet({
     if (!nicknameEdit.trim()) return;
     onSaveNickname(nicknameEdit.trim());
     flash('Nickname updated!');
-  };
-
-  const claimAds = () => {
-    if (adsFree) return;
-    onClaimAdsFree();
-    flash('Ads removed!');
   };
 
   const submitFeedback = () => {
@@ -78,21 +87,27 @@ export default function SettingsSheet({
             </View>
 
             <View style={[styles.card, styles.cardRow]}>
-              <View>
+              <NoAdsIcon size={34} />
+              <View style={styles.flex}>
                 <Text style={styles.cardLabel}>Remove Ads</Text>
-                <Text style={styles.cardSublabel}>One-time free removal</Text>
+                <Text style={styles.cardSublabel}>{adsFree ? 'Thanks for your support!' : 'No banners, no ad breaks, free daily boxes'}</Text>
               </View>
-              <Pressable onPress={claimAds} disabled={adsFree}>
-                {adsFree ? (
-                  <View style={[styles.flatPill, styles.flatPillDone]}>
-                    <Text style={[styles.flatPillText, styles.flatPillTextDone]}>REMOVED ✓</Text>
-                  </View>
-                ) : (
-                  <LinearGradient colors={['#ffe27a', '#ff9fd6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.flatPill}>
-                    <Text style={styles.flatPillText}>CLAIM FREE</Text>
-                  </LinearGradient>
-                )}
-              </Pressable>
+              {adsFree ? (
+                <CandyPill variant="purple" label="★ DONE" fontSize={12} padV={4} padH={12} />
+              ) : (
+                <CandyButton label={removeAdsPrice} variant="gold" size="sm" pulse="soft" onPress={onOpenRemoveAds} />
+              )}
+            </View>
+
+            <View style={styles.card}>
+              <View style={[styles.statRow, styles.soundRow]}>
+                <Text style={styles.cardLabel}>Music</Text>
+                <ToggleSwitch value={sound.music} onToggle={() => sfx.setMusicOn(!sound.music)} />
+              </View>
+              <View style={[styles.statRow, styles.statRowLast, styles.soundRow]}>
+                <Text style={styles.cardLabel}>Sound effects</Text>
+                <ToggleSwitch value={sound.effects} onToggle={() => sfx.setEffectsOn(!sound.effects)} />
+              </View>
             </View>
 
             <View style={styles.card}>
@@ -173,13 +188,10 @@ const styles = StyleSheet.create({
   title: { fontFamily: candyFonts.display, fontSize: 20, color: candyColors.ink },
   closeButton: { marginLeft: 'auto' },
   card: { backgroundColor: '#ffffff', borderRadius: 16, padding: 14, marginBottom: 12 },
-  cardRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  cardRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  flex: { flex: 1 },
   cardLabel: { color: candyColors.ink, fontFamily: candyFonts.bodyHeavy, fontSize: 13 },
   cardSublabel: { color: candyColors.mutedLight, fontFamily: candyFonts.body, fontSize: 11 },
-  flatPill: { borderRadius: 10, paddingVertical: 9, paddingHorizontal: 14 },
-  flatPillDone: { backgroundColor: '#ece4f5' },
-  flatPillText: { color: candyColors.ink, fontFamily: candyFonts.bodyHeavy, fontSize: 11 },
-  flatPillTextDone: { color: '#a898bf' },
   nicknameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   input: {
     flex: 1,
@@ -196,6 +208,7 @@ const styles = StyleSheet.create({
   statsTitle: { color: candyColors.goldInk, fontFamily: candyFonts.bodyHeavy, fontSize: 12, letterSpacing: 1, marginBottom: 10 },
   statRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 },
   statRowLast: { marginBottom: 0 },
+  soundRow: { alignItems: 'center', marginBottom: 12 },
   statLabel: { color: candyColors.inkSoft, fontFamily: candyFonts.body, fontSize: 12.5 },
   statValue: { color: candyColors.ink, fontFamily: candyFonts.body, fontSize: 12.5 },
   feedbackButton: {

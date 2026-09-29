@@ -18,13 +18,16 @@ import SquishSound from '../audio/SquishSound';
 import CoinSound from '../audio/CoinSound';
 import PopSound from '../audio/PopSound';
 import { candyColors, candyFonts, BUTTON_VARIANTS } from '../theme/candyTheme';
-import AdBanner from '../components/AdBanner';
+import AdStrip from '../components/AdStrip';
 import WatchAdButton from '../components/WatchAdButton';
+import { AD_FREE_BOOST_RECHARGE_MS } from '../economy';
 import CandyBackground from '../components/candy/CandyBackground';
 import CandyButton, { Shine } from '../components/candy/CandyButton';
 import RoundButton, { BackGlyph, CloseGlyph, GearIcon } from '../components/candy/RoundButton';
 import { CoinIcon, GlassPill } from '../components/candy/Coin';
 import OutlinedTitle from '../components/candy/OutlinedTitle';
+import ToggleSwitch from '../components/candy/ToggleSwitch';
+import sfx from '../audio/sfx';
 
 // Stage size scales to the device, capped at 380.
 const STAGE_SIZE = Math.min(Math.round(Dimensions.get('window').width - 32), 380);
@@ -391,24 +394,6 @@ const SquishStage = memo(function SquishStage({
   );
 });
 
-function ToggleSwitch({ value, onToggle }) {
-  const anim = useRef(new Animated.Value(value ? 1 : 0)).current;
-  useEffect(() => {
-    Animated.timing(anim, { toValue: value ? 1 : 0, duration: 150, useNativeDriver: false }).start();
-  }, [value, anim]);
-  const knobLeft = anim.interpolate({ inputRange: [0, 1], outputRange: [2, 18] });
-  return (
-    <Pressable onPress={onToggle} hitSlop={6}>
-      <View style={[styles.switchTrack, { backgroundColor: value ? undefined : candyColors.inkSoft }]}>
-        {value && (
-          <LinearGradient colors={['#9ff7ea', '#2fd4c2']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
-        )}
-        <Animated.View style={[styles.switchKnob, { left: knobLeft }]} />
-      </View>
-    </Pressable>
-  );
-}
-
 // Row of buttons where exactly one is selected.
 function Segmented({ options, value, onChange }) {
   return (
@@ -501,8 +486,10 @@ function SettingsModal({
   );
 }
 
-// Forces an interstitial ad after too many quick taps.
-function PunishmentModal({ visible, onDismiss }) {
+// Forces an interstitial ad after too many quick taps — unless Remove Ads
+// was bought: then the popup still scolds, but ACCEPT PUNISHMENT just
+// closes it.
+function PunishmentModal({ visible, onDismiss, adsFree }) {
   const [loading, setLoading] = useState(false);
   const adRef = useRef(null);
   const unsubsRef = useRef([]);
@@ -517,6 +504,10 @@ function PunishmentModal({ visible, onDismiss }) {
 
   const acceptPunishment = useCallback(() => {
     if (loading) return;
+    if (adsFree) {
+      onDismiss();
+      return;
+    }
     setLoading(true);
     const ad = InterstitialAd.createForAdRequest(INTERSTITIAL_AD_UNIT_ID);
     adRef.current = ad;
@@ -535,7 +526,7 @@ function PunishmentModal({ visible, onDismiss }) {
     const t = setTimeout(done, 8000);
     unsubsRef.current.push(() => clearTimeout(t));
     ad.load();
-  }, [loading, onDismiss]);
+  }, [loading, onDismiss, adsFree]);
 
   if (!visible) return null;
   return (
@@ -609,6 +600,7 @@ export default function SquishScreen({
   onRecordPress,
   achievements = {},
   onMarkAchievement,
+  onAdWatched,
   squishSoundEnabled = true,
   onToggleSquishSound,
   coinSoundEnabled = true,
@@ -621,6 +613,7 @@ export default function SquishScreen({
   onChangePokeStrength,
   pokeOutward = false,
   onChangePokeOutward,
+  adsFree = false,
 }) {
   const insets = useSafeAreaInsets();
   const toyRef = useRef(null);
@@ -683,6 +676,9 @@ export default function SquishScreen({
   }, [bonusEndsAt]);
 
   const bonusActive = !!bonusEndsAt;
+  // Remove Ads: boosts start without a video, then recharge for about as
+  // long as the video would have taken (src/economy.js).
+  const [boostRechargeUntil, setBoostRechargeUntil] = useState(0);
 
   useEffect(() => {
     const sound = new SquishSound();
@@ -715,6 +711,7 @@ export default function SquishScreen({
   // as it closes.
   const setSettingsVisible = useCallback(
     (visible) => {
+      sfx.play(visible ? 'popOpen' : 'popClose');
       setSettingsOpen(visible);
       Animated.timing(wheelAnim, { toValue: visible ? 1 : 0, duration: 400, useNativeDriver: true }).start();
     },
@@ -736,8 +733,10 @@ export default function SquishScreen({
     onRecordPress,
     onEarnCoins,
     onMarkAchievement,
+    onAdWatched,
     bonusEndsAt,
     bonusMultiplier,
+    adsFree,
   };
 
   // Stable identity (deps: []) so SquishyToy/SquishyToy2D's React.memo isn't
@@ -815,12 +814,17 @@ export default function SquishScreen({
   // is which of the three ad buttons was watched (2, 3, or 4) — only one
   // window runs at a time, so this simply (re)starts it at the new value.
   const handleAdReward = useCallback((multiplier) => {
-    const { achievements: liveAchievements, onMarkAchievement: markAch } = latestRef.current;
+    const { achievements: liveAchievements, onMarkAchievement: markAch, onAdWatched: adWatched, adsFree: noAds } = latestRef.current;
     setBonusEndsAt(Date.now() + BONUS_MS);
+    if (noAds) setBoostRechargeUntil(Date.now() + BONUS_MS + AD_FREE_BOOST_RECHARGE_MS);
     setBonusMultiplier(multiplier);
     setDoubleFlash(true);
+    sfx.play('boost');
     setDoubleFlashKey((k) => k + 1);
-    if (!liveAchievements.watchAd) markAch && markAch('watchAd');
+    if (!noAds && !liveAchievements.watchAd) markAch && markAch('watchAd');
+    // counts toward "Movie Night" (5 ads; not when no video played) and
+    // "Max Boost" (a ×4)
+    if (adWatched) adWatched(multiplier);
   }, []);
 
   const ndcFromLocation = (locationX, locationY) => ({
@@ -998,20 +1002,21 @@ export default function SquishScreen({
 
       <View style={styles.bottomPanel}>
         <View style={styles.bottomRow}>
-          <WatchAdButton multiplier={2} onRewardEarned={() => handleAdReward(2)} activeMultiplier={bonusActive ? bonusMultiplier : null} />
-          <WatchAdButton multiplier={3} onRewardEarned={() => handleAdReward(3)} activeMultiplier={bonusActive ? bonusMultiplier : null} />
-          <WatchAdButton multiplier={4} onRewardEarned={() => handleAdReward(4)} activeMultiplier={bonusActive ? bonusMultiplier : null} />
-        </View>
-
-        <View style={[styles.adSlot, { paddingBottom: Math.max(8, insets.bottom) }]}>
-          <View style={styles.adFrame}>
-            <Text style={styles.adLabel}>ADVERTISEMENT</Text>
-            <View style={StyleSheet.absoluteFill}>
-              <AdBanner />
-            </View>
-          </View>
+          {[2, 3, 4].map((m) => (
+            <WatchAdButton
+              key={m}
+              multiplier={m}
+              onRewardEarned={() => handleAdReward(m)}
+              activeMultiplier={bonusActive ? bonusMultiplier : null}
+              adFree={adsFree}
+              rechargeUntil={boostRechargeUntil}
+            />
+          ))}
         </View>
       </View>
+
+      {/* the same full-width strip as Home's (none with Remove Ads) */}
+      {adsFree ? <View style={{ height: insets.bottom }} /> : <AdStrip />}
 
       {doubleFlash && (
         <View style={styles.flashOverlay} pointerEvents="none">
@@ -1039,7 +1044,7 @@ export default function SquishScreen({
         />
       )}
 
-      <PunishmentModal visible={punishOpen} onDismiss={dismissPunishment} />
+      <PunishmentModal visible={punishOpen} onDismiss={dismissPunishment} adsFree={adsFree} />
     </CandyBackground>
   );
 }
@@ -1131,11 +1136,9 @@ const styles = StyleSheet.create({
   segmentActive: { borderColor: '#ffffff' },
   segmentText: { color: candyColors.ink, fontFamily: candyFonts.display, fontSize: 13 },
   segmentTextActive: { color: '#ffffff', textShadowColor: candyColors.pinkRing, textShadowOffset: { width: 0, height: 1.5 }, textShadowRadius: 1 },
-  switchTrack: { width: 38, height: 22, borderRadius: 11, overflow: 'hidden' },
-  switchKnob: { position: 'absolute', top: 2, width: 18, height: 18, borderRadius: 9, backgroundColor: '#fff' },
 
   bottomPanel: { backgroundColor: 'rgba(70,10,130,0.35)', borderTopWidth: 2, borderTopColor: 'rgba(255,255,255,0.6)' },
-  bottomRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 6 },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10 },
   gestureHint: { position: 'absolute', top: '52%', alignItems: 'center', gap: 6 },
   gestureHandWrap: { width: 46, height: 62, alignItems: 'center', justifyContent: 'center' },
   gestureSvg: { position: 'absolute' },
@@ -1157,20 +1160,6 @@ const styles = StyleSheet.create({
     textShadowRadius: 5,
     textShadowOffset: { width: 0, height: 0 },
   },
-  adSlot: { alignItems: 'stretch', paddingHorizontal: 16, paddingTop: 2 },
-  adFrame: {
-    height: 54,
-    borderRadius: 14,
-    backgroundColor: candyColors.paper,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: '#c9a8e8',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  adLabel: { color: '#a283c9', fontFamily: candyFonts.bodyHeavy, fontSize: 10, letterSpacing: 2 },
-
   bonusBar: { marginHorizontal: 16, marginBottom: 8, paddingBottom: 4 },
   bonusLip: { position: 'absolute', left: 0, right: 0, top: 4, bottom: 0, borderRadius: 21, backgroundColor: '#9c4d06' },
   bonusRing: {

@@ -21,12 +21,31 @@ import { Shine } from './candy/CandyButton';
 // at a time: whichever button isn't the active one is locked out entirely
 // (dimmed, unpressable, no animation) until the active window's timer ends,
 // regardless of whether that button's own ad happens to be loaded.
+//
+// `adFree` (Remove Ads bought): no video at all — a tap starts the boost
+// straight away, the caption reads "NO AD", and after each boost the buttons
+// recharge until `rechargeUntil` (a timestamp), counting the seconds down.
 const GOLD = BUTTON_VARIANTS.gold;
 
-export default function WatchAdButton({ multiplier, onRewardEarned, activeMultiplier }) {
+export default function WatchAdButton({ multiplier, onRewardEarned, activeMultiplier, adFree = false, rechargeUntil = 0 }) {
   const rewardedRef = useRef(null);
   const earnedRef = useRef(false);
-  const [ready, setReady] = useState(false);
+  const [adReady, setReady] = useState(false);
+  const ready = adFree || adReady;
+
+  // ad-free recharge countdown: a tick a second while it runs
+  const [now, setNow] = useState(Date.now());
+  const recharging = adFree && activeMultiplier == null && rechargeUntil > now;
+  useEffect(() => {
+    if (!adFree || rechargeUntil <= Date.now()) return undefined;
+    setNow(Date.now());
+    const id = setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      if (t >= rechargeUntil) clearInterval(id);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [adFree, rechargeUntil]);
   const breatheAnim = useRef(new Animated.Value(0)).current;
   const sheenAnim = useRef(new Animated.Value(0)).current;
 
@@ -36,7 +55,7 @@ export default function WatchAdButton({ multiplier, onRewardEarned, activeMultip
   // the two cases the button must go grey + unpressable + animation-frozen
   // for, treated identically. The active button itself keeps its own look
   // (the "ACTIVE" label below) rather than going grey.
-  const isStill = !ready || isLockedByOther;
+  const isStill = !ready || isLockedByOther || recharging;
   const isDisabled = isStill || isThisActive;
 
   useEffect(() => {
@@ -63,6 +82,7 @@ export default function WatchAdButton({ multiplier, onRewardEarned, activeMultip
   }, [isStill, breatheAnim, sheenAnim]);
 
   useEffect(() => {
+    if (adFree) return undefined; // nothing to load
     let unsub = [];
 
     const load = () => {
@@ -94,18 +114,31 @@ export default function WatchAdButton({ multiplier, onRewardEarned, activeMultip
     load();
     return () => unsub.forEach((fn) => fn());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [adFree]);
 
   const handlePress = useCallback(() => {
-    if (!ready || isDisabled || !rewardedRef.current) return;
+    if (!ready || isDisabled) return;
+    if (adFree) {
+      onRewardEarned && onRewardEarned();
+      return;
+    }
+    if (!rewardedRef.current) return;
     rewardedRef.current.show();
-  }, [ready, isDisabled]);
+  }, [ready, isDisabled, adFree, onRewardEarned]);
 
   const scale = breatheAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.035] });
   // Sweep the light streak across in the first 60% of the loop, then hold it
   // off the right edge for the remaining 40%.
   const sheenX = sheenAnim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [-70, 160, 160] });
-  const sub = isThisActive ? 'ACTIVE' : multiplier >= 4 ? 'LONG AD' : 'WATCH AD';
+  const sub = isThisActive
+    ? 'ACTIVE'
+    : recharging
+      ? `READY IN ${Math.ceil((rechargeUntil - now) / 1000)}s`
+      : adFree
+        ? 'NO AD'
+        : multiplier >= 4
+          ? 'LONG AD'
+          : 'WATCH AD';
 
   return (
     <Animated.View style={[styles.wrap, { transform: [{ scale }] }, isStill && styles.dim]}>
@@ -113,12 +146,14 @@ export default function WatchAdButton({ multiplier, onRewardEarned, activeMultip
         <View style={styles.lip} />
         <View style={styles.ring}>
           <LinearGradient colors={GOLD.colors} locations={GOLD.locations} style={styles.face}>
-            <Shine radius={14} inset="8%" height="42%" />
+            <Shine radius={14} height="42%" />
             <Animated.View pointerEvents="none" style={[styles.sheen, { transform: [{ translateX: sheenX }, { skewX: '-20deg' }] }]} />
             <View style={styles.topRow}>
-              <View style={styles.screen}>
-                <View style={styles.play} />
-              </View>
+              {adFree ? null : (
+                <View style={styles.screen}>
+                  <View style={styles.play} />
+                </View>
+              )}
               <Text style={styles.mult}>×{multiplier}</Text>
             </View>
             <Text style={styles.sub}>{sub}</Text>

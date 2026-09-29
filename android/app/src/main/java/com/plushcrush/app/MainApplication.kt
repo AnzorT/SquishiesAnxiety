@@ -12,6 +12,8 @@ import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.load
 import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.soloader.SoLoader
 
+import com.plushcrush.app.billing.PlayBillingPackage
+
 import expo.modules.ApplicationLifecycleDispatcher
 import expo.modules.ReactNativeHostWrapper
 
@@ -21,9 +23,9 @@ class MainApplication : Application(), ReactApplication {
         this,
         object : DefaultReactNativeHost(this) {
           override fun getPackages(): List<ReactPackage> {
-            // Packages that cannot be autolinked yet can be added manually here, for example:
-            // packages.add(new MyReactNativePackage());
-            return PackageList(this).packages
+            // Packages that cannot be autolinked yet can be added manually here.
+            // Google Play Billing (app code, see billing/PlayBillingModule.java).
+            return PackageList(this).packages.apply { add(PlayBillingPackage()) }
           }
 
           override fun getJSMainModuleName(): String = ".expo/.virtual-metro-entry"

@@ -170,6 +170,11 @@ dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 
+    // Google Play Billing for the in-app purchases (Remove Ads, creature
+    // keys) — app/src/main/java/com/plushcrush/app/billing. Google Play
+    // requires Billing Library 8 or newer for app updates.
+    implementation("com.android.billingclient:billing:8.3.0")
+
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";
     def isWebpAnimatedEnabled = (findProperty('expo.webp.animated') ?: "") == "true";

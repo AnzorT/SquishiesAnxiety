@@ -61,14 +61,16 @@ export const TITLE_FILLS = {
 // Rarity tiers. A premade creature's tier comes from its roster position
 // (TIER_OF) — the design assigns ids 0-7 Common, 8-12 Rare, 13-15 Epic,
 // 16-17 Legendary, 18 Rainbow, 19 Golden. `w` is the mystery-box pull weight
-// in percent; Secret is never rolled, only granted once everything is owned.
+// in percent — retuned from the design's 55/25/12/6/1.5/0.5 for the sticker
+// economy (see src/economy.js); Secret is never rolled, only granted once
+// everything is owned.
 export const TIERS = {
-  Common: { label: 'COMMON', w: 55, bg: ['#d7f0ff', '#d7f0ff'], color: '#4a1a73', glow: '#9fd8ff' },
-  Rare: { label: 'RARE', w: 25, bg: ['#c9f7e1', '#c9f7e1'], color: '#4a1a73', glow: '#7ee8b4' },
-  Epic: { label: 'EPIC', w: 12, bg: ['#ead6ff', '#ead6ff'], color: '#4a1a73', glow: '#c89bff' },
-  Legendary: { label: 'LEGENDARY', w: 6, bg: ['#ffdcb0', '#ffdcb0'], color: '#4a1a73', glow: '#ffa94d' },
-  Rainbow: { label: 'RAINBOW', w: 1.5, bg: ['#ffb3c7', '#ffe38a', '#b3f5c8', '#b3e0ff', '#dcc2ff'], color: '#4a1a73', glow: '#ff9fd6' },
-  Golden: { label: 'GOLDEN', w: 0.5, bg: ['#fff3b0', '#ffc233', '#f0a000'], color: '#4a1a73', glow: '#ffd24d' },
+  Common: { label: 'COMMON', w: 45, bg: ['#d7f0ff', '#d7f0ff'], color: '#4a1a73', glow: '#9fd8ff' },
+  Rare: { label: 'RARE', w: 27, bg: ['#c9f7e1', '#c9f7e1'], color: '#4a1a73', glow: '#7ee8b4' },
+  Epic: { label: 'EPIC', w: 15, bg: ['#ead6ff', '#ead6ff'], color: '#4a1a73', glow: '#c89bff' },
+  Legendary: { label: 'LEGENDARY', w: 8, bg: ['#ffdcb0', '#ffdcb0'], color: '#4a1a73', glow: '#ffa94d' },
+  Rainbow: { label: 'RAINBOW', w: 3.5, bg: ['#ffb3c7', '#ffe38a', '#b3f5c8', '#b3e0ff', '#dcc2ff'], color: '#4a1a73', glow: '#ff9fd6' },
+  Golden: { label: 'GOLDEN', w: 1.5, bg: ['#fff3b0', '#ffc233', '#f0a000'], color: '#4a1a73', glow: '#ffd24d' },
   Secret: { label: 'SECRET', w: 0, bg: ['#4a1a73', '#ff4fa3'], color: '#ffffff', glow: '#ff6fbd' },
 };
 

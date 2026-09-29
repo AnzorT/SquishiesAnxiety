@@ -3,11 +3,12 @@
 // src/data/creatureCache.js) — app-level constants that were never part of
 // that catalog data in the first place.
 
-// Starter creatures every new account already owns (unlocked, no key/coins
-// required) — the rest are bought as a key in the Store, then redeemed with
-// a hold-to-unlock gesture on their Home card. Ids match the live Firestore
-// `creatures` collection (0 Glorp, 1 Puffle, 2 Nubbin).
-export const STARTER_CREATURE_IDS = ['0', '1', '2'];
+// The creature every new account already owns: Glorp. Every other one is
+// unlocked with stickers, coins or $0.99 (src/economy.js) — each gets its
+// key, redeemed with the hold-to-unlock gesture on its Home card. (Accounts
+// made before this owned Puffle and Nubbin too, and keep them.) Ids match
+// the live Firestore `creatures` collection (0 Glorp).
+export const STARTER_CREATURE_IDS = ['0'];
 
 // Soft-body dent physics constants — identical for every creature.
 export const PHYS = { strength: 2.2, stiff: 0.55, damp: 0.68, wobbleKick: 0.4 };

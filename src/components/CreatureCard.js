@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Defs, Pattern, Circle, Rect, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Defs, Pattern, Circle, Rect, RadialGradient, Stop, Path } from 'react-native-svg';
 import { candyColors, candyFonts, BUTTON_VARIANTS, tierOf } from '../theme/candyTheme';
 import CreatureThumbnail from './CreatureThumbnail';
 import { CandyCard, Pedestal, RaysSpin, TierChip, CandyProgress } from './candy/Decor';
@@ -9,14 +9,20 @@ import { CandyPill, Shine } from './candy/CandyButton';
 import { KeyIcon } from './candy/RoundButton';
 import { Twinkle } from './candy/Sparkles';
 import OutlinedTitle from './candy/OutlinedTitle';
+import ShadowText, { outline3 } from './candy/ShadowText';
+import CreatureToken from './candy/Tokens';
+import { tokenPrice } from '../economy';
+import { CARD_SIZE } from './CardPager';
+import sfx from '../audio/sfx';
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 // The single creature card shown on Home's "OUR CREATURES" carousel — the v3
 // card: a white-rimmed pink card, the creature standing on a gold pedestal
 // under slowly spinning light rays, name as a pink sticker title with its
-// rarity chip, and a candy status row (LOCKED · GET KEY / HOLD TO UNLOCK /
-// ★ OWNED + PLAY ▶). HomeScreen mounts one per page.
+// rarity chip, and a candy status row (its tokens so far + UNLOCK /
+// HOLD TO UNLOCK / ★ OWNED + PLAY ▶). HomeScreen mounts one per page.
+// Tapping a locked card opens the unlock choices (UnlockSheet).
 //
 // This component owns the whole unlock-with-key interaction: hold the image
 // area and a gold key slides into a pink padlock (which shakes, then pops its
@@ -31,6 +37,29 @@ const BLEED = 16;
 const BLEED_RATIO = (100 + BLEED * 2) / 100;
 
 // ---- padlocks ----------------------------------------------------------
+
+// The purple padlock's gold keyhole, as one shape — the round top and the
+// slot below it — so its white rim and thin brown edge run all the way
+// round. (Built from two views, the slot had no rim and covered the bottom
+// of the circle's, leaving a bare gold line.)
+const KEYHOLE = 'M10.25 17.26 A6.5 6.5 0 1 1 13.75 17.26 L13.75 24.25 A1.75 1.75 0 0 1 10.25 24.25 Z';
+
+function GoldKeyhole() {
+  return (
+    <Svg width={24} height={32} style={styles.goldHole}>
+      <Defs>
+        <RadialGradient id="keyholeGold" cx="10" cy="8.5" r="12" gradientUnits="userSpaceOnUse">
+          <Stop offset="0" stopColor="#fff7b0" />
+          <Stop offset="0.6" stopColor="#ffc233" />
+          <Stop offset="1" stopColor="#e08a00" />
+        </RadialGradient>
+      </Defs>
+      <Path d={KEYHOLE} fill="none" stroke="#9c4d06" strokeWidth={7} strokeLinejoin="round" />
+      <Path d={KEYHOLE} fill="none" stroke="#ffffff" strokeWidth={4} strokeLinejoin="round" />
+      <Path d={KEYHOLE} fill="url(#keyholeGold)" />
+    </Svg>
+  );
+}
 
 function Padlock({ variant = 'purple', scale = 1, shackleLift }) {
   const purple = variant === 'purple';
@@ -63,10 +92,7 @@ function Padlock({ variant = 'purple', scale = 1, shackleLift }) {
           <LinearGradient colors={v.colors} locations={v.locations} style={[styles.lockBody, { borderRadius: purple ? 16 : 14 }]}>
             <Shine />
             {purple ? (
-              <View style={styles.goldHole}>
-                <View style={styles.goldHoleDisc} />
-                <View style={styles.goldHoleStem} />
-              </View>
+              <GoldKeyhole />
             ) : (
               <View style={styles.darkHole}>
                 <View style={styles.darkHoleDisc} />
@@ -89,7 +115,7 @@ function ImageBackdrop() {
       <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
         <Defs>
           <Pattern id="cardDots" x="0" y="0" width="16" height="16" patternUnits="userSpaceOnUse">
-            <Circle cx="1" cy="1" r="1" fill="#ffffff" fillOpacity={0.9} />
+            <Circle cx="8" cy="8" r="1.1" fill="#ffffff" fillOpacity={0.9} />
           </Pattern>
           <RadialGradient id="cardGlow" cx="50%" cy="42%" r="60%">
             <Stop offset="0" stopColor="#ffffff" stopOpacity={1} />
@@ -109,7 +135,7 @@ function ImageBackdrop() {
   );
 }
 
-export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, onOpenStore, onUnlockWithKey }) {
+function CreatureCard({ creature, unlocked, hasKey, tokens = 0, onSelectToy, onShowUnlock, onUnlockWithKey }) {
   const lockedNoKey = !unlocked && !hasKey;
   const lockedHasKey = !unlocked && hasKey;
   const tier = tierOf(creature.id);
@@ -152,10 +178,42 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
     shake.setValue(0);
   }, [shake]);
 
+  // The design's hold sound: a hum whose pitch climbs with the hold
+  // (260 → 960 Hz, played by speeding up the loop) and a little note every
+  // 10%.
+  const holdSoundRef = useRef(null);
+  const stopHoldSound = useCallback(() => {
+    const h = holdSoundRef.current;
+    holdSoundRef.current = null;
+    if (!h) return;
+    holdProgress.removeListener(h.listener);
+    h.loop.stop();
+  }, [holdProgress]);
+  useEffect(() => stopHoldSound, [stopHoldSound]);
+
   const handlePressIn = useCallback(() => {
     if (!lockedHasKey) return;
     if (holdAnimRef.current) holdAnimRef.current.stop();
     holdProgress.setValue(0);
+    stopHoldSound();
+    const hum = sfx.loop('holdLoop', { volume: 0.42 });
+    let lastStep = 0;
+    let lastRate = 1;
+    const listener = holdProgress.addListener(({ value: p }) => {
+      const rate = (260 + p * 700) / 260;
+      // the listener runs every frame; only send real changes to the player
+      if (Math.abs(rate - lastRate) > 0.04) {
+        lastRate = rate;
+        hum.setRate(rate);
+        hum.setVolume((0.05 + p * 0.07) / 0.12);
+      }
+      const step = Math.floor(p * 10);
+      if (step > lastStep) {
+        lastStep = step;
+        sfx.play('holdStep', { rate });
+      }
+    });
+    holdSoundRef.current = { loop: hum, listener };
     shakeLoopRef.current = Animated.loop(Animated.timing(shake, { toValue: 1, duration: 500, easing: Easing.linear, useNativeDriver: true }));
     shakeLoopRef.current.start();
     holdAnimRef.current = Animated.timing(holdProgress, {
@@ -168,6 +226,8 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
       if (!finished) return; // released early — handlePressOut already reset the bar
       holdAnimRef.current = null;
       stopShake();
+      stopHoldSound();
+      sfx.play('unlock');
       setShowCelebration(true);
       celebrationFade.setValue(1);
       onUnlockWithKey(creature.id);
@@ -202,7 +262,7 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
         });
       }, CELEBRATION_MS);
     });
-  }, [lockedHasKey, creature.id, onUnlockWithKey, holdProgress, celebrationFade, colorFade, shake, stopShake]);
+  }, [lockedHasKey, creature.id, onUnlockWithKey, holdProgress, celebrationFade, colorFade, shake, stopShake, stopHoldSound]);
 
   const handlePressOut = useCallback(() => {
     if (!holdAnimRef.current) return; // already completed
@@ -210,7 +270,8 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
     holdAnimRef.current = null;
     holdProgress.setValue(0);
     stopShake();
-  }, [holdProgress, stopShake]);
+    stopHoldSound();
+  }, [holdProgress, stopShake, stopHoldSound]);
 
   // --- popIn for "UNLOCKED!" (scale 0.4 -> 1.12 -> 1, rotate -8 -> 0) ---
   const popScale = useRef(new Animated.Value(0.4)).current;
@@ -243,15 +304,16 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
 
   const handleCardPress = useCallback(() => {
     if (unlocked) onSelectToy(creature);
-    else if (lockedNoKey) onOpenStore();
+    else if (lockedNoKey) onShowUnlock(creature);
     // has key, not unlocked → unlock happens via the hold gesture only
-  }, [unlocked, lockedNoKey, creature, onSelectToy, onOpenStore]);
+  }, [unlocked, lockedNoKey, creature, onSelectToy, onShowUnlock]);
 
   const mood = showCelebration ? 'celebrate' : unlocked ? 'idle' : 'sleep';
 
-  // Creature body size: min(170, area height - 34, 80% of area width), as in
-  // the design; the thumbnail itself is bigger by the bleed margin.
-  const body = imgBox.h ? Math.max(60, Math.min(170, imgBox.h - 40, imgBox.w * 0.8)) : 0;
+  // Creature size: the design's min(170px, 100cqh - 34px, 80cqw) of the
+  // image area; the thumbnail footprint is bigger by the bleed margin (only
+  // the older SVG art needs that room — see CreatureThumbnail).
+  const body = imgBox.h ? Math.max(60, Math.min(170, imgBox.h - 34, imgBox.w * 0.8)) : 0;
   const thumb = Math.round(body * BLEED_RATIO);
   // fits the padlock / key stage to short cards
   const overlayScale = imgBox.h ? Math.min(1, (imgBox.h - 16) / 150) : 1;
@@ -272,7 +334,9 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
 
           {body > 0 ? (
             <View style={{ width: thumb, height: thumb, marginTop: -6 }}>
-              <View style={[styles.pedestalWrap, { top: thumb * (0.5 + 0.5 / BLEED_RATIO) - 26 }]}>
+              {/* 130% of the creature wide, its bottom edge 10px below the
+                  creature's box (the design's bottom:-10px) */}
+              <View style={[styles.pedestalWrap, { top: (thumb + body) / 2 + 10 - 22 - 2 }]}>
                 <Pedestal width={body * 1.3} height={22} />
               </View>
               {colorTransitioning ? (
@@ -323,7 +387,9 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
                     </View>
                   </Animated.View>
                 </View>
-                <Text style={styles.holdLabel}>HOLD TO UNLOCK</Text>
+                <ShadowText style={styles.holdLabel} shadows={HOLD_LABEL_SHADOWS}>
+                  HOLD TO UNLOCK
+                </ShadowText>
                 <CandyProgress
                   height={14}
                   ring={candyColors.pinkRing}
@@ -338,7 +404,7 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
 
         <View style={styles.infoArea}>
           <View style={styles.nameRow}>
-            <OutlinedTitle text={creature.name} fill="pink" size={21} outline={2} letterSpacing={0.5} style={styles.nameTitle} />
+            <OutlinedTitle text={creature.name} fill="pink" size={21} outline={2} ring={1.5} drop={3} letterSpacing={0} style={styles.nameTitle} />
             {tier ? <TierChip tier={tier} /> : null}
           </View>
           <Text style={styles.cardDesc} numberOfLines={1} ellipsizeMode="tail">
@@ -347,13 +413,21 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
           <View style={styles.statusRow}>
             {unlocked ? (
               <>
-                <Text style={styles.ownedLabel}>★ OWNED</Text>
-                <CandyPill variant="blue" label="PLAY ▶" pulse />
+                <ShadowText style={styles.ownedLabel} shadows={outline3(candyColors.goldRing)}>
+                  ★ OWNED
+                </ShadowText>
+                <CandyPill variant="blue" label="PLAY ▶" pulse fontSize={13} padV={5} padH={16} letterSpacing={0.8} />
               </>
             ) : lockedHasKey ? (
-              <CandyPill variant="gold" label="HOLD TO UNLOCK" pulse halfMs={600} />
+              <CandyPill variant="gold" label="HOLD TO UNLOCK" pulse halfMs={600} fontSize={12} padV={4} padH={12} letterSpacing={0.6} />
             ) : (
-              <CandyPill variant="grey" label="LOCKED · GET KEY" />
+              <>
+                <View style={styles.tokenRow}>
+                  <CreatureToken creature={creature} size={22} />
+                  <Text style={styles.tokenText}>{`${tokens.toLocaleString()}/${tokenPrice(creature.id).toLocaleString()}`}</Text>
+                </View>
+                <CandyPill variant="pink" label="UNLOCK" pulse fontSize={12} padV={4} padH={14} letterSpacing={0.8} />
+              </>
             )}
           </View>
         </View>
@@ -362,8 +436,19 @@ export default function CreatureCard({ creature, unlocked, hasKey, onSelectToy, 
   );
 }
 
+export default memo(CreatureCard);
+
+// the design's white caption outlined 1.5px all round plus a 3px drop
+const HOLD_LABEL_SHADOWS = [
+  [1.5, 0, '#45189a'],
+  [-1.5, 0, '#45189a'],
+  [0, 1.5, '#45189a'],
+  [0, -1.5, '#45189a'],
+  [0, 3, '#45189a'],
+];
+
 const styles = StyleSheet.create({
-  card: { width: '84%', maxWidth: 340, height: '94%', maxHeight: 470 },
+  card: CARD_SIZE,
   cardBody: { flex: 1, flexDirection: 'column' },
   imageArea: {
     flex: 1,
@@ -389,9 +474,7 @@ const styles = StyleSheet.create({
   lockLip: { position: 'absolute', left: 0, right: 0 },
   lockRing: { position: 'absolute', left: 0, right: 0, padding: 2.5 },
   lockBody: { flex: 1, borderWidth: 3, borderColor: '#ffffff', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  goldHole: { width: 18, height: 26, marginTop: 4, alignItems: 'center' },
-  goldHoleDisc: { width: 18, height: 18, borderRadius: 9, backgroundColor: '#ffc233', borderWidth: 2, borderColor: '#ffffff' },
-  goldHoleStem: { width: 6, height: 12, marginTop: -4, borderBottomLeftRadius: 3, borderBottomRightRadius: 3, backgroundColor: '#ffc233' },
+  goldHole: { marginTop: 2 },
   darkHole: { width: 14, height: 22, alignItems: 'center' },
   darkHoleDisc: { width: 14, height: 14, borderRadius: 7, backgroundColor: '#7a0f62' },
   darkHoleStem: { width: 8, height: 12, marginTop: -4, borderBottomLeftRadius: 2, borderBottomRightRadius: 2, backgroundColor: '#7a0f62' },
@@ -406,29 +489,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 1,
     color: '#ffffff',
-    textShadowColor: '#45189a',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 2,
+    includeFontPadding: false,
   },
   holdBar: { width: 128, marginTop: 6 },
 
-  infoArea: { paddingHorizontal: 12, paddingTop: 2, paddingBottom: 8 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  nameTitle: { marginLeft: -4, marginBottom: -4 },
-  cardDesc: { color: candyColors.muted, fontSize: 11, fontFamily: candyFonts.body, marginTop: 0, lineHeight: 14, paddingHorizontal: 2 },
+  // The sticker title's SVG carries its own outline margin (3.5px round, 3px
+  // drop) — pulled back so the letters sit where the design's do.
+  infoArea: { paddingHorizontal: 14, paddingTop: 2, paddingBottom: 8 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4.5 },
+  nameTitle: { marginLeft: -3.5, marginTop: -2, marginBottom: -5 },
+  cardDesc: { color: candyColors.muted, fontSize: 11, fontFamily: candyFonts.body, marginTop: 2, lineHeight: 14 },
   statusRow: {
-    marginTop: 6,
+    marginTop: 4,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  tokenRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  tokenText: { color: '#d3179a', fontFamily: candyFonts.display, fontSize: 14, includeFontPadding: false },
   ownedLabel: {
     color: '#ffb300',
     fontFamily: candyFonts.display,
     fontSize: 14,
     letterSpacing: 1,
-    textShadowColor: candyColors.goldRing,
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 1,
+    includeFontPadding: false,
   },
 });

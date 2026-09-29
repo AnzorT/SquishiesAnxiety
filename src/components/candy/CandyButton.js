@@ -2,6 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BUTTON_VARIANTS, candyFonts } from '../../theme/candyTheme';
+import ShadowText, { outline3 } from './ShadowText';
+import sfx from '../../audio/sfx';
 
 // The v3 "candy" button: a gradient face inside a white border, wrapped in a
 // dark ring whose colour also forms a thick bottom lip, with a glossy shine
@@ -18,6 +20,10 @@ const SIZES = {
   md: { padV: 11, padH: 24, font: 16, ring: 2.5, border: 3, lip: 5 },
   sm: { padV: 5, padH: 14, font: 13, ring: 2, border: 3, lip: 4 },
   xs: { padV: 3, padH: 11, font: 12, ring: 2, border: 2.5, lip: 3 },
+  // Auth submit: padding 16px, 17px caption
+  auth: { padV: 16, padH: 16, font: 17, ring: 2.5, border: 3, lip: 5 },
+  // Key Shop rows: padding 8px 14px, 13px caption, 3px rim, 2.5px ring + lip
+  shop: { padV: 8, padH: 14, font: 13, ring: 2.5, border: 3, lip: 4 },
 };
 
 const PULSES = {
@@ -25,13 +31,25 @@ const PULSES = {
   soft: { to: 1.04, half: 800 },
 };
 
-export function Shine({ radius = 999, inset = '9%', height = '44%', top = 3 }) {
+// The glossy highlight across the top of every candy button/pill.
+//
+// It sits in its own full-size layer: React Native resolves an absolute
+// child's percentage size against its parent's *content* box, so on a
+// padded button face `height: 44%` came out as 44% of the caption's height —
+// a thin floating strip. Measured against this padding-free layer the
+// gloss is the design's 44% of the whole face. It also starts flush against
+// the white rim (no strip of button colour above it) and, on buttons, pills
+// and tabs, runs the full width of the face (the design insets it 9% a side,
+// which read as too narrow); the face's own rounded clip shapes its ends.
+// Round things (round buttons, coins, badges) pass an inset.
+export function Shine({ radius = 999, inset = 0, height = '44%', top = 0 }) {
   return (
-    <LinearGradient
-      pointerEvents="none"
-      colors={['rgba(255,255,255,0.85)', 'rgba(255,255,255,0.1)']}
-      style={{ position: 'absolute', left: inset, right: inset, top, height, borderRadius: radius }}
-    />
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      <LinearGradient
+        colors={['rgba(255,255,255,0.85)', 'rgba(255,255,255,0.1)']}
+        style={{ position: 'absolute', left: inset, right: inset, top, height, borderRadius: radius }}
+      />
+    </View>
   );
 }
 
@@ -89,7 +107,10 @@ export default function CandyButton({
       <Pressable
         onPress={onPress}
         onPressIn={(e) => {
-          if (!disabled) sink(1);
+          if (!disabled) {
+            sink(1);
+            sfx.play('tap');
+          }
           onPressIn && onPressIn(e);
         }}
         onPressOut={(e) => {
@@ -120,16 +141,9 @@ export default function CandyButton({
                 ) : children != null ? (
                   children
                 ) : (
-                  <Text
-                    style={[
-                      styles.label,
-                      { fontSize: sz.font, textShadowColor: v.ring },
-                      textStyle,
-                    ]}
-                    numberOfLines={1}
-                  >
+                  <ButtonText ring={v.ring} size={sz.font} style={textStyle}>
                     {label}
-                  </Text>
+                  </ButtonText>
                 )}
               </LinearGradient>
             </View>
@@ -142,8 +156,10 @@ export default function CandyButton({
 
 // Non-interactive candy pill (card status rows like PLAY ▶ / LOCKED · GET
 // KEY) — same look as a small CandyButton, for places where the whole card
-// is already the tap target. `pulse` breathes it 1→1.04.
-export function CandyPill({ variant = 'pink', label, pulse = false, halfMs = 800, fontSize, style }) {
+// is already the tap target. `pulse` breathes it 1→1.04. Padding and letter
+// spacing follow the design per use (PLAY ▶ 5/16 at 13px, the locked states
+// 4/12 at 12px).
+export function CandyPill({ variant = 'pink', label, pulse = false, halfMs = 800, fontSize, padV = 4, padH = 14, letterSpacing, style }) {
   const v = BUTTON_VARIANTS[variant] || BUTTON_VARIANTS.pink;
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -164,9 +180,11 @@ export function CandyPill({ variant = 'pink', label, pulse = false, halfMs = 800
         <View style={[styles.pillRing, { backgroundColor: v.ring }]}>
           <LinearGradient colors={v.colors} locations={v.locations} style={styles.pillFace}>
             <Shine />
-            <ButtonText ring={v.ring} size={fontSize || (variant === 'blue' ? 13 : 12)}>
-              {label}
-            </ButtonText>
+            <View style={{ paddingVertical: padV, paddingHorizontal: padH }}>
+              <ButtonText ring={v.ring} size={fontSize || (variant === 'blue' ? 13 : 12)} style={letterSpacing != null ? { letterSpacing } : null}>
+                {label}
+              </ButtonText>
+            </View>
           </LinearGradient>
         </View>
       </View>
@@ -174,13 +192,14 @@ export function CandyPill({ variant = 'pink', label, pulse = false, halfMs = 800
   );
 }
 
-// White label with the ring-coloured hard drop the design puts on every
-// button caption. Exposed for custom button content.
+// White caption outlined in the button's ring colour — the design's
+// `text-shadow: 0 2px 0 ring, 1px 0 0 ring, -1px 0 0 ring` on every button.
+// Exposed for custom button content.
 export function ButtonText({ children, ring = '#8e1580', size = 16, style, numberOfLines = 1 }) {
   return (
-    <Text style={[styles.label, { fontSize: size, textShadowColor: ring }, style]} numberOfLines={numberOfLines}>
+    <ShadowText style={[styles.label, { fontSize: size }, style]} shadows={outline3(ring)} numberOfLines={numberOfLines}>
       {children}
-    </Text>
+    </ShadowText>
   );
 }
 
@@ -195,13 +214,11 @@ const styles = StyleSheet.create({
   face: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   pillLip: { borderRadius: 999, paddingBottom: 4 },
   pillRing: { borderRadius: 999, padding: 2 },
-  pillFace: { borderRadius: 999, borderWidth: 3, borderColor: '#ffffff', paddingHorizontal: 14, paddingVertical: 4, overflow: 'hidden' },
+  pillFace: { borderRadius: 999, borderWidth: 3, borderColor: '#ffffff', overflow: 'hidden' },
   label: {
     fontFamily: candyFonts.display,
     color: '#ffffff',
     letterSpacing: 1,
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 1,
     includeFontPadding: false,
   },
 });

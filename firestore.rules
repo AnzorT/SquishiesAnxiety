@@ -16,13 +16,21 @@ service cloud.firestore {
       // directly; only generateCustomModel (admin SDK, bypasses rules) may
       // spend or refund it, and a purchase is reconciled by hand for now by
       // setting it from the Firebase console/admin SDK.
+      //
+      // The Daily Spin's bookkeeping is the same kind of field: only the
+      // spinWheel Cloud Function writes it, so the app can't grant itself
+      // extra spins or the 15%-off-a-creation prize. `adsFree` is paid for
+      // (Remove Ads): only verifyPurchase sets it, after Google Play
+      // confirms the purchase.
       allow update: if request.auth != null && request.auth.uid == userId
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['generationCredits']);
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['generationCredits', 'creationDiscountPct', 'lastSpinDay', 'spins', 'wheelJackpot', 'adsFree']);
       // A fresh profile may only ever start with its one free generation
       // (or none set, which the Cloud Function also treats as 1) — never a
       // self-granted stack of them.
       allow create: if request.auth != null && request.auth.uid == userId
-        && (!('generationCredits' in request.resource.data) || request.resource.data.generationCredits == 1);
+        && (!('generationCredits' in request.resource.data) || request.resource.data.generationCredits == 1)
+        && (!('adsFree' in request.resource.data) || request.resource.data.adsFree == false)
+        && !request.resource.data.keys().hasAny(['creationDiscountPct', 'lastSpinDay', 'spins', 'wheelJackpot']);
 
       // Player-made creatures (image-to-3D via the creator flow). Fully
       // owned by that user — nobody else reads or writes them.
@@ -46,6 +54,12 @@ service cloud.firestore {
     match /config/{doc} {
       allow read: if request.auth != null;
       allow create, update, delete: if false;
+    }
+
+    // Google Play purchases already granted (verifyPurchase's ledger) —
+    // server only.
+    match /purchases/{purchaseId} {
+      allow read, write: if false;
     }
 
     // One-way mailbox: any signed-in user can drop a feedback note bearing

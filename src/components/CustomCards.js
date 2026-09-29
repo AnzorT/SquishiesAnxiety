@@ -1,11 +1,13 @@
-import React, { useEffect, useRef } from 'react';
+import React, { memo, useEffect, useRef } from 'react';
 import { View, Text, Image, Pressable, StyleSheet, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Stop, Circle } from 'react-native-svg';
-import { candyColors, candyFonts } from '../theme/candyTheme';
+import { BUTTON_VARIANTS, candyColors, candyFonts } from '../theme/candyTheme';
 import AssembleCreature from './AssembleCreature';
-import { CandyCard } from './candy/Decor';
-import { CandyPill } from './candy/CandyButton';
+import { CandyCard, SoftPulse } from './candy/Decor';
+import { ButtonText, CandyPill, Shine } from './candy/CandyButton';
+import ShineSweep from './candy/ShineSweep';
+import { CARD_SIZE } from './CardPager';
 
 // The two card types on Home's "MY CREATURES" tab, in the v3 candy card: the
 // dashed-rim "Create your own squishy" card (always at index 0) and a card
@@ -13,7 +15,37 @@ import { CandyPill } from './candy/CandyButton';
 
 // --- "Create your own squishy" -------------------------------------------
 
-export function CreateOwnCard({ onPress, generationCredits = 0, priceLabel = '$4.99' }) {
+// The free creations the player still has, as a blue candy pill (the old
+// flat teal outline didn't belong with the candy look): a gold ball with the
+// count, "FREE CREATION", gloss, a light streak and a gentle breath.
+function FreeCreationPill({ count }) {
+  const v = BUTTON_VARIANTS.blue;
+  const gold = BUTTON_VARIANTS.gold;
+  return (
+    <SoftPulse style={styles.freeWrap}>
+      <View style={[styles.freeLip, { backgroundColor: v.ring }]}>
+        <View style={[styles.freeRing, { backgroundColor: v.ring }]}>
+          <LinearGradient colors={v.colors} locations={v.locations} style={styles.freeFace}>
+            <Shine />
+            <ShineSweep />
+            <View style={[styles.countRing, { backgroundColor: gold.ring }]}>
+              <LinearGradient colors={gold.colors} locations={gold.locations} style={styles.countFace}>
+                <ButtonText ring={gold.ring} size={13}>
+                  {String(count)}
+                </ButtonText>
+              </LinearGradient>
+            </View>
+            <ButtonText ring={v.ring} size={14} style={styles.freeLabel}>
+              {count === 1 ? 'FREE CREATION' : 'FREE CREATIONS'}
+            </ButtonText>
+          </LinearGradient>
+        </View>
+      </View>
+    </SoftPulse>
+  );
+}
+
+export const CreateOwnCard = memo(function CreateOwnCard({ onPress, generationCredits = 0, priceLabel = '$4.99', discountPct = 0 }) {
   // createPulse: scale 1 -> 1.07 -> 1 with a widening glow, 2.4s loop
   const pulse = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -50,19 +82,18 @@ export function CreateOwnCard({ onPress, generationCredits = 0, priceLabel = '$4
         <Text style={styles.createTitle}>Create your own squishy</Text>
         <Text style={styles.createSub}>Upload or draw a picture, add a squish sound, and we turn it into 3D.</Text>
         {generationCredits > 0 ? (
-          <View style={[styles.pricePill, styles.freePill]}>
-            <Text style={styles.freePillText}>✓ {generationCredits} FREE GENERATION{generationCredits === 1 ? '' : 'S'}</Text>
-          </View>
+          <FreeCreationPill count={generationCredits} />
         ) : (
           <View style={styles.pricePill}>
             <Text style={styles.priceAmount}>{priceLabel}</Text>
             <Text style={styles.priceUnit}>PER CREATURE</Text>
+            {discountPct ? <Text style={styles.discount}>−{discountPct}%</Text> : null}
           </View>
         )}
       </CandyCard>
     </Pressable>
   );
-}
+});
 
 // --- a made creature ----------------------------------------------------
 //
@@ -82,7 +113,7 @@ function ScanLine() {
   return <Animated.View pointerEvents="none" style={[styles.scanLine, { transform: [{ translateY }] }]} />;
 }
 
-export function CustomCreatureCard({ creature, onPlay, onDelete, onRetry }) {
+export const CustomCreatureCard = memo(function CustomCreatureCard({ creature, onPlay, onDelete, onRetry }) {
   const status = creature.status || 'ready';
   const busy = status === 'pending' || status === 'running';
   // 'capacity': the balance guard (or Tripo's own "insufficient credit" error)
@@ -152,7 +183,7 @@ export function CustomCreatureCard({ creature, onPlay, onDelete, onRetry }) {
                   <CandyPill variant="gold" label="RETRY ↻" />
                 </Pressable>
               ) : (
-                <CandyPill variant="blue" label="PLAY ▶" pulse />
+                <CandyPill variant="blue" label="PLAY ▶" pulse fontSize={13} padV={5} padH={16} letterSpacing={0.8} />
               )}
             </View>
           </View>
@@ -160,10 +191,10 @@ export function CustomCreatureCard({ creature, onPlay, onDelete, onRetry }) {
       </CandyCard>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
-  cardShell: { width: '84%', maxWidth: 340, height: '94%', maxHeight: 470, alignItems: 'center' },
+  cardShell: { ...CARD_SIZE, alignItems: 'center' },
   card: { width: '100%', height: '100%' },
   cardBody: { flex: 1, flexDirection: 'column' },
 
@@ -202,9 +233,36 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   priceAmount: { fontFamily: candyFonts.display, fontSize: 15, color: candyColors.goldInk },
+  discount: {
+    color: '#ffffff',
+    backgroundColor: '#0f9d90',
+    borderRadius: 999,
+    overflow: 'hidden',
+    paddingHorizontal: 7,
+    paddingVertical: 1,
+    fontFamily: candyFonts.bodyBlack,
+    fontSize: 10,
+    letterSpacing: 0.6,
+  },
   priceUnit: { color: candyColors.inkSoft, fontFamily: candyFonts.bodyBlack, fontSize: 9, letterSpacing: 1.4 },
-  freePill: { borderColor: '#2fd4c2' },
-  freePillText: { color: '#0f9d90', fontFamily: candyFonts.bodyBlack, fontSize: 10, letterSpacing: 1 },
+  freeWrap: { marginTop: 4 },
+  freeLip: { borderRadius: 999, paddingBottom: 4 },
+  freeRing: { borderRadius: 999, padding: 2 },
+  freeFace: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    borderRadius: 999,
+    borderWidth: 3,
+    borderColor: '#ffffff',
+    overflow: 'hidden',
+    paddingLeft: 4,
+    paddingRight: 14,
+    paddingVertical: 3,
+  },
+  freeLabel: { letterSpacing: 0.8 },
+  countRing: { width: 24, height: 24, borderRadius: 12, padding: 1.5 },
+  countFace: { flex: 1, borderRadius: 11, borderWidth: 2, borderColor: '#ffffff', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
 
   // custom creature
   customImageArea: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center', position: 'relative' },

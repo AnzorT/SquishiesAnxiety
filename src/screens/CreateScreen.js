@@ -12,16 +12,23 @@ import CandyButton, { ButtonText } from '../components/candy/CandyButton';
 import RoundButton, { BackGlyph } from '../components/candy/RoundButton';
 import OutlinedTitle from '../components/candy/OutlinedTitle';
 import AssembleCreature, { ASSEMBLE_BODY_COLORS, ASSEMBLE_DEFAULT } from '../components/AssembleCreature';
+import PaintCanvas from '../components/PaintCanvas';
 
 // CREATE A SQUISHY — the creator flow in the v3 candy look. Name, then a
-// picture (upload a photo or assemble one from parts), an optional short
-// squish sound.
+// picture (upload a photo, or CREATE ONE: paint it, or assemble it from
+// parts), an optional short squish sound.
 //
 // On submit this hands a payload to `onCreated` (App): for a photo it uploads
 // the resized JPEG to Storage and creates a `status: 'pending'` doc — the
 // `generateCustomModel` Cloud Function then runs Tripo image-to-3D in the
-// background and the MY CREATURES card tracks its progress. Assemble-path
+// background and the MY CREATURES card tracks its progress. A painting takes
+// the same path as a photo (it's rendered to a JPEG first). Assemble-path
 // creatures are born ready and play as their 2D art.
+//
+// A creation uses one generation credit: the free one every player starts
+// with, or one bought right here — with none left, the button shows the
+// store's price and buys one (Google Play / the App Store, src/billing),
+// then carries straight on with the creation.
 
 const MAX_AUDIO_CHARS = 700000; // ~500 KB of base64 — keeps the Firestore doc small
 
@@ -32,11 +39,14 @@ const ASSEMBLE_ROWS = [
   { key: 'extra', label: 'EXTRA', options: [['none', 'None'], ['antenna', 'Antenna'], ['ears', 'Ears'], ['horns', 'Horns']] },
 ];
 
-export default function CreateScreen({ onBack, onCreated, generationCredits = 1, priceLabel = '$4.99' }) {
+export default function CreateScreen({ onBack, onCreated, generationCredits = 1, priceLabel = '$4.99', discountPct = 0, onBuyCreation, buying = false }) {
   const insets = useSafeAreaInsets();
 
   const [name, setName] = useState('');
-  const [source, setSource] = useState('upload'); // 'upload' | 'assemble'
+  const [source, setSource] = useState('upload'); // 'upload' | 'draw'
+  const [drawMode, setDrawMode] = useState('paint'); // 'paint' | 'assemble' (under CREATE ONE)
+  const [drawing, setDrawing] = useState(false); // a paint stroke is in progress
+  const paintRef = useRef(null);
   const [imageUri, setImageUri] = useState(null); // resized local JPEG
   const [imageError, setImageError] = useState(null);
   const [build, setBuild] = useState(ASSEMBLE_DEFAULT);
@@ -152,18 +162,40 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
   }, [audio]);
 
   const nameOk = !!name.trim();
-  const imgOk = source === 'assemble' || !!imageUri;
+  const assembling = source === 'draw' && drawMode === 'assemble';
+  const painting = source === 'draw' && drawMode === 'paint';
+  // A painting is checked on submit (the pad tells whether it's blank).
+  const imgOk = source === 'draw' || !!imageUri;
   // One free generation credit covers either path — the assemble path has no
   // Tripo/backend cost, but it's still gated the same way so it actually
   // consumes the shared credit (see generateCustomModel's assemble-path
   // branch in functions/index.js) instead of always reading as free.
   const hasCredit = generationCredits > 0;
-  const ready = nameOk && imgOk && !converting && hasCredit;
+  const ready = nameOk && imgOk && !converting && !buying;
 
   const submit = useCallback(async () => {
     if (!ready) return;
     setSubmitError(null);
-    const isPhoto = source === 'upload';
+    // No credit: buy one first. (Paid creations get no ad break.)
+    let paid = false;
+    if (!hasCredit) {
+      if (!onBuyCreation || !(await onBuyCreation())) return;
+      paid = true;
+    }
+    const isPhoto = !assembling;
+    let picture = imageUri;
+    if (painting) {
+      if (!paintRef.current || paintRef.current.isEmpty()) {
+        setSubmitError('Paint something first.');
+        return;
+      }
+      try {
+        picture = await paintRef.current.exportImage();
+      } catch (e) {
+        setSubmitError('Could not save your painting — try again.');
+        return;
+      }
+    }
     if (isPhoto) setConverting(true);
     try {
       // App uploads the photo to Storage (if any) and writes the Firestore
@@ -171,9 +203,10 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
       // success, so this screen just unmounts.
       await onCreated({
         name: name.trim(),
-        imageUri: isPhoto ? imageUri : null,
+        imageUri: isPhoto ? picture : null,
         build: isPhoto ? null : build,
         audio: audio?.dataUrl || null,
+        paid,
       });
     } catch (e) {
       setConverting(false);
@@ -185,7 +218,7 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
       const detail = e?.code || e?.message;
       setSubmitError(detail ? `Upload failed — ${detail}` : 'Upload failed — check your connection and try again.');
     }
-  }, [ready, name, source, build, imageUri, audio, onCreated]);
+  }, [ready, hasCredit, onBuyCreation, name, assembling, painting, build, imageUri, audio, onCreated]);
 
   const setBuildPart = (key, val) => setBuild((b) => ({ ...b, [key]: val }));
 
@@ -200,7 +233,7 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
         <OutlinedTitle text="CREATE A SQUISHY" fill="pink" size={19} outline={3} />
       </View>
 
-      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 20 }]} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: 20 }]} keyboardShouldPersistTaps="handled" scrollEnabled={!drawing}>
         <View style={styles.field}>
           <Text style={styles.fieldLabel}>TOY NAME</Text>
           <TextInput value={name} onChangeText={setName} placeholder="e.g. Sir Wobbles" placeholderTextColor="#a98bc9" maxLength={18} style={styles.input} />
@@ -211,7 +244,7 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
           <View style={styles.segment}>
             {[
               ['upload', 'UPLOAD'],
-              ['assemble', 'CREATE ONE'],
+              ['draw', 'CREATE ONE'],
             ].map(([val, label]) => {
               const on = source === val;
               return (
@@ -240,37 +273,58 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
               {imageError ? <Text style={styles.errorText}>{imageError}</Text> : null}
             </>
           ) : (
-            <View style={styles.assembleWrap}>
-              <View style={styles.assemblePreview}>
-                <AssembleCreature build={build} size={150} />
+            <View style={styles.drawWrap}>
+              <View style={styles.drawTabs}>
+                {[
+                  ['paint', 'PAINT'],
+                  ['assemble', 'ASSEMBLE'],
+                ].map(([val, label]) => {
+                  const on = drawMode === val;
+                  return (
+                    <Pressable key={val} onPress={() => setDrawMode(val)} style={[styles.drawTab, on && styles.drawTabOn]} hitSlop={6}>
+                      <Text style={[styles.drawTabText, on && styles.drawTabTextOn]}>{label}</Text>
+                    </Pressable>
+                  );
+                })}
               </View>
-              {ASSEMBLE_ROWS.map((row) => (
-                <View key={row.key} style={styles.assembleRow}>
-                  <Text style={styles.assembleRowLabel}>{row.label}</Text>
-                  <View style={styles.chips}>
-                    {row.options.map(([val, label]) => {
-                      const on = build[row.key] === val;
-                      return (
-                        <Pressable key={val} style={[styles.chip, on && styles.chipOn]} onPress={() => setBuildPart(row.key, val)}>
-                          <Text style={[styles.chipText, on && styles.chipTextOn]}>{label}</Text>
-                        </Pressable>
-                      );
-                    })}
+              {/* kept mounted, so switching tabs doesn't lose the painting */}
+              <View style={painting ? null : styles.gone}>
+                <PaintCanvas ref={paintRef} onStroke={setDrawing} />
+              </View>
+              {assembling ? (
+                <View style={styles.assembleWrap}>
+                  <View style={styles.assemblePreview}>
+                    <AssembleCreature build={build} size={150} />
+                  </View>
+                  {ASSEMBLE_ROWS.map((row) => (
+                    <View key={row.key} style={styles.assembleRow}>
+                      <Text style={styles.assembleRowLabel}>{row.label}</Text>
+                      <View style={styles.chips}>
+                        {row.options.map(([val, label]) => {
+                          const on = build[row.key] === val;
+                          return (
+                            <Pressable key={val} style={[styles.chip, on && styles.chipOn]} onPress={() => setBuildPart(row.key, val)}>
+                              <Text style={[styles.chipText, on && styles.chipTextOn]}>{label}</Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  ))}
+                  <View style={styles.assembleRow}>
+                    <Text style={styles.assembleRowLabel}>BODY COLOR</Text>
+                    <View style={styles.chips}>
+                      {ASSEMBLE_BODY_COLORS.map((c) => (
+                        <Pressable
+                          key={c}
+                          onPress={() => setBuildPart('color', c)}
+                          style={[styles.swatch, { backgroundColor: c }, build.color === c && styles.swatchOn]}
+                        />
+                      ))}
+                    </View>
                   </View>
                 </View>
-              ))}
-              <View style={styles.assembleRow}>
-                <Text style={styles.assembleRowLabel}>BODY COLOR</Text>
-                <View style={styles.chips}>
-                  {ASSEMBLE_BODY_COLORS.map((c) => (
-                    <Pressable
-                      key={c}
-                      onPress={() => setBuildPart('color', c)}
-                      style={[styles.swatch, { backgroundColor: c }, build.color === c && styles.swatchOn]}
-                    />
-                  ))}
-                </View>
-              </View>
+              ) : null}
             </View>
           )}
         </View>
@@ -315,15 +369,14 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
         {submitError ? <Text style={styles.errorText}>{submitError}</Text> : null}
-        {!hasCredit ? <Text style={styles.noCreditText}>No generations left — purchases aren&apos;t available yet, check back soon.</Text> : null}
-        <CandyButton variant={ready ? 'pink' : 'grey'} size="md" radius={18} onPress={submit} disabled={!ready} dim={!ready} style={styles.createBtn}>
+        <CandyButton variant={ready ? 'pink' : 'grey'} size="md" radius={18} onPress={submit} disabled={!ready} dim={!ready} loading={buying} style={styles.createBtn}>
           <View style={styles.createRow}>
             <ButtonText ring={ready ? '#8e1580' : '#5a4a80'} size={17}>
               {hasCredit ? 'FREE' : priceLabel}
             </ButtonText>
             <View style={styles.createDivider} />
             <ButtonText ring={ready ? '#8e1580' : '#5a4a80'} size={13} style={styles.createLabel}>
-              {source === 'assemble' ? 'CREATE' : 'CREATE IN 3D'}
+              {assembling ? 'CREATE' : 'CREATE IN 3D'}
             </ButtonText>
           </View>
         </CandyButton>
@@ -332,10 +385,14 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
             ? 'Add a name to continue'
             : !imgOk
             ? 'Add a picture to continue'
+            : !hasCredit && discountPct
+            ? `One-time purchase · your Daily Spin prize takes ${discountPct}% off`
             : !hasCredit
-            ? "You'll be able to buy more soon"
-            : source === 'assemble'
+            ? 'One-time purchase · your creature stays in My Creatures'
+            : assembling
             ? 'Uses one creature generation · plays as your assembled art'
+            : painting
+            ? 'Uses one creature generation · we turn your painting into a 3D squishy'
             : 'Uses one creature generation · we turn your photo into a 3D squishy'}
         </Text>
       </View>
@@ -443,6 +500,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 
+  drawWrap: { gap: 10 },
+  drawTabs: { flexDirection: 'row', gap: 16, borderBottomWidth: 1.5, borderBottomColor: 'rgba(255,255,255,0.35)', paddingLeft: 2 },
+  drawTab: { paddingBottom: 8, borderBottomWidth: 2.5, borderBottomColor: 'transparent', marginBottom: -1.5 },
+  drawTabOn: { borderBottomColor: '#ff3ea5' },
+  drawTabText: { color: '#a283c9', fontFamily: candyFonts.bodyBlack, fontSize: 10, letterSpacing: 1.4 },
+  drawTabTextOn: { color: '#4a1a73' },
+  gone: { display: 'none' },
   assembleWrap: { gap: 11, backgroundColor: candyColors.paper, borderRadius: 16, padding: 12 },
   assemblePreview: {
     alignSelf: 'center',
@@ -492,7 +556,6 @@ const styles = StyleSheet.create({
   createDivider: { width: 1.5, height: 16, backgroundColor: 'rgba(74,26,115,0.3)' },
   createLabel: { letterSpacing: 1.6 },
   footerHint: { color: '#a283c9', fontFamily: candyFonts.body, fontSize: 10, textAlign: 'center' },
-  noCreditText: { color: candyColors.danger, fontFamily: candyFonts.bodyHeavy, fontSize: 11, textAlign: 'center' },
 
   convertOverlay: {
     ...StyleSheet.absoluteFillObject,
