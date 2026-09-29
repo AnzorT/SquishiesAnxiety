@@ -194,7 +194,7 @@ function buildCreature(id, visual) {
     sampleStride: 1,
     // Dent shape for the unit-radius procedural sphere — see MODEL_TUNING.
     dentDepth: 0.6,
-    dentRadius: 0.14,
+    dentRadius: 0.33,
     dentTip: 0.05,
     featureBases,
     featureMeshes,
@@ -234,14 +234,19 @@ function buildCreature(id, visual) {
 // Every model creature — premade or custom — uses this same tuning: `visual`
 // bakes the on-stage size into the geometry (the mesh is recentred +
 // rescaled so its largest dimension == this many units; 2 == same size as
-// the procedural spheres). The dent is a pointed funnel pushed in along the
+// the procedural spheres). The camera (SquishScreen) sees 2.47 units top to
+// bottom, so 2.25 fills 91% of the stage; only the very top of a tall
+// creature can touch the edge at the peak of a deep pop-out press. The dent is a pointed funnel pushed in along the
 // press direction, like a finger or spear poking in (see computeDentFall /
 // applyDentScale / tickPhysics): `dentDepth` is how deep the tip goes when
 // held (model units), `dentRadius` how quickly it fades away from the tip,
 // and `dentTip` rounds the very tip so it isn't a single-vertex spike.
 // `fallbackColor` only matters for the rare mesh with no baked texture map
 // (see prepareModelData).
-const MODEL_TUNING = { visual: 1.9, dentDepth: 0.6, dentRadius: 0.14, dentTip: 0.05, fallbackColor: '#2dd4bf' };
+// dentRadius was 0.14 until 2026-09-29: on a phone the finger itself covers
+// about 0.35 units of the body, so a dent that narrow hid under it. At 0.33
+// the visible rim reaches ~0.75 units, well clear of the fingertip.
+const MODEL_TUNING = { visual: 2.25, dentDepth: 0.6, dentRadius: 0.33, dentTip: 0.05, fallbackColor: '#2dd4bf' };
 
 // Creatures that get a soft glossy sheen over their texture, like Tripo's
 // viewer shows them. Tripo exports carry no shine data (just a colour

@@ -146,6 +146,8 @@ export default function App() {
   const [squishSoundEnabled, setSquishSoundEnabled] = useState(true);
   const [coinSoundEnabled, setCoinSoundEnabled] = useState(true);
   const [releaseSoundEnabled, setReleaseSoundEnabled] = useState(true);
+  // Vibration on the squish stage (its strength follows pokeStrength).
+  const [vibrationEnabled, setVibrationEnabled] = useState(true);
   // Squish-screen settings popup: FPS pill, poke strength (1-5, 3 = the
   // tuned default depth) and poke direction (push in / pop out).
   const [showFps, setShowFps] = useState(true);
@@ -757,6 +759,8 @@ export default function App() {
           onToggleCoinSound={setCoinSoundEnabled}
           releaseSoundEnabled={releaseSoundEnabled}
           onToggleReleaseSound={setReleaseSoundEnabled}
+          vibrationEnabled={vibrationEnabled}
+          onToggleVibration={setVibrationEnabled}
           showFps={showFps}
           onToggleShowFps={setShowFps}
           pokeStrength={pokeStrength}

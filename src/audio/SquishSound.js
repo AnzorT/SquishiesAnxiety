@@ -1,20 +1,35 @@
 import { Audio } from 'expo-av';
 
-// A single looping sample that plays for exactly as long as the buddy is
-// being squished — started when a poke begins, stopped when it's released.
-// Which sample depends on the creature (see SQUISH_SOUND_BY_SPECIES in
-// SquishScreen.js), so the source is passed into load() rather than
-// hardcoded here.
-
-// Release fades the volume out over this many ms (in even steps) instead of
-// cutting the loop dead, so letting go doesn't sound like a hard stutter.
-const FADE_OUT_MS = 400;
+// A single looping sample that plays while the creature is being squished —
+// and only while the finger is actually moving. A press starts it; once the
+// finger rests (no movement for IDLE_PAUSE_MS) it fades out and pauses; the
+// next movement fades it back in from where it stopped; letting go fades it
+// out. Which sample depends on the creature (src/audio/creatureSquish.js),
+// so the source is passed into load() rather than hardcoded here.
+//
+// Every level change is a fade (in FADE_STEP_MS steps) that starts from
+// wherever the volume is right now, so a finger that stops and restarts
+// mid-fade never hears a jump or a click. The player is paused, not
+// stopped, so resuming continues the loop instead of restarting it.
 const FADE_STEP_MS = 20;
+// letting go
+const RELEASE_FADE_MS = 400;
+// finger holding still: how long before the sound starts to fade, and how
+// long the fade takes
+const IDLE_PAUSE_MS = 180;
+const IDLE_FADE_MS = 350;
+// finger moving again
+const RESUME_FADE_MS = 120;
 
 export class SquishSound {
   constructor() {
     this.sound = null;
     this.fadeTimer = null;
+    this.fadeTarget = null; // where the running fade is heading
+    this.idleTimer = null;
+    this.held = false; // finger down (a poke in progress)
+    this.audible = false; // player running (possibly mid-fade)
+    this.volume = 0; // last volume sent to the player
   }
 
   _clearFade() {
@@ -22,6 +37,67 @@ export class SquishSound {
       clearInterval(this.fadeTimer);
       this.fadeTimer = null;
     }
+    this.fadeTarget = null;
+  }
+
+  _clearIdle() {
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
+  }
+
+  _setVolume(v) {
+    this.volume = v;
+    if (!this.sound) return;
+    this.sound.setVolumeAsync(v).catch(() => {
+      // sound may have been unloaded mid-fade — nothing to do
+    });
+  }
+
+  // Ramps from the current volume to `target` over `ms`, then calls onDone.
+  _fadeTo(target, ms, onDone) {
+    this._clearFade();
+    this.fadeTarget = target;
+    const from = this.volume;
+    const steps = Math.max(1, Math.round(ms / FADE_STEP_MS));
+    let step = 0;
+    this.fadeTimer = setInterval(() => {
+      step += 1;
+      this._setVolume(from + ((target - from) * step) / steps);
+      if (step >= steps) {
+        this._clearFade();
+        onDone && onDone();
+      }
+    }, FADE_STEP_MS);
+  }
+
+  _pause() {
+    this.audible = false;
+    if (!this.sound) return;
+    // pauseAsync (not stopAsync) — stopAsync resets the playhead to 0,
+    // which would restart the loop from the top on every resume. Pausing
+    // keeps position so the next play resumes right where this left off.
+    this.sound.pauseAsync().catch(() => {});
+  }
+
+  async _play() {
+    this.audible = true;
+    if (!this.sound) return;
+    try {
+      await this.sound.playAsync();
+    } catch (e) {
+      // no-op — audio hiccups shouldn't crash gameplay
+    }
+  }
+
+  // Arms the "finger is resting" fade; every movement re-arms it.
+  _armIdle() {
+    this._clearIdle();
+    this.idleTimer = setTimeout(() => {
+      this.idleTimer = null;
+      this._fadeTo(0, IDLE_FADE_MS, () => this._pause());
+    }, IDLE_PAUSE_MS);
   }
 
   async load(source) {
@@ -33,7 +109,8 @@ export class SquishSound {
     try {
       const { sound } = await Audio.Sound.createAsync(source, {
         isLooping: true,
-        volume: 1,
+        volume: 0,
+        progressUpdateIntervalMillis: 60000,
       });
       this.sound = sound;
     } catch (e) {
@@ -41,53 +118,43 @@ export class SquishSound {
     }
   }
 
-  async start() {
+  // A poke started: play at once (the press itself is a squish), then fade
+  // out unless the finger keeps moving.
+  start() {
     if (!this.sound) return;
+    this.held = true;
     this._clearFade();
-    try {
-      await this.sound.setVolumeAsync(1);
-      await this.sound.playAsync();
-    } catch (e) {
-      // no-op — audio hiccups shouldn't crash gameplay
-    }
+    this._setVolume(1);
+    this._play();
+    this._armIdle();
   }
 
-  // Fades volume down over FADE_OUT_MS rather than cutting the loop dead.
-  // Fire-and-forget by design (callers don't await this), so a re-squish
-  // that lands mid-fade just calls start(), which cancels the fade timer
-  // and snaps volume back to 1.
-  async stop() {
+  // The finger moved: keep the sound going, or bring it back if it had
+  // faded while the finger rested.
+  noteMotion() {
+    if (!this.sound || !this.held) return;
+    this._armIdle();
+    if (!this.audible) this._play();
+    // bring the level back up, unless a fade-in is already under way (a
+    // drag calls this many times a second)
+    if (this.volume < 1 && this.fadeTarget !== 1) this._fadeTo(1, RESUME_FADE_MS);
+  }
+
+  // Letting go: fade out and pause. Fire-and-forget by design (callers
+  // don't await this); a new press that lands mid-fade just calls start().
+  stop() {
+    this.held = false;
+    this._clearIdle();
     if (!this.sound) return;
-    this._clearFade();
-    const sound = this.sound;
-    const steps = Math.round(FADE_OUT_MS / FADE_STEP_MS);
-    let step = 0;
-    this.fadeTimer = setInterval(async () => {
-      step += 1;
-      const volume = Math.max(0, 1 - step / steps);
-      try {
-        await sound.setVolumeAsync(volume);
-      } catch (e) {
-        // sound may have been unloaded mid-fade — nothing to do
-      }
-      if (step >= steps) {
-        this._clearFade();
-        try {
-          // pauseAsync (not stopAsync) — stopAsync resets the playhead to 0,
-          // which would restart the loop from the top on every re-squish.
-          // Pausing keeps position so the next start() resumes right where
-          // this squish left off.
-          await sound.pauseAsync();
-          await sound.setVolumeAsync(1);
-        } catch (e) {
-          // no-op
-        }
-      }
-    }, FADE_STEP_MS);
+    if (!this.audible && !this.fadeTimer) return; // already quiet
+    this._fadeTo(0, RELEASE_FADE_MS, () => this._pause());
   }
 
   async unload() {
     this._clearFade();
+    this._clearIdle();
+    this.held = false;
+    this.audible = false;
     if (!this.sound) return;
     try {
       await this.sound.unloadAsync();

@@ -15,6 +15,8 @@ import { INTERSTITIAL_AD_UNIT_ID } from '../firebase/ads';
 // custom one) mounts the 3D mesh; everything else falls back to 2D art
 // (SquishyToy2D).
 import SquishSound from '../audio/SquishSound';
+import squishSoundFor from '../audio/creatureSquish';
+import { pressHaptic, moveHaptic, releaseHaptic } from '../haptics/squishHaptics';
 import CoinSound from '../audio/CoinSound';
 import PopSound from '../audio/PopSound';
 import { candyColors, candyFonts, BUTTON_VARIANTS } from '../theme/candyTheme';
@@ -29,17 +31,24 @@ import OutlinedTitle from '../components/candy/OutlinedTitle';
 import ToggleSwitch from '../components/candy/ToggleSwitch';
 import sfx from '../audio/sfx';
 
-// Stage size scales to the device, capped at 380.
-const STAGE_SIZE = Math.min(Math.round(Dimensions.get('window').width - 32), 380);
+// Stage size: the full screen width (capped for tablets). The creature's
+// own size inside it is MODEL_TUNING.visual in SquishyToy.js.
+const STAGE_SIZE = Math.min(Math.round(Dimensions.get('window').width), 420);
 const RIPPLE_LIFETIME_MS = 620;
 // 60s window where an ad-watch doubles squish rewards.
 const BONUS_MS = 60000;
 const SPEED_TAP_WINDOW_MS = 60000;
 const SPEED_TAP_THRESHOLD = 60;
 
-// Bank 1 coin every 1.5s while held; two fingers (rotate) earns nothing.
+// The squish sound plays while the finger moves and fades out when it rests
+// (see SquishSound). A move counts once the finger is this far (dp) from
+// where it last counted, so touch jitter on a resting finger stays silent.
+const SOUND_MOTION_DP = 3;
+
+// Bank 5 coins every 1.5s while held (was 1 until 2026-09-29); two fingers
+// (rotate) earns nothing. A ×N boost multiplies this.
 const EARN_TICK_MS = 1500;
-const EARN_PER_TICK = 1;
+const EARN_PER_TICK = 5;
 // Floating "+1" per tick: rises, spins, fades.
 const FLOATING_COIN_MS = 1650;
 const FLOATING_COIN_RISE = 72;
@@ -55,8 +64,6 @@ const ABUSE_RULES = [
   { windowMs: 2000, limit: 7 },
 ];
 const ABUSE_MAX_WINDOW_MS = Math.max(...ABUSE_RULES.map((r) => r.windowMs));
-
-const DEFAULT_SQUISH_SOUND = require('../../assets/audio/slime.wav');
 
 const RIPPLE_MAX = 180;
 
@@ -220,20 +227,27 @@ function FpsCounter() {
 // tree and its inline props through reconciliation 4x/sec, competing with the
 // per-frame squish physics on the JS thread and making the squish feel
 // laggy while a bonus window is running).
+//
+// Always mounted, invisible while no window runs: it sits between the stage
+// and the bottom panel, so mounting it only while active shifted the whole
+// stage (and the creature) up when a boost started and down when it ended.
 function BonusBanner({ endsAt, multiplier, coinAnim }) {
+  const active = !!endsAt;
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
+    if (!active) return undefined;
+    setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(id);
-  }, []);
-  const remain = Math.max(0, endsAt - now);
+  }, [active]);
+  const remain = active ? Math.max(0, endsAt - now) : 0;
   const secs = Math.ceil(remain / 1000);
   const timeText = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
   const pct = Math.max(0, Math.min(100, (remain / BONUS_MS) * 100));
   const coinScale = coinAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] });
   const gold = BUTTON_VARIANTS.gold;
   return (
-    <View style={styles.bonusBar}>
+    <View style={[styles.bonusBar, !active && styles.bonusHidden]} pointerEvents="none">
       <View style={styles.bonusLip} />
       <View style={styles.bonusRing}>
         <LinearGradient colors={gold.colors} locations={gold.locations} style={styles.bonusInner}>
@@ -471,6 +485,8 @@ function SettingsModal({
   onToggleCoinSound,
   releaseSoundEnabled,
   onToggleReleaseSound,
+  vibrationEnabled,
+  onToggleVibration,
   showFps,
   onToggleShowFps,
   pokeStrength,
@@ -506,9 +522,12 @@ function SettingsModal({
         </SettingsRow>
 
         <Text style={styles.settingsSection}>SQUISH</Text>
+        <SettingsRow label="Vibration">
+          <ToggleSwitch value={vibrationEnabled} onToggle={() => onToggleVibration(!vibrationEnabled)} />
+        </SettingsRow>
         <Text style={styles.settingsLabel}>Poke strength</Text>
         <Segmented options={POKE_STRENGTH_OPTIONS} value={pokeStrength} onChange={onChangePokeStrength} />
-        <Text style={styles.settingsHint}>1 = gentle · 5 = deepest</Text>
+        <Text style={styles.settingsHint}>1 = gentle · 5 = deepest (the vibration follows it)</Text>
         <Text style={[styles.settingsLabel, styles.settingsLabelSpaced]}>Poke direction</Text>
         <Segmented options={POKE_DIRECTION_OPTIONS} value={pokeOutward} onChange={onChangePokeOutward} />
       </View>
@@ -637,6 +656,8 @@ export default function SquishScreen({
   onToggleCoinSound,
   releaseSoundEnabled = true,
   onToggleReleaseSound,
+  vibrationEnabled = true,
+  onToggleVibration,
   showFps = true,
   onToggleShowFps,
   pokeStrength = 3,
@@ -651,6 +672,8 @@ export default function SquishScreen({
   const coinSoundRef = useRef(null);
   const popSoundRef = useRef(null);
   const lastTouch = useRef({ x: 0, y: 0 });
+  // where the finger was when the squish sound last counted a movement
+  const soundAnchorRef = useRef({ x: 0, y: 0 });
   const holdStartRef = useRef(0);
   const effectsRef = useRef(null);
   const coinCounterRef = useRef(null);
@@ -714,8 +737,9 @@ export default function SquishScreen({
   useEffect(() => {
     const sound = new SquishSound();
     soundRef.current = sound;
-    // Custom creatures can carry their own squish sound.
-    sound.load(toy?.audio ? { uri: toy.audio } : DEFAULT_SQUISH_SOUND);
+    // Each premade creature has its own recording; a custom creature can
+    // carry one too (see src/audio/creatureSquish.js).
+    sound.load(squishSoundFor(toy));
     return () => sound.unload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -760,6 +784,8 @@ export default function SquishScreen({
     releaseSoundEnabled,
     coinSoundEnabled,
     squishSoundEnabled,
+    vibrationEnabled,
+    pokeStrength,
     toy,
     onRecordPress,
     onEarnCoins,
@@ -908,7 +934,9 @@ export default function SquishScreen({
         gestureModeRef.current = 'poke';
         const { locationX, locationY } = evt.nativeEvent;
         lastTouch.current = { x: locationX, y: locationY };
+        soundAnchorRef.current = { x: locationX, y: locationY };
         holdStartRef.current = Date.now();
+        if (latestRef.current.vibrationEnabled) pressHaptic(latestRef.current.pokeStrength);
         const ndc = ndcFromLocation(locationX, locationY);
         toyRef.current?.pointerDown(ndc.x, ndc.y);
         effectsRef.current?.spawnRipple(locationX, locationY);
@@ -948,6 +976,14 @@ export default function SquishScreen({
         lastTouch.current = { x: locationX, y: locationY };
         const ndc = ndcFromLocation(locationX, locationY);
         toyRef.current?.pointerMove(ndc.x, ndc.y);
+        // Real movement (not jitter) keeps the squish sound going.
+        const ax = locationX - soundAnchorRef.current.x;
+        const ay = locationY - soundAnchorRef.current.y;
+        if (ax * ax + ay * ay >= SOUND_MOTION_DP * SOUND_MOTION_DP) {
+          soundAnchorRef.current = { x: locationX, y: locationY };
+          if (latestRef.current.squishSoundEnabled) soundRef.current?.noteMotion();
+          if (latestRef.current.vibrationEnabled) moveHaptic(latestRef.current.pokeStrength);
+        }
       },
       onPanResponderRelease: () => {
         const mode = gestureModeRef.current;
@@ -985,6 +1021,7 @@ export default function SquishScreen({
 
         soundRef.current?.stop();
         if (releaseSoundOn) popSoundRef.current?.play();
+        if (latestRef.current.vibrationEnabled) releaseHaptic(latestRef.current.pokeStrength);
       },
       onPanResponderTerminate: () => {
         gestureModeRef.current = 'none';
@@ -1032,7 +1069,7 @@ export default function SquishScreen({
         />
       </View>
 
-      {bonusActive && <BonusBanner endsAt={bonusEndsAt} multiplier={bonusMultiplier} coinAnim={bonusCoinAnim} />}
+      <BonusBanner endsAt={bonusEndsAt} multiplier={bonusMultiplier} coinAnim={bonusCoinAnim} />
 
       <View style={styles.bottomPanel}>
         <View style={styles.bottomRow}>
@@ -1069,6 +1106,8 @@ export default function SquishScreen({
           onToggleCoinSound={onToggleCoinSound}
           releaseSoundEnabled={releaseSoundEnabled}
           onToggleReleaseSound={onToggleReleaseSound}
+          vibrationEnabled={vibrationEnabled}
+          onToggleVibration={onToggleVibration}
           showFps={showFps}
           onToggleShowFps={onToggleShowFps}
           pokeStrength={pokeStrength}
@@ -1197,6 +1236,7 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 0 },
   },
   bonusBar: { marginHorizontal: 16, marginBottom: 8, paddingBottom: 4 },
+  bonusHidden: { opacity: 0 },
   bonusLip: { position: 'absolute', left: 0, right: 0, top: 4, bottom: 0, borderRadius: 21, backgroundColor: '#9c4d06' },
   bonusRing: {
     borderRadius: 21,
