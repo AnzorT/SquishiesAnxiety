@@ -1,6 +1,6 @@
 import { NativeEventEmitter, NativeModules } from 'react-native';
 import { PRODUCTS } from '../economy';
-import { ALL_IDS, PurchaseError, notifyPrices, prices, setPrice, verify } from './common';
+import { ALL_IDS, CONSUMABLE_IDS, PurchaseError, notifyPrices, prices, setPrice, verify } from './common';
 
 export { PurchaseError, priceLabel, subscribePrices } from './common';
 
@@ -56,7 +56,7 @@ const deliver = (purchase) =>
 // server's answer ({ granted: 'adsFree' | 'key' | 'coins' | 'creation', … }),
 // or { pending: true } for a payment Google Play hasn't cleared yet (it's
 // granted by syncPurchases once it does). Rejects with a PurchaseError.
-export async function buy(key, { uid, creatureId = '' }) {
+export async function buy(key, { uid, creatureId = '' }, retried = false) {
   const product = PRODUCTS[key];
   if (!product) throw new PurchaseError('failed', `Unknown product ${key}`);
   if (!(await connect())) throw new PurchaseError('unavailable');
@@ -67,8 +67,12 @@ export async function buy(key, { uid, creatureId = '' }) {
     purchases = await Native.purchase(product.id, uid, creatureId);
   } catch (e) {
     if (e.code === 'already_owned') {
-      // Remove Ads bought before (another phone, or not synced yet)
       await syncPurchases();
+      // A creation or a key that Play still holds (the server never got to
+      // consume it): the sync just granted and consumed it, so the store
+      // sheet opens normally now — once.
+      if (CONSUMABLE_IDS.includes(product.id) && !retried) return buy(key, { uid, creatureId }, true);
+      // Remove Ads bought before (another phone, or not synced yet)
       return { granted: 'restored' };
     }
     const passThrough = ['cancelled', 'busy', 'network'];
