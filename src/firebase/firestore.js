@@ -298,3 +298,18 @@ export function subscribeToBoxConfig(onChange) {
       }
     );
 }
+
+// The real-money price levels — a hand-edited doc, config/pricing (see
+// setPricing in src/economy.js). `onChange` gets null until it exists.
+export function subscribeToPricing(onChange) {
+  return firestore()
+    .collection('config')
+    .doc('pricing')
+    .onSnapshot(
+      (snap) => onChange(snap.exists ? snap.data() : null),
+      (error) => {
+        console.error('subscribeToPricing failed:', error);
+        onChange(null);
+      }
+    );
+}

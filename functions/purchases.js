@@ -22,6 +22,11 @@
 //                              waiting; it uses the prize up. (Stores can't
 //                              discount a product on the fly, so the
 //                              discounted price is its own product.)
+//
+// Price levels: each product can also be sold at other prices, as its own
+// store product named `<id>_<cents>` (creature_key_149 is a $1.49 key). The
+// app picks the level from Firestore `config/pricing` (src/economy.js); any
+// level grants the same as its base product.
 
 const crypto = require('crypto');
 
@@ -33,6 +38,16 @@ const CREATION = 'creature_creation';
 const CREATION_DISCOUNTED = 'creature_creation_15off';
 const PRODUCT_IDS = [REMOVE_ADS, CREATURE_KEY, CREATION, CREATION_DISCOUNTED];
 const CONSUMABLES = [CREATURE_KEY, CREATION, CREATION_DISCOUNTED];
+
+// A product id → its base product (one of PRODUCT_IDS), for the base id
+// itself or any price level of it (`<base>_<cents>`); null for anything else.
+// (creature_creation_15off is tried before creature_creation.)
+const LEVEL_RE = /^(remove_ads|creature_key|creature_creation_15off|creature_creation)(?:_([1-9]\d{0,5}))?$/;
+function baseProduct(productId) {
+  const m = LEVEL_RE.exec(String(productId || ''));
+  return m ? m[1] : null;
+}
+const isConsumable = (productId) => CONSUMABLES.includes(baseProduct(productId));
 
 // Paid back, in coins (3 Mystery Boxes' worth), for a key bought for a
 // creature that got unlocked another way in the meantime.
@@ -91,13 +106,14 @@ function checkAppleTransaction(tx, uid, productId) {
 // (verifyPurchase.js turns them into Firestore increments/deletes),
 // `result` goes back to the app.
 function grantFor({ productId, creatureId, profile, rosterIds }) {
-  if (!PRODUCT_IDS.includes(productId)) return { error: 'unknown_product' };
+  const base = baseProduct(productId);
+  if (!base) return { error: 'unknown_product' };
 
-  if (productId === REMOVE_ADS) return { update: { adsFree: true }, result: { granted: 'adsFree' } };
+  if (base === REMOVE_ADS) return { update: { adsFree: true }, result: { granted: 'adsFree' } };
 
-  if (productId === CREATION || productId === CREATION_DISCOUNTED) {
+  if (base === CREATION || base === CREATION_DISCOUNTED) {
     return {
-      update: { credits: 1, paidCredits: 1, clearDiscount: productId === CREATION_DISCOUNTED },
+      update: { credits: 1, paidCredits: 1, clearDiscount: base === CREATION_DISCOUNTED },
       result: { granted: 'creation' },
     };
   }
@@ -132,6 +148,8 @@ module.exports = {
   CREATION_DISCOUNTED,
   PRODUCT_IDS,
   CONSUMABLES,
+  baseProduct,
+  isConsumable,
   KEY_REFUND_COINS,
   sha256,
   appAccountToken,

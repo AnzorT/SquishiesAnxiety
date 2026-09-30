@@ -19,7 +19,18 @@ const { execFileSync } = require('child_process');
 const admin = require('firebase-admin');
 const { HttpsError } = require('firebase-functions/v2/https');
 const { makeVerifyPurchase, makeVerifyApple } = require('./verifyPurchase');
-const { appAccountToken, sha256, KEY_REFUND_COINS, spendCredit } = require('./purchases');
+const { appAccountToken, sha256, KEY_REFUND_COINS, spendCredit, baseProduct } = require('./purchases');
+
+// --- price levels: <base>_<cents> ------------------------------------------------
+assert.strictEqual(baseProduct('creature_key'), 'creature_key');
+assert.strictEqual(baseProduct('creature_key_149'), 'creature_key');
+assert.strictEqual(baseProduct('creature_creation_15off'), 'creature_creation_15off');
+assert.strictEqual(baseProduct('creature_creation_15off_509'), 'creature_creation_15off');
+assert.strictEqual(baseProduct('creature_creation_599'), 'creature_creation');
+assert.strictEqual(baseProduct('remove_ads_299'), 'remove_ads');
+assert.strictEqual(baseProduct('remove_ads_'), null);
+assert.strictEqual(baseProduct('remove_ads_01'), null);
+assert.strictEqual(baseProduct('gems'), null);
 
 // --- spending a creation credit (generateCustomModel), bought ones first ------
 assert.deepStrictEqual(spendCredit({}), { generationCredits: 0 }, 'a profile without the field has its one free credit');
@@ -170,6 +181,26 @@ const profile = async (uid) => (await db.collection('users').doc(uid).get()).dat
   await fails(as('bob', { platform: 'android', productId: 'remove_ads', purchaseToken: 't1' }), 'failed-precondition', 'Ann\'s token on Bob');
   await fails(as('bob', { platform: 'android', productId: 'remove_ads', purchaseToken: 'nope' }), 'not-found', 'an unknown token');
   await fails(as('bob', { platform: 'android', productId: 'gems', purchaseToken: 't1' }), 'invalid-argument', 'an unknown product');
+  await fails(as('bob', { platform: 'android', productId: 'creature_keys', purchaseToken: 't1' }), 'invalid-argument', 'not a price level');
+  await fails(as('bob', { platform: 'android', productId: 'creature_key_0', purchaseToken: 't1' }), 'invalid-argument', 'a zero price level');
+
+  // price levels (config/pricing): each grants what its base product does
+  const bobAcct = sha256('bob');
+  play.L1 = { purchaseState: 0, consumptionState: 0, obfuscatedExternalAccountId: bobAcct, obfuscatedExternalProfileId: '7' };
+  r = await as('bob', { platform: 'android', productId: 'creature_key_149', purchaseToken: 'L1' });
+  assert.deepStrictEqual(r, { granted: 'key', creatureId: '7' }, 'a $1.49 key');
+  assert.ok(playCalls.includes('POST creature_key_149/tokens/L1:consume'), 'a key price level is consumed');
+  play.L2 = { purchaseState: 0, consumptionState: 0, obfuscatedExternalAccountId: bobAcct };
+  r = await as('bob', { platform: 'android', productId: 'creature_creation_599', purchaseToken: 'L2' });
+  assert.deepStrictEqual(r, { granted: 'creation' }, 'a $5.99 creation');
+  assert.ok(playCalls.includes('POST creature_creation_599/tokens/L2:consume'));
+  play.L3 = { purchaseState: 0, acknowledgementState: 0, obfuscatedExternalAccountId: bobAcct };
+  r = await as('bob', { platform: 'android', productId: 'remove_ads_299', purchaseToken: 'L3' });
+  assert.deepStrictEqual(r, { granted: 'adsFree' }, 'a $2.99 Remove Ads');
+  assert.ok(playCalls.includes('POST remove_ads_299/tokens/L3:acknowledge'), 'Remove Ads levels are acknowledged, not consumed');
+  p = await profile('bob');
+  assert.deepStrictEqual([p.keys['7'], p.generationCredits, p.paidCredits, p.adsFree], [true, 1, 1, true]);
+  await db.collection('users').doc('bob').update({ keys: {}, generationCredits: 0, paidCredits: FieldValue.delete(), adsFree: false });
   await fails(verify({ data: { productId: 'remove_ads', purchaseToken: 't1' } }), 'unauthenticated', 'signed out');
   assert.strictEqual((await profile('bob')).adsFree, false, 'Bob got nothing');
 

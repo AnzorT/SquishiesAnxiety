@@ -1,14 +1,14 @@
 import * as RNIap from 'react-native-iap';
-import { PRODUCTS } from '../economy';
-import { ALL_IDS, CONSUMABLE_IDS, PurchaseError, appAccountToken, notifyPrices, prices, setPrice, verify } from './common';
+import { isConsumable, productId, productIds } from '../economy';
+import { PurchaseError, appAccountToken, notifyPrices, prices, setPrice, verify } from './common';
 
 export { PurchaseError, priceLabel, subscribePrices } from './common';
 
 // In-app purchases on iOS — StoreKit 2, through react-native-iap (linked for
 // iOS only: react-native.config.js keeps it out of the Android build, which
 // uses the app's own Play Billing 8 module, index.android.js). What the two
-// share is in common.js; products: PRODUCTS in src/economy.js, the same ids
-// in App Store Connect.
+// share is in common.js; products: PRODUCTS in src/economy.js (with the
+// price level config/pricing picks), the same ids in App Store Connect.
 //
 // As on Android the app never grants anything itself: each purchase's
 // Apple-signed transaction (StoreKit 2's jwsRepresentation) goes to the
@@ -29,7 +29,7 @@ RNIap.setup({ storekitMode: 'STOREKIT2_MODE' });
 const deliver = async (purchase) => {
   const result = await verify({ platform: 'ios', productId: purchase.productId, jws: purchase.verificationResultIOS });
   if (!result || !result.pending) {
-    await RNIap.finishTransaction({ purchase, isConsumable: CONSUMABLE_IDS.includes(purchase.productId) }).catch(() => {});
+    await RNIap.finishTransaction({ purchase, isConsumable: isConsumable(purchase.productId) }).catch(() => {});
   }
   return result;
 };
@@ -64,7 +64,7 @@ function connect() {
 export async function loadProducts() {
   if (!(await connect())) return false;
   try {
-    const list = await RNIap.getProducts({ skus: ALL_IDS });
+    const list = await RNIap.getProducts({ skus: productIds() });
     list.forEach((p) => setPrice(p.productId, p.localizedPrice));
     notifyPrices();
     return list.length > 0;
@@ -76,15 +76,15 @@ export async function loadProducts() {
 // Same contract as the Android buy(): the server's answer, { pending: true }
 // for an Ask to Buy waiting on a parent, or a PurchaseError.
 export async function buy(key, { uid, creatureId = '' }) {
-  const product = PRODUCTS[key];
-  if (!product) throw new PurchaseError('failed', `Unknown product ${key}`);
+  const id = productId(key); // its price level (config/pricing)
+  if (!id) throw new PurchaseError('failed', `Unknown product ${key}`);
   if (!(await connect())) throw new PurchaseError('unavailable');
-  if (!prices[product.id]) await loadProducts();
-  if (!prices[product.id]) throw new PurchaseError('unavailable');
+  if (!prices[id]) await loadProducts();
+  if (!prices[id]) throw new PurchaseError('unavailable');
   let purchase;
   try {
     purchase = await RNIap.requestPurchase({
-      sku: product.id,
+      sku: id,
       appAccountToken: appAccountToken(uid, creatureId || null),
       andDangerouslyFinishTransactionAutomaticallyIOS: false,
     });

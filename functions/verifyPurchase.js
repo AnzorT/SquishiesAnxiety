@@ -13,7 +13,7 @@
 // tested against the Firestore emulator with fakes: verifyPurchase.test.js.
 
 const { SignedDataVerifier, Environment } = require('@apple/app-store-server-library');
-const { PRODUCT_IDS, CREATURE_KEY, CONSUMABLES, BUNDLE_ID, sha256, checkPlayPurchase, checkAppleTransaction, grantFor } = require('./purchases');
+const { CREATURE_KEY, BUNDLE_ID, baseProduct, isConsumable, sha256, checkPlayPurchase, checkAppleTransaction, grantFor } = require('./purchases');
 
 // verifyApple(jws) for makeVerifyPurchase: checks a StoreKit 2 signed
 // transaction's certificate chain up to `roots` (Apple's root CA in
@@ -48,7 +48,8 @@ function makeVerifyPurchase({ db, FieldValue, HttpsError, logger, playApi, verif
     const data = request.data || {};
     const platform = data.platform === 'ios' ? 'ios' : 'android';
     const { productId } = data;
-    if (!PRODUCT_IDS.includes(productId)) throw new HttpsError('invalid-argument', 'Unknown purchase.');
+    // a base product or one of its price levels (purchases.js)
+    if (!baseProduct(productId)) throw new HttpsError('invalid-argument', 'Unknown purchase.');
 
     // --- 1. ask the store ---------------------------------------------------
     let checked;
@@ -86,7 +87,7 @@ function makeVerifyPurchase({ db, FieldValue, HttpsError, logger, playApi, verif
     const userRef = db.collection('users').doc(uid);
     const recordRef = db.collection('purchases').doc(recordId);
     const rosterIds =
-      productId === CREATURE_KEY
+      baseProduct(productId) === CREATURE_KEY
         ? (await db.collection('creatures').select().get()).docs.map((d) => d.id).filter((id) => /^\d+$/.test(id))
         : [];
 
@@ -132,7 +133,7 @@ function makeVerifyPurchase({ db, FieldValue, HttpsError, logger, playApi, verif
     // retried by the app's next sync, which lands on `already` above.)
     if (platform === 'android') {
       try {
-        if (CONSUMABLES.includes(productId)) {
+        if (isConsumable(productId)) {
           if (play.consumptionState !== 1) await playApi(`${tokenPath}:consume`, 'POST');
         } else if (play.acknowledgementState !== 1) {
           await playApi(`${tokenPath}:acknowledge`, 'POST');

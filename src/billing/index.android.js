@@ -1,13 +1,13 @@
 import { NativeEventEmitter, NativeModules } from 'react-native';
-import { PRODUCTS } from '../economy';
-import { ALL_IDS, CONSUMABLE_IDS, PurchaseError, notifyPrices, prices, setPrice, verify } from './common';
+import { isConsumable, productId, productIds } from '../economy';
+import { PurchaseError, notifyPrices, prices, setPrice, verify } from './common';
 
 export { PurchaseError, priceLabel, subscribePrices } from './common';
 
 // In-app purchases on Android — Google Play Billing 8, through the app's own
 // native module (android/app/src/main/java/com/plushcrush/app/billing). The
 // iOS twin is index.ios.js; what they share is in common.js. Products:
-// PRODUCTS in src/economy.js.
+// PRODUCTS in src/economy.js (with the price level config/pricing picks).
 //
 // The app never grants anything itself. Every purchase goes to the
 // verifyPurchase Cloud Function, which checks it with Google Play, writes the
@@ -40,9 +40,12 @@ function connect() {
 export async function loadProducts() {
   if (!(await connect())) return false;
   try {
-    const list = await Native.getProducts(ALL_IDS);
+    const ids = productIds();
+    const list = await Native.getProducts(ids);
     list.forEach((p) => setPrice(p.id, p.price));
     notifyPrices();
+    const missing = ids.filter((id) => !list.some((p) => p.id === id));
+    if (missing.length) console.warn('Not in Google Play (create them, or fix config/pricing):', missing.join(', '));
     return list.length > 0;
   } catch {
     return false;
@@ -57,28 +60,28 @@ const deliver = (purchase) =>
 // or { pending: true } for a payment Google Play hasn't cleared yet (it's
 // granted by syncPurchases once it does). Rejects with a PurchaseError.
 export async function buy(key, { uid, creatureId = '' }, retried = false) {
-  const product = PRODUCTS[key];
-  if (!product) throw new PurchaseError('failed', `Unknown product ${key}`);
+  const id = productId(key); // its price level (config/pricing)
+  if (!id) throw new PurchaseError('failed', `Unknown product ${key}`);
   if (!(await connect())) throw new PurchaseError('unavailable');
-  if (!prices[product.id]) await loadProducts();
-  if (!prices[product.id]) throw new PurchaseError('unavailable');
+  if (!prices[id]) await loadProducts();
+  if (!prices[id]) throw new PurchaseError('unavailable');
   let purchases;
   try {
-    purchases = await Native.purchase(product.id, uid, creatureId);
+    purchases = await Native.purchase(id, uid, creatureId);
   } catch (e) {
     if (e.code === 'already_owned') {
       await syncPurchases();
       // A creation or a key that Play still holds (the server never got to
       // consume it): the sync just granted and consumed it, so the store
       // sheet opens normally now — once.
-      if (CONSUMABLE_IDS.includes(product.id) && !retried) return buy(key, { uid, creatureId }, true);
+      if (isConsumable(id) && !retried) return buy(key, { uid, creatureId }, true);
       // Remove Ads bought before (another phone, or not synced yet)
       return { granted: 'restored' };
     }
     const passThrough = ['cancelled', 'busy', 'network'];
     throw new PurchaseError(passThrough.includes(e.code) ? e.code : 'unavailable', e.message);
   }
-  const p = purchases.find((x) => x.products.includes(product.id)) || purchases[0];
+  const p = purchases.find((x) => x.products.includes(id)) || purchases[0];
   if (!p) throw new PurchaseError('failed', 'No purchase came back');
   if (p.state === 'pending') return { pending: true };
   try {

@@ -36,6 +36,7 @@ import {
   subscribeToUserProfile,
   subscribeToCreatures,
   subscribeToBoxConfig,
+  subscribeToPricing,
   addCoins,
   unlockWithKey,
   recordPress,
@@ -59,7 +60,7 @@ import CreateScreen from './src/screens/CreateScreen';
 import { plushArtUrls } from './src/components/CreatureThumbnail';
 import { boxPayMode, boxPriceLabel, ownedCount, boxRoster } from './src/mysteryBox';
 import * as billing from './src/billing';
-import { setBoxSettings } from './src/economy';
+import { setBoxSettings, setPricing } from './src/economy';
 import { hasSpunToday, todayKey, tzOffsetMinutes } from './src/dailySpin';
 import callFunction from './src/firebase/callFunction';
 import sfx from './src/audio/sfx';
@@ -252,6 +253,17 @@ export default function App() {
   // not yet granted (or Remove Ads bought on another phone) sent to the
   // server once signed in.
   useEffect(() => billing.subscribePrices(setStorePrices), []);
+  // Which price level each product sells at (config/pricing): a change
+  // loads that level's store price; the re-render updates every label.
+  const [, setPricingVersion] = useState(0);
+  useEffect(() => {
+    if (!authUser) return undefined;
+    return subscribeToPricing((doc) => {
+      setPricing(doc);
+      setPricingVersion((v) => v + 1);
+      billing.loadProducts();
+    });
+  }, [authUser]);
   useEffect(() => {
     if (!authUser) return;
     billing.loadProducts().then(() => billing.syncPurchases());

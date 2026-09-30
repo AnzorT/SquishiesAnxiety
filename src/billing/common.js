@@ -1,13 +1,10 @@
 import callFunction from '../firebase/callFunction';
-import { PRODUCTS } from '../economy';
+import { fallbackPriceLabel, productId } from '../economy';
 
 // What Google Play (index.android.js) and the App Store (index.ios.js) share:
 // the store's prices, the errors a purchase can end in, and the call that
 // hands a purchase to the verifyPurchase Cloud Function — the only place
 // anything is granted.
-
-export const ALL_IDS = Object.values(PRODUCTS).map((p) => p.id);
-export const CONSUMABLE_IDS = [PRODUCTS.creatureKey.id, PRODUCTS.creation.id, PRODUCTS.creationDiscount.id];
 
 // --- store prices -----------------------------------------------------------
 
@@ -21,10 +18,11 @@ export function notifyPrices() {
   priceListeners.forEach((fn) => fn({ ...prices }));
 }
 
-// `key` is a PRODUCTS key ('removeAds', 'creatureKey', 'creation', …).
+// `key` is a PRODUCTS key ('removeAds', 'creatureKey', 'creation', …): the
+// store's price for the product sold right now (its price level from
+// config/pricing), or the dollar price until that has loaded.
 export function priceLabel(key, loaded = prices) {
-  const p = PRODUCTS[key];
-  return (p && loaded[p.id]) || (p && p.fallbackPrice) || '';
+  return loaded[productId(key)] || fallbackPriceLabel(key);
 }
 
 export function subscribePrices(fn) {
