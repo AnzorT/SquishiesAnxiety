@@ -71,7 +71,8 @@ export default function HomeScreen({
   onSelectCustom = () => {},
   onDeleteCustom = () => {},
   onRetryCustom = () => {},
-  focusMineToken = 0,
+  focusMine = null, // { id, token }: a creature just made — open on it
+  onFocusMineDone = () => {},
   generationCredits = 1,
   priceLabel = '$4.99',
   discountPct = 0, // a Daily Spin CREATE prize: shown as "−15%" by the price
@@ -84,11 +85,12 @@ export default function HomeScreen({
 }) {
   const insets = useSafeAreaInsets();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [tab, setTab] = useState('ours'); // 'ours' | 'mine'
+  // Back from CREATE with a new creature: start on MY CREATURES.
+  const [tab, setTab] = useState(focusMine ? 'mine' : 'ours'); // 'ours' | 'mine'
   const [listW, setListW] = useState(0);
 
   // --- list slide: 0 = OUR CREATURES in view, 1 = MY CREATURES in view ---
-  const tabPos = useRef(new Animated.Value(0)).current;
+  const tabPos = useRef(new Animated.Value(focusMine ? 1 : 0)).current;
   const slideTo = useCallback(
     (next) => {
       Animated.timing(tabPos, { toValue: next === 'mine' ? 1 : 0, ...LIST_SLIDE, useNativeDriver: true }).start();
@@ -98,7 +100,7 @@ export default function HomeScreen({
 
   // MY CREATURES is built quietly once Home has settled, so the first switch
   // is already instant; switching before that shows the placeholder card.
-  const [mineReady, setMineReady] = useState(false);
+  const [mineReady, setMineReady] = useState(!!focusMine);
   useEffect(() => {
     const task = InteractionManager.runAfterInteractions(() => setMineReady(true));
     return () => task.cancel();
@@ -115,29 +117,26 @@ export default function HomeScreen({
     [tab, slideTo, mineReady]
   );
 
-  // App bumps focusMineToken right after a creature is created — jump to MY
-  // CREATURES and to its last page (the new creature).
+  // App passes `focusMine` right after a creature is made (Home mounts fresh
+  // then): show MY CREATURES on that creature's card. Its doc can reach the
+  // list a moment later — until it does, the list waits on its last page,
+  // and after 8 s it stops waiting.
   const [mineJump, setMineJump] = useState(null);
-  const didMountFocus = useRef(false);
   useEffect(() => {
-    if (!didMountFocus.current) {
-      didMountFocus.current = true;
-      return;
-    }
+    if (!focusMine) return undefined;
     setMineReady(true);
     setTab('mine');
     slideTo('mine');
-    setMineJump({ page: customCreatures.length, token: focusMineToken, until: Date.now() + 8000 });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusMineToken]);
-  // The new creature's doc can land a moment after the token — for a few
-  // seconds, keep the jump target on the last page as the list grows.
-  useEffect(() => {
-    if (mineJump && Date.now() < mineJump.until && mineJump.page !== customCreatures.length) {
-      setMineJump({ ...mineJump, page: customCreatures.length, token: mineJump.token + 0.5 });
+    const i = customCreatures.findIndex((c) => c.id === focusMine.id);
+    setMineJump({ page: i >= 0 ? i + 1 : customCreatures.length, token: `${focusMine.token}:${i}` });
+    if (i >= 0) {
+      onFocusMineDone();
+      return undefined;
     }
+    const giveUp = setTimeout(onFocusMineDone, 8000);
+    return () => clearTimeout(giveUp);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customCreatures.length]);
+  }, [focusMine, customCreatures]);
 
   // --- pages ---
   const ownedSet = useMemo(() => new Set(ownedIds), [ownedIds]);

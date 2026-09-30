@@ -121,7 +121,10 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [creatures, setCreatures] = useState([]);
   const [customCreatures, setCustomCreatures] = useState([]);
-  const [mineFocusToken, setMineFocusToken] = useState(0);
+  // The creature just made in CREATE: Home opens on MY CREATURES at its
+  // card, then clears this (clearMineFocus).
+  const [mineFocus, setMineFocus] = useState(null); // { id, token }
+  const clearMineFocus = useCallback(() => setMineFocus(null), []);
   // Which OUR CREATURES card Home shows — a ref, not state: Home owns its
   // paging and only reports back so it can reopen on the same card after a
   // squish session. Keeping it out of state means paging never re-renders
@@ -412,7 +415,7 @@ export default function App() {
         sourceImagePath = up.path;
       }
       await addCustomCreature(uid, { id, name, sourceImageUrl, sourceImagePath, build, audio });
-      setMineFocusToken((t) => t + 1);
+      setMineFocus({ id, token: Date.now() });
       setScreen('home');
       // Forced ad only on the house, never after a real (future) purchase,
       // and never with Remove Ads.
@@ -688,7 +691,8 @@ export default function App() {
           onSelectCustom={handleSelectCustom}
           onDeleteCustom={handleDeleteCustom}
           onRetryCustom={handleRetryCustom}
-          focusMineToken={mineFocusToken}
+          focusMine={mineFocus}
+          onFocusMineDone={clearMineFocus}
           generationCredits={profile?.generationCredits ?? 1}
           priceLabel={priceLabel}
           discountPct={discountPct}
