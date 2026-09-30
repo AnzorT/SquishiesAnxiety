@@ -74,6 +74,7 @@ export default function HomeScreen({
   focusMine = null, // { id, token }: a creature just made — open on it
   onFocusMineDone = () => {},
   generationCredits = 1,
+  paidCredits = 0,
   priceLabel = '$4.99',
   discountPct = 0, // a Daily Spin CREATE prize: shown as "−15%" by the price
   // the Mystery Box banner: "3/20 · FIND THE SECRET", FREE/VIDEO/500/READY
@@ -163,12 +164,13 @@ export default function HomeScreen({
 
   const renderMine = useCallback(
     (i) => {
-      if (i === 0) return <CreateOwnCard onPress={onOpenCreator} generationCredits={generationCredits} priceLabel={priceLabel} discountPct={discountPct} />;
+      if (i === 0)
+        return <CreateOwnCard onPress={onOpenCreator} generationCredits={generationCredits} paidCredits={paidCredits} priceLabel={priceLabel} discountPct={discountPct} />;
       const custom = customCreatures[i - 1];
       if (!custom) return null;
       return <CustomPage custom={custom} onSelect={onSelectCustom} onDelete={onDeleteCustom} onRetry={onRetryCustom} />;
     },
-    [customCreatures, onOpenCreator, generationCredits, priceLabel, discountPct, onSelectCustom, onDeleteCustom, onRetryCustom]
+    [customCreatures, onOpenCreator, generationCredits, paidCredits, priceLabel, discountPct, onSelectCustom, onDeleteCustom, onRetryCustom]
   );
   const mineKey = useCallback((i) => (i === 0 ? 'create' : customCreatures[i - 1] ? `m-${customCreatures[i - 1].id}` : `m-${i}`), [customCreatures]);
 

@@ -403,8 +403,10 @@ export default function App() {
       if (!authUser) return;
       // Captured before the writes below spend it, so the ad trigger below
       // reflects whether *this* creation was free — see ForcedInterstitialAd.
-      // `paid`: bought just now (the credit it uses isn't a free one).
-      const hadFreeCredit = !paid && (profile?.generationCredits ?? 1) > 0;
+      // `paid`: bought just now. A credit bought earlier (paidCredits — the
+      // creation didn't go through right after the purchase) is spent first
+      // by the server, and gets no ad break either.
+      const hadFreeCredit = !paid && (profile?.generationCredits ?? 1) > 0 && !(profile?.paidCredits > 0);
       const uid = authUser.uid;
       const id = newCustomCreatureId(uid);
       let sourceImageUrl = null;
@@ -694,6 +696,7 @@ export default function App() {
           focusMine={mineFocus}
           onFocusMineDone={clearMineFocus}
           generationCredits={profile?.generationCredits ?? 1}
+          paidCredits={profile?.paidCredits ?? 0}
           priceLabel={priceLabel}
           discountPct={discountPct}
           boxLabel={boxLabel}
@@ -723,6 +726,7 @@ export default function App() {
           onBack={() => setScreen('home')}
           onCreated={handleCreatureCreated}
           generationCredits={profile?.generationCredits ?? 1}
+          paidCredits={profile?.paidCredits ?? 0}
           priceLabel={priceLabel}
           discountPct={discountPct}
           onBuyCreation={buyCreation}

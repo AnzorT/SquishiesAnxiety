@@ -31,7 +31,9 @@ import PaintCanvas from '../components/PaintCanvas';
 // A creation uses one generation credit: the free one every player starts
 // with, or one bought right here — with none left, the button shows the
 // store's price and buys one (Google Play / the App Store, src/billing),
-// then carries straight on with the creation.
+// then carries straight on with the creation. A credit bought earlier that
+// wasn't used yet (`paidCredits`: the creation failed to upload, or the
+// store confirmed it late) shows as PAID, not FREE, and is used first.
 
 const MAX_AUDIO_CHARS = 700000; // ~500 KB of base64 — keeps the Firestore doc small
 
@@ -42,7 +44,7 @@ const ASSEMBLE_ROWS = [
   { key: 'extra', label: 'EXTRA', options: [['none', 'None'], ['antenna', 'Antenna'], ['ears', 'Ears'], ['horns', 'Horns']] },
 ];
 
-export default function CreateScreen({ onBack, onCreated, generationCredits = 1, priceLabel = '$4.99', discountPct = 0, onBuyCreation, buying = false }) {
+export default function CreateScreen({ onBack, onCreated, generationCredits = 1, paidCredits = 0, priceLabel = '$4.99', discountPct = 0, onBuyCreation, buying = false }) {
   const insets = useSafeAreaInsets();
 
   const [name, setName] = useState('');
@@ -158,6 +160,7 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
   // consumes the shared credit (see generateCustomModel's assemble-path
   // branch in functions/index.js) instead of always reading as free.
   const hasCredit = generationCredits > 0;
+  const creditPaid = hasCredit && paidCredits > 0;
   const ready = nameOk && imgOk && !converting && !buying;
 
   const submit = useCallback(async () => {
@@ -360,7 +363,7 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
         <CandyButton variant={ready ? 'pink' : 'grey'} size="md" radius={18} onPress={submit} disabled={!ready} dim={!ready} loading={buying} style={styles.createBtn}>
           <View style={styles.createRow}>
             <ButtonText ring={ready ? '#8e1580' : '#5a4a80'} size={17}>
-              {hasCredit ? 'FREE' : priceLabel}
+              {creditPaid ? 'PAID' : hasCredit ? 'FREE' : priceLabel}
             </ButtonText>
             <View style={styles.createDivider} />
             <ButtonText ring={ready ? '#8e1580' : '#5a4a80'} size={13} style={styles.createLabel}>
@@ -377,6 +380,8 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
             ? `One-time purchase · your Daily Spin prize takes ${discountPct}% off`
             : !hasCredit
             ? 'One-time purchase · your creature stays in My Creatures'
+            : creditPaid
+            ? 'Uses the creation you bought'
             : assembling
             ? 'Uses one creature generation · plays as your assembled art'
             : painting

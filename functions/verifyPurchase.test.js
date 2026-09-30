@@ -19,7 +19,14 @@ const { execFileSync } = require('child_process');
 const admin = require('firebase-admin');
 const { HttpsError } = require('firebase-functions/v2/https');
 const { makeVerifyPurchase, makeVerifyApple } = require('./verifyPurchase');
-const { appAccountToken, sha256, KEY_REFUND_COINS } = require('./purchases');
+const { appAccountToken, sha256, KEY_REFUND_COINS, spendCredit } = require('./purchases');
+
+// --- spending a creation credit (generateCustomModel), bought ones first ------
+assert.deepStrictEqual(spendCredit({}), { generationCredits: 0 }, 'a profile without the field has its one free credit');
+assert.deepStrictEqual(spendCredit({ generationCredits: 0 }), null, 'no credit left');
+assert.deepStrictEqual(spendCredit({ generationCredits: 1 }), { generationCredits: 0 });
+assert.deepStrictEqual(spendCredit({ generationCredits: 2, paidCredits: 1 }), { generationCredits: 1, paidCredits: 0 }, 'the bought one goes first');
+assert.deepStrictEqual(spendCredit({ generationCredits: 1, paidCredits: 3 }), { generationCredits: 0, paidCredits: 0 }, 'never more paid than credits');
 
 if (!process.env.FIRESTORE_EMULATOR_HOST) {
   console.error('Run under the Firestore emulator (see the top of this file).');
@@ -145,11 +152,13 @@ const profile = async (uid) => (await db.collection('users').doc(uid).get()).dat
   assert.deepStrictEqual(r, { granted: 'creation' });
   let p = await profile('ann');
   assert.deepStrictEqual([p.generationCredits, p.creationDiscountPct], [1, 15], 'full price keeps the Daily Spin discount');
+  assert.strictEqual(p.paidCredits, 1, 'a bought credit is counted as paid');
 
   play.t5 = { purchaseState: 0, consumptionState: 0, obfuscatedExternalAccountId: acct };
   r = await as('ann', { platform: 'android', productId: 'creature_creation_15off', purchaseToken: 't5' });
   p = await profile('ann');
   assert.deepStrictEqual([p.generationCredits, p.creationDiscountPct], [2, undefined], 'the discounted one uses the discount up');
+  assert.strictEqual(p.paidCredits, 2);
 
   play.t6 = { purchaseState: 2, obfuscatedExternalAccountId: acct };
   r = await as('ann', { platform: 'android', productId: 'remove_ads', purchaseToken: 't6' });
@@ -179,6 +188,7 @@ const profile = async (uid) => (await db.collection('users').doc(uid).get()).dat
   jws = signedTransaction(good, { productId: 'creature_creation', appAccountToken: appAccountToken('bob') });
   r = await as('bob', { platform: 'ios', productId: 'creature_creation', jws });
   assert.strictEqual((await profile('bob')).generationCredits, 1);
+  assert.strictEqual((await profile('bob')).paidCredits, 1);
 
   jws = signedTransaction(rogue, { productId: 'remove_ads', appAccountToken: appAccountToken('ann') });
   await fails(as('ann', { platform: 'ios', productId: 'remove_ads', jws }), 'permission-denied', 'a transaction not signed by the trusted root');

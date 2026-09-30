@@ -108,6 +108,7 @@ function makeVerifyPurchase({ db, FieldValue, HttpsError, logger, playApi, verif
         update.totalEarned = FieldValue.increment(g.coins);
       }
       if (g.credits) update.generationCredits = FieldValue.increment(g.credits);
+      if (g.paidCredits) update.paidCredits = FieldValue.increment(g.paidCredits);
       if (g.clearDiscount) update.creationDiscountPct = FieldValue.delete();
       Object.entries(g.keys || {}).forEach(([id, v]) => {
         update[`keys.${id}`] = v;

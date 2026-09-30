@@ -13,7 +13,10 @@
 //                              creature's tokens from Mystery Boxes.
 //  · creature_creation       — $4.99, consumable: one custom-creature
 //                              generation (`generationCredits` + 1, spent by
-//                              generateCustomModel).
+//                              generateCustomModel). `paidCredits` + 1 too:
+//                              how many of the credits were bought, so the
+//                              app shows them as paid (not FREE) and never
+//                              puts an ad break after one.
 //  · creature_creation_15off — the same at 15% off, bought instead while the
 //                              Daily Spin's prize (`creationDiscountPct`) is
 //                              waiting; it uses the prize up. (Stores can't
@@ -94,7 +97,7 @@ function grantFor({ productId, creatureId, profile, rosterIds }) {
 
   if (productId === CREATION || productId === CREATION_DISCOUNTED) {
     return {
-      update: { credits: 1, clearDiscount: productId === CREATION_DISCOUNTED },
+      update: { credits: 1, paidCredits: 1, clearDiscount: productId === CREATION_DISCOUNTED },
       result: { granted: 'creation' },
     };
   }
@@ -105,6 +108,19 @@ function grantFor({ productId, creatureId, profile, rosterIds }) {
     return { update: { coins: KEY_REFUND_COINS }, result: { granted: 'coins', coins: KEY_REFUND_COINS, creatureId: id } };
   }
   return { update: { keys: { [id]: true } }, result: { granted: 'key', creatureId: id } };
+}
+
+// One custom-creature generation spent from a profile (users/{uid} data):
+// the fields to write, or null with no credit left. A missing
+// generationCredits is the one free credit every profile starts with.
+// `paidCredits` counts how many of generationCredits were bought; a bought
+// one is spent first, so the app — which labels it PAID and puts no ad break
+// after it — and the server agree on which was used.
+function spendCredit(profile = {}) {
+  const credits = typeof profile.generationCredits === 'number' ? profile.generationCredits : 1;
+  if (credits <= 0) return null;
+  const paid = typeof profile.paidCredits === 'number' ? Math.min(profile.paidCredits, credits) : 0;
+  return paid > 0 ? { generationCredits: credits - 1, paidCredits: paid - 1 } : { generationCredits: credits - 1 };
 }
 
 module.exports = {
@@ -123,4 +139,5 @@ module.exports = {
   checkPlayPurchase,
   checkAppleTransaction,
   grantFor,
+  spendCredit,
 };

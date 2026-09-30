@@ -22,7 +22,7 @@ import { CARD_SIZE } from './CardPager';
 // The free creations the player still has, as a blue candy pill (the old
 // flat teal outline didn't belong with the candy look): a gold ball with the
 // count, "FREE CREATION", gloss, a light streak and a gentle breath.
-function FreeCreationPill({ count }) {
+function FreeCreationPill({ count, paid = false }) {
   const v = BUTTON_VARIANTS.blue;
   const gold = BUTTON_VARIANTS.gold;
   return (
@@ -40,7 +40,7 @@ function FreeCreationPill({ count }) {
               </LinearGradient>
             </View>
             <ButtonText ring={v.ring} size={14} style={styles.freeLabel}>
-              {count === 1 ? 'FREE CREATION' : 'FREE CREATIONS'}
+              {paid ? (count === 1 ? 'CREATION READY' : 'CREATIONS READY') : count === 1 ? 'FREE CREATION' : 'FREE CREATIONS'}
             </ButtonText>
           </LinearGradient>
         </View>
@@ -49,7 +49,8 @@ function FreeCreationPill({ count }) {
   );
 }
 
-export const CreateOwnCard = memo(function CreateOwnCard({ onPress, generationCredits = 0, priceLabel = '$4.99', discountPct = 0 }) {
+// `paidCredits`: how many of the credits were bought — shown as READY, not FREE.
+export const CreateOwnCard = memo(function CreateOwnCard({ onPress, generationCredits = 0, paidCredits = 0, priceLabel = '$4.99', discountPct = 0 }) {
   // createPulse: scale 1 -> 1.07 -> 1 with a widening glow, 2.4s loop
   const pulse = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -86,7 +87,7 @@ export const CreateOwnCard = memo(function CreateOwnCard({ onPress, generationCr
         <Text style={styles.createTitle}>Create your own squishy</Text>
         <Text style={styles.createSub}>Upload or draw a picture, add a squish sound, and we turn it into 3D.</Text>
         {generationCredits > 0 ? (
-          <FreeCreationPill count={generationCredits} />
+          <FreeCreationPill count={generationCredits} paid={paidCredits > 0} />
         ) : (
           <View style={styles.pricePill}>
             <Text style={styles.priceAmount}>{priceLabel}</Text>

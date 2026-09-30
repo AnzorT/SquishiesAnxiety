@@ -9,10 +9,9 @@
 //      directly. First it spends the player's `generationCredits` (a plain
 //      counter on users/{uid}; the client SDK is blocked by firestore.rules
 //      from writing that field itself — see below): 1 is granted free per
-//      profile at signup, more come from a real-money purchase that (until
-//      real IAP exists) gets reconciled by hand — set
-//      users/{uid}.generationCredits directly in the Firebase console/admin
-//      SDK once a purchase clears. If the player has none, the job ends at
+//      profile at signup, more are bought in the app (Google Play / the
+//      App Store; the verifyPurchase function below grants them, and counts
+//      them in `paidCredits` too). If the player has none, the job ends at
 //      `status: 'blocked'` without ever calling Tripo. Otherwise it hands
 //      Tripo the image URL (with the same TRIPO_TASK_OPTS tuning used for
 //      every 3D creature, so custom ones run the physics just as smoothly),
@@ -63,6 +62,7 @@ const { setGlobalOptions } = require('firebase-functions/v2');
 const logger = require('firebase-functions/logger');
 const admin = require('firebase-admin');
 const { randomUUID } = require('crypto');
+const { spendCredit } = require('./purchases');
 
 admin.initializeApp();
 setGlobalOptions({ region: 'us-central1', maxInstances: 10 });
@@ -108,9 +108,13 @@ const LOW_BALANCE_ALERT_CREDITS = 1000; // ≈ 15–30 generations of runway
 const STATUS_DOC = 'system/tripoStatus';
 const CAPACITY_MESSAGE = "We're topping up 3D credits — try again shortly. You have not been charged.";
 // Every profile is born with one free generation (see createUserProfile in
-// src/firebase/firestore.js); further ones come from a real-money purchase
-// that's reconciled by hand for now — see the header comment above.
+// src/firebase/firestore.js); further ones are bought — see the header
+// comment above.
 const NO_CREDIT_MESSAGE = 'No creature generations available. Purchase one to create another squishy.';
+
+// One credit spent from a profile snapshot — see spendCredit in
+// purchases.js (a bought credit goes first).
+const spendCreditUpdate = (snap) => spendCredit(snap.exists ? snap.data() : {});
 
 // --- balance watcher --------------------------------------------------
 // Runs hourly. Writes the live balance to Firestore (so generateCustomModel
@@ -170,10 +174,8 @@ exports.generateCustomModel = onDocumentWritten(
     // double-tap race go negative.
     if (!before && after.status === 'ready' && !after.sourceImageUrl) {
       await admin.firestore().runTransaction(async (tx) => {
-        const snap = await tx.get(userRef);
-        const credits = snap.exists && typeof snap.data().generationCredits === 'number' ? snap.data().generationCredits : 1;
-        if (credits <= 0) return;
-        tx.set(userRef, { generationCredits: credits - 1 }, { merge: true });
+        const update = spendCreditUpdate(await tx.get(userRef));
+        if (update) tx.set(userRef, update, { merge: true });
       });
       return;
     }
@@ -190,9 +192,17 @@ exports.generateCustomModel = onDocumentWritten(
       Authorization: `Bearer ${TRIPO_API_KEY.value()}`,
       'Content-Type': 'application/json',
     };
+    // set by the spend below: whether the credit used was a bought one
+    let spentPaid = false;
     const refundCredit = () =>
       userRef
-        .set({ generationCredits: admin.firestore.FieldValue.increment(1) }, { merge: true })
+        .set(
+          {
+            generationCredits: admin.firestore.FieldValue.increment(1),
+            ...(spentPaid ? { paidCredits: admin.firestore.FieldValue.increment(1) } : {}),
+          },
+          { merge: true }
+        )
         .catch((e) => logger.error(`[${uid}/${id}] credit refund failed`, e));
 
     try {
@@ -217,10 +227,10 @@ exports.generateCustomModel = onDocumentWritten(
       // whether Tripo ever gets called — everything below it either
       // succeeds (credit stays spent) or refunds via refundCredit().
       const hasCredit = await admin.firestore().runTransaction(async (tx) => {
-        const snap = await tx.get(userRef);
-        const credits = snap.exists && typeof snap.data().generationCredits === 'number' ? snap.data().generationCredits : 1;
-        if (credits <= 0) return false;
-        tx.set(userRef, { generationCredits: credits - 1 }, { merge: true });
+        const update = spendCreditUpdate(await tx.get(userRef));
+        if (!update) return false;
+        spentPaid = 'paidCredits' in update;
+        tx.set(userRef, update, { merge: true });
         return true;
       });
       if (!hasCredit) {

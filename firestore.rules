@@ -14,8 +14,8 @@ service cloud.firestore {
       // generationCredits pays for real Tripo API spend, so — unlike
       // coins/ownedIds above — the client is never allowed to touch it
       // directly; only generateCustomModel (admin SDK, bypasses rules) may
-      // spend or refund it, and a purchase is reconciled by hand for now by
-      // setting it from the Firebase console/admin SDK.
+      // spend or refund it, and verifyPurchase adds a bought one (with
+      // `paidCredits`, how many of them were bought — server-only too).
       //
       // The Daily Spin's bookkeeping is the same kind of field: only the
       // spinWheel Cloud Function writes it, so the app can't grant itself
@@ -23,14 +23,14 @@ service cloud.firestore {
       // (Remove Ads): only verifyPurchase sets it, after Google Play
       // confirms the purchase.
       allow update: if request.auth != null && request.auth.uid == userId
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['generationCredits', 'creationDiscountPct', 'lastSpinDay', 'spins', 'wheelJackpot', 'adsFree']);
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['generationCredits', 'paidCredits', 'creationDiscountPct', 'lastSpinDay', 'spins', 'wheelJackpot', 'adsFree']);
       // A fresh profile may only ever start with its one free generation
       // (or none set, which the Cloud Function also treats as 1) — never a
       // self-granted stack of them.
       allow create: if request.auth != null && request.auth.uid == userId
         && (!('generationCredits' in request.resource.data) || request.resource.data.generationCredits == 1)
         && (!('adsFree' in request.resource.data) || request.resource.data.adsFree == false)
-        && !request.resource.data.keys().hasAny(['creationDiscountPct', 'lastSpinDay', 'spins', 'wheelJackpot']);
+        && !request.resource.data.keys().hasAny(['paidCredits', 'creationDiscountPct', 'lastSpinDay', 'spins', 'wheelJackpot']);
 
       // Player-made creatures (image-to-3D via the creator flow). Fully
       // owned by that user — nobody else reads or writes them.
