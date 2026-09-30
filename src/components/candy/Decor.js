@@ -119,8 +119,10 @@ export function CandyProgress({ pct = 0, height = 12, ring = candyColors.cardRin
 }
 
 // ---- rarity chip (COMMON / RARE / … ) ---------------------------------
-export function TierChip({ tier, pulse = true, style, fontSize = 9 }) {
-  const t = TIERS[tier];
+// `look` ({ label, bg, color }) draws a chip that isn't a rarity, like a
+// custom creature's MY CREATION.
+export function TierChip({ tier, look, pulse = true, style, fontSize = 9 }) {
+  const t = look || TIERS[tier];
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (!pulse) return undefined;

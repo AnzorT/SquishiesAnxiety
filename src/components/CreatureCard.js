@@ -107,8 +107,8 @@ function Padlock({ variant = 'purple', scale = 1, shackleLift }) {
 }
 
 // The image-area backdrop: pink→lilac, a faint dot grid, a white glow where
-// the creature stands.
-function ImageBackdrop() {
+// the creature stands. (The custom creature card uses it too.)
+export function ImageBackdrop() {
   return (
     <>
       <LinearGradient colors={['#ffc2ec', '#e79cff']} style={StyleSheet.absoluteFill} />

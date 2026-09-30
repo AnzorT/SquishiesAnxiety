@@ -122,6 +122,26 @@ export function TrophyIcon({ size = 24 }) {
   );
 }
 
+// A bin (a custom creature's delete button): white, outlined like the glyphs.
+export function TrashIcon({ size = 16 }) {
+  const lid = 'M5 7 H19';
+  const handle = 'M9.5 7 V4.8 H14.5 V7';
+  const body = 'M6.8 9.5 H17.2 L16.3 20 H7.7 Z';
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <G stroke={RING} strokeWidth={3.8} strokeLinejoin="round" strokeLinecap="round" fill="none">
+        <Path d={lid} />
+        <Path d={handle} />
+        <Path d={body} />
+      </G>
+      <Path d={lid} stroke="#ffffff" strokeWidth={2} strokeLinecap="round" />
+      <Path d={handle} stroke="#ffffff" strokeWidth={1.6} strokeLinejoin="round" fill="none" />
+      <Path d={body} fill="#ffffff" stroke="#ffffff" strokeWidth={1} strokeLinejoin="round" />
+      <Path d="M10.4 12 V17.4 M13.6 12 V17.4" stroke="#b65cff" strokeWidth={1.4} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
 // A rising three-bar chart (the Stats screen): blue, pink and gold bars
 // drawn like the trophy — dark outline with a drop, white edge, glossy fill.
 const statBar = (x, top) => `M${x} ${top + 1.6} a1.6 1.6 0 0 1 1.6 -1.6 h1.4 a1.6 1.6 0 0 1 1.6 1.6 V20.5 H${x} Z`;

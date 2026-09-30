@@ -10,7 +10,10 @@ import { candyColors, candyFonts } from '../theme/candyTheme';
 import CandyBackground from '../components/candy/CandyBackground';
 import CandyButton, { ButtonText } from '../components/candy/CandyButton';
 import RoundButton, { BackGlyph } from '../components/candy/RoundButton';
-import OutlinedTitle from '../components/candy/OutlinedTitle';
+import OutlinedTitle, { HaloText } from '../components/candy/OutlinedTitle';
+import { CandyProgress, RaysSpin } from '../components/candy/Decor';
+import { Twinkle } from '../components/candy/Sparkles';
+import { PhotoBadge } from '../components/CustomCards';
 import AssembleCreature, { ASSEMBLE_BODY_COLORS, ASSEMBLE_DEFAULT } from '../components/AssembleCreature';
 import PaintCanvas from '../components/PaintCanvas';
 
@@ -54,6 +57,7 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
   const [audioError, setAudioError] = useState(null);
 
   const [converting, setConverting] = useState(false);
+  const [uploadUri, setUploadUri] = useState(null); // the picture being uploaded
   const [submitError, setSubmitError] = useState(null);
   const previewSoundRef = useRef(null);
 
@@ -63,23 +67,6 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
     },
     []
   );
-
-  const scan = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (!converting) return undefined;
-    scan.setValue(0);
-    // Drives `top` (see scanTop below) — the native driver only supports
-    // transform/opacity, never layout props. Declaring this true anyway left
-    // the native animated node half-set-up, and once this overlay unmounts
-    // (App swaps CreateScreen for Home right after onCreated resolves) later
-    // attach/detach calls reference a tag that was never valid, surfacing as
-    // "disconnectAnimatedNodeFromView: Animated node with tag X does not
-    // exist". Same class of bug CreatureCard.js's hold-to-unlock bar already
-    // works around (see its useNativeDriver: false comment).
-    const loop = Animated.loop(Animated.timing(scan, { toValue: 1, duration: 1600, easing: Easing.linear, useNativeDriver: false }));
-    loop.start();
-    return () => loop.stop();
-  }, [converting, scan]);
 
   const pickImage = useCallback(async () => {
     setImageError(null);
@@ -196,7 +183,10 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
         return;
       }
     }
-    if (isPhoto) setConverting(true);
+    if (isPhoto) {
+      setUploadUri(picture);
+      setConverting(true);
+    }
     try {
       // App uploads the photo to Storage (if any) and writes the Firestore
       // doc; the Cloud Function takes it from there. It navigates home on
@@ -221,8 +211,6 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
   }, [ready, hasCredit, onBuyCreation, name, assembling, painting, build, imageUri, audio, onCreated]);
 
   const setBuildPart = (key, val) => setBuild((b) => ({ ...b, [key]: val }));
-
-  const scanTop = scan.interpolate({ inputRange: [0, 1], outputRange: ['-14%', '104%'] });
 
   return (
     <CandyBackground style={styles.container}>
@@ -397,21 +385,46 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
         </Text>
       </View>
 
-      {converting ? (
-        <View style={styles.convertOverlay}>
-          <View style={styles.convertFrame}>
-            {imageUri ? <Image source={{ uri: imageUri }} style={styles.convertImg} /> : null}
-            <Animated.View style={[styles.scanLine, { top: scanTop }]}>
-              <LinearGradient colors={['rgba(34,224,208,0)', 'rgba(34,224,208,0.75)', 'rgba(34,224,208,0)']} style={StyleSheet.absoluteFill} />
-            </Animated.View>
+      {converting ? <CreatingOverlay uri={uploadUri} /> : null}
+    </CandyBackground>
+  );
+}
+
+// Shown while the picture uploads (a few seconds), before Home takes over:
+// the picture in the custom card's round candy frame under spinning rays,
+// a white-and-pink shine sweeping down it, and a candy bar easing towards
+// full. The 3D model itself is built afterwards, on MY CREATURES.
+function CreatingOverlay({ uri }) {
+  const fill = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    // `width` can't run on the native driver
+    const a = Animated.timing(fill, { toValue: 0.92, duration: 6000, easing: Easing.out(Easing.cubic), useNativeDriver: false });
+    a.start();
+    return () => a.stop();
+  }, [fill]);
+  const width = fill.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
+  return (
+    <View style={styles.creatingOverlay}>
+      <CandyBackground sparkles>
+        <View style={styles.creatingBody}>
+          <OutlinedTitle text="CREATING…" fill="gold" size={34} outline={4} />
+          <View style={styles.creatingStage}>
+            <View style={styles.creatingRays} pointerEvents="none">
+              <RaysSpin size={330} durationMs={9000} opacity={0.5} />
+            </View>
+            <PhotoBadge uri={uri} size={180} busy />
+            <Twinkle size={18} duration={1.6} style={styles.twinkleA} />
+            <Twinkle size={12} duration={2.1} delay={500} style={styles.twinkleB} />
+            <Twinkle size={14} color="#fff3a0" duration={1.8} delay={900} style={styles.twinkleC} />
           </View>
-          <View style={styles.convertMeta}>
-            <Text style={styles.convertStage}>Uploading your picture…</Text>
-            <Text style={styles.convertPctText}>Then we build the 3D model in the background — check MY CREATURES.</Text>
+          <HaloText style={styles.creatingStep}>Uploading your picture…</HaloText>
+          <CandyProgress height={14} ring={candyColors.pinkRing} fill={['#ffa8e6', '#ff4fbf']} animatedWidth={width} style={styles.creatingBar} />
+          <View style={styles.creatingNote}>
+            <Text style={styles.creatingNoteText}>Next we build it in 3D. It will be waiting for you in MY CREATURES.</Text>
           </View>
         </View>
-      ) : null}
-    </CandyBackground>
+      </CandyBackground>
+    </View>
   );
 }
 
@@ -557,28 +570,23 @@ const styles = StyleSheet.create({
   createLabel: { letterSpacing: 1.6 },
   footerHint: { color: '#a283c9', fontFamily: candyFonts.body, fontSize: 10, textAlign: 'center' },
 
-  convertOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,236,247,0.96)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 22,
-    padding: 32,
+  creatingOverlay: { ...StyleSheet.absoluteFillObject, zIndex: 50, elevation: 50 },
+  creatingBody: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 18 },
+  creatingStage: { width: 240, height: 240, alignItems: 'center', justifyContent: 'center' },
+  creatingRays: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  twinkleA: { position: 'absolute', top: 18, right: 22 },
+  twinkleB: { position: 'absolute', bottom: 34, left: 18 },
+  twinkleC: { position: 'absolute', top: 44, left: 30 },
+  creatingStep: { fontSize: 19, textAlign: 'center' },
+  creatingBar: { width: 220 },
+  creatingNote: {
+    borderRadius: 18,
+    backgroundColor: candyColors.glass,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.7)',
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    maxWidth: 300,
   },
-  convertFrame: {
-    width: 150,
-    height: 150,
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: candyColors.inkSoft,
-    backgroundColor: candyColors.paper,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  convertImg: { width: '100%', height: '100%', opacity: 0.85 },
-  scanLine: { position: 'absolute', left: 0, right: 0, height: '14%' },
-  convertMeta: { alignItems: 'center', gap: 12, width: '100%', maxWidth: 260 },
-  convertStage: { fontFamily: candyFonts.display, fontSize: 17, color: candyColors.ink, textAlign: 'center' },
-  convertPctText: { color: '#a283c9', fontFamily: candyFonts.bodyHeavy, fontSize: 10, letterSpacing: 1.4, textAlign: 'center' },
+  creatingNoteText: { color: '#ffffff', fontFamily: candyFonts.bodyHeavy, fontSize: 12.5, lineHeight: 17, textAlign: 'center' },
 });
