@@ -20,7 +20,7 @@ import BoxReveal, { OUTLINE_8 } from '../components/box/BoxReveal';
 import Toast from '../components/squad/Toast';
 import AdStrip, { AD_H } from '../components/AdStrip';
 import useRewardedAd from '../components/useRewardedAd';
-import { BOX_PRICE, BOX_TAPS, DAILY_BOXES, SECRET, boxDailyUsed, boxPayMode, boxRoster, ownedCount, pullIsPlayable, rollBox, untilNewBoxes } from '../mysteryBox';
+import { BOX_TAPS, SECRET, boxDailyUsed, boxPayMode, boxPrice, boxRoster, dailyBoxes, ownedCount, pullIsPlayable, rollBox, untilNewBoxes } from '../mysteryBox';
 import sfx from '../audio/sfx';
 
 // The v3 Mystery Box. Every day the first two boxes cost a video each (free
@@ -335,10 +335,10 @@ function StepChip({ free, state }) {
 
 // One chip per daily box: a blue ✓ once used, gold ▶ (★ with Remove Ads)
 // while still to come, the next one breathing.
-const DailyChips = memo(function DailyChips({ used, free }) {
+const DailyChips = memo(function DailyChips({ used, free, count }) {
   return (
     <View style={styles.steps}>
-      {Array.from({ length: DAILY_BOXES }, (_, i) => (
+      {Array.from({ length: count }, (_, i) => (
         <View key={i} style={styles.stepSlot}>
           {i > 0 ? <View style={styles.stepLink} /> : null}
           <StepChip free={free} state={i < used ? 'done' : i === used ? 'now' : 'next'} />
@@ -405,7 +405,10 @@ export default function MysteryBoxScreen({ profile, creatures = [], onBack, onOp
     return () => clearInterval(id);
   }, [payMode]);
   const coins = profile?.coins ?? 0;
-  const canAfford = coins >= BOX_PRICE;
+  // the box's prices (config/mysteryBox); App re-renders when they change
+  const price = boxPrice();
+  const daily = dailyBoxes();
+  const canAfford = coins >= price;
   const roster = boxRoster(creatures);
   const total = roster.length || 20;
   const owned = ownedCount(creatures, profile?.ownedIds ?? []);
@@ -443,7 +446,7 @@ export default function MysteryBoxScreen({ profile, creatures = [], onBack, onOp
 
   const needCoins = useCallback(() => {
     sfx.play('bonk');
-    showToast(`You need ${BOX_PRICE} coins for a box — squish to earn more`);
+    showToast(`You need ${price} coins for a box — squish to earn more`);
   }, [showToast]);
 
   // A daily box: one video pays for it.
@@ -508,7 +511,7 @@ export default function MysteryBoxScreen({ profile, creatures = [], onBack, onOp
       }
       if (payMode === 'coins') {
         if (!canAfford) needCoins();
-        else showToast(`Tap OPEN to pay ${BOX_PRICE} coins`);
+        else showToast(`Tap OPEN to pay ${price} coins`);
         return;
       }
     }
@@ -568,11 +571,11 @@ export default function MysteryBoxScreen({ profile, creatures = [], onBack, onOp
       : taps >= BOX_TAPS
         ? 'One more…'
         : payMode === 'free'
-          ? `Free box ${dailyUsed + 1}/${DAILY_BOXES} today · tap it!`
+          ? `Free box ${dailyUsed + 1}/${daily} today · tap it!`
           : 'Tap the box to open!';
   const payHint =
     payMode === 'ad'
-      ? `Box ${dailyUsed + 1}/${DAILY_BOXES} today · watch a video`
+      ? `Box ${dailyUsed + 1}/${daily} today · watch a video`
       : `New ${adsFree ? 'free' : 'video'} boxes in ${untilNewBoxes(clock)}`;
   const revealCreature = pull && pull.kind !== 'coins' ? creatures.find((c) => c.id === (pull.kind === 'secret' ? SECRET.id : pull.id)) : null;
   const glow = (pull && TIERS[pull.tier]?.glow) || '#ff9fd6';
@@ -597,7 +600,7 @@ export default function MysteryBoxScreen({ profile, creatures = [], onBack, onOp
         <View style={styles.watchRow}>
           <CoinIcon size={16} />
           <ButtonText ring={BUTTON_VARIANTS.grey.ring} size={16} style={styles.watchLabel}>
-            {`${(BOX_PRICE - coins).toLocaleString()} MORE COINS`}
+            {`${(price - coins).toLocaleString()} MORE COINS`}
           </ButtonText>
         </View>
       </CandyButton>
@@ -613,7 +616,7 @@ export default function MysteryBoxScreen({ profile, creatures = [], onBack, onOp
           <View style={styles.payDivider} />
           <CoinIcon size={16} />
           <ButtonText ring={BUTTON_VARIANTS.pink.ring} size={18}>
-            {String(BOX_PRICE)}
+            {String(price)}
           </ButtonText>
         </View>
       </CandyButton>
@@ -641,7 +644,7 @@ export default function MysteryBoxScreen({ profile, creatures = [], onBack, onOp
           {unpaid ? (
             <View style={styles.controls}>
               <HintPill text={payHint} />
-              <DailyChips used={dailyUsed} free={adsFree} />
+              <DailyChips used={dailyUsed} free={adsFree} count={daily} />
               {payButton}
             </View>
           ) : (

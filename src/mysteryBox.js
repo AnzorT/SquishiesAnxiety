@@ -1,13 +1,14 @@
 import { tierOf } from './theme/candyTheme';
-import { SPARE_BOX_COINS, pickTokenCreature, tokenAmount, tokenCandidates, tokenCount, tokenPrice } from './economy';
+import { boxSettings, pickTokenCreature, tokenAmount, tokenCandidates, tokenCount, tokenPrice } from './economy';
 import { todayKey } from './dailySpin';
 
 // Mystery Box rules (the v3 design's box, on the sticker economy in
 // src/economy.js):
-//  · every day the player gets DAILY_BOXES boxes for one rewarded video
+//  · every day the player gets dailyBoxes() boxes for one rewarded video
 //    each — free, without the video, with Remove Ads. They come back on the
 //    next calendar day (the phone's date, like the Daily Spin). Once they're
-//    used, a box costs BOX_PRICE coins, paid with the OPEN button;
+//    used, a box costs boxPrice() coins, paid with the OPEN button. Both
+//    numbers come from config/mysteryBox (src/economy.js);
 //  · a box gives 1–3 tokens of one locked creature, picked by rarity (the
 //    odds and prices: src/economy.js, tunable in Firestore); a full set puts
 //    the creature's key on its card. The very first box ever fills Puffle's
@@ -20,17 +21,18 @@ import { todayKey } from './dailySpin';
 // mid-tapping would stall the taps. The day's count is `boxDayOpens` for the
 // day in `boxDay`; `boxOpens` counts every box ever opened.
 
-export const BOX_PRICE = 500;
-export const DAILY_BOXES = 2;
+// The box's prices, from config/mysteryBox (defaults 500 coins, 2 a day).
+export const boxPrice = () => boxSettings().boxPrice;
+export const dailyBoxes = () => boxSettings().dailyBoxes;
 export const BOX_TAPS = 10;
 export const SECRET = { id: '0', tier: 'Secret', name: 'Prism Glorp' };
 
 // Daily boxes used today / still left today.
 export function boxDailyUsed(profile, today = todayKey()) {
-  return profile?.boxDay === today ? Math.min(DAILY_BOXES, profile?.boxDayOpens ?? 0) : 0;
+  return profile?.boxDay === today ? Math.min(dailyBoxes(), profile?.boxDayOpens ?? 0) : 0;
 }
 export function boxDailyLeft(profile, today = todayKey()) {
-  return DAILY_BOXES - boxDailyUsed(profile, today);
+  return dailyBoxes() - boxDailyUsed(profile, today);
 }
 
 // The profile fields that use up one of today's boxes.
@@ -47,7 +49,7 @@ export function boxPayMode(profile, today = todayKey()) {
 }
 
 export function boxPriceLabel(mode) {
-  return mode === 'paid' ? 'READY' : mode === 'free' ? 'FREE' : mode === 'ad' ? 'VIDEO' : String(BOX_PRICE);
+  return mode === 'paid' ? 'READY' : mode === 'free' ? 'FREE' : mode === 'ad' ? 'VIDEO' : String(boxPrice());
 }
 
 // "5h 12m" until today's boxes come back (local midnight).
@@ -80,7 +82,7 @@ export function rollBox(creatures, profile, random = Math.random) {
     return { ...SECRET, kind: 'secret' };
   }
   const candidates = tokenCandidates(roster, profile);
-  if (!candidates.length) return { kind: 'coins', tier: 'Common', amount: SPARE_BOX_COINS };
+  if (!candidates.length) return { kind: 'coins', tier: 'Common', amount: boxSettings().spareBoxCoins };
   const first = (profile?.boxOpens ?? 0) === 0;
   const c = first ? candidates[0] : pickTokenCreature(candidates, random);
   const need = tokenPrice(c.id);

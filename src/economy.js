@@ -19,8 +19,10 @@ import { STARTER_CREATURE_IDS } from './data/creatures';
 //
 // The numbers live in Firestore, `config/mysteryBox` (read-only for the app,
 // edited in the Firebase console), so they can be tuned without an app
-// update; BOX_DEFAULTS is used until that document exists, and for any field
-// it leaves out. At the defaults (a simulation of an engaged player: 1,500
+// update — the odds, the token prices, and the box's own prices (its coin
+// price, how many video boxes a day, the coins a box gives when nothing is
+// left to unlock). BOX_DEFAULTS is used until that document exists, and for
+// any field it leaves out. At the defaults (a simulation of an engaged player: 1,500
 // coins a day into boxes plus the two daily boxes) the second creature comes
 // on day ~64 and all 19 in ~7½ months; a casual player takes ~a year.
 
@@ -32,11 +34,14 @@ export const BOX_DEFAULTS = {
   // tokens for #1 Puffle, and how many more each creature after it needs
   firstPrice: 30,
   priceStep: 5,
+  // a box's price in coins, once the day's video boxes are used
+  boxPrice: 500,
+  // boxes a day for one rewarded video each (free with Remove Ads)
+  dailyBoxes: 2,
+  // what a box pays when there's no locked creature to give tokens for
+  // (the rest are keyed and waiting to be unlocked)
+  spareBoxCoins: 150,
 };
-
-// A box with no locked creature to give tokens for (the rest are keyed and
-// waiting to be unlocked) pays coins.
-export const SPARE_BOX_COINS = 150;
 
 // Google Play / App Store product ids — the same in both stores (create
 // them with these ids; see REDESIGN_V3.md). The labels are fallbacks until
@@ -75,6 +80,9 @@ export function setBoxSettings(doc) {
     tokenOdds: oddsOr(d.tokenOdds, BOX_DEFAULTS.tokenOdds),
     firstPrice: positive(d.firstPrice) && d.firstPrice >= 1 ? Math.round(d.firstPrice) : BOX_DEFAULTS.firstPrice,
     priceStep: positive(d.priceStep) ? Math.round(d.priceStep) : BOX_DEFAULTS.priceStep,
+    boxPrice: positive(d.boxPrice) ? Math.round(d.boxPrice) : BOX_DEFAULTS.boxPrice,
+    dailyBoxes: positive(d.dailyBoxes) && d.dailyBoxes <= 10 ? Math.round(d.dailyBoxes) : BOX_DEFAULTS.dailyBoxes,
+    spareBoxCoins: positive(d.spareBoxCoins) ? Math.round(d.spareBoxCoins) : BOX_DEFAULTS.spareBoxCoins,
   };
 }
 

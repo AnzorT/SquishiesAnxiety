@@ -1,6 +1,6 @@
 import firestore from '@react-native-firebase/firestore';
 import { STARTER_CREATURE_IDS } from '../data/creatures';
-import { BOX_PRICE, boxPayMode, dailyBoxUse } from '../mysteryBox';
+import { boxPayMode, boxPrice, dailyBoxUse } from '../mysteryBox';
 import { tokenPrice } from '../economy';
 
 // Coins and unlocks are client-authoritative (writes go straight from the
@@ -164,7 +164,7 @@ const inc = (n) => firestore.FieldValue.increment(n);
 const logFail = (what) => (e) => console.warn(`${what} failed:`, e);
 
 // A daily box's video was watched: that box is paid for (one of today's
-// DAILY_BOXES used) and waits as `boxPending` until it's opened, even if the
+// dailyBoxes() used) and waits as `boxPending` until it's opened, even if the
 // player leaves first.
 export function payBoxWithAd(uid, profile) {
   userDocRef(uid)
@@ -172,11 +172,12 @@ export function payBoxWithAd(uid, profile) {
     .catch(logFail('payBoxWithAd'));
 }
 
-// Today's boxes are used up: charge BOX_PRICE and set the box up to be
+// Today's boxes are used up: charge boxPrice() and set the box up to be
 // opened. False if there aren't enough coins.
 export function payBoxWithCoins(uid, profile) {
-  if ((profile?.coins ?? 0) < BOX_PRICE) return false;
-  userDocRef(uid).update({ coins: inc(-BOX_PRICE), boxPending: true }).catch(logFail('payBoxWithCoins'));
+  const price = boxPrice();
+  if ((profile?.coins ?? 0) < price) return false;
+  userDocRef(uid).update({ coins: inc(-price), boxPending: true }).catch(logFail('payBoxWithCoins'));
   return true;
 }
 
