@@ -24,7 +24,7 @@ What the redesign changes, in short:
 ## Decisions made
 
 - **Platform:** the redesign goes into the **React Native app**. The Unity port is dropped.
-- **Coins:** earned while holding a squish, **5 coins every 1.5 s** since 2026-09-29 (it was 1; the design had 2). Nothing is earned on release.
+- **Coins:** **5 coins for every 1.5 s the finger spends moving** on the squish (since Round 6; before that it was every 1.5 s of holding, and 1 coin, not 5; the design had 2). Holding still earns nothing, like the squish sound. Nothing is earned on release.
 - **The tap-spam easter egg stays.** The "🚨 WHOA THERE! You're tapping way too much. You will be punished." popup is not in the v3 design, but it must be kept. It trips at 5 quick taps in 1 s or 7 in 2 s, and ACCEPT PUNISHMENT plays a full-screen ad.
 - **Creature art comes from Firebase, not the app.** The v3 plush creatures are rendered from the design's own HTML/CSS to images, hosted in Firebase Storage and listed on each `creatures/{id}` doc as `plush`. The app bundles no creature art (see "Creature art" below).
 - **Unlocking (Round 5):** only Glorp is free. Coins buy Mystery Boxes, not creatures. Every creature has its own tokens (30 for Puffle, +5 per creature along the roster). A box gives 1–3 tokens (80/17/3%) of one locked creature, picked by rarity (50/28/13/6/2/1%); a full set puts its key on its card. The other way to a key is $0.99 in the Key Shop. All the box numbers are tunable in Firestore (`config/mysteryBox`).
@@ -104,7 +104,7 @@ Size classes exist because the design's shadows are fixed pixel sizes: `lg` (car
 
 ## Phase 2 — new features: DONE (2026-09-29)
 
-Checked on the Pixel_9 emulator against the design (recordings, frame by frame). Nothing is committed yet.
+Checked on the Pixel_9 emulator against the design (recordings, frame by frame).
 
 | Feature | What it does | Where |
 |---|---|---|
@@ -151,7 +151,7 @@ Performance notes (measured on the Pixel_9 emulator):
 
 ## Round 5 — review fixes, the unlock economy, paid Remove Ads: DONE (2026-09-29)
 
-Checked on the Pixel_9 emulator. Nothing is committed yet. Real purchases can't be made until the Play Console setup below is done.
+Checked on the Pixel_9 emulator. Real purchases can't be made until the Play Console setup below is done.
 
 ### Review fixes
 
@@ -212,6 +212,9 @@ The very first box ever fills Puffle's set (30 tokens), so a new player unlocks 
 | `tokenOdds` | map | `1` 80, `2` 17, `3` 3 (numbers; the key is how many tokens) |
 | `firstPrice` | number | 30 |
 | `priceStep` | number | 5 |
+| `boxPrice` | number | 500 (coins per box once the day's video boxes are used; since Round 6) |
+| `dailyBoxes` | number | 2 (video boxes a day, free with Remove Ads; 0–10; since Round 6) |
+| `spareBoxCoins` | number | 150 (coins a box gives when nothing is left to unlock; since Round 6) |
 
 **How long it takes at these numbers** (simulation, an engaged player putting 1,500 coins a day into boxes and opening both daily boxes): Puffle from the first box, then the **second creature around day 64**, 5 by day ~87, all 19 in ~7½ months. A casual player (~600 coins a day) gets the second around day 100 and all of them in about a year. A box averages ~1.2 tokens, so lowering `firstPrice` / `priceStep` is the main dial.
 
@@ -230,7 +233,7 @@ The very first box ever fills Puffle's set (30 tokens), so a new player unlocks 
 
 ### Remove Ads ($1.99)
 
-- **Floating button** on Home's lists, beside the down arrow: a gold candy pill with a "no ads" badge, NO ADS and a $1.99 tag, bobbing. It opens a popup listing what it does, with REMOVE ADS · $1.99. Settings has the same entry (it used to be a free "CLAIM FREE").
+- **Floating button** on Home's lists, beside the down arrow: a gold candy pill with a "no ads" badge, NO ADS and a $1.99 tag, bobbing. It opens a popup listing what it does, with REMOVE ADS · $1.99. (Settings had the same entry until Round 6.)
 - **Once bought** (`adsFree`): no ad strip on Home or the squish screen; no ad breaks (Daily Spin, free creation, and the WHOA THERE! punishment, which still pops up but just closes); the two daily boxes are free with no video; ×2 / ×3 / ×4 start without a video, labelled NO AD. After each boost the buttons recharge for 30 s ("READY IN 27s"), about the time the video would have taken. Without that, ×4 could run nonstop and the economy above would be four times faster for anyone who paid $1.99. To change it, set `AD_FREE_BOOST_RECHARGE_MS` in `src/economy.js` (0 = no recharge).
 - Ad-free boosts still count toward "Max Boost" but not "Movie Night" / "Ad Enthusiast" (no video was watched).
 
@@ -322,6 +325,81 @@ firebase deploy --only functions:verifyPurchase,firestore:rules
 
 Not checked on the emulator: buying a creation (needs Play products).
 
+## Round 6 — last review fixes: DONE (2026-09-29)
+
+Checked on the Pixel_9 emulator unless noted.
+
+### Screens
+- **Splash:** no creature sits behind the wordmark, the tagline or TAP TO START any more. The creatures are placed in zones measured on screen (above the wordmark, between the tagline and the button, beside each), so this holds on any screen shape. A zone that's too short shrinks its creatures; a side zone too narrow for one stays empty.
+- **Ad strip on more screens:** the Mystery Box, the Key Shop, Achievements and Stats now have the ad strip along the bottom, as on Home and the squish screen (none with Remove Ads). The box's toasts sit above it.
+- **Settings:** Remove Ads and the stats are gone (Remove Ads stays on Home's NO ADS button). The sheet scrolls when it's taller than the screen allows: checked by padding it past the screen. The backdrop used to wrap the scroll view in two touchables; it's now a sibling behind the sheet. The empty gap under "Sound effects" is fixed.
+- **Stats (new screen):** a chart button left of the trophy on Home opens YOUR STATS: the favourite creature, eight tiles (squishes, longest hold, time squishing, coins earned, creatures, achievements, boxes opened, biggest boost) and the five most-squished creatures, custom ones included. `src/screens/StatsScreen.js`; the icon is `StatsIcon` in `RoundButton.js`.
+- **Squish screen:**
+  - **Hint hands:** redrawn in the candy style: white hands with the header icons' dark outline and drop, pink-and-white touch rings, and the Mystery Box's glass pill for the caption.
+  - **Rotate caption:** now says **2 FINGERS TO ROTATE**, since one finger pokes.
+  - **Settings pointer (new):** a third hand under the gear, a pink halo pulsing round the gear, and a **GAMEPLAY SETTINGS** pill ("Sound · vibration · poke"). It fades when the gear is opened, or 4 s after the first squish; the stage hints still go on the first touch.
+  - **FPS:** off by default.
+  - **Coins only while moving:** coins follow the squish sound's rule. Only time spent moving the finger counts, and every 1.5 s of it pays a tick; a finger that holds still earns nothing. Checked on the emulator: holding still for 4 s gave nothing, and dragging for 3.5 s gave +10 (two ticks).
+- **Creating a creature:**
+  - **The "uploading" overlay:** redesigned on the candy stage. A gold CREATING… title, the picture in a round candy frame under spinning rays, a white-and-pink shine sweeping down it (the teal scan line is gone), a pink progress bar and a glass note.
+  - **After CREATE:** Home now opens on MY CREATURES, on the new creature's card. It used to land on OUR CREATURES: Home mounts fresh at that moment and ignored the first value of the old focus counter. App now passes the new creature's id (`focusMine`). If its doc arrives a moment later, the list waits on the last page and then snaps to the card.
+  - **The custom creature card:** rebuilt on the premade card's layout. The dotted pink backdrop, rays, gold pedestal, sticker-style name with a MY CREATION chip, a round trash button, and candy PLAY / PLEASE WAIT… / RETRY. A photo creature sits in the same round candy frame. While it builds, the frame shows the shine sweep and a glass BUILDING IN 3D · N% pill with a progress bar; a failed one shows COULDN'T BUILD IT.
+  - **How these were checked:** fake creatures injected for a moment (assembled, building at 42%, failed, and one arriving 2.5 s late), and the overlay forced on. Ted's free creation was not spent.
+
+### Buying a creation: fixes
+The purchase path was already in place (Round 5). Reading it end to end turned up two bugs:
+1. **A paid credit could show as FREE, followed by an ad.** If the purchase went through but the creation didn't (the upload failed, or the store confirmed late), the next press showed FREE. It then played the forced ad break meant for the free creation. Now:
+   - **Server:** `verifyPurchase` also counts bought credits in `paidCredits`, and `generateCustomModel` spends a bought credit first (a refund puts it back the same way). The rule is `spendCredit` in `functions/purchases.js`.
+   - **App:** a leftover bought credit shows as **PAID** on the Create button ("Uses the creation you bought") and as CREATION READY on Home's card, and gets no ad break.
+   - **Rules:** `firestore.rules` keeps `paidCredits` server-only.
+2. **"Already owned" on Google Play.** If an earlier creation or key purchase was never consumed, Play refuses a new one. The app then showed "Ads removed — thank you!" and nothing happened. Now it sends the stuck purchase to the server (which grants and consumes it) and opens the Play sheet again once.
+
+**Tested:** the server suite passes on the Firestore emulator (`functions/verifyPurchase.test.js`, now with paid-credit checks and `spendCredit` rules). Both JS bundles (Android, iOS) build. `react-native-iap` 12.16.4 does return `verificationResultIOS` in StoreKit 2 mode, which the iOS path relies on. `verifyPurchase` is live (an unauthenticated call gets 401).
+
+**Not tested:** a real purchase. That still needs the Play Console products and license testing (Round 5's setup list, steps 1–4), and an iOS build for the App Store.
+
+### Prices from Firebase
+Every coin price is now in `config/mysteryBox`: the box's price in coins (`boxPrice`), how many video boxes a day (`dailyBoxes`) and the coins a box gives when nothing is left to unlock (`spareBoxCoins`). They join the odds and token prices already there (the table under "Unlocking creatures"). The app picks a change up live, no update needed; a missing or bad value falls back to the default. Checked with a Node test of the parsing (defaults, set values, bad values, the document deleted).
+
+**Real-money prices, as price levels (`config/pricing`).** Google Play and the App Store only charge the price stored on their own product, so Firebase picks *which* product is sold. Each of the three can be sold at other prices, as its own store product named `<id>_<cents>`:
+
+| Field in `config/pricing` | Example | The app then sells | Default (no field) |
+|---|---|---|---|
+| `creatureKey` | 1.49 | `creature_key_149` | `creature_key` |
+| `removeAds` | 2.99 | `remove_ads_299` | `remove_ads` |
+| `creation` | 5.99 | `creature_creation_599`, and `creature_creation_15off_509` for the Daily Spin's 15% off (85%, cents rounded down) | `creature_creation`, `creature_creation_15off` |
+| `creationDiscount` (optional) | 4.99 | `creature_creation_15off_499`, instead of the automatic 85% | — |
+
+To change a price:
+1. **Create the product first**, in both stores, with that id and that price. Key and creation products are consumable; Remove Ads is non-consumable.
+2. **Set the number** in Firestore → `config` → document `pricing` (a number, in US dollars).
+
+The app picks the change up live, no update needed. It shows the store's localized price once loaded, and the Firebase number before that. A price whose product doesn't exist yet can't be bought ("Purchases aren't available right now"), and the app logs which ids are missing. Removing the field goes back to the base product.
+
+The server grants any price level like its base product, so purchases made at an older price still sync. **Deactivate a price level you no longer sell** (Play Console: set the product inactive; App Store Connect: remove it from sale). Otherwise a modified app could still buy an older, cheaper one.
+
+Checked: Node tests of the app's price logic (ids, labels, the discount, bad values) and the server suite with price-level purchases (a $1.49 key, a $5.99 creation, $2.99 Remove Ads; lookalike ids refused). Not checked: a real purchase at a price level (needs the store products).
+
+**Deploy (yours to run).** Also needed for price levels: the live `verifyPurchase` only knows the four base ids. Both functions must go out together: the new `verifyPurchase` without the new `generateCustomModel` would leave bought credits marked PAID forever.
+```
+firebase deploy --only functions:verifyPurchase,functions:generateCustomModel,firestore:rules
+```
+Until then the app behaves as before (no `paidCredits` means FREE, as today). As before, `firestore:rules` replaces the live rules with this file, so compare first if they were edited in the console.
+
+## Key Shop stalls (2026-09-29)
+
+The Key Shop's list of rows is now a street of market stalls, one per rarity (Common, Rare, Epic, Legendary, Rainbow, Golden), each in that rarity's colours. A stall has:
+- a striped, scalloped awning hanging from a candy rod, with the rarity's name on a candy sign. Rainbow's stripes run through the rainbow; Rainbow and Golden twinkle.
+- candy-cane posts and a dotted back wall.
+- shelves with two creatures each, every creature in a white display box: its art on a soft glow, its name, its tokens with a bar, and the $0.99 button (or ★ OWNED / KEY READY). A rarity with one creature (Rainbow, Golden) shows it as a single wide showcase.
+- a counter along the front with "3/7 OWNED".
+
+Opened from a locked creature's popup (SHOP), it still lands on that creature's shelf, and the creature still breathes. Nothing about buying changed.
+
+Code: `src/components/shop/Stall.js` (the stall art, colours per rarity and sizes) and `src/screens/StoreScreen.js` (the list and the display boxes). The list is still a FlatList of fixed-height pieces (a stall's top, each shelf, its counter), so it builds a shelf at a time as before.
+
+Checked on the Pixel_9 emulator at 411 dp and 360 dp wide, with some creatures temporarily forced to locked, key-ready and part-way through their tokens (the override is removed): every stall, the showcase, the counters, and opening on Zappy's shelf.
+
 ## What is left
 
 ### Creature unlocking: decided and built (Round 5)
@@ -332,7 +410,7 @@ The earlier research (same day) led to Round 5's creature tokens / $0.99 and pai
 
 ### Smaller follow-ups
 - **Box tap lag with sound:** check fast Mystery Box tapping on a real phone (see Phase 3's performance notes). If it lags there too, move effects to a native low-latency player (SoundPool).
-- **Commit:** nothing from Round 2 onwards is committed yet.
+- **iOS: a Restore Purchases button.** App Review expects one for a non-consumable like Remove Ads. The app restores it on its own at sign-in (`syncPurchases`), but a visible RESTORE link (for example in the Remove Ads popup) avoids a rejection.
 - **Economy is still client-trusted:** coins, tokens and `ownedIds` are written by the app, guarded only by the rules. Paid things (`adsFree`, purchased keys) go through the server. Moving box pulls and key purchases into Cloud Functions would close the rest.
 - **iOS:** there is no iOS app yet. Purchases are written for it (StoreKit 2, `src/billing/index.ios.js`) but have never run. Other iOS gaps: Ogg audio doesn't play on iOS (`tools/audio/encode.py` needs AAC), and the AdMob iOS app id in `app.json` is Google's test id.
 
