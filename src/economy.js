@@ -52,15 +52,17 @@ export const BOX_DEFAULTS = {
 // then sells that level's own store product, `<base>_<cents>`
 // (creature_key_149) — it must exist in both stores at that price. The 15%
 // off creation follows the creation price (85% of it, cents rounded down)
-// unless `creationDiscount` is set too. The server grants every level like
-// its base product (functions/purchases.js).
+// unless `creationDiscount` is set too; the half-price one (the 10-day
+// streak's reward) is half of it unless `creationHalf` is set. The server
+// grants every level like its base product (functions/purchases.js).
 export const PRODUCTS = {
   creatureKey: { base: 'creature_key', usd: 0.99 },
   removeAds: { base: 'remove_ads', usd: 1.99 },
   creation: { base: 'creature_creation', usd: 4.99 },
   creationDiscount: { base: 'creature_creation_15off', usd: 4.24 },
+  creationHalf: { base: 'creature_creation_half', usd: 2.49 },
 };
-const CONSUMABLE_KEYS = ['creatureKey', 'creation', 'creationDiscount'];
+const CONSUMABLE_KEYS = ['creatureKey', 'creation', 'creationDiscount', 'creationHalf'];
 
 let pricing = {}; // PRODUCTS key → price in USD cents, from config/pricing
 
@@ -77,6 +79,8 @@ export function setPricing(doc) {
   });
   const discount = cents(d.creationDiscount) || (next.creation ? Math.floor(next.creation * 0.85) : null);
   if (discount) next.creationDiscount = discount;
+  const half = cents(d.creationHalf) || (next.creation ? Math.floor(next.creation * 0.5) : null);
+  if (half) next.creationHalf = half;
   pricing = next;
 }
 
@@ -100,7 +104,7 @@ export function fallbackPriceLabel(key) {
 
 // A product id (a base product or a price level of it) → its PRODUCTS key.
 export function productKey(id) {
-  const m = /^(remove_ads|creature_key|creature_creation_15off|creature_creation)(?:_[1-9]\d{0,5})?$/.exec(String(id || ''));
+  const m = /^(remove_ads|creature_key|creature_creation_15off|creature_creation_half|creature_creation)(?:_[1-9]\d{0,5})?$/.exec(String(id || ''));
   return m ? Object.keys(PRODUCTS).find((k) => PRODUCTS[k].base === m[1]) : null;
 }
 
