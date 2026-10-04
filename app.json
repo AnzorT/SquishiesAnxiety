@@ -3,14 +3,40 @@
     "name": "PlushCrush",
     "slug": "plushcrush",
     "version": "1.0.0",
+    "icon": "./assets/icons/app_icon.png",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "splash": {
       "backgroundColor": "#1A1326"
     },
-    "assetBundlePatterns": ["**/*"],
-    "ios": { "supportsTablet": true, "bundleIdentifier": "com.plushcrush.app" },
-    "android": { "package": "com.plushcrush.app" },
-    "plugins": ["expo-av"]
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.plushcrush.app",
+      "googleServicesFile": "./GoogleService-Info.plist"
+    },
+    "android": {
+      "package": "com.plushcrush.app",
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icons/app_icon_foreground.png",
+        "backgroundColor": "#B24FE6"
+      }
+    },
+    "plugins": [
+      "expo-av",
+      "@react-native-firebase/app",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+        }
+      ],
+      "expo-font",
+      "expo-asset"
+    ]
   }
 }
