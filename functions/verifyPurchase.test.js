@@ -27,6 +27,8 @@ assert.strictEqual(baseProduct('creature_key_149'), 'creature_key');
 assert.strictEqual(baseProduct('creature_creation_15off'), 'creature_creation_15off');
 assert.strictEqual(baseProduct('creature_creation_15off_509'), 'creature_creation_15off');
 assert.strictEqual(baseProduct('creature_creation_599'), 'creature_creation');
+assert.strictEqual(baseProduct('creature_creation_half'), 'creature_creation_half');
+assert.strictEqual(baseProduct('creature_creation_half_299'), 'creature_creation_half');
 assert.strictEqual(baseProduct('remove_ads_299'), 'remove_ads');
 assert.strictEqual(baseProduct('remove_ads_'), null);
 assert.strictEqual(baseProduct('remove_ads_01'), null);
@@ -170,6 +172,14 @@ const profile = async (uid) => (await db.collection('users').doc(uid).get()).dat
   p = await profile('ann');
   assert.deepStrictEqual([p.generationCredits, p.creationDiscountPct], [2, undefined], 'the discounted one uses the discount up');
   assert.strictEqual(p.paidCredits, 2);
+
+  // the 10-day streak's half-price creation uses its reward up
+  await db.collection('users').doc('ann').update({ streakDiscount: true });
+  play.t5h = { purchaseState: 0, consumptionState: 0, obfuscatedExternalAccountId: acct };
+  r = await as('ann', { platform: 'android', productId: 'creature_creation_half', purchaseToken: 't5h' });
+  assert.deepStrictEqual(r, { granted: 'creation' });
+  p = await profile('ann');
+  assert.deepStrictEqual([p.generationCredits, p.paidCredits, p.streakDiscount], [3, 3, undefined], 'half price uses the streak reward up');
 
   play.t6 = { purchaseState: 2, obfuscatedExternalAccountId: acct };
   r = await as('ann', { platform: 'android', productId: 'remove_ads', purchaseToken: 't6' });
