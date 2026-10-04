@@ -12,15 +12,14 @@ import Animated, {
 import CreatureThumbnail from './CreatureThumbnail';
 import AssembleCreature from './AssembleCreature';
 
-// The 2D squish rig. Every premade creature now has a 3D model (SquishyToy.js
-// handles all of them), so in practice this only ever mounts for a custom
-// creature — a player's photo (`imageUri`) or an assembled build (`build`).
-// The `creature` fallback path below is a last resort for a custom creature
-// with neither.
+// The 2D squish rig: for a roster creature without a 3D model yet (the plush
+// roster of 2026-10-03 ships as 2D art until its Tripo models exist —
+// SquishyToy.js takes over as soon as the creature doc has a `modelUrl`), and
+// for a custom creature — a player's photo (`imageUri`) or an assembled build
+// (`build`).
 //
-// Instead of deforming a mesh, this wraps the exact 2D design art
-// (CreatureThumbnail — the literal SVG port of Claude Design's
-// Creature.dc.html) in a Reanimated layer and drives a soft-body "jelly"
+// Instead of deforming a mesh, this wraps the 2D art (CreatureThumbnail's
+// plush image) in a Reanimated layer and drives a soft-body "jelly"
 // transform on it: press flattens the body and bulges it sideways, the
 // squash leans + shifts toward the contact point, and release springs back
 // with an overshoot wobble. A two-finger drag twists the whole toy, which
@@ -36,18 +35,16 @@ const SQUASH_Y = 0.26; // how much it flattens at full press
 const LEAN_DEG = 14; // max skew toward the contact point
 const SHIFT_PX = 26; // max translate toward the contact point
 
-// Extra viewBox room (in the SVG's 100-unit space) so antennae / flame / horns
-// / tentacles / the silhouette glow don't get clipped at the stage edges. We
-// scale the SVG up by the same factor so the *body* still fills `size` — only
-// the previously-clipped overhang spills (harmlessly) past the touch box.
-const ART_BLEED = 15;
-const BLEED_SCALE = (100 + ART_BLEED * 2) / 100;
-
-// The squish-stage creature reads ~20% larger than its touch box. Only the
-// art scales up (it spills past the box like the bleed already does) — the
-// stage View, the PanResponder hit area and the NDC touch math in SquishScreen
-// stay on the original `size`.
+// A custom creature's photo / build reads ~20% larger than its touch box.
+// Only the art scales up (it spills past the box) — the stage View, the
+// PanResponder hit area and the NDC touch math in SquishScreen stay on the
+// original `size`.
 const ART_SCALE = 1.2;
+// A roster creature's plush image: the 3D creatures span ~90% of the stage
+// (MODEL_TUNING.visual in SquishyToy.js against the camera's view), and the
+// plush image's sticker outline and shadow spill past its own box by
+// 10-40%, so its box is 80% of the stage.
+const PLUSH_BOX = 0.8;
 
 // `imageUri` (a player's uploaded photo) or `build` (an assembled creature)
 // swap out the roster art for a custom creature; the jelly transform is
@@ -139,6 +136,8 @@ const SquishyToy2D = memo(forwardRef(function SquishyToy2D({ creature, imageUri,
     [press, pressX, pressY, rot, wobble, bounce, onSquish, onRelease]
   );
 
+  const artSize = imageUri || build ? size * ART_SCALE : size * PLUSH_BOX;
+
   const animatedStyle = useAnimatedStyle(() => {
     const p = press.value;
     const br = (breathe.value - 0.5) * 0.024; // ±1.2% idle
@@ -149,7 +148,7 @@ const SquishyToy2D = memo(forwardRef(function SquishyToy2D({ creature, imageUri,
         // shift toward the finger, and drop as the body flattens so the
         // squash reads as anchored at the contact point rather than centred
         { translateX: pressX.value * SHIFT_PX * p },
-        { translateY: pressY.value * SHIFT_PX * 0.7 * p + (1 - scaleY) * size * ART_SCALE * 0.5 * pressY.value },
+        { translateY: pressY.value * SHIFT_PX * 0.7 * p + (1 - scaleY) * artSize * 0.5 * pressY.value },
         { rotateZ: `${rot.value + wobble.value}deg` },
         { skewX: `${pressX.value * LEAN_DEG * p}deg` },
         { scaleX },
@@ -157,8 +156,6 @@ const SquishyToy2D = memo(forwardRef(function SquishyToy2D({ creature, imageUri,
       ],
     };
   });
-
-  const artSize = size * ART_SCALE;
 
   return (
     <View style={[styles.stage, { width: size, height: size }]} pointerEvents="none">
@@ -168,13 +165,7 @@ const SquishyToy2D = memo(forwardRef(function SquishyToy2D({ creature, imageUri,
         ) : build ? (
           <AssembleCreature build={build} size={artSize} />
         ) : (
-          <CreatureThumbnail
-            creature={creature}
-            size={size * BLEED_SCALE * ART_SCALE}
-            bleed={ART_BLEED}
-            animate={false}
-            glow={false}
-          />
+          <CreatureThumbnail creature={creature} size={artSize} animate={false} />
         )}
       </Animated.View>
     </View>

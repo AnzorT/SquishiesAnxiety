@@ -104,7 +104,7 @@ const Badge = memo(function Badge({ entry, index, move, fade, z, onSelect }) {
             </Svg>
             <View style={styles.content}>
               {entry.creature ? (
-                <CreatureThumbnail creature={entry.creature} mood="idle" size={84} locked={!done} />
+                <CreatureThumbnail creature={entry.creature} mood="cycle" size={84} locked={!done} />
               ) : (
                 <ShadowText
                   style={[styles.badgeLabel, { fontSize: label.length > 3 ? 30 : 40 }]}
