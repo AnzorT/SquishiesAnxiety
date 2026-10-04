@@ -1,5 +1,5 @@
 // The 50 achievements of the v3 design ("ASMR Creature Squash v3.dc.html",
-// ACHIEVEMENTS), in its order and words. Shared by AchievementsScreen
+// ACHIEVEMENTS), in its order and words, then the newer ones below. Shared by AchievementsScreen
 // (renders it) and App.js (diffs it against the previous snapshot to fire a
 // toast the moment one flips to done).
 //
@@ -9,10 +9,19 @@
 //   the `achievements` flags for the two live SquishScreen events that have
 //   no counter (speedTap: 60 taps in 60s; watchAd: first rewarded ad).
 // The Mystery Box ones read boxOpens / tierPulls / secretFound (written by
-// openBox), the Daily Spin ones spins / wheelJackpot (written by the
-// spinWheel Cloud Function).
+// openBox) and boxDoublesTotal (doubleBox), the Daily Spin ones spins /
+// wheelJackpot (written by the spinWheel Cloud Function).
+//
+// Since the 2026-10-03 drop there are more, for what the game has now: the
+// level (up to 100 — a level a day once Daily Challenges open, see
+// src/progression.js), the daily streak (bestStreak) and chests opened
+// (chests), and the Crib: care given (cribCare, counted with the Crib's
+// daily-challenge events), furniture bought (cribBuys) and how many friends
+// live there (cribSize).
 
-const A = (key, title, desc, look, value, max = 1) => ({ key, title, desc, ...look, value, max });
+import { creaturesOfTier } from './theme/candyTheme';
+
+const A =(key, title, desc, look, value, max = 1) => ({ key, title, desc, ...look, value, max });
 const creature = (id) => ({ creatureId: String(id) });
 const badge = (label) => ({ badgeLabel: label });
 
@@ -24,8 +33,15 @@ export function computeAchievements(creatures = [], profile = {}, customCount = 
 
   const has = (id) => (owned.has(String(id)) ? 1 : 0);
   const nameOf = (id, fallback) => byId.get(String(id))?.name ?? fallback;
-  const total = creatures.length || 20;
+  const total = creatures.length || 30;
   const ownedCount = creatures.length ? creatures.filter((c) => owned.has(String(c.id))).length : owned.size;
+  // The rarity ones go by tier, not by a fixed id: the design wrote "creature
+  // #17/#18", the Rainbow and the Golden one for its 20-creature roster, and
+  // the 30-creature roster spreads the tiers differently (tierOf). The badge
+  // shows the first creature of that tier (the only one, for Rainbow/Golden).
+  const ofTier = (tier) => creaturesOfTier(creatures, tier);
+  const ownedOfTier = (tier) => ofTier(tier).filter((c) => owned.has(String(c.id))).length;
+  const firstOfTier = (tier, fallbackId) => creature(ofTier(tier)[0]?.id ?? fallbackId);
   const earned = profile.totalEarned ?? 0;
   const presses = stats.presses ?? 0;
   const holdS = Math.floor((stats.longestHoldMs ?? 0) / 1000);
@@ -34,13 +50,20 @@ export function computeAchievements(creatures = [], profile = {}, customCount = 
   const boxes = profile.boxOpens ?? 0;
   const pulls = profile.tierPulls ?? {};
   const spins = profile.spins ?? 0;
+  const lv = Math.max(1, Math.floor(profile.level ?? 1));
+  const bestStreak = Math.max(profile.bestStreak ?? 0, profile.streak ?? 0);
+  const chests = profile.chests ?? 0;
+  const care = profile.cribCare ?? 0;
+  const buys = profile.cribBuys ?? 0;
+  const cribSize = profile.cribSize ?? 0;
+  const doubles = profile.boxDoublesTotal ?? 0;
 
   const list = [
-    A('unlock3', 'Egg-cellent!', `Unlock ${nameOf(3, 'Dotty')}`, creature(3), has(3)),
-    A('unlock4', 'Spiky Squish', `Unlock ${nameOf(4, 'Spike')}`, creature(4), has(4)),
-    A('unlock5', 'Star Struck', `Unlock ${nameOf(5, 'Stellie')}`, creature(5), has(5)),
-    A('unlock6', 'Head in Clouds', `Unlock ${nameOf(6, 'Puffington')}`, creature(6), has(6)),
-    A('unlock7', 'Noodle Master', `Unlock ${nameOf(7, 'Noodle')}`, creature(7), has(7)),
+    A('unlock3', 'Bun Appétit', `Unlock ${nameOf(3, 'Bao')}`, creature(3), has(3)),
+    A('unlock4', 'Sweet Tooth', `Unlock ${nameOf(4, 'Dunkie')}`, creature(4), has(4)),
+    A('unlock5', 'Hot & Crispy', `Unlock ${nameOf(5, 'Frybo')}`, creature(5), has(5)),
+    A('unlock6', 'Waddle Squad', `Unlock ${nameOf(6, 'Pip')}`, creature(6), has(6)),
+    A('unlock7', 'Stacked!', `Unlock ${nameOf(7, 'Bunbun')}`, creature(7), has(7)),
     A('earn10k', 'Pocket Change', 'Earn 10,000 Squish Points', badge('10K'), earned, 10000),
     A('earn100k', 'Squish Tycoon', 'Earn 100,000 Squish Points', badge('100K'), earned, 100000),
     A('unlockAll', 'Collector Supreme', `Unlock all ${total} creatures`, badge('ALL'), ownedCount, total),
@@ -63,10 +86,10 @@ export function computeAchievements(creatures = [], profile = {}, customCount = 
     A('own5', 'Squad of Five', 'Own 5 creatures', badge('×5'), ownedCount, 5),
     A('own10', 'Double Digits', 'Own 10 creatures', badge('×10'), ownedCount, 10),
     A('own15', 'Almost There', 'Own 15 creatures', badge('×15'), ownedCount, 15),
-    A('own16', 'Legend Found', 'Unlock creature #17', creature(16), has(16)),
-    A('own17', 'Twin Legends', 'Unlock creature #18', creature(17), has(17)),
-    A('own18', 'Over the Rainbow', 'Unlock the Rainbow creature', creature(18), has(18)),
-    A('own19', 'Golden Touch', 'Unlock the Golden creature', creature(19), has(19)),
+    A('own16', 'Legend Found', 'Unlock a Legendary creature', firstOfTier('Legendary', 24), ownedOfTier('Legendary')),
+    A('own17', 'Twin Legends', 'Unlock 2 Legendary creatures', firstOfTier('Legendary', 24), ownedOfTier('Legendary'), 2),
+    A('own18', 'Over the Rainbow', 'Unlock the Rainbow creature', firstOfTier('Rainbow', 28), ownedOfTier('Rainbow')),
+    A('own19', 'Golden Touch', 'Unlock the Golden creature', firstOfTier('Golden', 29), ownedOfTier('Golden')),
     A('box1', 'Peek Inside', 'Open your first mystery box', badge('BOX'), boxes),
     A('box5', 'Box Fan', 'Open 5 mystery boxes', badge('5'), boxes, 5),
     A('box10', 'Unboxing Pro', 'Open 10 mystery boxes', badge('10'), boxes, 10),
@@ -86,6 +109,32 @@ export function computeAchievements(creatures = [], profile = {}, customCount = 
     A('custom3', 'Toy Designer', 'Create 3 custom squishies', badge('×3'), customCount, 3),
     A('play5', 'Friendly Squisher', 'Play with 5 different creatures', badge('5♥'), played, 5),
     A('play10', 'Best Friends', 'Play with 10 different creatures', badge('10♥'), played, 10),
+    // levels: 2 and 3 come with the tutorial, then one a day from the chest
+    A('lv3', 'Challenger', 'Reach level 3 and unlock Daily Challenges', badge('LV3'), lv, 3),
+    A('lv5', 'Rising Star', 'Reach level 5', badge('LV5'), lv, 5),
+    A('lv10', 'Squish Regular', 'Reach level 10', badge('10'), lv, 10),
+    A('lv25', 'Dedicated Squisher', 'Reach level 25', badge('25'), lv, 25),
+    A('lv50', 'Half Way There', 'Reach level 50', badge('50'), lv, 50),
+    A('lv75', 'Squish Veteran', 'Reach level 75', badge('75'), lv, 75),
+    A('lv100', 'Squish Centurion', 'Reach level 100 with the Daily Challenges', badge('100'), lv, 100),
+    // the daily chest and the streak
+    A('chest1', 'Treasure Hunter', 'Open your first daily chest', badge('CHEST'), chests),
+    A('chest30', 'Chest Collector', 'Open 30 daily chests', badge('×30'), chests, 30),
+    A('streak3', 'On a Roll', 'Keep a 3-day streak', badge('3🔥'), bestStreak, 3),
+    A('streak7', 'Week Warrior', 'Keep a 7-day streak', badge('7🔥'), bestStreak, 7),
+    A('streak10', 'Half Price Hero', 'Reach day 10 of a streak', badge('10🔥'), bestStreak, 10),
+    A('streak30', 'Unstoppable', 'Keep a 30-day streak', badge('30🔥'), bestStreak, 30),
+    // the Crib
+    A('care1', 'Caretaker', 'Send a friend to a bath, snack, nap or play in the Crib', badge('♥'), care),
+    A('care50', 'Super Sitter', 'Take care of your Crib friends 50 times', badge('50♥'), care, 50),
+    A('care250', 'Crib Parent', 'Take care of your Crib friends 250 times', badge('250'), care, 250),
+    A('buy1', 'First Makeover', 'Buy something for the Crib', badge('NEW'), buys),
+    A('buy10', 'Home Decorator', 'Buy 10 things for the Crib', badge('×10'), buys, 10),
+    A('buy30', 'Dream House', 'Buy 30 things for the Crib', badge('×30'), buys, 30),
+    A('crib10', 'Full House', 'Have 10 friends living in the Crib', badge('10'), cribSize, 10),
+    // the box's DOUBLE IT
+    A('double1', 'Double Trouble', 'Double a Mystery Box prize', badge('×2'), doubles),
+    A('double25', 'Twice as Nice', 'Double 25 Mystery Box prizes', badge('25'), doubles, 25),
   ];
 
   return list.map(({ creatureId, value, max, ...rest }) => {
