@@ -3,16 +3,23 @@ import { View, StyleSheet, Animated, Easing, InteractionManager } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CreatureCard from '../components/CreatureCard';
 import { CreateOwnCard, CustomCreatureCard } from '../components/CustomCards';
-import CardPager from '../components/CardPager';
+import CardPager, { CARD_SIZE } from '../components/CardPager';
 import SkeletonCard from '../components/SkeletonCard';
 import AdStrip from '../components/AdStrip';
 import MysteryBoxBanner from '../components/box/MysteryBoxBanner';
 import { RemoveAdsButton } from '../components/RemoveAds';
 import CandyBackground from '../components/candy/CandyBackground';
 import CandyTabs from '../components/candy/CandyTabs';
-import RoundButton, { StatsIcon, TrophyIcon, BagIcon, GearIcon } from '../components/candy/RoundButton';
+import RoundButton, { StatsIcon, TrophyIcon, BagIcon, GearIcon, HouseIcon, DailyIcon } from '../components/candy/RoundButton';
 import { CoinPill } from '../components/candy/Coin';
 import { HaloText } from '../components/candy/OutlinedTitle';
+import ShadowText, { outline3 } from '../components/candy/ShadowText';
+import { LinearGradient } from 'expo-linear-gradient';
+import { candyFonts } from '../theme/candyTheme';
+import TutTarget from '../tutorial/Target';
+import { Flame } from '../components/StreakIcons';
+import HomeMenu, { MENU_BUTTON } from '../components/HomeMenu';
+import { report as tutReport } from '../tutorial/store';
 import SettingsSheet from './SettingsSheet';
 import sfx from '../audio/sfx';
 
@@ -41,8 +48,23 @@ const HOME_TABS = [
 
 // one shared element, so the memoized pagers don't see a new prop each render
 const SKELETON = <SkeletonCard />;
+// the Create card fills its tutorial target, which has the card's size
+const FILL_CARD = { width: '100%', height: '100%', maxHeight: undefined };
 
 const LIST_SLIDE = { duration: 420, easing: Easing.bezier(0.3, 0.9, 0.3, 1) };
+const HEADER_PAD = 16;
+const HEADER_BUTTON = 36;
+
+// The design's "LV 3" pill beside the name: gold, white rim, outlined text.
+function LevelPill({ level }) {
+  return (
+    <View style={styles.lvRing}>
+      <LinearGradient colors={['#fffbd6', '#ffe045', '#ff9500']} locations={[0, 0.45, 1]} style={styles.lvFace}>
+        <ShadowText style={styles.lvText} shadows={outline3('#a04a00')}>{`LV ${level}`}</ShadowText>
+      </LinearGradient>
+    </View>
+  );
+}
 
 export default function HomeScreen({
   creatures = [],
@@ -83,12 +105,54 @@ export default function HomeScreen({
   boxVideos = 0,
   boxCoins = false,
   onOpenBox = () => {},
+  // progression (src/progression.js): the LV pill, the Daily Challenges
+  // button (from level 3 once the tutorial has shown it, with how many
+  // rewards wait) and the Crib (from level 2)
+  level = 1,
+  dailyUnlocked = false,
+  cribUnlocked = false,
+  dailyBadge = 0,
+  onOpenDaily = () => {},
+  // the daily streak (its screen, from the menu): its days so far, and
+  // whether today's chest still has it riding on it
+  streak = 0,
+  streakHot = false,
+  onOpenStreak = () => {},
+  onOpenCrib = () => {},
+  onReplayTutorial,
 }) {
   const insets = useSafeAreaInsets();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // The header: the Crib, the shop and settings as their own buttons, and a
+  // menu button for the rest (HomeMenu draws it, over everything, so its
+  // drop-down can cover the screen; the header keeps room for it)
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const onMenuSlot = useCallback(
+    (e) => {
+      const { y } = e.nativeEvent.layout;
+      setMenuAnchor((a) => (a && a.top === insets.top + y ? a : { top: insets.top + y, right: HEADER_PAD }));
+    },
+    [insets.top]
+  );
+  const openSettings = useCallback(() => setSettingsOpen(true), []);
+  // the menu's items, in a fixed order (the daily ones once they're unlocked)
+  const menuItems = useMemo(() => {
+    const list = [];
+    if (dailyUnlocked) {
+      list.push({ key: 'daily', label: 'DAILY CHALLENGES', variant: 'gold', icon: <DailyIcon />, onPress: onOpenDaily, badge: dailyBadge, tut: 'daily' });
+      list.push({ key: 'streak', label: 'DAILY STREAK', variant: 'flame', icon: <Flame size={18} />, onPress: onOpenStreak, badge: streak, badgeGold: true, hot: streakHot });
+    }
+    list.push({ key: 'trophies', label: 'TROPHIES', icon: <TrophyIcon size={22} />, onPress: onOpenAchievements });
+    list.push({ key: 'stats', label: 'STATS', icon: <StatsIcon size={22} />, onPress: onOpenStats });
+    return list;
+  }, [dailyUnlocked, dailyBadge, streak, streakHot, onOpenDaily, onOpenStreak, onOpenAchievements, onOpenStats]);
   // Back from CREATE with a new creature: start on MY CREATURES.
   const [tab, setTab] = useState(focusMine ? 'mine' : 'ours'); // 'ours' | 'mine'
   const [listW, setListW] = useState(0);
+  // the tutorial follows the tab (src/tutorial/steps.js)
+  useEffect(() => {
+    tutReport({ listTab: tab });
+  }, [tab]);
 
   // --- list slide: 0 = OUR CREATURES in view, 1 = MY CREATURES in view ---
   const tabPos = useRef(new Animated.Value(focusMine ? 1 : 0)).current;
@@ -165,7 +229,11 @@ export default function HomeScreen({
   const renderMine = useCallback(
     (i) => {
       if (i === 0)
-        return <CreateOwnCard onPress={onOpenCreator} generationCredits={generationCredits} paidCredits={paidCredits} priceLabel={priceLabel} discountPct={discountPct} />;
+        return (
+          <TutTarget name="createCard" style={CARD_SIZE}>
+            <CreateOwnCard onPress={onOpenCreator} generationCredits={generationCredits} paidCredits={paidCredits} priceLabel={priceLabel} discountPct={discountPct} style={FILL_CARD} />
+          </TutTarget>
+        );
       const custom = customCreatures[i - 1];
       if (!custom) return null;
       return <CustomPage custom={custom} onSelect={onSelectCustom} onDelete={onDeleteCustom} onRetry={onRetryCustom} />;
@@ -193,30 +261,41 @@ export default function HomeScreen({
       <View style={[styles.content, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <View style={styles.nameCol}>
-            <HaloText style={styles.nickname} numberOfLines={1}>
-              {nickname}
-            </HaloText>
-            <CoinPill coins={coins} style={styles.wallet} />
+            {/* the LV pill beside the name, above the coins */}
+            <View style={styles.nameRow}>
+              <HaloText style={styles.nickname} numberOfLines={1}>
+                {/* names saved before the 10-character cap */}
+                {nickname?.slice(0, 10)}
+              </HaloText>
+              <LevelPill level={level} />
+            </View>
+            <View style={styles.walletRow}>
+              <CoinPill coins={coins} />
+            </View>
           </View>
-          <View style={styles.headerIcons}>
-            <RoundButton size={42} onPress={onOpenStats}>
-              <StatsIcon />
+          <View style={styles.headerIcons} onLayout={onMenuSlot}>
+            {cribUnlocked ? (
+              <TutTarget name="crib">
+                <RoundButton size={HEADER_BUTTON} variant="green" onPress={onOpenCrib}>
+                  <HouseIcon />
+                </RoundButton>
+              </TutTarget>
+            ) : null}
+            <TutTarget name="store">
+              <RoundButton size={HEADER_BUTTON} onPress={onOpenStore}>
+                <BagIcon size={21} />
+              </RoundButton>
+            </TutTarget>
+            <RoundButton size={HEADER_BUTTON} onPress={openSettings}>
+              <GearIcon size={21} />
             </RoundButton>
-            <RoundButton size={42} onPress={onOpenAchievements}>
-              <TrophyIcon />
-            </RoundButton>
-            <RoundButton size={42} onPress={onOpenStore}>
-              <BagIcon />
-            </RoundButton>
-            <RoundButton size={42} onPress={() => setSettingsOpen(true)}>
-              <GearIcon />
-            </RoundButton>
+            <View style={styles.menuSlot} />
           </View>
         </View>
 
-        <View style={styles.tabBarWrap}>
+        <TutTarget name="tabs" style={styles.tabBarWrap}>
           <CandyTabs options={HOME_TABS} value={tab} onChange={switchTab} fontSize={13} padV={9} badges={[0, customCreatures.length]} />
-        </View>
+        </TutTarget>
 
         <View style={styles.lists} onLayout={(e) => setListW(e.nativeEvent.layout.width)}>
           {listW > 0 ? (
@@ -248,11 +327,15 @@ export default function HomeScreen({
         </View>
       </View>
 
-      <MysteryBoxBanner collectedLabel={boxLabel} priceLabel={boxPrice} videos={boxVideos} coins={boxCoins} onPress={onOpenBox} />
+      <TutTarget name="box">
+        <MysteryBoxBanner collectedLabel={boxLabel} priceLabel={boxPrice} videos={boxVideos} coins={boxCoins} onPress={onOpenBox} />
+      </TutTarget>
 
       {/* Full-width ad strip flush with the bottom edge (under the gesture
           bar too); not part of the list animation. */}
       {adsFree ? <View style={{ height: insets.bottom }} /> : <AdStrip />}
+
+      <HomeMenu items={menuItems} anchor={menuAnchor} badge={dailyBadge} hot={streakHot} />
 
       <SettingsSheet
         visible={settingsOpen}
@@ -261,6 +344,7 @@ export default function HomeScreen({
         onSaveNickname={onSaveNickname}
         onSubmitFeedback={onSubmitFeedback}
         onLogout={onLogout}
+        onReplayTutorial={onReplayTutorial}
       />
     </CandyBackground>
   );
@@ -287,11 +371,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 10,
   },
-  nameCol: { flexShrink: 1, alignItems: 'flex-start' },
-  nickname: { fontSize: 17 },
-  wallet: { marginTop: 5 },
-  headerIcons: { flexDirection: 'row', gap: 8 },
-
+  nameCol: { flexShrink: 1, alignItems: 'flex-start', marginRight: 8 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, maxWidth: '100%' },
+  nickname: { fontSize: 17, flexShrink: 1 },
+  walletRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 5 },
+  headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  menuSlot: { width: MENU_BUTTON, height: MENU_BUTTON + 4 },
+  lvRing: { borderRadius: 999, backgroundColor: '#a04a00', padding: 1.5 },
+  lvFace: { borderRadius: 999, borderWidth: 2, borderColor: '#ffffff', paddingHorizontal: 9, paddingVertical: 3 },
+  lvText: { fontFamily: candyFonts.display, fontSize: 12, color: '#ffffff', includeFontPadding: false },
   tabBarWrap: { paddingHorizontal: 16, paddingBottom: 6 },
 
   lists: { flex: 1, minHeight: 0, overflow: 'hidden' },
