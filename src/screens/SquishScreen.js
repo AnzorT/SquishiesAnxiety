@@ -22,6 +22,8 @@ import PopSound from '../audio/PopSound';
 import { candyColors, candyFonts, BUTTON_VARIANTS } from '../theme/candyTheme';
 import AdStrip from '../components/AdStrip';
 import WatchAdButton from '../components/WatchAdButton';
+import TutTarget from '../tutorial/Target';
+import { report as tutReport } from '../tutorial/store';
 import { AD_FREE_BOOST_RECHARGE_MS } from '../economy';
 import CandyBackground from '../components/candy/CandyBackground';
 import CandyButton, { Shine } from '../components/candy/CandyButton';
@@ -607,9 +609,11 @@ function SettingsModal({
       <View style={styles.settingsCard}>
         <View style={styles.settingsHeader}>
           <Text style={styles.settingsTitle}>SETTINGS</Text>
-          <RoundButton size={32} onPress={onClose} hitSlop={10}>
-            <CloseGlyph />
-          </RoundButton>
+          <TutTarget name="gearClose">
+            <RoundButton size={32} onPress={onClose} hitSlop={10}>
+              <CloseGlyph />
+            </RoundButton>
+          </TutTarget>
         </View>
 
         <Text style={styles.settingsSection}>SOUND</Text>
@@ -772,6 +776,11 @@ export default function SquishScreen({
   pokeOutward = false,
   onChangePokeOutward,
   adsFree = false,
+  // the streak's +5% a day and the tutorial's ×10 (src/progression.js), on
+  // top of a ×N boost
+  coinMultiplier = 1,
+  // the guided tutorial is on: its coach marks replace the stage's own hints
+  hideHints = false,
 }) {
   const insets = useSafeAreaInsets();
   const toyRef = useRef(null);
@@ -823,12 +832,12 @@ export default function SquishScreen({
   // actually touches the toy — see onPanResponderGrant below. Stays hidden
   // for the rest of this screen's lifetime (hintDismissedRef).
   const gestureHintOpacity = useRef(new Animated.Value(1)).current;
-  const hintDismissedRef = useRef(false);
-  const [showHints, setShowHints] = useState(true);
+  const hintDismissedRef = useRef(hideHints);
+  const [showHints, setShowHints] = useState(!hideHints);
   // The settings pointer fades when the gear is opened, or 4 s after the
   // first squish, then unmounts (its loops stop with it).
   const settingsHintOpacity = useRef(new Animated.Value(1)).current;
-  const [showSettingsHint, setShowSettingsHint] = useState(true);
+  const [showSettingsHint, setShowSettingsHint] = useState(!hideHints);
   const settingsHintTimerRef = useRef(null);
   const settingsPointAnim = useLoopAnim({ duration: 650 });
   const gearPulseAnim = useLoopAnim({ duration: 900 });
@@ -896,10 +905,14 @@ export default function SquishScreen({
     (visible) => {
       sfx.play(visible ? 'popOpen' : 'popClose');
       setSettingsOpen(visible);
+      tutReport({ settingsOpen: visible });
       Animated.timing(wheelAnim, { toValue: visible ? 1 : 0, duration: 400, useNativeDriver: true }).start();
     },
     [wheelAnim]
   );
+  // the tutorial watches the finger and the twist (src/tutorial/steps.js)
+  const rotateAccRef = useRef(0);
+  useEffect(() => () => tutReport({ holdActive: false, settingsOpen: false }), []);
   const openSettings = useCallback(() => {
     dismissSettingsHint();
     setSettingsVisible(true);
@@ -928,6 +941,7 @@ export default function SquishScreen({
     bonusEndsAt,
     bonusMultiplier,
     adsFree,
+    coinMultiplier,
   };
 
   // Stable identity (deps: []) so SquishyToy/SquishyToy2D's React.memo isn't
@@ -958,9 +972,9 @@ export default function SquishScreen({
     lastMotionAtRef.current = now;
     while (movingMsRef.current >= EARN_TICK_MS) {
       movingMsRef.current -= EARN_TICK_MS;
-      const { coinSoundEnabled: coinSoundOn, bonusEndsAt: liveBonusEndsAt, bonusMultiplier: liveMultiplier } = latestRef.current;
+      const { coinSoundEnabled: coinSoundOn, bonusEndsAt: liveBonusEndsAt, bonusMultiplier: liveMultiplier, coinMultiplier: liveCoinMult } = latestRef.current;
       const bonusIsLive = !!liveBonusEndsAt && now < liveBonusEndsAt;
-      const gain = EARN_PER_TICK * (bonusIsLive ? liveMultiplier : 1);
+      const gain = Math.max(1, Math.round(EARN_PER_TICK * (bonusIsLive ? liveMultiplier : 1) * (liveCoinMult || 1)));
       earnAccumRef.current += gain;
       coinCounterRef.current?.add(gain);
       if (coinSoundOn) coinSoundRef.current?.play();
@@ -1075,6 +1089,7 @@ export default function SquishScreen({
           return;
         }
         gestureModeRef.current = 'poke';
+        tutReport({ holdActive: true });
         const { locationX, locationY } = evt.nativeEvent;
         lastTouch.current = { x: locationX, y: locationY };
         soundAnchorRef.current = { x: locationX, y: locationY };
@@ -1101,6 +1116,12 @@ export default function SquishScreen({
           }
           const c = centroidOf(touches);
           toyRef.current?.orbit(c.x - lastCentroidRef.current.x, c.y - lastCentroidRef.current.y);
+          // the tutorial's rotate step counts the twist (every 20 px)
+          rotateAccRef.current += Math.abs(c.x - lastCentroidRef.current.x) * 1.5;
+          if (rotateAccRef.current - (tutReport.lastRot || 0) >= 20) {
+            tutReport.lastRot = rotateAccRef.current;
+            tutReport({ rotateAcc: Math.round(rotateAccRef.current) });
+          }
           lastCentroidRef.current = c;
           return;
         }
@@ -1135,6 +1156,7 @@ export default function SquishScreen({
         const hadTwo = gestureHadTwoRef.current;
         gestureModeRef.current = 'none';
         gestureHadTwoRef.current = false;
+        tutReport({ holdActive: false });
         // Orbit gestures never earn coins or play the release sound.
         if (mode === 'orbit' || hadTwo) {
           toyRef.current?.endOrbit();
@@ -1171,6 +1193,7 @@ export default function SquishScreen({
       onPanResponderTerminate: () => {
         gestureModeRef.current = 'none';
         gestureHadTwoRef.current = false;
+        tutReport({ holdActive: false });
         toyRef.current?.endOrbit();
         toyRef.current?.pointerUp();
         soundRef.current?.stop();
@@ -1184,9 +1207,11 @@ export default function SquishScreen({
     <CandyBackground style={styles.container}>
       <View style={styles.stageArea}>
         <View style={[styles.topLeft, { top: insets.top + 14 }]}>
-          <RoundButton size={34} onPress={onBack} hitSlop={8}>
-            <BackGlyph />
-          </RoundButton>
+          <TutTarget name="back">
+            <RoundButton size={34} onPress={onBack} hitSlop={8}>
+              <BackGlyph />
+            </RoundButton>
+          </TutTarget>
           <CoinCounter ref={coinCounterRef} initial={coins} />
           {showFps && <FpsCounter />}
         </View>
@@ -1195,27 +1220,31 @@ export default function SquishScreen({
           <SettingsHint top={insets.top + 14} opacity={settingsHintOpacity} bobAnim={settingsPointAnim} pulseAnim={gearPulseAnim} />
         ) : null}
 
-        <RoundButton size={GEAR_SIZE} onPress={openSettings} style={[styles.wheelButton, { top: insets.top + 14 }]}>
-          <Animated.View style={{ transform: [{ rotate: wheelRotate }] }}>
-            <GearIcon />
-          </Animated.View>
-        </RoundButton>
+        <TutTarget name="gear" style={[styles.wheelButton, { top: insets.top + 14 }]}>
+          <RoundButton size={GEAR_SIZE} onPress={openSettings}>
+            <Animated.View style={{ transform: [{ rotate: wheelRotate }] }}>
+              <GearIcon />
+            </Animated.View>
+          </RoundButton>
+        </TutTarget>
 
-        <SquishStage
-          toy={toy}
-          toyRef={toyRef}
-          effectsRef={effectsRef}
-          panHandlers={panResponder.panHandlers}
-          onSquish={handleToySquish}
-          onRelease={handleToyRelease}
-          hintOpacity={gestureHintOpacity}
-          showHints={showHints}
-          squishAnim={gestureSquishAnim}
-          rotateAnim={gestureRotateAnim}
-          touchAnim={gestureTouchAnim}
-          dentScale={dentScale}
-          dentOutward={pokeOutward}
-        />
+        <TutTarget name="stage">
+          <SquishStage
+            toy={toy}
+            toyRef={toyRef}
+            effectsRef={effectsRef}
+            panHandlers={panResponder.panHandlers}
+            onSquish={handleToySquish}
+            onRelease={handleToyRelease}
+            hintOpacity={gestureHintOpacity}
+            showHints={showHints}
+            squishAnim={gestureSquishAnim}
+            rotateAnim={gestureRotateAnim}
+            touchAnim={gestureTouchAnim}
+            dentScale={dentScale}
+            dentOutward={pokeOutward}
+          />
+        </TutTarget>
       </View>
 
       <BonusBanner endsAt={bonusEndsAt} multiplier={bonusMultiplier} coinAnim={bonusCoinAnim} />
