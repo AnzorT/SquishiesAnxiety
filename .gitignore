@@ -29,3 +29,16 @@ ios/build/
 # Env
 .env
 *.local
+
+# Firebase service-account keys (full admin access to the project)
+*-firebase-adminsdk-*.json
+
+# tools/plush-art: the extracted design and the rendered images (published
+# to Firebase by publish.mjs, never bundled with the app)
+tools/plush-art/design/
+tools/plush-art/out/
+# tools/audio: the renderer's raw WAVs (encode.py turns them into assets/audio)
+tools/audio/out/
+
+# Firebase emulator logs
+*-debug.log

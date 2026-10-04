@@ -1,193 +1,1502 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, PanResponder, Pressable } from 'react-native';
+import React, { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { View, Text, StyleSheet, PanResponder, Animated, Pressable, Easing, Dimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Canvas } from '@react-three/fiber';
-import SquishyToy, { COLOR_DEFS } from '../components/SquishyToy';
-import { SquishyAudioEngine } from '../audio/SquishyAudioEngine';
-import { spacing } from '../theme/tokens';
+import { NeutralToneMapping } from 'three';
+import Svg, { Defs, LinearGradient as SvgGradient, Stop, Path } from 'react-native-svg';
+import { InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
+import SquishyToy from '../components/SquishyToy';
+import SquishyToy2D from '../components/SquishyToy2D';
+import Supersample from '../components/Supersample';
+import { INTERSTITIAL_AD_UNIT_ID } from '../firebase/ads';
 
-// "Squish Buddies" — ported design: poke the body to dent it (soft-body
-// spring + diffusion physics), drag empty space to spin it, tap the nose to
-// boop it. See src/components/SquishyToy.js for the physics itself.
+// A creature with a `modelUrl` (every premade creature, plus a photo-path
+// custom one) mounts the 3D mesh; everything else falls back to 2D art
+// (SquishyToy2D).
+import SquishSound from '../audio/SquishSound';
+import squishSoundFor from '../audio/creatureSquish';
+import { pressHaptic, moveHaptic, releaseHaptic } from '../haptics/squishHaptics';
+import CoinSound from '../audio/CoinSound';
+import PopSound from '../audio/PopSound';
+import { candyColors, candyFonts, BUTTON_VARIANTS } from '../theme/candyTheme';
+import AdStrip from '../components/AdStrip';
+import WatchAdButton from '../components/WatchAdButton';
+import { AD_FREE_BOOST_RECHARGE_MS } from '../economy';
+import CandyBackground from '../components/candy/CandyBackground';
+import CandyButton, { Shine } from '../components/candy/CandyButton';
+import RoundButton, { BackGlyph, CloseGlyph, GearIcon } from '../components/candy/RoundButton';
+import { CoinIcon, GlassPill } from '../components/candy/Coin';
+import OutlinedTitle from '../components/candy/OutlinedTitle';
+import ShadowText from '../components/candy/ShadowText';
+import ToggleSwitch from '../components/candy/ToggleSwitch';
+import sfx from '../audio/sfx';
 
-const STAGE_WIDTH = 360;
-const STAGE_HEIGHT = 400;
+// Stage size: the full screen width (capped for tablets). The creature's
+// own size inside it is MODEL_TUNING.visual in SquishyToy.js.
+const STAGE_SIZE = Math.min(Math.round(Dimensions.get('window').width), 420);
+const RIPPLE_LIFETIME_MS = 620;
+// 60s window where an ad-watch doubles squish rewards.
+const BONUS_MS = 60000;
+const SPEED_TAP_WINDOW_MS = 60000;
+const SPEED_TAP_THRESHOLD = 60;
 
-export default function SquishScreen({ toy, onBack }) {
-  const toyRef = useRef(null);
-  const audioRef = useRef(null);
-  const lastTouch = useRef({ x: 0, y: 0 });
-  const [score] = useState(1240);
-  const [selected, setSelected] = useState(toy.startingColorIndex ?? 0);
-  const [muted, setMuted] = useState(false);
+// The squish sound plays while the finger moves and fades out when it rests
+// (see SquishSound). A move counts once the finger is this far (dp) from
+// where it last counted, so touch jitter on a resting finger stays silent.
+const SOUND_MOTION_DP = 3;
 
+// Bank 5 coins for every 1.5 s the finger spends MOVING on the toy (was 1
+// coin per 1.5 s of holding until 2026-09-29). Coins follow the squish
+// sound's rule: a finger that holds still earns nothing, just as the sound
+// fades. Moving time is the gaps between counted movements (see
+// SOUND_MOTION_DP), each capped at MOTION_GAP_MS — a longer gap means the
+// finger rested (SquishSound's IDLE_PAUSE_MS). Two fingers (rotate) earn
+// nothing. A ×N boost multiplies this.
+const EARN_TICK_MS = 1500;
+const EARN_PER_TICK = 5;
+const MOTION_GAP_MS = 180;
+// Floating "+1" per tick: rises, spins, fades.
+const FLOATING_COIN_MS = 1650;
+const FLOATING_COIN_RISE = 72;
+const FLOATING_COIN_SIZE = 30;
+
+// Too many quick taps trips the punishment ad — must be a rapid-fire burst,
+// not just several taps spread over a minute. Each rule is a rate limit
+// (limit taps per windowMs); a burst trips the alarm the moment ANY rule's
+// tap-rate crosses 100% of its allowance, so e.g. either 5 taps/1s or
+// 7 taps/2s (whichever is hit first) counts as abuse.
+const ABUSE_RULES = [
+  { windowMs: 1000, limit: 5 },
+  { windowMs: 2000, limit: 7 },
+];
+const ABUSE_MAX_WINDOW_MS = Math.max(...ABUSE_RULES.map((r) => r.windowMs));
+
+const RIPPLE_MAX = 180;
+
+// True for 3D-mesh creatures; picks Canvas vs SquishyToy2D in SquishStage.
+const toyIs3D = (t) => !!(t && t.modelUrl);
+
+// Ring that blooms from the touch point and fades. Pooled: a few of these
+// stay mounted (invisible when finished) and `play` just moves one to the
+// touch point and restarts its animation, so a touch never mounts views.
+const Ripple = memo(forwardRef(function Ripple(_props, ref) {
+  const t = useRef(new Animated.Value(1)).current;
+  const x = useRef(new Animated.Value(0)).current;
+  const y = useRef(new Animated.Value(0)).current;
+  useImperativeHandle(
+    ref,
+    () => ({
+      play: (px, py) => {
+        x.setValue(px - RIPPLE_MAX / 2);
+        y.setValue(py - RIPPLE_MAX / 2);
+        t.setValue(0);
+        Animated.timing(t, { toValue: 1, duration: RIPPLE_LIFETIME_MS, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+      },
+    }),
+    [t, x, y]
+  );
+  const scale = t.interpolate({ inputRange: [0, 1], outputRange: [0.25, 1] });
+  const opacity = t.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 0.5, 0] });
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.ripple, { opacity, transform: [{ translateX: x }, { translateY: y }, { scale }] }]}
+    />
+  );
+}));
+
+// A spinning gold coin and a sticker "+N" that rise and fade — pops once per
+// earn tick (the design's coinRise / coinSpin / coinFade). Pooled like the
+// ripple; only a changed amount (a new ×N boost) re-renders the sticker.
+const FloatingCoin = memo(forwardRef(function FloatingCoin(_props, ref) {
+  const t = useRef(new Animated.Value(1)).current;
+  const x = useRef(new Animated.Value(0)).current;
+  const y = useRef(new Animated.Value(0)).current;
+  const [amount, setAmount] = useState(1);
+  useImperativeHandle(
+    ref,
+    () => ({
+      play: (px, py, n) => {
+        setAmount((cur) => (cur === n ? cur : n));
+        x.setValue(px - 40);
+        y.setValue(py - 60);
+        t.setValue(0);
+        Animated.timing(t, { toValue: 1, duration: FLOATING_COIN_MS, easing: Easing.bezier(0.25, 0.6, 0.35, 1), useNativeDriver: true }).start();
+      },
+    }),
+    [t, x, y]
+  );
+  const translateY = t.interpolate({ inputRange: [0, 1], outputRange: [8, -FLOATING_COIN_RISE] });
+  const opacity = t.interpolate({ inputRange: [0, 0.15, 0.75, 1], outputRange: [0, 1, 1, 0] });
+  const spin = t.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.floatingCoin, { opacity, transform: [{ translateX: x }, { translateY: y }, { translateY }] }]}
+    >
+      <Animated.View style={{ transform: [{ perspective: 200 }, { rotateY: spin }] }}>
+        <CoinIcon size={FLOATING_COIN_SIZE} glow />
+      </Animated.View>
+      <OutlinedTitle text={`+${amount}`} fill="gold" size={26} outline={2.5} letterSpacing={0} />
+    </Animated.View>
+  );
+}));
+
+const RIPPLE_POOL = 3;
+const COIN_POOL = 3;
+
+// Touch ripples + floating "+N" coins, driven through the ref. Both pools
+// are mounted once, so spawning one is a couple of native-driver setValues —
+// no React work on the very touch that starts a squish, and none on each
+// earn tick mid-squish.
+const StageEffects = memo(forwardRef(function StageEffects(_props, ref) {
+  const ripples = useRef([]);
+  const coins = useRef([]);
+  const nextRipple = useRef(0);
+  const nextCoin = useRef(0);
+  useImperativeHandle(
+    ref,
+    () => ({
+      spawnRipple: (x, y) => {
+        const r = ripples.current[nextRipple.current++ % RIPPLE_POOL];
+        r && r.play(x, y);
+      },
+      spawnFloatingCoin: (x, y, amount) => {
+        const c = coins.current[nextCoin.current++ % COIN_POOL];
+        c && c.play(x, y, amount);
+      },
+    }),
+    []
+  );
+  return (
+    <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+      {Array.from({ length: RIPPLE_POOL }, (_, i) => (
+        <Ripple key={`r${i}`} ref={(el) => { ripples.current[i] = el; }} />
+      ))}
+      {Array.from({ length: COIN_POOL }, (_, i) => (
+        <FloatingCoin key={`c${i}`} ref={(el) => { coins.current[i] = el; }} />
+      ))}
+    </View>
+  );
+}));
+
+// Top-bar coin pill. Counts up through its ref on each earn tick, so the
+// tick re-renders only this pill instead of the whole screen mid-squish.
+const CoinCounter = memo(forwardRef(function CoinCounter({ initial }, ref) {
+  const [value, setValue] = useState(initial);
+  useImperativeHandle(ref, () => ({ add: (n) => setValue((c) => c + n) }), []);
+  return (
+    <GlassPill style={styles.coinPill}>
+      <CoinIcon size={14} />
+      <Text style={styles.coinPillText}>{value}</Text>
+    </GlassPill>
+  );
+}));
+
+// Live frames-per-second pill. Counts requestAnimationFrame callbacks — the
+// same JS-thread frame loop the 3D stage renders on, so a slow squish frame
+// shows up here — and redraws twice a second in its own leaf, so it never
+// re-renders SquishScreen.
+function FpsCounter() {
+  const [fps, setFps] = useState(null);
   useEffect(() => {
-    const engine = new SquishyAudioEngine();
-    audioRef.current = engine;
-    engine.init(false);
+    let frames = 0;
+    let raf = 0;
+    let last = performance.now();
+    const loop = () => {
+      frames += 1;
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    const id = setInterval(() => {
+      const t = performance.now();
+      setFps(Math.round((frames * 1000) / (t - last)));
+      frames = 0;
+      last = t;
+    }, 500);
     return () => {
-      engine.unloadAll();
+      cancelAnimationFrame(raf);
+      clearInterval(id);
     };
   }, []);
+  const color = fps == null ? '#ffffff' : fps >= 55 ? '#7dffb0' : fps >= 40 ? '#fff3a0' : '#ffb3b3';
+  return (
+    <GlassPill style={styles.fpsPill}>
+      <Text style={[styles.fpsText, { color }]}>{fps == null ? '–' : fps} FPS</Text>
+    </GlassPill>
+  );
+}
 
-  const toggleMute = () => {
-    setMuted((prev) => {
-      const next = !prev;
-      audioRef.current?.setMuted(next);
-      return next;
+// Live ×N-coins countdown bar. Ticks its own `now` every 250ms in isolation
+// so that redraw stays scoped to this small subtree instead of re-rendering
+// the whole SquishScreen (which would otherwise drag the 3D Canvas/SquishyToy
+// tree and its inline props through reconciliation 4x/sec, competing with the
+// per-frame squish physics on the JS thread and making the squish feel
+// laggy while a bonus window is running).
+//
+// Always mounted, invisible while no window runs: it sits between the stage
+// and the bottom panel, so mounting it only while active shifted the whole
+// stage (and the creature) up when a boost started and down when it ended.
+function BonusBanner({ endsAt, multiplier, coinAnim }) {
+  const active = !!endsAt;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!active) return undefined;
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, [active]);
+  const remain = active ? Math.max(0, endsAt - now) : 0;
+  const secs = Math.ceil(remain / 1000);
+  const timeText = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+  const pct = Math.max(0, Math.min(100, (remain / BONUS_MS) * 100));
+  const coinScale = coinAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] });
+  const gold = BUTTON_VARIANTS.gold;
+  return (
+    <View style={[styles.bonusBar, !active && styles.bonusHidden]} pointerEvents="none">
+      <View style={styles.bonusLip} />
+      <View style={styles.bonusRing}>
+        <LinearGradient colors={gold.colors} locations={gold.locations} style={styles.bonusInner}>
+          <Shine radius={14} />
+          <Animated.View style={[styles.bonusCoin, { transform: [{ scale: coinScale }] }]}>
+            <LinearGradient colors={['#fffbe0', '#ffe45c', '#ffc21a', '#e08a00']} locations={[0, 0.3, 0.62, 1]} style={StyleSheet.absoluteFillObject} />
+            <Text style={styles.bonusCoinText}>×{multiplier}</Text>
+          </Animated.View>
+          <View style={styles.bonusBody}>
+            <View style={styles.bonusTopRow}>
+              <Text style={styles.bonusLabel}>×{multiplier} COINS ACTIVE</Text>
+              <Text style={styles.bonusTime}>{timeText}</Text>
+            </View>
+            <View style={styles.bonusTrack}>
+              <LinearGradient colors={['#ffffff', '#fff3a0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.bonusFill, { width: `${pct}%` }]} />
+            </View>
+          </View>
+        </LinearGradient>
+      </View>
+    </View>
+  );
+}
+
+// Springs in small+tilted, overshoots, settles, holds, then fades out —
+// onFadeOutDone fires right as it becomes invisible so the caller can
+// unmount it without an abrupt cut.
+function PopIn({ style, children, holdMs = 940, fadeOutMs = 400, onFadeOutDone }) {
+  const t = useRef(new Animated.Value(0)).current;
+  const fade = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.timing(t, { toValue: 1, duration: 460, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+    const holdTimer = setTimeout(() => {
+      Animated.timing(fade, { toValue: 0, duration: fadeOutMs, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(({ finished }) => {
+        if (finished) onFadeOutDone && onFadeOutDone();
+      });
+    }, 460 + holdMs);
+    return () => clearTimeout(holdTimer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const popOpacity = t.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 1] });
+  const scale = t.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.4, 1.12, 1] });
+  const rotate = t.interpolate({ inputRange: [0, 0.6, 1], outputRange: ['-8deg', '3deg', '0deg'] });
+  const opacity = Animated.multiply(popOpacity, fade);
+  return <Animated.View style={[style, { opacity, transform: [{ scale }, { rotate }] }]}>{children}</Animated.View>;
+}
+
+// One-time gesture tutorial, overlaid on the stage itself (replaces the old
+// permanent bottom-panel hint list) — a squish hand on the left, a
+// two-finger rotate hand on the right, each with a pulsing touch ring,
+// fading out the first time the player actually touches the toy (see
+// gestureHintOpacity). A third hand under the gear points at the gameplay
+// settings (SettingsHint). All three are drawn in the candy style: white
+// hands with the header icons' dark outline and drop, pink-and-white touch
+// rings, and the Mystery Box's glass hint pill for the caption.
+const SQUISH_HAND_D =
+  'M24 17A6 6 0 0 1 36 17L36 42C37 39 41 37.5 44 39C47.4 40.4 48.4 44 47.4 47C48.4 44 51.4 42.4 54.4 43.6C57.8 45 58.8 48.4 57.8 51.6C59.4 49.4 62.6 48.8 64.8 50.6C67.4 52.6 67.8 55.8 67 59L65.4 69C63.8 81.4 54.8 90.6 42.8 90.6L35.8 90.6C23.4 90.6 15.2 81.6 13.8 69.2L12.8 60.6L5.8 50.6C2.8 46.2 9.2 41.6 12.8 46.2L19.4 55.2C20.6 56.8 22.2 57.4 24 57.4Z';
+const SQUISH_HAND_CREASE_D = 'M47.4 47c-2.6.6-5.4.2-7.6-1.2M57.8 51.6c-2.6.8-5.6.4-8-1';
+const ROTATE_HAND_D =
+  'M18 22A6 6 0 0 1 30 22L30 44L32 44L32 15A6 6 0 0 1 44 15L44 47C45.4 44 49 42.6 52 44.2C55.4 45.8 56.2 49.4 55 52.6C56.8 50.4 60 50 62.2 52C64.8 54.2 65 57.4 64 60.4L62.6 69.6C61 82 52 90.6 40 90.6L33 90.6C21 90.6 13 81.6 11.8 69.4L10.8 61L4 51C1 46.6 7.4 42 11 46.6L17 55.4C17.6 56.4 17.8 56.6 18 57Z';
+const ROTATE_HAND_CREASE_D = 'M55 52.6c-2.6.8-5.6.4-8-1M31 44.4c-.2 4 .4 8 1.8 11.6';
+// The hand paths live in a 72×96 box; the viewBox leaves room for the
+// outline and its drop.
+const HAND_VIEWBOX = '-5 -5 82 110';
+const HAND_ASPECT = 110 / 82;
+// fingertip of each hand, in path units — where its touch ring sits
+const SQUISH_TIP = { x: 30, y: 11 };
+const ROTATE_TIP = { x: 31, y: 12 };
+const HINT_INK = '#45189a';
+const HINT_TEXT_SHADOWS = [
+  [0, 2, HINT_INK],
+  [1, 0, HINT_INK],
+  [-1, 0, HINT_INK],
+];
+
+function CandyHand({ d, creaseD, width }) {
+  return (
+    <Svg width={width} height={width * HAND_ASPECT} viewBox={HAND_VIEWBOX}>
+      <Defs>
+        <SvgGradient id="candyHand" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#ffffff" />
+          <Stop offset="1" stopColor="#f0dcff" />
+        </SvgGradient>
+      </Defs>
+      <Path d={d} fill={HINT_INK} stroke={HINT_INK} strokeWidth={7} strokeLinejoin="round" transform="translate(0,4)" />
+      <Path d={d} fill={HINT_INK} stroke={HINT_INK} strokeWidth={7} strokeLinejoin="round" />
+      <Path d={d} fill="url(#candyHand)" stroke="#ffffff" strokeWidth={2.4} strokeLinejoin="round" />
+      <Path d={creaseD} stroke="#c28cf0" strokeWidth={2.4} strokeLinecap="round" fill="none" />
+    </Svg>
+  );
+}
+
+// Pink ring with a white rim, pulsing where the finger lands.
+function TouchRing({ anim, style }) {
+  return (
+    <Animated.View
+      style={[
+        styles.touchRing,
+        style,
+        {
+          opacity: anim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.95, 0.35, 0.95] }),
+          transform: [{ scale: anim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }) }],
+        },
+      ]}
+    >
+      <View style={styles.touchRingInner} />
+    </Animated.View>
+  );
+}
+
+// The glass caption pill (the Mystery Box's hint look).
+function HintPill({ label, sub, align = 'center' }) {
+  return (
+    <View style={[styles.hintPill, { alignItems: align === 'right' ? 'flex-end' : 'center' }]}>
+      <ShadowText style={styles.hintPillText} shadows={HINT_TEXT_SHADOWS} numberOfLines={1}>
+        {label}
+      </ShadowText>
+      {sub ? (
+        <Text style={styles.hintPillSub} numberOfLines={1}>
+          {sub}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+const HAND_W = 50;
+
+function GestureHint({ side, d, creaseD, tip, label, touchAnim, gestureAnim }) {
+  const sideStyle = side === 'left' ? { left: '4%' } : { right: '4%' };
+  const k = HAND_W / 82;
+  const ring = { left: (tip.x + 5) * k - 14, top: (tip.y + 5) * k - 14 };
+  return (
+    <View style={[styles.gestureHint, sideStyle]} pointerEvents="none">
+      <Animated.View style={[styles.gestureHandWrap, { transform: gestureAnim }]}>
+        <CandyHand d={d} creaseD={creaseD} width={HAND_W} />
+        <TouchRing anim={touchAnim} style={ring} />
+      </Animated.View>
+      <HintPill label={label} />
+    </View>
+  );
+}
+
+// The settings pointer: a hand under the gear, bobbing up at it, a pink halo
+// pulsing round the gear, and a GAMEPLAY SETTINGS pill saying what's inside.
+// It stays a little longer than the stage hints — until the gear is opened,
+// or a few seconds after the first squish (see settingsHintOpacity).
+const POINT_HAND_W = 44;
+const GEAR_SIZE = 42;
+const GEAR_RIGHT = 14;
+
+function SettingsHint({ top, opacity, bobAnim, pulseAnim }) {
+  const k = POINT_HAND_W / 82;
+  // put the fingertip right under the gear's centre
+  const handRight = GEAR_RIGHT + GEAR_SIZE / 2 - (POINT_HAND_W - (SQUISH_TIP.x + 5) * k);
+  const translateY = bobAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -7] });
+  return (
+    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.settingsHintLayer, { opacity }]}>
+      <Animated.View
+        style={[
+          styles.gearHalo,
+          {
+            top: top - 5,
+            right: GEAR_RIGHT - 5,
+            opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 0.15] }),
+            transform: [{ scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.28] }) }],
+          },
+        ]}
+      />
+      <View style={[styles.gearHint, { top: top + GEAR_SIZE + 8 }]}>
+        <Animated.View style={{ marginRight: handRight - 10, transform: [{ translateY }] }}>
+          <CandyHand d={SQUISH_HAND_D} creaseD={SQUISH_HAND_CREASE_D} width={POINT_HAND_W} />
+        </Animated.View>
+        <HintPill label="GAMEPLAY SETTINGS" sub="Sound · vibration · poke" align="right" />
+      </View>
+    </Animated.View>
+  );
+}
+
+function useLoopAnim(config) {
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim, { toValue: 1, duration: config.duration, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 0, duration: config.duration, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return anim;
+}
+
+// The stage itself: touch surface, 3D Canvas (or the 2D rig), touch effects
+// and the gesture tutorial. Every prop is stable for the screen's lifetime
+// except the poke settings (which only change from the settings popup), so
+// the memo keeps SquishScreen re-renders (the Firestore profile update
+// after each release, the bonus window, the settings popup) from ever
+// reconciling the Canvas subtree — see project perf notes on SquishScreen.
+const SquishStage = memo(function SquishStage({
+  toy,
+  toyRef,
+  effectsRef,
+  panHandlers,
+  onSquish,
+  onRelease,
+  hintOpacity,
+  showHints,
+  squishAnim,
+  rotateAnim,
+  touchAnim,
+  dentScale,
+  dentOutward,
+}) {
+  return (
+    <View style={styles.stage} {...panHandlers}>
+      {toyIs3D(toy) ? (
+        <Canvas
+          frameloop="always"
+          camera={{ fov: 30, position: [0, 0.1, 4.6], near: 0.1, far: 100 }}
+          // Khronos "PBR Neutral" tone mapping keeps each creature's texture
+          // colours true to how Tripo shows them. R3F's default (ACES) washed
+          // saturated colours (Bubbles' cyan, Tako's pink) out to pastels.
+          gl={{ toneMapping: NeutralToneMapping, toneMappingExposure: 1 }}
+        >
+          {/* Tuned to match Tripo's viewer with plain lights only: the old
+              RoomEnvironment reflection map renders black on the phone (see
+              SquishyToy.js), so nothing here may depend on it. The strong
+              sky/ground hemisphere is the soft all-round fill it used to give. */}
+          <ambientLight intensity={0.6} />
+          <hemisphereLight args={[0xffffff, 0x9aa8bc, 3.5]} />
+          <directionalLight color={0xffffff} intensity={1.2} position={[2, 3, 3]} />
+          <directionalLight color={0xd8ccff} intensity={0.3} position={[-2.5, -1, 2]} />
+          <directionalLight color={0xffffff} intensity={0.35} position={[-1.5, 2, -3]} />
+          {/* Anti-aliasing, which expo-gl doesn't provide on Android. */}
+          <Supersample factor={2} />
+          <SquishyToy
+            ref={toyRef}
+            creatureId={toy.id}
+            modelUrl={toy.modelUrl}
+            visual={toy.visual}
+            onSquish={onSquish}
+            onRelease={onRelease}
+            dentScale={dentScale}
+            dentOutward={dentOutward}
+          />
+        </Canvas>
+      ) : (
+        <SquishyToy2D
+          ref={toyRef}
+          creature={toy}
+          imageUri={toy.isCustom ? toy.image : undefined}
+          build={toy.isCustom ? toy.build : undefined}
+          size={STAGE_SIZE}
+          onSquish={onSquish}
+          onRelease={onRelease}
+        />
+      )}
+
+      <StageEffects ref={effectsRef} />
+
+      {/* Gone for good once faded: its three pulse loops would otherwise
+          keep animating an invisible layer for the rest of the session. */}
+      {showHints && (
+      <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: hintOpacity }]} pointerEvents="none">
+        <GestureHint
+          side="left"
+          d={SQUISH_HAND_D}
+          creaseD={SQUISH_HAND_CREASE_D}
+          tip={SQUISH_TIP}
+          label="HOLD TO SQUISH"
+          touchAnim={touchAnim}
+          gestureAnim={[{ translateY: squishAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 8, 0] }) }]}
+        />
+        <GestureHint
+          side="right"
+          d={ROTATE_HAND_D}
+          creaseD={ROTATE_HAND_CREASE_D}
+          tip={ROTATE_TIP}
+          label="2 FINGERS TO ROTATE"
+          touchAnim={touchAnim}
+          gestureAnim={[{ rotate: rotateAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['0deg', '-14deg', '0deg'] }) }]}
+        />
+      </Animated.View>
+      )}
+    </View>
+  );
+});
+
+// Row of buttons where exactly one is selected.
+function Segmented({ options, value, onChange }) {
+  return (
+    <View style={styles.segmented}>
+      {options.map((option) => {
+        const active = option.value === value;
+        return (
+          <Pressable key={String(option.value)} onPress={() => onChange(option.value)} style={[styles.segment, active && styles.segmentActive]}>
+            {active ? (
+              <LinearGradient colors={BUTTON_VARIANTS.pink.colors} locations={BUTTON_VARIANTS.pink.locations} style={StyleSheet.absoluteFill} />
+            ) : null}
+            <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{option.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+// Poke strength setting (1-5) -> multiplier on SquishyToy's tuned dent depth.
+// 3 is the tuned default.
+const POKE_STRENGTH_SCALES = [0.5, 0.75, 1, 1.25, 1.5];
+const POKE_STRENGTH_OPTIONS = [1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) }));
+const POKE_DIRECTION_OPTIONS = [
+  { value: false, label: 'Push in' },
+  { value: true, label: 'Pop out' },
+];
+
+function SettingsRow({ label, children }) {
+  return (
+    <View style={styles.settingsRow}>
+      <Text style={styles.settingsLabel}>{label}</Text>
+      {children}
+    </View>
+  );
+}
+
+// Settings popup opened from the gear. Tapping outside the card or the X
+// closes it.
+function SettingsModal({
+  onClose,
+  squishSoundEnabled,
+  onToggleSquishSound,
+  coinSoundEnabled,
+  onToggleCoinSound,
+  releaseSoundEnabled,
+  onToggleReleaseSound,
+  vibrationEnabled,
+  onToggleVibration,
+  showFps,
+  onToggleShowFps,
+  pokeStrength,
+  onChangePokeStrength,
+  pokeOutward,
+  onChangePokeOutward,
+}) {
+  return (
+    <View style={styles.settingsOverlay}>
+      <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+      <View style={styles.settingsCard}>
+        <View style={styles.settingsHeader}>
+          <Text style={styles.settingsTitle}>SETTINGS</Text>
+          <RoundButton size={32} onPress={onClose} hitSlop={10}>
+            <CloseGlyph />
+          </RoundButton>
+        </View>
+
+        <Text style={styles.settingsSection}>SOUND</Text>
+        <SettingsRow label="Squish sound">
+          <ToggleSwitch value={squishSoundEnabled} onToggle={() => onToggleSquishSound(!squishSoundEnabled)} />
+        </SettingsRow>
+        <SettingsRow label="Coin sound">
+          <ToggleSwitch value={coinSoundEnabled} onToggle={() => onToggleCoinSound(!coinSoundEnabled)} />
+        </SettingsRow>
+        <SettingsRow label="Release sound">
+          <ToggleSwitch value={releaseSoundEnabled} onToggle={() => onToggleReleaseSound(!releaseSoundEnabled)} />
+        </SettingsRow>
+
+        <Text style={styles.settingsSection}>DISPLAY</Text>
+        <SettingsRow label="Show FPS">
+          <ToggleSwitch value={showFps} onToggle={() => onToggleShowFps(!showFps)} />
+        </SettingsRow>
+
+        <Text style={styles.settingsSection}>SQUISH</Text>
+        <SettingsRow label="Vibration">
+          <ToggleSwitch value={vibrationEnabled} onToggle={() => onToggleVibration(!vibrationEnabled)} />
+        </SettingsRow>
+        <Text style={styles.settingsLabel}>Poke strength</Text>
+        <Segmented options={POKE_STRENGTH_OPTIONS} value={pokeStrength} onChange={onChangePokeStrength} />
+        <Text style={styles.settingsHint}>1 = gentle · 5 = deepest (the vibration follows it)</Text>
+        <Text style={[styles.settingsLabel, styles.settingsLabelSpaced]}>Poke direction</Text>
+        <Segmented options={POKE_DIRECTION_OPTIONS} value={pokeOutward} onChange={onChangePokeOutward} />
+      </View>
+    </View>
+  );
+}
+
+// Forces an interstitial ad after too many quick taps — unless Remove Ads
+// was bought: then the popup still scolds, but ACCEPT PUNISHMENT just
+// closes it.
+function PunishmentModal({ visible, onDismiss, adsFree }) {
+  const [loading, setLoading] = useState(false);
+  const adRef = useRef(null);
+  const unsubsRef = useRef([]);
+
+  useEffect(() => {
+    if (!visible) setLoading(false);
+    return () => {
+      unsubsRef.current.forEach((fn) => fn());
+      unsubsRef.current = [];
+    };
+  }, [visible]);
+
+  const acceptPunishment = useCallback(() => {
+    if (loading) return;
+    if (adsFree) {
+      onDismiss();
+      return;
+    }
+    setLoading(true);
+    const ad = InterstitialAd.createForAdRequest(INTERSTITIAL_AD_UNIT_ID);
+    adRef.current = ad;
+    const done = () => {
+      unsubsRef.current.forEach((fn) => fn());
+      unsubsRef.current = [];
+      setLoading(false);
+      onDismiss();
+    };
+    unsubsRef.current = [
+      ad.addAdEventListener(AdEventType.LOADED, () => ad.show()),
+      ad.addAdEventListener(AdEventType.CLOSED, done),
+      ad.addAdEventListener(AdEventType.ERROR, done),
+    ];
+    // If the ad never loads, don't trap the player forever.
+    const t = setTimeout(done, 8000);
+    unsubsRef.current.push(() => clearTimeout(t));
+    ad.load();
+  }, [loading, onDismiss, adsFree]);
+
+  if (!visible) return null;
+  return (
+    <View style={styles.punishOverlay}>
+      <PunishCard>
+        <Siren />
+        <OutlinedTitle text="WHOA THERE!" fill={PUNISH_FILL} size={30} />
+        <Text style={styles.punishBody}>
+          You&apos;re tapping way too much.{'\n'}You will be punished.
+        </Text>
+        <CandyButton
+          label={loading ? 'LOADING…' : 'ACCEPT PUNISHMENT'}
+          variant="pink"
+          size="md"
+          onPress={acceptPunishment}
+          disabled={loading}
+          dim={loading}
+          style={styles.punishButton}
+          textStyle={styles.punishButtonText}
+        />
+      </PunishCard>
+    </View>
+  );
+}
+
+// Red sticker fill for the "WHOA THERE!" title.
+const PUNISH_FILL = { colors: ['#ffe0e6', '#ff5c7a', '#d3173d'], locations: [0, 0.5, 1] };
+
+// The punishment card springs in (popIn) inside a red candy rim.
+function PunishCard({ children }) {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.spring(t, { toValue: 1, friction: 5, tension: 120, useNativeDriver: true }).start();
+  }, [t]);
+  const scale = t.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
+  const rotate = t.interpolate({ inputRange: [0, 1], outputRange: ['-8deg', '0deg'] });
+  return (
+    <Animated.View style={[styles.punishRing, { opacity: t, transform: [{ scale }, { rotate }] }]}>
+      <View style={styles.punishWhite}>
+        <LinearGradient colors={['#fff6fd', '#ffdcf4', '#f5cbff']} locations={[0, 0.6, 1]} style={styles.punishFace}>
+          {children}
+        </LinearGradient>
+      </View>
+    </Animated.View>
+  );
+}
+
+// 🚨 that won't sit still (the design's hintShake, looped).
+function Siren() {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(t, { toValue: 1, duration: 360, easing: Easing.linear, useNativeDriver: true }),
+        Animated.delay(420),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [t]);
+  const translateX = t.interpolate({ inputRange: [0, 0.25, 0.75, 1], outputRange: [0, -6, 6, 0] });
+  const rotate = t.interpolate({ inputRange: [0, 0.25, 0.75, 1], outputRange: ['0deg', '-10deg', '10deg', '0deg'] });
+  return <Animated.Text style={[styles.punishEmoji, { transform: [{ translateX }, { rotate }] }]}>🚨</Animated.Text>;
+}
+
+export default function SquishScreen({
+  toy,
+  coins = 0,
+  onBack,
+  onEarnCoins,
+  onRecordPress,
+  achievements = {},
+  onMarkAchievement,
+  onAdWatched,
+  squishSoundEnabled = true,
+  onToggleSquishSound,
+  coinSoundEnabled = true,
+  onToggleCoinSound,
+  releaseSoundEnabled = true,
+  onToggleReleaseSound,
+  vibrationEnabled = true,
+  onToggleVibration,
+  showFps = false,
+  onToggleShowFps,
+  pokeStrength = 3,
+  onChangePokeStrength,
+  pokeOutward = false,
+  onChangePokeOutward,
+  adsFree = false,
+}) {
+  const insets = useSafeAreaInsets();
+  const toyRef = useRef(null);
+  const soundRef = useRef(null);
+  const coinSoundRef = useRef(null);
+  const popSoundRef = useRef(null);
+  const lastTouch = useRef({ x: 0, y: 0 });
+  // where the finger was when the squish sound last counted a movement
+  const soundAnchorRef = useRef({ x: 0, y: 0 });
+  const holdStartRef = useRef(0);
+  const effectsRef = useRef(null);
+  const coinCounterRef = useRef(null);
+  const tapTimestampsRef = useRef([]);
+  // Coins banked this hold; flushed on release. While a poke is on:
+  // earningRef, the moving time towards the next tick, and when the last
+  // counted movement was.
+  const earningRef = useRef(false);
+  const earnAccumRef = useRef(0);
+  const movingMsRef = useRef(0);
+  const lastMotionAtRef = useRef(0);
+  // Tap timestamps for the abuse guard; mirrors punishOpen so the
+  // tap-rate check (a stable useCallback) always sees the latest value.
+  const abuseTapsRef = useRef([]);
+  const punishOpenRef = useRef(false);
+  // gesture mode: none | poke | orbit
+  const gestureModeRef = useRef('none');
+  const lastCentroidRef = useRef({ x: 0, y: 0 });
+  // True once 2 fingers have touched — blocks sound/coins for the rest of the gesture.
+  const gestureHadTwoRef = useRef(false);
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [punishOpen, setPunishOpen] = useState(false);
+  const [doubleFlash, setDoubleFlash] = useState(false);
+  const [doubleFlashKey, setDoubleFlashKey] = useState(0);
+  // Bonus window end time + which of the three ad buttons opened it (2/3/4).
+  // Only one window can run at a time — see WatchAdButton's `activeMultiplier`
+  // handling. The live countdown (text/progress bar, ticking every 250ms)
+  // lives in the BonusBanner child below so that its frequent re-renders stay
+  // scoped to that small subtree instead of the whole screen (which includes
+  // the 3D Canvas/SquishyToy tree and its per-frame squish physics).
+  const [bonusEndsAt, setBonusEndsAt] = useState(null);
+  const [bonusMultiplier, setBonusMultiplier] = useState(2);
+
+  const wheelAnim = useRef(new Animated.Value(0)).current;
+  const gestureSquishAnim = useLoopAnim({ duration: 1700 });
+  const gestureRotateAnim = useLoopAnim({ duration: 1700 });
+  const gestureTouchAnim = useLoopAnim({ duration: 1700 });
+  // Fades the on-stage gesture tutorial out the first time the player
+  // actually touches the toy — see onPanResponderGrant below. Stays hidden
+  // for the rest of this screen's lifetime (hintDismissedRef).
+  const gestureHintOpacity = useRef(new Animated.Value(1)).current;
+  const hintDismissedRef = useRef(false);
+  const [showHints, setShowHints] = useState(true);
+  // The settings pointer fades when the gear is opened, or 4 s after the
+  // first squish, then unmounts (its loops stop with it).
+  const settingsHintOpacity = useRef(new Animated.Value(1)).current;
+  const [showSettingsHint, setShowSettingsHint] = useState(true);
+  const settingsHintTimerRef = useRef(null);
+  const settingsPointAnim = useLoopAnim({ duration: 650 });
+  const gearPulseAnim = useLoopAnim({ duration: 900 });
+  const settingsHintGoneRef = useRef(false);
+  const dismissSettingsHint = useCallback(() => {
+    if (settingsHintGoneRef.current) return;
+    settingsHintGoneRef.current = true;
+    clearTimeout(settingsHintTimerRef.current);
+    Animated.timing(settingsHintOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start(({ finished }) => {
+      if (finished) setShowSettingsHint(false);
     });
+  }, [settingsHintOpacity]);
+  useEffect(() => () => clearTimeout(settingsHintTimerRef.current), []);
+  const bonusCoinAnim = useLoopAnim({ duration: 1300 });
+
+  // Only re-renders SquishScreen once, when the window actually expires —
+  // the per-250ms countdown tick lives inside BonusBanner instead.
+  useEffect(() => {
+    if (!bonusEndsAt) return undefined;
+    const remain = bonusEndsAt - Date.now();
+    if (remain <= 0) {
+      setBonusEndsAt(null);
+      return undefined;
+    }
+    const id = setTimeout(() => setBonusEndsAt(null), remain);
+    return () => clearTimeout(id);
+  }, [bonusEndsAt]);
+
+  const bonusActive = !!bonusEndsAt;
+  // Remove Ads: boosts start without a video, then recharge for about as
+  // long as the video would have taken (src/economy.js).
+  const [boostRechargeUntil, setBoostRechargeUntil] = useState(0);
+
+  useEffect(() => {
+    const sound = new SquishSound();
+    soundRef.current = sound;
+    // Each premade creature has its own recording; a custom creature can
+    // carry one too (see src/audio/creatureSquish.js).
+    sound.load(squishSoundFor(toy));
+    return () => sound.unload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const sound = new CoinSound();
+    coinSoundRef.current = sound;
+    sound.load();
+    return () => sound.unload();
+  }, []);
+
+  useEffect(() => {
+    const sound = new PopSound();
+    popSoundRef.current = sound;
+    sound.load();
+    return () => sound.unload();
+  }, []);
+
+  useEffect(() => {
+    if (!squishSoundEnabled) soundRef.current?.stop();
+  }, [squishSoundEnabled]);
+
+  // The gear turns half a revolution as the settings popup opens, and back
+  // as it closes.
+  const setSettingsVisible = useCallback(
+    (visible) => {
+      sfx.play(visible ? 'popOpen' : 'popClose');
+      setSettingsOpen(visible);
+      Animated.timing(wheelAnim, { toValue: visible ? 1 : 0, duration: 400, useNativeDriver: true }).start();
+    },
+    [wheelAnim]
+  );
+  const openSettings = useCallback(() => {
+    dismissSettingsHint();
+    setSettingsVisible(true);
+  }, [setSettingsVisible, dismissSettingsHint]);
+  const closeSettings = useCallback(() => setSettingsVisible(false), [setSettingsVisible]);
+  const wheelRotate = wheelAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
+  const dentScale = POKE_STRENGTH_SCALES[pokeStrength - 1] ?? 1;
+
+  const dismissSettingsHintRef = useRef(dismissSettingsHint);
+  dismissSettingsHintRef.current = dismissSettingsHint;
+
+  // Mirrors props/state so the once-created PanResponder always reads fresh values.
+  const latestRef = useRef(null);
+  latestRef.current = {
+    achievements,
+    releaseSoundEnabled,
+    coinSoundEnabled,
+    squishSoundEnabled,
+    vibrationEnabled,
+    pokeStrength,
+    toy,
+    onRecordPress,
+    onEarnCoins,
+    onMarkAchievement,
+    onAdWatched,
+    bonusEndsAt,
+    bonusMultiplier,
+    adsFree,
   };
 
+  // Stable identity (deps: []) so SquishyToy/SquishyToy2D's React.memo isn't
+  // defeated by a fresh closure on every SquishScreen re-render — see
+  // BonusBanner above for why keeping that subtree from reconciling matters.
+  const handleToySquish = useCallback(() => {
+    if (latestRef.current.squishSoundEnabled) soundRef.current?.start();
+  }, []);
+  const handleToyRelease = useCallback(() => {
+    soundRef.current?.stop();
+  }, []);
+
+  // A poke starts: coins now come from moving the finger (noteEarnMotion).
+  const startEarning = useCallback(() => {
+    if (earningRef.current) return;
+    earningRef.current = true;
+    earnAccumRef.current = 0;
+    movingMsRef.current = 0;
+    lastMotionAtRef.current = Date.now();
+  }, []);
+
+  // A counted movement: adds the moving time since the last one, and banks
+  // EARN_PER_TICK coins for every EARN_TICK_MS of it.
+  const noteEarnMotion = useCallback(() => {
+    if (!earningRef.current) return;
+    const now = Date.now();
+    movingMsRef.current += Math.min(now - lastMotionAtRef.current, MOTION_GAP_MS);
+    lastMotionAtRef.current = now;
+    while (movingMsRef.current >= EARN_TICK_MS) {
+      movingMsRef.current -= EARN_TICK_MS;
+      const { coinSoundEnabled: coinSoundOn, bonusEndsAt: liveBonusEndsAt, bonusMultiplier: liveMultiplier } = latestRef.current;
+      const bonusIsLive = !!liveBonusEndsAt && now < liveBonusEndsAt;
+      const gain = EARN_PER_TICK * (bonusIsLive ? liveMultiplier : 1);
+      earnAccumRef.current += gain;
+      coinCounterRef.current?.add(gain);
+      if (coinSoundOn) coinSoundRef.current?.play();
+      effectsRef.current?.spawnFloatingCoin(lastTouch.current.x, lastTouch.current.y, gain);
+    }
+  }, []);
+
+  const stopEarning = useCallback(() => {
+    earningRef.current = false;
+    movingMsRef.current = 0;
+    const earned = earnAccumRef.current;
+    earnAccumRef.current = 0;
+    if (earned > 0) {
+      const { onEarnCoins: earnCoins } = latestRef.current;
+      earnCoins && earnCoins(earned);
+    }
+    return earned;
+  }, []);
+
+
+  // Trips the punishment after too many quick taps. Every rule's tap-rate is
+  // expressed as a percentage of its allowance (count / limit); crossing
+  // 100% on any rule counts as abuse. Not gated by a cooldown — the alarm
+  // is meant to reappear every single time the player abuses again, not
+  // just the first time.
+  const registerAbuseTap = useCallback(() => {
+    if (punishOpenRef.current) return;
+    const t = Date.now();
+    const taps = [...abuseTapsRef.current, t].filter((ts) => t - ts < ABUSE_MAX_WINDOW_MS);
+    abuseTapsRef.current = taps;
+    const violated = ABUSE_RULES.some(({ windowMs, limit }) => {
+      const count = taps.filter((ts) => t - ts < windowMs).length;
+      const pctOfLimit = (count / limit) * 100;
+      return pctOfLimit >= 100;
+    });
+    if (violated) {
+      abuseTapsRef.current = [];
+      punishOpenRef.current = true;
+      setPunishOpen(true);
+    }
+  }, []);
+
+  const dismissPunishment = useCallback(() => {
+    punishOpenRef.current = false;
+    setPunishOpen(false);
+    abuseTapsRef.current = [];
+  }, []);
+
+  // Ad reward opens the 60s ×N-coins window and pops the flash. `multiplier`
+  // is which of the three ad buttons was watched (2, 3, or 4) — only one
+  // window runs at a time, so this simply (re)starts it at the new value.
+  const handleAdReward = useCallback((multiplier) => {
+    const { achievements: liveAchievements, onMarkAchievement: markAch, onAdWatched: adWatched, adsFree: noAds } = latestRef.current;
+    setBonusEndsAt(Date.now() + BONUS_MS);
+    if (noAds) setBoostRechargeUntil(Date.now() + BONUS_MS + AD_FREE_BOOST_RECHARGE_MS);
+    setBonusMultiplier(multiplier);
+    setDoubleFlash(true);
+    sfx.play('boost');
+    setDoubleFlashKey((k) => k + 1);
+    if (!noAds && !liveAchievements.watchAd) markAch && markAch('watchAd');
+    // counts toward "Movie Night" (5 ads; not when no video played) and
+    // "Max Boost" (a ×4)
+    if (adWatched) adWatched(multiplier);
+  }, []);
+
   const ndcFromLocation = (locationX, locationY) => ({
-    x: (locationX / STAGE_WIDTH) * 2 - 1,
-    y: -((locationY / STAGE_HEIGHT) * 2 - 1),
+    x: (locationX / STAGE_SIZE) * 2 - 1,
+    y: -((locationY / STAGE_SIZE) * 2 - 1),
   });
+
+  const centroidOf = (touches) => {
+    let sx = 0;
+    let sy = 0;
+    for (const t of touches) {
+      sx += t.locationX;
+      sy += t.locationY;
+    }
+    return { x: sx / touches.length, y: sy / touches.length };
+  };
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
+      onMoveShouldSetPanResponderCapture: () => true,
+      // Catches a poke -> orbit switch on the second finger landing.
+      onPanResponderStart: (evt) => {
+        const touches = evt.nativeEvent.touches || [];
+        if (touches.length >= 2 && gestureModeRef.current !== 'orbit') {
+          gestureHadTwoRef.current = true;
+          toyRef.current?.cancelPoke();
+          soundRef.current?.stop();
+          stopEarning();
+          gestureModeRef.current = 'orbit';
+          lastCentroidRef.current = centroidOf(touches);
+        }
+      },
       onPanResponderGrant: (evt) => {
+        if (!hintDismissedRef.current) {
+          hintDismissedRef.current = true;
+          Animated.timing(gestureHintOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start(({ finished }) => {
+            if (finished) setShowHints(false);
+          });
+          settingsHintTimerRef.current = setTimeout(() => dismissSettingsHintRef.current(), 4000);
+        }
+        const touches = evt.nativeEvent.touches || [];
+        gestureHadTwoRef.current = touches.length >= 2;
+        if (touches.length >= 2) {
+          gestureModeRef.current = 'orbit';
+          lastCentroidRef.current = centroidOf(touches);
+          return;
+        }
+        gestureModeRef.current = 'poke';
         const { locationX, locationY } = evt.nativeEvent;
         lastTouch.current = { x: locationX, y: locationY };
+        soundAnchorRef.current = { x: locationX, y: locationY };
+        holdStartRef.current = Date.now();
+        if (latestRef.current.vibrationEnabled) pressHaptic(latestRef.current.pokeStrength);
         const ndc = ndcFromLocation(locationX, locationY);
         toyRef.current?.pointerDown(ndc.x, ndc.y);
+        effectsRef.current?.spawnRipple(locationX, locationY);
+        startEarning();
       },
       onPanResponderMove: (evt) => {
+        const touches = evt.nativeEvent.touches || [];
+
+        if (touches.length >= 2) {
+          gestureHadTwoRef.current = true;
+          // Second finger cancels any poke in progress and starts orbit.
+          if (gestureModeRef.current !== 'orbit') {
+            toyRef.current?.cancelPoke();
+            soundRef.current?.stop();
+            stopEarning();
+            gestureModeRef.current = 'orbit';
+            lastCentroidRef.current = centroidOf(touches);
+            return;
+          }
+          const c = centroidOf(touches);
+          toyRef.current?.orbit(c.x - lastCentroidRef.current.x, c.y - lastCentroidRef.current.y);
+          lastCentroidRef.current = c;
+          return;
+        }
+
+        if (gestureModeRef.current === 'orbit') {
+          // Keep orbiting with the remaining finger.
+          if (touches.length === 1) {
+            const c = { x: touches[0].locationX, y: touches[0].locationY };
+            toyRef.current?.orbit(c.x - lastCentroidRef.current.x, c.y - lastCentroidRef.current.y);
+            lastCentroidRef.current = c;
+          }
+          return;
+        }
+
         const { locationX, locationY } = evt.nativeEvent;
-        const dx = locationX - lastTouch.current.x;
-        const dy = locationY - lastTouch.current.y;
         lastTouch.current = { x: locationX, y: locationY };
         const ndc = ndcFromLocation(locationX, locationY);
-        toyRef.current?.pointerMove(ndc.x, ndc.y, dx, dy);
+        toyRef.current?.pointerMove(ndc.x, ndc.y);
+        // Real movement (not jitter) keeps the squish sound going and earns
+        // coins.
+        const ax = locationX - soundAnchorRef.current.x;
+        const ay = locationY - soundAnchorRef.current.y;
+        if (ax * ax + ay * ay >= SOUND_MOTION_DP * SOUND_MOTION_DP) {
+          soundAnchorRef.current = { x: locationX, y: locationY };
+          noteEarnMotion();
+          if (latestRef.current.squishSoundEnabled) soundRef.current?.noteMotion();
+          if (latestRef.current.vibrationEnabled) moveHaptic(latestRef.current.pokeStrength);
+        }
       },
-      onPanResponderRelease: () => toyRef.current?.pointerUp(),
-      onPanResponderTerminate: () => toyRef.current?.pointerUp(),
+      onPanResponderRelease: () => {
+        const mode = gestureModeRef.current;
+        const hadTwo = gestureHadTwoRef.current;
+        gestureModeRef.current = 'none';
+        gestureHadTwoRef.current = false;
+        // Orbit gestures never earn coins or play the release sound.
+        if (mode === 'orbit' || hadTwo) {
+          toyRef.current?.endOrbit();
+          toyRef.current?.pointerUp();
+          soundRef.current?.stop();
+          stopEarning();
+          return;
+        }
+        const result = toyRef.current?.pointerUp();
+        if (!result || !result.wasPoke) {
+          stopEarning();
+          return;
+        }
+        const { achievements: liveAchievements, releaseSoundEnabled: releaseSoundOn, toy: currentToy, onRecordPress: recordPress, onMarkAchievement: markAch } = latestRef.current;
+
+        const holdMs = Date.now() - holdStartRef.current;
+        const now = Date.now();
+        const timestamps = [...tapTimestampsRef.current, now].filter((t) => now - t < SPEED_TAP_WINDOW_MS);
+        tapTimestampsRef.current = timestamps;
+        if (timestamps.length >= SPEED_TAP_THRESHOLD && !liveAchievements.speedTap) {
+          markAch && markAch('speedTap');
+        }
+
+        recordPress && recordPress(currentToy.id, holdMs);
+
+        // Flush the banked total; quick jabs count toward the abuse guard.
+        stopEarning();
+        if (holdMs < 400) registerAbuseTap();
+
+        soundRef.current?.stop();
+        if (releaseSoundOn) popSoundRef.current?.play();
+        if (latestRef.current.vibrationEnabled) releaseHaptic(latestRef.current.pokeStrength);
+      },
+      onPanResponderTerminate: () => {
+        gestureModeRef.current = 'none';
+        gestureHadTwoRef.current = false;
+        toyRef.current?.endOrbit();
+        toyRef.current?.pointerUp();
+        soundRef.current?.stop();
+        stopEarning();
+      },
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   ).current;
 
-  const current = COLOR_DEFS[selected];
-
   return (
-    <View style={[styles.container, { backgroundColor: current.light }]}>
-      <View style={styles.topBar}>
-        <Text onPress={onBack} style={[styles.back, { color: current.deep }]}>
-          ‹
-        </Text>
-        <View style={styles.scorePill}>
-          <Text style={styles.scoreText}>{score}</Text>
+    <CandyBackground style={styles.container}>
+      <View style={styles.stageArea}>
+        <View style={[styles.topLeft, { top: insets.top + 14 }]}>
+          <RoundButton size={34} onPress={onBack} hitSlop={8}>
+            <BackGlyph />
+          </RoundButton>
+          <CoinCounter ref={coinCounterRef} initial={coins} />
+          {showFps && <FpsCounter />}
         </View>
-        <Pressable onPress={toggleMute} style={styles.muteBtn}>
-          <Text style={{ fontSize: 18 }}>{muted ? '🔈' : '🔊'}</Text>
-        </Pressable>
+
+        {showSettingsHint ? (
+          <SettingsHint top={insets.top + 14} opacity={settingsHintOpacity} bobAnim={settingsPointAnim} pulseAnim={gearPulseAnim} />
+        ) : null}
+
+        <RoundButton size={GEAR_SIZE} onPress={openSettings} style={[styles.wheelButton, { top: insets.top + 14 }]}>
+          <Animated.View style={{ transform: [{ rotate: wheelRotate }] }}>
+            <GearIcon />
+          </Animated.View>
+        </RoundButton>
+
+        <SquishStage
+          toy={toy}
+          toyRef={toyRef}
+          effectsRef={effectsRef}
+          panHandlers={panResponder.panHandlers}
+          onSquish={handleToySquish}
+          onRelease={handleToyRelease}
+          hintOpacity={gestureHintOpacity}
+          showHints={showHints}
+          squishAnim={gestureSquishAnim}
+          rotateAnim={gestureRotateAnim}
+          touchAnim={gestureTouchAnim}
+          dentScale={dentScale}
+          dentOutward={pokeOutward}
+        />
       </View>
 
-      <Text style={[styles.title, { color: current.deep }]}>{toy.name}</Text>
-      <Text style={styles.subtitle}>poke, squeeze, and stretch — just breathe</Text>
+      <BonusBanner endsAt={bonusEndsAt} multiplier={bonusMultiplier} coinAnim={bonusCoinAnim} />
 
-      <View style={styles.swatchRow}>
-        {COLOR_DEFS.map((c, i) => (
-          <Pressable
-            key={c.name}
-            onPress={() => {
-              setSelected(i);
-              toyRef.current?.selectColor(i);
-            }}
-            style={[styles.swatchBtn, { borderColor: i === selected ? c.deep : '#EDE4F9' }]}
-          >
-            <View style={[styles.swatchInner, { backgroundColor: c.mid }]} />
-          </Pressable>
-        ))}
+      <View style={styles.bottomPanel}>
+        <View style={styles.bottomRow}>
+          {[2, 3, 4].map((m) => (
+            <WatchAdButton
+              key={m}
+              multiplier={m}
+              onRewardEarned={() => handleAdReward(m)}
+              activeMultiplier={bonusActive ? bonusMultiplier : null}
+              adFree={adsFree}
+              rechargeUntil={boostRechargeUntil}
+            />
+          ))}
+        </View>
       </View>
 
-      <View style={styles.stage} {...panResponder.panHandlers}>
-        <Canvas camera={{ fov: 32, position: [0, 0.15, 4.4], near: 0.1, far: 100 }}>
-          <ambientLight intensity={0.62} />
-          <directionalLight color={0xfff2e0} intensity={1.35} position={[2.2, 3, 3]} />
-          <directionalLight color={0xcdd8ff} intensity={0.55} position={[-2.5, -1, 2]} />
-          <directionalLight color={0xffffff} intensity={0.4} position={[-1.5, 2, -3]} />
-          <SquishyToy
-            ref={toyRef}
-            startingColorIndex={selected}
-            onSquish={() => audioRef.current?.playSquish()}
-            onRelease={() => audioRef.current?.playRelease()}
-            onStick={() => audioRef.current?.playStick()}
-            onBoop={() => audioRef.current?.playBoop()}
-          />
-        </Canvas>
-      </View>
+      {/* the same full-width strip as Home's (none with Remove Ads) */}
+      {adsFree ? <View style={{ height: insets.bottom }} /> : <AdStrip />}
 
-      <Text style={styles.caption}>
-        drag the buddy to squish & stretch it · drag empty space to spin it around
-      </Text>
-    </View>
+      {doubleFlash && (
+        <View style={styles.flashOverlay} pointerEvents="none">
+          <PopIn key={doubleFlashKey} onFadeOutDone={() => setDoubleFlash(false)} style={styles.doubleFlashPop}>
+            <OutlinedTitle text={`×${bonusMultiplier} COINS!`} fill="gold" size={44} outline={4} />
+          </PopIn>
+        </View>
+      )}
+
+      {settingsOpen && (
+        <SettingsModal
+          onClose={closeSettings}
+          squishSoundEnabled={squishSoundEnabled}
+          onToggleSquishSound={onToggleSquishSound}
+          coinSoundEnabled={coinSoundEnabled}
+          onToggleCoinSound={onToggleCoinSound}
+          releaseSoundEnabled={releaseSoundEnabled}
+          onToggleReleaseSound={onToggleReleaseSound}
+          vibrationEnabled={vibrationEnabled}
+          onToggleVibration={onToggleVibration}
+          showFps={showFps}
+          onToggleShowFps={onToggleShowFps}
+          pokeStrength={pokeStrength}
+          onChangePokeStrength={onChangePokeStrength}
+          pokeOutward={pokeOutward}
+          onChangePokeOutward={onChangePokeOutward}
+        />
+      )}
+
+      <PunishmentModal visible={punishOpen} onDismiss={dismissPunishment} adsFree={adsFree} />
+    </CandyBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center' },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    paddingHorizontal: spacing(5),
-    paddingTop: spacing(12),
-  },
-  back: { fontSize: 26, fontWeight: '700' },
-  scorePill: {
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    borderRadius: 999,
-    paddingHorizontal: spacing(4),
-    paddingVertical: spacing(1),
-  },
-  scoreText: { fontSize: 14, fontWeight: '600', color: '#7C4FC0' },
-  muteBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#E4D6F6',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '800',
-    marginTop: spacing(6),
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#9C87BD',
-    marginTop: spacing(1),
-  },
-  swatchRow: {
-    flexDirection: 'row',
-    gap: spacing(3),
-    marginTop: spacing(6),
-  },
-  swatchBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    borderWidth: 3,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  swatchInner: { width: 26, height: 26, borderRadius: 13 },
-  stage: { width: STAGE_WIDTH, height: STAGE_HEIGHT, marginTop: spacing(4) },
-  caption: {
+  container: { flex: 1 },
+  // Bottom panel no longer carries a tall hint list, so the stage claims
+  // whatever's left instead of a fixed 70/30 split (see bottomPanel below).
+  stageArea: { flex: 1, position: 'relative', alignItems: 'center', justifyContent: 'center' },
+  topLeft: { position: 'absolute', left: 14, flexDirection: 'row', alignItems: 'center', gap: 8, zIndex: 3 },
+  coinPill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 4 },
+  coinPillText: {
+    color: candyColors.goldText,
+    fontFamily: candyFonts.bodyHeavy,
     fontSize: 13,
-    fontWeight: '600',
-    fontStyle: 'italic',
-    color: '#A691C6',
-    marginTop: spacing(1),
-    marginBottom: spacing(8),
-    textAlign: 'center',
-    maxWidth: 300,
-    paddingHorizontal: spacing(6),
+    textShadowColor: candyColors.outline,
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
   },
+  fpsPill: { paddingHorizontal: 10, paddingVertical: 4 },
+  fpsText: {
+    fontFamily: candyFonts.bodyHeavy,
+    fontSize: 12,
+    textShadowColor: candyColors.outline,
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
+  },
+  wheelButton: { position: 'absolute', right: GEAR_RIGHT, zIndex: 3 },
+  settingsHintLayer: { zIndex: 4 },
+  gearHalo: {
+    position: 'absolute',
+    width: GEAR_SIZE + 10,
+    height: GEAR_SIZE + 10,
+    borderRadius: (GEAR_SIZE + 10) / 2,
+    borderWidth: 3,
+    borderColor: '#ff4fbf',
+  },
+  gearHint: { position: 'absolute', right: 10, alignItems: 'flex-end', gap: 4 },
+  stage: { width: STAGE_SIZE, height: STAGE_SIZE },
+  ripple: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    width: RIPPLE_MAX,
+    height: RIPPLE_MAX,
+    borderRadius: RIPPLE_MAX / 2,
+    borderWidth: 3,
+    borderColor: 'rgba(255,111,189,0.7)',
+  },
+  floatingCoin: { position: 'absolute', left: 0, top: 0, flexDirection: 'row', alignItems: 'center', gap: 2, zIndex: 6 },
+
+  settingsOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: candyColors.scrim,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    zIndex: 40,
+  },
+  settingsCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: candyColors.sheet,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: candyColors.inkSoft,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 20,
+    shadowColor: '#6b3fa0',
+    shadowOpacity: 0.28,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 10,
+  },
+  settingsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  settingsTitle: { fontFamily: candyFonts.display, fontSize: 20, letterSpacing: 1, color: candyColors.ink },
+  settingsSection: {
+    marginTop: 14,
+    marginBottom: 4,
+    color: candyColors.goldInk,
+    fontFamily: candyFonts.bodyHeavy,
+    fontSize: 10.5,
+    letterSpacing: 1.4,
+  },
+  settingsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 7 },
+  settingsLabel: { color: candyColors.inkSoft, fontFamily: candyFonts.body, fontSize: 13 },
+  settingsLabelSpaced: { marginTop: 12 },
+  settingsHint: { marginTop: 4, color: candyColors.mutedLight, fontFamily: candyFonts.body, fontSize: 10.5 },
+  segmented: { flexDirection: 'row', gap: 6, marginTop: 8 },
+  segment: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#e3cff5',
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  segmentActive: { borderColor: '#ffffff' },
+  segmentText: { color: candyColors.ink, fontFamily: candyFonts.display, fontSize: 13 },
+  segmentTextActive: { color: '#ffffff', textShadowColor: candyColors.pinkRing, textShadowOffset: { width: 0, height: 1.5 }, textShadowRadius: 1 },
+
+  bottomPanel: { backgroundColor: 'rgba(70,10,130,0.35)', borderTopWidth: 2, borderTopColor: 'rgba(255,255,255,0.6)' },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10 },
+  gestureHint: { position: 'absolute', top: '50%', alignItems: 'center', gap: 6 },
+  gestureHandWrap: { width: HAND_W, height: HAND_W * HAND_ASPECT },
+  touchRing: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 3,
+    borderColor: '#ff4fbf',
+  },
+  touchRingInner: { flex: 1, borderRadius: 11, borderWidth: 2, borderColor: '#ffffff' },
+  hintPill: {
+    borderRadius: 14,
+    backgroundColor: 'rgba(60,8,110,0.45)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.75)',
+    paddingVertical: 4,
+    paddingHorizontal: 11,
+  },
+  hintPillText: { color: '#ffffff', fontFamily: candyFonts.display, fontSize: 12, letterSpacing: 0.8, includeFontPadding: false },
+  hintPillSub: { color: '#ffe6fa', fontFamily: candyFonts.bodyHeavy, fontSize: 10.5, marginTop: 1 },
+  bonusBar: { marginHorizontal: 16, marginBottom: 8, paddingBottom: 4 },
+  bonusHidden: { opacity: 0 },
+  bonusLip: { position: 'absolute', left: 0, right: 0, top: 4, bottom: 0, borderRadius: 21, backgroundColor: '#9c4d06' },
+  bonusRing: {
+    borderRadius: 21,
+    padding: 2.5,
+    backgroundColor: '#9c4d06',
+    shadowColor: '#ffd23c',
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
+  },
+  bonusInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 18,
+    borderWidth: 3,
+    borderColor: '#ffffff',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    overflow: 'hidden',
+  },
+  bonusCoin: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    overflow: 'hidden',
+    borderWidth: 2.5,
+    borderColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bonusCoinText: {
+    fontFamily: candyFonts.display,
+    fontSize: 12,
+    color: '#5a3a00',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
+  bonusBody: { flex: 1, gap: 5 },
+  bonusTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  bonusLabel: {
+    color: '#ffffff',
+    fontFamily: candyFonts.display,
+    fontSize: 12,
+    letterSpacing: 1,
+    textShadowColor: '#9c4d06',
+    textShadowOffset: { width: 0, height: 1.5 },
+    textShadowRadius: 1,
+  },
+  bonusTime: {
+    fontFamily: candyFonts.display,
+    fontSize: 17,
+    color: '#ffffff',
+    textShadowColor: '#9c4d06',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 1,
+  },
+  bonusTrack: { height: 8, borderRadius: 4, backgroundColor: 'rgba(156,77,6,0.35)', borderWidth: 1.5, borderColor: '#ffffff', overflow: 'hidden' },
+  bonusFill: { height: '100%', borderRadius: 3 },
+  flashOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    zIndex: 32,
+  },
+  doubleFlashPop: { alignItems: 'center' },
+
+  punishOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(74,26,115,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 26,
+    zIndex: 60,
+  },
+  punishRing: {
+    width: '100%',
+    maxWidth: 340,
+    borderRadius: 31,
+    padding: 3,
+    backgroundColor: candyColors.danger,
+    shadowColor: '#320064',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.5,
+    shadowRadius: 18,
+    elevation: 14,
+  },
+  punishWhite: { borderRadius: 28, borderWidth: 4, borderColor: '#ffffff', overflow: 'hidden' },
+  punishFace: { paddingHorizontal: 22, paddingTop: 22, paddingBottom: 20, alignItems: 'center' },
+  punishEmoji: { fontSize: 46, marginBottom: 2 },
+  punishBody: {
+    fontFamily: candyFonts.body,
+    fontSize: 15,
+    lineHeight: 21,
+    color: candyColors.ink,
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  punishButton: { alignSelf: 'stretch' },
+  punishButtonText: { fontSize: 15 },
 });
