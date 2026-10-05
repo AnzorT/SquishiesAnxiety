@@ -768,6 +768,7 @@ function makeSquishState() {
     dentUserScale: 1,
     dentSign: 1,
     pressDir: new THREE.Vector3(0, 0, -1),
+    rayDirLocal: new THREE.Vector3(0, 0, -1),
     // Whole-body puff from the mean push-in, applied on the group transform.
     lift: 1,
     // The whole-body squeeze along the press direction (see the shader).
@@ -943,6 +944,10 @@ function meanFunnel(s, px, py, pz) {
 // sliding is invisible.
 const PRESS_MOVE_EPS = 0.06;
 
+// How much the push direction leans toward the body's centre instead of
+// straight into the screen (see computeDentFall).
+const PRESS_TOWARD_CENTRE = 0.15;
+
 // The press point moved (pointerDown / the once-per-frame pointerMove).
 function computeDentFall(s, localPoint) {
   const px = localPoint.x;
@@ -989,11 +994,20 @@ function computeDentFall(s, localPoint) {
     }
     presses.push({ x: px, y: py, z: pz, amp: 0, vel: 0, target: 0, meanF: meanFunnel(s, px, py, pz), driven: true });
   }
-  // Push direction: from the touch point straight in toward the body's
-  // centre. Every dented vertex moves along this one direction (the pull and
-  // the squeeze are measured against it too).
+  // Push direction: mostly straight into the screen, along the finger's ray
+  // (so the dent stays under the finger), with a little toward the body's
+  // centre so a press near the outline still sinks in rather than sliding
+  // the surface sideways. Every dented vertex moves along this one direction
+  // (the pull, the squeeze and the creases are measured against it too). It
+  // used to point at the centre only, which on a creature with a head on a
+  // body pushed a press on the face diagonally down, away from the finger.
   const len = Math.hypot(px, py, pz);
-  if (len > 1e-6) s.pressDir.set(-px / len, -py / len, -pz / len);
+  const ray = s.rayDirLocal;
+  if (len > 1e-6) {
+    const k = PRESS_TOWARD_CENTRE / len;
+    const w = 1 - PRESS_TOWARD_CENTRE;
+    s.pressDir.set(ray.x * w - px * k, ray.y * w - py * k, ray.z * w - pz * k).normalize();
+  }
   const featureSigma = s.dentRadius;
   const featureSigmaFactor = -1 / (2 * featureSigma * featureSigma);
   for (let j = 0; j < s.featureBases.length; j++) {
@@ -1183,6 +1197,8 @@ function raycastLocal(s, camera, raycaster, ndcX, ndcY) {
   const dx = _ray.direction.x;
   const dy = _ray.direction.y;
   const dz = _ray.direction.z;
+  // The finger's direction in the mesh's space, for the push direction.
+  s.rayDirLocal.set(dx, dy, dz).normalize();
 
   // Ray passes wide of the body's bounding sphere -> no triangle can be hit.
   const tc = -(ox * dx + oy * dy + oz * dz);
