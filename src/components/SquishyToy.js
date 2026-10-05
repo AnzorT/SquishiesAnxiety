@@ -259,6 +259,9 @@ function buildCreature(id, visual) {
 // - `dentSqueeze`: the whole body is squeezed along the press direction by up
 //   to this fraction, and spreads out sideways by a quarter of that (less
 //   than a real volume would: the stage has little room to the sides).
+// These are the strongest squish (Squish level 5 in the squish screen's
+// settings): the player's level scales the depth, the pull, the squeeze and
+// the floor flatten together (`dentUserScale`).
 // `fallbackColor` only matters for the rare mesh with no baked texture map
 // (see prepareModelData).
 // Until 2026-10-05 the dent was a pointed funnel (dentDepth 0.6, a cusp of
@@ -664,8 +667,8 @@ function makeSquishState() {
     presses: [],
     pressUniform: new Float32Array(SQUISH_MAX_PRESSES * 4),
     squishUniforms: null,
-    // Player settings (see the SquishyToy props): depth multiplier, and
-    // 1 = push in / -1 = pop out.
+    // Player settings (see the SquishyToy props): the squish level's
+    // multiplier on the whole squish, and 1 = push in / -1 = pop out.
     dentUserScale: 1,
     dentSign: 1,
     pressDir: new THREE.Vector3(0, 0, -1),
@@ -1202,7 +1205,7 @@ function uploadSquish(s) {
   const fullDepth = s.dentDepth * s.dentUserScale;
   u.uSquishDent.value.set(
     1 / (s.dentRadius * s.dentRadius),
-    (s.dentPull / fullDepth) * sign * invLift,
+    (s.dentPull / s.dentDepth) * sign * invLift,
     fullDepth * 1.5,
     s.squeeze * sign
   );
@@ -1257,8 +1260,7 @@ function tickPhysics(s, dt) {
     // briefly stretches) on release along with the dent.
     let ampSum = 0;
     for (let j = 0; j < presses.length; j++) ampSum += presses[j].amp;
-    const fullDepth = s.dentDepth * s.dentUserScale;
-    s.squeeze = clamp((ampSum / fullDepth) * s.dentSqueeze, -s.dentSqueeze, s.dentSqueeze * 1.4);
+    s.squeeze = clamp((ampSum / s.dentDepth) * s.dentSqueeze, -s.dentSqueeze, s.dentSqueeze * 1.4);
     if (!s.dentTargetActive && (presses.length === 0 || motion < REST_EPS)) {
       settleToRest(s);
       meanDent = 0;
@@ -1447,7 +1449,8 @@ const SquishyToy = memo(forwardRef(function SquishyToy(
         computeDentFall(s, local);
         applyDentScale(s, 0);
         // A push-in flattens the whole body; a pop-out stretches it instead.
-        s.globalSquashTarget = 0.55 * s.dentSign;
+        // The squish level scales it with the rest of the squish.
+        s.globalSquashTarget = 0.55 * s.dentUserScale * s.dentSign;
         onSquish && onSquish();
       },
       // Only records where the finger is now — applyPendingMove (in useFrame)

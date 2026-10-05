@@ -566,9 +566,11 @@ function Segmented({ options, value, onChange }) {
   );
 }
 
-// Poke strength setting (1-5) -> multiplier on SquishyToy's tuned dent depth.
-// 3 is the tuned default.
-const POKE_STRENGTH_SCALES = [0.5, 0.75, 1, 1.25, 1.5];
+// Squish level setting (1-5) -> multiplier on SquishyToy's squish, which is
+// tuned for level 5 (the strongest): it scales the dent's depth, the pull
+// into it, the whole-body squeeze and the flatten together. 3 is the
+// default.
+const POKE_STRENGTH_SCALES = [0.35, 0.55, 0.78, 0.9, 1];
 const POKE_STRENGTH_OPTIONS = [1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) }));
 const POKE_DIRECTION_OPTIONS = [
   { value: false, label: 'Push in' },
@@ -636,9 +638,9 @@ function SettingsModal({
         <SettingsRow label="Vibration">
           <ToggleSwitch value={vibrationEnabled} onToggle={() => onToggleVibration(!vibrationEnabled)} />
         </SettingsRow>
-        <Text style={styles.settingsLabel}>Poke strength</Text>
+        <Text style={styles.settingsLabel}>Squish level</Text>
         <Segmented options={POKE_STRENGTH_OPTIONS} value={pokeStrength} onChange={onChangePokeStrength} />
-        <Text style={styles.settingsHint}>1 = gentle · 5 = deepest (the vibration follows it)</Text>
+        <Text style={styles.settingsHint}>1 = gentle · 5 = strongest (the vibration follows it)</Text>
         <Text style={[styles.settingsLabel, styles.settingsLabelSpaced]}>Poke direction</Text>
         <Segmented options={POKE_DIRECTION_OPTIONS} value={pokeOutward} onChange={onChangePokeOutward} />
       </View>

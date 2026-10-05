@@ -6,7 +6,7 @@ import * as Haptics from 'expo-haptics';
 // while it rests), one impact when it lets go. Nothing for two-finger
 // rotation or the coin ticks.
 //
-// The strength follows the Poke strength setting (1-5). expo-haptics only
+// The strength follows the Squish level setting (1-5). expo-haptics only
 // has three real strengths on Android (light 30/255, medium 50/255, heavy
 // 70/255 amplitude, 43-60 ms each), so the five levels also differ in how
 // often the ticks come while dragging and whether the landing is a double
