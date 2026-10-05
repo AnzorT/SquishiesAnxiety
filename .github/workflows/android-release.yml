@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - claude/dazzling-heisenberg-gflopb
+      - claude/pillow-squish
     tags:
       - 'v*'
 
