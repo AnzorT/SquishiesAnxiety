@@ -81,7 +81,6 @@ import { setBoxSettings, setPricing } from './src/economy';
 import { adSpinsLeft, hasSpunToday, todayKey, tzOffsetMinutes } from './src/dailySpin';
 import callFunction from './src/firebase/callFunction';
 import sfx from './src/audio/sfx';
-import DEV_CATALOG from './src/data/devCatalog'; // TEMP-DEV-CATALOG: preview of the unpublished roster (tools/plush-art/serve.mjs)
 
 // GLTFParser's constructor (three.js, used by SquishyToy.js's Glorp build
 // path) sniffs navigator.userAgent to work around known Safari ImageBitmap
@@ -319,7 +318,7 @@ export default function App() {
   // the live Firestore subscription below takes over once signed in and
   // refreshes the cache for next time.
   useEffect(() => {
-    loadCachedCreatures().then(() => setCreatures(DEV_CATALOG)); // TEMP-DEV-CATALOG
+    loadCachedCreatures().then(setCreatures);
   }, []);
 
   useEffect(() => {
@@ -331,7 +330,8 @@ export default function App() {
     if (!authUser) return undefined;
     return subscribeToCreatures((list) => {
       if (list.length) {
-        setCreatures(DEV_CATALOG); // TEMP-DEV-CATALOG (was: setCreatures(list); saveCreaturesToCache(list);)
+        setCreatures(list);
+        saveCreaturesToCache(list);
       }
       // An empty list here means a transient error — keep whatever the
       // cache (or a prior successful fetch) already put in state rather
