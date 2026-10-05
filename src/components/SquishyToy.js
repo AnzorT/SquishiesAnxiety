@@ -201,6 +201,7 @@ function buildCreature(id, visual) {
     dentPullWidth: 0.7,
     dentSqueeze: 0.14,
     bottomY: -1,
+    extent: { w: 2, h: 2, midY: 0 },
     featureBases,
     featureMeshes,
     featureScaleBase,
@@ -864,6 +865,7 @@ function buildModelCreature(id, cfg, modelData) {
     dentPullWidth: cfg.dentPullWidth,
     dentSqueeze: cfg.dentSqueeze,
     bottomY: lowestY(basePos),
+    extent: extentOf(basePos),
     // No separate face meshes — Glorp's face is in its texture.
     featureBases: [],
     featureMeshes: [],
@@ -883,6 +885,23 @@ function buildModelCreature(id, cfg, modelData) {
 }
 
 // The lowest point of the rest mesh: the squash keeps it on the floor.
+// The rest mesh's width and height (model units), for the camera fit.
+function extentOf(basePos) {
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (let i = 0; i < basePos.length; i += 3) {
+    const x = basePos[i];
+    const y = basePos[i + 1];
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+  }
+  return { w: maxX - minX, h: maxY - minY, midY: (minY + maxY) / 2 };
+}
+
 function lowestY(basePos) {
   let min = 0;
   for (let i = 1; i < basePos.length; i += 3) if (basePos[i] < min) min = basePos[i];
@@ -912,11 +931,14 @@ function meanFunnel(s, px, py, pz) {
   return count ? sum / count : 0;
 }
 
-// A finger that slides less than this (model units; the body is ~1.9
-// across) just moves the current press point along. Further than that and
-// a new press point starts while the old one springs back — the lag the
-// per-vertex springs used to give.
-const PRESS_MOVE_EPS = 0.008;
+// A finger that slides less than this per frame (model units; the body is
+// ~2.25 across) just moves the current press point along with it. Further
+// than that and a new press point starts while the old one springs back —
+// the lag the per-vertex springs used to give. It was 0.008: a finger's
+// natural jitter on a phone crossed that, so a held press kept restarting
+// in a new spot and smeared. Against the wide dent (0.85) this much
+// sliding is invisible.
+const PRESS_MOVE_EPS = 0.06;
 
 // The press point moved (pointerDown / the once-per-frame pointerMove).
 function computeDentFall(s, localPoint) {
@@ -980,11 +1002,22 @@ function computeDentFall(s, localPoint) {
   }
 }
 
-// A press goes straight to 60% of the full depth, then sinks the rest of the
-// way in over about a second of holding, like a head settling into a
-// pillow. The whole squish scales together.
+// How long a press takes to sink all the way in (seconds).
+const PRESS_SINK_TIME = 0.75;
+
+// A press sinks in smoothly from nothing: quickly at first, then slower and
+// slower until it settles at the full depth (an ease-out over
+// PRESS_SINK_TIME), like a head settling into a pillow. It used to jump
+// straight to 60% of the depth on the first frame, which read as a sudden
+// jump of the whole creature. The dent, the squeeze, the floor flatten and
+// the creases all follow this one curve, so the whole squish moves
+// together; the squish level scales it.
 function applyDentScale(s, holdSeconds) {
-  const tipDepth = s.dentDepth * s.dentUserScale * (0.6 + 0.4 * (1 - Math.exp(-holdSeconds * 1.5)));
+  const x = Math.min(holdSeconds / PRESS_SINK_TIME, 1);
+  const progress = 1 - (1 - x) * (1 - x) * (1 - x);
+  const tipDepth = s.dentDepth * s.dentUserScale * progress;
+  // A push-in flattens the whole body; a pop-out stretches it instead.
+  s.globalSquashTarget = 0.55 * s.dentUserScale * s.dentSign * progress;
   const presses = s.presses;
   for (let j = 0; j < presses.length; j++) presses[j].target = presses[j].driven ? tipDepth : 0;
   for (let j = 0; j < s.featureBases.length; j++) s.featureDentTarget[j] = tipDepth * s.featureDentFall[j] * 1.1;
@@ -1471,10 +1504,10 @@ function tickPhysics(s, dt) {
 // timers, etc.) doesn't force React to reconcile this subtree — the per-frame
 // squish physics already runs in useFrame and shouldn't compete with that.
 const SquishyToy = memo(forwardRef(function SquishyToy(
-  { creatureId = '0', modelUrl, visual, onSquish, onRelease, dentScale = 1, dentOutward = false },
+  { creatureId = '0', modelUrl, visual, onSquish, onRelease, dentScale = 1, dentOutward = false, fillHeight = 0 },
   ref
 ) {
-  const { camera, gl } = useThree();
+  const { camera, gl, size } = useThree();
   const toyRef = useRef(null);
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const [built, setBuilt] = useState(null);
@@ -1552,6 +1585,24 @@ const SquishyToy = memo(forwardRef(function SquishyToy(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Size on screen: the camera moves in or out so the creature is
+  // `fillHeight` px tall (SquishScreen asks for ~70% of the screen), but
+  // never taller than 90% of the stage, and never wider than the stage
+  // with room for the squish to spread sideways. It looks at the
+  // creature's middle. Without `fillHeight` the camera stays where the
+  // Canvas put it.
+  useEffect(() => {
+    const s = toyRef.current;
+    if (!s || !fillHeight || !size.width || !size.height) return;
+    const { w, h, midY } = s.extent;
+    const tanHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const heightPx = Math.min(fillHeight, size.height * 0.9);
+    const view = Math.max((h * size.height) / heightPx, (w * 1.06 * size.height) / (size.width * 0.96));
+    camera.position.set(0, midY, view / (2 * tanHalf));
+    camera.lookAt(0, midY, 0);
+    camera.updateMatrixWorld();
+  }, [built, camera, fillHeight, size.width, size.height]);
+
   // The player's poke settings (the squish screen's settings popup). Applied
   // live: a change takes effect on the next press, or the current one.
   useEffect(() => {
@@ -1576,9 +1627,6 @@ const SquishyToy = memo(forwardRef(function SquishyToy(
         s.pendingMove = null;
         computeDentFall(s, local);
         applyDentScale(s, 0);
-        // A push-in flattens the whole body; a pop-out stretches it instead.
-        // The squish level scales it with the rest of the squish.
-        s.globalSquashTarget = 0.55 * s.dentUserScale * s.dentSign;
         onSquish && onSquish();
       },
       // Only records where the finger is now — applyPendingMove (in useFrame)
@@ -1655,12 +1703,8 @@ const SquishyToy = memo(forwardRef(function SquishyToy(
 
   if (!built) return null;
 
-  return (
-    <>
-      <primitive object={built.group} />
-      <primitive object={built.shadowMesh} />
-    </>
-  );
+  // The creature stands on its own: no drop shadow under it.
+  return <primitive object={built.group} />;
 }));
 
 export default SquishyToy;

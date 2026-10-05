@@ -1,4 +1,4 @@
-import React, { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, PanResponder, Animated, Pressable, Easing, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,9 +34,13 @@ import ShadowText from '../components/candy/ShadowText';
 import ToggleSwitch from '../components/candy/ToggleSwitch';
 import sfx from '../audio/sfx';
 
-// Stage size: the full screen width (capped for tablets). The creature's
-// own size inside it is MODEL_TUNING.visual in SquishyToy.js.
+// Stage size for a 2D creature: the full screen width (capped for tablets).
+// A 3D creature's stage is instead the whole free area between the top
+// buttons and the bottom panel (measured on layout — see stageBox), and
+// SquishyToy fits the camera so the creature is about this share of the
+// screen's height.
 const STAGE_SIZE = Math.min(Math.round(Dimensions.get('window').width), 420);
+const CREATURE_SCREEN_SHARE = 0.7;
 const RIPPLE_LIFETIME_MS = 620;
 // 60s window where an ad-watch doubles squish rewards.
 const BONUS_MS = 60000;
@@ -471,10 +475,15 @@ const SquishStage = memo(function SquishStage({
   touchAnim,
   dentScale,
   dentOutward,
+  stageBox,
 }) {
+  const is3D = toyIs3D(toy);
   return (
-    <View style={styles.stage} {...panHandlers}>
-      {toyIs3D(toy) ? (
+    <View
+      style={is3D ? { width: stageBox.w, height: stageBox.h, marginTop: stageBox.top } : styles.stage}
+      {...panHandlers}
+    >
+      {is3D ? (
         <Canvas
           frameloop="always"
           camera={{ fov: 30, position: [0, 0.1, 4.6], near: 0.1, far: 100 }}
@@ -503,6 +512,7 @@ const SquishStage = memo(function SquishStage({
             onRelease={onRelease}
             dentScale={dentScale}
             dentOutward={dentOutward}
+            fillHeight={Math.round(Dimensions.get('window').height * CREATURE_SCREEN_SHARE)}
           />
         </Canvas>
       ) : (
@@ -785,6 +795,24 @@ export default function SquishScreen({
   hideHints = false,
 }) {
   const insets = useSafeAreaInsets();
+  // A 3D creature's stage: the free area under the top buttons (the stage
+  // area's size comes from its onLayout). stageBoxRef feeds the touch math
+  // in the PanResponder, which is created once.
+  const [stageArea, setStageArea] = useState(null);
+  const stageTop = insets.top + 14 + GEAR_SIZE + 6;
+  const stageBox = useMemo(
+    () =>
+      stageArea
+        ? { w: stageArea.width, h: Math.max(stageArea.height - stageTop, STAGE_SIZE * 0.6), top: stageTop }
+        : { w: STAGE_SIZE, h: STAGE_SIZE, top: 0 },
+    [stageArea, stageTop]
+  );
+  const stageBoxRef = useRef(stageBox);
+  stageBoxRef.current = toyIs3D(toy) ? stageBox : { w: STAGE_SIZE, h: STAGE_SIZE, top: 0 };
+  const onStageAreaLayout = useCallback((e) => {
+    const { width, height } = e.nativeEvent.layout;
+    setStageArea((prev) => (prev && prev.width === width && prev.height === height ? prev : { width, height }));
+  }, []);
   const toyRef = useRef(null);
   const soundRef = useRef(null);
   const coinSoundRef = useRef(null);
@@ -1043,8 +1071,8 @@ export default function SquishScreen({
   }, []);
 
   const ndcFromLocation = (locationX, locationY) => ({
-    x: (locationX / STAGE_SIZE) * 2 - 1,
-    y: -((locationY / STAGE_SIZE) * 2 - 1),
+    x: (locationX / stageBoxRef.current.w) * 2 - 1,
+    y: -((locationY / stageBoxRef.current.h) * 2 - 1),
   });
 
   const centroidOf = (touches) => {
@@ -1207,7 +1235,7 @@ export default function SquishScreen({
 
   return (
     <CandyBackground style={styles.container}>
-      <View style={styles.stageArea}>
+      <View style={styles.stageArea} onLayout={onStageAreaLayout}>
         <View style={[styles.topLeft, { top: insets.top + 14 }]}>
           <TutTarget name="back">
             <RoundButton size={34} onPress={onBack} hitSlop={8}>
@@ -1245,6 +1273,7 @@ export default function SquishScreen({
             touchAnim={gestureTouchAnim}
             dentScale={dentScale}
             dentOutward={pokeOutward}
+            stageBox={stageBox}
           />
         </TutTarget>
       </View>
