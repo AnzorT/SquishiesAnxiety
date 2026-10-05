@@ -193,12 +193,12 @@ function buildCreature(id, visual) {
     vertCount: count,
     sampleStride: 1,
     // Dent shape for the unit-radius procedural sphere — see MODEL_TUNING.
-    dentDepth: 0.5,
-    dentRadius: 0.48,
-    dentRim: 0.3,
-    dentRimWidth: 1.9,
-    dentPull: 0.35,
-    dentSqueeze: 0.1,
+    dentDepth: 0.8,
+    dentRadius: 0.67,
+    dentRim: 0.35,
+    dentRimWidth: 1.7,
+    dentPull: 0.5,
+    dentSqueeze: 0.2,
     bottomY: -1,
     featureBases,
     featureMeshes,
@@ -253,20 +253,21 @@ function buildCreature(id, visual) {
 //   pushed-in stuffing goes into the sides.
 // - `dentPull`: the surface around the dent is pulled in toward the press,
 //   so the fabric folds into the dent (at most this fraction of the way).
-// - `dentSqueeze`: the whole body is squeezed along the press direction and
-//   spreads out sideways by up to this fraction.
+// - `dentSqueeze`: the whole body is squeezed along the press direction by up
+//   to this fraction, and spreads out sideways by about a third of that (less
+//   than a real volume would: the stage has little room to the sides).
 // `fallbackColor` only matters for the rare mesh with no baked texture map
 // (see prepareModelData).
 // Until 2026-10-05 the dent was a pointed funnel (dentDepth 0.6, a cusp of
 // radius 0.33), which read as a spear going into a balloon.
 const MODEL_TUNING = {
   visual: 2.25,
-  dentDepth: 0.65,
-  dentRadius: 0.55,
-  dentRim: 0.3,
-  dentRimWidth: 1.9,
-  dentPull: 0.35,
-  dentSqueeze: 0.1,
+  dentDepth: 0.9,
+  dentRadius: 0.75,
+  dentRim: 0.35,
+  dentRimWidth: 1.7,
+  dentPull: 0.5,
+  dentSqueeze: 0.2,
   fallbackColor: '#2dd4bf',
 };
 
@@ -612,7 +613,7 @@ const SQUISH_NORMAL_GLSL = `
 #include <beginnormal_vertex>
 vec3 squishAxis = normalize(uSquishDir);
 mat3 squishAlong = mat3(squishAxis * squishAxis.x, squishAxis * squishAxis.y, squishAxis * squishAxis.z);
-mat3 squishSqueezeJ = uSquishDent.w * (0.5 * mat3(1.0) - 1.5 * squishAlong);
+mat3 squishSqueezeJ = uSquishDent.w * (0.35 * mat3(1.0) - 1.35 * squishAlong);
 float squishD = squishDepth(position, mat3(1.0) - squishAlong);
 {
   vec3 g = squishD < uSquishDent.z ? squishGrad : vec3(0.0);
@@ -623,8 +624,8 @@ float squishD = squishDepth(position, mat3(1.0) - squishAlong);
 `;
 
 // After three's "transformed = position": move the vertex. The squeeze is
-// linear in the position (compress along the press, spread sideways by half
-// as much), so its Jacobian above is the matrix itself.
+// linear in the position (compress along the press, spread sideways by 35%
+// of that), so its Jacobian above is the matrix itself.
 const SQUISH_POSITION_GLSL = `
 #include <begin_vertex>
 transformed += uSquishDir * min(squishD, uSquishDent.z) + squishPull + squishSqueezeJ * position;
@@ -1311,9 +1312,9 @@ function tickPhysics(s, dt) {
   const lift = s.lift;
   // The sideways spread is kept small (the shader's squeeze adds its own):
   // the stage is only ~9% wider than the widest creature.
-  const sx = (1 + s.globalSquash * 0.08) * breathe * lift;
-  const sy = (1 - s.globalSquash * 0.3) * breathe * lift;
-  const sz = (1 + s.globalSquash * 0.08) * breathe * lift;
+  const sx = (1 + s.globalSquash * 0.1) * breathe * lift;
+  const sy = (1 - s.globalSquash * 0.42) * breathe * lift;
+  const sz = (1 + s.globalSquash * 0.1) * breathe * lift;
   s.group.rotation.y = s.userRotY;
   s.group.rotation.x = s.userRotX + s.wobbleRotX;
   s.group.rotation.z = s.wobbleRotZ;
