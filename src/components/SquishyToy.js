@@ -1391,6 +1391,13 @@ function tickWrinkles(s, dt) {
   u.uWrinkleAxis.value.copy(s.wrinkleAxis);
 }
 
+// A released press springs back softly, like foam rising: back in about
+// 0.4 s with a small (~9%) jiggle past the rest shape. With the press's own
+// stiff spring (PHYS) it overshot by ~40%, so the face popped out toward
+// the camera and swelled past the stage edge for a moment.
+const RELEASE_STIFF = 0.1;
+const RELEASE_DAMP = 0.7;
+
 function tickPhysics(s, dt) {
   const k = dt * 60;
 
@@ -1412,14 +1419,16 @@ function tickPhysics(s, dt) {
   // rings back to zero — the same spring every vertex used to run.
   const dentStiff = 1 - Math.pow(1 - PHYS.stiff, k);
   const dentDamp = Math.pow(PHYS.damp, k);
+  const releaseStiff = 1 - Math.pow(1 - RELEASE_STIFF, k);
+  const releaseDamp = Math.pow(RELEASE_DAMP, k);
   let meanDent = 0;
   if (!s.atRest) {
     const presses = s.presses;
     let motion = 0;
     for (let j = presses.length - 1; j >= 0; j--) {
       const pr = presses[j];
-      pr.vel += (pr.target - pr.amp) * dentStiff;
-      pr.vel *= dentDamp;
+      pr.vel += (pr.target - pr.amp) * (pr.driven ? dentStiff : releaseStiff);
+      pr.vel *= pr.driven ? dentDamp : releaseDamp;
       pr.amp += pr.vel;
       const aa = Math.abs(pr.amp);
       const av = Math.abs(pr.vel);
@@ -1695,7 +1704,7 @@ const SquishyToy = memo(forwardRef(function SquishyToy(
         // The under-damped spring (see tickPhysics) overshoots on its own —
         // g springs from ~0.85 back through 0 into a tall stretch and bounces
         // down to rest.
-        const kick = PHYS.wobbleKick;
+        const kick = PHYS.wobbleKick * 0.5;
         s.wobbleRotXV += clamp((Math.random() - 0.5) * kick, -kick, kick);
         s.wobbleRotZV += clamp((Math.random() - 0.5) * kick, -kick, kick);
         s.pressLocalSmoothed = null;
