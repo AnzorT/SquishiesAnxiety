@@ -193,12 +193,13 @@ function buildCreature(id, visual) {
     vertCount: count,
     sampleStride: 1,
     // Dent shape for the unit-radius procedural sphere — see MODEL_TUNING.
-    dentDepth: 0.8,
-    dentRadius: 0.67,
-    dentRim: 0.35,
-    dentRimWidth: 1.7,
-    dentPull: 0.5,
-    dentSqueeze: 0.2,
+    dentDepth: 1.0,
+    dentRadius: 0.76,
+    dentRim: 0.4,
+    dentRimWidth: 1.6,
+    dentPull: 0.62,
+    dentPullWidth: 0.7,
+    dentSqueeze: 0.3,
     bottomY: -1,
     featureBases,
     featureMeshes,
@@ -251,10 +252,12 @@ function buildCreature(id, visual) {
 // - `dentRim` / `dentRimWidth`: the ring around the dent rises by this
 //   fraction of the depth, over this many times the dent's width, as the
 //   pushed-in stuffing goes into the sides.
-// - `dentPull`: the surface around the dent is pulled in toward the press,
-//   so the fabric folds into the dent (at most this fraction of the way).
+// - `dentPull` / `dentPullWidth`: the surface around the dent is pulled in
+//   toward the press, so the fabric folds into the dent (at most this
+//   fraction of the way), over this many times the dent's width. Narrower
+//   than the dent so the creature's outline isn't pulled in with it.
 // - `dentSqueeze`: the whole body is squeezed along the press direction by up
-//   to this fraction, and spreads out sideways by about a third of that (less
+//   to this fraction, and spreads out sideways by a quarter of that (less
 //   than a real volume would: the stage has little room to the sides).
 // `fallbackColor` only matters for the rare mesh with no baked texture map
 // (see prepareModelData).
@@ -262,12 +265,13 @@ function buildCreature(id, visual) {
 // radius 0.33), which read as a spear going into a balloon.
 const MODEL_TUNING = {
   visual: 2.25,
-  dentDepth: 0.9,
-  dentRadius: 0.75,
-  dentRim: 0.35,
-  dentRimWidth: 1.7,
-  dentPull: 0.5,
-  dentSqueeze: 0.2,
+  dentDepth: 1.15,
+  dentRadius: 0.85,
+  dentRim: 0.4,
+  dentRimWidth: 1.6,
+  dentPull: 0.62,
+  dentPullWidth: 0.7,
+  dentSqueeze: 0.3,
   fallbackColor: '#2dd4bf',
 };
 
@@ -570,14 +574,15 @@ const SQUISH_MAX_PRESSES = 24;
 // uSquishDir: press direction * push-in/pop-out sign / lift.
 // uSquishDent: x = 1/sigma^2 of the dent, y = pull strength (signed, per
 // unit of amplitude), z = overshoot guard on the depth, w = squeeze amount
-// (signed). uSquishRim: x = 1/sigma^2 of the rim, y = rim height ratio.
+// (signed). uSquishRim: x = 1/sigma^2 of the rim, y = rim height ratio,
+// z = 1/sigma^2 of the pull.
 const SQUISH_VERTEX_GLSL = `
 #define SQUISH_MAX ${SQUISH_MAX_PRESSES}
 uniform vec4 uSquishPress[SQUISH_MAX];
 uniform int uSquishCount;
 uniform vec3 uSquishDir;
 uniform vec4 uSquishDent;
-uniform vec2 uSquishRim;
+uniform vec3 uSquishRim;
 vec3 squishGrad;
 vec3 squishPull;
 mat3 squishPullJ;
@@ -596,9 +601,9 @@ float squishDepth(vec3 p, mat3 sideways) {
     depth += dent - rim;
     squishGrad -= q * (dent * uSquishDent.x - rim * uSquishRim.x);
     vec3 t = sideways * q;
-    float k = uSquishDent.y * dent;
+    float k = uSquishDent.y * exp(-0.5 * qq * uSquishRim.z) * amp;
     squishPull -= t * k;
-    squishPullJ -= k * (sideways - mat3(t * q.x, t * q.y, t * q.z) * uSquishDent.x);
+    squishPullJ -= k * (sideways - mat3(t * q.x, t * q.y, t * q.z) * uSquishRim.z);
   }
   return depth;
 }
@@ -613,7 +618,7 @@ const SQUISH_NORMAL_GLSL = `
 #include <beginnormal_vertex>
 vec3 squishAxis = normalize(uSquishDir);
 mat3 squishAlong = mat3(squishAxis * squishAxis.x, squishAxis * squishAxis.y, squishAxis * squishAxis.z);
-mat3 squishSqueezeJ = uSquishDent.w * (0.35 * mat3(1.0) - 1.35 * squishAlong);
+mat3 squishSqueezeJ = uSquishDent.w * (0.25 * mat3(1.0) - 1.25 * squishAlong);
 float squishD = squishDepth(position, mat3(1.0) - squishAlong);
 {
   vec3 g = squishD < uSquishDent.z ? squishGrad : vec3(0.0);
@@ -624,8 +629,8 @@ float squishD = squishDepth(position, mat3(1.0) - squishAlong);
 `;
 
 // After three's "transformed = position": move the vertex. The squeeze is
-// linear in the position (compress along the press, spread sideways by 35%
-// of that), so its Jacobian above is the matrix itself.
+// linear in the position (compress along the press, spread sideways by a
+// quarter of that), so its Jacobian above is the matrix itself.
 const SQUISH_POSITION_GLSL = `
 #include <begin_vertex>
 transformed += uSquishDir * min(squishD, uSquishDent.z) + squishPull + squishSqueezeJ * position;
@@ -641,7 +646,7 @@ function installSquishShader(material, s) {
     shader.uniforms.uSquishCount = { value: 0 };
     shader.uniforms.uSquishDir = { value: new THREE.Vector3(0, 0, -1) };
     shader.uniforms.uSquishDent = { value: new THREE.Vector4(1 / (s.dentRadius * s.dentRadius), 0, s.dentDepth * 1.5, 0) };
-    shader.uniforms.uSquishRim = { value: new THREE.Vector2(1 / (s.dentRadius * s.dentRimWidth) ** 2, s.dentRim) };
+    shader.uniforms.uSquishRim = { value: new THREE.Vector3() };
     shader.vertexShader = shader.vertexShader
       .replace('void main() {', `${SQUISH_VERTEX_GLSL}\nvoid main() {`)
       .replace('#include <beginnormal_vertex>', SQUISH_NORMAL_GLSL)
@@ -756,6 +761,7 @@ function buildModelCreature(id, cfg, modelData) {
     dentRim: cfg.dentRim,
     dentRimWidth: cfg.dentRimWidth,
     dentPull: cfg.dentPull,
+    dentPullWidth: cfg.dentPullWidth,
     dentSqueeze: cfg.dentSqueeze,
     bottomY: lowestY(basePos),
     // No separate face meshes — Glorp's face is in its texture.
@@ -1200,7 +1206,7 @@ function uploadSquish(s) {
     fullDepth * 1.5,
     s.squeeze * sign
   );
-  u.uSquishRim.value.set(1 / (s.dentRadius * s.dentRimWidth) ** 2, s.dentRim);
+  u.uSquishRim.value.set(1 / (s.dentRadius * s.dentRimWidth) ** 2, s.dentRim, 1 / (s.dentRadius * s.dentPullWidth) ** 2);
 }
 
 function tickPhysics(s, dt) {
@@ -1312,9 +1318,9 @@ function tickPhysics(s, dt) {
   const lift = s.lift;
   // The sideways spread is kept small (the shader's squeeze adds its own):
   // the stage is only ~9% wider than the widest creature.
-  const sx = (1 + s.globalSquash * 0.1) * breathe * lift;
-  const sy = (1 - s.globalSquash * 0.42) * breathe * lift;
-  const sz = (1 + s.globalSquash * 0.1) * breathe * lift;
+  const sx = (1 + s.globalSquash * 0.07) * breathe * lift;
+  const sy = (1 - s.globalSquash * 0.52) * breathe * lift;
+  const sz = (1 + s.globalSquash * 0.07) * breathe * lift;
   s.group.rotation.y = s.userRotY;
   s.group.rotation.x = s.userRotX + s.wobbleRotX;
   s.group.rotation.z = s.wobbleRotZ;
