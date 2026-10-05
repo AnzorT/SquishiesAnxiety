@@ -193,12 +193,12 @@ function buildCreature(id, visual) {
     vertCount: count,
     sampleStride: 1,
     // Dent shape for the unit-radius procedural sphere — see MODEL_TUNING.
-    dentDepth: 1.0,
-    dentRadius: 0.76,
-    dentRim: 0.4,
+    dentDepth: 0.67,
+    dentRadius: 0.5,
+    dentRim: 0.35,
     dentRimWidth: 1.6,
-    dentPull: 0.62,
-    dentPullWidth: 0.7,
+    dentPull: 0.45,
+    dentPullWidth: 0.75,
     dentSqueeze: 0.14,
     bottomY: -1,
     extent: { w: 2, h: 2, midY: 0 },
@@ -266,15 +266,18 @@ function buildCreature(id, visual) {
 // `fallbackColor` only matters for the rare mesh with no baked texture map
 // (see prepareModelData).
 // Until 2026-10-05 the dent was a pointed funnel (dentDepth 0.6, a cusp of
-// radius 0.33), which read as a spear going into a balloon.
+// radius 0.33), which read as a spear going into a balloon. The widths are
+// sized for a creature with a head about 1.3 units across: pressing the face
+// caves the face in and pulls it together while the head keeps its outline
+// (a dent wider than the head shrank the whole head).
 const MODEL_TUNING = {
   visual: 2.25,
-  dentDepth: 1.15,
-  dentRadius: 0.85,
-  dentRim: 0.4,
+  dentDepth: 0.75,
+  dentRadius: 0.55,
+  dentRim: 0.35,
   dentRimWidth: 1.6,
-  dentPull: 0.62,
-  dentPullWidth: 0.7,
+  dentPull: 0.45,
+  dentPullWidth: 0.75,
   dentSqueeze: 0.14,
   fallbackColor: '#2dd4bf',
 };
@@ -693,7 +696,7 @@ float squishWrinkles() {
       + 0.05 * sin(r * (61.0 + 23.0 * h3) + h2 * 20.0);
     float f = abs(fract(a) - 0.5 - wig);
     float spacing = max(r * 6.2831853 / count, 1e-4);
-    float w = min(0.007 / spacing, 0.3);
+    float w = min(0.005 / spacing, 0.3);
     float line = 1.0 - smoothstep(w * 0.3, w * 1.3, f);
     float r0 = fl * reach * 0.12 * h3;
     float len = reach * (0.18 + 0.7 * h2 * h2) * (1.0 - 0.3 * fl);
@@ -714,7 +717,7 @@ diffuseColor.rgb *= 1.0 - 0.4 * vSquishShade;
 
 // Before three writes the pixel: the creases catch the light.
 const SQUISH_LIGHT_GLSL = `
-outgoingLight = mix(outgoingLight, vec3(1.0), squishWrinkles() * 0.7);
+outgoingLight = mix(outgoingLight, vec3(1.0), squishWrinkles() * 0.6);
 #include <opaque_fragment>
 `;
 
@@ -1481,9 +1484,9 @@ function tickPhysics(s, dt) {
   const lift = s.lift;
   // The sideways spread is kept small (the shader's squeeze adds its own):
   // the stage is only ~9% wider than the widest creature.
-  const sx = (1 + s.globalSquash * 0.05) * breathe * lift;
-  const sy = (1 - s.globalSquash * 0.24) * breathe * lift;
-  const sz = (1 + s.globalSquash * 0.05) * breathe * lift;
+  const sx = (1 + s.globalSquash * 0.03) * breathe * lift;
+  const sy = (1 - s.globalSquash * 0.1) * breathe * lift;
+  const sz = (1 + s.globalSquash * 0.03) * breathe * lift;
   s.group.rotation.y = s.userRotY;
   s.group.rotation.x = s.userRotX + s.wobbleRotX;
   s.group.rotation.z = s.wobbleRotZ;
