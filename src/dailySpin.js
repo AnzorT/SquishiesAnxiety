@@ -31,6 +31,17 @@ export function hasSpunToday(profile, now = new Date()) {
   return !!profile && !!profile.lastSpinDay && profile.lastSpinDay >= todayKey(now);
 }
 
+// SPIN AGAIN: after the free spin, up to MAX_AD_SPINS more a day for a
+// rewarded video each (free with Remove Ads). The server counts them in
+// `adSpins: { day, n }` (functions/dailySpin.js has the same number).
+export const MAX_AD_SPINS = 3;
+export function adSpinsLeft(profile, now = new Date()) {
+  const day = todayKey(now);
+  const a = profile && profile.adSpins;
+  const used = a && a.day === day ? Math.max(0, Math.floor(a.n || 0)) : 0;
+  return Math.max(0, MAX_AD_SPINS - used);
+}
+
 // The prize card under the wheel (the design's prizeTitle / prizeDesc /
 // prizeCta), for a spinWheel result.
 export function prizeCard(result) {

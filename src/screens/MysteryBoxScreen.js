@@ -20,7 +20,10 @@ import BoxReveal, { OUTLINE_8 } from '../components/box/BoxReveal';
 import Toast from '../components/squad/Toast';
 import AdStrip, { AD_H } from '../components/AdStrip';
 import useRewardedAd from '../components/useRewardedAd';
-import { BOX_TAPS, SECRET, boxDailyUsed, boxPayMode, boxPrice, boxRoster, dailyBoxes, ownedCount, pullIsPlayable, rollBox, untilNewBoxes } from '../mysteryBox';
+import VideoBadge from '../components/candy/VideoBadge';
+import { BOX_TAPS, MAX_DOUBLES, SECRET, boxDailyUsed, boxPayMode, boxPrice, boxRoster, canDouble, dailyBoxes, doublesLeft, ownedCount, pullIsPlayable, rollBox, untilNewBoxes } from '../mysteryBox';
+import TutTarget from '../tutorial/Target';
+import { report } from '../tutorial/store';
 import sfx from '../audio/sfx';
 
 // The v3 Mystery Box. Every day the first two boxes cost a video each (free
@@ -254,17 +257,6 @@ function HintPill({ text, shakeKey, warn }) {
   );
 }
 
-// The gold "▶" video badge used on WATCH TO OPEN and OPEN ANOTHER.
-function VideoBadge({ w = 34, h = 24 }) {
-  return (
-    <View style={[styles.videoRing, { width: w + 3, height: h + 3, borderRadius: 8.5 }]}>
-      <LinearGradient colors={['#ffe98a', '#e89400']} style={[styles.videoFace, { borderRadius: 7 }]}>
-        <View style={styles.videoPlay} />
-      </LinearGradient>
-    </View>
-  );
-}
-
 // ---- the white flash when the box bursts -----------------------------------
 
 function Flash({ color }) {
@@ -350,7 +342,7 @@ const DailyChips = memo(function DailyChips({ used, free, count }) {
 
 // ---- screen --------------------------------------------------------------
 
-export default function MysteryBoxScreen({ profile, creatures = [], onBack, onOpen, onVideoBoxWatched, onPayCoins, onSquish, onOpenShop, onUnlockIt }) {
+export default function MysteryBoxScreen({ profile, creatures = [], onBack, onOpen, onDouble, onVideoBoxWatched, onPayCoins, onSquish, onOpenShop, onUnlockIt }) {
   const insets = useSafeAreaInsets();
   const ad = useRewardedAd();
 
@@ -394,6 +386,11 @@ export default function MysteryBoxScreen({ profile, creatures = [], onBack, onOp
 
   const payMode = paidAhead ? 'paid' : boxPayMode(profile);
   const adsFree = !!profile?.adsFree;
+  // the tutorial follows the box (src/tutorial/steps.js)
+  useEffect(() => {
+    report({ boxPhase: phase, boxPaid: payMode === 'paid' || payMode === 'free' });
+  }, [phase, payMode]);
+  useEffect(() => () => report({ boxPhase: 'closed', boxPaid: false }), []);
   const dailyUsed = boxDailyUsed(profile);
   // Once today's boxes are used: tick the "back in 5h 12m" countdown (the
   // re-render also notices when the new day arrives).
@@ -552,6 +549,23 @@ export default function MysteryBoxScreen({ profile, creatures = [], onBack, onOp
     if (boxPayMode(profile) === 'ad') watchVideoBox();
   }, [profile, resetTaps, watchVideoBox]);
 
+  // DOUBLE IT: a video (none with Remove Ads) for the same prize again,
+  // MAX_DOUBLES a day (src/mysteryBox.js)
+  const doubles = doublesLeft(profile);
+  const showDouble = phase === 'reveal' && canDouble(pull) && doubles > 0 && !!onDouble;
+  const double = useCallback(() => {
+    const go = () => {
+      const doubled = onDouble(pull);
+      if (!doubled || !mounted.current) return;
+      setPull(doubled);
+      sfx.play('jackpot');
+      if (doubled.kind === 'coins') sfx.play('coinShower', { delay: 200 });
+      showToast(doubled.kind === 'coins' ? `Doubled! +${doubled.amount} coins` : `Doubled! +${doubled.amount} ${doubled.name} tokens`);
+    };
+    if (adsFree) go();
+    else if (!ad.show(go)) showToast('The video is still loading — try again in a moment');
+  }, [adsFree, ad, onDouble, pull, showToast]);
+
   const squish = useCallback(() => {
     if (!pull) return;
     onSquish(pull.kind === 'secret' ? SECRET.id : pull.id);
@@ -626,9 +640,11 @@ export default function MysteryBoxScreen({ profile, creatures = [], onBack, onOp
   return (
     <CandyBackground sparkles style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <RoundButton size={38} onPress={onBack}>
-          <BackGlyph />
-        </RoundButton>
+        <TutTarget name="boxBack">
+          <RoundButton size={38} onPress={onBack}>
+            <BackGlyph />
+          </RoundButton>
+        </TutTarget>
         <OutlinedTitle text="MYSTERY BOX" fill="pink" size={24} />
         <CoinPill coins={coins} style={styles.coins} />
       </View>
@@ -640,12 +656,14 @@ export default function MysteryBoxScreen({ profile, creatures = [], onBack, onOp
           <BoxReveal pull={pull} creature={revealCreature} glow={glow} shown={phase === 'reveal'} />
         ) : null}
         <View style={[styles.closed, phase === 'reveal' && styles.hidden]} pointerEvents={phase === 'closed' ? 'auto' : 'none'}>
-          <GiftBox taps={taps} phase={phase === 'closed' ? 'closed' : 'opening'} draining={!!drain} shakeKey={shakeKey} drainKey={drainKey} onPress={tapBox} />
+          <TutTarget name="boxTap">
+            <GiftBox taps={taps} phase={phase === 'closed' ? 'closed' : 'opening'} draining={!!drain} shakeKey={shakeKey} drainKey={drainKey} onPress={tapBox} />
+          </TutTarget>
           {unpaid ? (
             <View style={styles.controls}>
               <HintPill text={payHint} />
               <DailyChips used={dailyUsed} free={adsFree} count={daily} />
-              {payButton}
+              <TutTarget name="boxPay">{payButton}</TutTarget>
             </View>
           ) : (
             <View style={styles.controls}>
@@ -686,12 +704,31 @@ export default function MysteryBoxScreen({ profile, creatures = [], onBack, onOp
             </View>
           </View>
         </View>
+        {showDouble ? (
+          <View style={styles.doubleRow}>
+            <CandyButton variant="gold" pulse="soft" onPress={double} style={styles.flex} faceStyle={styles.revealFace}>
+              <ShineSweep />
+              <View style={styles.watchRow}>
+                {adsFree ? null : <VideoBadge w={26} h={18} />}
+                <ButtonText ring={BUTTON_VARIANTS.gold.ring} size={15}>
+                  DOUBLE IT ×2
+                </ButtonText>
+              </View>
+            </CandyButton>
+            <ShadowText style={styles.doubleNote} shadows={OUTLINE_8('#45107a', 1.2, 2.5)}>
+              {`${doubles}/${MAX_DOUBLES}
+TODAY`}
+            </ShadowText>
+          </View>
+        ) : null}
         {phase === 'reveal' ? (
           <View style={styles.revealButtons}>
             {pullIsPlayable(pull) ? (
               <CandyButton variant="blue" label="SQUISH IT" onPress={squish} style={styles.flex} faceStyle={styles.revealFace} textStyle={styles.revealLabel} />
             ) : pull && pull.complete ? (
-              <CandyButton variant="gold" label="UNLOCK IT" pulse="soft" onPress={unlockIt} style={styles.flex} faceStyle={styles.revealFace} textStyle={styles.revealLabel} />
+              <TutTarget name="revealUnlock" style={styles.flex}>
+                <CandyButton variant="gold" label="UNLOCK IT" pulse="soft" onPress={unlockIt} style={styles.flex} faceStyle={styles.revealFace} textStyle={styles.revealLabel} />
+              </TutTarget>
             ) : (
               <CandyButton variant="blue" onPress={openShop} style={styles.flex} faceStyle={styles.revealFace}>
                 <View style={styles.watchRow}>
@@ -833,26 +870,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(80,12,140,0.45)',
     overflow: 'hidden',
   },
-  videoRing: { backgroundColor: '#9c4d06', padding: 1.5 },
-  videoFace: {
-    flex: 1,
-    borderWidth: 2,
-    borderColor: '#ffffff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  videoPlay: {
-    marginLeft: 2,
-    width: 0,
-    height: 0,
-    borderTopWidth: 5,
-    borderBottomWidth: 5,
-    borderLeftWidth: 8,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderLeftColor: '#ffffff',
-  },
   flash: { zIndex: 20 },
+  doubleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  doubleNote: { fontFamily: candyFonts.display, fontSize: 11, lineHeight: 13, textAlign: 'center', color: '#ffffff' },
   bottom: { paddingHorizontal: 18, gap: 12 },
   toastAt: { position: 'absolute', left: 0, right: 0, height: 0, zIndex: 30 },
   collectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },

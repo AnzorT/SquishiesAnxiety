@@ -8,9 +8,16 @@
 // track's pattern (24 bars — chords repeat every 4, the melody every 8, the
 // random plucks every 12), with the ringing tail folded back onto the start.
 //
+// The Crib's music (the 2026-10-03 drop's sfx.js: a track per room and the
+// dance room's club songs) comes from that drop's newer music engine, so it
+// has its own mode: `--crib` renders just those tracks (the effects and the
+// five moods above were rendered from the earlier drop's sfx.js, whose
+// music code the new file no longer has — their WAVs stay in out/).
+//
 // Usage (from the repo root):
 //   python -m zipfile -e "ASMR Creature Squash Game.zip" tools/plush-art/design
 //   node tools/audio/render.mjs          → tools/audio/out/*.wav
+//   node tools/audio/render.mjs --crib   → tools/audio/out/music-crib_*.wav, music-club_*.wav
 //   python tools/audio/encode.py         → assets/audio/sfx, assets/audio/music, src/audio/effectFiles.js
 
 import { spawn } from 'node:child_process';
@@ -34,6 +41,11 @@ const ONE_SHOTS = [
 ];
 const MUSIC = ['dream', 'party', 'cozy', 'calm', 'mystery'];
 const MUSIC_BARS = 24;
+// the Crib's: one cycle of the new engine's pattern is 8 bars (the chords
+// change every 2, the melody repeats every 8)
+const CRIB_MUSIC = ['crib_living', 'crib_kitchen', 'crib_bath', 'crib_bed', 'crib_dance', 'crib_yard', 'club_disco', 'club_house', 'club_synth', 'club_bounce', 'club_turbo'];
+const CRIB_BARS = 8;
+const CRIB_ONLY = process.argv.includes('--crib');
 
 // ---- the page --------------------------------------------------------------
 
@@ -41,7 +53,10 @@ const MUSIC_BARS = 24;
 // seeded Math.random so every render comes out the same.
 const sfx = fs
   .readFileSync(SFX_JS, 'utf8')
-  .replace(/\}\)\(\);\s*$/, 'window.__SFX = { S, init, tone, noise, bell, sparkle, arp, SOUNDS, PRESETS, voice, lead, mtof };\n})();');
+  .replace(
+    /\}\)\(\);\s*$/,
+    `window.__SFX = { ${['S', 'init', 'tone', 'noise', 'bell', 'sparkle', 'arp', 'SOUNDS', 'PRESETS', 'voice', 'lead', 'mtof', 'swell', 'keys', 'kalimba', 'motif'].map((k) => `${k}: typeof ${k} !== 'undefined' ? ${k} : null`).join(', ')} };\n})();`
+  );
 
 const PAGE_JS = `
 (() => {
@@ -175,6 +190,45 @@ const PAGE_JS = `
       }
       return { loopSamples: Math.round(loop * SR), pcm: await pcm(ctx) };
     },
+    // One cycle of a Crib track, scheduled exactly like the new sfx.js's
+    // startTrack (its swing, pads, bass, arps, two melodies and the room's
+    // extras: snaps, plucks, drips, music box, birds), plus the tail.
+    async cribMusic(name, bars, tail) {
+      const P = I.PRESETS[name];
+      const six = 60 / P.bpm / 4;
+      const loop = bars * 16 * six;
+      const ctx = context(loop + tail, 777);
+      I.S.mus.gain.value = 0.25; // the design's default: musicVol 0.5 × 0.5
+      const bus = ctx.createGain();
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3200; bus.connect(lp); lp.connect(I.S.mus);
+      const A = I.motif(P, 11), B = I.motif(P, 23);
+      const { swell, tone, noise, bell, keys, kalimba, mtof } = I;
+      for (let step = 0; step < bars * 16; step++) {
+        const s = step % 16, bar = Math.floor(step / 16), ci = Math.floor(bar / 2) % 4, ch = P.chords[ci];
+        const t = step * six + (P.swing && s % 4 === 2 ? six * 0.33 : 0);
+        if (s === 0 && bar % 2 === 0) {
+          const d = six * 32 + 1.2;
+          ch.forEach((m, i) => { swell(mtof(m + 12), t, d, { vol: P.pad, attack: 1.4, release: 1.6, lp: 1100, bus, detune: (i - 1.5) * 5 }); });
+          swell(mtof(ch[0] + 24), t, d, { vol: P.pad * 0.35, type: 'triangle', attack: 2, release: 1.6, lp: 1600, bus });
+        }
+        if (s === 0) tone(mtof(ch[0] - 12), t, six * 10, { vol: P.bass, attack: 0.03, bus, lp: 500 });
+        if (s === 8) tone(mtof(ch[0] - 12 + 7), t, six * 6, { vol: P.bass * 0.7, attack: 0.03, bus, lp: 500 });
+        P.arp.forEach(([st, ni]) => { if (st === s) keys(mtof(ch[ni % ch.length] + 12), t, six * 6, 0.03, bus); });
+        const sec = bar % 8, mot = sec < 2 || sec === 4 || sec === 5 ? A : sec < 4 ? B : null;
+        const mi = mot && mot[step % 32];
+        if (mi != null) kalimba(mtof(P.key + mi), t, 0.045, bus);
+        if (P.kick && P.kick.indexOf(s) >= 0) tone(95, t, 0.28, { to: 48, slide: 0.12, vol: 0.09, attack: 0.004, bus, lp: 600 });
+        if (P.hat && s % 4 === 2) noise(t, 0.025, { ft: 'highpass', f: 8000, vol: 0.012, bus });
+        if (P.snap && (s === 4 || s === 12)) noise(t, 0.04, { f: 2200, q: 3, vol: 0.03, bus });
+        if (P.clap && (s === 4 || s === 12)) { noise(t, 0.09, { f: 1500, q: 1, vol: 0.05, bus }); noise(t + 0.012, 0.06, { f: 1800, q: 1.2, vol: 0.03, bus }); }
+        if (P.octBass && s % 2 === 1) tone(mtof(ch[0] + (s % 4 === 1 ? 0 : 12) - 12), t, six * 0.8, { vol: P.bass * 0.55, attack: 0.01, bus, lp: 900 });
+        if (P.pluck && s % 4 === 3) tone(mtof(ch[2] + 24), t, 0.12, { type: 'triangle', vol: 0.02, attack: 0.003, bus, lp: 2600 });
+        if (P.drip && s % 8 === 5 && Math.random() < 0.6) tone(900 + Math.random() * 700, t, 0.12, { to: 1800 + Math.random() * 600, slide: 0.06, vol: 0.03, attack: 0.005, bus, lp: 2600, verb: 0.5, vbus: I.S.mverbIn });
+        if (P.musicbox && s % 4 === 0 && Math.random() < 0.5) bell(mtof(P.key + 12 + P.scale[Math.floor(Math.random() * 5)]), t, 1.4, 0.03, bus);
+        if (P.birds && s === 6 && bar % 3 === 1) { const f0 = 2600 + Math.random() * 900; for (let k = 0; k < 3; k++) tone(f0 * (1 + k * 0.06), t + k * 0.07, 0.06, { to: f0 * 1.25, slide: 0.04, vol: 0.018, attack: 0.004, bus }); }
+      }
+      return { loopSamples: Math.round(loop * SR), pcm: await pcm(ctx) };
+    },
   };
 })();`;
 
@@ -294,6 +348,15 @@ try {
     process.stdout.write(`${name} `);
   };
 
+  if (CRIB_ONLY) {
+    for (const name of CRIB_MUSIC) {
+      const r = await call(`render.cribMusic(${JSON.stringify(name)}, ${CRIB_BARS}, 5)`);
+      save(`music-${name}`, fold(decode(r.pcm), r.loopSamples));
+    }
+    console.log('\nrendered to', OUT);
+    close();
+    process.exit(0);
+  }
   for (const name of ONE_SHOTS) save(name, trim(decode(await call(`render.oneShot(${JSON.stringify(name)})`))));
   save('boxThump', trim(decode(await call('render.boxThump()'))));
   save('boxBell', trim(decode(await call('render.boxBell()'))));

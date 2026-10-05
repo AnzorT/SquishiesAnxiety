@@ -13,6 +13,7 @@ import ShadowText, { outline3 } from './candy/ShadowText';
 import CreatureToken from './candy/Tokens';
 import { tokenPrice } from '../economy';
 import { CARD_SIZE } from './CardPager';
+import TutTarget from '../tutorial/Target';
 import sfx from '../audio/sfx';
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
@@ -308,7 +309,8 @@ function CreatureCard({ creature, unlocked, hasKey, tokens = 0, onSelectToy, onS
     // has key, not unlocked → unlock happens via the hold gesture only
   }, [unlocked, lockedNoKey, creature, onSelectToy, onShowUnlock]);
 
-  const mood = showCelebration ? 'celebrate' : unlocked ? 'idle' : 'sleep';
+  // unlocked: idle, dancing, eating in turn (the user's)
+  const mood = showCelebration ? 'celebrate' : unlocked ? 'list' : 'sleep';
 
   // Creature size: the design's min(170px, 100cqh - 34px, 80cqw) of the
   // image area; the thumbnail footprint is bigger by the bleed margin (only
@@ -328,7 +330,9 @@ function CreatureCard({ creature, unlocked, hasKey, tokens = 0, onSelectToy, onS
   return (
     <CandyCard style={styles.card}>
       <Pressable style={styles.cardBody} onPress={handleCardPress}>
-        <View style={styles.imageArea} onLayout={(e) => setImgBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
+        {/* the tutorial points at this creature's card (src/tutorial) */}
+        <TutTarget name={`card:${creature.id}`} style={styles.imageArea}>
+        <View style={[StyleSheet.absoluteFill, styles.imageAreaInner]} onLayout={(e) => setImgBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
           <ImageBackdrop />
           <RaysSpin size={260} />
 
@@ -401,6 +405,7 @@ function CreatureCard({ creature, unlocked, hasKey, tokens = 0, onSelectToy, onS
             </Pressable>
           ) : null}
         </View>
+        </TutTarget>
 
         <View style={styles.infoArea}>
           <View style={styles.nameRow}>
@@ -463,6 +468,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.8)',
   },
+  // the image area's content box (the tutorial-target wrapper holds the frame)
+  imageAreaInner: { alignItems: 'center', justifyContent: 'center' },
   pedestalWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
   overlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   lockedTint: { backgroundColor: 'rgba(90,20,150,0.14)' },

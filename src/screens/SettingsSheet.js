@@ -16,15 +16,15 @@ import sfx from '../audio/sfx';
 // large system font). The tap-to-close backdrop is a sibling behind the
 // sheet, not its parent, so no touchable sits between the finger and the
 // ScrollView.
-export default function SettingsSheet({ visible, onClose, nickname, onSaveNickname, onSubmitFeedback, onLogout }) {
-  const [nicknameEdit, setNicknameEdit] = useState(nickname || '');
+export default function SettingsSheet({ visible, onClose, nickname, onSaveNickname, onSubmitFeedback, onLogout, onReplayTutorial }) {
+  const [nicknameEdit, setNicknameEdit] = useState((nickname || '').slice(0, 10));
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [toast, setToast] = useState(null);
   const [toastKey, setToastKey] = useState(0);
 
   useEffect(() => {
-    if (visible) setNicknameEdit(nickname || '');
+    if (visible) setNicknameEdit((nickname || '').slice(0, 10));
   }, [visible, nickname]);
 
   // pop sounds as the sheet opens and closes (not on first mount)
@@ -85,7 +85,7 @@ export default function SettingsSheet({ visible, onClose, nickname, onSaveNickna
             <View style={styles.card}>
               <Text style={styles.cardLabel}>Nickname</Text>
               <View style={styles.nicknameRow}>
-                <TextInput style={styles.input} value={nicknameEdit} onChangeText={setNicknameEdit} placeholderTextColor="#a98bc9" />
+                <TextInput style={styles.input} value={nicknameEdit} onChangeText={setNicknameEdit} maxLength={10} placeholderTextColor="#a98bc9" />
                 <CandyButton label="SAVE" variant="blue" size="sm" onPress={saveNickname} />
               </View>
             </View>
@@ -93,6 +93,19 @@ export default function SettingsSheet({ visible, onClose, nickname, onSaveNickna
             <Pressable style={styles.feedbackButton} onPress={() => setFeedbackOpen(true)}>
               <Text style={styles.feedbackButtonText}>SEND FEEDBACK</Text>
             </Pressable>
+
+            {/* the design's "Replay tutorial" (src/tutorial): starts the guide over */}
+            {onReplayTutorial ? (
+              <Pressable
+                style={styles.feedbackButton}
+                onPress={() => {
+                  onReplayTutorial();
+                  onClose();
+                }}
+              >
+                <Text style={styles.feedbackButtonText}>REPLAY TUTORIAL</Text>
+              </Pressable>
+            ) : null}
 
             <CandyButton label="LOG OUT" variant="pink" size="md" onPress={onLogout} style={styles.logoutButton} textStyle={styles.logoutText} />
           </ScrollView>

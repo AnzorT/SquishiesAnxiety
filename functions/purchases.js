@@ -22,6 +22,10 @@
 //                              waiting; it uses the prize up. (Stores can't
 //                              discount a product on the fly, so the
 //                              discounted price is its own product.)
+//  · creature_creation_half  — the same at half price, bought instead while
+//                              the 10-day streak's reward (`streakDiscount`,
+//                              set by the app with the day-10 chest) is
+//                              waiting; it uses the reward up.
 //
 // Price levels: each product can also be sold at other prices, as its own
 // store product named `<id>_<cents>` (creature_key_149 is a $1.49 key). The
@@ -36,13 +40,14 @@ const REMOVE_ADS = 'remove_ads';
 const CREATURE_KEY = 'creature_key';
 const CREATION = 'creature_creation';
 const CREATION_DISCOUNTED = 'creature_creation_15off';
-const PRODUCT_IDS = [REMOVE_ADS, CREATURE_KEY, CREATION, CREATION_DISCOUNTED];
-const CONSUMABLES = [CREATURE_KEY, CREATION, CREATION_DISCOUNTED];
+const CREATION_HALF = 'creature_creation_half';
+const PRODUCT_IDS = [REMOVE_ADS, CREATURE_KEY, CREATION, CREATION_DISCOUNTED, CREATION_HALF];
+const CONSUMABLES = [CREATURE_KEY, CREATION, CREATION_DISCOUNTED, CREATION_HALF];
 
 // A product id → its base product (one of PRODUCT_IDS), for the base id
 // itself or any price level of it (`<base>_<cents>`); null for anything else.
-// (creature_creation_15off is tried before creature_creation.)
-const LEVEL_RE = /^(remove_ads|creature_key|creature_creation_15off|creature_creation)(?:_([1-9]\d{0,5}))?$/;
+// (creature_creation_15off and _half are tried before creature_creation.)
+const LEVEL_RE = /^(remove_ads|creature_key|creature_creation_15off|creature_creation_half|creature_creation)(?:_([1-9]\d{0,5}))?$/;
 function baseProduct(productId) {
   const m = LEVEL_RE.exec(String(productId || ''));
   return m ? m[1] : null;
@@ -111,9 +116,9 @@ function grantFor({ productId, creatureId, profile, rosterIds }) {
 
   if (base === REMOVE_ADS) return { update: { adsFree: true }, result: { granted: 'adsFree' } };
 
-  if (base === CREATION || base === CREATION_DISCOUNTED) {
+  if (base === CREATION || base === CREATION_DISCOUNTED || base === CREATION_HALF) {
     return {
-      update: { credits: 1, paidCredits: 1, clearDiscount: base === CREATION_DISCOUNTED },
+      update: { credits: 1, paidCredits: 1, clearDiscount: base === CREATION_DISCOUNTED, clearStreakDiscount: base === CREATION_HALF },
       result: { granted: 'creation' },
     };
   }
@@ -146,6 +151,7 @@ module.exports = {
   CREATURE_KEY,
   CREATION,
   CREATION_DISCOUNTED,
+  CREATION_HALF,
   PRODUCT_IDS,
   CONSUMABLES,
   baseProduct,

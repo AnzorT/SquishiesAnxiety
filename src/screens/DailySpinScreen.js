@@ -2,13 +2,14 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from '
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg';
-import { candyFonts } from '../theme/candyTheme';
+import { BUTTON_VARIANTS, candyFonts } from '../theme/candyTheme';
 import CandyBackground from '../components/candy/CandyBackground';
-import CandyButton from '../components/candy/CandyButton';
+import CandyButton, { ButtonText, Shine } from '../components/candy/CandyButton';
 import OutlinedTitle, { HaloText } from '../components/candy/OutlinedTitle';
 import ShadowText from '../components/candy/ShadowText';
-import { Shine } from '../components/candy/CandyButton';
-import { WHEEL, SLICE, prizeCard } from '../dailySpin';
+import { MAX_AD_SPINS, WHEEL, SLICE, prizeCard } from '../dailySpin';
+import useRewardedAd from '../components/useRewardedAd';
+import VideoBadge from '../components/candy/VideoBadge';
 import sfx from '../audio/sfx';
 
 // The v3 Daily Spin: once a day, before Home. SPIN asks the server
@@ -16,6 +17,9 @@ import sfx from '../audio/sfx';
 // then eases onto the slice it picked, like the design's 4.5s spin, and the
 // prize card pops up. onClaim(result) takes it from there (coins are
 // already in, CREATE opens the creator, FREE goes to the creature reel).
+// There's no ad break after it any more: a coins prize offers SPIN AGAIN
+// instead — a rewarded video (none with Remove Ads) for another spin, up to
+// MAX_AD_SPINS a day (`bonusLeft`; the server counts them too).
 
 const SIZE = 290;
 const DISC = SIZE - 40; // the design's `inset: 20px`
@@ -270,9 +274,15 @@ const Wheel = memo(function Wheel({ rot }) {
 
 // ---- screen ----------------------------------------------------------------
 
-export default function DailySpinScreen({ onSpin, onClaim, onSkip }) {
+export default function DailySpinScreen({ onSpin, onClaim, onSkip, bonusLeft = 0, adsFree = false }) {
   const [phase, setPhase] = useState('idle'); // 'idle' | 'spinning' | 'prize' | 'error'
   const [result, setResult] = useState(null);
+  // video spins taken on this screen (the profile's count may lag behind)
+  const [usedHere, setUsedHere] = useState(0);
+  const [adNote, setAdNote] = useState(null);
+  const busyRef = useRef(false);
+  const ad = useRewardedAd();
+  const spinsLeft = Math.max(0, Math.min(bonusLeft, MAX_AD_SPINS - usedHere));
   const rot = useRef(new Animated.Value(0)).current;
   const shrink = useRef(new Animated.Value(0)).current;
   const pop = useRef(new Animated.Value(0)).current;
@@ -300,8 +310,10 @@ export default function DailySpinScreen({ onSpin, onClaim, onSkip }) {
     [rot]
   );
 
-  const spin = useCallback(async () => {
-    if (phase !== 'idle') return;
+  const spin = useCallback(async (bonus = false) => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setAdNote(null);
     setPhase('spinning');
     // fast ticking while it whirls; the slowing-down ticks once it lands
     const whirl = sfx.loop('whirlLoop');
@@ -315,12 +327,14 @@ export default function DailySpinScreen({ onSpin, onClaim, onSkip }) {
     });
     let res;
     try {
-      res = await onSpin();
+      res = await onSpin(bonus);
     } catch (e) {
       res = { error: true };
     }
     whirl.stop();
+    busyRef.current = false;
     if (!mounted.current) return;
+    if (bonus && !res.error) setUsedHere((n) => n + 1);
     if (res.error || res.already) {
       sfx.play('fail');
       rot.stopAnimation((v) => Animated.timing(rot, { toValue: v + 180, duration: 900, easing: Easing.out(Easing.quad), useNativeDriver: true }).start());
@@ -337,7 +351,20 @@ export default function DailySpinScreen({ onSpin, onClaim, onSkip }) {
     Animated.timing(shrink, { toValue: 1, duration: 400, easing: Easing.bezier(0.25, 0.1, 0.25, 1), useNativeDriver: true }).start();
     pop.setValue(0);
     Animated.timing(pop, { toValue: 1, duration: 450, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
-  }, [phase, rot, onSpin, land, shrink, pop]);
+  }, [rot, onSpin, land, shrink, pop]);
+
+  // SPIN AGAIN: the video first (not with Remove Ads), then the wheel grows
+  // back and spins for another prize
+  const spinAgain = useCallback(() => {
+    const go = () => {
+      if (!mounted.current) return;
+      Animated.timing(shrink, { toValue: 0, duration: 300, useNativeDriver: true }).start();
+      setResult(null);
+      spin(true);
+    };
+    if (adsFree) go();
+    else if (!ad.show(go)) setAdNote('The video is still loading — try again in a moment');
+  }, [adsFree, ad, shrink, spin]);
 
   const card = phase === 'prize' ? prizeCard(result) : null;
   // wheelScale 0.92 → 0.72 and margin -12 → -40 when the prize shows
@@ -361,7 +388,7 @@ export default function DailySpinScreen({ onSpin, onClaim, onSkip }) {
         </Animated.View>
 
         <View style={styles.below}>
-          {phase === 'idle' ? <CandyButton variant="gold" label="SPIN" onPress={spin} faceStyle={styles.spinFace} textStyle={styles.spinLabel} /> : null}
+          {phase === 'idle' ? <CandyButton variant="gold" label="SPIN" onPress={() => spin(false)} faceStyle={styles.spinFace} textStyle={styles.spinLabel} /> : null}
           {phase === 'spinning' ? <SpinningText /> : null}
           {phase === 'prize' && card ? (
             <Animated.View style={[styles.prize, { opacity: popOpacity, transform: [{ scale: popScale }] }]}>
@@ -372,13 +399,28 @@ export default function DailySpinScreen({ onSpin, onClaim, onSkip }) {
                 </LinearGradient>
               </View>
               <CandyButton variant="blue" label={card.cta} onPress={() => onClaim(result)} faceStyle={styles.ctaFace} textStyle={styles.ctaLabel} />
+              {result.kind === 'coins' && spinsLeft > 0 ? (
+                <View style={styles.again}>
+                  <CandyButton variant="gold" size="md" pulse="soft" onPress={spinAgain} faceStyle={styles.againFace}>
+                    <View style={styles.againRow}>
+                      {adsFree ? null : <VideoBadge w={28} h={19} />}
+                      <ButtonText ring={BUTTON_VARIANTS.gold.ring} size={15} style={styles.againLabel}>
+                        SPIN AGAIN
+                      </ButtonText>
+                    </View>
+                  </CandyButton>
+                  <HaloText style={styles.againNote}>{adNote || `${spinsLeft} more ${spinsLeft === 1 ? 'spin' : 'spins'} today`}</HaloText>
+                </View>
+              ) : null}
             </Animated.View>
           ) : null}
           {phase === 'error' ? (
             <View style={styles.prize}>
               <View style={styles.cardRing}>
                 <LinearGradient colors={['#fff6fd', '#ffdcf4', '#f5cbff']} locations={[0, 0.6, 1]} style={styles.card}>
-                  <Text style={[styles.cardTitle, { color: '#6b3fa0' }]}>{result && result.already ? 'ALREADY SPUN TODAY' : 'THE WHEEL IS RESTING'}</Text>
+                  <Text style={[styles.cardTitle, { color: '#6b3fa0' }]}>
+                    {result && result.already ? (result.bonus ? 'NO MORE SPINS TODAY' : 'ALREADY SPUN TODAY') : 'THE WHEEL IS RESTING'}
+                  </Text>
                   <Text style={styles.cardDesc}>
                     {result && result.already ? 'Come back tomorrow for another spin.' : "We couldn't reach the wheel. Try again next time."}
                   </Text>
@@ -540,4 +582,9 @@ const styles = StyleSheet.create({
   cardDesc: { color: '#9467bd', fontFamily: candyFonts.bodyHeavy, fontSize: 11, lineHeight: 16, textAlign: 'center' },
   ctaFace: { paddingVertical: 13, paddingHorizontal: 34 },
   ctaLabel: { fontSize: 12, letterSpacing: 1.6 },
+  again: { alignItems: 'center', gap: 6, marginTop: 2 },
+  againFace: { paddingVertical: 9, paddingLeft: 12, paddingRight: 20 },
+  againRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  againLabel: { letterSpacing: 0.8 },
+  againNote: { fontFamily: candyFonts.bodyHeavy, fontSize: 11 },
 });

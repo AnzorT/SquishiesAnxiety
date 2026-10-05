@@ -1,7 +1,9 @@
 import firestore from '@react-native-firebase/firestore';
 import { STARTER_CREATURE_IDS } from '../data/creatures';
-import { boxPayMode, boxPrice, dailyBoxUse } from '../mysteryBox';
-import { tokenPrice } from '../economy';
+import { boxPayMode, boxPrice, dailyBoxUse, doublePull, doublesLeft } from '../mysteryBox';
+import { todayKey } from '../dailySpin';
+import { tokenCount, tokenPrice } from '../economy';
+import { bumpDaily as bumpDailyRules, claimDaily as claimDailyRules, claimChest as claimChestRules } from '../progression';
 
 // Coins and unlocks are client-authoritative (writes go straight from the
 // device to Firestore, guarded only by firestore.rules) — fine for a
@@ -12,6 +14,9 @@ import { tokenPrice } from '../economy';
 function userDocRef(uid) {
   return firestore().collection('users').doc(uid);
 }
+
+const inc = (n) => firestore.FieldValue.increment(n);
+const logFail = (what) => (e) => console.warn(`${what} failed:`, e);
 
 export async function createUserProfile(uid, { email, age, nickname }) {
   await userDocRef(uid).set({
@@ -38,8 +43,125 @@ export async function createUserProfile(uid, { email, age, nickname }) {
     // — creature unlocks, earn10k/100k, unlockAll — are computed straight
     // from ownedIds/totalEarned, see src/achievements.js).
     achievements: { speedTap: false, watchAd: false },
+    // Progression (src/progression.js): the guided tutorial starts at its
+    // first step, level 1.
+    tut: 'start',
+    level: 1,
     createdAt: firestore.FieldValue.serverTimestamp(),
   });
+}
+
+// --- progression (src/progression.js) ---------------------------------------
+//
+// Client-written like coins (see the note at the top).
+
+export function setTutorialStep(uid, step) {
+  userDocRef(uid).update({ tut: step }).catch(logFail('setTutorialStep'));
+}
+
+export function setLevel(uid, level) {
+  userDocRef(uid).update({ level }).catch(logFail('setLevel'));
+}
+
+// The day the streak screen last opened by itself (after the Daily Spin),
+// so it does once a day on every device.
+export function markStreakSeen(uid, date) {
+  userDocRef(uid).update({ streakSeen: date }).catch(logFail('markStreakSeen'));
+}
+
+// `n` more of a daily-challenge event (squish, earn, ad, bath…). Returns the
+// titles of the challenges this completed, for the toast. The Crib's events
+// (a friend sent to a bath, a snack…) also count as care given, for the
+// achievements (`cribCare`).
+const CRIB_EVENTS = ['bath', 'feed', 'sleep', 'dance', 'tv', 'play'];
+export function bumpDaily(uid, profile, ev, n = 1) {
+  const { update, completed } = bumpDailyRules(profile, ev, n);
+  if (CRIB_EVENTS.includes(ev)) update.cribCare = inc(n);
+  userDocRef(uid).update(update).catch(logFail('bumpDaily'));
+  return completed;
+}
+
+// Claims a finished challenge: its coins. Returns them (0 if nothing).
+export function claimDailyChallenge(uid, profile, id) {
+  const r = claimDailyRules(profile, id);
+  if (!r) return 0;
+  userDocRef(uid)
+    .update({ ...r.update, coins: inc(r.coins), totalEarned: inc(r.coins) })
+    .catch(logFail('claimDailyChallenge'));
+  return r.coins;
+}
+
+// Opens the daily chest: its coins, one token of `tokenCreatureId` (the
+// cheapest locked creature, chosen by the caller), the streak and the level,
+// and the streak day's reward (src/progression.js STREAK_REWARDS): coins,
+// more tokens of the same creature, a free box (waiting as `boxPending`;
+// coins instead if one already waits) or half price on the next creation
+// (`streakDiscount`, used up by buying it — functions/purchases.js).
+// Returns { coins, reward } (null if it isn't ready). Tokens that fill a set
+// put the key on the card, as a box does.
+export function claimDailyChest(uid, profile, tokenCreatureId) {
+  const r = claimChestRules(profile);
+  if (!r) return null;
+  const reward = r.reward;
+  let coins = r.coins;
+  const update = { ...r.update, chests: inc(1) };
+  let tokens = 1;
+  if (reward.kind === 'coins') coins += reward.amount;
+  else if (reward.kind === 'tokens') tokens += reward.amount;
+  else if (reward.kind === 'box') {
+    if (profile?.boxPending) coins += boxPrice();
+    else update.boxPending = true;
+  } else if (reward.kind === 'half') update.streakDiscount = true;
+  update.coins = inc(coins);
+  update.totalEarned = inc(coins);
+  if (tokenCreatureId) {
+    const have = tokenCount(profile, tokenCreatureId);
+    const need = tokenPrice(tokenCreatureId);
+    if (have + tokens >= need) {
+      update[`keys.${tokenCreatureId}`] = true;
+      update[`tokens.${tokenCreatureId}`] = need;
+    } else update[`tokens.${tokenCreatureId}`] = inc(tokens);
+  }
+  userDocRef(uid).update(update).catch(logFail('claimDailyChest'));
+  return { coins, reward, tokens: tokenCreatureId ? tokens : 0 };
+}
+
+// --- the Squad Crib (src/crib/): the squad's rooms, stats and furniture, one
+// document per player (users/{uid}/crib/state), written by the Crib screen
+// alone — it loads it once, simulates, and saves (see CribScreen.js).
+
+const cribDocRef = (uid) => userDocRef(uid).collection('crib').doc('state');
+
+export async function loadCrib(uid) {
+  try {
+    const snap = await cribDocRef(uid).get();
+    return snap.exists ? snap.data() : null;
+  } catch (e) {
+    console.warn('loadCrib failed:', e);
+    return null;
+  }
+}
+
+export function saveCrib(uid, state) {
+  cribDocRef(uid).set(state).catch(logFail('saveCrib'));
+}
+
+// Something bought in the Crib's shop (its coins go through cribCoins), and
+// how many friends live in the Crib — both for the achievements.
+export function noteCribBuy(uid) {
+  userDocRef(uid).update({ cribBuys: inc(1) }).catch(logFail('noteCribBuy'));
+}
+export function setCribSize(uid, n) {
+  userDocRef(uid).update({ cribSize: n }).catch(logFail('setCribSize'));
+}
+
+// Coins the squad made (or cost) in the Crib; only earnings count towards
+// the lifetime total. The caller keeps `coins` from going under zero.
+export function cribCoins(uid, n) {
+  if (!n) return;
+  const update = { coins: inc(n) };
+  if (n > 0) update.totalEarned = inc(n);
+  userDocRef(uid).update(update).catch(logFail('cribCoins'));
 }
 
 // Accounts created before this app matched the new roster have an
@@ -160,9 +282,6 @@ export async function recordAdWatched(uid, multiplier, currentMaxMult = 0, watch
 // offline), so the box never waits on the network. Like the rest of the
 // economy above, this is client-trusted.
 
-const inc = (n) => firestore.FieldValue.increment(n);
-const logFail = (what) => (e) => console.warn(`${what} failed:`, e);
-
 // A daily box's video was watched: that box is paid for (one of today's
 // dailyBoxes() used) and waits as `boxPending` until it's opened, even if the
 // player leaves first.
@@ -201,6 +320,27 @@ export function openBox(uid, profile, pull, paidAhead = false) {
   } else update[`tokens.${pull.id}`] = inc(pull.amount);
   userDocRef(uid).update(update).catch(logFail('openBox'));
   return true;
+}
+
+// DOUBLE IT on a box's reveal (its video watched): the same prize again,
+// counted in the day's `boxDoubles`. Returns the doubled pull to show, or
+// null when there's nothing to double or today's doubles are used up.
+export function doubleBox(uid, profile, pull) {
+  if (doublesLeft(profile) <= 0) return null;
+  const d = doublePull(pull);
+  if (!d) return null;
+  const today = todayKey();
+  const used = profile?.boxDoubles?.day === today ? profile.boxDoubles.n || 0 : 0;
+  const update = { boxDoubles: { day: today, n: used + 1 }, boxDoublesTotal: inc(1) };
+  if (d.coins) {
+    update.coins = inc(d.coins);
+    update.totalEarned = inc(d.coins);
+  } else if (d.pull.complete) {
+    update[`keys.${pull.id}`] = true;
+    update[`tokens.${pull.id}`] = tokenPrice(pull.id);
+  } else update[`tokens.${pull.id}`] = inc(d.tokens);
+  userDocRef(uid).update(update).catch(logFail('doubleBox'));
+  return d.pull;
 }
 
 // --- player-made creatures (the "Create your own squishy" flow) ---------

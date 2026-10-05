@@ -248,7 +248,7 @@ function TierBadge({ tier, active }) {
   );
 }
 
-// the creature, celebrating, with a jellyBounce on top
+// the creature out of the box (the design's reveal mood), with a jellyBounce on top
 function Creature({ creature, tier, active }) {
   const jelly = useLoopWhen(active, 1400, 500, Easing.bezier(0.42, 0, 0.58, 1));
   const style = useMemo(
@@ -273,7 +273,8 @@ function Creature({ creature, tier, active }) {
   const wash = tier === 'Secret' || tier === 'Rainbow' ? 'holo' : tier === 'Golden' ? 'gold' : null;
   return (
     <Animated.View style={style}>
-      <CreatureThumbnail creature={creature} mood="celebrate" size={140} wash={wash} animate={active} />
+      {/* the design's reveal: shoots up out of the box, drops, settles, hops */}
+      <CreatureThumbnail creature={creature} mood="reveal" size={140} wash={wash} animate={active} />
     </Animated.View>
   );
 }
