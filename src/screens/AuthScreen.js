@@ -6,6 +6,7 @@ import { authErrorMessage } from '../firebase/authErrors';
 import { candyColors, candyFonts } from '../theme/candyTheme';
 import CandyBackground from '../components/candy/CandyBackground';
 import CandyButton, { ButtonText } from '../components/candy/CandyButton';
+import TutTarget from '../tutorial/Target';
 import CandyTabs from '../components/candy/CandyTabs';
 import OutlinedTitle from '../components/candy/OutlinedTitle';
 
@@ -177,20 +178,22 @@ export default function AuthScreen() {
             <>
               <ExtraRow open={isRegister}>
                 <View style={styles.row}>
-                  <CandyInput value={nickname} onChangeText={setNickname} placeholder="Nickname" style={styles.nickname} />
+                  <CandyInput value={nickname} onChangeText={setNickname} placeholder="Nickname" maxLength={10} style={styles.nickname} />
                   <CandyInput value={ageInput} onChangeText={setAgeInput} keyboardType="number-pad" placeholder="Age" maxLength={3} style={styles.age} />
                 </View>
               </ExtraRow>
               <CandyInput value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholder="Email" style={styles.gap} />
               <CandyInput value={password} onChangeText={setPassword} secureTextEntry placeholder="Password" style={styles.lastInput} />
               {!!error && <Text style={styles.error}>{error}</Text>}
-              <CandyButton variant="blue" size="auth" onPress={submit} loading={submitting} style={styles.submitButton}>
-                <Animated.View style={labelStyle}>
-                  <ButtonText ring="#0c5a9c" size={17} style={styles.caption}>
-                    {buttonLabel}
-                  </ButtonText>
-                </Animated.View>
-              </CandyButton>
+              <TutTarget name="enter">
+                <CandyButton variant="blue" size="auth" onPress={submit} loading={submitting} style={styles.submitButton}>
+                  <Animated.View style={labelStyle}>
+                    <ButtonText ring="#0c5a9c" size={17} style={styles.caption}>
+                      {buttonLabel}
+                    </ButtonText>
+                  </Animated.View>
+                </CandyButton>
+              </TutTarget>
             </>
           )}
         </ScrollView>

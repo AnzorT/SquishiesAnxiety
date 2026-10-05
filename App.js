@@ -25,8 +25,18 @@ import DailySpinScreen from './src/screens/DailySpinScreen';
 import CreatureReelScreen from './src/screens/CreatureReelScreen';
 import LoadingScreen from './src/screens/LoadingScreen';
 import SquishScreen from './src/screens/SquishScreen';
+import CribScreen from './src/screens/CribScreen';
+import DailyChallengesSheet from './src/screens/DailyChallengesSheet';
+import StreakScreen from './src/screens/StreakScreen';
+import TutorialGuide from './src/tutorial/Guide';
+import useTutorial from './src/tutorial/useTutorial';
+import { report as tutReport } from './src/tutorial/store';
+import { tutorialActive } from './src/tutorial/steps';
+import { streakMultiplier, streakOf, TUTORIAL_BOOST, cribUnlocked, dailyUnlocked as dailyIsUnlocked, dailyView, level as levelOf } from './src/progression';
+import { tokenCandidates } from './src/economy';
 import AchievementToast from './src/components/squad/AchievementToast';
 import Toast from './src/components/squad/Toast';
+import { TurnWithCrib } from './src/crib/orientation';
 import UnlockSheet from './src/components/UnlockSheet';
 import { RemoveAdsSheet } from './src/components/RemoveAds';
 import ForcedInterstitialAd from './src/components/ForcedInterstitialAd';
@@ -45,6 +55,7 @@ import {
   payBoxWithAd,
   payBoxWithCoins,
   openBox,
+  doubleBox,
   updateNickname,
   submitFeedback,
   ensureStarterCreaturesOwned,
@@ -53,6 +64,12 @@ import {
   deleteCustomCreature,
   retryCustomCreature,
   newCustomCreatureId,
+  setTutorialStep,
+  setLevel,
+  markStreakSeen,
+  bumpDaily,
+  claimDailyChallenge,
+  claimDailyChest,
 } from './src/firebase/firestore';
 import { uploadSourceImage, deleteCustomAssets } from './src/firebase/storage';
 import { loadCachedCreatures, saveCreaturesToCache } from './src/data/creatureCache';
@@ -61,9 +78,10 @@ import { plushArtUrls } from './src/components/CreatureThumbnail';
 import { boxPayMode, boxPriceLabel, ownedCount, boxRoster } from './src/mysteryBox';
 import * as billing from './src/billing';
 import { setBoxSettings, setPricing } from './src/economy';
-import { hasSpunToday, todayKey, tzOffsetMinutes } from './src/dailySpin';
+import { adSpinsLeft, hasSpunToday, todayKey, tzOffsetMinutes } from './src/dailySpin';
 import callFunction from './src/firebase/callFunction';
 import sfx from './src/audio/sfx';
+import DEV_CATALOG from './src/data/devCatalog'; // TEMP-DEV-CATALOG: preview of the unpublished roster (tools/plush-art/serve.mjs)
 
 // GLTFParser's constructor (three.js, used by SquishyToy.js's Glorp build
 // path) sniffs navigator.userAgent to work around known Safari ImageBitmap
@@ -91,6 +109,7 @@ const MUSIC_FOR_STAGE = {
   auth: 'dream',
   wheel: 'party',
   reel: 'party',
+  streak: 'party',
   home: 'cozy',
   store: 'cozy',
   achievements: 'cozy',
@@ -99,7 +118,17 @@ const MUSIC_FOR_STAGE = {
   loading: 'calm',
   toy: 'calm',
   box: 'mystery',
+  // the Crib plays its rooms' own music (CribScreen)
 };
+
+// The creature cheering on the streak screen: the owned one squished the
+// longest, else the first owned, else the starter.
+function streakMascot(creatures, profile) {
+  const owned = creatures.filter((c) => (profile?.ownedIds || []).includes(c.id));
+  const time = profile?.stats?.playTime || {};
+  const best = owned.reduce((a, c) => ((time[c.id] || 0) > (a ? time[a.id] || 0 : -1) ? c : a), null);
+  return best || owned[0] || creatures[0] || null;
+}
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -166,7 +195,6 @@ export default function App() {
   // creature prize while its reel plays.
   const [spinState, setSpinState] = useState('unknown');
   const [reel, setReel] = useState(null);
-  const [spinAdTrigger, setSpinAdTrigger] = useState(0);
 
   // Unlocking and purchases: which locked creature's popup is open
   // (UnlockSheet), the creature the Key Shop should open on, the Remove Ads
@@ -179,6 +207,11 @@ export default function App() {
   const [storePrices, setStorePrices] = useState({});
   const [appToast, setAppToast] = useState(null);
   const [appToastKey, setAppToastKey] = useState(0);
+  // the Daily Challenges panel (src/progression.js)
+  const [dailyOpen, setDailyOpen] = useState(false);
+  // the streak screen opening by itself, once a day after the Daily Spin
+  // (StreakScreen's `intro`; from the menu it's just a screen)
+  const [streakIntro, setStreakIntro] = useState(false);
 
   const prevAchievementsRef = useRef(null);
 
@@ -222,9 +255,11 @@ export default function App() {
     }
     if (!hasProfile || spinState !== 'unknown') return;
     const today = todayKey();
-    const offer = !spunToday && spinOfferedDayRef.current !== today;
+    // not during the tutorial (the design skips the wheel until it's done)
+    const offer = !spunToday && !tutorialActive(profile) && spinOfferedDayRef.current !== today;
     if (offer) spinOfferedDayRef.current = today;
     setSpinState(offer ? 'show' : 'done');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser, hasProfile, spunToday, spinState]);
   // Coming back to the app on a new day offers it too — but only from Home,
   // never in the middle of a squish.
@@ -284,7 +319,7 @@ export default function App() {
   // the live Firestore subscription below takes over once signed in and
   // refreshes the cache for next time.
   useEffect(() => {
-    loadCachedCreatures().then(setCreatures);
+    loadCachedCreatures().then(() => setCreatures(DEV_CATALOG)); // TEMP-DEV-CATALOG
   }, []);
 
   useEffect(() => {
@@ -296,8 +331,7 @@ export default function App() {
     if (!authUser) return undefined;
     return subscribeToCreatures((list) => {
       if (list.length) {
-        setCreatures(list);
-        saveCreaturesToCache(list);
+        setCreatures(DEV_CATALOG); // TEMP-DEV-CATALOG (was: setCreatures(list); saveCreaturesToCache(list);)
       }
       // An empty list here means a transient error — keep whatever the
       // cache (or a prior successful fetch) already put in state rather
@@ -347,22 +381,18 @@ export default function App() {
   }, []);
 
   // --- Daily Spin (src/dailySpin.js; the server rolls it) ---
-  const handleSpin = useCallback(() => callFunction('spinWheel', { tzOffsetMinutes: tzOffsetMinutes() }), []);
-  const handleSpinClaim = useCallback(
-    (result) => {
-      setSpinState('done');
-      if (result.kind === 'unlock' && result.creatureId) {
-        // the ad break waits until the reel is done (handleReelDone)
-        setReel({ lockedIds: result.lockedIds || [], winnerId: result.creatureId });
-        setScreen('home');
-        return;
-      }
-      // the design's "Thanks for spinning!" ad break
-      if (!profile?.adsFree) setSpinAdTrigger((t) => t + 1);
-      setScreen(result.kind === 'create' ? 'create' : 'home');
-    },
-    [profile?.adsFree]
-  );
+  // `bonus`: a SPIN AGAIN, paid with a rewarded video on the wheel screen.
+  // No ad break follows the wheel any more (SPIN AGAIN replaced it).
+  const handleSpin = useCallback((bonus = false) => callFunction('spinWheel', { tzOffsetMinutes: tzOffsetMinutes(), bonus }), []);
+  const handleSpinClaim = useCallback((result) => {
+    setSpinState('done');
+    if (result.kind === 'unlock' && result.creatureId) {
+      setReel({ lockedIds: result.lockedIds || [], winnerId: result.creatureId });
+      setScreen('home');
+      return;
+    }
+    setScreen(result.kind === 'create' ? 'create' : 'home');
+  }, []);
   const handleSpinSkip = useCallback(() => setSpinState('done'), []);
   const handleReelDone = useCallback(
     (creatureId) => {
@@ -370,29 +400,139 @@ export default function App() {
       if (i >= 0) homeIndexRef.current = i;
       setReel(null);
       setScreen('home');
-      if (!profile?.adsFree) setSpinAdTrigger((t) => t + 1);
     },
-    [creatures, profile?.adsFree]
+    [creatures]
   );
 
   // --- custom creatures (the "Create your own squishy" flow) ---
   const handleOpenCreator = useCallback(() => setScreen('create'), []);
   const openAchievements = useCallback(() => setScreen('achievements'), []);
   const openStats = useCallback(() => setScreen('stats'), []);
+  // the tutorial's current step (useTutorial runs further down; this ref is
+  // for callbacks declared before it)
+  const tutorialStepRef = useRef('done');
   const openStore = useCallback(() => {
-    setStoreFocusId(null);
+    // the tutorial's "keys unlock creatures" step points at the first locked
+    // creature: open the shop on its row
+    const firstLocked = tutorialStepRef.current === 'store' ? tokenCandidates(boxRoster(creatures), profile)[0] : null;
+    setStoreFocusId(firstLocked ? firstLocked.id : null);
     setScreen('store');
-  }, []);
+  }, [creatures, profile]);
   const openBoxScreen = useCallback(() => setScreen('box'), []);
+  const openCrib = useCallback(() => setScreen('crib'), []);
+
+  const flashApp = useCallback((msg) => {
+    setAppToast(msg);
+    setAppToastKey((k) => k + 1);
+    setTimeout(() => setAppToast((cur) => (cur === msg ? null : cur)), 2600);
+  }, []);
+
+  // --- progression: daily challenges, the chest, the tutorial (src/progression.js) ---
+  // `n` more of a challenge event; a toast when that completes one.
+  const noteDaily = useCallback(
+    (ev, n = 1) => {
+      if (!authUser || !profile) return;
+      const done = bumpDaily(authUser.uid, profile, ev, n);
+      if (done.length) flashApp(`Challenge complete: ${done[0]}`);
+    },
+    [authUser, profile, flashApp]
+  );
+  const openDaily = useCallback(() => setDailyOpen(true), []);
+  const closeDaily = useCallback(() => setDailyOpen(false), []);
+  // Once a day, straight after the Daily Spin (or on the first visit Home
+  // that day), while a streak is alive and today's chest is still shut: the
+  // streak screen, to keep it going. `streakSeen` on the profile keeps it to
+  // once a day across devices; the ref covers a failed write.
+  const streakOfferedDayRef = useRef(null);
+  const streakIntroDue =
+    !!authUser &&
+    !!profile &&
+    spinState === 'done' &&
+    !reel &&
+    screen === 'home' &&
+    !activeToy &&
+    !loadingToy &&
+    !tutorialActive(profile) &&
+    dailyIsUnlocked(profile) &&
+    streakOf(profile) > 0 &&
+    profile.lastFull !== todayKey() &&
+    profile.streakSeen !== todayKey() &&
+    streakOfferedDayRef.current !== todayKey();
+  useEffect(() => {
+    if (!streakIntroDue) return;
+    const today = todayKey();
+    streakOfferedDayRef.current = today;
+    markStreakSeen(authUser.uid, today);
+    setStreakIntro(true);
+  }, [streakIntroDue, authUser]);
+  const openStreak = useCallback(() => setScreen('streak'), []);
+  const closeStreak = useCallback(() => {
+    setStreakIntro(false);
+    setScreen('home');
+  }, []);
+  const streakToDaily = useCallback(() => {
+    setStreakIntro(false);
+    setScreen('home');
+    setDailyOpen(true);
+  }, []);
+  const handleClaimDaily = useCallback(
+    (id) => {
+      if (!authUser) return;
+      const coins = claimDailyChallenge(authUser.uid, profile, id);
+      if (coins) flashApp(`+${coins} coins!`);
+    },
+    [authUser, profile, flashApp]
+  );
+  // the chest's token goes to the cheapest locked creature (the design's
+  // shared token became one creature's token here)
+  // (the streak day's reward too: src/progression.js STREAK_REWARDS)
+  const handleClaimChest = useCallback(() => {
+    if (!authUser) return;
+    const next = tokenCandidates(boxRoster(creatures), profile)[0] || null;
+    const r = claimDailyChest(authUser.uid, profile, next ? next.id : null);
+    if (!r) return;
+    const tokens = r.tokens ? ` + ${r.tokens} ${next.name} ${r.tokens === 1 ? 'token' : 'tokens'}` : '';
+    const extra = r.reward.kind === 'box' ? ' + a free Mystery Box' : r.reward.kind === 'half' ? ' + half price on your next creation' : '';
+    flashApp(`Daily chest: +${r.coins} coins${tokens}${extra}!`);
+  }, [authUser, profile, creatures, flashApp]);
+  const dailyToCrib = useCallback(() => {
+    setDailyOpen(false);
+    setScreen('crib');
+  }, []);
+  const replayTutorial = useCallback(() => {
+    if (authUser) setTutorialStep(authUser.uid, 'start');
+  }, [authUser]);
+  const tutorial = useTutorial({
+    profile,
+    creatures,
+    signedIn: !!authUser && !!profile,
+    setStep: useCallback((step) => authUser && setTutorialStep(authUser.uid, step), [authUser]),
+    setLevel: useCallback((lv) => authUser && setLevel(authUser.uid, lv), [authUser]),
+  });
+  tutorialStepRef.current = tutorial.step;
 
   // --- Mystery Box (src/mysteryBox.js) ---
   const handleOpenBox = useCallback((pull, paidAhead) => (authUser ? openBox(authUser.uid, profile, pull, paidAhead) : false), [authUser, profile]);
+  // DOUBLE IT on the reveal: the doubled pull, or null
+  const handleDoubleBox = useCallback(
+    (pull) => {
+      if (!authUser) return null;
+      const doubled = doubleBox(authUser.uid, profile, pull);
+      if (doubled && !profile?.adsFree) {
+        recordAdWatched(authUser.uid, 0).catch(() => {});
+        noteDaily('ad');
+      }
+      return doubled;
+    },
+    [authUser, profile, noteDaily]
+  );
   // A daily box's video was watched: count the ad and pay for the box.
   const handleVideoBoxWatched = useCallback(() => {
     if (!authUser) return;
     recordAdWatched(authUser.uid, 0).catch(() => {});
     payBoxWithAd(authUser.uid, profile);
-  }, [authUser, profile]);
+    noteDaily('ad');
+  }, [authUser, profile, noteDaily]);
   const handlePayBoxCoins = useCallback(() => (authUser ? payBoxWithCoins(authUser.uid, profile) : false), [authUser, profile]);
   // SQUISH IT: straight to the creature that came out of the box.
   const handleSquishFromBox = useCallback(
@@ -487,15 +627,10 @@ export default function App() {
     (amount) => {
       if (!authUser) return;
       addCoins(authUser.uid, amount).catch(() => {});
+      noteDaily('earn', amount);
     },
-    [authUser]
+    [authUser, noteDaily]
   );
-
-  const flashApp = useCallback((msg) => {
-    setAppToast(msg);
-    setAppToastKey((k) => k + 1);
-    setTimeout(() => setAppToast((cur) => (cur === msg ? null : cur)), 2600);
-  }, []);
 
   // Real-money purchases through Google Play / the App Store (src/billing):
   // Remove Ads, a creature's key, or a custom creation. The server grants
@@ -529,8 +664,10 @@ export default function App() {
   );
   const handleBuyNow = useCallback((creature) => purchase('creatureKey', creature), [purchase]);
   const buyRemoveAds = useCallback(() => purchase('removeAds'), [purchase]);
-  // a creation: the 15%-off product while the Daily Spin prize is waiting
-  const creationKey = profile?.creationDiscountPct ? 'creationDiscount' : 'creation';
+  // a creation: the half-price product while the 10-day streak's reward is
+  // waiting, else the 15%-off one while the Daily Spin prize is (each is
+  // used up by its own product; the half price is the better deal)
+  const creationKey = profile?.streakDiscount ? 'creationHalf' : profile?.creationDiscountPct ? 'creationDiscount' : 'creation';
   const buyCreation = useCallback(async () => {
     const r = await purchase(creationKey);
     return !!r && r.granted === 'creation';
@@ -572,8 +709,9 @@ export default function App() {
     (creatureId, holdMs) => {
       if (!authUser) return;
       recordPress(authUser.uid, creatureId, holdMs).catch(() => {});
+      noteDaily('squish');
     },
-    [authUser]
+    [authUser, noteDaily]
   );
 
   const handleMarkAchievement = useCallback(
@@ -590,8 +728,9 @@ export default function App() {
     (multiplier) => {
       if (!authUser) return;
       recordAdWatched(authUser.uid, multiplier, profile?.maxMult ?? 0, !profile?.adsFree).catch(() => {});
+      if (!profile?.adsFree) noteDaily('ad');
     },
-    [authUser, profile?.maxMult, profile?.adsFree]
+    [authUser, profile?.maxMult, profile?.adsFree, noteDaily]
   );
 
   const handleSaveNickname = useCallback(
@@ -615,6 +754,7 @@ export default function App() {
     if (!authUser) stage = 'auth';
     else if (spinState === 'show') stage = 'wheel';
     else if (reel) stage = 'reel';
+    else if (streakIntro) stage = 'streak';
     else if (activeToy) stage = 'toy';
     else if (loadingToy) stage = 'loading';
     else stage = screen;
@@ -624,6 +764,7 @@ export default function App() {
   // screens, and coins coming in or going out. The squish screen and the
   // Mystery Box play their own coin sounds.
   useEffect(() => {
+    if (stage === 'crib') return;
     sfx.music(fontsLoaded ? MUSIC_FOR_STAGE[stage] : null);
   }, [stage, fontsLoaded]);
   const prevStageRef = useRef(stage);
@@ -631,6 +772,10 @@ export default function App() {
     if (prevStageRef.current !== stage) sfx.play('whoosh');
     prevStageRef.current = stage;
   }, [stage]);
+  // the tutorial follows the screen; it hides behind popups
+  useEffect(() => {
+    tutReport({ screen: stage, busy: removeAdsOpen || !!unlockForId || dailyOpen });
+  }, [stage, removeAdsOpen, unlockForId, dailyOpen]);
   const coinsNow = profile?.coins;
   const prevCoinsRef = useRef(coinsNow);
   useEffect(() => {
@@ -655,18 +800,24 @@ export default function App() {
 
   const ownedIds = profile?.ownedIds ?? [];
   const keys = profile?.keys ?? {};
-  // back to today's flat rate until that doc exists — see firestore.rules.
-  // A Daily Spin CREATE prize takes creationDiscountPct (15) off it.
-  // A creation's price comes from the store (the 15%-off product while the
-  // Daily Spin's CREATE prize, creationDiscountPct, is waiting).
-  const discountPct = profile?.creationDiscountPct ?? 0;
+  // A creation's price comes from the store: the half-price product while
+  // the streak's reward waits (−50%), the 15%-off one while the Daily Spin's
+  // CREATE prize, creationDiscountPct, does.
+  const discountPct = profile?.streakDiscount ? 50 : profile?.creationDiscountPct ?? 0;
   const priceLabel = billing.priceLabel(creationKey, storePrices);
   const boxMode = boxPayMode(profile);
   const adsFree = profile?.adsFree ?? false;
   const removeAdsPrice = billing.priceLabel('removeAds', storePrices);
   const creatureKeyPrice = billing.priceLabel('creatureKey', storePrices);
   const unlockCreature = unlockForId && !ownedIds.includes(unlockForId) ? creatures.find((c) => c.id === unlockForId) : null;
-  const boxLabel = `${ownedCount(creatures, ownedIds)}/${boxRoster(creatures).length || 20} · ${profile?.secretFound ? 'SECRET FOUND' : 'A SECRET AWAITS'}`;
+  const boxLabel = `${ownedCount(creatures, ownedIds)}/${boxRoster(creatures).length || 30} · ${profile?.secretFound ? 'SECRET FOUND' : 'A SECRET AWAITS'}`;
+  const dailyNow = profile ? dailyView(profile) : null;
+  // the streak screen's squishy (the one squished longest, else the first
+  // owned) and the creature the chest's tokens go to
+  const mascot = stage === 'streak' ? streakMascot(creatures, profile) : null;
+  const tokenCreature = stage === 'streak' ? tokenCandidates(boxRoster(creatures), profile)[0] || null : null;
+  // squish coins: the streak's +5% a day, ×10 in the tutorial's goal step
+  const coinMultiplier = streakMultiplier(profile) * (tutorial.step === 'goal' ? TUTORIAL_BOOST : 1);
 
   // Every screen sits on the v3 candy stage (pink at the top), where light
   // status-bar icons still read clearly.
@@ -716,9 +867,36 @@ export default function App() {
           boxVideos={boxMode === 'ad' ? 1 : 0}
           boxCoins={boxMode === 'coins'}
           onOpenBox={openBoxScreen}
+          level={levelOf(profile)}
+          dailyUnlocked={dailyIsUnlocked(profile)}
+          cribUnlocked={cribUnlocked(profile)}
+          dailyBadge={dailyNow ? dailyNow.claimable : 0}
+          onOpenDaily={openDaily}
+          streak={streakOf(profile)}
+          streakHot={!!dailyNow && dailyNow.streak > 0 && !dailyNow.chestDone}
+          onOpenStreak={openStreak}
+          onOpenCrib={openCrib}
+          onReplayTutorial={replayTutorial}
         />
       )}
-      {stage === 'wheel' && <DailySpinScreen onSpin={handleSpin} onClaim={handleSpinClaim} onSkip={handleSpinSkip} />}
+      {stage === 'crib' && (
+        <CribScreen
+          authUser={authUser}
+          profile={profile}
+          creatures={creatures}
+          onBack={() => setScreen('home')}
+          noteDaily={noteDaily}
+          daily={{ unlocked: dailyIsUnlocked(profile), badge: dailyNow ? dailyNow.claimable : 0, onClaim: handleClaimDaily, onClaimChest: handleClaimChest }}
+          tutorialStep={tutorial.step}
+          onTutorialAction={tutorial.onAction}
+        />
+      )}
+      {stage === 'wheel' && (
+        <DailySpinScreen onSpin={handleSpin} onClaim={handleSpinClaim} onSkip={handleSpinSkip} bonusLeft={adSpinsLeft(profile)} adsFree={profile?.adsFree ?? false} />
+      )}
+      {stage === 'streak' && (
+        <StreakScreen profile={profile} mascot={mascot} tokenCreature={tokenCreature} intro={streakIntro} onClose={closeStreak} onOpenDaily={streakToDaily} />
+      )}
       {stage === 'reel' && reel && <CreatureReelScreen creatures={creatures} lockedIds={reel.lockedIds} winnerId={reel.winnerId} onDone={handleReelDone} />}
       {stage === 'box' && (
         <MysteryBoxScreen
@@ -726,6 +904,7 @@ export default function App() {
           creatures={creatures}
           onBack={() => setScreen('home')}
           onOpen={handleOpenBox}
+          onDouble={handleDoubleBox}
           onVideoBoxWatched={handleVideoBoxWatched}
           onPayCoins={handlePayBoxCoins}
           onSquish={handleSquishFromBox}
@@ -742,7 +921,7 @@ export default function App() {
           priceLabel={priceLabel}
           discountPct={discountPct}
           onBuyCreation={buyCreation}
-          buying={buying === 'creation' || buying === 'creationDiscount'}
+          buying={buying === 'creation' || buying === 'creationDiscount' || buying === 'creationHalf'}
         />
       )}
       {stage === 'achievements' && (
@@ -788,21 +967,28 @@ export default function App() {
           pokeOutward={pokeOutward}
           onChangePokeOutward={setPokeOutward}
           adsFree={adsFree}
+          coinMultiplier={coinMultiplier}
+          hideHints={tutorial.step !== 'done'}
         />
       )}
       {authUser ? (
         <>
           <UnlockSheet creature={unlockCreature} profile={profile} moneyPrice={creatureKeyPrice} onClose={closeUnlock} onOpenShop={unlockOpenShop} />
           <RemoveAdsSheet visible={removeAdsOpen} adsFree={adsFree} price={removeAdsPrice} buying={buying === 'removeAds'} onBuy={buyRemoveAds} onClose={closeRemoveAds} />
+          <DailyChallengesSheet visible={dailyOpen} profile={profile} onClose={closeDaily} onClaim={handleClaimDaily} onClaimChest={handleClaimChest} onOpenCrib={dailyToCrib} />
         </>
       ) : null}
       {/* above the ad strip and the Mystery Box banner */}
-      <View pointerEvents="none" style={APP_TOAST_AT}>
-        <Toast message={appToast} messageKey={appToastKey} />
-      </View>
-      <AchievementToast title={achToast} messageKey={achToastKey} />
+      {/* (turned with the Crib while it's landscape, so they come from its top) */}
+      <TurnWithCrib>
+        <View pointerEvents="none" style={APP_TOAST_AT}>
+          <Toast message={appToast} messageKey={appToastKey} />
+        </View>
+        <AchievementToast title={achToast} messageKey={achToastKey} />
+      </TurnWithCrib>
       <ForcedInterstitialAd trigger={freeGenAdTrigger} />
-      <ForcedInterstitialAd trigger={spinAdTrigger} />
+      {/* the guided tutorial's coach marks, over everything */}
+      <TutorialGuide onAction={tutorial.onAction} />
     </SafeAreaProvider>
   );
 }

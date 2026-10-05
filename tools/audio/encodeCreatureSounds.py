@@ -1,10 +1,15 @@
 """Turns the design's per-creature squish recordings into the loops the
 squish stage plays while a creature is held.
 
-Source: "ASMR Creature Squash Game (1).zip" in the project root, which holds
+Source: "ASMR Creature Squash Game.zip" in the project root, which holds
 export/creature-sounds/NN-name.wav — one 8 s stereo recording per creature,
-numbered in roster order (01-glorp is creature id 0, 20-cosmo is id 19).
-Each has silence at the ends and is not a loop.
+numbered in roster order (01 is creature id 0, 20 is id 19). The files are
+still named after the first roster (01-glorp … 20-cosmo); since the
+2026-10-03 drop the roster is 30 plush creatures (0 Nimbo … 29 Avo) and the
+recordings are new calm "ASMR voices" (sfx.js's CRE table, one per number),
+so NN-1 is simply the creature id — creatures 20–29 have no recording yet
+and fall back to the shared slime loop (src/audio/creatureSquish.js). Each
+has silence at the ends and is not a loop.
 
 For each one:
   · trim the leading/trailing silence,
@@ -33,7 +38,7 @@ import soundfile as sf
 
 HERE = pathlib.Path(__file__).parent
 ROOT = HERE.parent.parent
-ZIP = ROOT / 'ASMR Creature Squash Game (1).zip'
+ZIP = ROOT / 'ASMR Creature Squash Game.zip'
 OUT = ROOT / 'assets' / 'audio' / 'creatures'
 LIST = ROOT / 'src' / 'audio' / 'creatureSquishFiles.js'
 PEAK = 0.7

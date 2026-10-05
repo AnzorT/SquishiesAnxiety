@@ -11,9 +11,10 @@ import { todayKey } from './dailySpin';
 //    numbers come from config/mysteryBox (src/economy.js);
 //  · a box gives 1–3 tokens of one locked creature, picked by rarity (the
 //    odds and prices: src/economy.js, tunable in Firestore); a full set puts
-//    the creature's key on its card. The very first box ever fills Puffle's
-//    set;
-//  · once all 20 are owned, the next box is the Secret: "Prism Glorp".
+//    the creature's key on its card. The very first box ever fills #1
+//    Mittens' set;
+//  · once every roster creature is owned, the next box is the Secret: "Prism
+//    Nimbo" (the design's rainbow version of creature #0).
 //
 // A box paid for (its video watched, or its coins) waits as `boxPending`
 // until it's opened, even if the player leaves. Opening writes the pull in
@@ -25,7 +26,7 @@ import { todayKey } from './dailySpin';
 export const boxPrice = () => boxSettings().boxPrice;
 export const dailyBoxes = () => boxSettings().dailyBoxes;
 export const BOX_TAPS = 10;
-export const SECRET = { id: '0', tier: 'Secret', name: 'Prism Glorp' };
+export const SECRET = { id: '0', tier: 'Secret', name: 'Prism Nimbo' };
 
 // Daily boxes used today / still left today.
 export function boxDailyUsed(profile, today = todayKey()) {
@@ -42,8 +43,15 @@ export function dailyBoxUse(profile, today = todayKey()) {
 
 // 'ad' (a daily box, one video) | 'free' (a daily box with Remove Ads) |
 // 'coins' (today's are used up), or 'paid' while a paid box waits.
+//
+// The tutorial (src/tutorial/steps.js) bends this twice, as the design does:
+// the very first box ever is free — no video in the first minute of play —
+// and the tutorial's second box is paid with the coins its goal step just
+// earned, whatever the day's boxes say.
 export function boxPayMode(profile, today = todayKey()) {
   if (profile?.boxPending) return 'paid';
+  if ((profile?.boxOpens ?? 0) === 0) return 'free';
+  if (profile?.tut === 'box2tap') return 'coins';
   if (boxDailyLeft(profile, today) > 0) return profile?.adsFree ? 'free' : 'ad';
   return 'coins';
 }
@@ -60,7 +68,7 @@ export function untilNewBoxes(now = new Date()) {
   return h ? `${h}h ${mins % 60}m` : `${mins}m`;
 }
 
-// Only the numbered roster creatures (ids '0'–'19') are in the box.
+// Only the numbered roster creatures (ids '0'–'29') are in the box.
 export function boxRoster(creatures = []) {
   return creatures.filter((c) => tierOf(c.id));
 }
@@ -70,7 +78,7 @@ export function ownedCount(creatures, ownedIds = []) {
 }
 
 // One pull. `random` is injectable for tests.
-//   kind 'secret' — Prism Glorp, once everything is owned
+//   kind 'secret' — Prism Nimbo, once everything is owned
 //   kind 'tokens' — `amount` of creature `id`'s tokens; `have`/`need` after
 //                   it, `complete` when that fills its set (its key is ready)
 //   kind 'coins'  — `amount` coins, when there's no locked creature left to
@@ -94,4 +102,26 @@ export function rollBox(creatures, profile, random = Math.random) {
 // Can the player squish what came out of the box right away?
 export function pullIsPlayable(pull) {
   return !!pull && pull.kind === 'secret';
+}
+
+// DOUBLE IT: after a box, a rewarded video (none with Remove Ads) doubles
+// what came out — the same tokens again (up to the creature's full set) or
+// the coins again. MAX_DOUBLES a day, counted in `boxDoubles: { day, n }`.
+// The Secret and a set that's already full have nothing to double.
+export const MAX_DOUBLES = 5;
+export function doublesLeft(profile, today = todayKey()) {
+  const d = profile?.boxDoubles;
+  const used = d && d.day === today ? Math.max(0, Math.floor(d.n || 0)) : 0;
+  return Math.max(0, MAX_DOUBLES - used);
+}
+export const canDouble = (pull) => !!pull && !pull.doubled && (pull.kind === 'coins' || (pull.kind === 'tokens' && !pull.complete));
+
+// The pull doubled: { pull } to show (amount, have, complete updated) and
+// the profile fields to write besides the day's count, or null.
+export function doublePull(pull) {
+  if (!canDouble(pull)) return null;
+  if (pull.kind === 'coins') return { pull: { ...pull, amount: pull.amount * 2, doubled: true }, coins: pull.amount };
+  const extra = Math.min(pull.amount, pull.need - pull.have);
+  const have = pull.have + extra;
+  return { pull: { ...pull, amount: pull.amount + extra, have, complete: have >= pull.need, doubled: true }, tokens: extra };
 }

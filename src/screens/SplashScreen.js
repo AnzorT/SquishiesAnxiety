@@ -5,6 +5,7 @@ import { candyFonts } from '../theme/candyTheme';
 import CreatureThumbnail from '../components/CreatureThumbnail';
 import CandyBackground from '../components/candy/CandyBackground';
 import CandyButton from '../components/candy/CandyButton';
+import TutTarget from '../tutorial/Target';
 import OutlinedTitle, { HaloText } from '../components/candy/OutlinedTitle';
 
 // First thing shown on launch — the v3 splash: every creature scattered
@@ -21,7 +22,8 @@ import OutlinedTitle, { HaloText } from '../components/candy/OutlinedTitle';
 // cache has been written (first successful login), every future launch has
 // it immediately, before auth even resolves.
 
-const MOODS = ['idle', 'jump', 'wobble'];
+// the scattered creatures idle or dance (the user's)
+const MOODS = ['idle', 'dance'];
 
 // Where each creature sits: a zone of the screen plus the creature's centre
 // as a fraction of that zone. The zones are measured on screen, so a
@@ -166,7 +168,7 @@ export default function SplashScreen({ onFinish, ownedIds = [], creatures = [] }
                     unlocked={unlocked}
                     box={box}
                     delay={i * 90}
-                    mood={MOODS[i % 3]}
+                    mood={MOODS[i % MOODS.length]}
                   />
                 );
               })
@@ -182,7 +184,9 @@ export default function SplashScreen({ onFinish, ownedIds = [], creatures = [] }
         </View>
 
         <View style={{ marginBottom: insets.bottom + 48 }} onLayout={(e) => setButton(rectOf(e))}>
-          <CandyButton label="TAP TO START" onPress={skip} pulse="cta" size="lg" />
+          <TutTarget name="start">
+            <CandyButton label="TAP TO START" onPress={skip} pulse="cta" size="lg" />
+          </TutTarget>
         </View>
       </CandyBackground>
     </Pressable>

@@ -3,7 +3,7 @@ import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import EFFECT_FILES from './effectFiles';
 
-// The v3 design's sound: ~40 effects and five music moods, rendered from the
+// The v3 design's sound: ~40 effects, five music moods and the Crib's tracks, rendered from the
 // design's own sfx.js (tools/audio) to files in assets/audio.
 //
 //   sfx.play('tap')                 one-shot effect
@@ -27,6 +27,18 @@ const MUSIC = {
   cozy: require('../../assets/audio/music/cozy.ogg'),
   calm: require('../../assets/audio/music/calm.ogg'),
   mystery: require('../../assets/audio/music/mystery.ogg'),
+  // the Crib's rooms and the dance room's club songs (tools/audio/render.mjs --crib)
+  crib_living: require('../../assets/audio/music/crib_living.ogg'),
+  crib_kitchen: require('../../assets/audio/music/crib_kitchen.ogg'),
+  crib_bath: require('../../assets/audio/music/crib_bath.ogg'),
+  crib_bed: require('../../assets/audio/music/crib_bed.ogg'),
+  crib_dance: require('../../assets/audio/music/crib_dance.ogg'),
+  crib_yard: require('../../assets/audio/music/crib_yard.ogg'),
+  club_disco: require('../../assets/audio/music/club_disco.ogg'),
+  club_house: require('../../assets/audio/music/club_house.ogg'),
+  club_synth: require('../../assets/audio/music/club_synth.ogg'),
+  club_bounce: require('../../assets/audio/music/club_bounce.ogg'),
+  club_turbo: require('../../assets/audio/music/club_turbo.ogg'),
 };
 
 // The files are levelled per group (tools/audio/encode.py); this puts the

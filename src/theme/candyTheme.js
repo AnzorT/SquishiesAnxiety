@@ -59,11 +59,15 @@ export const TITLE_FILLS = {
 };
 
 // Rarity tiers. A premade creature's tier comes from its roster position
-// (TIER_OF) — the design assigns ids 0-7 Common, 8-12 Rare, 13-15 Epic,
-// 16-17 Legendary, 18 Rainbow, 19 Golden. `w` is the mystery-box pull weight
-// in percent — retuned from the design's 55/25/12/6/1.5/0.5 for the sticker
-// economy (see src/economy.js); Secret is never rolled, only granted once
-// everything is owned.
+// (TIER_OF). The design's formula (ids 0-7 Common, 8-12 Rare, 13-15 Epic,
+// 16-17 Legendary, 18 Rainbow, 19 Golden) was written for 20 creatures and
+// never updated for the 30-creature plush roster of 2026-10-03 (it would make
+// ids 19-29 all Golden), so the same proportions are spread over 30: 0-11
+// Common, 12-18 Rare, 19-23 Epic, 24-27 Legendary, 28 Rainbow (Boba), 29
+// Golden (Avo). `w` is the mystery-box pull weight in percent — retuned from
+// the design's 55/25/12/6/1.5/0.5 for the sticker economy (see
+// src/economy.js); Secret is never rolled, only granted once everything is
+// owned.
 export const TIERS = {
   Common: { label: 'COMMON', w: 45, bg: ['#d7f0ff', '#d7f0ff'], color: '#4a1a73', glow: '#9fd8ff' },
   Rare: { label: 'RARE', w: 27, bg: ['#c9f7e1', '#c9f7e1'], color: '#4a1a73', glow: '#7ee8b4' },
@@ -77,12 +81,17 @@ export const TIERS = {
 export function tierOf(creatureId) {
   const id = Number(creatureId);
   if (!Number.isFinite(id)) return null; // custom creatures have no tier
-  if (id <= 7) return 'Common';
-  if (id <= 12) return 'Rare';
-  if (id <= 15) return 'Epic';
-  if (id <= 17) return 'Legendary';
-  if (id === 18) return 'Rainbow';
+  if (id <= 11) return 'Common';
+  if (id <= 18) return 'Rare';
+  if (id <= 23) return 'Epic';
+  if (id <= 27) return 'Legendary';
+  if (id === 28) return 'Rainbow';
   return 'Golden';
 }
 
-export default { candyColors, candyBg, candyFonts, BUTTON_VARIANTS, TITLE_FILLS, TIERS, tierOf };
+// The roster creatures of one rarity, in roster order.
+export function creaturesOfTier(creatures = [], tier) {
+  return creatures.filter((c) => tierOf(c.id) === tier);
+}
+
+export default { candyColors, candyBg, candyFonts, BUTTON_VARIANTS, TITLE_FILLS, TIERS, tierOf, creaturesOfTier };

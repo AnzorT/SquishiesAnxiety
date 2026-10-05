@@ -24,6 +24,9 @@ const CREATE_DISCOUNT_PCT = 15;
 // FREE creature when every creature is already owned (the design's
 // fallback).
 const ALL_OWNED_COINS = 2000;
+// After the day's free spin, a few more for a rewarded video each (SPIN
+// AGAIN on the prize card), counted per day in `adSpins: { day, n }`.
+const MAX_AD_SPINS = 3;
 // Time zones run from UTC-12 to UTC+14.
 const MAX_OFFSET_MIN = 14 * 60;
 
@@ -77,4 +80,15 @@ function spinOutcome({ profile, rosterIds, day, index, pick = Math.random }) {
   return { result, changes };
 }
 
-module.exports = { WHEEL, CREATE_DISCOUNT_PCT, rollWheel, dayKey, spinOutcome };
+// May the player spin today? The free spin once a day; a video spin
+// (`bonus`) only after it, up to MAX_AD_SPINS a day. Returns the fields to
+// write besides the prize's, or null.
+function spinAllowed(profile = {}, day, bonus = false) {
+  const spunToday = !!profile.lastSpinDay && day <= profile.lastSpinDay;
+  if (!bonus) return spunToday ? null : { lastSpinDay: day };
+  if (!spunToday) return null;
+  const used = profile.adSpins && profile.adSpins.day === day ? Math.max(0, Math.floor(profile.adSpins.n || 0)) : 0;
+  return used < MAX_AD_SPINS ? { adSpins: { day, n: used + 1 } } : null;
+}
+
+module.exports = { WHEEL, CREATE_DISCOUNT_PCT, MAX_AD_SPINS, rollWheel, dayKey, spinOutcome, spinAllowed };

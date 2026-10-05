@@ -50,7 +50,10 @@ function FreeCreationPill({ count, paid = false }) {
 }
 
 // `paidCredits`: how many of the credits were bought — shown as READY, not FREE.
-export const CreateOwnCard = memo(function CreateOwnCard({ onPress, generationCredits = 0, paidCredits = 0, priceLabel = '$4.99', discountPct = 0 }) {
+// `style`: the card's box, when a wrapper already has the card's size (the
+// tutorial's target around it — CARD_SIZE's percentages would otherwise
+// shrink against the wrapper)
+export const CreateOwnCard = memo(function CreateOwnCard({ onPress, generationCredits = 0, paidCredits = 0, priceLabel = '$4.99', discountPct = 0, style }) {
   // createPulse: scale 1 -> 1.07 -> 1 with a widening glow, 2.4s loop
   const pulse = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -66,7 +69,7 @@ export const CreateOwnCard = memo(function CreateOwnCard({ onPress, generationCr
   const badgeScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.07] });
 
   return (
-    <Pressable style={styles.cardShell} onPress={onPress}>
+    <Pressable style={[styles.cardShell, style]} onPress={onPress}>
       <CandyCard style={styles.card} dashed innerStyle={styles.createBody}>
         <View style={styles.createGlow} pointerEvents="none">
           <Svg width={280} height={280}>

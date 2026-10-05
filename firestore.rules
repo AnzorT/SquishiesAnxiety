@@ -19,22 +19,30 @@ service cloud.firestore {
       //
       // The Daily Spin's bookkeeping is the same kind of field: only the
       // spinWheel Cloud Function writes it, so the app can't grant itself
-      // extra spins or the 15%-off-a-creation prize. `adsFree` is paid for
+      // extra spins (`adSpins` counts the day's SPIN AGAIN videos) or the
+      // 15%-off-a-creation prize. `adsFree` is paid for
       // (Remove Ads): only verifyPurchase sets it, after Google Play
       // confirms the purchase.
       allow update: if request.auth != null && request.auth.uid == userId
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['generationCredits', 'paidCredits', 'creationDiscountPct', 'lastSpinDay', 'spins', 'wheelJackpot', 'adsFree']);
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['generationCredits', 'paidCredits', 'creationDiscountPct', 'lastSpinDay', 'adSpins', 'spins', 'wheelJackpot', 'adsFree']);
       // A fresh profile may only ever start with its one free generation
       // (or none set, which the Cloud Function also treats as 1) — never a
       // self-granted stack of them.
       allow create: if request.auth != null && request.auth.uid == userId
         && (!('generationCredits' in request.resource.data) || request.resource.data.generationCredits == 1)
         && (!('adsFree' in request.resource.data) || request.resource.data.adsFree == false)
-        && !request.resource.data.keys().hasAny(['paidCredits', 'creationDiscountPct', 'lastSpinDay', 'spins', 'wheelJackpot']);
+        && !request.resource.data.keys().hasAny(['paidCredits', 'creationDiscountPct', 'lastSpinDay', 'adSpins', 'spins', 'wheelJackpot']);
 
       // Player-made creatures (image-to-3D via the creator flow). Fully
       // owned by that user — nobody else reads or writes them.
       match /customCreatures/{creatureId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // The Squad Crib's home (src/crib/): the squad's rooms, stats and
+      // furniture — one document, the player's own. Client-written like
+      // coins (the coins it earns go through the profile's `coins` above).
+      match /crib/{doc} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }

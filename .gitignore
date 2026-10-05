@@ -39,6 +39,14 @@ tools/plush-art/design/
 tools/plush-art/out/
 # tools/audio: the renderer's raw WAVs (encode.py turns them into assets/audio)
 tools/audio/out/
+# tools/crib-art: render.mjs's whole-room shots and manifests for check.py
+tools/crib-art/out/
 
 # Firebase emulator logs
 *-debug.log
+
+# tools/plush-art/serve.mjs writes this preview catalog (art served from the PC)
+src/data/devCatalog.js
+
+# Python bytecode caches (tools/icon, tools/audio)
+__pycache__/

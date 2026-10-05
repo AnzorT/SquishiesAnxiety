@@ -377,7 +377,7 @@ export default function CreateScreen({ onBack, onCreated, generationCredits = 1,
             : !imgOk
             ? 'Add a picture to continue'
             : !hasCredit && discountPct
-            ? `One-time purchase · your Daily Spin prize takes ${discountPct}% off`
+            ? `One-time purchase · your ${discountPct === 50 ? '10-day streak' : 'Daily Spin prize'} takes ${discountPct}% off`
             : !hasCredit
             ? 'One-time purchase · your creature stays in My Creatures'
             : creditPaid

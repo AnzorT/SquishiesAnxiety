@@ -344,7 +344,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // dailySpin.js. The app calls this over plain HTTPS with its ID token
 // (src/firebase/callFunction.js), so it needs no extra native module.
 //
-// Returns { already: true } if today's spin is used, otherwise the prize:
+// `bonus: true` is a SPIN AGAIN, paid with a rewarded video the app played:
+// allowed after the day's free spin, up to MAX_AD_SPINS a day (dailySpin.js).
+//
+// Returns { already: true } if today's spin is used (or, for a bonus spin,
+// the day's video spins), otherwise the prize:
 // { index, kind: 'coins' | 'create' | 'unlock', amount?, discountPct?,
 //   creatureId?, lockedIds?, allOwned? }.
 //
@@ -353,18 +357,20 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // and clear it once used.
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { FieldValue } = require('firebase-admin/firestore');
-const { WHEEL, rollWheel, dayKey, spinOutcome } = require('./dailySpin');
+const { WHEEL, rollWheel, dayKey, spinOutcome, spinAllowed } = require('./dailySpin');
 
 exports.spinWheel = onCall(async (request) => {
   const uid = request.auth && request.auth.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'Sign in to spin.');
   const db = admin.firestore();
   const day = dayKey(Date.now(), request.data && request.data.tzOffsetMinutes);
+  const bonus = !!(request.data && request.data.bonus);
   const index = rollWheel();
-  // The FREE creature needs the catalog (the numbered roster, 0–19).
+  // The FREE creature needs the catalog (the numbered roster — 30 creatures
+  // since the 2026-10-03 plush roster; any numeric id counts).
   const rosterIds =
     WHEEL[index].kind === 'unlock'
-      ? (await db.collection('creatures').select().get()).docs.map((d) => d.id).filter((id) => /^\d+$/.test(id) && Number(id) < 20)
+      ? (await db.collection('creatures').select().get()).docs.map((d) => d.id).filter((id) => /^\d+$/.test(id))
       : [];
 
   const userRef = db.collection('users').doc(uid);
@@ -372,10 +378,11 @@ exports.spinWheel = onCall(async (request) => {
     const snap = await tx.get(userRef);
     if (!snap.exists) throw new HttpsError('failed-precondition', 'No profile.');
     const profile = snap.data();
-    if (profile.lastSpinDay && day <= profile.lastSpinDay) return { already: true, day };
+    const allowed = spinAllowed(profile, day, bonus);
+    if (!allowed) return { already: true, day, bonus };
 
     const { result, changes } = spinOutcome({ profile, rosterIds, day, index });
-    const update = { lastSpinDay: changes.lastSpinDay, spins: FieldValue.increment(changes.spins) };
+    const update = { ...allowed, spins: FieldValue.increment(changes.spins) };
     if (changes.coins) {
       update.coins = FieldValue.increment(changes.coins);
       update.totalEarned = FieldValue.increment(changes.coins);
@@ -387,7 +394,7 @@ exports.spinWheel = onCall(async (request) => {
       update[`keys.${changes.unlockId}`] = false;
     }
     tx.update(userRef, update);
-    logger.info(`[${uid}] daily spin ${day}: ${result.kind}`, result);
+    logger.info(`[${uid}] daily spin ${day}${bonus ? ' (video)' : ''}: ${result.kind}`, result);
     return result;
   });
 });

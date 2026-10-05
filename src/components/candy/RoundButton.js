@@ -6,16 +6,36 @@ import sfx from '../../audio/sfx';
 
 // Purple glossy circle button (header icons, back, close, carousel arrows):
 // radial violet face, white border, dark ring + 4px lip, sinks when pressed.
+// `variant` 'green' (Home's Crib button) and 'gold' (Daily Challenges) are
+// the design's other two: a top-to-bottom gradient face and their own ring.
 
 const RING = '#45189a';
+const VARIANTS = {
+  violet: { ring: RING, stops: [['0', '#f3d2ff'], ['0.45', '#b65cff'], ['1', '#6a22d6']], radial: true },
+  green: { ring: '#17652f', stops: [['0', '#d8ffc2'], ['0.55', '#6fe07a'], ['1', '#26a94e']] },
+  gold: { ring: '#a04a00', stops: [['0', '#fffbd6'], ['0.45', '#ffe045'], ['1', '#ff9500']] },
+  // Home's daily streak button
+  flame: { ring: '#9e2a08', stops: [['0', '#ffe0c2'], ['0.5', '#ff8a4a'], ['1', '#e8502a']] },
+  // the Squad Crib's HUD: the design's pastel faces on its brown ring
+  cribPink: { ring: '#5b3a29', stops: [['0', '#ffd0f0'], ['0.55', '#ff7fd0'], ['1', '#d84aa8']] },
+  cribGold: { ring: '#5b3a29', stops: [['0', '#fff2c2'], ['0.55', '#ffd36a'], ['1', '#e8a63a']] },
+  cribGreen: { ring: '#5b3a29', stops: [['0', '#c9e8a8'], ['0.55', '#8fc46e'], ['1', '#5f9a4a']] },
+  cribPurple: { ring: '#5b3a29', stops: [['0', '#e9d6ff'], ['0.55', '#b38cff'], ['1', '#8a5fd6']] },
+  cribOrange: { ring: '#5b3a29', stops: [['0', '#ffe0b8'], ['0.55', '#ffab5c'], ['1', '#e8862a']] },
+  cribYellow: { ring: '#5b3a29', stops: [['0', '#ffe9a8'], ['0.55', '#ffd66b'], ['1', '#f2b84a']] },
+  cribRed: { ring: '#5b3a29', stops: [['0', '#ffab98'], ['0.55', '#f2665a'], ['1', '#d9483e']] },
+  cribBlue: { ring: '#5b3a29', stops: [['0', '#d6ecff'], ['0.55', '#8fc4f0'], ['1', '#5a92c8']] },
+};
 
-export default function RoundButton({ size = 42, onPress, children, disabled = false, dim = false, style, hitSlop = 6, lip = 4 }) {
+export default function RoundButton({ size = 42, onPress, children, disabled = false, dim = false, style, hitSlop = 6, lip = 4, variant = 'violet' }) {
   const press = useRef(new Animated.Value(0)).current;
   const sink = (to) => Animated.timing(press, { toValue: to, duration: 80, useNativeDriver: true }).start();
   const faceY = press.interpolate({ inputRange: [0, 1], outputRange: [0, lip - 1] });
   const ring = 2;
   const border = size >= 36 ? 2.5 : 2;
   const inner = size - ring * 2 - border * 2;
+  const v = VARIANTS[variant] || VARIANTS.violet;
+  const gradId = `rb-${variant}`;
 
   return (
     <Pressable
@@ -30,23 +50,31 @@ export default function RoundButton({ size = 42, onPress, children, disabled = f
       hitSlop={hitSlop}
       style={[{ width: size, height: size + lip, opacity: dim ? 0.4 : 1 }, style]}
     >
-      <View style={[styles.lip, { top: lip, width: size, height: size, borderRadius: size / 2 }]} />
+      <View style={[styles.lip, { top: lip, width: size, height: size, borderRadius: size / 2, backgroundColor: v.ring }]} />
       <Animated.View
         style={[
           styles.face,
-          { width: size, height: size, borderRadius: size / 2, borderWidth: ring, transform: [{ translateY: faceY }] },
+          { width: size, height: size, borderRadius: size / 2, borderWidth: ring, borderColor: v.ring, backgroundColor: v.ring, transform: [{ translateY: faceY }] },
         ]}
       >
         <View style={{ width: size - ring * 2, height: size - ring * 2, borderRadius: size, borderWidth: border, borderColor: '#fff', overflow: 'hidden' }}>
           <Svg width={inner} height={inner} style={StyleSheet.absoluteFill}>
             <Defs>
-              <RadialGradient id="violet" cx="35%" cy="25%" r="80%">
-                <Stop offset="0" stopColor="#f3d2ff" />
-                <Stop offset="0.45" stopColor="#b65cff" />
-                <Stop offset="1" stopColor="#6a22d6" />
-              </RadialGradient>
+              {v.radial ? (
+                <RadialGradient id={gradId} cx="35%" cy="25%" r="80%">
+                  {v.stops.map(([o, c]) => (
+                    <Stop key={o} offset={o} stopColor={c} />
+                  ))}
+                </RadialGradient>
+              ) : (
+                <LinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                  {v.stops.map(([o, c]) => (
+                    <Stop key={o} offset={o} stopColor={c} />
+                  ))}
+                </LinearGradient>
+              )}
             </Defs>
-            <Circle cx={inner / 2} cy={inner / 2} r={inner} fill="url(#violet)" />
+            <Circle cx={inner / 2} cy={inner / 2} r={inner} fill={`url(#${gradId})`} />
           </Svg>
           <Shine inset="9%" />
           <View style={styles.content}>{children}</View>
@@ -230,6 +258,35 @@ export function GearIcon({ size = 24 }) {
       <Path d={GEAR_D} fill="url(#icoSilver)" stroke="#ffffff" strokeWidth={1.2} strokeLinejoin="round" />
       <Circle cx={12} cy={12} r={3.3} fill="#b65cff" stroke={RING} strokeWidth={1.6} />
       <Circle cx={11} cy={11} r={1} fill="#ffffff" opacity={0.9} />
+    </Svg>
+  );
+}
+
+// Home's Crib button: a white house with a green door (on the green button).
+export function HouseIcon({ size = 22 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <G transform="translate(0,1.5)" opacity={0.9}>
+        <Path d="M3 11.5 12 4l9 7.5" stroke="#17652f" strokeWidth={2.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <Path d="M5.5 10.5V20h13v-9.5" fill="#17652f" />
+      </G>
+      <Path d="M3 11.5 12 4l9 7.5" stroke="#ffffff" strokeWidth={2.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M5.5 10.5V20h13v-9.5" fill="#ffffff" />
+      <Path d="M10 14 h4 a1 1 0 0 1 1 1 v5 h-6 v-5 a1 1 0 0 1 1 -1 Z" fill="#26a94e" />
+    </Svg>
+  );
+}
+
+// Home's Daily Challenges button: a white clipboard with a pink clip, a
+// green tick and two orange lines (on the gold button).
+export function DailyIcon({ size = 22 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M4 5 h16 a1.5 1.5 0 0 1 1.5 1.5 v16 h-19 v-16 A1.5 1.5 0 0 1 4 5 Z" fill="#a04a00" opacity={0.9} transform="translate(0,0)" />
+      <Path d="M7 3.5 h10 a3 3 0 0 1 3 3 v12 a3 3 0 0 1 -3 3 h-10 a3 3 0 0 1 -3 -3 v-12 a3 3 0 0 1 3 -3 Z" fill="#ffffff" />
+      <Path d="M10 2 h4 a1.5 1.5 0 0 1 1.5 1.5 v1 a1.5 1.5 0 0 1 -1.5 1.5 h-4 a1.5 1.5 0 0 1 -1.5 -1.5 v-1 A1.5 1.5 0 0 1 10 2 Z" fill="#ff4fbf" />
+      <Path d="M7.5 11l1.6 1.6 3-3" stroke="#26a94e" strokeWidth={2.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M13.5 11.5h3.5M7.5 16.5h9.5" stroke="#c25e00" strokeWidth={2} strokeLinecap="round" />
     </Svg>
   );
 }

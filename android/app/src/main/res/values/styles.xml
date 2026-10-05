@@ -5,6 +5,10 @@
     <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
     <item name="colorPrimary">@color/colorPrimary</item>
     <item name="android:statusBarColor">#1A1326</item>
+    <!-- draw into the camera cutout even with the status bar hidden (the
+         Crib's landscape page hides it; without this the cutout's strip was
+         left black) -->
+    <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="p">shortEdges</item>
   </style>
   <style name="ResetEditText" parent="@android:style/Widget.EditText">
     <item name="android:padding">0dp</item>
