@@ -199,7 +199,7 @@ function buildCreature(id, visual) {
     dentRimWidth: 1.6,
     dentPull: 0.62,
     dentPullWidth: 0.7,
-    dentSqueeze: 0.3,
+    dentSqueeze: 0.14,
     bottomY: -1,
     featureBases,
     featureMeshes,
@@ -274,7 +274,7 @@ const MODEL_TUNING = {
   dentRimWidth: 1.6,
   dentPull: 0.62,
   dentPullWidth: 0.7,
-  dentSqueeze: 0.3,
+  dentSqueeze: 0.14,
   fallbackColor: '#2dd4bf',
 };
 
@@ -586,6 +586,9 @@ uniform int uSquishCount;
 uniform vec3 uSquishDir;
 uniform vec4 uSquishDent;
 uniform vec3 uSquishRim;
+uniform vec3 uWrinkleSize;
+varying vec3 vSquishRest;
+varying float vSquishShade;
 vec3 squishGrad;
 vec3 squishPull;
 mat3 squishPullJ;
@@ -637,7 +640,89 @@ float squishD = squishDepth(position, mat3(1.0) - squishAlong);
 const SQUISH_POSITION_GLSL = `
 #include <begin_vertex>
 transformed += uSquishDir * min(squishD, uSquishDent.z) + squishPull + squishSqueezeJ * position;
+vSquishRest = position;
+vSquishShade = step(0.0, uSquishDent.y) * clamp(squishD * uWrinkleSize.z, 0.0, 1.0);
 `;
+
+// ---- the skin: wrinkles and the dent's shadow (fragment shader) ----
+//
+// Pressing a squishy stretches its skin toward the finger: thin bright
+// creases spread out from the press point across the face and down the
+// body, and they fade out slowly after the release, after the shape has
+// already sprung back. They're drawn per pixel around the latest press
+// point (on the rest surface, so they stay put on the skin): spokes at
+// random angles that wiggle and end at random lengths, in three layers,
+// with a constant thickness on the
+// surface. The long ones start at the press point; the others start a little
+// further out (they read as branches); each is jagged and broken in places.
+// The dent itself is also shaded darker, the deeper it is.
+//
+// uWrinkle: xyz = centre (rest space), w = strength 0..1.
+// uWrinkleAxis: the press direction. uWrinkleSize: x = reach, y = spoke
+// count, z = 1 / the full dent depth (for the dent's shadow).
+const SQUISH_FRAGMENT_GLSL = `
+uniform vec4 uWrinkle;
+uniform vec3 uWrinkleAxis;
+uniform vec3 uWrinkleSize;
+varying vec3 vSquishRest;
+varying float vSquishShade;
+float squishHash(float n) { return fract(sin(n * 127.1 + 311.7) * 43758.5453); }
+float squishWrinkles() {
+  if (uWrinkle.w < 0.003) return 0.0;
+  vec3 ax = uWrinkleAxis;
+  vec3 q = vSquishRest - uWrinkle.xyz;
+  vec3 t = q - ax * dot(q, ax);
+  float r = length(t);
+  float reach = uWrinkleSize.x;
+  if (r > reach || dot(q, ax) > reach * 0.6) return 0.0;
+  vec3 u = normalize(cross(ax, abs(ax.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0)));
+  vec3 v = cross(ax, u);
+  float ang = atan(dot(t, v), dot(t, u)) / 6.2831853 + 0.5;
+  float sum = 0.0;
+  for (int layer = 0; layer < 3; layer++) {
+    float fl = float(layer);
+    float count = uWrinkleSize.y * (1.0 + fl * 0.9);
+    float a = ang * count + fl * 0.37;
+    float cell = floor(a);
+    float h1 = squishHash(cell + fl * 91.0);
+    float h2 = squishHash(cell * 1.7 + 13.0 + fl * 37.0);
+    float h3 = squishHash(cell * 2.3 + 71.0 + fl * 17.0);
+    float wig = (h1 - 0.5) * 0.3
+      + 0.07 * sin(r * (23.0 + 17.0 * h2) + h1 * 40.0)
+      + 0.05 * sin(r * (61.0 + 23.0 * h3) + h2 * 20.0);
+    float f = abs(fract(a) - 0.5 - wig);
+    float spacing = max(r * 6.2831853 / count, 1e-4);
+    float w = min(0.007 / spacing, 0.3);
+    float line = 1.0 - smoothstep(w * 0.3, w * 1.3, f);
+    float r0 = fl * reach * 0.12 * h3;
+    float len = reach * (0.18 + 0.7 * h2 * h2) * (1.0 - 0.3 * fl);
+    line *= smoothstep(r0, r0 + 0.04, r) * (1.0 - smoothstep(r0 + len * 0.6, r0 + len, r));
+    line *= step(0.22, squishHash(cell * 3.1 + floor(r * 14.0) * 7.7 + fl * 5.0));
+    sum += line * (0.45 + 0.55 * h3) * (1.0 - 0.3 * fl);
+  }
+  float fade = smoothstep(0.015, 0.09, length(q)) * (1.0 - smoothstep(0.55, 1.0, length(q) / reach));
+  return clamp(sum, 0.0, 1.0) * fade * uWrinkle.w;
+}
+`;
+
+// After the texture colour: the dent is shaded darker the deeper it is.
+const SQUISH_COLOR_GLSL = `
+#include <map_fragment>
+diffuseColor.rgb *= 1.0 - 0.4 * vSquishShade;
+`;
+
+// Before three writes the pixel: the creases catch the light.
+const SQUISH_LIGHT_GLSL = `
+outgoingLight = mix(outgoingLight, vec3(1.0), squishWrinkles() * 0.7);
+#include <opaque_fragment>
+`;
+
+// How far the creases reach (times the dent's width), how many long ones
+// there are, and how long they take to fade after the release (seconds to
+// drop to about a third).
+const WRINKLE_REACH = 1.6;
+const WRINKLE_SPOKES = 30;
+const WRINKLE_FADE = 0.7;
 
 // Hooks the squish into a body material's vertex shader and hands the state
 // its uniforms (they exist once three compiles the program — on the first
@@ -650,10 +735,17 @@ function installSquishShader(material, s) {
     shader.uniforms.uSquishDir = { value: new THREE.Vector3(0, 0, -1) };
     shader.uniforms.uSquishDent = { value: new THREE.Vector4(1 / (s.dentRadius * s.dentRadius), 0, s.dentDepth * 1.5, 0) };
     shader.uniforms.uSquishRim = { value: new THREE.Vector3() };
+    shader.uniforms.uWrinkle = { value: new THREE.Vector4() };
+    shader.uniforms.uWrinkleAxis = { value: new THREE.Vector3(0, 0, -1) };
+    shader.uniforms.uWrinkleSize = { value: new THREE.Vector3(s.dentRadius * WRINKLE_REACH, WRINKLE_SPOKES, 1 / s.dentDepth) };
     shader.vertexShader = shader.vertexShader
       .replace('void main() {', `${SQUISH_VERTEX_GLSL}\nvoid main() {`)
       .replace('#include <beginnormal_vertex>', SQUISH_NORMAL_GLSL)
       .replace('#include <begin_vertex>', SQUISH_POSITION_GLSL);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('void main() {', `${SQUISH_FRAGMENT_GLSL}\nvoid main() {`)
+      .replace('#include <map_fragment>', SQUISH_COLOR_GLSL)
+      .replace('#include <opaque_fragment>', SQUISH_LIGHT_GLSL);
     s.squishUniforms = shader.uniforms;
   };
 }
@@ -676,6 +768,11 @@ function makeSquishState() {
     lift: 1,
     // The whole-body squeeze along the press direction (see the shader).
     squeeze: 0,
+    // The skin's creases: strength 0..1, where they centre (rest space) and
+    // the press direction they spread around.
+    wrinkleAmt: 0,
+    wrinkleCenter: new THREE.Vector3(),
+    wrinkleAxis: new THREE.Vector3(0, 0, -1),
     dentTargetActive: false,
     atRest: true,
     pendingMove: null,
@@ -1212,6 +1309,36 @@ function uploadSquish(s) {
   u.uSquishRim.value.set(1 / (s.dentRadius * s.dentRimWidth) ** 2, s.dentRim, 1 / (s.dentRadius * s.dentPullWidth) ** 2);
 }
 
+// The skin's creases (see the fragment shader): while the finger is down
+// they follow it and grow with the dent (so the squish level scales them
+// too); after the release they stay where they were and fade out slowly,
+// well after the shape has sprung back.
+function tickWrinkles(s, dt) {
+  let target = 0;
+  if (s.mode === 'poke') {
+    const presses = s.presses;
+    let ampSum = 0;
+    let driven = null;
+    for (let j = 0; j < presses.length; j++) {
+      ampSum += presses[j].amp;
+      if (presses[j].driven) driven = presses[j];
+    }
+    if (driven) {
+      target = clamp(ampSum / s.dentDepth, 0, 1);
+      s.wrinkleCenter.set(driven.x, driven.y, driven.z);
+      s.wrinkleAxis.copy(s.pressDir);
+    }
+  }
+  const before = s.wrinkleAmt;
+  if (target > s.wrinkleAmt) s.wrinkleAmt += (target - s.wrinkleAmt) * Math.min(1, dt * 12);
+  else s.wrinkleAmt *= Math.exp(-dt / WRINKLE_FADE);
+  if (s.wrinkleAmt < 1e-3) s.wrinkleAmt = 0;
+  const u = s.squishUniforms;
+  if (!u || (before === 0 && s.wrinkleAmt === 0)) return;
+  u.uWrinkle.value.set(s.wrinkleCenter.x, s.wrinkleCenter.y, s.wrinkleCenter.z, s.wrinkleAmt);
+  u.uWrinkleAxis.value.copy(s.wrinkleAxis);
+}
+
 function tickPhysics(s, dt) {
   const k = dt * 60;
 
@@ -1267,6 +1394,7 @@ function tickPhysics(s, dt) {
     }
     uploadSquish(s);
   }
+  tickWrinkles(s, dt);
 
   for (let j = 0; j < s.featureBases.length; j++) {
     s.featureDentVel[j] += (s.featureDentTarget[j] - s.featureDentAmt[j]) * dentStiff;
@@ -1320,9 +1448,9 @@ function tickPhysics(s, dt) {
   const lift = s.lift;
   // The sideways spread is kept small (the shader's squeeze adds its own):
   // the stage is only ~9% wider than the widest creature.
-  const sx = (1 + s.globalSquash * 0.07) * breathe * lift;
-  const sy = (1 - s.globalSquash * 0.52) * breathe * lift;
-  const sz = (1 + s.globalSquash * 0.07) * breathe * lift;
+  const sx = (1 + s.globalSquash * 0.05) * breathe * lift;
+  const sy = (1 - s.globalSquash * 0.24) * breathe * lift;
+  const sz = (1 + s.globalSquash * 0.05) * breathe * lift;
   s.group.rotation.y = s.userRotY;
   s.group.rotation.x = s.userRotX + s.wobbleRotX;
   s.group.rotation.z = s.wobbleRotZ;
