@@ -10,8 +10,6 @@ import { KeyIcon } from './candy/RoundButton';
 import { Twinkle } from './candy/Sparkles';
 import OutlinedTitle from './candy/OutlinedTitle';
 import ShadowText, { outline3 } from './candy/ShadowText';
-import CreatureToken from './candy/Tokens';
-import { tokenPrice } from '../economy';
 import { CARD_SIZE } from './CardPager';
 import TutTarget from '../tutorial/Target';
 import sfx from '../audio/sfx';
@@ -23,7 +21,7 @@ const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 // under slowly spinning light rays, name as a pink sticker title with its
 // rarity chip, and a candy status row (its tokens so far + UNLOCK /
 // HOLD TO UNLOCK / ★ OWNED + PLAY ▶). HomeScreen mounts one per page.
-// Tapping a locked card opens the unlock choices (UnlockSheet).
+// Tapping a locked card opens the Shop's squishies (chests, coins or Stars).
 //
 // This component owns the whole unlock-with-key interaction: hold the image
 // area and a gold key slides into a pink padlock (which shakes, then pops its
@@ -136,7 +134,7 @@ export function ImageBackdrop() {
   );
 }
 
-function CreatureCard({ creature, unlocked, hasKey, tokens = 0, onSelectToy, onShowUnlock, onUnlockWithKey }) {
+function CreatureCard({ creature, unlocked, hasKey, onSelectToy, onShowUnlock, onUnlockWithKey }) {
   const lockedNoKey = !unlocked && !hasKey;
   const lockedHasKey = !unlocked && hasKey;
   const tier = tierOf(creature.id);
@@ -427,11 +425,8 @@ function CreatureCard({ creature, unlocked, hasKey, tokens = 0, onSelectToy, onS
               <CandyPill variant="gold" label="HOLD TO UNLOCK" pulse halfMs={600} fontSize={12} padV={4} padH={12} letterSpacing={0.6} />
             ) : (
               <>
-                <View style={styles.tokenRow}>
-                  <CreatureToken creature={creature} size={22} />
-                  <Text style={styles.tokenText}>{`${tokens.toLocaleString()}/${tokenPrice(creature.id).toLocaleString()}`}</Text>
-                </View>
-                <CandyPill variant="pink" label="UNLOCK" pulse fontSize={12} padV={4} padH={14} letterSpacing={0.8} />
+                <Text style={styles.chestsText}>IN CHESTS</Text>
+                <CandyPill variant="pink" label="GET IT" pulse fontSize={12} padV={4} padH={14} letterSpacing={0.8} />
               </>
             )}
           </View>
@@ -473,6 +468,7 @@ const styles = StyleSheet.create({
   pedestalWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
   overlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   lockedTint: { backgroundColor: 'rgba(90,20,150,0.14)' },
+  chestsText: { fontFamily: candyFonts.bodyBlack, fontSize: 12, letterSpacing: 1, color: '#8a5aa8' },
   keyTint: { backgroundColor: 'rgba(90,20,150,0.22)' },
   lockSparkle: { position: 'absolute', top: '32%', right: '30%' },
 
@@ -512,8 +508,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  tokenRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  tokenText: { color: '#d3179a', fontFamily: candyFonts.display, fontSize: 14, includeFontPadding: false },
   ownedLabel: {
     color: '#ffb300',
     fontFamily: candyFonts.display,

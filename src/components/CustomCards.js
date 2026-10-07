@@ -161,7 +161,7 @@ export function PhotoBadge({ uri, size, busy = false, dim = false }) {
 }
 
 // The custom creature's art, bobbing gently like the premade ones' idle mood.
-function CustomArt({ creature, size, busy, dim }) {
+export function CustomArt({ creature, size, busy, dim }) {
   const bob = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (busy || dim) return undefined;

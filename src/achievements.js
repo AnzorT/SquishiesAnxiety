@@ -8,9 +8,10 @@
 //   adsWatched / maxMult (recordAdWatched), the custom creature count, and
 //   the `achievements` flags for the two live SquishScreen events that have
 //   no counter (speedTap: 60 taps in 60s; watchAd: first rewarded ad).
-// The Mystery Box ones read boxOpens / tierPulls / secretFound (written by
-// openBox) and boxDoublesTotal (doubleBox), the Daily Spin ones spins /
-// wheelJackpot (written by the spinWheel Cloud Function).
+// The chest ones read chestOpens / tierPulls (written by the `squad` Cloud
+// Function as chests open; the old Mystery Box's boxOpens still count), the
+// finish, set and growth ones the collection (`col`), the Daily Spin ones
+// spins / wheelJackpot (written by the spinWheel Cloud Function).
 //
 // Since the 2026-10-03 drop there are more, for what the game has now: the
 // level (up to 100 — a level a day once Daily Challenges open, see
@@ -20,6 +21,7 @@
 // live there (cribSize).
 
 import { creaturesOfTier } from './theme/candyTheme';
+import { SETS, setInfo } from './squad/data';
 
 const A =(key, title, desc, look, value, max = 1) => ({ key, title, desc, ...look, value, max });
 const creature = (id) => ({ creatureId: String(id) });
@@ -47,7 +49,7 @@ export function computeAchievements(creatures = [], profile = {}, customCount = 
   const holdS = Math.floor((stats.longestHoldMs ?? 0) / 1000);
   const played = Object.values(stats.playTime ?? {}).filter((ms) => ms > 0).length;
   const ads = Math.max(profile.adsWatched ?? 0, flags.watchAd ? 1 : 0);
-  const boxes = profile.boxOpens ?? 0;
+  const boxes = (profile.chestOpens ?? 0) + (profile.boxOpens ?? 0);
   const pulls = profile.tierPulls ?? {};
   const spins = profile.spins ?? 0;
   const lv = Math.max(1, Math.floor(profile.level ?? 1));
@@ -56,7 +58,11 @@ export function computeAchievements(creatures = [], profile = {}, customCount = 
   const care = profile.cribCare ?? 0;
   const buys = profile.cribBuys ?? 0;
   const cribSize = profile.cribSize ?? 0;
-  const doubles = profile.boxDoublesTotal ?? 0;
+  const col = Object.values(profile.col ?? {});
+  const finishes = (k) => col.filter((e) => e.f && e.f[k]).length;
+  const grown = col.filter((e) => (e.st ?? 0) >= 1).length;
+  const bestFriends = col.filter((e) => e.st === 2).length;
+  const setsDone = SETS.filter((k) => setInfo(profile, k).done).length;
 
   const list = [
     A('unlock3', 'Bun Appétit', `Unlock ${nameOf(3, 'Bao')}`, creature(3), has(3)),
@@ -88,18 +94,18 @@ export function computeAchievements(creatures = [], profile = {}, customCount = 
     A('own15', 'Almost There', 'Own 15 creatures', badge('×15'), ownedCount, 15),
     A('own16', 'Legend Found', 'Unlock a Legendary creature', firstOfTier('Legendary', 24), ownedOfTier('Legendary')),
     A('own17', 'Twin Legends', 'Unlock 2 Legendary creatures', firstOfTier('Legendary', 24), ownedOfTier('Legendary'), 2),
-    A('own18', 'Over the Rainbow', 'Unlock the Rainbow creature', firstOfTier('Rainbow', 28), ownedOfTier('Rainbow')),
-    A('own19', 'Golden Touch', 'Unlock the Golden creature', firstOfTier('Golden', 29), ownedOfTier('Golden')),
-    A('box1', 'Peek Inside', 'Open your first mystery box', badge('BOX'), boxes),
-    A('box5', 'Box Fan', 'Open 5 mystery boxes', badge('5'), boxes, 5),
-    A('box10', 'Unboxing Pro', 'Open 10 mystery boxes', badge('10'), boxes, 10),
-    A('box25', 'Box Hoarder', 'Open 25 mystery boxes', badge('25'), boxes, 25),
-    A('box50', 'Mystery Master', 'Open 50 mystery boxes', badge('50'), boxes, 50),
-    A('pullEpic', 'Epic Luck', 'Pull an Epic from a box', badge('EPIC'), pulls.Epic ?? 0),
-    A('pullLegendary', 'Legendary Pull', 'Pull a Legendary from a box', badge('LEG'), pulls.Legendary ?? 0),
-    A('pullRainbow', 'Rainbow Pull', 'Pull a Rainbow from a box', badge('RBW'), pulls.Rainbow ?? 0),
-    A('pullGolden', 'Pure Gold', 'Pull a Golden from a box', badge('GLD'), pulls.Golden ?? 0),
-    A('secret', 'Secret Keeper', 'Find the Secret creature', badge('?'), profile.secretFound ? 1 : 0),
+    A('own18', 'Over the Rainbow', 'Get a Rainbow squishy', badge('RBW'), finishes('r')),
+    A('own19', 'Golden Touch', 'Get a Golden squishy', badge('GLD'), finishes('g')),
+    A('box1', 'Peek Inside', 'Open your first chest', badge('BOX'), boxes),
+    A('box5', 'Box Fan', 'Open 5 chests', badge('5'), boxes, 5),
+    A('box10', 'Unboxing Pro', 'Open 10 chests', badge('10'), boxes, 10),
+    A('box25', 'Box Hoarder', 'Open 25 chests', badge('25'), boxes, 25),
+    A('box50', 'Mystery Master', 'Open 50 chests', badge('50'), boxes, 50),
+    A('pullEpic', 'Epic Luck', 'Pull an Epic from a chest', badge('EPIC'), pulls.Epic ?? 0),
+    A('pullLegendary', 'Legendary Pull', 'Pull a Legendary from a chest', badge('LEG'), pulls.Legendary ?? 0),
+    A('pullRainbow', 'Rainbow Pull', 'Pull a Rainbow finish from a chest', badge('RBW'), pulls.Rainbow ?? 0),
+    A('pullGolden', 'Pure Gold', 'Pull a Golden finish from a chest', badge('GLD'), pulls.Golden ?? 0),
+    A('secret', 'Set Collector', 'Complete a set', badge('SET'), setsDone),
     A('spin1', 'Lucky Spin', 'Spin the daily wheel', badge('SPIN'), spins),
     A('spin7', 'Week of Spins', 'Spin the wheel 7 times', badge('7'), spins, 7),
     A('jackpot', 'Jackpot!', 'Win a free creature or 15% off a creation on the wheel', badge('★'), profile.wheelJackpot ? 1 : 0),
@@ -133,8 +139,8 @@ export function computeAchievements(creatures = [], profile = {}, customCount = 
     A('buy30', 'Dream House', 'Buy 30 things for the Crib', badge('×30'), buys, 30),
     A('crib10', 'Full House', 'Have 10 friends living in the Crib', badge('10'), cribSize, 10),
     // the box's DOUBLE IT
-    A('double1', 'Double Trouble', 'Double a Mystery Box prize', badge('×2'), doubles),
-    A('double25', 'Twice as Nice', 'Double 25 Mystery Box prizes', badge('25'), doubles, 25),
+    A('double1', 'Growing Up', 'Grow a squishy to Grown', badge('UP'), grown),
+    A('double25', 'Best Friends', 'Make a squishy your Best Friend', badge('BFF'), bestFriends),
   ];
 
   return list.map(({ creatureId, value, max, ...rest }) => {

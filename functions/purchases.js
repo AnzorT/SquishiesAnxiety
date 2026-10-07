@@ -26,6 +26,10 @@
 //                              the 10-day streak's reward (`streakDiscount`,
 //                              set by the app with the day-10 chest) is
 //                              waiting; it uses the reward up.
+//  · gems_80 … gems_12000    — consumable gem packs ($0.99 80, $4.99 450,
+//                              $9.99 950, $19.99 2000, $49.99 5500, $99.99
+//                              12000; GEM_PACKS in squad.js). A pack's first
+//                              purchase gives double (`gemFirst`).
 //
 // Price levels: each product can also be sold at other prices, as its own
 // store product named `<id>_<cents>` (creature_key_149 is a $1.49 key). The
@@ -41,13 +45,15 @@ const CREATURE_KEY = 'creature_key';
 const CREATION = 'creature_creation';
 const CREATION_DISCOUNTED = 'creature_creation_15off';
 const CREATION_HALF = 'creature_creation_half';
-const PRODUCT_IDS = [REMOVE_ADS, CREATURE_KEY, CREATION, CREATION_DISCOUNTED, CREATION_HALF];
-const CONSUMABLES = [CREATURE_KEY, CREATION, CREATION_DISCOUNTED, CREATION_HALF];
+const { GEM_PACKS } = require('./squad');
+const GEM_IDS = Object.keys(GEM_PACKS);
+const PRODUCT_IDS = [REMOVE_ADS, CREATURE_KEY, CREATION, CREATION_DISCOUNTED, CREATION_HALF, ...GEM_IDS];
+const CONSUMABLES = [CREATURE_KEY, CREATION, CREATION_DISCOUNTED, CREATION_HALF, ...GEM_IDS];
 
 // A product id → its base product (one of PRODUCT_IDS), for the base id
 // itself or any price level of it (`<base>_<cents>`); null for anything else.
 // (creature_creation_15off and _half are tried before creature_creation.)
-const LEVEL_RE = /^(remove_ads|creature_key|creature_creation_15off|creature_creation_half|creature_creation)(?:_([1-9]\d{0,5}))?$/;
+const LEVEL_RE = /^(gems_(?:80|450|950|2000|5500|12000)|remove_ads|creature_key|creature_creation_15off|creature_creation_half|creature_creation)(?:_([1-9]\d{0,5}))?$/;
 function baseProduct(productId) {
   const m = LEVEL_RE.exec(String(productId || ''));
   return m ? m[1] : null;
@@ -113,6 +119,12 @@ function checkAppleTransaction(tx, uid, productId) {
 function grantFor({ productId, creatureId, profile, rosterIds }) {
   const base = baseProduct(productId);
   if (!base) return { error: 'unknown_product' };
+
+  if (GEM_PACKS[base]) {
+    const first = !(profile.gemFirst || {})[base];
+    const gems = GEM_PACKS[base] * (first ? 2 : 1);
+    return { update: { gems, gemFirst: first ? base : null }, result: { granted: 'gems', gems, doubled: first } };
+  }
 
   if (base === REMOVE_ADS) return { update: { adsFree: true }, result: { granted: 'adsFree' } };
 

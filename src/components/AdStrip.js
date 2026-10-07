@@ -6,13 +6,14 @@ import AdBanner from './AdBanner';
 
 // The banner ad strip at the bottom of Home and Squish: full width, flush
 // with the bottom edge (it runs under the gesture bar too), with an
-// "ADVERTISEMENT" caption behind the banner until the ad loads.
+// "ADVERTISEMENT" caption behind the banner until the ad loads. Above the
+// bottom nav (MainScreen) it isn't the bottom edge: `inset={false}`.
 export const AD_H = 60;
 
-export default function AdStrip() {
+export default function AdStrip({ inset = true, style }) {
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.bar, { paddingBottom: insets.bottom }]}>
+    <View style={[styles.bar, style, { paddingBottom: inset ? insets.bottom : 0 }]}>
       <View style={styles.slot}>
         <View style={styles.labelWrap} pointerEvents="none">
           <Text style={styles.label}>ADVERTISEMENT</Text>

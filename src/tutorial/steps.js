@@ -1,16 +1,13 @@
 // The guided tutorial (the 2026-10-03 design's tutSync in "ASMR Creature
-// Squash v3.dc.html"), on this app's own economy: the first box fills
-// Mittens' tokens (its key), the card is held to unlock, box 2 is paid with
-// the 500 coins earned in the goal step, and the design's "duplicate →
-// token, watch a video to double it" became a card about creature tokens
-// (there are no duplicates and no shared tokens here).
+// Squash v3.dc.html"), on the squad economy (src/squad): every new player
+// has a Welcome chest that always holds Mittens (functions/squad.js); the
+// second chest is a Basic one bought with the coins earned in the goal
+// step; then a card about Stars, sets and finishes.
 //
 // `tut` on the profile is the current step; 'done' ends it. Each step says
 // what the Guide shows (`ui`) and when to move on (`next`), from the store's
 // view of the app (store.js) and the profile. App.js runs `stepView` on
 // every change (and on a tick for the timed steps) and writes the step.
-
-import { tokenPrice } from '../economy';
 
 export const FIRST_STEP = 'start';
 // the Crib picks the tutorial up from here (Phase C)
@@ -38,11 +35,18 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
   const starter = creatures.find((c) => c.id === '0')?.name || 'Nimbo';
   const on = (screen) => s.screen === screen;
   const owned = profile?.ownedIds || [];
-  const hasKey = !!profile?.keys?.['1'];
-  // a squish-screen step while the player is back on Home: point at the card
-  const backToToy = () => (on('home') ? { ui: spot('card:1', `Back to ${name}`, 'Tap the card to keep playing.', { radius: 24, place: 'top' }) } : { hide: true });
-  // a box step while the player is back on Home: point at the box
-  const backToBox = () => (on('home') ? { ui: spot('box', 'Back to the box', 'Tap here to open it.') } : { hide: true });
+  // Home is the Squishies tab and 'store' the Shop tab (MainScreen). A
+  // squishy is a cell in the Collection (`card:<id>`, scrolled into view);
+  // its sheet's SQUISH button is `sheetPlay`.
+  const sheetUp = String(s.squadSheet) === '1';
+  const toMittens = (title, text) =>
+    sheetUp ? { ui: spot('sheetPlay', title, 'Tap SQUISH to play.', { radius: 20, place: 'top' }) } : { ui: spot('card:1', title, text, { radius: 18, place: 'top' }) };
+  // a squish-screen step while the player is back on Home: point at the cell
+  const backToToy = () => (on('home') ? toMittens(`Back to ${name}`, `Tap ${name} to keep playing.`) : { hide: true });
+  // a chest step while the player is back on Home: point at the Shop tab
+  const backToBox = () => (on('home') ? { ui: spot('store', 'Back to your chest', 'Tap the Shop to open it.') } : { hide: true });
+  // the chest opener, while it's up (in the Shop)
+  const smashing = s.boxPhase === 'opening';
 
   switch (tut) {
     case 'start':
@@ -50,17 +54,17 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
       return { hide: true };
 
     case 'box1':
-      if (on('box')) return { next: 'box1tap' };
+      if (on('store')) return { next: 'box1tap' };
       if (!on('home')) return { hide: true };
-      // the first box is already open (a replay): straight on
-      if (owned.includes('1') || hasKey) return { next: 'card' };
-      return { ui: spot('box', 'Your first Mystery Box!', 'Every squishy friend hatches from a box. Tap here to open yours.') };
+      // the welcome chest is already open (a replay): straight on
+      if (owned.includes('1')) return { next: 'play' };
+      return { ui: spot('store', 'Your first chest!', 'Every squishy friend comes out of a chest. A welcome chest is waiting for you in the Shop — tap here.') };
 
     case 'box1tap':
       if (s.boxPhase === 'reveal') return { next: 'lvl2' };
-      if (!on('box')) return backToBox();
-      if (!s.boxPaid) return { ui: spot('boxPay', 'Open it', 'This box needs paying for first — tap here.') };
-      return { ui: spot('boxTap', 'Tap tap tap!', 'Tap the box 10 times to crack it open. This first one is on us.', { radius: 40 }) };
+      if (!on('store')) return backToBox();
+      if (smashing) return { ui: spot('chestStage', 'Tap tap tap!', 'Tap the chest until it bursts open. Stop and it heals!', { radius: 40, block: false }) };
+      return { ui: spot('shelf', 'Open it', 'Your Welcome chest is in My Chests. Tap it!', { radius: 16 }) };
 
     case 'lvl2':
       return {
@@ -68,29 +72,23 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
         ui: card({
           level: 2,
           title: 'You reached level 2!',
-          text: `You got ${name}' key — your very first squishy friend.`,
+          text: `${name} joined your squad — your very first squishy friend.`,
           buttons: [{ label: 'Yay!', next: 'reveal' }],
         }),
       };
 
     case 'reveal':
-      if (on('home')) return { next: 'card' };
-      if (!on('box')) return { hide: true };
-      return { ui: spot('revealUnlock', `Meet ${name}`, `Let’s go and unlock ${name} — tap here.`) };
+      if (on('home')) return { next: 'play' };
+      if (!on('store')) return { hide: true };
+      if (s.boxPhase === 'reveal') return { ui: spot('revealDone', `Meet ${name}`, 'Tap here to say hi.') };
+      return { ui: spot('storeBack', 'Back to your squishies', `Let’s go and play with ${name}.`) };
 
-    // The card target is `card:<id>`: only a mounted card registers, so when
-    // the player pages away the guide falls back to a banner until Mittens'
-    // card is back in view.
-    case 'card':
-      if (owned.includes('1')) return { next: 'play' };
-      if (!on('home')) return { hide: true };
-      if (s.listTab !== 'ours') return { ui: spot('tabs', 'Your creature list', 'Open the OUR CREATURES tab.', { handX: 0.25 }) };
-      return { ui: spot('card:1', 'Unlock it!', `Press and hold ${name}'s card until the key turns.`, { hand: 'hold', radius: 24, place: 'top' }) };
-
+    // Mittens' cell (`card:1`) is only mounted on Collection > Squishies;
+    // elsewhere the guide falls back to a banner.
     case 'play':
       if (on('toy')) return { next: 'gear' };
       if (!on('home')) return { hide: true };
-      return { ui: spot('card:1', `Play with ${name}`, `Find ${name} in your list and tap the card to start playing.`, { radius: 24, place: 'top' }) };
+      return toMittens(`Play with ${name}`, `Here’s ${name}. Tap them, then SQUISH to start playing.`);
 
     case 'gear':
       if (!on('toy')) return backToToy();
@@ -152,60 +150,40 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
     case 'back':
       if (on('home')) return { next: 'box2' };
       if (!on('toy')) return { hide: true };
-      return { ui: spot('back', 'Goal reached!', 'Head back and spend your coins on another Mystery Box.') };
+      return { ui: spot('back', 'Goal reached!', 'Head back and spend your coins on a chest.') };
 
     case 'box2':
-      if (on('box')) return { next: 'box2tap' };
+      if (on('store')) return { next: 'box2tap' };
       if (!on('home')) return { hide: true };
-      return { ui: spot('box', 'Another box', `This one costs ${GOAL_COINS} coins. Let’s open it!`) };
+      return { ui: spot('store', 'Another chest', 'Your coins buy chests in the Shop. Tap here!') };
 
     case 'box2tap':
-      if (s.boxPhase === 'reveal') return { next: 'tokens' };
-      if (!on('box')) return backToBox();
-      if (!s.boxPaid) return { ui: spot('boxPay', 'Pay with coins', `Your ${GOAL_COINS} coins pay for this box — tap OPEN.`) };
-      return { ui: spot('boxTap', 'Tap 10 times', 'Tap it open!', { radius: 40 }) };
+      if (s.boxPhase === 'reveal') return { next: 'stars' };
+      if (!on('store')) return on('home') ? { ui: spot('store', 'Back to the Shop', 'Let’s buy that chest.') } : { hide: true };
+      if (smashing) return { ui: spot('chestStage', 'Tap it open', 'Tap tap tap!', { radius: 40, block: false }) };
+      if (s.shopSheet === 'got') return { ui: spot('openNow', 'Open it now', 'Tap OPEN NOW.') };
+      return { ui: spot('buy:basic', 'A Basic chest', 'It costs 250 coins. Tap to buy it!', { radius: 999 }) };
 
-    case 'tokens': {
-      // the cheapest creature still to unlock (roster order = price order)
-      const next = creatures.find((c) => /^\d+$/.test(c.id) && c.id !== '0' && !owned.includes(c.id) && !profile?.keys?.[c.id]);
-      const need = next ? tokenPrice(next.id) : 35;
+    case 'stars':
       return {
         ui: card({
-          badge: 'CREATURE TOKENS',
-          title: 'Tokens!',
-          text: `Every box gives tokens of one creature. Fill a creature's set — ${need} for ${next ? next.name : 'the next one'} — and its key is yours. The daily chest gives tokens too.`,
-          buttons: [{ label: 'Got it', next: 'store' }],
-        }),
-      };
-    }
-
-    case 'store':
-      if (on('store')) return { next: 'storeInfo' };
-      if (on('box')) return { ui: spot('boxBack', 'Back home', 'Head back — the shop is next.') };
-      if (!on('home')) return { hide: true };
-      return { ui: spot('store', 'The shop', 'Tap here to see how you unlock more creatures.') };
-
-    case 'storeInfo':
-      if (on('home')) return { ui: spot('store', 'The shop', 'Tap here to see how you unlock more creatures.') };
-      if (!on('store')) return { hide: true };
-      return {
-        ui: spot('key', 'Keys unlock creatures', 'Fill a creature’s tokens from Mystery Boxes, or buy its key right away.', {
-          hand: null,
-          radius: 16,
-          next: 'Got it',
-          onNext: 'storeBack',
+          badge: 'STARS & FINISHES',
+          title: 'Stars!',
+          text: 'Got a squishy you already have? It turns into Stars. Spend Stars to grow your squishies, get the ones you’re missing, or give them a Shiny or Rainbow finish. Finish a set for a bonus squishy!',
+          buttons: [{ label: 'Got it', next: 'storeBack' }],
         }),
       };
 
     case 'storeBack':
       if (on('home')) return { next: 'mine' };
       if (!on('store')) return { hide: true };
-      return { ui: spot('storeBack', 'Back to your list', 'One more thing to show you.') };
+      if (s.boxPhase === 'reveal') return { ui: spot('revealDone', 'Nice!', 'Tap here to finish.') };
+      return { ui: spot('storeBack', 'Back to your squishies', 'One more thing to show you.') };
 
     case 'mine':
       if (!on('home')) return { hide: true };
       if (s.listTab === 'mine') return { next: 'create' };
-      return { ui: spot('tabs', 'Make your own', 'Open the MY CREATURES tab.', { handX: 0.75 }) };
+      return { ui: spot('tabs', 'Make your own', 'Open My creations.', { handX: 0.75 }) };
 
     case 'create':
       if (!on('home')) return { hide: true };
@@ -285,8 +263,8 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
           title: 'New challenges every day',
           text: 'Finish them in the Crib and in the squish game.',
           items: [
-            { icon: '✓', color: '#f2b84a', title: 'Claim all six for the chest', desc: 'Coins, a creature token and your streak reward, every day you finish them all.' },
-            { icon: '%', color: '#7fae6a', title: '10 days of streak rewards', desc: 'Coins, tokens, free boxes, +5% squish coins a day — and on day 10, half price on a new creature.' },
+            { icon: '✓', color: '#f2b84a', title: 'Claim all six for the chest', desc: 'Coins, Stars and your streak reward, every day you finish them all.' },
+            { icon: '%', color: '#7fae6a', title: '10 days of streak rewards', desc: 'Coins, Stars, free chests, +5% squish coins a day — and on day 10, half price on a new creature.' },
             { icon: '!', color: '#f2665a', title: 'Miss a day, lose the streak', desc: 'Your streak goes back to day 1.' },
           ],
           buttons: [{ label: 'Got it', next: 'c_offers' }],
@@ -302,8 +280,8 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
           title: 'Make it even squishier',
           text: 'You’re all set! A few more things to know:',
           items: [
-            { icon: '★', color: '#f2b84a', title: 'Keys unlock creatures', desc: 'Fill their tokens from Mystery Boxes, or buy a key in the shop.' },
-            { icon: '✦', color: '#9b84d8', title: 'Create your own', desc: 'Turn a photo or a drawing into a squishy on the MY CREATURES tab.' },
+            { icon: '★', color: '#f2b84a', title: 'Chests bring new squishies', desc: 'Free ones every day, more in the Shop. Grow them with Stars in the Star Shop.' },
+            { icon: '✦', color: '#9b84d8', title: 'Create your own', desc: 'Turn a photo or a drawing into a squishy in Collection > My creations.' },
             { icon: '×', color: '#f2665a', title: 'Remove ads', desc: 'A one-time purchase in Settings. No more ads, ever.' },
           ],
           buttons: [{ label: 'Start playing', next: 'done' }],

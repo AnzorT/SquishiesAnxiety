@@ -8,9 +8,10 @@ import { useSyncExternalStore } from 'react';
 const state = {
   // reported by App.js and the screens
   screen: 'splash', // App's stage: splash | auth | home | box | toy | store | …
-  listTab: 'ours', // Home's tab
-  boxPhase: 'closed', // MysteryBoxScreen: closed | opening | reveal
-  boxPaid: false, // the box on screen is paid for (or free): tapping opens it
+  listTab: 'ours', // the Squishies tab's Collection list: 'ours' | 'mine' (My creations)
+  squadSheet: null, // the squishy whose sheet is open there (its id, as a string)
+  boxPhase: 'closed', // the Shop's chest opener: closed | opening | reveal
+  shopSheet: null, // the Shop's open sheet: 'got' (a chest bought) | 'odds' | …
   holdActive: false, // SquishScreen: one finger pressing the toy
   rotateAcc: 0, // SquishScreen: how far two fingers have twisted, px
   settingsOpen: false, // SquishScreen's settings popup

@@ -1,3 +1,5 @@
+import { RARITY, rarityOf } from '../squad/data';
+
 // Candy theme — the v3 redesign ("ASMR Creature Squash v3.dc.html" in the
 // design zip): a pink→violet gradient stage with polka dots and bokeh,
 // glossy "candy" buttons (white border, dark ring + bottom lip, top shine),
@@ -58,35 +60,27 @@ export const TITLE_FILLS = {
   pink: { colors: ['#ffd6f4', '#ff5cc6', '#c02bd9'], locations: [0, 0.52, 1] },
 };
 
-// Rarity tiers. A premade creature's tier comes from its roster position
-// (TIER_OF). The design's formula (ids 0-7 Common, 8-12 Rare, 13-15 Epic,
-// 16-17 Legendary, 18 Rainbow, 19 Golden) was written for 20 creatures and
-// never updated for the 30-creature plush roster of 2026-10-03 (it would make
-// ids 19-29 all Golden), so the same proportions are spread over 30: 0-11
-// Common, 12-18 Rare, 19-23 Epic, 24-27 Legendary, 28 Rainbow (Boba), 29
-// Golden (Avo). `w` is the mystery-box pull weight in percent — retuned from
-// the design's 55/25/12/6/1.5/0.5 for the sticker economy (see
-// src/economy.js); Secret is never rolled, only granted once everything is
-// owned.
+// Rarity tiers. A premade creature's rarity is the squad roster's
+// (functions/squad.js, the 2026-10-06 design): Common, Rare, Epic,
+// Legendary, or a set's reward creature. Rainbow and Golden are no longer
+// creature rarities but finishes (src/squad/data.js FIN_LOOK); their entries
+// stay for the screens that still draw them until the old box economy is
+// removed. `w` is the old mystery-box weight (src/economy.js), unused by
+// chests.
 export const TIERS = {
   Common: { label: 'COMMON', w: 45, bg: ['#d7f0ff', '#d7f0ff'], color: '#4a1a73', glow: '#9fd8ff' },
   Rare: { label: 'RARE', w: 27, bg: ['#c9f7e1', '#c9f7e1'], color: '#4a1a73', glow: '#7ee8b4' },
   Epic: { label: 'EPIC', w: 15, bg: ['#ead6ff', '#ead6ff'], color: '#4a1a73', glow: '#c89bff' },
   Legendary: { label: 'LEGENDARY', w: 8, bg: ['#ffdcb0', '#ffdcb0'], color: '#4a1a73', glow: '#ffa94d' },
+  'Set reward': { label: 'SET REWARD', w: 0, bg: ['#ffe0f3', '#ffe0f3'], color: '#4a1a73', glow: '#ff8fd3' },
   Rainbow: { label: 'RAINBOW', w: 3.5, bg: ['#ffb3c7', '#ffe38a', '#b3f5c8', '#b3e0ff', '#dcc2ff'], color: '#4a1a73', glow: '#ff9fd6' },
   Golden: { label: 'GOLDEN', w: 1.5, bg: ['#fff3b0', '#ffc233', '#f0a000'], color: '#4a1a73', glow: '#ffd24d' },
   Secret: { label: 'SECRET', w: 0, bg: ['#4a1a73', '#ff4fa3'], color: '#ffffff', glow: '#ff6fbd' },
 };
 
 export function tierOf(creatureId) {
-  const id = Number(creatureId);
-  if (!Number.isFinite(id)) return null; // custom creatures have no tier
-  if (id <= 11) return 'Common';
-  if (id <= 18) return 'Rare';
-  if (id <= 23) return 'Epic';
-  if (id <= 27) return 'Legendary';
-  if (id === 28) return 'Rainbow';
-  return 'Golden';
+  const r = rarityOf(creatureId);
+  return r == null ? null : RARITY[r]; // custom creatures have no tier
 }
 
 // The roster creatures of one rarity, in roster order.

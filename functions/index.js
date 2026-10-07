@@ -399,6 +399,53 @@ exports.spinWheel = onCall(async (request) => {
   });
 });
 
+// --- The squad economy: chests, gems, Stars, the collection ------------------
+//
+// One callable for every move (the rules: squad.js). The app sends
+// { move, ...args, tzOffsetMinutes }; the move runs in a transaction on the
+// player's profile and the result goes back. Chests can only drop creatures
+// that have art: the catalog's numbered creature docs.
+const squad = require('./squad');
+
+exports.squad = onCall(async (request) => {
+  const uid = request.auth && request.auth.uid;
+  if (!uid) throw new HttpsError('unauthenticated', 'Sign in first.');
+  const data = request.data || {};
+  const fn = squad.MOVES[data.move];
+  if (!fn) throw new HttpsError('invalid-argument', 'Unknown move.');
+  const db = admin.firestore();
+  const day = dayKey(Date.now(), data.tzOffsetMinutes);
+  const needsArt = ['openChest', 'buyCreature'].includes(data.move);
+  const artIds = needsArt ? (await db.collection('creatures').select().get()).docs.map((d) => d.id).filter((id) => /^\d+$/.test(id)) : [];
+  const args = {
+    tier: String(data.tier || ''),
+    deal: !!data.deal,
+    id: String(data.id ?? ''),
+    cur: data.cur === 'stars' ? 'stars' : 'coins',
+    f: String(data.f || ''),
+    i: Number(data.i),
+    reward: data.reward && typeof data.reward === 'object' ? { kind: String(data.reward.kind || ''), amount: Number(data.reward.amount) || 0 } : null,
+    day,
+    artIds,
+  };
+
+  const userRef = db.collection('users').doc(uid);
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(userRef);
+    if (!snap.exists) throw new HttpsError('failed-precondition', 'No profile.');
+    const begun = squad.withStart(snap.data());
+    const out = fn(begun.p, args);
+    if (out.error) {
+      if (Object.keys(begun.set).length) tx.update(userRef, begun.set);
+      return { error: out.error };
+    }
+    const update = { ...begun.set, ...out.set };
+    if (Object.keys(update).length) tx.update(userRef, update);
+    logger.info(`[${uid}] squad ${data.move}`, out.result);
+    return out.result;
+  });
+});
+
 // --- In-app purchases -------------------------------------------------------
 //
 // The app sends every Google Play / App Store purchase to verifyPurchase

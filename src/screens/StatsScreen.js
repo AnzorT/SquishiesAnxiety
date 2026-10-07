@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { candyColors, candyFonts } from '../theme/candyTheme';
 import { computeAchievements } from '../achievements';
-import { boxRoster, ownedCount } from '../mysteryBox';
 import CandyBackground from '../components/candy/CandyBackground';
 import RoundButton, { BackGlyph } from '../components/candy/RoundButton';
 import OutlinedTitle from '../components/candy/OutlinedTitle';
@@ -95,8 +94,10 @@ export default function StatsScreen({ creatures = [], customCreatures = [], prof
 
   const favorite = ranked[0] || null;
   const totalMs = Object.values(stats.playTime || {}).reduce((sum, ms) => sum + (ms > 0 ? ms : 0), 0);
-  const owned = ownedCount(creatures, p.ownedIds || []);
-  const rosterSize = boxRoster(creatures).length || creatures.length;
+  // the numbered roster creatures (custom ones aren't counted)
+  const roster = creatures.filter((c) => /^\d+$/.test(c.id));
+  const owned = roster.filter((c) => (p.ownedIds || []).includes(c.id)).length;
+  const rosterSize = roster.length || creatures.length;
   const achDone = achievements.filter((a) => a.done).length;
   const top = ranked.slice(0, TOP_COUNT);
 

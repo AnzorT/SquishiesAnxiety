@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Canvas } from '@react-three/fiber';
 import { NeutralToneMapping } from 'three';
-import Svg, { Defs, LinearGradient as SvgGradient, Stop, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
 import SquishyToy from '../components/SquishyToy';
 import SquishyToy2D from '../components/SquishyToy2D';
@@ -25,12 +25,11 @@ import WatchAdButton from '../components/WatchAdButton';
 import TutTarget from '../tutorial/Target';
 import { report as tutReport } from '../tutorial/store';
 import { AD_FREE_BOOST_RECHARGE_MS } from '../economy';
-import CandyBackground from '../components/candy/CandyBackground';
+import SkyBackground from '../squad/SkyBackground';
 import CandyButton, { Shine } from '../components/candy/CandyButton';
 import RoundButton, { BackGlyph, CloseGlyph, GearIcon } from '../components/candy/RoundButton';
 import { CoinIcon, GlassPill } from '../components/candy/Coin';
 import OutlinedTitle from '../components/candy/OutlinedTitle';
-import ShadowText from '../components/candy/ShadowText';
 import ToggleSwitch from '../components/candy/ToggleSwitch';
 import sfx from '../audio/sfx';
 
@@ -183,16 +182,18 @@ const StageEffects = memo(forwardRef(function StageEffects(_props, ref) {
   );
 }));
 
-// Top-bar coin pill. Counts up through its ref on each earn tick, so the
-// tick re-renders only this pill instead of the whole screen mid-squish.
-const CoinCounter = memo(forwardRef(function CoinCounter({ initial }, ref) {
-  const [value, setValue] = useState(initial);
+// Top-bar "+N EARNED" pill: the coins earned since the screen opened (v5).
+// Counts up through its ref on each earn tick, so the tick re-renders only
+// this pill instead of the whole screen mid-squish.
+const CoinCounter = memo(forwardRef(function CoinCounter(_props, ref) {
+  const [value, setValue] = useState(0);
   useImperativeHandle(ref, () => ({ add: (n) => setValue((c) => c + n) }), []);
   return (
-    <GlassPill style={styles.coinPill}>
-      <CoinIcon size={14} />
-      <Text style={styles.coinPillText}>{value}</Text>
-    </GlassPill>
+    <View style={styles.coinPill}>
+      <CoinIcon size={17} />
+      <Text style={styles.coinPillText}>+{value.toLocaleString()}</Text>
+      <Text style={styles.coinPillEarned}>EARNED</Text>
+    </View>
   );
 }));
 
@@ -324,31 +325,19 @@ const HAND_ASPECT = 110 / 82;
 // fingertip of each hand, in path units — where its touch ring sits
 const SQUISH_TIP = { x: 30, y: 11 };
 const ROTATE_TIP = { x: 31, y: 12 };
-const HINT_INK = '#45189a';
-const HINT_TEXT_SHADOWS = [
-  [0, 2, HINT_INK],
-  [1, 0, HINT_INK],
-  [-1, 0, HINT_INK],
-];
+const HINT_INK = '#6b3fa0';
 
 function CandyHand({ d, creaseD, width }) {
   return (
     <Svg width={width} height={width * HAND_ASPECT} viewBox={HAND_VIEWBOX}>
-      <Defs>
-        <SvgGradient id="candyHand" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#ffffff" />
-          <Stop offset="1" stopColor="#f0dcff" />
-        </SvgGradient>
-      </Defs>
-      <Path d={d} fill={HINT_INK} stroke={HINT_INK} strokeWidth={7} strokeLinejoin="round" transform="translate(0,4)" />
-      <Path d={d} fill={HINT_INK} stroke={HINT_INK} strokeWidth={7} strokeLinejoin="round" />
-      <Path d={d} fill="url(#candyHand)" stroke="#ffffff" strokeWidth={2.4} strokeLinejoin="round" />
-      <Path d={creaseD} stroke="#c28cf0" strokeWidth={2.4} strokeLinecap="round" fill="none" />
+      <Path d={d} fill="rgba(107,63,160,0.16)" transform="translate(0,3)" />
+      <Path d={d} fill="rgba(255,255,255,0.9)" stroke={HINT_INK} strokeWidth={2.8} strokeLinejoin="round" />
+      <Path d={creaseD} stroke="rgba(107,63,160,0.6)" strokeWidth={2} strokeLinecap="round" fill="none" />
     </Svg>
   );
 }
 
-// Pink ring with a white rim, pulsing where the finger lands.
+// Pink ring pulsing where the finger lands.
 function TouchRing({ anim, style }) {
   return (
     <Animated.View
@@ -361,18 +350,17 @@ function TouchRing({ anim, style }) {
         },
       ]}
     >
-      <View style={styles.touchRingInner} />
     </Animated.View>
   );
 }
 
-// The glass caption pill (the Mystery Box's hint look).
+// v5's caption: dark purple caps with a white glow, no pill.
 function HintPill({ label, sub, align = 'center' }) {
   return (
-    <View style={[styles.hintPill, { alignItems: align === 'right' ? 'flex-end' : 'center' }]}>
-      <ShadowText style={styles.hintPillText} shadows={HINT_TEXT_SHADOWS} numberOfLines={1}>
+    <View style={{ alignItems: align === 'right' ? 'flex-end' : 'center' }}>
+      <Text style={styles.hintPillText} numberOfLines={1}>
         {label}
-      </ShadowText>
+      </Text>
       {sub ? (
         <Text style={styles.hintPillSub} numberOfLines={1}>
           {sub}
@@ -382,12 +370,12 @@ function HintPill({ label, sub, align = 'center' }) {
   );
 }
 
-const HAND_W = 50;
+const HAND_W = 52;
 
 function GestureHint({ side, d, creaseD, tip, label, touchAnim, gestureAnim }) {
   const sideStyle = side === 'left' ? { left: '4%' } : { right: '4%' };
   const k = HAND_W / 82;
-  const ring = { left: (tip.x + 5) * k - 14, top: (tip.y + 5) * k - 14 };
+  const ring = { left: (tip.x + 5) * k - 13, top: (tip.y + 5) * k - 13 };
   return (
     <View style={[styles.gestureHint, sideStyle]} pointerEvents="none">
       <Animated.View style={[styles.gestureHandWrap, { transform: gestureAnim }]}>
@@ -584,9 +572,11 @@ function SettingsRow({ label, children }) {
   );
 }
 
-// Settings popup opened from the gear. Tapping outside the card or the X
-// closes it.
+// Settings dropdown opened from the gear: v5's white card hanging under the
+// gear, with no scrim. Tapping anywhere outside it (the gear included) or
+// the ✕ closes it; the ✕ is also the tutorial's gearClose target.
 function SettingsModal({
+  top,
   onClose,
   squishSoundEnabled,
   onToggleSquishSound,
@@ -606,11 +596,11 @@ function SettingsModal({
   return (
     <View style={styles.settingsOverlay}>
       <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
-      <View style={styles.settingsCard}>
+      <View style={[styles.settingsCard, { top }]}>
         <View style={styles.settingsHeader}>
-          <Text style={styles.settingsTitle}>SETTINGS</Text>
+          <Text style={styles.settingsTitle}>Settings</Text>
           <TutTarget name="gearClose">
-            <RoundButton size={32} onPress={onClose} hitSlop={10}>
+            <RoundButton size={26} onPress={onClose} hitSlop={10}>
               <CloseGlyph />
             </RoundButton>
           </TutTarget>
@@ -1204,7 +1194,7 @@ export default function SquishScreen({
   ).current;
 
   return (
-    <CandyBackground style={styles.container}>
+    <SkyBackground style={styles.container}>
       <View style={styles.stageArea}>
         <View style={[styles.topLeft, { top: insets.top + 14 }]}>
           <TutTarget name="back">
@@ -1212,7 +1202,7 @@ export default function SquishScreen({
               <BackGlyph />
             </RoundButton>
           </TutTarget>
-          <CoinCounter ref={coinCounterRef} initial={coins} />
+          <CoinCounter ref={coinCounterRef} />
           {showFps && <FpsCounter />}
         </View>
 
@@ -1277,6 +1267,7 @@ export default function SquishScreen({
 
       {settingsOpen && (
         <SettingsModal
+          top={insets.top + 14 + GEAR_SIZE + 8}
           onClose={closeSettings}
           squishSoundEnabled={squishSoundEnabled}
           onToggleSquishSound={onToggleSquishSound}
@@ -1296,7 +1287,7 @@ export default function SquishScreen({
       )}
 
       <PunishmentModal visible={punishOpen} onDismiss={dismissPunishment} adsFree={adsFree} />
-    </CandyBackground>
+    </SkyBackground>
   );
 }
 
@@ -1306,12 +1297,31 @@ const styles = StyleSheet.create({
   // whatever's left instead of a fixed 70/30 split (see bottomPanel below).
   stageArea: { flex: 1, position: 'relative', alignItems: 'center', justifyContent: 'center' },
   topLeft: { position: 'absolute', left: 14, flexDirection: 'row', alignItems: 'center', gap: 8, zIndex: 3 },
-  coinPill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 4 },
+  coinPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: 'rgba(80,12,140,0.42)',
+  },
   coinPillText: {
-    color: candyColors.goldText,
+    color: '#ffffff',
     fontFamily: candyFonts.bodyHeavy,
     fontSize: 13,
-    textShadowColor: candyColors.outline,
+    textShadowColor: '#6a1b9a',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
+  },
+  coinPillEarned: {
+    color: '#ffe9a8',
+    fontFamily: candyFonts.bodyHeavy,
+    fontSize: 9,
+    letterSpacing: 0.8,
+    textShadowColor: '#6a1b9a',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 1,
   },
@@ -1347,24 +1357,17 @@ const styles = StyleSheet.create({
   },
   floatingCoin: { position: 'absolute', left: 0, top: 0, flexDirection: 'row', alignItems: 'center', gap: 2, zIndex: 6 },
 
-  settingsOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: candyColors.scrim,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    zIndex: 40,
-  },
+  settingsOverlay: { ...StyleSheet.absoluteFillObject, zIndex: 40 },
   settingsCard: {
-    width: '100%',
-    maxWidth: 360,
-    backgroundColor: candyColors.sheet,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: candyColors.inkSoft,
-    paddingHorizontal: 18,
-    paddingTop: 16,
-    paddingBottom: 20,
+    position: 'absolute',
+    right: GEAR_RIGHT,
+    width: 244,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#6b3fa0',
+    padding: 14,
+    paddingTop: 10,
     shadowColor: '#6b3fa0',
     shadowOpacity: 0.28,
     shadowRadius: 15,
@@ -1372,24 +1375,24 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   settingsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  settingsTitle: { fontFamily: candyFonts.display, fontSize: 20, letterSpacing: 1, color: candyColors.ink },
+  settingsTitle: { fontFamily: candyFonts.display, fontSize: 15, color: '#6b3fa0' },
   settingsSection: {
-    marginTop: 14,
-    marginBottom: 4,
-    color: candyColors.goldInk,
+    marginTop: 8,
+    marginBottom: 1,
+    color: '#a283c9',
     fontFamily: candyFonts.bodyHeavy,
-    fontSize: 10.5,
-    letterSpacing: 1.4,
+    fontSize: 9.5,
+    letterSpacing: 1.2,
   },
-  settingsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 7 },
-  settingsLabel: { color: candyColors.inkSoft, fontFamily: candyFonts.body, fontSize: 13 },
-  settingsLabelSpaced: { marginTop: 12 },
-  settingsHint: { marginTop: 4, color: candyColors.mutedLight, fontFamily: candyFonts.body, fontSize: 10.5 },
-  segmented: { flexDirection: 'row', gap: 6, marginTop: 8 },
+  settingsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 3 },
+  settingsLabel: { color: '#6b3fa0', fontFamily: candyFonts.bodyHeavy, fontSize: 12.5 },
+  settingsLabelSpaced: { marginTop: 8 },
+  settingsHint: { marginTop: 3, color: '#a283c9', fontFamily: candyFonts.body, fontSize: 9.5 },
+  segmented: { flexDirection: 'row', gap: 4, marginTop: 5 },
   segment: {
     flex: 1,
-    paddingVertical: 9,
-    borderRadius: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
     borderWidth: 2,
     borderColor: '#e3cff5',
     backgroundColor: '#ffffff',
@@ -1406,23 +1409,31 @@ const styles = StyleSheet.create({
   gestureHandWrap: { width: HAND_W, height: HAND_W * HAND_ASPECT },
   touchRing: {
     position: 'absolute',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 3,
-    borderColor: '#ff4fbf',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2.5,
+    borderColor: '#ff6fbd',
   },
-  touchRingInner: { flex: 1, borderRadius: 11, borderWidth: 2, borderColor: '#ffffff' },
-  hintPill: {
-    borderRadius: 14,
-    backgroundColor: 'rgba(60,8,110,0.45)',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.75)',
-    paddingVertical: 4,
-    paddingHorizontal: 11,
+  hintPillText: {
+    color: '#4a1a73',
+    fontFamily: candyFonts.bodyHeavy,
+    fontSize: 10,
+    letterSpacing: 1.1,
+    textShadowColor: '#ffffff',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 6,
+    includeFontPadding: false,
   },
-  hintPillText: { color: '#ffffff', fontFamily: candyFonts.display, fontSize: 12, letterSpacing: 0.8, includeFontPadding: false },
-  hintPillSub: { color: '#ffe6fa', fontFamily: candyFonts.bodyHeavy, fontSize: 10.5, marginTop: 1 },
+  hintPillSub: {
+    color: '#6b3fa0',
+    fontFamily: candyFonts.bodyHeavy,
+    fontSize: 9.5,
+    marginTop: 2,
+    textShadowColor: '#ffffff',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 6,
+  },
   bonusBar: { marginHorizontal: 16, marginBottom: 8, paddingBottom: 4 },
   bonusHidden: { opacity: 0 },
   bonusLip: { position: 'absolute', left: 0, right: 0, top: 4, bottom: 0, borderRadius: 21, backgroundColor: '#9c4d06' },

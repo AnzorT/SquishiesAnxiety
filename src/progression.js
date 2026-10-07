@@ -16,8 +16,8 @@ import { todayKey } from './dailySpin.js';
 //   streak     days in a row the chest was opened; lastFull the last one.
 //              Each streak day adds STREAK_BONUS to squish coins (up to
 //              STREAK_DAYS days). A missed day resets it. Every chest also
-//              pays that streak day's reward (STREAK_REWARDS: coins, tokens,
-//              a free box, and on day 10 half price on the next creation —
+//              pays that streak day's reward (STREAK_REWARDS: coins, Stars,
+//              a free Silver chest, and on day 10 half price on the next creation —
 //              `streakDiscount`); the track starts over after day 10.
 //              bestStreak is the longest one, chests the chests opened.
 //
@@ -31,21 +31,21 @@ export const STREAK_DAYS = 10;
 export const STREAK_REWARDS = [
   { day: 1, kind: 'coins', amount: 100, label: '100' },
   { day: 2, kind: 'coins', amount: 150, label: '150' },
-  { day: 3, kind: 'tokens', amount: 1, label: '+1' },
+  { day: 3, kind: 'stars', amount: 10, label: '+10' },
   { day: 4, kind: 'coins', amount: 250, label: '250' },
-  { day: 5, kind: 'box', label: 'BOX' },
+  { day: 5, kind: 'chest', label: 'CHEST' },
   { day: 6, kind: 'coins', amount: 400, label: '400' },
-  { day: 7, kind: 'tokens', amount: 2, label: '+2' },
+  { day: 7, kind: 'stars', amount: 20, label: '+20' },
   { day: 8, kind: 'coins', amount: 600, label: '600' },
-  { day: 9, kind: 'box', label: 'BOX' },
+  { day: 9, kind: 'chest', label: 'CHEST' },
   { day: 10, kind: 'half', label: '50%' },
 ];
 // the reward for streak day `n` (1, 2, … — day 11 pays day 1's again)
 export const streakReward = (n) => STREAK_REWARDS[(Math.max(1, n) - 1) % STREAK_DAYS];
 export function streakRewardText(r) {
   if (r.kind === 'coins') return `+${r.amount} coins`;
-  if (r.kind === 'tokens') return `+${r.amount} creature ${r.amount === 1 ? 'token' : 'tokens'}`;
-  if (r.kind === 'box') return 'a free Mystery Box';
+  if (r.kind === 'stars') return `+${r.amount} Stars`;
+  if (r.kind === 'chest') return 'a free Silver chest';
   return 'half price on your next creation';
 }
 export const TUTORIAL_BOOST = 10; // ×10 coins during the tutorial's goal step
@@ -207,10 +207,9 @@ export function claimDaily(profile, id, date = todayKey()) {
   return { coins: row.reward, update: { daily: { date, prog: s.prog, claimed: { ...s.claimed, [id]: true }, chest: s.chest } } };
 }
 
-// Opens the chest once every challenge is claimed: CHEST_COINS, one token
-// of `tokenCreatureId` (the caller picks it — the design's shared token
-// became one creature's token here), the streak and its day's reward
-// (`reward`, applied by the caller) and, from level 3, a level a day. Null
+// Opens the chest once every challenge is claimed: CHEST_COINS, the streak
+// and its day's reward (`reward`, applied by the caller: coins here, Stars
+// and chests by the server's dailyGift with its +5 Stars) and, from level 3, a level a day. Null
 // if it isn't ready.
 export function claimChest(profile, date = todayKey()) {
   const s = dailyState(profile, date);

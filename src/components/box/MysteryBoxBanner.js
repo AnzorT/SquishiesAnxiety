@@ -61,7 +61,8 @@ function VideoChip() {
 }
 
 // `videos`: video badges to show; `coins`: show the coin before the price.
-function MysteryBoxBanner({ collectedLabel, priceLabel, videos = 0, coins = false, onPress }) {
+// `title`: MYSTERY BOX, or CHESTS on the squad economy (which opens the Shop).
+function MysteryBoxBanner({ title = 'MYSTERY BOX', collectedLabel, priceLabel, videos = 0, coins = false, onPress }) {
   return (
     <View style={styles.wrap}>
       <CandyButton variant="pink" pulse="soft" onPress={onPress} style={styles.button} faceStyle={styles.face}>
@@ -70,7 +71,7 @@ function MysteryBoxBanner({ collectedLabel, priceLabel, videos = 0, coins = fals
           <ShakingGift />
           <View style={styles.texts}>
             <ButtonText ring={PINK.ring} size={19} style={styles.title}>
-              MYSTERY BOX
+              {title}
             </ButtonText>
             <Text style={styles.sub} numberOfLines={1}>
               {collectedLabel}

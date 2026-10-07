@@ -50,3 +50,6 @@ src/data/devCatalog.js
 
 # Python bytecode caches (tools/icon, tools/audio)
 __pycache__/
+
+# tools/shop-art: the design screens decoded from "Squish Squad App.html"
+tools/shop-art/design/
