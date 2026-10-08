@@ -1,23 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, KeyboardAvoidingView, ScrollView, Platform, StyleSheet, Animated, Easing } from 'react-native';
-import { loginWithEmail, registerWithEmail } from '../firebase/auth';
+import { View, Text, TextInput, Pressable, KeyboardAvoidingView, ScrollView, Platform, StyleSheet, Animated, Easing } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
+import { loginWithEmail, registerWithEmail, setKeepSignedIn } from '../firebase/auth';
 import { createUserProfile } from '../firebase/firestore';
 import { authErrorMessage } from '../firebase/authErrors';
-import { candyColors, candyFonts } from '../theme/candyTheme';
-import CandyBackground from '../components/candy/CandyBackground';
-import CandyButton, { ButtonText } from '../components/candy/CandyButton';
 import TutTarget from '../tutorial/Target';
-import CandyTabs from '../components/candy/CandyTabs';
-import OutlinedTitle from '../components/candy/OutlinedTitle';
+import ShadowText from '../components/candy/ShadowText';
+import IntroBackground from '../squad/IntroBackground';
+import { BtnText, CandyBtn, F, PINK, PINK_RING } from '../squad/ui';
 
-// Single Auth screen with a LOGIN/REGISTER toggle — the v3 look: pink sticker
-// title, a glass tab bar whose pink pill springs between the two tabs, pale
-// candy inputs, and a blue candy submit button. As in the design, REGISTER
-// only grows one extra row above Email (authFieldIn); nothing else on the
-// screen is re-animated or resized, and switching back folds it away again
-// (authFieldOut). The button caption fades up when it changes (authTextIn).
-// Firebase Auth's onAuthStateChanged listener in App.js is what actually
-// advances past this screen — there's no local navigation call on success.
+// Log in / Register, from the app shell of "Squish Squad App.html": the
+// white outlined "Squish Squad" title and a line under it, then one white
+// card with the Log in / Register switch (a pink pill that springs across),
+// labelled fields, the pink submit button and "Keep me signed in". Email
+// only (2026-10-08 ruling), so the design's OR + Google / Facebook / TikTok
+// row is left out, and so is its rive-rig Mittens mascot (not ported yet).
+// Register grows one row above Email: the squad name, plus the age, which
+// the design doesn't have but our COPPA gate needs. Firebase Auth's
+// onAuthStateChanged listener in App.js is what moves past this screen.
 
 // Minimum age to create an account at all. Below this, registration is
 // blocked outright — no email/nickname/age is ever sent to Firebase for that
@@ -27,17 +28,18 @@ import OutlinedTitle from '../components/candy/OutlinedTitle';
 // collecting personal information.
 const MIN_SIGNUP_AGE = 13;
 
-const AUTH_TABS = [
-  { value: 'login', label: 'LOGIN' },
-  { value: 'register', label: 'REGISTER' },
-];
+const PURPLE = '#45107a';
+const LABEL = '#6a3d9a';
+const INK = '#4a1a73';
+const LINE = '#e3cff5';
+const FOCUS = '#c02bd9';
 
-const ROW_GAP = 12;
-// the design's input: 14px padding, 15px text, 2px border
-const INPUT_H = 52;
+const GAP = 11; // the card's row gap
+const INPUT_H = 48;
+const FIELD_H = 16 + 4 + INPUT_H; // label, gap, input
 
-// The register-only row: grows open from nothing (height, 12px gap, a small
-// drop and scale-up, fading in) and folds shut again when leaving REGISTER.
+// The register-only row: grows open from nothing (height, a small drop and
+// scale-up, fading in) and folds shut again when leaving Register.
 function ExtraRow({ open, children }) {
   const [mounted, setMounted] = useState(open);
   const t = useRef(new Animated.Value(open ? 1 : 0)).current;
@@ -56,13 +58,29 @@ function ExtraRow({ open, children }) {
   return (
     <Animated.View
       style={{
-        width: '100%',
         overflow: 'hidden',
-        height: t.interpolate({ inputRange: [0, 1], outputRange: [0, INPUT_H + ROW_GAP] }),
-        opacity: t.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0, 1, 1] }),
+        marginBottom: -GAP, // the card's gap comes with the row's own height
+        height: t.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, FIELD_H + GAP],
+        }),
+        opacity: t.interpolate({
+          inputRange: [0, 0.6, 1],
+          outputRange: [0, 1, 1],
+        }),
         transform: [
-          { translateY: t.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) },
-          { scale: t.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1] }) },
+          {
+            translateY: t.interpolate({
+              inputRange: [0, 1],
+              outputRange: [-10, 0],
+            }),
+          },
+          {
+            scale: t.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.96, 1],
+            }),
+          },
         ],
       }}
     >
@@ -71,7 +89,7 @@ function ExtraRow({ open, children }) {
   );
 }
 
-// Caption that fades up whenever its text changes (authTextIn).
+// A line that fades up whenever its text changes.
 function useFadeUp(text) {
   const t = useRef(new Animated.Value(1)).current;
   const first = useRef(true);
@@ -81,13 +99,98 @@ function useFadeUp(text) {
       return;
     }
     t.setValue(0);
-    Animated.timing(t, { toValue: 1, duration: 300, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+    Animated.timing(t, {
+      toValue: 1,
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
   }, [text, t]);
-  return { opacity: t, transform: [{ translateY: t.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] };
+  return {
+    opacity: t,
+    transform: [
+      {
+        translateY: t.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }),
+      },
+    ],
+  };
 }
 
-function CandyInput(props) {
-  return <TextInput placeholderTextColor="#a98bc9" {...props} style={[styles.input, props.style]} />;
+// "EMAIL" over a white rounded input whose border turns pink while focused;
+// `right` sits inside the input's right end (the password's Show / Hide).
+function Field({ label, style, right, ...input }) {
+  const [focus, setFocus] = useState(false);
+  return (
+    <View style={style}>
+      <Text style={styles.label}>{label}</Text>
+      <View>
+        <TextInput
+          placeholderTextColor="#a98bc9"
+          {...input}
+          onFocus={() => setFocus(true)}
+          onBlur={() => setFocus(false)}
+          style={[styles.input, focus && { borderColor: FOCUS }, right && { paddingRight: 64 }, input.style]}
+        />
+        {right}
+      </View>
+    </View>
+  );
+}
+
+// Log in | Register: a lilac track with the pink pill under the chosen side
+function ModeSwitch({ mode, onChange }) {
+  const [w, setW] = useState(0);
+  const x = useRef(new Animated.Value(mode === 'register' ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.timing(x, {
+      toValue: mode === 'register' ? 1 : 0,
+      duration: 350,
+      easing: Easing.bezier(0.3, 1.3, 0.5, 1),
+      useNativeDriver: true,
+    }).start();
+  }, [mode, x]);
+  const half = (w - 8) / 2;
+  return (
+    <View style={styles.track} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
+      {w ? (
+        <Animated.View
+          style={[
+            styles.pill,
+            {
+              width: half,
+              transform: [
+                {
+                  translateX: x.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, half],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <View style={styles.pillRing} />
+          <LinearGradient colors={PINK} locations={[0, 0.55, 1]} style={styles.pillFace} />
+        </Animated.View>
+      ) : null}
+      {[
+        ['login', 'Log in'],
+        ['register', 'Register'],
+      ].map(([value, label]) => (
+        <Pressable key={value} onPress={() => onChange(value)} style={styles.tab}>
+          <Text style={[styles.tabText, { color: mode === value ? '#ffffff' : LABEL }]}>{label}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+function Tick() {
+  return (
+    <Svg width={12} height={12} viewBox="0 0 12 12">
+      <Path d="M2.5 6.2 L5 8.6 L9.6 3.4" stroke="#ffffff" strokeWidth={2.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
 }
 
 export default function AuthScreen() {
@@ -97,14 +200,19 @@ export default function AuthScreen() {
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [keep, setKeep] = useState(true);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const isRegister = mode === 'register';
-  const buttonLabel = isRegister ? 'CREATE ACCOUNT' : 'ENTER THE SQUAD';
+  const sub = isRegister ? 'Make an account so your squad is saved.' : 'Welcome back! Log in to see your squad.';
+  const buttonLabel = isRegister ? 'Create my squad' : 'Log in';
+  const subStyle = useFadeUp(sub);
   const labelStyle = useFadeUp(buttonLabel);
 
   const submit = async () => {
+    if (submitting) return;
     const trimmedEmail = email.trim();
 
     if (isRegister) {
@@ -119,6 +227,10 @@ export default function AuthScreen() {
         setBlocked(true);
         return;
       }
+      if (nickname.trim().length < 2) {
+        setError('Pick a squad name of at least 2 letters.');
+        return;
+      }
       if (!trimmedEmail || !password) {
         setError('Enter your email and password.');
         return;
@@ -130,8 +242,13 @@ export default function AuthScreen() {
       setError('');
       setSubmitting(true);
       try {
+        await setKeepSignedIn(keep);
         const user = await registerWithEmail(trimmedEmail, password);
-        await createUserProfile(user.uid, { email: trimmedEmail, age, nickname });
+        await createUserProfile(user.uid, {
+          email: trimmedEmail,
+          age,
+          nickname,
+        });
       } catch (e) {
         setError(authErrorMessage(e));
         setSubmitting(false);
@@ -146,6 +263,7 @@ export default function AuthScreen() {
     setError('');
     setSubmitting(true);
     try {
+      await setKeepSignedIn(keep);
       await loginWithEmail(trimmedEmail, password);
     } catch (e) {
       setError(authErrorMessage(e));
@@ -163,97 +281,201 @@ export default function AuthScreen() {
   };
 
   return (
-    <CandyBackground>
+    <IntroBackground>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <OutlinedTitle text="Welcome Back!" fill="pink" size={30} outline={3} ring={2} drop={5} style={styles.title} />
+          <ShadowText
+            style={styles.title}
+            shadows={[
+              [0, 4, PURPLE],
+              [2.5, 0, PURPLE],
+              [-2.5, 0, PURPLE],
+              [0, -2.5, PURPLE],
+            ]}
+          >
+            Squish Squad
+          </ShadowText>
+          <Animated.Text style={[styles.sub, subStyle]}>{sub}</Animated.Text>
 
-          <CandyTabs options={AUTH_TABS} value={mode} onChange={switchMode} style={styles.tabBar} />
+          <View style={styles.cardLip}>
+            <View style={styles.card}>
+              <ModeSwitch mode={mode} onChange={switchMode} />
 
-          {blocked ? (
-            <View style={styles.blockedCard}>
-              <Text style={styles.blockedText}>This game needs a parent or guardian to help set up an account. Ask them to continue!</Text>
+              {blocked ? (
+                <Text style={styles.blocked}>This game needs a parent or guardian to help set up an account. Ask them to continue!</Text>
+              ) : (
+                <>
+                  <ExtraRow open={isRegister}>
+                    <View style={styles.row}>
+                      <Field label="SQUAD NAME" value={nickname} onChangeText={setNickname} placeholder="Captain Squish" maxLength={10} style={styles.flex} />
+                      <Field label="AGE" value={ageInput} onChangeText={setAgeInput} keyboardType="number-pad" placeholder="13+" maxLength={3} style={styles.age} />
+                    </View>
+                  </ExtraRow>
+                  <Field label="EMAIL" value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" placeholder="you@example.com" />
+                  <Field
+                    label="PASSWORD"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPass}
+                    autoCapitalize="none"
+                    placeholder="At least 6 characters"
+                    right={
+                      <Pressable onPress={() => setShowPass((v) => !v)} hitSlop={8} style={styles.eye}>
+                        <Text style={styles.eyeText}>{showPass ? 'Hide' : 'Show'}</Text>
+                      </Pressable>
+                    }
+                  />
+                  {!!error && <Text style={styles.error}>{error}</Text>}
+                  <TutTarget name="enter">
+                    <CandyBtn kind="pink" onPress={submit} disabled={submitting} padV={10} lip={5} stretch>
+                      <Animated.View style={labelStyle}>
+                        <BtnText ring={PINK_RING} size={20}>
+                          {submitting ? '…' : buttonLabel}
+                        </BtnText>
+                      </Animated.View>
+                    </CandyBtn>
+                  </TutTarget>
+                  <Pressable onPress={() => setKeep((v) => !v)} style={styles.keep} hitSlop={6}>
+                    {keep ? (
+                      <LinearGradient colors={['#ff8fd8', '#c02bd9']} style={styles.box}>
+                        <Tick />
+                      </LinearGradient>
+                    ) : (
+                      <View style={styles.box} />
+                    )}
+                    <Text style={styles.keepText}>Keep me signed in</Text>
+                  </Pressable>
+                </>
+              )}
             </View>
-          ) : (
-            <>
-              <ExtraRow open={isRegister}>
-                <View style={styles.row}>
-                  <CandyInput value={nickname} onChangeText={setNickname} placeholder="Nickname" maxLength={10} style={styles.nickname} />
-                  <CandyInput value={ageInput} onChangeText={setAgeInput} keyboardType="number-pad" placeholder="Age" maxLength={3} style={styles.age} />
-                </View>
-              </ExtraRow>
-              <CandyInput value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholder="Email" style={styles.gap} />
-              <CandyInput value={password} onChangeText={setPassword} secureTextEntry placeholder="Password" style={styles.lastInput} />
-              {!!error && <Text style={styles.error}>{error}</Text>}
-              <TutTarget name="enter">
-                <CandyButton variant="blue" size="auth" onPress={submit} loading={submitting} style={styles.submitButton}>
-                  <Animated.View style={labelStyle}>
-                    <ButtonText ring="#0c5a9c" size={17} style={styles.caption}>
-                      {buttonLabel}
-                    </ButtonText>
-                  </Animated.View>
-                </CandyButton>
-              </TutTarget>
-            </>
-          )}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </CandyBackground>
+    </IntroBackground>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  scrollContent: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, paddingVertical: 40 },
-  // the sticker's SVG carries 5px of outline + 5px drop below the letters
-  title: { marginBottom: 12 },
-  tabBar: { width: '100%', marginBottom: 20 },
-  row: { flexDirection: 'row', gap: 10 },
-  nickname: { flex: 1 },
-  age: { width: 84, textAlign: 'center' },
-  input: {
-    width: '100%',
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: candyColors.inkSoft,
-    backgroundColor: candyColors.paper,
-    color: candyColors.ink,
-    fontFamily: candyFonts.body,
-    fontSize: 15,
-    height: INPUT_H,
-    paddingHorizontal: 16,
-    paddingVertical: 0,
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 22,
+    paddingVertical: 40,
   },
-  gap: { marginBottom: ROW_GAP },
-  lastInput: { marginBottom: 22 },
-  error: {
-    width: '100%',
+  title: {
+    alignSelf: 'center',
+    fontFamily: F.display,
+    fontSize: 38,
+    lineHeight: 44,
     color: '#ffffff',
-    backgroundColor: 'rgba(229,72,77,0.85)',
-    borderRadius: 10,
-    overflow: 'hidden',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    fontFamily: candyFonts.body,
-    fontSize: 13,
-    marginTop: -10,
+  },
+  sub: {
+    alignSelf: 'center',
+    textAlign: 'center',
+    fontFamily: F.heavy,
+    fontSize: 13.5,
+    color: PURPLE,
+    marginTop: 6,
     marginBottom: 12,
   },
-  blockedCard: {
-    width: '100%',
-    backgroundColor: candyColors.sheet,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: candyColors.inkSoft,
-    padding: 18,
+  // the card: 90% white over the sky (drawn opaque, so the lip doesn't show
+  // through it), a 3px white rim and a 6px lilac lip under it
+  cardLip: { borderRadius: 28, backgroundColor: '#d6b8ee', paddingBottom: 6 },
+  card: {
+    borderRadius: 28,
+    borderWidth: 3,
+    borderColor: '#ffffff',
+    backgroundColor: '#fcfaff',
+    paddingTop: 14,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    gap: GAP,
   },
-  blockedText: {
-    color: candyColors.ink,
-    fontFamily: candyFonts.body,
+  track: {
+    flexDirection: 'row',
+    borderRadius: 999,
+    backgroundColor: '#f1e4ff',
+    padding: 4,
+  },
+  // the pill: the pink face in a 2px ring with a 3px lip
+  pill: { position: 'absolute', top: 4, bottom: 4, left: 4 },
+  pillRing: {
+    position: 'absolute',
+    left: -2,
+    right: -2,
+    top: -2,
+    bottom: -5,
+    borderRadius: 999,
+    backgroundColor: PINK_RING,
+  },
+  pillFace: { ...StyleSheet.absoluteFillObject, borderRadius: 999 },
+  tab: { flex: 1, alignItems: 'center', paddingVertical: 9 },
+  tabText: { fontFamily: F.display, fontSize: 16 },
+  row: { flexDirection: 'row', gap: 10 },
+  age: { width: 84 },
+  label: {
+    fontFamily: F.black,
+    fontSize: 11,
+    lineHeight: 16,
+    letterSpacing: 1,
+    color: LABEL,
+    marginBottom: 4,
+  },
+  input: {
+    height: INPUT_H,
+    borderRadius: 16,
+    borderWidth: 2.5,
+    borderColor: LINE,
+    backgroundColor: '#ffffff',
+    color: INK,
+    fontFamily: F.heavy,
     fontSize: 15,
-    textAlign: 'center',
-    lineHeight: 22,
+    paddingHorizontal: 14,
+    paddingVertical: 0,
   },
-  submitButton: { width: '100%' },
-  caption: { letterSpacing: 0.5 },
+  eye: {
+    position: 'absolute',
+    right: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  },
+  eyeText: { fontFamily: F.black, fontSize: 12, color: FOCUS },
+  error: {
+    fontFamily: F.heavy,
+    fontSize: 12.5,
+    lineHeight: 17,
+    color: '#c4204f',
+    backgroundColor: '#ffe6ee',
+    borderRadius: 12,
+    overflow: 'hidden',
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+  },
+  blocked: {
+    fontFamily: F.heavy,
+    fontSize: 15,
+    lineHeight: 22,
+    color: INK,
+    textAlign: 'center',
+    paddingVertical: 8,
+  },
+  keep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'flex-start',
+  },
+  box: {
+    width: 20,
+    height: 20,
+    borderRadius: 7,
+    borderWidth: 2.5,
+    borderColor: FOCUS,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  keepText: { fontFamily: F.heavy, fontSize: 13, color: INK },
 });

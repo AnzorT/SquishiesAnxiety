@@ -22,7 +22,7 @@ import { CRIB_MAX, advanceOffline, applyLayout, buyFood, coinRate, freshState, l
 import { buy as buyItem, canBuy, equip, fridgeFoods, itemOf, nextSong, placeGame, setDecorPos, setPad, setTheme, setUnitPos, sleepCount, sleeperY, dinerY, song, songs, toggleLight, toggleStore } from '../crib/home';
 import { CribToast, INK, PAPER, PanButton, SongPill } from '../crib/ui';
 import { Pantry } from '../crib/Pantry';
-import { CoinsPill, CribButton, LevelPill, PhasePill, RoomTitle } from '../crib/Hud';
+import { CoinsPill, CribButton, LevelPill, PhasePill, RoomFlash, RoomTitle } from '../crib/Hud';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // The Squad Crib (the 2026-10-03 design's "Squad Crib v5" and "Squad Crib
@@ -788,15 +788,17 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
 
   const selPet = sel && model.current ? model.current.pets[sel] : null;
   const roomName = ROOMS[room].name.toUpperCase();
-  const roomSub = room === 'hatch' ? `${members}/${CRIB_MAX} live in the Crib · tap one to move` : `${summary[room].count} friends here · ${ROOMS[room].sub}`;
+  const owner = profile && profile.nickname ? `${profile.nickname}’s home · ` : '';
+  const roomSub = owner + (room === 'hatch' ? `${members}/${CRIB_MAX} live in the Crib · tap one to move` : `${summary[room].count} friends here · ${ROOMS[room].sub}`);
 
   const canEdit = EDITABLE.includes(room);
   // The HUD, as the design lays it out (src/crib/Hud.js). Landscape: every
   // button in a row on the left — back, music, rotate, map, shop, edit,
   // daily, and in the kitchen the pantry — then the level, the coins and the
-  // time of day on the right. Portrait: back, music, shop, edit, rotate on
-  // the left and the pantry (kitchen), daily on the right, the room's big
-  // title and the coins under them.
+  // time of day on the right. Portrait (Crib Vertical v2): back, music,
+  // shop, edit, daily, rotate on the left and the pantry (kitchen) on the
+  // right, the room's big title and the coins under them. v2 hides rotate
+  // inside the app; we keep it (both orientations, the 2026-10-03 ruling).
   const dailyBtn = daily && daily.unlocked ? <CribButton face="yellow" icon="daily" onPress={() => setDailyOpen(true)} badge={daily.badge || 0} badgeKind="red" /> : null;
   const pantryBtn = room === 'kitchen' && !edit ? <CribButton face="red" icon="pantry" iconSize={26} onPress={openPantry} /> : null;
   const hud = landscape ? (
@@ -827,10 +829,10 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
         <CribButton face="gold" icon="music" off={!musicOn} onPress={toggleMusic} />
         <CribButton face="purple" icon="shop" size={42} iconSize={26} onPress={openShop} />
         <CribButton face="orange" icon="edit" size={42} iconSize={22} onPress={openEdit} dim={!canEdit || edit} />
+        {dailyBtn}
         <CribButton face="blue" icon="rotate" size={42} iconSize={22} turn onPress={toggleLandscape} />
         <View style={{ flex: 1 }} />
         {pantryBtn}
-        {dailyBtn}
       </View>
       <View style={styles.hudRowPort2} pointerEvents="box-none">
         <View pointerEvents="none" style={{ flexShrink: 1 }}>
@@ -877,7 +879,9 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
 
   const overlays = (
     <>
-      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#ffffff', opacity: flash }]} />
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: flash }]}>
+        <RoomFlash />
+      </Animated.View>
       {songPill}
       {toast && !edit ? (
         <View pointerEvents="box-none" style={[styles.toastAt, { top: topPad + 52, left: landscape ? cw * 0.2 : 12, right: landscape ? cw * 0.2 : 12 }]}>

@@ -1,68 +1,58 @@
 import React, { memo, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import Svg, { Defs, LinearGradient, RadialGradient, Stop, Rect, Pattern, Circle } from 'react-native-svg';
-import { candyBg } from '../../theme/candyTheme';
+import Svg, { Defs, LinearGradient, RadialGradient, Stop, Rect, Pattern, Circle, Ellipse } from 'react-native-svg';
 import Sparkles from './Sparkles';
 
-// The v3 stage every full-screen view sits on: a pink→violet vertical
-// gradient, three soft colour glows, four bokeh circles, and two offset
-// polka-dot grids (white every 19px, butter-yellow every 29px). Drawn once
-// in a single static SVG and memoized, so screens that re-render a lot (the
-// squish stage) never repaint it. `sparkles` adds the twinkling ✦ layer
-// (Splash, Home, Mystery Box) — the squish screen leaves it off.
+// The stage every full-screen view sits on: since 2026-10-08 the sky of
+// "Squish Squad App.html" (Squishies Tab v2, Shop Screen v2, Full Roster):
+// blue at the top through pale blue and lavender to pink, five soft white
+// cloud wisps, and white dots every 26px. Drawn once in a single static SVG
+// and memoized, so screens that re-render a lot never repaint it.
+// `sparkles` adds the twinkling ✦ layer.
 //
 // The SVG gets the container's measured pixel size rather than "100%":
 // with percentage sizing it kept the size from its first layout pass, so a
 // later resize (e.g. the system nav bar settling) left a bare strip at the
 // bottom.
 
+// the design's clouds: radial-gradient(ellipse RXpx RYpx at X% Y%, white A
+// 0 SOLID%, transparent 100%)
+const CLOUDS = [
+  { x: 0.12, y: 0.09, rx: 90, ry: 26, a: 0.95, solid: 0.6 },
+  { x: 0.24, y: 0.07, rx: 60, ry: 20, a: 0.95, solid: 0.55 },
+  { x: 0.88, y: 0.15, rx: 110, ry: 30, a: 0.9, solid: 0.55 },
+  { x: 0.08, y: 0.52, rx: 130, ry: 34, a: 0.7, solid: 0.5 },
+  { x: 0.96, y: 0.7, rx: 120, ry: 30, a: 0.7, solid: 0.5 },
+];
+
 // Kept as one hardware layer on Android: without it, every frame that has
-// anything moving over it (sparkles, a pulsing button, the 3D stage's
-// texture) re-runs all six full-screen gradient and pattern fills for the
-// dirty region on the GPU. As a layer it's a single texture read.
+// anything moving over it re-runs the full-screen fills for the dirty
+// region on the GPU. As a layer it's a single texture read.
 const Stage = memo(function Stage({ width, height }) {
   return (
     <Svg style={StyleSheet.absoluteFill} width={width} height={height} renderToHardwareTextureAndroid>
       <Defs>
         <LinearGradient id="stageBg" x1="0" y1="0" x2="0" y2="1">
-          {candyBg.colors.map((c, i) => (
-            <Stop key={c} offset={candyBg.locations[i]} stopColor={c} />
-          ))}
+          <Stop offset="0" stopColor="#8fd0ff" />
+          <Stop offset="0.38" stopColor="#b9e2ff" />
+          <Stop offset="0.68" stopColor="#e6dcff" />
+          <Stop offset="1" stopColor="#ffd6f4" />
         </LinearGradient>
-        <RadialGradient id="glowTL" cx="15%" cy="5%" r="40%">
-          <Stop offset="0" stopColor="#ffc8f5" stopOpacity={0.95} />
-          <Stop offset="1" stopColor="#ffc8f5" stopOpacity={0} />
-        </RadialGradient>
-        <RadialGradient id="glowR" cx="92%" cy="32%" r="45%">
-          <Stop offset="0" stopColor="#aa6eff" stopOpacity={0.85} />
-          <Stop offset="1" stopColor="#aa6eff" stopOpacity={0} />
-        </RadialGradient>
-        <RadialGradient id="glowC" cx="50%" cy="40%" r="55%">
-          <Stop offset="0" stopColor="#ffb4eb" stopOpacity={0.55} />
-          <Stop offset="1" stopColor="#ffb4eb" stopOpacity={0} />
-        </RadialGradient>
-        <RadialGradient id="bokeh" cx="50%" cy="50%" r="50%">
-          <Stop offset="0" stopColor="#ffffff" stopOpacity={0.26} />
-          <Stop offset="0.7" stopColor="#ffffff" stopOpacity={0.22} />
-          <Stop offset="1" stopColor="#ffffff" stopOpacity={0} />
-        </RadialGradient>
-        <Pattern id="dotsWhite" x="0" y="0" width="19" height="19" patternUnits="userSpaceOnUse">
-          <Circle cx="1" cy="1" r="1.2" fill="#ffffff" fillOpacity={0.7} />
-        </Pattern>
-        <Pattern id="dotsGold" x="9" y="11" width="29" height="29" patternUnits="userSpaceOnUse">
-          <Circle cx="1" cy="1" r="1.2" fill="#fff0aa" fillOpacity={0.55} />
+        {CLOUDS.map((c, i) => (
+          <RadialGradient key={i} id={`cloud${i}`} cx="50%" cy="50%" r="50%">
+            <Stop offset={c.solid} stopColor="#ffffff" stopOpacity={c.a} />
+            <Stop offset="1" stopColor="#ffffff" stopOpacity={0} />
+          </RadialGradient>
+        ))}
+        <Pattern id="stageDots" x="0" y="0" width="26" height="26" patternUnits="userSpaceOnUse">
+          <Circle cx="1" cy="1" r="1.3" fill="#ffffff" fillOpacity={0.8} />
         </Pattern>
       </Defs>
-      <Rect x="0" y="0" width="100%" height="100%" fill="url(#stageBg)" />
-      <Rect x="0" y="0" width="100%" height="100%" fill="url(#glowR)" />
-      <Rect x="0" y="0" width="100%" height="100%" fill="url(#glowC)" />
-      <Rect x="0" y="0" width="100%" height="100%" fill="url(#glowTL)" />
-      <Circle cx="12%" cy="22%" r="20" fill="url(#bokeh)" />
-      <Circle cx="86%" cy="14%" r="30" fill="url(#bokeh)" />
-      <Circle cx="78%" cy="62%" r="26" fill="url(#bokeh)" />
-      <Circle cx="20%" cy="78%" r="34" fill="url(#bokeh)" />
-      <Rect x="0" y="0" width="100%" height="100%" fill="url(#dotsWhite)" />
-      <Rect x="0" y="0" width="100%" height="100%" fill="url(#dotsGold)" />
+      <Rect x="0" y="0" width={width} height={height} fill="url(#stageBg)" />
+      {CLOUDS.map((c, i) => (
+        <Ellipse key={i} cx={c.x * width} cy={c.y * height} rx={c.rx} ry={c.ry} fill={`url(#cloud${i})`} />
+      ))}
+      <Rect x="0" y="0" width={width} height={height} fill="url(#stageDots)" />
     </Svg>
   );
 });
@@ -85,5 +75,5 @@ export default function CandyBackground({ children, style, sparkles = false, spa
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: '#b24fe6', overflow: 'hidden' },
+  fill: { flex: 1, backgroundColor: '#b9e2ff', overflow: 'hidden' },
 });

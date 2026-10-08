@@ -11,6 +11,11 @@ import { candyColors, candyFonts, TITLE_FILLS } from '../../theme/candyTheme';
 // the word as layered SVG text. The SVG needs a concrete width, so an
 // invisible RN <Text> with the same font measures the word first.
 
+// react-native-svg on Android dropped the I after an A ("DAILY" drew as
+// "DALY"): it reported no width for the I, so the I was merged into the A
+// and never drawn. A hair space between them gives the I its own glyph.
+const svgSafe = (text) => String(text).replace(/AI/g, 'A\u200AI');
+
 function OutlinedTitle({
   text,
   fill = 'pink', // 'pink' | 'gold' | { colors, locations }
@@ -47,6 +52,7 @@ function OutlinedTitle({
   const rotate = wob.interpolate({ inputRange: [0, 1], outputRange: ['-3deg', '3deg'] });
   const scale = wob.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] });
 
+  const shown = svgSafe(text);
   const common = {
     x: width / 2,
     y: baseline,
@@ -78,16 +84,16 @@ function OutlinedTitle({
             </LinearGradient>
           </Defs>
           <SvgText {...common} y={baseline + drop} fill={candyColors.outlineDeep} stroke={candyColors.outlineDeep} strokeWidth={halo * 2}>
-            {text}
+            {shown}
           </SvgText>
           <SvgText {...common} fill={candyColors.outline} stroke={candyColors.outline} strokeWidth={halo * 2}>
-            {text}
+            {shown}
           </SvgText>
           <SvgText {...common} fill="#ffffff" stroke="#ffffff" strokeWidth={outline * 2}>
-            {text}
+            {shown}
           </SvgText>
           <SvgText {...common} fill="url(#titleFill)">
-            {text}
+            {shown}
           </SvgText>
         </Svg>
       ) : (

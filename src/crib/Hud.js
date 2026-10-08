@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { memo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle, Defs, G, LinearGradient as SvgLinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Defs, G, LinearGradient as SvgLinearGradient, Path, Pattern, RadialGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { candyFonts } from '../theme/candyTheme';
+import { CoinIcon } from '../squad/ui';
 
 // The Crib's HUD, copied from the design ("Squad Crib v5" / "Squad Crib
 // Vertical", the <!-- HUD --> block): round 46px buttons with a white rim,
@@ -146,31 +147,12 @@ export function LevelPill({ level }) {
   );
 }
 
-// the design's gold coin (15px: radial gold, white rim, brown ring)
-export function HudCoin({ size = 15 }) {
-  return (
-    <Svg width={size + 2} height={size + 2} viewBox="-1 -1 17 17">
-      <Defs>
-        <SvgLinearGradient id="hudCoin" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#fff6a8" />
-          <Stop offset="0.42" stopColor="#ffd83a" />
-          <Stop offset="0.72" stopColor="#ffb000" />
-          <Stop offset="1" stopColor="#f08c00" />
-        </SvgLinearGradient>
-      </Defs>
-      <Circle cx={7.5} cy={7.5} r={8} fill="#a04a00" />
-      <Circle cx={7.5} cy={7.5} r={7} fill="#ffffff" />
-      <Circle cx={7.5} cy={7.5} r={5.6} fill="url(#hudCoin)" />
-    </Svg>
-  );
-}
-
-// "1,261 · +4.5/s": the brown glass pill
+// "1,261 · +4.5/s": the brown glass pill, with v2's coin (the shared coin.svg)
 export function CoinsPill({ coins, rate }) {
   const r = rate == null ? '' : ` · ${rate >= 0 ? '+' : ''}${rate.toFixed(1)}/s`;
   return (
     <View style={styles.coins}>
-      <HudCoin />
+      <CoinIcon size={18} />
       <Text style={styles.coinsText} numberOfLines={1}>{`${Math.max(0, Math.round(coins)).toLocaleString()}${r}`}</Text>
     </View>
   );
@@ -185,6 +167,30 @@ export function PhasePill({ sun, label }) {
     </View>
   );
 }
+
+// The room-switch flash (Crib Vertical v2): white dots every 22px over a
+// radial white → lavender → sky blue. The screen fades it in and out.
+export const RoomFlash = memo(function RoomFlash() {
+  return (
+    <Svg width="100%" height="100%">
+      <Defs>
+        <RadialGradient id="roomFlash" cx="50%" cy="50%" r="71%">
+          <Stop offset="0" stopColor="#ffffff" />
+          <Stop offset="0.55" stopColor="#e6dcff" />
+          <Stop offset="1" stopColor="#8fd0ff" />
+        </RadialGradient>
+        <Pattern id="roomFlashDots" width={22} height={22} patternUnits="userSpaceOnUse">
+          <Circle cx={0} cy={0} r={1.5} fill="rgba(255,255,255,0.9)" />
+          <Circle cx={22} cy={0} r={1.5} fill="rgba(255,255,255,0.9)" />
+          <Circle cx={0} cy={22} r={1.5} fill="rgba(255,255,255,0.9)" />
+          <Circle cx={22} cy={22} r={1.5} fill="rgba(255,255,255,0.9)" />
+        </Pattern>
+      </Defs>
+      <Rect width="100%" height="100%" fill="url(#roomFlash)" />
+      <Rect width="100%" height="100%" fill="url(#roomFlashDots)" />
+    </Svg>
+  );
+});
 
 // The vertical page's room title: Fredoka 26, a cream-to-peach gradient
 // inside a brown outline with a deeper drop; the line under it in white
@@ -224,7 +230,7 @@ export function RoomTitle({ title, sub }) {
         <View style={{ height: size * 1.15 + pad * 2 + 3 }} />
       )}
       {sub ? (
-        <Text style={styles.sub} numberOfLines={1}>
+        <Text style={styles.sub} numberOfLines={2}>
           {sub}
         </Text>
       ) : null}
@@ -245,7 +251,7 @@ const styles = StyleSheet.create({
   lvRing: { borderRadius: 999, padding: 1.5, backgroundColor: INK },
   lvFace: { borderRadius: 999, borderWidth: 2, borderColor: '#ffffff', backgroundColor: '#ffd66b', paddingHorizontal: 9, paddingVertical: 2 },
   lvText: { fontFamily: candyFonts.display, fontSize: 12, color: INK },
-  coins: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(91,58,41,0.75)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.9)', borderRadius: 999, paddingHorizontal: 11, paddingVertical: 4 },
+  coins: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(91,58,41,0.75)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.9)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
   coinsText: { fontFamily: candyFonts.bodyHeavy, fontSize: 14, color: '#fff3a0', textShadowColor: '#6a1b9a', textShadowRadius: 0.5, textShadowOffset: { width: 0, height: 1 } },
   phase: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 11, paddingVertical: 4, borderRadius: 999, backgroundColor: 'rgba(91,58,41,0.75)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.9)' },
   sun: { width: 9, height: 9, borderRadius: 5 },

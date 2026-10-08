@@ -3,6 +3,7 @@ import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { candyFonts } from '../theme/candyTheme';
+import { CoinIcon } from '../squad/ui';
 
 // The Crib's small parts, in the design's palette (brown ink on cream): the
 // song pill, the look-left / look-right buttons, a sticker
@@ -38,13 +39,9 @@ export function PanButton({ dir, onPress, style }) {
   );
 }
 
+// the coin: since Crib Vertical v2, the design's shared coin.svg
 export function CoinGlyph({ size = 14 }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 20 20">
-      <Circle cx={10} cy={10} r={8.5} fill="#ffd23a" stroke="#a04a00" strokeWidth={2} />
-      <Circle cx={10} cy={10} r={4.5} fill="none" stroke="#a04a00" strokeWidth={1.6} opacity={0.6} />
-    </Svg>
-  );
+  return <CoinIcon size={size} />;
 }
 
 // a sticker button: gradient face, white rim, brown ring and lip

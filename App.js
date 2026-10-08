@@ -23,7 +23,6 @@ import StatsScreen from './src/screens/StatsScreen';
 import ShopScreen from './src/screens/ShopScreen';
 import SquishiesScreen from './src/screens/SquishiesScreen';
 import DailySpinScreen from './src/screens/DailySpinScreen';
-import CreatureReelScreen from './src/screens/CreatureReelScreen';
 import LoadingScreen from './src/screens/LoadingScreen';
 import SquishScreen from './src/screens/SquishScreen';
 import CribScreen from './src/screens/CribScreen';
@@ -74,7 +73,6 @@ import { adSpinsLeft, hasSpunToday, todayKey, tzOffsetMinutes } from './src/dail
 import callFunction from './src/firebase/callFunction';
 import { dailyGift as squadDailyGift, startSquad } from './src/squad/api';
 import sfx from './src/audio/sfx';
-import DEV_CATALOG from './src/data/devCatalog'; // TEMP-DEV-CATALOG: preview of the unpublished roster (tools/plush-art/serve.mjs)
 
 // GLTFParser's constructor (three.js, used by SquishyToy.js's Glorp build
 // path) sniffs navigator.userAgent to work around known Safari ImageBitmap
@@ -100,7 +98,6 @@ const MUSIC_FOR_STAGE = {
   splash: 'dream',
   auth: 'dream',
   wheel: 'party',
-  reel: 'party',
   streak: 'party',
   home: 'cozy',
   store: 'cozy',
@@ -181,10 +178,8 @@ export default function App() {
   const [pokeOutward, setPokeOutward] = useState(false);
 
   // Daily Spin: 'unknown' until the profile loads, then 'show' (today's spin
-  // is waiting — it comes before Home) or 'done'. `reel` holds a FREE
-  // creature prize while its reel plays.
+  // is waiting — it comes before Home) or 'done'.
   const [spinState, setSpinState] = useState('unknown');
-  const [reel, setReel] = useState(null);
 
   // Purchases: the Remove Ads popup, what's being bought right now
   // ('removeAds', a gem pack, a creation),
@@ -298,7 +293,9 @@ export default function App() {
   // the live Firestore subscription below takes over once signed in and
   // refreshes the cache for next time.
   useEffect(() => {
-    loadCachedCreatures().then(() => setCreatures(DEV_CATALOG)); // TEMP-DEV-CATALOG
+    loadCachedCreatures().then((cached) => {
+      if (cached.length) setCreatures((cur) => (cur.length ? cur : cached));
+    });
   }, []);
 
   useEffect(() => {
@@ -310,7 +307,8 @@ export default function App() {
     if (!authUser) return undefined;
     return subscribeToCreatures((list) => {
       if (list.length) {
-        setCreatures(DEV_CATALOG); // TEMP-DEV-CATALOG (was: setCreatures(list); saveCreaturesToCache(list);)
+        setCreatures(list);
+        saveCreaturesToCache(list);
       }
       // An empty list here means a transient error — keep whatever the
       // cache (or a prior successful fetch) already put in state rather
@@ -360,21 +358,11 @@ export default function App() {
   }, []);
 
   // --- Daily Spin (src/dailySpin.js; the server rolls it) ---
-  // `bonus`: a SPIN AGAIN, paid with a rewarded video on the wheel screen.
-  // No ad break follows the wheel any more (SPIN AGAIN replaced it).
+  // `bonus`: "Watch ad, spin again", paid with a rewarded video on the
+  // wheel screen. The prizes (coins, gems, Stars) are paid by the server.
   const handleSpin = useCallback((bonus = false) => callFunction('spinWheel', { tzOffsetMinutes: tzOffsetMinutes(), bonus }), []);
-  const handleSpinClaim = useCallback((result) => {
+  const handleSpinDone = useCallback(() => {
     setSpinState('done');
-    if (result.kind === 'unlock' && result.creatureId) {
-      setReel({ lockedIds: result.lockedIds || [], winnerId: result.creatureId });
-      setScreen('home');
-      return;
-    }
-    setScreen(result.kind === 'create' ? 'create' : 'home');
-  }, []);
-  const handleSpinSkip = useCallback(() => setSpinState('done'), []);
-  const handleReelDone = useCallback(() => {
-    setReel(null);
     setScreen('home');
   }, []);
 
@@ -423,7 +411,6 @@ export default function App() {
     !!authUser &&
     !!profile &&
     spinState === 'done' &&
-    !reel &&
     screen === 'home' &&
     !activeToy &&
     !loadingToy &&
@@ -663,7 +650,6 @@ export default function App() {
   if (splashDone && authChecked) {
     if (!authUser) stage = 'auth';
     else if (spinState === 'show') stage = 'wheel';
-    else if (reel) stage = 'reel';
     else if (streakIntro) stage = 'streak';
     else if (activeToy) stage = 'toy';
     else if (loadingToy) stage = 'loading';
@@ -723,14 +709,14 @@ export default function App() {
   // squish coins: the streak's +5% a day, ×10 in the tutorial's goal step
   const coinMultiplier = streakMultiplier(profile) * (tutorial.step === 'goal' ? TUTORIAL_BOOST : 1);
 
-  // Every screen sits on the v3 candy stage (pink at the top), where light
-  // status-bar icons still read clearly.
-  const statusBarStyle = 'light';
+  // Every screen sits on the design's light sky (blue at the top), so the
+  // status-bar icons are dark; the Crib's HUD is dark brown, so light there.
+  const statusBarStyle = stage === 'crib' ? 'light' : 'dark';
 
   return (
     <SafeAreaProvider>
       <StatusBar style={statusBarStyle} />
-      {stage === 'splash' && <SplashScreen onFinish={() => setSplashDone(true)} ownedIds={ownedIds} creatures={creatures} />}
+      {stage === 'splash' && <SplashScreen onFinish={() => setSplashDone(true)} creatures={creatures} />}
       {stage === 'auth' && <AuthScreen />}
       {stage === 'home' && (
         <MainScreen
@@ -794,12 +780,18 @@ export default function App() {
         />
       )}
       {stage === 'wheel' && (
-        <DailySpinScreen onSpin={handleSpin} onClaim={handleSpinClaim} onSkip={handleSpinSkip} bonusLeft={adSpinsLeft(profile)} adsFree={profile?.adsFree ?? false} />
+        <DailySpinScreen
+          onSpin={handleSpin}
+          onDone={handleSpinDone}
+          bonusLeft={adSpinsLeft(profile)}
+          adsFree={profile?.adsFree ?? false}
+          name={profile?.nickname}
+          creatures={creatures}
+        />
       )}
       {stage === 'streak' && (
         <StreakScreen profile={profile} mascot={mascot} intro={streakIntro} onClose={closeStreak} onOpenDaily={streakToDaily} />
       )}
-      {stage === 'reel' && reel && <CreatureReelScreen creatures={creatures} lockedIds={reel.lockedIds} winnerId={reel.winnerId} onDone={handleReelDone} />}
       {stage === 'create' && (
         <CreateScreen
           onBack={() => setScreen('home')}

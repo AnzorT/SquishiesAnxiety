@@ -130,7 +130,7 @@ function Card({ it, home, level, coins, width, onBuy }) {
         </View>
       ) : (
         <Pressable onPress={() => onBuy(it.id)} style={({ pressed }) => [styles.buy, { opacity: afford ? 1 : 0.55 }, pressed && { transform: [{ translateY: 2 }] }]}>
-          <CoinGlyph size={14} />
+          <CoinGlyph size={15} />
           <Text style={styles.buyText}>{(item.coins || 0).toLocaleString()}</Text>
         </Pressable>
       )}
@@ -153,7 +153,7 @@ export const Shop = memo(function Shop({ home, homeRev, room, level, coins, msg,
         <Text style={styles.level}>{`LEVEL ${level}`}</Text>
         <View style={{ flex: 1 }} />
         <View style={styles.coins}>
-          <CoinGlyph size={14} />
+          <CoinGlyph size={17} />
           <Text style={styles.coinsText}>{Math.max(0, Math.round(coins)).toLocaleString()}</Text>
         </View>
         <Pressable onPress={onClose} hitSlop={8} style={styles.close}>

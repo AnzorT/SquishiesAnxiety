@@ -108,7 +108,7 @@ export function computeAchievements(creatures = [], profile = {}, customCount = 
     A('secret', 'Set Collector', 'Complete a set', badge('SET'), setsDone),
     A('spin1', 'Lucky Spin', 'Spin the daily wheel', badge('SPIN'), spins),
     A('spin7', 'Week of Spins', 'Spin the wheel 7 times', badge('7'), spins, 7),
-    A('jackpot', 'Jackpot!', 'Win a free creature or 15% off a creation on the wheel', badge('★'), profile.wheelJackpot ? 1 : 0),
+    A('jackpot', 'Jackpot!', 'Win the 50 gems JACKPOT on the Daily Spin', badge('★'), profile.wheelJackpot ? 1 : 0),
     A('ads5', 'Movie Night', 'Watch 5 video ads', badge('▶5'), ads, 5),
     A('boost4', 'Max Boost', 'Activate a ×4 coin boost', badge('×4'), (profile.maxMult ?? 0) >= 4 ? 1 : 0),
     A('custom1', 'Creator', 'Create your own squishy', badge('NEW'), customCount),
