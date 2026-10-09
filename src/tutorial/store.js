@@ -38,15 +38,43 @@ function emit() {
   listeners.forEach((fn) => fn());
 }
 
+// The hold and twist progress tick many times a second; only the Guide
+// draws them (its progress bar). App's step machine follows `coarse`
+// changes (everything else) plus useTutorialSelect for the moment a goal is
+// reached, so it no longer re-renders the whole app on every tick (it did
+// every 150 ms through the hold step: 4 of 6.7 s of JS, profiled).
+const VOLATILE = new Set(['holdMs', 'rotateAcc']);
+const coarseListeners = new Set();
+let coarseVersion = 0;
+
+// Targets' positions have their own listeners: only the Guide draws from
+// them. They used to bump the same version as everything else, so every
+// TutTarget's onLayout (72 Collection cells, the nav, the header…)
+// re-rendered App and the whole Squishies screen once per target — the
+// main reason a tap could take seconds to answer (profiled 2026-10-08).
+const rectListeners = new Set();
+let rectVersion = 0;
+function emitRect() {
+  rectVersion++;
+  rectListeners.forEach((fn) => fn());
+}
+
 export function report(patch) {
   let changed = false;
+  let coarse = false;
   Object.keys(patch).forEach((k) => {
     if (state[k] !== patch[k]) {
       state[k] = patch[k];
       changed = true;
+      if (!VOLATILE.has(k)) coarse = true;
     }
   });
-  if (changed) emit();
+  if (!changed) return;
+  if (coarse) {
+    coarseVersion++;
+    coarseListeners.forEach((fn) => fn());
+  }
+  emit();
 }
 
 export const getState = () => state;
@@ -79,9 +107,12 @@ export function measureTarget(name) {
     if (!rect && !r) return;
     if (rect && r && Math.abs(r.x - rect.x) < 0.5 && Math.abs(r.y - rect.y) < 0.5 && Math.abs(r.w - rect.w) < 0.5 && Math.abs(r.h - rect.h) < 0.5) return;
     t.rect = rect;
-    emit();
+    emitRect();
   });
 }
+
+// The target the guide points at right now (a name), or null.
+export const currentTarget = () => (state.ui && typeof state.ui.target === 'string' ? state.ui.target : null);
 
 const subscribe = (fn) => {
   listeners.add(fn);
@@ -91,11 +122,37 @@ const snapshot = () => version;
 
 // Re-renders the caller whenever anything in the store changes. The state
 // object itself never changes identity — effects that should follow the
-// store depend on the version from useTutorialVersion().
+// store depend on the version from useTutorialVersion(). Keep these to
+// small components (the Guide); a screen should use useTutorialSelect.
 export function useTutorialStore() {
   useSyncExternalStore(subscribe, snapshot, snapshot);
   return state;
 }
-export function useTutorialVersion() {
-  return useSyncExternalStore(subscribe, snapshot, snapshot);
+// App's step machine: changes to everything but the hold / twist progress
+// (see VOLATILE). `on` false: not subscribed at all (once the tutorial is
+// over).
+const noSubscribe = () => () => {};
+const zero = () => 0;
+const subscribeCoarse = (fn) => {
+  coarseListeners.add(fn);
+  return () => coarseListeners.delete(fn);
+};
+const coarseSnapshot = () => coarseVersion;
+export function useTutorialVersion(on = true) {
+  return useSyncExternalStore(on ? subscribeCoarse : noSubscribe, on ? coarseSnapshot : zero, on ? coarseSnapshot : zero);
+}
+// Re-renders the caller only when `select(state)` changes; it must return
+// a primitive (a string, a boolean…), not a new object.
+export function useTutorialSelect(select) {
+  const get = () => select(state);
+  return useSyncExternalStore(subscribe, get, get);
+}
+// The Guide: re-renders when a target moves.
+const subscribeRects = (fn) => {
+  rectListeners.add(fn);
+  return () => rectListeners.delete(fn);
+};
+const rectSnapshot = () => rectVersion;
+export function useTargetRects() {
+  return useSyncExternalStore(subscribeRects, rectSnapshot, rectSnapshot);
 }

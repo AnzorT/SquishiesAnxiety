@@ -2,7 +2,7 @@
 // The spinWheel function in index.js applies them to the player's profile.
 //
 // The wheel is the "Squish Squad App" shell's (2026-10-08): eight slices of
-// coins, gems and Stars, each with its own weight (out of 100). The app
+// coins and gems, each with its own weight (out of 100). The app
 // draws the same eight in the same order (src/dailySpin.js) — change both
 // together.
 
@@ -10,7 +10,7 @@ const WHEEL = [
   { kind: 'coins', amount: 100, weight: 22 },
   { kind: 'gems', amount: 5, weight: 18 },
   { kind: 'coins', amount: 250, weight: 14 },
-  { kind: 'stars', amount: 20, weight: 14 },
+  { kind: 'coins', amount: 150, weight: 14 },
   { kind: 'coins', amount: 50, weight: 20 },
   { kind: 'gems', amount: 15, weight: 7 },
   { kind: 'coins', amount: 500, weight: 4 },
@@ -48,7 +48,7 @@ function dayKey(nowMs, offsetMinutes) {
 function spinOutcome({ day, index }) {
   const slice = WHEEL[index];
   const result = { index, kind: slice.kind, amount: slice.amount, day };
-  const changes = { lastSpinDay: day, spins: 1, coins: 0, gems: 0, stars: 0, jackpot: false };
+  const changes = { lastSpinDay: day, spins: 1, coins: 0, gems: 0, jackpot: false };
   changes[slice.kind] = slice.amount;
   if (slice.kind === 'gems' && slice.amount >= JACKPOT_GEMS) {
     result.jackpot = true;

@@ -297,9 +297,19 @@ function loadGltfFromUrl(url) {
 // per-instance geometry/mesh construction from this cached data, so a
 // revisit — or the normal preload-then-mount path — never re-pays it.
 const remoteModelDataPromises = new Map();
+// urls whose model data is ready (their promise above has resolved)
+const readyModelUrls = new Set();
 function loadModelDataFromUrl(creatureId, url) {
   if (!remoteModelDataPromises.has(url)) {
-    remoteModelDataPromises.set(url, loadGltfFromUrl(url).then((gltf) => prepareModelData(creatureId, MODEL_TUNING, gltf)));
+    remoteModelDataPromises.set(
+      url,
+      loadGltfFromUrl(url)
+        .then((gltf) => prepareModelData(creatureId, MODEL_TUNING, gltf))
+        .then((data) => {
+          readyModelUrls.add(url);
+          return data;
+        }),
+    );
   }
   return remoteModelDataPromises.get(url);
 }
@@ -315,6 +325,13 @@ function loadModelDataFromUrl(creatureId, url) {
 export function preloadCreatureModel(creature) {
   if (!creature || !creature.modelUrl) return Promise.resolve();
   return loadModelDataFromUrl(creature.id, creature.modelUrl);
+}
+
+// True when SquishScreen can show this creature without waiting: it has no
+// model to load (2D art), or its model was already loaded this app run.
+// LoadingScreen then skips its "Getting Ready" beat.
+export function isCreatureModelReady(creature) {
+  return !creature || !creature.modelUrl || readyModelUrls.has(creature.modelUrl);
 }
 
 // Low-poly exports (Tripo retopo included) commonly split a vertex into two

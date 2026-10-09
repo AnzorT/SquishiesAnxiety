@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, G, LinearGradient as SvgLinearGradient, Path, Pattern, RadialGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { candyFonts } from '../theme/candyTheme';
 import { CoinIcon } from '../squad/ui';
+import { fmtNum } from '../format';
 
 // The Crib's HUD, copied from the design ("Squad Crib v5" / "Squad Crib
 // Vertical", the <!-- HUD --> block): round 46px buttons with a white rim,
@@ -153,7 +154,7 @@ export function CoinsPill({ coins, rate }) {
   return (
     <View style={styles.coins}>
       <CoinIcon size={18} />
-      <Text style={styles.coinsText} numberOfLines={1}>{`${Math.max(0, Math.round(coins)).toLocaleString()}${r}`}</Text>
+      <Text style={styles.coinsText} numberOfLines={1}>{`${fmtNum(Math.max(0, coins))}${r}`}</Text>
     </View>
   );
 }

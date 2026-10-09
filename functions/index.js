@@ -348,10 +348,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 //
 // Returns { already: true } if today's spin is used (or, for a bonus spin,
 // the day's video spin), otherwise the prize:
-// { index, kind: 'coins' | 'gems' | 'stars', amount, jackpot? }.
+// { index, kind: 'coins' | 'gems', amount, jackpot? }.
 //
-// A profile that hasn't made a squad move yet gets its starting gems and
-// Stars first (squad.withStart), or a gems prize would stand in for them.
+// A profile that hasn't made a squad move yet gets its starting gems first
+// (squad.withStart), or a gems prize would stand in for them.
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { FieldValue } = require('firebase-admin/firestore');
 const { rollWheel, dayKey, spinOutcome, spinAllowed } = require('./dailySpin');
@@ -380,7 +380,6 @@ exports.spinWheel = onCall(async (request) => {
       update.totalEarned = FieldValue.increment(changes.coins);
     }
     if (changes.gems) update.gems = (Number(begun.p.gems) || 0) + changes.gems;
-    if (changes.stars) update.stars = (Number(begun.p.stars) || 0) + changes.stars;
     if (changes.jackpot) update.wheelJackpot = true;
     tx.update(userRef, update);
     logger.info(`[${uid}] daily spin ${day}${bonus ? ' (video)' : ''}: ${result.amount} ${result.kind}`, result);
@@ -388,7 +387,7 @@ exports.spinWheel = onCall(async (request) => {
   });
 });
 
-// --- The squad economy: chests, gems, Stars, the collection ------------------
+// --- The squad economy: chests, gems, the collection -------------------------
 //
 // One callable for every move (the rules: squad.js). The app sends
 // { move, ...args, tzOffsetMinutes }; the move runs in a transaction on the
@@ -410,7 +409,6 @@ exports.squad = onCall(async (request) => {
     tier: String(data.tier || ''),
     deal: !!data.deal,
     id: String(data.id ?? ''),
-    cur: data.cur === 'stars' ? 'stars' : 'coins',
     f: String(data.f || ''),
     i: Number(data.i),
     reward: data.reward && typeof data.reward === 'object' ? { kind: String(data.reward.kind || ''), amount: Number(data.reward.amount) || 0 } : null,

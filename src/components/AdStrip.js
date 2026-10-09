@@ -11,10 +11,11 @@ import AdBanner from './AdBanner';
 // with a white rim and an "AD" tag; the card shows "ADVERTISEMENT" until
 // the real banner loads over it (the shell's made-up cross-promo ads are
 // left out). Above the bottom nav (MainScreen) it isn't the bottom edge:
-// `inset={false}`.
+// `inset={false}`. `live={false}` keeps the strip's look but no real banner
+// (Home kept alive under another screen doesn't hold an ad nobody can see).
 export const AD_H = 60;
 
-export default function AdStrip({ inset = true, style }) {
+export default function AdStrip({ inset = true, live = true, style }) {
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.bar, style, { paddingBottom: inset ? insets.bottom : 0 }]}>
@@ -25,7 +26,7 @@ export default function AdStrip({ inset = true, style }) {
             <Text style={styles.tag}>AD</Text>
           </LinearGradient>
         </View>
-        <AdBanner />
+        {live ? <AdBanner /> : null}
       </View>
     </View>
   );

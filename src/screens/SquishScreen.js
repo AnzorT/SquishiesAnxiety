@@ -32,6 +32,7 @@ import { CoinIcon, GlassPill } from '../components/candy/Coin';
 import OutlinedTitle from '../components/candy/OutlinedTitle';
 import ToggleSwitch from '../components/candy/ToggleSwitch';
 import sfx from '../audio/sfx';
+import { fmtNum } from '../format';
 
 // Stage size: the full screen width (capped for tablets). The creature's
 // own size inside it is MODEL_TUNING.visual in SquishyToy.js.
@@ -191,7 +192,7 @@ const CoinCounter = memo(forwardRef(function CoinCounter(_props, ref) {
   return (
     <View style={styles.coinPill}>
       <CoinIcon size={17} />
-      <Text style={styles.coinPillText}>+{value.toLocaleString()}</Text>
+      <Text style={styles.coinPillText}>+{fmtNum(value)}</Text>
       <Text style={styles.coinPillEarned}>EARNED</Text>
     </View>
   );
@@ -742,7 +743,7 @@ function Siren() {
   return <Animated.Text style={[styles.punishEmoji, { transform: [{ translateX }, { rotate }] }]}>🚨</Animated.Text>;
 }
 
-export default function SquishScreen({
+function SquishScreen({
   toy,
   coins = 0,
   onBack,
@@ -1540,3 +1541,7 @@ const styles = StyleSheet.create({
   punishButton: { alignSelf: 'stretch' },
   punishButtonText: { fontSize: 15 },
 });
+
+// memo: App re-renders on things the stage doesn't show (tutorial reports,
+// sheets, toasts); each of those used to re-render this whole screen
+export default React.memo(SquishScreen);

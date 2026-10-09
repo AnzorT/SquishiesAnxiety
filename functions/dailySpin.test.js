@@ -26,7 +26,7 @@ for (let i = 0; i < D.WHEEL.length; i++) {
   const { result, changes } = D.spinOutcome({ day: DAY, index: i });
   const w = D.WHEEL[i];
   assert.deepStrictEqual([result.kind, result.amount], [w.kind, w.amount]);
-  for (const cur of ['coins', 'gems', 'stars']) assert.strictEqual(changes[cur], cur === w.kind ? w.amount : 0);
+  for (const cur of ['coins', 'gems']) assert.strictEqual(changes[cur], cur === w.kind ? w.amount : 0);
   assert.strictEqual(changes.jackpot, w.kind === 'gems' && w.amount === 50);
 }
 

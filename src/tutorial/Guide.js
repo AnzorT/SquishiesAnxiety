@@ -3,7 +3,8 @@ import { Animated, Easing, Platform, Pressable, StatusBar, StyleSheet, Text, Vie
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { candyFonts } from '../theme/candyTheme';
-import { measureTarget, targetRect, useTutorialStore } from './store';
+import { measureTarget, targetRect, useTargetRects, useTutorialSelect, useTutorialStore } from './store';
+import { HOLD_MS, ROTATE_PX } from './steps';
 
 // The coach-mark overlay (the design's squish-guide.js): dims the app, cuts
 // a hole around the target, pulses a ring around it, shows an animated hand
@@ -116,12 +117,31 @@ function ProgressBar({ value, style }) {
   );
 }
 
+// The hold / twist steps' bar (and the hold's countdown), read straight from
+// the store: these tick many times a second and only this redraws for them.
+function LiveProgress({ kind }) {
+  const holdMs = useTutorialSelect((s) => s.holdMs);
+  const rotateAcc = useTutorialSelect((s) => s.rotateAcc);
+  const holding = useTutorialSelect((s) => s.holdActive);
+  if (kind === 'hold') {
+    const left = Math.max(0, Math.ceil((HOLD_MS - holdMs) / 1000));
+    return (
+      <>
+        <ProgressBar value={Math.min(1, holdMs / HOLD_MS)} />
+        <Text style={styles.note}>{holding ? `Keep holding… ${left}s` : 'Hold for 5 seconds'}</Text>
+      </>
+    );
+  }
+  return <ProgressBar value={Math.min(1, rotateAcc / ROTATE_PX)} />;
+}
+
 // the caption: title, text, progress, note, a button
 function Bubble({ ui, width, onAction, style }) {
   return (
     <View style={[styles.bubble, { width }, style]} pointerEvents="box-none">
       {ui.title ? <Text style={styles.bubbleTitle}>{ui.title}</Text> : null}
       {ui.text ? <Text style={styles.bubbleText}>{ui.text}</Text> : null}
+      {ui.live ? <LiveProgress kind={ui.live} /> : null}
       {ui.progress != null ? <ProgressBar value={ui.progress} /> : null}
       {ui.note ? <Text style={styles.note}>{ui.note}</Text> : null}
       {ui.next ? (
@@ -232,6 +252,7 @@ const DimPanel = memo(function DimPanel({ block, dim, style }) {
 const Y_FIX = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0;
 
 function Spot({ ui, onAction, winW, winH, topInset, yFix }) {
+  useTargetRects(); // follows the target as it moves
   // a target that is mounted but off screen (a neighbouring card in the
   // pager) counts as absent
   const m = targetRect(ui.target);

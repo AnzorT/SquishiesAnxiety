@@ -143,8 +143,8 @@ const CLEARED = [
   // progression (2026-10-03 drop): daily challenges, streak, the level day
   'levelDay', 'daily', 'streak', 'lastFull', 'logins', 'lastLogin', 'bestStreak', 'streakSeen', 'streakDiscount', 'chests', 'adSpins',
   // the squad economy (functions/squad.js): with `gems` gone, the next squad
-  // move or spin hands out the starting 600 gems, 180 Stars and the welcome
-  // chest again. `gemFirst` stays: it's about packs paid for with money.
+  // move or spin hands out the starting 600 gems and the welcome chest
+  // again. `stars` is the dropped Stars currency (2026-10-09). `gemFirst` stays: it's about packs paid for with money.
   'gems', 'stars', 'col', 'pity', 'epic', 'chestBag', 'chestVideos', 'dealDay', 'giftDay', 'chestOpens', 'xp',
   // fields from versions that only existed during testing
   'stickerPile', 'stickers',

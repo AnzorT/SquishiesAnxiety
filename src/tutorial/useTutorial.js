@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { getState, report, useTutorialVersion } from './store';
-import { stepView, tutorialActive } from './steps';
+import { getState, report, useTutorialSelect, useTutorialVersion } from './store';
+import { HOLD_MS, ROTATE_PX, stepView, tutorialActive } from './steps';
 
 // Runs the tutorial for App.js: feeds the step machine (steps.js) with the
 // store and the profile, puts what to show in the store (`ui`, drawn by
@@ -11,13 +11,19 @@ import { stepView, tutorialActive } from './steps';
 // The timed step (hold 5 s) banks holdMs on a 150 ms tick while the finger
 // is down.
 export default function useTutorial({ profile, creatures, setStep, setLevel, signedIn }) {
-  const version = useTutorialVersion();
-  const s = getState();
-  const stepRef = useRef(null);
-  const levelledRef = useRef(null);
   // the tutorial starts once the player is signed in (never on the splash
   // or sign-in screens) and picks up from the profile's step after a restart
   const active = signedIn && tutorialActive(profile);
+  // App follows the store only while the tutorial runs: subscribed for
+  // good, every report() anywhere re-rendered the whole app
+  const version = useTutorialVersion(active);
+  // the hold / twist progress ticks don't reach App (store.js VOLATILE);
+  // reaching their goals does
+  const holdDone = useTutorialSelect((st) => st.holdMs >= HOLD_MS);
+  const rotateDone = useTutorialSelect((st) => st.rotateAcc >= ROTATE_PX);
+  const s = getState();
+  const stepRef = useRef(null);
+  const levelledRef = useRef(null);
   const tut = signedIn ? profile?.tut : null;
 
   // the profile is the source of truth; a step set here is kept until the
@@ -85,7 +91,7 @@ export default function useTutorial({ profile, creatures, setStep, setLevel, sig
     return undefined;
     // `version` stands for the store's contents
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [version, profile, creatures, active, go, setLevel]);
+  }, [version, holdDone, rotateDone, profile, creatures, active, go, setLevel]);
 
   return { onAction, step: active ? stepRef.current : 'done' };
 }

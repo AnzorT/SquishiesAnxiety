@@ -21,7 +21,7 @@ const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 // under slowly spinning light rays, name as a pink sticker title with its
 // rarity chip, and a candy status row (its tokens so far + UNLOCK /
 // HOLD TO UNLOCK / ★ OWNED + PLAY ▶). HomeScreen mounts one per page.
-// Tapping a locked card opens the Shop's squishies (chests, coins or Stars).
+// Tapping a locked card opens the Shop's squishies (chests or coins).
 //
 // This component owns the whole unlock-with-key interaction: hold the image
 // area and a gold key slides into a pink padlock (which shakes, then pops its

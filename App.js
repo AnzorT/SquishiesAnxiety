@@ -6,7 +6,7 @@
 // including SquishyToy.js) gets evaluated.
 import 'fast-text-encoding';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Alert, Image, AppState } from 'react-native';
+import { View, Alert, Image, AppState, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import mobileAds from 'react-native-google-mobile-ads';
@@ -66,6 +66,11 @@ import {
 import { uploadSourceImage, deleteCustomAssets } from './src/firebase/storage';
 import { loadCachedCreatures, saveCreaturesToCache } from './src/data/creatureCache';
 import CreateScreen from './src/screens/CreateScreen';
+import Freeze from './src/components/Freeze';
+import { fmtNum } from './src/format';
+import { preloadCrib } from './src/firebase/firestore';
+import ScreenLayer, { WhenScreenReady } from './src/components/ScreenLayer';
+import CribBones from './src/crib/CribBones';
 import { plushArtUrls } from './src/components/CreatureThumbnail';
 import * as billing from './src/billing';
 import { setPricing } from './src/economy';
@@ -93,6 +98,14 @@ sfx.init();
 
 // Background music for each screen (the design's MUSIC table).
 const APP_TOAST_AT = { position: 'absolute', left: 0, right: 0, bottom: 150, height: 0, zIndex: 70, elevation: 70 };
+
+// Screens that slide in over Home (the others replace it without a slide:
+// the wheel and the streak's intro come before Home, the squish screen
+// after its loading screen).
+// one empty object, so a memoized screen sees the same prop every render
+const NO_ACHIEVEMENTS = {};
+
+const SLIDE_IN = new Set(['crib', 'create', 'achievements', 'stats', 'streak', 'loading']);
 
 const MUSIC_FOR_STAGE = {
   splash: 'dream',
@@ -146,7 +159,7 @@ export default function App() {
   const clearMineFocus = useCallback(() => setMineFocus(null), []);
   const [screen, setScreen] = useState('home'); // 'home' | 'achievements' | 'stats' | 'create' | 'crib' | … — only relevant once signed in
   // 'home' is the app shell (MainScreen): its open tab ('squish' | 'shop'),
-  // and the Shop's own tab to open on (`shopKey` restarts the Shop there)
+  // and the Shop's own tab to open on (`shopKey` sends the Shop there)
   const [mainTab, setMainTab] = useState('squish');
   const [shopTab, setShopTab] = useState('chests');
   const [shopKey, setShopKey] = useState(0);
@@ -261,7 +274,7 @@ export default function App() {
   useEffect(() => billing.subscribePrices(setStorePrices), []);
   // Which price level each product sells at (config/pricing): a change
   // loads that level's store price; the re-render updates every label.
-  const [, setPricingVersion] = useState(0);
+  const [pricingVersion, setPricingVersion] = useState(0);
   useEffect(() => {
     if (!authUser) return undefined;
     return subscribeToPricing((doc) => {
@@ -273,7 +286,7 @@ export default function App() {
   useEffect(() => {
     if (!authUser) return;
     billing.loadProducts().then(() => billing.syncPurchases());
-    // the starting 600 gems and 180 Stars, once (until the `squad` function
+    // the starting 600 gems, once (until the `squad` function
     // is deployed this fails quietly; the wallet shows them anyway)
     startSquad().catch(() => {});
   }, [authUser]);
@@ -287,6 +300,14 @@ export default function App() {
     // re-running after it succeeds is harmless (arrayUnion) but pointless.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser, profile?.ownedIds]);
+
+  // The Crib's saved state, read in the background once it's unlocked, so
+  // opening the Crib never waits on Firestore (src/firebase/firestore.js)
+  const cribIsOpen = !!authUser && !!profile && cribUnlocked(profile);
+  useEffect(() => {
+    if (cribIsOpen) preloadCrib(authUser.uid);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cribIsOpen]);
 
   // Seeds `creatures` from the on-device cache immediately (before auth even
   // resolves — SplashScreen needs something to render at cold start), then
@@ -359,7 +380,7 @@ export default function App() {
 
   // --- Daily Spin (src/dailySpin.js; the server rolls it) ---
   // `bonus`: "Watch ad, spin again", paid with a rewarded video on the
-  // wheel screen. The prizes (coins, gems, Stars) are paid by the server.
+  // wheel screen. The prizes (coins, gems) are paid by the server.
   const handleSpin = useCallback((bonus = false) => callFunction('spinWheel', { tzOffsetMinutes: tzOffsetMinutes(), bonus }), []);
   const handleSpinDone = useCallback(() => {
     setSpinState('done');
@@ -381,6 +402,8 @@ export default function App() {
     setScreen('home');
   }, []);
   const openSettings = useCallback(() => setSettingsOpen(true), []);
+  // stable, so the memoized Shop only re-renders when the prices change
+  const priceOf = useCallback((key) => billing.priceLabel(key, storePrices), [storePrices, pricingVersion]); // eslint-disable-line react-hooks/exhaustive-deps
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
   const openCrib = useCallback(() => setScreen('crib'), []);
 
@@ -445,16 +468,16 @@ export default function App() {
     },
     [authUser, profile, flashApp]
   );
-  // the daily chest: its coins here, its Stars (and a streak day's Stars or
-  // Silver chest) from the server — squad dailyGift
+  // the daily chest: its coins here, a streak day's gems or Silver chest
+  // from the server — squad dailyGift
   // (the streak day's reward: src/progression.js STREAK_REWARDS)
   const handleClaimChest = useCallback(() => {
     if (!authUser) return;
     const r = claimDailyChest(authUser.uid, profile);
     if (!r) return;
-    const gift = r.reward.kind === 'stars' || r.reward.kind === 'chest' ? r.reward : null;
+    const gift = r.reward.kind === 'gems' || r.reward.kind === 'chest' ? r.reward : null;
     squadDailyGift(gift).catch(() => {});
-    const extra = r.reward.kind === 'stars' ? ` + ${5 + r.reward.amount} Stars` : r.reward.kind === 'chest' ? ' + 5 Stars + a free Silver chest' : r.reward.kind === 'half' ? ' + 5 Stars + half price on your next creation' : ' + 5 Stars';
+    const extra = r.reward.kind === 'gems' ? ` + ${r.reward.amount} gems` : r.reward.kind === 'chest' ? ' + a free Silver chest' : r.reward.kind === 'half' ? ' + half price on your next creation' : '';
     flashApp(`Daily chest: +${r.coins} coins${extra}!`);
   }, [authUser, profile, flashApp]);
   const dailyToCrib = useCallback(() => {
@@ -571,8 +594,8 @@ export default function App() {
         const r = await billing.buy(key, { uid: authUser.uid, creatureId: creature ? creature.id : '' });
         if (r.pending) flashApp('Payment pending — it arrives as soon as it clears');
         else if (r.granted === 'adsFree' || r.granted === 'restored') flashApp('Ads removed — thank you!');
-        else if (r.granted === 'coins') flashApp(`Already unlocked — here are ${r.coins.toLocaleString()} coins instead`);
-        else if (r.granted === 'gems') flashApp(`+${r.gems.toLocaleString()} gems${r.doubled ? ' (doubled!)' : ''}`);
+        else if (r.granted === 'coins') flashApp(`Already unlocked — here are ${fmtNum(r.coins)} coins instead`);
+        else if (r.granted === 'gems') flashApp(`+${fmtNum(r.gems)} gems${r.doubled ? ' (doubled!)' : ''}`);
         return r.pending ? null : r;
       } catch (e) {
         if (e.code === 'cancelled') return null;
@@ -599,7 +622,7 @@ export default function App() {
     return !!r && r.granted === 'creation';
   }, [purchase, creationKey]);
   const closeRemoveAds = useCallback(() => setRemoveAdsOpen(false), []);
-  // a locked creature's card: the Shop's squishies (coins, Stars or chests)
+  // a locked creature's card: the Shop's squishies (coins or chests)
   const showUnlock = useCallback(() => openShopAt('squish', 'home'), [openShopAt]);
 
   const handleRecordPress = useCallback(
@@ -655,6 +678,31 @@ export default function App() {
     else if (loadingToy) stage = 'loading';
     else stage = screen;
   }
+
+  // Home stays mounted once built, under whatever screen opens from it, so
+  // going back is instant (it used to be rebuilt from scratch every time).
+  // Once the screen on top covers it (`homeCovered`), it's frozen: not drawn,
+  // not re-rendered (src/components/Freeze.js). Signing out lets it go.
+  const [homeAlive, setHomeAlive] = useState(false);
+  const [homeCovered, setHomeCovered] = useState(false);
+  useEffect(() => {
+    if (stage === 'home') {
+      setHomeAlive(true);
+      setHomeCovered(false);
+    } else if (stage === 'splash' || stage === 'auth') {
+      setHomeAlive(false);
+    }
+  }, [stage]);
+  const coverHome = useCallback(() => setHomeCovered(true), []);
+  const uncoverHome = useCallback(() => setHomeCovered(false), []);
+  // Back to Home from a screen over it: it slides away first (ScreenLayer's
+  // exit), with Home already under it; the screen switch follows the slide.
+  const layerRef = useRef(null);
+  const goHome = useCallback(() => {
+    const layer = layerRef.current;
+    if (layer) layer.exit(() => setScreen('home'));
+    else setScreen('home');
+  }, []);
 
   // --- sound (src/audio/sfx.js): each screen's music, a whoosh between
   // screens, and coins coming in or going out. The squish screen and the
@@ -713,132 +761,149 @@ export default function App() {
   // status-bar icons are dark; the Crib's HUD is dark brown, so light there.
   const statusBarStyle = stage === 'crib' ? 'light' : 'dark';
 
+  const onHome = stage === 'home';
+  const showHome = onHome || (homeAlive && stage !== 'splash' && stage !== 'auth');
+  // every other screen once signed in sits in a ScreenLayer over Home
+  const overlay = !onHome && stage !== 'splash' && stage !== 'auth';
+
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider style={styles.app}>
       <StatusBar style={statusBarStyle} />
       {stage === 'splash' && <SplashScreen onFinish={() => setSplashDone(true)} creatures={creatures} />}
       {stage === 'auth' && <AuthScreen />}
-      {stage === 'home' && (
-        <MainScreen
-          tab={mainTab}
-          onTab={setMainTab}
-          adsFree={adsFree}
-          squishies={
-            <SquishiesScreen
-              creatures={creatures}
-              profile={profile}
-              onPlay={openToy}
-              onOpenShop={openShopAt}
-              onOpenCreator={handleOpenCreator}
-              createPrice={priceLabel}
-              generationCredits={profile?.generationCredits ?? 1}
-              paidCredits={profile?.paidCredits ?? 0}
-              discountPct={discountPct}
-              customCreatures={customCreatures}
-              onSelectCustom={handleSelectCustom}
-              onDeleteCustom={handleDeleteCustom}
-              onRetryCustom={handleRetryCustom}
-              focusMine={mineFocus}
-              onFocusMineDone={clearMineFocus}
-              level={levelOf(profile)}
-              cribUnlocked={cribUnlocked(profile)}
-              onOpenCrib={openCrib}
-              onOpenAchievements={openAchievements}
-              onOpenSettings={openSettings}
-              onOpenStats={openStats}
-              dailyUnlocked={dailyIsUnlocked(profile)}
-              dailyBadge={dailyNow ? dailyNow.claimable : 0}
-              onOpenDaily={openDaily}
-              streak={streakOf(profile)}
-              streakHot={!!dailyNow && dailyNow.streak > 0 && !dailyNow.chestDone}
-              onOpenStreak={openStreak}
+      {showHome && (
+        <Freeze freeze={!onHome && homeCovered}>
+          <View style={styles.fill} collapsable={false} pointerEvents={onHome ? 'auto' : 'none'}>
+            <MainScreen
+              tab={mainTab}
+              onTab={setMainTab}
+              adsFree={adsFree}
+              active={onHome}
+              squishies={
+                <SquishiesScreen
+                  active={onHome}
+                  creatures={creatures}
+                  profile={profile}
+                  onPlay={openToy}
+                  onOpenShop={openShopAt}
+                  onOpenCreator={handleOpenCreator}
+                  createPrice={priceLabel}
+                  generationCredits={profile?.generationCredits ?? 1}
+                  paidCredits={profile?.paidCredits ?? 0}
+                  discountPct={discountPct}
+                  customCreatures={customCreatures}
+                  onSelectCustom={handleSelectCustom}
+                  onDeleteCustom={handleDeleteCustom}
+                  onRetryCustom={handleRetryCustom}
+                  focusMine={mineFocus}
+                  onFocusMineDone={clearMineFocus}
+                  level={levelOf(profile)}
+                  cribUnlocked={cribUnlocked(profile)}
+                  onOpenCrib={openCrib}
+                  onOpenAchievements={openAchievements}
+                  onOpenSettings={openSettings}
+                  onOpenStats={openStats}
+                  dailyUnlocked={dailyIsUnlocked(profile)}
+                  dailyBadge={dailyNow ? dailyNow.claimable : 0}
+                  onOpenDaily={openDaily}
+                  streak={streakOf(profile)}
+                  streakHot={!!dailyNow && dailyNow.streak > 0 && !dailyNow.chestDone}
+                  onOpenStreak={openStreak}
+                />
+              }
+              renderShop={(onImmersive) => (
+                <ShopScreen
+                  openKey={shopKey}
+                  startTab={shopTab}
+                  creatures={creatures}
+                  profile={profile}
+                  onBuyProduct={purchase}
+                  priceOf={priceOf}
+                  onImmersive={onImmersive}
+                />
+              )}
             />
-          }
-          renderShop={(onImmersive) => (
-            <ShopScreen
-              key={shopKey}
-              startTab={shopTab}
+          </View>
+        </Freeze>
+      )}
+      {overlay && (
+        <ScreenLayer ref={layerRef} key={stage} slide={showHome && SLIDE_IN.has(stage)} onCovered={coverHome} onUncover={showHome ? uncoverHome : undefined}>
+          {stage === 'crib' && (
+            <WhenScreenReady placeholder={<CribBones />}>
+              <CribScreen
+                authUser={authUser}
+                profile={profile}
+                creatures={creatures}
+                onBack={goHome}
+                noteDaily={noteDaily}
+                daily={{ unlocked: dailyIsUnlocked(profile), badge: dailyNow ? dailyNow.claimable : 0, onClaim: handleClaimDaily, onClaimChest: handleClaimChest }}
+                tutorialStep={tutorial.step}
+                onTutorialAction={tutorial.onAction}
+              />
+            </WhenScreenReady>
+          )}
+          {stage === 'wheel' && (
+            <DailySpinScreen
+              onSpin={handleSpin}
+              onDone={handleSpinDone}
+              bonusLeft={adSpinsLeft(profile)}
+              adsFree={profile?.adsFree ?? false}
+              name={profile?.nickname}
               creatures={creatures}
-              profile={profile}
-              onBuyProduct={purchase}
-              priceOf={(key) => billing.priceLabel(key, storePrices)}
-              onImmersive={onImmersive}
             />
           )}
-        />
-      )}
-      {stage === 'crib' && (
-        <CribScreen
-          authUser={authUser}
-          profile={profile}
-          creatures={creatures}
-          onBack={() => setScreen('home')}
-          noteDaily={noteDaily}
-          daily={{ unlocked: dailyIsUnlocked(profile), badge: dailyNow ? dailyNow.claimable : 0, onClaim: handleClaimDaily, onClaimChest: handleClaimChest }}
-          tutorialStep={tutorial.step}
-          onTutorialAction={tutorial.onAction}
-        />
-      )}
-      {stage === 'wheel' && (
-        <DailySpinScreen
-          onSpin={handleSpin}
-          onDone={handleSpinDone}
-          bonusLeft={adSpinsLeft(profile)}
-          adsFree={profile?.adsFree ?? false}
-          name={profile?.nickname}
-          creatures={creatures}
-        />
-      )}
-      {stage === 'streak' && (
-        <StreakScreen profile={profile} mascot={mascot} intro={streakIntro} onClose={closeStreak} onOpenDaily={streakToDaily} />
-      )}
-      {stage === 'create' && (
-        <CreateScreen
-          onBack={() => setScreen('home')}
-          onCreated={handleCreatureCreated}
-          generationCredits={profile?.generationCredits ?? 1}
-          paidCredits={profile?.paidCredits ?? 0}
-          priceLabel={priceLabel}
-          discountPct={discountPct}
-          onBuyCreation={buyCreation}
-          buying={buying === 'creation' || buying === 'creationDiscount' || buying === 'creationHalf'}
-        />
-      )}
-      {stage === 'achievements' && (
-        <AchievementsScreen creatures={creatures} profile={profile} customCount={customCreatures.length} onBack={() => setScreen('home')} />
-      )}
-      {stage === 'stats' && (
-        <StatsScreen creatures={creatures} customCreatures={customCreatures} profile={profile} onBack={() => setScreen('home')} />
-      )}
-      {stage === 'loading' && <LoadingScreen creature={loadingToy} onFinish={finishLoadingToy} />}
-      {stage === 'toy' && activeToy && (
-        <SquishScreen
-          toy={activeToy}
-          coins={profile?.coins ?? 0}
-          onBack={backToHome}
-          onEarnCoins={handleEarnCoins}
-          onRecordPress={handleRecordPress}
-          achievements={profile?.achievements ?? {}}
-          onMarkAchievement={handleMarkAchievement}
-          onAdWatched={handleAdWatched}
-          squishSoundEnabled={squishSoundEnabled}
-          onToggleSquishSound={setSquishSoundEnabled}
-          coinSoundEnabled={coinSoundEnabled}
-          onToggleCoinSound={setCoinSoundEnabled}
-          releaseSoundEnabled={releaseSoundEnabled}
-          onToggleReleaseSound={setReleaseSoundEnabled}
-          vibrationEnabled={vibrationEnabled}
-          onToggleVibration={setVibrationEnabled}
-          showFps={showFps}
-          onToggleShowFps={setShowFps}
-          pokeStrength={pokeStrength}
-          onChangePokeStrength={setPokeStrength}
-          pokeOutward={pokeOutward}
-          onChangePokeOutward={setPokeOutward}
-          adsFree={adsFree}
-          coinMultiplier={coinMultiplier}
-          hideHints={tutorial.step !== 'done'}
-        />
+          {stage === 'streak' && (
+            <StreakScreen profile={profile} mascot={mascot} intro={streakIntro} onClose={closeStreak} onOpenDaily={streakToDaily} />
+          )}
+          {stage === 'create' && (
+            <CreateScreen
+              onBack={goHome}
+              onCreated={handleCreatureCreated}
+              generationCredits={profile?.generationCredits ?? 1}
+              paidCredits={profile?.paidCredits ?? 0}
+              priceLabel={priceLabel}
+              discountPct={discountPct}
+              onBuyCreation={buyCreation}
+              buying={buying === 'creation' || buying === 'creationDiscount' || buying === 'creationHalf'}
+            />
+          )}
+          {stage === 'achievements' && (
+            <AchievementsScreen creatures={creatures} profile={profile} customCount={customCreatures.length} onBack={goHome} />
+          )}
+          {stage === 'stats' && (
+            <StatsScreen creatures={creatures} customCreatures={customCreatures} profile={profile} onBack={goHome} />
+          )}
+          {stage === 'loading' && <LoadingScreen creature={loadingToy} onFinish={finishLoadingToy} />}
+          {stage === 'toy' && activeToy && (
+            <SquishScreen
+              toy={activeToy}
+              coins={profile?.coins ?? 0}
+              onBack={backToHome}
+              onEarnCoins={handleEarnCoins}
+              onRecordPress={handleRecordPress}
+              achievements={profile?.achievements ?? NO_ACHIEVEMENTS}
+              onMarkAchievement={handleMarkAchievement}
+              onAdWatched={handleAdWatched}
+              squishSoundEnabled={squishSoundEnabled}
+              onToggleSquishSound={setSquishSoundEnabled}
+              coinSoundEnabled={coinSoundEnabled}
+              onToggleCoinSound={setCoinSoundEnabled}
+              releaseSoundEnabled={releaseSoundEnabled}
+              onToggleReleaseSound={setReleaseSoundEnabled}
+              vibrationEnabled={vibrationEnabled}
+              onToggleVibration={setVibrationEnabled}
+              showFps={showFps}
+              onToggleShowFps={setShowFps}
+              pokeStrength={pokeStrength}
+              onChangePokeStrength={setPokeStrength}
+              pokeOutward={pokeOutward}
+              onChangePokeOutward={setPokeOutward}
+              adsFree={adsFree}
+              coinMultiplier={coinMultiplier}
+              hideHints={tutorial.step !== 'done'}
+            />
+          )}
+        </ScreenLayer>
       )}
       {authUser ? (
         <>
@@ -869,3 +934,10 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  // the sky's own blue behind everything: a screen sliding away before the
+  // one under it has drawn shows sky, never a white flash
+  app: { backgroundColor: '#b9e2ff' },
+  fill: { flex: 1 },
+});

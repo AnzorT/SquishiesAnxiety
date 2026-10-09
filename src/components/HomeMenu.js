@@ -4,7 +4,7 @@ import { candyColors, candyFonts } from '../theme/candyTheme';
 import RoundButton from './candy/RoundButton';
 import { SoftPulse } from './candy/Decor';
 import TutTarget from '../tutorial/Target';
-import { useTutorialStore } from '../tutorial/store';
+import { useTutorialSelect } from '../tutorial/store';
 import { Flame } from './StreakIcons';
 
 // Home's menu button (beside the Crib, shop and settings buttons): it drops
@@ -86,8 +86,7 @@ function Row({ item, t, i, onPick }) {
 export default function HomeMenu({ items, anchor, badge = 0, hot = false, onOpenChange }) {
   const [open, setOpen] = useState(false);
   // the tutorial's guide points at one of the items: open, and stay open
-  const tut = useTutorialStore();
-  const target = tut.screen === 'home' && tut.ui && tut.ui.target;
+  const target = useTutorialSelect((s) => (s.screen === 'home' && s.ui && typeof s.ui.target === 'string' ? s.ui.target : null));
   const forced = !!target && items.some((it) => it.tut === target);
   const shown = open || forced;
 

@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import CandyBackground from '../components/candy/CandyBackground';
@@ -13,14 +13,18 @@ import { PRODUCTS, GEM_KEYS } from '../economy';
 import { todayKey } from '../dailySpin';
 import sfx from '../audio/sfx';
 import {
-  BY_ID, CHESTS, CHEST_LOOK, CHEST_ORDER, COIN_PRICE, DEAL, PITY_MAX, RAR_LOOK, ROSTER, SEASON, SETS, SET_OF, STAR_PRICE, SWAPS,
+  BY_ID, CHESTS, CHEST_LOOK, CHEST_ORDER, COIN_PRICE, DEAL, PITY_MAX, RAR_LOOK, ROSTER, SEASON, SETS, SET_OF, SWAPS,
   chestArtOf, chestPrice, chestVideosLeft, creaturePrice, dealBought, myChests, owns, picks as todaysPicks, wallet,
 } from '../squad/data';
 import * as squad from '../squad/api';
-import { Bob, BtnText, CandyBtn, Chest, Chip, CoinIcon, F, GemIcon, GOLD, GOLD_RING, PINK_RING, PriceBtn, Ringed, hms, untilMidnight } from '../squad/ui';
+import { Bob, BtnText, CandyBtn, Chest, Chip, CoinIcon, F, GemIcon, GOLD, GOLD_RING, PINK_RING, PriceBtn, Ringed, hms, TickingText, untilMidnight } from '../squad/ui';
 import ChestOpener from './ChestOpener';
 import TutTarget from '../tutorial/Target';
 import { report as tutReport } from '../tutorial/store';
+import { Bone, BoneCard, Reveal, useAfterFirstFrame } from '../components/Skeleton';
+import { useSeenTabs } from '../components/TabPane';
+import { fmtNum } from '../format';
+import useInstantTab from '../components/useInstantTab';
 
 // The Shop (the 2026-10-06 design's "Shop Screen v2"): chests, squishies
 // and gems, on the squad economy (src/squad, run by the `squad` Cloud
@@ -28,7 +32,7 @@ import { report as tutReport } from '../tutorial/store';
 //  · Chests — My Chests (bought, not opened), the Daily Deal, free video
 //    chests, the Legendary guarantee, the five chests and the season chest;
 //  · Squishies — Today's Picks (20% off) and every squishy by set, to buy
-//    with coins or Stars;
+//    with coins (Legendaries come from chests only);
 //  · Gems — the gem packs (real money), gems → coins, Remove Ads.
 // Left out until their products exist: the hero offers (Season Pass,
 // Starter Pack, Mega Bundle, VIP Club).
@@ -46,7 +50,6 @@ const ODDS_BG = ['#d7f0ff', '#c9f7e1', '#ead6ff', '#ffdcb0'];
 const ERRORS = {
   not_enough_coins: null, // → the broke sheet
   not_enough_gems: null,
-  not_enough_stars: 'Not enough Stars yet',
   deal_used: 'You already got today\'s deal',
   no_videos_left: 'No more free chests today',
   no_chest: 'That chest is already open',
@@ -54,7 +57,9 @@ const ERRORS = {
   owned: 'Already in your squad',
   not_for_sale: 'Not for sale',
 };
-const fmt = (n) => Number(n).toLocaleString('en-US');
+const fmt = fmtNum;
+// the season's last minute (its chest's "Ends in" countdown)
+const SEASON_END = new Date(2026, 9, 31, 23, 59);
 
 export function Title({ children, size = 17 }) {
   return (
@@ -64,13 +69,13 @@ export function Title({ children, size = 17 }) {
   );
 }
 
-// The coin / gem / Star counters in the header.
+// The coin / gem counters in the header.
 export function Purse({ cur, amount, onPress, plus = true }) {
-  const ring = cur === 'gems' || cur === 'stars' ? '#45189a' : PINK_RING;
+  const ring = cur === 'gems' ? '#45189a' : PINK_RING;
   return (
     <Pressable onPress={onPress}>
       <Ringed ring={ring} lip={3} ringW={2} border={2.5} innerStyle={styles.purse}>
-        {cur === 'gems' ? <GemIcon size={17} /> : cur === 'stars' ? <Text style={styles.purseStar}>✦</Text> : <CoinIcon size={19} />}
+        {cur === 'gems' ? <GemIcon size={17} /> : <CoinIcon size={19} />}
         <Text style={[styles.purseText, { color: cur === 'coins' ? '#b86200' : '#5a22c8' }, !plus && { marginRight: 6 }]}>{fmt(amount)}</Text>
         {plus && (
           <LinearGradient colors={['#b8ffd9', '#3ddc97', '#16a86a']} style={styles.plus}>
@@ -83,7 +88,11 @@ export function Purse({ cur, amount, onPress, plus = true }) {
 }
 
 // The segmented tab switch (Chests / Squishies / Gems here).
-export function Seg({ tab, onTab, badges = {}, segs = SEGS }) {
+// `onPick(k)`: called on the tap itself (before onTab), for a caller that
+// starts its own animation at once (the Squishies screen's page slide)
+export function Seg({ tab: current, onTab, onPick, badges = {}, segs = SEGS }) {
+  // the tapped tab lights up and the pill moves at once; onTab follows
+  const [tab, press] = useInstantTab(current, onTab);
   const [w, setW] = useState(0);
   const x = useRef(new Animated.Value(0)).current;
   const i = segs.findIndex(([k]) => k === tab);
@@ -100,7 +109,14 @@ export function Seg({ tab, onTab, badges = {}, segs = SEGS }) {
         </Animated.View>
       )}
       {segs.map(([k, label]) => (
-        <Pressable key={k} style={styles.segItem} onPress={() => onTab(k)}>
+        <Pressable
+          key={k}
+          style={styles.segItem}
+          onPress={() => {
+            if (onPick) onPick(k);
+            press(k);
+          }}
+        >
           {k === tab ? (
             <ShadowText style={styles.segOn} shadows={outline3(PINK_RING, 2)}>
               {label}
@@ -121,7 +137,7 @@ export function Seg({ tab, onTab, badges = {}, segs = SEGS }) {
 
 // --- Chests tab -----------------------------------------------------------------
 
-const ChestsTab = memo(function ChestsTab({ profile, day, now, onBuy, onDeal, onVideo, onOpen, onOdds, seasonOn }) {
+const ChestsTab = memo(function ChestsTab({ profile, day, onBuy, onDeal, onVideo, onOpen, onOdds, seasonOn }) {
   const mine = myChests(profile);
   const shelf = ['welcome', ...CHEST_ORDER, 'season'].filter((t) => (mine[t] || 0) > 0);
   const videos = chestVideosLeft(profile, day);
@@ -157,7 +173,7 @@ const ChestsTab = memo(function ChestsTab({ profile, day, now, onBuy, onDeal, on
             <Chest tier="crystal" size={104} />
           </Bob>
           <Text style={[styles.cardName, { color: '#45107a' }]}>Crystal Chest</Text>
-          <Text style={[styles.cardNote, { color: '#45107a' }]}>{hms(untilMidnight(now))}</Text>
+          <TickingText style={[styles.cardNote, { color: '#45107a' }]} text={(now) => hms(untilMidnight(now))} />
           {dealDone ? (
             <View style={styles.sold}>
               <Text style={styles.soldText}>BOUGHT TODAY</Text>
@@ -267,7 +283,7 @@ const ChestsTab = memo(function ChestsTab({ profile, day, now, onBuy, onDeal, on
             </ShadowText>
             <Text style={styles.seasonNote}>6 squishies that leave forever when the season ends: Gourdy, Batty, Hexie and more.</Text>
             <Chip bg="#7a2a00" size={10.5}>
-              Ends in {hms(new Date(2026, 9, 31, 23, 59) - now)}
+              Ends in <TickingText text={(now) => hms(SEASON_END - now)} />
             </Chip>
             <View style={{ alignSelf: 'flex-start' }}>
               <PriceBtn cur="gems" amount={CHESTS.season.gems} onPress={() => onBuy('season')} size={17} padH={16} />
@@ -284,17 +300,16 @@ const ChestsTab = memo(function ChestsTab({ profile, day, now, onBuy, onDeal, on
 
 // --- Squishies tab --------------------------------------------------------------
 
-const SquishTab = memo(function SquishTab({ profile, catalog, artIds, day, now, onPick }) {
+const SquishTab = memo(function SquishTab({ profile, catalog, artIds, day, onPick }) {
   const pickIds = todaysPicks(profile || {}, artIds, day);
   const base = ROSTER.filter((c) => c.base);
   const ownedN = base.filter((c) => owns(profile || {}, c.id)).length;
-  const stars = wallet(profile).stars;
   return (
     <View style={{ gap: 16 }}>
       <View style={{ gap: 8 }}>
         <View style={styles.titleRow}>
           <Title>Today's Picks</Title>
-          <Text style={styles.small}>New picks in {hms(untilMidnight(now))}</Text>
+          <TickingText style={styles.small} text={(now) => `New picks in ${hms(untilMidnight(now))}`} />
         </View>
         <View style={styles.row8}>
           {pickIds.map((id) => {
@@ -316,7 +331,7 @@ const SquishTab = memo(function SquishTab({ profile, catalog, artIds, day, now, 
                       <Text style={styles.pickOld}>{fmt(COIN_PRICE[c.rar])}</Text>
                       <View style={styles.rowCenter}>
                         <CoinIcon size={12} />
-                        <BtnText size={13}>{fmt(creaturePrice(profile || {}, id, 'coins', artIds, day))}</BtnText>
+                        <BtnText size={13}>{fmt(creaturePrice(profile || {}, id, artIds, day))}</BtnText>
                       </View>
                     </Ringed>
                   )}
@@ -331,21 +346,16 @@ const SquishTab = memo(function SquishTab({ profile, catalog, artIds, day, now, 
       <View style={{ gap: 8 }}>
         <View style={styles.titleRow}>
           <Title>All Squishies</Title>
-          <View style={styles.rowCenter}>
-            <Text style={styles.small}>
-              {ownedN} / {base.length} owned
-            </Text>
-            <View style={styles.starsChip}>
-              <Text style={styles.starsChipText}>✦ {fmt(stars)} Stars</Text>
-            </View>
-          </View>
+          <Text style={styles.small}>
+            {ownedN} / {base.length} owned
+          </Text>
         </View>
         {SETS.map((key) => (
           <SetBlock key={key} setKey={key} profile={profile} catalog={catalog} artIds={artIds} onPick={onPick} />
         ))}
       </View>
       <Text style={styles.foot}>
-        Legendaries can't be bought with coins. Get them from chests, the Legendary guarantee, or with Stars from duplicates. Any squishy can drop as Shiny, Rainbow or Golden in chests.
+        Legendaries can't be bought. Get them from chests or the Legendary guarantee. Any squishy can drop as Shiny, Rainbow or Golden in chests, and a duplicate turns into coins.
       </Text>
     </View>
   );
@@ -409,7 +419,7 @@ function SetBlock({ setKey, profile, catalog, artIds, onPick }) {
                 </View>
               ) : chestOnly ? (
                 <View style={[styles.tag, { borderColor: '#e0c8f2' }]}>
-                  <Text style={[styles.tagText, { color: '#8e1580' }]}>✦ {STAR_PRICE[3]} STARS</Text>
+                  <Text style={[styles.tagText, { color: '#8e1580' }]}>IN CHESTS</Text>
                 </View>
               ) : (
                 <Ringed ring={GOLD_RING} lip={2} ringW={1.5} border={2} colors={GOLD} style={{ marginTop: 2 }} innerStyle={{ paddingHorizontal: 6, paddingVertical: 1, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
@@ -577,9 +587,7 @@ function Sheet({ sheet, profile, catalog, artIds, day, onClose, onOpenNow, onBuy
   } else if (sheet.type === 'creature') {
     const c = BY_ID[sheet.id];
     const mine = owns(profile || {}, sheet.id);
-    const price = creaturePrice(profile || {}, sheet.id, 'coins', artIds, day);
-    const starP = STAR_PRICE[c.rar];
-    const stars = wallet(profile).stars;
+    const price = creaturePrice(profile || {}, sheet.id, artIds, day);
     body = (
       <>
         <View style={styles.pvArt}>
@@ -617,16 +625,13 @@ function Sheet({ sheet, profile, catalog, artIds, day, onClose, onOpenNow, onBuy
                 </BtnText>
               </CandyBtn>
             ) : (
-              <CandyBtn kind="gold" stretch padV={12} lip={5} onPress={() => onBuyCreature(sheet.id, 'coins')}>
+              <CandyBtn kind="gold" stretch padV={12} lip={5} onPress={() => onBuyCreature(sheet.id)}>
                 {price !== COIN_PRICE[c.rar] && <Text style={styles.pvOld}>{fmt(COIN_PRICE[c.rar])}</Text>}
                 <BtnText size={19}>BUY</BtnText>
                 <CoinIcon size={18} />
                 <BtnText size={19}>{fmt(price)}</BtnText>
               </CandyBtn>
             )}
-            <CandyBtn kind={stars >= starP ? 'purple' : 'grey'} stretch padV={10} onPress={() => onBuyCreature(sheet.id, 'stars')}>
-              <BtnText ring={stars >= starP ? '#45189a' : '#7a6a8c'}>{`USE ✦ ${starP} STARS${stars < starP ? ` (YOU HAVE ${stars})` : ''}`}</BtnText>
-            </CandyBtn>
           </>
         )}
       </>
@@ -648,24 +653,66 @@ function Sheet({ sheet, profile, catalog, artIds, day, onClose, onOpenNow, onBuy
 // As a tab of the app shell (MainScreen) there's no back button (`onBack`
 // unset), the nav sits under it (no bottom inset), and `onImmersive` hears
 // when the chest opener takes the screen.
-export default function ShopScreen({ profile, creatures, onBack, onBuyProduct, priceOf, startTab = 'chests', onImmersive }) {
+// The Shop's first frame, before its tab is built: a big card and a grid of
+// smaller ones.
+function ShopBones() {
+  return (
+    <View style={{ gap: 12 }}>
+      <BoneCard style={{ gap: 10, alignItems: 'center' }}>
+        <Bone w="50%" h={18} r={9} />
+        <Bone w={150} h={120} r={24} />
+        <Bone w="70%" h={40} r={20} />
+      </BoneCard>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
+        {[0, 1, 2, 3].map((i) => (
+          <BoneCard key={i} style={{ width: '48.4%', gap: 8, alignItems: 'center' }}>
+            <Bone w={80} h={70} r={18} />
+            <Bone w="70%" h={12} r={6} />
+            <Bone w="85%" h={30} r={15} />
+          </BoneCard>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// `openKey`: bumped by App each time something opens the Shop on a tab
+// (`startTab`); the Shop goes there without being rebuilt
+function ShopScreen({ profile, creatures, onBack, onBuyProduct, priceOf, startTab = 'chests', openKey = 0, onImmersive }) {
   const insets = useSafeAreaInsets();
+  // the tab's content is built a couple of frames after the Shop opens
+  // (placeholders until then), so its first frame is up at once
+  const built = useAfterFirstFrame();
   const [tab, setTab] = useState(startTab);
+  const seen = useSeenTabs(tab);
+  const openedAt = useRef(openKey);
   const [sheet, setSheet] = useState(null);
   const [opening, setOpening] = useState(null);
   useEffect(() => onImmersive?.(!!opening), [opening, onImmersive]);
   const [toast, setToast] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [now, setNow] = useState(() => new Date());
-  const ad = useRewardedAd();
-  const scroll = useRef(null);
-  const day = todayKey(now);
-  const w = wallet(profile);
-
+  // today's key (picks and deals change with it), moved on at midnight; the
+  // countdowns tick by themselves (TickingText)
+  const [day, setDay] = useState(() => todayKey(new Date()));
   useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
+    const t = setTimeout(() => setDay(todayKey(new Date())), untilMidnight() + 500);
+    return () => clearTimeout(t);
+  }, [day]);
+  const ad = useRewardedAd();
+  // each tab is its own page with its own scroll (see the pages below)
+  const scrolls = { chests: useRef(null), squish: useRef(null), gems: useRef(null) };
+  // opened again on a tab (a purse, GET SEASON CHEST…): that tab, from the
+  // top, with no sheet up (it used to be rebuilt for this)
+  useEffect(() => {
+    if (openedAt.current === openKey) return;
+    openedAt.current = openKey;
+    setTab(startTab);
+    setSheet(null);
+    scrolls[startTab]?.current?.scrollTo({ y: 0, animated: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openKey, startTab]);
+  // memoized: the buy handlers depend on it, and the memoized tabs on them
+  const w = useMemo(() => wallet(profile), [profile]);
   // the tutorial's view: which sheet is up
   useEffect(() => tutReport({ shopSheet: sheet ? sheet.type : null }), [sheet]);
   useEffect(() => () => tutReport({ shopSheet: null }), []);
@@ -728,10 +775,9 @@ export default function ShopScreen({ profile, creatures, onBack, onBuyProduct, p
     setOpening(tier);
   }, []);
   const buyCreature = useCallback(
-    async (id, cur) => {
-      const price = cur === 'stars' ? STAR_PRICE[BY_ID[id].rar] : creaturePrice(profile || {}, id, 'coins', artIds, day);
-      if (cur === 'stars' && w.stars < price) return flash(`You need ${price - w.stars} more Stars`);
-      const r = await run(() => squad.buyCreature(id, cur), () => price - w.coins);
+    async (id) => {
+      const price = creaturePrice(profile || {}, id, artIds, day);
+      const r = await run(() => squad.buyCreature(id), () => price - w.coins);
       if (r) {
         setSheet(null);
         sfx.play('unlock');
@@ -750,10 +796,58 @@ export default function ShopScreen({ profile, creatures, onBack, onBuyProduct, p
   const goTab = useCallback((k) => {
     setTab(k);
     setSheet(null);
-    scroll.current?.scrollTo({ y: 0, animated: false });
   }, []);
 
+  // Chests | Squishies | Gems are three pages side by side, like the
+  // Squishies screen's: a switch is a native slide started on the tap (Seg's
+  // onPick), towards the left going right in the list and back the other
+  // way. Every tab is built once (the one shown first, then the others in
+  // the background a moment later), so switching never waits on a build.
+  const { width: pageW } = useWindowDimensions();
+  const order = SEGS.map(([k]) => k);
+  const pageX = useRef(new Animated.Value(Math.max(0, order.indexOf(startTab)))).current;
+  const pageAt = useRef(Math.max(0, order.indexOf(startTab)));
+  const slideTo = useCallback(
+    (k) => {
+      const to = Math.max(0, order.indexOf(k));
+      if (pageAt.current === to) return;
+      pageAt.current = to;
+      Animated.timing(pageX, { toValue: to, duration: 360, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true }).start();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pageX],
+  );
+  useEffect(() => slideTo(tab), [tab, slideTo]);
+  // the other two pages one at a time, a second apart: one big build blocks
+  // JS long enough for a tap to wait on it (measured: ~6 s in a debug build
+  // when the whole Shop was built at once)
+  const [warm, setWarm] = useState(0); // pages built in the background so far
+  useEffect(() => {
+    if (!built || warm >= 2) return undefined;
+    const t = setTimeout(() => setWarm((n) => n + 1), 1000);
+    return () => clearTimeout(t);
+  }, [built, warm]);
+  const isOn = (k) => {
+    if (!built) return false;
+    if (seen.has(k)) return true;
+    // the ones not shown first, in the bar's order
+    const rest = order.filter((o) => o !== startTab);
+    return rest.indexOf(k) < warm;
+  };
+  const pageShift = pageX.interpolate({ inputRange: [0, 1, 2], outputRange: [0, -pageW, -2 * pageW] });
+  const pageStyle = [styles.scroll, { paddingBottom: 22 + (onBack ? insets.bottom : 0) }];
+
   const badges = { chests: chestVideosLeft(profile, day) > 0 ? 'FREE' : '', squish: '', gems: '' };
+  // stable, so a re-render of the Shop (a tab switch, a sheet) doesn't
+  // re-render all three tabs' content (they're memoized)
+  const openOdds = useCallback(() => setSheet({ type: 'odds' }), []);
+  const pickCreature = useCallback(
+    (id) => (artIds.includes(id) ? setSheet({ type: 'creature', id }) : flash(`${BY_ID[id].name} is still hatching. Coming soon!`)),
+    [artIds, flash],
+  );
+  const buyPack = useCallback((key) => onBuyProduct(key), [onBuyProduct]);
+  const adsFree = !!profile?.adsFree;
+  const buyNoAds = useCallback(() => (adsFree ? flash('Ads are already off') : onBuyProduct('removeAds')), [adsFree, flash, onBuyProduct]);
 
   return (
     <CandyBackground style={{ paddingTop: insets.top }}>
@@ -771,14 +865,26 @@ export default function ShopScreen({ profile, creatures, onBack, onBuyProduct, p
           <Purse cur="gems" amount={w.gems} onPress={() => goTab('gems')} />
         </View>
       </View>
-      <Seg tab={tab} onTab={goTab} badges={badges} />
-      <ScrollView ref={scroll} style={{ flex: 1 }} contentContainerStyle={[styles.scroll, { paddingBottom: 22 + (onBack ? insets.bottom : 0) }]} showsVerticalScrollIndicator={false}>
-        {tab === 'chests' && (
-          <ChestsTab profile={profile} day={day} now={now} onBuy={buyChest} onDeal={buyDeal} onVideo={videoChest} onOpen={openChest} onOdds={() => setSheet({ type: 'odds' })} seasonOn={seasonOn} />
-        )}
-        {tab === 'squish' && <SquishTab profile={profile} catalog={catalog} artIds={artIds} day={day} now={now} onPick={(id) => (artIds.includes(id) ? setSheet({ type: 'creature', id }) : flash(`${BY_ID[id].name} is still hatching. Coming soon!`))} />}
-        {tab === 'gems' && <GemsTab profile={profile} priceOf={priceOf} onPack={(key) => onBuyProduct(key)} onSwap={swap} onNoAds={() => (profile?.adsFree ? flash('Ads are already off') : onBuyProduct('removeAds'))} noAdsPrice={priceOf('removeAds')} />}
-      </ScrollView>
+      <Seg tab={tab} onPick={slideTo} onTab={goTab} badges={badges} />
+      <View style={styles.pager}>
+        <Animated.View style={[styles.pageTrack, { width: pageW * 3, transform: [{ translateX: pageShift }] }]}>
+          <ScrollView ref={scrolls.chests} style={{ width: pageW }} contentContainerStyle={pageStyle} showsVerticalScrollIndicator={false}>
+            <Reveal ready={isOn('chests')} placeholder={<ShopBones />}>
+              <ChestsTab profile={profile} day={day} onBuy={buyChest} onDeal={buyDeal} onVideo={videoChest} onOpen={openChest} onOdds={openOdds} seasonOn={seasonOn} />
+            </Reveal>
+          </ScrollView>
+          <ScrollView ref={scrolls.squish} style={{ width: pageW }} contentContainerStyle={pageStyle} showsVerticalScrollIndicator={false}>
+            <Reveal ready={isOn('squish')} placeholder={<ShopBones />}>
+              <SquishTab profile={profile} catalog={catalog} artIds={artIds} day={day} onPick={pickCreature} />
+            </Reveal>
+          </ScrollView>
+          <ScrollView ref={scrolls.gems} style={{ width: pageW }} contentContainerStyle={pageStyle} showsVerticalScrollIndicator={false}>
+            <Reveal ready={isOn('gems')} placeholder={<ShopBones />}>
+              <GemsTab profile={profile} priceOf={priceOf} onPack={buyPack} onSwap={swap} onNoAds={buyNoAds} noAdsPrice={priceOf('removeAds')} />
+            </Reveal>
+          </ScrollView>
+        </Animated.View>
+      </View>
 
       <Sheet
         sheet={sheet}
@@ -828,7 +934,6 @@ const styles = StyleSheet.create({
   purses: { marginLeft: 'auto', flexDirection: 'row', gap: 6 },
   purse: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 9, paddingRight: 4, paddingVertical: 3 },
   purseText: { fontFamily: F.black, fontSize: 15 },
-  purseStar: { fontFamily: F.black, fontSize: 15, color: '#8f3cf2' },
   plus: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#ffffff', alignItems: 'center', justifyContent: 'center' },
   plusText: { fontFamily: F.black, fontSize: 15, lineHeight: 17, color: '#ffffff' },
   segOuter: { marginHorizontal: 14, marginBottom: 12 },
@@ -840,6 +945,9 @@ const styles = StyleSheet.create({
   segBadge: { backgroundColor: '#ff2f8f', borderWidth: 1.5, borderColor: '#ffffff', borderRadius: 999, paddingHorizontal: 5 },
   segBadgeText: { fontFamily: F.black, fontSize: 8.5, letterSpacing: 0.6, color: '#ffffff' },
   scroll: { paddingHorizontal: 14, paddingTop: 2 },
+  // Chests | Squishies | Gems, side by side (see slideTo)
+  pager: { flex: 1, overflow: 'hidden' },
+  pageTrack: { flex: 1, flexDirection: 'row' },
   col14: { gap: 14 },
   row10: { flexDirection: 'row', gap: 10 },
   row8: { flexDirection: 'row', gap: 8 },
@@ -893,8 +1001,6 @@ const styles = StyleSheet.create({
   pickPrice: { alignItems: 'center', paddingHorizontal: 10, paddingVertical: 2 },
   pickOld: { fontFamily: F.heavy, fontSize: 9, lineHeight: 10, color: GOLD_RING, textDecorationLine: 'line-through' },
   center: { fontFamily: F.heavy, fontSize: 12, color: '#45107a', textAlign: 'center' },
-  starsChip: { backgroundColor: '#8f3cf2', borderWidth: 2, borderColor: '#ffffff', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 1 },
-  starsChipText: { fontFamily: F.black, fontSize: 11, color: '#ffffff' },
   setName: { borderRadius: 999, borderWidth: 2, borderColor: '#ffffff', borderBottomWidth: 3, paddingHorizontal: 10, paddingVertical: 1 },
   setNameText: { fontFamily: F.display, fontSize: 13, color: '#ffffff' },
   grid4: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
@@ -949,3 +1055,6 @@ const styles = StyleSheet.create({
   toast: { paddingHorizontal: 16, paddingVertical: 8 },
   toastText: { fontFamily: F.display, fontSize: 14, color: PINK_RING },
 });
+
+// memo: App re-renders on things the Shop doesn't show (the bottom nav's tab…)
+export default memo(ShopScreen);

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, KeyboardAvoidingView, ScrollView, Platform, StyleSheet, Animated, Easing } from 'react-native';
+import { View, Text, TextInput, Pressable, KeyboardAvoidingView, ScrollView, Platform, StyleSheet, Animated, Easing, LayoutAnimation, UIManager } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { loginWithEmail, registerWithEmail, setKeepSignedIn } from '../firebase/auth';
@@ -8,6 +8,7 @@ import { authErrorMessage } from '../firebase/authErrors';
 import TutTarget from '../tutorial/Target';
 import ShadowText from '../components/candy/ShadowText';
 import IntroBackground from '../squad/IntroBackground';
+import HopDots from '../components/candy/HopDots';
 import { BtnText, CandyBtn, F, PINK, PINK_RING } from '../squad/ui';
 
 // Log in / Register, from the app shell of "Squish Squad App.html": the
@@ -38,56 +39,23 @@ const GAP = 11; // the card's row gap
 const INPUT_H = 48;
 const FIELD_H = 16 + 4 + INPUT_H; // label, gap, input
 
-// The register-only row: grows open from nothing (height, a small drop and
-// scale-up, fading in) and folds shut again when leaving Register.
-function ExtraRow({ open, children }) {
-  const [mounted, setMounted] = useState(open);
-  const t = useRef(new Animated.Value(open ? 1 : 0)).current;
-  useEffect(() => {
-    if (open) setMounted(true);
-    Animated.timing(t, {
-      toValue: open ? 1 : 0,
-      duration: open ? 420 : 360,
-      easing: open ? Easing.bezier(0.3, 1.2, 0.5, 1) : Easing.bezier(0.42, 0, 1, 1),
-      useNativeDriver: false, // height
-    }).start(({ finished }) => {
-      if (finished && !open) setMounted(false);
-    });
-  }, [open, t]);
-  if (!mounted) return null;
-  return (
-    <Animated.View
-      style={{
-        overflow: 'hidden',
-        marginBottom: -GAP, // the card's gap comes with the row's own height
-        height: t.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, FIELD_H + GAP],
-        }),
-        opacity: t.interpolate({
-          inputRange: [0, 0.6, 1],
-          outputRange: [0, 1, 1],
-        }),
-        transform: [
-          {
-            translateY: t.interpolate({
-              inputRange: [0, 1],
-              outputRange: [-10, 0],
-            }),
-          },
-          {
-            scale: t.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.96, 1],
-            }),
-          },
-        ],
-      }}
-    >
-      {children}
-    </Animated.View>
-  );
+// Switching Log in ↔ Register opens or closes the register-only row (squad
+// name + age) with a native layout animation: it runs on the UI thread, so
+// it stays smooth however busy JS is (the old height animation was driven
+// from JS and stuttered). Under the card, a spacer shrinks by exactly what
+// the row adds (same animation), so the centred column keeps its height and
+// the title and the line under it never move; only the card's lower part
+// does.
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
 }
+const SWAP = {
+  duration: 300,
+  create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+  update: { type: LayoutAnimation.Types.easeInEaseOut },
+  delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity, duration: 150 },
+};
+const EXTRA_H = FIELD_H + GAP; // the register row and the card gap it brings
 
 // A line that fades up whenever its text changes.
 function useFadeUp(text) {
@@ -204,11 +172,12 @@ export default function AuthScreen() {
   const [keep, setKeep] = useState(true);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // the register row's real height plus the card's gap (measured the first
+  // time it opens; until then the computed one)
+  const [extraH, setExtraH] = useState(EXTRA_H);
 
   const isRegister = mode === 'register';
-  const sub = isRegister ? 'Make an account so your squad is saved.' : 'Welcome back! Log in to see your squad.';
   const buttonLabel = isRegister ? 'Create my squad' : 'Log in';
-  const subStyle = useFadeUp(sub);
   const labelStyle = useFadeUp(buttonLabel);
 
   const submit = async () => {
@@ -273,6 +242,7 @@ export default function AuthScreen() {
 
   const switchMode = (next) => {
     if (next === mode) return;
+    LayoutAnimation.configureNext(SWAP);
     setMode(next);
     setError('');
     // Re-entering register always re-asks age from scratch.
@@ -295,7 +265,8 @@ export default function AuthScreen() {
           >
             Squish Squad
           </ShadowText>
-          <Animated.Text style={[styles.sub, subStyle]}>{sub}</Animated.Text>
+          {/* one line for both modes: it stays put while the card changes */}
+          <Text style={styles.sub}>Log in or make an account to save your squad.</Text>
 
           <View style={styles.cardLip}>
             <View style={styles.card}>
@@ -305,12 +276,12 @@ export default function AuthScreen() {
                 <Text style={styles.blocked}>This game needs a parent or guardian to help set up an account. Ask them to continue!</Text>
               ) : (
                 <>
-                  <ExtraRow open={isRegister}>
-                    <View style={styles.row}>
+                  {isRegister && (
+                    <View style={styles.row} onLayout={(e) => setExtraH(Math.round(e.nativeEvent.layout.height) + GAP)}>
                       <Field label="SQUAD NAME" value={nickname} onChangeText={setNickname} placeholder="Captain Squish" maxLength={10} style={styles.flex} />
                       <Field label="AGE" value={ageInput} onChangeText={setAgeInput} keyboardType="number-pad" placeholder="13+" maxLength={3} style={styles.age} />
                     </View>
-                  </ExtraRow>
+                  )}
                   <Field label="EMAIL" value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" placeholder="you@example.com" />
                   <Field
                     label="PASSWORD"
@@ -328,11 +299,16 @@ export default function AuthScreen() {
                   {!!error && <Text style={styles.error}>{error}</Text>}
                   <TutTarget name="enter">
                     <CandyBtn kind="pink" onPress={submit} disabled={submitting} padV={10} lip={5} stretch>
-                      <Animated.View style={labelStyle}>
-                        <BtnText ring={PINK_RING} size={20}>
-                          {submitting ? '…' : buttonLabel}
-                        </BtnText>
-                      </Animated.View>
+                      {/* while it waits on the server: the loading screen's hopping dots */}
+                      {submitting ? (
+                        <HopDots size={14} style={styles.dots} />
+                      ) : (
+                        <Animated.View style={labelStyle}>
+                          <BtnText ring={PINK_RING} size={20}>
+                            {buttonLabel}
+                          </BtnText>
+                        </Animated.View>
+                      )}
                     </CandyBtn>
                   </TutTarget>
                   <Pressable onPress={() => setKeep((v) => !v)} style={styles.keep} hitSlop={6}>
@@ -349,6 +325,8 @@ export default function AuthScreen() {
               )}
             </View>
           </View>
+          {/* room the register row takes when it's open (see SWAP) */}
+          <View style={{ height: isRegister ? 0 : extraH }} />
         </ScrollView>
       </KeyboardAvoidingView>
     </IntroBackground>
@@ -357,6 +335,9 @@ export default function AuthScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  // the dots (14 + 7 hop room) in the label's place: about the label's
+  // line height, so the button keeps its size
+  dots: { height: 26 },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',

@@ -1,5 +1,7 @@
 # Squad economy (2026-10-06 design drop)
 
+> **2026-10-09:** Stars were dropped everywhere (server, database, UI). Duplicates and finished sets now pay coins, growth is XP only, and finishes come from chests only. See ECONOMY_V2.md. The Stars rules below are history.
+
 The switch from per-creature tokens, keys and the Key Shop to the design's chests, gems, Stars and finishes. The spec is `Squish Squad App.html` (a bundled page; its screens and `squad-store.js` are decoded from the `__bundler/manifest` script: gzip + base64 per resource) and `handoff/squad-store.js` in the zip.
 
 ## Rulings (user, 2026-10-06)

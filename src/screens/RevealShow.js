@@ -7,9 +7,10 @@ import OutlinedTitle from '../components/candy/OutlinedTitle';
 import { RaysSpin } from '../components/candy/Decor';
 import CreatureThumbnail from '../components/CreatureThumbnail';
 import sfx from '../audio/sfx';
-import { BY_ID, FIN_LOOK, RAR_LOOK } from '../squad/data';
+import { fmtNum } from '../format';
+import { BY_ID, FIN_LOOK, RAR_LOOK, SET_BONUS } from '../squad/data';
 import MOVES from '../squad/moves';
-import { BtnText, CandyBtn, F, StarIcon } from '../squad/ui';
+import { BtnText, CandyBtn, CoinIcon, F } from '../squad/ui';
 import TutTarget from '../tutorial/Target';
 
 // What came out of a chest (the design's "Reveal Show"): the squishy
@@ -17,7 +18,7 @@ import TutTarget from '../tutorial/Target';
 // banner with its name and rarity drops in (NEW! if it's new). Rarer pulls
 // get more show — the floor from Rare, spotlights and a beat from Epic,
 // fireworks from Legendary — with confetti cannons on every landing.
-// Tap to skip to the end. A duplicate shows the Stars it paid, a set's last
+// Tap to skip to the end. A duplicate shows the coins it paid, a set's last
 // member the reward creature that came with it.
 //
 // Timeline (ms): land 880 · wave 1100 · dance 1900 · celebrate 1900 + D ·
@@ -291,15 +292,15 @@ export default function RevealShow({ pull, creature, chestName, canAgain, onAgai
               )}
               <Text style={styles.from}>from a {chestName.toLowerCase()} chest</Text>
             </View>
-            {pull.stars > 0 && (
+            {pull.coins > 0 && !pull.isNew && !pull.newFinish && (
               <View style={styles.dupe}>
-                <StarIcon size={16} />
-                <Text style={styles.dupeText}>Duplicate! +{pull.stars} Stars</Text>
+                <CoinIcon size={16} />
+                <Text style={styles.dupeText}>Duplicate! +{fmtNum(pull.coins)} coins</Text>
               </View>
             )}
             {pull.reward && (
               <View style={styles.dupe}>
-                <Text style={styles.dupeText}>Set complete! {BY_ID[pull.reward]?.name} joined too</Text>
+                <Text style={styles.dupeText}>Set complete! {BY_ID[pull.reward]?.name} joined too, +{fmtNum(SET_BONUS)} coins</Text>
               </View>
             )}
           </Animated.View>

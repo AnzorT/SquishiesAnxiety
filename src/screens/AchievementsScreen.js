@@ -13,7 +13,10 @@ import OutlinedTitle from '../components/candy/OutlinedTitle';
 import ShadowText, { outline3 } from '../components/candy/ShadowText';
 import CreatureThumbnail from '../components/CreatureThumbnail';
 import AdStrip from '../components/AdStrip';
+import { Bone, Reveal } from '../components/Skeleton';
+import { useScreenReady } from '../components/ScreenLayer';
 import sfx from '../audio/sfx';
+import { fmtNum } from '../format';
 
 // Achievements, as the v3 design's carousel: one big badge at a time under
 // spinning rays and a pulsing halo, neighbours fanned out smaller to either
@@ -199,7 +202,7 @@ function Details({ entry, index, total }) {
         <View style={styles.progWrap}>
           <CandyProgress pct={(prog.cur / prog.max) * 100} height={12} ring={candyColors.pinkRing} fill={['#ffa8e6', '#ff4fbf']} horizontal={false} style={styles.progBar} />
           <ShadowText style={styles.progText} shadows={[[0, 1.5, candyColors.outlineDeep]]}>
-            {`${prog.cur.toLocaleString()} / ${prog.max.toLocaleString()}`}
+            {`${fmtNum(prog.cur)} / ${fmtNum(prog.max)}`}
           </ShadowText>
         </View>
       ) : null}
@@ -212,6 +215,7 @@ function Details({ entry, index, total }) {
 
 export default function AchievementsScreen({ creatures = [], profile = null, customCount = 0, onBack }) {
   const insets = useSafeAreaInsets();
+  const ready = useScreenReady();
   const entries = useMemo(() => computeAchievements(creatures, profile || {}, customCount), [creatures, profile, customCount]);
   const adsFree = !!profile?.adsFree;
   const doneCount = entries.filter((e) => e.done).length;
@@ -286,36 +290,57 @@ export default function AchievementsScreen({ creatures = [], profile = null, cus
         <CandyProgress pct={(doneCount / Math.max(1, entries.length)) * 100} height={12} />
       </View>
 
-      <View style={styles.stage} {...pan.panHandlers}>
-        <View style={styles.center} pointerEvents="none">
-          <RaysSpin size={360} durationMs={12000} rayDeg={9} gapDeg={13} opacity={0.4} fadeStart={0.14} fadeEnd={0.62} />
-          <Halo />
-        </View>
-        <View style={styles.shadowSpot} pointerEvents="none">
-          <Svg width={150} height={26}>
-            <Defs>
-              <RadialGradient id="spot" cx="50%" cy="50%" r="50%">
-                <Stop offset="0" stopColor="#3c006e" stopOpacity={0.35} />
-                <Stop offset="0.7" stopColor="#3c006e" stopOpacity={0} />
-              </RadialGradient>
-            </Defs>
-            <Ellipse cx={75} cy={13} rx={75} ry={13} fill="url(#spot)" />
-          </Svg>
-        </View>
-        <View style={styles.center}>{badges}</View>
-        <RoundButton size={38} onPress={() => go(index - 1)} style={[styles.arrow, { left: 10, opacity: index === 0 ? 0.4 : 1 }]}>
-          <Triangle dir="left" size={8} />
-        </RoundButton>
-        <RoundButton size={38} onPress={() => go(index + 1)} style={[styles.arrow, { right: 10, opacity: index === entries.length - 1 ? 0.4 : 1 }]}>
-          <Triangle dir="right" size={8} />
-        </RoundButton>
-      </View>
+      {/* placeholders while it slides in, then a crossfade to the real thing */}
+      <Reveal
+        fill
+        ready={ready}
+        placeholder={
+          <>
+            <View style={[styles.stage, styles.boneStage]}>
+              <Bone tone="sky" w={150} h={150} r={34} />
+            </View>
+            <View style={[styles.details, { paddingBottom: adsFree ? 26 + insets.bottom : 16 }]}>
+              <Bone tone="sky" w={180} h={22} r={11} />
+              <Bone tone="sky" w={240} h={12} r={6} />
+              <Bone tone="sky" w={200} h={12} r={6} />
+              <Bone tone="sky" w={200} h={10} r={5} style={{ marginTop: 6 }} />
+            </View>
+          </>
+        }
+      >
+        <>
+          <View style={styles.stage} {...pan.panHandlers}>
+            <View style={styles.center} pointerEvents="none">
+              <RaysSpin size={360} durationMs={12000} rayDeg={9} gapDeg={13} opacity={0.4} fadeStart={0.14} fadeEnd={0.62} />
+              <Halo />
+            </View>
+            <View style={styles.shadowSpot} pointerEvents="none">
+              <Svg width={150} height={26}>
+                <Defs>
+                  <RadialGradient id="spot" cx="50%" cy="50%" r="50%">
+                    <Stop offset="0" stopColor="#3c006e" stopOpacity={0.35} />
+                    <Stop offset="0.7" stopColor="#3c006e" stopOpacity={0} />
+                  </RadialGradient>
+                </Defs>
+                <Ellipse cx={75} cy={13} rx={75} ry={13} fill="url(#spot)" />
+              </Svg>
+            </View>
+            <View style={styles.center}>{badges}</View>
+            <RoundButton size={38} onPress={() => go(index - 1)} style={[styles.arrow, { left: 10, opacity: index === 0 ? 0.4 : 1 }]}>
+              <Triangle dir="left" size={8} />
+            </RoundButton>
+            <RoundButton size={38} onPress={() => go(index + 1)} style={[styles.arrow, { right: 10, opacity: index === entries.length - 1 ? 0.4 : 1 }]}>
+              <Triangle dir="right" size={8} />
+            </RoundButton>
+          </View>
 
-      {current ? (
-        <View style={{ paddingBottom: adsFree ? 26 + insets.bottom : 16 }}>
-          <Details key={current.key} entry={current} index={index} total={entries.length} />
-        </View>
-      ) : null}
+          {current ? (
+            <View style={{ paddingBottom: adsFree ? 26 + insets.bottom : 16 }}>
+              <Details key={current.key} entry={current} index={index} total={entries.length} />
+            </View>
+          ) : null}
+        </>
+      </Reveal>
       {/* the ad strip along the bottom, as on Home (none with Remove Ads) */}
       {adsFree ? null : <AdStrip />}
     </CandyBackground>
@@ -338,6 +363,7 @@ const styles = StyleSheet.create({
   },
   totalBar: { paddingHorizontal: 20, paddingTop: 2 },
   stage: { flex: 1, minHeight: 220, overflow: 'hidden' },
+  boneStage: { alignItems: 'center', justifyContent: 'center' },
   center: { position: 'absolute', left: 0, right: 0, top: '46%', height: 0, alignItems: 'center', justifyContent: 'center' },
   halo: { position: 'absolute' },
   shadowSpot: { position: 'absolute', left: 0, right: 0, top: '78%', alignItems: 'center' },

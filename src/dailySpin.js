@@ -1,15 +1,17 @@
+import { fmtNum } from './format';
+
 // Daily Spin, app side. The server (spinWheel in functions/index.js, rules in
 // functions/dailySpin.js) rolls and hands out the prize; the app draws the
 // wheel and lands it on the slice the server picked. The eight slices here
 // must match functions/dailySpin.js, in the same order.
 
-// The shell's wheel (2026-10-08): coins, gems and Stars; `color` is the
+// The shell's wheel (2026-10-08): coins and gems; `color` is the
 // slice's (the design's WCOL).
 export const WHEEL = [
   { kind: 'coins', amount: 100, color: '#ff4fbf' },
   { kind: 'gems', amount: 5, color: '#9d4dff' },
   { kind: 'coins', amount: 250, color: '#ff4fbf' },
-  { kind: 'stars', amount: 20, color: '#9d4dff' },
+  { kind: 'coins', amount: 150, color: '#9d4dff' },
   { kind: 'coins', amount: 50, color: '#ff4fbf' },
   { kind: 'gems', amount: 15, color: '#2fc8f0' },
   { kind: 'coins', amount: 500, color: '#ff4fbf' },
@@ -50,7 +52,7 @@ export function prizeCard(result) {
   if (!result) return null;
   return {
     title: result.kind === 'gems' && result.amount >= 50 ? 'JACKPOT!' : 'You won!',
-    amount: `+${result.amount.toLocaleString()}`,
+    amount: `+${fmtNum(result.amount)}`,
     what: result.kind.toUpperCase(),
   };
 }

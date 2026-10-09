@@ -5,6 +5,7 @@ import { candyFonts } from '../theme/candyTheme';
 import { CoinGlyph, INK, PAPER, SOFT } from './ui';
 import { FOODS } from './data';
 import { FOOD_PACK, foodCost } from './model';
+import { fmtNum } from '../format';
 
 // The kitchen's pantry shop (only in the kitchen: its HUD button, and "Buy
 // food" in the snack picker): every food the fridge holds, how many are in
@@ -87,7 +88,7 @@ export const Pantry = memo(function Pantry({ pantry, fridge, fill, coins, msg, w
           <View style={{ flex: 1 }} />
           <View style={styles.coins}>
             <CoinGlyph size={14} />
-            <Text style={styles.coinsText}>{Math.max(0, Math.round(coins)).toLocaleString()}</Text>
+            <Text style={styles.coinsText}>{fmtNum(Math.max(0, coins))}</Text>
           </View>
           <Pressable onPress={onClose} hitSlop={8} style={styles.close}>
             <Text style={styles.closeText}>✕</Text>

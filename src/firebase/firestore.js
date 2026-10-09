@@ -92,8 +92,8 @@ export function claimDailyChallenge(uid, profile, id) {
 // (`streakDiscount`, used up by buying it — functions/purchases.js).
 // Returns { coins, reward } (null if it isn't ready). Tokens that fill a set
 // put the key on the card, as a box does.
-// The daily chest's coins and streak (the Stars and chests that come with
-// it are the server's: squad dailyGift, which the caller sends).
+// The daily chest's coins and streak (a streak day's gems or chest are the
+// server's: squad dailyGift, which the caller sends).
 export function claimDailyChest(uid, profile) {
   const r = claimChestRules(profile);
   if (!r) return null;
@@ -114,17 +114,46 @@ export function claimDailyChest(uid, profile) {
 
 const cribDocRef = (uid) => userDocRef(uid).collection('crib').doc('state');
 
+// The Crib's state is kept in memory once read (and on every save), so
+// opening the Crib again doesn't wait on a Firestore round trip: it used to
+// read the doc on every visit, showing an empty portrait Crib meanwhile,
+// then rebuild once the doc (and its saved orientation) arrived. This
+// device is the only writer of the doc, so the copy stays current.
+// `preloadCrib` reads it in the background after sign-in.
+const cribCache = new Map(); // uid → the last state read or saved
+const cribLoads = new Map(); // uid → the read in flight
+
 export async function loadCrib(uid) {
-  try {
-    const snap = await cribDocRef(uid).get();
-    return snap.exists ? snap.data() : null;
-  } catch (e) {
-    console.warn('loadCrib failed:', e);
-    return null;
+  if (cribCache.has(uid)) return cribCache.get(uid);
+  if (!cribLoads.has(uid)) {
+    cribLoads.set(
+      uid,
+      cribDocRef(uid)
+        .get()
+        .then((snap) => {
+          const doc = snap.exists ? snap.data() : null;
+          if (!cribCache.has(uid)) cribCache.set(uid, doc);
+          return cribCache.get(uid);
+        })
+        .catch((e) => {
+          console.warn('loadCrib failed:', e);
+          return null;
+        })
+        .finally(() => cribLoads.delete(uid)),
+    );
   }
+  return cribLoads.get(uid);
 }
 
+// The Crib's state if it's already in memory (`undefined` if not read yet,
+// `null` for a player with no Crib saved yet).
+export const peekCrib = (uid) => cribCache.get(uid);
+export const preloadCrib = (uid) => {
+  if (uid) loadCrib(uid);
+};
+
 export function saveCrib(uid, state) {
+  cribCache.set(uid, state);
   cribDocRef(uid).set(state).catch(logFail('saveCrib'));
 }
 

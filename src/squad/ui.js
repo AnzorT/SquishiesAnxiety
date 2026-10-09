@@ -1,11 +1,12 @@
-import React, { memo, useEffect, useRef } from 'react';
+import React, { memo, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SvgXml } from 'react-native-svg';
 import { candyFonts } from '../theme/candyTheme';
 import ShadowText, { outline3 } from '../components/candy/ShadowText';
 import CHEST_ART, { CHEST_BOX } from './chestArt';
-import { COIN_SVG, GEM_SVG, STAR_SVG } from './icons';
+import { COIN_SVG, GEM_SVG } from './icons';
+import { fmtNum } from '../format';
 
 // Small pieces shared by the squad screens (Shop, chest opener, Squishies),
 // drawn from the 2026-10-06 design's CSS. Its "ring" look — a white border
@@ -30,8 +31,7 @@ export const GREEN_RING = '#0d7a4a';
 
 export const CoinIcon = memo(({ size = 19 }) => <SvgXml xml={COIN_SVG} width={size} height={size} />);
 export const GemIcon = memo(({ size = 17 }) => <SvgXml xml={GEM_SVG} width={size} height={size} />);
-export const StarIcon = memo(({ size = 17 }) => <SvgXml xml={STAR_SVG} width={size} height={size} />);
-export const CurrencyIcon = ({ cur, size }) => (cur === 'gems' ? <GemIcon size={size} /> : cur === 'stars' ? <StarIcon size={size} /> : <CoinIcon size={size} />);
+export const CurrencyIcon = ({ cur, size }) => (cur === 'gems' ? <GemIcon size={size} /> : <CoinIcon size={size} />);
 
 // The design's chest (tools/shop-art/render.mjs) at `size` px for its 240px
 // box; the image carries extra room round it for the rays and glow.
@@ -105,14 +105,14 @@ export const BtnText = ({ children, ring = GOLD_RING, size = 16 }) => (
   </ShadowText>
 );
 
-// A gold price button: an icon (coins, gems or Stars) and the amount.
+// A gold price button: an icon (coins or gems) and the amount.
 export function PriceBtn({ cur, amount, was, onPress, disabled, size = 16, padH = 14 }) {
   return (
     <CandyBtn kind={disabled ? 'grey' : 'gold'} onPress={onPress} disabled={disabled} padH={padH} style={{ marginTop: 4 }}>
       {was != null && <Text style={{ fontFamily: F.heavy, fontSize: 10, color: GOLD_RING, textDecorationLine: 'line-through' }}>{was}</Text>}
       <CurrencyIcon cur={cur} size={size - 1} />
       <BtnText ring={disabled ? '#7a6a8c' : GOLD_RING} size={size}>
-        {amount.toLocaleString('en-US')}
+        {fmtNum(amount)}
       </BtnText>
     </CandyBtn>
   );
@@ -132,6 +132,20 @@ export function hms(ms) {
   return `${p(Math.floor(sec / 3600))}:${p(Math.floor(sec / 60) % 60)}:${p(sec % 60)}`;
 }
 export const untilMidnight = (now = new Date()) => new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1) - now;
+
+// A countdown (or any line that changes every second): `text(now)` makes
+// the string. It ticks on its own, so only this Text re-renders each second,
+// never the screen around it (the Shop used to re-render whole every second
+// for its countdowns, which kept the JS thread busy and made every tap in
+// the app wait). Can sit inside another Text.
+export function TickingText({ text, style }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return <Text style={style}>{text(now)}</Text>;
+}
 
 const s = StyleSheet.create({
   shine: { position: 'absolute', left: '9%', right: '9%', top: 2, height: '42%', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.45)' },

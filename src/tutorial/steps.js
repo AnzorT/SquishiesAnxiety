@@ -2,7 +2,7 @@
 // Squash v3.dc.html"), on the squad economy (src/squad): every new player
 // has a Welcome chest that always holds Mittens (functions/squad.js); the
 // second chest is a Basic one bought with the coins earned in the goal
-// step; then a card about Stars, sets and finishes.
+// step; then a card about duplicates, sets and finishes.
 //
 // `tut` on the profile is the current step; 'done' ends it. Each step says
 // what the Guide shows (`ui`) and when to move on (`next`), from the store's
@@ -13,8 +13,8 @@ export const FIRST_STEP = 'start';
 // the Crib picks the tutorial up from here (Phase C)
 export const CRIB_STEP = 'crib';
 export const GOAL_COINS = 500;
-const HOLD_MS = 5000;
-const ROTATE_PX = 260;
+export const HOLD_MS = 5000;
+export const ROTATE_PX = 260;
 
 const isDone = (t) => !t || t === 'done';
 // The tutorial starts after sign-in: nothing shows on the splash or the
@@ -103,7 +103,6 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
     case 'hold': {
       if (!on('toy')) return backToToy();
       if (s.holdMs >= HOLD_MS) return { next: 'rotate' };
-      const left = Math.ceil((HOLD_MS - s.holdMs) / 1000);
       return {
         timed: true,
         ui: spot('stage', 'Squash it!', `Press and hold ${name} with one finger.`, {
@@ -112,8 +111,8 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
           pad: 0,
           place: 'bottom',
           block: false,
-          progress: s.holdMs / HOLD_MS,
-          note: s.holdActive ? `Keep holding… ${left}s` : 'Hold for 5 seconds',
+          // the bar and the countdown are drawn live by the Guide (liveProgress)
+          live: 'hold',
         }),
       };
     }
@@ -128,7 +127,7 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
           pad: 0,
           place: 'bottom',
           block: false,
-          progress: Math.min(1, s.rotateAcc / ROTATE_PX),
+          live: 'rotate',
         }),
       };
 
@@ -158,18 +157,19 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
       return { ui: spot('store', 'Another chest', 'Your coins buy chests in the Shop. Tap here!') };
 
     case 'box2tap':
-      if (s.boxPhase === 'reveal') return { next: 'stars' };
+      if (s.boxPhase === 'reveal') return { next: 'collect' };
       if (!on('store')) return on('home') ? { ui: spot('store', 'Back to the Shop', 'Let’s buy that chest.') } : { hide: true };
       if (smashing) return { ui: spot('chestStage', 'Tap it open', 'Tap tap tap!', { radius: 40, block: false }) };
       if (s.shopSheet === 'got') return { ui: spot('openNow', 'Open it now', 'Tap OPEN NOW.') };
       return { ui: spot('buy:basic', 'A Basic chest', 'It costs 250 coins. Tap to buy it!', { radius: 999 }) };
 
-    case 'stars':
+    case 'stars': // the step's name before Stars were dropped (2026-10-09)
+    case 'collect':
       return {
         ui: card({
-          badge: 'STARS & FINISHES',
-          title: 'Stars!',
-          text: 'Got a squishy you already have? It turns into Stars. Spend Stars to grow your squishies, get the ones you’re missing, or give them a Shiny or Rainbow finish. Finish a set for a bonus squishy!',
+          badge: 'SETS & FINISHES',
+          title: 'Collect them all!',
+          text: 'Got a squishy you already have? It turns into coins. Some come out Shiny, Rainbow or Golden, and chests are the only place to find those. Finish a set for a bonus squishy!',
           buttons: [{ label: 'Got it', next: 'storeBack' }],
         }),
       };
@@ -263,8 +263,8 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
           title: 'New challenges every day',
           text: 'Finish them in the Crib and in the squish game.',
           items: [
-            { icon: '✓', color: '#f2b84a', title: 'Claim all six for the chest', desc: 'Coins, Stars and your streak reward, every day you finish them all.' },
-            { icon: '%', color: '#7fae6a', title: '10 days of streak rewards', desc: 'Coins, Stars, free chests, +5% squish coins a day — and on day 10, half price on a new creature.' },
+            { icon: '✓', color: '#f2b84a', title: 'Claim all six for the chest', desc: 'Coins and your streak reward, every day you finish them all.' },
+            { icon: '%', color: '#7fae6a', title: '10 days of streak rewards', desc: 'Coins, gems, free chests, +5% squish coins a day — and on day 10, half price on a new creature.' },
             { icon: '!', color: '#f2665a', title: 'Miss a day, lose the streak', desc: 'Your streak goes back to day 1.' },
           ],
           buttons: [{ label: 'Got it', next: 'c_offers' }],
@@ -280,7 +280,7 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
           title: 'Make it even squishier',
           text: 'You’re all set! A few more things to know:',
           items: [
-            { icon: '★', color: '#f2b84a', title: 'Chests bring new squishies', desc: 'Free ones every day, more in the Shop. Grow them with Stars in the Star Shop.' },
+            { icon: '★', color: '#f2b84a', title: 'Chests bring new squishies', desc: 'Free ones every day, more in the Shop. Squish them to grow them.' },
             { icon: '✦', color: '#9b84d8', title: 'Create your own', desc: 'Turn a photo or a drawing into a squishy in Collection > My creations.' },
             { icon: '×', color: '#f2665a', title: 'Remove ads', desc: 'A one-time purchase in Settings. No more ads, ever.' },
           ],

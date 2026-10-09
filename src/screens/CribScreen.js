@@ -6,7 +6,7 @@ import CreatureThumbnail from '../components/CreatureThumbnail';
 import DailyChallengesSheet from './DailyChallengesSheet';
 import TutorialGuide from '../tutorial/Guide';
 import { report as tutReport } from '../tutorial/store';
-import { cribCoins, loadCrib, noteCribBuy, saveCrib, setCribSize } from '../firebase/firestore';
+import { cribCoins, loadCrib, noteCribBuy, peekCrib, saveCrib, setCribSize } from '../firebase/firestore';
 import sfx from '../audio/sfx';
 import { level as levelOf } from '../progression';
 import Scene from '../crib/Scene';
@@ -108,7 +108,9 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
   const [frame, setFrame] = useState(0);
   const bump = useCallback(() => setFrame((f) => f + 1), []);
   const [room, setRoom] = useState('living');
-  const [landscape, setLandscape] = useState(false);
+  // the saved orientation from the first render when the Crib's state is
+  // already in memory, so it isn't built in portrait and then rebuilt
+  const [landscape, setLandscape] = useState(() => !!(uid && peekCrib(uid) && peekCrib(uid).landscape));
   const W = box ? box.width : win.width;
   const H = box ? box.height : win.height;
   const [sel, setSel] = useState(null);
@@ -148,9 +150,7 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
   useEffect(() => {
     if (!ready || loaded) return undefined;
     let alive = true;
-    (async () => {
-      const doc = uid ? await loadCrib(uid) : null;
-      if (!alive) return;
+    const build = (doc) => {
       const t = Date.now();
       const st = doc ? normalize(doc, ownedIds, t) : freshState(ownedIds, t, { tutorial: !!tutorialOn });
       if (doc) advanceOffline(st, t);
@@ -165,7 +165,15 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
       setLandscape(!!st.landscape);
       dirty.current = true;
       setLoaded(true);
-    })();
+    };
+    // in memory already (an earlier visit, or the preload after sign-in):
+    // built right away; otherwise read first
+    const cached = uid ? peekCrib(uid) : null;
+    if (cached !== undefined) build(cached ? JSON.parse(JSON.stringify(cached)) : null);
+    else
+      loadCrib(uid).then((doc) => {
+        if (alive) build(doc ? JSON.parse(JSON.stringify(doc)) : null);
+      });
     return () => {
       alive = false;
     };

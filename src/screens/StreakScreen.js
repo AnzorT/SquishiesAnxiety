@@ -14,9 +14,11 @@ import ShineSweep from '../components/candy/ShineSweep';
 import { CoinIcon } from '../components/candy/Coin';
 import CreatureThumbnail from '../components/CreatureThumbnail';
 import { BigFlame, Flame } from '../components/StreakIcons';
-import { Chest, StarIcon } from '../squad/ui';
+import { Chest, GemIcon } from '../squad/ui';
 import { CHEST_COINS, STREAK_BONUS, STREAK_DAYS, dailyView, streakReward, streakRewardText } from '../progression';
 import sfx from '../audio/sfx';
+import { Bone, BoneCard, Reveal } from '../components/Skeleton';
+import { useScreenReady } from '../components/ScreenLayer';
 
 // The daily streak's own screen (the rules are src/progression.js: the
 // streak grows each day the daily chest is opened, every chest pays that
@@ -166,7 +168,7 @@ const LOOK = {
   next: { colors: ['#ffffff', '#faf3ff', '#ecdcff'], ring: '#a23ad8', text: candyColors.ink },
 };
 
-// The prize's picture: coins, Stars, a Silver chest.
+// The prize's picture: coins, gems, a Silver chest.
 function RewardArt({ reward, size }) {
   if (reward.kind === 'coins') {
     const big = reward.amount >= 400;
@@ -178,14 +180,14 @@ function RewardArt({ reward, size }) {
       </View>
     );
   }
-  if (reward.kind === 'stars') return <StarIcon size={size * 0.8} />;
+  if (reward.kind === 'gems') return <GemIcon size={size * 0.8} />;
   if (reward.kind === 'chest') return <Chest tier="silver" size={size * 1.1} />;
   return null;
 }
 
 function rewardCaption(reward) {
   if (reward.kind === 'coins') return `${reward.amount}`;
-  if (reward.kind === 'stars') return `+${reward.amount} STARS`;
+  if (reward.kind === 'gems') return `+${reward.amount} GEMS`;
   if (reward.kind === 'chest') return 'FREE CHEST';
   return '50% OFF';
 }
@@ -268,18 +270,50 @@ function Jackpot({ day, enter }) {
 
 // ---- the screen ---------------------------------------------------------------
 
+// The page while it slides in: the flame and squishy, today's card and the
+// prize tiles as placeholders.
+function StreakBones() {
+  return (
+    <>
+      <View style={[styles.hero, { gap: 10 }]}>
+        <Bone tone="sky" w={150} h={150} r={75} />
+        <Bone tone="sky" w={220} h={14} r={7} />
+      </View>
+      <BoneCard style={{ gap: 8 }}>
+        <Bone w="45%" h={18} r={9} />
+        <Bone w="90%" h={11} r={6} />
+        <Bone w="100%" h={12} r={6} />
+      </BoneCard>
+      <View style={[styles.sectionHead, { gap: 6 }]}>
+        <Bone tone="sky" w={170} h={16} r={8} />
+        <Bone tone="sky" w={240} h={10} r={5} />
+      </View>
+      <View style={styles.grid}>
+        {Array.from({ length: STREAK_DAYS - 1 }, (_, i) => (
+          <View key={i} style={styles.tileSlot}>
+            <Bone tone="sky" h={96} r={18} />
+          </View>
+        ))}
+      </View>
+    </>
+  );
+}
+
 export default function StreakScreen({ profile, mascot, intro = false, onClose, onOpenDaily }) {
   const insets = useSafeAreaInsets();
+  const ready = useScreenReady();
   const [clock, setClock] = useState(() => new Date());
   useEffect(() => {
     const iv = setInterval(() => setClock(new Date()), 30000);
     return () => clearInterval(iv);
   }, []);
   const enter = useRef(new Animated.Value(0)).current;
+  // the tiles' entrance plays once they're built (after the slide-in)
   useEffect(() => {
+    if (!ready) return;
     sfx.play(intro ? 'sparkle' : 'popOpen');
     Animated.timing(enter, { toValue: 1, duration: 1400, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
-  }, [enter, intro]);
+  }, [enter, intro, ready]);
 
   const v = dailyView(profile, clock);
   const todayDay = v.track.find((d) => d.today) || v.track[0];
@@ -305,19 +339,21 @@ export default function StreakScreen({ profile, mascot, intro = false, onClose, 
       </View>
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        <Hero streak={v.streak} mascot={mascot} line={line} />
-        <TodayCard v={v} todayDay={todayDay} />
+        <Reveal ready={ready} placeholder={<StreakBones />} contentStyle={styles.stack}>
+            <Hero streak={v.streak} mascot={mascot} line={line} />
+            <TodayCard v={v} todayDay={todayDay} />
 
-        <View style={styles.sectionHead}>
-          <HaloText style={styles.sectionTitle}>THE DAILY PRIZES</HaloText>
-          <HaloText style={styles.sectionNote}>{`Every chest: ${CHEST_COINS} coins + 1 token + the day’s prize`}</HaloText>
-        </View>
-        <View style={styles.grid}>
-          {tiles.map((d, i) => (
-            <DayTile key={d.n} day={d} enter={enter} i={i} />
-          ))}
-        </View>
-        <Jackpot day={jackpot} enter={enter} />
+            <View style={styles.sectionHead}>
+              <HaloText style={styles.sectionTitle}>THE DAILY PRIZES</HaloText>
+              <HaloText style={styles.sectionNote}>{`Every chest: ${CHEST_COINS} coins + 1 token + the day’s prize`}</HaloText>
+            </View>
+            <View style={styles.grid}>
+              {tiles.map((d, i) => (
+                <DayTile key={d.n} day={d} enter={enter} i={i} />
+              ))}
+            </View>
+            <Jackpot day={jackpot} enter={enter} />
+        </Reveal>
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
@@ -341,6 +377,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 },
   headerSide: { width: 36 },
   body: { paddingHorizontal: 16, paddingBottom: 16, gap: 12 },
+  stack: { gap: 12 }, // the body's gap, inside Reveal's wrapper
 
   hero: { alignItems: 'center', paddingTop: 6, paddingBottom: 2 },
   rays: { position: 'absolute', top: -60, alignSelf: 'center' },

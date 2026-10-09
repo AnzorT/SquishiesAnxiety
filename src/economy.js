@@ -1,5 +1,5 @@
 // Real-money products and their prices. The game's economy itself — coins,
-// gems, Stars, chests and the collection — is src/squad (rules in
+// gems, chests and the collection — is src/squad (rules in
 // functions/squad.js, run by the `squad` Cloud Function).
 
 // Google Play / App Store products — the same ids in both stores (see

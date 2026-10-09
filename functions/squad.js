@@ -3,14 +3,14 @@
 // in index.js runs these in a transaction on users/{uid}. The app's copy of
 // the tables is src/squad/data.js — keep the two in step.
 //
-// Currencies: coins (the profile's `coins`, still written by the app too),
-// gems (bought with real money: the g1–g6 packs in purchases.js) and Stars
-// (from duplicate pulls and set rewards; they grow creatures and buy
-// finishes). Gems, Stars and the collection are server-only fields
+// Currencies: coins (the profile's `coins`, still written by the app too;
+// duplicates and finished sets pay coins here) and gems (bought with real
+// money: the g1–g6 packs in purchases.js). Stars were dropped (user,
+// 2026-10-09). Gems and the collection are server-only fields
 // (firestore.rules).
 //
 // Profile fields this owns:
-//   gems, stars          numbers
+//   gems                 a number
 //   col                  { [id]: { f: { n: 1, s: 1 … }, eq: 'n', st: 0 } } —
 //                        the finishes owned, the one shown, the growth stage
 //   pity                 Gold/Crystal/Rainbow chests since the last
@@ -75,16 +75,15 @@ const SET_OF = Object.fromEntries(
 
 // --- prices and odds ---------------------------------------------------------
 
-const STAR_PRICE = [40, 100, 250, 700];
 const COIN_PRICE = [1500, 4000, 9000, null]; // Legendaries come from chests only
 const PICK_OFF = 0.8; // Today's Picks: 20% off, rounded to 50
-const DUPE = [5, 15, 40, 120, 40]; // Stars for a duplicate (doubled for a finish)
-const SET_BONUS = 50;
-// Finishes: odds in a normal chest (a Rainbow chest triples them); `x` is
-// the Stars price as a multiple of the creature's STAR_PRICE (Golden can't
-// be bought).
-const FIN = { n: { odds: 97.4, x: 0 }, s: { odds: 2, x: 3 }, r: { odds: 0.5, x: 8 }, g: { odds: 0.1, x: 0 } };
-const STAGES = [{ xp: 0, stars: 0 }, { xp: 100, stars: 10 }, { xp: 300, stars: 40 }];
+const DUPE = [400, 1000, 2500, 5000, 2500]; // coins for a duplicate (doubled for a finish)
+const SET_BONUS = 2000; // coins, with a set's reward creature
+// Finishes: odds in a normal chest (a Rainbow chest triples them). They
+// only come from chests.
+const FIN = { n: { odds: 97.4 }, s: { odds: 2 }, r: { odds: 0.5 }, g: { odds: 0.1 } };
+// Growth: the squish XP each stage needs.
+const STAGES = [{ xp: 0 }, { xp: 100 }, { xp: 300 }];
 const CHESTS = {
   basic: { coins: 250, odds: [72, 22, 5, 1] },
   silver: { coins: 600, odds: [55, 33, 9.5, 2.5] },
@@ -102,7 +101,7 @@ const VIDEO_CHESTS = 3; // free Basic chests a day, one video each
 const SWAPS = [{ coins: 2000, gems: 100 }, { coins: 5500, gems: 250 }, { coins: 12000, gems: 500 }];
 // What every player starts with (user, 2026-10-06), given on their first
 // squad move: the profile has no `gems` yet.
-const START = { gems: 600, stars: 180 };
+const START = { gems: 600 };
 const GEM_PACKS = { gems_80: 80, gems_450: 450, gems_950: 950, gems_2000: 2000, gems_5500: 5500, gems_12000: 12000 };
 
 // --- reading a profile -------------------------------------------------------
@@ -125,10 +124,9 @@ function picks(p, artIds, day) {
   return (un.length >= 3 ? un : order).slice(0, 3);
 }
 
-function creaturePrice(p, id, cur, artIds, day) {
+function creaturePrice(p, id, artIds, day) {
   const c = BY_ID[id];
   if (!c || !c.base) return null;
-  if (cur === 'stars') return STAR_PRICE[c.rar];
   const base = COIN_PRICE[c.rar];
   if (!base) return null;
   return picks(p, artIds, day).includes(id) ? Math.round((base * PICK_OFF) / 50) * 50 : base;
@@ -144,7 +142,6 @@ const bad = (error) => ({ error });
 function pay(p, cur, n) {
   if (cur === 'coins') return num(p.coins) >= n ? { coins: num(p.coins) - n } : null;
   if (cur === 'gems') return num(p.gems) >= n ? { gems: num(p.gems) - n } : null;
-  if (cur === 'stars') return num(p.stars) >= n ? { stars: num(p.stars) - n } : null;
   return null;
 }
 
@@ -213,12 +210,12 @@ function roll(p, tier, artIds, random) {
 }
 
 // Adds creature `id` in finish `f` to the collection: new, a new finish,
-// or a duplicate (Stars). A base set's last member also brings its reward.
+// or a duplicate (coins). A base set's last member also brings its reward.
 function grant(p, id, f = 'n') {
   const c = BY_ID[id];
   const col = colOf(p);
   const e = entryOf(p, id);
-  const out = { id, isNew: !e, newFinish: false, stars: 0, reward: null };
+  const out = { id, isNew: !e, newFinish: false, coins: 0, reward: null };
   const set = {};
   const owned = new Set(p.ownedIds || []);
   if (!e) {
@@ -227,19 +224,20 @@ function grant(p, id, f = 'n') {
   } else if (!e.f[f]) {
     set[`col.${id}`] = { ...e, f: { ...e.f, [f]: 1 } };
     out.newFinish = true;
-  } else out.stars = DUPE[c.rar] * (f !== 'n' ? 2 : 1);
-  let stars = num(p.stars) + out.stars;
+  } else out.coins = DUPE[c.rar] * (f !== 'n' ? 2 : 1);
+  let coins = num(p.coins) + out.coins;
   if (c.base) {
     const s = SET_OF[c.set];
     const has = (x) => x === id || owns(p, x);
     if (!col[s.reward] && !owned.has(s.reward) && s.ids.every(has)) {
       set[`col.${s.reward}`] = { f: { n: 1 }, eq: 'n', st: 0 };
       owned.add(s.reward);
-      stars += SET_BONUS;
+      coins += SET_BONUS;
+      out.coins += SET_BONUS;
       out.reward = s.reward;
     }
   }
-  if (stars !== num(p.stars)) set.stars = stars;
+  if (coins !== num(p.coins)) set.coins = coins;
   if (owned.size !== (p.ownedIds || []).length) set.ownedIds = [...owned];
   return { set, result: out };
 }
@@ -267,45 +265,27 @@ function openChest(p, { tier, artIds, random = Math.random }) {
   };
 }
 
-function buyCreature(p, { id, cur, artIds, day }) {
+// Buying a creature, with coins.
+function buyCreature(p, { id, artIds, day }) {
   const c = BY_ID[id];
   if (!c || !c.base || !artIds.includes(id)) return bad('not_for_sale');
   if (owns(p, id)) return bad('owned');
-  const price = creaturePrice(p, id, cur, artIds, day);
+  const price = creaturePrice(p, id, artIds, day);
   if (!price) return bad('not_for_sale');
-  const paid = pay(p, cur, price);
-  if (!paid) return bad(cur === 'stars' ? 'not_enough_stars' : 'not_enough_coins');
+  const paid = pay(p, 'coins', price);
+  if (!paid) return bad('not_enough_coins');
   const g = grant({ ...p, ...paid }, id, 'n');
-  return { set: { ...paid, ...g.set }, result: { ...g.result, price, cur } };
+  return { set: { ...paid, ...g.set }, result: { ...g.result, price, cur: 'coins' } };
 }
 
+// Growing a creature: free once it has squished enough XP.
 function grow(p, { id }) {
   const e = owns(p, id) ? entryOf(p, id) : null;
   if (!e) return bad('not_owned');
   const next = STAGES[num(e.st) + 1];
   if (!next) return bad('max_stage');
   if (num((p.xp || {})[id]) < next.xp) return bad('need_xp');
-  const paid = pay(p, 'stars', next.stars);
-  if (!paid) return bad('not_enough_stars');
-  return { set: { ...paid, [`col.${id}`]: { ...e, st: num(e.st) + 1 } }, result: { id, st: num(e.st) + 1 } };
-}
-
-function finishPrice(id, f) {
-  const c = BY_ID[id];
-  const F = FIN[f];
-  if (!c || !F || !F.x || c.rar > 3) return null;
-  return STAR_PRICE[c.rar] * F.x;
-}
-
-function buyFinish(p, { id, f }) {
-  const e = owns(p, id) ? entryOf(p, id) : null;
-  if (!e) return bad('not_owned');
-  if (e.f[f]) return bad('owned');
-  const price = finishPrice(id, f);
-  if (!price) return bad('not_for_sale');
-  const paid = pay(p, 'stars', price);
-  if (!paid) return bad('not_enough_stars');
-  return { set: { ...paid, [`col.${id}`]: { ...e, f: { ...e.f, [f]: 1 }, eq: f } }, result: { id, f, price } };
+  return { set: { [`col.${id}`]: { ...e, st: num(e.st) + 1 } }, result: { id, st: num(e.st) + 1 } };
 }
 
 function equip(p, { id, f }) {
@@ -322,33 +302,31 @@ function swap(p, { i }) {
   return { set: { ...paid, coins: num(p.coins) + s.coins }, result: { coins: s.coins, gems: s.gems } };
 }
 
-// The profile with the starting gems and Stars if it has none yet, and the
-// fields that writes.
+// The profile with the starting gems if it has none yet, and the fields
+// that writes.
 function withStart(p) {
   if (p.gems != null) return { p, set: {} };
-  const set = { gems: START.gems, stars: num(p.stars) + START.stars };
+  const set = { gems: START.gems };
   if (!owns(p, '1')) set.chestBag = { ...(p.chestBag || {}), welcome: 1 };
   return { p: { ...p, ...set }, set };
 }
 
 // The daily chest's gift (once a day, with the coins the app adds itself):
-// +GIFT_STARS Stars, and the streak day's own reward — Stars (`stars`, up
-// to 20) or a Silver chest (`chest`).
-const GIFT_STARS = 5;
+// the streak day's own server-side reward — gems (`gems`, up to 20) or a
+// Silver chest (`chest`).
 function dailyGift(p, { day, reward }) {
   if (p.giftDay === day) return bad('gift_used');
-  let stars = GIFT_STARS;
   const set = { giftDay: day };
-  if (reward && reward.kind === 'stars') stars += Math.max(0, Math.min(20, Math.floor(num(reward.amount))));
+  const gems = reward && reward.kind === 'gems' ? Math.max(0, Math.min(20, Math.floor(num(reward.amount)))) : 0;
+  if (gems) set.gems = num(p.gems) + gems;
   if (reward && reward.kind === 'chest') Object.assign(set, addChests(p, 'silver'));
-  set.stars = num(p.stars) + stars;
-  return { set, result: { stars, chest: reward && reward.kind === 'chest' ? 'silver' : null } };
+  return { set, result: { gems, chest: reward && reward.kind === 'chest' ? 'silver' : null } };
 }
 
-// `start`: only the starting gems and Stars (the app calls it on sign-in).
-const start = (p) => ({ set: {}, result: { gems: num(p.gems), stars: num(p.stars) } });
+// `start`: only the starting gems (the app calls it on sign-in).
+const start = (p) => ({ set: {}, result: { gems: num(p.gems) } });
 
-const MOVES = { start, dailyGift, buyChest, videoChest, openChest, buyCreature, grow, buyFinish, equip, swap };
+const MOVES = { start, dailyGift, buyChest, videoChest, openChest, buyCreature, grow, equip, swap };
 
 module.exports = {
   RARITY,
@@ -357,7 +335,6 @@ module.exports = {
   ROSTER,
   BY_ID,
   SET_OF,
-  STAR_PRICE,
   COIN_PRICE,
   DUPE,
   SET_BONUS,
@@ -377,6 +354,5 @@ module.exports = {
   creaturePrice,
   roll,
   grant,
-  finishPrice,
   MOVES,
 };

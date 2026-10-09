@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -13,30 +13,29 @@ import { CustomArt } from '../components/CustomCards';
 import HomeMenu, { MENU_BUTTON } from '../components/HomeMenu';
 import { Flame } from '../components/StreakIcons';
 import TutTarget from '../tutorial/Target';
-import { measureTarget, report as tutReport, useTutorialStore } from '../tutorial/store';
+import { measureTarget, report as tutReport, useTutorialSelect } from '../tutorial/store';
 import sfx from '../audio/sfx';
-import { BY_ID, FIN, RAR_LOOK, ROSTER, SEASON, SETS, SET_BONUS, SET_OF, STAGE_FX, STAGE_NAMES, STAR_PRICE, creaturePrice, entry, finishPrice, growInfo, owns, setInfo, wallet } from '../squad/data';
+import { BY_ID, FIN, RAR_LOOK, ROSTER, SEASON, SETS, SET_BONUS, SET_OF, STAGE_FX, STAGE_NAMES, creaturePrice, entry, growInfo, owns, setInfo, wallet } from '../squad/data';
 import * as squad from '../squad/api';
 import MOVES from '../squad/moves';
 import { todayKey } from '../dailySpin';
 import { BtnText, CandyBtn, F, PINK_RING, Ringed } from '../squad/ui';
-import { Purse, Seg, Title } from './ShopScreen';
+import { Purse, Title } from './ShopScreen';
+import { Bone, Reveal, useAfterFirstFrame } from '../components/Skeleton';
+import { fmtNum } from '../format';
+import useInstantTab from '../components/useInstantTab';
 
 // The main screen's Squishies tab (the 2026-10-06 design's "Squishies Tab
 // v2", inside the app shell's MainScreen): the SQUAD header (LV, the Crib,
 // trophies, settings, and the menu for daily challenges, streak and stats),
-// the purses, and
-//  · Collection — split into the game's Squishies (how many collected, the
-//    season, and every set with its members, growth pips, finish diamond
-//    and set reward) and My creations (Create your own squishy, then each
-//    creature the player made: play, retry, delete);
-//  · Star Shop — the Stars, who's ready to grow, the squishies still
-//    missing (for Stars) and Shiny / Rainbow finishes for the squad.
+// the purses, and the collection, split into the game's Squishies (how many
+// collected, the season, and every set with its members, growth pips,
+// finish diamond and set reward) and My creations (Create your own squishy,
+// then each creature the player made: play, retry, delete).
 // Tapping a squishy opens its sheet: growth (Baby → Grown → Best Friend,
-// XP from squishing + Stars), finishes (preview, wear, buy), SQUISH, or how
-// to get it. Every change goes to the server (src/squad/api.js).
-
-const SEGS = [['col', 'Collection'], ['star', 'Star Shop']];
+// from squish XP alone), finishes (preview, wear; they only drop in
+// chests), SQUISH, or how to get it. Every change goes to the server
+// (src/squad/api.js). The Star Shop tab went with Stars (2026-10-09).
 const SET_LOOK = {
   snack: { name: 'Snack Shack', vibe: 'Street-food buddies', tint: '#fff0e2', lip: '#f2c7a0', ink: '#c4651f', perk: 'Unlocks the Snack Shack kitchen theme' },
   fruit: { name: 'Fruit Patch', vibe: 'Juicy and bright', tint: '#fff6d6', lip: '#ecd078', ink: '#b88a00', perk: 'Unlocks a fruit-stand furniture set' },
@@ -51,9 +50,7 @@ const SET_LOOK = {
 const FIN_SW = { n: ['#ffe3f4', '#e6d3ff'], s: ['#ffffff', '#cbeaff', '#a9c8ff'], r: ['#ffb3c7', '#ffe38a', '#b3f5c8', '#b3e0ff', '#dcc2ff'], g: ['#fff3b0', '#ffc233', '#f0a000'] };
 const FIN_RING = { n: '#d6b8ee', s: '#9fc4ee', r: '#cdb0f2', g: '#d9a020' };
 const FIN_NAME = { n: 'Normal', s: 'Shiny', r: 'Rainbow', g: 'Golden' };
-const PURPLE = ['#efe6ff', '#b48bff', '#8f3cf2'];
-const GREY = ['#e6dcf0', '#c9b9da', '#b9a6cc'];
-const fmt = (n) => Number(n).toLocaleString('en-US');
+const fmt = fmtNum;
 
 // How a squishy looks in its finish: Rainbow and Golden are the
 // thumbnail's own holo / gold washes, Shiny a pale sheen.
@@ -94,15 +91,50 @@ function Egg({ size = 40, colors = ['#efe4fb', '#cdb8ec'] }) {
   );
 }
 
+// The Collection while its cells are still being built (Home's first frame):
+// two set cards of placeholder cells.
+function CollectionBones() {
+  return (
+    <View style={{ gap: 12 }}>
+      {[0, 1].map((k) => (
+        <View key={k} style={[styles.setCard, { backgroundColor: '#ffffff', borderBottomColor: '#e3d4f5' }]}>
+          <View style={styles.setHead}>
+            <View style={{ flex: 1, gap: 6 }}>
+              <Bone w="45%" h={16} r={8} />
+              <Bone w="65%" h={9} r={5} />
+            </View>
+            <Bone w={52} h={24} r={12} />
+          </View>
+          <Bone h={7} r={4} />
+          <View style={styles.grid4}>
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <View key={i} style={styles.cellSlot}>
+                <Bone h={88} r={16} />
+              </View>
+            ))}
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 // One squishy in a set's grid.
 // A tutorial target (`card:<id>`), in `refs` so the screen can scroll to it
-const Cell = memo(function Cell({ id, profile, creature, onOpen, refs }) {
-  const c = BY_ID[id];
-  const R = RAR_LOOK[c.rar];
+// A cell's look from the profile: owned, growth stage, equipped finish.
+function cellLook(profile, id) {
   const mine = owns(profile || {}, id);
   const e = mine ? entry(profile, id) : null;
-  const st = e?.st || 0;
-  const eq = e?.eq || 'n';
+  return { mine, st: (e && e.st) || 0, eq: (e && e.eq) || 'n' };
+}
+
+// It takes only what it shows (owned, stage, finish), not the whole profile:
+// with the profile, any profile change (coins from the Crib, a daily tick)
+// re-rendered all 72 cells, which took about 1.4 s in a debug build on
+// coming back to Home.
+const Cell = memo(function Cell({ id, mine, st, eq, creature, onOpen, refs }) {
+  const c = BY_ID[id];
+  const R = RAR_LOOK[c.rar];
   return (
     <TutTarget name={`card:${id}`} style={styles.cellSlot}>
       <View ref={(r) => (refs.current[id] = r)} collapsable={false}>
@@ -224,7 +256,7 @@ const CollectionTab = memo(function CollectionTab({ profile, catalog, artIds, on
               {[...SET_OF[key].ids]
                 .sort((a, b) => BY_ID[a].rar - BY_ID[b].rar || a - b)
                 .map((id) => (
-                  <Cell key={id} id={id} profile={profile} creature={catalog[id]} onOpen={onOpen} refs={refs} />
+                  <Cell key={id} id={id} {...cellLook(profile, id)} creature={catalog[id]} onOpen={onOpen} refs={refs} />
                 ))}
             </View>
             <Pressable style={[styles.reward, { borderBottomColor: L.lip }]} onPress={() => onOpen(rw.id)}>
@@ -237,7 +269,7 @@ const CollectionTab = memo(function CollectionTab({ profile, catalog, artIds, on
                 </View>
                 <Text style={styles.rewardName}>{rw.name}</Text>
                 <Text style={styles.rewardNote}>
-                  Collect all {info.total} for +{SET_BONUS} Stars. {L.perk}.
+                  Collect all {info.total} for +{fmt(SET_BONUS)} coins. {L.perk}.
                 </Text>
               </View>
               <View style={[styles.rewardPill, rwMine ? { backgroundColor: '#16a86a' } : { backgroundColor: '#ffffff', borderColor: '#f2c98f' }]}>
@@ -247,7 +279,7 @@ const CollectionTab = memo(function CollectionTab({ profile, catalog, artIds, on
           </View>
         );
       })}
-      <Text style={styles.foot}>Squish a squishy to earn XP, then spend Stars to grow it. Duplicates turn into Stars.</Text>
+      <Text style={styles.foot}>Squish a squishy to earn XP and grow it. Duplicates turn into coins.</Text>
     </View>
   );
 });
@@ -334,14 +366,23 @@ const SUBS = [
   ['game', 'Squishies'],
   ['mine', 'My creations'],
 ];
-function SubSeg({ sub, onSub, mineCount }) {
+function SubSeg({ sub: current, onSub, onPick, mineCount }) {
+  // the tapped side lights up at once; onSub follows
+  const [sub, press] = useInstantTab(current, onSub);
   return (
     <View style={styles.subTrack}>
       {SUBS.map(([k, label]) => {
         const on = sub === k;
         const text = k === 'mine' && mineCount ? `${label} · ${mineCount}` : label;
         return (
-          <Pressable key={k} style={{ flex: 1 }} onPress={() => onSub(k)}>
+          <Pressable
+            key={k}
+            style={{ flex: 1 }}
+            onPress={() => {
+              if (onPick) onPick(k);
+              press(k);
+            }}
+          >
             {on ? (
               <Ringed ring={PINK_RING} lip={3} ringW={2} border={2.5} colors={['#ffd6f4', '#ff5cc6', '#c02bd9']} innerStyle={styles.subOn}>
                 <BtnText size={14}>{text}</BtnText>
@@ -371,119 +412,6 @@ function LevelPill({ level }) {
 
 const HEADER_BUTTON = 40;
 
-// --- Star Shop tab ----------------------------------------------------------------
-
-const StarTab = memo(function StarTab({ profile, catalog, artIds, onOpen, onGrow, onFinish }) {
-  const stars = wallet(profile).stars;
-  const mineIds = ROSTER.filter((c) => owns(profile || {}, c.id) && catalog[c.id]).map((c) => c.id);
-  const ready = mineIds.filter((id) => {
-    const g = growInfo(profile, id);
-    return g && !g.max && g.xpOk;
-  });
-  const missing = ROSTER.filter((c) => c.base && artIds.includes(c.id) && !owns(profile || {}, c.id));
-  const chips = [['Common +5', RAR_LOOK[0].bg], ['Rare +15', RAR_LOOK[1].bg], ['Epic +40', RAR_LOOK[2].bg], ['Legendary +120', RAR_LOOK[3].bg], ['×2 with a finish', '#ffe38a']];
-  return (
-    <View style={{ gap: 16 }}>
-      <Ringed ring="#45189a" lip={6} radius={24} colors={['#efe6ff', '#c9b0ff', '#9a6bff']} innerStyle={styles.starsCard}>
-        <View style={styles.rowBase}>
-          <ShadowText style={styles.starsBig} shadows={[[0, 3, '#45189a'], [2, 0, '#45189a'], [-2, 0, '#45189a'], [0, -2, '#45189a']]}>
-            ✦ {fmt(stars)}
-          </ShadowText>
-          <Text style={styles.starsWord}>Stars</Text>
-        </View>
-        <Text style={styles.starsNote}>Earned from duplicates, set rewards and Best Friends. Spend them on squishies you're missing, Shiny and Rainbow finishes, and growing.</Text>
-        <View style={styles.chips}>
-          {chips.map(([t, bg]) => (
-            <View key={t} style={[styles.dupeChip, { backgroundColor: bg }]}>
-              <Text style={styles.dupeChipText}>{t}</Text>
-            </View>
-          ))}
-        </View>
-      </Ringed>
-
-      {ready.length > 0 && (
-        <View style={{ gap: 8 }}>
-          <Title>Ready to grow</Title>
-          {ready.map((id) => {
-            const g = growInfo(profile, id);
-            const e = entry(profile, id);
-            return (
-              <View key={id} style={styles.listRow}>
-                <Pressable style={[styles.listArt, { backgroundColor: RAR_LOOK[BY_ID[id].rar].card }]} onPress={() => onOpen(id)}>
-                  <Squishy creature={catalog[id]} size={40} stage={e.st} f={e.eq} />
-                </Pressable>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.listName}>{BY_ID[id].name}</Text>
-                  <Text style={styles.listStep}>
-                    {STAGE_NAMES[g.stage]} → {g.next}
-                  </Text>
-                </View>
-                <CandyBtn kind={g.starsOk ? 'purple' : 'grey'} padH={12} lip={3} onPress={() => onGrow(id)}>
-                  <BtnText ring={g.starsOk ? '#45189a' : '#7a6a8c'} size={14}>{`✦ ${g.needStars}`}</BtnText>
-                </CandyBtn>
-              </View>
-            );
-          })}
-        </View>
-      )}
-
-      <View style={{ gap: 8 }}>
-        <View style={styles.titleRow}>
-          <Title>Squishies you're missing</Title>
-          <Text style={styles.small}>{missing.length} left</Text>
-        </View>
-        <View style={styles.grid4}>
-          {missing.map((c) => (
-            <Pressable key={c.id} style={[styles.cell, { backgroundColor: RAR_LOOK[c.rar].card, borderBottomColor: RAR_LOOK[c.rar].lip }]} onPress={() => onOpen(c.id)}>
-              <View style={[styles.cellDot, { backgroundColor: RAR_LOOK[c.rar].dot }]} />
-              <CreatureThumbnail creature={catalog[c.id]} size={50} animate={false} />
-              <Text style={[styles.cellName, { color: '#4a1a73' }]} numberOfLines={1}>
-                {c.name}
-              </Text>
-              <LinearGradient colors={PURPLE} style={styles.starTag}>
-                <Text style={styles.starTagText}>✦ {fmt(STAR_PRICE[c.rar])}</Text>
-              </LinearGradient>
-            </Pressable>
-          ))}
-        </View>
-        {missing.length === 0 && <Text style={styles.center}>You have every squishy that's out so far.</Text>}
-      </View>
-
-      <View style={{ gap: 8 }}>
-        <Title>Finishes for your squad</Title>
-        {mineIds
-          .filter((id) => BY_ID[id].rar < 4)
-          .map((id) => {
-            const e = entry(profile, id);
-            return (
-              <View key={id} style={[styles.listRow, { borderBottomColor: '#d6c4ef', paddingVertical: 5 }]}>
-                <Pressable style={[styles.listArt, { width: 42, height: 42, backgroundColor: RAR_LOOK[BY_ID[id].rar].card }]} onPress={() => onOpen(id)}>
-                  <Squishy creature={catalog[id]} size={38} stage={e.st} f={e.eq} />
-                </Pressable>
-                <Text style={[styles.listName, { flex: 1, fontSize: 14 }]} numberOfLines={1}>
-                  {BY_ID[id].name}
-                </Text>
-                {['s', 'r'].map((k) => {
-                  const own = !!e.f[k];
-                  const wearing = e.eq === k;
-                  return (
-                    <Pressable key={k} onPress={() => onFinish(id, k)} style={({ pressed }) => [pressed && { transform: [{ translateY: 2 }] }]}>
-                      <LinearGradient colors={own ? FIN_SW[k] : ['#ffffff', '#ffffff']} style={[styles.finBtn, { borderColor: '#ffffff', shadowColor: FIN_RING[k] }]}>
-                        <Text style={styles.finBtnName}>{k === 's' ? 'SHINY' : 'RAINBOW'}</Text>
-                        <Text style={styles.finBtnLabel}>{wearing ? 'WEARING' : own ? 'WEAR' : `✦ ${fmt(finishPrice(id, k))}`}</Text>
-                      </LinearGradient>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            );
-          })}
-      </View>
-      <Text style={styles.foot}>Golden can't be bought. It drops in 0.1% of chest pulls, or 0.3% from Rainbow chests. Legendaries cost Stars only.</Text>
-    </View>
-  );
-});
-
 // --- the squishy sheet ---------------------------------------------------------------
 
 function SquishySheet({ id, profile, catalog, artIds, day, onClose, onPlay, onGrow, onFinish, onBuy, onShop }) {
@@ -504,16 +432,13 @@ function SquishySheet({ id, profile, catalog, artIds, day, onClose, onPlay, onGr
   const g = mine ? growInfo(profile, id) : null;
   const eq = e?.eq || 'n';
   const show = preview || eq;
-  const stars = wallet(profile).stars;
   const info = MOVES[Number(id)] || [];
-  const starP = STAR_PRICE[c.rar];
-  const coinP = c.base ? creaturePrice(profile || {}, id, 'coins', artIds, day) : null;
-  const prevPrice = mine && preview && !e.f[preview] ? finishPrice(id, preview) : null;
+  const coinP = c.base ? creaturePrice(profile || {}, id, artIds, day) : null;
 
   let lock = '';
   let lockBtn = '';
   if (!mine) {
-    if (!art) lock = `${c.name} is still being hatched. It joins the chests and the Star Shop soon.`;
+    if (!art) lock = `${c.name} is still being hatched. It joins the chests and the Shop soon.`;
     else if (c.pass) lock = 'Season Pass exclusive. Coming with the Spooky Squish pass.';
     else if (c.season) {
       lock = `Only in the ${SEASON.name} Season Chest.`;
@@ -521,6 +446,9 @@ function SquishySheet({ id, profile, catalog, artIds, day, onClose, onPlay, onGr
     } else if (c.reward) {
       const inf = setInfo(profile, c.set);
       lock = `Set reward. Collect all ${inf.total} ${L.name} squishies to unlock it (${inf.have} / ${inf.total}).`;
+    } else if (!coinP) {
+      lock = 'Legendaries only come from Gold, Crystal and Rainbow chests.';
+      lockBtn = 'GET CHESTS';
     }
   }
 
@@ -528,7 +456,7 @@ function SquishySheet({ id, profile, catalog, artIds, day, onClose, onPlay, onGr
     <View style={StyleSheet.absoluteFill}>
       <Pressable style={styles.scrim} onPress={onClose} />
       <Animated.View style={[styles.sheet, { transform: [{ translateY: up.interpolate({ inputRange: [0, 1], outputRange: [700, 0] }) }] }]}>
-        <ScrollView contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false}>
           <View style={styles.grip} />
           <View style={styles.pvArt}>
             <View style={[styles.pvGlow, { backgroundColor: R.dot }]} />
@@ -588,9 +516,9 @@ function SquishySheet({ id, profile, catalog, artIds, day, onClose, onPlay, onGr
                   <View style={styles.xpBar}>
                     <LinearGradient colors={['#ffb3e0', '#c02bd9']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: `${Math.min(100, (g.xp / g.needXp) * 100)}%`, height: '100%', borderRadius: 999 }} />
                   </View>
-                  <CandyBtn kind={g.xpOk && g.starsOk ? 'purple' : 'grey'} padV={8} stretch onPress={() => (g.xpOk ? onGrow(id) : onPlay(id))}>
-                    <BtnText ring={g.xpOk && g.starsOk ? '#45189a' : '#7a6a8c'} size={15}>
-                      {g.xpOk ? `GROW TO ${g.next.toUpperCase()} · ✦ ${g.needStars}` : `SQUISH TO EARN ${g.needXp - g.xp} XP`}
+                  <CandyBtn kind={g.xpOk ? 'purple' : 'grey'} padV={8} stretch onPress={() => (g.xpOk ? onGrow(id) : onPlay(id))}>
+                    <BtnText ring={g.xpOk ? '#45189a' : '#7a6a8c'} size={15}>
+                      {g.xpOk ? `GROW TO ${g.next.toUpperCase()}` : `SQUISH TO EARN ${g.needXp - g.xp} XP`}
                     </BtnText>
                   </CandyBtn>
                 </>
@@ -608,9 +536,8 @@ function SquishySheet({ id, profile, catalog, artIds, day, onClose, onPlay, onGr
               {['n', 's', 'r', 'g'].map((k) => {
                 const F2 = FIN[k];
                 const own = !!e?.f?.[k];
-                const price = finishPrice(id, k);
                 const sel = show === k;
-                const state = own ? (eq === k ? 'WEARING' : 'OWNED') : k === 'n' ? 'BASE' : mine && price ? `✦ ${fmt(price)}` : `${F2.odds}%`;
+                const state = own ? (eq === k ? 'WEARING' : 'OWNED') : k === 'n' ? 'BASE' : `${F2.odds}%`;
                 return (
                   <Pressable
                     key={k}
@@ -628,32 +555,9 @@ function SquishySheet({ id, profile, catalog, artIds, day, onClose, onPlay, onGr
                 );
               })}
             </View>
-            {!!prevPrice && (
-              <CandyBtn kind={stars >= prevPrice ? 'purple' : 'grey'} padV={8} stretch onPress={() => onFinish(id, preview)}>
-                <BtnText ring={stars >= prevPrice ? '#45189a' : '#7a6a8c'} size={15}>{`GET ${FIN_NAME[preview].toUpperCase()} · ✦ ${fmt(prevPrice)}`}</BtnText>
-              </CandyBtn>
-            )}
+            {mine && !!preview && !e.f[preview] && <Text style={styles.boxNote}>{FIN_NAME[preview]} only drops in chests.</Text>}
           </View>
 
-          {mine && (
-            <TutTarget name="sheetPlay" style={{ alignSelf: 'stretch' }}>
-              <CandyBtn kind="cyan" padV={12} lip={5} stretch onPress={() => onPlay(id)}>
-                <BtnText ring="#0c5a9c" size={18}>
-                  SQUISH ▶
-                </BtnText>
-              </CandyBtn>
-            </TutTarget>
-          )}
-          {!mine && art && c.base && (
-            <CandyBtn kind={stars >= starP ? 'purple' : 'grey'} padV={11} lip={5} stretch onPress={() => onBuy(id, 'stars')}>
-              <BtnText ring={stars >= starP ? '#45189a' : '#7a6a8c'} size={17}>{`USE ✦ ${fmt(starP)} STARS${stars < starP ? ` (YOU HAVE ${fmt(stars)})` : ''}`}</BtnText>
-            </CandyBtn>
-          )}
-          {!mine && art && c.base && !!coinP && (
-            <CandyBtn kind="gold" padV={11} lip={5} stretch onPress={() => onBuy(id, 'coins')}>
-              <BtnText size={17}>{`BUY ★ ${fmt(coinP)}`}</BtnText>
-            </CandyBtn>
-          )}
           {!!lock && (
             <View style={styles.lock}>
               <Text style={styles.lockText}>{lock}</Text>
@@ -667,6 +571,27 @@ function SquishySheet({ id, profile, catalog, artIds, day, onClose, onPlay, onGr
             </View>
           )}
         </ScrollView>
+        {/* the sheet's actions stay in view under the scrolling part: at the
+            end of the scroll, SQUISH sat below the sheet's visible bottom
+            (under the ad strip), where the tutorial pointed at it */}
+        {(mine || (art && c.base && !!coinP)) && (
+          <View style={styles.sheetFoot}>
+            {mine && (
+              <TutTarget name="sheetPlay" style={{ alignSelf: 'stretch' }}>
+                <CandyBtn kind="cyan" padV={12} lip={5} stretch onPress={() => onPlay(id)}>
+                  <BtnText ring="#0c5a9c" size={18}>
+                    SQUISH ▶
+                  </BtnText>
+                </CandyBtn>
+              </TutTarget>
+            )}
+            {!mine && art && c.base && !!coinP && (
+              <CandyBtn kind="gold" padV={11} lip={5} stretch onPress={() => onBuy(id)}>
+                <BtnText size={17}>{`BUY ★ ${fmt(coinP)}`}</BtnText>
+              </CandyBtn>
+            )}
+          </View>
+        )}
       </Animated.View>
     </View>
   );
@@ -728,7 +653,8 @@ function GrowFx({ id, to, creature, f, onClose }) {
 
 // --- the screen ----------------------------------------------------------------------
 
-export default function SquishiesScreen({
+function SquishiesScreen({
+  active = true,
   profile,
   creatures,
   onPlay,
@@ -761,16 +687,20 @@ export default function SquishiesScreen({
   onOpenStreak,
 }) {
   const insets = useSafeAreaInsets();
-  const [tab, setTab] = useState('col');
   const [sub, setSub] = useState('game');
   const [open, setOpen] = useState(null);
   const [grow, setGrow] = useState(null);
   const [toast, setToast] = useState(null);
   const [busy, setBusy] = useState(false);
   const scroll = useRef(null);
-  const now = useMemo(() => new Date(), []);
+  // the lists are built a couple of frames after the screen (placeholders
+  // until then), so its first frame is up at once
+  const built = useAfterFirstFrame();
+  // read again each time the screen comes back (App keeps it alive under
+  // other screens), so a new day shows without a remount
+  const now = useMemo(() => new Date(), [active]); // eslint-disable-line react-hooks/exhaustive-deps
   const day = todayKey(now);
-  const w = wallet(profile);
+  const w = useMemo(() => wallet(profile), [profile]);
   const catalog = useMemo(() => Object.fromEntries((creatures || []).map((c) => [c.id, c])), [creatures]);
   const artIds = useMemo(() => Object.keys(catalog).filter((id) => BY_ID[id]), [catalog]);
 
@@ -788,7 +718,7 @@ export default function SquishiesScreen({
       try {
         return await fn();
       } catch (e) {
-        const msg = { not_enough_stars: 'Not enough Stars yet', not_enough_coins: 'Not enough coins', need_xp: 'Squish it more to earn XP first', owned: 'Already yours' }[e.message];
+        const msg = { not_enough_coins: 'Not enough coins', need_xp: 'Squish it more to earn XP first', owned: 'Already yours' }[e.message];
         flash(msg || 'Something went wrong. Try again!');
         return null;
       } finally {
@@ -803,37 +733,27 @@ export default function SquishiesScreen({
       const g = growInfo(profile, id);
       if (!g || g.max) return;
       if (!g.xpOk) return flash(`Squish ${BY_ID[id].name} ${g.needXp - g.xp} more times first`);
-      if (!g.starsOk) return flash(`You need ${g.needStars - w.stars} more Stars`);
       const r = await run(() => squad.growCreature(id));
       if (r) {
         setOpen(null);
         setGrow({ id, to: r.st, f: entry(profile, id)?.eq || 'n' });
       }
     },
-    [profile, w, run, flash],
+    [profile, run, flash],
   );
+  // wearing a finish the squishy has (finishes only drop in chests)
   const doFinish = useCallback(
     async (id, f) => {
       const e = entry(profile, id);
       if (!e) return;
-      if (e.f[f]) {
-        if (e.eq !== f) await run(() => squad.equipFinish(id, f));
-        return;
-      }
-      const price = finishPrice(id, f);
-      if (!price) return flash('That finish only drops from chests');
-      if (w.stars < price) return flash(`You need ${price - w.stars} more Stars`);
-      const r = await run(() => squad.buyFinish(id, f));
-      if (r) {
-        sfx.play('sparkle');
-        flash(`${FIN_NAME[f]} ${BY_ID[id].name}!`);
-      }
+      if (!e.f[f]) return flash('That finish only drops from chests');
+      if (e.eq !== f) await run(() => squad.equipFinish(id, f));
     },
-    [profile, w, run, flash],
+    [profile, run, flash],
   );
   const doBuy = useCallback(
-    async (id, cur) => {
-      const r = await run(() => squad.buyCreature(id, cur));
+    async (id) => {
+      const r = await run(() => squad.buyCreature(id));
       if (r) {
         sfx.play('unlock');
         flash(r.reward ? `Set complete! ${BY_ID[r.reward].name} joined too` : `${BY_ID[id].name} joined your squad!`);
@@ -866,25 +786,57 @@ export default function SquishiesScreen({
       list.push({ key: 'streak', label: 'DAILY STREAK', variant: 'flame', icon: <Flame size={18} />, onPress: onOpenStreak, badge: streak, badgeGold: true, hot: streakHot });
     }
     list.push({ key: 'stats', label: 'STATS', icon: <StatsIcon size={22} />, onPress: onOpenStats });
+    // Settings lives in this menu (2026-10-09 ruling), not in the header
+    list.push({ key: 'settings', label: 'SETTINGS', icon: <GearIcon size={21} />, onPress: onOpenSettings });
     return list;
-  }, [dailyUnlocked, dailyBadge, streak, streakHot, onOpenDaily, onOpenStreak, onOpenStats]);
+  }, [dailyUnlocked, dailyBadge, streak, streakHot, onOpenDaily, onOpenStreak, onOpenStats, onOpenSettings]);
 
-  const toTop = useCallback(() => scroll.current?.scrollTo({ y: 0, animated: false }), []);
-  const pickSub = useCallback(
+  // My creations' own scroll (see the Squishies | My creations pages below)
+  const mineScroll = useRef(null);
+  const openSeasonChest = useCallback(() => onOpenShop('chests'), [onOpenShop]);
+
+  // Squishies and My creations are two pages side by side, and switching
+  // slides between them (to My creations: out left / in right). Both stay
+  // built, so a switch is only the slide (native, started on the tap's own
+  // frame); rebuilding a page took about 1.5 s on the emulator. Each page
+  // keeps its own scroll.
+  const { width: pageW } = useWindowDimensions();
+  const subX = useRef(new Animated.Value(0)).current;
+  const subAt = useRef(0);
+  const slideSub = useCallback(
+    (k) => {
+      const to = k === 'mine' ? 1 : 0;
+      if (subAt.current === to) return;
+      subAt.current = to;
+      Animated.timing(subX, { toValue: to, duration: 360, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true }).start();
+    },
+    [subX],
+  );
+  useEffect(() => slideSub(sub), [sub, slideSub]);
+  // My creations is built in the background a moment after Squishies
+  const [mineWarm, setMineWarm] = useState(false);
+  useEffect(() => {
+    if (!built || mineWarm) return undefined;
+    const t = setTimeout(() => setMineWarm(true), 1200);
+    return () => clearTimeout(t);
+  }, [built, mineWarm]);
+  const mineOn = mineWarm || sub === 'mine';
+  const subShift = subX.interpolate({ inputRange: [0, 1], outputRange: [0, -pageW] });
+  const pickSub = useCallback((k) => setSub(k), []);
+  // the tap itself: the sound and the slide at once (pickSub follows)
+  const onPickSub = useCallback(
     (k) => {
       if (k === sub) return;
       sfx.play('swipe');
-      setSub(k);
-      toTop();
+      slideSub(k);
     },
-    [sub, toTop],
+    [sub, slideSub],
   );
   // Back from CREATE with a new creature: My creations, at the top.
   useEffect(() => {
     if (!focusMine) return;
-    setTab('col');
     setSub('mine');
-    toTop();
+    mineScroll.current?.scrollTo({ y: 0, animated: false });
     onFocusMineDone();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusMine]);
@@ -892,29 +844,28 @@ export default function SquishiesScreen({
   // The tutorial: which list is up, which squishy's sheet is open, and —
   // when its guide points at a squishy's cell — that cell scrolled into view
   // (then measured again where it landed).
-  useEffect(() => tutReport({ listTab: tab === 'col' && sub === 'mine' ? 'mine' : 'ours' }), [tab, sub]);
+  useEffect(() => tutReport({ listTab: sub === 'mine' ? 'mine' : 'ours' }), [sub]);
   useEffect(() => tutReport({ squadSheet: open == null ? null : String(open) }), [open]);
   useEffect(() => () => tutReport({ squadSheet: null }), []);
   const cellRefs = useRef({});
   const box = useRef(null);
   const offY = useRef(0);
-  const tut = useTutorialStore();
-  const target = tut.screen === 'home' && tut.ui && typeof tut.ui.target === 'string' ? tut.ui.target : null;
+  // only the guide's target on Home (re-rendering on every tutorial change
+  // rebuilt this whole screen many times a second)
+  const target = useTutorialSelect((s) => (s.screen === 'home' && s.ui && typeof s.ui.target === 'string' ? s.ui.target : null));
   const want = target && target.startsWith('card:') ? target : null;
   // My creations' switch and Create card sit at the top of Collection
   const wantTop = target === 'tabs' || target === 'createCard';
   useEffect(() => {
     if (!wantTop) return undefined;
-    setTab('col');
     setOpen(null);
-    scroll.current?.scrollTo({ y: 0, animated: true });
+    if (target === 'createCard') mineScroll.current?.scrollTo({ y: 0, animated: true });
     const t = setTimeout(() => measureTarget(target), 500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wantTop, target]);
   useEffect(() => {
-    if (!want) return undefined;
-    setTab('col');
+    if (!want || !built) return undefined;
     setSub('game');
     const t = setTimeout(() => {
       const cell = cellRefs.current[want.slice(5)];
@@ -928,7 +879,7 @@ export default function SquishiesScreen({
       );
     }, 400);
     return () => clearTimeout(t);
-  }, [want]);
+  }, [want, built]);
 
   return (
     <CandyBackground style={{ paddingTop: insets.top }}>
@@ -946,51 +897,45 @@ export default function SquishiesScreen({
           <RoundButton size={HEADER_BUTTON} onPress={onOpenAchievements}>
             <TrophyIcon size={22} />
           </RoundButton>
-          <RoundButton size={HEADER_BUTTON} onPress={onOpenSettings}>
-            <GearIcon size={21} />
-          </RoundButton>
           <View style={styles.menuSlot} />
         </View>
       </View>
       <View style={styles.purses}>
         <Purse cur="coins" amount={w.coins} plus={false} onPress={() => onOpenShop('gems')} />
         <Purse cur="gems" amount={w.gems} plus={false} onPress={() => onOpenShop('gems')} />
-        <Purse cur="stars" amount={w.stars} plus={false} onPress={() => setTab('star')} />
       </View>
-      <Seg tab={tab} onTab={(k) => { setTab(k); toTop(); }} segs={SEGS} />
-      <View ref={box} collapsable={false} style={{ flex: 1 }}>
-        <ScrollView
-          ref={scroll}
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingHorizontal: 14, paddingTop: 2, paddingBottom: 22 }}
-          showsVerticalScrollIndicator={false}
-          onScroll={(e) => (offY.current = e.nativeEvent.contentOffset.y)}
-          scrollEventThrottle={32}
-        >
-          {tab === 'col' ? (
-            <>
-              <TutTarget name="tabs" style={{ marginBottom: 12 }}>
-                <SubSeg sub={sub} onSub={pickSub} mineCount={customCreatures.length} />
-              </TutTarget>
-              {sub === 'game' ? (
-                <CollectionTab profile={profile} catalog={catalog} artIds={artIds} onOpen={setOpen} onSeasonChest={() => onOpenShop('chests')} now={now} refs={cellRefs} />
-              ) : (
-                <MineTab
-                  customs={customCreatures}
-                  onCreate={onOpenCreator}
-                  createPrice={createPrice}
-                  credits={generationCredits + paidCredits}
-                  discountPct={discountPct}
-                  onPlay={onSelectCustom}
-                  onDelete={onDeleteCustom}
-                  onRetry={onRetryCustom}
-                />
-              )}
-            </>
-          ) : (
-            <StarTab profile={profile} catalog={catalog} artIds={artIds} onOpen={setOpen} onGrow={doGrow} onFinish={doFinish} />
-          )}
-        </ScrollView>
+      <TutTarget name="tabs" style={styles.subBar}>
+        <SubSeg sub={sub} onSub={pickSub} onPick={onPickSub} mineCount={customCreatures.length} />
+      </TutTarget>
+      <View ref={box} collapsable={false} style={styles.pager}>
+        <Animated.View style={[styles.pageTrack, { width: pageW * 2, transform: [{ translateX: subShift }] }]}>
+          <ScrollView
+            ref={scroll}
+            style={{ width: pageW }}
+            contentContainerStyle={styles.pageBody}
+            showsVerticalScrollIndicator={false}
+            onScroll={(e) => (offY.current = e.nativeEvent.contentOffset.y)}
+            scrollEventThrottle={32}
+          >
+            <Reveal ready={built} placeholder={<CollectionBones />}>
+              <CollectionTab profile={profile} catalog={catalog} artIds={artIds} onOpen={setOpen} onSeasonChest={openSeasonChest} now={now} refs={cellRefs} />
+            </Reveal>
+          </ScrollView>
+          <ScrollView ref={mineScroll} style={{ width: pageW }} contentContainerStyle={styles.pageBody} showsVerticalScrollIndicator={false}>
+            <Reveal ready={mineOn} placeholder={<CollectionBones />}>
+              <MineTab
+                customs={customCreatures}
+                onCreate={onOpenCreator}
+                createPrice={createPrice}
+                credits={generationCredits + paidCredits}
+                discountPct={discountPct}
+                onPlay={onSelectCustom}
+                onDelete={onDeleteCustom}
+                onRetry={onRetryCustom}
+              />
+            </Reveal>
+          </ScrollView>
+        </Animated.View>
       </View>
       {/* under the sheets */}
       <HomeMenu items={menuItems} anchor={menuAnchor} badge={dailyBadge} hot={streakHot} />
@@ -1042,6 +987,12 @@ const styles = StyleSheet.create({
   mineMeta: { fontFamily: F.bold, fontSize: 11, lineHeight: 14, color: '#9467bd' },
   createOff: { fontFamily: F.black, fontSize: 10, color: '#ffffff', backgroundColor: '#ff3d7f', borderRadius: 999, paddingHorizontal: 6, overflow: 'hidden' },
   cellSlot: { width: '23.4%' },
+  // Squishies | My creations, side by side (see slideSub)
+  pager: { flex: 1, overflow: 'hidden' },
+  pageTrack: { flex: 1, flexDirection: 'row' },
+  pageBody: { paddingHorizontal: 14, paddingTop: 2, paddingBottom: 22 },
+  // the Squishies | My creations switch, fixed over its two pages
+  subBar: { paddingHorizontal: 14, paddingTop: 2, paddingBottom: 10 },
   purses: { flexDirection: 'row', gap: 6, paddingHorizontal: 14, paddingBottom: 10 },
   rowCenter: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   rowBase: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
@@ -1093,28 +1044,12 @@ const styles = StyleSheet.create({
   rewardPill: { borderWidth: 2, borderColor: '#ffffff', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   rewardPillText: { fontFamily: F.black, fontSize: 10, letterSpacing: 0.5 },
   foot: { fontFamily: F.bold, fontSize: 10.5, lineHeight: 15, color: 'rgba(255,255,255,0.9)', textAlign: 'center', paddingHorizontal: 10 },
-  starsCard: { gap: 6, paddingHorizontal: 14, paddingVertical: 12 },
-  starsBig: { fontFamily: F.display, fontSize: 32, color: '#ffffff' },
-  starsWord: { fontFamily: F.display, fontSize: 16, color: '#45189a' },
-  starsNote: { fontFamily: F.heavy, fontSize: 11.5, lineHeight: 15.5, color: '#3a1a80' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
-  dupeChip: { borderWidth: 1.5, borderColor: '#ffffff', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 1 },
-  dupeChipText: { fontFamily: F.black, fontSize: 9.5, color: '#3a1a80' },
-  listRow: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 18, backgroundColor: '#ffffff', ...card, borderBottomWidth: 6, borderBottomColor: '#e2a9d6', paddingHorizontal: 8, paddingVertical: 6 },
-  listArt: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  listName: { fontFamily: F.display, fontSize: 15, color: '#4a1a73' },
-  listStep: { fontFamily: F.heavy, fontSize: 10.5, color: '#8a5aa8' },
-  titleRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
-  small: { fontFamily: F.black, fontSize: 11, color: '#45107a' },
-  starTag: { borderWidth: 2, borderColor: '#ffffff', borderRadius: 999, paddingHorizontal: 7 },
-  starTagText: { fontFamily: F.display, fontSize: 11, color: '#ffffff' },
-  center: { fontFamily: F.heavy, fontSize: 12, color: '#45107a', textAlign: 'center' },
-  finBtn: { alignItems: 'center', borderWidth: 2, borderRadius: 12, paddingHorizontal: 7, paddingVertical: 2, minWidth: 58 },
-  finBtnName: { fontFamily: F.black, fontSize: 8.5, letterSpacing: 0.6, color: '#4a1a73' },
-  finBtnLabel: { fontFamily: F.display, fontSize: 12, lineHeight: 14, color: '#4a1a73' },
   scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(30,0,60,0.55)' },
   sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '90%', borderTopLeftRadius: 30, borderTopRightRadius: 30, backgroundColor: '#fbefff', borderTopWidth: 3, borderColor: '#ffffff' },
-  sheetBody: { paddingTop: 20, paddingHorizontal: 16, paddingBottom: 26, alignItems: 'center', gap: 9 },
+  // shrinks to leave the footer (sheetFoot) in view
+  sheetScroll: { flexShrink: 1 },
+  sheetBody: { paddingTop: 20, paddingHorizontal: 16, paddingBottom: 14, alignItems: 'center', gap: 9 },
+  sheetFoot: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 14, gap: 8, borderTopWidth: 2, borderTopColor: '#f0dcf7' },
   grip: { width: 44, height: 5, borderRadius: 999, backgroundColor: '#e0c8f2', marginTop: -8 },
   pvArt: { width: 160, height: 160, alignItems: 'center', justifyContent: 'center' },
   pvGlow: { position: 'absolute', width: 150, height: 150, borderRadius: 75, opacity: 0.35 },
@@ -1147,3 +1082,7 @@ const styles = StyleSheet.create({
   toast: { paddingHorizontal: 16, paddingVertical: 8 },
   toastText: { fontFamily: F.display, fontSize: 14, color: PINK_RING },
 });
+
+// memo: App re-renders on things this screen doesn't show (the bottom nav's
+// tab, the Shop's state…)
+export default memo(SquishiesScreen);

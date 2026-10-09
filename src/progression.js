@@ -16,7 +16,7 @@ import { todayKey } from './dailySpin.js';
 //   streak     days in a row the chest was opened; lastFull the last one.
 //              Each streak day adds STREAK_BONUS to squish coins (up to
 //              STREAK_DAYS days). A missed day resets it. Every chest also
-//              pays that streak day's reward (STREAK_REWARDS: coins, Stars,
+//              pays that streak day's reward (STREAK_REWARDS: coins, gems,
 //              a free Silver chest, and on day 10 half price on the next creation —
 //              `streakDiscount`); the track starts over after day 10.
 //              bestStreak is the longest one, chests the chests opened.
@@ -31,11 +31,11 @@ export const STREAK_DAYS = 10;
 export const STREAK_REWARDS = [
   { day: 1, kind: 'coins', amount: 100, label: '100' },
   { day: 2, kind: 'coins', amount: 150, label: '150' },
-  { day: 3, kind: 'stars', amount: 10, label: '+10' },
+  { day: 3, kind: 'gems', amount: 10, label: '+10' },
   { day: 4, kind: 'coins', amount: 250, label: '250' },
   { day: 5, kind: 'chest', label: 'CHEST' },
   { day: 6, kind: 'coins', amount: 400, label: '400' },
-  { day: 7, kind: 'stars', amount: 20, label: '+20' },
+  { day: 7, kind: 'gems', amount: 20, label: '+20' },
   { day: 8, kind: 'coins', amount: 600, label: '600' },
   { day: 9, kind: 'chest', label: 'CHEST' },
   { day: 10, kind: 'half', label: '50%' },
@@ -44,7 +44,7 @@ export const STREAK_REWARDS = [
 export const streakReward = (n) => STREAK_REWARDS[(Math.max(1, n) - 1) % STREAK_DAYS];
 export function streakRewardText(r) {
   if (r.kind === 'coins') return `+${r.amount} coins`;
-  if (r.kind === 'stars') return `+${r.amount} Stars`;
+  if (r.kind === 'gems') return `+${r.amount} gems`;
   if (r.kind === 'chest') return 'a free Silver chest';
   return 'half price on your next creation';
 }
@@ -208,8 +208,8 @@ export function claimDaily(profile, id, date = todayKey()) {
 }
 
 // Opens the chest once every challenge is claimed: CHEST_COINS, the streak
-// and its day's reward (`reward`, applied by the caller: coins here, Stars
-// and chests by the server's dailyGift with its +5 Stars) and, from level 3, a level a day. Null
+// and its day's reward (`reward`, applied by the caller: coins here, gems
+// and chests by the server's dailyGift) and, from level 3, a level a day. Null
 // if it isn't ready.
 export function claimChest(profile, date = todayKey()) {
   const s = dailyState(profile, date);

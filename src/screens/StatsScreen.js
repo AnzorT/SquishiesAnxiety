@@ -11,6 +11,9 @@ import { CandyProgress } from '../components/candy/Decor';
 import CreatureThumbnail from '../components/CreatureThumbnail';
 import AssembleCreature from '../components/AssembleCreature';
 import AdStrip from '../components/AdStrip';
+import { Bone, Reveal } from '../components/Skeleton';
+import { useScreenReady } from '../components/ScreenLayer';
+import { fmtNum } from '../format';
 
 // The player's stats, opened from Home's chart button (they used to sit at
 // the bottom of Settings): their favourite creature, a grid of totals, and
@@ -70,6 +73,34 @@ function Card({ children, style }) {
   );
 }
 
+// The page while it slides in: the same cards, holding placeholders.
+function StatsBones() {
+  return (
+    <>
+      <Card>
+        <View style={styles.favRow}>
+          <Bone w={92} h={92} r={46} />
+          <View style={[styles.flex, { gap: 8 }]}>
+            <Bone w="60%" h={10} r={5} />
+            <Bone w="80%" h={20} r={10} />
+            <Bone w="50%" h={10} r={5} />
+          </View>
+        </View>
+      </Card>
+      <View style={styles.grid}>
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+          <Card key={i} style={styles.tile}>
+            <View style={{ alignItems: 'center', gap: 6 }}>
+              <Bone w="55%" h={22} r={11} />
+              <Bone w="75%" h={9} r={5} />
+            </View>
+          </Card>
+        ))}
+      </View>
+    </>
+  );
+}
+
 function Tile({ value, label, color }) {
   return (
     <Card style={styles.tile}>
@@ -85,6 +116,7 @@ function Tile({ value, label, color }) {
 
 export default function StatsScreen({ creatures = [], customCreatures = [], profile = null, onBack }) {
   const insets = useSafeAreaInsets();
+  const ready = useScreenReady();
   const p = profile || {};
   const stats = p.stats || {};
   const adsFree = !!p.adsFree;
@@ -102,13 +134,13 @@ export default function StatsScreen({ creatures = [], customCreatures = [], prof
   const top = ranked.slice(0, TOP_COUNT);
 
   const tiles = [
-    { label: 'SQUISHES', value: (stats.presses || 0).toLocaleString(), color: '#d3179a' },
+    { label: 'SQUISHES', value: fmtNum(stats.presses || 0), color: '#d3179a' },
     { label: 'LONGEST HOLD', value: `${((stats.longestHoldMs || 0) / 1000).toFixed(1)}s`, color: '#1695d6' },
     { label: 'TIME SQUISHING', value: formatDuration(totalMs), color: '#7a2ff0' },
-    { label: 'COINS EARNED', value: (p.totalEarned || 0).toLocaleString(), color: candyColors.goldInk },
+    { label: 'COINS EARNED', value: fmtNum(p.totalEarned || 0), color: candyColors.goldInk },
     { label: 'CREATURES', value: `${owned}/${rosterSize}`, color: '#d3179a' },
     { label: 'ACHIEVEMENTS', value: `${achDone}/${achievements.length}`, color: candyColors.goldInk },
-    { label: 'BOXES OPENED', value: (p.boxOpens || 0).toLocaleString(), color: '#7a2ff0' },
+    { label: 'BOXES OPENED', value: fmtNum(p.boxOpens || 0), color: '#7a2ff0' },
     { label: 'BIGGEST BOOST', value: p.maxMult ? `×${p.maxMult}` : '—', color: '#1695d6' },
   ];
 
@@ -122,53 +154,55 @@ export default function StatsScreen({ creatures = [], customCreatures = [], prof
       </View>
 
       <ScrollView contentContainerStyle={[styles.body, { paddingBottom: adsFree ? insets.bottom + 24 : 24 }]} showsVerticalScrollIndicator={false}>
-        <Card>
-          <View style={styles.favRow}>
-            <View style={styles.favArt}>{favorite ? <Art entry={favorite} size={92} /> : null}</View>
-            <View style={styles.flex}>
-              <Text style={styles.kicker}>FAVORITE CREATURE</Text>
-              {favorite ? (
-                <>
-                  <Text style={styles.favName} numberOfLines={1}>
-                    {nameOf(favorite)}
-                  </Text>
-                  <Text style={styles.favSub}>{`${formatDuration(favorite.ms)} of squishing`}</Text>
-                </>
-              ) : (
-                <Text style={styles.favSub}>Squish a creature to find your favorite!</Text>
-              )}
-            </View>
-          </View>
-        </Card>
-
-        <View style={styles.grid}>
-          {tiles.map((t) => (
-            <Tile key={t.label} {...t} />
-          ))}
-        </View>
-
-        {top.length ? (
-          <Card>
-            <Text style={[styles.kicker, styles.listTitle]}>MOST SQUISHED</Text>
-            {top.map((entry, i) => (
-              <View key={entry.id} style={[styles.rankRow, i === top.length - 1 && styles.rankRowLast]}>
-                <Text style={styles.rankNum}>{i + 1}</Text>
-                <View style={styles.rankArt}>
-                  <Art entry={entry} size={40} />
-                </View>
+        <Reveal ready={ready} placeholder={<StatsBones />} contentStyle={styles.stack}>
+            <Card>
+              <View style={styles.favRow}>
+                <View style={styles.favArt}>{favorite ? <Art entry={favorite} size={92} /> : null}</View>
                 <View style={styles.flex}>
-                  <View style={styles.rankTop}>
-                    <Text style={styles.rankName} numberOfLines={1}>
-                      {nameOf(entry)}
-                    </Text>
-                    <Text style={styles.rankTime}>{formatDuration(entry.ms)}</Text>
-                  </View>
-                  <CandyProgress pct={(entry.ms / top[0].ms) * 100} height={8} ring={candyColors.pinkRing} fill={['#ffa8e6', '#ff4fbf']} />
+                  <Text style={styles.kicker}>FAVORITE CREATURE</Text>
+                  {favorite ? (
+                    <>
+                      <Text style={styles.favName} numberOfLines={1}>
+                        {nameOf(favorite)}
+                      </Text>
+                      <Text style={styles.favSub}>{`${formatDuration(favorite.ms)} of squishing`}</Text>
+                    </>
+                  ) : (
+                    <Text style={styles.favSub}>Squish a creature to find your favorite!</Text>
+                  )}
                 </View>
               </View>
-            ))}
-          </Card>
-        ) : null}
+            </Card>
+
+            <View style={styles.grid}>
+              {tiles.map((t) => (
+                <Tile key={t.label} {...t} />
+              ))}
+            </View>
+
+            {top.length ? (
+              <Card>
+                <Text style={[styles.kicker, styles.listTitle]}>MOST SQUISHED</Text>
+                {top.map((entry, i) => (
+                  <View key={entry.id} style={[styles.rankRow, i === top.length - 1 && styles.rankRowLast]}>
+                    <Text style={styles.rankNum}>{i + 1}</Text>
+                    <View style={styles.rankArt}>
+                      <Art entry={entry} size={40} />
+                    </View>
+                    <View style={styles.flex}>
+                      <View style={styles.rankTop}>
+                        <Text style={styles.rankName} numberOfLines={1}>
+                          {nameOf(entry)}
+                        </Text>
+                        <Text style={styles.rankTime}>{formatDuration(entry.ms)}</Text>
+                      </View>
+                      <CandyProgress pct={(entry.ms / top[0].ms) * 100} height={8} ring={candyColors.pinkRing} fill={['#ffa8e6', '#ff4fbf']} />
+                    </View>
+                  </View>
+                ))}
+              </Card>
+            ) : null}
+        </Reveal>
       </ScrollView>
       {/* the ad strip along the bottom, as on Home (none with Remove Ads) */}
       {adsFree ? null : <AdStrip />}
@@ -182,6 +216,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
   body: { paddingHorizontal: 16, paddingTop: 6, gap: 12 },
+  stack: { gap: 12 }, // the body's gap, inside Reveal's wrapper
 
   cardRing: {
     borderRadius: 23,

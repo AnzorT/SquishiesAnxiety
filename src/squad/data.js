@@ -1,11 +1,11 @@
 // The squad economy, app side. The tables and rules are the server's own
 // (functions/squad.js — Metro bundles that file as is), so the two can't
-// drift; the server is still the one that rolls chests and spends gems and
-// Stars (src/squad/api.js). This adds what only the app needs: how chests
+// drift; the server is still the one that rolls chests and spends gems
+// (src/squad/api.js). This adds what only the app needs: how chests
 // look and open, and reads of the profile for the screens.
 import squad from '../../functions/squad.js';
 
-export const { RARITY, SETS, SEASON, ROSTER, BY_ID, SET_OF, STAR_PRICE, COIN_PRICE, DUPE, SET_BONUS, FIN, STAGES, CHESTS, PITY_MAX, EPIC_MAX, DEAL, VIDEO_CHESTS, SWAPS, GEM_PACKS, START, owns, picks, creaturePrice, finishPrice } = squad;
+export const { RARITY, SETS, SEASON, ROSTER, BY_ID, SET_OF, COIN_PRICE, DUPE, SET_BONUS, FIN, STAGES, CHESTS, PITY_MAX, EPIC_MAX, DEAL, VIDEO_CHESTS, SWAPS, GEM_PACKS, START, owns, picks, creaturePrice } = squad;
 
 // Shop order and how each chest opens (the design's TIERS: TAP, HOLD,
 // SWIPE, MIX); the season chest opens like a Basic one.
@@ -51,10 +51,10 @@ export const rarityOf = (id) => (BY_ID[String(id)] ? BY_ID[String(id)].rar : nul
 
 const num = (n) => (typeof n === 'number' && Number.isFinite(n) ? n : 0);
 
-// Gems and Stars before the first squad move are the starting ones.
+// Gems before the first squad move are the starting ones.
 export function wallet(profile) {
   const fresh = profile?.gems == null;
-  return { coins: num(profile?.coins), gems: fresh ? START.gems : num(profile.gems), stars: num(profile?.stars) + (fresh ? START.stars : 0) };
+  return { coins: num(profile?.coins), gems: fresh ? START.gems : num(profile.gems) };
 }
 
 export function entry(profile, id) {
@@ -75,8 +75,7 @@ export function growInfo(profile, id) {
   const next = STAGES[st + 1];
   const xp = num(profile?.xp?.[id]);
   if (!next) return { stage: st, max: true, xp };
-  const stars = wallet(profile).stars;
-  return { stage: st, max: false, xp, needXp: next.xp, needStars: next.stars, xpOk: xp >= next.xp, starsOk: stars >= next.stars, next: STAGE_NAMES[st + 1] };
+  return { stage: st, max: false, xp, needXp: next.xp, xpOk: xp >= next.xp, next: STAGE_NAMES[st + 1] };
 }
 
 export function setInfo(profile, key) {

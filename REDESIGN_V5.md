@@ -1,18 +1,40 @@
 # Redesign v5: the rest of "Squish Squad App.html"
 
-Start here in a new session. The user is short on tokens, so:
+All five steps below are **built** (2026-10-08). What's left is on the user's side (the player reset and the deploy), checking on a phone, and the later rive-rig project.
+
+Working rules, since the user is short on tokens:
 - read only the design sections you're porting;
 - check visuals with screenshots (`tools/shop-art/shot.mjs`) rather than reading whole CSS files;
-- keep each session to one step below.
+- match the **whole** screen against a full-page design shot: background, splash and mascot, not just the widgets. The user caught the old background still behind every screen.
 
-## Where things stand (2026-10-07)
+## Where things stand (2026-10-08)
 
-- The **economy** is already switched to the design: chests, gems, Stars, finishes and growth. See `SQUAD_ECONOMY.md`.
-  - Screens: `src/screens/ShopScreen.js`, `ChestOpener.js`, `RevealShow.js`, `SquishiesScreen.js`.
-  - Shared UI: `src/squad/ui.js` (Ringed, CandyBtn, BtnText, PriceBtn, Chip, Bob, Chest, Coin / Gem / Star icons).
-- **Not deployed yet:** the user runs `firebase deploy --only functions:squad,functions:verifyPurchase,firestore:rules` (the auto-mode classifier blocks the assistant). Until then, chest and Stars moves fail.
-- **Nothing committed** since `b588cc8`. Commit only when the user asks.
-- The user ruled (2026-10-07): restyle the **whole app** to the design, in the order below.
+- Commit only when the user asks.
+- **Roster published** to Firestore: the 30 plush creatures replace the old 20 (see "Roster" below). The app reads the catalog from Firestore again; the `TEMP-DEV-CATALOG` hook is gone.
+- **The user still has to run:**
+  1. The player reset, so everyone starts fresh in the new economy. In PowerShell:
+     ```
+     $env:GOOGLE_APPLICATION_CREDENTIALS = "<path to your service-account key>.json"
+     node tools/plush-art/publish.mjs --reset-players
+     ```
+     Add `--dry` first to preview. It clears gems, chests, the collection and the other economy fields, so the starting 600 gems and the welcome chest are handed out again. It keeps nickname, email, purchases (`adsFree`, `generationCredits`, `paidCredits`, `gemFirst`) and custom creatures.
+  2. The deploy of `verifyPurchase`: `firebase deploy --only functions:verifyPurchase`. `spinWheel`, `squad` and `firestore.rules` went live on 2026-10-09 (see ECONOMY_V2.md).
+- **Stars were dropped on 2026-10-09** (see ECONOMY_V2.md).
+- **Not seen on a phone:** steps 2, 3 and 5, the sky backgrounds and the new splash. The user asked to stop emulator testing on 2026-10-08. Metro builds the app, every changed file passes the Babel scope check, and `functions/*.test.js` pass.
+- The economy itself is described in `SQUAD_ECONOMY.md` (screens: `ShopScreen.js`, `ChestOpener.js`, `RevealShow.js`, `SquishiesScreen.js`; shared UI in `src/squad/ui.js`).
+
+## The APK (2026-10-08)
+
+A release APK for phones, with the JS bundled in, so it runs without the PC:
+`cd android && ./gradlew.bat assembleRelease -PreactNativeArchitectures=arm64-v8a`
+→ `android/app/build/outputs/apk/release/app-release.apk` (about 95 MB; a copy is on the user's Desktop as `SquishSquad.apk`).
+- **arm64 only:** the full build fails on `react-native-reanimated:buildCMakeRelWithDebInfo[armeabi-v7a]` with "ninja: manifest 'build.ninja' still dirty after 100 tries", while arm64-v8a builds fine. Deleting `node_modules/react-native-reanimated/android/.cxx` didn't help, and no file has a future timestamp. So it's most likely Windows' 260-character path limit (the project's path is long and has spaces). Moving the project to a short path (e.g. `C:\pc`) or enabling Windows long paths should allow a full build. 32-bit-only phones and x86 emulators can't run the arm64 APK.
+- It's signed with the debug key (`android/app/build.gradle`): fine for installing straight onto phones, not for the Play Store. Google Play Billing (gem packs, Remove Ads) doesn't work in a sideloaded app.
+- `versionCode` is still 1.
+
+## Unused files, delete when convenient
+
+`CreatureReelScreen.js`, `CandyTabs`, `SkeletonCard`, `MysteryBoxBanner`, `RemoveAdsButton`, `CreateOwnCard` / `CustomCreatureCard` (but `CustomArt` in the same file is used), `CardPager` once those are gone, and `src/data/devCatalog.js` (git-ignored). `RemoveAdsSheet` is still rendered in App, but nothing opens it any more.
 
 ## The design files
 
@@ -45,10 +67,10 @@ Start here in a new session. The user is short on tokens, so:
 User rulings: the old Home carousel is gone; Collection is split into the game's **Squishies** and **My creations**; the Crib keeps its green house button (from level 2) in the header.
 - `src/screens/MainScreen.js`: the shell. Squishies and Shop pages slide side by side, then the ad strip (`AdStrip inset={false}`), then `src/squad/BottomNav.js`. The Shop mounts on its first visit. While the chest opener is up, `ShopScreen` calls `onImmersive(true)` and the ad and nav hide.
 - App: stage `'home'` is the shell. `mainTab` is `'squish' | 'shop'`. `openShopAt(tab)` bumps `shopKey`, which remounts the Shop on that tab. The `'store'` and `'squad'` stages are gone, and so is `HomeScreen.js`. SettingsSheet is now rendered in App.
-- Header: SQUAD, LV pill, then Crib, trophy, settings and the HomeMenu (daily, streak, stats).
+- Header: SQUAD, LV pill, then Crib, trophy and the HomeMenu (daily, streak, stats, settings; Settings moved into the menu 2026-10-09).
 - Tutorial: App reports `screen: 'store'` while the Shop tab is open. Targets: `store` is the Shop nav item and `storeBack` is the Squishies nav item (`box` is no longer used). `card:<id>` is a Collection cell; the screen scrolls it into view when the guide points at it. `sheetPlay` is the sheet's SQUISH; steps use the `squadSheet` report. `tabs` is the Squishies / My creations switch and `createCard` is in My creations; both scroll the list to the top.
 - Not checked on device: the full tutorial run (replay it from Settings), and the ad strip (the test account is ad-free).
-- Orphaned now, delete when convenient: `SkeletonCard`, `MysteryBoxBanner`, `RemoveAdsButton`, `CreateOwnCard` / `CustomCreatureCard` (but `CustomArt` in the same file is used), and `CardPager` once those are gone. `RemoveAdsSheet` is still rendered in App but nothing opens it any more (Remove Ads is in Shop › Gems). `CandyTabs` is still used by AuthScreen. A backup of the deleted `HomeScreen.js` was only kept in that session's scratchpad.
+- The files this step orphaned are listed under "Unused files" at the top. A backup of the deleted `HomeScreen.js` was only kept in that session's scratchpad.
 
 ## Step 2 as built (2026-10-07)
 
@@ -95,7 +117,8 @@ User rulings: the wheel's prizes are the design's (coins / gems / Stars), and on
 
 ## Roster (2026-10-08)
 
-The `TEMP-DEV-CATALOG` hook is removed from App.js: the app reads `creatures/*` from Firestore again. **Published 2026-10-08** (all 30 docs replaced, run with the user's key). The command, for next time: `GOOGLE_APPLICATION_CREDENTIALS=<key.json> node tools/plush-art/publish.mjs --catalog` (add `--dry` first to preview; `--reset-players` also resets every player). The art is already rendered in `tools/plush-art/out/`.
+The `TEMP-DEV-CATALOG` hook is removed from App.js: the app reads `creatures/*` from Firestore again. **Published 2026-10-08**: all 30 docs replaced, run with the user's service-account key (on their Desktop). The command, for next time: `GOOGLE_APPLICATION_CREDENTIALS=<key.json> node tools/plush-art/publish.mjs --catalog` (add `--dry` first to preview). The art is rendered in `tools/plush-art/out/`.
+- **Players not reset yet.** Their `ownedIds` still use the old ids, which now point at different creatures. The user runs `--reset-players` (see "Where things stand").
 
 ## Backgrounds and splash (2026-10-08)
 
@@ -107,3 +130,6 @@ The user found the old pink/purple stage still behind every screen. The design p
 ## Open questions to ask the user (briefly)
 
 - ~~Step 4: Google / Facebook?~~ Ruled 2026-10-08: **email only for now**. Leave the social buttons out.
+- Crib rotate button: the design hides it inside the app (portrait only). We kept it because of the 2026-10-03 ruling for both orientations. Ask if they now want portrait only.
+- The design's mascot is the rive-rig Mittens; we show our Mittens plush instead (splash, daily spin). On a brand-new install the splash has no Mittens until the catalog has been downloaded once.
+- A full APK that also runs on 32-bit phones needs the project moved to a shorter path (see "The APK").

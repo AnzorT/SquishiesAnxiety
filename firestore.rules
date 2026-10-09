@@ -22,18 +22,18 @@ service cloud.firestore {
       // extra spins (`adSpins` counts the day's SPIN AGAIN videos) or the
       // 15%-off-a-creation prize. `adsFree` is paid for
       // (Remove Ads): only verifyPurchase sets it, after Google Play
-      // confirms the purchase. The squad economy's gems, Stars, collection
+      // confirms the purchase. The squad economy's gems, collection
       // and chests are written only by the `squad` Cloud Function (gems
       // also by verifyPurchase) — functions/squad.js.
       allow update: if request.auth != null && request.auth.uid == userId
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['generationCredits', 'paidCredits', 'creationDiscountPct', 'lastSpinDay', 'adSpins', 'spins', 'wheelJackpot', 'adsFree', 'gems', 'stars', 'col', 'pity', 'epic', 'chestBag', 'chestVideos', 'dealDay', 'giftDay', 'gemFirst', 'chestOpens', 'tierPulls']);
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['generationCredits', 'paidCredits', 'creationDiscountPct', 'lastSpinDay', 'adSpins', 'spins', 'wheelJackpot', 'adsFree', 'gems', 'col', 'pity', 'epic', 'chestBag', 'chestVideos', 'dealDay', 'giftDay', 'gemFirst', 'chestOpens', 'tierPulls']);
       // A fresh profile may only ever start with its one free generation
       // (or none set, which the Cloud Function also treats as 1) — never a
       // self-granted stack of them.
       allow create: if request.auth != null && request.auth.uid == userId
         && (!('generationCredits' in request.resource.data) || request.resource.data.generationCredits == 1)
         && (!('adsFree' in request.resource.data) || request.resource.data.adsFree == false)
-        && !request.resource.data.keys().hasAny(['paidCredits', 'creationDiscountPct', 'lastSpinDay', 'adSpins', 'spins', 'wheelJackpot', 'gems', 'stars', 'col', 'pity', 'epic', 'chestBag', 'chestVideos', 'dealDay', 'giftDay', 'gemFirst', 'chestOpens', 'tierPulls']);
+        && !request.resource.data.keys().hasAny(['paidCredits', 'creationDiscountPct', 'lastSpinDay', 'adSpins', 'spins', 'wheelJackpot', 'gems', 'col', 'pity', 'epic', 'chestBag', 'chestVideos', 'dealDay', 'giftDay', 'gemFirst', 'chestOpens', 'tierPulls']);
 
       // Player-made creatures (image-to-3D via the creator flow). Fully
       // owned by that user — nobody else reads or writes them.
