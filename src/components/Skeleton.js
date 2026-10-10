@@ -70,7 +70,8 @@ export const Bone = memo(function Bone({ w = '100%', h = 14, r = 8, tone = 'card
 // `fill`: the wrapper takes the parent's remaining height (flex: 1).
 // `contentStyle`: for the content's wrapper (e.g. the parent's `gap`, which
 // a wrapper View would otherwise swallow).
-const REVEAL = { duration: 320, easing: Easing.out(Easing.quad), useNativeDriver: true };
+// short: the content is ready, the fade only softens the swap
+const REVEAL = { duration: 160, easing: Easing.out(Easing.quad), useNativeDriver: true };
 
 export function Reveal({ ready, placeholder, fill = false, contentStyle, children }) {
   const [bones, setBones] = useState(!ready);

@@ -69,6 +69,8 @@ export default function SkyBackground({ children, style }) {
       style={[styles.fill, style]}
       onLayout={(e) => {
         const { width, height } = e.nativeEvent.layout;
+        // 0 × 0 is a hidden screen (display: none): keep the real size
+        if (!width || !height) return;
         if (!size || size.width !== width || size.height !== height) setSize({ width, height });
       }}
     >

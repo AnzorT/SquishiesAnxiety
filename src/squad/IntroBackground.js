@@ -30,7 +30,7 @@ const Intro = memo(function Intro({ width: w, height: h }) {
 export default function IntroBackground({ children, style }) {
   const [size, setSize] = useState(null);
   return (
-    <View style={[styles.fill, style]} onLayout={(e) => setSize(e.nativeEvent.layout)}>
+    <View style={[styles.fill, style]} onLayout={(e) => e.nativeEvent.layout.width > 0 && e.nativeEvent.layout.height > 0 && setSize(e.nativeEvent.layout)}>
       {size ? <Intro width={size.width} height={size.height} /> : <View style={[StyleSheet.absoluteFill, { backgroundColor: '#b9e2ff' }]} />}
       {children}
     </View>

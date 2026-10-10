@@ -412,6 +412,44 @@ function LevelPill({ level }) {
 
 const HEADER_BUTTON = 40;
 
+// The header and the purses, memoized: the screen re-renders on every trip
+// to another screen and back (`active`), and redrawing these each time
+// (candy buttons, outlined text) was 15-100 ms of each trip in a debug
+// build.
+const Header = memo(function Header({ level, cribUnlocked, onOpenCrib, onOpenAchievements, onMenuSlot }) {
+  return (
+    <View style={styles.header}>
+      <OutlinedTitle text="SQUAD" fill="pink" size={25} outline={3} ring={2} drop={5} />
+      <LevelPill level={level} />
+      <View style={styles.headerIcons} onLayout={onMenuSlot}>
+        {cribUnlocked ? (
+          <TutTarget name="crib">
+            <RoundButton size={HEADER_BUTTON} variant="green" onPress={onOpenCrib}>
+              <HouseIcon />
+            </RoundButton>
+          </TutTarget>
+        ) : null}
+        <RoundButton size={HEADER_BUTTON} onPress={onOpenAchievements}>
+          <TrophyIcon size={22} />
+        </RoundButton>
+        <View style={styles.menuSlot} />
+      </View>
+    </View>
+  );
+});
+
+const Purses = memo(function Purses({ coins, gems, onOpenShop }) {
+  const toGems = () => onOpenShop('gems');
+  return (
+    <View style={styles.purses}>
+      <Purse cur="coins" amount={coins} plus={false} onPress={toGems} />
+      <Purse cur="gems" amount={gems} plus={false} onPress={toGems} />
+    </View>
+  );
+});
+
+const SubSegMemo = memo(SubSeg);
+
 // --- the squishy sheet ---------------------------------------------------------------
 
 function SquishySheet({ id, profile, catalog, artIds, day, onClose, onPlay, onGrow, onFinish, onBuy, onShop }) {
@@ -698,7 +736,14 @@ function SquishiesScreen({
   const built = useAfterFirstFrame();
   // read again each time the screen comes back (App keeps it alive under
   // other screens), so a new day shows without a remount
-  const now = useMemo(() => new Date(), [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  // — but a new `now` only on a new day: a new Date every time re-rendered
+  // all 72 collection cells on each trip to another screen and back
+  const nowRef = useRef(null);
+  const now = useMemo(() => {
+    const n = new Date();
+    if (!nowRef.current || todayKey(n) !== todayKey(nowRef.current)) nowRef.current = n;
+    return nowRef.current;
+  }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
   const day = todayKey(now);
   const w = useMemo(() => wallet(profile), [profile]);
   const catalog = useMemo(() => Object.fromEntries((creatures || []).map((c) => [c.id, c])), [creatures]);
@@ -774,7 +819,10 @@ function SquishiesScreen({
   const [menuAnchor, setMenuAnchor] = useState(null);
   const onMenuSlot = useCallback(
     (e) => {
-      const { y } = e.nativeEvent.layout;
+      const { y, height } = e.nativeEvent.layout;
+      // a hidden Home (asleep under another screen) lays out at 0: ignore it,
+      // or the menu button jumps and the menu re-renders twice on waking
+      if (!height) return;
       setMenuAnchor((a) => (a && a.top === insets.top + y ? a : { top: insets.top + y, right: 14 }));
     },
     [insets.top],
@@ -883,29 +931,10 @@ function SquishiesScreen({
 
   return (
     <CandyBackground style={{ paddingTop: insets.top }}>
-      <View style={styles.header}>
-        <OutlinedTitle text="SQUAD" fill="pink" size={25} outline={3} ring={2} drop={5} />
-        <LevelPill level={level} />
-        <View style={styles.headerIcons} onLayout={onMenuSlot}>
-          {cribUnlocked ? (
-            <TutTarget name="crib">
-              <RoundButton size={HEADER_BUTTON} variant="green" onPress={onOpenCrib}>
-                <HouseIcon />
-              </RoundButton>
-            </TutTarget>
-          ) : null}
-          <RoundButton size={HEADER_BUTTON} onPress={onOpenAchievements}>
-            <TrophyIcon size={22} />
-          </RoundButton>
-          <View style={styles.menuSlot} />
-        </View>
-      </View>
-      <View style={styles.purses}>
-        <Purse cur="coins" amount={w.coins} plus={false} onPress={() => onOpenShop('gems')} />
-        <Purse cur="gems" amount={w.gems} plus={false} onPress={() => onOpenShop('gems')} />
-      </View>
+      <Header level={level} cribUnlocked={cribUnlocked} onOpenCrib={onOpenCrib} onOpenAchievements={onOpenAchievements} onMenuSlot={onMenuSlot} />
+      <Purses coins={w.coins} gems={w.gems} onOpenShop={onOpenShop} />
       <TutTarget name="tabs" style={styles.subBar}>
-        <SubSeg sub={sub} onSub={pickSub} onPick={onPickSub} mineCount={customCreatures.length} />
+        <SubSegMemo sub={sub} onSub={pickSub} onPick={onPickSub} mineCount={customCreatures.length} />
       </TutTarget>
       <View ref={box} collapsable={false} style={styles.pager}>
         <Animated.View style={[styles.pageTrack, { width: pageW * 2, transform: [{ translateX: subShift }] }]}>

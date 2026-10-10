@@ -70,7 +70,7 @@ function OutlinedTitle({
           text (the Mystery Box reveal's name, after OPEN ANOTHER) kept the
           old, too-narrow width and got clipped at both ends. */}
       <View style={styles.measureBox} pointerEvents="none">
-        <Text style={[styles.measure, { fontSize: size, letterSpacing }]} onLayout={(e) => setTextW(e.nativeEvent.layout.width)} numberOfLines={1}>
+        <Text style={[styles.measure, { fontSize: size, letterSpacing }]} onLayout={(e) => e.nativeEvent.layout.width > 0 && setTextW(e.nativeEvent.layout.width)} numberOfLines={1}>
           {text}
         </Text>
       </View>

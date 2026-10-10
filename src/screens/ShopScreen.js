@@ -102,7 +102,7 @@ export function Seg({ tab: current, onTab, onPick, badges = {}, segs = SEGS }) {
   const pill = (w - 8) / segs.length;
   return (
     <Ringed ring={PINK_RING} lip={4} style={styles.segOuter} innerStyle={styles.seg}>
-      <View style={StyleSheet.absoluteFill} onLayout={(e) => setW(e.nativeEvent.layout.width)} />
+      <View style={StyleSheet.absoluteFill} onLayout={(e) => e.nativeEvent.layout.width > 0 && setW(e.nativeEvent.layout.width)} />
       {w > 0 && (
         <Animated.View style={[styles.segPill, { width: pill, transform: [{ translateX: x.interpolate({ inputRange: [0, 1], outputRange: [0, pill] }) }] }]}>
           <Ringed ring={PINK_RING} lip={3} ringW={2} border={2} colors={['#ffd6f4', '#ff5cc6', '#c02bd9']} style={{ flex: 1 }} innerStyle={{ flex: 1 }} />

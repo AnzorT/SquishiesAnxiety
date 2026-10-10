@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { View, Text, Image, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -114,7 +114,7 @@ function Tile({ value, label, color }) {
   );
 }
 
-export default function StatsScreen({ creatures = [], customCreatures = [], profile = null, onBack }) {
+function StatsScreen({ creatures = [], customCreatures = [], profile = null, onBack }) {
   const insets = useSafeAreaInsets();
   const ready = useScreenReady();
   const p = profile || {};
@@ -251,3 +251,7 @@ const styles = StyleSheet.create({
   rankName: { flex: 1, color: candyColors.ink, fontFamily: candyFonts.display, fontSize: 15 },
   rankTime: { color: candyColors.inkSoft, fontFamily: candyFonts.body, fontSize: 12.5 },
 });
+
+// memoized: App re-renders while this is open (Home going to sleep under it,
+// a profile change), and those re-rendered the whole screen
+export default memo(StatsScreen);

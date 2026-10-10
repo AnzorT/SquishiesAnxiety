@@ -76,7 +76,7 @@ export default function BottomNav({ tab, onTab }) {
     <View>
       <View style={styles.pinkLine} />
       <LinearGradient colors={['#6a22d6', '#45107a']} style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) + 6 }]}>
-        <View style={styles.track} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
+        <View style={styles.track} onLayout={(e) => e.nativeEvent.layout.width > 0 && setW(e.nativeEvent.layout.width)}>
           {w > 0 && (
             <Animated.View pointerEvents="none" style={[styles.pill, { width: half, transform: [{ translateX: x.interpolate({ inputRange: [0, 1], outputRange: [0, half] }) }] }]}>
               <Ringed ring={PINK_RING} lip={4} ringW={2} border={3} radius={18} colors={PINK} style={{ flex: 1 }} innerStyle={{ flex: 1 }} />

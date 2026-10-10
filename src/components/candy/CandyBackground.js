@@ -64,6 +64,9 @@ export default function CandyBackground({ children, style, sparkles = false, spa
       style={[styles.fill, style]}
       onLayout={(e) => {
         const { width, height } = e.nativeEvent.layout;
+        // 0 × 0 is a hidden screen (Home asleep under another one, display:
+        // none): keep the real size, or waking it redrew the sky twice
+        if (!width || !height) return;
         if (!size || size.width !== width || size.height !== height) setSize({ width, height });
       }}
     >

@@ -28,7 +28,10 @@ import { fmtNum } from '../format';
 const BADGE = 124; // the badge (white rim included); its ring sits outside
 const RING = 3;
 const LIP = 7;
-const WINDOW = 5; // badges mounted either side of the current one
+// badges mounted either side of the current one: the two on screen, plus
+// one so a swipe has its next badge ready (5 made the screen ~40% slower to
+// build)
+const WINDOW = 3;
 
 // Where a badge `d` steps from the centre sits — the design's numbers.
 const xOf = (d) => (d === 0 ? 0 : Math.sign(d) * (112 + (Math.abs(d) - 1) * 80));
@@ -46,7 +49,8 @@ const FADE = { duration: 350, easing: Easing.bezier(0.25, 0.1, 0.25, 1) };
 const DONE_STOPS = [[0, '#fffbe0', 1], [0.3, '#ffe45c', 1], [0.62, '#ffc21a', 1], [1, '#e08a00', 1]];
 const LOCKED_STOPS = [[0, '#ffffff', 0.55], [0.45, '#e6b4ff', 0.4], [1, '#823cd2', 0.55]];
 
-const OFFSETS = Array.from({ length: 11 }, (_, k) => k - WINDOW);
+// the curves' key points: d = -5 … 5 (they don't depend on WINDOW)
+const OFFSETS = Array.from({ length: 11 }, (_, k) => k - 5);
 
 function curve(pos, index, fn) {
   // pos → value for a badge at `index`: it sits at d = index - pos
@@ -54,7 +58,11 @@ function curve(pos, index, fn) {
   return pos.interpolate({ inputRange: pairs.map((p) => p[0]), outputRange: pairs.map((p) => p[1]), extrapolate: 'clamp' });
 }
 
-const Badge = memo(function Badge({ entry, index, move, fade, z, onSelect }) {
+// `live`: the centre badge. Only its creature cycles its moods (a timer
+// re-rendering it every 3 s); with every mounted badge cycling on its own
+// clock, the screen re-rendered a creature about every 270 ms and taps
+// (the back button too) waited behind those renders.
+const Badge = memo(function Badge({ entry, index, move, fade, z, live, onSelect }) {
   const done = entry.done;
   const ring = done ? '#a0520a' : candyColors.outline;
   const label = String(entry.badgeLabel ?? '');
@@ -81,17 +89,22 @@ const Badge = memo(function Badge({ entry, index, move, fade, z, onSelect }) {
       ]}
     >
       <Pressable onPress={() => onSelect(index)} style={styles.fill}>
-        <Animated.View pointerEvents="none" style={[styles.glow, { width: glowR * 2, height: glowR * 2, marginLeft: -glowR, marginTop: -glowR, opacity: anim.glow }]}>
-          <Svg width={glowR * 2} height={glowR * 2}>
-            <Defs>
-              <RadialGradient id="badgeGlow" cx="50%" cy="50%" r="50%">
-                <Stop offset={(BADGE / 2 - 4) / glowR} stopColor="#ffdc78" stopOpacity={0.9} />
-                <Stop offset="1" stopColor="#ffdc78" stopOpacity={0} />
-              </RadialGradient>
-            </Defs>
-            <Circle cx={glowR} cy={glowR} r={glowR} fill="url(#badgeGlow)" />
-          </Svg>
-        </Animated.View>
+        {/* the gold glow only shows on the centre badge: built for it and its
+            neighbours (for the swipe's crossfade), not for every badge
+            (each was a large SVG to create and draw) */}
+        {z >= 49 ? (
+          <Animated.View pointerEvents="none" style={[styles.glow, { width: glowR * 2, height: glowR * 2, marginLeft: -glowR, marginTop: -glowR, opacity: anim.glow }]}>
+            <Svg width={glowR * 2} height={glowR * 2}>
+              <Defs>
+                <RadialGradient id="badgeGlow" cx="50%" cy="50%" r="50%">
+                  <Stop offset={(BADGE / 2 - 4) / glowR} stopColor="#ffdc78" stopOpacity={0.9} />
+                  <Stop offset="1" stopColor="#ffdc78" stopOpacity={0} />
+                </RadialGradient>
+              </Defs>
+              <Circle cx={glowR} cy={glowR} r={glowR} fill="url(#badgeGlow)" />
+            </Svg>
+          </Animated.View>
+        ) : null}
         <View style={[styles.lip, { backgroundColor: ring }]} />
         <View style={[styles.ring, { backgroundColor: ring }]}>
           <View style={styles.rim}>
@@ -107,7 +120,7 @@ const Badge = memo(function Badge({ entry, index, move, fade, z, onSelect }) {
             </Svg>
             <View style={styles.content}>
               {entry.creature ? (
-                <CreatureThumbnail creature={entry.creature} mood="cycle" size={84} locked={!done} />
+                <CreatureThumbnail creature={entry.creature} mood={live ? 'cycle' : 'idle'} size={84} locked={!done} />
               ) : (
                 <ShadowText
                   style={[styles.badgeLabel, { fontSize: label.length > 3 ? 30 : 40 }]}
@@ -213,7 +226,7 @@ function Details({ entry, index, total }) {
   );
 }
 
-export default function AchievementsScreen({ creatures = [], profile = null, customCount = 0, onBack }) {
+function AchievementsScreen({ creatures = [], profile = null, customCount = 0, onBack }) {
   const insets = useSafeAreaInsets();
   const ready = useScreenReady();
   const entries = useMemo(() => computeAchievements(creatures, profile || {}, customCount), [creatures, profile, customCount]);
@@ -272,7 +285,7 @@ export default function AchievementsScreen({ creatures = [], profile = null, cus
   const hi = Math.min(entries.length - 1, span[1] + WINDOW);
   const badges = [];
   for (let i = lo; i <= hi; i++) {
-    badges.push(<Badge key={entries[i].key} entry={entries[i]} index={i} move={move} fade={fade} z={50 - Math.abs(i - index)} onSelect={select} />);
+    badges.push(<Badge key={entries[i].key} entry={entries[i]} index={i} move={move} fade={fade} z={50 - Math.abs(i - index)} live={i === index} onSelect={select} />);
   }
 
   return (
@@ -420,3 +433,7 @@ const styles = StyleSheet.create({
   },
   status: { fontFamily: candyFonts.display, fontSize: 13, letterSpacing: 1, includeFontPadding: false },
 });
+
+// memoized: App re-renders while this is open (Home going to sleep under it,
+// a profile change), and those re-rendered the whole screen
+export default memo(AchievementsScreen);

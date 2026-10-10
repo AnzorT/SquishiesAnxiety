@@ -299,7 +299,7 @@ function StreakBones() {
   );
 }
 
-export default function StreakScreen({ profile, mascot, intro = false, onClose, onOpenDaily }) {
+function StreakScreen({ profile, mascot, intro = false, onClose, onOpenDaily }) {
   const insets = useSafeAreaInsets();
   const ready = useScreenReady();
   const [clock, setClock] = useState(() => new Date());
@@ -495,3 +495,7 @@ const styles = StyleSheet.create({
   later: { paddingVertical: 4, paddingHorizontal: 18 },
   laterText: { fontFamily: candyFonts.bodyHeavy, fontSize: 13 },
 });
+
+// memoized: App re-renders while this is open (Home going to sleep under it,
+// a profile change), and those re-rendered the whole screen
+export default memo(StreakScreen);

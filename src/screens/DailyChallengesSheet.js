@@ -70,7 +70,7 @@ function Section({ title, right, rows, onClaim }) {
   );
 }
 
-export default function DailyChallengesSheet({ visible, profile, onClose, onClaim, onClaimChest, onOpenCrib }) {
+function DailyChallengesSheet({ visible, profile, onClose, onClaim, onClaimChest, onOpenCrib }) {
   const insets = useSafeAreaInsets();
   const [clock, setClock] = useState(() => new Date());
   useEffect(() => {
@@ -200,3 +200,5 @@ const styles = StyleSheet.create({
   chestBar: { height: 10, borderRadius: 6, backgroundColor: '#ffffff', borderWidth: 1.5, borderColor: '#ffcd3c', overflow: 'hidden' },
   chestCount: { fontFamily: candyFonts.bodyBlack, fontSize: 12, color: '#7a3d00' },
 });
+
+export default memo(DailyChallengesSheet);

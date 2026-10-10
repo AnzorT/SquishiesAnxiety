@@ -63,7 +63,7 @@ Taps that open a screen felt slow. The data wasn't the cause: the catalog, profi
   - While covered, `MainScreen`'s `active` is off: the ad strip keeps its look but drops the real banner, and `SquishiesScreen` reads the date again when it comes back (it used to get a fresh one from the remount).
   - `Freeze` is react-freeze's trick (react-navigation uses it). It was checked under a legacy React root, which this app uses (`newArchEnabled=false`): hidden, no renders on new props, state kept, new props on unfreeze.
 - **The loading screen is quick when there's nothing to load** (`LoadingScreen.js`). If the creature's model is already loaded this run (`isCreatureModelReady` in `SquishyToy.js`) or it has none, it skips "Getting Ready": "I AM READY!" for 0.5 s, then a 0.2 s fade. The first time a model loads still gets the full 1.5 + 1 + 0.5 s sequence (longer if the download is slow).
-- **Placeholders first** (`src/components/Skeleton.js`). A screen's first frame is its background, header and placeholder blocks with a shared white shine sweeping across them (`Bone`, `BoneCard`). The real content is built after that frame: in a ScreenLayer once the slide is over (`useScreenReady`, or `WhenScreenReady` for the Crib, whose placeholder is `src/crib/CribBones.js`), and on Home and the Shop a couple of frames after mounting (`useAfterFirstFrame`). That covers Achievements, Stats, Streak (its tiles' entrance now starts when they appear), the Crib, the Squishies lists and the Shop's tabs. Create is a light form and builds at once. The slide never stutters under a big mount, because nothing big mounts until it's over.
+- **Placeholders first** (`src/components/Skeleton.js`). A screen's first frame is its background, header and placeholder blocks with a shared white shine sweeping across them (`Bone`, `BoneCard`). The real content is built after that frame: in a ScreenLayer two frames in, while the slide is already running (`useScreenReady`, or `WhenScreenReady` for the Crib, whose placeholder is `src/crib/CribBones.js`; it waited for the end of the slide until 2026-10-10), and on Home and the Shop a couple of frames after mounting (`useAfterFirstFrame`). That covers Achievements, Stats, Streak (its tiles' entrance now starts when they appear), the Crib, the Squishies lists and the Shop's tabs. Create is a light form and builds at once. The slide runs on the native driver, so the JS build doesn't hold it up; creating the new views on the UI thread can cost it a frame or two, which is the price of the content arriving 0.3-0.6 s sooner.
 - **The splash's loading bar** (`SplashScreen.js`) fills on the native driver: a pink pill sliding inside the track over 1.1 s on an ease-out curve. It used to be a JS-set width jumping 7-16% every 110 ms, which stuttered while the JS thread was busy starting the app. The percentage text follows the same curve and re-renders on its own.
 - **The real cause of the delay on every tap (found by profiling, 2026-10-08):** the JS thread sat at ~100% even with the app idle on Home. 73% of it was the Shop's once-a-second clock (`setNow(new Date())`), which re-rendered the whole Shop every second, even while hidden behind the Squishies tab (the Shop stays mounted after the first visit). Another 18% was `toLocaleString`, which is very slow on Hermes, formatting every price on each of those renders. Every tap waited in line behind that. Now the three countdowns are `TickingText` (`src/squad/ui.js`), which re-renders one Text a second; the Shop's `day` moves on with a timeout at midnight; and every number on screen goes through `fmtNum` (`src/format.js`, same output as `toLocaleString('en-US')`). Rule: never put a fast timer's state at the top of a big screen.
 - **Full run through a new account's tutorial (2026-10-09), profiled tap by tap.** Two more app-wide causes:
@@ -81,3 +81,41 @@ Taps that open a screen felt slow. The data wasn't the cause: the catalog, profi
 - **How to profile the JS thread** (debug build, Metro running): `curl localhost:<metro port>/json/list` lists the Hermes targets; connect to "Hermes React Native"'s `webSocketDebuggerUrl` and send `Profiler.enable`, `Profiler.start`, wait, then `Profiler.stop`, and sum the samples' self and inclusive time per function. In debug, `unstable_now` (React's dev profiler timers) inflates everything, but the shares point at the right culprit.
 - Not done yet: `FlatList` for the Squishies and Shop grids, so off-screen cells aren't built up front.
 - Not yet measured on a phone. Measure on a release build (see the top of this file).
+
+## Buttons and back buttons (2026-10-10)
+
+The user: every button that opens something (Settings, Achievements, every back button) reacts late. Measured on emulator-5556 with temporary marks in the app: the root View's `onTouchEnd` timestamp (the native MotionEvent time, the same clock as `performance.now()`), then the time of each step (screen switched, first frame, content built, fade done), plus React `<Profiler>`s around Home, the layer and the sheets. The marks are removed again; the method is below.
+
+What was wrong, and what changed:
+
+- **Achievements re-rendered itself about every 270 ms while open.** Every mounted badge's creature ran its own 3 s mood timer (`mood="cycle"`). A tap landing in that stream waited: the back button's touch reached JS 693 ms late. Now only the centre badge cycles (`live` in `AchievementsScreen`'s `Badge`); the touch reaches JS in 20-60 ms.
+- **Every trip re-rendered all of Home.** Going anywhere and back flips Home's `active`, and `SquishiesScreen` made a new `now` for it, which re-rendered all 72 collection cells (150-300 ms each way in debug). `now` only changes on a new day now. Home's header, purses and Squishies | My creations switch are memoized (`Header`, `Purses`, `SubSegMemo`).
+- **A hidden Home measured itself as 0 × 0.** Home asleep under another screen is `display: none`, so its `onLayout` handlers stored a 0 size: on waking, the sky background (`CandyBackground`, `SkyBackground`), the outlined titles (`OutlinedTitle`'s text width) and the menu button's spot rendered at 0, then again at the real size (two flickering re-renders). Every such handler now ignores 0 sizes (also `IntroBackground`, `ShineSweep`, `BottomNav`, the Shop's `Seg`).
+- **The slide-ins waited for their slide before building** (`ScreenLayer`'s `useScreenReady` flipped at the end of the 260 ms slide), then faded in over 320 ms. Now the content is built two frames in, while the native slide runs, and the fade is 160 ms.
+- **Back started slow on purpose** (an ease-in over 380 ms, so Home had time to draw under it). Now Home is uncovered in the same render as the tap (it's cheap now: 10-20 ms in debug) and the layer slides out fast at first (280 ms, ease-out), like the way in. The streak screen's close now uses the same slide (it swapped straight to Home).
+- **Settings was a `<Modal>`**: a new Android dialog window on every open, the whole sheet built from scratch (~280 ms) and rendered twice more (~310 ms) before it moved, then thrown away on close. `SettingsSheet` is now drawn in the app's own tree, built once (in the background 4 s after start) and kept; opening only slides it up on the native driver. Its contents (`Body`) are memoized, the Android back key closes it (`BackHandler`), and the feedback popup inside is still a Modal. The three sheets (`SettingsSheet`, `RemoveAdsSheet`, `DailyChallengesSheet`) are memoized: they all re-rendered with App on every screen change.
+- **The menu built its rows on every open** (~270 ms in debug) and dropped them on close. They're built once (in the background 3 s after Home is up) and kept; `HomeMenu` and its `Row`s are memoized.
+- Also: `AchievementsScreen`, `StatsScreen` and `StreakScreen` are memoized (App re-renders while they're open); Achievements mounts 3 badges either side of the centre instead of 5, and only the centre badge and its neighbours carry the large SVG glow.
+
+Numbers, release build on emulator-5556 (x86_64), ms after the finger lifts: when the screen answers / when its content is drawn / when it's done.
+
+| Button | answers | content | done |
+|---|---|---|---|
+| Achievements (trophy) | 140-160 | ~520 | ~680 |
+| Stats (menu) | 210 | 550 | 710 |
+| Streak (menu) | 210 | 850 | 950 |
+| Crib | 130 | 550 | 1130 |
+| Create | 240 | 360 | 360 |
+| Settings (menu) | 105-120 | — | slide 280 |
+| Settings close | 80-110 | — | — |
+| Shop / Squishies tab | slide on the tap | 250-280 | — |
+| SQUISH (loading → squish screen) | 140 | 1430 (squish screen) | — |
+| Every back button | slide starts on the tap | Home under it at once | — |
+| Squish screen back | 360 | — | — |
+
+Before, in the debug build on the same emulator: Achievements done at 2.9 s and back at 2.0-2.2 s, Settings' first frame at 0.9-1.3 s, the menu 0.3-0.5 s, Stats and Streak 2.4-2.8 s.
+
+- **Judge on a release build.** In debug, React's dev timers are about half of every render; the same taps took 2-4× longer there.
+- **The emulator was overloaded during this:** 4 GB with 80 MB of swap free and 89% system CPU, the app at 956 MB after two hours of debug use, median frame 48 ms. Restart the app (or `adb reboot`) before measuring.
+- **Still slow:** the Crib's scene (~1 s in release), Streak's day tiles (~0.6 s), the first Shop visit after launch (a 2.6 s build in debug), the squish screen's "I AM READY!" step (by design), and the native side of creating many SVG views (badges, glows): the same in debug and release.
+- **How to measure again:** a root `View` with `onTouchEnd={(e) => (up = e.nativeEvent.timestamp)}`, `console.log` of `performance.now() - up` at each step and in the next `requestAnimationFrame`, read with `adb logcat -s ReactNativeJS`; `<React.Profiler onRender>` (debug only) for which subtree re-rendered and how long. Drive with `adb shell input swipe X Y X Y 80` (a finger-length press). The emulator's `screenrecord` is no use for this: it captures about 10 fps.

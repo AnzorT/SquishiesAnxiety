@@ -11,10 +11,12 @@ import { Reveal } from './Skeleton';
 // answer to the tap). Without it, it's simply there and covers Home at once.
 //
 // `useScreenReady()` tells the screen inside when to build its heavy
-// content: once the slide is over (or a couple of frames in, without one).
-// Until then it shows its frame and placeholders (src/components/Skeleton.js),
-// so the slide starts on the tap's frame and never stutters under a big
-// mount. Outside a layer it's always true.
+// content: two frames in, once the slide is already running (it runs on the
+// native side, so the build doesn't hold it up). Until then it shows its
+// frame and placeholders (src/components/Skeleton.js). It used to wait for
+// the end of the slide, which put the whole slide in front of every build:
+// the content showed up 0.3-0.6 s later than it had to (measured
+// 2026-10-10). Outside a layer it's always true.
 const SLIDE = { duration: 260, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true };
 
 const ScreenReady = createContext(true);
@@ -30,41 +32,40 @@ export function WhenScreenReady({ placeholder, children }) {
   );
 }
 
-// `ref.exit(then)`: the way back. The layer slides out to the right at once
-// (native), Home is uncovered under it a frame later (`onUncover`: App
-// unfreezes it, so it's there as the layer moves away), and `then` runs when
-// the slide is over (App switches the screen, and the layer unmounts out of
-// sight). Going back used to wait for Home's re-render and the screen's
-// teardown before anything moved.
-// slow at first, so the screen under it has a moment to draw before most of
-// it is uncovered
-const EXIT = { duration: 380, easing: Easing.bezier(0.55, 0, 0.75, 1), useNativeDriver: true };
+// `ref.exit(then)`: the way back. Home is uncovered first (`onUncover`: App
+// unfreezes it in the same render, so it's drawn under the layer in the
+// same frame the layer starts to move), the layer slides out to the right
+// (native, fast at first, like the way in), and `then` runs when the slide
+// is over (App switches the screen, and the layer unmounts out of sight).
+// The slide used to start slow (an ease-in over 380 ms, so Home had time to
+// draw), which read as the back button not reacting.
+const EXIT = { duration: 280, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true };
 
 function ScreenLayer({ slide, onCovered, onUncover, children }, ref) {
   const { width } = useWindowDimensions();
   const x = useRef(new Animated.Value(slide ? 1 : 0)).current;
   const [ready, setReady] = useState(false);
   useEffect(() => {
+    let second = null;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => setReady(true));
+    });
+    const stopReady = () => {
+      cancelAnimationFrame(first);
+      if (second != null) cancelAnimationFrame(second);
+    };
     if (!slide) {
       onCovered();
-      let second = null;
-      const first = requestAnimationFrame(() => {
-        second = requestAnimationFrame(() => setReady(true));
-      });
-      return () => {
-        cancelAnimationFrame(first);
-        if (second != null) cancelAnimationFrame(second);
-      };
+      return stopReady;
     }
     const anim = Animated.timing(x, { toValue: 0, ...SLIDE });
     // only when it really got there: a layer closed mid-slide must not
     // freeze the Home it was leaving for
-    anim.start(({ finished }) => {
-      if (!finished) return;
-      onCovered();
-      setReady(true);
-    });
-    return () => anim.stop();
+    anim.start(({ finished }) => finished && onCovered());
+    return () => {
+      stopReady();
+      anim.stop();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const exiting = useRef(false);
@@ -74,9 +75,8 @@ function ScreenLayer({ slide, onCovered, onUncover, children }, ref) {
       exit(then) {
         if (exiting.current) return;
         exiting.current = true;
+        if (onUncover) onUncover();
         Animated.timing(x, { toValue: 1, ...EXIT }).start(() => then());
-        // after the slide's start has reached the native side
-        if (onUncover) requestAnimationFrame(() => onUncover());
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -451,9 +451,16 @@ export default function App() {
     setStreakIntro(true);
   }, [streakIntroDue, authUser]);
   const openStreak = useCallback(() => setScreen('streak'), []);
+  // back to Home with the layer's slide, like every other screen (it used to
+  // swap straight to Home, which showed nothing until Home had re-rendered)
   const closeStreak = useCallback(() => {
-    setStreakIntro(false);
-    setScreen('home');
+    const done = () => {
+      setStreakIntro(false);
+      setScreen('home');
+    };
+    const layer = layerRef.current;
+    if (layer) layer.exit(done);
+    else done();
   }, []);
   const streakToDaily = useCallback(() => {
     setStreakIntro(false);
