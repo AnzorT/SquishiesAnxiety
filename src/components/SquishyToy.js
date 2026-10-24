@@ -11,6 +11,7 @@ import * as FileSystem from 'expo-file-system';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { PHYS } from '../data/creatures';
 import perf from '../perfProbe';
+import { CARD_FRAGMENT, CARD_TUNING, cardGeometryData, cardMaterial, cardMotion, cardState, cardSway, loadCardTexture } from './squishCard';
 
 // Used by buildCreature's procedural-sphere path (and prepareModelData's
 // no-texture-map fallback tint) whenever the caller doesn't have a real
@@ -179,6 +180,8 @@ function buildCreature(id, visual) {
   shadowMesh.scale.set(1.25, 0.5, 1);
   shadowMesh.position.set(0, -1.3, -0.3);
   shadowMesh.rotation.x = -Math.PI / 2.5;
+  // the design's card casts no floor shadow
+  if (card) shadowMesh.visible = false;
 
   const s = {
     group,
@@ -209,6 +212,7 @@ function buildCreature(id, visual) {
     blinkTimer: 2 + Math.random() * 3,
     ...makeSquishState(),
   };
+  if (card) Object.assign(s, cardState(id, stage, group));
   installSquishShader(bodyMat, s);
   return s;
 }
@@ -323,14 +327,37 @@ function loadModelDataFromUrl(creatureId, url) {
 // the same in-flight/resolved promise — a creature with no modelUrl
 // (2D/procedural) resolves immediately.
 export function preloadCreatureModel(creature) {
+  if (creature && creature.card && creature.card.url) return loadCardDataFromUrl(creature.card.url);
   if (!creature || !creature.modelUrl) return Promise.resolve();
   return loadModelDataFromUrl(creature.id, creature.modelUrl);
+}
+
+// The design's card (src/components/squishCard.js): one geometry and pick
+// grid shared by every card, and each creature's atlas as its texture.
+let cardGeometry = null;
+function loadCardDataFromUrl(url) {
+  if (!remoteModelDataPromises.has(url)) {
+    remoteModelDataPromises.set(
+      url,
+      loadCardTexture(url).then((map) => {
+        if (!cardGeometry) {
+          const g = cardGeometryData();
+          cardGeometry = { ...g, grid: buildTriangleGrid(g.basePos, g.indexArray) };
+        }
+        readyModelUrls.add(url);
+        return { ...cardGeometry, map, fallbackColor: new THREE.Color(CARD_TUNING.fallbackColor), card: true };
+      }),
+    );
+    remoteModelDataPromises.get(url).catch(() => remoteModelDataPromises.delete(url));
+  }
+  return remoteModelDataPromises.get(url);
 }
 
 // True when SquishScreen can show this creature without waiting: it has no
 // model to load (2D art), or its model was already loaded this app run.
 // LoadingScreen then skips its "Getting Ready" beat.
 export function isCreatureModelReady(creature) {
+  if (creature && creature.card && creature.card.url) return readyModelUrls.has(creature.card.url);
   return !creature || !creature.modelUrl || readyModelUrls.has(creature.modelUrl);
 }
 
@@ -608,8 +635,10 @@ transformed += uSquishDir * min(squishD, uSquishDent.z);
 // its uniforms (they exist once three compiles the program — on the first
 // render — so tickPhysics writes into them only from then on).
 function installSquishShader(material, s) {
-  material.customProgramCacheKey = () => 'squish';
+  const card = !!material.userData.cardDecode;
+  material.customProgramCacheKey = () => (card ? 'squish-card' : 'squish');
   material.onBeforeCompile = (shader) => {
+    if (card) Object.entries(CARD_FRAGMENT).forEach(([chunk, code]) => (shader.fragmentShader = shader.fragmentShader.replace(chunk, code)));
     shader.uniforms.uSquishPress = { value: s.pressUniform };
     shader.uniforms.uSquishCount = { value: 0 };
     shader.uniforms.uSquishDir = { value: new THREE.Vector3(0, 0, -1) };
@@ -667,8 +696,8 @@ function makeSquishState() {
 // Cheap per-instance construction from prepareModelData's cached output: a
 // BufferGeometry over the cached arrays (nothing here is ever written to —
 // the squish happens in the shader) plus fresh material/mesh/group.
-function buildModelCreature(id, cfg, modelData) {
-  const { basePos, baseNormals, uvArray, indexArray, grid, vertCount, map, fallbackColor } = modelData;
+function buildModelCreature(id, cfg, modelData, stage = 1) {
+  const { basePos, baseNormals, uvArray, indexArray, grid, vertCount, map, fallbackColor, card } = modelData;
 
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(basePos, 3));
@@ -688,9 +717,11 @@ function buildModelCreature(id, cfg, modelData) {
     side: THREE.FrontSide,
     flatShading: false,
   };
-  const bodyMat = shiny
-    ? new THREE.MeshPhysicalMaterial({ ...matParams, clearcoat: 0.6, clearcoatRoughness: 0.25 })
-    : new THREE.MeshStandardMaterial(matParams);
+  const bodyMat = card
+    ? cardMaterial(map)
+    : shiny
+      ? new THREE.MeshPhysicalMaterial({ ...matParams, clearcoat: 0.6, clearcoatRoughness: 0.25 })
+      : new THREE.MeshStandardMaterial(matParams);
   const bodyMesh = new THREE.Mesh(geo, bodyMat);
   const group = new THREE.Group();
   group.add(bodyMesh);
@@ -705,6 +736,8 @@ function buildModelCreature(id, cfg, modelData) {
   shadowMesh.scale.set(cfg.visual * 0.62, cfg.visual * 0.26, 1);
   shadowMesh.position.set(0, -cfg.visual * 0.52, -0.3);
   shadowMesh.rotation.x = -Math.PI / 2.5;
+  // the design's card casts no floor shadow
+  if (card) shadowMesh.visible = false;
 
   const s = {
     group,
@@ -738,6 +771,7 @@ function buildModelCreature(id, cfg, modelData) {
     blinkTimer: 999,
     ...makeSquishState(),
   };
+  if (card) Object.assign(s, cardState(id, stage, group));
   installSquishShader(bodyMat, s);
   return s;
 }
@@ -1221,8 +1255,9 @@ function tickPhysics(s, dt) {
     mesh.scale.set(sb.x * squish, sb.y * squish, sb.z * squish);
   }
 
-  const squashStiff = 1 - Math.pow(1 - 0.4, k);
-  const squashDamp = Math.pow(0.72, k);
+  // (a card has its own springs: squishCard.js cardState)
+  const squashStiff = 1 - Math.pow(1 - (s.sqSt || 0.4), k);
+  const squashDamp = Math.pow(s.sqDp || 0.72, k);
   s.globalSquashV += (s.globalSquashTarget - s.globalSquash) * squashStiff;
   s.globalSquashV *= squashDamp;
   s.globalSquash += s.globalSquashV;
@@ -1248,6 +1283,7 @@ function tickPhysics(s, dt) {
     s.orbitTargetY += s.orbitVelY * k;
     s.orbitTargetX += s.orbitVelX * k;
   }
+  if (s.card) cardSway(s);
   const orbitCatchup = Math.min(1, 0.22 * k);
   s.userRotY += (s.orbitTargetY - s.userRotY) * orbitCatchup;
   s.userRotX += (s.orbitTargetX - s.userRotX) * orbitCatchup;
@@ -1258,13 +1294,17 @@ function tickPhysics(s, dt) {
   // never repainted).
   const breathe = 1 + Math.sin(s.idlePhase * 0.45) * 0.012;
   const lift = s.lift;
-  const sx = (1 + s.globalSquash * 0.14) * breathe * lift;
-  const sy = (1 - s.globalSquash * 0.26) * breathe * lift;
-  const sz = (1 + s.globalSquash * 0.14) * breathe * lift;
+  const sqX = s.sqX || 0.14;
+  const sqY = s.sqY || 0.26;
+  const sx = (1 + s.globalSquash * sqX) * breathe * lift;
+  const sy = (1 - s.globalSquash * sqY) * breathe * lift;
+  const sz = (1 + s.globalSquash * sqX) * breathe * lift;
   s.group.rotation.y = s.userRotY;
   s.group.rotation.x = s.userRotX + s.wobbleRotX;
   s.group.rotation.z = s.wobbleRotZ;
   s.group.scale.set(sx, sy, sz);
+  // the card's dance cycle and stage on top (squishCard.js)
+  if (s.card) cardMotion(s, k, sx, sy, sz);
 
   if (s.eyeStyle === 'round') {
     const blinkScale = 1 - s.blinkAmt * 0.88;
@@ -1277,7 +1317,7 @@ function tickPhysics(s, dt) {
 // timers, etc.) doesn't force React to reconcile this subtree — the per-frame
 // squish physics already runs in useFrame and shouldn't compete with that.
 const SquishyToy = memo(forwardRef(function SquishyToy(
-  { creatureId = '0', modelUrl, visual, onSquish, onRelease, dentScale = 1, dentOutward = false },
+  { creatureId = '0', modelUrl, cardUrl, stage = 1, visual, onSquish, onRelease, dentScale = 1, dentOutward = false },
   ref
 ) {
   const { camera, gl } = useThree();
@@ -1292,6 +1332,11 @@ const SquishyToy = memo(forwardRef(function SquishyToy(
       if (!result) return;
       result.bodyGeo.dispose();
       result.bodyMat.dispose();
+      (result.cardExtras || []).forEach((m) => {
+        m.geometry.dispose();
+        if (m.material.map) m.material.map.dispose();
+        m.material.dispose();
+      });
       if (result.shadowMesh) {
         result.shadowMesh.geometry.dispose();
         result.shadowMesh.material.dispose();
@@ -1308,7 +1353,9 @@ const SquishyToy = memo(forwardRef(function SquishyToy(
     // synchronously.
     const modelId = Number(creatureId);
     let pending;
-    if (modelUrl) {
+    if (cardUrl) {
+      pending = loadCardDataFromUrl(cardUrl).then((modelData) => buildModelCreature(creatureId, CARD_TUNING, modelData, stage));
+    } else if (modelUrl) {
       pending = loadModelDataFromUrl(creatureId, modelUrl).then((modelData) => buildModelCreature(creatureId, MODEL_TUNING, modelData));
     } else {
       pending = Promise.resolve(buildCreature(modelId, visual));
@@ -1440,6 +1487,8 @@ const SquishyToy = memo(forwardRef(function SquishyToy(
         s.pressHoldTime = 0;
         s.pendingMove = null;
         s.mode = null;
+        // the card's happy reaction (squishCard.js cardMotion)
+        if (s.card) s.reactT = Date.now();
         onRelease && onRelease(holdSeconds);
         return { wasPoke: true, holdSeconds };
       },

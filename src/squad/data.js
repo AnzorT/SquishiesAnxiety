@@ -5,7 +5,7 @@
 // look and open, and reads of the profile for the screens.
 import squad from '../../functions/squad.js';
 
-export const { RARITY, SETS, SEASON, ROSTER, BY_ID, SET_OF, COIN_PRICE, DUPE, SET_BONUS, FIN, STAGES, CHESTS, PITY_MAX, EPIC_MAX, DEAL, VIDEO_CHESTS, SWAPS, GEM_PACKS, START, owns, picks, creaturePrice } = squad;
+export const { RARITY, GROUPS, SETS, SEASON, ROSTER, BY_ID, SET_OF, HIDDEN, hiddenOf, isOut, groupOut, outIds, SET_REWARDS, setRewardsOf, COPIES, copiesOf, needOf, copiesHad, dropRar, inGroupChest, DUPE, SET_BONUS, FIN, STAGES, CHESTS, PITY_MAX, EPIC_MAX, DEAL, VIDEO_CHESTS, SWAPS, GEM_PACKS, START, owns, SIZES, SIZE_I, GDUPE, LUCK_MAX, UPGRADE, FREE_MS, AD_CHESTS, GDEAL, lineup, DEFAULT_OFFERS, offersOf, jarGems } = squad;
 
 // Shop order and how each chest opens (the design's TIERS: TAP, HOLD,
 // SWIPE, MIX); the season chest opens like a Basic one.
@@ -33,7 +33,8 @@ export const RAR_LOOK = [
   { label: 'RARE', bg: '#c9f7e1', dot: '#7ee8b4', ink: '#16a86a', card: '#e2fbef', lip: '#98dcbc' },
   { label: 'EPIC', bg: '#ead6ff', dot: '#c89bff', ink: '#8f3cf2', card: '#f1e6ff', lip: '#cdb0f2' },
   { label: 'LEGENDARY', bg: '#ffdcb0', dot: '#ffa94d', ink: '#d9772f', card: '#fff0dc', lip: '#f2c98f' },
-  { label: 'SET REWARD', bg: '#ffe0f3', dot: '#ff8fd3', ink: '#d3179a', card: '#ffe9f6', lip: '#f0a8d8' },
+  // the sets' reward creatures, the top rarity (the user calls it Rainbow)
+  { label: 'RAINBOW', bg: '#ffe0f3', dot: '#ff8fd3', ink: '#d3179a', card: '#ffe9f6', lip: '#f0a8d8', rainbow: ['#ffb3c7', '#ffe38a', '#b3f5c8', '#b3e0ff', '#dcc2ff'] },
 ];
 export const FIN_LOOK = {
   n: { name: 'Normal' },
@@ -45,7 +46,27 @@ export const STAGE_NAMES = ['Baby', 'Grown', 'Best Friend'];
 // how each growth stage looks: Baby smaller and rounder, Best Friend crowned
 export const STAGE_FX = [{ sx: 0.8, sy: 0.72, crown: false }, { sx: 1, sy: 1, crown: false }, { sx: 1.04, sy: 1.04, crown: true }];
 
-export const rarityOf = (id) => (BY_ID[String(id)] ? BY_ID[String(id)].rar : null);
+// Every group but the season, in the design's order: the 8 sets, then the
+// Masked and Elemental Heroes (they have no reward creature).
+export const COLLECTION_GROUPS = GROUPS.filter((g) => g.key !== SEASON.key).map((g) => g.key);
+
+// Each group's ink (squad-store.js SETS / SEASON / HEROES / ELEMENTAL): the
+// lobby's group line under the name.
+export const GROUP_INK = { snack: '#c4651f', fruit: '#b88a00', ocean: '#2f7fd6', pet: '#c0268f', forest: '#16a86a', sky: '#5a3ad0', dream: '#9a2fc8', bakery: '#c2502a', spooky: '#7a2a00', heroes: '#c0182e', elemental: '#3a3ab0' };
+
+export const rarityOf =(id) => (BY_ID[String(id)] ? BY_ID[String(id)].rar : null);
+
+// --- copies ---------------------------------------------------------------------
+// A creature unlocks once it's been found its rarity's number of times
+// (functions/squad.js COPIES). The counts in force are config/roster's, which
+// App passes in here as it changes (setCopyCounts).
+let counts = COPIES;
+export const setCopyCounts = (cfg) => {
+  counts = copiesOf(cfg);
+};
+export const copyCounts = () => counts;
+// { have, need } for one not unlocked yet (have: the copies found so far)
+export const copyProgress = (profile, id) => ({ have: copiesHad(profile || {}, String(id)), need: needOf(BY_ID[String(id)], counts) });
 
 // --- reading the profile -------------------------------------------------------
 

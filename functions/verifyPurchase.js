@@ -14,6 +14,8 @@
 
 const { SignedDataVerifier, Environment } = require('@apple/app-store-server-library');
 const { CREATURE_KEY, BUNDLE_ID, baseProduct, isConsumable, sha256, checkPlayPurchase, checkAppleTransaction, grantFor } = require('./purchases');
+const { hiddenOf, outIds, setRewardsOf, copiesOf } = require('./squad');
+const { dayKey } = require('./dailySpin');
 
 // verifyApple(jws) for makeVerifyPurchase: checks a StoreKit 2 signed
 // transaction's certificate chain up to `roots` (Apple's root CA in
@@ -86,10 +88,21 @@ function makeVerifyPurchase({ db, FieldValue, HttpsError, logger, playApi, verif
     // --- 2. grant it, once -------------------------------------------------
     const userRef = db.collection('users').doc(uid);
     const recordRef = db.collection('purchases').doc(recordId);
+    const base = baseProduct(productId);
+    const isOffer = base.startsWith('offer_');
     const rosterIds =
-      baseProduct(productId) === CREATURE_KEY
-        ? (await db.collection('creatures').select().get()).docs.map((d) => d.id).filter((id) => /^\d+$/.test(id))
-        : [];
+      base === CREATURE_KEY || isOffer ? (await db.collection('creatures').select().get()).docs.map((d) => d.id).filter((id) => /^\d+$/.test(id)) : [];
+    // what the offers sell (config/offers; the gem packs' amounts too)
+    const offersSnap = await db.collection('config').doc('offers').get();
+    const offers = offersSnap.exists ? offersSnap.data() : null;
+    // a bundle's chests drop only what's out, by the set-reward rule
+    // (config/roster: squad.js HIDDEN, SET_REWARDS)
+    const rosterSnap = isOffer ? await db.collection('config').doc('roster').get() : null;
+    const rosterCfg = rosterSnap && rosterSnap.exists ? rosterSnap.data() : null;
+    const hidden = hiddenOf(rosterCfg);
+    const setRewards = setRewardsOf(rosterCfg);
+    const need = copiesOf(rosterCfg);
+    const day = dayKey(Date.now(), data.tzOffsetMinutes);
 
     const result = await db.runTransaction(async (tx) => {
       const [record, user] = await Promise.all([tx.get(recordRef), tx.get(userRef)]);
@@ -98,7 +111,7 @@ function makeVerifyPurchase({ db, FieldValue, HttpsError, logger, playApi, verif
         return { ...record.data().result, already: true };
       }
       if (!user.exists) throw new HttpsError('failed-precondition', 'No profile.');
-      const grant = grantFor({ productId, creatureId: checked.creatureId, profile: user.data(), rosterIds });
+      const grant = grantFor({ productId, creatureId: checked.creatureId, profile: user.data(), rosterIds, offers, artIds: outIds(rosterIds, hidden), hidden, setRewards, need, day });
       if (grant.error) throw new HttpsError('failed-precondition', grant.error);
 
       const g = grant.update;
@@ -117,6 +130,8 @@ function makeVerifyPurchase({ db, FieldValue, HttpsError, logger, playApi, verif
       Object.entries(g.keys || {}).forEach(([id, v]) => {
         update[`keys.${id}`] = v;
       });
+      // an offer's fields, written as they are (purchases.js offerGrant)
+      if (g.set) Object.assign(update, g.set);
       tx.update(userRef, update);
       tx.set(recordRef, {
         uid,
@@ -136,7 +151,7 @@ function makeVerifyPurchase({ db, FieldValue, HttpsError, logger, playApi, verif
     // retried by the app's next sync, which lands on `already` above.)
     if (platform === 'android') {
       try {
-        if (isConsumable(productId)) {
+        if (isConsumable(productId, offers)) {
           if (play.consumptionState !== 1) await playApi(`${tokenPath}:consume`, 'POST');
         } else if (play.acknowledgementState !== 1) {
           await playApi(`${tokenPath}:acknowledge`, 'POST');

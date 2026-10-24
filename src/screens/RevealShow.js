@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -30,22 +30,27 @@ const CONFETTI = ['#ff5cc6', '#ffd23a', '#3fd7f6', '#7be495', '#c78bff', '#fffff
 const SPARKLES = Array.from({ length: 10 }, (_, i) => ({ x: ((i * 37 + 9) % 92) + 3, y: ((i * 53 + 7) % 60) + 4, size: 10 + ((i * 7) % 12), ms: 1600 + (i % 5) * 400 }));
 const rnd = (a, b) => a + Math.random() * (b - a);
 
-function Twinkle({ x, y, size, ms }) {
+// The show re-renders on every beat. The animated pieces below are memoized
+// with their nodes made once: an Animated view that re-renders is rebuilt on
+// the native side, one bridge call per node (see ChestOpener).
+
+// up and back in one native timing (a loop of a sequence runs from JS)
+const Twinkle = memo(function Twinkle({ x, y, size, ms }) {
   const t = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    const loop = Animated.loop(Animated.sequence([Animated.timing(t, { toValue: 1, duration: ms / 2, useNativeDriver: true }), Animated.timing(t, { toValue: 0, duration: ms / 2, useNativeDriver: true })]));
+    const loop = Animated.loop(Animated.timing(t, { toValue: 1, duration: ms, easing: Easing.linear, useNativeDriver: true }));
     loop.start();
     return () => loop.stop();
   }, [t, ms]);
-  return (
-    <Animated.Text style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, fontSize: size, color: '#ffffff', opacity: t.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] }), transform: [{ scale: t.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1.1] }) }] }}>
-      ✦
-    </Animated.Text>
+  const style = useMemo(
+    () => ({ position: 'absolute', left: `${x}%`, top: `${y}%`, fontSize: size, color: '#ffffff', opacity: t.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.2, 1, 0.2] }), transform: [{ scale: t.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.6, 1.1, 0.6] }) }] }),
+    [t, x, y, size],
   );
-}
+  return <Animated.Text style={style}>✦</Animated.Text>;
+});
 
 // A burst of confetti from both bottom corners (the cannons).
-function Confetti({ shot, width, height }) {
+const Confetti = memo(function Confetti({ shot, width, height }) {
   const pieces = useMemo(() => {
     const out = [];
     for (let side = 0; side < 2; side++)
@@ -56,36 +61,36 @@ function Confetti({ shot, width, height }) {
     return out;
   }, [shot, width]);
   return pieces.map((p) => <ConfettiBit key={p.key} p={p} top={height - 60} />);
-}
-function ConfettiBit({ p, top }) {
+});
+const ConfettiBit = memo(function ConfettiBit({ p, top }) {
   const t = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(t, { toValue: 1, duration: p.ms, easing: Easing.linear, useNativeDriver: true }).start();
   }, [t, p]);
-  return (
-    <Animated.View
-      style={{
-        position: 'absolute', left: p.x, top, width: p.w, height: p.h, borderRadius: p.round ? p.w : 2, backgroundColor: p.c,
-        opacity: t.interpolate({ inputRange: [0, 0.8, 1], outputRange: [1, 1, 0] }),
-        transform: [
-          { translateX: t.interpolate({ inputRange: [0, 0.42, 1], outputRange: [0, p.dx, p.dx * 1.35] }) },
-          { translateY: t.interpolate({ inputRange: [0, 0.42, 1], outputRange: [0, p.dy, p.dy + p.fall], easing: Easing.inOut(Easing.quad) }) },
-          { rotate: t.interpolate({ inputRange: [0, 1], outputRange: ['0deg', `${p.rot}deg`] }) },
-        ],
-      }}
-    />
+  const style = useMemo(
+    () => ({
+      position: 'absolute', left: p.x, top, width: p.w, height: p.h, borderRadius: p.round ? p.w : 2, backgroundColor: p.c,
+      opacity: t.interpolate({ inputRange: [0, 0.8, 1], outputRange: [1, 1, 0] }),
+      transform: [
+        { translateX: t.interpolate({ inputRange: [0, 0.42, 1], outputRange: [0, p.dx, p.dx * 1.35] }) },
+        { translateY: t.interpolate({ inputRange: [0, 0.42, 1], outputRange: [0, p.dy, p.dy + p.fall], easing: Easing.inOut(Easing.quad) }) },
+        { rotate: t.interpolate({ inputRange: [0, 1], outputRange: ['0deg', `${p.rot}deg`] }) },
+      ],
+    }),
+    [t, p, top],
   );
-}
+  return <Animated.View style={style} />;
+});
 
 // A firework: 16 sparks out from a point.
-function Firework({ x, y, delay, colors }) {
+const Firework = memo(function Firework({ x, y, delay, colors }) {
   const t = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.sequence([Animated.delay(delay), Animated.timing(t, { toValue: 1, duration: 1100, easing: Easing.out(Easing.cubic), useNativeDriver: true })]).start();
   }, [t, delay]);
-  return (
-    <View style={{ position: 'absolute', left: `${x}%`, top: `${y}%` }} pointerEvents="none">
-      {Array.from({ length: 16 }, (_, i) => {
+  const sparks = useMemo(
+    () =>
+      Array.from({ length: 16 }, (_, i) => {
         const a = (i / 16) * Math.PI * 2;
         const d = 60 + (i % 3) * 14;
         const s = 5 + (i % 2) * 2;
@@ -99,10 +104,15 @@ function Firework({ x, y, delay, colors }) {
             }}
           />
         );
-      })}
+      }),
+    [t, colors],
+  );
+  return (
+    <View style={{ position: 'absolute', left: `${x}%`, top: `${y}%` }} pointerEvents="none">
+      {sparks}
     </View>
   );
-}
+});
 
 // The dance floor: 8 × 4 tiles in perspective, flashing on the beat.
 function Floor({ beat, lit, width }) {
@@ -217,6 +227,7 @@ export default function RevealShow({ pull, creature, chestName, canAgain, onAgai
   };
 
   const mood = phase === 'launch' ? 'reveal' : phase === 'dance' ? 'dance' : phase === 'wave' ? 'happy' : phase === 'celebrate' ? 'happy' : 'idle';
+  const fwColors = useMemo(() => [R.dot, '#ffd23a', '#ff5cc6', '#ffffff'], [R.dot]);
   const shakeX = shake.interpolate({ inputRange: [0, 0.2, 0.4, 0.6, 1], outputRange: [0, -8, 7, -4, 0] });
   const size = Math.min(220, width * 0.55);
   const cam = phase === 'dance' ? (rar >= 2 ? 1.22 : 1.1) : 1;
@@ -267,7 +278,7 @@ export default function RevealShow({ pull, creature, chestName, canAgain, onAgai
         {shot > 0 && <Confetti key={shot} shot={shot} width={width} height={height} />}
         {fireworks &&
           [[24, 20, 0], [76, 16, 250], [50, 8, 500], [30, 34, 750]].map(([x, y, d], j) => (
-            <Firework key={j} x={x} y={y} delay={d} colors={[R.dot, '#ffd23a', '#ff5cc6', '#ffffff']} />
+            <Firework key={j} x={x} y={y} delay={d} colors={fwColors} />
           ))}
 
         {banner && (

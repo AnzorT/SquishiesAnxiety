@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Pressable from '../components/Pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { candyColors, candyFonts } from '../theme/candyTheme';
@@ -168,7 +169,7 @@ const LOOK = {
   next: { colors: ['#ffffff', '#faf3ff', '#ecdcff'], ring: '#a23ad8', text: candyColors.ink },
 };
 
-// The prize's picture: coins, gems, a Silver chest.
+// The prize's picture: coins, gems, a chest (an extra free one in the Shop).
 function RewardArt({ reward, size }) {
   if (reward.kind === 'coins') {
     const big = reward.amount >= 400;

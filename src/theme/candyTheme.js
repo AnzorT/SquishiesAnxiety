@@ -72,7 +72,7 @@ export const TIERS = {
   Rare: { label: 'RARE', w: 27, bg: ['#c9f7e1', '#c9f7e1'], color: '#4a1a73', glow: '#7ee8b4' },
   Epic: { label: 'EPIC', w: 15, bg: ['#ead6ff', '#ead6ff'], color: '#4a1a73', glow: '#c89bff' },
   Legendary: { label: 'LEGENDARY', w: 8, bg: ['#ffdcb0', '#ffdcb0'], color: '#4a1a73', glow: '#ffa94d' },
-  'Set reward': { label: 'SET REWARD', w: 0, bg: ['#ffe0f3', '#ffe0f3'], color: '#4a1a73', glow: '#ff8fd3' },
+  'Set reward': { label: 'RAINBOW', w: 0, bg: ['#ffe0f3', '#ffe0f3'], color: '#4a1a73', glow: '#ff8fd3' },
   Rainbow: { label: 'RAINBOW', w: 3.5, bg: ['#ffb3c7', '#ffe38a', '#b3f5c8', '#b3e0ff', '#dcc2ff'], color: '#4a1a73', glow: '#ff9fd6' },
   Golden: { label: 'GOLDEN', w: 1.5, bg: ['#fff3b0', '#ffc233', '#f0a000'], color: '#4a1a73', glow: '#ffd24d' },
   Secret: { label: 'SECRET', w: 0, bg: ['#4a1a73', '#ff4fa3'], color: '#ffffff', glow: '#ff6fbd' },

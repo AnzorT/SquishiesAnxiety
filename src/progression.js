@@ -17,7 +17,7 @@ import { todayKey } from './dailySpin.js';
 //              Each streak day adds STREAK_BONUS to squish coins (up to
 //              STREAK_DAYS days). A missed day resets it. Every chest also
 //              pays that streak day's reward (STREAK_REWARDS: coins, gems,
-//              a free Silver chest, and on day 10 half price on the next creation —
+//              an extra free chest, and on day 10 half price on the next creation —
 //              `streakDiscount`); the track starts over after day 10.
 //              bestStreak is the longest one, chests the chests opened.
 //
@@ -45,7 +45,7 @@ export const streakReward = (n) => STREAK_REWARDS[(Math.max(1, n) - 1) % STREAK_
 export function streakRewardText(r) {
   if (r.kind === 'coins') return `+${r.amount} coins`;
   if (r.kind === 'gems') return `+${r.amount} gems`;
-  if (r.kind === 'chest') return 'a free Silver chest';
+  if (r.kind === 'chest') return 'a free chest in the Shop';
   return 'half price on your next creation';
 }
 export const TUTORIAL_BOOST = 10; // ×10 coins during the tutorial's goal step

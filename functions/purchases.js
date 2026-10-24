@@ -4,7 +4,7 @@
 //
 // Products — the same ids in the Play Console and App Store Connect (the
 // app's list is PRODUCTS in src/economy.js):
-//  · remove_ads              — one-time, $1.99: `adsFree: true` (no banner,
+//  · remove_ads              — one-time, $0.99: `adsFree: true` (no banner,
 //                              no forced ads, free daily boxes, boosts
 //                              without videos).
 //  · creature_key            — $0.99, consumable: the key for one creature,
@@ -31,6 +31,13 @@
 //                              12000; GEM_PACKS in squad.js). A pack's first
 //                              purchase gives double (`gemFirst`).
 //
+//  · offer_*                — the Deals tab's offers (REDESIGN_V6 step 7):
+//                              what each sells is Firestore config/offers
+//                              (squad.js DEFAULT_OFFERS until it exists): a
+//                              bundle's gems, coins and chests (rolled here,
+//                              at once), the gem jar's gems, the season pass.
+//                              The gem packs' amounts come from it too.
+//
 // Price levels: each product can also be sold at other prices, as its own
 // store product named `<id>_<cents>` (creature_key_149 is a $1.49 key). The
 // app picks the level from Firestore `config/pricing` (src/economy.js); any
@@ -45,7 +52,7 @@ const CREATURE_KEY = 'creature_key';
 const CREATION = 'creature_creation';
 const CREATION_DISCOUNTED = 'creature_creation_15off';
 const CREATION_HALF = 'creature_creation_half';
-const { GEM_PACKS } = require('./squad');
+const { GEM_PACKS, offersOf, openGroup, jarGems, lineup } = require('./squad');
 const GEM_IDS = Object.keys(GEM_PACKS);
 const PRODUCT_IDS = [REMOVE_ADS, CREATURE_KEY, CREATION, CREATION_DISCOUNTED, CREATION_HALF, ...GEM_IDS];
 const CONSUMABLES = [CREATURE_KEY, CREATION, CREATION_DISCOUNTED, CREATION_HALF, ...GEM_IDS];
@@ -54,11 +61,22 @@ const CONSUMABLES = [CREATURE_KEY, CREATION, CREATION_DISCOUNTED, CREATION_HALF,
 // itself or any price level of it (`<base>_<cents>`); null for anything else.
 // (creature_creation_15off and _half are tried before creature_creation.)
 const LEVEL_RE = /^(gems_(?:80|450|950|2000|5500|12000)|remove_ads|creature_key|creature_creation_15off|creature_creation_half|creature_creation)(?:_([1-9]\d{0,5}))?$/;
+// an offer's product: offer_ and words (each starting with a letter), then
+// maybe a price level
+const OFFER_RE = /^(offer_[a-z][a-z0-9]*(?:_[a-z][a-z0-9]*)*)(?:_([1-9]\d{0,5}))?$/;
 function baseProduct(productId) {
-  const m = LEVEL_RE.exec(String(productId || ''));
+  const id = String(productId || '');
+  const m = LEVEL_RE.exec(id) || OFFER_RE.exec(id);
   return m ? m[1] : null;
 }
-const isConsumable = (productId) => CONSUMABLES.includes(baseProduct(productId));
+// the enabled offer that sells `productId`, from config/offers
+const offerFor = (productId, offers) => offersOf(offers).offers.find((o) => o.enabled !== false && o.product === baseProduct(productId)) || null;
+const isConsumable = (productId, offers) => {
+  const base = baseProduct(productId);
+  if (CONSUMABLES.includes(base)) return true;
+  const o = base && base.startsWith('offer_') ? offerFor(productId, offers) : null;
+  return !!(o && o.consumable);
+};
 
 // Paid back, in coins (3 Mystery Boxes' worth), for a key bought for a
 // creature that got unlocked another way in the meantime.
@@ -116,13 +134,54 @@ function checkAppleTransaction(tx, uid, productId) {
 // { update, result }: `update` describes the profile write in plain values
 // (verifyPurchase.js turns them into Firestore increments/deletes),
 // `result` goes back to the app.
-function grantFor({ productId, creatureId, profile, rosterIds }) {
+// An offer's grant (config/offers): `set` holds the profile fields to write
+// as they are (verifyPurchase writes them as given).
+function offerGrant(offer, profile, offers, { artIds = [], hidden, setRewards, need, day, random } = {}) {
+  const num = (n) => (typeof n === 'number' && Number.isFinite(n) ? n : 0);
+  const bought = { ...(profile.offersBought || {}), [offer.id]: true };
+  if (offer.kind === 'bundle') {
+    const gems = num(offer.gems);
+    const coins = num(offer.coins);
+    let p = { ...profile, gems: num(profile.gems) + gems, coins: num(profile.coins) + coins, totalEarned: num(profile.totalEarned) + coins };
+    let set = { gems: p.gems, coins: p.coins, totalEarned: p.totalEarned };
+    const hot = lineup(day, hidden);
+    const chests = (offer.chests || []).map((size, i) => {
+      const o = openGroup(p, hot[i % hot.length], size, { artIds, random, setRewards, need });
+      Object.entries(o.set).forEach(([k, v]) => {
+        if (k.startsWith('col.')) p = { ...p, col: { ...(p.col || {}), [k.slice(4)]: v } };
+        else p = { ...p, [k]: v };
+      });
+      set = { ...set, ...o.set };
+      return o.result;
+    });
+    return { update: { set: { ...set, offersBought: bought } }, result: { granted: 'bundle', offer: offer.id, gems, coins, chests } };
+  }
+  if (offer.kind === 'jar') {
+    const gems = jarGems(profile, offer);
+    return { update: { set: { gems: num(profile.gems) + gems, jarBase: num(profile.totalEarned), offersBought: bought } }, result: { granted: 'gems', gems, offer: offer.id } };
+  }
+  if (offer.kind === 'pass') {
+    const season = offersOf(offers).pass.season;
+    return { update: { set: { passPrem: { ...(profile.passPrem || {}), [season]: true }, offersBought: bought } }, result: { granted: 'pass', season } };
+  }
+  return { error: 'unknown_product' };
+}
+
+function grantFor({ productId, creatureId, profile, rosterIds, offers = null, artIds = [], hidden, setRewards, need, day, random }) {
   const base = baseProduct(productId);
   if (!base) return { error: 'unknown_product' };
 
+  if (base.startsWith('offer_')) {
+    const offer = offerFor(productId, offers);
+    if (!offer) return { error: 'unknown_product' };
+    return offerGrant(offer, profile, offers, { artIds, hidden, setRewards, need, day, random });
+  }
+
   if (GEM_PACKS[base]) {
     const first = !(profile.gemFirst || {})[base];
-    const gems = GEM_PACKS[base] * (first ? 2 : 1);
+    // the amount config/offers gives the pack, else the product's own
+    const pack = offersOf(offers).packs.find((x) => x.product === base);
+    const gems = (pack ? pack.gems : GEM_PACKS[base]) * (first ? 2 : 1);
     return { update: { gems, gemFirst: first ? base : null }, result: { granted: 'gems', gems, doubled: first } };
   }
 
@@ -168,6 +227,7 @@ module.exports = {
   CONSUMABLES,
   baseProduct,
   isConsumable,
+  offerFor,
   KEY_REFUND_COINS,
   sha256,
   appAccountToken,

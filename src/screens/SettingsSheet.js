@@ -1,16 +1,20 @@
 import React, { forwardRef, memo, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { Animated, BackHandler, Easing, Keyboard, View, Text, TextInput, Pressable, Modal, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, useWindowDimensions } from 'react-native';
+import { Animated, BackHandler, Easing, Keyboard, View, Text, TextInput, Modal, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, useWindowDimensions } from 'react-native';
+import Pressable from '../components/Pressable';
 import { candyColors, candyFonts } from '../theme/candyTheme';
 import CandyButton from '../components/candy/CandyButton';
 import RoundButton, { CloseGlyph } from '../components/candy/RoundButton';
 import Toast from '../components/squad/Toast';
 import ToggleSwitch from '../components/candy/ToggleSwitch';
 import sfx from '../audio/sfx';
+import TestWallet from '../components/TestWallet';
 
-// Bottom sheet opened from Home's menu — music / sound switches, nickname
-// editing, a feedback note and logout, in the v3 look: a pale pink sheet of
-// white cards, candy SAVE/LOG OUT buttons. (Remove Ads lives on Home's NO
-// ADS button; the stats have their own screen, StatsScreen.)
+// Bottom sheet opened from the lobby's gear (the 2026-10-19 design's
+// settings, less Remove Ads, which only the Shop's Deals sells): music /
+// sound switches, nickname, Stats, feedback,
+// Replay tutorial and logout, in the v3 look: a pale pink sheet of white
+// cards, candy SAVE/LOG OUT buttons. A tester account (the `tester` claim,
+// REDESIGN_V6 ruling 5) also gets the Test wallet and the FPS switch.
 //
 // It's drawn in the app's own tree, built once and then kept: opening only
 // slides it up (native) and fades the backdrop in. It used to be a
@@ -31,7 +35,7 @@ const CLOSE = { duration: 200, easing: Easing.in(Easing.quad), useNativeDriver: 
 // `ref.reset()` puts the nickname field back to the saved nickname (on
 // each open).
 const Body = memo(
-  forwardRef(function Body({ onClose, nickname, onSaveNickname, onSubmitFeedback, onLogout, onReplayTutorial }, ref) {
+  forwardRef(function Body({ onClose, nickname, onSaveNickname, onSubmitFeedback, onLogout, onReplayTutorial, onOpenStats, tester, wallet, fpsOn, onToggleFps }, ref) {
     const [nicknameEdit, setNicknameEdit] = useState((nickname || '').slice(0, 10));
     const [feedbackOpen, setFeedbackOpen] = useState(false);
     const [feedbackText, setFeedbackText] = useState('');
@@ -74,6 +78,8 @@ const Body = memo(
             </RoundButton>
           </View>
 
+          {tester ? <TestWallet wallet={wallet} fpsOn={fpsOn} onToggleFps={onToggleFps} /> : null}
+
           <View style={styles.card}>
             <View style={styles.soundRow}>
               <Text style={styles.cardLabel}>Music</Text>
@@ -92,6 +98,19 @@ const Body = memo(
               <CandyButton label="SAVE" variant="blue" size="sm" onPress={saveNickname} />
             </View>
           </View>
+
+          {/* Stats moved here from Home's menu (the 2026-10-19 design's settings) */}
+          {onOpenStats ? (
+            <Pressable
+              style={styles.feedbackButton}
+              onPress={() => {
+                onClose();
+                onOpenStats();
+              }}
+            >
+              <Text style={styles.feedbackButtonText}>STATS</Text>
+            </Pressable>
+          ) : null}
 
           <Pressable style={styles.feedbackButton} onPress={() => setFeedbackOpen(true)}>
             <Text style={styles.feedbackButtonText}>SEND FEEDBACK</Text>
@@ -142,7 +161,7 @@ const Body = memo(
   }),
 );
 
-function SettingsSheet({ visible, onClose, nickname, onSaveNickname, onSubmitFeedback, onLogout, onReplayTutorial }) {
+function SettingsSheet({ visible, onClose, nickname, onSaveNickname, onSubmitFeedback, onLogout, onReplayTutorial, onOpenStats, tester, wallet, fpsOn, onToggleFps }) {
   const { height } = useWindowDimensions();
   const [built, setBuilt] = useState(visible);
   useEffect(() => {
@@ -180,7 +199,7 @@ function SettingsSheet({ visible, onClose, nickname, onSaveNickname, onSubmitFee
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents={visible ? 'box-none' : 'none'}>
       <Animated.View style={[StyleSheet.absoluteFill, styles.scrim, { opacity: t }]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <Pressable silent style={StyleSheet.absoluteFill} onPress={onClose} />
       </Animated.View>
       <View style={styles.backdrop} pointerEvents="box-none">
         <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
@@ -192,6 +211,11 @@ function SettingsSheet({ visible, onClose, nickname, onSaveNickname, onSubmitFee
             onSubmitFeedback={onSubmitFeedback}
             onLogout={onLogout}
             onReplayTutorial={onReplayTutorial}
+            onOpenStats={onOpenStats}
+            tester={tester}
+            wallet={wallet}
+            fpsOn={fpsOn}
+            onToggleFps={onToggleFps}
           />
         </Animated.View>
       </View>

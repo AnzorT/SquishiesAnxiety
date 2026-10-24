@@ -392,7 +392,8 @@ exports.spinWheel = onCall(async (request) => {
 // One callable for every move (the rules: squad.js). The app sends
 // { move, ...args, tzOffsetMinutes }; the move runs in a transaction on the
 // player's profile and the result goes back. Chests can only drop creatures
-// that have art: the catalog's numbered creature docs.
+// that have art (the catalog's numbered creature docs) and are out (not on
+// config/roster's hidden list: squad.js HIDDEN).
 const squad = require('./squad');
 
 exports.squad = onCall(async (request) => {
@@ -403,8 +404,14 @@ exports.squad = onCall(async (request) => {
   if (!fn) throw new HttpsError('invalid-argument', 'Unknown move.');
   const db = admin.firestore();
   const day = dayKey(Date.now(), data.tzOffsetMinutes);
-  const needsArt = ['openChest', 'buyCreature'].includes(data.move);
-  const artIds = needsArt ? (await db.collection('creatures').select().get()).docs.map((d) => d.id).filter((id) => /^\d+$/.test(id)) : [];
+  const needsArt = ['openChest', 'groupChest', 'freeChest', 'adChest', 'dealChest', 'passClaim', 'streakClaim'].includes(data.move);
+  // the season pass and the 7-day streak read what config/offers sets
+  const needsOffers = ['passClaim', 'streakClaim'].includes(data.move);
+  const offersSnap = needsOffers ? await db.collection('config').doc('offers').get() : null;
+  const [artSnap, rosterSnap] = needsArt ? await Promise.all([db.collection('creatures').select().get(), db.collection('config').doc('roster').get()]) : [null, null];
+  const rosterCfg = rosterSnap && rosterSnap.exists ? rosterSnap.data() : null;
+  const hidden = squad.hiddenOf(rosterCfg);
+  const artIds = artSnap ? squad.outIds(artSnap.docs.map((d) => d.id).filter((id) => /^\d+$/.test(id)), hidden) : [];
   const args = {
     tier: String(data.tier || ''),
     deal: !!data.deal,
@@ -412,8 +419,17 @@ exports.squad = onCall(async (request) => {
     f: String(data.f || ''),
     i: Number(data.i),
     reward: data.reward && typeof data.reward === 'object' ? { kind: String(data.reward.kind || ''), amount: Number(data.reward.amount) || 0 } : null,
+    // a group chest (REDESIGN_V6 step 5)
+    group: String(data.group || ''),
+    size: String(data.size || ''),
+    now: Date.now(),
+    offers: offersSnap && offersSnap.exists ? offersSnap.data() : null,
     day,
     artIds,
+    hidden,
+    setRewards: squad.setRewardsOf(rosterCfg),
+    // how many copies unlock a creature (config/roster, else squad.js COPIES)
+    need: squad.copiesOf(rosterCfg),
   };
 
   const userRef = db.collection('users').doc(uid);
@@ -484,3 +500,122 @@ const verifyApple = makeVerifyApple({
 exports.verifyPurchase = onCall(
   makeVerifyPurchase({ db: admin.firestore(), FieldValue, HttpsError, logger, playApi, verifyApple })
 );
+
+// --- Social sign-in: Google, Facebook, TikTok (REDESIGN_V6 step 8) -----------
+//
+// One web flow for all three (the rules and pages: oauth.js). The browser
+// opens /oauth/start?provider=…; the provider sends it back to
+// /oauth/callback; the player comes back to the app with a custom token for
+// the Firebase user `<provider>:<id>` (made, with a profile, the first time).
+// Setup (once per provider): its client id + secret in Firestore
+// secrets/oauth (tools/admin/oauth.mjs), with this redirect URI registered at
+// the provider:
+//   https://us-central1-squishy-app-61445.cloudfunctions.net/oauth/callback
+// and the functions' service account allowed to sign tokens ("Service
+// Account Token Creator" on itself, in Google Cloud IAM).
+const { onRequest } = require('firebase-functions/v2/https');
+const oauth = require('./oauth');
+
+const OAUTH_REDIRECT = 'https://us-central1-squishy-app-61445.cloudfunctions.net/oauth/callback';
+
+async function oauthFetch(req) {
+  const res = await fetch(req.url, { method: req.method, headers: req.headers, body: req.body });
+  const text = await res.text();
+  let json = null;
+  try {
+    json = JSON.parse(text);
+  } catch (e) {
+    // not JSON
+  }
+  if (!res.ok || !json) throw new Error(`${req.url.split('?')[0]} → HTTP ${res.status} ${text.slice(0, 200)}`);
+  return json;
+}
+
+exports.oauth = onRequest(async (req, res) => {
+  const db = admin.firestore();
+  const sec = (await db.collection('secrets').doc('oauth').get()).data() || {};
+  const page = (code, html) => res.status(code).set('Content-Type', 'text/html; charset=utf-8').send(html);
+  const route = req.path.replace(/\/+$/, '');
+  try {
+    if (route.endsWith('/start')) {
+      const provider = String(req.query.provider || '');
+      const P = oauth.PROVIDERS[provider];
+      const cfg = sec[provider];
+      if (!P) return page(400, oauth.messagePage('Unknown sign-in', "That way of signing in isn't available."));
+      if (!cfg || !cfg[P.idKey] || !cfg.secret || !sec.stateKey) return page(200, oauth.messagePage(`${P.name} sign-in is coming soon`, 'For now, log in or register with your email.'));
+      return res.redirect(oauth.authorizeUrl(provider, cfg, OAUTH_REDIRECT, oauth.makeState(provider, sec.stateKey)));
+    }
+    if (route.endsWith('/callback')) {
+      const st = sec.stateKey ? oauth.readState(req.query.state, sec.stateKey) : null;
+      if (!st) return page(400, oauth.messagePage('That took too long', 'Please try signing in again.'));
+      if (req.query.error || !req.query.code) return page(200, oauth.messagePage('Sign-in cancelled', 'No worries, try again any time.'));
+      const provider = st.p;
+      const cfg = sec[provider];
+      const tok = await oauthFetch(oauth.tokenRequest(provider, cfg, String(req.query.code), OAUTH_REDIRECT));
+      const preq = oauth.profileRequest(provider, tok);
+      const prof = preq ? await oauthFetch(preq) : null;
+      const who = oauth.userOf(provider, tok, prof);
+      if (!who) throw new Error(`${provider}: no user in the answer`);
+      const uid = oauth.uidOf(provider, who.id);
+      const auth = admin.auth();
+      try {
+        await auth.getUser(uid);
+      } catch (e) {
+        await auth
+          .createUser({ uid, displayName: who.name || undefined, ...(who.email ? { email: who.email, emailVerified: who.emailVerified } : {}) })
+          // that email is already some other account's: make the user without it
+          .catch(() => auth.createUser({ uid, displayName: who.name || undefined }));
+      }
+      // the profile Register would make (createUserProfile in the app); no
+      // age is asked here: the provider's own age rules stand in
+      const userRef = db.collection('users').doc(uid);
+      if (!(await userRef.get()).exists) {
+        await userRef.set({
+          email: who.email || null,
+          age: null,
+          nickname: oauth.nicknameOf(who.name),
+          provider,
+          coins: 250,
+          totalEarned: 250,
+          adsFree: false,
+          generationCredits: 1,
+          ownedIds: ['0'],
+          stats: { presses: 0, longestHoldMs: 0, playTime: {} },
+          achievements: { speedTap: false, watchAd: false },
+          tut: 'start',
+          level: 1,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+      }
+      const token = await auth.createCustomToken(uid, { provider });
+      logger.info(`[${uid}] ${provider} sign-in`);
+      return page(200, oauth.returnPage(token));
+    }
+    return page(404, oauth.messagePage('Not found', ''));
+  } catch (e) {
+    logger.error('oauth failed', e.message);
+    return page(500, oauth.messagePage("Sign-in didn't work", 'Something went wrong on our side. Please try again in a moment.'));
+  }
+});
+
+// --- The test wallet (REDESIGN_V6 step 9, ruling 5) ---------------------------
+//
+// Sets coins, gems and the level for testing — only for an account with the
+// `tester: true` custom claim (set once with tools/admin/tester.mjs for the
+// owner's own account). The claim is checked here, on the server; the app
+// also hides the panel without it. Nobody else can use it, debug or release.
+exports.testWallet = onCall(async (request) => {
+  const uid = request.auth && request.auth.uid;
+  if (!uid) throw new HttpsError('unauthenticated', 'Sign in first.');
+  if (!request.auth.token || request.auth.token.tester !== true) throw new HttpsError('permission-denied', 'Not a tester account.');
+  const d = request.data || {};
+  const n = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(Number(v) || 0)));
+  const update = {};
+  if (d.coins != null) update.coins = n(d.coins, 0, 99999999);
+  if (d.gems != null) update.gems = n(d.gems, 0, 99999999);
+  if (d.level != null) update.level = n(d.level, 1, 99);
+  if (!Object.keys(update).length) return { ok: true };
+  await admin.firestore().collection('users').doc(uid).update(update);
+  logger.info(`[${uid}] test wallet`, update);
+  return { ok: true, ...update };
+});

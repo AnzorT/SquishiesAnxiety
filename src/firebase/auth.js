@@ -64,3 +64,21 @@ export async function loginWithEmail(email, password) {
 export async function logout() {
   await auth().signOut();
 }
+
+// --- email verification (REDESIGN_V6 step 8) -----------------------------------
+// Email/password accounts confirm their address before they play; Google,
+// Facebook and TikTok ones don't need to (the provider vouches for them).
+export const needsVerification = (user) => !!user && !user.emailVerified && (user.providerData || []).some((p) => p.providerId === 'password');
+
+export async function sendVerification() {
+  const user = auth().currentUser;
+  if (user) await user.sendEmailVerification();
+}
+
+// Asks Firebase again (the link was tapped in a browser): true once verified.
+export async function reloadVerified() {
+  const user = auth().currentUser;
+  if (!user) return false;
+  await user.reload();
+  return !!auth().currentUser?.emailVerified;
+}

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
+import Pressable from '../components/Pressable';
 import { LinearGradient } from 'expo-linear-gradient';
 import { candyFonts } from '../theme/candyTheme';
 import CandyBackground from '../components/candy/CandyBackground';

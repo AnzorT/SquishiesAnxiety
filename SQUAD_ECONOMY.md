@@ -14,7 +14,7 @@ The switch from per-creature tokens, keys and the Key Shop to the design's chest
 
 ## The rules (`functions/squad.js`, tested by `functions/squad.test.js`)
 
-- **Roster:** 79 creatures in 8 sets plus the Spooky Squish season. Ids 0-29 are the current plush 30. Rarity: Common, Rare, Epic, Legendary, plus one Set reward per set. Only creatures with a catalog doc (that is, with art) drop or are sold.
+- **Roster:** 86 creatures in 11 groups since 2026-10-19 (8 sets, the Spooky Squish season, Masked Heroes, Elemental Heroes; see REDESIGN_V6.md). Rarity: Common, Rare, Epic, Legendary, plus one Set reward per set. Only creatures with a catalog doc (that is, with art) drop or are sold.
 - **Chests:** Basic 250, Silver 600 and Gold 1,200 coins. Crystal 150, Rainbow 300 and Season 120 gems. Odds are in `CHESTS`.
   - Gold, Crystal and Rainbow count toward pity: the 30th is a Legendary.
   - Every 10th chest without an Epic gives one.

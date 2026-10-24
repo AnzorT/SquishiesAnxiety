@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useRef } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Pressable from '../components/Pressable';
 import Svg, { Path } from 'react-native-svg';
 import { candyFonts } from '../theme/candyTheme';
 import { INK, SOFT } from './ui';

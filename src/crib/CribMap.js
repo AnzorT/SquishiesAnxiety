@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
+import Pressable from '../components/Pressable';
 import CreatureThumbnail from '../components/CreatureThumbnail';
 import { candyFonts } from '../theme/candyTheme';
 import { SCENE_H, SCENE_W } from './data';

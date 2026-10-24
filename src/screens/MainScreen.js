@@ -76,8 +76,9 @@ export default function MainScreen({ tab: current, onTab, adsFree, active = true
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#45107a' },
+  root: { flex: 1, backgroundColor: '#fdeefa' },
   pages: { flex: 1, overflow: 'hidden' },
   track: { flex: 1, flexDirection: 'row' },
-  ad: { backgroundColor: '#2a0f4a', borderTopWidth: 0 },
+  // on the nav bar's own pastel (the design has no banner; ours sits on top of the bar)
+  ad: { backgroundColor: '#fdeefa', borderTopWidth: 0 },
 });

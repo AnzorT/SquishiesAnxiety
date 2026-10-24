@@ -56,6 +56,32 @@ export function setLevel(uid, level) {
   userDocRef(uid).update({ level }).catch(logFail('setLevel'));
 }
 
+// --- the lobby (src/squad/lobby.js) ------------------------------------------
+//
+// `lobby.sel`: the squishy shown in the lobby; `lobby.seen`: the owned ones
+// already looked at (the rest wear NEW). Client-written, like `tut`.
+
+export function setLobbySelected(uid, id) {
+  userDocRef(uid)
+    .update({ 'lobby.sel': String(id), 'lobby.seen': firestore.FieldValue.arrayUnion(String(id)) })
+    .catch(logFail('setLobbySelected'));
+}
+
+// A one-time offer's window (config/offers windowHours) runs from when the
+// player first saw it: offerSeen.<id> = ms.
+export function setOfferSeen(uid, id, at) {
+  userDocRef(uid)
+    .update({ [`offerSeen.${id}`]: at })
+    .catch(logFail('setOfferSeen'));
+}
+
+export function markSquadSeen(uid, ids) {
+  if (!ids.length) return;
+  userDocRef(uid)
+    .update({ 'lobby.seen': firestore.FieldValue.arrayUnion(...ids.map(String)) })
+    .catch(logFail('markSquadSeen'));
+}
+
 // The day the streak screen last opened by itself (after the Daily Spin),
 // so it does once a day on every device.
 export function markStreakSeen(uid, date) {
@@ -173,6 +199,28 @@ export function cribCoins(uid, n) {
   const update = { coins: inc(n) };
   if (n > 0) update.totalEarned = inc(n);
   userDocRef(uid).update(update).catch(logFail('cribCoins'));
+}
+
+// A Squishdoku level or Blitz run (src/squishdoku/levels.js afterLevel /
+// afterBlitz): its `sdk.*` fields and the coins it paid.
+export function saveSquishdoku(uid, update, coins = 0) {
+  const all = { ...update };
+  if (coins > 0) {
+    all.coins = inc(coins);
+    all.totalEarned = inc(coins);
+  }
+  userDocRef(uid).update(all).catch(logFail('saveSquishdoku'));
+}
+
+// Squish Sort's record (`sort.*` fields, src/sort/levels.js afterLevel) and
+// the coins a level paid, the same way.
+export function saveSort(uid, update, coins = 0) {
+  const all = { ...update };
+  if (coins > 0) {
+    all.coins = inc(coins);
+    all.totalEarned = inc(coins);
+  }
+  userDocRef(uid).update(all).catch(logFail('saveSort'));
 }
 
 // Accounts created before this app matched the new roster have an
@@ -346,6 +394,32 @@ export function subscribeToCreatures(onChange) {
         console.error('subscribeToCreatures failed:', error);
         onChange([]);
       }
+    );
+}
+
+// What the Shop's Deals and Gems tabs sell — config/offers (REDESIGN_V6
+// step 7; functions/squad.js DEFAULT_OFFERS documents it). `onChange` gets
+// null until it exists.
+export function subscribeToOffers(onChange) {
+  return firestore()
+    .collection('config')
+    .doc('offers')
+    .onSnapshot(
+      (snap) => onChange(snap.exists ? snap.data() : null),
+      () => onChange(null),
+    );
+}
+
+// The groups and creatures not out yet — config/roster { hidden: [...] }
+// (functions/squad.js HIDDEN documents it). `onChange` gets null until it
+// exists.
+export function subscribeToRoster(onChange) {
+  return firestore()
+    .collection('config')
+    .doc('roster')
+    .onSnapshot(
+      (snap) => onChange(snap.exists ? snap.data() : null),
+      () => onChange(null),
     );
 }
 

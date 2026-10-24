@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Platform, Pressable, StatusBar, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, Platform, StatusBar, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import Pressable from '../components/Pressable';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { candyFonts } from '../theme/candyTheme';

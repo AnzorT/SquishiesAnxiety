@@ -11,9 +11,9 @@
 // src/plush/) — from the rig data this also collects (design/creatures-v2.js:
 // each creature's eye/mouth/cheek geometry and colours, and its MOVES).
 //
-// Usage (from the repo root):
-//   python -m zipfile -e "ASMR Creature Squash Game.zip" tools/plush-art/design
-//   node tools/plush-art/render.mjs
+// Usage (from the repo root), with the design unpacked in tools/design-v6
+// (REDESIGN_V6.md):
+//   node tools/plush-art/render.mjs [id …]
 // Output: tools/plush-art/out/{id}/{variant}.webp plus out/manifest.json.
 
 import { spawn } from 'node:child_process';
@@ -24,7 +24,7 @@ import { fileURLToPath } from 'node:url';
 import { ROSTER } from './roster.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const DESIGN = path.join(HERE, 'design');
+const DESIGN = path.resolve(HERE, '../design-v6');
 const OUT = path.join(HERE, 'out');
 const PORT = 9400 + Math.floor(Math.random() * 400);
 
@@ -78,9 +78,11 @@ const MOVES = jsonAfter(v2Src, 'const MOVES = ');
 const animSrc = fs.readFileSync(path.join(DESIGN, 'plush-anim.js'), 'utf8');
 const FOODS = Object.fromEntries([...animSrc.match(/const FOODS = \{([^}]*)\}/)[1].matchAll(/(\w+): '(\w+)'/g)].map((m) => [m[1], m[2]]));
 
+// Only the 2026-10-03 thirty have face data; the rest are null, and the app
+// shows their drawing's own face (no mood faces, no faceless variants).
 function rigOf(c) {
   const v = V2.find((x) => x.name.toLowerCase() === c.key);
-  if (!v) throw new Error(`no creatures-v2 entry for ${c.key}`);
+  if (!v) return null;
   const { name, src, ...rig } = v;
   return { key: c.key, food: FOODS[c.key] || 'apple', ...rig };
 }
@@ -227,7 +229,8 @@ try {
     fs.mkdirSync(path.join(OUT, String(c.id)), { recursive: true });
     const svg = svgOf(c);
     const art = {};
-    for (const v of VARIANTS) {
+    const rig = rigOf(c);
+    for (const v of VARIANTS.filter((x) => x.face || rig)) {
       const m = marginOf(v.size);
       const canvas = v.size + m * 2;
       await send('Emulation.setDeviceMetricsOverride', { width: canvas, height: canvas, deviceScaleFactor: DPR, mobile: false });
@@ -251,7 +254,7 @@ try {
         px: [trimmed.w, trimmed.h],
       };
     }
-    manifest[c.id] = { key: c.key, name: c.name, description: c.description, art, rig: rigOf(c), moves: MOVES[c.name] || null };
+    manifest[c.id] = { key: c.key, name: c.name, description: c.description, art, rig, moves: MOVES[c.name] || null };
     process.stdout.write(`${c.id} `);
   }
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 1));

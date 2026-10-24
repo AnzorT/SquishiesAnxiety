@@ -1,5 +1,6 @@
 import React, { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { View, Text, StyleSheet, PanResponder, Animated, Pressable, Easing, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, PanResponder, Animated, Easing, Dimensions } from 'react-native';
+import Pressable from '../components/Pressable';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Canvas } from '@react-three/fiber';
@@ -11,9 +12,10 @@ import SquishyToy2D from '../components/SquishyToy2D';
 import Supersample from '../components/Supersample';
 import { INTERSTITIAL_AD_UNIT_ID } from '../firebase/ads';
 
-// A creature with a `modelUrl` (every premade creature, plus a photo-path
-// custom one) mounts the 3D mesh; everything else falls back to 2D art
-// (SquishyToy2D).
+// A creature with a `card` (every roster creature since REDESIGN_V6 step 4:
+// the design's card, src/components/squishCard.js) or a `modelUrl` (a
+// photo-path custom one) mounts the 3D stage; everything else falls back to
+// 2D art (SquishyToy2D).
 import SquishSound from '../audio/SquishSound';
 import squishSoundFor from '../audio/creatureSquish';
 import { pressHaptic, moveHaptic, releaseHaptic } from '../haptics/squishHaptics';
@@ -77,7 +79,7 @@ const ABUSE_MAX_WINDOW_MS = Math.max(...ABUSE_RULES.map((r) => r.windowMs));
 const RIPPLE_MAX = 180;
 
 // True for 3D-mesh creatures; picks Canvas vs SquishyToy2D in SquishStage.
-const toyIs3D = (t) => !!(t && t.modelUrl);
+const toyIs3D = (t) => !!(t && ((t.card && t.card.url) || t.modelUrl));
 
 // Ring that blooms from the touch point and fades. Pooled: a few of these
 // stay mounted (invisible when finished) and `play` just moves one to the
@@ -487,6 +489,8 @@ const SquishStage = memo(function SquishStage({
             ref={toyRef}
             creatureId={toy.id}
             modelUrl={toy.modelUrl}
+            cardUrl={toy.card ? toy.card.url : null}
+            stage={toy.stage ?? 1}
             visual={toy.visual}
             onSquish={onSquish}
             onRelease={onRelease}
@@ -596,7 +600,7 @@ function SettingsModal({
 }) {
   return (
     <View style={styles.settingsOverlay}>
-      <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+      <Pressable silent style={StyleSheet.absoluteFillObject} onPress={onClose} />
       <View style={[styles.settingsCard, { top }]}>
         <View style={styles.settingsHeader}>
           <Text style={styles.settingsTitle}>Settings</Text>

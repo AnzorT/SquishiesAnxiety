@@ -1,10 +1,12 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import Pressable from '../components/Pressable';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg';
 import OutlinedTitle from '../components/candy/OutlinedTitle';
 import ShadowText from '../components/candy/ShadowText';
 import CreatureThumbnail from '../components/CreatureThumbnail';
+import RigCreature from '../components/RigCreature';
 import IntroBackground from '../squad/IntroBackground';
 import { BtnText, CandyBtn, CurrencyIcon, F, GREEN_RING, PINK_RING } from '../squad/ui';
 import { MAX_AD_SPINS, WHEEL, SLICE, prizeCard } from '../dailySpin';
@@ -255,7 +257,7 @@ export default function DailySpinScreen({ onSpin, onDone, bonusLeft = 0, adsFree
   const k = Math.min(1, (W - 24) / (S + 6));
   // Mittens under the wheel: 150px when there's room, smaller (or none) on
   // short screens
-  const mascot = !mittens ? 0 : H >= 860 ? 150 : H >= 760 ? 110 : 0;
+  const mascot = H >= 860 ? 150 : H >= 760 ? 110 : 0;
 
   const land = useCallback(
     (index) =>
@@ -348,7 +350,8 @@ export default function DailySpinScreen({ onSpin, onDone, bonusLeft = 0, adsFree
 
         {mascot ? (
           <View style={{ marginTop: 8 }}>
-            <CreatureThumbnail creature={mittens} size={mascot} mood={phase === 'done' || phase === 'prize' ? 'happy' : 'idle'} animate />
+            {/* the design's live Mittens (REDESIGN_V6 step 9) */}
+            <RigCreature creatureKey="mittens" style={{ width: mascot, height: mascot }} />
           </View>
         ) : (
           <View style={{ height: 16 }} />

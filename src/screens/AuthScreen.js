@@ -1,8 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, KeyboardAvoidingView, ScrollView, Platform, StyleSheet, Animated, Easing, LayoutAnimation, UIManager } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { View, Text, TextInput, KeyboardAvoidingView, ScrollView, Platform, StyleSheet, Animated, Easing, LayoutAnimation, UIManager } from 'react-native';
+import Pressable from '../components/Pressable';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import { loginWithEmail, registerWithEmail, setKeepSignedIn } from '../firebase/auth';
+import { loginWithEmail, registerWithEmail, sendVerification, setKeepSignedIn } from '../firebase/auth';
+import { startSocial } from '../firebase/social';
+import RigCreature from '../components/RigCreature';
 import { createUserProfile } from '../firebase/firestore';
 import { authErrorMessage } from '../firebase/authErrors';
 import TutTarget from '../tutorial/Target';
@@ -14,9 +17,11 @@ import { BtnText, CandyBtn, F, PINK, PINK_RING } from '../squad/ui';
 // Log in / Register, from the app shell of "Squish Squad App.html": the
 // white outlined "Squish Squad" title and a line under it, then one white
 // card with the Log in / Register switch (a pink pill that springs across),
-// labelled fields, the pink submit button and "Keep me signed in". Email
-// only (2026-10-08 ruling), so the design's OR + Google / Facebook / TikTok
-// row is left out, and so is its rive-rig Mittens mascot (not ported yet).
+// labelled fields, the pink submit button and "Keep me signed in"; since
+// REDESIGN_V6 step 8 also the design's live Mittens on top and its OR +
+// Google / Facebook / TikTok row (the web flow in src/firebase/social.js; a
+// provider not set up yet says so). A new email account gets a verification
+// link (App holds it at VerifyEmailScreen until it's tapped).
 // Register grows one row above Email: the squad name, plus the age, which
 // the design doesn't have but our COPPA gate needs. Firebase Auth's
 // onAuthStateChanged listener in App.js is what moves past this screen.
@@ -218,6 +223,9 @@ export default function AuthScreen() {
           age,
           nickname,
         });
+        // the link that proves the address is real (VerifyEmailScreen waits
+        // for it); a failed send can be retried there
+        await sendVerification().catch(() => {});
       } catch (e) {
         setError(authErrorMessage(e));
         setSubmitting(false);
@@ -254,6 +262,7 @@ export default function AuthScreen() {
     <IntroBackground>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <RigCreature creatureKey="mittens" style={styles.mittens} />
           <ShadowText
             style={styles.title}
             shadows={[
@@ -321,6 +330,19 @@ export default function AuthScreen() {
                     )}
                     <Text style={styles.keepText}>Keep me signed in</Text>
                   </Pressable>
+                  <View style={styles.orRow}>
+                    <View style={styles.orLine} />
+                    <Text style={styles.orText}>OR</Text>
+                    <View style={styles.orLine} />
+                  </View>
+                  <View style={styles.socials}>
+                    {SOCIALS.map(([id, label, Icon]) => (
+                      <Pressable key={id} onPress={() => startSocial(id)} style={({ pressed }) => [styles.social, pressed && { transform: [{ translateY: 2 }] }]}>
+                        <Icon />
+                        <Text style={styles.socialText}>{label}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
                 </>
               )}
             </View>
@@ -333,8 +355,45 @@ export default function AuthScreen() {
   );
 }
 
+// the three social buttons' logos
+const GoogleLogo = () => (
+  <Svg width={26} height={26} viewBox="0 0 24 24">
+    <Path d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z" fill="#4285F4" />
+    <Path d="M12 22c2.7 0 5-.9 6.6-2.5l-3.2-2.5c-.9.6-2 1-3.4 1a5.9 5.9 0 0 1-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z" fill="#34A853" />
+    <Path d="M6.4 13.9a6 6 0 0 1 0-3.8V7.5H3.1a10 10 0 0 0 0 9z" fill="#FBBC05" />
+    <Path d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.5l3.3 2.6A5.9 5.9 0 0 1 12 6z" fill="#EA4335" />
+  </Svg>
+);
+const FacebookLogo = () => (
+  <Svg width={26} height={26} viewBox="0 0 24 24">
+    <Circle cx={12} cy={12} r={11} fill="#1877F2" />
+    <Path d="M13.2 19v-6.1h2.1l.3-2.4h-2.4V9c0-.7.2-1.2 1.2-1.2h1.3V5.7c-.2 0-1-.1-1.9-.1-1.9 0-3.1 1.1-3.1 3.2v1.7H8.6v2.4h2.1V19z" fill="#ffffff" />
+  </Svg>
+);
+const TT = 'M14.6 6.5c.4 1.3 1.4 2.2 2.7 2.3v2a4.6 4.6 0 0 1-2.7-.9v4.2a3.6 3.6 0 1 1-3.6-3.6h.4v2.1a1.5 1.5 0 1 0 1.1 1.5V6.5z';
+const TikTokLogo = () => (
+  <Svg width={26} height={26} viewBox="0 0 24 24">
+    <Circle cx={12} cy={12} r={11} fill="#111111" />
+    <Path d={TT} fill="#25F4EE" transform="translate(-0.5,-0.4)" />
+    <Path d={TT} fill="#FE2C55" transform="translate(0.5,0.4)" />
+    <Path d={TT} fill="#ffffff" />
+  </Svg>
+);
+const SOCIALS = [
+  ['google', 'Google', GoogleLogo],
+  ['facebook', 'Facebook', FacebookLogo],
+  ['tiktok', 'TikTok', TikTokLogo],
+];
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  mittens: { width: 130, height: 130, alignSelf: 'center', marginBottom: -6 },
+  orRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 2 },
+  orLine: { flex: 1, height: 2, borderRadius: 1, backgroundColor: '#ece0f8' },
+  orText: { fontFamily: F.black, fontSize: 10.5, letterSpacing: 1.2, color: '#a98bc9' },
+  socials: { flexDirection: 'row', gap: 7 },
+  social: { flex: 1, alignItems: 'center', gap: 4, paddingTop: 10, paddingBottom: 8, borderRadius: 16, backgroundColor: '#ffffff', borderWidth: 2.5, borderColor: '#ece0f8', borderBottomWidth: 5 },
+  socialText: { fontFamily: F.black, fontSize: 11, color: '#45107a' },
   // the dots (14 + 7 hop room) in the label's place: about the label's
   // line height, so the button keeps its size
   dots: { height: 26 },

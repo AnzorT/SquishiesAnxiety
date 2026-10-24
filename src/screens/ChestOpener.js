@@ -1,15 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, Image, PanResponder, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import CandyBackground from '../components/candy/CandyBackground';
 import RoundButton, { BackGlyph } from '../components/candy/RoundButton';
 import OutlinedTitle from '../components/candy/OutlinedTitle';
 import ShadowText, { outline3 } from '../components/candy/ShadowText';
 import { RaysSpin } from '../components/candy/Decor';
 import sfx from '../audio/sfx';
 import { CHESTS, CHEST_LOOK, RAR_LOOK, chestArtOf, myChests } from '../squad/data';
+import CHEST_ART, { CHEST_BOX } from '../squad/chestArt';
 import * as squad from '../squad/api';
-import { BtnText, CandyBtn, Chest, F, PINK_RING } from '../squad/ui';
+import { BtnText, CandyBtn, F, PINK_RING } from '../squad/ui';
 import RevealShow from './RevealShow';
 import TutTarget from '../tutorial/Target';
 import { report as tutReport } from '../tutorial/store';
@@ -23,7 +23,20 @@ import { report as tutReport } from '../tutorial/store';
 // The server rolls the chest the moment the smashing starts (squad
 // openChest); the burst waits for its answer. The chest's look per crack
 // stage is the design's own art (src/squad/chestArt.js); the squash, wobble,
-// tremble and burst are done here.
+// tremble and burst are done here. It's drawn over the Shop's sky
+// (ShopScreen, whose content sleeps meanwhile).
+//
+// Speed (2026-10-10: taps after the first answered late and the motion
+// hitched): every tap re-renders this screen, and an Animated view that
+// re-renders, or an interpolation made in a render, is torn down and rebuilt
+// on the native side, one bridge call per node. So the animated parts are
+// memoized pieces whose nodes are made once (a tap only redraws the HP bar
+// and adds its own chips), and every multi-step motion (squash, shake,
+// flash, burst, wobble, bob, tremble) is ONE native timing read through a
+// keyframed interpolation: an Animated.sequence, or a loop of one, hands
+// back to JS between steps, so a busy JS thread used to stall the chest
+// mid-squash. All six crack stages are drawn up front (hidden), so a new
+// stage never waits on its image.
 
 const HP = { basic: 100, silver: 160, gold: 200, crystal: 240, rainbow: 300, season: 160, welcome: 60 };
 const DMG = { tap: [11, 15], hold: [5, 7], swipe: [42, 56] };
@@ -44,21 +57,45 @@ const rnd = (a, b) => a + Math.random() * (b - a);
 const irnd = (a, b) => Math.round(rnd(a, b));
 const SIZE = 240 * 1.12;
 const ORIGIN_DY = (0.86 - 0.5) * SIZE; // the design squashes about 50% 86%
+const HIT_MS = 450; // impact held 130 ms, then the recoil (lcRecA): 130, 95, 95
+const HIT_SOFT = 70 / HIT_MS; // a hit that doesn't crack a stage holds 60 ms, not 130
+const BURST_MS = 650;
+const SHAKE_MS = 230;
+const FLASH_MS = 900;
+const TREMBLE_STEPS = 8; // lcTremble: a new offset every 50 ms
 
-// One flying chip, number, or slash: a view that animates once and goes.
-function Fx({ item, onDone }) {
+// A looping value 0 → 1 read as a smooth curve: `f` sampled at 17 points
+// (native interpolation is piecewise linear). Replaces a loop of an
+// up-and-back sequence, which RN runs from JS.
+const WAVE_IN = Array.from({ length: 17 }, (_, i) => i / 16);
+const curve = (t, f) => t.interpolate({ inputRange: WAVE_IN, outputRange: WAVE_IN.map(f) });
+const TAU = Math.PI * 2;
+const keys = (t, ms, at, out) => t.interpolate({ inputRange: at.map((x) => x / ms), outputRange: out, extrapolate: 'clamp' });
+
+// One hit's flying chips and number (or a slash): one native timing drives
+// them all, and their nodes are made once. Each item keeps its own length
+// (`ms`) inside the group's: it ends where the group's eased value is at
+// that time.
+const Burst = memo(function Burst({ group }) {
   const t = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.timing(t, { toValue: 1, duration: item.ms, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(() => onDone(item.id));
-  }, [t, item, onDone]);
+    Animated.timing(t, { toValue: 1, duration: group.ms, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [t, group]);
+  const views = useMemo(() => group.items.map((item) => fxView(item, t, 1 - (1 - item.ms / group.ms) ** 3)), [group, t]);
+  return views;
+});
+
+function fxView(item, t, end) {
+  const at = (pts, out) => t.interpolate({ inputRange: pts.map((x) => x * end), outputRange: out, extrapolate: 'clamp' });
   if (item.kind === 'part') {
     return (
       <Animated.View
+        key={item.id}
         style={{
           position: 'absolute', left: item.x - item.w / 2, top: item.y - item.h / 2, width: item.w, height: item.h, borderRadius: item.round ? item.w : 2, backgroundColor: item.c,
           borderWidth: item.round ? 0 : 2, borderColor: '#ffffff',
-          opacity: t.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
-          transform: [{ translateX: t.interpolate({ inputRange: [0, 1], outputRange: [0, item.dx] }) }, { translateY: t.interpolate({ inputRange: [0, 1], outputRange: [0, item.dy] }) }, { rotate: t.interpolate({ inputRange: [0, 1], outputRange: ['0deg', `${item.rot}deg`] }) }, { scale: t.interpolate({ inputRange: [0, 1], outputRange: [1, 0.6] }) }],
+          opacity: at([0, 1], [1, 0]),
+          transform: [{ translateX: at([0, 1], [0, item.dx]) }, { translateY: at([0, 1], [0, item.dy]) }, { rotate: at([0, 1], ['0deg', `${item.rot}deg`]) }, { scale: at([0, 1], [1, 0.6]) }],
         }}
       />
     );
@@ -66,10 +103,11 @@ function Fx({ item, onDone }) {
   if (item.kind === 'slash') {
     return (
       <Animated.View
+        key={item.id}
         style={{
           position: 'absolute', left: item.x - item.len / 2, top: item.y - 4.5, width: item.len, height: 9, borderRadius: 999, backgroundColor: '#ffffff', shadowColor: '#bff6ff', shadowRadius: 10, shadowOpacity: 1, elevation: 6,
-          opacity: t.interpolate({ inputRange: [0, 0.35, 1], outputRange: [1, 1, 0] }),
-          transform: [{ rotate: `${item.ang}deg` }, { scaleX: t.interpolate({ inputRange: [0, 0.35, 1], outputRange: [0.15, 1, 1.08] }) }],
+          opacity: at([0, 0.35, 1], [1, 1, 0]),
+          transform: [{ rotate: `${item.ang}deg` }, { scaleX: at([0, 0.35, 1], [0.15, 1, 1.08]) }],
         }}
       />
     );
@@ -77,21 +115,174 @@ function Fx({ item, onDone }) {
   // a damage / heal number
   return (
     <Animated.View
+      key={item.id}
       pointerEvents="none"
       style={{
         position: 'absolute', left: item.x - 60, top: item.y - item.size / 2, width: 120, alignItems: 'center',
-        opacity: t.interpolate({ inputRange: [0, 0.18, 1], outputRange: [0, 1, 0] }),
-        transform: [{ translateY: t.interpolate({ inputRange: [0, 0.18, 1], outputRange: [0, -0.3 * item.size, -2.1 * item.size] }) }, { scale: t.interpolate({ inputRange: [0, 0.18, 1], outputRange: [0.4, 1.25, 0.95] }) }],
+        opacity: at([0, 0.18, 1], [0, 1, 0]),
+        transform: [{ translateY: at([0, 0.18, 1], [0, -0.3 * item.size, -2.1 * item.size]) }, { scale: at([0, 0.18, 1], [0.4, 1.25, 0.95]) }],
       }}
     >
-      <ShadowText style={{ fontFamily: F.display, fontSize: item.size, color: item.color }} shadows={[[0, 4, '#45107a'], [2, 0, '#45107a'], [-2, 0, '#45107a'], [0, 2, '#45107a'], [0, -2, '#45107a']]}>
+      <ShadowText style={{ fontFamily: F.display, fontSize: item.size, color: item.color }} shadows={NUM_SHADOWS}>
         {item.txt}
       </ShadowText>
     </Animated.View>
   );
 }
+const NUM_SHADOWS = [[0, 4, '#45107a'], [2, 0, '#45107a'], [-2, 0, '#45107a'], [0, 2, '#45107a'], [0, -2, '#45107a']];
 
-export default function ChestOpener({ tier, profile, catalog, onClose }) {
+const FxLayer = memo(function FxLayer({ fx }) {
+  return fx.map((g) => <Burst key={g.id} group={g} />);
+});
+
+// The chest with its aura: drawn again only when the crack stage changes.
+// All six stages' art is laid out (only the current one shows), so each is
+// decoded before it's needed.
+const ChestStage = memo(function ChestStage({ art, img, idleStage, m }) {
+  const transform = useMemo(() => {
+    const [, deg, isx, isy] = IDLE[idleStage] || [0, 0, 1, 1];
+    // one swing: out to +1, back through 0 to −1, home (the old sequence's ease in-out)
+    const sin = (x) => Math.sin(TAU * x);
+    const rot = curve(m.idle, (x) => `${sin(x) * deg}deg`);
+    const idleSx = curve(m.idle, (x) => 1 + Math.max(0, sin(x)) * (isx - 1));
+    const idleSy = curve(m.idle, (x) => 1 + Math.max(0, sin(x)) * (isy - 1));
+    return [
+      { translateX: Animated.multiply(m.tremX, m.tremAmp) },
+      { translateY: Animated.add(Animated.multiply(m.tremY, m.tremAmp), m.bobY) },
+      // squash about the chest's foot (50% 86%)
+      { translateY: ORIGIN_DY },
+      { scaleX: Animated.multiply(Animated.multiply(m.hitSx, m.burstSx), idleSx) },
+      { scaleY: Animated.multiply(Animated.multiply(m.hitSy, m.burstSy), idleSy) },
+      { rotate: rot },
+      { translateY: -ORIGIN_DY },
+    ];
+  }, [idleStage, m]);
+  const style = useMemo(() => ({ width: SIZE, height: SIZE, marginTop: -32, opacity: m.fade, transform }), [m, transform]);
+  const frames = CHEST_ART[art] || CHEST_ART.basic;
+  const shown = img === 'burst' ? 5 : img;
+  const box = CHEST_BOX * (SIZE / 240);
+  const pad = (box - SIZE) / 2;
+  return (
+    <View style={styles.center} pointerEvents="none">
+      <View style={styles.halo} />
+      <RaysSpin size={460} durationMs={16000} rayDeg={9} gapDeg={13} opacity={0.5} color={AURA[art]} fadeStart={0.12} fadeEnd={0.62} style={styles.rays} />
+      <View style={[styles.floorGlow, { backgroundColor: AURA[art] }]} />
+      <TutTarget name="chestStage" style={styles.tutChest} pointerEvents="none" />
+      <Animated.View style={style}>
+        {frames.map((src, i) => (
+          <Image key={i} source={src} fadeDuration={0} style={{ position: 'absolute', left: -pad, top: -pad, width: box, height: box, opacity: i === shown ? 1 : 0 }} />
+        ))}
+      </Animated.View>
+    </View>
+  );
+});
+
+const Header = memo(function Header({ tier, busy, onClose }) {
+  const odds = (CHESTS[tier]?.odds || []).map((p, i) => ({ p, i })).filter((o) => o.p > 0);
+  return (
+    <>
+      <View style={styles.header}>
+        <RoundButton size={36} onPress={busy ? undefined : onClose} dim={busy}>
+          <BackGlyph />
+        </RoundButton>
+        <OutlinedTitle text={`${CHEST_LOOK[tier].name.toUpperCase()} CHEST`} fill="pink" size={23} outline={3} ring={2} drop={5} />
+      </View>
+      <View style={styles.odds}>
+        {odds.map(({ p, i }) => (
+          <View key={i} style={[styles.oddsChip, { backgroundColor: RAR_LOOK[i].bg }]}>
+            <Text style={styles.oddsLabel}>{RAR_LOOK[i].label}</Text>
+            <Text style={styles.oddsPct}>{p}%</Text>
+          </View>
+        ))}
+      </View>
+    </>
+  );
+});
+
+const HpBar = memo(function HpBar({ phase, st, rem, hp, healing }) {
+  const chunk = hp / 5;
+  return (
+    <View style={styles.bar} pointerEvents="none">
+      <View style={styles.barHead}>
+        <ShadowText style={styles.barLabel} shadows={BAR_SHADOWS}>
+          {phase === 'idle' ? 'CHEST HP' : st >= 5 ? 'OPEN!' : `STAGE ${st + 1} / 5`}
+        </ShadowText>
+        <ShadowText style={[styles.barLabel, { color: '#fff3a0', letterSpacing: 0 }]} shadows={BAR_SHADOWS}>
+          {`${Math.max(0, Math.round(rem))} / ${hp}`}
+        </ShadowText>
+      </View>
+      <View style={styles.segs}>
+        {[0, 1, 2, 3, 4].map((i) => {
+          const f = Math.max(0, Math.min(1, (rem - i * chunk) / chunk));
+          return (
+            <View key={i} style={styles.seg}>
+              <View style={[styles.segFill, { width: `${f * 100}%`, backgroundColor: healing && f > 0 ? '#7ee8b4' : '#ff8fd0' }]} />
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+});
+const BAR_SHADOWS = outline3('#45107a', 1.5);
+
+const Foot = memo(function Foot({ phase, mech, mechOf, healing, bottom }) {
+  const busy = phase === 'smash' || phase === 'burst';
+  const mu = MECH_UI[mech] || MECH_UI.tap;
+  return (
+    <View style={[styles.foot, { paddingBottom: 22 + bottom }]}>
+      {phase === 'idle' && (
+        <View style={styles.idlePill}>
+          <ShadowText style={styles.idleText} shadows={IDLE_SHADOWS}>
+            {MECH_UI[mechOf].idle}
+          </ShadowText>
+        </View>
+      )}
+      {busy && (
+        <>
+          {mechOf === 'mix' && (
+            <View style={styles.mixRow}>
+              {['tap', 'hold', 'swipe'].map((k) => (
+                <View key={k} style={[styles.mixStep, { backgroundColor: k === mech ? '#ff4fbf' : 'rgba(255,255,255,0.85)' }]}>
+                  <Text style={[styles.mixText, { color: k === mech ? '#ffffff' : '#6a1b9a' }]}>{MECH_UI[k].tag}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+          <CandyBtn kind="pink" padV={10} padH={26} lip={5} key={mech}>
+            <BtnText ring={PINK_RING} size={22}>
+              {mu.title}
+            </BtnText>
+          </CandyBtn>
+          <ShadowText style={[styles.sub, { color: healing ? '#fff3a0' : '#ffffff' }]} shadows={SUB_SHADOWS}>
+            {healing ? "It's healing! Keep going" : mu.sub}
+          </ShadowText>
+        </>
+      )}
+    </View>
+  );
+});
+const IDLE_SHADOWS = [[0, 3.5, '#45107a'], [2, 0, '#45107a'], [-2, 0, '#45107a'], [0, 2, '#45107a'], [0, -2, '#45107a']];
+const SUB_SHADOWS = [[0, 3, '#45107a'], [1.5, 0, '#45107a'], [-1.5, 0, '#45107a'], [0, 1.5, '#45107a'], [0, -1.5, '#45107a']];
+
+// The white ring that rings out when a stage cracks.
+const Ring = memo(function Ring({ t, w, h, glow }) {
+  const style = useMemo(
+    () => [styles.ring, { left: w / 2 - 125, top: h / 2 - 125, shadowColor: glow, opacity: t.interpolate({ inputRange: [0, 1], outputRange: [0.95, 0] }), transform: [{ scale: t.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1.7] }) }] }],
+    [t, w, h, glow],
+  );
+  return <Animated.View style={style} />;
+});
+
+const Flash = memo(function Flash({ t }) {
+  const style = useMemo(() => [StyleSheet.absoluteFill, { backgroundColor: '#ffffff', opacity: keys(t, FLASH_MS, [0, 110, FLASH_MS], [0, 1, 0]) }], [t]);
+  return <Animated.View pointerEvents="none" style={style} />;
+});
+
+// `waitFor`: a purchase still on its way to the server (the Shop shows the
+// chest at once); the chest is opened once it's through. `onRevealing`
+// hears when the Reveal Show starts and ends.
+export default function ChestOpener({ tier, profile, catalog, onClose, waitFor = null, onRevealing }) {
   const insets = useSafeAreaInsets();
   const hp = HP[tier] || 100;
   const mechOf = tier === 'rainbow' ? 'mix' : { basic: 'tap', silver: 'tap', gold: 'hold', crystal: 'swipe', season: 'tap', welcome: 'tap' }[tier];
@@ -108,52 +299,77 @@ export default function ChestOpener({ tier, profile, catalog, onClose }) {
 
   const r = useRef({ phase: 'idle', dmg: 0, down: false, anchor: null, lastSlash: 0, tick: 0, holdT: null, healT: null, id: 0, result: null, failed: false, burstReady: false }).current;
 
-  // chest motion
-  const sx = useRef(new Animated.Value(1)).current;
-  const sy = useRef(new Animated.Value(1)).current;
-  const idle = useRef(new Animated.Value(0)).current;
-  const bob = useRef(new Animated.Value(0)).current;
-  const shake = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-  const tremble = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-  const fade = useRef(new Animated.Value(1)).current;
-  const flash = useRef(new Animated.Value(0)).current;
-  const ring = useRef(new Animated.Value(0)).current;
+  // chest motion: driver values and the nodes read from them, made once
+  const m = useMemo(() => {
+    const v = (x) => new Animated.Value(x);
+    const o = { idle: v(0), bob: v(0), hit: v(1), burst: v(0), shakeS: v(1), shakeB: v(1), tremble: v(0), tremAmp: v(0), flash: v(1), ring: v(0) };
+    o.hitSx = keys(o.hit, HIT_MS, [0, 130, 260, 355, HIT_MS], [1.13, 1.13, 0.93, 1.03, 1]);
+    o.hitSy = keys(o.hit, HIT_MS, [0, 130, 260, 355, HIT_MS], [0.86, 0.86, 1.09, 0.98, 1]);
+    o.burstSx = keys(o.burst, BURST_MS, [0, 230, 390, BURST_MS], [1, 1.22, 0.88, 1.6]);
+    o.burstSy = keys(o.burst, BURST_MS, [0, 230, 390, BURST_MS], [1, 0.82, 1.2, 1.6]);
+    o.fade = keys(o.burst, BURST_MS, [0, 390, BURST_MS], [1, 1, 0]);
+    o.bobY = curve(o.bob, (x) => (-8 * (1 - Math.cos(TAU * x))) / 2);
+    // a fixed jittery path, scaled by tremAmp (0 when not held)
+    const path = () => [0, ...Array.from({ length: TREMBLE_STEPS - 1 }, () => rnd(-1, 1)), 0];
+    const tin = Array.from({ length: TREMBLE_STEPS + 1 }, (_, i) => i / TREMBLE_STEPS);
+    o.tremX = o.tremble.interpolate({ inputRange: tin, outputRange: path() });
+    o.tremY = o.tremble.interpolate({ inputRange: tin, outputRange: path() });
+    const shake = (t, a) => ({
+      x: keys(t, SHAKE_MS, [0, 50, 110, 170, SHAKE_MS], [0, -a, a * 0.9, -a * 0.6, 0]),
+      y: keys(t, SHAKE_MS, [0, 50, 110, 170, SHAKE_MS], [0, a / 2, -a / 2, a / 3, 0]),
+    });
+    const s = shake(o.shakeS, 3);
+    const b = shake(o.shakeB, 9);
+    o.screen = { flex: 1, transform: [{ translateX: Animated.add(s.x, b.x) }, { translateY: Animated.add(s.y, b.y) }] };
+    return o;
+  }, []);
 
   const stageOf = (d) => Math.min(5, Math.floor(d / (hp / 5) + 1e-9));
   const st = stageOf(dmg);
   const mech = mechOf === 'mix' ? MIX[Math.min(4, st)] : mechOf;
-  const range = (m) => (mechOf === 'mix' ? MIX_DMG[m] : DMG[m]);
+  const range = (k) => (mechOf === 'mix' ? MIX_DMG[k] : DMG[k]);
 
   // idle bob (before the first touch) and the per-stage wobble
   useEffect(() => {
     if (phase !== 'idle') return undefined;
-    const loop = Animated.loop(Animated.sequence([Animated.timing(bob, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.sin), useNativeDriver: true }), Animated.timing(bob, { toValue: 0, duration: 1200, easing: Easing.inOut(Easing.sin), useNativeDriver: true })]));
+    m.bob.setValue(0);
+    const loop = Animated.loop(Animated.timing(m.bob, { toValue: 1, duration: 2400, easing: Easing.linear, useNativeDriver: true }));
     loop.start();
     return () => loop.stop();
-  }, [phase, bob]);
+  }, [phase, m]);
   const idleStage = Math.min(4, st);
   useEffect(() => {
     const spec = IDLE[idleStage];
-    idle.setValue(0);
+    m.idle.setValue(0);
     if (!spec || phase === 'burst' || phase === 'reveal') return undefined;
-    const loop = Animated.loop(Animated.sequence([Animated.timing(idle, { toValue: 1, duration: spec[0] / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }), Animated.timing(idle, { toValue: -1, duration: spec[0] / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true })]));
+    const loop = Animated.loop(Animated.timing(m.idle, { toValue: 1, duration: spec[0], easing: Easing.linear, useNativeDriver: true }));
     loop.start();
     return () => loop.stop();
-  }, [idleStage, phase, idle]);
+  }, [idleStage, phase, m]);
 
   // shaking while it's held (lcTremble: more the further along)
   useEffect(() => {
     if (!holding || phase !== 'smash') {
-      tremble.setValue({ x: 0, y: 0 });
+      m.tremAmp.setValue(0);
       return undefined;
     }
-    const amp = 1 + Math.min(1, 0.25 + r.dmg / hp) * 3;
-    const t = setInterval(() => tremble.setValue({ x: rnd(-amp, amp), y: rnd(-amp, amp) }), 50);
-    return () => clearInterval(t);
-  }, [holding, phase, tremble, r, hp]);
+    m.tremAmp.setValue(1 + Math.min(1, 0.25 + r.dmg / hp) * 3);
+    m.tremble.setValue(0);
+    const loop = Animated.loop(Animated.timing(m.tremble, { toValue: 1, duration: TREMBLE_STEPS * 50, easing: Easing.linear, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [holding, phase, idleStage, m, r, hp]);
 
-  const addFx = useCallback((items) => setFx((f) => [...f.slice(-48), ...items]), []);
-  const dropFx = useCallback((id) => setFx((f) => f.filter((x) => x.id !== id)), []);
+  // a hit's effects as one group; groups that are over are dropped as new ones come
+  const addFx = useCallback(
+    (items) => {
+      if (!items.length) return;
+      const now = Date.now();
+      const ms = Math.max(...items.map((x) => x.ms));
+      setFx((f) => [...f.filter((g) => g.until > now).slice(-24), { id: ++r.id, ms, until: now + ms + 50, items }]);
+    },
+    [r],
+  );
   const center = () => ({ x: stageBox.w / 2, y: stageBox.h * 0.5 });
 
   const parts = (n, x, y, spread) => {
@@ -169,24 +385,13 @@ export default function ChestOpener({ tier, profile, catalog, onClose }) {
   };
   const num = (x, y, txt, color, size) => ({ id: ++r.id, kind: 'num', ms: 850, x, y, txt, color, size });
 
-  const shakeIt = (big) => {
-    const a = big ? 9 : 3;
-    Animated.sequence([
-      Animated.timing(shake, { toValue: { x: -a, y: a / 2 }, duration: 50, useNativeDriver: true }),
-      Animated.timing(shake, { toValue: { x: a * 0.9, y: -a / 2 }, duration: 60, useNativeDriver: true }),
-      Animated.timing(shake, { toValue: { x: -a * 0.6, y: a / 3 }, duration: 60, useNativeDriver: true }),
-      Animated.timing(shake, { toValue: { x: 0, y: 0 }, duration: 60, useNativeDriver: true }),
-    ]).start();
+  const run = (t, from, ms, easing = Easing.linear) => {
+    t.setValue(from);
+    Animated.timing(t, { toValue: 1, duration: ms, easing, useNativeDriver: true }).start();
   };
-  // impact squash, then the recoil (lcRecA)
-  const squash = (up) => {
-    sx.setValue(1.13);
-    sy.setValue(0.86);
-    Animated.parallel([
-      Animated.sequence([Animated.delay(up ? 130 : 60), Animated.timing(sx, { toValue: 0.93, duration: 130, useNativeDriver: true }), Animated.timing(sx, { toValue: 1.03, duration: 95, useNativeDriver: true }), Animated.timing(sx, { toValue: 1, duration: 95, useNativeDriver: true })]),
-      Animated.sequence([Animated.delay(up ? 130 : 60), Animated.timing(sy, { toValue: 1.09, duration: 130, useNativeDriver: true }), Animated.timing(sy, { toValue: 0.98, duration: 95, useNativeDriver: true }), Animated.timing(sy, { toValue: 1, duration: 95, useNativeDriver: true })]),
-    ]).start();
-  };
+  const shakeIt = (big) => run(big ? m.shakeB : m.shakeS, 0, SHAKE_MS);
+  // impact squash, then the recoil (lcRecA); a smaller hit holds the squash less
+  const squash = (up) => run(m.hit, up ? 0 : HIT_SOFT, up ? HIT_MS : HIT_MS * (1 - HIT_SOFT));
 
   const burst = () => {
     r.phase = 'burst';
@@ -197,13 +402,9 @@ export default function ChestOpener({ tier, profile, catalog, onClose }) {
     shakeIt(true);
     const c = center();
     addFx(parts(18, c.x, c.y, 190));
-    flash.setValue(0);
-    Animated.sequence([Animated.timing(flash, { toValue: 1, duration: 110, useNativeDriver: true }), Animated.timing(flash, { toValue: 0, duration: 790, useNativeDriver: true })]).start();
-    Animated.parallel([
-      Animated.sequence([Animated.timing(sx, { toValue: 1.22, duration: 230, useNativeDriver: true }), Animated.timing(sx, { toValue: 0.88, duration: 160, useNativeDriver: true }), Animated.timing(sx, { toValue: 1.6, duration: 260, useNativeDriver: true })]),
-      Animated.sequence([Animated.timing(sy, { toValue: 0.82, duration: 230, useNativeDriver: true }), Animated.timing(sy, { toValue: 1.2, duration: 160, useNativeDriver: true }), Animated.timing(sy, { toValue: 1.6, duration: 260, useNativeDriver: true })]),
-      Animated.sequence([Animated.delay(390), Animated.timing(fade, { toValue: 0, duration: 260, useNativeDriver: true })]),
-    ]).start();
+    run(m.flash, 0, FLASH_MS);
+    m.hit.setValue(1);
+    run(m.burst, 0, BURST_MS);
     setTimeout(() => {
       r.burstReady = true;
       maybeReveal();
@@ -220,6 +421,7 @@ export default function ChestOpener({ tier, profile, catalog, onClose }) {
     if (!r.result) return;
     r.phase = 'reveal';
     setPull(r.result);
+    setFx([]);
     setPhase('reveal');
   };
 
@@ -239,8 +441,7 @@ export default function ChestOpener({ tier, profile, catalog, onClose }) {
     }
     if (up && now < 5) {
       setWord({ text: WORDS[now], key: ++r.id });
-      ring.setValue(0);
-      Animated.timing(ring, { toValue: 1, duration: 550, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+      run(m.ring, 0, 550, Easing.out(Easing.quad));
       sfx.play('bonk');
     }
     const items = [];
@@ -294,14 +495,20 @@ export default function ChestOpener({ tier, profile, catalog, onClose }) {
     setHolding(false);
   };
 
-  // The server rolls the chest as the smashing starts.
+  // The server rolls the chest as the smashing starts (after the purchase,
+  // if it's still on its way).
   const start = () => {
     r.phase = 'smash';
     r.dmg = 0;
     r.tick = 0;
     setPhase('smash');
-    squad
-      .openChest(tier)
+    const bought = r.waited ? null : waitFor;
+    r.waited = true;
+    Promise.resolve(bought)
+      .then((ok) => {
+        if (bought && !ok) throw new Error('not_bought');
+        return squad.openChest(tier);
+      })
       .then((res) => {
         r.result = res;
         maybeReveal();
@@ -323,21 +530,21 @@ export default function ChestOpener({ tier, profile, catalog, onClose }) {
           r.down = true;
           clearTimeout(r.healT);
           const p = { x: e.nativeEvent.locationX, y: e.nativeEvent.locationY };
-          const m = curMech();
-          if (m === 'tap') {
+          const k = curMech();
+          if (k === 'tap') {
             const [a, b] = range('tap');
             const crit = Math.random() < 0.12;
             sfx.play('boxThump');
             hit(irnd(a, b) * (crit ? 2 : 1), { kind: 'tap', x: p.x, y: p.y, crit });
-          } else if (m === 'hold') startHold();
+          } else if (k === 'hold') startHold();
           else r.anchor = p;
         },
         onPanResponderMove: (e) => {
           if (!r.down || r.phase !== 'smash') return;
-          const m = curMech();
+          const k = curMech();
           const p = { x: e.nativeEvent.locationX, y: e.nativeEvent.locationY };
-          if (m === 'hold' && !r.holdT) return startHold();
-          if (m !== 'swipe') return;
+          if (k === 'hold' && !r.holdT) return startHold();
+          if (k !== 'swipe') return;
           const a = r.anchor;
           if (!a) {
             r.anchor = p;
@@ -385,150 +592,59 @@ export default function ChestOpener({ tier, profile, catalog, onClose }) {
   // the tutorial's view: smashing (or about to), or the reveal
   useEffect(() => tutReport({ boxPhase: phase === 'reveal' ? 'reveal' : 'opening' }), [phase]);
   useEffect(() => () => tutReport({ boxPhase: 'closed' }), []);
+  useEffect(() => onRevealing?.(phase === 'reveal'), [phase, onRevealing]);
 
   // the next chest of the same kind, if there's one waiting
   const again = () => {
     const left = (myChests(profile)[tier] || 0) > 0;
     if (!left) return onClose();
+    // the Shop goes back to sleep in this same render (it shows through otherwise)
+    onRevealing?.(false);
     Object.assign(r, { phase: 'idle', dmg: 0, result: null, failed: false, burstReady: false });
-    sx.setValue(1);
-    sy.setValue(1);
-    fade.setValue(1);
+    m.hit.setValue(1);
+    m.burst.setValue(0);
     setDmg(0);
     setPull(null);
     setWord(null);
     setPhase('idle');
   };
 
+  const onLayout = useCallback((e) => {
+    const { width: w, height: h } = e.nativeEvent.layout;
+    if (w && h) setStageBox((b) => (b.w === w && b.h === h ? b : { w, h }));
+  }, []);
+
   const stageImg = phase === 'burst' || phase === 'reveal' ? 'burst' : Math.min(4, st);
-  const rem = hp - dmg;
-  const chunk = hp / 5;
-  const spec = IDLE[idleStage];
-  const idleRot = idle.interpolate({ inputRange: [-1, 1], outputRange: [`${-(spec?.[1] || 0)}deg`, `${spec?.[1] || 0}deg`] });
-  const idleSx = idle.interpolate({ inputRange: [-1, 0, 1], outputRange: [1, 1, spec?.[2] || 1] });
-  const idleSy = idle.interpolate({ inputRange: [-1, 0, 1], outputRange: [1, 1, spec?.[3] || 1] });
   const busy = phase === 'smash' || phase === 'burst';
-  const mu = MECH_UI[mech] || MECH_UI.tap;
-  const odds = (CHESTS[tier]?.odds || []).map((p, i) => ({ p, i })).filter((o) => o.p > 0);
   const glow = pull ? RAR_LOOK[pull.rar]?.dot : '#fff3a0';
 
   return (
     <View style={StyleSheet.absoluteFill}>
-      <CandyBackground style={{ paddingTop: insets.top }}>
-        <Animated.View style={{ flex: 1, transform: [{ translateX: shake.x }, { translateY: shake.y }] }}>
-          <View style={styles.header}>
-            <RoundButton size={36} onPress={busy ? undefined : onClose} dim={busy}>
-              <BackGlyph />
-            </RoundButton>
-            <OutlinedTitle text={`${CHEST_LOOK[tier].name.toUpperCase()} CHEST`} fill="pink" size={23} outline={3} ring={2} drop={5} />
-          </View>
-          <View style={styles.odds}>
-            {odds.map(({ p, i }) => (
-              <View key={i} style={[styles.oddsChip, { backgroundColor: RAR_LOOK[i].bg }]}>
-                <Text style={styles.oddsLabel}>{RAR_LOOK[i].label}</Text>
-                <Text style={styles.oddsPct}>{p}%</Text>
-              </View>
-            ))}
-          </View>
+      {/* on the Shop's own sky (its content sleeps under the chest): a second
+          full-screen sky cost the open a GPU layer and a layout pass */}
+      <View style={[StyleSheet.absoluteFill, { paddingTop: insets.top }]}>
+        <Animated.View style={m.screen}>
+          <Header tier={tier} busy={busy} onClose={onClose} />
 
-          <View style={{ flex: 1 }} onLayout={(e) => setStageBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })} {...pan.panHandlers}>
-            {phase !== 'reveal' && (
-              <View style={styles.bar} pointerEvents="none">
-                <View style={styles.barHead}>
-                  <ShadowText style={styles.barLabel} shadows={outline3('#45107a', 1.5)}>
-                    {phase === 'idle' ? 'CHEST HP' : st >= 5 ? 'OPEN!' : `STAGE ${st + 1} / 5`}
-                  </ShadowText>
-                  <ShadowText style={[styles.barLabel, { color: '#fff3a0', letterSpacing: 0 }]} shadows={outline3('#45107a', 1.5)}>
-                    {`${Math.max(0, Math.round(rem))} / ${hp}`}
-                  </ShadowText>
-                </View>
-                <View style={styles.segs}>
-                  {[0, 1, 2, 3, 4].map((i) => {
-                    const f = Math.max(0, Math.min(1, (rem - i * chunk) / chunk));
-                    return (
-                      <View key={i} style={styles.seg}>
-                        <View style={[styles.segFill, { width: `${f * 100}%`, backgroundColor: healing && f > 0 ? '#7ee8b4' : '#ff8fd0' }]} />
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-            )}
-
-            {phase !== 'reveal' && (
-              <View style={styles.center} pointerEvents="none">
-                <View style={styles.halo} />
-                <RaysSpin size={460} durationMs={16000} rayDeg={9} gapDeg={13} opacity={0.5} color={AURA[art]} fadeStart={0.12} fadeEnd={0.62} style={styles.rays} />
-                <View style={[styles.floorGlow, { backgroundColor: AURA[art] }]} />
-                <TutTarget name="chestStage" style={styles.tutChest} pointerEvents="none" />
-                <Animated.View
-                  style={{
-                    width: SIZE, height: SIZE, marginTop: -32, opacity: fade,
-                    transform: [
-                      { translateX: tremble.x },
-                      { translateY: Animated.add(tremble.y, bob.interpolate({ inputRange: [0, 1], outputRange: [0, -8] })) },
-                      // squash about the chest's foot (50% 86%)
-                      { translateY: ORIGIN_DY },
-                      { scaleX: Animated.multiply(sx, idleSx) },
-                      { scaleY: Animated.multiply(sy, idleSy) },
-                      { rotate: idleRot },
-                      { translateY: -ORIGIN_DY },
-                    ],
-                  }}
-                >
-                  <Chest tier={art} stage={stageImg} size={SIZE} />
-                </Animated.View>
-              </View>
-            )}
+          <View style={{ flex: 1 }} onLayout={onLayout} {...pan.panHandlers}>
+            {phase !== 'reveal' && <HpBar phase={phase} st={st} rem={hp - dmg} hp={hp} healing={healing} />}
+            {phase !== 'reveal' && <ChestStage art={art} img={stageImg} idleStage={idleStage} m={m} />}
 
             <View style={StyleSheet.absoluteFill} pointerEvents="none">
-              {fx.map((item) => (
-                <Fx key={item.id} item={item} onDone={dropFx} />
-              ))}
+              <FxLayer fx={fx} />
               {word && phase === 'smash' && (
                 <>
-                  <Animated.View
-                    style={[styles.ring, { left: stageBox.w / 2 - 125, top: stageBox.h / 2 - 125, shadowColor: glow, opacity: ring.interpolate({ inputRange: [0, 1], outputRange: [0.95, 0] }), transform: [{ scale: ring.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1.7] }) }] }]}
-                  />
+                  <Ring t={m.ring} w={stageBox.w} h={stageBox.h} glow={glow} />
                   <Word key={word.key} text={word.text} />
                 </>
               )}
             </View>
           </View>
 
-          <View style={[styles.foot, { paddingBottom: 22 + insets.bottom }]}>
-            {phase === 'idle' && (
-              <View style={styles.idlePill}>
-                <ShadowText style={styles.idleText} shadows={[[0, 3.5, '#45107a'], [2, 0, '#45107a'], [-2, 0, '#45107a'], [0, 2, '#45107a'], [0, -2, '#45107a']]}>
-                  {MECH_UI[mechOf].idle}
-                </ShadowText>
-              </View>
-            )}
-            {busy && (
-              <>
-                {mechOf === 'mix' && (
-                  <View style={styles.mixRow}>
-                    {['tap', 'hold', 'swipe'].map((k) => (
-                      <View key={k} style={[styles.mixStep, { backgroundColor: k === mech ? '#ff4fbf' : 'rgba(255,255,255,0.85)' }]}>
-                        <Text style={[styles.mixText, { color: k === mech ? '#ffffff' : '#6a1b9a' }]}>{MECH_UI[k].tag}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-                <CandyBtn kind="pink" padV={10} padH={26} lip={5} key={mech}>
-                  <BtnText ring={PINK_RING} size={22}>
-                    {mu.title}
-                  </BtnText>
-                </CandyBtn>
-                <ShadowText style={[styles.sub, { color: healing ? '#fff3a0' : '#ffffff' }]} shadows={[[0, 3, '#45107a'], [1.5, 0, '#45107a'], [-1.5, 0, '#45107a'], [0, 1.5, '#45107a'], [0, -1.5, '#45107a']]}>
-                  {healing ? "It's healing! Keep going" : mu.sub}
-                </ShadowText>
-              </>
-            )}
-          </View>
+          <Foot phase={phase} mech={mech} mechOf={mechOf} healing={healing} bottom={insets.bottom} />
         </Animated.View>
-        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#ffffff', opacity: flash }]} />
-      </CandyBackground>
+        <Flash t={m.flash} />
+      </View>
       {phase === 'reveal' && pull && (
         <RevealShow pull={pull} creature={catalog[pull.id]} chestName={CHEST_LOOK[tier].name} canAgain={(myChests(profile)[tier] || 0) > 0} onAgain={again} onClose={onClose} />
       )}
@@ -537,29 +653,31 @@ export default function ChestOpener({ tier, profile, catalog, onClose }) {
 }
 
 // "CRACK!" — pops up big and floats away (mbWord).
-function Word({ text }) {
+const Word = memo(function Word({ text }) {
   const t = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(t, { toValue: 1, duration: 900, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
   }, [t]);
+  const style = useMemo(
+    () => [
+      styles.word,
+      {
+        opacity: t.interpolate({ inputRange: [0, 0.25, 0.7, 1], outputRange: [0, 1, 1, 0] }),
+        transform: [
+          { translateY: t.interpolate({ inputRange: [0, 0.25, 0.7, 1], outputRange: [0, -10, -18, -34] }) },
+          { scale: t.interpolate({ inputRange: [0, 0.25, 0.7, 1], outputRange: [0.3, 1.2, 1, 0.9] }) },
+          { rotate: t.interpolate({ inputRange: [0, 0.25, 0.7, 1], outputRange: ['-10deg', '4deg', '0deg', '0deg'] }) },
+        ],
+      },
+    ],
+    [t],
+  );
   return (
-    <Animated.View
-      style={[
-        styles.word,
-        {
-          opacity: t.interpolate({ inputRange: [0, 0.25, 0.7, 1], outputRange: [0, 1, 1, 0] }),
-          transform: [
-            { translateY: t.interpolate({ inputRange: [0, 0.25, 0.7, 1], outputRange: [0, -10, -18, -34] }) },
-            { scale: t.interpolate({ inputRange: [0, 0.25, 0.7, 1], outputRange: [0.3, 1.2, 1, 0.9] }) },
-            { rotate: t.interpolate({ inputRange: [0, 0.25, 0.7, 1], outputRange: ['-10deg', '4deg', '0deg', '0deg'] }) },
-          ],
-        },
-      ]}
-    >
+    <Animated.View style={style}>
       <OutlinedTitle text={text} fill="gold" size={34} outline={3} ring={2} drop={5} />
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 10 },

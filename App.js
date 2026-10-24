@@ -5,7 +5,7 @@
 // TextEncoder polyfill is in place before any other module (transitively
 // including SquishyToy.js) gets evaluated.
 import 'fast-text-encoding';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Alert, Image, AppState, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -21,7 +21,9 @@ import SettingsSheet from './src/screens/SettingsSheet';
 import AchievementsScreen from './src/screens/AchievementsScreen';
 import StatsScreen from './src/screens/StatsScreen';
 import ShopScreen from './src/screens/ShopScreen';
-import SquishiesScreen from './src/screens/SquishiesScreen';
+import LobbyScreen from './src/screens/LobbyScreen';
+import SquishdokuScreen from './src/screens/SquishdokuScreen';
+import SortScreen from './src/screens/SortScreen';
 import DailySpinScreen from './src/screens/DailySpinScreen';
 import LoadingScreen from './src/screens/LoadingScreen';
 import SquishScreen from './src/screens/SquishScreen';
@@ -36,14 +38,20 @@ import { streakMultiplier, streakOf, TUTORIAL_BOOST, cribUnlocked, dailyUnlocked
 import AchievementToast from './src/components/squad/AchievementToast';
 import Toast from './src/components/squad/Toast';
 import { TurnWithCrib } from './src/crib/orientation';
-import { RemoveAdsSheet } from './src/components/RemoveAds';
 import ForcedInterstitialAd from './src/components/ForcedInterstitialAd';
 import { computeAchievements } from './src/achievements';
-import { subscribeToAuthUser, logout } from './src/firebase/auth';
+import { subscribeToAuthUser, logout, needsVerification } from './src/firebase/auth';
+import { listenForSocial } from './src/firebase/social';
+import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
+import FpsCounter from './src/components/FpsCounter';
+import { BY_ID, hiddenOf, isOut, owns, setCopyCounts, setRewardsOf, wallet as walletOf } from './src/squad/data';
 import {
   subscribeToUserProfile,
   subscribeToCreatures,
   subscribeToPricing,
+  subscribeToOffers,
+  subscribeToRoster,
+  setOfferSeen,
   addCoins,
   recordPress,
   markAchievement,
@@ -62,7 +70,11 @@ import {
   bumpDaily,
   claimDailyChallenge,
   claimDailyChest,
+  setLobbySelected,
+  markSquadSeen,
 } from './src/firebase/firestore';
+import { isNewId, lobbySeeded, ownedIdList } from './src/squad/lobby';
+import { stageOf } from './src/squad/data';
 import { uploadSourceImage, deleteCustomAssets } from './src/firebase/storage';
 import { loadCachedCreatures, saveCreaturesToCache } from './src/data/creatureCache';
 import CreateScreen from './src/screens/CreateScreen';
@@ -73,7 +85,7 @@ import ScreenLayer, { WhenScreenReady } from './src/components/ScreenLayer';
 import CribBones from './src/crib/CribBones';
 import { plushArtUrls } from './src/components/CreatureThumbnail';
 import * as billing from './src/billing';
-import { setPricing } from './src/economy';
+import { setOfferProducts, setPricing } from './src/economy';
 import { adSpinsLeft, hasSpunToday, todayKey, tzOffsetMinutes } from './src/dailySpin';
 import callFunction from './src/firebase/callFunction';
 import { dailyGift as squadDailyGift, startSquad } from './src/squad/api';
@@ -105,21 +117,28 @@ const APP_TOAST_AT = { position: 'absolute', left: 0, right: 0, bottom: 150, hei
 // one empty object, so a memoized screen sees the same prop every render
 const NO_ACHIEVEMENTS = {};
 
-const SLIDE_IN = new Set(['crib', 'create', 'achievements', 'stats', 'streak', 'loading']);
+const SLIDE_IN = new Set(['crib', 'create', 'achievements', 'stats', 'streak', 'loading', 'squishdoku', 'sort']);
 
+// The splash is silent; Butterscotch Bounce is the game's theme from the
+// end of the splash on, one track across the menus (it doesn't restart
+// between them).
 const MUSIC_FOR_STAGE = {
-  splash: 'dream',
-  auth: 'dream',
-  wheel: 'party',
-  streak: 'party',
-  home: 'cozy',
-  store: 'cozy',
-  achievements: 'cozy',
-  stats: 'cozy',
-  create: 'cozy',
+  splash: null,
+  auth: 'bounce',
+  wheel: 'bounce',
+  streak: 'bounce',
+  home: 'bounce',
+  store: 'bounce',
+  achievements: 'bounce',
+  stats: 'bounce',
+  create: 'bounce',
   loading: 'calm',
   toy: 'calm',
   box: 'mystery',
+  // Squishdoku: thinking music; its Blitz switches to 'party' itself
+  squishdoku: 'dream',
+  // Squish Sort: party music
+  sort: 'party',
   // the Crib plays its rooms' own music (CribScreen)
 };
 
@@ -194,10 +213,10 @@ export default function App() {
   // is waiting — it comes before Home) or 'done'.
   const [spinState, setSpinState] = useState('unknown');
 
-  // Purchases: the Remove Ads popup, what's being bought right now
-  // ('removeAds', a gem pack, a creation),
-  // Google Play's prices, and a toast for how a purchase went.
-  const [removeAdsOpen, setRemoveAdsOpen] = useState(false);
+  // Purchases: what's being bought right now ('removeAds', a gem pack, a
+  // creation), Google Play's prices, and a toast for how a purchase went.
+  // (Remove Ads is sold in the Shop's Deals tab only; Settings no longer
+  // has it, user 2026-10-24.)
   const [buying, setBuying] = useState(null);
   const [storePrices, setStorePrices] = useState({});
   const [appToast, setAppToast] = useState(null);
@@ -218,6 +237,27 @@ export default function App() {
       }),
     []
   );
+  // Google / Facebook / TikTok: the browser comes back with a token
+  useEffect(() => listenForSocial(() => Alert.alert('Sign-in', "That didn't work. Please try again.")), []);
+  // an email account that hasn't confirmed its address yet waits on the
+  // verify screen (`verifiedNow`: confirmed during this run)
+  const [verifiedNow, setVerifiedNow] = useState(false);
+  const mustVerify = !!authUser && needsVerification(authUser) && !verifiedNow;
+  // a tester account (the `tester` claim, tools/admin/tester.mjs): the Test
+  // wallet and the FPS counter (REDESIGN_V6 ruling 5)
+  const [tester, setTester] = useState(false);
+  const [fpsOverlay, setFpsOverlay] = useState(false);
+  useEffect(() => {
+    setTester(false);
+    if (!authUser) return;
+    authUser
+      .getIdTokenResult(true)
+      .then((t) => setTester(!!(t && t.claims && t.claims.tester)))
+      .catch(() => {});
+  }, [authUser]);
+  const toggleFps = useCallback(() => setFpsOverlay((v) => !v), []);
+  // a different account (or none) starts unconfirmed again
+  useEffect(() => setVerifiedNow(false), [authUser?.uid]);
 
   useEffect(() => {
     if (!authUser) {
@@ -283,6 +323,39 @@ export default function App() {
       billing.loadProducts();
     });
   }, [authUser]);
+  // What the Shop's Deals and Gems tabs sell (config/offers): its offers'
+  // store products load with the rest.
+  const [offers, setOffers] = useState(null);
+  useEffect(() => {
+    if (!authUser) return undefined;
+    return subscribeToOffers((doc) => {
+      setOffers(doc);
+      setOfferProducts(doc);
+      setPricingVersion((v) => v + 1);
+      billing.loadProducts();
+    });
+  }, [authUser]);
+  const seenOffer = useCallback((id, at) => authUser && setOfferSeen(authUser.uid, id, at), [authUser]);
+  // The groups and creatures not out yet and the set-reward rule
+  // (config/roster, else functions/squad.js HIDDEN and SET_REWARDS): the
+  // Shop and the Squad grid follow them. Its copy counts (how many finds
+  // unlock a creature) go to src/squad/data.js before the screens redraw.
+  const [rosterCfg, setRosterCfg] = useState(null);
+  useEffect(() => {
+    if (!authUser) return undefined;
+    return subscribeToRoster((cfg) => {
+      setCopyCounts(cfg);
+      setRosterCfg(cfg);
+    });
+  }, [authUser]);
+  const hidden = useMemo(() => hiddenOf(rosterCfg), [rosterCfg]);
+  const setRewards = setRewardsOf(rosterCfg);
+  // the catalog less what's not out yet (one already owned stays): what the
+  // achievements and stats count
+  const counted = useMemo(
+    () => creatures.filter((c) => !BY_ID[String(c.id)] || isOut(BY_ID[String(c.id)], hidden) || owns(profile || {}, String(c.id))),
+    [creatures, hidden, profile],
+  );
   useEffect(() => {
     if (!authUser) return;
     billing.loadProducts().then(() => billing.syncPurchases());
@@ -300,6 +373,14 @@ export default function App() {
     // re-running after it succeeds is harmless (arrayUnion) but pointless.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser, profile?.ownedIds]);
+
+  // The lobby's NEW badges count what came after the first visit: the
+  // first time, everything owned then counts as seen (src/squad/lobby.js).
+  const lobbyReady = !!profile && lobbySeeded(profile);
+  useEffect(() => {
+    if (authUser && profile && !lobbyReady) markSquadSeen(authUser.uid, ownedIdList(profile));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser, !!profile, lobbyReady]);
 
   // The Crib's saved state, read in the background once it's unlocked, so
   // opening the Crib never waits on Firestore (src/firebase/firestore.js)
@@ -354,8 +435,8 @@ export default function App() {
   // than stored server-side, since every achievement is itself derived from
   // the profile (see src/achievements.js).
   useEffect(() => {
-    if (!profile || !creatures.length) return;
-    const current = computeAchievements(creatures, profile, customCreatures.length);
+    if (!profile || !counted.length) return;
+    const current = computeAchievements(counted, profile, customCreatures.length);
     const prev = prevAchievementsRef.current;
     if (prev) {
       const newlyDone = current.find((entry) => entry.done && !prev[entry.key]);
@@ -366,9 +447,33 @@ export default function App() {
       }
     }
     prevAchievementsRef.current = Object.fromEntries(current.map((entry) => [entry.key, entry.done]));
-  }, [profile, creatures, customCreatures.length]);
+  }, [profile, counted, customCreatures.length]);
 
   const openToy = useCallback((creature) => setLoadingToy(creature), []);
+  // --- the lobby (src/screens/LobbyScreen.js) ---
+  // PLAY: the selected squishy (its catalog doc, the game's creature)
+  const creaturesRef = useRef(creatures);
+  creaturesRef.current = creatures;
+  const playSelected = useCallback((id) => {
+    const creature = creaturesRef.current.find((c) => c.id === id);
+    // with its growth stage: the game's card is scaled (and crowned) by it
+    if (creature) setLoadingToy({ ...creature, stage: stageOf(profileRef.current, id) });
+  }, []);
+  // the Squad screen's SELECT: that squishy is the lobby's
+  const selectSquishy = useCallback(
+    (id) => {
+      if (authUser) setLobbySelected(authUser.uid, id);
+    },
+    [authUser],
+  );
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
+  const squadSeen = useCallback(
+    (id) => {
+      if (authUser && isNewId(profileRef.current, id)) markSquadSeen(authUser.uid, [id]);
+    },
+    [authUser],
+  );
   const finishLoadingToy = useCallback(() => {
     setActiveToy(loadingToy);
     setLoadingToy(null);
@@ -391,6 +496,8 @@ export default function App() {
   const handleOpenCreator = useCallback(() => setScreen('create'), []);
   const openAchievements = useCallback(() => setScreen('achievements'), []);
   const openStats = useCallback(() => setScreen('stats'), []);
+  const openSquishdoku = useCallback(() => setScreen('squishdoku'), []);
+  const openSort = useCallback(() => setScreen('sort'), []);
   // the tutorial's current step (useTutorial runs further down; this ref is
   // for callbacks declared before it)
   const tutorialStepRef = useRef('done');
@@ -475,7 +582,7 @@ export default function App() {
     },
     [authUser, profile, flashApp]
   );
-  // the daily chest: its coins here, a streak day's gems or Silver chest
+  // the daily chest: its coins here, a streak day's gems or extra free chest
   // from the server — squad dailyGift
   // (the streak day's reward: src/progression.js STREAK_REWARDS)
   const handleClaimChest = useCallback(() => {
@@ -484,7 +591,7 @@ export default function App() {
     if (!r) return;
     const gift = r.reward.kind === 'gems' || r.reward.kind === 'chest' ? r.reward : null;
     squadDailyGift(gift).catch(() => {});
-    const extra = r.reward.kind === 'gems' ? ` + ${r.reward.amount} gems` : r.reward.kind === 'chest' ? ' + a free Silver chest' : r.reward.kind === 'half' ? ' + half price on your next creation' : '';
+    const extra = r.reward.kind === 'gems' ? ` + ${r.reward.amount} gems` : r.reward.kind === 'chest' ? ' + a free chest in the Shop' : r.reward.kind === 'half' ? ' + half price on your next creation' : '';
     flashApp(`Daily chest: +${r.coins} coins${extra}!`);
   }, [authUser, profile, flashApp]);
   const dailyToCrib = useCallback(() => {
@@ -573,6 +680,8 @@ export default function App() {
   );
 
   const handleLogout = useCallback(async () => {
+    // closed, so the next sign-in doesn't open on it
+    setSettingsOpen(false);
     setActiveToy(null);
     setLoadingToy(null);
     setMainTab('squish');
@@ -602,7 +711,7 @@ export default function App() {
         if (r.pending) flashApp('Payment pending — it arrives as soon as it clears');
         else if (r.granted === 'adsFree' || r.granted === 'restored') flashApp('Ads removed — thank you!');
         else if (r.granted === 'coins') flashApp(`Already unlocked — here are ${fmtNum(r.coins)} coins instead`);
-        else if (r.granted === 'gems') flashApp(`+${fmtNum(r.gems)} gems${r.doubled ? ' (doubled!)' : ''}`);
+        else if (r.granted === 'gems' && !r.offer) flashApp(`+${fmtNum(r.gems)} gems${r.doubled ? ' (doubled!)' : ''}`);
         return r.pending ? null : r;
       } catch (e) {
         if (e.code === 'cancelled') return null;
@@ -619,7 +728,6 @@ export default function App() {
     },
     [authUser, buying, flashApp]
   );
-  const buyRemoveAds = useCallback(() => purchase('removeAds'), [purchase]);
   // a creation: the half-price product while the 10-day streak's reward is
   // waiting, else the 15%-off one while the Daily Spin prize is (each is
   // used up by its own product; the half price is the better deal)
@@ -628,9 +736,8 @@ export default function App() {
     const r = await purchase(creationKey);
     return !!r && r.granted === 'creation';
   }, [purchase, creationKey]);
-  const closeRemoveAds = useCallback(() => setRemoveAdsOpen(false), []);
   // a locked creature's card: the Shop's squishies (coins or chests)
-  const showUnlock = useCallback(() => openShopAt('squish', 'home'), [openShopAt]);
+  const showUnlock = useCallback(() => openShopAt('chests'), [openShopAt]);
 
   const handleRecordPress = useCallback(
     (creatureId, holdMs) => {
@@ -679,6 +786,7 @@ export default function App() {
   let stage = 'splash';
   if (splashDone && authChecked) {
     if (!authUser) stage = 'auth';
+    else if (mustVerify) stage = 'verify';
     else if (spinState === 'show') stage = 'wheel';
     else if (streakIntro) stage = 'streak';
     else if (activeToy) stage = 'toy';
@@ -696,7 +804,7 @@ export default function App() {
     if (stage === 'home') {
       setHomeAlive(true);
       setHomeCovered(false);
-    } else if (stage === 'splash' || stage === 'auth') {
+    } else if (stage === 'splash' || stage === 'auth' || stage === 'verify') {
       setHomeAlive(false);
     }
   }, [stage]);
@@ -725,8 +833,8 @@ export default function App() {
   }, [stage]);
   // the tutorial follows the screen; it hides behind popups
   useEffect(() => {
-    tutReport({ screen: stage === 'home' && mainTab === 'shop' ? 'store' : stage, busy: removeAdsOpen || dailyOpen || settingsOpen });
-  }, [stage, mainTab, removeAdsOpen, dailyOpen, settingsOpen]);
+    tutReport({ screen: stage === 'home' && mainTab === 'shop' ? 'store' : stage, busy: dailyOpen || settingsOpen });
+  }, [stage, mainTab, dailyOpen, settingsOpen]);
   const coinsNow = profile?.coins;
   const prevCoinsRef = useRef(coinsNow);
   useEffect(() => {
@@ -756,7 +864,6 @@ export default function App() {
   const discountPct = profile?.streakDiscount ? 50 : profile?.creationDiscountPct ?? 0;
   const priceLabel = billing.priceLabel(creationKey, storePrices);
   const adsFree = profile?.adsFree ?? false;
-  const removeAdsPrice = billing.priceLabel('removeAds', storePrices);
   const dailyNow = profile ? dailyView(profile) : null;
   // the streak screen's squishy (the one squished longest, else the first
   // owned)
@@ -769,15 +876,16 @@ export default function App() {
   const statusBarStyle = stage === 'crib' ? 'light' : 'dark';
 
   const onHome = stage === 'home';
-  const showHome = onHome || (homeAlive && stage !== 'splash' && stage !== 'auth');
+  const showHome = onHome || (homeAlive && stage !== 'splash' && stage !== 'auth' && stage !== 'verify');
   // every other screen once signed in sits in a ScreenLayer over Home
-  const overlay = !onHome && stage !== 'splash' && stage !== 'auth';
+  const overlay = !onHome && stage !== 'splash' && stage !== 'auth' && stage !== 'verify';
 
   return (
     <SafeAreaProvider style={styles.app}>
       <StatusBar style={statusBarStyle} />
       {stage === 'splash' && <SplashScreen onFinish={() => setSplashDone(true)} creatures={creatures} />}
       {stage === 'auth' && <AuthScreen />}
+      {stage === 'verify' && <VerifyEmailScreen email={authUser?.email} onVerified={() => setVerifiedNow(true)} onLogout={handleLogout} />}
       {showHome && (
         <Freeze freeze={!onHome && homeCovered}>
           <View style={styles.fill} collapsable={false} pointerEvents={onHome ? 'auto' : 'none'}>
@@ -787,35 +895,23 @@ export default function App() {
               adsFree={adsFree}
               active={onHome}
               squishies={
-                <SquishiesScreen
-                  active={onHome}
-                  creatures={creatures}
+                <LobbyScreen
+                  active={onHome && mainTab === 'squish'}
                   profile={profile}
-                  onPlay={openToy}
-                  onOpenShop={openShopAt}
-                  onOpenCreator={handleOpenCreator}
-                  createPrice={priceLabel}
-                  generationCredits={profile?.generationCredits ?? 1}
-                  paidCredits={profile?.paidCredits ?? 0}
-                  discountPct={discountPct}
-                  customCreatures={customCreatures}
-                  onSelectCustom={handleSelectCustom}
-                  onDeleteCustom={handleDeleteCustom}
-                  onRetryCustom={handleRetryCustom}
-                  focusMine={mineFocus}
-                  onFocusMineDone={clearMineFocus}
-                  level={levelOf(profile)}
                   cribUnlocked={cribUnlocked(profile)}
                   onOpenCrib={openCrib}
                   onOpenAchievements={openAchievements}
                   onOpenSettings={openSettings}
-                  onOpenStats={openStats}
-                  dailyUnlocked={dailyIsUnlocked(profile)}
-                  dailyBadge={dailyNow ? dailyNow.claimable : 0}
-                  onOpenDaily={openDaily}
-                  streak={streakOf(profile)}
-                  streakHot={!!dailyNow && dailyNow.streak > 0 && !dailyNow.chestDone}
-                  onOpenStreak={openStreak}
+                  onOpenShop={openShopAt}
+                  onPlay={playSelected}
+                  onOpenPuzzle={openSquishdoku}
+                  onOpenSort={openSort}
+                  pickGames={tutorial.step === 'done'}
+                  creatures={creatures}
+                  hidden={hidden}
+                  setRewards={setRewards}
+                  onSelect={selectSquishy}
+                  onSeen={squadSeen}
                 />
               }
               renderShop={(onImmersive) => (
@@ -824,6 +920,10 @@ export default function App() {
                   startTab={shopTab}
                   creatures={creatures}
                   profile={profile}
+                  offers={offers}
+                  hidden={hidden}
+                  setRewards={setRewards}
+                  onSeenOffer={seenOffer}
                   onBuyProduct={purchase}
                   priceOf={priceOf}
                   onImmersive={onImmersive}
@@ -875,10 +975,14 @@ export default function App() {
             />
           )}
           {stage === 'achievements' && (
-            <AchievementsScreen creatures={creatures} profile={profile} customCount={customCreatures.length} onBack={goHome} />
+            <AchievementsScreen creatures={counted} profile={profile} customCount={customCreatures.length} onBack={goHome} />
           )}
+          {stage === 'squishdoku' && (
+            <SquishdokuScreen profile={profile} creatures={creatures} uid={authUser?.uid} adsFree={adsFree} haptics={vibrationEnabled} onBack={goHome} />
+          )}
+          {stage === 'sort' && <SortScreen profile={profile} creatures={creatures} hidden={hidden} uid={authUser?.uid} haptics={vibrationEnabled} onBack={goHome} />}
           {stage === 'stats' && (
-            <StatsScreen creatures={creatures} customCreatures={customCreatures} profile={profile} onBack={goHome} />
+            <StatsScreen creatures={counted} customCreatures={customCreatures} profile={profile} onBack={goHome} />
           )}
           {stage === 'loading' && <LoadingScreen creature={loadingToy} onFinish={finishLoadingToy} />}
           {stage === 'toy' && activeToy && (
@@ -922,8 +1026,12 @@ export default function App() {
             onSubmitFeedback={handleSubmitFeedback}
             onLogout={handleLogout}
             onReplayTutorial={replayTutorial}
+            onOpenStats={openStats}
+            tester={tester}
+            wallet={{ ...walletOf(profile), level: profile?.level ?? 1 }}
+            fpsOn={fpsOverlay}
+            onToggleFps={toggleFps}
           />
-          <RemoveAdsSheet visible={removeAdsOpen} adsFree={adsFree} price={removeAdsPrice} buying={buying === 'removeAds'} onBuy={buyRemoveAds} onClose={closeRemoveAds} />
           <DailyChallengesSheet visible={dailyOpen} profile={profile} onClose={closeDaily} onClaim={handleClaimDaily} onClaimChest={handleClaimChest} onOpenCrib={dailyToCrib} />
         </>
       ) : null}
@@ -936,6 +1044,7 @@ export default function App() {
         <AchievementToast title={achToast} messageKey={achToastKey} />
       </TurnWithCrib>
       <ForcedInterstitialAd trigger={freeGenAdTrigger} />
+      {tester && fpsOverlay ? <FpsCounter /> : null}
       {/* the guided tutorial's coach marks, over everything */}
       <TutorialGuide onAction={tutorial.onAction} />
     </SafeAreaProvider>

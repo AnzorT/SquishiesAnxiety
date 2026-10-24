@@ -1,10 +1,11 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import Pressable from '../components/Pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
 import CandyBackground from '../components/candy/CandyBackground';
-import RoundButton, { DailyIcon, GearIcon, HouseIcon, StatsIcon, TrashIcon, TrophyIcon } from '../components/candy/RoundButton';
+import RoundButton, { BackGlyph, DailyIcon, GearIcon, HouseIcon, StatsIcon, TrashIcon, TrophyIcon } from '../components/candy/RoundButton';
 import OutlinedTitle from '../components/candy/OutlinedTitle';
 import ShadowText, { outline3 } from '../components/candy/ShadowText';
 import { RaysSpin } from '../components/candy/Decor';
@@ -15,7 +16,7 @@ import { Flame } from '../components/StreakIcons';
 import TutTarget from '../tutorial/Target';
 import { measureTarget, report as tutReport, useTutorialSelect } from '../tutorial/store';
 import sfx from '../audio/sfx';
-import { BY_ID, FIN, RAR_LOOK, ROSTER, SEASON, SETS, SET_BONUS, SET_OF, STAGE_FX, STAGE_NAMES, creaturePrice, entry, growInfo, owns, setInfo, wallet } from '../squad/data';
+import { BY_ID, COLLECTION_GROUPS, FIN, RAR_LOOK, ROSTER, SEASON, SETS, SET_BONUS, SET_OF, STAGE_FX, STAGE_NAMES, creaturePrice, entry, growInfo, owns, setInfo, wallet } from '../squad/data';
 import * as squad from '../squad/api';
 import MOVES from '../squad/moves';
 import { todayKey } from '../dailySpin';
@@ -45,12 +46,17 @@ const SET_LOOK = {
   sky: { name: 'Sky & Stars', vibe: 'Dreamy night sky', tint: '#ece6ff', lip: '#c3b0f2', ink: '#5a3ad0', perk: 'Unlocks the starry ceiling' },
   dream: { name: 'Dreamland', vibe: 'Fantasy and magic', tint: '#f6e3ff', lip: '#d9a8f0', ink: '#9a2fc8', perk: 'Unlocks the castle bed' },
   bakery: { name: 'Sweet Bakery', vibe: 'Fresh from the oven', tint: '#fff0e6', lip: '#f2b8a0', ink: '#c2502a', perk: 'Unlocks the bakery kitchen' },
+  heroes: { name: 'Masked Heroes', vibe: 'Cheeky caped troublemakers', tint: '#ffe4e6', lip: '#f2a0aa', ink: '#c0182e' },
+  elemental: { name: 'Elemental Heroes', vibe: 'Super-powered squishies', tint: '#e8eeff', lip: '#a9b8f0', ink: '#3a3ab0' },
 };
 // finish swatches and rings (the design's FINSW / FINRING)
 const FIN_SW = { n: ['#ffe3f4', '#e6d3ff'], s: ['#ffffff', '#cbeaff', '#a9c8ff'], r: ['#ffb3c7', '#ffe38a', '#b3f5c8', '#b3e0ff', '#dcc2ff'], g: ['#fff3b0', '#ffc233', '#f0a000'] };
 const FIN_RING = { n: '#d6b8ee', s: '#9fc4ee', r: '#cdb0f2', g: '#d9a020' };
 const FIN_NAME = { n: 'Normal', s: 'Shiny', r: 'Rainbow', g: 'Golden' };
 const fmt = fmtNum;
+// "My creations" (painted creatures) is off for now (REDESIGN_V6 ruling 3):
+// the code stays, the tab and its page aren't shown.
+const SHOW_MINE = false;
 
 // How a squishy looks in its finish: Rainbow and Golden are the
 // thumbnail's own holo / gold washes, Shiny a pale sheen.
@@ -230,11 +236,11 @@ const CollectionTab = memo(function CollectionTab({ profile, catalog, artIds, on
         </Ringed>
       )}
 
-      {SETS.map((key) => {
+      {COLLECTION_GROUPS.map((key) => {
         const L = SET_LOOK[key];
         const info = setInfo(profile, key);
-        const rw = BY_ID[info.reward];
-        const rwMine = owns(profile || {}, rw.id);
+        const rw = info.reward ? BY_ID[info.reward] : null;
+        const rwMine = !!rw && owns(profile || {}, rw.id);
         const left = info.total - info.have;
         return (
           <View key={key} style={[styles.setCard, { backgroundColor: L.tint, borderBottomColor: L.lip }]}>
@@ -259,23 +265,25 @@ const CollectionTab = memo(function CollectionTab({ profile, catalog, artIds, on
                   <Cell key={id} id={id} {...cellLook(profile, id)} creature={catalog[id]} onOpen={onOpen} refs={refs} />
                 ))}
             </View>
-            <Pressable style={[styles.reward, { borderBottomColor: L.lip }]} onPress={() => onOpen(rw.id)}>
-              <View style={[styles.rewardArt, { backgroundColor: rwMine ? RAR_LOOK[4].card : '#f1ebf7' }]}>
-                {catalog[rw.id] ? <Squishy creature={catalog[rw.id]} size={42} locked={!rwMine} /> : <Egg size={32} colors={['#ffe0f3', '#f0a8d8']} />}
-              </View>
-              <View style={{ flex: 1, gap: 1 }}>
-                <View style={styles.rewardChip}>
-                  <Text style={styles.rewardChipText}>SET REWARD</Text>
+            {rw && (
+              <Pressable style={[styles.reward, { borderBottomColor: L.lip }]} onPress={() => onOpen(rw.id)}>
+                <View style={[styles.rewardArt, { backgroundColor: rwMine ? RAR_LOOK[4].card : '#f1ebf7' }]}>
+                  {catalog[rw.id] ? <Squishy creature={catalog[rw.id]} size={42} locked={!rwMine} /> : <Egg size={32} colors={['#ffe0f3', '#f0a8d8']} />}
                 </View>
-                <Text style={styles.rewardName}>{rw.name}</Text>
-                <Text style={styles.rewardNote}>
-                  Collect all {info.total} for +{fmt(SET_BONUS)} coins. {L.perk}.
-                </Text>
-              </View>
-              <View style={[styles.rewardPill, rwMine ? { backgroundColor: '#16a86a' } : { backgroundColor: '#ffffff', borderColor: '#f2c98f' }]}>
-                <Text style={[styles.rewardPillText, { color: rwMine ? '#ffffff' : '#c46a00' }]}>{rwMine ? 'UNLOCKED' : `${left} TO GO`}</Text>
-              </View>
-            </Pressable>
+                <View style={{ flex: 1, gap: 1 }}>
+                  <View style={styles.rewardChip}>
+                    <Text style={styles.rewardChipText}>SET REWARD</Text>
+                  </View>
+                  <Text style={styles.rewardName}>{rw.name}</Text>
+                  <Text style={styles.rewardNote}>
+                    Collect all {info.total} for +{fmt(SET_BONUS)} coins. {L.perk}.
+                  </Text>
+                </View>
+                <View style={[styles.rewardPill, rwMine ? { backgroundColor: '#16a86a' } : { backgroundColor: '#ffffff', borderColor: '#f2c98f' }]}>
+                  <Text style={[styles.rewardPillText, { color: rwMine ? '#ffffff' : '#c46a00' }]}>{rwMine ? 'UNLOCKED' : `${left} TO GO`}</Text>
+                </View>
+              </Pressable>
+            )}
           </View>
         );
       })}
@@ -416,7 +424,18 @@ const HEADER_BUTTON = 40;
 // to another screen and back (`active`), and redrawing these each time
 // (candy buttons, outlined text) was 15-100 ms of each trip in a debug
 // build.
-const Header = memo(function Header({ level, cribUnlocked, onOpenCrib, onOpenAchievements, onMenuSlot }) {
+const Header = memo(function Header({ level, cribUnlocked, onOpenCrib, onOpenAchievements, onMenuSlot, onBack }) {
+  // opened from the lobby's Squad tile: only the way back
+  if (onBack)
+    return (
+      <View style={styles.header}>
+        <RoundButton size={HEADER_BUTTON} onPress={onBack}>
+          <BackGlyph />
+        </RoundButton>
+        <OutlinedTitle text="SQUAD" fill="pink" size={25} outline={3} ring={2} drop={5} />
+        <LevelPill level={level} />
+      </View>
+    );
   return (
     <View style={styles.header}>
       <OutlinedTitle text="SQUAD" fill="pink" size={25} outline={3} ring={2} drop={5} />
@@ -492,7 +511,7 @@ function SquishySheet({ id, profile, catalog, artIds, day, onClose, onPlay, onGr
 
   return (
     <View style={StyleSheet.absoluteFill}>
-      <Pressable style={styles.scrim} onPress={onClose} />
+      <Pressable silent style={styles.scrim} onPress={onClose} />
       <Animated.View style={[styles.sheet, { transform: [{ translateY: up.interpolate({ inputRange: [0, 1], outputRange: [700, 0] }) }] }]}>
         <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false}>
           <View style={styles.grip} />
@@ -723,6 +742,11 @@ function SquishiesScreen({
   streak = 0,
   streakHot = false,
   onOpenStreak,
+  // the lobby's Squad screen (REDESIGN_V6 step 2, until step 3's grid): a
+  // back button for the header's, no menu; `onSeen(id)` when a squishy's
+  // sheet opens (it's no longer NEW)
+  onBack,
+  onSeen,
 }) {
   const insets = useSafeAreaInsets();
   const [sub, setSub] = useState('game');
@@ -894,6 +918,10 @@ function SquishiesScreen({
   // (then measured again where it landed).
   useEffect(() => tutReport({ listTab: sub === 'mine' ? 'mine' : 'ours' }), [sub]);
   useEffect(() => tutReport({ squadSheet: open == null ? null : String(open) }), [open]);
+  useEffect(() => {
+    if (open != null && onSeen) onSeen(String(open));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
   useEffect(() => () => tutReport({ squadSheet: null }), []);
   const cellRefs = useRef({});
   const box = useRef(null);
@@ -931,11 +959,13 @@ function SquishiesScreen({
 
   return (
     <CandyBackground style={{ paddingTop: insets.top }}>
-      <Header level={level} cribUnlocked={cribUnlocked} onOpenCrib={onOpenCrib} onOpenAchievements={onOpenAchievements} onMenuSlot={onMenuSlot} />
+      <Header level={level} cribUnlocked={cribUnlocked} onOpenCrib={onOpenCrib} onOpenAchievements={onOpenAchievements} onMenuSlot={onMenuSlot} onBack={onBack} />
       <Purses coins={w.coins} gems={w.gems} onOpenShop={onOpenShop} />
-      <TutTarget name="tabs" style={styles.subBar}>
-        <SubSegMemo sub={sub} onSub={pickSub} onPick={onPickSub} mineCount={customCreatures.length} />
-      </TutTarget>
+      {SHOW_MINE && (
+        <TutTarget name="tabs" style={styles.subBar}>
+          <SubSegMemo sub={sub} onSub={pickSub} onPick={onPickSub} mineCount={customCreatures.length} />
+        </TutTarget>
+      )}
       <View ref={box} collapsable={false} style={styles.pager}>
         <Animated.View style={[styles.pageTrack, { width: pageW * 2, transform: [{ translateX: subShift }] }]}>
           <ScrollView
@@ -950,7 +980,7 @@ function SquishiesScreen({
               <CollectionTab profile={profile} catalog={catalog} artIds={artIds} onOpen={setOpen} onSeasonChest={openSeasonChest} now={now} refs={cellRefs} />
             </Reveal>
           </ScrollView>
-          <ScrollView ref={mineScroll} style={{ width: pageW }} contentContainerStyle={styles.pageBody} showsVerticalScrollIndicator={false}>
+          {SHOW_MINE && <ScrollView ref={mineScroll} style={{ width: pageW }} contentContainerStyle={styles.pageBody} showsVerticalScrollIndicator={false}>
             <Reveal ready={mineOn} placeholder={<CollectionBones />}>
               <MineTab
                 customs={customCreatures}
@@ -963,11 +993,11 @@ function SquishiesScreen({
                 onRetry={onRetryCustom}
               />
             </Reveal>
-          </ScrollView>
+          </ScrollView>}
         </Animated.View>
       </View>
-      {/* under the sheets */}
-      <HomeMenu items={menuItems} anchor={menuAnchor} badge={dailyBadge} hot={streakHot} />
+      {/* under the sheets (not on the lobby's Squad screen) */}
+      {!onBack && <HomeMenu items={menuItems} anchor={menuAnchor} badge={dailyBadge} hot={streakHot} />}
       {open != null && (
         <SquishySheet
           id={open}

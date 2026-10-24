@@ -15,7 +15,7 @@
 // streak's reward) is half of it unless `creationHalf` is set. The server
 // grants every level like its base product (functions/purchases.js).
 export const PRODUCTS = {
-  removeAds: { base: 'remove_ads', usd: 1.99 },
+  removeAds: { base: 'remove_ads', usd: 0.99 },
   creation: { base: 'creature_creation', usd: 4.99 },
   creationDiscount: { base: 'creature_creation_15off', usd: 4.24 },
   creationHalf: { base: 'creature_creation_half', usd: 2.49 },
@@ -31,6 +31,22 @@ export const GEM_KEYS = ['gems80', 'gems450', 'gems950', 'gems2000', 'gems5500',
 const CONSUMABLE_KEYS = ['creation', 'creationDiscount', 'creationHalf', ...GEM_KEYS];
 
 let pricing = {}; // PRODUCTS key → price in USD cents, from config/pricing
+
+// The Deals tab's offers (REDESIGN_V6 step 7): their products come from
+// Firestore config/offers, so a new offer needs no app update. Each is
+// 'offer:<id>' → { base: its product id, usd: the fallback label's price,
+// consumable }.
+let offerProducts = {};
+const product = (key) => PRODUCTS[key] || offerProducts[key];
+export function setOfferProducts(cfg) {
+  const next = {};
+  ((cfg && Array.isArray(cfg.offers) && cfg.offers) || []).forEach((o) => {
+    if (o && o.id && typeof o.product === 'string' && /^offer_[a-z0-9_]+$/.test(o.product)) {
+      next[`offer:${o.id}`] = { base: o.product, usd: typeof o.usd === 'number' ? o.usd : null, consumable: !!o.consumable };
+    }
+  });
+  offerProducts = next;
+}
 
 const cents = (usd) => (typeof usd === 'number' && Number.isFinite(usd) && usd > 0 && usd < 10000 ? Math.round(usd * 100) : null);
 
@@ -52,29 +68,33 @@ export function setPricing(doc) {
 
 // The store product to sell for `key` right now.
 export function productId(key) {
-  const p = PRODUCTS[key];
+  const p = product(key);
   if (!p) return null;
   return pricing[key] ? `${p.base}_${pricing[key]}` : p.base;
 }
 
 // Every product the app may sell right now (to load their store prices).
-export const productIds = () => Object.keys(PRODUCTS).map(productId);
+export const productIds = () => [...Object.keys(PRODUCTS), ...Object.keys(offerProducts)].map(productId);
 
 // "$1.49" — the price set in Firebase (or the default), until the store's
 // own localized price has loaded.
 export function fallbackPriceLabel(key) {
-  const p = PRODUCTS[key];
-  if (!p) return '';
+  const p = product(key);
+  if (!p || p.usd == null) return '';
   return `$${((pricing[key] || Math.round(p.usd * 100)) / 100).toFixed(2)}`;
 }
 
 // A product id (a base product or a price level of it) → its PRODUCTS key.
 export function productKey(id) {
   const m = /^(gems_(?:80|450|950|2000|5500|12000)|remove_ads|creature_creation_15off|creature_creation_half|creature_creation)(?:_[1-9]\d{0,5})?$/.exec(String(id || ''));
-  return m ? Object.keys(PRODUCTS).find((k) => PRODUCTS[k].base === m[1]) : null;
+  if (m) return Object.keys(PRODUCTS).find((k) => PRODUCTS[k].base === m[1]);
+  return Object.keys(offerProducts).find((k) => offerProducts[k].base === String(id || '')) || null;
 }
 
-export const isConsumable = (id) => CONSUMABLE_KEYS.includes(productKey(id));
+export const isConsumable = (id) => {
+  const k = productKey(id);
+  return CONSUMABLE_KEYS.includes(k) || !!(offerProducts[k] && offerProducts[k].consumable);
+};
 
 // Without ads, a ×N boost starts straight away; this recharge after each
 // one keeps the same pace as watching the video would.

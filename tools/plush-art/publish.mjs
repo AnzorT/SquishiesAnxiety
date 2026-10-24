@@ -1,12 +1,16 @@
-// Publishes the plush roster to Firebase:
+// Publishes the roster (roster.mjs: the 86 of functions/squad.js) to Firebase:
 //   · each rendered image (render.mjs → out/) goes to Storage at
 //     creatureArt/plush-v2/{id}/{variant}.webp
+//   · each rig still (tools/rig/thumbs.mjs → tools/rig/out/thumbs/{key}.webp,
+//     512 px, idle pose) goes to creatureArt/rig-v1/{key}.webp
 //   · each `creatures/{id}` doc gets what the app reads:
-//       name, description, order (= id),
+//       name, description, order (= id), key (the design's art/rig key),
+//       thumb: { url } (the rig still, for the v6 grids, cards and reveals),
 //       plush: { v: 2, lg: { url, frame }, lgLocked, lgFace, lgLockedFace,
 //                md, mdLocked, mdFace, mdLockedFace, sm },
 //       rig:   { key, food, ink, mouthInk, cheek, sclera, iris, irisK, patch,
-//                eyes, mouth, cheeks, head }   (the design's creatures-v2.js)
+//                eyes, mouth, cheeks, head }   (the design's creatures-v2.js;
+//                null for the creatures it has no face data for)
 //       moves: the design's per-creature motion channels
 // Nothing about the roster lives in the app bundle. A creature's 3D model is
 // NOT set here: upload a Tripo GLB to Storage and put its download URL on the
@@ -18,11 +22,12 @@
 //
 //   GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json node tools/plush-art/publish.mjs [flags]
 //
-//   (no flag)        update `plush`, `rig` and `moves` on the docs that exist
-//   --catalog        REPLACE every roster doc (creatures/0 … 29) with the
-//                    roster above — this is the 2026-10-03 roster swap: the
-//                    old 20 creatures' fields (their svg, modelUrl…) go away
-//                    and docs 20-29 are created
+//   (no flag)        update `key`, `thumb`, `plush`, `rig` and `moves` on
+//                    the docs that exist
+//   --catalog        REPLACE every roster doc (creatures/0 … 85) with the
+//                    roster, creating the missing ones (the 2026-10-19 swap
+//                    to the 86). Fields not written here go away, except a
+//                    `modelUrl` (a 3D model) already on the doc.
 //   --reset-players  reset every player's progress to a fresh profile (what
 //                    createUserProfile gives a new account): 250 coins, only
 //                    the free creature (#0), no keys/tokens/boxes/stats/
@@ -30,6 +35,10 @@
 //                    age, nickname), what they paid for (adsFree,
 //                    generationCredits, paidCredits) and their custom
 //                    creatures.
+//   --cards          ONLY the squish game's card art (REDESIGN_V6 step 4):
+//                    tools/rig/cards.mjs → tools/rig/out/cards/{key}.png goes
+//                    to creatureArt/card-v1/{key}.png and each doc gets
+//                    card: { url }. Nothing else is touched.
 //   --dry            only print what would be written
 //
 // Re-running is safe: files are overwritten in place.
@@ -48,9 +57,14 @@ const args = process.argv.slice(2);
 const DRY = args.includes('--dry');
 const CATALOG = args.includes('--catalog');
 const RESET = args.includes('--reset-players');
+const CARDS = args.includes('--cards');
 const PROJECT_ID = 'squishy-app-61445';
 const BUCKET = 'squishy-app-61445.firebasestorage.app';
 const PREFIX = 'creatureArt/plush-v2';
+const THUMB_PREFIX = 'creatureArt/rig-v1';
+const THUMBS = path.resolve(HERE, '../rig/out/thumbs');
+const CARD_PREFIX = 'creatureArt/card-v1';
+const CARD_DIR = path.resolve(HERE, '../rig/out/cards');
 
 // firebase-admin is already installed for the Cloud Functions
 const require = createRequire(path.join(ROOT, 'functions', 'package.json'));
@@ -74,39 +88,74 @@ const downloadUrl = (objectPath, token) =>
 
 // --- the catalog -------------------------------------------------------------
 
+// Uploads a local webp to Storage and returns its download URL.
+async function upload(local, objectPath, contentType = 'image/webp') {
+  const token = crypto.randomUUID();
+  if (!DRY) {
+    await bucket.upload(local, {
+      destination: objectPath,
+      metadata: {
+        contentType,
+        cacheControl: 'public, max-age=31536000',
+        metadata: { firebaseStorageDownloadTokens: token },
+      },
+    });
+  }
+  return downloadUrl(objectPath, token);
+}
+
+// --- the squish game's cards (--cards: nothing else) -------------------------
+
+if (CARDS) {
+  let n = 0;
+  for (const c of ROSTER) {
+    const file = path.join(CARD_DIR, `${c.key}.png`);
+    if (!fs.existsSync(file)) {
+      console.warn(`creatures/${c.id} (${c.name}): no card — run tools/rig/cards.mjs first; skipped`);
+      continue;
+    }
+    const card = { url: await upload(file, `${CARD_PREFIX}/${c.key}.png`, 'image/png') };
+    if (DRY) {
+      console.log(`creatures/${c.id} ${c.key} → card`);
+      continue;
+    }
+    const ref = db.collection('creatures').doc(String(c.id));
+    if (!(await ref.get()).exists) {
+      console.warn(`creatures/${c.id} does not exist — skipped`);
+      continue;
+    }
+    await ref.update({ card });
+    n++;
+  }
+  console.log(DRY ? 'dry run — nothing written' : `${n} cards published`);
+  process.exit(0);
+}
+
 for (const c of ROSTER) {
   const entry = manifest[c.id];
-  if (!entry) {
-    console.warn(`creatures/${c.id} (${c.name}): not rendered — run render.mjs first; skipped`);
+  const thumbFile = path.join(THUMBS, `${c.key}.webp`);
+  if (!entry || entry.key !== c.key || !fs.existsSync(thumbFile)) {
+    console.warn(`creatures/${c.id} (${c.name}): not rendered — run render.mjs and tools/rig/thumbs.mjs first; skipped`);
     continue;
   }
   const plush = { v: 2 };
   for (const [variant, info] of Object.entries(entry.art)) {
-    const local = path.join(OUT, String(c.id), `${variant}.webp`);
-    const objectPath = `${PREFIX}/${c.id}/${variant}.webp`;
-    const token = crypto.randomUUID();
-    if (!DRY) {
-      await bucket.upload(local, {
-        destination: objectPath,
-        metadata: {
-          contentType: 'image/webp',
-          cacheControl: 'public, max-age=31536000',
-          metadata: { firebaseStorageDownloadTokens: token },
-        },
-      });
-    }
-    plush[variant] = { url: downloadUrl(objectPath, token), frame: info.frame };
+    plush[variant] = { url: await upload(path.join(OUT, String(c.id), `${variant}.webp`), `${PREFIX}/${c.id}/${variant}.webp`), frame: info.frame };
   }
-  const fields = { plush, rig: entry.rig, moves: entry.moves };
+  const thumb = { url: await upload(thumbFile, `${THUMB_PREFIX}/${c.key}.webp`) };
+  const fields = { key: c.key, thumb, plush, rig: entry.rig, moves: entry.moves };
   const doc = CATALOG ? { name: c.name, description: c.description, order: c.id, ...fields } : fields;
   if (DRY) {
-    console.log(`creatures/${c.id} ${CATALOG ? 'SET' : 'update'} →`, Object.keys(doc).join(', '), `(${Object.keys(plush).length - 1} images)`);
+    console.log(`creatures/${c.id} ${c.key} ${CATALOG ? 'SET' : 'update'} →`, Object.keys(doc).join(', '), `(${Object.keys(plush).length - 1} images + thumb)`);
     continue;
   }
   const ref = db.collection('creatures').doc(String(c.id));
   if (CATALOG) {
-    await ref.set(doc); // replaces the doc: the old roster's fields go away
-    console.log(`creatures/${c.id} (${c.name}) replaced ✓`);
+    // replaces the doc (the old roster's fields go away), keeping a 3D model
+    const old = await ref.get();
+    const modelUrl = old.exists ? old.get('modelUrl') : null;
+    await ref.set(modelUrl ? { ...doc, modelUrl } : doc);
+    console.log(`creatures/${c.id} (${c.name}) ${old.exists ? 'replaced' : 'created'} ✓${modelUrl ? ' (kept its modelUrl)' : ''}`);
   } else {
     const snap = await ref.get();
     if (!snap.exists) {
@@ -148,6 +197,8 @@ const CLEARED = [
   'gems', 'stars', 'col', 'pity', 'epic', 'chestBag', 'chestVideos', 'dealDay', 'giftDay', 'chestOpens', 'xp',
   // fields from versions that only existed during testing
   'stickerPile', 'stickers',
+  // the Crib's achievement counters (its state doc is deleted below)
+  'cribBuys', 'cribSize',
 ];
 
 if (RESET) {

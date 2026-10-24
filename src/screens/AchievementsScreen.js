@@ -1,5 +1,6 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated, Easing, Pressable, PanResponder } from 'react-native';
+import { View, Text, StyleSheet, Animated, Easing, PanResponder } from 'react-native';
+import Pressable from '../components/Pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Stop, Circle, Ellipse } from 'react-native-svg';

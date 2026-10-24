@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
-import { View, Text, Image, Pressable, StyleSheet, Animated, Easing } from 'react-native';
+import { View, Text, Image, StyleSheet, Animated, Easing } from 'react-native';
+import Pressable from './Pressable';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Stop, Circle } from 'react-native-svg';
 import { BUTTON_VARIANTS, candyColors, candyFonts } from '../theme/candyTheme';

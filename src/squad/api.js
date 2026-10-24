@@ -19,7 +19,18 @@ export const buyDeal = () => move('buyChest', { deal: true });
 export const videoChest = () => move('videoChest');
 // → { id, rar, f, isNew, newFinish, coins, reward, tier } (coins: a duplicate's or a set's)
 export const openChest = (tier) => move('openChest', { tier });
-export const buyCreature = (id) => move('buyCreature', { id });
 export const growCreature = (id) => move('grow', { id });
 export const equipFinish = (id, f) => move('equip', { id, f });
 export const swapGems = (i) => move('swap', { i });
+
+// --- the v6 group chests (REDESIGN_V6 step 5): each opens at once and
+// resolves → { group, size, final, upgraded, id, rar, isNew, coins,
+// dupeCoins, reward, setBonus, luck } (functions/squad.js openGroup)
+export const groupChest = (group, size) => move('groupChest', { group, size });
+export const freeChest = () => move('freeChest');
+export const adChest = () => move('adChest');
+export const dealChest = () => move('dealChest');
+// the Deals tab (step 7): a season-pass reward, today's streak reward →
+// { kind: 'coins' | 'gems', n } or { kind: 'chest', chest } (+ i / day)
+export const passClaim = (i) => move('passClaim', { i });
+export const streakClaim = () => move('streakClaim');

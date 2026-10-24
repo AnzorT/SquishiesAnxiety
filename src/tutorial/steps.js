@@ -1,8 +1,9 @@
 // The guided tutorial (the 2026-10-03 design's tutSync in "ASMR Creature
-// Squash v3.dc.html"), on the squad economy (src/squad): every new player
-// has a Welcome chest that always holds Mittens (functions/squad.js); the
-// second chest is a Basic one bought with the coins earned in the goal
-// step; then a card about duplicates, sets and finishes.
+// Squash v3.dc.html"), on the squad economy (src/squad): a new player's
+// first Free chest in the Shop is the welcome one and always holds Mittens
+// (functions/squad.js freeChest); the second chest is a Common group chest
+// bought with the coins earned in the goal step; then a card about
+// duplicates, sets and finishes.
 //
 // `tut` on the profile is the current step; 'done' ends it. Each step says
 // what the Guide shows (`ui`) and when to move on (`next`), from the store's
@@ -12,9 +13,11 @@
 export const FIRST_STEP = 'start';
 // the Crib picks the tutorial up from here (Phase C)
 export const CRIB_STEP = 'crib';
-export const GOAL_COINS = 500;
+export const GOAL_COINS = 500; // enough for a Common group chest (300)
 export const HOLD_MS = 5000;
 export const ROTATE_PX = 260;
+// "My creations" is off for now (REDESIGN_V6 ruling 3; SquishiesScreen's SHOW_MINE)
+const SHOW_MINE = false;
 
 const isDone = (t) => !t || t === 'done';
 // The tutorial starts after sign-in: nothing shows on the splash or the
@@ -35,14 +38,12 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
   const starter = creatures.find((c) => c.id === '0')?.name || 'Nimbo';
   const on = (screen) => s.screen === screen;
   const owned = profile?.ownedIds || [];
-  // Home is the Squishies tab and 'store' the Shop tab (MainScreen). A
-  // squishy is a cell in the Collection (`card:<id>`, scrolled into view);
-  // its sheet's SQUISH button is `sheetPlay`.
-  const sheetUp = String(s.squadSheet) === '1';
-  const toMittens = (title, text) =>
-    sheetUp ? { ui: spot('sheetPlay', title, 'Tap SQUISH to play.', { radius: 20, place: 'top' }) } : { ui: spot('card:1', title, text, { radius: 18, place: 'top' }) };
-  // a squish-screen step while the player is back on Home: point at the cell
-  const backToToy = () => (on('home') ? toMittens(`Back to ${name}`, `Tap ${name} to keep playing.`) : { hide: true });
+  // Home is the lobby (the Squish tab) and 'store' the Shop tab
+  // (MainScreen). The lobby shows the selected squishy — Mittens, from the
+  // welcome chest, until the player picks another — over PLAY (`play`).
+  const toMittens = (title, text) => ({ ui: spot('play', title, text, { radius: 26, place: 'top' }) });
+  // a squish-screen step while the player is back on Home: point at PLAY
+  const backToToy = () => (on('home') ? toMittens(`Back to ${name}`, `Tap PLAY to keep squishing ${name}.`) : { hide: true });
   // a chest step while the player is back on Home: point at the Shop tab
   const backToBox = () => (on('home') ? { ui: spot('store', 'Back to your chest', 'Tap the Shop to open it.') } : { hide: true });
   // the chest opener, while it's up (in the Shop)
@@ -58,13 +59,13 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
       if (!on('home')) return { hide: true };
       // the welcome chest is already open (a replay): straight on
       if (owned.includes('1')) return { next: 'play' };
-      return { ui: spot('store', 'Your first chest!', 'Every squishy friend comes out of a chest. A welcome chest is waiting for you in the Shop — tap here.') };
+      return { ui: spot('store', 'Your first chest!', 'Every squishy friend comes out of a chest. A free chest is waiting for you in the Shop — tap here.') };
 
     case 'box1tap':
       if (s.boxPhase === 'reveal') return { next: 'lvl2' };
       if (!on('store')) return backToBox();
       if (smashing) return { ui: spot('chestStage', 'Tap tap tap!', 'Tap the chest until it bursts open. Stop and it heals!', { radius: 40, block: false }) };
-      return { ui: spot('shelf', 'Open it', 'Your Welcome chest is in My Chests. Tap it!', { radius: 16 }) };
+      return { ui: spot('freeChest', 'Open it', 'Your first chest is free. Tap Open free!', { radius: 16 }) };
 
     case 'lvl2':
       return {
@@ -83,12 +84,10 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
       if (s.boxPhase === 'reveal') return { ui: spot('revealDone', `Meet ${name}`, 'Tap here to say hi.') };
       return { ui: spot('storeBack', 'Back to your squishies', `Let’s go and play with ${name}.`) };
 
-    // Mittens' cell (`card:1`) is only mounted on Collection > Squishies;
-    // elsewhere the guide falls back to a banner.
     case 'play':
       if (on('toy')) return { next: 'gear' };
       if (!on('home')) return { hide: true };
-      return toMittens(`Play with ${name}`, `Here’s ${name}. Tap them, then SQUISH to start playing.`);
+      return toMittens(`Play with ${name}`, `Here’s ${name}! Poke them, spin them, then tap PLAY to start squishing.`);
 
     case 'gear':
       if (!on('toy')) return backToToy();
@@ -160,8 +159,9 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
       if (s.boxPhase === 'reveal') return { next: 'collect' };
       if (!on('store')) return on('home') ? { ui: spot('store', 'Back to the Shop', 'Let’s buy that chest.') } : { hide: true };
       if (smashing) return { ui: spot('chestStage', 'Tap it open', 'Tap tap tap!', { radius: 40, block: false }) };
-      if (s.shopSheet === 'got') return { ui: spot('openNow', 'Open it now', 'Tap OPEN NOW.') };
-      return { ui: spot('buy:basic', 'A Basic chest', 'It costs 250 coins. Tap to buy it!', { radius: 999 }) };
+      // the v6 Shop (REDESIGN_V6 step 5): a Common of today's HOT group is
+      // 300 coins; the free chest is the same chest when it's waiting
+      return { ui: spot('buy:hot', 'Open a chest', 'Pick a size and tap Open. Common chests cost 300 coins!', { radius: 22 }) };
 
     case 'stars': // the step's name before Stars were dropped (2026-10-09)
     case 'collect':
@@ -175,17 +175,21 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
       };
 
     case 'storeBack':
-      if (on('home')) return { next: 'mine' };
+      if (on('home')) return { next: SHOW_MINE ? 'mine' : 'cribBtn' };
       if (!on('store')) return { hide: true };
       if (s.boxPhase === 'reveal') return { ui: spot('revealDone', 'Nice!', 'Tap here to finish.') };
       return { ui: spot('storeBack', 'Back to your squishies', 'One more thing to show you.') };
 
+    // My creations is hidden for now (REDESIGN_V6 ruling 3): its two steps
+    // pass straight on to the Crib.
     case 'mine':
+      if (!SHOW_MINE) return { next: 'cribBtn' };
       if (!on('home')) return { hide: true };
       if (s.listTab === 'mine') return { next: 'create' };
       return { ui: spot('tabs', 'Make your own', 'Open My creations.', { handX: 0.75 }) };
 
     case 'create':
+      if (!SHOW_MINE) return { next: 'cribBtn' };
       if (!on('home')) return { hide: true };
       return {
         ui: spot('createCard', 'Create a creature', 'Turn any photo or drawing into your own squishy.', {
@@ -281,7 +285,7 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
           text: 'You’re all set! A few more things to know:',
           items: [
             { icon: '★', color: '#f2b84a', title: 'Chests bring new squishies', desc: 'Free ones every day, more in the Shop. Squish them to grow them.' },
-            { icon: '✦', color: '#9b84d8', title: 'Create your own', desc: 'Turn a photo or a drawing into a squishy in Collection > My creations.' },
+            { icon: '✦', color: '#9b84d8', title: 'Your squad', desc: 'Tap Squad in the lobby to see everyone you’ve collected.' },
             { icon: '×', color: '#f2665a', title: 'Remove ads', desc: 'A one-time purchase in Settings. No more ads, ever.' },
           ],
           buttons: [{ label: 'Start playing', next: 'done' }],

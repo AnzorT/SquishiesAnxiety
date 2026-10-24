@@ -1,5 +1,6 @@
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import Pressable from './Pressable';
 import { candyColors, candyFonts } from '../theme/candyTheme';
 import RoundButton from './candy/RoundButton';
 import { SoftPulse } from './candy/Decor';
@@ -133,7 +134,7 @@ function HomeMenu({ items, anchor, badge = 0, hot = false, onOpenChange }) {
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       {mounted ? (
         <Animated.View style={[StyleSheet.absoluteFill, styles.scrim, { opacity: scrim }]} pointerEvents={shown ? 'auto' : 'none'}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={close} />
+          <Pressable silent style={StyleSheet.absoluteFill} onPress={close} />
         </Animated.View>
       ) : null}
       <View style={[styles.trigger, { top: anchor.top, right: anchor.right }]}>

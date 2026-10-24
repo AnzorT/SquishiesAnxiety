@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
+import Pressable from '../components/Pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
@@ -7,23 +8,25 @@ import ShadowText from '../components/candy/ShadowText';
 import TutTarget from '../tutorial/Target';
 import { F, PINK, PINK_RING, Ringed } from './ui';
 
-// The app shell's bottom nav (the design's App Shell): Squishies | Shop on a
-// purple bar, with a pink candy pill sliding under the open tab and the
-// tapped tab's icon popping. Tutorial targets: `storeBack` on Squishies (the
+// The app shell's bottom nav (the 2026-10-19 design's "Squish Squad App
+// v4"): Squish | Shop on a light pastel bar, with a pink candy pill sliding
+// under the open tab, the tapped tab's icon popping, and a red dot on the
+// Shop while you're elsewhere. Tutorial targets: `storeBack` on Squish (the
 // way back from the Shop), `store` on Shop.
 
 export const TABS = [
-  ['squish', 'Squishies', 'storeBack'],
+  ['squish', 'Squish', 'storeBack'],
   ['shop', 'Shop', 'store'],
 ];
 const SLIDE = { duration: 450, easing: Easing.bezier(0.3, 1.3, 0.5, 1), useNativeDriver: true };
 const ON_SHADOWS = [[0, 2, PINK_RING], [1.5, 0, PINK_RING], [-1.5, 0, PINK_RING], [0, -1, PINK_RING]];
-const OFF_SHADOWS = [[0, 1.5, '#2a0b47']];
+const OFF_SHADOWS = [];
 
-function SquishGlyph({ ink }) {
+// on: a white glyph with pink features; off: violet with white ones
+function SquishGlyph({ fill, ink }) {
   return (
     <Svg width={28} height={28} viewBox="0 0 26 26">
-      <Path d="M3 17 C3 8 8 4 13 4 C18 4 23 8 23 17 C23 21 19 23 13 23 C7 23 3 21 3 17 Z" fill="#ffffff" />
+      <Path d="M3 17 C3 8 8 4 13 4 C18 4 23 8 23 17 C23 21 19 23 13 23 C7 23 3 21 3 17 Z" fill={fill} />
       <Circle cx={9.5} cy={14} r={1.8} fill={ink} />
       <Circle cx={16.5} cy={14} r={1.8} fill={ink} />
       <Path d="M11 17.5 Q13 19 15 17.5" fill="none" stroke={ink} strokeWidth={1.6} strokeLinecap="round" />
@@ -31,11 +34,11 @@ function SquishGlyph({ ink }) {
   );
 }
 
-function ShopGlyph({ ink }) {
+function ShopGlyph({ fill, ink }) {
   return (
     <Svg width={30} height={28} viewBox="0 0 28 26">
-      <Path d="M4 12 L4 9 C4 5 8 3 14 3 C20 3 24 5 24 9 L24 12 Z" fill="#ffffff" stroke="#ffffff" strokeWidth={2} strokeLinejoin="round" />
-      <Rect x={4} y={13} width={20} height={10} rx={3} fill="#ffffff" />
+      <Path d="M4 12 L4 9 C4 5 8 3 14 3 C20 3 24 5 24 9 L24 12 Z" fill={fill} stroke={fill} strokeWidth={2} strokeLinejoin="round" />
+      <Rect x={4} y={13} width={20} height={10} rx={3} fill={fill} />
       <Circle cx={14} cy={13} r={2.6} fill={ink} />
     </Svg>
   );
@@ -51,14 +54,16 @@ const NavItem = memo(function NavItem({ id, label, tut, on, onPress }) {
   };
   const scale = pop.interpolate({ inputRange: [0, 0.55, 1], outputRange: [0.7, 1.18, 1] });
   const rotate = pop.interpolate({ inputRange: [0, 0.55, 1], outputRange: ['-8deg', '4deg', '0deg'] });
-  const ink = on ? '#c02bd9' : '#6a22d6';
+  const ink = on ? '#c02bd9' : '#ffffff';
+  const fill = on ? '#ffffff' : '#6a22d6';
   return (
     <TutTarget name={tut} style={styles.item}>
       <Pressable style={styles.itemIn} onPress={press}>
-        <Animated.View style={{ transform: [{ scale }, { rotate }] }}>{id === 'shop' ? <ShopGlyph ink={ink} /> : <SquishGlyph ink={ink} />}</Animated.View>
-        <ShadowText style={styles.label} shadows={on ? ON_SHADOWS : OFF_SHADOWS}>
+        <Animated.View style={{ transform: [{ scale }, { rotate }] }}>{id === 'shop' ? <ShopGlyph fill={fill} ink={ink} /> : <SquishGlyph fill={fill} ink={ink} />}</Animated.View>
+        <ShadowText style={[styles.label, { color: on ? '#ffffff' : '#45107a' }]} shadows={on ? ON_SHADOWS : OFF_SHADOWS}>
           {label}
         </ShadowText>
+        {id === 'shop' && !on && <View style={styles.dot} pointerEvents="none" />}
       </Pressable>
     </TutTarget>
   );
@@ -73,9 +78,8 @@ export default function BottomNav({ tab, onTab }) {
   }, [tab, x]);
   const half = (w - 6) / 2;
   return (
-    <View>
-      <View style={styles.pinkLine} />
-      <LinearGradient colors={['#6a22d6', '#45107a']} style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) + 6 }]}>
+    <View style={styles.shadow}>
+      <LinearGradient colors={['#fdeefa', '#f1e4ff']} style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 14) + 6 }]}>
         <View style={styles.track} onLayout={(e) => e.nativeEvent.layout.width > 0 && setW(e.nativeEvent.layout.width)}>
           {w > 0 && (
             <Animated.View pointerEvents="none" style={[styles.pill, { width: half, transform: [{ translateX: x.interpolate({ inputRange: [0, 1], outputRange: [0, half] }) }] }]}>
@@ -92,17 +96,19 @@ export default function BottomNav({ tab, onTab }) {
 }
 
 const styles = StyleSheet.create({
-  pinkLine: { height: 3, backgroundColor: '#c02bd9' },
-  bar: { borderTopWidth: 3, borderTopColor: '#ffffff', paddingTop: 10, paddingHorizontal: 14 },
+  // box-shadow: 0 -8px 22px rgba(69,16,122,0.14)
+  shadow: { backgroundColor: '#fdeefa', shadowColor: '#45107a', shadowOpacity: 0.14, shadowRadius: 11, shadowOffset: { width: 0, height: -8 }, elevation: 12 },
+  bar: { borderTopWidth: 2, borderTopColor: '#ffffff', paddingTop: 10, paddingHorizontal: 14 },
   track: {
     flexDirection: 'row',
     height: 56,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.75)',
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderColor: '#ffffff',
   },
   pill: { position: 'absolute', top: 1, bottom: 5, left: 1 },
+  dot: { position: 'absolute', right: 22, top: 4, width: 12, height: 12, borderRadius: 6, backgroundColor: '#e01e4a', borderWidth: 2, borderColor: '#ffffff' },
   item: { flex: 1 },
   itemIn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
   label: { fontFamily: F.display, fontSize: 19, letterSpacing: 0.3, color: '#ffffff', includeFontPadding: false },

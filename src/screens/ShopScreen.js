@@ -1,24 +1,23 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Dimensions, Easing, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import Pressable from '../components/Pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import CandyBackground from '../components/candy/CandyBackground';
 import RoundButton, { BackGlyph } from '../components/candy/RoundButton';
 import OutlinedTitle from '../components/candy/OutlinedTitle';
 import ShadowText, { outline3 } from '../components/candy/ShadowText';
-import { RaysSpin } from '../components/candy/Decor';
-import CreatureThumbnail from '../components/CreatureThumbnail';
 import useRewardedAd from '../components/useRewardedAd';
 import { PRODUCTS, GEM_KEYS } from '../economy';
 import { todayKey } from '../dailySpin';
 import sfx from '../audio/sfx';
-import {
-  BY_ID, CHESTS, CHEST_LOOK, CHEST_ORDER, COIN_PRICE, DEAL, PITY_MAX, RAR_LOOK, ROSTER, SEASON, SETS, SET_OF, SWAPS,
-  chestArtOf, chestPrice, chestVideosLeft, creaturePrice, dealBought, myChests, owns, picks as todaysPicks, wallet,
-} from '../squad/data';
+import { BY_ID, GDEAL, HIDDEN, SET_REWARDS, SEASON, SIZES, SIZE_I, SWAPS, AD_CHESTS, outIds, wallet } from '../squad/data';
 import * as squad from '../squad/api';
-import { Bob, BtnText, CandyBtn, Chest, Chip, CoinIcon, F, GemIcon, GOLD, GOLD_RING, PINK_RING, PriceBtn, Ringed, hms, TickingText, untilMidnight } from '../squad/ui';
-import ChestOpener from './ChestOpener';
+import { BtnText, CandyBtn, CoinIcon, F, GemIcon, GOLD_RING, PINK_RING, Ringed, untilMidnight } from '../squad/ui';
+import ChestsTabV6, { ChestSheetBody, OddsSheetBody } from './ShopChests';
+import ChestSmash from '../components/ChestSmash';
+import { DealsTab, GemsTab as GemsTabV6 } from './ShopDeals';
+import Freeze from '../components/Freeze';
 import TutTarget from '../tutorial/Target';
 import { report as tutReport } from '../tutorial/store';
 import { Bone, BoneCard, Reveal, useAfterFirstFrame } from '../components/Skeleton';
@@ -29,20 +28,20 @@ import useInstantTab from '../components/useInstantTab';
 // The Shop (the 2026-10-06 design's "Shop Screen v2"): chests, squishies
 // and gems, on the squad economy (src/squad, run by the `squad` Cloud
 // Function). Three tabs:
-//  · Chests — My Chests (bought, not opened), the Daily Deal, free video
-//    chests, the Legendary guarantee, the five chests and the season chest;
-//  · Squishies — Today's Picks (20% off) and every squishy by set, to buy
-//    with coins (Legendaries come from chests only);
+//  · Chests — the v6 group chests (ShopChests.js); no "My Chests" shelf:
+//    every chest opens as soon as it's got;
+//  · (no Squishies tab: a squishy unlocks only by being found in chests
+//    enough times — functions/squad.js COPIES; none is sold for coins);
 //  · Gems — the gem packs (real money), gems → coins, Remove Ads.
 // Left out until their products exist: the hero offers (Season Pass,
 // Starter Pack, Mega Bundle, VIP Club).
 //
 // Every move goes to the server; the profile listener brings the result in.
 
-const TINT = ['#fff0e2', '#e4f3ff', '#ffe6f6', '#dffcf6', '#f1e6ff'];
 const LIP = ['#f2c7a0', '#a9d2f2', '#f0a8d8', '#93e0d2', '#cdb0f2'];
 const CHIP = ['#d9772f', '#2f7fd6', '#d3179a', '#1b9c8c'];
-const SEGS = [['chests', 'Chests'], ['squish', 'Squishies'], ['gems', 'Gems']];
+// the v6 tabs (the Squishies tab's buying moved to the Squad screen's UNLOCK)
+const SEGS = [['chests', 'Chests'], ['deals', 'Deals'], ['gems', 'Gems']];
 const GEM_PILE = [[20, 12, 22], [4, 18, 18], [40, 18, 18], [12, 4, 16], [30, 2, 16], [22, 24, 14]];
 const COIN_POS = [[0, 6], [15, 6], [30, 6], [8, 0], [22, 0]];
 const ODDS_NAMES = ['Common', 'Rare', 'Epic', 'Legend'];
@@ -56,6 +55,13 @@ const ERRORS = {
   empty_chest: 'Nothing in that chest yet. Coming soon!',
   owned: 'Already in your squad',
   not_for_sale: 'Not for sale',
+  not_yet: 'Your free chest isn\'t ready yet',
+  unknown_chest: 'That chest isn\'t in the shop any more',
+  claimed: 'Already claimed',
+  need_xp: 'Open more chests to earn XP first',
+  need_pass: 'This reward needs the season pass',
+  season_over: 'The season is over',
+  unknown_reward: 'That reward isn\'t there any more',
 };
 const fmt = fmtNum;
 // the season's last minute (its chest's "Ends in" countdown)
@@ -137,308 +143,12 @@ export function Seg({ tab: current, onTab, onPick, badges = {}, segs = SEGS }) {
 
 // --- Chests tab -----------------------------------------------------------------
 
-const ChestsTab = memo(function ChestsTab({ profile, day, onBuy, onDeal, onVideo, onOpen, onOdds, seasonOn }) {
-  const mine = myChests(profile);
-  const shelf = ['welcome', ...CHEST_ORDER, 'season'].filter((t) => (mine[t] || 0) > 0);
-  const videos = chestVideosLeft(profile, day);
-  const dealDone = dealBought(profile, day);
-  const pity = Math.min(PITY_MAX, profile?.pity || 0);
-  return (
-    <View style={styles.col14}>
-      {shelf.length > 0 && (
-        <TutTarget name="shelf" style={styles.shelf}>
-          <Text style={styles.shelfTitle}>My Chests</Text>
-          {shelf.map((t) => (
-            <Pressable key={t} onPress={() => onOpen(t)} style={[styles.shelfSlot, { backgroundColor: TINT[Math.max(0, CHEST_ORDER.indexOf(t))] }]}>
-              <Chest tier={chestArtOf(t)} size={46} style={{ marginLeft: 2 }} />
-              <View style={styles.shelfN}>
-                <Text style={styles.shelfNText}>{mine[t]}</Text>
-              </View>
-            </Pressable>
-          ))}
-          <Text style={styles.shelfHint}>{'TAP TO\nOPEN'}</Text>
-        </TutTarget>
-      )}
-
-      <View style={styles.row10}>
-        <Ringed ring="#8e1580" lip={5} radius={24} style={{ flex: 1 }} innerStyle={styles.bigCard} colors={['#c9fff4', '#7ee8e0', '#b98bff']}>
-          <RaysSpin size={300} durationMs={16000} gapDeg={14} opacity={0.5} style={styles.cardRays} />
-          <View style={styles.cardTop}>
-            <Chip bg="#ff2f8f">DAILY DEAL</Chip>
-            <Chip bg="#ff2f8f" size={11}>
-              -30%
-            </Chip>
-          </View>
-          <Bob ms={2600}>
-            <Chest tier="crystal" size={104} />
-          </Bob>
-          <Text style={[styles.cardName, { color: '#45107a' }]}>Crystal Chest</Text>
-          <TickingText style={[styles.cardNote, { color: '#45107a' }]} text={(now) => hms(untilMidnight(now))} />
-          {dealDone ? (
-            <View style={styles.sold}>
-              <Text style={styles.soldText}>BOUGHT TODAY</Text>
-            </View>
-          ) : (
-            <PriceBtn cur="gems" amount={DEAL.gems} was={CHESTS.crystal.gems} onPress={onDeal} />
-          )}
-        </Ringed>
-
-        <Pressable style={{ flex: 1 }} onPress={onVideo}>
-          <Ringed ring="#0d7a4a" lip={5} radius={24} innerStyle={styles.bigCard} colors={['#e9fff3', '#9ff0c6', '#4fd39a']}>
-            <View style={styles.cardTop}>
-              <Chip bg="#16a86a">FREE</Chip>
-              <Text style={styles.videoShort}>{videos > 0 ? `${videos} LEFT` : 'DONE'}</Text>
-            </View>
-            <Bob ms={2600} delay={0.6}>
-              <Chest tier="basic" size={104} />
-            </Bob>
-            <Text style={[styles.cardName, { color: '#0d6a40' }]}>Free Chest</Text>
-            <Text style={[styles.cardNote, { color: '#0d6a40' }]}>{videos > 0 ? `${videos} left today` : 'Back tomorrow'}</Text>
-            <CandyBtn kind={videos > 0 ? 'green' : 'grey'} onPress={onVideo} disabled={videos <= 0} style={{ marginTop: 4 }}>
-              <Text style={styles.play}>▶</Text>
-              <BtnText ring={videos > 0 ? '#0d7a4a' : '#7a6a8c'} size={15}>
-                {profile?.adsFree && videos > 0 ? 'FREE' : videos > 0 ? 'WATCH' : 'DONE'}
-              </BtnText>
-            </CandyBtn>
-          </Ringed>
-        </Pressable>
-      </View>
-
-      <View style={styles.pity}>
-        <LinearGradient colors={['#fff3c4', '#ffa94d', '#e07a00']} start={{ x: 0.3, y: 0 }} end={{ x: 0.7, y: 1 }} style={styles.pityStar}>
-          <Text style={styles.pityStarText}>★</Text>
-        </LinearGradient>
-        <View style={{ flex: 1, gap: 4 }}>
-          <View style={styles.pityHead}>
-            <Text style={styles.pityTitle}>LEGENDARY GUARANTEE</Text>
-            <Text style={styles.pityCount}>
-              {pity} / {PITY_MAX}
-            </Text>
-          </View>
-          <View style={styles.pityBar}>
-            {Array.from({ length: 10 }, (_, i) => (
-              <View key={i} style={[styles.pitySeg, { backgroundColor: i < Math.floor(pity / 3) ? '#ffa94d' : '#f3dcc0' }]} />
-            ))}
-          </View>
-          <Text style={styles.pityNote}>{pity >= PITY_MAX ? 'Your next Gold+ chest is Legendary!' : `${PITY_MAX - pity} more Gold+ chests to a sure Legendary`}</Text>
-        </View>
-      </View>
-
-      <View style={styles.titleRow}>
-        <Title size={19}>Chests</Title>
-        <Text style={styles.link} onPress={onOdds}>
-          View odds
-        </Text>
-      </View>
-      <View style={styles.grid2}>
-        {CHEST_ORDER.slice(0, 4).map((t, i) => {
-          const p = chestPrice(t);
-          const best = CHESTS[t].odds.slice(2).reduce((a, b) => a + b, 0);
-          return (
-            <View key={t} style={[styles.tierCard, { backgroundColor: TINT[i], shadowColor: LIP[i], borderBottomColor: LIP[i] }]}>
-              <View style={[styles.tierChip, { backgroundColor: CHIP[i] }]}>
-                <Text style={styles.tierChipText}>OPENS WITH {CHEST_LOOK[t].mech}</Text>
-              </View>
-              <View style={styles.tierArt}>
-                <View style={[styles.tierShadow, { backgroundColor: LIP[i] }]} />
-                <Bob ms={2800} delay={i * 0.35} style={{ position: 'absolute', left: 4, top: -6 }}>
-                  <Chest tier={t} size={104} />
-                </Bob>
-              </View>
-              <Text style={styles.tierName}>{CHEST_LOOK[t].name}</Text>
-              <Text style={[styles.tierBest, { color: CHIP[i] }]}>Epic or better {best.toFixed(0)}%</Text>
-              <TutTarget name={`buy:${t}`}>
-                <PriceBtn cur={p.cur} amount={p.n} onPress={() => onBuy(t)} />
-              </TutTarget>
-            </View>
-          );
-        })}
-      </View>
-
-      <Ringed ring="#8f3cf2" lip={6} radius={26} innerStyle={styles.wideCard} colors={['#ffd1ec', '#fff1b0', '#c9fbe4', '#cbe8ff', '#e6d3ff']}>
-        <RaysSpin size={360} durationMs={12000} gapDeg={12} opacity={0.6} style={styles.rainbowRays} />
-        <Bob ms={2600}>
-          <Chest tier="rainbow" size={136} />
-        </Bob>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Chip bg="#8f3cf2">THE BEST CHEST</Chip>
-          <ShadowText style={styles.wideName} shadows={[[0, 2.5, '#8f3cf2'], [2, 0, '#8f3cf2'], [-2, 0, '#8f3cf2'], [0, -2, '#8f3cf2']]}>
-            Rainbow
-          </ShadowText>
-          <Text style={styles.wideNote}>Epic or better every time. Opens with tap, hold and swipe.</Text>
-          <View style={{ alignSelf: 'flex-start' }}>
-            <PriceBtn cur="gems" amount={CHESTS.rainbow.gems} onPress={() => onBuy('rainbow')} size={17} padH={16} />
-          </View>
-        </View>
-      </Ringed>
-
-      {seasonOn && (
-        <Ringed ring="#7a2a00" lip={6} radius={26} innerStyle={[styles.wideCard, { paddingLeft: 14, paddingRight: 6 }]} colors={['#4a1a73', '#8f3cf2', '#ff8a3d']}>
-          <View style={{ flex: 1, gap: 4 }}>
-            <Chip bg="#ffd23a" color="#4a1a73">
-              SEASON 1 · LIMITED
-            </Chip>
-            <ShadowText style={[styles.wideName, { fontSize: 23 }]} shadows={[[0, 2.5, '#4a1a73'], [2, 0, '#4a1a73'], [-2, 0, '#4a1a73'], [0, -2, '#4a1a73']]}>
-              {SEASON.name}
-            </ShadowText>
-            <Text style={styles.seasonNote}>6 squishies that leave forever when the season ends: Gourdy, Batty, Hexie and more.</Text>
-            <Chip bg="#7a2a00" size={10.5}>
-              Ends in <TickingText text={(now) => hms(SEASON_END - now)} />
-            </Chip>
-            <View style={{ alignSelf: 'flex-start' }}>
-              <PriceBtn cur="gems" amount={CHESTS.season.gems} onPress={() => onBuy('season')} size={17} padH={16} />
-            </View>
-          </View>
-          <Bob ms={2600}>
-            <Chest tier="gold" size={130} />
-          </Bob>
-        </Ringed>
-      )}
-    </View>
-  );
-});
-
-// --- Squishies tab --------------------------------------------------------------
-
-const SquishTab = memo(function SquishTab({ profile, catalog, artIds, day, onPick }) {
-  const pickIds = todaysPicks(profile || {}, artIds, day);
-  const base = ROSTER.filter((c) => c.base);
-  const ownedN = base.filter((c) => owns(profile || {}, c.id)).length;
-  return (
-    <View style={{ gap: 16 }}>
-      <View style={{ gap: 8 }}>
-        <View style={styles.titleRow}>
-          <Title>Today's Picks</Title>
-          <TickingText style={styles.small} text={(now) => `New picks in ${hms(untilMidnight(now))}`} />
-        </View>
-        <View style={styles.row8}>
-          {pickIds.map((id) => {
-            const c = BY_ID[id];
-            const mine = owns(profile || {}, id);
-            return (
-              <Pressable key={id} style={{ flex: 1 }} onPress={() => onPick(id, true)}>
-                <Ringed ring={PINK_RING} lip={5} radius={22} colors={mine ? ['#efe6f7', '#cdbde0'] : [RAR_LOOK[c.rar].bg, RAR_LOOK[c.rar].bg]} innerStyle={styles.pick}>
-                  <View style={styles.pickOff}>
-                    <Text style={styles.pickOffText}>-20%</Text>
-                  </View>
-                  <CreatureThumbnail creature={catalog[id]} size={84} />
-                  <Text style={styles.pickName}>{c.name}</Text>
-                  <View style={styles.pickRar}>
-                    <Text style={styles.pickRarText}>{mine ? 'OWNED' : RAR_LOOK[c.rar].label}</Text>
-                  </View>
-                  {!mine && (
-                    <Ringed ring={GOLD_RING} lip={3} ringW={2} border={2.5} colors={GOLD} innerStyle={styles.pickPrice}>
-                      <Text style={styles.pickOld}>{fmt(COIN_PRICE[c.rar])}</Text>
-                      <View style={styles.rowCenter}>
-                        <CoinIcon size={12} />
-                        <BtnText size={13}>{fmt(creaturePrice(profile || {}, id, artIds, day))}</BtnText>
-                      </View>
-                    </Ringed>
-                  )}
-                </Ringed>
-              </Pressable>
-            );
-          })}
-        </View>
-        {pickIds.length > 0 && pickIds.every((id) => owns(profile || {}, id)) && <Text style={styles.center}>You own every pick today. New ones tomorrow!</Text>}
-      </View>
-
-      <View style={{ gap: 8 }}>
-        <View style={styles.titleRow}>
-          <Title>All Squishies</Title>
-          <Text style={styles.small}>
-            {ownedN} / {base.length} owned
-          </Text>
-        </View>
-        {SETS.map((key) => (
-          <SetBlock key={key} setKey={key} profile={profile} catalog={catalog} artIds={artIds} onPick={onPick} />
-        ))}
-      </View>
-      <Text style={styles.foot}>
-        Legendaries can't be bought. Get them from chests or the Legendary guarantee. Any squishy can drop as Shiny, Rainbow or Golden in chests, and a duplicate turns into coins.
-      </Text>
-    </View>
-  );
-});
-
-const SET_LOOK = {
-  snack: ['Snack Shack', '#c4651f', '#f2c7a0'],
-  fruit: ['Fruit Patch', '#b88a00', '#ecd078'],
-  ocean: ['Ocean Pals', '#2f7fd6', '#a9d2f2'],
-  pet: ['Pet Shop', '#c0268f', '#f0a8d8'],
-  forest: ['Forest Friends', '#16a86a', '#98dcbc'],
-  sky: ['Sky & Stars', '#5a3ad0', '#c3b0f2'],
-  dream: ['Dreamland', '#9a2fc8', '#d9a8f0'],
-  bakery: ['Sweet Bakery', '#c2502a', '#f2b8a0'],
-};
-const CARD_BG = ['#e6f5ff', '#e2fbef', '#f1e6ff', '#fff0dc'];
-const CARD_LIP = ['#a9d2f2', '#98dcbc', '#cdb0f2', '#f2c98f'];
-
-function SetBlock({ setKey, profile, catalog, artIds, onPick }) {
-  const [name, ink, lip] = SET_LOOK[setKey];
-  const ids = [...SET_OF[setKey].ids].sort((a, b) => BY_ID[a].rar - BY_ID[b].rar || a - b);
-  const have = ids.filter((id) => owns(profile || {}, id)).length;
-  return (
-    <View style={{ gap: 6, marginTop: 4 }}>
-      <View style={styles.rowCenter}>
-        <View style={[styles.setName, { backgroundColor: ink, shadowColor: lip, borderBottomColor: lip }]}>
-          <Text style={styles.setNameText}>{name}</Text>
-        </View>
-        <Text style={styles.small}>
-          {have} / {ids.length}
-        </Text>
-      </View>
-      <View style={styles.grid4}>
-        {ids.map((id) => {
-          const c = BY_ID[id];
-          const mine = owns(profile || {}, id);
-          const soon = !artIds.includes(id);
-          const chestOnly = c.rar >= 3;
-          return (
-            <Pressable key={id} style={[styles.cell, { backgroundColor: mine ? '#efe9f4' : CARD_BG[c.rar], borderBottomColor: mine ? '#d8cce4' : CARD_LIP[c.rar] }]} onPress={() => onPick(id, false)}>
-              <View style={[styles.cellDot, { backgroundColor: RAR_LOOK[c.rar].dot }]} />
-              <View style={{ width: 50, height: 50, alignItems: 'center', justifyContent: 'center', opacity: mine ? 0.55 : 1 }}>
-                {soon ? (
-                  <View style={styles.egg}>
-                    <Text style={styles.eggText}>?</Text>
-                  </View>
-                ) : (
-                  <CreatureThumbnail creature={catalog[id]} size={50} animate={false} />
-                )}
-              </View>
-              <Text style={styles.cellName} numberOfLines={1}>
-                {c.name}
-              </Text>
-              {soon ? (
-                <View style={[styles.tag, { backgroundColor: '#f1ebf7', borderColor: '#e0d4ee' }]}>
-                  <Text style={[styles.tagText, { color: '#a07cc0' }]}>SOON</Text>
-                </View>
-              ) : mine ? (
-                <View style={[styles.tag, { borderColor: '#d8cce4' }]}>
-                  <Text style={[styles.tagText, { color: '#9a88ad' }]}>OWNED</Text>
-                </View>
-              ) : chestOnly ? (
-                <View style={[styles.tag, { borderColor: '#e0c8f2' }]}>
-                  <Text style={[styles.tagText, { color: '#8e1580' }]}>IN CHESTS</Text>
-                </View>
-              ) : (
-                <Ringed ring={GOLD_RING} lip={2} ringW={1.5} border={2} colors={GOLD} style={{ marginTop: 2 }} innerStyle={{ paddingHorizontal: 6, paddingVertical: 1, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                  <CoinIcon size={10} />
-                  <BtnText size={10}>{fmt(COIN_PRICE[c.rar])}</BtnText>
-                </Ringed>
-              )}
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
 // --- Gems tab --------------------------------------------------------------------
 
-const GemsTab = memo(function GemsTab({ profile, priceOf, onPack, onSwap, onNoAds, noAdsPrice }) {
-  const first = profile?.gemFirst || {};
+// `firstBought`: the packs already bought once ('a,b'), `adsFree`: Remove
+// Ads owned. Not the profile: it changes with every move.
+const GemsTab = memo(function GemsTab({ firstBought, adsFree, priceOf, onPack, onSwap, onNoAds, noAdsPrice }) {
+  const first = Object.fromEntries(firstBought.split(',').filter(Boolean).map((k) => [k, true]));
   return (
     <View style={[styles.col14, { paddingTop: 8 }]}>
       <View style={styles.grid3}>
@@ -509,9 +219,9 @@ const GemsTab = memo(function GemsTab({ profile, priceOf, onPack, onSwap, onNoAd
           <Text style={styles.noAdsTitle}>Remove Ads</Text>
           <Text style={styles.noAdsNote}>No more ads between screens. Free reward videos stay optional.</Text>
         </View>
-        <Ringed ring={profile?.adsFree ? '#0d7a4a' : '#1d4f9a'} lip={3} ringW={2} border={2.5} colors={profile?.adsFree ? ['#b8ffd9', '#3ddc97', '#16a86a'] : ['#d6f3ff', '#5fb8ff', '#2f7fd6']} innerStyle={{ paddingHorizontal: 10, paddingVertical: 5 }}>
-          <BtnText ring={profile?.adsFree ? '#0d7a4a' : '#1d4f9a'} size={14}>
-            {profile?.adsFree ? 'OWNED' : noAdsPrice}
+        <Ringed ring={adsFree ? '#0d7a4a' : '#1d4f9a'} lip={3} ringW={2} border={2.5} colors={adsFree ? ['#b8ffd9', '#3ddc97', '#16a86a'] : ['#d6f3ff', '#5fb8ff', '#2f7fd6']} innerStyle={{ paddingHorizontal: 10, paddingVertical: 5 }}>
+          <BtnText ring={adsFree ? '#0d7a4a' : '#1d4f9a'} size={14}>
+            {adsFree ? 'OWNED' : noAdsPrice}
           </BtnText>
         </Ringed>
       </Pressable>
@@ -522,7 +232,7 @@ const GemsTab = memo(function GemsTab({ profile, priceOf, onPack, onSwap, onNoAd
 
 // --- the sheet ---------------------------------------------------------------------
 
-function Sheet({ sheet, profile, catalog, artIds, day, onClose, onOpenNow, onBuyCreature, onBroke, onToChests }) {
+function Sheet({ sheet, profile, catalog, artIds, setRewards, wallet: w, onClose, onBroke, onBuyGroup }) {
   const up = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     up.setValue(0);
@@ -531,46 +241,13 @@ function Sheet({ sheet, profile, catalog, artIds, day, onClose, onOpenNow, onBuy
   if (!sheet) return null;
   const translateY = up.interpolate({ inputRange: [0, 1], outputRange: [500, 0] });
   let body = null;
-  if (sheet.type === 'got') {
+  if (sheet.type === 'odds') {
+    body = <OddsSheetBody />;
+  } else if (sheet.type === 'gchest') {
     body = (
-      <>
-        <Chest tier={chestArtOf(sheet.tier)} size={120} />
-        <Text style={styles.sheetTitle}>{CHEST_LOOK[sheet.tier].name} Chest!</Text>
-        <View style={[styles.row10, { alignSelf: 'stretch', marginTop: 4 }]}>
-          <Pressable style={({ pressed }) => [styles.later, pressed && styles.pressed]} onPress={onClose}>
-            <Text style={styles.laterText}>SAVE FOR LATER</Text>
-          </Pressable>
-          <TutTarget name="openNow" style={{ flex: 1 }}>
-            <CandyBtn kind="pink" padV={11} onPress={() => onOpenNow(sheet.tier)}>
-              <BtnText ring={PINK_RING}>OPEN NOW</BtnText>
-            </CandyBtn>
-          </TutTarget>
-        </View>
-      </>
-    );
-  } else if (sheet.type === 'odds') {
-    body = (
-      <>
-        <Text style={[styles.sheetTitle, { fontSize: 22 }]}>Chest odds</Text>
-        <View style={{ alignSelf: 'stretch', gap: 6 }}>
-          {CHEST_ORDER.map((t, i) => (
-            <View key={t} style={[styles.oddsRow, { backgroundColor: TINT[i] }]}>
-              <Text style={styles.oddsName}>{CHEST_LOOK[t].name}</Text>
-              <View style={styles.oddsChips}>
-                {CHESTS[t].odds.map((p, r) =>
-                  p > 0 ? (
-                    <View key={r} style={[styles.oddsChip, { backgroundColor: ODDS_BG[r] }]}>
-                      <Text style={styles.oddsChipText}>
-                        {ODDS_NAMES[r]} {p}%
-                      </Text>
-                    </View>
-                  ) : null,
-                )}
-              </View>
-            </View>
-          ))}
-        </View>
-      </>
+      <ScrollView style={styles.sheetScroll} contentContainerStyle={{ paddingBottom: 6 }} showsVerticalScrollIndicator={false}>
+        <ChestSheetBody gk={sheet.gk} size={sheet.size} profile={profile} artIds={artIds} setRewards={setRewards} catalog={catalog} wallet={w} onBuy={onBuyGroup} />
+      </ScrollView>
     );
   } else if (sheet.type === 'broke') {
     body = (
@@ -584,62 +261,10 @@ function Sheet({ sheet, profile, catalog, artIds, day, onClose, onOpenNow, onBuy
         </CandyBtn>
       </>
     );
-  } else if (sheet.type === 'creature') {
-    const c = BY_ID[sheet.id];
-    const mine = owns(profile || {}, sheet.id);
-    const price = creaturePrice(profile || {}, sheet.id, artIds, day);
-    body = (
-      <>
-        <View style={styles.pvArt}>
-          <View style={[styles.pvGlow, { backgroundColor: RAR_LOOK[c.rar].dot }]} />
-          <CreatureThumbnail creature={catalog[sheet.id]} size={150} mood="dance" />
-        </View>
-        <View style={styles.rowCenter}>
-          <Text style={[styles.sheetTitle, { fontSize: 26 }]}>{c.name}</Text>
-          <View style={[styles.pvRar, { backgroundColor: RAR_LOOK[c.rar].bg }]}>
-            <Text style={styles.pvRarText}>{RAR_LOOK[c.rar].label}</Text>
-          </View>
-        </View>
-        <View style={styles.rowCenter}>
-          <View style={[styles.finChip, { backgroundColor: '#e8f4ff' }]}>
-            <Text style={styles.finChipText}>SHINY 2%</Text>
-          </View>
-          <LinearGradient colors={['#ffb3c7', '#ffe38a', '#b3f5c8', '#b3e0ff', '#dcc2ff']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.finChip}>
-            <Text style={styles.finChipText}>RAINBOW 0.5%</Text>
-          </LinearGradient>
-          <LinearGradient colors={['#fff3b0', '#ffc233', '#f0a000']} style={styles.finChip}>
-            <Text style={styles.finChipText}>GOLDEN 0.1%</Text>
-          </LinearGradient>
-        </View>
-        <Text style={styles.finNote}>Finishes drop from chests only</Text>
-        {mine ? (
-          <View style={styles.already}>
-            <Text style={styles.alreadyText}>ALREADY IN YOUR SQUAD</Text>
-          </View>
-        ) : (
-          <>
-            {c.rar >= 3 ? (
-              <CandyBtn kind="pink" stretch padV={12} lip={5} onPress={onToChests}>
-                <BtnText ring={PINK_RING} size={17}>
-                  FIND IT IN CHESTS
-                </BtnText>
-              </CandyBtn>
-            ) : (
-              <CandyBtn kind="gold" stretch padV={12} lip={5} onPress={() => onBuyCreature(sheet.id)}>
-                {price !== COIN_PRICE[c.rar] && <Text style={styles.pvOld}>{fmt(COIN_PRICE[c.rar])}</Text>}
-                <BtnText size={19}>BUY</BtnText>
-                <CoinIcon size={18} />
-                <BtnText size={19}>{fmt(price)}</BtnText>
-              </CandyBtn>
-            )}
-          </>
-        )}
-      </>
-    );
   }
   return (
     <View style={StyleSheet.absoluteFill}>
-      <Pressable style={styles.scrim} onPress={onClose} />
+      <Pressable silent style={styles.scrim} onPress={onClose} />
       <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
         <View style={styles.grip} />
         {body}
@@ -677,8 +302,10 @@ function ShopBones() {
 }
 
 // `openKey`: bumped by App each time something opens the Shop on a tab
-// (`startTab`); the Shop goes there without being rebuilt
-function ShopScreen({ profile, creatures, onBack, onBuyProduct, priceOf, startTab = 'chests', openKey = 0, onImmersive }) {
+// (`startTab`); the Shop goes there without being rebuilt. `hidden`: the
+// groups and creatures not out yet; `setRewards`: whether set rewards stay
+// out of chests (config/roster)
+function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRewards = SET_REWARDS, onSeenOffer, onBuyProduct, priceOf, onBack, startTab = 'chests', openKey = 0, onImmersive }) {
   const insets = useSafeAreaInsets();
   // the tab's content is built a couple of frames after the Shop opens
   // (placeholders until then), so its first frame is up at once
@@ -687,10 +314,15 @@ function ShopScreen({ profile, creatures, onBack, onBuyProduct, priceOf, startTa
   const seen = useSeenTabs(tab);
   const openedAt = useRef(openKey);
   const [sheet, setSheet] = useState(null);
-  const [opening, setOpening] = useState(null);
-  useEffect(() => onImmersive?.(!!opening), [opening, onImmersive]);
+  // the v6 chest smash: the chests to open, the first one showing (`chest`
+  // null while the server's answer is on its way: the smash is up at once)
+  const [smash, setSmash] = useState(null); // { chest, queue }
+  useEffect(() => onImmersive?.(!!smash), [smash, onImmersive]);
   const [toast, setToast] = useState(null);
-  const [busy, setBusy] = useState(false);
+  // a move on its way (no second one meanwhile); a ref, not state: as
+  // state it changed `run`, so every move re-rendered the tabs' cards twice
+  // (~2 s of a purchase in a debug build)
+  const busy = useRef(false);
   // today's key (picks and deals change with it), moved on at midnight; the
   // countdowns tick by themselves (TickingText)
   const [day, setDay] = useState(() => todayKey(new Date()));
@@ -700,7 +332,7 @@ function ShopScreen({ profile, creatures, onBack, onBuyProduct, priceOf, startTa
   }, [day]);
   const ad = useRewardedAd();
   // each tab is its own page with its own scroll (see the pages below)
-  const scrolls = { chests: useRef(null), squish: useRef(null), gems: useRef(null) };
+  const scrolls = { chests: useRef(null), deals: useRef(null), gems: useRef(null) };
   // opened again on a tab (a purse, GET SEASON CHEST…): that tab, from the
   // top, with no sheet up (it used to be rebuilt for this)
   useEffect(() => {
@@ -717,10 +349,10 @@ function ShopScreen({ profile, creatures, onBack, onBuyProduct, priceOf, startTa
   useEffect(() => tutReport({ shopSheet: sheet ? sheet.type : null }), [sheet]);
   useEffect(() => () => tutReport({ shopSheet: null }), []);
 
-  // the catalog's creatures by id (only these have art)
+  // the catalog's creatures by id (only these have art); what's for sale or
+  // in a chest: the ones with art that are out (as the server counts them)
   const catalog = useMemo(() => Object.fromEntries((creatures || []).map((c) => [c.id, c])), [creatures]);
-  const artIds = useMemo(() => Object.keys(catalog).filter((id) => BY_ID[id]), [catalog]);
-  const seasonOn = artIds.some((id) => BY_ID[id].season);
+  const artIds = useMemo(() => outIds(Object.keys(catalog), hidden), [catalog, hidden]);
 
   const flash = useCallback((text) => {
     setToast({ text, key: Date.now() });
@@ -729,8 +361,8 @@ function ShopScreen({ profile, creatures, onBack, onBuyProduct, priceOf, startTa
   // Runs a squad move; the rule errors become the broke sheet or a toast.
   const run = useCallback(
     async (fn, broke) => {
-      if (busy) return null;
-      setBusy(true);
+      if (busy.current) return null;
+      busy.current = true;
       try {
         return await fn();
       } catch (e) {
@@ -739,53 +371,108 @@ function ShopScreen({ profile, creatures, onBack, onBuyProduct, priceOf, startTa
         else flash(ERRORS[code] || 'Something went wrong. Try again!');
         return null;
       } finally {
-        setBusy(false);
+        busy.current = false;
       }
     },
-    [busy, flash],
+    [flash],
   );
 
-  const buyChest = useCallback(
-    async (tier) => {
-      const p = chestPrice(tier);
-      const r = await run(() => squad.buyChest(tier), () => p.n - w[p.cur]);
-      if (r) {
-        sfx.play('coin');
-        setSheet({ type: 'got', tier: r.tier });
-      }
+  // A group chest move (squad groupChest / freeChest / adChest / dealChest):
+  // the smash comes up at once and plays the server's answer when it lands.
+  const smashKey = useRef(0);
+  const openGroup = useCallback(
+    async (move, broke) => {
+      if (busy.current) return;
+      setSheet(null);
+      setSmash({ chest: null, queue: [] });
+      const r = await run(move, broke);
+      if (!r) return setSmash(null);
+      smashKey.current += 1;
+      setSmash({ chest: { key: smashKey.current, result: r }, queue: [] });
     },
-    [run, w],
+    [run],
   );
-  const buyDeal = useCallback(async () => {
-    const r = await run(() => squad.buyDeal(), () => DEAL.gems - w.gems);
-    if (r) setSheet({ type: 'got', tier: r.tier });
-  }, [run, w]);
-  const videoChest = useCallback(() => {
-    if (chestVideosLeft(profile, day) <= 0) return flash('No more free chests today');
-    const claim = async () => {
-      const r = await run(() => squad.videoChest());
-      if (r) setSheet({ type: 'got', tier: 'basic' });
-    };
+  const collectSmash = useCallback(() => {
+    setSmash((s) => {
+      if (!s || !s.queue.length) return null;
+      smashKey.current += 1;
+      return { chest: { key: smashKey.current, result: s.queue[0] }, queue: s.queue.slice(1) };
+    });
+    const r = smash?.chest?.result;
+    if (r && r.id) {
+      const name = BY_ID[r.id].name;
+      // a copy toward unlocking it, the copy that unlocks it, or a duplicate
+      flash(r.isNew ? `${name} joined your squad!` : r.copies ? `${name}: ${r.copies} / ${r.need} found` : `${name} again: +${fmt(r.dupeCoins)} coins`);
+    }
+  }, [smash, flash]);
+  const buyGroup = useCallback(
+    (gk, size) => {
+      const T = SIZES[SIZE_I[size]];
+      const cur = T.price.cur;
+      if (w[cur] < T.price.n) return setSheet({ type: 'broke', cur, need: T.price.n - w[cur] });
+      sfx.play('coin');
+      openGroup(() => squad.groupChest(gk, size), () => T.price.n - w[cur]);
+    },
+    [openGroup, w],
+  );
+  const freeGroup = useCallback(() => {
+    if ((profile?.freeAt || 0) > Date.now() && !profile?.freeBonus) return flash(ERRORS.not_yet);
+    openGroup(() => squad.freeChest());
+  }, [profile, openGroup, flash]);
+  const adGroup = useCallback(() => {
+    const used = profile?.adChests?.day === day ? profile.adChests.n || 0 : 0;
+    if (used >= AD_CHESTS) return flash('No more ad chests today. Back tomorrow!');
+    const claim = () => openGroup(() => squad.adChest());
     if (profile?.adsFree) return claim();
     if (!ad.ready) return flash('No video right now. Try again in a moment');
     ad.show(claim);
-  }, [profile, day, ad, run, flash]);
-  const openChest = useCallback((tier) => {
+  }, [profile, day, ad, openGroup, flash]);
+  const dealGroup = useCallback(() => {
+    if (profile?.dealDay === day) return flash(ERRORS.deal_used);
+    if (w.gems < GDEAL.gems) return setSheet({ type: 'broke', cur: 'gems', need: GDEAL.gems - w.gems });
+    openGroup(() => squad.dealChest(), () => GDEAL.gems - w.gems);
+  }, [profile, day, w, openGroup, flash]);
+  const openGroupSheet = useCallback((gk, size) => setSheet({ type: 'gchest', gk, size }), []);
+  // chests a purchase or a reward brought (rolled by the server): the smash
+  const smashAll = useCallback((list) => {
+    const chests = (list || []).filter(Boolean);
+    if (!chests.length) return;
+    smashKey.current += 1;
     setSheet(null);
-    setOpening(tier);
+    setSmash({ chest: { key: smashKey.current, result: chests[0] }, queue: chests.slice(1) });
   }, []);
-  const buyCreature = useCallback(
-    async (id) => {
-      const price = creaturePrice(profile || {}, id, artIds, day);
-      const r = await run(() => squad.buyCreature(id), () => price - w.coins);
-      if (r) {
-        setSheet(null);
-        sfx.play('unlock');
-        flash(r.reward ? `Set complete! ${BY_ID[r.reward].name} joined too` : `${BY_ID[id].name} joined your squad!`);
-      }
+  // --- the Deals tab (config/offers) ---
+  const buyOffer = useCallback(
+    async (o) => {
+      if (o.kind === 'noads') return onBuyProduct('removeAds');
+      const r = await onBuyProduct(`offer:${o.id}`);
+      if (!r) return;
+      if (r.granted === 'bundle') smashAll(r.chests);
+      else if (r.granted === 'pass') flash('Season pass unlocked!');
+      else if (r.granted === 'gems' && r.offer) flash(`Gem jar broken: +${fmt(r.gems)} gems!`);
     },
-    [profile, artIds, day, w, run, flash],
+    [onBuyProduct, smashAll, flash],
   );
+  const reward = useCallback(
+    (r, what) => {
+      if (!r) return;
+      if (r.kind === 'chest') smashAll([r.chest]);
+      else flash(`${what}+${r.kind === 'coins' ? `${fmt(r.n)} coins` : `${r.n} gems`}`);
+    },
+    [smashAll, flash],
+  );
+  const claimStreak = useCallback(async () => {
+    const r = await run(() => squad.streakClaim());
+    reward(r, r ? `Day ${r.day}: ` : '');
+  }, [run, reward]);
+  const claimPass = useCallback(
+    async (i) => {
+      const r = await run(() => squad.passClaim(i));
+      reward(r, '');
+    },
+    [run, reward],
+  );
+  const seeOffer = useCallback((id, at) => onSeenOffer && onSeenOffer(id, at), [onSeenOffer]);
   const swap = useCallback(
     async (i) => {
       const r = await run(() => squad.swapGems(i), () => SWAPS[i].gems - w.gems);
@@ -837,72 +524,89 @@ function ShopScreen({ profile, creatures, onBack, onBuyProduct, priceOf, startTa
   const pageShift = pageX.interpolate({ inputRange: [0, 1, 2], outputRange: [0, -pageW, -2 * pageW] });
   const pageStyle = [styles.scroll, { paddingBottom: 22 + (onBack ? insets.bottom : 0) }];
 
-  const badges = { chests: chestVideosLeft(profile, day) > 0 ? 'FREE' : '', squish: '', gems: '' };
+  const adsUsed = profile?.adChests?.day === day ? profile.adChests.n || 0 : 0;
+  const chestBadge = ((profile?.freeAt || 0) <= Date.now() ? 1 : 0) + (adsUsed < AD_CHESTS ? 1 : 0);
+  const streakWaiting = profile?.shopStreak?.last !== day;
+  const doubleLeft = (offers?.packs || []).some((p) => !(profile?.gemFirst || {})[p.product]) || !offers;
+  const badges = { chests: chestBadge ? String(chestBadge) : '', deals: streakWaiting ? '1' : '', gems: doubleLeft ? '2X' : '' };
   // stable, so a re-render of the Shop (a tab switch, a sheet) doesn't
   // re-render all three tabs' content (they're memoized)
   const openOdds = useCallback(() => setSheet({ type: 'odds' }), []);
-  const pickCreature = useCallback(
-    (id) => (artIds.includes(id) ? setSheet({ type: 'creature', id }) : flash(`${BY_ID[id].name} is still hatching. Coming soon!`)),
-    [artIds, flash],
-  );
   const buyPack = useCallback((key) => onBuyProduct(key), [onBuyProduct]);
   const adsFree = !!profile?.adsFree;
+  const firstBought = Object.keys(profile?.gemFirst || {})
+    .filter((k) => profile.gemFirst[k])
+    .sort()
+    .join(',');
   const buyNoAds = useCallback(() => (adsFree ? flash('Ads are already off') : onBuyProduct('removeAds')), [adsFree, flash, onBuyProduct]);
 
   return (
     <CandyBackground style={{ paddingTop: insets.top }}>
-      <View style={styles.header}>
-        {onBack ? (
-          <TutTarget name="storeBack">
-            <RoundButton size={36} onPress={onBack}>
-              <BackGlyph />
-            </RoundButton>
-          </TutTarget>
-        ) : null}
-        <OutlinedTitle text="SHOP" fill="pink" size={25} outline={3} ring={2} drop={5} />
-        <View style={styles.purses}>
-          <Purse cur="coins" amount={w.coins} onPress={() => goTab('gems')} />
-          <Purse cur="gems" amount={w.gems} onPress={() => goTab('gems')} />
+      {/* asleep under an open chest: the server's answers (the purchase, the
+          roll) change the profile mid-smash, and re-rendering the three tabs
+          for it held up the taps */}
+      <Freeze freeze={!!smash && !!smash.chest}>
+        <View style={styles.header}>
+          {onBack ? (
+            <TutTarget name="storeBack">
+              <RoundButton size={36} onPress={onBack}>
+                <BackGlyph />
+              </RoundButton>
+            </TutTarget>
+          ) : null}
+          <OutlinedTitle text="SHOP" fill="pink" size={25} outline={3} ring={2} drop={5} />
+          <View style={styles.purses}>
+            <Purse cur="coins" amount={w.coins} onPress={() => goTab('gems')} />
+            <Purse cur="gems" amount={w.gems} onPress={() => goTab('gems')} />
+          </View>
         </View>
-      </View>
-      <Seg tab={tab} onPick={slideTo} onTab={goTab} badges={badges} />
-      <View style={styles.pager}>
-        <Animated.View style={[styles.pageTrack, { width: pageW * 3, transform: [{ translateX: pageShift }] }]}>
-          <ScrollView ref={scrolls.chests} style={{ width: pageW }} contentContainerStyle={pageStyle} showsVerticalScrollIndicator={false}>
-            <Reveal ready={isOn('chests')} placeholder={<ShopBones />}>
-              <ChestsTab profile={profile} day={day} onBuy={buyChest} onDeal={buyDeal} onVideo={videoChest} onOpen={openChest} onOdds={openOdds} seasonOn={seasonOn} />
-            </Reveal>
-          </ScrollView>
-          <ScrollView ref={scrolls.squish} style={{ width: pageW }} contentContainerStyle={pageStyle} showsVerticalScrollIndicator={false}>
-            <Reveal ready={isOn('squish')} placeholder={<ShopBones />}>
-              <SquishTab profile={profile} catalog={catalog} artIds={artIds} day={day} onPick={pickCreature} />
-            </Reveal>
-          </ScrollView>
-          <ScrollView ref={scrolls.gems} style={{ width: pageW }} contentContainerStyle={pageStyle} showsVerticalScrollIndicator={false}>
-            <Reveal ready={isOn('gems')} placeholder={<ShopBones />}>
-              <GemsTab profile={profile} priceOf={priceOf} onPack={buyPack} onSwap={swap} onNoAds={buyNoAds} noAdsPrice={priceOf('removeAds')} />
-            </Reveal>
-          </ScrollView>
-        </Animated.View>
-      </View>
+        <Seg tab={tab} onPick={slideTo} onTab={goTab} badges={badges} />
+        <View style={styles.pager}>
+          <Animated.View style={[styles.pageTrack, { width: pageW * 3, transform: [{ translateX: pageShift }] }]}>
+            <ScrollView ref={scrolls.chests} style={{ width: pageW }} contentContainerStyle={pageStyle} showsVerticalScrollIndicator={false}>
+              <Reveal ready={isOn('chests')} placeholder={<ShopBones />}>
+                <ChestsTabV6
+                  profile={profile}
+                  day={day}
+                  artIds={artIds}
+                  hidden={hidden}
+                  setRewards={setRewards}
+                  onFree={freeGroup}
+                  onAd={adGroup}
+                  onDeal={dealGroup}
+                  onOpenSheet={openGroupSheet}
+                  onBuy={buyGroup}
+                  onOdds={openOdds}
+                />
+              </Reveal>
+            </ScrollView>
+            <ScrollView ref={scrolls.deals} style={{ width: pageW }} contentContainerStyle={pageStyle} showsVerticalScrollIndicator={false}>
+              <Reveal ready={isOn('deals')} placeholder={<ShopBones />}>
+                <DealsTab config={offers} profile={profile} day={day} hidden={hidden} priceOf={priceOf} onBuyOffer={buyOffer} onClaimStreak={claimStreak} onClaimPass={claimPass} onNoAds={buyNoAds} onSeen={seeOffer} toast={flash} />
+              </Reveal>
+            </ScrollView>
+            <ScrollView ref={scrolls.gems} style={{ width: pageW }} contentContainerStyle={pageStyle} showsVerticalScrollIndicator={false}>
+              <Reveal ready={isOn('gems')} placeholder={<ShopBones />}>
+                <GemsTabV6 config={offers} profile={profile} priceOf={priceOf} onPack={buyPack} onSwap={swap} />
+              </Reveal>
+            </ScrollView>
+          </Animated.View>
+        </View>
 
-      <Sheet
-        sheet={sheet}
-        profile={profile}
-        catalog={catalog}
-        artIds={artIds}
-        day={day}
-        onClose={() => {
-          if (sheet?.type === 'got') flash('Saved to My Chests');
-          setSheet(null);
-        }}
-        onOpenNow={openChest}
-        onBuyCreature={buyCreature}
-        onBroke={() => goTab('gems')}
-        onToChests={() => goTab('chests')}
-      />
+        <Sheet
+          sheet={sheet}
+          profile={profile}
+          catalog={catalog}
+          artIds={artIds}
+          setRewards={setRewards}
+          wallet={w}
+          onBuyGroup={buyGroup}
+          onClose={() => setSheet(null)}
+          onBroke={() => goTab('gems')}
+        />
+      </Freeze>
       {toast && <Toast key={toast.key} text={toast.text} bottom={60 + (onBack ? insets.bottom : 0)} onDone={() => setToast(null)} />}
-      {opening && <ChestOpener tier={opening} profile={profile} catalog={catalog} onClose={() => setOpening(null)} />}
+      {smash && <ChestSmash chest={smash.chest} catalog={catalog} onCollect={collectSmash} />}
     </CandyBackground>
   );
 }
@@ -952,12 +656,6 @@ const styles = StyleSheet.create({
   row10: { flexDirection: 'row', gap: 10 },
   row8: { flexDirection: 'row', gap: 8 },
   rowCenter: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  shelf: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 20, backgroundColor: '#ffffff', ...card, borderBottomColor: '#e2a9d6', borderBottomWidth: 6, paddingHorizontal: 8, paddingVertical: 6 },
-  shelfTitle: { fontFamily: F.display, fontSize: 13, lineHeight: 14, color: PINK_RING, width: 44 },
-  shelfSlot: { width: 50, height: 50, borderRadius: 14, justifyContent: 'center' },
-  shelfN: { position: 'absolute', right: -5, top: -6, minWidth: 19, height: 19, paddingHorizontal: 4, borderRadius: 999, backgroundColor: '#ff2f8f', borderWidth: 2, borderColor: '#ffffff', alignItems: 'center', justifyContent: 'center' },
-  shelfNText: { fontFamily: F.black, fontSize: 10, color: '#ffffff' },
-  shelfHint: { marginLeft: 'auto', fontFamily: F.black, fontSize: 10, lineHeight: 12, color: '#8a5aa8', textAlign: 'right' },
   bigCard: { paddingHorizontal: 8, paddingTop: 8, paddingBottom: 10, alignItems: 'center', gap: 2, overflow: 'hidden' },
   cardRays: { position: 'absolute', left: '50%', top: '30%', marginLeft: -150, marginTop: -150 },
   cardTop: { alignSelf: 'stretch', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -1029,6 +727,8 @@ const styles = StyleSheet.create({
   noAdsTitle: { fontFamily: F.display, fontSize: 16, color: '#4a1a73' },
   noAdsNote: { fontFamily: F.heavy, fontSize: 11, color: '#8a5aa8' },
   scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(30,0,60,0.55)' },
+  // a group chest's sheet scrolls when it's taller than the screen allows
+  sheetScroll: { alignSelf: 'stretch', maxHeight: Dimensions.get('window').height * 0.78 },
   sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 20, paddingHorizontal: 18, paddingBottom: 30, borderTopLeftRadius: 30, borderTopRightRadius: 30, backgroundColor: '#fbefff', borderTopWidth: 3, borderColor: '#ffffff', alignItems: 'center', gap: 10 },
   grip: { width: 44, height: 5, borderRadius: 999, backgroundColor: '#e0c8f2', marginTop: -8 },
   sheetTitle: { fontFamily: F.display, fontSize: 24, color: PINK_RING, textAlign: 'center' },

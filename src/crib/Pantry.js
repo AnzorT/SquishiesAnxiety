@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import Pressable from '../components/Pressable';
 import { SvgXml } from 'react-native-svg';
 import { candyFonts } from '../theme/candyTheme';
 import { CoinGlyph, INK, PAPER, SOFT } from './ui';
@@ -79,7 +80,7 @@ export const Pantry = memo(function Pantry({ pantry, fridge, fill, coins, msg, w
   const stocked = Object.values(pantry).reduce((a, b) => a + (b || 0), 0);
   return (
     <View style={styles.scrim}>
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      <Pressable silent style={StyleSheet.absoluteFill} onPress={onClose} />
       <View style={[styles.panel, { width: panelW, maxHeight: height - 32 }]}>
         <View style={styles.head}>
           <View style={styles.badge}>
