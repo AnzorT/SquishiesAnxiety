@@ -13,6 +13,7 @@ import { COIN, GEM } from '../squad/currencyArt';
 import { F, hms } from '../squad/ui';
 import { productKey } from '../economy';
 import { fmtNum } from '../format';
+import { useProgressive } from '../components/Skeleton';
 
 // The Shop's Deals and Gems tabs, drawn from Firestore config/offers
 // (REDESIGN_V6 ruling 2: which offers show, what they hold, their badges,
@@ -619,17 +620,25 @@ export const DealsTab = memo(function DealsTab({ config, profile, day, hidden, p
   const first = offers.filter((o) => (o.order || 0) < 0);
   const rest = offers.filter((o) => (o.order || 0) >= 0);
   const bundles = rest.filter((o) => o.kind === 'bundle');
+  // The page a part a frame as it's built (the offers on top, the streak,
+  // then each offer). All at once was one 0.3 s frame on the Galaxy A15, and
+  // two offers a frame with the streak still one of 0.25 s, built unseen a
+  // second after the Shop opened (2026-10-28).
+  const shown = useProgressive(first.length + 1 + rest.length, 1, 1);
+  const shownRest = Math.max(0, shown - first.length - 1);
   return (
     <View style={styles.tab}>
-      {first.map(card)}
-      <Streak
-        streak={C.streak}
-        profile={profile}
-        day={day}
-        hot={hot}
-        onClaim={(today, done, i) => (today ? onClaimStreak() : toast(done ? 'Already claimed' : `Come back on day ${i + 1}`))}
-      />
-      {rest.map((o, i) => (
+      {first.slice(0, shown).map(card)}
+      {shown > first.length && (
+        <Streak
+          streak={C.streak}
+          profile={profile}
+          day={day}
+          hot={hot}
+          onClaim={(today, done, i) => (today ? onClaimStreak() : toast(done ? 'Already claimed' : `Come back on day ${i + 1}`))}
+        />
+      )}
+      {rest.slice(0, shownRest).map((o, i) => (
         <React.Fragment key={o.id}>
           {o.kind === 'bundle' && o.id === bundles[0]?.id ? <Heading title="Special offers" note="Limited bundles" /> : null}
           {card(o, i)}
@@ -706,6 +715,8 @@ export const GemsTab = memo(function GemsTab({ config, profile, priceOf, onPack,
   const C = offersOf(config);
   const first = profile?.gemFirst || {};
   const anyDouble = C.packs.some((p) => !first[p.product]);
+  // the packs one a frame as the page is built, then the swaps
+  const packsShown = useProgressive(C.packs.length + 1, 1, 1);
   return (
     <View style={styles.tab}>
       {anyDouble && (
@@ -730,42 +741,44 @@ export const GemsTab = memo(function GemsTab({ config, profile, priceOf, onPack,
       )}
       <Heading title="Gem packs" note="Gems open the best chests" />
       <View style={styles.packs}>
-        {C.packs.map((p, pi) => {
+        {C.packs.slice(0, packsShown).map((p, pi) => {
           const key = productKey(p.product);
           return <Pack key={p.product} p={p} pi={pi} dbl={!first[p.product]} price={key ? priceOf(key) : ''} onPress={() => key && onPack(key)} />;
         })}
       </View>
-      <Heading title="Swap gems for coins" />
-      <View style={styles.swaps}>
-        {SWAPS.map((w, i) => (
-          <View key={i} style={styles.swapSlot}>
-            <View style={[styles.swapRing]}>
-              <LinearGradient colors={['#fffdf2', '#ffefc2']} style={styles.swap}>
-                {!!SWAP_TAGS[i] && (
-                  <View style={styles.swapTag}>
-                    <Text style={styles.swapTagText}>{SWAP_TAGS[i]}</Text>
+      {packsShown > C.packs.length && <Heading title="Swap gems for coins" />}
+      {packsShown > C.packs.length && (
+        <View style={styles.swaps}>
+          {SWAPS.map((w, i) => (
+            <View key={i} style={styles.swapSlot}>
+              <View style={[styles.swapRing]}>
+                <LinearGradient colors={['#fffdf2', '#ffefc2']} style={styles.swap}>
+                  {!!SWAP_TAGS[i] && (
+                    <View style={styles.swapTag}>
+                      <Text style={styles.swapTagText}>{SWAP_TAGS[i]}</Text>
+                    </View>
+                  )}
+                  <View style={styles.coinPile}>
+                    <Glow size={70} color="#fff6c4" />
+                    {Array.from({ length: i + 1 }, (_, j) => (
+                      <Image key={j} source={COIN[(i + j + 1) % 6]} style={[styles.img36, { marginHorizontal: -9, marginBottom: j === 1 ? 8 : 0 }]} />
+                    ))}
                   </View>
-                )}
-                <View style={styles.coinPile}>
-                  <Glow size={70} color="#fff6c4" />
-                  {Array.from({ length: i + 1 }, (_, j) => (
-                    <Image key={j} source={COIN[(i + j + 1) % 6]} style={[styles.img36, { marginHorizontal: -9, marginBottom: j === 1 ? 8 : 0 }]} />
-                  ))}
-                </View>
-                <ShadowText style={styles.swapCoins} shadows={outline3('#a04a00', 1.5)}>
-                  {fmt(w.coins)}
-                </ShadowText>
-                <Btn look={PURPLE_BTN} height={34} radius={12} lip={4} style={{ alignSelf: 'stretch' }} onPress={() => onSwap(i)}>
-                  <Image source={GEM[0]} style={styles.img22} />
-                  <BtnLabel look={PURPLE_BTN} size={15}>
-                    {fmt(w.gems)}
-                  </BtnLabel>
-                </Btn>
-              </LinearGradient>
+                  <ShadowText style={styles.swapCoins} shadows={outline3('#a04a00', 1.5)}>
+                    {fmt(w.coins)}
+                  </ShadowText>
+                  <Btn look={PURPLE_BTN} height={34} radius={12} lip={4} style={{ alignSelf: 'stretch' }} onPress={() => onSwap(i)}>
+                    <Image source={GEM[0]} style={styles.img22} />
+                    <BtnLabel look={PURPLE_BTN} size={15}>
+                      {fmt(w.gems)}
+                    </BtnLabel>
+                  </Btn>
+                </LinearGradient>
+              </View>
             </View>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 });

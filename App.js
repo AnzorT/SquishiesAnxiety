@@ -16,7 +16,7 @@ import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraB
 import { Fredoka_500Medium, Fredoka_600SemiBold, Fredoka_700Bold } from '@expo-google-fonts/fredoka';
 import SplashScreen from './src/screens/SplashScreen';
 import AuthScreen from './src/screens/AuthScreen';
-import MainScreen from './src/screens/MainScreen';
+import MainScreen, { ShopAway } from './src/screens/MainScreen';
 import SettingsSheet from './src/screens/SettingsSheet';
 import AchievementsScreen from './src/screens/AchievementsScreen';
 import StatsScreen from './src/screens/StatsScreen';
@@ -78,10 +78,12 @@ import { stageOf } from './src/squad/data';
 import { uploadSourceImage, deleteCustomAssets } from './src/firebase/storage';
 import { loadCachedCreatures, saveCreaturesToCache } from './src/data/creatureCache';
 import CreateScreen from './src/screens/CreateScreen';
-import Freeze from './src/components/Freeze';
+import Freeze, { Hold } from './src/components/Freeze';
+import { LoopsOn, RigAway } from './src/components/idleLoop';
 import { fmtNum } from './src/format';
 import { preloadCrib } from './src/firebase/firestore';
 import ScreenLayer, { WhenScreenReady } from './src/components/ScreenLayer';
+import ScreenBones from './src/components/ScreenBones';
 import CribBones from './src/crib/CribBones';
 import { plushArtUrls } from './src/components/CreatureThumbnail';
 import * as billing from './src/billing';
@@ -118,6 +120,14 @@ const APP_TOAST_AT = { position: 'absolute', left: 0, right: 0, bottom: 150, hei
 const NO_ACHIEVEMENTS = {};
 
 const SLIDE_IN = new Set(['crib', 'create', 'achievements', 'stats', 'streak', 'loading', 'squishdoku', 'sort']);
+// creature pictures fetched into the image cache at a time (see below)
+const PREFETCH_AT_ONCE = 6;
+// Screens over Home that need it truly hidden (Freeze, display: none) rather
+// than only held and out of sight (none now), and those that need only the
+// Shop page hidden (MainScreen's ShopAway): the Crib, whose pictures and the
+// Shop's together overflowed the texture cache (every Crib frame ~150 ms)
+const SHOP_AWAY_UNDER = new Set(['crib']);
+const FREEZE_UNDER = new Set([]);
 
 // The splash is silent; Butterscotch Bounce is the game's theme from the
 // end of the splash on, one track across the menus (it doesn't restart
@@ -420,14 +430,31 @@ export default function App() {
 
   // Warm the image cache with every creature's art as soon as the catalog
   // arrives, so paging through Home or opening a screen never waits on the
-  // network for a picture.
+  // network for a picture. PREFETCH_AT_ONCE at a time: all of them at once
+  // (hundreds) flooded the bridge while the app started ("Excessive number
+  // of pending callbacks: 501", 2026-10-28).
   const prefetchedRef = useRef(new Set());
+  const prefetchQueue = useRef([]);
+  const prefetching = useRef(0);
   useEffect(() => {
+    const pump = () => {
+      while (prefetching.current < PREFETCH_AT_ONCE && prefetchQueue.current.length) {
+        const url = prefetchQueue.current.shift();
+        prefetching.current += 1;
+        Image.prefetch(url)
+          .catch(() => prefetchedRef.current.delete(url))
+          .finally(() => {
+            prefetching.current -= 1;
+            pump();
+          });
+      }
+    };
     plushArtUrls(creatures).forEach((url) => {
       if (prefetchedRef.current.has(url)) return;
       prefetchedRef.current.add(url);
-      Image.prefetch(url).catch(() => prefetchedRef.current.delete(url));
+      prefetchQueue.current.push(url);
     });
+    pump();
   }, [creatures]);
 
   // Fires a top-banner toast the instant an achievement flips from
@@ -796,8 +823,12 @@ export default function App() {
 
   // Home stays mounted once built, under whatever screen opens from it, so
   // going back is instant (it used to be rebuilt from scratch every time).
-  // Once the screen on top covers it (`homeCovered`), it's frozen: not drawn,
-  // not re-rendered (src/components/Freeze.js). Signing out lets it go.
+  // Once the screen on top covers it (`homeCovered`), it's held (Hold: not
+  // re-rendered), moved out of sight and its loops and live creature stop
+  // (LoopsOn). It isn't hidden with display: none (Freeze) any more except
+  // under FREEZE_UNDER: hiding and showing its thousands of views cost a
+  // 0.4-0.65 s frame as each screen came in and again on the way back
+  // (Galaxy A15 debug, 2026-10-28). Signing out lets it go.
   const [homeAlive, setHomeAlive] = useState(false);
   const [homeCovered, setHomeCovered] = useState(false);
   useEffect(() => {
@@ -809,6 +840,30 @@ export default function App() {
     }
   }, [stage]);
   const coverHome = useCallback(() => setHomeCovered(true), []);
+  // the lobby's live creature let go under a screen (RigAway, idleLoop.js):
+  // from when it has slid in until Home is the screen again (after the slide
+  // back, not during it)
+  const [rigAway, setRigAway] = useState(false);
+  useEffect(() => {
+    if (homeCovered && stage !== 'home') setRigAway(true);
+    else if (stage === 'home') setRigAway(false);
+  }, [homeCovered, stage]);
+  // the Shop page truly hidden (MainScreen ShopAway) under SHOP_AWAY_UNDER:
+  // from when the screen has slid in until a moment after it has slid away
+  // again (not in the same frame the screen is taken down: together they
+  // were one 0.3 s frame)
+  const [shopAway, setShopAway] = useState(false);
+  useEffect(() => {
+    if (homeCovered && SHOP_AWAY_UNDER.has(stage)) {
+      // a few frames after the screen's own content is built, not in the
+      // same frame
+      const t = setTimeout(() => setShopAway(true), 120);
+      return () => clearTimeout(t);
+    }
+    if (stage !== 'home') return undefined;
+    const t = setTimeout(() => setShopAway(false), 900);
+    return () => clearTimeout(t);
+  }, [homeCovered, stage]);
   const uncoverHome = useCallback(() => setHomeCovered(false), []);
   // Back to Home from a screen over it: it slides away first (ScreenLayer's
   // exit), with Home already under it; the screen switch follows the slide.
@@ -883,12 +938,21 @@ export default function App() {
   return (
     <SafeAreaProvider style={styles.app}>
       <StatusBar style={statusBarStyle} />
-      {stage === 'splash' && <SplashScreen onFinish={() => setSplashDone(true)} creatures={creatures} />}
+      {/* the splash moves on once sign-in is known and, signed in, the
+          profile and the catalog are here */}
+      {stage === 'splash' && <SplashScreen onFinish={() => setSplashDone(true)} ready={authChecked && (!authUser || (!!profile && creatures.length > 0))} creatures={creatures} />}
       {stage === 'auth' && <AuthScreen />}
       {stage === 'verify' && <VerifyEmailScreen email={authUser?.email} onVerified={() => setVerifiedNow(true)} onLogout={handleLogout} />}
       {showHome && (
-        <Freeze freeze={!onHome && homeCovered}>
-          <View style={styles.fill} collapsable={false} pointerEvents={onHome ? 'auto' : 'none'}>
+        <Freeze freeze={!onHome && homeCovered && FREEZE_UNDER.has(stage)}>
+        {/* (the Shop page stays hidden through the slide back: it's out of
+            sight beside the lobby, and showing it mid-slide stalled the slide) */}
+        <ShopAway.Provider value={shopAway}>
+        <View style={styles.homeClip} removeClippedSubviews>
+        <RigAway.Provider value={rigAway}>
+        <LoopsOn.Provider value={onHome || !homeCovered}>
+        <Hold hold={!onHome && homeCovered}>
+          <View style={[styles.home, !onHome && homeCovered && styles.homeAway]} collapsable={false} pointerEvents={onHome ? 'auto' : 'none'}>
             <MainScreen
               tab={mainTab}
               onTab={setMainTab}
@@ -931,6 +995,11 @@ export default function App() {
               )}
             />
           </View>
+        </Hold>
+        </LoopsOn.Provider>
+        </RigAway.Provider>
+        </View>
+        </ShopAway.Provider>
         </Freeze>
       )}
       {overlay && (
@@ -977,10 +1046,18 @@ export default function App() {
           {stage === 'achievements' && (
             <AchievementsScreen creatures={counted} profile={profile} customCount={customCreatures.length} onBack={goHome} />
           )}
+          {/* the games slide in as placeholders and are built once the
+              slide is over (ScreenLayer) */}
           {stage === 'squishdoku' && (
-            <SquishdokuScreen profile={profile} creatures={creatures} uid={authUser?.uid} adsFree={adsFree} haptics={vibrationEnabled} onBack={goHome} />
+            <WhenScreenReady placeholder={<ScreenBones kind="hub" />}>
+              <SquishdokuScreen profile={profile} creatures={creatures} uid={authUser?.uid} adsFree={adsFree} haptics={vibrationEnabled} onBack={goHome} />
+            </WhenScreenReady>
           )}
-          {stage === 'sort' && <SortScreen profile={profile} creatures={creatures} hidden={hidden} uid={authUser?.uid} haptics={vibrationEnabled} onBack={goHome} />}
+          {stage === 'sort' && (
+            <WhenScreenReady placeholder={<ScreenBones kind="hub" />}>
+              <SortScreen profile={profile} creatures={creatures} hidden={hidden} uid={authUser?.uid} haptics={vibrationEnabled} onBack={goHome} />
+            </WhenScreenReady>
+          )}
           {stage === 'stats' && (
             <StatsScreen creatures={counted} customCreatures={customCreatures} profile={profile} onBack={goHome} />
           )}
@@ -1056,4 +1133,9 @@ const styles = StyleSheet.create({
   // one under it has drawn shows sky, never a white flash
   app: { backgroundColor: '#b9e2ff' },
   fill: { flex: 1 },
+  // Home, and Home moved out of its clip while a screen covers it (the
+  // clip's removeClippedSubviews then takes it out of the drawing)
+  homeClip: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
+  home: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
+  homeAway: { top: 100000, bottom: -100000 },
 });

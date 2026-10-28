@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,10 +13,24 @@ import AdBanner from './AdBanner';
 // left out). Above the bottom nav (MainScreen) it isn't the bottom edge:
 // `inset={false}`. `live={false}` keeps the strip's look but no real banner
 // (Home kept alive under another screen doesn't hold an ad nobody can see).
+// A real banner is a native ad view (a web view of its own) that costs the
+// UI thread a few frames to make, so it comes LIVE_AFTER ms after the strip
+// goes live: not in the middle of the slide back to Home (it was a 0.3 s
+// stall right as Home showed, Galaxy A15 debug build, 2026-10-28).
 export const AD_H = 60;
+const LIVE_AFTER = 700;
 
 export default function AdStrip({ inset = true, live = true, style }) {
   const insets = useSafeAreaInsets();
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    if (!live) {
+      setOn(false);
+      return undefined;
+    }
+    const t = setTimeout(() => setOn(true), LIVE_AFTER);
+    return () => clearTimeout(t);
+  }, [live]);
   return (
     <View style={[styles.bar, style, { paddingBottom: inset ? insets.bottom : 0 }]}>
       <View style={styles.slot}>
@@ -26,7 +40,7 @@ export default function AdStrip({ inset = true, live = true, style }) {
             <Text style={styles.tag}>AD</Text>
           </LinearGradient>
         </View>
-        {live ? <AdBanner /> : null}
+        {on ? <AdBanner /> : null}
       </View>
     </View>
   );

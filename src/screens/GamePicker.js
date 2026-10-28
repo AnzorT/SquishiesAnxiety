@@ -7,6 +7,7 @@ import { RaysSpin } from '../components/candy/Decor';
 import { Twinkle } from '../components/candy/Sparkles';
 import sfx from '../audio/sfx';
 import { F } from '../squad/ui';
+import Freeze from '../components/Freeze';
 import { PATCHES } from '../squishdoku/theme';
 import Tile from '../squishdoku/Tile';
 import { LEVELS, puzzleLevel, record } from '../squishdoku/levels';
@@ -17,6 +18,9 @@ import { useDoorLoop } from '../sort/Hub';
 
 // The games, slid up over the Lobby by PLAY: a card per game with its own
 // little animated picture, flying in one after another. Tap one to play it.
+// Built once (in the background, `warm`, or on the first PLAY) and kept,
+// asleep while closed (Freeze), so PLAY is only the slide up: building it on
+// the tap held the slide for 0.3-0.4 s (Galaxy A15 debug build, 2026-10-28).
 //   onPick('squish')       the classic squish with the Lobby's creature
 //   onPick('squishdoku')   the puzzle (SQUISHDOKU.md)
 //   onPick('sort')         the memory game with the fridge (SQUISH_SORT.md)
@@ -160,11 +164,15 @@ const SoonArt = memo(function SoonArt() {
 });
 
 // A game's card: flies in (from alternate sides, with a twist), squashes when
-// pressed, and plays its game a beat later so the squash is seen.
+// pressed (on the touch), and plays its game on the release. (It used to wait
+// a beat for the squash to be seen, then the Lobby another 0.2 s: the game
+// came 0.4 s after the finger lifted.)
 function GameCard({ index, trigger, colors, ring, title, lines, chips = [], art, onPress, ghost }) {
   const enter = useRef(new Animated.Value(0)).current;
   const press = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    // (not while the picker is built in the background, before any PLAY)
+    if (!trigger) return undefined;
     enter.setValue(0);
     Animated.spring(enter, { toValue: 1, friction: 6.5, tension: 70, delay: 140 + index * 110, useNativeDriver: true }).start();
     const pop = setTimeout(() => sfx.play('sd_nodePop', { rate: 0.95 + index * 0.1 }), 200 + index * 110);
@@ -187,14 +195,19 @@ function GameCard({ index, trigger, colors, ring, title, lines, chips = [], art,
         onPressOut={() => Animated.spring(press, { toValue: 0, friction: 3.5, tension: 240, useNativeDriver: true }).start()}
         onPress={() => {
           sfx.play('sd_select');
-          setTimeout(onPress, 160);
+          onPress();
         }}
       >
         <View style={[styles.cardLip, { backgroundColor: ring }]} />
         <View style={[styles.cardRing, { backgroundColor: ring }]}>
-          <LinearGradient colors={colors} locations={[0, 0.55, 1]} style={[styles.cardFace, ghost && styles.ghostFace]}>
+          {/* the face is still, so it's one cached texture; its picture,
+              which never stops moving, sits over it in the same spot.
+              Inside the face, the picture's frames re-drew all four cards'
+              gradients and text every frame (the open sheet at ~40 fps on
+              the Galaxy A15, 2026-10-28) */}
+          <LinearGradient colors={colors} locations={[0, 0.55, 1]} style={[styles.cardFace, ghost && styles.ghostFace]} renderToHardwareTextureAndroid>
             <View style={styles.cardShine} />
-            {art}
+            <View style={styles.artSlot} />
             <View style={styles.cardText}>
               <Text style={[styles.cardTitle, { color: ring }]} numberOfLines={1}>
                 {title}
@@ -218,94 +231,118 @@ function GameCard({ index, trigger, colors, ring, title, lines, chips = [], art,
               </View>
             ) : null}
           </LinearGradient>
+          <View style={styles.artOver} pointerEvents="none">
+            {art}
+          </View>
         </View>
       </Pressable>
     </Animated.View>
   );
 }
 
-function GamePicker({ visible, profile, creatureName, creatureUri, puzzleUris, sortUris = [], onClose, onPick }) {
+// `warm`: build it now, unseen (the Lobby, a moment after it has settled).
+// `onUp(true)` once it's all the way up, `onUp(false)` as it starts down.
+function GamePicker({ visible, warm = false, profile, creatureName, creatureUri, puzzleUris, sortUris = [], onClose, onPick, onUp }) {
   const { height } = useWindowDimensions();
   const t = useRef(new Animated.Value(0)).current;
-  const [shown, setShown] = useState(visible);
+  // built (kept from then on); open: on screen, from PLAY until the slide
+  // down is over; slept: built a frame ago, so it may sleep (a subtree
+  // frozen from its first render is never built)
+  const [built, setBuilt] = useState(visible);
+  const [open, setOpen] = useState(visible);
+  const [slept, setSlept] = useState(false);
   const [key, setKey] = useState(0);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
+  const upRef = useRef(onUp);
+  upRef.current = onUp;
+  useEffect(() => {
+    if (warm) setBuilt(true);
+  }, [warm]);
+  useEffect(() => {
+    if (!built || slept) return undefined;
+    const f = requestAnimationFrame(() => setSlept(true));
+    return () => cancelAnimationFrame(f);
+  }, [built, slept]);
   useEffect(() => {
     if (visible) {
-      setShown(true);
-      setKey((k) => k + 1);
       t.setValue(0);
+      Animated.spring(t, { toValue: 1, friction: 8, tension: 60, useNativeDriver: true }).start(({ finished }) => finished && upRef.current?.(true));
+      setBuilt(true);
+      setOpen(true);
+      setKey((k) => k + 1);
       sfx.play('whoosh');
-      Animated.spring(t, { toValue: 1, friction: 8, tension: 60, useNativeDriver: true }).start();
       const sub = BackHandler.addEventListener('hardwareBackPress', () => {
         closeRef.current();
         return true;
       });
       return () => sub.remove();
     }
-    if (shown) Animated.timing(t, { toValue: 0, duration: 240, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(() => setShown(false));
+    upRef.current?.(false);
+    if (open) Animated.timing(t, { toValue: 0, duration: 240, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(({ finished }) => finished && setOpen(false));
     return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
-  if (!shown) return null;
+  if (!built) return null;
 
   const rec = record(profile);
   const pl = puzzleLevel(rec.xp);
   const srt = sortRecord(profile);
   const pick = (game) => () => onPick(game);
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents={visible ? 'auto' : 'none'}>
-      <Animated.View style={[StyleSheet.absoluteFill, styles.scrim, { opacity: t.interpolate({ inputRange: [0, 1], outputRange: [0, 1], extrapolate: 'clamp' }) }]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-      </Animated.View>
-      <Animated.View style={[styles.sheet, { transform: [{ translateY: t.interpolate({ inputRange: [0, 1], outputRange: [height, 0] }) }] }]}>
-        <LinearGradient colors={['#fff2fb', '#f6e8ff', '#e9dcff']} style={StyleSheet.absoluteFill} />
-        <View style={styles.handle} />
-        <View style={styles.header}>
-          <OutlinedTitle text="PICK A GAME" size={28} fill="pink" />
-          <RoundButton size={36} onPress={onClose} hitSlop={10}>
-            <CloseGlyph />
-          </RoundButton>
-        </View>
-        <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-          <GameCard
-            index={0}
-            trigger={key}
-            colors={['#fff0fa', '#ffc6ea', '#ff93d6']}
-            ring="#8e1580"
-            title="SQUISH"
-            lines={[`Squish ${creatureName || 'your squishy'} and earn coins`]}
-            chips={['ASMR', 'COINS']}
-            art={<SquishArt uri={creatureUri} />}
-            onPress={pick('squish')}
-          />
-          <GameCard
-            index={1}
-            trigger={key}
-            colors={['#e0fbff', '#9feeff', '#5fd0f5']}
-            ring="#0c5a9c"
-            title="SQUISHDOKU"
-            lines={['One creature per row, column and patch']}
-            chips={[`LEVEL ${Math.min(rec.lv, LEVELS)}/${LEVELS}`, `PUZZLE LV ${pl.level}`, ...(rec.blitz.reached ? [`BLITZ ${rec.blitz.reached}/10`] : [])]}
-            art={<SudokuArt uris={puzzleUris} />}
-            onPress={pick('squishdoku')}
-          />
-          <GameCard
-            index={2}
-            trigger={key}
-            colors={['#fff8ec', '#ffe2b8', '#ffc078']}
-            ring="#a04a00"
-            title="SQUISH SORT"
-            lines={['Remember who sits where, then sort them back!']}
-            chips={[`FRIDGE LV ${srt.fridge.lv}`, `CUPBOARD LV ${srt.cupboard.lv}`, 'NEW!']}
-            art={<SortArt uris={sortUris} />}
-            onPress={pick('sort')}
-          />
-          <GameCard index={3} trigger={key} ghost colors={['#f7f2fc', '#ece3f7', '#ded2ee']} ring="#9a86c0" title="MORE SOON" lines={['New mini-games are on the way!']} art={<SoonArt />} />
-        </ScrollView>
-      </Animated.View>
-    </View>
+    <Freeze freeze={slept && !open}>
+      <View style={StyleSheet.absoluteFill} pointerEvents={visible ? 'auto' : 'none'}>
+        <Animated.View style={[StyleSheet.absoluteFill, styles.scrim, { opacity: t.interpolate({ inputRange: [0, 1], outputRange: [0, 1], extrapolate: 'clamp' }) }]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        </Animated.View>
+        <Animated.View style={[styles.sheet, { transform: [{ translateY: t.interpolate({ inputRange: [0, 1], outputRange: [height, 0] }) }] }]}>
+          <LinearGradient colors={['#fff2fb', '#f6e8ff', '#e9dcff']} style={StyleSheet.absoluteFill} />
+          <View style={styles.handle} />
+          <View style={styles.header}>
+            <OutlinedTitle text="PICK A GAME" size={28} fill="pink" />
+            <RoundButton size={36} onPress={onClose} hitSlop={10}>
+              <CloseGlyph />
+            </RoundButton>
+          </View>
+          <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+            <GameCard
+              index={0}
+              trigger={key}
+              colors={['#fff0fa', '#ffc6ea', '#ff93d6']}
+              ring="#8e1580"
+              title="SQUISH"
+              lines={[`Squish ${creatureName || 'your squishy'} and earn coins`]}
+              chips={['ASMR', 'COINS']}
+              art={<SquishArt uri={creatureUri} />}
+              onPress={pick('squish')}
+            />
+            <GameCard
+              index={1}
+              trigger={key}
+              colors={['#e0fbff', '#9feeff', '#5fd0f5']}
+              ring="#0c5a9c"
+              title="SQUISHDOKU"
+              lines={['One creature per row, column and patch']}
+              chips={[`LEVEL ${Math.min(rec.lv, LEVELS)}/${LEVELS}`, `PUZZLE LV ${pl.level}`, ...(rec.blitz.reached ? [`BLITZ ${rec.blitz.reached}/10`] : [])]}
+              art={<SudokuArt uris={puzzleUris} />}
+              onPress={pick('squishdoku')}
+            />
+            <GameCard
+              index={2}
+              trigger={key}
+              colors={['#fff8ec', '#ffe2b8', '#ffc078']}
+              ring="#a04a00"
+              title="SQUISH SORT"
+              lines={['Remember who sits where, then sort them back!']}
+              chips={[`FRIDGE LV ${srt.fridge.lv}`, `CUPBOARD LV ${srt.cupboard.lv}`, 'NEW!']}
+              art={<SortArt uris={sortUris} />}
+              onPress={pick('sort')}
+            />
+            <GameCard index={3} trigger={key} ghost colors={['#f7f2fc', '#ece3f7', '#ded2ee']} ring="#9a86c0" title="MORE SOON" lines={['New mini-games are on the way!']} art={<SoonArt />} />
+          </ScrollView>
+        </Animated.View>
+      </View>
+    </Freeze>
   );
 }
 
@@ -330,6 +367,10 @@ const styles = StyleSheet.create({
   go: { width: 40, height: 40, borderRadius: 20, borderWidth: 3, borderColor: '#ffffff', alignItems: 'center', justifyContent: 'center' },
   goText: { fontFamily: F.display, fontSize: 16, color: '#ffffff', marginLeft: 3, includeFontPadding: false },
   art: { width: ART, height: ART, borderRadius: 18, overflow: 'hidden', borderWidth: 3, borderColor: '#ffffff' },
+  // the picture's place in the face, and the picture over it: the ring's
+  // padding, the face's border and its padding in from the left, centred
+  artSlot: { width: ART, height: ART },
+  artOver: { position: 'absolute', left: 2.5 + 3 + 10, top: 0, bottom: 0, justifyContent: 'center' },
   center: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   floor: { position: 'absolute', bottom: 12, left: '22%', right: '22%', height: 10, borderRadius: 999, backgroundColor: 'rgba(142,21,128,0.22)' },
   lines: { ...StyleSheet.absoluteFillObject },

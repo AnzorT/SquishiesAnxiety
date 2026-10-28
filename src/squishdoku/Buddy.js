@@ -1,4 +1,4 @@
-import React, { forwardRef, memo, useImperativeHandle, useRef, useState } from 'react';
+import React, { forwardRef, memo, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Animated, Easing, Image, StyleSheet, Text, View } from 'react-native';
 import RigCreature from '../components/RigCreature';
 import { F } from './theme';
@@ -7,7 +7,9 @@ import { F } from './theme';
 // board: the design's rig in a WebView, the same as on the Lobby. It cheers
 // a right creature, gasps at a mistake, spins on a solve, fidgets when time
 // is short, with a speech bubble for each. Its still shows until the rig has
-// drawn. `ref.current.react(kind, n)`:
+// drawn. The rig (a WebView of its own) is made LIVE_AFTER ms into the level,
+// not with the board: making it cost the UI thread frames in the middle of
+// the board's entrance (Galaxy A15, 2026-10-28). `ref.current.react(kind, n)`:
 //   'start' | 'right' (n = the streak) | 'wrong' | 'hurry' | 'solve' | 'timeup'
 
 const SAY = {
@@ -22,10 +24,16 @@ const SAY = {
 // which rig move each reaction plays (rive-rig.js STATES)
 const MOVE = { start: 'hop', right: 'happy', streak: 'hop', wrong: 'surprised', hurry: 'look', solve: 'spin', timeup: 'surprised' };
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
+const LIVE_AFTER = 700;
 
 function Buddy({ creatureKey, uri, paused = false, size = 96, style }, ref) {
   const rig = useRef(null);
+  const [live, setLive] = useState(false);
   const [drawn, setDrawn] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setLive(true), LIVE_AFTER);
+    return () => clearTimeout(t);
+  }, []);
   const jump = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
   const bubble = useRef(new Animated.Value(0)).current;
@@ -68,7 +76,7 @@ function Buddy({ creatureKey, uri, paused = false, size = 96, style }, ref) {
       <View style={[styles.floor, { width: size * 0.62, height: size * 0.1, left: size * 0.19 }]} />
       <Animated.View style={{ width: size, height: size, transform: [{ translateY }, { translateX }] }}>
         {!drawn && uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="contain" fadeDuration={0} /> : null}
-        {creatureKey ? (
+        {creatureKey && live ? (
           <RigCreature ref={rig} creatureKey={creatureKey} shuffle={false} renderScale={0.8} paused={paused} onMounted={() => setDrawn(true)} style={StyleSheet.absoluteFill} />
         ) : null}
       </Animated.View>

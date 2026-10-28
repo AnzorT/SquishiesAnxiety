@@ -45,11 +45,15 @@ function rewardOf(r, catalog) {
 }
 
 // `chest`: { key, result } (result: the server's answer); `onCollect()` after COLLECT.
-export default function ChestSmash({ chest, catalog, onCollect }) {
+// `first`: { group, size } of the chest whose answer is on its way (known at the tap): its
+// scene comes up at once and the answer fills it in when it lands (a first tap meanwhile is
+// held). The smash stays unseen until the page has painted its scene, then `onShown()`.
+export default function ChestSmash({ chest, first = null, catalog, onCollect, onShown }) {
   const insets = useSafeAreaInsets();
   const web = useRef(null);
   const ready = useRef(false);
-  const shown = useRef(null);
+  const shown = useRef(null); // the chest's key on the page, or 'first'
+  const [painted, setPainted] = useState(false);
   const [collectAt, setCollectAt] = useState(null);
   const [effects, setEffects] = useState(true);
   useEffect(() => sfx.subscribe((s) => setEffects(s.effects)), []);
@@ -58,17 +62,37 @@ export default function ChestSmash({ chest, catalog, onCollect }) {
     if (web.current && ready.current) web.current.injectJavaScript(`${js};true;`);
   }, []);
   const start = useCallback(() => {
-    if (!chest || !ready.current || shown.current === chest.key) return;
+    if (!ready.current) return;
+    const scene = { sound: effects, insetTop: insets.top, insetBottom: insets.bottom };
+    if (!chest) {
+      if (!first || shown.current) return;
+      shown.current = 'first';
+      run(`chestHost.start(${JSON.stringify({ ...scene, group: first.group, size: first.size, wait: true })})`);
+      tutReport({ boxPhase: 'opening' });
+      return;
+    }
+    if (shown.current === chest.key) return;
+    const r = chest.result;
+    const o = { group: r.group, size: SIZE_NAMES[r.size] || 'common', final: SIZE_NAMES[r.final] || r.size, reward: rewardOf(r, catalog || {}) };
+    // the answer for the chest already up, or a scene of its own
+    if (shown.current === 'first' && first && o.group === first.group && o.size === first.size) run(`chestHost.fill(${JSON.stringify(o)})`);
+    else run(`chestHost.start(${JSON.stringify({ ...scene, ...o })})`);
     shown.current = chest.key;
     setCollectAt(null);
-    const r = chest.result;
-    const o = { group: r.group, size: SIZE_NAMES[r.size] || 'common', final: SIZE_NAMES[r.final] || r.size, reward: rewardOf(r, catalog || {}), sound: effects, insetTop: insets.top, insetBottom: insets.bottom };
-    run(`chestHost.start(${JSON.stringify(o)})`);
     tutReport({ boxPhase: 'opening' });
-  }, [chest, catalog, effects, insets.top, insets.bottom, run]);
+  }, [chest, first, catalog, effects, insets.top, insets.bottom, run]);
   useEffect(() => start(), [start]);
   useEffect(() => run(`chestHost.sound(${effects ? 'true' : 'false'})`), [effects, run]);
   useEffect(() => () => tutReport({ boxPhase: null }), []);
+  // never left unseen over the screen if the page doesn't say 'shown'
+  useEffect(() => {
+    if (painted) return undefined;
+    const t = setTimeout(() => {
+      setPainted(true);
+      onShown?.();
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [painted, onShown]);
 
   const onMessage = useCallback(
     (e) => {
@@ -81,6 +105,11 @@ export default function ChestSmash({ chest, catalog, onCollect }) {
       if (m.type === 'ready') {
         ready.current = true;
         start();
+      } else if (m.type === 'shown') {
+        if (!painted) {
+          setPainted(true);
+          onShown?.();
+        }
       } else if (m.type === 'reveal') {
         if (m.collect) setCollectAt(m.collect);
         tutReport({ boxPhase: 'reveal' });
@@ -91,12 +120,12 @@ export default function ChestSmash({ chest, catalog, onCollect }) {
         onCollect();
       }
     },
-    [start, onCollect],
+    [start, onCollect, onShown, painted],
   );
 
   if (!HOST) return null;
   return (
-    <View style={StyleSheet.absoluteFill}>
+    <View style={[StyleSheet.absoluteFill, !painted && styles.unseen]}>
       <WebView
         ref={web}
         source={{ uri: HOST }}
@@ -123,5 +152,6 @@ export default function ChestSmash({ chest, catalog, onCollect }) {
 
 const styles = StyleSheet.create({
   web: { flex: 1, backgroundColor: '#2a0f4a' },
+  unseen: { opacity: 0 },
   stageTarget: { position: 'absolute', left: '18%', right: '18%', top: '36%', height: '34%' },
 });

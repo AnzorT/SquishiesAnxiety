@@ -144,10 +144,29 @@ function setBudget(n) {
 
 // Load a screen's effects ahead of time: the first play of an effect loads
 // its player, which stalls the app for a moment — mid-way through the
-// Mystery Box's fast taps that was enough to break the combo.
+// Mystery Box's fast taps that was enough to break the combo. They're made
+// one every PRELOAD_GAP ms, not all at once: a Squishdoku level's 16 (each
+// an ExoPlayer made on the main thread) were a burst of stalled frames
+// right as its board came in (Galaxy A15, 2026-10-28). One played before
+// its turn simply loads then.
+const PRELOAD_GAP = 40;
+const preloadQueue = [];
+let preloading = null;
+function pumpPreload() {
+  const name = preloadQueue.shift();
+  if (name == null) {
+    preloading = null;
+    return;
+  }
+  if (state.effectsOn && !state.players.has(name)) entry(name);
+  preloading = setTimeout(pumpPreload, PRELOAD_GAP);
+}
 function preload(names) {
   if (!state.effectsOn) return;
-  names.forEach(entry);
+  names.forEach((n) => {
+    if (!state.players.has(n) && !preloadQueue.includes(n)) preloadQueue.push(n);
+  });
+  if (!preloading) pumpPreload();
 }
 
 function play(name, { delay = 0, rate } = {}) {

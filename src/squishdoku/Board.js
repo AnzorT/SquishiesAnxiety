@@ -1,6 +1,7 @@
 import React, { forwardRef, memo, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Image, PanResponder, StyleSheet, View } from 'react-native';
 import { FxLayer } from './fx';
+import { PHASE, SWING, UP_DOWN, phaseLoop } from '../components/idleLoop';
 import Tile from './Tile';
 import { INK, PATCHES, RING } from './theme';
 
@@ -59,8 +60,12 @@ const Cell = memo(
     const hop = useRef(new Animated.Value(0)).current;
     const sulk = useRef(new Animated.Value(0)).current; // the wrong creature's shake
     const gone = useRef(new Animated.Value(0)).current; // the wrong creature popping off
-    const breathe = useRef(new Animated.Value(0)).current; // idle: 0 … 1
-    const sway = useRef(new Animated.Value(0)).current; // idle: -1 … 1
+    // idle: breathe 0 … 1 … 0 and sway 0 … 1 … -1 … 0, each read off a phase
+    // that loops 0 → 1 natively (src/components/idleLoop.js)
+    const breatheT = useRef(new Animated.Value(0)).current;
+    const swayT = useRef(new Animated.Value(0)).current;
+    const breathe = useMemo(() => breatheT.interpolate({ inputRange: PHASE, outputRange: UP_DOWN }), [breatheT]);
+    const sway = useMemo(() => swayT.interpolate({ inputRange: PHASE, outputRange: SWING }), [swayT]);
     const spin = useRef(new Animated.Value(0)).current; // a trick: one turn
     const peek = useRef(new Animated.Value(0)).current; // a trick: lean out and back
     const [wrongKey, setWrongKey] = useState(0);
@@ -79,32 +84,23 @@ const Cell = memo(
     };
 
     // Idle life once placed: breathing and swaying at the creature's own pace
-    // (random periods and start, so the board never moves in lockstep).
+    // (random periods and start, so the board never moves in lockstep). Each
+    // is one linear timing looping on the native side, its curve in the
+    // interpolation (src/components/idleLoop.js): a loop around a sequence is
+    // restarted from JS at every step, so a full board kept the JS thread
+    // waking all the time and the motion hitched whenever JS was busy.
     useEffect(() => {
       if (!piece) return undefined;
-      const b = 1500 + Math.random() * 900;
-      const w = 2200 + Math.random() * 1600;
       const loops = [
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(breathe, { toValue: 1, duration: b / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-            Animated.timing(breathe, { toValue: 0, duration: b / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          ]),
-        ),
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(sway, { toValue: 1, duration: w / 4, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-            Animated.timing(sway, { toValue: -1, duration: w / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-            Animated.timing(sway, { toValue: 0, duration: w / 4, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          ]),
-        ),
+        phaseLoop(breatheT, 1500 + Math.random() * 900),
+        phaseLoop(swayT, 2200 + Math.random() * 1600),
       ];
       const start = setTimeout(() => loops.forEach((l) => l.start()), 400 + Math.random() * 700);
       return () => {
         clearTimeout(start);
         loops.forEach((l) => l.stop());
       };
-    }, [piece, breathe, sway]);
+    }, [piece, breatheT, swayT]);
     const [lift, setLift] = useState(false);
 
     // A creature dropping in: fall 180 ms (the place sound's landing), squash,

@@ -4,6 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import sfx from '../audio/sfx';
 import { Bob } from '../squad/ui';
+import { useProgressive } from '../components/Skeleton';
+import { usePingPong } from '../components/idleLoop';
 import { FxLayer } from '../squishdoku/fx';
 import { Head } from '../squishdoku/ui';
 import { F, INK } from '../squishdoku/theme';
@@ -35,22 +37,12 @@ const Stars = ({ n }) => (
 const Node = memo(function Node({ lv, x, y, state, stars, delay, onPress, mascot, mascotLeft }) {
   const t = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
-  const pulse = useRef(new Animated.Value(0)).current;
+  // the next level's pulse: one native loop (src/components/idleLoop.js)
+  const pulse = usePingPong(1400, { on: state === 'current' });
   const fx = useRef(null);
   useEffect(() => {
     Animated.spring(t, { toValue: 1, friction: 5, tension: 150, delay, useNativeDriver: true }).start();
   }, [t, delay]);
-  useEffect(() => {
-    if (state !== 'current') return undefined;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 700, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [state, pulse]);
   const press = () => {
     if (state === 'locked') {
       sfx.play('sd_locked');
@@ -125,6 +117,10 @@ function LevelMap({ rec, uris = [], onPlay }) {
   const height = points[LEVELS - 1].y + 120;
   const mascot = uris.length ? uris[(cur * 11) % uris.length] : null;
 
+  const order = useMemo(() => Array.from({ length: LEVELS }, (_, i) => i).sort((a, b) => Math.abs(a + 1 - cur) - Math.abs(b + 1 - cur)), [cur, LEVELS]);
+  const n = useProgressive(LEVELS, 12, 10);
+  const built = useMemo(() => new Set(order.slice(0, n)), [order, n]);
+
   useEffect(() => {
     const y = Math.max(0, points[cur - 1].y - 260);
     const tm = setTimeout(() => scroll.current?.scrollTo({ y, animated: false }), 0);
@@ -139,6 +135,7 @@ function LevelMap({ rec, uris = [], onPlay }) {
 
   const dots = [];
   for (let i = 0; i < LEVELS - 1; i++) {
+    if (!built.has(i) || !built.has(i + 1)) continue;
     const a = points[i];
     const b = points[i + 1];
     for (let k = 1; k <= 3; k++) {
@@ -163,6 +160,7 @@ function LevelMap({ rec, uris = [], onPlay }) {
       {dots}
       {banners}
       {points.map((p, i) => {
+        if (!built.has(i)) return null;
         const lv = i + 1;
         const state = lv < cur ? 'done' : lv === cur ? (rec.best[lv] ? 'done' : 'current') : 'locked';
         return (

@@ -140,3 +140,89 @@ Release build, emulator-5556, ms from the finger lifting (or touching, for chest
 | YAY → Shop back, already caught up | < 500 |
 
 Not measured on the A15. The Cloud Function's cold start still sets how soon the reveal can start after the burst (the burst waits for the roll), but the roll starts on the first tap, so it is normally back before the chest breaks.
+
+### The v6 chest smash: no empty screen before the chest (2026-10-28)
+
+The user saw "a screen" between tapping Open and the chest. The smash (`ChestSmash`, a WebView on `android_asset/chest/host.html`) came up at once with `chest: null`, but the page only drew the chest on `chestHost.start`, which waited for both the page load (a fresh WebView each open, ~430 KB of chest scripts) and the `squad` Cloud Function's answer. Until then it showed the page's bare dark purple with empty pills (the tier label, HP bar and hint, no text).
+
+- The app knows which chest it is at the tap (the bought group and size; free = welcome group or `lineup(day, hidden)[0]` Common; ad = `lineup[1]` Rare; deal = `lineup[0]` `GDEAL.size`, the server's own picks). The Shop passes it as `first`, and the page starts that scene at once in phase `wait`. `chestHost.fill({ final, reward })` brings in the answer. A first tap while waiting is held and played when it lands, so the upgrade roll is never guessed. If the server's group or size differ (a day change at midnight), a normal `start` replaces the scene.
+- The smash stays at opacity 0 until the page posts `shown` (two frames after `start`), so the WebView's own load shows the Shop rather than an empty page. The Shop freezes only after that. A 2.5 s fallback shows the smash anyway in case `shown` never arrives.
+- `host.html` is an Android asset: a Metro reload doesn't pick it up, the APK has to be rebuilt.
+
+## Taps that wait, slow backs, long loading screens (2026-10-28)
+
+The user: long loading screens, buttons that answer seconds late, and going back "freezes for a few seconds, then takes me back". Measured on the Galaxy A15 (USB) with a temporary probe: the root View's `onTouchEndCapture` timestamp, a `requestAnimationFrame` loop logging every frame over 50 ms, marks in `ScreenLayer` and `React.Profiler`s around Home, the Shop and the layer (`adb logcat -s ReactNativeJS`). The CPU profiler over Metro stopped answering after an app relaunch (targets listed, commands timed out); the probe was enough. The user had been judging a **debug** build again.
+
+Why, in one rule: **on Android (legacy arch) a native-driver animation started in a handler only starts once that handler's render has been committed** (NativeAnimatedModule runs its queue at the end of the UIManager batch). Every screen that was built in the same render as its slide held the slide, and every frame, until the build was done. A big subtree created at once (or shown again after `display: none`) also stalls the UI thread, so a slide that does start still stutters.
+
+What changed:
+
+- **ScreenLayer** (every screen over Home): the content is built when the slide-in is over (`useScreenReady`); during the slide only placeholders, which are light. Building during the slide (since 2026-10-10) made the UI thread create the views mid-slide: a 260 ms slide took 0.6-0.85 s. **Back** starts the slide-out first and uncovers Home in the next task (`setTimeout(onUncover, 0)`); uncovering first put Home's render (and the game screen's own re-render) in front of the slide.
+- **Squishdoku, Squish Sort, Squish Stack and the level road** sit in `WhenScreenReady` with `ScreenBones` (candy sky, header, `ViewBones` of a kind: `hub`, `map`, `game`, `list`) and are memoized, so App's renders (Home waking on the way back) don't re-render them.
+- **Inside the games** (hub → map → level, Blitz): `useViewSwitch` + `ViewSlot` (src/components/ViewSwitch.js) start the switch's spring and draw the new view's placeholders on the tap, build the content two frames later and fade it in. The **level map stays built, asleep, under a level** (`KeptView`), so QUIT / leaving a level is instant (it was a full rebuild: 0.75 s render + 0.8 s of view creation in debug).
+- **Long lists are built a few items a frame** (`useProgressive` in Skeleton.js): the level maps (nearest the current level first) and the Squad grid.
+- **Lobby** (`useSettled`): the games sheet (2.5 s after the lobby settles), the Squad screen (4.5 s) and the selected creature's squish model (6.5 s) are prepared in the background. The sheet and the Squad are kept and asleep while closed (the Squad sleeps only once all its tiles are built: `onBuilt`), and the lobby is hidden (`display: none`) while the Squad covers it: idle on the Squad went from ~15 fps (64 stalls in 4 s, RenderThread at 83 %) to no stalls. PLAY's game cards open their game on release (they waited 160 ms for the squash, then the lobby 200 ms more).
+- **MainScreen's off-screen tab** sleeps with `Hold` (Freeze.js), not `Freeze`: it stays laid out beside the page shown, deaf to new props from above. Waking the Shop from `display: none` was a 0.3-0.7 s UI-thread re-layout in the middle of its slide; now 0.06-0.26 s of small stalls, and idle frames are unchanged.
+- **Banner ads** come 700 ms after an `AdStrip` goes live (a banner is a WebView of its own): it was a 0.3 s stall as Home came back.
+- **Squishdoku's level buddy** (a rig WebView) is made 0.7 s into the level, not with the board; its still shows until then as before.
+- **Loading screens**: the squish game's beats are as short as reads well (dots for as long as the model takes, 0.6 s at least, then 0.9 s; quick path 0.6 s), and the lobby's preload makes the quick path the usual one. **The splash finishes as soon as the app is ready** (signed in or not, profile and catalog here), 1.5 s at the least, 10 s at most (user ruling 2026-10-28; it was a fixed 10 s).
+
+Galaxy A15, release build, ms after the finger lifts (frames over 100 ms in brackets, total):
+
+| Tap | Before (debug) | After (release) |
+|---|---|---|
+| Splash | 10 s + | hands over at 2.8 s from the first frame |
+| SQUAD | 3.6 s before anything moved | slide at once; one 0.3 s hitch mid-slide |
+| PLAY (games sheet) | 0.5 s, then 1.3 s choppy | smooth (0.15 s of small stalls) |
+| A game from the sheet | screen at 1.1 s | screen at 0.12 s, slide done 0.44 s, content after |
+| Regular → level map | 0.86 s, then 0.6 s | placeholders at once, nodes fill in ~0.75 s |
+| QUIT a level → map | ~1.5 s rebuild | instant (one 0.13 s frame) |
+| Every back button | slide waited 0.06-0.3 s on Home's render | slide starts ~0.03 s, done ~0.3 s |
+| Achievements / level road | first frame 0.27-0.58 s, slide 0.6-0.85 s | screen at 0.13-0.17 s, slide clean |
+| PLAY → Squish | squish screen at 5.3 s | at 0.86 s |
+| Shop ↔ Squish tab | 0.3-0.7 s stall in the slide | 0.06-0.26 s |
+
+Follow-ups the same day:
+
+- **The Squad screen ran at ~25 fps while open, before and after the above.** `dumpsys gfxinfo … framestats` put it in RenderThread's *sync* stage: ~66 ms a frame against ~5 ms of GPU. With the grid's tiles taken out it was 1.8 ms. Every frame of the live hero, HWUI re-prepared the pictures of all ~80 tiles, scrolled out of sight or not. Fix: `removeClippedSubviews` on the grid's ScrollView (sync 1.9 ms). Check a screen that has something live with `framestats` and a median of SyncStart → IssueDrawCommandsStart; anything over a few ms is the tree, not the GPU.
+- **The Squad's tiles** draw their floor shadow from one shared PNG (assets/squad/tile-floor.png, the same gradient) and their small lock in plain views: ~150 little SVGs, each drawn on the UI thread, made the Squad's every showing a 0.3 s hitch.
+- **Chromium's "tile memory limits exceeded, some content may not draw"**: a rig WebView made off screen and then put to sleep (the Squad's hero in the background build) never drew; the hero spot stayed empty. The hero's rig is now made the first time the screen is up, after its slide, with the creature's still until it has drawn. `RigCreature` ignores 0 × 0 layouts (a hidden screen's).
+- **Tried and dropped:** keeping the closed Squad laid out off screen (`Hold`) and the lobby under the open Squad at `opacity: 0` instead of `display: none`. Both made the phone work through the hidden screen every frame: the lobby went from 1 to ~40 stalled frames in 4 s. `display: none` (Freeze) is right for something hidden under or below; `Hold` only for a page beside the one shown (MainScreen's tabs), where it measured fine.
+- **Sound players** (`sfx.preload`) are made one every 40 ms instead of in one burst (a Squishdoku level made 16 ExoPlayers on the main thread as its board came in). Squishdoku's sound budget is 30 (was 18, less than a level plays, so every level made some again) and its level sounds load while the menus are up.
+- **Creature art prefetch at startup** runs 6 at a time (App.js `PREFETCH_AT_ONCE`); all at once was hundreds of bridge calls as the app started.
+
+- **Forever loops run on the native side** (src/components/idleLoop.js: `usePingPong`, `useKeyLoop`, `phaseLoop`): a linear phase looping natively, read through keyframes of the curve. `Animated.loop(Animated.sequence(…))` is restarted from JS at every step: each `Twinkle` (14 on every sparkly background), `Bob`, the level maps' current node, a placed Squishdoku creature's breathe and sway, the HUD's glow, pulse and pip, Sort's wobble and pulse, Stack's seat glow and Squishdoku's `Pulse`/`Rock` all woke the JS thread every half-period. About 30 other `loop(sequence)` uses remain in screens not on these paths (Crib, Achievements, Daily Spin, Shop Deals, CandyButton…); convert them the same way when touched.
+- **The games sheet** hides the lobby parts it covers (the creature, SQUAD and PLAY) once it's all the way up (`onUp`), and shows them again as it starts down: the phone drew them under it every frame (open sheet ~60 → ~43 ms a frame).
+- **The level road** renders 5 rows first (was 12), then 4 a batch over a smaller window, and its rows' lock is plain views (was an SVG each).
+
+- **Home under a covering screen** (App.js) is no longer hidden with `display: none` (Freeze): hiding and showing the Lobby + Shop's thousands of views cost one 0.4-0.65 s frame (debug) as each screen came in and again on the way back. It's now held (`Hold`: not re-rendered), moved out of sight in a clipped container, and `LoopsOn` (idleLoop.js) turns off for it: its native loops stop and **the Lobby takes its live creature out** (`display: none` on the rig's one view). That WebView, even paused and out of sight, cost ~3.5 ms of RenderThread work in *every* frame of whatever was on screen; MainScreen turns `LoopsOn` off for the tab you slid away from too, so the Shop and the games sheet no longer pay for it. Exception, the Crib: with Home held under it, each Crib frame cost ~150 ms (below), so the Shop page is truly hidden there.
+
+**How this was measured, and a correction.** `dumpsys gfxinfo … framestats` keeps only the last 120 frames (about 1.3 s at 90 Hz), and its newer "Janky frames" count missed these frames too: the earlier "no janky frames" checks in this section missed the frame where a screen's content appears. The reliable way is a system trace of every main-thread frame after a tap: `adb shell atrace -t 6 -b 32768 gfx view input > trace.txt`, then the `Choreographer#doFrame` slices of the app's main thread (`B|<pid>|…` / `E|<pid>` lines; strip the `\r`). A frame's `animation` phase is where React Native creates and updates views.
+
+Galaxy A15, release build, system trace of every main-thread frame in the 3-4 s after the tap (2026-10-28):
+
+| Tap | Slowest frames after it |
+|---|---|
+| SQUAD / its back | 130 ms (the tap's own frame: the slide starts on it) / 80 ms |
+| PLAY (games sheet) | 67 ms |
+| Squishdoku from the sheet / Regular → level map / a level | 96 / 89 / 75 ms |
+| pause / QUIT | 50 / 59 ms |
+| Every back (map, hub, Achievements, road, Crib, squish) | 31-59 ms |
+| Achievements / level road | 73 / 66 ms |
+| Shop tab / Squish tab | 28 / 22 ms |
+| Crib | 122-124 ms, after its slide (was 0.2-0.23 s) |
+| A room in the Crib | 77-86 ms, under the room flash (was 120-170 ms) |
+| The first Shop tap after a Crib visit (the Shop built again) | 109-134 ms worst (was 258), the rest spread out |
+| PLAY → Squish | 143 ms (the squish stage starting, 1.2 s in, under the loading screen) |
+
+Idle, traced, frames a second over 3 s (2026-10-28, final release build): Lobby 82, Squad 81, games sheet 68, Squishdoku 90, level map 82, a level 60, Achievements 78, Shop 76, Crib 89, squish 76; no idle screen had a frame over 34 ms. (`gfxinfo`'s IntendedVsync → FrameCompleted is a frame's latency, not its interval: the "~40-45 fps" reported for the games sheet and the Shop earlier was read off it and was wrong; they ran ~55-70 fps. The games sheet's cards now cache their still faces as a texture with their moving picture over them, `renderToHardwareTextureAndroid`: with the pictures inside, Android re-drew all the cards every frame.)
+
+**Why the Crib is the exception.** With Home held under it, the Crib's frames took ~150 ms: a system trace showed RenderThread uploading ~175 textures *every frame* (prepareTree pins the images of every view in the tree, off-screen ones too, and the Crib's pictures plus the Shop's, 99 chest pictures of ~87 MB decoded, don't fit Android's texture cache together, so they evict each other). Without the Shop the Crib idles at ~23 ms a frame. So the Shop is let go (unmounted) once the Crib has slid in (App `SHOP_AWAY_UNDER` → MainScreen `ShopAway`) and built again only when its tab is next tapped, behind its placeholders. Hiding it with display: none instead cost ~0.35 s frames as the Crib came in and again after the way back; hiding all of Home, 0.4-0.9 s (debug). The Shop builds in pieces now: the chest carousel builds only the card in view and its neighbours (`near`; the rest are empty cards until a swipe brings them near), the Deals and Gems pages a part a frame (below). The Crib builds its scene a couple of frames after its frame and room dock, and its creatures a few a frame.
+
+Last round (same day):
+
+- **The Shop built again after the Crib.** Its 0.25 s frame wasn't the tap: it came 1.5 s later, when the Shop built its Deals page unseen (the streak and two offers in one frame), and the Gems page 1 s after that. Every page is built a part a frame now: the Chests tab (the tiles and the deal, then the carousel, then the rest), the Deals (the offers on top, the streak, then one offer a frame) and the Gems (one pack a frame, then the swaps). Only the page shown has placeholders. When the Shop isn't built yet as its tab is tapped, its page slides in as placeholders (`ShopPageBones`) and the Shop is built once it's in, fading in over them (MainScreen).
+- **The Crib** comes in a part every other frame (`useEveryOtherFrame`, Skeleton.js: one frame apart, React Native can still run both parts' view batches in one frame): its HUD, then the room dock, then the room, itself in three parts (the backdrop and the night's tint, then the furniture, then the front and the creatures, three a frame). The room scene is keyed by the room, so a room switch builds the new room the same way, under the flash. And **the room-switch flash** is two pictures (assets/crib/flash-*.png, tools/crib-art/flash.py) instead of a full-screen SVG. react-native-svg draws every SVG in software on the UI thread the first time it's drawn, and this one (mounted, unseen, from the Crib's first frame) was ~40 ms of it.
+- **The Lobby's creature after the squish game**: its WebView, kept hidden through the squish stage, came back blank (Chromium's "tile memory limits exceeded"). The Lobby lets the WebView go while a screen covers Home (App `RigAway`) and makes a fresh one once Home is back, showing the creature's still until it has drawn.
+
+Still the slowest, each one frame of ~0.1-0.15 s once the screen is already up: the SQUAD tap (its grid shown again: react-native-svg throws away and redraws its pictures when a view's size changes), the Crib (~0.12 s), the Shop built again after the Crib (~0.11-0.13 s) and the squish stage starting (~0.14 s, under the loading screen). A debug build is 2-4x slower than all of the above.

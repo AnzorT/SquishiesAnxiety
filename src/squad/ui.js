@@ -1,5 +1,5 @@
-import React, { memo, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Image, StyleSheet, Text, View } from 'react-native';
+import React, { memo, useEffect, useState } from 'react';
+import { Animated, Image, StyleSheet, Text, View } from 'react-native';
 import Pressable from '../components/Pressable';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SvgXml } from 'react-native-svg';
@@ -8,6 +8,7 @@ import ShadowText, { outline3 } from '../components/candy/ShadowText';
 import CHEST_ART, { CHEST_BOX } from './chestArt';
 import { COIN_SVG, GEM_SVG } from './icons';
 import { fmtNum } from '../format';
+import { usePingPong } from '../components/idleLoop';
 
 // Small pieces shared by the squad screens (Shop, chest opener, Squishies),
 // drawn from the 2026-10-06 design's CSS. Its "ring" look — a white border
@@ -50,21 +51,8 @@ export const Chest = memo(function Chest({ tier, stage = 0, size = 104, style })
 
 // shBob: up 7px and back, forever.
 export function Bob({ children, ms = 2800, delay = 0, dy = 7, style }) {
-  const t = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(t, { toValue: 1, duration: ms / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(t, { toValue: 0, duration: ms / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      ]),
-    );
-    const start = setTimeout(() => loop.start(), delay * 1000);
-    return () => {
-      clearTimeout(start);
-      loop.stop();
-    };
-  }, [t, ms, delay]);
-  const translateY = t.interpolate({ inputRange: [0, 1], outputRange: [0, -dy] });
+  // one native loop (src/components/idleLoop.js), not an up-and-down sequence
+  const translateY = usePingPong(ms, { from: 0, to: -dy, delay: delay * 1000 });
   return <Animated.View style={[style, { transform: [{ translateY }] }]}>{children}</Animated.View>;
 }
 

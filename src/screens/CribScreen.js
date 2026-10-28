@@ -24,6 +24,7 @@ import { CribToast, INK, PAPER, PanButton, SongPill } from '../crib/ui';
 import { Pantry } from '../crib/Pantry';
 import { CoinsPill, CribButton, LevelPill, PhasePill, RoomFlash, RoomTitle } from '../crib/Hud';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useEveryOtherFrame } from '../components/Skeleton';
 
 // The Squad Crib (the 2026-10-03 design's "Squad Crib v5" and "Squad Crib
 // Vertical"): the creatures' home. Seven rooms drawn by Scene.js from the
@@ -105,6 +106,13 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
 
   const model = useRef(null);
   const [loaded, setLoaded] = useState(false);
+  // The Crib comes in a part every other frame: the HUD, then the room
+  // dock, then the room scene (its art, decor and creatures: most of the
+  // Crib's views; Scene builds itself in parts too). All at once was one
+  // 0.4 s frame as the Crib came in, and the HUD and the dock together still
+  // one of 0.2 s (Galaxy A15 release, 2026-10-28).
+  const part = useEveryOtherFrame(3);
+  const sceneOn = part >= 3 && loaded;
   const [frame, setFrame] = useState(0);
   const bump = useCallback(() => setFrame((f) => f + 1), []);
   const [room, setRoom] = useState('living');
@@ -852,8 +860,11 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
     </View>
   );
 
-  const scene = loaded ? (
+  // keyed by the room: a switch builds the new room in Scene's parts (under
+  // the room flash), not in one go
+  const scene = sceneOn ? (
     <Scene
+      key={room}
       room={room}
       phase={phase}
       scale={scale}
@@ -1017,7 +1028,7 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
           />
         </View>
       ) : (
-        <RoomDock summary={summary} current={room} onGo={goRoom} phase={PH[phase]} level={level} tileH={Math.max(92, Math.min(TILE_H, Math.floor((ch - sceneH - insets.bottom - 92) / 2)))} bottomPad={insets.bottom} />
+        part >= 2 && <RoomDock summary={summary} current={room} onGo={goRoom} phase={PH[phase]} level={level} tileH={Math.max(92, Math.min(TILE_H, Math.floor((ch - sceneH - insets.bottom - 92) / 2)))} bottomPad={insets.bottom} />
       )}
       {hud}
       {overlays}

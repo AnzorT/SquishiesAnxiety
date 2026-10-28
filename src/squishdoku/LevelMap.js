@@ -3,6 +3,8 @@ import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View, useWin
 import { LinearGradient } from 'expo-linear-gradient';
 import sfx from '../audio/sfx';
 import { Bob } from '../squad/ui';
+import { useProgressive } from '../components/Skeleton';
+import { usePingPong } from '../components/idleLoop';
 import { FxLayer } from './fx';
 import { Head } from './ui';
 import { LEVEL_LIST, LEVELS } from './levels';
@@ -11,7 +13,9 @@ import { F, INK, TIER_COLORS } from './theme';
 // The 50 levels on a winding path, level 1 at the top. Done levels are gold
 // with the creatures they earned, the next one pink and pulsing with a
 // creature bobbing on it, the rest locked. Nodes pop in around the current
-// one; a level just unlocked breaks its lock open.
+// one; a level just unlocked breaks its lock open. The nodes are built
+// nearest the current one first, a few a frame (useProgressive), so the map
+// is up at once and fills outwards.
 
 const GAP = 96;
 const NODE = 62;
@@ -23,23 +27,13 @@ const bandOf = (i) => LEVEL_LIST[i].n;
 const Node = memo(function Node({ lv, x, y, state, stars, perfect, heads, delay, onPress, unlocking, mascot, mascotLeft }) {
   const t = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
-  const pulse = useRef(new Animated.Value(0)).current;
+  // the next level's pulse: one native loop (src/components/idleLoop.js)
+  const pulse = usePingPong(1400, { on: state === 'current' });
   const lock = useRef(new Animated.Value(unlocking ? 0 : 1)).current;
   const fx = useRef(null);
   useEffect(() => {
     Animated.spring(t, { toValue: 1, friction: 5, tension: 150, delay, useNativeDriver: true }).start();
   }, [t, delay]);
-  useEffect(() => {
-    if (state !== 'current') return undefined;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 700, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [state, pulse]);
   // a lock rattling, then bursting off
   useEffect(() => {
     if (!unlocking) return undefined;
@@ -141,8 +135,12 @@ function LevelMap({ rec, roster, onPlay, justUnlocked }) {
   }, [width]);
   const height = points[LEVELS - 1].y + 120;
   // a creature for each node's score heads (fixed per level) and the mascot
-  const headsOf = (lv) => [0, 1, 2].map((k) => roster.length && roster[(lv * 7 + k * 13) % roster.length]);
+  const heads = useMemo(() => Array.from({ length: LEVELS }, (_, i) => [0, 1, 2].map((k) => roster.length && roster[((i + 1) * 7 + k * 13) % roster.length])), [roster]);
   const mascot = roster.length ? roster[(cur * 11) % roster.length] : null;
+
+  const order = useMemo(() => Array.from({ length: LEVELS }, (_, i) => i).sort((a, b) => Math.abs(a + 1 - cur) - Math.abs(b + 1 - cur)), [cur]);
+  const n = useProgressive(LEVELS, 12, 10);
+  const built = useMemo(() => new Set(order.slice(0, n)), [order, n]);
 
   useEffect(() => {
     const y = Math.max(0, points[cur - 1].y - 260);
@@ -159,6 +157,7 @@ function LevelMap({ rec, roster, onPlay, justUnlocked }) {
 
   const dots = [];
   for (let i = 0; i < LEVELS - 1; i++) {
+    if (!built.has(i) || !built.has(i + 1)) continue;
     const a = points[i];
     const b = points[i + 1];
     for (let k = 1; k <= 3; k++) {
@@ -184,6 +183,7 @@ function LevelMap({ rec, roster, onPlay, justUnlocked }) {
       {dots}
       {banners}
       {points.map((p, i) => {
+        if (!built.has(i)) return null;
         const lv = i + 1;
         // every level before the unlocked one was beaten to get there
         const state = lv < cur ? 'done' : lv === cur ? (rec.best[lv] ? 'done' : 'current') : 'locked';
@@ -196,7 +196,7 @@ function LevelMap({ rec, roster, onPlay, justUnlocked }) {
             state={state}
             stars={rec.best[lv] || 0}
             perfect={!!rec.perfect[lv]}
-            heads={headsOf(lv)}
+            heads={heads[i]}
             delay={Math.min(700, Math.abs(lv - cur) * 45)}
             onPress={onPlay}
             unlocking={justUnlocked === lv}

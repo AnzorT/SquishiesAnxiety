@@ -11,7 +11,7 @@ import useRewardedAd from '../components/useRewardedAd';
 import { PRODUCTS, GEM_KEYS } from '../economy';
 import { todayKey } from '../dailySpin';
 import sfx from '../audio/sfx';
-import { BY_ID, GDEAL, HIDDEN, SET_REWARDS, SEASON, SIZES, SIZE_I, SWAPS, AD_CHESTS, outIds, wallet } from '../squad/data';
+import { BY_ID, GDEAL, HIDDEN, SET_REWARDS, SEASON, SIZES, SIZE_I, SWAPS, AD_CHESTS, lineup, outIds, owns, wallet } from '../squad/data';
 import * as squad from '../squad/api';
 import { BtnText, CandyBtn, CoinIcon, F, GemIcon, GOLD_RING, PINK_RING, Ringed, untilMidnight } from '../squad/ui';
 import ChestsTabV6, { ChestSheetBody, OddsSheetBody } from './ShopChests';
@@ -301,6 +301,27 @@ function ShopBones() {
   );
 }
 
+// The whole Shop page as placeholders (the header, the tab switch, ShopBones):
+// what the Shop's page shows while it slides in to be built (MainScreen).
+export const ShopPageBones = memo(function ShopPageBones() {
+  const insets = useSafeAreaInsets();
+  return (
+    <CandyBackground style={{ paddingTop: insets.top }}>
+      <View style={styles.header}>
+        <Bone w={92} h={34} r={17} tone="sky" />
+        <View style={styles.purses}>
+          <Bone w={84} h={32} r={16} tone="sky" />
+          <Bone w={72} h={32} r={16} tone="sky" />
+        </View>
+      </View>
+      <Bone w="auto" h={46} r={23} tone="sky" style={styles.segOuter} />
+      <View style={styles.scroll}>
+        <ShopBones />
+      </View>
+    </CandyBackground>
+  );
+});
+
 // `openKey`: bumped by App each time something opens the Shop on a tab
 // (`startTab`); the Shop goes there without being rebuilt. `hidden`: the
 // groups and creatures not out yet; `setRewards`: whether set rewards stay
@@ -315,9 +336,12 @@ function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRew
   const openedAt = useRef(openKey);
   const [sheet, setSheet] = useState(null);
   // the v6 chest smash: the chests to open, the first one showing (`chest`
-  // null while the server's answer is on its way: the smash is up at once)
-  const [smash, setSmash] = useState(null); // { chest, queue }
+  // null while the server's answer is on its way: the smash is up at once,
+  // with the scene of `first`, the chest that was tapped); `up` once its page
+  // has painted (until then the Shop shows under it)
+  const [smash, setSmash] = useState(null); // { chest, first, queue, up }
   useEffect(() => onImmersive?.(!!smash), [smash, onImmersive]);
+  const smashShown = useCallback(() => setSmash((s) => s && { ...s, up: true }), []);
   const [toast, setToast] = useState(null);
   // a move on its way (no second one meanwhile); a ref, not state: as
   // state it changed `run`, so every move re-rendered the tabs' cards twice
@@ -377,18 +401,19 @@ function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRew
     [flash],
   );
 
-  // A group chest move (squad groupChest / freeChest / adChest / dealChest):
-  // the smash comes up at once and plays the server's answer when it lands.
+  // A group chest move (squad groupChest / freeChest / adChest / dealChest)
+  // of `first` ({ group, size }, the same pick the server makes): the smash
+  // comes up at once on that chest and plays the server's answer when it lands.
   const smashKey = useRef(0);
   const openGroup = useCallback(
-    async (move, broke) => {
+    async (move, broke, first) => {
       if (busy.current) return;
       setSheet(null);
-      setSmash({ chest: null, queue: [] });
+      setSmash({ chest: null, first, queue: [] });
       const r = await run(move, broke);
       if (!r) return setSmash(null);
       smashKey.current += 1;
-      setSmash({ chest: { key: smashKey.current, result: r }, queue: [] });
+      setSmash((s) => ({ ...s, chest: { key: smashKey.current, result: r }, queue: [] }));
     },
     [run],
   );
@@ -396,7 +421,7 @@ function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRew
     setSmash((s) => {
       if (!s || !s.queue.length) return null;
       smashKey.current += 1;
-      return { chest: { key: smashKey.current, result: s.queue[0] }, queue: s.queue.slice(1) };
+      return { ...s, chest: { key: smashKey.current, result: s.queue[0] }, queue: s.queue.slice(1) };
     });
     const r = smash?.chest?.result;
     if (r && r.id) {
@@ -411,27 +436,29 @@ function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRew
       const cur = T.price.cur;
       if (w[cur] < T.price.n) return setSheet({ type: 'broke', cur, need: T.price.n - w[cur] });
       sfx.play('coin');
-      openGroup(() => squad.groupChest(gk, size), () => T.price.n - w[cur]);
+      openGroup(() => squad.groupChest(gk, size), () => T.price.n - w[cur], { group: gk, size });
     },
     [openGroup, w],
   );
   const freeGroup = useCallback(() => {
     if ((profile?.freeAt || 0) > Date.now() && !profile?.freeBonus) return flash(ERRORS.not_yet);
-    openGroup(() => squad.freeChest());
-  }, [profile, openGroup, flash]);
+    // the welcome chest (a new player's first) is of Mittens' group
+    const welcome = !owns(profile || {}, '1') && !profile?.chestOpens;
+    openGroup(() => squad.freeChest(), undefined, { group: welcome ? BY_ID['1'].set : lineup(day, hidden)[0], size: 'common' });
+  }, [profile, day, hidden, openGroup, flash]);
   const adGroup = useCallback(() => {
     const used = profile?.adChests?.day === day ? profile.adChests.n || 0 : 0;
     if (used >= AD_CHESTS) return flash('No more ad chests today. Back tomorrow!');
-    const claim = () => openGroup(() => squad.adChest());
+    const claim = () => openGroup(() => squad.adChest(), undefined, { group: lineup(day, hidden)[1], size: 'rare' });
     if (profile?.adsFree) return claim();
     if (!ad.ready) return flash('No video right now. Try again in a moment');
     ad.show(claim);
-  }, [profile, day, ad, openGroup, flash]);
+  }, [profile, day, hidden, ad, openGroup, flash]);
   const dealGroup = useCallback(() => {
     if (profile?.dealDay === day) return flash(ERRORS.deal_used);
     if (w.gems < GDEAL.gems) return setSheet({ type: 'broke', cur: 'gems', need: GDEAL.gems - w.gems });
-    openGroup(() => squad.dealChest(), () => GDEAL.gems - w.gems);
-  }, [profile, day, w, openGroup, flash]);
+    openGroup(() => squad.dealChest(), () => GDEAL.gems - w.gems, { group: lineup(day, hidden)[0], size: GDEAL.size });
+  }, [profile, day, hidden, w, openGroup, flash]);
   const openGroupSheet = useCallback((gk, size) => setSheet({ type: 'gchest', gk, size }), []);
   // chests a purchase or a reward brought (rolled by the server): the smash
   const smashAll = useCallback((list) => {
@@ -545,7 +572,7 @@ function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRew
       {/* asleep under an open chest: the server's answers (the purchase, the
           roll) change the profile mid-smash, and re-rendering the three tabs
           for it held up the taps */}
-      <Freeze freeze={!!smash && !!smash.chest}>
+      <Freeze freeze={!!smash && !!smash.chest && !!smash.up}>
         <View style={styles.header}>
           {onBack ? (
             <TutTarget name="storeBack">
@@ -561,10 +588,12 @@ function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRew
           </View>
         </View>
         <Seg tab={tab} onPick={slideTo} onTab={goTab} badges={badges} />
+        {/* only the page shown has placeholders: the others are built
+            unseen, a second apart (or at once when their tab is tapped) */}
         <View style={styles.pager}>
           <Animated.View style={[styles.pageTrack, { width: pageW * 3, transform: [{ translateX: pageShift }] }]}>
             <ScrollView ref={scrolls.chests} style={{ width: pageW }} contentContainerStyle={pageStyle} showsVerticalScrollIndicator={false}>
-              <Reveal ready={isOn('chests')} placeholder={<ShopBones />}>
+              <Reveal ready={isOn('chests')} placeholder={tab === 'chests' ? <ShopBones /> : null}>
                 <ChestsTabV6
                   profile={profile}
                   day={day}
@@ -581,12 +610,12 @@ function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRew
               </Reveal>
             </ScrollView>
             <ScrollView ref={scrolls.deals} style={{ width: pageW }} contentContainerStyle={pageStyle} showsVerticalScrollIndicator={false}>
-              <Reveal ready={isOn('deals')} placeholder={<ShopBones />}>
+              <Reveal ready={isOn('deals')} placeholder={tab === 'deals' ? <ShopBones /> : null}>
                 <DealsTab config={offers} profile={profile} day={day} hidden={hidden} priceOf={priceOf} onBuyOffer={buyOffer} onClaimStreak={claimStreak} onClaimPass={claimPass} onNoAds={buyNoAds} onSeen={seeOffer} toast={flash} />
               </Reveal>
             </ScrollView>
             <ScrollView ref={scrolls.gems} style={{ width: pageW }} contentContainerStyle={pageStyle} showsVerticalScrollIndicator={false}>
-              <Reveal ready={isOn('gems')} placeholder={<ShopBones />}>
+              <Reveal ready={isOn('gems')} placeholder={tab === 'gems' ? <ShopBones /> : null}>
                 <GemsTabV6 config={offers} profile={profile} priceOf={priceOf} onPack={buyPack} onSwap={swap} />
               </Reveal>
             </ScrollView>
@@ -606,7 +635,7 @@ function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRew
         />
       </Freeze>
       {toast && <Toast key={toast.key} text={toast.text} bottom={60 + (onBack ? insets.bottom : 0)} onDone={() => setToast(null)} />}
-      {smash && <ChestSmash chest={smash.chest} catalog={catalog} onCollect={collectSmash} />}
+      {smash && <ChestSmash chest={smash.chest} first={smash.first} catalog={catalog} onCollect={collectSmash} onShown={smashShown} />}
     </CandyBackground>
   );
 }

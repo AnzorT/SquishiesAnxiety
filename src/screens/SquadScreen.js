@@ -13,6 +13,7 @@ import { isNewId, ownedIdList, selectedId } from '../squad/lobby';
 import { COIN } from '../squad/currencyArt';
 import { F, Ringed } from '../squad/ui';
 import { fmtNum } from '../format';
+import { useProgressive } from '../components/Skeleton';
 
 // The Squad screen (the 2026-10-19 design's "Squad Select v2"), sliding up
 // over the lobby: the squishy you're looking at, live (drag to spin), with
@@ -37,6 +38,11 @@ const GROUP_NAME = Object.fromEntries(GROUPS.map((g) => [g.key, g.name]));
 const rank = (c) => (c.rar === 4 ? 2.5 : c.rar);
 const ORDER = ROSTER.slice().sort((a, b) => rank(a) - rank(b) || Number(a.id) - Number(b.id));
 const GREEN = ['#d8ffc2', '#6fe07a', '#26a94e'];
+// a tile's floor shadow: the soft purple ellipse the tiles had as an SVG
+// radial gradient, as one shared image (assets/squad/tile-floor.png). SVGs
+// are drawn on the UI thread one by one: ~80 floors and ~70 locks showing
+// at once were a 0.3 s hitch every time the Squad slid up (2026-10-28).
+const FLOOR = require('../../assets/squad/tile-floor.png');
 
 // --- the grid ---------------------------------------------------------------------
 
@@ -52,17 +58,7 @@ const Cell = memo(function Cell({ c, uri, mine, have, need, sel, fresh, on, onVi
           <LinearGradient colors={['#fff6fd', '#ffe3f6']} style={StyleSheet.absoluteFill} />
         </View>
       ) : null}
-      <View style={styles.ground}>
-        <Svg width="100%" height="100%">
-          <Defs>
-            <RadialGradient id="gOff" cx="50%" cy="50%" r="50%">
-              <Stop offset="0" stopColor="#45107a" stopOpacity={0.22} />
-              <Stop offset="1" stopColor="#45107a" stopOpacity={0} />
-            </RadialGradient>
-          </Defs>
-          <Ellipse cx="50%" cy="50%" rx="50%" ry="50%" fill="url(#gOff)" />
-        </Svg>
-      </View>
+      <Image source={FLOOR} style={styles.ground} resizeMode="stretch" fadeDuration={0} />
       {uri ? <Image source={{ uri }} style={[styles.thumb, !mine && styles.thumbLocked]} resizeMode="contain" fadeDuration={150} /> : null}
       {!mine && <CopyBar have={have} need={need} style={styles.cellCopies} />}
       {sel && (
@@ -89,7 +85,7 @@ const Cell = memo(function Cell({ c, uri, mine, have, need, sel, fresh, on, onVi
         </View>
         {!mine && (
           <View style={styles.lock}>
-            <LockGlyph size={10} color="#8a6ab8" />
+            <LockMini />
           </View>
         )}
       </View>
@@ -119,6 +115,16 @@ function LockGlyph({ size, color }) {
       <Rect x={1.5} y={6} width={10} height={7} rx={2} fill={color} />
       <Path d="M3.8 6 V4.2 A2.7 2.7 0 0 1 9.2 4.2 V6" stroke={color} strokeWidth={1.8} fill="none" />
     </Svg>
+  );
+}
+
+// The tile's small lock, LockGlyph's shape at 10 px in plain views.
+function LockMini() {
+  return (
+    <View style={styles.lockMini}>
+      <View style={styles.lockShackle} />
+      <View style={styles.lockBody} />
+    </View>
   );
 }
 
@@ -208,7 +214,8 @@ function MainButton({ m, onPress }) {
 // `hidden`: the groups and creatures not out yet (config/roster), left out
 // of the grid unless owned. `setRewards`: a set's reward creature comes from
 // finishing the set (else from its group's chests).
-function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRewards = SET_REWARDS, onClose, onSelect, onSeen }) {
+// `onBuilt()`: once every tile is built (the lobby lets it sleep then)
+function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRewards = SET_REWARDS, onClose, onSelect, onSeen, onBuilt }) {
   const insets = useSafeAreaInsets();
   const sel = selectedId(profile);
   const [view, setView] = useState(sel);
@@ -216,7 +223,22 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
   const w = wallet(profile);
   const catalog = useMemo(() => Object.fromEntries((creatures || []).map((c) => [c.id, c])), [creatures]);
   const ownedN = ownedIdList(profile).filter((id) => BY_ID[id]).length;
-  const shown = ORDER.filter((x) => isOut(x, hidden) || owns(profile || {}, x.id));
+  const shown = useMemo(() => ORDER.filter((x) => isOut(x, hidden) || owns(profile || {}, x.id)), [profile, hidden]);
+  // what each tile shows, worked out once per profile (not on every render)
+  const tileInfo = useMemo(
+    () =>
+      shown.map((x) => {
+        const p = copyProgress(profile, x.id);
+        return { x, mine: owns(profile || {}, x.id), have: p.have, need: p.need, fresh: isNewId(profile, x.id) };
+      }),
+    [shown, profile],
+  );
+  // the grid's tiles a few a frame (first build only), never all at once
+  const tiles = useProgressive(shown.length, 12, 8);
+  const built = tiles >= shown.length;
+  useEffect(() => {
+    if (built && onBuilt) onBuilt();
+  }, [built, onBuilt]);
   // 4 columns, 9px apart, 12px from the edges; each 0.84 as wide as tall
   const { width: winW } = useWindowDimensions();
   // The hero's stage gives way on short pages (the banner ad takes room the
@@ -271,7 +293,25 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
     ],
   };
 
+  // The live hero is made each time the screen is up (once its slide is
+  // over) and let go when it closes. The app's WebViews share Chromium's tile
+  // memory: one made off screen and asleep never drew, and one kept while
+  // closed left the lobby's own creature blank when it came back ("tile
+  // memory limits exceeded", 2026-10-28). The creature's still shows until
+  // the rig has drawn.
   const rig = useRef(null);
+  const [rigLive, setRigLive] = useState(false);
+  const [rigDrawn, setRigDrawn] = useState(false);
+  useEffect(() => {
+    if (!active) {
+      setRigLive(false);
+      setRigDrawn(false);
+      return undefined;
+    }
+    const t = setTimeout(() => setRigLive(true), 450);
+    return () => clearTimeout(t);
+  }, [active]);
+  const onRigDrawn = useCallback(() => setRigDrawn(true), []);
   const c = BY_ID[view];
   const own = owns(profile || {}, view);
   const isSel = own && view === sel;
@@ -350,7 +390,8 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
         <View style={[styles.heroStage, { height: stageH }]}>
           <HeroBack k={stageH / 236} />
           <Animated.View style={[{ width: heroSize, height: heroSize }, popStyle]}>
-            <RigCreature ref={rig} creatureKey={c.key} paused={!active} rigShadow={false} style={{ width: heroSize, height: heroSize }} />
+            {!rigDrawn && catalog[view]?.thumb?.url ? <Image source={{ uri: catalog[view].thumb.url }} style={StyleSheet.absoluteFill} resizeMode="contain" fadeDuration={0} /> : null}
+            {rigLive ? <RigCreature ref={rig} creatureKey={c.key} paused={!active} rigShadow={false} onMounted={onRigDrawn} style={{ width: heroSize, height: heroSize }} /> : null}
           </Animated.View>
           <View style={styles.spinHint} pointerEvents="none">
             <Svg width={16} height={10} viewBox="0 0 16 10">
@@ -367,17 +408,21 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
       <View style={styles.divider} />
       <View style={styles.gridBox}>
         <GridBack />
-        <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
-          {shown.map((x) => (
+        {/* tiles scrolled out of sight are taken out of the drawing: with all
+            ~80 in it, every frame of the live hero re-prepared every tile's
+            picture (66 ms a frame, the screen at ~25 fps on the Galaxy A15,
+            2026-10-28) */}
+        <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false} removeClippedSubviews>
+          {tileInfo.slice(0, tiles).map(({ x, mine, have, need, fresh }) => (
             <Cell
               key={x.id}
               c={x}
               uri={catalog[x.id]?.thumb?.url || null}
-              mine={owns(profile || {}, x.id)}
-              have={copyProgress(profile, x.id).have}
-              need={copyProgress(profile, x.id).need}
+              mine={mine}
+              have={have}
+              need={need}
               sel={x.id === sel}
-              fresh={isNewId(profile, x.id)}
+              fresh={fresh}
               on={x.id === view}
               onView={viewNow}
               size={cellSize}
@@ -452,6 +497,10 @@ const styles = StyleSheet.create({
   rarChip: { flexShrink: 1, minWidth: 0, borderRadius: 999, paddingHorizontal: 6, paddingVertical: 1, borderWidth: 1.5, borderColor: '#ffffff', borderBottomColor: 'rgba(69,16,122,0.18)' },
   rarText: { fontFamily: F.black, fontSize: 8, letterSpacing: 0.5 },
   lock: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#ffffff', borderWidth: 1.5, borderColor: '#c9b0ec', borderBottomWidth: 3, alignItems: 'center', justifyContent: 'center' },
+  // LockGlyph (viewBox 13×14) at 10 px: the shackle's arc, the body
+  lockMini: { width: 10, height: 11, alignItems: 'center' },
+  lockShackle: { width: 5.5, height: 4.3, marginTop: 0.5, borderWidth: 1.4, borderBottomWidth: 0, borderColor: '#8a6ab8', borderTopLeftRadius: 2.75, borderTopRightRadius: 2.75 },
+  lockBody: { width: 7.7, height: 5.4, borderRadius: 1.5, backgroundColor: '#8a6ab8' },
   toast: { position: 'absolute', alignSelf: 'center', bottom: 26, maxWidth: '86%', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, backgroundColor: '#45107a', borderWidth: 2.5, borderColor: '#ffffff', zIndex: 9 },
   toastText: { fontFamily: F.heavy, fontSize: 13, lineHeight: 17, color: '#ffffff', textAlign: 'center' },
 });

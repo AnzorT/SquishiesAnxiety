@@ -1,5 +1,6 @@
 import React, { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { PHASE, SWING, useKeyLoop, usePingPong } from '../components/idleLoop';
 
 // Squishdoku's little effects: particle bursts (dust, sparks, poofs,
 // confetti) on one shared layer, pop-ins, shakes, pulses and counters.
@@ -138,40 +139,16 @@ export function SlideIn({ children, delay = 0, dy = 40, trigger, style }) {
 }
 
 // A gentle forever-pulse (scale), without Animated.delay (a looping delay
-// stalls InteractionManager — see PERFORMANCE.md).
+// stalls InteractionManager — see PERFORMANCE.md), as one native loop
+// (src/components/idleLoop.js).
 export function Pulse({ children, to = 1.06, ms = 1400, active = true, style }) {
-  const t = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (!active) {
-      t.setValue(0);
-      return undefined;
-    }
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(t, { toValue: 1, duration: ms / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(t, { toValue: 0, duration: ms / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [t, ms, active]);
-  const scale = t.interpolate({ inputRange: [0, 1], outputRange: [1, to] });
+  const scale = usePingPong(ms, { from: 1, to, on: active });
   return <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>;
 }
 
-// A forever side-to-side rock (rotate).
+// A forever side-to-side rock (rotate), one native loop.
 export function Rock({ children, deg = 4, ms = 2400, style }) {
-  const t = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(t, { toValue: 1, duration: ms / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(t, { toValue: -1, duration: ms / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [t, ms]);
+  const t = useKeyLoop(ms, { at: PHASE, values: SWING });
   const rotate = t.interpolate({ inputRange: [-1, 1], outputRange: [`${-deg}deg`, `${deg}deg`] });
   return <Animated.View style={[style, { transform: [{ rotate }] }]}>{children}</Animated.View>;
 }

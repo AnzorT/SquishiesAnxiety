@@ -11,12 +11,13 @@ import { Reveal } from './Skeleton';
 // answer to the tap). Without it, it's simply there and covers Home at once.
 //
 // `useScreenReady()` tells the screen inside when to build its heavy
-// content: two frames in, once the slide is already running (it runs on the
-// native side, so the build doesn't hold it up). Until then it shows its
-// frame and placeholders (src/components/Skeleton.js). It used to wait for
-// the end of the slide, which put the whole slide in front of every build:
-// the content showed up 0.3-0.6 s later than it had to (measured
-// 2026-10-10). Outside a layer it's always true.
+// content: once the slide is over (two frames in without a slide). Until
+// then it shows its frame and placeholders (src/components/Skeleton.js),
+// which are light, so the slide starts on the tap. Building during the slide
+// (2026-10-10 to 10-28) made the UI thread create the content's views in the
+// middle of it: on the Galaxy A15 a 260 ms slide took 0.6-0.85 s and
+// stuttered all the way (debug build, 2026-10-28). Outside a layer it's
+// always true.
 const SLIDE = { duration: 260, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true };
 
 const ScreenReady = createContext(true);
@@ -25,20 +26,23 @@ export const useScreenReady = () => useContext(ScreenReady);
 // For a screen that doesn't ask itself: `placeholder` until the layer is
 // ready, then a crossfade to the screen.
 export function WhenScreenReady({ placeholder, children }) {
+  const ready = useScreenReady();
   return (
-    <Reveal fill ready={useScreenReady()} placeholder={placeholder}>
-      {children}
+    <Reveal fill ready={ready} placeholder={placeholder}>
+      {ready ? children : null}
     </Reveal>
   );
 }
 
-// `ref.exit(then)`: the way back. Home is uncovered first (`onUncover`: App
-// unfreezes it in the same render, so it's drawn under the layer in the
-// same frame the layer starts to move), the layer slides out to the right
-// (native, fast at first, like the way in), and `then` runs when the slide
-// is over (App switches the screen, and the layer unmounts out of sight).
-// The slide used to start slow (an ease-in over 380 ms, so Home had time to
-// draw), which read as the back button not reacting.
+// `ref.exit(then)`: the way back. The layer starts sliding out to the right
+// (native, fast at first, like the way in) on the tap, and Home is uncovered
+// (`onUncover`: App unfreezes it) in the next JS task, so the slide is
+// already running while Home renders. Uncovering it first put Home's render
+// (and, for a game screen, the game's own re-render) in front of the slide:
+// on Android a native animation only starts once the render it was started
+// in has been committed (0.3 s in a debug build, 2026-10-28). `then` runs
+// when the slide is over (App switches the screen, and the layer unmounts
+// out of sight).
 const EXIT = { duration: 280, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true };
 
 function ScreenLayer({ slide, onCovered, onUncover, children }, ref) {
@@ -46,26 +50,26 @@ function ScreenLayer({ slide, onCovered, onUncover, children }, ref) {
   const x = useRef(new Animated.Value(slide ? 1 : 0)).current;
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    let second = null;
-    const first = requestAnimationFrame(() => {
-      second = requestAnimationFrame(() => setReady(true));
-    });
-    const stopReady = () => {
-      cancelAnimationFrame(first);
-      if (second != null) cancelAnimationFrame(second);
-    };
     if (!slide) {
       onCovered();
-      return stopReady;
+      let second = null;
+      const first = requestAnimationFrame(() => {
+        second = requestAnimationFrame(() => setReady(true));
+      });
+      return () => {
+        cancelAnimationFrame(first);
+        if (second != null) cancelAnimationFrame(second);
+      };
     }
     const anim = Animated.timing(x, { toValue: 0, ...SLIDE });
     // only when it really got there: a layer closed mid-slide must not
     // freeze the Home it was leaving for
-    anim.start(({ finished }) => finished && onCovered());
-    return () => {
-      stopReady();
-      anim.stop();
-    };
+    anim.start(({ finished }) => {
+      if (!finished) return;
+      onCovered();
+      setReady(true);
+    });
+    return () => anim.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const exiting = useRef(false);
@@ -75,8 +79,8 @@ function ScreenLayer({ slide, onCovered, onUncover, children }, ref) {
       exit(then) {
         if (exiting.current) return;
         exiting.current = true;
-        if (onUncover) onUncover();
         Animated.timing(x, { toValue: 1, ...EXIT }).start(() => then());
+        if (onUncover) setTimeout(onUncover, 0);
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps

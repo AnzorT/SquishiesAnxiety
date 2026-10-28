@@ -17,6 +17,7 @@ import { DecorLayer } from './Decor';
 import { Night } from './Night';
 import { YardGames, useYardMotion } from './Yard';
 import { EF, sample } from '../plush/ease';
+import { useEveryOtherFrame, useProgressive } from '../components/Skeleton';
 
 // One room of the Crib, the design's 852×393 scene drawn at `scale`: the
 // room (with the player's themes), the dance room's floor and lights or the
@@ -360,6 +361,16 @@ function Scene({ room, phase, scale, pets, onPetPress, host, pods, members = 0, 
   const decor = useMemo(() => placedDecor(home, room), [home, homeRev, room]); // eslint-disable-line react-hooks/exhaustive-deps
   const lamps = useMemo(() => lampsOf(home, room), [home, homeRev, room]); // eslint-disable-line react-hooks/exhaustive-deps
   const sorted = useMemo(() => [...pets].sort((a, b) => a.y - b.y), [pets]);
+  // The room itself in three parts as the scene comes in (and on a room
+  // switch: CribScreen keys it by the room): the backdrop and the night's
+  // tint, then the furniture, then the front and the creatures. Its SVGs
+  // are drawn in software on the UI thread the first time, and all of them
+  // at once made one ~0.18 s frame as the Crib opened (Galaxy A15,
+  // 2026-10-28).
+  const stage = useEveryOtherFrame(3);
+  // the creatures a few a frame from then (each is a picture, its face and
+  // care sprites, SVGs, and its bubble), not all in one frame
+  const shownPets = useProgressive(sorted.length, 3, 3, stage >= 3);
 
   // The yard's and the dance room's motion runs on one UI-thread clock,
   // ticking only while one of them is on screen. The swing and the seesaw
@@ -425,20 +436,22 @@ function Scene({ room, phase, scale, pets, onPetPress, host, pods, members = 0, 
         </>
       ) : null}
       {room === 'yard' ? <YardGames games={look.flags.games} spots={yardSpots || []} occ={yardOcc || []} yard={yard} scale={scale} /> : null}
-      {look.back.map((art, i) => (
-        <Piece key={`b${i}`} art={art} scale={scale} phase={phase} />
-      ))}
-      <DecorLayer decor={decor} home={home} homeRev={homeRev} room={room} scale={scale} edit={edit} phase={phase} onToggleLight={onToggleLight} onMoveDecor={onMoveDecor} onMovePad={onMovePad} onMoveUnit={onMoveUnit} toLocal={toLocal} />
-      {pods ? <Pods pods={pods} members={members} head={podHead} scale={scale} onPress={onPodPress} /> : null}
-      {edit ? null : sorted.map((p, i) => <Pet key={p.id} pet={p} index={i} scale={scale} host={host} yard={yard} onPress={() => onPetPress(p.id)} />)}
+      {stage >= 2 &&
+        look.back.map((art, i) => (
+          <Piece key={`b${i}`} art={art} scale={scale} phase={phase} />
+        ))}
+      {stage >= 2 && <DecorLayer decor={decor} home={home} homeRev={homeRev} room={room} scale={scale} edit={edit} phase={phase} onToggleLight={onToggleLight} onMoveDecor={onMoveDecor} onMovePad={onMovePad} onMoveUnit={onMoveUnit} toLocal={toLocal} />}
+      {pods && stage >= 2 ? <Pods pods={pods} members={members} head={podHead} scale={scale} onPress={onPodPress} /> : null}
+      {edit || stage < 3 ? null : sorted.slice(0, shownPets).map((p, i) => <Pet key={p.id} pet={p} index={i} scale={scale} host={host} yard={yard} onPress={() => onPetPress(p.id)} />)}
       {edit ? null : ghosts.map((g) => <Ghost key={g.key} ghost={g} scale={scale} />)}
       {/* above every creature (they're zIndex 100 + their feet): the
           front furniture, the kitchen's table, the night */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { zIndex: 1000 }]}>
-        {look.front.map((art, i) => (
-          <Piece key={`f${i}`} art={art} scale={scale} phase={phase} />
-        ))}
-        <RoomFront room={room} scale={scale} />
+        {stage >= 3 &&
+          look.front.map((art, i) => (
+            <Piece key={`f${i}`} art={art} scale={scale} phase={phase} />
+          ))}
+        {stage >= 3 && <RoomFront room={room} scale={scale} />}
         <Night phase={phase} lights={lamps} dark={room !== 'hatch'} scale={scale} />
       </View>
     </View>

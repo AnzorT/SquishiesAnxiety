@@ -1,10 +1,13 @@
-import React, { memo, useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, View } from 'react-native';
+import React, { memo } from 'react';
+import { Animated, StyleSheet, View } from 'react-native';
+import { usePingPong } from '../idleLoop';
 
 // Twinkling ✦ glyphs — the design's `twinkle` keyframe (opacity 0.2→1,
 // scale 0.6→1.1, rotate 0→20deg and back). Positions/sizes/timings are the
 // design's own deterministic SPARKLES table, so every screen sparkles the
-// same way. All native-driver loops, so they cost the JS thread nothing.
+// same way. Each one native loop (idleLoop.js), so they cost the JS thread
+// nothing: as up-and-down sequences they woke it about 20 times a second
+// on a sparkly screen.
 
 const COLORS = ['#ffffff', '#fff3a0', '#ffd1f5', '#ffffff'];
 export const SPARKLES = Array.from({ length: 14 }, (_, i) => ({
@@ -18,21 +21,7 @@ export const SPARKLES = Array.from({ length: 14 }, (_, i) => ({
 }));
 
 export function Twinkle({ size = 14, color = '#ffffff', duration = 2, delay = 0, style }) {
-  const t = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const half = (duration * 1000) / 2;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(t, { toValue: 1, duration: half, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(t, { toValue: 0, duration: half, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      ])
-    );
-    const start = setTimeout(() => loop.start(), delay * 1000);
-    return () => {
-      clearTimeout(start);
-      loop.stop();
-    };
-  }, [t, duration, delay]);
+  const t = usePingPong(duration * 1000, { delay: delay * 1000 });
   const opacity = t.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] });
   const scale = t.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1.1] });
   const rotate = t.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '20deg'] });

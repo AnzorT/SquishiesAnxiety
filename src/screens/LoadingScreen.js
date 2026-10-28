@@ -20,13 +20,17 @@ import sfx from '../audio/sfx';
 // model could still be loading once SquishScreen mounts and pop in there.
 // When there's nothing to wait for (the model is already loaded, or the
 // creature has none) it skips the dots: just "I AM READY!" and a quick fade,
-// about 0.7 s instead of 3.
+// about 0.6 s. The Lobby preloads its creature's model while it's on screen,
+// so that's the usual case. The beats are as short as reads well: the dots
+// for as long as the model takes (0.6 s at least, so they don't flash), then
+// 0.9 s; they used to be 1.5 s at least, then 1.5 s ("no long loading
+// screens", 2026-10-28).
 
-const PREP_MS = 1500;
-const READY_MS = 1000;
-const FADE_MS = 500;
-const QUICK_READY_MS = 500;
-const QUICK_FADE_MS = 200;
+const PREP_MS = 600;
+const READY_MS = 600;
+const FADE_MS = 300;
+const QUICK_READY_MS = 450;
+const QUICK_FADE_MS = 150;
 // Never block navigation forever on a slow/failed fetch — proceed anyway
 // after this, same as today's fixed-timer behavior in the worst case.
 const MAX_WAIT_MS = 8000;

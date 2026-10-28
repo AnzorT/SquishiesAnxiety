@@ -10,6 +10,7 @@ import { COIN, GEM } from '../squad/currencyArt';
 import { Bob, F, TickingText, hms, untilMidnight } from '../squad/ui';
 import TutTarget from '../tutorial/Target';
 import { fmtNum } from '../format';
+import { useProgressive } from '../components/Skeleton';
 
 // The Shop's Chests tab (the 2026-10-19 design's "Shop Screen v5"): the Free
 // chest (every 4 h) and the Rare chest (an ad, 3 a day), the daily deal (a
@@ -218,31 +219,51 @@ const Deal = memo(function Deal({ gk, done, onBuy }) {
 
 // --- the carousel ------------------------------------------------------------------------
 
-const Card = memo(function Card({ x, size, info, width, index, onSize, onOpen, onBuy }) {
+// `near`: the card in view or next to it. Only those are built (their
+// pictures are ~2.3 MB of texture each, and nine whole cards at once were a
+// 0.25 s frame as the Shop was built); the others are an empty card of the
+// same width until a swipe brings them near (2026-10-28).
+const Card = memo(function Card({ x, size, info, width, index, near = true, onSize, onOpen, onBuy }) {
   const C = info;
   const tc = TC[C.ti];
   const gemsCur = C.T.price.cur === 'gems';
+  if (!near) {
+    return (
+      <View style={[styles.cardRing, { width }]}>
+        <View style={[styles.card, styles.cardShell, { backgroundColor: tc.soft }]} />
+      </View>
+    );
+  }
+  const top = (
+    <>
+      <View style={[styles.cardFloor, { backgroundColor: `${tc.c}55` }]} />
+      <Bob ms={2800} delay={(index * 0.6) % 2.8} style={styles.cardArt}>
+        {near ? <Image source={GCHEST[x.k][`${size}-grow`]} style={styles.fill} resizeMode="contain" fadeDuration={0} /> : null}
+      </Bob>
+      <View style={styles.cardLabel}>
+        <Text style={styles.cardLabelText}>{GROUP_LABEL[x.k]}</Text>
+      </View>
+      {!!x.tag && (
+        <LinearGradient colors={x.tagBg} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cardTag}>
+          <Text style={styles.cardTagText}>{x.tag}</Text>
+        </LinearGradient>
+      )}
+      <View style={styles.cardHave}>
+        <Text style={styles.cardHaveText}>{`${C.have} / ${C.pool.length} collected`}</Text>
+      </View>
+    </>
+  );
   return (
     <View style={[styles.cardRing, { width }]}>
       <View style={styles.card}>
         <Pressable silent onPress={() => onOpen(x.k, size)}>
-          <ImageBackground source={GCHEST[x.k].bg} style={styles.cardTop} imageStyle={styles.cardTopImg} resizeMode="cover">
-            <View style={[styles.cardFloor, { backgroundColor: `${tc.c}55` }]} />
-            <Bob ms={2800} delay={(index * 0.6) % 2.8} style={styles.cardArt}>
-              <Image source={GCHEST[x.k][`${size}-grow`]} style={styles.fill} resizeMode="contain" fadeDuration={0} />
-            </Bob>
-            <View style={styles.cardLabel}>
-              <Text style={styles.cardLabelText}>{GROUP_LABEL[x.k]}</Text>
-            </View>
-            {!!x.tag && (
-              <LinearGradient colors={x.tagBg} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cardTag}>
-                <Text style={styles.cardTagText}>{x.tag}</Text>
-              </LinearGradient>
-            )}
-            <View style={styles.cardHave}>
-              <Text style={styles.cardHaveText}>{`${C.have} / ${C.pool.length} collected`}</Text>
-            </View>
-          </ImageBackground>
+          {near ? (
+            <ImageBackground source={GCHEST[x.k].bg} style={styles.cardTop} imageStyle={styles.cardTopImg} resizeMode="cover">
+              {top}
+            </ImageBackground>
+          ) : (
+            <View style={[styles.cardTop, styles.cardTopImg, { backgroundColor: tc.soft }]}>{top}</View>
+          )}
         </Pressable>
         <View style={styles.cardBody}>
           <View style={{ gap: 2 }}>
@@ -307,6 +328,16 @@ function Carousel({ list, profile, artIds, setRewards, onOpen, onBuy }) {
   const step = cardW + 12;
   const [sel, setSel] = useState({});
   const [at, setAt] = useState(0);
+  // the card being swiped to, as soon as the swipe passes half way (for
+  // `near`; `at` only moves when the carousel has settled)
+  const [seen, setSeen] = useState(0);
+  const onScroll = useCallback(
+    (e) => {
+      const i = Math.round(e.nativeEvent.contentOffset.x / step);
+      setSeen((s) => (s === i ? s : i));
+    },
+    [step],
+  );
   const car = useRef(null);
   const chips = useRef(null);
   const chipX = useRef([]);
@@ -363,12 +394,14 @@ function Carousel({ list, profile, artIds, setRewards, onOpen, onBuy }) {
         decelerationRate="fast"
         disableIntervalMomentum
         onMomentumScrollEnd={onEnd}
+        onScroll={onScroll}
+        scrollEventThrottle={100}
         style={styles.carScroll}
         contentContainerStyle={styles.car}
       >
         {list.map((x, i) => {
           const size = sel[x.k] || 'epic';
-          return <Card key={x.k} x={x} index={i} size={size} width={cardW} info={chestInfo(x.k, size, profile, artIds, setRewards)} onSize={onSize} onOpen={onOpen} onBuy={onBuy} />;
+          return <Card key={x.k} x={x} index={i} size={size} width={cardW} near={Math.abs(i - seen) <= 1} info={chestInfo(x.k, size, profile, artIds, setRewards)} onSize={onSize} onOpen={onOpen} onBuy={onBuy} />;
         })}
       </ScrollView>
     </>
@@ -406,33 +439,42 @@ function Lucky({ epic }) {
 
 // --- the tab -----------------------------------------------------------------------------
 
+// Built a part a frame (the tiles and the deal, then the carousel, then the
+// rest): built in one go, the tab's views and chest pictures made one ~0.25 s
+// frame on the Galaxy A15 when the Shop was built again after the Crib
+// (2026-10-28).
 function ChestsTab({ profile, day, artIds, hidden, setRewards, onFree, onAd, onDeal, onOpenSheet, onBuy, onOdds }) {
   const hot = useMemo(() => lineup(day, hidden), [day, hidden]);
   const welcome = !!profile && !owns(profile, '1') && !profile.chestOpens;
   const list = useMemo(() => allChests(day, hidden), [day, hidden]);
   const adsLeft = Math.max(0, AD_CHESTS - (profile?.adChests?.day === day ? profile.adChests.n || 0 : 0));
+  const parts = useProgressive(3, 1, 1);
   return (
     <View style={styles.tab}>
       <Tiles hot={hot} freeGk={welcome ? BY_ID['1'].set : hot[0]} freeAt={profile?.freeAt || 0} freeBonus={profile?.freeBonus || 0} adsLeft={adsLeft} adsFree={!!profile?.adsFree} onFree={onFree} onAd={onAd} />
       <Deal gk={hot[0]} done={profile?.dealDay === day} onBuy={onDeal} />
-      <View style={{ gap: 8 }}>
-        <View style={styles.allHead}>
-          <View style={{ gap: 3 }}>
-            <ShadowText style={styles.allTitle} shadows={OUT('#45107a', 2)}>
-              All chests
-            </ShadowText>
-            <Text style={styles.allSub}>{`${list.length} groups · every size · swipe`}</Text>
-          </View>
-          <View style={styles.allTimer}>
-            <TickingText style={styles.allTimerText} text={(now) => `Hot picks change in ${hm(untilMidnight(now))}`} />
+      {parts >= 2 && (
+        <View style={{ gap: 8 }}>
+          <View style={styles.allHead}>
+            <View style={{ gap: 3 }}>
+              <ShadowText style={styles.allTitle} shadows={OUT('#45107a', 2)}>
+                All chests
+              </ShadowText>
+              <Text style={styles.allSub}>{`${list.length} groups · every size · swipe`}</Text>
+            </View>
+            <View style={styles.allTimer}>
+              <TickingText style={styles.allTimerText} text={(now) => `Hot picks change in ${hm(untilMidnight(now))}`} />
+            </View>
           </View>
         </View>
-      </View>
-      <Carousel list={list} profile={profile} artIds={artIds} setRewards={setRewards} onOpen={onOpenSheet} onBuy={onBuy} />
-      <Lucky epic={profile?.epic || 0} />
-      <Pressable onPress={onOdds} style={styles.oddsLink}>
-        <Text style={styles.oddsLinkText}>See all drop odds</Text>
-      </Pressable>
+      )}
+      {parts >= 2 && <Carousel list={list} profile={profile} artIds={artIds} setRewards={setRewards} onOpen={onOpenSheet} onBuy={onBuy} />}
+      {parts >= 3 && <Lucky epic={profile?.epic || 0} />}
+      {parts >= 3 && (
+        <Pressable onPress={onOdds} style={styles.oddsLink}>
+          <Text style={styles.oddsLinkText}>See all drop odds</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -569,6 +611,9 @@ const styles = StyleSheet.create({
   car: { gap: 12, paddingHorizontal: 20, paddingTop: 4, paddingBottom: 16 },
   cardRing: { borderRadius: 30, backgroundColor: '#45189a', padding: 2, paddingBottom: 7 },
   card: { borderRadius: 28, backgroundColor: '#ffffff', borderWidth: 3, borderColor: '#ffffff', overflow: 'hidden' },
+  // a card not built yet (away from view): the carousel's height comes from
+  // the built ones
+  cardShell: { height: 232 },
   cardTop: { height: 232, overflow: 'hidden' },
   cardTopImg: { borderTopLeftRadius: 25, borderTopRightRadius: 25 },
   cardFloor: { position: 'absolute', left: '50%', bottom: 22, width: 210, height: 36, marginLeft: -105, borderRadius: 105, opacity: 0.8, transform: [{ scaleY: 0.5 }] },

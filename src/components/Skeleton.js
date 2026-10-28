@@ -119,8 +119,104 @@ export function useAfterFirstFrame() {
   return ready;
 }
 
+// How many of `total` items to build so far: `first` at once, then `step`
+// more a frame, so a long list (a level map's 50 nodes, the Squad's 80
+// tiles) is never built in one block. One block held the JS thread, then
+// the UI thread creating its views, and every animation on screen with
+// them (a level map: 0.75 s + 0.8 s in a debug build, 2026-10-28). `on`:
+// grows only from then (a screen's content waiting for its slide).
+export function useProgressive(total, first = 10, step = 10, on = true) {
+  const [n, setN] = useState(Math.min(total, first));
+  useEffect(() => {
+    if (!on || n >= total) return undefined;
+    const f = requestAnimationFrame(() => setN((k) => Math.min(total, k + step)));
+    return () => cancelAnimationFrame(f);
+  }, [n, total, step, on]);
+  return Math.min(n, total);
+}
+
+// 1, then one more every other frame up to `total`: a screen built in
+// parts that must land in different frames. One frame apart isn't enough
+// there: React Native runs every batch waiting at a frame in that frame, so
+// a part rendered on the next frame could still join the one before.
+export function useEveryOtherFrame(total) {
+  const [n, setN] = useState(1);
+  useEffect(() => {
+    if (n >= total) return undefined;
+    let second = null;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => setN((k) => Math.min(total, k + 1)));
+    });
+    return () => {
+      cancelAnimationFrame(first);
+      if (second != null) cancelAnimationFrame(second);
+    };
+  }, [n, total]);
+  return n;
+}
+
+// Placeholder layouts on the sky background, in the shape of what's coming:
+// 'hub' (a game's menu: title, two big cards, a button), 'map' (a level
+// map's winding nodes), 'game' (a board), 'list' (a header card and rows).
+export const ViewBones = memo(function ViewBones({ kind = 'hub' }) {
+  if (kind === 'map') {
+    return (
+      <View style={styles.mapBones}>
+        {[0.62, 0.3, 0.5, 0.72, 0.4, 0.58].map((x, i) => (
+          <View key={i} style={[styles.mapRow, { paddingLeft: `${x * 100 - 9}%` }]}>
+            <Bone w={62} h={62} r={31} tone="sky" />
+          </View>
+        ))}
+      </View>
+    );
+  }
+  if (kind === 'game') {
+    return (
+      <View style={styles.bonesCol}>
+        <View style={styles.bonesRow}>
+          <Bone w={44} h={44} r={22} tone="sky" />
+          <Bone w="40%" h={36} r={18} tone="sky" />
+          <Bone w={70} h={36} r={18} tone="sky" />
+        </View>
+        <Bone h={undefined} r={24} tone="sky" style={styles.board} />
+        <View style={styles.bonesRow}>
+          {[0, 1, 2, 3].map((i) => (
+            <Bone key={i} w={64} h={64} r={18} tone="sky" />
+          ))}
+        </View>
+      </View>
+    );
+  }
+  if (kind === 'list') {
+    return (
+      <View style={styles.bonesCol}>
+        <Bone h={104} r={24} tone="sky" />
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <Bone key={i} h={64} r={20} tone="sky" />
+        ))}
+      </View>
+    );
+  }
+  return (
+    <View style={[styles.bonesCol, styles.hubBones]}>
+      <Bone w="62%" h={40} r={20} tone="sky" />
+      <Bone w="74%" h={12} r={6} tone="sky" />
+      <Bone h={128} r={26} tone="sky" style={styles.hubCard} />
+      <Bone h={128} r={26} tone="sky" />
+      <Bone w="46%" h={46} r={23} tone="sky" />
+    </View>
+  );
+});
+
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  bonesCol: { flex: 1, gap: 14, paddingHorizontal: 16, paddingTop: 14 },
+  bonesRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  hubBones: { alignItems: 'center', paddingTop: 24 },
+  hubCard: { marginTop: 10 },
+  board: { width: '100%', aspectRatio: 1 },
+  mapBones: { flex: 1, paddingTop: 40, gap: 34 },
+  mapRow: { width: '100%' },
   // the bones over the content while they fade out
   over: { position: 'absolute', top: 0, left: 0, right: 0 },
   bone: { overflow: 'hidden' },

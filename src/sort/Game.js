@@ -15,6 +15,7 @@ import { HEARTS, LEVELS, TIER_COLORS, TIER_NAMES, afterLevel, clock, levelSpec, 
 import { KINDS, Prop } from './props';
 import { THEMES } from './themes';
 import { F, INK } from '../squishdoku/theme';
+import { useKeyLoop, usePingPong } from '../components/idleLoop';
 
 // One level of Squish Sort (SQUISH_SORT.md), and the next ones after it:
 //   intro   the level's number and its twists
@@ -45,39 +46,14 @@ const trayCenter = (tg, j) => ({ x: tg.tx + 12 + (j % tg.perRow) * tg.cell + tg.
 
 // --- a squishy -----------------------------------------------------------------------
 
+// a mixed-up squishy's wobble: right, left, back (650 ms), then a rest
+// (900 ms), as one native loop (src/components/idleLoop.js)
+const WOB_AT = [0, 0.084, 0.168, 0.252, 0.335, 0.377, 0.419, 1];
+const WOB_VALUES = [0, 0.71, 1, 0, -1, -0.5, 0, 0];
+
 const Piece = memo(function Piece({ uri, size, a, mixed, selected, locked }) {
-  const wob = useRef(new Animated.Value(0)).current;
-  const pulse = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (!mixed) {
-      wob.setValue(0);
-      return undefined;
-    }
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(wob, { toValue: 1, duration: 260, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(wob, { toValue: -1, duration: 260, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(wob, { toValue: 0, duration: 130, useNativeDriver: true }),
-        Animated.timing(wob, { toValue: 0, duration: 900, useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [mixed, wob]);
-  useEffect(() => {
-    if (!selected) {
-      pulse.setValue(0);
-      return undefined;
-    }
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 420, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 420, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [selected, pulse]);
+  const wob = useKeyLoop(1550, { at: WOB_AT, values: WOB_VALUES, on: mixed });
+  const pulse = usePingPong(840, { on: selected });
   const rotate = wob.interpolate({ inputRange: [-1, 1], outputRange: ['-9deg', '9deg'] });
   const lift = Animated.add(a.lift, pulse.interpolate({ inputRange: [0, 1], outputRange: [0, 0.35] }));
   return (

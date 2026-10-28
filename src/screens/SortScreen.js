@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Animated, BackHandler, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CandyBackground from '../components/candy/CandyBackground';
+import { KeptView, ViewSlot, useViewSwitch } from '../components/ViewSwitch';
 import RoundButton, { BackGlyph } from '../components/candy/RoundButton';
 import sfx from '../audio/sfx';
 import Hub from '../sort/Hub';
@@ -15,22 +16,26 @@ import { F, INK } from '../squishdoku/theme';
 
 // Squish Sort (SQUISH_SORT.md), opened from the Lobby's PLAY game picker:
 // the hub (the fridge or the toy cupboard), that container's 50-level map,
-// and a level, each sliding in over the last (as Squishdoku).
+// and a level, each sliding in over the last as placeholders first (as
+// Squishdoku: src/components/ViewSwitch.js).
 
 // sounds kept loaded while the game is open (src/audio/sfx.js setBudget)
 const SOUND_BUDGET = 26;
 // a container needs this many different squishies to draw from
 const MIN_POOL = 8;
+// each view's placeholder while it's built
+const BONES = { hub: 'hub', map: 'map', game: 'game' };
 
-export default function SortScreen({ profile, creatures, hidden, uid, haptics, onBack }) {
+function SortScreen({ profile, creatures, hidden, uid, haptics, onBack }) {
   const insets = useSafeAreaInsets();
   const rec = record(profile);
-  const [view, setView] = useState('hub'); // hub | map | game
+  const sw = useViewSwitch('hub'); // hub | map | game
+  const { view, go } = sw;
   const [theme, setTheme] = useState('fridge');
   const [playLv, setPlayLv] = useState(1);
   const [rules, setRules] = useState(false);
-  const slide = useRef(new Animated.Value(1)).current;
   const pools = useMemo(() => ({ fridge: poolOf('fridge', creatures, hidden), cupboard: poolOf('cupboard', creatures, hidden) }), [creatures, hidden]);
+  const mapUris = useMemo(() => pools[theme].map((c) => c.uri), [pools, theme]);
 
   useEffect(() => {
     sfx.setBudget(SOUND_BUDGET);
@@ -44,14 +49,6 @@ export default function SortScreen({ profile, creatures, hidden, uid, haptics, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const go = useCallback(
-    (next) => {
-      slide.setValue(0);
-      setView(next);
-      Animated.spring(slide, { toValue: 1, friction: 8, tension: 70, useNativeDriver: true }).start();
-    },
-    [slide],
-  );
 
   // back: rules → map → hub → lobby (the game handles its own)
   useEffect(() => {
@@ -85,8 +82,6 @@ export default function SortScreen({ profile, creatures, hidden, uid, haptics, o
     go('map');
   }, [go]);
 
-  const translateX = slide.interpolate({ inputRange: [0, 1], outputRange: [60, 0] });
-  const opacity = slide.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] });
   const ready = pools[theme].length >= MIN_POOL;
   const t = THEMES[theme];
 
@@ -110,22 +105,29 @@ export default function SortScreen({ profile, creatures, hidden, uid, haptics, o
           ) : null}
         </View>
       ) : null}
-      <Animated.View style={[styles.fill, { opacity, transform: [{ translateX }] }]}>
-        {view === 'hub' ? <Hub rec={rec} pools={pools} onPlay={openMap} onRules={() => setRules(true)} /> : null}
-        {view === 'map' ? <LevelMap rec={rec[theme]} uris={pools[theme].map((c) => c.uri)} onPlay={play} /> : null}
-        {view === 'game' ? (
-          ready ? (
-            <View style={[styles.fill, { paddingBottom: insets.bottom }]}>
-              <SortGame theme={theme} startLv={playLv} pool={pools[theme]} profile={profile} uid={uid} haptics={haptics} onExit={leaveGame} />
-            </View>
-          ) : (
-            <View style={styles.wait}>
-              <Text style={styles.waitText}>The squishies are still on their way. Try again in a moment!</Text>
-              <RoundButton size={44} onPress={leaveGame}>
-                <BackGlyph />
-              </RoundButton>
-            </View>
-          )
+      <Animated.View style={[styles.fill, sw.style]}>
+        {/* the map stays built under a level, so leaving the level is instant */}
+        <KeptView sw={sw} name="map" keepWhile={view === 'game'} bones="map">
+          <LevelMap key={theme} rec={rec[theme]} uris={mapUris} onPlay={play} />
+        </KeptView>
+        {view !== 'map' ? (
+          <ViewSlot sw={sw} bones={BONES[view]}>
+            {view === 'hub' ? <Hub rec={rec} pools={pools} onPlay={openMap} onRules={() => setRules(true)} /> : null}
+            {view === 'game' ? (
+              ready ? (
+                <View style={[styles.fill, { paddingBottom: insets.bottom }]}>
+                  <SortGame theme={theme} startLv={playLv} pool={pools[theme]} profile={profile} uid={uid} haptics={haptics} onExit={leaveGame} />
+                </View>
+              ) : (
+                <View style={styles.wait}>
+                  <Text style={styles.waitText}>The squishies are still on their way. Try again in a moment!</Text>
+                  <RoundButton size={44} onPress={leaveGame}>
+                    <BackGlyph />
+                  </RoundButton>
+                </View>
+              )
+            ) : null}
+          </ViewSlot>
         ) : null}
       </Animated.View>
       <RulesCard visible={rules} onClose={() => setRules(false)} />
@@ -144,3 +146,6 @@ const styles = StyleSheet.create({
   wait: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30, gap: 16 },
   waitText: { fontFamily: F.display, fontSize: 16, color: INK, textAlign: 'center' },
 });
+
+// App re-renders while it's open (Home waking on the way back, the profile)
+export default memo(SortScreen);

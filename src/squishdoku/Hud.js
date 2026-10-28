@@ -1,18 +1,25 @@
-import React, { memo, useEffect, useRef } from 'react';
+import React, { memo, useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Head } from './ui';
 import { F, INK } from './theme';
+import { usePingPong } from '../components/idleLoop';
 
 // The game's HUD pieces: the three score creatures, the timer bar (with the
-// creatures that fall off it as times A and B pass) and Blitz's pips.
+// creatures that fall off it as times A and B pass) and Blitz's pips. Their
+// loops (the PERFECT glow, the last seconds' pulse, the current pip) are
+// single native loops (src/components/idleLoop.js), so they don't wake the
+// JS thread while the player is playing.
 
 // The three score creatures. `left` of them are still on offer; the others
 // tumble off (down, spinning, fading). While a PERFECT run is still
 // possible they sit in a gold glow.
 export const ScoreRow = memo(function ScoreRow({ uris, left, perfect, size = 46 }) {
   const out = useRef([0, 1, 2].map(() => new Animated.Value(0))).current;
-  const glow = useRef(new Animated.Value(0)).current;
+  // the glow: faded in or out (`glowOn`) over a pulse between 1 and 0.45
+  const glowOn = useRef(new Animated.Value(0)).current;
+  const glowPulse = usePingPong(1400, { from: 1, to: 0.45, on: perfect });
+  const glow = useMemo(() => Animated.multiply(glowOn, glowPulse), [glowOn, glowPulse]);
   const pop = useRef([0, 1, 2].map(() => new Animated.Value(0))).current;
   useEffect(() => {
     // a new level: everyone pops back in, one after another
@@ -29,19 +36,8 @@ export const ScoreRow = memo(function ScoreRow({ uris, left, perfect, size = 46 
     });
   }, [left, out]);
   useEffect(() => {
-    if (!perfect) {
-      Animated.timing(glow, { toValue: 0, duration: 300, useNativeDriver: true }).start();
-      return undefined;
-    }
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(glow, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(glow, { toValue: 0.45, duration: 700, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [perfect, glow]);
+    Animated.timing(glowOn, { toValue: perfect ? 1 : 0, duration: perfect ? 700 : 300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }).start();
+  }, [perfect, glowOn]);
   return (
     <View style={styles.scoreRow}>
       <Animated.View pointerEvents="none" style={[styles.glow, { opacity: glow, transform: [{ scaleX: glow.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.05] }) }] }]}>
@@ -78,21 +74,7 @@ export const ScoreRow = memo(function ScoreRow({ uris, left, perfect, size = 46 
 // time-left fraction) are the creatures riding on it, dropped as the fill
 // passes them. `warn` pulses it red (the last seconds).
 export const TimerBar = memo(function TimerBar({ frac, width, markers = [], warn = false, label }) {
-  const pulse = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (!warn) {
-      pulse.setValue(0);
-      return undefined;
-    }
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 250, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 250, useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [warn, pulse]);
+  const pulse = usePingPong(500, { eased: false, on: warn });
   const inner = width - 6; // inside the track's 3px border
   const shift = frac.interpolate({ inputRange: [0, 1], outputRange: [-inner, 0], extrapolate: 'clamp' });
   const yellow = frac.interpolate({ inputRange: [0.2, 0.45], outputRange: [1, 0], extrapolate: 'clamp' });
@@ -154,23 +136,13 @@ const Marker = memo(function Marker({ x, uri, gone }) {
 // current one pulsing. `drain` empties them right to left (back to level 1).
 export const Pips = memo(function Pips({ count = 10, done, current }) {
   const vals = useRef(Array.from({ length: count }, () => new Animated.Value(0))).current;
-  const now = useRef(new Animated.Value(0)).current;
+  const now = usePingPong(1000, { eased: false });
   useEffect(() => {
     vals.forEach((v, i) => {
       const on = i < done;
       Animated.spring(v, { toValue: on ? 1 : 0, friction: on ? 4 : 7, tension: 180, delay: on ? 0 : (count - i) * 50, useNativeDriver: true }).start();
     });
   }, [done, vals, count]);
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(now, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(now, { toValue: 0, duration: 500, useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [now]);
   return (
     <View style={styles.pips}>
       {vals.map((v, i) => (

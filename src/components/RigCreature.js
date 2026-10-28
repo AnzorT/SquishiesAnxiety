@@ -46,7 +46,9 @@ const RigCreature = forwardRef(function RigCreature({ creatureKey, shuffle = tru
   if (!HOST) return null;
   const k = renderScale, w = box ? box.width * k : 0, h = box ? box.height * k : 0;
   return (
-    <View style={style} onLayout={e => setBox(e.nativeEvent.layout)}>
+    // (a hidden screen, display: none, lays out as 0 × 0: kept out, or the page went 0-sized
+    // and the creature never showed again on a Squad screen built asleep, 2026-10-28)
+    <View style={style} onLayout={e => { const l = e.nativeEvent.layout; if (l.width > 0 && l.height > 0) setBox(l); }}>
     {box && <WebView
       ref={web}
       source={{ uri: HOST }}

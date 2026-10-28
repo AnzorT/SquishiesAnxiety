@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, BackHandler, Easing, Image, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,6 +9,9 @@ import RoundButton, { GearIcon, HouseIcon, TrophyIcon } from '../components/cand
 import OutlinedTitle from '../components/candy/OutlinedTitle';
 import ShadowText from '../components/candy/ShadowText';
 import RigCreature from '../components/RigCreature';
+import { preloadCreatureModel } from '../components/SquishyToy';
+import { LoopsOn, RigAway } from '../components/idleLoop';
+import Freeze from '../components/Freeze';
 import SquadScreen from './SquadScreen';
 import GamePicker from './GamePicker';
 import TutTarget from '../tutorial/Target';
@@ -34,8 +37,9 @@ import { fmtNum } from '../format';
 // spike's fix for the heaviest art on the Galaxy A15. It's paused whenever
 // the lobby isn't on screen (`active` off), and while the Squad screen
 // (src/screens/SquadScreen.js) is up: it slides up over the lobby, under the
-// nav, as in the design. Built on its first opening, then kept (asleep while
-// closed) so it opens at once next time.
+// nav, as in the design. It and the games sheet are built in the background
+// once the lobby has settled (useSettled), then kept (asleep while closed),
+// so they open at once.
 
 const STAGE = 330; // the design's creature area; the creature is 310 of it
 const NAME_SHADOWS = [[0, 3.5], [2.5, 0], [-2.5, 0], [0, -2.5], [2, 2], [-2, 2]].map(([x, y]) => [x, y, '#45107a']);
@@ -164,8 +168,36 @@ const StageBack = memo(function StageBack({ size }) {
   );
 });
 
+// true once the lobby has been on screen for `ms` (and from then on): what it
+// opens (the games sheet, the Squad screen) is built then, in the background,
+// so opening it is only its slide. Built on the tap, it held the slide for
+// 0.3-0.4 s (the games) and 3.6 s (the Squad's 80 tiles and live creature)
+// in a debug build on the Galaxy A15 (2026-10-28).
+function useSettled(active, ms) {
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    if (settled || !active) return undefined;
+    const t = setTimeout(() => setSettled(true), ms);
+    return () => clearTimeout(t);
+  }, [settled, active, ms]);
+  return settled;
+}
+
 function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cribUnlocked = false, pickGames = true, onOpenCrib, onOpenAchievements, onOpenSettings, onOpenShop, onPlay, onOpenPuzzle, onOpenSort, onSelect, onSeen }) {
   const insets = useSafeAreaInsets();
+  // off while the lobby is out of sight (a screen over it, the Shop's page
+  // beside it): its live creature is taken out then. A WebView, even paused
+  // and off screen, cost the phone ~3.5 ms of every frame of whatever was on
+  // screen (Galaxy A15, 2026-10-28)
+  const onScreen = useContext(LoopsOn);
+  // under another screen: the creature's WebView let go (RigAway), its still
+  // shown in its place until a fresh one has drawn
+  const rigAway = useContext(RigAway);
+  const [rigDrawn, setRigDrawn] = useState(false);
+  useEffect(() => {
+    if (rigAway) setRigDrawn(false);
+  }, [rigAway]);
+  const onRigDrawn = useCallback(() => setRigDrawn(true), []);
   const w = wallet(profile);
   const id = selectedId(profile);
   const c = BY_ID[id];
@@ -202,19 +234,39 @@ function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cr
     if (slow.current >= SLOW_SECONDS) setScale(0.8);
   }, []);
 
-  // the Squad screen: slides up (the design's slUp, 0.42 s) and back down
+  // the Squad screen: slides up (the design's slUp, 0.42 s) and back down.
+  // Built in the background (`warmSquad`) and asleep while closed (Freeze);
+  // the lobby under it is hidden while it's up (`covered`), so the phone
+  // doesn't draw both screens for every frame of its live creature. Both
+  // really hidden (display: none): kept laid out instead (off screen, or at
+  // opacity 0) the phone still worked through them every frame, and the
+  // lobby and the Squad dropped to ~10 fps (Galaxy A15 release, 2026-10-28).
   const { height: winH } = useWindowDimensions();
+  const warmGames = useSettled(active, 2500);
+  const warmSquad = useSettled(active, 4500);
   const [squadBuilt, setSquadBuilt] = useState(false);
   const [squadOpen, setSquadOpen] = useState(false);
+  const [squadUp, setSquadUp] = useState(false); // on screen, or sliding
+  // asleep only once all of it has been built (its tiles come a few a frame,
+  // and a frozen subtree isn't built) and it's closed
+  const [squadDone, setSquadDone] = useState(false);
+  const onSquadBuilt = useCallback(() => setSquadDone(true), []);
+  const [covered, setCovered] = useState(false);
+  useEffect(() => {
+    if (warmSquad) setSquadBuilt(true);
+  }, [warmSquad]);
   const up = useRef(new Animated.Value(0)).current;
   const openSquad = useCallback(() => {
+    // the slide first: it starts once this render is committed
+    Animated.timing(up, { toValue: 1, duration: 420, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true }).start(({ finished }) => finished && setCovered(true));
     setSquadBuilt(true);
+    setSquadUp(true);
     setSquadOpen(true);
-    Animated.timing(up, { toValue: 1, duration: 420, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true }).start();
   }, [up]);
   const closeSquad = useCallback(() => {
+    Animated.timing(up, { toValue: 0, duration: 320, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true }).start(({ finished }) => finished && setSquadUp(false));
+    setCovered(false);
     setSquadOpen(false);
-    Animated.timing(up, { toValue: 0, duration: 320, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true }).start();
   }, [up]);
   useEffect(() => {
     if (!squadOpen || !active) return undefined;
@@ -228,100 +280,126 @@ function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cr
   const toGems = useCallback(() => onOpenShop('gems'), [onOpenShop]);
   const play = useCallback(() => onPlay(id), [onPlay, id]);
 
-  // the games sheet
+  // the games sheet; `pickerUp` while it's all the way up: the creature and
+  // the buttons it covers are hidden then (display: none), so the phone
+  // doesn't draw them under it every frame of its cards' animations (the
+  // open sheet ran at ~40 fps on the Galaxy A15, 2026-10-28)
   const [picking, setPicking] = useState(false);
+  const [pickerUp, setPickerUp] = useState(false);
   const openGames = useCallback(() => setPicking(true), []);
   const closeGames = useCallback(() => setPicking(false), []);
   const pickGame = useCallback(
     (game) => {
       setPicking(false);
-      // after the sheet has started down, so the game opens over a calm lobby
-      setTimeout(() => {
-        if (game === 'squishdoku') onOpenPuzzle && onOpenPuzzle();
-        else if (game === 'sort') onOpenSort && onOpenSort();
-        else play();
-      }, 200);
+      // at once: the game's screen slides in over the sheet going down (it
+      // used to wait 0.2 s for a calm lobby first)
+      if (game === 'squishdoku') onOpenPuzzle && onOpenPuzzle();
+      else if (game === 'sort') onOpenSort && onOpenSort();
+      else play();
     },
     [onOpenPuzzle, onOpenSort, play],
   );
   const owned = ownedKey(profile);
   const puzzleUris = useMemo(() => rosterOf(creatures, profile).slice(0, 8), [creatures, owned]); // eslint-disable-line react-hooks/exhaustive-deps
   const sortUris = useMemo(() => poolOf('fridge', creatures, hidden).slice(0, 3).map((c) => c.uri), [creatures, hidden]);
-  const creatureUri = useMemo(() => {
-    const entry = (creatures || []).find((x) => String(x.id) === String(id));
-    return entry && entry.thumb ? entry.thumb.url : null;
-  }, [creatures, id]);
+  const creatureEntry = useMemo(() => (creatures || []).find((x) => String(x.id) === String(id)) || null, [creatures, id]);
+  const creatureUri = creatureEntry && creatureEntry.thumb ? creatureEntry.thumb.url : null;
+  // the squish game's model of the creature, loaded while the lobby is up
+  // (after the sheets' background builds), so PLAY → Squish skips most of
+  // the loading screen
+  const warmModel = useSettled(active, 6500);
+  useEffect(() => {
+    if (warmModel && creatureEntry) preloadCreatureModel(creatureEntry).catch(() => {});
+  }, [warmModel, creatureEntry]);
   const creature = stage - 20;
 
   return (
-    <CandyBackground style={{ paddingTop: insets.top }}>
-      <View style={styles.top}>
-        <View style={styles.titleRow}>
-          <OutlinedTitle text="SQUAD" fill="pink" size={25} outline={3} ring={2} drop={5} />
-          <View style={styles.icons}>
-            {cribUnlocked ? (
-              <TutTarget name="crib">
-                <RoundButton size={42} variant="green" onPress={onOpenCrib}>
-                  <HouseIcon />
-                </RoundButton>
-              </TutTarget>
-            ) : null}
-            <RoundButton size={42} onPress={onOpenAchievements}>
-              <TrophyIcon size={24} />
-            </RoundButton>
-            <RoundButton size={42} onPress={onOpenSettings}>
-              <GearIcon size={24} />
-            </RoundButton>
+    <View style={styles.root}>
+      <CandyBackground style={[{ paddingTop: insets.top }, covered && styles.gone]}>
+        <View style={styles.top}>
+          <View style={styles.titleRow}>
+            <OutlinedTitle text="SQUAD" fill="pink" size={25} outline={3} ring={2} drop={5} />
+            <View style={styles.icons}>
+              {cribUnlocked ? (
+                <TutTarget name="crib">
+                  <RoundButton size={42} variant="green" onPress={onOpenCrib}>
+                    <HouseIcon />
+                  </RoundButton>
+                </TutTarget>
+              ) : null}
+              <RoundButton size={42} onPress={onOpenAchievements}>
+                <TrophyIcon size={24} />
+              </RoundButton>
+              <RoundButton size={42} onPress={onOpenSettings}>
+                <GearIcon size={24} />
+              </RoundButton>
+            </View>
+          </View>
+          <View style={styles.purses}>
+            <Purse amount={w.coins} onPress={toGems} />
+            <Purse gem amount={w.gems} onPress={toGems} />
           </View>
         </View>
-        <View style={styles.purses}>
-          <Purse amount={w.coins} onPress={toGems} />
-          <Purse gem amount={w.gems} onPress={toGems} />
+
+        <View style={[styles.middle, pickerUp && styles.gone]} onLayout={onMiddle}>
+          <ShadowText style={styles.name} shadows={NAME_SHADOWS} numberOfLines={1}>
+            {c ? c.name : ''}
+          </ShadowText>
+          <Text style={[styles.group, { color: (c && GROUP_INK[c.set]) || '#45107a' }]}>{c ? GROUP_NAME[c.set] : ''}</Text>
+          <View style={[styles.stage, { height: stage }, !onScreen && styles.gone]}>
+            <StageBack size={stage} />
+            {c && !rigDrawn && creatureUri ? (
+              <View style={styles.stillWrap} pointerEvents="none">
+                <Image source={{ uri: creatureUri }} style={{ width: creature, height: creature }} resizeMode="contain" fadeDuration={0} />
+              </View>
+            ) : null}
+            {c && !rigAway ? (
+              <RigCreature creatureKey={c.key} renderScale={scale} paused={!active || squadOpen || picking} rigShadow={false} onState={onState} onPerf={onPerf} onMounted={onRigDrawn} style={{ width: creature, height: creature }} />
+            ) : null}
+          </View>
+          <Text style={styles.hint}>Tap to poke · drag to spin</Text>
         </View>
-      </View>
 
-      <View style={styles.middle} onLayout={onMiddle}>
-        <ShadowText style={styles.name} shadows={NAME_SHADOWS} numberOfLines={1}>
-          {c ? c.name : ''}
-        </ShadowText>
-        <Text style={[styles.group, { color: (c && GROUP_INK[c.set]) || '#45107a' }]}>{c ? GROUP_NAME[c.set] : ''}</Text>
-        <View style={[styles.stage, { height: stage }]}>
-          <StageBack size={stage} />
-          {c ? (
-            <RigCreature creatureKey={c.key} renderScale={scale} paused={!active || squadOpen || picking} rigShadow={false} onState={onState} onPerf={onPerf} style={{ width: creature, height: creature }} />
-          ) : null}
+        <View style={[styles.bottom, pickerUp && styles.gone]}>
+          <SquadTile count={fresh} onPress={openSquad} />
+          <PlayButton onPress={pickGames ? openGames : play} />
         </View>
-        <Text style={styles.hint}>Tap to poke · drag to spin</Text>
-      </View>
 
-      <View style={styles.bottom}>
-        <SquadTile count={fresh} onPress={openSquad} />
-        <PlayButton onPress={pickGames ? openGames : play} />
-      </View>
-
+        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+          <GamePicker
+            visible={picking && active}
+            warm={warmGames}
+            profile={profile}
+            creatureName={c ? c.name : ''}
+            creatureUri={creatureUri}
+            puzzleUris={puzzleUris}
+            sortUris={sortUris}
+            onClose={closeGames}
+            onPick={pickGame}
+            onUp={setPickerUp}
+          />
+        </View>
+      </CandyBackground>
       {squadBuilt && (
         <Animated.View
           pointerEvents={squadOpen ? 'auto' : 'none'}
           style={[StyleSheet.absoluteFill, { transform: [{ translateY: up.interpolate({ inputRange: [0, 1], outputRange: [winH, 0] }) }] }]}
         >
-          <SquadScreen active={active && squadOpen} profile={profile} creatures={creatures} hidden={hidden} setRewards={setRewards} onClose={closeSquad} onSelect={onSelect} onSeen={onSeen} />
+          <Freeze freeze={squadDone && !squadUp}>
+            <SquadScreen active={active && squadOpen} profile={profile} creatures={creatures} hidden={hidden} setRewards={setRewards} onClose={closeSquad} onSelect={onSelect} onSeen={onSeen} onBuilt={onSquadBuilt} />
+          </Freeze>
         </Animated.View>
       )}
-      <GamePicker
-        visible={picking && active}
-        profile={profile}
-        creatureName={c ? c.name : ''}
-        creatureUri={creatureUri}
-        puzzleUris={puzzleUris}
-        sortUris={sortUris}
-        onClose={closeGames}
-        onPick={pickGame}
-      />
-    </CandyBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
+  // the lobby while the Squad screen covers it
+  gone: { display: 'none' },
+  // the creature's still, in the live creature's box, until it has drawn
+  stillWrap: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   abs: { position: 'absolute' },
   top: { gap: 9, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

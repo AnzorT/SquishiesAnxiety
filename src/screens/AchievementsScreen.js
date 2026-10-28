@@ -14,7 +14,7 @@ import OutlinedTitle from '../components/candy/OutlinedTitle';
 import ShadowText, { outline3 } from '../components/candy/ShadowText';
 import CreatureThumbnail from '../components/CreatureThumbnail';
 import AdStrip from '../components/AdStrip';
-import { Bone, Reveal } from '../components/Skeleton';
+import { Bone, Reveal, useProgressive } from '../components/Skeleton';
 import { useScreenReady } from '../components/ScreenLayer';
 import sfx from '../audio/sfx';
 import { fmtNum } from '../format';
@@ -282,8 +282,12 @@ function AchievementsScreen({ creatures = [], profile = null, customCount = 0, o
   );
 
   const current = entries[index] || entries[0];
-  const lo = Math.max(0, span[0] - WINDOW);
-  const hi = Math.min(entries.length - 1, span[1] + WINDOW);
+  // the badge in view first, then one more each side a frame: all seven at
+  // once (each with its SVG glow) were one 0.15 s frame as the screen's
+  // content came in (Galaxy A15 release, 2026-10-28)
+  const win = useProgressive(WINDOW + 1, 1, 1, ready) - 1;
+  const lo = Math.max(0, span[0] - win);
+  const hi = Math.min(entries.length - 1, span[1] + win);
   const badges = [];
   for (let i = lo; i <= hi; i++) {
     badges.push(<Badge key={entries[i].key} entry={entries[i]} index={i} move={move} fade={fade} z={50 - Math.abs(i - index)} live={i === index} onSelect={select} />);

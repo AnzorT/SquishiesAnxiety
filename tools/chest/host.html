@@ -142,7 +142,8 @@
   const post = (m) => { const s = JSON.stringify(m); if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(s); else (window.__chestOut = window.__chestOut || []).push(m); };
 
   let S = null, run = null, st = null, pow = 0, bk = 0, bannerT = 0, revealT = 0;
-  // st: { gk, start, final, tier, hp, max, name, phase, first, sup, reward }
+  // st: { gk, start, final, tier, hp, max, name, phase, first, sup, reward, held }
+  // (phase 'wait': the scene is up and the server's answer on its way; `held`: a first tap meanwhile)
 
   function paint() {
     if (!st) return;
@@ -156,7 +157,8 @@
     if (pips.children.length !== max) { pips.innerHTML = ''; for (let i = 0; i < max; i++) { const d = document.createElement('div'); d.className = 'pip'; pips.appendChild(d); } }
     [...pips.children].forEach((d, i) => { const on = i < st.hp; d.style.background = on ? '#7ee87a' : 'rgba(255,255,255,0.25)'; d.style.boxShadow = 'inset 0 -3px 0 ' + (on ? '#3aa83a' : 'rgba(0,0,0,0.15)') + ', inset 0 2px 0 rgba(255,255,255,0.55)'; });
     $('hp').textContent = st.hp + ' HP';
-    const HINT = { idle: st.first && st.start <= 1 ? 'Tap to smash. The first tap might upgrade it!' : st.sup ? 'SUPER! Every tap hits double' : 'Keep tapping. Fast taps fill POWER', up: 'Upgrading… tap to skip', ko: 'Bursting open…', open: 'Opened!' };
+    const idle = st.first && st.start <= 1 ? 'Tap to smash. The first tap might upgrade it!' : st.sup ? 'SUPER! Every tap hits double' : 'Keep tapping. Fast taps fill POWER';
+    const HINT = { idle, wait: idle, up: 'Upgrading… tap to skip', ko: 'Bursting open…', open: 'Opened!' };
     const hint = HINT[st.phase] || '';
     if ($('hint').textContent !== hint) { const h = $('hint'); h.textContent = hint; h.style.animation = 'none'; void h.offsetWidth; h.style.animation = ''; }
     $('bottom').style.opacity = st.phase === 'ko' || st.phase === 'open' ? 0.4 : 1;
@@ -240,6 +242,7 @@
 
   function tap(e) {
     if (!S || !st) return;
+    if (st.phase === 'wait') { if (!st.held) st.held = { clientX: e.clientX, clientY: e.clientY }; return; }
     if (st.phase === 'up') { S.skipUp(); return; }
     if (st.phase !== 'idle') return;
     if (st.first) {
@@ -266,19 +269,32 @@
   window.chestHost = {
     // { group, size, final, reward: { name, rar, rarLabel, rarBg, rarInk, concept, img, isNew, copies, need, coins, dupeCoins, setBonus, luck }, sound, insetTop, insetBottom }
     // (img: the creature's front art, ../rig/export/tripo/<key>/<key>-front.svg)
+    // `wait`: no final/reward yet, fill() brings them. Says 'shown' once the scene is painted.
     start(o) {
       clearTimeout(revealT); clearTimeout(bannerT);
       $('bannerWrap').innerHTML = ''; $('reveal').style.display = 'none';
       document.documentElement.style.setProperty('--inset-top', (o.insetTop || 0) + 'px');
       document.documentElement.style.setProperty('--inset-bottom', (o.insetBottom || 0) + 'px');
       const gk = GROUPS[o.group] ? o.group : 'ocean', start = TI[o.size] ?? 0, final = Math.max(start, TI[o.final] ?? start);
-      st = { gk, start, final, tier: start, hp: 0, max: 1, name: '', phase: 'idle', first: true, sup: 0, reward: o.reward || null };
+      st = { gk, start, final, tier: start, hp: 0, max: 1, name: '', phase: o.wait ? 'wait' : 'idle', first: true, sup: 0, reward: o.reward || null, held: null };
       pow = 0;
       const CM = window.ChestModels;
       if (!S) { S = new CM.Stage($('cv'), { group: gk, ground: 0.73, top: 178 + (o.insetTop || 0), onEvent: ev }); S.load(gk, start, true); }
       else S.reset(gk, start);
       S.sound = o.sound !== false;
       paint();
+      requestAnimationFrame(() => requestAnimationFrame(() => post({ type: 'shown' })));
+    },
+    // the server's answer for the chest start({ wait }) put up: { final, reward }
+    fill(o) {
+      if (!st) return;
+      st.final = Math.max(st.start, TI[o.final] ?? st.start);
+      st.reward = o.reward || null;
+      if (st.phase !== 'wait') return;
+      st.phase = 'idle';
+      const h = st.held;
+      st.held = null;
+      if (h) tap(h); else paint();
     },
     sound(on) { if (S) S.sound = !!on; },
   };

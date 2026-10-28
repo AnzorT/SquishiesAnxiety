@@ -1,8 +1,8 @@
 import React, { memo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import Pressable from '../components/Pressable';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle, Defs, G, LinearGradient as SvgLinearGradient, Path, Pattern, RadialGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Defs, G, LinearGradient as SvgLinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { candyFonts } from '../theme/candyTheme';
 import { CoinIcon } from '../squad/ui';
 import { fmtNum } from '../format';
@@ -171,26 +171,18 @@ export function PhasePill({ sun, label }) {
 }
 
 // The room-switch flash (Crib Vertical v2): white dots every 22px over a
-// radial white → lavender → sky blue. The screen fades it in and out.
+// radial white → lavender → sky blue. The screen fades it in and out. Two
+// pictures (tools/crib-art/flash.py), not an SVG: Android draws an SVG in
+// software on the UI thread, and this one, full-screen and mounted (unseen)
+// from the Crib's first frame, held the frame the Crib opened on.
+const FLASH_GLOW = require('../../assets/crib/flash-glow.png');
+const FLASH_DOTS = require('../../assets/crib/flash-dots.png');
 export const RoomFlash = memo(function RoomFlash() {
   return (
-    <Svg width="100%" height="100%">
-      <Defs>
-        <RadialGradient id="roomFlash" cx="50%" cy="50%" r="71%">
-          <Stop offset="0" stopColor="#ffffff" />
-          <Stop offset="0.55" stopColor="#e6dcff" />
-          <Stop offset="1" stopColor="#8fd0ff" />
-        </RadialGradient>
-        <Pattern id="roomFlashDots" width={22} height={22} patternUnits="userSpaceOnUse">
-          <Circle cx={0} cy={0} r={1.5} fill="rgba(255,255,255,0.9)" />
-          <Circle cx={22} cy={0} r={1.5} fill="rgba(255,255,255,0.9)" />
-          <Circle cx={0} cy={22} r={1.5} fill="rgba(255,255,255,0.9)" />
-          <Circle cx={22} cy={22} r={1.5} fill="rgba(255,255,255,0.9)" />
-        </Pattern>
-      </Defs>
-      <Rect width="100%" height="100%" fill="url(#roomFlash)" />
-      <Rect width="100%" height="100%" fill="url(#roomFlashDots)" />
-    </Svg>
+    <View style={StyleSheet.absoluteFill}>
+      <Image source={FLASH_GLOW} fadeDuration={0} resizeMode="stretch" style={styles.flashFill} />
+      <Image source={FLASH_DOTS} fadeDuration={0} resizeMode="repeat" style={styles.flashFill} />
+    </View>
   );
 });
 
@@ -241,6 +233,7 @@ export function RoomTitle({ title, sub }) {
 }
 
 const styles = StyleSheet.create({
+  flashFill: { position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' },
   circle: { position: 'absolute', left: 0, backgroundColor: INK },
   face: { position: 'absolute', left: 2, top: 2, borderWidth: 2.5, borderColor: '#ffffff', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   badgeRing: { position: 'absolute', borderRadius: 11, padding: 1 },
