@@ -9,20 +9,27 @@ import { usePingPong } from '../components/idleLoop';
 import { FxLayer } from '../squishdoku/fx';
 import { Head } from '../squishdoku/ui';
 import { F, INK } from '../squishdoku/theme';
-import { LEVELS, LEVEL_LIST, TIER_COLORS } from './levels';
+import { LEVEL_LIST, TIER_COLORS } from './levels';
 
 // A container's 50 levels on a winding path, level 1 at the top (as
 // Squishdoku's map): beaten levels gold with their stars, the next one pink
 // and pulsing with a squishy bobbing beside it, the rest locked. A banner
-// opens each size band (5 SHELVES × 4 …); the dot on a node is its tier.
+// opens each size band (5 SHELVES × 4 …), with a picture over it when
+// `iconOf` draws one (Squish Sort's fridges and cupboards); the dot on a
+// node is its tier. Squish Stack's map is this one with its own `list` and
+// `bannerOf`. The
+// nodes are built nearest the current one first, a few a frame
+// (useProgressive), so the map is up at once and fills outwards.
 
 const GAP = 92;
 const NODE = 60;
 const TOP = 130;
 const BAND_GAP = 76;
+// a band's picture, over its banner
+const ICON_H = 116;
 const STAR_D = 'M12 2.2 L14.9 8.6 L21.8 9.3 L16.6 14 L18.1 20.9 L12 17.4 L5.9 20.9 L7.4 14 L2.2 9.3 L9.1 8.6 Z';
 
-const bandOf = (i) => LEVEL_LIST[i].band;
+const shelves = (L) => `${L.rows} ${L.rows > 1 ? 'SHELVES' : 'SHELF'} · ${L.cols} SPOTS`;
 
 const Stars = ({ n }) => (
   <View style={styles.stars}>
@@ -34,7 +41,7 @@ const Stars = ({ n }) => (
   </View>
 );
 
-const Node = memo(function Node({ lv, x, y, state, stars, delay, onPress, mascot, mascotLeft }) {
+const Node = memo(function Node({ lv, tier, x, y, state, stars, delay, onPress, mascot, mascotLeft }) {
   const t = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
   // the next level's pulse: one native loop (src/components/idleLoop.js)
@@ -56,7 +63,6 @@ const Node = memo(function Node({ lv, x, y, state, stars, delay, onPress, mascot
   };
   const colors = state === 'done' ? ['#fff7b0', '#ffd23a', '#ff9c0a'] : state === 'current' ? ['#ffd6f4', '#ff5cc6', '#c02bd9'] : ['#ece6f3', '#cfc3dd', '#b3a5c4'];
   const ring = state === 'done' ? '#9c4d06' : state === 'current' ? '#8e1580' : '#7a6a8c';
-  const tier = LEVEL_LIST[lv - 1].tier;
   return (
     <Animated.View
       style={[
@@ -100,20 +106,25 @@ const Node = memo(function Node({ lv, x, y, state, stars, delay, onPress, mascot
   );
 });
 
-function LevelMap({ rec, uris = [], onPlay }) {
+// list: [{ band, tier, … }] a level each; bannerOf(level) names its band,
+// iconOf(level) draws its picture (or null)
+function LevelMap({ rec, uris = [], onPlay, list = LEVEL_LIST, bannerOf = shelves, iconOf }) {
   const { width } = useWindowDimensions();
   const scroll = useRef(null);
   const cur = rec.lv;
+  const LEVELS = list.length;
+  const bandOf = (i) => list[i].band;
   const points = useMemo(() => {
     const amp = Math.min(110, width * 0.27);
     let y = TOP;
     return Array.from({ length: LEVELS }, (_, i) => {
-      if (i > 0 && bandOf(i) !== bandOf(i - 1)) y += BAND_GAP;
+      if (i > 0 && list[i].band !== list[i - 1].band) y += BAND_GAP;
+      if (iconOf && (i === 0 || list[i].band !== list[i - 1].band) && iconOf(list[i])) y += ICON_H;
       const p = { x: width / 2 + Math.sin(i * 1.05) * amp, y };
       y += GAP;
       return p;
     });
-  }, [width]);
+  }, [width, list, LEVELS, iconOf]);
   const height = points[LEVELS - 1].y + 120;
   const mascot = uris.length ? uris[(cur * 11) % uris.length] : null;
 
@@ -146,10 +157,13 @@ function LevelMap({ rec, uris = [], onPlay }) {
   const banners = [];
   for (let i = 0; i < LEVELS; i++) {
     if (i === 0 || bandOf(i) !== bandOf(i - 1)) {
-      const L = LEVEL_LIST[i];
+      const L = list[i];
+      // (the picture comes with its level's node, a few a frame)
+      const icon = iconOf ? iconOf(L) : null;
       banners.push(
-        <View key={`b${L.band}`} style={[styles.banner, { top: points[i].y - 104 }]}>
-          <Text style={styles.bannerText}>{`${L.rows} ${L.rows > 1 ? 'SHELVES' : 'SHELF'} · ${L.cols} SPOTS`}</Text>
+        <View key={`b${L.band}`} style={[styles.banner, { top: points[i].y - 104 - (icon ? ICON_H : 0) }]}>
+          {icon ? <View style={styles.icon}>{built.has(i) ? icon : null}</View> : null}
+          <Text style={styles.bannerText}>{bannerOf(L)}</Text>
         </View>,
       );
     }
@@ -167,6 +181,7 @@ function LevelMap({ rec, uris = [], onPlay }) {
           <Node
             key={lv}
             lv={lv}
+            tier={list[i].tier}
             x={p.x}
             y={p.y}
             state={state}
@@ -198,7 +213,8 @@ const styles = StyleSheet.create({
   mascot: { position: 'absolute', top: 8, zIndex: 3 },
   dot: { position: 'absolute', width: 8, height: 8, borderRadius: 4 },
   banner: { position: 'absolute', alignSelf: 'center', left: 0, right: 0, alignItems: 'center' },
-  bannerText: { fontFamily: F.display, fontSize: 14, letterSpacing: 1.5, color: '#ffffff', backgroundColor: '#7a2fd6', borderRadius: 999, borderWidth: 2.5, borderColor: '#ffffff', paddingHorizontal: 14, paddingVertical: 3, overflow: 'hidden' },
+  bannerText: { fontFamily: F.display, fontSize: 14, letterSpacing: 1.5, color: '#ffffff', textAlign: 'center', backgroundColor: '#7a2fd6', borderRadius: 16, borderWidth: 2.5, borderColor: '#ffffff', paddingHorizontal: 14, paddingVertical: 3, overflow: 'hidden' },
+  icon: { height: ICON_H - 8, justifyContent: 'flex-end', marginBottom: 6 },
 });
 
 export default memo(LevelMap);

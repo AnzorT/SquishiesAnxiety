@@ -1,6 +1,7 @@
 import firestore from '@react-native-firebase/firestore';
 import { STARTER_CREATURE_IDS } from '../data/creatures';
 import { bumpDaily as bumpDailyRules, claimDaily as claimDailyRules, claimChest as claimChestRules } from '../progression';
+import { addXp, migrateXp, pxpOf, xpToReach } from '../playerXp';
 
 // Coins and unlocks are client-authoritative (writes go straight from the
 // device to Firestore, guarded only by firestore.rules) — fine for a
@@ -40,6 +41,7 @@ export async function createUserProfile(uid, { email, age, nickname }) {
     // first step, level 1.
     tut: 'start',
     level: 1,
+    pxp: 0,
     createdAt: firestore.FieldValue.serverTimestamp(),
   });
 }
@@ -52,8 +54,36 @@ export function setTutorialStep(uid, step) {
   userDocRef(uid).update({ tut: step }).catch(logFail('setTutorialStep'));
 }
 
-export function setLevel(uid, level) {
-  userDocRef(uid).update({ level }).catch(logFail('setLevel'));
+// The tutorial's levels (2 and 3): the XP that reaches `level`, if the
+// player doesn't have it yet.
+export function setLevel(uid, level, profile) {
+  const pxp = Math.max(pxpOf(profile), xpToReach(level));
+  userDocRef(uid).update({ pxp, level: Math.max(level, Math.floor(profile?.level ?? 1)) }).catch(logFail('setLevel'));
+}
+
+// --- the player's XP (src/playerXp.js, PLAYER_XP.md) -----------------------
+//
+// The fields that add `n` XP, merged into the write that earned it: an
+// increment, and the level when it rises (a profile not moved over yet gets
+// its whole total). Returns them with addXp's { xp, before, after, levelUps }.
+function xpFields(profile, n) {
+  const r = addXp(profile, n);
+  const fields = {};
+  if (r.xp) fields.pxp = typeof profile?.pxp === 'number' ? inc(r.xp) : pxpOf(profile) + r.xp;
+  if (r.levelUps.length) fields.level = r.after.level;
+  return { ...r, fields };
+}
+
+// The one-time move over to player XP (an older profile's level and Puzzle
+// XP become `pxp`); nothing once done.
+export function migrateToXp(uid, profile) {
+  const update = migrateXp(profile);
+  if (update) userDocRef(uid).update(update).catch(logFail('migrateToXp'));
+}
+
+// The highest level whose LEVEL UP card has been shown.
+export function markLevelSeen(uid, level) {
+  userDocRef(uid).update({ lvSeen: level }).catch(logFail('markLevelSeen'));
 }
 
 // --- the lobby (src/squad/lobby.js) ------------------------------------------
@@ -93,21 +123,25 @@ export function markStreakSeen(uid, date) {
 // (a friend sent to a bath, a snack…) also count as care given, for the
 // achievements (`cribCare`).
 const CRIB_EVENTS = ['bath', 'feed', 'sleep', 'dance', 'tv', 'play'];
+// Squishes also earn XP (src/progression.js bumpDaily).
 export function bumpDaily(uid, profile, ev, n = 1) {
-  const { update, completed } = bumpDailyRules(profile, ev, n);
+  const { update, completed, xp } = bumpDailyRules(profile, ev, n);
   if (CRIB_EVENTS.includes(ev)) update.cribCare = inc(n);
-  userDocRef(uid).update(update).catch(logFail('bumpDaily'));
+  userDocRef(uid)
+    .update({ ...update, ...xpFields(profile, xp).fields })
+    .catch(logFail('bumpDaily'));
   return completed;
 }
 
-// Claims a finished challenge: its coins. Returns them (0 if nothing).
+// Claims a finished challenge: its coins and XP. Returns { coins, xp } (null
+// if nothing).
 export function claimDailyChallenge(uid, profile, id) {
   const r = claimDailyRules(profile, id);
-  if (!r) return 0;
+  if (!r) return null;
   userDocRef(uid)
-    .update({ ...r.update, coins: inc(r.coins), totalEarned: inc(r.coins) })
+    .update({ ...r.update, coins: inc(r.coins), totalEarned: inc(r.coins), ...xpFields(profile, r.xp).fields })
     .catch(logFail('claimDailyChallenge'));
-  return r.coins;
+  return { coins: r.coins, xp: r.xp };
 }
 
 // Opens the daily chest: its coins, one token of `tokenCreatureId` (the
@@ -118,20 +152,20 @@ export function claimDailyChallenge(uid, profile, id) {
 // (`streakDiscount`, used up by buying it — functions/purchases.js).
 // Returns { coins, reward } (null if it isn't ready). Tokens that fill a set
 // put the key on the card, as a box does.
-// The daily chest's coins and streak (a streak day's gems or chest are the
-// server's: squad dailyGift, which the caller sends).
+// The daily chest's coins, XP and streak (a streak day's gems or chest are
+// the server's: squad dailyGift, which the caller sends).
 export function claimDailyChest(uid, profile) {
   const r = claimChestRules(profile);
   if (!r) return null;
   const reward = r.reward;
   let coins = r.coins;
-  const update = { ...r.update, chests: inc(1) };
+  const update = { ...r.update, chests: inc(1), ...xpFields(profile, r.xp).fields };
   if (reward.kind === 'coins') coins += reward.amount;
   else if (reward.kind === 'half') update.streakDiscount = true;
   update.coins = inc(coins);
   update.totalEarned = inc(coins);
   userDocRef(uid).update(update).catch(logFail('claimDailyChest'));
-  return { coins, reward };
+  return { coins, xp: r.xp, reward };
 }
 
 // --- the Squad Crib (src/crib/): the squad's rooms, stats and furniture, one
@@ -201,27 +235,26 @@ export function cribCoins(uid, n) {
   userDocRef(uid).update(update).catch(logFail('cribCoins'));
 }
 
-// A Squishdoku level or Blitz run (src/squishdoku/levels.js afterLevel /
-// afterBlitz): its `sdk.*` fields and the coins it paid.
-export function saveSquishdoku(uid, update, coins = 0) {
-  const all = { ...update };
+// A mini-game's record and what a level or run paid: coins, and XP for the
+// player (`profile`: the one the XP was worked out from).
+function saveGame(what, uid, update, coins, xp, profile) {
+  const all = { ...update, ...(xp > 0 ? xpFields(profile, xp).fields : {}) };
   if (coins > 0) {
     all.coins = inc(coins);
     all.totalEarned = inc(coins);
   }
-  userDocRef(uid).update(all).catch(logFail('saveSquishdoku'));
+  userDocRef(uid).update(all).catch(logFail(what));
 }
 
-// Squish Sort's record (`sort.*` fields, src/sort/levels.js afterLevel) and
-// the coins a level paid, the same way.
-export function saveSort(uid, update, coins = 0) {
-  const all = { ...update };
-  if (coins > 0) {
-    all.coins = inc(coins);
-    all.totalEarned = inc(coins);
-  }
-  userDocRef(uid).update(all).catch(logFail('saveSort'));
-}
+// A Squishdoku level or Blitz run (src/squishdoku/levels.js afterLevel /
+// afterBlitz): its `sdk.*` fields.
+export const saveSquishdoku = (uid, update, coins = 0, xp = 0, profile = null) => saveGame('saveSquishdoku', uid, update, coins, xp, profile);
+
+// Squish Sort's record (`sort.*` fields, src/sort/levels.js afterLevel).
+export const saveSort = (uid, update, coins = 0, xp = 0, profile = null) => saveGame('saveSort', uid, update, coins, xp, profile);
+
+// Squish Stack (SQUISH_STACK.md): the `stack` record.
+export const saveStack = (uid, update, coins = 0, xp = 0, profile = null) => saveGame('saveStack', uid, update, coins, xp, profile);
 
 // Accounts created before this app matched the new roster have an
 // `ownedIds` that predates STARTER_CREATURE_IDS (e.g. the old single 'buddy'
@@ -404,6 +437,19 @@ export function subscribeToOffers(onChange) {
   return firestore()
     .collection('config')
     .doc('offers')
+    .onSnapshot(
+      (snap) => onChange(snap.exists ? snap.data() : null),
+      () => onChange(null),
+    );
+}
+
+// What the levels are — config/levels (the road, the curve, what earns XP:
+// functions/squad.js DEFAULT_LEVELS documents it). `onChange` gets null
+// until it exists.
+export function subscribeToLevels(onChange) {
+  return firestore()
+    .collection('config')
+    .doc('levels')
     .onSnapshot(
       (snap) => onChange(snap.exists ? snap.data() : null),
       () => onChange(null),

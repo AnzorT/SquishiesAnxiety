@@ -5,7 +5,7 @@
 // look and open, and reads of the profile for the screens.
 import squad from '../../functions/squad.js';
 
-export const { RARITY, GROUPS, SETS, SEASON, ROSTER, BY_ID, SET_OF, HIDDEN, hiddenOf, isOut, groupOut, outIds, SET_REWARDS, setRewardsOf, COPIES, copiesOf, needOf, copiesHad, dropRar, inGroupChest, DUPE, SET_BONUS, FIN, STAGES, CHESTS, PITY_MAX, EPIC_MAX, DEAL, VIDEO_CHESTS, SWAPS, GEM_PACKS, START, owns, SIZES, SIZE_I, GDUPE, LUCK_MAX, UPGRADE, FREE_MS, AD_CHESTS, GDEAL, lineup, DEFAULT_OFFERS, offersOf, jarGems } = squad;
+export const { RARITY, GROUPS, SETS, SEASON, ROSTER, BY_ID, SET_OF, HIDDEN, hiddenOf, isOut, groupOut, outIds, SET_REWARDS, setRewardsOf, COPIES, copiesOf, needOf, copiesHad, dropRar, inGroupChest, DUPE, SET_BONUS, FIN, STAGES, CHESTS, PITY_MAX, EPIC_MAX, DEAL, VIDEO_CHESTS, SWAPS, GEM_PACKS, START, owns, SIZES, SIZE_I, dupeCoinsFor, LUCK_MAX, UPGRADE, FREE_MS, AD_CHESTS, GDEAL, lineup, DEFAULT_OFFERS, offersOf, jarGems } = squad;
 
 // Shop order and how each chest opens (the design's TIERS: TAP, HOLD,
 // SWIPE, MIX); the season chest opens like a Basic one.

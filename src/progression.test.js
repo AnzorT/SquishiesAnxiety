@@ -5,7 +5,7 @@
 // (plain Node: the module imports nothing from React Native)
 
 import assert from 'node:assert/strict';
-import { challengesFor, dailyRows, bumpDaily, claimDaily, claimChest, streakOf, streakMultiplier, streakTrack, streakReward, dailyView, dailyUnlocked, cribUnlocked, level, DAILY_LEVEL, CHEST_COINS } from './progression.js';
+import { challengesFor, dailyRows, bumpDaily, claimDaily, claimChest, streakOf, streakMultiplier, streakTrack, streakReward, dailyView, dailyUnlocked, cribUnlocked, level, DAILY_LEVEL, CHEST_COINS, CHEST_XP, CHALLENGE_XP, SQUISH_XP, SQUISH_XP_DAY } from './progression.js';
 
 const DAY = '2026-10-03';
 const YESTERDAY = '2026-10-02';
@@ -50,13 +50,14 @@ for (const ch of a) {
 }
 assert.equal(dailyView(profile, new Date(`${DAY}T10:00:00`)).chestReady, true);
 
-// the chest: coins, streak 1, no level yet (level < 3)
+// the chest: coins, XP, streak 1 — and no level of its own any more (PLAYER_XP.md)
 let chest = claimChest(profile, DAY);
 assert.equal(chest.coins, CHEST_COINS);
+assert.equal(chest.xp, CHEST_XP);
+assert.equal('level' in chest.update, false);
 profile = { ...profile, ...chest.update };
 assert.equal(profile.streak, 1);
 assert.equal(profile.lastFull, DAY);
-assert.equal(profile.level, undefined, 'no level a day before DAILY_LEVEL');
 assert.equal(claimChest(profile, DAY), null, 'once a day');
 assert.equal(streakOf(profile, new Date(`${DAY}T20:00:00`)), 1);
 assert.equal(streakMultiplier(profile, new Date(`${DAY}T20:00:00`)), 1.05);
@@ -65,7 +66,7 @@ assert.equal(streakMultiplier(profile, new Date(`${DAY}T20:00:00`)), 1.05);
 assert.equal(streakOf({ streak: 4, lastFull: YESTERDAY }, new Date(`${DAY}T09:00:00`)), 4);
 assert.equal(streakOf({ streak: 4, lastFull: '2026-10-01' }, new Date(`${DAY}T09:00:00`)), 0);
 
-// a new day starts the challenges over, and the chest on it extends the streak and the level (from level 3)
+// a new day starts the challenges over, and the chest on it extends the streak
 const NEXT = '2026-10-04';
 profile = { ...profile, level: DAILY_LEVEL };
 assert.ok(dailyRows(profile, NEXT).every((x) => x.prog === 0 && !x.claimed));
@@ -76,9 +77,7 @@ for (const ch of challengesFor(NEXT)) {
 chest = claimChest(profile, NEXT);
 profile = { ...profile, ...chest.update };
 assert.equal(profile.streak, 2);
-assert.equal(profile.level, DAILY_LEVEL + 1);
-assert.equal(profile.levelDay, NEXT);
-assert.equal(level(profile), DAILY_LEVEL + 1);
+assert.equal(level(profile), DAILY_LEVEL, 'the chest leaves the level to the XP');
 
 // a missed day: the streak starts over at 1
 profile = { ...profile, lastFull: '2026-10-01', streak: 9 };
@@ -121,5 +120,30 @@ assert.equal(dailyUnlocked({ level: 3 }), true);
 assert.equal(dailyUnlocked({ level: 3, tut: 'box1' }), false, 'a replay hides them again');
 assert.equal(dailyUnlocked({ level: 3, tut: 'c_daily' }), true);
 assert.equal(dailyUnlocked({ level: 2, tut: 'done' }), false);
+// …by the XP once a profile has it (200 reaches level 2, 500 level 3)
+assert.equal(cribUnlocked({ pxp: 199, level: 5 }), false, 'pxp wins over the old level');
+assert.equal(cribUnlocked({ pxp: 200 }), true);
+assert.equal(dailyUnlocked({ pxp: 499, tut: 'done' }), false);
+assert.equal(dailyUnlocked({ pxp: 500, tut: 'done' }), true);
+
+// a claim pays its XP with its coins
+{
+  const p0 = { daily: { date: DAY, prog: { squish: 500 }, claimed: {}, chest: false } };
+  const sq = dailyRows(p0, DAY).find((x) => x.ev === 'squish');
+  assert.equal(sq.xp, CHALLENGE_XP);
+  assert.equal(claimDaily(p0, sq.id, DAY).xp, CHALLENGE_XP);
+}
+
+// squishing: 1 XP every SQUISH_XP squishes, up to SQUISH_XP_DAY a day; other events none
+{
+  const at = (n) => ({ daily: { date: DAY, prog: { squish: n }, claimed: {}, chest: false } });
+  assert.equal(bumpDaily(at(0), 'squish', 1, DAY).xp, 0);
+  assert.equal(bumpDaily(at(SQUISH_XP - 1), 'squish', 1, DAY).xp, 1);
+  assert.equal(bumpDaily(at(3), 'squish', 12, DAY).xp, 3);
+  assert.equal(bumpDaily(at(SQUISH_XP * SQUISH_XP_DAY - 1), 'squish', 1, DAY).xp, 1, 'the last one of the day');
+  assert.equal(bumpDaily(at(SQUISH_XP * SQUISH_XP_DAY), 'squish', SQUISH_XP, DAY).xp, 0, 'capped');
+  assert.equal(bumpDaily(at(SQUISH_XP * SQUISH_XP_DAY), 'squish', 1, '2026-10-04').xp, 0, 'a new day starts from 0');
+  assert.equal(bumpDaily(at(0), 'earn', 500, DAY).xp, 0);
+}
 
 console.log('progression: all checks passed');

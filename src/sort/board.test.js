@@ -1,7 +1,7 @@
 // node src/sort/board.test.js — Squish Sort's levels and board rules.
 import assert from 'node:assert/strict';
 import { drop, makeBoard, occupant, solved, startState } from './board.js';
-import { HEARTS, LEVELS, LEVEL_LIST, afterLevel, coinsFor, levelSpec, nextSkill, record, skillShift, starsFor } from './levels.js';
+import { BLITZ_COINS, BLITZ_ROUNDS, HEARTS, LEVELS, LEVEL_LIST, MODEL_STARTS, afterBlitz, afterLevel, blitzSpec, blitzTheme, coinsFor, levelSpec, nextSkill, record, skillShift, starsFor, xpFor } from './levels.js';
 
 // a seeded random
 const rng = (seed) => () => {
@@ -14,8 +14,28 @@ const POOL = Array.from({ length: 27 }, (_, i) => ({ id: String(i), uri: `u${i}`
 assert.equal(LEVELS, 50);
 assert.equal(LEVEL_LIST.length, 50);
 // level 1 is one shelf, easy; the last is eight
-assert.deepEqual([levelSpec(1).rows, levelSpec(1).cols, levelSpec(1).tier, levelSpec(1).count], [1, 4, 0, 2]);
+assert.deepEqual([levelSpec(1).rows, levelSpec(1).cols, levelSpec(1).tier, levelSpec(1).count], [1, 3, 0, 2]);
 assert.equal(levelSpec(50).rows, 8);
+// seven fridges (and cupboards), small to very very large: each one starts
+// on its first level, is at least as wide as the last, and gains shelves
+// as it goes, never losing one
+assert.deepEqual(MODEL_STARTS, [1, 6, 12, 19, 26, 33, 42]);
+assert.equal(levelSpec(1).model, 0);
+assert.equal(levelSpec(50).model, 6);
+for (let lv = 2; lv <= LEVELS; lv++) {
+  const [a, b] = [LEVEL_LIST[lv - 2], LEVEL_LIST[lv - 1]];
+  assert.ok(b.model === a.model || b.model === a.model + 1, lv);
+  assert.equal(b.first, b.model !== a.model, lv);
+  if (b.model === a.model) assert.ok(b.rows >= a.rows && b.cols === a.cols, lv);
+  else assert.ok(b.cols >= a.cols, lv);
+  // a new shelf: a new band (and a banner on the map)
+  assert.equal(b.band !== a.band, b.first || b.more, lv);
+  assert.equal(b.more, b.model === a.model && b.rows > a.rows, lv);
+}
+for (let k = 0; k < 7; k++) {
+  const own = LEVEL_LIST.filter((L) => L.model === k);
+  assert.ok(new Set(own.map((L) => L.rows)).size >= 2, `model ${k} gains a shelf`);
+}
 for (let lv = 1; lv <= LEVELS; lv++) {
   for (const skill of [-2, 0, 2]) {
     const s = levelSpec(lv, skill);
@@ -154,5 +174,44 @@ assert.equal(lost.coins, 0);
 assert.ok(lost.update['sort.cupboard.skill'] < 0);
 assert.equal(record(p).cupboard.lv, 1);
 assert.equal(afterLevel({ sort: { fridge: { lv: 50 } } }, 'fridge', levelSpec(50), { won: true, mistakes: 0, ms: 1 }).unlocked, false);
+
+// Blitz: ten rounds that never shrink, the fridge and the cupboard taking
+// turns, each one dealable; the run's record
+assert.equal(BLITZ_ROUNDS, 10);
+assert.deepEqual([0, 1, 2, 3].map(blitzTheme), ['fridge', 'cupboard', 'fridge', 'cupboard']);
+for (let i = 0; i < BLITZ_ROUNDS; i++) {
+  const s = blitzSpec(i, 0);
+  assert.equal(s.round, i + 1);
+  if (i > 0) assert.ok(s.rows * s.cols >= blitzSpec(i - 1).rows * blitzSpec(i - 1).cols, i);
+  const b = makeBoard(s, POOL, rng(i + 40));
+  assert.equal(b.pieces.filter((pc) => pc.home != null).length, s.count, `blitz ${i} deals its squishies`);
+}
+assert.equal(record({}).blitz.reached, 0);
+const lostRun = afterBlitz({}, { won: false, reached: 3 });
+assert.equal(lostRun.coins, 0);
+assert.equal(lostRun.update['sort.blitz.reached'], 3);
+const wonRun = afterBlitz({ sort: { blitz: { reached: 10, bestMs: 0, wins: 0 } } }, { won: true, reached: 10, ms: 200000 });
+assert.equal(wonRun.coins, BLITZ_COINS);
+assert.equal(wonRun.update['sort.blitz.wins'], 1);
+assert.equal(wonRun.update['sort.blitz.bestMs'], 200000);
+
+// the player's XP (PLAYER_XP.md): all of it on a first win, half on a replay,
+// the difference when a replay beats the best by more; 200 for a Blitz win
+{
+  const spec = levelSpec(10);
+  const full = xpFor(spec, 3);
+  assert.equal(full, Math.round((10 + 5 + 5 * spec.tier) * 1.2));
+  const first = afterLevel({ pxp: 0 }, 'fridge', spec, { won: true, mistakes: 0, ms: 1 });
+  assert.equal(first.xp, full);
+  assert.equal(first.before.level, 1);
+  const again = afterLevel({ pxp: 0, sort: { fridge: { lv: 11, best: { 10: 3 } } } }, 'fridge', spec, { won: true, mistakes: 0, ms: 1 });
+  assert.equal(again.xp, Math.round(full / 2));
+  const better = afterLevel({ pxp: 0, sort: { fridge: { lv: 11, best: { 10: 1 } } } }, 'fridge', spec, { won: true, mistakes: 0, ms: 1 });
+  assert.equal(better.xp, Math.max(Math.round(full / 2), full - xpFor(spec, 1)));
+  assert.equal(afterLevel({}, 'fridge', spec, { won: false }).xp, 0);
+  const run = afterBlitz({ pxp: 150 }, { won: true, reached: BLITZ_ROUNDS, ms: 1000 });
+  assert.equal(run.xp, 200);
+  assert.deepEqual(run.levelUps, [2]);
+}
 
 console.log('sort board.test.js: all passed');

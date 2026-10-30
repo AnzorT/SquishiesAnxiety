@@ -6,10 +6,10 @@ import { RaysSpin } from '../components/candy/Decor';
 import { CoinIcon } from '../squad/ui';
 import sfx from '../audio/sfx';
 import { CountUp, FxLayer, PopIn, Rock, SlideIn } from '../squishdoku/fx';
-import { Overlay } from '../squishdoku/Overlays';
+import { Overlay, XpGain, XpPlus } from '../squishdoku/Overlays';
 import { BtnLabel, Head, SdButton } from '../squishdoku/ui';
 import { F, INK } from '../squishdoku/theme';
-import { HEARTS, TIER_NAMES, clock } from './levels';
+import { BLITZ_ROUNDS, HEARTS, TIER_NAMES, clock } from './levels';
 
 // Squish Sort's cards over the game: the win (stars popping in one by one,
 // coins counting up), the fail (out of hearts or time), pause, and how to
@@ -17,7 +17,8 @@ import { HEARTS, TIER_NAMES, clock } from './levels';
 
 const STAR_D = 'M12 2.2 L14.9 8.6 L21.8 9.3 L16.6 14 L18.1 20.9 L12 17.4 L5.9 20.9 L7.4 14 L2.2 9.3 L9.1 8.6 Z';
 
-function Star({ earned, delay, big }) {
+// a result star popping in (Squish Stack's result card too)
+export function Star({ earned, delay, big }) {
   const t = useRef(new Animated.Value(0)).current;
   const fx = useRef(null);
   const size = big ? 74 : 60;
@@ -50,7 +51,8 @@ function Star({ earned, delay, big }) {
 const TITLES = ['', 'SORTED!', 'NICE SORTING!', 'PERFECT MEMORY!'];
 const STEP = 480;
 
-// res: { stars, coins, mistakes, ms, unlocked }; `last`: level 50, no NEXT
+// res: { stars, coins, xp, before, after, levelUps, mistakes, ms, unlocked };
+// `last`: level 50, no NEXT
 export function ResultCard({ visible, res, spec, theme, last, onNext, onReplay, onHub }) {
   const [key, setKey] = useState(0);
   useEffect(() => {
@@ -77,7 +79,9 @@ export function ResultCard({ visible, res, spec, theme, last, onNext, onReplay, 
       <SlideIn trigger={key} delay={coinsAt - 150} dy={20} style={styles.rewardRow}>
         <CoinIcon size={26} />
         <CountUp value={res.coins} delay={coinsAt} ms={800} style={styles.coins} prefix="+" onTick={() => sfx.play('sd_coinTick')} />
+        <XpPlus xp={res.xp} />
       </SlideIn>
+      <XpGain trigger={key} res={res} delay={coinsAt + 500} />
       {res.unlocked ? (
         <PopIn trigger={key} delay={coinsAt + 500}>
           <Text style={styles.unlocked}>{`LEVEL ${spec.lv + 1} UNLOCKED`}</Text>
@@ -198,6 +202,14 @@ export function RulesCard({ visible, onClose }) {
           {line}
         </Text>
       ))}
+      <Text style={styles.twist}>
+        <Text style={[styles.twistName, { color: '#1f7a5a' }]}>{'BIGGER AND BIGGER  '}</Text>
+        {'Seven sizes, from a mini fridge to a restaurant fridge (and a bedside cabinet to a giant wardrobe), each gaining shelves as you go.'}
+      </Text>
+      <Text style={styles.twist}>
+        <Text style={[styles.twistName, { color: '#0c5a9c' }]}>{'BLITZ ⚡  '}</Text>
+        {`${BLITZ_ROUNDS} rounds on one clock that runs while you sort. One mistake and it's back to round 1 (one revive per run).`}
+      </Text>
       <SdButton kind="green" onPress={onClose} sound="sd_select" faceStyle={styles.bigFace} style={{ marginTop: 8 }}>
         <BtnLabel kind="green" size={18}>
           GOT IT!

@@ -8,16 +8,15 @@ import CandyBackground from '../components/candy/CandyBackground';
 import RoundButton from '../components/candy/RoundButton';
 import ShadowText from '../components/candy/ShadowText';
 import RigCreature from '../components/RigCreature';
-import { BY_ID, GROUPS, GROUP_INK, HIDDEN, RAR_LOOK, ROSTER, SET_REWARDS, copyProgress, isOut, owns, wallet } from '../squad/data';
+import { BY_ID, GROUPS, GROUP_INK, HIDDEN, RAR_LOOK, ROSTER, SET_REWARDS, copyProgress, isOut, owns } from '../squad/data';
 import { isNewId, ownedIdList, selectedId } from '../squad/lobby';
-import { COIN } from '../squad/currencyArt';
 import { F, Ringed } from '../squad/ui';
-import { fmtNum } from '../format';
 import { useProgressive } from '../components/Skeleton';
 
-// The Squad screen (the 2026-10-19 design's "Squad Select v2"), sliding up
-// over the lobby: the squishy you're looking at, live (drag to spin), with
-// its name, group and rarity and one big button — SELECTED, SELECT (it
+// The Squad screen, titled "My Pals" (user 2026-10-28; the design's "Squad
+// Select v2"), sliding up over the lobby (no coin purse: user 2026-10-28):
+// the squishy you're looking at, live (drag to spin), with
+// its name, group and rarity and one button — SELECTED, SELECT (it
 // becomes the lobby's), or where it comes from (no coin price: chest copies
 // are the only way to unlock, user 2026-10-24) — over a
 // grid of all 86 but the ones not out yet (rig stills from the catalog's
@@ -129,16 +128,23 @@ function LockMini() {
 }
 
 // The grid's own backdrop: purple dots every 14px on a white wash.
-const GridBack = memo(function GridBack() {
+// Sized in numbers (`w` × `h`, the grid's measured box), not "100%":
+// react-native-svg on Android keeps a 100% rect at the size it first drew,
+// and the grid starts short (the hero's stage is full height until the page
+// is measured), so the wash stopped a row down and the page's pink showed
+// under the rest (user 2026-10-28).
+const GridBack = memo(function GridBack({ w, h }) {
+  const W = w || '100%';
+  const H = h || '100%';
   return (
-    <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" pointerEvents="none">
+    <Svg style={StyleSheet.absoluteFill} width={W} height={H} pointerEvents="none">
       <Defs>
         <Pattern id="ssDots" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
           <Circle cx="1.5" cy="1.5" r="1.4" fill="#8f3cf2" fillOpacity={0.13} />
         </Pattern>
       </Defs>
-      <Rect x="0" y="0" width="100%" height="100%" fill="#ffffff" fillOpacity={0.45} />
-      <Rect x="0" y="0" width="100%" height="100%" fill="url(#ssDots)" />
+      <Rect x="0" y="0" width={W} height={H} fill="#ffffff" fillOpacity={0.45} />
+      <Rect x="0" y="0" width={W} height={H} fill="url(#ssDots)" />
     </Svg>
   );
 });
@@ -174,7 +180,7 @@ const HeroBack = memo(function HeroBack({ k = 1 }) {
 const ICONS = {
   lock: (lip) => <LockGlyph size={20} color={lip} />,
   gift: () => (
-    <Svg width={22} height={22} viewBox="0 0 22 22">
+    <Svg width={16} height={16} viewBox="0 0 22 22">
       <Rect x={3} y={9} width={16} height={10} rx={2} fill="#6a22d6" />
       <Rect x={2} y={6} width={18} height={4.5} rx={1.5} fill="#8f3cf2" />
       <Rect x={9.7} y={6} width={2.6} height={13} fill="#ffd83a" />
@@ -183,29 +189,18 @@ const ICONS = {
   ),
 };
 
-// The big pill under the hero: a white disc with the icon, then the label.
-// SELECT / SELECTED have no icon, so their label sits in the middle.
+// The pill under the hero: SELECT, SELECTED, or where it comes from (FROM
+// CHESTS …, a small icon before it), all one small size (the big one was too
+// big, user 2026-10-28, twice).
 function MainButton({ m, onPress }) {
-  const size = m.small ? 19 : m.price ? 21 : 24;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.mainSlot, pressed && { transform: [{ translateY: 4 }, { scale: 0.98 }] }]}>
-      <Ringed ring={m.lip} lip={6} ringW={2.5} border={3} radius={999} colors={m.bg} innerStyle={[styles.mainFace, !m.ic && styles.mainFaceBare]}>
-        <LinearGradient pointerEvents="none" colors={['rgba(255,255,255,0.6)', 'rgba(255,255,255,0.04)']} style={[styles.mainShine, !m.ic && styles.mainShineBare]} />
-        {m.ic ? (
-          <View style={[styles.mainDiscLip, { backgroundColor: m.lip }]}>
-            <View style={styles.mainDisc}>{ICONS[m.ic](m.lip)}</View>
-          </View>
-        ) : null}
-        <View style={[styles.mainLabels, !m.ic && styles.mainLabelsBare]}>
-          <ShadowText style={[styles.mainText, { fontSize: size, lineHeight: size + 4, color: m.ink }]} shadows={m.ts ? OUTLINE(m.ts) : []} numberOfLines={1}>
-            {m.label}
-          </ShadowText>
-          {m.price ? (
-            <ShadowText style={styles.mainPrice} shadows={OUTLINE(m.ts)}>
-              {m.price}
-            </ShadowText>
-          ) : null}
-        </View>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.mainSlot, pressed && { transform: [{ translateY: 3 }, { scale: 0.98 }] }]}>
+      <Ringed ring={m.lip} lip={4} ringW={2} border={2.5} radius={999} colors={m.bg} innerStyle={styles.mainFace}>
+        <LinearGradient pointerEvents="none" colors={['rgba(255,255,255,0.6)', 'rgba(255,255,255,0.04)']} style={styles.mainShine} />
+        {m.ic ? ICONS[m.ic](m.lip) : null}
+        <ShadowText style={[styles.mainText, m.ic && styles.mainTextIc, { color: m.ink }]} shadows={m.ts ? OUTLINE(m.ts) : []} numberOfLines={1}>
+          {m.label}
+        </ShadowText>
       </Ringed>
     </Pressable>
   );
@@ -220,7 +215,6 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
   const sel = selectedId(profile);
   const [view, setView] = useState(sel);
   const [toast, setToast] = useState(null);
-  const w = wallet(profile);
   const catalog = useMemo(() => Object.fromEntries((creatures || []).map((c) => [c.id, c])), [creatures]);
   const ownedN = ownedIdList(profile).filter((id) => BY_ID[id]).length;
   const shown = useMemo(() => ORDER.filter((x) => isOut(x, hidden) || owns(profile || {}, x.id)), [profile, hidden]);
@@ -249,7 +243,19 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
     if (h > 0) setPageH(h);
   }, []);
   const stageH = pageH ? Math.max(150, Math.min(236, Math.round(pageH - 470))) : 236;
+  const [gridBox, setGridBox] = useState(null);
+  const onGrid = useCallback((e) => {
+    const { width: w, height: h } = e.nativeEvent.layout;
+    if (w > 0 && h > 0) setGridBox((b) => (b && b.w === w && b.h === h ? b : { w, h }));
+  }, []);
   const heroSize = stageH - 10;
+  // room for the moves that reach past the creature's box (RigCreature
+  // `bleed`): out to the screen's sides, up over the name, down behind the
+  // button. In the bare box its edges cut them off straight (user 2026-10-28).
+  const heroBleed = useMemo(
+    () => ({ x: Math.max(0, Math.floor((winW - heroSize) / 2)), top: Math.round(heroSize * 0.25), bottom: Math.round(heroSize * 0.12) }),
+    [winW, heroSize],
+  );
   const cellSize = useMemo(() => {
     const cw = Math.floor(((winW - 24 - 27) / 4) * 10) / 10;
     return { width: cw, height: Math.round((cw / 0.84) * 10) / 10 };
@@ -345,7 +351,6 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
       bg: ['#ffffff', '#f7f2fd', '#efe6fb'],
       lip: '#b8a0dc',
       ink: '#6a22d6',
-      small: true,
       note: viaSet
         ? `Collect the whole ${group} set to get ${c.name}.`
         : c.season
@@ -367,14 +372,10 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
         </RoundButton>
         <View style={styles.headText}>
           <ShadowText style={styles.title} shadows={TITLE_SHADOWS}>
-            Squad
+            My Pals
           </ShadowText>
           <Text style={styles.have}>{`${ownedN} / ${shown.length} collected`}</Text>
         </View>
-        <Ringed ring="#8e1580" lip={3} ringW={2} border={2.5} style={styles.coinPill} innerStyle={styles.purse}>
-          <Image source={COIN[0]} style={styles.coinImg} fadeDuration={0} />
-          <Text style={styles.purseText}>{fmtNum(w.coins)}</Text>
-        </Ringed>
       </View>
 
       <View style={styles.hero}>
@@ -391,7 +392,7 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
           <HeroBack k={stageH / 236} />
           <Animated.View style={[{ width: heroSize, height: heroSize }, popStyle]}>
             {!rigDrawn && catalog[view]?.thumb?.url ? <Image source={{ uri: catalog[view].thumb.url }} style={StyleSheet.absoluteFill} resizeMode="contain" fadeDuration={0} /> : null}
-            {rigLive ? <RigCreature ref={rig} creatureKey={c.key} paused={!active} rigShadow={false} onMounted={onRigDrawn} style={{ width: heroSize, height: heroSize }} /> : null}
+            {rigLive ? <RigCreature ref={rig} creatureKey={c.key} paused={!active} rigShadow={false} bleed={heroBleed} onMounted={onRigDrawn} style={{ width: heroSize, height: heroSize }} /> : null}
           </Animated.View>
           <View style={styles.spinHint} pointerEvents="none">
             <Svg width={16} height={10} viewBox="0 0 16 10">
@@ -406,8 +407,8 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
       </View>
 
       <View style={styles.divider} />
-      <View style={styles.gridBox}>
-        <GridBack />
+      <View style={styles.gridBox} onLayout={onGrid}>
+        <GridBack w={gridBox?.w} h={gridBox?.h} />
         {/* tiles scrolled out of sight are taken out of the drawing: with all
             ~80 in it, every frame of the live hero re-prepared every tile's
             picture (66 ms a frame, the screen at ~25 fps on the Galaxy A15,
@@ -441,14 +442,11 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
 }
 
 const styles = StyleSheet.create({
-  head: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 10, paddingHorizontal: 14, paddingBottom: 4 },
+  // over the hero, whose creature's moves reach up behind it (its `bleed`), so the back button keeps its taps
+  head: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 10, paddingHorizontal: 14, paddingBottom: 4, zIndex: 1 },
   headText: { gap: 1, minWidth: 0 },
   title: { fontFamily: F.display, fontSize: 22, lineHeight: 25, color: '#ffffff', includeFontPadding: false },
   have: { fontFamily: F.black, fontSize: 11, color: '#45107a' },
-  coinPill: { marginLeft: 'auto' },
-  purse: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingLeft: 7, paddingRight: 9, paddingVertical: 4 },
-  coinImg: { width: 22, height: 22, marginVertical: -5, marginLeft: -4 },
-  purseText: { fontFamily: F.black, fontSize: 13.5, color: '#b86200', includeFontPadding: false },
   hero: { alignItems: 'center', paddingTop: 2, paddingHorizontal: 16, paddingBottom: 12 },
   heroName: { fontFamily: F.display, fontSize: 34, lineHeight: 38, color: '#ffffff', textAlign: 'center', includeFontPadding: false },
   heroTags: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
@@ -460,17 +458,13 @@ const styles = StyleSheet.create({
   heroFloor: { position: 'absolute', left: '50%', bottom: 14, marginLeft: -75 },
   spinHint: { position: 'absolute', right: 4, bottom: 6, flexDirection: 'row', alignItems: 'center', gap: 4 },
   spinText: { fontFamily: F.heavy, fontSize: 10.5, color: '#6a4a9a' },
-  mainSlot: { width: '100%', maxWidth: 230 + 5 },
-  mainFace: { height: 64, flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 8, paddingRight: 18 },
-  mainFaceBare: { paddingLeft: 18 },
-  mainShine: { position: 'absolute', left: 46, right: '8%', top: 3, height: '38%', borderRadius: 999 },
-  mainShineBare: { left: '8%' },
-  mainDiscLip: { borderRadius: 22, paddingBottom: 3, marginBottom: -3 },
-  mainDisc: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center' },
-  mainLabels: { flex: 1, minWidth: 0, alignItems: 'flex-start', gap: 2 },
-  mainLabelsBare: { alignItems: 'center' },
-  mainText: { fontFamily: F.display, letterSpacing: 1, includeFontPadding: false },
-  mainPrice: { fontFamily: F.display, fontSize: 14, lineHeight: 17, color: '#ffffff', includeFontPadding: false },
+  // 140 × 44 with its ring and lip (235 × 73 until 2026-10-28)
+  mainSlot: { width: '100%', maxWidth: 140 },
+  mainFace: { height: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 8 },
+  mainShine: { position: 'absolute', left: '8%', right: '8%', top: 2, height: '38%', borderRadius: 999 },
+  mainText: { fontFamily: F.display, fontSize: 16, lineHeight: 20, letterSpacing: 1, includeFontPadding: false },
+  // the longer FROM CHESTS / SEASON CHEST / SET REWARD, beside their icon
+  mainTextIc: { fontSize: 12, lineHeight: 16, letterSpacing: 0.3 },
   note: { marginTop: 7, maxWidth: 260, fontFamily: F.heavy, fontSize: 11.5, lineHeight: 15, color: '#45107a', textAlign: 'center' },
   divider: { height: 3, backgroundColor: '#ffffff', zIndex: 3, borderBottomWidth: 1, borderBottomColor: 'rgba(201,176,236,0.9)', elevation: 4, shadowColor: '#45107a' },
   gridBox: { flex: 1, minHeight: 0 },

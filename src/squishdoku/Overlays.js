@@ -12,8 +12,9 @@ import { F, INK } from './theme';
 
 // The cards over the board: the result (score creatures popping in one by
 // one, each with its own bigger sound; PERFECT's stamp; coins counting up;
-// the XP bar; a Puzzle Level up), time's up, pause, and Blitz's mistake /
-// back-to-level-1 / win cards.
+// the player's XP bar; a level up), time's up, pause, and Blitz's mistake /
+// back-to-level-1 / win cards. The XP pieces are Squish Sort's and Squish
+// Stack's too.
 
 // The dim scrim and a card springing up into the middle.
 export function Overlay({ visible, children, tint = 'rgba(40,8,80,0.55)' }) {
@@ -108,8 +109,9 @@ function Stamp({ delay, text = 'PERFECT!' }) {
   );
 }
 
-// The Puzzle XP bar filling from before → after (rolling over on a level up).
-function XpBar({ before, after, delay }) {
+// The player's XP bar filling from before → after (src/playerXp.js
+// playerLevel()s), rolling over on a level up.
+export function XpBar({ before, after, delay }) {
   const t = useRef(new Animated.Value(0)).current;
   const [lv, setLv] = useState(before.level);
   useEffect(() => {
@@ -150,8 +152,37 @@ function XpBar({ before, after, delay }) {
           <LinearGradient colors={['#d9b8ff', '#9a4dff']} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} />
         </Animated.View>
       </View>
-      <Text style={styles.xpLabel}>PUZZLE XP</Text>
+      <Text style={styles.xpLabel}>XP</Text>
     </View>
+  );
+}
+
+// "+40 XP", beside a result's coins
+export const XpPlus = ({ xp }) => (xp ? <Text style={styles.xpPlus}>{`+${xp} XP`}</Text> : null);
+
+// Under a result's coins: the XP bar from `delay`, and LEVEL n! when it rose
+// (its prize waits on the level road). `res`: { xp, before, after, levelUps }.
+export function XpGain({ trigger, res, delay }) {
+  useEffect(() => {
+    if (!res?.levelUps?.length) return undefined;
+    const timer = setTimeout(() => sfx.play('sd_levelUp'), delay + 600);
+    return () => clearTimeout(timer);
+  }, [trigger, res, delay]);
+  if (!res?.xp || !res.before) return null;
+  return (
+    <>
+      <SlideIn trigger={trigger} delay={delay - 200} dy={16}>
+        <XpBar key={trigger} before={res.before} after={res.after} delay={delay} />
+      </SlideIn>
+      {res.levelUps?.length ? (
+        <PopIn trigger={trigger} delay={delay + 600} style={styles.levelUp}>
+          <Rock deg={3}>
+            <Text style={styles.levelUpText}>{`LEVEL ${res.after.level}!`}</Text>
+            <Text style={styles.levelUpSub}>A new prize on your level road</Text>
+          </Rock>
+        </PopIn>
+      ) : null}
+    </>
   );
 }
 
@@ -168,7 +199,6 @@ export function ResultCard({ visible, res, spec, uris, onNext, onReplay, onMap, 
     const STEP = 520;
     for (let i = 0; i < 3; i++) at(420 + i * STEP, () => sfx.play(i < res.stars ? `sd_star${i + 1}` : 'sd_starEmpty'));
     if (res.perfect) at(420 + 3 * STEP, () => sfx.play('sd_perfect'));
-    if (res.levelUps && res.levelUps.length) at(coinsAt(res) + 900, () => sfx.play('sd_levelUp'));
     return () => timers.forEach(clearTimeout);
   }, [visible, res]);
   if (!res) return <Overlay visible={false} />;
@@ -191,19 +221,9 @@ export function ResultCard({ visible, res, spec, uris, onNext, onReplay, onMap, 
         <CoinIcon size={26} />
         <CountUp value={res.levelCoins} delay={cAt} ms={800} style={styles.coins} prefix="+" onTick={() => sfx.play('sd_coinTick')} />
         {res.perfect ? <Text style={styles.mult}>×3</Text> : null}
-        <Text style={styles.xpPlus}>{`+${res.xp} XP`}</Text>
+        <XpPlus xp={res.xp} />
       </SlideIn>
-      <SlideIn trigger={key} delay={cAt + 300} dy={16}>
-        <XpBar key={key} before={res.before} after={res.after} delay={cAt + 500} />
-      </SlideIn>
-      {res.levelUps && res.levelUps.length ? (
-        <PopIn trigger={key} delay={cAt + 900} style={styles.levelUp}>
-          <Rock deg={3}>
-            <Text style={styles.levelUpText}>{`PUZZLE LEVEL ${res.after.level}!`}</Text>
-            <Text style={styles.levelUpSub}>{`+${res.levelUps.reduce((a, u) => a + u.coins, 0)} bonus coins`}</Text>
-          </Rock>
-        </PopIn>
-      ) : null}
+      <XpGain trigger={key} res={res} delay={cAt + 500} />
       {res.unlocked ? (
         <PopIn trigger={key} delay={cAt + 600}>
           <Text style={styles.unlocked}>{`LEVEL ${spec.lv + 1} UNLOCKED`}</Text>
@@ -274,21 +294,25 @@ export function PauseCard({ visible, onResume, onRestart, onQuit, blitz }) {
   );
 }
 
-// Blitz: a mistake with the revive still unused.
-export function ReviveCard({ visible, board, adReady, adsFree, onRevive, onGiveUp }) {
+// where a lost run goes back to (Squishdoku's says level; the others theirs)
+const backTo = (unit) => (unit === 'board' ? 'BACK TO LEVEL 1' : `BACK TO ${unit.toUpperCase()} 1`);
+
+// Blitz: a mistake with the revive still unused. (Squish Sort's and Squish
+// Stack's Blitz too: `unit` is what a step of the run is called.)
+export function ReviveCard({ visible, board, unit = 'board', adReady, adsFree, onRevive, onGiveUp }) {
   return (
     <Overlay visible={visible} tint="rgba(80,0,30,0.5)">
       <PopIn trigger={visible} delay={40}>
         <OutlinedTitle text="OOPS!" size={34} fill="pink" />
       </PopIn>
-      <Text style={styles.body}>{`That's a mistake. Keep your run going on board ${board}?`}</Text>
+      <Text style={styles.body}>{`That's a mistake. Keep your run going on ${unit} ${board}?`}</Text>
       <Text style={styles.small}>One revive per run</Text>
       <View style={styles.col}>
         <SdButton kind="gold" onPress={onRevive} disabled={!adsFree && !adReady} sound="sd_select" faceStyle={styles.wideFace}>
           <BtnLabel kind="gold" size={17}>{adsFree ? 'REVIVE (FREE)' : adReady ? '▶ WATCH AD TO REVIVE' : 'LOADING AD…'}</BtnLabel>
         </SdButton>
         <SdButton kind="white" onPress={onGiveUp} sound="sd_select" faceStyle={styles.wideFace}>
-          <BtnLabel kind="purple" size={15}>BACK TO LEVEL 1</BtnLabel>
+          <BtnLabel kind="purple" size={15}>{backTo(unit)}</BtnLabel>
         </SdButton>
       </View>
     </Overlay>
@@ -296,14 +320,14 @@ export function ReviveCard({ visible, board, adReady, adsFree, onRevive, onGiveU
 }
 
 // Blitz: the run is over (a mistake, or the clock).
-export function BlitzFailCard({ visible, reason, reached, best, onAgain, onQuit }) {
+export function BlitzFailCard({ visible, reason, reached, best, unit = 'board', onAgain, onQuit }) {
   return (
     <Overlay visible={visible} tint="rgba(80,0,30,0.55)">
       <PopIn trigger={visible} delay={40} from={2.4} twist={-12} friction={6} tension={160}>
-        <OutlinedTitle text="BACK TO LEVEL 1!" size={26} fill="pink" />
+        <OutlinedTitle text={`${backTo(unit)}!`} size={26} fill="pink" />
       </PopIn>
       <Text style={styles.body}>{reason === 'time' ? 'The Blitz clock ran out.' : 'One mistake sends the whole squad home.'}</Text>
-      <Text style={styles.small}>{`You reached board ${reached} · best ${Math.max(best, reached)}`}</Text>
+      <Text style={styles.small}>{`You reached ${unit} ${reached} · best ${Math.max(best, reached)}`}</Text>
       <View style={styles.col}>
         <SdButton kind="cyan" onPress={onAgain} sound="sd_select" faceStyle={styles.wideFace}>
           <BtnLabel kind="cyan" size={18}>GO AGAIN</BtnLabel>
@@ -316,7 +340,8 @@ export function BlitzFailCard({ visible, reason, reached, best, onAgain, onQuit 
   );
 }
 
-export function BlitzWinCard({ visible, res, uris, onAgain, onQuit }) {
+// (Squish Sort's and Squish Stack's too)
+export function BlitzWinCard({ visible, res, uris, unit = 'board', onAgain, onQuit }) {
   const fx = useRef(null);
   useEffect(() => {
     if (!visible) return undefined;
@@ -329,7 +354,7 @@ export function BlitzWinCard({ visible, res, uris, onAgain, onQuit }) {
       <PopIn trigger={visible} delay={60}>
         <OutlinedTitle text="BLITZ CHAMPION!" size={26} fill="gold" />
       </PopIn>
-      <Text style={styles.sub}>{`10 BOARDS · ${clock(res.ms)}${res.newBest ? ' · NEW BEST!' : ''}`}</Text>
+      <Text style={styles.sub}>{`10 ${unit.toUpperCase()}S · ${clock(res.ms)}${res.newBest ? ' · NEW BEST!' : ''}`}</Text>
       <View style={styles.slots}>
         {[0, 1, 2].map((i) => (
           <Slot key={i} uri={uris[i]} earned delay={300 + i * 300} big={i === 1} />
@@ -338,8 +363,9 @@ export function BlitzWinCard({ visible, res, uris, onAgain, onQuit }) {
       <SlideIn trigger={visible} delay={1300} dy={20} style={styles.rewardRow}>
         <CoinIcon size={26} />
         <CountUp value={res.coins} delay={1400} ms={1100} style={styles.coins} prefix="+" onTick={() => sfx.play('sd_coinTick')} ticks={14} />
-        <Text style={styles.xpPlus}>{`+${res.xp} XP`}</Text>
+        <XpPlus xp={res.xp} />
       </SlideIn>
+      <XpGain trigger={visible} res={res} delay={1900} />
       <SlideIn trigger={visible} delay={1700} dy={30} style={styles.btnRow}>
         <SdButton kind="white" onPress={onQuit} sound="sd_boardOut" faceStyle={styles.smallFace}>
           <BtnLabel kind="purple" size={15}>DONE</BtnLabel>

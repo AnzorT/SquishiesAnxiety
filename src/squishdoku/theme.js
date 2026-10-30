@@ -1,4 +1,5 @@
 import { F } from '../squad/ui';
+import CUSHIONS from './cushions';
 
 // Squishdoku's look: the candy app's fonts and rings, and the patch colours.
 export { F };
@@ -6,21 +7,15 @@ export { F };
 export const INK = '#45107a'; // the app's deep plum
 export const RING = '#45189a';
 
-// Nine patch colours, nine clearly different hues: with no lines between
-// patches the colours alone tell them apart, so two must never be mixed up,
-// even under a creature. Each is a candy tile's three shades (Tile.js):
-// [its darker 3D base, the face, the face's light top].
-export const PATCHES = [
-  ['#d94fa0', '#ff8fd0', '#ffd6ef'], // bubblegum pink
-  ['#d34646', '#ff7b7b', '#ffd2d2'], // coral red
-  ['#e3803a', '#ffb56a', '#ffe3c6'], // orange
-  ['#d6ac25', '#ffdc5c', '#fff6c4'], // yellow
-  ['#8fb92f', '#c8ea6a', '#effcc6'], // lime
-  ['#38b673', '#7fe3ad', '#d6f8e6'], // mint
-  ['#25a3ae', '#62dbe4', '#cff7fa'], // teal
-  ['#4a6de0', '#8aa6ff', '#dde6ff'], // blue
-  ['#8355dc', '#bb97ff', '#ece0ff'], // purple
-];
+// The nine patch colours, as plush cushions (cushions.js, made by
+// tools/squishdoku/cushions.mjs): { name, shade: [edge, body, light], src }.
+// Nine clearly different hues: with no lines between patches the colours
+// alone tell them apart. The user's picks on 2026-10-28, in turn: much more
+// colour that fits the app, then "cooler" (Jewel: deep and rich, the pastel
+// creatures stand out on it), then plush cushions in those colours, because
+// glossy candy buttons didn't match the creatures' fabric. Turned down that
+// day: bright candy (out of context) and Dreamy pastels (not cool).
+export const PATCHES = CUSHIONS;
 
 export const MODE_COLORS = {
   regular: { ring: '#8e1580', colors: ['#ffd6f4', '#ff5cc6', '#c02bd9'] },

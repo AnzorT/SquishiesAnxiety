@@ -215,7 +215,7 @@ export default function BlitzGame({ profile, uid, roster, adsFree, head = false,
       setTimeout(() => {
         const ms = clk.elapsed();
         const out = afterBlitz(profileRef.current, { won: true, reached: BOARDS, ms, head });
-        if (uid) saveSquishdoku(uid, out.update, out.coins);
+        if (uid) saveSquishdoku(uid, out.update, out.coins, out.xp, profileRef.current);
         const rec = record(profileRef.current);
         setWinUris(pickCreatures(roster, 3));
         setWin({ ...out, ms, newBest: !rec.blitz.bestMs || ms < rec.blitz.bestMs });
@@ -379,8 +379,9 @@ export default function BlitzGame({ profile, uid, roster, adsFree, head = false,
   );
 }
 
-// The big 3, 2, 1, GO! — each number slams in and swells away.
-function Countdown({ value }) {
+// The big 3, 2, 1, GO! — each number slams in and swells away. (Squish
+// Stack's Blitz too.)
+export function Countdown({ value }) {
   const t = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     t.setValue(0);

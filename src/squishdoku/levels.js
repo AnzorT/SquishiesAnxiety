@@ -1,6 +1,8 @@
 // Squishdoku's levels, timers, scoring and rewards (SQUISHDOKU.md), and
 // the profile's `sdk` record they're saved in. Pure functions: the screen
-// writes what they return.
+// writes what they return. The XP goes to the player's level
+// (src/playerXp.js; it was the game's own Puzzle Level until 2026-10-25).
+import { addXp, gameXp, winXp, xpRules } from '../playerXp.js';
 
 export const LEVELS = 50;
 
@@ -90,29 +92,13 @@ export function xpFor(spec, { stars, perfect }) {
   return Math.round(base * (0.6 + 0.2 * stars) * (perfect ? 1.5 : 1) * headCut(spec));
 }
 
-// --- Puzzle Level (the player's XP) -------------------------------------------------
-
-// XP to go from level L to L+1.
-export const xpToNext = (L) => 100 + 50 * (L - 1);
-export const levelUpCoins = (L) => 100 + 50 * L;
-
-// { level, into, need } for a total of `xp`.
-export function puzzleLevel(xp = 0) {
-  let L = 1;
-  let left = Math.max(0, Math.floor(xp));
-  while (left >= xpToNext(L)) {
-    left -= xpToNext(L);
-    L++;
-  }
-  return { level: L, into: left, need: xpToNext(L) };
-}
-
 // --- Blitz -----------------------------------------------------------------------
 
 export const BLITZ_SIZES = [4, 5, 5, 6, 6, 6, 6, 7, 7, 7];
 const BLITZ_TIERS = [0, 0, 0, 0, 0, 1, 1, 0, 1, 1];
 export const BLITZ_MS = 10 * 60 * 1000;
 export const BLITZ_COINS = 1500;
+// a won run's XP: config/levels `xp.blitz.squishdoku` (this by default)
 export const BLITZ_XP = 400;
 
 export function blitzSpec(i, skill = 0) {
@@ -124,7 +110,7 @@ export function blitzSpec(i, skill = 0) {
 export const blitzMs = (head) => Math.round(BLITZ_MS * (head ? HEAD_START.time : 1));
 export const blitzPrize = (head) => ({
   coins: Math.round(BLITZ_COINS * (head ? HEAD_START.reward : 1)),
-  xp: Math.round(BLITZ_XP * (head ? HEAD_START.reward : 1)),
+  xp: Math.round(xpRules().blitz.squishdoku * (head ? HEAD_START.reward : 1)),
 });
 
 // --- the profile's record -------------------------------------------------------
@@ -135,7 +121,6 @@ export function record(profile) {
     lv: Math.max(1, Math.min(LEVELS, s.lv || 1)),
     best: s.best || {},
     perfect: s.perfect || {},
-    xp: s.xp || 0,
     skill: s.skill || 0,
     bSkill: s.bSkill || 0,
     blitz: { reached: 0, bestMs: 0, wins: 0, ...(s.blitz || {}) },
@@ -145,8 +130,9 @@ export function record(profile) {
   };
 }
 
-// The fields to write after a Regular level, and what it paid: coins
-// (the level's plus any Puzzle Level rewards), xp, and the levels gained.
+// The fields to write after a Regular level, and what it paid: coins, the
+// player's XP (half on a replay: winXp) and the player levels it reached
+// (`before` / `after`: the result's XP bar).
 export function afterLevel(profile, spec, result) {
   const rec = record(profile);
   const update = {
@@ -156,18 +142,15 @@ export function afterLevel(profile, spec, result) {
   if (!result.solved) return { update, coins: 0, xp: 0, levelUps: [], unlocked: false };
   const { stars, perfect } = result;
   const coins = coinsFor(spec, result);
-  const xp = xpFor(spec, result);
-  const before = puzzleLevel(rec.xp);
-  const after = puzzleLevel(rec.xp + xp);
-  const levelUps = [];
-  for (let L = before.level + 1; L <= after.level; L++) levelUps.push({ level: L, coins: levelUpCoins(L) });
+  const best = rec.best[spec.lv] || 0;
+  const xp = winXp(gameXp(xpFor(spec, result)), best ? gameXp(xpFor(spec, { stars: best, perfect: !!rec.perfect[spec.lv] })) : null);
+  const { before, after, levelUps } = addXp(profile, xp);
   update['sdk.solves'] = rec.solves + 1;
-  update['sdk.xp'] = rec.xp + xp;
-  if (stars > (rec.best[spec.lv] || 0)) update[`sdk.best.${spec.lv}`] = stars;
+  if (stars > best) update[`sdk.best.${spec.lv}`] = stars;
   if (perfect && !rec.perfect[spec.lv]) update[`sdk.perfect.${spec.lv}`] = true;
   const unlocked = spec.lv === rec.lv && rec.lv < LEVELS;
   if (unlocked) update['sdk.lv'] = rec.lv + 1;
-  return { update, coins: coins + levelUps.reduce((a, u) => a + u.coins, 0), levelCoins: coins, xp, levelUps, unlocked, before, after };
+  return { update, coins, levelCoins: coins, xp, levelUps, unlocked, before, after };
 }
 
 // The fields to write after a Blitz run ends (won or not).
@@ -181,12 +164,8 @@ export function afterBlitz(profile, { won, reached, ms, head = false }) {
   update['sdk.blitz.wins'] = rec.blitz.wins + 1;
   if (!rec.blitz.bestMs || ms < rec.blitz.bestMs) update['sdk.blitz.bestMs'] = ms;
   const prize = blitzPrize(head);
-  const before = puzzleLevel(rec.xp);
-  const after = puzzleLevel(rec.xp + prize.xp);
-  const levelUps = [];
-  for (let L = before.level + 1; L <= after.level; L++) levelUps.push({ level: L, coins: levelUpCoins(L) });
-  update['sdk.xp'] = rec.xp + prize.xp;
-  return { update, coins: prize.coins + levelUps.reduce((a, u) => a + u.coins, 0), xp: prize.xp, levelUps, before, after };
+  const { before, after, levelUps } = addXp(profile, prize.xp);
+  return { update, coins: prize.coins, xp: prize.xp, levelUps, before, after };
 }
 
 // 1:05 / 0:09

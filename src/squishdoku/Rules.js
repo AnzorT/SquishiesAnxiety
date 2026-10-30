@@ -7,6 +7,7 @@ import { PopIn, SlideIn } from './fx';
 import { BtnLabel, SdButton, XGlyph } from './ui';
 import Tile from './Tile';
 import { F, INK, PATCHES } from './theme';
+import { headOf } from './roster';
 
 // How to play: a solved 5×5 drawn small, and the rules in five lines.
 
@@ -20,10 +21,11 @@ function MiniBoard({ roster, size = 130 }) {
         const r = Math.floor(cell / p.n);
         const c = cell % p.n;
         const uri = roster.length ? roster[(reg * 5 + 3) % roster.length] : null;
+        const head = uri ? headOf(uri) : null;
         return (
           <View key={cell} style={{ position: 'absolute', left: 4 + c * cs, top: 4 + r * cs, width: cs, height: cs }}>
             <Tile size={cs} patch={PATCHES[reg]} />
-            {sol.has(cell) && uri ? <Image source={{ uri }} style={{ position: 'absolute', width: '86%', height: '86%', left: '7%', top: '4%' }} resizeMode="contain" /> : null}
+            {sol.has(cell) && uri ? <Image source={head ? head.idle : { uri }} style={{ position: 'absolute', width: '86%', height: '86%', left: '7%', top: '4%' }} resizeMode="contain" /> : null}
           </View>
         );
       })}
@@ -67,7 +69,7 @@ export default function RulesCard({ visible, roster, onClose }) {
 }
 
 const styles = StyleSheet.create({
-  mini: { borderRadius: 12, backgroundColor: '#d9c6f5', borderWidth: 2.5, borderColor: '#45189a', overflow: 'hidden' },
+  mini: { borderRadius: 12, backgroundColor: '#e9dcf7', borderWidth: 2.5, borderColor: '#45189a', overflow: 'hidden' },
   rule: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, alignSelf: 'stretch', paddingHorizontal: 4 },
   ruleBadge: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#ff5cc6', borderWidth: 2, borderColor: '#ffffff', alignItems: 'center', justifyContent: 'center', marginTop: 1 },
   ruleKey: { fontFamily: F.display, fontSize: 12, color: '#ffffff', includeFontPadding: false },

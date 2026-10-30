@@ -210,21 +210,32 @@ const GEM_PACKS = { gems_80: 80, gems_450: 450, gems_950: 950, gems_2000: 2000, 
 // Every group has a chest in five sizes. Each drops one creature of its group
 // at its size's odds (the rarity nearest the roll that the group has, never a
 // pass creature, nor a set reward while those are on: SET_REWARDS; unowned
-// ones 3x as likely) and coins. A
-// duplicate pays GDUPE coins. Common and Rare chests can upgrade on the first
-// smash (UPGRADE): rolled here, at the purchase, and played by the smash.
+// ones 3x as likely), and nothing else: no coins, unless it's a duplicate,
+// which pays DUPE_SHARE of what the chest is worth (dupeCoinsFor; the user,
+// 2026-10-25). Common and Rare chests can upgrade on the first smash
+// (UPGRADE): rolled here, at the purchase, and played by the smash.
 // The Lucky meter is `epic`: an Epic or better at least every LUCK_MAX
 // chests. Group chests drop no finishes (the design's grant is always
 // Normal).
 const SIZES = [
-  { k: 'common', odds: [72, 22, 5, 1], coins: [40, 120], price: { cur: 'coins', n: 300 } },
-  { k: 'rare', odds: [55, 33, 9.5, 2.5], coins: [80, 220], price: { cur: 'coins', n: 1200 } },
-  { k: 'epic', odds: [30, 45, 20, 5], coins: [150, 400], price: { cur: 'gems', n: 120 } },
-  { k: 'legendary', odds: [0, 50, 38, 12], coins: [300, 700], price: { cur: 'gems', n: 320 } },
-  { k: 'set', odds: [0, 0, 70, 30], coins: [600, 1400], price: { cur: 'gems', n: 680 } },
+  { k: 'common', odds: [72, 22, 5, 1], price: { cur: 'coins', n: 300 } },
+  { k: 'rare', odds: [55, 33, 9.5, 2.5], price: { cur: 'coins', n: 1200 } },
+  { k: 'epic', odds: [30, 45, 20, 5], price: { cur: 'gems', n: 120 } },
+  { k: 'legendary', odds: [0, 50, 38, 12], price: { cur: 'gems', n: 320 } },
+  { k: 'set', odds: [0, 0, 70, 30], price: { cur: 'gems', n: 680 } },
 ];
 const SIZE_I = Object.fromEntries(SIZES.map((t, i) => [t.k, i]));
-const GDUPE = [60, 180, 500, 1500, 1500]; // a set reward's as a Legendary's
+// A chest's worth in coins: its price, a gem counted at the Shop's first
+// swap (50 gems → 2,000 coins). A duplicate pays 7% of it — of the chest it
+// opened as, when it upgraded: Common 21, Rare 84, Epic 336, Legendary 896,
+// Rainbow 1,904 coins.
+const GEM_COINS = 40;
+const DUPE_SHARE = 0.07;
+const chestWorth = (size) => {
+  const T = SIZES[SIZE_I[size]];
+  return T ? T.price.n * (T.price.cur === 'gems' ? GEM_COINS : 1) : 0;
+};
+const dupeCoinsFor = (size) => Math.round(chestWorth(size) * DUPE_SHARE);
 const LUCK_MAX = 10;
 // first-smash upgrade: % chance for a Common / Rare chest; then Epic 78%,
 // Legendary 19%, Rainbow the rest (Chest Smash v2's commonUp / rareUp /
@@ -442,7 +453,7 @@ function grant(p, id, f = 'n', dupe = DUPE, setRewards = SET_REWARDS, { whole = 
   } else if (!e.f[f]) {
     set[`col.${id}`] = { ...e, f: { ...e.f, [f]: 1 } };
     out.newFinish = true;
-  } else out.coins = (dupe[c.rar] || 0) * (f !== 'n' ? 2 : 1);
+  } else out.coins = (typeof dupe === 'number' ? dupe : dupe[c.rar] || 0) * (f !== 'n' ? 2 : 1);
   let coins = num(p.coins) + out.coins;
   if (c.base && setRewards) {
     const s = SET_OF[c.set];
@@ -487,11 +498,7 @@ function openChest(p, { tier, artIds, random = Math.random, setRewards, need }) 
 // it to Epic), the creature, the coins inside. `fixed`: the creature it holds
 // (the welcome chest's), with no upgrade and no Lucky meter.
 function rollGroup(p, group, size, artIds, random, fixed, setRewards = SET_REWARDS) {
-  if (fixed) {
-    const T = SIZES[SIZE_I[size]];
-    const coins = Math.round((T.coins[0] + random() * (T.coins[1] - T.coins[0])) / 10) * 10;
-    return { final: T.k, id: fixed, rar: BY_ID[fixed].rar, epic: num(p.epic), luck: false, coins };
-  }
+  if (fixed) return { final: SIZES[SIZE_I[size]].k, id: fixed, rar: BY_ID[fixed].rar, epic: num(p.epic), luck: false };
   let to = SIZE_I[size];
   if ((size === 'common' || size === 'rare') && random() * 100 < UPGRADE[size]) {
     const r = random() * 100;
@@ -512,22 +519,21 @@ function rollGroup(p, group, size, artIds, random, fixed, setRewards = SET_REWAR
       }
     }
   }
-  const coins = Math.round((T.coins[0] + random() * (T.coins[1] - T.coins[0])) / 10) * 10;
-  return { final: T.k, id: c ? c.id : null, rar: c ? c.rar : r, epic: r >= 2 ? 0 : Math.min(LUCK_MAX, num(p.epic) + 1), luck: due && r >= 2, coins };
+  return { final: T.k, id: c ? c.id : null, rar: c ? c.rar : r, epic: r >= 2 ? 0 : Math.min(LUCK_MAX, num(p.epic) + 1), luck: due && r >= 2 };
 }
 
 // Opens a group chest for `p` (already charged): `extra` is what the move
-// itself writes (the price paid, a timer). Coins: the chest's, plus a
-// duplicate's or a finished set's. The creature is one more copy of it
-// (`whole`: the creature itself, as the welcome chest gives Mittens).
+// itself writes (the price paid, a timer). Coins only for a duplicate
+// (dupeCoinsFor the size it opened as) or a finished set. The creature is
+// one more copy of it (`whole`: the creature itself, as the welcome chest
+// gives Mittens).
 function openGroup(p, group, size, { artIds, random = Math.random, fixed, whole, setRewards, need }, extra = {}) {
   const pull = rollGroup(p, group, size, artIds, random, fixed, setRewards);
-  const withCoins = { ...p, coins: num(p.coins) + pull.coins };
-  const g = pull.id ? grant(withCoins, pull.id, 'n', GDUPE, setRewards, { whole, need }) : { set: {}, result: { coins: 0, isNew: false, reward: null } };
+  const g = pull.id ? grant(p, pull.id, 'n', dupeCoinsFor(pull.final), setRewards, { whole, need }) : { set: {}, result: { coins: 0, isNew: false, reward: null } };
   const set = {
     ...extra,
     ...g.set,
-    coins: g.set.coins != null ? g.set.coins : withCoins.coins,
+    coins: g.set.coins != null ? g.set.coins : num(p.coins),
     epic: pull.epic,
     chestOpens: num(p.chestOpens) + 1,
     passXp: num(p.passXp) + passXpFor(pull.final),
@@ -536,7 +542,7 @@ function openGroup(p, group, size, { artIds, random = Math.random, fixed, whole,
   const bonus = g.result.reward ? SET_BONUS : 0;
   return {
     set,
-    result: { group, size, final: pull.final, upgraded: pull.final !== size, id: pull.id, rar: pull.rar, isNew: !!g.result.isNew, copies: g.result.copies || null, need: g.result.need || null, coins: pull.coins, dupeCoins: g.result.coins - bonus, reward: g.result.reward, setBonus: bonus, luck: pull.luck },
+    result: { group, size, final: pull.final, upgraded: pull.final !== size, id: pull.id, rar: pull.rar, isNew: !!g.result.isNew, copies: g.result.copies || null, need: g.result.need || null, coins: 0, dupeCoins: g.result.coins - bonus, reward: g.result.reward, setBonus: bonus, luck: pull.luck },
   };
 }
 
@@ -584,6 +590,122 @@ function streakClaim(p, args) {
   const g = giveReward(p, r, lineup(args.day, args.hidden)[2], args);
   if (!g) return bad('unknown_reward');
   return { set: { ...g.set, shopStreak: { count: count + 1, last: args.day } }, result: { ...g.result, day: (count % streak.length) + 1 } };
+}
+
+// --- the player level (PLAYER_XP.md) ------------------------------------------
+// One XP total, `pxp`, written by the app like coins: the mini-games, the
+// daily challenges and squishing add to it. The level comes from it, and
+// each level on the level road has a prize, claimed here once each
+// (`levelGot`: { [level]: true }).
+//
+// What the levels are is data, so levels, prizes and XP change without an
+// app update or a deploy: Firestore config/levels, read by the app and by
+// the server (tools/admin/levels.mjs seeds it from DEFAULT_LEVELS; anything
+// missing or broken falls back to these):
+//   xpPerLevel  reaching level L takes xpPerLevel × L XP, counted from 0 at
+//               every level (the user, 2026-10-25: 9 → 10 is 1,000 XP);
+//               levels 2 and 3 come at once with the tutorial
+//   road        [{ k: 'coins' | 'gems' | 'chest', n, t (a chest's size) }] —
+//               [i] is the prize for reaching level i + 1; a row more is a
+//               level more on the road
+//   xp          what earns XP (the app gives it): challenge, chest (the
+//               daily one), squishEvery / squishDay (1 XP every so many
+//               squishes, up to so much a day), replay (a level beaten
+//               before pays this share), games (× every mini-game level's
+//               XP), blitz { squishdoku, sort, stack } (a won run)
+const DEFAULT_LEVELS = {
+  xpPerLevel: 100,
+  // a prize at every level from 1 to 50 (user, 2026-10-25): coins rising,
+  // gems every few levels, a bigger chest on each 5th
+  road: [
+    { k: 'coins', n: 200 }, { k: 'coins', n: 300 }, { k: 'chest', t: 'common' }, { k: 'coins', n: 400 }, { k: 'gems', n: 30 }, //  1-5
+    { k: 'coins', n: 500 }, { k: 'chest', t: 'common' }, { k: 'coins', n: 600 }, { k: 'gems', n: 40 }, { k: 'chest', t: 'rare' }, //  6-10
+    { k: 'coins', n: 800 }, { k: 'chest', t: 'common' }, { k: 'gems', n: 50 }, { k: 'coins', n: 1000 }, { k: 'chest', t: 'rare' }, // 11-15
+    { k: 'coins', n: 1200 }, { k: 'gems', n: 60 }, { k: 'chest', t: 'common' }, { k: 'coins', n: 1500 }, { k: 'chest', t: 'epic' }, // 16-20
+    { k: 'coins', n: 1600 }, { k: 'chest', t: 'rare' }, { k: 'gems', n: 80 }, { k: 'coins', n: 1800 }, { k: 'chest', t: 'legendary' }, // 21-25
+    { k: 'coins', n: 2000 }, { k: 'chest', t: 'rare' }, { k: 'gems', n: 100 }, { k: 'coins', n: 2200 }, { k: 'chest', t: 'epic' }, // 26-30
+    { k: 'coins', n: 2400 }, { k: 'chest', t: 'rare' }, { k: 'gems', n: 120 }, { k: 'coins', n: 2600 }, { k: 'chest', t: 'epic' }, // 31-35
+    { k: 'coins', n: 2800 }, { k: 'chest', t: 'rare' }, { k: 'gems', n: 150 }, { k: 'coins', n: 3000 }, { k: 'chest', t: 'legendary' }, // 36-40
+    { k: 'coins', n: 3200 }, { k: 'chest', t: 'epic' }, { k: 'gems', n: 180 }, { k: 'coins', n: 3500 }, { k: 'chest', t: 'legendary' }, // 41-45
+    { k: 'coins', n: 4000 }, { k: 'chest', t: 'epic' }, { k: 'gems', n: 250 }, { k: 'coins', n: 5000 }, { k: 'chest', t: 'set' }, // 46-50
+  ],
+  xp: { challenge: 25, chest: 100, squishEvery: 5, squishDay: 200, replay: 0.5, games: 1, blitz: { squishdoku: 400, sort: 200, stack: 200 } },
+};
+const okPrize = (r) => r && ((r.k === 'coins' || r.k === 'gems') ? num(r.n) > 0 : r.k === 'chest' && SIZE_I[r.t] != null);
+const posNum = (v, d) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : d);
+// config/levels as read
+function levelsOf(cfg) {
+  if (!cfg || typeof cfg !== 'object') return DEFAULT_LEVELS;
+  const x = cfg.xp && typeof cfg.xp === 'object' ? cfg.xp : {};
+  const D = DEFAULT_LEVELS.xp;
+  const b = x.blitz && typeof x.blitz === 'object' ? x.blitz : {};
+  return {
+    xpPerLevel: posNum(cfg.xpPerLevel, DEFAULT_LEVELS.xpPerLevel),
+    road: Array.isArray(cfg.road) && cfg.road.length && cfg.road.every(okPrize) ? cfg.road : DEFAULT_LEVELS.road,
+    xp: {
+      challenge: posNum(x.challenge, D.challenge),
+      chest: posNum(x.chest, D.chest),
+      squishEvery: posNum(x.squishEvery, D.squishEvery),
+      squishDay: posNum(x.squishDay, D.squishDay),
+      replay: typeof x.replay === 'number' && x.replay >= 0 && x.replay <= 1 ? x.replay : D.replay,
+      games: posNum(x.games, D.games),
+      blitz: { squishdoku: posNum(b.squishdoku, D.blitz.squishdoku), sort: posNum(b.sort, D.blitz.sort), stack: posNum(b.stack, D.blitz.stack) },
+    },
+  };
+}
+
+// The curve, at config/levels' xpPerLevel (`cfg`: the doc, or nothing for
+// the defaults). XP from level L to L + 1:
+const xpToNext = (L, cfg) => levelsOf(cfg).xpPerLevel * (Math.max(1, Math.floor(L)) + 1);
+// the total XP that reaches level L: (2 + 3 + … + L) × xpPerLevel
+const xpToReach = (L, cfg) => (L <= 1 ? 0 : (levelsOf(cfg).xpPerLevel * (L * (L + 1) - 2)) / 2);
+// { level, into, need } for a total of `pxp`
+function playerLevel(pxp, cfg) {
+  const per = levelsOf(cfg).xpPerLevel;
+  const x = Math.max(0, Math.floor(num(pxp)));
+  // the highest L with xpToReach(L) <= x, then nudged past any rounding
+  let L = Math.max(1, Math.floor((Math.sqrt(9 + (8 * x) / per) - 1) / 2));
+  while (L > 1 && xpToReach(L, cfg) > x) L--;
+  while (xpToReach(L + 1, cfg) <= x) L++;
+  return { level: L, into: x - xpToReach(L, cfg), need: xpToNext(L, cfg) };
+}
+
+// Claiming the road's prize for level `i`: reached, once each. Chests are of
+// today's first HOT group (the free chest's).
+function levelClaim(p, args) {
+  const { road } = levelsOf(args.levels);
+  const lv = Math.floor(Number(args.i));
+  const r = road[lv - 1];
+  if (!r) return bad('unknown_reward');
+  const got = p.levelGot || {};
+  if (got[lv]) return bad('claimed');
+  if (playerLevel(p.pxp, args.levels).level < lv) return bad('need_level');
+  const g = giveReward(p, r, lineup(args.day, args.hidden)[0], args);
+  if (!g) return bad('unknown_reward');
+  return { set: { ...g.set, levelGot: { ...got, [lv]: true } }, result: { ...g.result, lv } };
+}
+
+// Every prize waiting on the road in one go (CLAIM ALL, the LEVEL UP card's
+// COLLECT): one call instead of one a level. Each claim sees the ones
+// before it (as a bundle's chests do). → { results: [levelClaim's results] }
+function levelClaimAll(p, args) {
+  const { road } = levelsOf(args.levels);
+  const top = Math.min(playerLevel(p.pxp, args.levels).level, road.length);
+  const results = [];
+  let cur = p;
+  let set = {};
+  for (let lv = 1; lv <= top; lv++) {
+    const o = levelClaim(cur, { ...args, i: lv });
+    if (o.error) continue;
+    Object.entries(o.set).forEach(([k, v]) => {
+      if (k.startsWith('col.')) cur = { ...cur, col: { ...(cur.col || {}), [k.slice(4)]: v } };
+      else cur = { ...cur, [k]: v };
+    });
+    set = { ...set, ...o.set };
+    results.push(o.result);
+  }
+  if (!results.length) return bad('nothing_to_claim');
+  return { set, result: { results } };
 }
 
 // Buying a group chest of a size (of a group that's out): it opens at once.
@@ -676,7 +798,7 @@ function dailyGift(p, { day, reward }) {
 const start = (p) => ({ set: {}, result: { gems: num(p.gems) } });
 
 // (no buyCreature: squishies aren't sold for coins any more, 2026-10-24)
-const MOVES = { start, dailyGift, buyChest, videoChest, openChest, grow, equip, swap, groupChest, freeChest, adChest, dealChest, passClaim, streakClaim };
+const MOVES = { start, dailyGift, buyChest, videoChest, openChest, grow, equip, swap, groupChest, freeChest, adChest, dealChest, passClaim, streakClaim, levelClaim, levelClaimAll };
 
 module.exports = {
   RARITY,
@@ -713,7 +835,10 @@ module.exports = {
   START,
   SIZES,
   SIZE_I,
-  GDUPE,
+  GEM_COINS,
+  DUPE_SHARE,
+  chestWorth,
+  dupeCoinsFor,
   LUCK_MAX,
   UPGRADE,
   FREE_MS,
@@ -725,6 +850,11 @@ module.exports = {
   DEFAULT_OFFERS,
   offersOf,
   jarGems,
+  DEFAULT_LEVELS,
+  levelsOf,
+  xpToNext,
+  xpToReach,
+  playerLevel,
   withStart,
   owns,
   roll,

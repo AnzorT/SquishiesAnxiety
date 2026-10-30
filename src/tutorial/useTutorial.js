@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { getState, report, useTutorialSelect, useTutorialVersion } from './store';
 import { HOLD_MS, ROTATE_PX, stepView, tutorialActive } from './steps';
+import { level as levelOf } from '../progression';
 
 // Runs the tutorial for App.js: feeds the step machine (steps.js) with the
 // store and the profile, puts what to show in the store (`ui`, drawn by
@@ -76,7 +77,7 @@ export default function useTutorial({ profile, creatures, setStep, setLevel, sig
     const mittens = creatures.find((c) => c.id === '1');
     const run = () => {
       const view = stepView({ tut: stepRef.current, s, profile, creatures, mittens });
-      if (view.level && setLevel && levelledRef.current !== view.level && (profile?.level ?? 1) < view.level) {
+      if (view.level && setLevel && levelledRef.current !== view.level && levelOf(profile) < view.level) {
         levelledRef.current = view.level;
         setLevel(view.level);
       }

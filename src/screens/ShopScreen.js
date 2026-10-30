@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Dimensions, Easing, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Pressable from '../components/Pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +16,7 @@ import * as squad from '../squad/api';
 import { BtnText, CandyBtn, CoinIcon, F, GemIcon, GOLD_RING, PINK_RING, Ringed, untilMidnight } from '../squad/ui';
 import ChestsTabV6, { ChestSheetBody, OddsSheetBody } from './ShopChests';
 import ChestSmash from '../components/ChestSmash';
+import { ChestDrop, FlyLayer, centerOf, flyReward, usePurse } from '../components/RewardFx';
 import { DealsTab, GemsTab as GemsTabV6 } from './ShopDeals';
 import Freeze from '../components/Freeze';
 import TutTarget from '../tutorial/Target';
@@ -58,7 +59,7 @@ const ERRORS = {
   not_yet: 'Your free chest isn\'t ready yet',
   unknown_chest: 'That chest isn\'t in the shop any more',
   claimed: 'Already claimed',
-  need_xp: 'Open more chests to earn XP first',
+  need_xp: 'Open more chests to earn pass XP first',
   need_pass: 'This reward needs the season pass',
   season_over: 'The season is over',
   unknown_reward: 'That reward isn\'t there any more',
@@ -75,23 +76,29 @@ export function Title({ children, size = 17 }) {
   );
 }
 
-// The coin / gem counters in the header.
-export function Purse({ cur, amount, onPress, plus = true }) {
+// The coin / gem counters in the header; they count up as a claim's coins
+// or gems fly in (RewardFx usePurse). ref: { icon, hold(n), add(n), release() }
+export const Purse = forwardRef(function Purse({ cur, amount, onPress, plus = true }, ref) {
+  const { icon, scale, shown } = usePurse(ref, amount);
   const ring = cur === 'gems' ? '#45189a' : PINK_RING;
   return (
-    <Pressable onPress={onPress}>
-      <Ringed ring={ring} lip={3} ringW={2} border={2.5} innerStyle={styles.purse}>
-        {cur === 'gems' ? <GemIcon size={17} /> : <CoinIcon size={19} />}
-        <Text style={[styles.purseText, { color: cur === 'coins' ? '#b86200' : '#5a22c8' }, !plus && { marginRight: 6 }]}>{fmt(amount)}</Text>
-        {plus && (
-          <LinearGradient colors={['#b8ffd9', '#3ddc97', '#16a86a']} style={styles.plus}>
-            <Text style={styles.plusText}>+</Text>
-          </LinearGradient>
-        )}
-      </Ringed>
-    </Pressable>
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <Pressable onPress={onPress}>
+        <Ringed ring={ring} lip={3} ringW={2} border={2.5} innerStyle={styles.purse}>
+          <View ref={icon} collapsable={false}>
+            {cur === 'gems' ? <GemIcon size={17} /> : <CoinIcon size={19} />}
+          </View>
+          <Text style={[styles.purseText, { color: cur === 'coins' ? '#b86200' : '#5a22c8' }, !plus && { marginRight: 6 }]}>{fmt(shown)}</Text>
+          {plus && (
+            <LinearGradient colors={['#b8ffd9', '#3ddc97', '#16a86a']} style={styles.plus}>
+              <Text style={styles.plusText}>+</Text>
+            </LinearGradient>
+          )}
+        </Ringed>
+      </Pressable>
+    </Animated.View>
   );
-}
+});
 
 // The segmented tab switch (Chests / Squishies / Gems here).
 // `onPick(k)`: called on the tap itself (before onTab), for a caller that
@@ -480,25 +487,77 @@ function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRew
     },
     [onBuyProduct, smashAll, flash],
   );
-  const reward = useCallback(
-    (r, what) => {
-      if (!r) return;
-      if (r.kind === 'chest') smashAll([r.chest]);
-      else flash(`${what}+${r.kind === 'coins' ? `${fmt(r.n)} coins` : `${r.n} gems`}`);
+  // The Deals tab's claims (the streak's day, a season pass reward), as on
+  // the level road: the counters hold still while the server answers, then
+  // the coins or gems fly out of the prize's icon (`from`: { view, img }) and
+  // the counter counts up as they land; a chest drops in from above onto the
+  // smash, which shows as it lands.
+  const fly = useRef(null);
+  const coinPurse = useRef(null);
+  const gemPurse = useRef(null);
+  const wRef = useRef(w);
+  wRef.current = w;
+  const claiming = useRef(false); // from the tap until the counters let go
+  const [drop, setDrop] = useState(null); // { key, group, size, reveal }
+  const releasePurses = useCallback(() => {
+    coinPurse.current?.release();
+    gemPurse.current?.release();
+    claiming.current = false;
+  }, []);
+  // the counters let go once the profile has the claim (the server writes
+  // the coins or gems in the same go, so the wallet moves off `from`), or
+  // after a while
+  const [settle, setSettle] = useState(null); // { cur, from }
+  useEffect(() => {
+    if (!settle) return undefined;
+    const go = () => {
+      releasePurses();
+      setSettle(null);
+    };
+    if (w[settle.cur] !== settle.from) {
+      go();
+      return undefined;
+    }
+    const t = setTimeout(go, 20000);
+    return () => clearTimeout(t);
+  }, [settle, w, releasePurses]);
+  const claimReward = useCallback(
+    async (move, from) => {
+      if (claiming.current) return;
+      claiming.current = true;
+      const base = wRef.current;
+      coinPurse.current?.hold(base.coins);
+      gemPurse.current?.hold(base.gems);
+      const r = await run(move);
+      if (!r || r.kind === 'chest') {
+        releasePurses();
+        if (!r) return;
+        smashKey.current += 1;
+        setSheet(null);
+        setSmash({ chest: { key: smashKey.current, result: r.chest }, queue: [] });
+        setDrop({ key: smashKey.current, group: r.chest.group, size: r.chest.size });
+        return;
+      }
+      const cur = r.kind === 'gems' ? 'gems' : 'coins';
+      let at = await centerOf(from && from.view);
+      // its icon scrolled out of sight: out of the middle of the screen
+      const win = Dimensions.get('window');
+      if (at && (at.y < 90 || at.y > win.height - 40)) at = { x: win.width / 2, y: win.height / 2 };
+      sfx.play('coinShower');
+      flyReward({
+        layer: fly.current,
+        from: at,
+        purse: cur === 'gems' ? gemPurse.current : coinPurse.current,
+        n: r.n,
+        gem: cur === 'gems',
+        img: from && from.img,
+        onDone: () => setSettle({ cur, from: base[cur] }),
+      });
     },
-    [smashAll, flash],
+    [run, releasePurses],
   );
-  const claimStreak = useCallback(async () => {
-    const r = await run(() => squad.streakClaim());
-    reward(r, r ? `Day ${r.day}: ` : '');
-  }, [run, reward]);
-  const claimPass = useCallback(
-    async (i) => {
-      const r = await run(() => squad.passClaim(i));
-      reward(r, '');
-    },
-    [run, reward],
-  );
+  const claimStreak = useCallback((from) => claimReward(() => squad.streakClaim(), from), [claimReward]);
+  const claimPass = useCallback((i, from) => claimReward(() => squad.passClaim(i), from), [claimReward]);
   const seeOffer = useCallback((id, at) => onSeenOffer && onSeenOffer(id, at), [onSeenOffer]);
   const swap = useCallback(
     async (i) => {
@@ -572,7 +631,7 @@ function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRew
       {/* asleep under an open chest: the server's answers (the purchase, the
           roll) change the profile mid-smash, and re-rendering the three tabs
           for it held up the taps */}
-      <Freeze freeze={!!smash && !!smash.chest && !!smash.up}>
+      <Freeze freeze={!!smash && !!smash.chest && !!smash.up && !drop}>
         <View style={styles.header}>
           {onBack ? (
             <TutTarget name="storeBack">
@@ -583,8 +642,8 @@ function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRew
           ) : null}
           <OutlinedTitle text="SHOP" fill="pink" size={25} outline={3} ring={2} drop={5} />
           <View style={styles.purses}>
-            <Purse cur="coins" amount={w.coins} onPress={() => goTab('gems')} />
-            <Purse cur="gems" amount={w.gems} onPress={() => goTab('gems')} />
+            <Purse ref={coinPurse} cur="coins" amount={w.coins} onPress={() => goTab('gems')} />
+            <Purse ref={gemPurse} cur="gems" amount={w.gems} onPress={() => goTab('gems')} />
           </View>
         </View>
         <Seg tab={tab} onPick={slideTo} onTab={goTab} badges={badges} />
@@ -635,7 +694,14 @@ function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRew
         />
       </Freeze>
       {toast && <Toast key={toast.key} text={toast.text} bottom={60 + (onBack ? insets.bottom : 0)} onDone={() => setToast(null)} />}
-      {smash && <ChestSmash chest={smash.chest} first={smash.first} catalog={catalog} onCollect={collectSmash} onShown={smashShown} />}
+      <FlyLayer ref={fly} />
+      {/* a claimed chest's smash loads unseen under the chest dropping in, and shows as it lands */}
+      {smash && (
+        <View style={[StyleSheet.absoluteFill, drop && !drop.reveal && styles.unseen]} pointerEvents={drop ? 'none' : 'box-none'}>
+          <ChestSmash chest={smash.chest} first={smash.first} catalog={catalog} onCollect={collectSmash} onShown={smashShown} />
+        </View>
+      )}
+      {drop && <ChestDrop key={drop.key} group={drop.group} size={drop.size} onReveal={() => setDrop((d) => d && { ...d, reveal: true })} onDone={() => setDrop(null)} />}
     </CandyBackground>
   );
 }
@@ -678,6 +744,7 @@ const styles = StyleSheet.create({
   segBadge: { backgroundColor: '#ff2f8f', borderWidth: 1.5, borderColor: '#ffffff', borderRadius: 999, paddingHorizontal: 5 },
   segBadgeText: { fontFamily: F.black, fontSize: 8.5, letterSpacing: 0.6, color: '#ffffff' },
   scroll: { paddingHorizontal: 14, paddingTop: 2 },
+  unseen: { opacity: 0 },
   // Chests | Squishies | Gems, side by side (see slideTo)
   pager: { flex: 1, overflow: 'hidden' },
   pageTrack: { flex: 1, flexDirection: 'row' },

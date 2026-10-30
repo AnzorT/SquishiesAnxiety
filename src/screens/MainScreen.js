@@ -116,7 +116,7 @@ export default function MainScreen({ tab: current, onTab, adsFree, active = true
       </View>
       {!immersive && (
         <>
-          {adsFree ? null : <AdStrip inset={false} live={active} style={styles.ad} />}
+          {adsFree ? null : <AdStrip inset={false} live={active} large style={styles.ad} />}
           <BottomNav tab={tab} onTab={press} />
         </>
       )}

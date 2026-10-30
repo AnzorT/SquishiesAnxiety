@@ -25,16 +25,17 @@ service cloud.firestore {
       // confirms the purchase. The squad economy's gems, collection
       // and chests are written only by the `squad` Cloud Function (gems
       // also by verifyPurchase) — functions/squad.js. So are `copies`, the
-      // copies found of creatures not unlocked yet.
+      // copies found of creatures not unlocked yet, and `levelGot`, the
+      // level road's prizes claimed (the XP itself, `pxp`, is the app's).
       allow update: if request.auth != null && request.auth.uid == userId
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['generationCredits', 'paidCredits', 'creationDiscountPct', 'lastSpinDay', 'adSpins', 'spins', 'wheelJackpot', 'adsFree', 'gems', 'col', 'pity', 'epic', 'chestBag', 'chestVideos', 'dealDay', 'giftDay', 'gemFirst', 'chestOpens', 'tierPulls', 'freeAt', 'adChests', 'passXp', 'passGot', 'passPrem', 'shopStreak', 'jarBase', 'offersBought', 'copies']);
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['generationCredits', 'paidCredits', 'creationDiscountPct', 'lastSpinDay', 'adSpins', 'spins', 'wheelJackpot', 'adsFree', 'gems', 'col', 'pity', 'epic', 'chestBag', 'chestVideos', 'dealDay', 'giftDay', 'gemFirst', 'chestOpens', 'tierPulls', 'freeAt', 'adChests', 'passXp', 'passGot', 'passPrem', 'levelGot', 'shopStreak', 'jarBase', 'offersBought', 'copies']);
       // A fresh profile may only ever start with its one free generation
       // (or none set, which the Cloud Function also treats as 1) — never a
       // self-granted stack of them.
       allow create: if request.auth != null && request.auth.uid == userId
         && (!('generationCredits' in request.resource.data) || request.resource.data.generationCredits == 1)
         && (!('adsFree' in request.resource.data) || request.resource.data.adsFree == false)
-        && !request.resource.data.keys().hasAny(['paidCredits', 'creationDiscountPct', 'lastSpinDay', 'adSpins', 'spins', 'wheelJackpot', 'gems', 'col', 'pity', 'epic', 'chestBag', 'chestVideos', 'dealDay', 'giftDay', 'gemFirst', 'chestOpens', 'tierPulls', 'freeAt', 'adChests', 'passXp', 'passGot', 'passPrem', 'shopStreak', 'jarBase', 'offersBought', 'copies']);
+        && !request.resource.data.keys().hasAny(['paidCredits', 'creationDiscountPct', 'lastSpinDay', 'adSpins', 'spins', 'wheelJackpot', 'gems', 'col', 'pity', 'epic', 'chestBag', 'chestVideos', 'dealDay', 'giftDay', 'gemFirst', 'chestOpens', 'tierPulls', 'freeAt', 'adChests', 'passXp', 'passGot', 'passPrem', 'levelGot', 'shopStreak', 'jarBase', 'offersBought', 'copies']);
 
       // Player-made creatures (image-to-3D via the creator flow). Fully
       // owned by that user — nobody else reads or writes them.

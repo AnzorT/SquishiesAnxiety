@@ -404,10 +404,13 @@ exports.squad = onCall(async (request) => {
   if (!fn) throw new HttpsError('invalid-argument', 'Unknown move.');
   const db = admin.firestore();
   const day = dayKey(Date.now(), data.tzOffsetMinutes);
-  const needsArt = ['openChest', 'groupChest', 'freeChest', 'adChest', 'dealChest', 'passClaim', 'streakClaim'].includes(data.move);
-  // the season pass and the 7-day streak read what config/offers sets
+  const needsArt = ['openChest', 'groupChest', 'freeChest', 'adChest', 'dealChest', 'passClaim', 'streakClaim', 'levelClaim', 'levelClaimAll'].includes(data.move);
+  // the season pass and the 7-day streak read what config/offers sets, the
+  // level road what config/levels does
   const needsOffers = ['passClaim', 'streakClaim'].includes(data.move);
   const offersSnap = needsOffers ? await db.collection('config').doc('offers').get() : null;
+  const needsLevels = ['levelClaim', 'levelClaimAll'].includes(data.move);
+  const levelsSnap = needsLevels ? await db.collection('config').doc('levels').get() : null;
   const [artSnap, rosterSnap] = needsArt ? await Promise.all([db.collection('creatures').select().get(), db.collection('config').doc('roster').get()]) : [null, null];
   const rosterCfg = rosterSnap && rosterSnap.exists ? rosterSnap.data() : null;
   const hidden = squad.hiddenOf(rosterCfg);
@@ -424,6 +427,7 @@ exports.squad = onCall(async (request) => {
     size: String(data.size || ''),
     now: Date.now(),
     offers: offersSnap && offersSnap.exists ? offersSnap.data() : null,
+    levels: levelsSnap && levelsSnap.exists ? levelsSnap.data() : null,
     day,
     artIds,
     hidden,
@@ -584,6 +588,7 @@ exports.oauth = onRequest(async (req, res) => {
           achievements: { speedTap: false, watchAd: false },
           tut: 'start',
           level: 1,
+          pxp: 0,
           createdAt: FieldValue.serverTimestamp(),
         });
       }
@@ -600,22 +605,46 @@ exports.oauth = onRequest(async (req, res) => {
 
 // --- The test wallet (REDESIGN_V6 step 9, ruling 5) ---------------------------
 //
-// Sets coins, gems and the level for testing — only for an account with the
+// Sets coins, gems and the level (as the XP that reaches it) for testing — only for an account with the
 // `tester: true` custom claim (set once with tools/admin/tester.mjs for the
 // owner's own account). The claim is checked here, on the server; the app
 // also hides the panel without it. Nobody else can use it, debug or release.
+// Also replays rewards (2026-10-28): `streak: 'next'` makes the Deals
+// streak's next day claimable now (its last claim moves to yesterday, the
+// count kept), `streak: 'reset'` starts it over at day 1, and `road:
+// 'replay'` makes every reached level's prize claimable again and brings the
+// LEVEL UP card back for the level (`lvSeen` one below it).
 exports.testWallet = onCall(async (request) => {
   const uid = request.auth && request.auth.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'Sign in first.');
   if (!request.auth.token || request.auth.token.tester !== true) throw new HttpsError('permission-denied', 'Not a tester account.');
   const d = request.data || {};
   const n = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(Number(v) || 0)));
+  const userRef = admin.firestore().collection('users').doc(uid);
+  const levelsCfg = async () => {
+    const levels = await admin.firestore().collection('config').doc('levels').get();
+    return levels.exists ? levels.data() : null;
+  };
   const update = {};
   if (d.coins != null) update.coins = n(d.coins, 0, 99999999);
   if (d.gems != null) update.gems = n(d.gems, 0, 99999999);
-  if (d.level != null) update.level = n(d.level, 1, 99);
+  if (d.level != null) {
+    update.level = n(d.level, 1, 999);
+    update.pxp = squad.xpToReach(update.level, await levelsCfg());
+  }
+  if (d.streak === 'reset') update.shopStreak = FieldValue.delete();
+  if (d.streak === 'next' || d.road === 'replay') {
+    const p = (await userRef.get()).data() || {};
+    if (d.streak === 'next') update.shopStreak = { count: n((p.shopStreak || {}).count, 0, 99999), last: dayKey(Date.now() - 864e5, d.tzOffsetMinutes) };
+    if (d.road === 'replay') {
+      update.levelGot = FieldValue.delete();
+      update.lvSeen = squad.playerLevel(p.pxp, await levelsCfg()).level - 1;
+    }
+  }
   if (!Object.keys(update).length) return { ok: true };
-  await admin.firestore().collection('users').doc(uid).update(update);
+  await userRef.update(update);
   logger.info(`[${uid}] test wallet`, update);
-  return { ok: true, ...update };
+  // the plain values only (a FieldValue.delete() can't go back as JSON)
+  const { coins, gems, level, pxp } = update;
+  return { ok: true, coins, gems, level, pxp };
 });

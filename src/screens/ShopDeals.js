@@ -10,7 +10,8 @@ import { Twinkle } from '../components/candy/Sparkles';
 import { SWAPS, jarGems, lineup, offersOf } from '../squad/data';
 import GCHEST from '../squad/groupChestArt';
 import { COIN, GEM } from '../squad/currencyArt';
-import { F, hms } from '../squad/ui';
+import { F, hms, untilMidnight } from '../squad/ui';
+import { BigFlame } from '../components/StreakIcons';
 import { productKey } from '../economy';
 import { fmtNum } from '../format';
 import { useProgressive } from '../components/Skeleton';
@@ -20,7 +21,8 @@ import { useProgressive } from '../components/Skeleton';
 // timers and order change without an app update; prices are the stores').
 // Restyled 2026-10-24 (user: "modify the UI and style of the deals and gems
 // shop"): each offer is its own candy card with a lip, a ribbon or a burst
-// badge, and a big price button.
+// badge, and a big price button. The daily streak became one too on
+// 2026-10-25, in the Remove Ads card's layout.
 //   Deals: offers with a negative `order` first (Remove Ads, $0.99), then the
 //   7-day streak, then the rest in order: the gem jar, the bundles, the
 //   season pass. With ads already off, Remove Ads is a thank-you line at the
@@ -129,7 +131,7 @@ function Burst({ top, bottom, size = 70, colors = ['#fff36b', '#ffb000'], ink = 
   );
 }
 
-// A ribbon across a card's top corner.
+// A ribbon across a card's top corner (the card's last child).
 function Ribbon({ text, colors = ['#ff6f91', '#e0123f'], rim = '#8e0a2a' }) {
   return (
     <View pointerEvents="none" style={styles.ribbonClip}>
@@ -253,9 +255,9 @@ function NoAds({ offer, price, onPress }) {
               <Text style={styles.oneTime}>ONE-TIME PURCHASE</Text>
             </View>
           </Btn>
+          {offer.tag ? <Ribbon text={offer.tag} /> : null}
         </LinearGradient>
       </View>
-      {offer.tag ? <Ribbon text={offer.tag} /> : null}
     </View>
   );
 }
@@ -273,14 +275,61 @@ const NoAdsOwned = () => (
 
 // --- the daily streak --------------------------------------------------------------------
 
-const DAY_LOOK = {
-  coins: { bg: ['#fffbe6', '#ffe9a8'], ink: '#a05a00' },
-  gems: { bg: ['#f6efff', '#e2cfff'], ink: '#5a22c8' },
-  chest: { bg: ['#fff0fa', '#ffd2ef'], ink: '#a01a7a' },
-};
+// Laid out like the Remove Ads card (user, 2026-10-25): a fire-orange card,
+// the flame and three lines at the top, the seven days, a big CLAIM button
+// (or the time to the next gift once today's is in).
 
-function StreakDay({ r, i, last, done, today, hot, onPress }) {
-  const look = DAY_LOOK[r.k] || DAY_LOOK.coins;
+// The streak's flame with its count on it, flickering from its base; cold
+// (violet) before the first day.
+function StreakFlame({ count }) {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(t, { toValue: 1, duration: 520, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(t, { toValue: 0, duration: 640, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [t]);
+  const W = 82;
+  const H = W * 1.15;
+  const flicker = [
+    { translateY: H / 2 },
+    { rotate: t.interpolate({ inputRange: [0, 1], outputRange: ['-2deg', '2deg'] }) },
+    { scaleX: t.interpolate({ inputRange: [0, 1], outputRange: [1, 0.96] }) },
+    { scaleY: t.interpolate({ inputRange: [0, 1], outputRange: [1, 1.07] }) },
+    { translateY: -H / 2 },
+  ];
+  return (
+    <View style={{ width: W, height: H }}>
+      <Glow size={130} color="#fff6c4" opacity={0.95} style={{ left: (W - 130) / 2, top: (H - 130) / 2 }} />
+      <Animated.View style={{ transform: flicker }}>
+        <BigFlame width={W} cold={!count} />
+      </Animated.View>
+      <View pointerEvents="none" style={styles.flameNum}>
+        <ShadowText style={[styles.flameNumText, count >= 100 && { fontSize: 22 }]} shadows={outline3(count ? '#8a1d0c' : '#45189a', 2.5)}>
+          {String(count)}
+        </ShadowText>
+      </View>
+    </View>
+  );
+}
+
+const DAY_LOOK = {
+  next: { bg: ['#ffffff', '#fff0dc'], ring: '#c2531c', ink: '#a33a06' },
+  today: { bg: ['#fffbe0', '#ffd84a'], ring: '#9c4d06', ink: '#7a3d00' },
+  done: { bg: ['#fff6ea', '#ffe0c2'], ring: '#d98a52', ink: '#b8662a' },
+  big: { bg: ['#fbf5ff', '#dcc6ff'], ring: '#6a22d6', ink: '#5a22c8' },
+};
+const rewardLong = (r) => (r.k === 'coins' ? `${fmt(r.n)} coins` : r.k === 'gems' ? `${r.n} gems` : `${SIZE_NAME[r.t] || ''} chest`);
+// day i's coin or gem (its claim flies out as this)
+const dayBit = (r, i) => (r.k === 'gems' ? GEM[i % 6] : COIN[i % 6]);
+
+// `artRef`: today's art (where its claim flies from)
+function StreakDay({ r, i, last, done, today, hot, artRef, onPress }) {
+  const look = today ? DAY_LOOK.today : done ? DAY_LOOK.done : last ? DAY_LOOK.big : DAY_LOOK.next;
   const bob = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (!today) return undefined;
@@ -297,56 +346,92 @@ function StreakDay({ r, i, last, done, today, hot, onPress }) {
     r.k === 'chest' ? (
       <Image source={GCHEST[hot][`${r.t}-grow`]} style={last ? styles.dayChestBig : styles.dayChest} resizeMode="contain" />
     ) : (
-      <Image source={r.k === 'gems' ? GEM[i % 6] : COIN[i % 6]} style={last ? styles.dayImgBig : styles.dayImg} />
+      <Image source={dayBit(r, i)} style={last ? styles.dayImgBig : styles.dayImg} />
     );
   return (
     <Pressable onPress={onPress} style={[styles.daySlot, last && styles.daySlotLast]}>
-      <View style={[styles.dayRing, { backgroundColor: today ? '#b86200' : done ? '#9fd8b0' : '#d9c4f7' }]}>
-        <LinearGradient colors={today ? ['#fff6c4', '#ffd84a'] : look.bg} style={[styles.dayFace, last && styles.dayFaceLast]}>
-          <Text style={[styles.dayLabel, { color: today ? '#7a3d00' : '#8a78b0' }]}>{today ? 'TODAY' : `DAY ${i + 1}`}</Text>
-          <Animated.View style={{ transform: [{ translateY: bob.interpolate({ inputRange: [0, 1], outputRange: [0, -4] }) }, { scale: bob.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }) }] }}>{art}</Animated.View>
-          <Text style={[styles.dayAmt, { color: today ? '#7a3d00' : look.ink }]}>{rewardText(r)}</Text>
+      <View style={[styles.dayRing, { backgroundColor: look.ring }]}>
+        <LinearGradient colors={look.bg} style={styles.dayFace}>
+          {last && !done ? <RaysSpin size={130} color="#ffffff" opacity={0.7} durationMs={16000} style={{ alignSelf: 'center', top: -30 }} /> : null}
+          <Text style={[styles.dayLabel, { color: look.ink }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+            {today ? 'TODAY' : `DAY ${i + 1}`}
+          </Text>
+          <View ref={artRef} collapsable={false}>
+            <Animated.View style={{ transform: [{ translateY: bob.interpolate({ inputRange: [0, 1], outputRange: [0, -3] }) }, { scale: bob.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }) }] }}>{art}</Animated.View>
+          </View>
+          <Text style={[styles.dayAmt, { color: look.ink }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+            {rewardText(r)}
+          </Text>
           {done ? (
             <View style={styles.dayDone}>
-              <Check size={30} />
+              <Check size={22} />
             </View>
           ) : null}
         </LinearGradient>
       </View>
-      {today ? (
-        <View style={styles.claimPill}>
-          <Text style={styles.claimText}>CLAIM</Text>
-        </View>
-      ) : null}
     </Pressable>
   );
 }
 
+// onClaim(today, done, i, from): `from` { view, img }, where today's claim flies from
 function Streak({ streak, profile, day, hot, onClaim }) {
+  const todayArt = useRef(null);
   const st = profile?.shopStreak || { count: 0, last: null };
   const doneToday = st.last === day;
   const yesterday = new Date(Date.parse(`${day}T00:00:00Z`) - DAY).toISOString().slice(0, 10);
   const alive = doneToday || st.last === yesterday;
   const cnt = alive ? st.count || 0 : 0;
   const idx = doneToday ? (cnt - 1) % streak.length : cnt % streak.length;
+  const perks = ['A free gift every day', `Day ${streak.length}: ${rewardLong(streak[streak.length - 1])}`, 'Miss a day and it starts over'];
+  const from = { view: todayArt, img: dayBit(streak[idx], idx) };
   return (
-    <View style={styles.panel}>
-      <Heading
-        title="Daily streak"
-        icon={
-          <Svg width={24} height={26} viewBox="0 0 24 26">
-            <Path d="M12 1 C14 7 21 9 20 17 C19.5 22 16 25 12 25 C7 25 4 21.5 4.5 17 C5 13 8 12 8 8 C10 10 10.5 12 10.5 12 C11.5 9 12.5 5 12 1 Z" fill="#ff7a1a" stroke="#ffffff" strokeWidth={2} />
-            <Path d="M12 13 C13 16 16 17 15.5 20.5 C15 23 13.5 24 12 24 C10 24 8.5 22.5 8.8 20.5 C9 19 10.5 18 10.5 16 C11.5 17 12 13 12 13 Z" fill="#ffd84a" />
-          </Svg>
-        }
-        note={doneToday ? `${cnt} day${cnt === 1 ? '' : 's'} · back tomorrow` : `Day ${idx + 1} is ready`}
-      />
-      <View style={styles.dayGrid}>
-        {streak.map((r, i) => {
-          const done = doneToday ? i <= idx : i < idx;
-          const today = !doneToday && i === idx;
-          return <StreakDay key={i} r={r} i={i} last={i === streak.length - 1} done={done} today={today} hot={hot[2]} onPress={() => onClaim(today, done, i)} />;
-        })}
+    <View style={styles.cardWrap}>
+      <View style={[styles.cardRing, { backgroundColor: '#9a2a06' }]}>
+        <LinearGradient colors={['#ffe27a', '#ff9a3d', '#ec4a22']} locations={[0, 0.5, 1]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={styles.card}>
+          <RaysSpin size={340} color="#ffffff" opacity={0.28} durationMs={22000} style={{ left: -150, top: -150 }} />
+          <ShineSweep durationMs={3400} delayMs={900} strength={0.4} />
+          <Twinkle size={14} color="#ffffff" duration={1.8} style={{ position: 'absolute', top: 12, left: 92 }} />
+          <Twinkle size={10} color="#fff3a0" duration={2.4} delay={0.7} style={{ position: 'absolute', top: 96, left: 10 }} />
+          <View style={styles.streakTop}>
+            <StreakFlame count={cnt} />
+            <View style={styles.streakText}>
+              <ShadowText style={styles.noAdsTitle} shadows={outline3('#9a2a06', 2.5)}>
+                DAILY STREAK
+              </ShadowText>
+              {perks.map((p) => (
+                <View key={p} style={styles.perk}>
+                  <Check size={16} color="#ff6a1a" />
+                  <Text style={[styles.perkText, styles.streakPerk]}>{p}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+          <View style={styles.dayGrid}>
+            {streak.map((r, i) => {
+              const done = doneToday ? i <= idx : i < idx;
+              const today = !doneToday && i === idx;
+              return <StreakDay key={i} r={r} i={i} last={i === streak.length - 1} done={done} today={today} hot={hot[2]} artRef={today ? todayArt : undefined} onPress={() => onClaim(today, done, i, from)} />;
+            })}
+          </View>
+          {doneToday ? (
+            <View style={styles.streakWait}>
+              <ShadowText style={styles.streakWaitTitle} shadows={outline3('#9a2a06', 2)}>
+                {`${cnt} DAY${cnt === 1 ? '' : 'S'} IN A ROW!`}
+              </ShadowText>
+              <Countdown to={Date.now() + untilMidnight()} style={styles.streakWaitText} prefix="Next gift in " />
+            </View>
+          ) : (
+            <Btn look={GREEN_BTN} height={56} radius={20} lip={6} onPress={() => onClaim(true, false, idx, from)}>
+              <View style={{ alignItems: 'center' }}>
+                <BtnLabel look={GREEN_BTN} size={24}>
+                  {`CLAIM DAY ${idx + 1}`}
+                </BtnLabel>
+                <Text style={[styles.oneTime, { color: '#17652f' }]}>{`FREE · ${rewardLong(streak[idx]).toUpperCase()}`}</Text>
+              </View>
+            </Btn>
+          )}
+          <Ribbon text="FREE" colors={['#7be884', '#26a94e']} rim="#17652f" />
+        </LinearGradient>
       </View>
     </View>
   );
@@ -481,19 +566,21 @@ function Bundle({ offer, hot, price, seenAt, onBuy, index }) {
 
 // --- the season pass ----------------------------------------------------------------------
 
+// onPress(i, r, state, from): `from` { view, img }, where its claim flies from
 function PassNode({ r, i, xp, got, prem, onPress }) {
+  const icon = useRef(null);
   const claimed = !!got[i];
   const reach = xp >= r.xp;
   const lock = r.prem && !prem;
   const can = reach && !claimed && !lock;
-  const img =
-    r.k === 'chest' ? (
-      <Image source={GCHEST.spooky[`${r.t}-grow`]} style={styles.nodeChest} resizeMode="contain" />
-    ) : (
-      <Image source={r.k === 'gems' ? GEM[(i + 2) % 6] : COIN[(i + 1) % 6]} style={styles.nodeImg} />
-    );
+  const bit = r.k === 'gems' ? GEM[(i + 2) % 6] : COIN[(i + 1) % 6];
+  const img = (
+    <View ref={icon} collapsable={false}>
+      {r.k === 'chest' ? <Image source={GCHEST.spooky[`${r.t}-grow`]} style={styles.nodeChest} resizeMode="contain" /> : <Image source={bit} style={styles.nodeImg} />}
+    </View>
+  );
   return (
-    <Pressable onPress={() => onPress(i, r, { claimed, reach, lock })} style={styles.node}>
+    <Pressable onPress={() => onPress(i, r, { claimed, reach, lock }, { view: icon, img: bit })} style={styles.node}>
       <View style={[styles.nodeRing, { backgroundColor: can ? '#b86200' : r.prem ? '#c47a00' : '#6a3aa8' }]}>
         <LinearGradient
           colors={can ? ['#fff6c4', '#ffd84a'] : r.prem ? ['#fff3d0', '#ffd98a'] : ['#f6efff', '#dcc6ff']}
@@ -548,9 +635,9 @@ function Pass({ pass, profile, price, onClaim, onBuy }) {
           </View>
           <View style={styles.passBar}>
             <LinearGradient colors={['#ffd84a', '#ff8a3d', '#ff5cc6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.passFill, { width: `${Math.max(3, Math.min(100, Math.round((xp / max) * 100)))}%` }]} />
-            <Text style={styles.passBarText}>{`${fmt(xp)} / ${fmt(max)} XP`}</Text>
+            <Text style={styles.passBarText}>{`${fmt(xp)} / ${fmt(max)} PASS XP`}</Text>
           </View>
-          <Text style={styles.passHint}>Every chest you open gives XP. Gold rewards need the pass.</Text>
+          <Text style={styles.passHint}>Every chest you open gives pass XP. Gold rewards need the pass.</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.track} style={styles.trackBox}>
             <View style={styles.trackLine} />
             {pass.nodes.map((r, i) => (
@@ -575,7 +662,8 @@ function Pass({ pass, profile, price, onClaim, onBuy }) {
   );
 }
 
-// `buyOffer(offer, extra)`, `priceOf(key)`, `claimStreak()`, `claimPass(i)`, `seeOffer(id)`
+// `buyOffer(offer, extra)`, `priceOf(key)`, `claimStreak(from)`, `claimPass(i, from)`, `seeOffer(id)`
+// (`from`: { view, img }, the prize's icon its coins or gems fly out of)
 export const DealsTab = memo(function DealsTab({ config, profile, day, hidden, priceOf, onBuyOffer, onClaimStreak, onClaimPass, onNoAds, onSeen, toast }) {
   const C = offersOf(config);
   const hot = lineup(day, hidden);
@@ -607,11 +695,11 @@ export const DealsTab = memo(function DealsTab({ config, profile, day, hidden, p
           profile={profile}
           price={priceFor(o)}
           onBuy={() => onBuyOffer(o)}
-          onClaim={(idx, r, st) => {
+          onClaim={(idx, r, st, from) => {
             if (st.claimed) return;
-            if (!st.reach) return toast(`Open more chests to reach ${r.xp} XP`);
+            if (!st.reach) return toast(`Open more chests to reach ${r.xp} pass XP`);
             if (st.lock) return toast('This reward needs the season pass');
-            onClaimPass(idx);
+            onClaimPass(idx, from);
           }}
         />
       );
@@ -635,7 +723,7 @@ export const DealsTab = memo(function DealsTab({ config, profile, day, hidden, p
           profile={profile}
           day={day}
           hot={hot}
-          onClaim={(today, done, i) => (today ? onClaimStreak() : toast(done ? 'Already claimed' : `Come back on day ${i + 1}`))}
+          onClaim={(today, done, i, from) => (today ? onClaimStreak(from) : toast(done ? 'Already claimed' : `Come back on day ${i + 1}`))}
         />
       )}
       {rest.slice(0, shownRest).map((o, i) => (
@@ -802,8 +890,10 @@ const styles = StyleSheet.create({
   cardRing: { borderRadius: 28, padding: 2.5, paddingBottom: 8 },
   card: { gap: 12, padding: 14, borderRadius: 25.5, borderWidth: 3, borderColor: '#ffffff', overflow: 'hidden' },
   cardTitle: { fontFamily: F.display, fontSize: 20, color: '#ffffff', includeFontPadding: false },
-  ribbonClip: { position: 'absolute', top: -4, right: -4, width: 110, height: 110, overflow: 'hidden', borderTopRightRadius: 30 },
-  ribbon: { position: 'absolute', top: 24, right: -34, width: 150, paddingBottom: 3, transform: [{ rotate: '45deg' }] },
+  // inside the card's white border, its corner rounded to match, so the
+  // ribbon never reaches past the card
+  ribbonClip: { position: 'absolute', top: 0, right: 0, width: 96, height: 96, overflow: 'hidden', borderTopRightRadius: 22.5 },
+  ribbon: { position: 'absolute', top: 16, right: -44, width: 150, paddingBottom: 3, transform: [{ rotate: '45deg' }] },
   ribbonFace: { paddingVertical: 4, alignItems: 'center', borderTopWidth: 2, borderBottomWidth: 2, borderColor: '#ffffff' },
   ribbonText: { fontFamily: F.black, fontSize: 11, letterSpacing: 1, color: '#ffffff' },
   // Remove Ads
@@ -817,22 +907,27 @@ const styles = StyleSheet.create({
   ownedTitle: { fontFamily: F.display, fontSize: 16, color: '#17803a' },
   ownedNote: { fontFamily: F.bold, fontSize: 11.5, color: '#6a4a9a' },
   // streak
-  panel: { gap: 12, padding: 14, paddingTop: 12, borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.9)', borderWidth: 3, borderColor: '#ffffff' },
-  dayGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14 },
-  daySlot: { width: '23.4%' },
-  daySlotLast: { width: '48.6%' },
-  dayRing: { borderRadius: 18, padding: 2, paddingBottom: 5 },
-  dayFace: { minHeight: 84, alignItems: 'center', justifyContent: 'center', gap: 2, paddingVertical: 6, paddingHorizontal: 2, borderRadius: 16, borderWidth: 2.5, borderColor: '#ffffff', overflow: 'hidden' },
-  dayFaceLast: { flexDirection: 'column' },
-  dayLabel: { fontFamily: F.black, fontSize: 9.5, letterSpacing: 0.8 },
-  dayImg: { width: 32, height: 32 },
-  dayImgBig: { width: 40, height: 40 },
-  dayChest: { width: 40, height: 33 },
-  dayChestBig: { width: 64, height: 52 },
-  dayAmt: { fontFamily: F.display, fontSize: 13, includeFontPadding: false },
+  streakTop: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 4, paddingLeft: 4 },
+  streakText: { flex: 1, gap: 5, paddingRight: 24 },
+  streakPerk: { textShadowColor: 'rgba(122,30,0,0.6)' },
+  flameNum: { position: 'absolute', left: 0, right: 0, bottom: '9%', alignItems: 'center' },
+  flameNumText: { fontFamily: F.display, fontSize: 30, color: '#ffffff', includeFontPadding: false },
+  // all seven in one row (user, 2026-10-25), day 7 a little wider
+  dayGrid: { flexDirection: 'row', gap: 4 },
+  daySlot: { flex: 1, minWidth: 0 },
+  daySlotLast: { flex: 1.35 },
+  dayRing: { flex: 1, borderRadius: 14, padding: 2, paddingBottom: 4 },
+  dayFace: { flex: 1, minHeight: 74, alignItems: 'center', justifyContent: 'center', gap: 2, paddingVertical: 5, paddingHorizontal: 2, borderRadius: 12, borderWidth: 2, borderColor: '#ffffff', overflow: 'hidden' },
+  dayLabel: { fontFamily: F.black, fontSize: 8.5, letterSpacing: 0.3, maxWidth: '100%' },
+  dayImg: { width: 26, height: 26 },
+  dayImgBig: { width: 32, height: 32 },
+  dayChest: { width: 34, height: 28 },
+  dayChestBig: { width: 48, height: 40 },
+  dayAmt: { fontFamily: F.display, fontSize: 11.5, includeFontPadding: false, maxWidth: '100%' },
   dayDone: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center' },
-  claimPill: { position: 'absolute', alignSelf: 'center', bottom: -10, paddingHorizontal: 9, paddingVertical: 2, borderRadius: 999, backgroundColor: '#26a94e', borderWidth: 2, borderColor: '#ffffff' },
-  claimText: { fontFamily: F.display, fontSize: 11, letterSpacing: 0.6, color: '#ffffff', includeFontPadding: false },
+  streakWait: { height: 64, alignItems: 'center', justifyContent: 'center', gap: 1, borderRadius: 22, backgroundColor: 'rgba(122,30,0,0.28)', borderWidth: 2.5, borderColor: 'rgba(255,255,255,0.85)' },
+  streakWaitTitle: { fontFamily: F.display, fontSize: 20, color: '#ffffff', includeFontPadding: false },
+  streakWaitText: { fontFamily: F.black, fontSize: 12, letterSpacing: 0.4, color: '#fff3d6' },
   // jar
   jarCard: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   jarRing: { borderTopLeftRadius: 34, borderTopRightRadius: 34, borderBottomLeftRadius: 28, borderBottomRightRadius: 28, backgroundColor: '#45189a', padding: 2.5, paddingBottom: 7 },

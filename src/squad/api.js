@@ -34,3 +34,8 @@ export const dealChest = () => move('dealChest');
 // { kind: 'coins' | 'gems', n } or { kind: 'chest', chest } (+ i / day)
 export const passClaim = (i) => move('passClaim', { i });
 export const streakClaim = () => move('streakClaim');
+// the level road's prize for reaching level `lv` (PLAYER_XP.md) → the same
+// shapes as passClaim's (+ lv)
+export const levelClaim = (lv) => move('levelClaim', { i: lv });
+// every prize waiting on it at once → { results: [levelClaim's results] }
+export const levelClaimAll = () => move('levelClaimAll');

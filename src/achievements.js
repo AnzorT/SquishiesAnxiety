@@ -14,14 +14,14 @@
 // spins / wheelJackpot (written by the spinWheel Cloud Function).
 //
 // Since the 2026-10-03 drop there are more, for what the game has now: the
-// level (up to 100 — a level a day once Daily Challenges open, see
-// src/progression.js), the daily streak (bestStreak) and chests opened
+// level (up to 100 — it comes from the player's XP, src/playerXp.js), the daily streak (bestStreak) and chests opened
 // (chests), and the Crib: care given (cribCare, counted with the Crib's
 // daily-challenge events), furniture bought (cribBuys) and how many friends
 // live there (cribSize).
 
 import { creaturesOfTier } from './theme/candyTheme';
 import { SETS, setInfo } from './squad/data';
+import { level as levelOf } from './progression';
 
 const A =(key, title, desc, look, value, max = 1) => ({ key, title, desc, ...look, value, max });
 const creature = (id) => ({ creatureId: String(id) });
@@ -52,7 +52,7 @@ export function computeAchievements(creatures = [], profile = {}, customCount = 
   const boxes = (profile.chestOpens ?? 0) + (profile.boxOpens ?? 0);
   const pulls = profile.tierPulls ?? {};
   const spins = profile.spins ?? 0;
-  const lv = Math.max(1, Math.floor(profile.level ?? 1));
+  const lv = levelOf(profile);
   const bestStreak = Math.max(profile.bestStreak ?? 0, profile.streak ?? 0);
   const chests = profile.chests ?? 0;
   const care = profile.cribCare ?? 0;
@@ -115,14 +115,14 @@ export function computeAchievements(creatures = [], profile = {}, customCount = 
     A('custom3', 'Toy Designer', 'Create 3 custom squishies', badge('×3'), customCount, 3),
     A('play5', 'Friendly Squisher', 'Play with 5 different creatures', badge('5♥'), played, 5),
     A('play10', 'Best Friends', 'Play with 10 different creatures', badge('10♥'), played, 10),
-    // levels: 2 and 3 come with the tutorial, then one a day from the chest
+    // levels: 2 and 3 come with the tutorial, then from XP (PLAYER_XP.md)
     A('lv3', 'Challenger', 'Reach level 3 and unlock Daily Challenges', badge('LV3'), lv, 3),
     A('lv5', 'Rising Star', 'Reach level 5', badge('LV5'), lv, 5),
     A('lv10', 'Squish Regular', 'Reach level 10', badge('10'), lv, 10),
     A('lv25', 'Dedicated Squisher', 'Reach level 25', badge('25'), lv, 25),
     A('lv50', 'Half Way There', 'Reach level 50', badge('50'), lv, 50),
     A('lv75', 'Squish Veteran', 'Reach level 75', badge('75'), lv, 75),
-    A('lv100', 'Squish Centurion', 'Reach level 100 with the Daily Challenges', badge('100'), lv, 100),
+    A('lv100', 'Squish Centurion', 'Reach level 100', badge('100'), lv, 100),
     // the daily chest and the streak
     A('chest1', 'Treasure Hunter', 'Open your first daily chest', badge('CHEST'), chests),
     A('chest30', 'Chest Collector', 'Open 30 daily chests', badge('×30'), chests, 30),

@@ -271,10 +271,11 @@ S['sd_x'] = (mix([(scratch(0.05, 4800), 0, 0.9), (scratch(0.055, 3900), 0.065, 1
 S['sd_xOff'] = (mix([(sweep_filter(noise(0.13), 6500, 1500, 'band', 0.5) * np.sin(np.linspace(0, np.pi, int(0.13 * SR))), 0, 0.9), (droplet(900, 500, 0.05), 0.08, 0.35)]), 0.4)
 
 # placing -------------------------------------------------------------------------
-_fall = osc(sweep(1500, 650, 0.17)) * env(int(0.17 * SR), a=0.02, d=0.2, s=0.6, r=0.04) * 0.25
+# the head zooming up from small to fill its cell (the board's place / wrong animation, Board.js)
+_grow = osc(sweep(480, 1350, 0.17)) * env(int(0.17 * SR), a=0.02, d=0.2, s=0.6, r=0.04) * 0.25
 _land = mix([(bloop(560, 150, 0.13, 0.055), 0, 1.0), (squish(0.12, 1800, 400), 0.005, 0.45), (thump(85, 0.12), 0, 0.5)])
 _chime = reverb(mix([(bell(note('C6'), 0.5, tau=0.18), 0, 0.6), (bell(note('E6'), 0.5, tau=0.18), 0.045, 0.55), (bell(note('G6'), 0.6, tau=0.2), 0.09, 0.6), (shimmer(0.35, 4000, 9000, 40), 0.1, 0.35)]), 0.7, 0.22)
-S['sd_place'] = (mix([(_fall, 0, 1.0), (_land, 0.18, 1.0), (_chime, 0.23, 0.55)]), 0.78)
+S['sd_place'] = (mix([(_grow, 0, 1.0), (_land, 0.18, 1.0), (_chime, 0.23, 0.55)]), 0.78)
 
 
 def grumble(d=0.2):
@@ -287,7 +288,7 @@ def grumble(d=0.2):
 _buzz = (osc(110, 0.22, 'square') + osc(116.5, 0.22, 'square')) * 0.5
 _buzz = low(_buzz, 1400) * env(len(_buzz), a=0.005, d=0.3, s=0.8, r=0.05) * (0.75 + 0.25 * np.sign(np.sin(2 * np.pi * 18 * secs(0.22))))
 _poof = sweep_filter(noise(0.18), 4000, 500, 'low') * decay(int(0.18 * SR), 0.05, a=0.004)
-S['sd_wrong'] = (mix([(_fall * 0.8, 0, 1.0), (bloop(420, 120, 0.12, 0.05), 0.18, 0.9), (_buzz, 0.24, 0.75), (grumble(0.22), 0.4, 0.8), (_poof, 0.62, 0.8), (droplet(700, 300, 0.06), 0.63, 0.4)]), 0.8)
+S['sd_wrong'] = (mix([(_grow * 0.8, 0, 1.0), (bloop(420, 120, 0.12, 0.05), 0.18, 0.9), (_buzz, 0.24, 0.75), (grumble(0.22), 0.4, 0.8), (_poof, 0.62, 0.8), (droplet(700, 300, 0.06), 0.63, 0.4)]), 0.8)
 S['sd_squeak'] = (mix([(band(osc(np.concatenate([sweep(900, 1500, 0.06), sweep(1500, 1050, 0.12)]) * (1 + 0.03 * np.sin(2 * np.pi * 30 * secs(0.18))), kind='saw'), 700, 3200) * env(int(0.18 * SR), a=0.008, d=0.1, s=0.6, r=0.04), 0, 1.0), (band(noise(0.18), 2500, 7000) * decay(int(0.18 * SR), 0.05), 0, 0.12)]), 0.5)
 
 # timer ----------------------------------------------------------------------------

@@ -24,12 +24,16 @@ import ShopScreen from './src/screens/ShopScreen';
 import LobbyScreen from './src/screens/LobbyScreen';
 import SquishdokuScreen from './src/screens/SquishdokuScreen';
 import SortScreen from './src/screens/SortScreen';
+import StackScreen from './src/screens/StackScreen';
 import DailySpinScreen from './src/screens/DailySpinScreen';
 import LoadingScreen from './src/screens/LoadingScreen';
 import SquishScreen from './src/screens/SquishScreen';
 import CribScreen from './src/screens/CribScreen';
 import DailyChallengesSheet from './src/screens/DailyChallengesSheet';
 import StreakScreen from './src/screens/StreakScreen';
+import LevelRoadScreen from './src/screens/LevelRoadScreen';
+import { LevelUpCard } from './src/components/LevelBits';
+import { roadClaimable, roadPrize, roadView, setLevelsConfig, xpView } from './src/playerXp';
 import TutorialGuide from './src/tutorial/Guide';
 import useTutorial from './src/tutorial/useTutorial';
 import { report as tutReport } from './src/tutorial/store';
@@ -44,13 +48,14 @@ import { subscribeToAuthUser, logout, needsVerification } from './src/firebase/a
 import { listenForSocial } from './src/firebase/social';
 import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
 import FpsCounter from './src/components/FpsCounter';
-import { BY_ID, hiddenOf, isOut, owns, setCopyCounts, setRewardsOf, wallet as walletOf } from './src/squad/data';
+import { BY_ID, hiddenOf, isOut, lineup, owns, setCopyCounts, setRewardsOf, wallet as walletOf } from './src/squad/data';
 import {
   subscribeToUserProfile,
   subscribeToCreatures,
   subscribeToPricing,
   subscribeToOffers,
   subscribeToRoster,
+  subscribeToLevels,
   setOfferSeen,
   addCoins,
   recordPress,
@@ -66,6 +71,8 @@ import {
   newCustomCreatureId,
   setTutorialStep,
   setLevel,
+  migrateToXp,
+  markLevelSeen,
   markStreakSeen,
   bumpDaily,
   claimDailyChallenge,
@@ -119,7 +126,7 @@ const APP_TOAST_AT = { position: 'absolute', left: 0, right: 0, bottom: 150, hei
 // one empty object, so a memoized screen sees the same prop every render
 const NO_ACHIEVEMENTS = {};
 
-const SLIDE_IN = new Set(['crib', 'create', 'achievements', 'stats', 'streak', 'loading', 'squishdoku', 'sort']);
+const SLIDE_IN = new Set(['crib', 'create', 'achievements', 'stats', 'streak', 'loading', 'squishdoku', 'sort', 'stack', 'road']);
 // creature pictures fetched into the image cache at a time (see below)
 const PREFETCH_AT_ONCE = 6;
 // Screens over Home that need it truly hidden (Freeze, display: none) rather
@@ -141,6 +148,7 @@ const MUSIC_FOR_STAGE = {
   store: 'bounce',
   achievements: 'bounce',
   stats: 'bounce',
+  road: 'bounce',
   create: 'bounce',
   loading: 'calm',
   toy: 'calm',
@@ -149,6 +157,8 @@ const MUSIC_FOR_STAGE = {
   squishdoku: 'dream',
   // Squish Sort: party music
   sort: 'party',
+  // Squish Stack: calm, cosy stacking
+  stack: 'cozy',
   // the Crib plays its rooms' own music (CribScreen)
 };
 
@@ -236,6 +246,11 @@ export default function App() {
   // the streak screen opening by itself, once a day after the Daily Spin
   // (StreakScreen's `intro`; from the menu it's just a screen)
   const [streakIntro, setStreakIntro] = useState(false);
+  // the player level (src/playerXp.js, PLAYER_XP.md): the LEVEL UP card
+  // ({ level, levels }: the levels it announces) and the levels the level
+  // road claims as it opens (its COLLECT)
+  const [levelUp, setLevelUp] = useState(null);
+  const [roadAuto, setRoadAuto] = useState(null);
 
   const prevAchievementsRef = useRef(null);
 
@@ -359,6 +374,16 @@ export default function App() {
     });
   }, [authUser]);
   const hidden = useMemo(() => hiddenOf(rosterCfg), [rosterCfg]);
+  // What the levels are (config/levels: the road, the curve, what earns XP):
+  // into src/playerXp.js before the screens redraw, as the roster's counts
+  const [levelsCfg, setLevelsCfg] = useState(null);
+  useEffect(() => {
+    if (!authUser) return undefined;
+    return subscribeToLevels((cfg) => {
+      setLevelsConfig(cfg);
+      setLevelsCfg(cfg);
+    });
+  }, [authUser]);
   const setRewards = setRewardsOf(rosterCfg);
   // the catalog less what's not out yet (one already owned stays): what the
   // achievements and stats count
@@ -383,6 +408,13 @@ export default function App() {
     // re-running after it succeeds is harmless (arrayUnion) but pointless.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser, profile?.ownedIds]);
+  // …and for those from before player XP: their level (and Squishdoku's
+  // Puzzle XP) become `pxp`, once
+  const hasXp = typeof profile?.pxp === 'number';
+  useEffect(() => {
+    if (authUser && profile && !hasXp) migrateToXp(authUser.uid, profile);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser, !!profile, hasXp]);
 
   // The lobby's NEW badges count what came after the first visit: the
   // first time, everything owned then counts as seen (src/squad/lobby.js).
@@ -525,6 +557,11 @@ export default function App() {
   const openStats = useCallback(() => setScreen('stats'), []);
   const openSquishdoku = useCallback(() => setScreen('squishdoku'), []);
   const openSort = useCallback(() => setScreen('sort'), []);
+  const openStack = useCallback(() => setScreen('stack'), []);
+  const openRoad = useCallback(() => {
+    setRoadAuto(null);
+    setScreen('road');
+  }, []);
   // the tutorial's current step (useTutorial runs further down; this ref is
   // for callbacks declared before it)
   const tutorialStepRef = useRef('done');
@@ -604,8 +641,8 @@ export default function App() {
   const handleClaimDaily = useCallback(
     (id) => {
       if (!authUser) return;
-      const coins = claimDailyChallenge(authUser.uid, profile, id);
-      if (coins) flashApp(`+${coins} coins!`);
+      const r = claimDailyChallenge(authUser.uid, profile, id);
+      if (r) flashApp(`+${r.coins} coins · +${r.xp} XP!`);
     },
     [authUser, profile, flashApp]
   );
@@ -619,7 +656,7 @@ export default function App() {
     const gift = r.reward.kind === 'gems' || r.reward.kind === 'chest' ? r.reward : null;
     squadDailyGift(gift).catch(() => {});
     const extra = r.reward.kind === 'gems' ? ` + ${r.reward.amount} gems` : r.reward.kind === 'chest' ? ' + a free chest in the Shop' : r.reward.kind === 'half' ? ' + half price on your next creation' : '';
-    flashApp(`Daily chest: +${r.coins} coins${extra}!`);
+    flashApp(`Daily chest: +${r.coins} coins · +${r.xp} XP${extra}!`);
   }, [authUser, profile, flashApp]);
   const dailyToCrib = useCallback(() => {
     setDailyOpen(false);
@@ -633,7 +670,7 @@ export default function App() {
     creatures,
     signedIn: !!authUser && !!profile,
     setStep: useCallback((step) => authUser && setTutorialStep(authUser.uid, step), [authUser]),
-    setLevel: useCallback((lv) => authUser && setLevel(authUser.uid, lv), [authUser]),
+    setLevel: useCallback((lv) => authUser && setLevel(authUser.uid, lv, profileRef.current), [authUser]),
   });
   tutorialStepRef.current = tutorial.step;
 
@@ -821,6 +858,40 @@ export default function App() {
     else stage = screen;
   }
 
+  // LEVEL UP (src/components/LevelBits.js): once a level is reached past the
+  // tutorial's 2 and 3 (it has its own cards for those), on the lobby with
+  // nothing else up. `lvSeen` on the profile keeps it to once a level on
+  // every device; the ref covers a failed write. COLLECT claims every prize
+  // waiting on the level road.
+  const lvNow = profile ? levelOf(profile) : 1;
+  const lvSeen = Math.max(3, Math.floor(profile?.lvSeen ?? 0));
+  const shownLvRef = useRef(0);
+  // the test wallet's "Claim prizes again" lowers `lvSeen`: the card may
+  // show again for a level it already showed this session
+  const lastLvSeenRef = useRef(lvSeen);
+  if (lvSeen < lastLvSeenRef.current) shownLvRef.current = Math.min(shownLvRef.current, lvSeen);
+  lastLvSeenRef.current = lvSeen;
+  const levelUpDue =
+    !!authUser && hasXp && lvNow > lvSeen && lvNow > shownLvRef.current && stage === 'home' && mainTab === 'squish' && !dailyOpen && !settingsOpen && !levelUp && !tutorialActive(profile);
+  useEffect(() => {
+    if (!levelUpDue) return;
+    shownLvRef.current = lvNow;
+    markLevelSeen(authUser.uid, lvNow);
+    setLevelUp({ level: lvNow });
+    sfx.play('sd_levelUp');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [levelUpDue]);
+  const closeLevelUp = useCallback(() => setLevelUp(null), []);
+  const collectLevelUp = useCallback(() => {
+    setLevelUp(null);
+    setRoadAuto(
+      roadView(profileRef.current)
+        .filter((n) => n.claimable)
+        .map((n) => n.lv),
+    );
+    setScreen('road');
+  }, []);
+
   // Home stays mounted once built, under whatever screen opens from it, so
   // going back is instant (it used to be rebuilt from scratch every time).
   // Once the screen on top covers it (`homeCovered`), it's held (Hold: not
@@ -920,6 +991,11 @@ export default function App() {
   const priceLabel = billing.priceLabel(creationKey, storePrices);
   const adsFree = profile?.adsFree ?? false;
   const dailyNow = profile ? dailyView(profile) : null;
+  // the player's level and XP, and the level road's prizes waiting (not
+  // shown during the tutorial)
+  const xpNow = xpView(profile);
+  const roadWaiting = profile && !tutorialActive(profile) ? roadClaimable(profile) : 0;
+  const lvPrize = levelUp && !(profile?.levelGot || {})[levelUp.level] ? roadPrize(levelUp.level) : null;
   // the streak screen's squishy (the one squished longest, else the first
   // owned)
   const mascot = stage === 'streak' ? streakMascot(creatures, profile) : null;
@@ -963,6 +1039,11 @@ export default function App() {
                   active={onHome && mainTab === 'squish'}
                   profile={profile}
                   cribUnlocked={cribUnlocked(profile)}
+                  level={xpNow.level}
+                  xpInto={xpNow.into}
+                  xpNeed={xpNow.need}
+                  roadWaiting={roadWaiting}
+                  onOpenRoad={openRoad}
                   onOpenCrib={openCrib}
                   onOpenAchievements={openAchievements}
                   onOpenSettings={openSettings}
@@ -970,6 +1051,7 @@ export default function App() {
                   onPlay={playSelected}
                   onOpenPuzzle={openSquishdoku}
                   onOpenSort={openSort}
+                  onOpenStack={openStack}
                   pickGames={tutorial.step === 'done'}
                   creatures={creatures}
                   hidden={hidden}
@@ -1046,8 +1128,8 @@ export default function App() {
           {stage === 'achievements' && (
             <AchievementsScreen creatures={counted} profile={profile} customCount={customCreatures.length} onBack={goHome} />
           )}
-          {/* the games slide in as placeholders and are built once the
-              slide is over (ScreenLayer) */}
+          {/* the games and the level road slide in as placeholders and are
+              built once the slide is over (ScreenLayer) */}
           {stage === 'squishdoku' && (
             <WhenScreenReady placeholder={<ScreenBones kind="hub" />}>
               <SquishdokuScreen profile={profile} creatures={creatures} uid={authUser?.uid} adsFree={adsFree} haptics={vibrationEnabled} onBack={goHome} />
@@ -1055,11 +1137,21 @@ export default function App() {
           )}
           {stage === 'sort' && (
             <WhenScreenReady placeholder={<ScreenBones kind="hub" />}>
-              <SortScreen profile={profile} creatures={creatures} hidden={hidden} uid={authUser?.uid} haptics={vibrationEnabled} onBack={goHome} />
+              <SortScreen profile={profile} creatures={creatures} hidden={hidden} uid={authUser?.uid} adsFree={adsFree} haptics={vibrationEnabled} onBack={goHome} />
+            </WhenScreenReady>
+          )}
+          {stage === 'stack' && (
+            <WhenScreenReady placeholder={<ScreenBones kind="hub" />}>
+              <StackScreen profile={profile} creatures={creatures} hidden={hidden} uid={authUser?.uid} adsFree={adsFree} haptics={vibrationEnabled} onBack={goHome} />
             </WhenScreenReady>
           )}
           {stage === 'stats' && (
             <StatsScreen creatures={counted} customCreatures={customCreatures} profile={profile} onBack={goHome} />
+          )}
+          {stage === 'road' && (
+            <WhenScreenReady placeholder={<ScreenBones kind="list" />}>
+              <LevelRoadScreen profile={profile} levels={levelsCfg} creatures={creatures} hidden={hidden} autoClaim={roadAuto} onBack={goHome} />
+            </WhenScreenReady>
           )}
           {stage === 'loading' && <LoadingScreen creature={loadingToy} onFinish={finishLoadingToy} />}
           {stage === 'toy' && activeToy && (
@@ -1105,12 +1197,22 @@ export default function App() {
             onReplayTutorial={replayTutorial}
             onOpenStats={openStats}
             tester={tester}
-            wallet={{ ...walletOf(profile), level: profile?.level ?? 1 }}
+            wallet={{ ...walletOf(profile), level: xpNow.level }}
             fpsOn={fpsOverlay}
             onToggleFps={toggleFps}
           />
           <DailyChallengesSheet visible={dailyOpen} profile={profile} onClose={closeDaily} onClaim={handleClaimDaily} onClaimChest={handleClaimChest} onOpenCrib={dailyToCrib} />
         </>
+      ) : null}
+      {levelUp ? (
+        <LevelUpCard
+          level={levelUp.level}
+          prize={lvPrize}
+          more={Math.max(0, roadWaiting - (lvPrize ? 1 : 0))}
+          group={lineup(todayKey(), hidden)[0]}
+          onCollect={collectLevelUp}
+          onLater={closeLevelUp}
+        />
       ) : null}
       {/* above the ad strip and the Mystery Box banner */}
       {/* (turned with the Crib while it's landscape, so they come from its top) */}

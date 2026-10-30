@@ -6,13 +6,14 @@ import OutlinedTitle from '../components/candy/OutlinedTitle';
 import { Bob } from '../squad/ui';
 import { PopIn, Pulse, Rock, SlideIn } from './fx';
 import { BtnLabel, Head, SdButton, XGlyph } from './ui';
-import { HEAD_START, LEVELS, blitzMs, clock, puzzleLevel } from './levels';
+import { HEAD_START, LEVELS, blitzMs, clock } from './levels';
 import { F, INK } from './theme';
 
 // Squishdoku's front page: the title with creatures bobbing round it, the
-// player's Puzzle Level, and the two modes.
+// player's level (which its wins fill with XP), and the two modes.
 
-function ModeCard({ kind, title, lines, cta, onPress, delay, children }) {
+// a mode's card (Squish Sort's and Squish Stack's BLITZ cards too)
+export function ModeCard({ kind, title, lines, cta, onPress, delay, children }) {
   const colors = kind === 'blitz' ? ['#e0fbff', '#9feeff', '#5fd0f5'] : ['#fff0fa', '#ffc6ea', '#ff93d6'];
   const ring = kind === 'blitz' ? '#0c5a9c' : '#8e1580';
   return (
@@ -61,8 +62,8 @@ function HeadStart({ on, uri, onToggle, delay }) {
   );
 }
 
-function Hub({ rec, roster, head, onToggleHead, onRegular, onBlitz, onRules }) {
-  const pl = puzzleLevel(rec.xp);
+// `pl`: the player's level and XP (src/playerXp.js xpView), which wins fill
+function Hub({ rec, pl, roster, head, onToggleHead, onRegular, onBlitz, onRules }) {
   const done = rec.lv - 1 + (rec.best[LEVELS] ? 1 : 0);
   const pick = (k) => (roster.length ? roster[k % roster.length] : null);
   return (
@@ -95,7 +96,7 @@ function Hub({ rec, roster, head, onToggleHead, onRegular, onBlitz, onRules }) {
             <Text style={styles.lvNum}>{pl.level}</Text>
           </View>
           <View style={{ gap: 3 }}>
-            <Text style={styles.lvLabel}>PUZZLE LEVEL</Text>
+            <Text style={styles.lvLabel}>YOUR LEVEL</Text>
             <View style={styles.xpTrack}>
               <View style={[styles.xpFill, { width: `${Math.round((pl.into / pl.need) * 100)}%` }]} />
             </View>

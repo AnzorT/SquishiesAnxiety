@@ -11,7 +11,8 @@ import RegularGame from '../squishdoku/RegularGame';
 import BlitzGame from '../squishdoku/BlitzGame';
 import RulesCard from '../squishdoku/Rules';
 import { PLAY_SOUNDS, RESULT_SOUNDS, prefetchPuzzle } from '../squishdoku/game';
-import { levelSpec, puzzleLevel, record } from '../squishdoku/levels';
+import { levelSpec, record } from '../squishdoku/levels';
+import { xpView } from '../playerXp';
 import { ownedKey, rosterOf } from '../squishdoku/roster';
 import { BY_ID } from '../squad/data';
 import { selectedId } from '../squad/lobby';
@@ -107,7 +108,7 @@ function SquishdokuScreen({ profile, creatures, uid, adsFree, haptics, onBack })
     go('hub');
   }, [go]);
 
-  const pl = puzzleLevel(rec.xp);
+  const pl = xpView(profile);
 
   return (
     <CandyBackground style={{ paddingTop: insets.top }} sparkles>
@@ -134,7 +135,7 @@ function SquishdokuScreen({ profile, creatures, uid, adsFree, haptics, onBack })
         {view !== 'map' ? (
           <ViewSlot sw={sw} bones={BONES[view]}>
             {view === 'hub' ? (
-              <Hub rec={rec} roster={roster} head={head} onToggleHead={toggleHead} onRegular={() => go('map')} onBlitz={() => go('blitz')} onRules={() => setRules(true)} />
+              <Hub rec={rec} pl={pl} roster={roster} head={head} onToggleHead={toggleHead} onRegular={() => go('map')} onBlitz={() => go('blitz')} onRules={() => setRules(true)} />
             ) : null}
             {view === 'play' ? (
               <RegularGame startLv={playLv} profile={profile} uid={uid} roster={roster} head={head} buddyKey={buddyKey} buddyUri={buddyUri} haptics={haptics} onExit={leaveLevel} />

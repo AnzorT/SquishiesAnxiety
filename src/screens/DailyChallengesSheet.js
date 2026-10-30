@@ -41,17 +41,20 @@ const Row = memo(function Row({ row, onClaim }) {
           <Text style={styles.barLabel}>{row.label}</Text>
         </View>
       </View>
-      {row.open ? (
-        <View style={styles.rewardPill}>
-          <Text style={styles.rewardText}>{`+${row.reward}`}</Text>
-        </View>
-      ) : row.claimable ? (
-        <CandyButton variant="gold" size="xs" onPress={() => onClaim(row.id)} label={`CLAIM +${row.reward}`} textStyle={styles.claimText} />
-      ) : (
-        <View style={styles.donePill}>
-          <Text style={styles.doneText}>DONE</Text>
-        </View>
-      )}
+      <View style={styles.rewardCol}>
+        {row.open ? (
+          <View style={styles.rewardPill}>
+            <Text style={styles.rewardText}>{`+${row.reward}`}</Text>
+          </View>
+        ) : row.claimable ? (
+          <CandyButton variant="gold" size="xs" onPress={() => onClaim(row.id)} label={`CLAIM +${row.reward}`} textStyle={styles.claimText} />
+        ) : (
+          <View style={styles.donePill}>
+            <Text style={styles.doneText}>DONE</Text>
+          </View>
+        )}
+        {!row.claimed ? <Text style={styles.xpText}>{`+${row.xp} XP`}</Text> : null}
+      </View>
     </View>
   );
 });
@@ -112,7 +115,7 @@ function DailyChallengesSheet({ visible, profile, onClose, onClaim, onClaimChest
             <LinearGradient colors={['#fff7d6', '#ffe9a8']} style={styles.chest}>
               <ChestIcon />
               <View style={{ flex: 1, gap: 5 }}>
-                <Text style={styles.chestText}>{`Claim all ${v.total} for the daily chest · +${v.chestReward} coins + 1 token + your streak reward`}</Text>
+                <Text style={styles.chestText}>{`Claim all ${v.total} for the daily chest · +${v.chestReward} coins + ${v.chestXp} XP + your streak reward`}</Text>
                 <View style={styles.chestBar}>
                   <LinearGradient colors={['#fffbd6', '#ffe045', '#ff9500']} locations={[0, 0.45, 1]} style={[styles.barFill, { width: `${v.chestPct}%` }]} />
                 </View>
@@ -181,6 +184,8 @@ const styles = StyleSheet.create({
   bar: { flex: 1, height: 10, borderRadius: 6, backgroundColor: '#f7e3fb', borderWidth: 1.5, borderColor: '#e3b8f2', overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 6 },
   barLabel: { fontFamily: candyFonts.bodyHeavy, fontSize: 11, color: candyColors.muted },
+  rewardCol: { alignItems: 'center', gap: 2 },
+  xpText: { fontFamily: candyFonts.bodyBlack, fontSize: 10, color: '#7a2fd6' },
   rewardPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: '#fff5d6', borderWidth: 1.5, borderColor: '#ffcd3c' },
   rewardText: { fontFamily: candyFonts.bodyBlack, fontSize: 12, color: candyColors.goldInk },
   claimText: { fontSize: 12 },

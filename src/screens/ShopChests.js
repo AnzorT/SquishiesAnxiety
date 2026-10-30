@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
 import Pressable from '../components/Pressable';
 import ShadowText from '../components/candy/ShadowText';
-import { BY_ID, GDEAL, GROUPS, LUCK_MAX, RAR_LOOK, ROSTER, SEASON, SIZES, SIZE_I, UPGRADE, AD_CHESTS, copyProgress, dropRar, groupOut, inGroupChest, owns, lineup } from '../squad/data';
+import { BY_ID, GDEAL, GROUPS, LUCK_MAX, RAR_LOOK, ROSTER, SEASON, SIZES, SIZE_I, UPGRADE, AD_CHESTS, copyProgress, dropRar, dupeCoinsFor, groupOut, inGroupChest, owns, lineup } from '../squad/data';
 import GCHEST, { CHEST_NAMES } from '../squad/groupChestArt';
 import { COIN, GEM } from '../squad/currencyArt';
 import { Bob, F, TickingText, hms, untilMidnight } from '../squad/ui';
@@ -72,7 +72,8 @@ export function chestInfo(gk, size, profile, artIds, setRewards) {
     name: (CHEST_NAMES[gk] || [])[ti] || `${SIZE_NAME[ti]} chest`,
     look: T.price.cur === 'coins' ? GOLD : PURPLE,
     odds: `${T.odds[3] ? `Leg ${T.odds[3]}% · ` : ''}Epic+ ${epicUp}%`,
-    coinsRange: `${fmt(T.coins[0])}–${fmt(T.coins[1])}`,
+    // what a duplicate pays: 7% of the chest's worth (no other coins inside)
+    dupeCoins: `+${fmt(dupeCoinsFor(size))}`,
     upNote: ti <= 1 ? `${UPGRADE[size]}% chance it upgrades on your first smash` : '',
   };
 }
@@ -299,8 +300,8 @@ const Card = memo(function Card({ x, size, info, width, index, near = true, onSi
               <Text style={[styles.infoValue, { color: '#45107a' }]}>{C.odds}</Text>
             </View>
             <View style={[styles.info, { backgroundColor: '#fff6dc' }]}>
-              <Text style={[styles.infoLabel, { color: '#b88a40' }]}>COINS INSIDE</Text>
-              <Text style={[styles.infoValue, { color: '#b86200' }]}>{C.coinsRange}</Text>
+              <Text style={[styles.infoLabel, { color: '#b88a40' }]}>DUPLICATE</Text>
+              <Text style={[styles.infoValue, { color: '#b86200' }]}>{`${C.dupeCoins} coins`}</Text>
             </View>
           </View>
           <TutTarget name={index === 0 ? 'buy:hot' : `buy:${x.k}`}>
@@ -531,7 +532,7 @@ export function ChestSheetBody({ gk, size, profile, artIds, setRewards, catalog,
       </View>
       <View style={styles.row4}>
         <Image source={COIN[0]} style={styles.icon16} />
-        <Text style={styles.sheetCoins}>{`+ ${C.coinsRange} coins · Lucky meter counts this chest`}</Text>
+        <Text style={styles.sheetCoins}>{`Duplicate: ${C.dupeCoins} coins · Lucky meter counts this chest`}</Text>
       </View>
       <Candy colors={look.bg} rim={look.rim} lip={5} radius={20} height={58} style={{ alignSelf: 'stretch' }} onPress={() => onBuy(gk, size)}>
         {afford && <Image source={gemsCur ? GEM[0] : COIN[0]} style={styles.icon30} />}

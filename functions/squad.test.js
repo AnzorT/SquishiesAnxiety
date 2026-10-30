@@ -247,9 +247,10 @@ assert.strictEqual(m.result.isNew, false); // a first copy
 assert.strictEqual(m.result.copies, 1);
 assert.strictEqual(m.result.need, 5);
 assert.deepStrictEqual(m.set.copies, { [m.result.id]: 1 });
+// no coins from a chest unless it's a duplicate (the user, 2026-10-25)
 assert.strictEqual(m.result.dupeCoins, 0);
-assert.ok(m.result.coins >= 40 && m.result.coins <= 120 && m.result.coins % 10 === 0);
-assert.strictEqual(m.set.coins, 1000 - 300 + m.result.coins);
+assert.strictEqual(m.result.coins, 0);
+assert.strictEqual(m.set.coins, 1000 - 300);
 assert.strictEqual(m.set.epic, 1);
 assert.strictEqual(m.set.passXp, 20);
 // its last copy from a chest unlocks it
@@ -275,7 +276,7 @@ assert.strictEqual(m.set.passXp, 80);
 m = S.MOVES.groupChest({ coins: 1000 }, { group: 'snack', size: 'common', artIds: ALL, random: seq(0.1, 0.5, 0.5, 0.5, 0.5) });
 assert.strictEqual(m.result.final, 'epic');
 assert.ok(m.result.upgraded);
-assert.ok(m.result.coins >= 150);
+assert.strictEqual(m.result.coins, 0);
 // an Epic never upgrades
 m = S.MOVES.groupChest({ gems: 200 }, { group: 'snack', size: 'epic', artIds: ALL, random: seq(0.01, 0.01, 0.5) });
 assert.strictEqual(m.result.final, 'epic');
@@ -284,12 +285,20 @@ m = S.MOVES.groupChest({ coins: 1000, epic: 9 }, { group: 'ocean', size: 'common
 assert.ok(m.result.rar >= 2);
 assert.ok(m.result.luck);
 assert.strictEqual(m.set.epic, 0);
-// a duplicate pays the design's coins
+// a duplicate pays 7% of the chest's worth in coins (a gem at 40 coins)
 const dupId = S.ROSTER.find((c) => c.set === 'ocean' && c.rar === 0).id;
+assert.deepStrictEqual(S.SIZES.map((t) => S.dupeCoinsFor(t.k)), [21, 84, 336, 896, 1904]);
+assert.strictEqual(S.chestWorth('legendary'), 320 * 40);
 m = S.MOVES.groupChest({ coins: 1000, ownedIds: S.ROSTER.filter((c) => c.set === 'ocean').map((c) => c.id) }, { group: 'ocean', size: 'common', artIds: ALL, random: seq(0.99, 0.01, 0.01, 0.5) });
 assert.strictEqual(m.result.isNew, false);
-assert.strictEqual(m.result.dupeCoins, S.GDUPE[m.result.rar]);
-assert.strictEqual(m.set.coins, 700 + m.result.coins + m.result.dupeCoins);
+assert.strictEqual(m.result.dupeCoins, 21);
+assert.strictEqual(m.result.coins, 0);
+assert.strictEqual(m.set.coins, 700 + 21);
+// …of the chest it opened as: a Common that upgraded to Epic pays an Epic's
+m = S.MOVES.groupChest({ coins: 1000, ownedIds: S.ROSTER.filter((c) => c.set === 'snack').map((c) => c.id) }, { group: 'snack', size: 'common', artIds: ALL, random: seq(0.1, 0.5, 0.5, 0.5, 0.5) });
+assert.strictEqual(m.result.final, 'epic');
+assert.strictEqual(m.result.dupeCoins, 336);
+assert.strictEqual(m.set.coins, 700 + 336);
 // with set rewards on, never a set reward; never a creature without art
 for (let i = 0; i < 200; i++) {
   const r = S.MOVES.groupChest({ gems: 1e4 }, { group: 'snack', size: 'set', artIds: ALL, setRewards: true }).result;
@@ -309,9 +318,9 @@ m = S.MOVES.groupChest({ gems: 1e4, ownedIds: ['28'] }, { group: 'snack', size: 
 assert.strictEqual(m.result.id, chefBun);
 assert.strictEqual(m.result.rar, 4);
 assert.strictEqual(m.result.reward, null);
-// its duplicate pays a Legendary's coins
+// its duplicate pays 7% of the Rainbow chest's worth
 m = S.MOVES.groupChest({ gems: 1e4, ownedIds: ['28', chefBun] }, { group: 'snack', size: 'set', artIds: ALL, random: seq(0.99, 0.99, 0.9) });
-assert.strictEqual(m.result.dupeCoins, S.GDUPE[3]);
+assert.strictEqual(m.result.dupeCoins, S.dupeCoinsFor('set'));
 // with set rewards on, a set's last member from a chest brings the reward
 const snackLast = S.SET_OF.snack.ids;
 m = S.MOVES.groupChest({ coins: 1e4, ownedIds: snackLast.slice(1), copies: ready(snackLast[0]) }, { group: 'snack', size: 'common', artIds: [snackLast[0]], setRewards: true, random: seq(0.99, 0.1, 0.1, 0.5) });
@@ -400,5 +409,71 @@ assert.strictEqual(S.jarGems({ totalEarned: 2500, jarBase: 2000 }, JAR), 20);
 assert.strictEqual(S.jarGems({ totalEarned: 1e7 }, JAR), 1500);
 // a broken config falls back to the design's
 assert.strictEqual(S.offersOf({ offers: 'x' }).offers.length, OFF.offers.length);
+
+// --- the player level (PLAYER_XP.md) ---
+const ROAD = S.DEFAULT_LEVELS.road;
+// the curve: reaching level L takes 100 × L XP from 0 (3 → 4 400 … 9 → 10
+// 1,000); 2 and 3 come with the tutorial
+assert.strictEqual(S.xpToNext(1), 200);
+assert.strictEqual(S.xpToNext(3), 400);
+assert.strictEqual(S.xpToNext(9), 1000);
+assert.strictEqual(S.xpToNext(49), 5000);
+assert.deepStrictEqual([1, 2, 3, 4, 5, 10, 50, 100].map(S.xpToReach), [0, 200, 500, 900, 1400, 5400, 127400, 504900]);
+assert.deepStrictEqual(S.playerLevel(0), { level: 1, into: 0, need: 200 });
+assert.deepStrictEqual(S.playerLevel(499), { level: 2, into: 299, need: 300 });
+assert.deepStrictEqual(S.playerLevel(500), { level: 3, into: 0, need: 400 });
+assert.deepStrictEqual(S.playerLevel(942), { level: 4, into: 42, need: 500 });
+assert.deepStrictEqual(S.playerLevel(4400 + 999), { level: 9, into: 999, need: 1000 });
+assert.strictEqual(S.playerLevel(undefined).level, 1);
+for (let L = 1; L <= 120; L++) assert.strictEqual(S.playerLevel(S.xpToReach(L)).level, L);
+// the road: a prize for each level 1-50
+assert.strictEqual(ROAD.length, 50);
+assert.ok(ROAD.every((r) => (r.k === 'coins' || r.k === 'gems' ? r.n > 0 : S.SIZE_I[r.t] != null)));
+// level 1's prize at once; once
+m = S.MOVES.levelClaim({ coins: 10 }, { i: 1, day: D20, artIds: ALL });
+assert.strictEqual(m.set.coins, 10 + ROAD[0].n);
+assert.deepStrictEqual(m.set.levelGot, { 1: true });
+assert.strictEqual(m.result.lv, 1);
+assert.strictEqual(S.MOVES.levelClaim({ levelGot: { 1: true } }, { i: 1, day: D20 }).error, 'claimed');
+// a level not reached yet; one reached (level 3: a Common chest of the first HOT group)
+assert.strictEqual(S.MOVES.levelClaim({ pxp: 499 }, { i: 3, day: D20 }).error, 'need_level');
+m = S.MOVES.levelClaim({ pxp: 500, levelGot: { 1: true } }, { i: 3, day: D20, artIds: ALL, random: seq(0.99, 0.1, 0.1, 0.5) });
+assert.strictEqual(m.result.kind, 'chest');
+assert.strictEqual(m.result.chest.group, S.lineup(D20)[0]);
+assert.strictEqual(m.result.chest.size, 'common');
+assert.deepStrictEqual(m.set.levelGot, { 1: true, 3: true });
+// gems (level 5)
+m = S.MOVES.levelClaim({ pxp: S.xpToReach(5), gems: 1 }, { i: 5, day: D20 });
+assert.strictEqual(m.set.gems, 1 + ROAD[4].n);
+// past the road, and nonsense
+assert.strictEqual(S.MOVES.levelClaim({ pxp: 1e9 }, { i: 51, day: D20 }).error, 'unknown_reward');
+assert.strictEqual(S.MOVES.levelClaim({ pxp: 1e9 }, { i: NaN, day: D20 }).error, 'unknown_reward');
+assert.strictEqual(S.MOVES.levelClaim({ pxp: 1e9 }, { i: 0, day: D20 }).error, 'unknown_reward');
+// CLAIM ALL: every level reached and not claimed yet, in one go, each seeing the last
+m = S.MOVES.levelClaimAll({ pxp: S.xpToReach(5), coins: 0, gems: 0, levelGot: { 2: true } }, { day: D20, artIds: ALL, random: seq(0.99, 0.1, 0.1, 0.5) });
+assert.deepStrictEqual(m.result.results.map((r) => r.lv), [1, 3, 4, 5]);
+assert.deepStrictEqual(m.result.results.map((r) => r.kind), ['coins', 'chest', 'coins', 'gems']);
+assert.strictEqual(m.set.coins, ROAD[0].n + ROAD[3].n);
+assert.strictEqual(m.set.gems, ROAD[4].n);
+assert.deepStrictEqual(m.set.levelGot, { 1: true, 2: true, 3: true, 4: true, 5: true });
+assert.strictEqual(m.set.chestOpens, 1);
+assert.strictEqual(S.MOVES.levelClaimAll({ pxp: 0, levelGot: { 1: true } }, { day: D20 }).error, 'nothing_to_claim');
+// config/offers can set its own road
+// config/levels: its own road (a row more, a level more), curve and XP;
+// anything broken falls back to DEFAULT_LEVELS
+assert.strictEqual(S.MOVES.levelClaim({ coins: 0 }, { i: 1, levels: { road: [{ k: 'coins', n: 7 }] }, day: D20 }).set.coins, 7);
+const longRoad = { road: [...ROAD, { k: 'gems', n: 999 }] };
+assert.strictEqual(S.MOVES.levelClaim({ gems: 0, pxp: S.xpToReach(51) }, { i: 51, levels: longRoad, day: D20 }).set.gems, 999);
+assert.strictEqual(S.MOVES.levelClaim({ pxp: S.xpToReach(51) }, { i: 51, day: D20 }).error, 'unknown_reward', 'not on the default road');
+const half = { xpPerLevel: 50 };
+assert.strictEqual(S.xpToNext(9, half), 500);
+assert.strictEqual(S.MOVES.levelClaim({ pxp: 250 }, { i: 3, levels: half, day: D20, artIds: ALL, random: seq(0.99, 0.1, 0.1, 0.5) }).result.lv, 3);
+assert.strictEqual(S.MOVES.levelClaim({ pxp: 250 }, { i: 3, day: D20 }).error, 'need_level', 'at 100 a level it takes 500');
+assert.strictEqual(S.levelsOf({ road: [{ k: 'chest', t: 'huge' }], xpPerLevel: -3, xp: { replay: 7 } }).road, ROAD);
+assert.strictEqual(S.levelsOf({ xpPerLevel: -3 }).xpPerLevel, 100);
+assert.strictEqual(S.levelsOf({ xp: { replay: 7 } }).xp.replay, 0.5);
+assert.strictEqual(S.levelsOf({ xp: { challenge: 40 } }).xp.challenge, 40);
+assert.strictEqual(S.levelsOf({ xp: { challenge: 40 } }).xp.chest, 100);
+assert.strictEqual(S.offersOf(null).road, undefined, 'the road left config/offers');
 
 console.log('squad.test.js: all passed');

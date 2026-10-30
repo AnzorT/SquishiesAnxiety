@@ -203,26 +203,34 @@ function Details({ entry, index, total }) {
   const done = entry.done;
   const prog = entry.progress;
   const statusRing = done ? candyColors.goldRing : candyColors.outlineDeep;
+  // every entry takes the tallest entry's room (two description lines and a
+  // progress bar): the stage above is flex, so a taller block here moved the
+  // badges up from one achievement to the next. With no bar, an invisible
+  // one under the status keeps its room.
+  const bar = (
+    <View style={[styles.progWrap, !prog && styles.unseen]} pointerEvents="none">
+      <CandyProgress pct={prog ? (prog.cur / prog.max) * 100 : 0} height={12} ring={candyColors.pinkRing} fill={['#ffa8e6', '#ff4fbf']} horizontal={false} style={styles.progBar} />
+      <ShadowText style={styles.progText} shadows={[[0, 1.5, candyColors.outlineDeep]]}>
+        {prog ? `${fmtNum(prog.cur)} / ${fmtNum(prog.max)}` : '0 / 0'}
+      </ShadowText>
+    </View>
+  );
   return (
     <Animated.View style={[styles.details, { opacity, transform: [{ translateY }, { scale }] }]}>
       <ShadowText style={styles.pos} shadows={[[0, 1.5, candyColors.outlineDeep]]}>
         {`${index + 1} OF ${total}`}
       </ShadowText>
       <OutlinedTitle text={entry.title} fill={done ? 'gold' : 'pink'} size={26} outline={2.5} ring={2} drop={4} letterSpacing={0} style={styles.title} />
-      <ShadowText style={styles.desc} shadows={[[0, 2, candyColors.outlineDeep]]} numberOfLines={2}>
-        {entry.desc}
-      </ShadowText>
-      {prog ? (
-        <View style={styles.progWrap}>
-          <CandyProgress pct={(prog.cur / prog.max) * 100} height={12} ring={candyColors.pinkRing} fill={['#ffa8e6', '#ff4fbf']} horizontal={false} style={styles.progBar} />
-          <ShadowText style={styles.progText} shadows={[[0, 1.5, candyColors.outlineDeep]]}>
-            {`${fmtNum(prog.cur)} / ${fmtNum(prog.max)}`}
-          </ShadowText>
-        </View>
-      ) : null}
+      <View style={styles.descBox}>
+        <ShadowText style={styles.desc} shadows={[[0, 2, candyColors.outlineDeep]]} numberOfLines={2}>
+          {entry.desc}
+        </ShadowText>
+      </View>
+      {prog ? bar : null}
       <ShadowText style={[styles.status, { color: done ? candyColors.goldText : '#ffffff' }]} shadows={outline3(statusRing)}>
         {done ? '★ UNLOCKED' : 'LOCKED'}
       </ShadowText>
+      {prog ? null : bar}
     </Animated.View>
   );
 }
@@ -419,6 +427,8 @@ const styles = StyleSheet.create({
   // the sticker title's SVG carries its outline margin (4.5px round + 4px
   // drop) — pulled in so the spacing matches the design's 7px gaps
   title: { marginTop: -4.5, marginBottom: -8.5 },
+  // two lines of desc (lineHeight 20), a one-line one centred in them
+  descBox: { height: 40, justifyContent: 'center' },
   desc: {
     color: '#ffffff',
     fontFamily: candyFonts.displayMedium,
@@ -430,6 +440,7 @@ const styles = StyleSheet.create({
   },
   progWrap: { width: 200, alignItems: 'center', gap: 4, marginTop: 2 },
   progBar: { width: '100%' },
+  unseen: { opacity: 0 },
   progText: {
     color: '#ffffff',
     fontFamily: candyFonts.displaySemi,

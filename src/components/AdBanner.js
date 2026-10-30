@@ -3,10 +3,11 @@ import { View, StyleSheet } from 'react-native';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { BANNER_AD_UNIT_ID } from '../firebase/ads';
 
-export default function AdBanner() {
+// `large`: the 320×100 large banner (else the full-width anchored adaptive one)
+export default function AdBanner({ large = false }) {
   return (
     <View style={styles.container}>
-      <BannerAd unitId={BANNER_AD_UNIT_ID} size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER} />
+      <BannerAd unitId={BANNER_AD_UNIT_ID} size={large ? BannerAdSize.LARGE_BANNER : BannerAdSize.ANCHORED_ADAPTIVE_BANNER} />
     </View>
   );
 }

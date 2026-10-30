@@ -4,14 +4,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, Ellipse, Path, RadialGradient, Stop } from 'react-native-svg';
 import RoundButton, { BackGlyph } from '../components/candy/RoundButton';
 import ShadowText, { outline3 } from '../components/candy/ShadowText';
+import useRewardedAd from '../components/useRewardedAd';
 import sfx from '../audio/sfx';
 import { FxLayer, PopIn } from '../squishdoku/fx';
-import { makeHaptics, prefetchImages, useClock } from '../squishdoku/game';
+import { makeHaptics, pickCreatures, prefetchImages, useClock } from '../squishdoku/game';
+import { Pips } from '../squishdoku/Hud';
+import { BlitzFailCard, BlitzWinCard, PauseCard as BlitzPauseCard, ReviveCard } from '../squishdoku/Overlays';
+import { Chip } from '../squishdoku/ui';
 import { saveSort } from '../firebase/firestore';
 import Container, { SHELF, geometry, slotAt, slotCenter } from './Container';
 import { FailCard, PauseCard, ResultCard } from './Cards';
 import { drop as dropRule, makeBoard, solved, startState } from './board';
-import { HEARTS, LEVELS, TIER_COLORS, TIER_NAMES, afterLevel, clock, levelSpec, record } from './levels';
+import { BLITZ_MS, BLITZ_ROUNDS, HEARTS, LEVELS, TIER_COLORS, TIER_NAMES, afterBlitz, afterLevel, blitzSpec, blitzTheme, clock, levelSpec, record } from './levels';
+import { modelOf } from './models';
 import { KINDS, Prop } from './props';
 import { THEMES } from './themes';
 import { F, INK } from '../squishdoku/theme';
@@ -30,6 +35,10 @@ import { useKeyLoop, usePingPong } from '../components/idleLoop';
 //   won / lost
 // The board's rules are board.js; this draws and animates them. The
 // squishies are the catalog's rig stills (`pool`: [{ id, uri }]).
+//
+// Blitz (`SortBlitz`, levels.js BLITZ_*): ten rounds, the fridge and the
+// cupboard taking turns (`pools` has both), on one clock that runs only in
+// `place`. One mistake ends the run, unless the run's one revive is used.
 
 const LOAD_SOUNDS = ['fs_pop', 'fs_peek', 'fs_doorClose', 'fs_doorOpen', 'fs_rattle', 'fs_jump', 'fs_land', 'fs_tumble', 'fs_pick', 'fs_drop', 'fs_snap', 'fs_wrong', 'fs_impostor', 'fs_swap', 'fs_heart', 'fs_mixed', 'sd_tick', 'sd_solve', 'sd_confetti', 'sd_boardIn'];
 
@@ -132,7 +141,8 @@ const Heart = memo(function Heart({ on }) {
 });
 
 // a bar that drains: `frac` (Animated 1 → 0) slides the fill out to the left
-function Bar({ frac, colors }) {
+// (Squish Stack's clock too)
+export function Bar({ frac, colors }) {
   const [w, setW] = useState(0);
   const shift = frac.interpolate({ inputRange: [0, 1], outputRange: [-w, 0], extrapolate: 'clamp' });
   return (
@@ -145,8 +155,8 @@ function Bar({ frac, colors }) {
   );
 }
 
-// the big words over the container
-function Banner({ banner, top }) {
+// the big words over the container (and over Squish Stack's cushions)
+export function Banner({ banner, top }) {
   const t = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (!banner) return undefined;
@@ -191,16 +201,41 @@ function Banner({ banner, top }) {
 
 // --- the game --------------------------------------------------------------------------
 
-export default function SortGame({ theme, startLv, pool, profile, uid, haptics: hapticsOn = true, onExit }) {
-  const t = THEMES[theme];
+// Blitz: the game with a rewarded ad kept loaded for the revive.
+export function SortBlitz(props) {
+  const ad = useRewardedAd();
+  return <SortGame {...props} blitz ad={ad} />;
+}
+
+export default function SortGame({ theme: themeProp, startLv, pool: poolProp, pools, blitz = false, ad, adsFree = false, profile, uid, haptics: hapticsOn = true, onExit }) {
   const haptics = useRef(makeHaptics(hapticsOn)).current;
   const [lv, setLv] = useState(startLv);
   const [round, setRound] = useState(0);
+  // Blitz: the run, its round, the rounds done (the pips), the revive, and
+  // which of its cards is up
+  const [run, setRun] = useState(0);
+  const [idx, setIdx] = useState(0);
+  const idxRef = useRef(0);
+  idxRef.current = idx;
+  const [done, setDone] = useState(0);
+  const [revived, setRevived] = useState(false);
+  const revivedRef = useRef(false);
+  revivedRef.current = revived;
+  const [blitzCard, setBlitzCard] = useState(null); // revive | fail | win
+  const [failReason, setFailReason] = useState('mistake');
+  const [blitzWin, setBlitzWin] = useState(null);
+  const runStarted = useRef(false);
+  const theme = blitz ? blitzTheme(idx) : themeProp;
+  const t = THEMES[theme];
+  const pool = blitz ? pools[theme] : poolProp;
   // the level at the player's skill when it starts (adaptive difficulty;
   // fixed for the deal even when the saved skill changes under it)
   const profileRef = useRef(profile);
   profileRef.current = profile;
-  const spec = useMemo(() => levelSpec(lv, record(profileRef.current)[theme].skill), [lv, round, theme]); // eslint-disable-line react-hooks/exhaustive-deps
+  const spec = useMemo(
+    () => (blitz ? blitzSpec(idx, record(profileRef.current).bSkill) : levelSpec(lv, record(profileRef.current)[theme].skill)),
+    [lv, round, theme, idx, run], // eslint-disable-line react-hooks/exhaustive-deps
+  );
   // a fresh deal for every level and every retry
   const board = useMemo(() => makeBoard(spec, pool, Math.random, KINDS), [spec, pool]); // eslint-disable-line react-hooks/exhaustive-deps
   const [area, setArea] = useState(null);
@@ -212,7 +247,9 @@ export default function SortGame({ theme, startLv, pool, profile, uid, haptics: 
     areaRef.current?.measure((x, y, w, h, px, py) => (origin.current = { x: px, y: py }));
   }, []);
   const tg = useMemo(() => (area ? trayGeo(area.w, area.h, board.trayCap) : null), [area, board]);
-  const g = useMemo(() => (area ? geometry({ w: area.w, h: area.h, rows: spec.rows, cols: spec.cols, theme, trayH: tg.th + 6 }) : null), [area, spec, theme, tg]);
+  // the level's fridge or cupboard, small to very very large (models.js)
+  const m = modelOf(theme, spec.model);
+  const g = useMemo(() => (area ? geometry({ w: area.w, h: area.h, rows: spec.rows, cols: spec.cols, model: m, trayH: tg.th + 6 }) : null), [area, spec, m, tg]);
   // the squishies stand on the shelves, smaller than their spots (the
   // user, 2026-10-24: "the creatures need to be smaller"), and so does the clutter
   const P = g ? Math.round(g.S * 0.8) : 0;
@@ -382,9 +419,36 @@ export default function SortGame({ theme, startLv, pool, profile, uid, haptics: 
     [hopInside],
   );
 
+  // Blitz: the run's over (a mistake with the revive used or turned down, or
+  // the clock), back to round 1
+  const endRun = useCallback(
+    (reason) => {
+      setPhase('lost');
+      clk.pause();
+      setSelected(null);
+      hover.o.setValue(0);
+      setFailReason(reason);
+      setBlitzCard('fail');
+      if (reason === 'time') sfx.play('sd_timeUp');
+      haptics.wrong();
+      later(reason === 'time' ? 900 : 0, () => sfx.play('sd_blitzFail'));
+      later(reason === 'time' ? 1500 : 600, () => {
+        sfx.play('sd_drain');
+        setDone(0);
+      });
+      const out = afterBlitz(profileRef.current, { won: false, reached: idxRef.current + 1 });
+      if (uid) saveSort(uid, out.update, 0);
+    },
+    [clk, haptics, hover.o, later, setPhase, setSelected, uid],
+  );
+
   const lose = useCallback(
     (reason) => {
       if (phaseRef.current !== 'place') return;
+      if (blitz) {
+        endRun(reason);
+        return;
+      }
       setPhase('lost');
       clk.pause();
       setSelected(null);
@@ -404,7 +468,7 @@ export default function SortGame({ theme, startLv, pool, profile, uid, haptics: 
       if (uid) saveSort(uid, out.update, 0);
       later(1700, () => setFail({ reason }));
     },
-    [clk, fly, haptics, hover.o, later, profile, setPhase, setSelected, theme, uid],
+    [blitz, clk, endRun, fly, haptics, hover.o, later, profile, setPhase, setSelected, theme, uid],
   );
 
   const win = useCallback(() => {
@@ -441,19 +505,58 @@ export default function SortGame({ theme, startLv, pool, profile, uid, haptics: 
     });
     later(650, () => fx.current?.burst('confetti', G.ix + G.W * 0.25, G.iy + G.H * 0.5, 1));
     later(800, () => fx.current?.burst('confetti', G.ix + G.W * 0.75, G.iy + G.H * 0.5, 1));
+    if (blitz) {
+      // a pip fills; on to the next round, or the run is won
+      const i = idxRef.current;
+      later(300, () => {
+        setDone(i + 1);
+        sfx.play('sd_pip', { rate: 0.9 + i * 0.06 });
+      });
+      if (i < BLITZ_ROUNDS - 1) {
+        later(1500, () => {
+          sfx.play('sd_blitzNext');
+          setIdx(i + 1);
+        });
+        return;
+      }
+      later(1100, () => {
+        const ms = clk.elapsed();
+        const rec = record(profileRef.current);
+        const out = afterBlitz(profileRef.current, { won: true, reached: BLITZ_ROUNDS, ms });
+        if (uid) saveSort(uid, out.update, out.coins, out.xp, profileRef.current);
+        const all = [...(pools.fridge || []), ...(pools.cupboard || [])].map((p) => p.uri);
+        setBlitzWin({ ...out, ms, newBest: !rec.blitz.bestMs || ms < rec.blitz.bestMs, uris: pickCreatures(all, 3) });
+        setBlitzCard('win');
+        sfx.play('sd_blitzWin');
+        haptics.win();
+      });
+      return;
+    }
     const out = afterLevel(profile, theme, live.current.spec, { won: true, mistakes: mistakesRef.current, ms: clk.elapsed() });
-    if (uid) saveSort(uid, out.update, out.coins);
+    if (uid) saveSort(uid, out.update, out.coins, out.xp, profile);
     const ms = clk.elapsed();
-    later(1500, () => setResult({ stars: out.stars, coins: out.coins, mistakes: mistakesRef.current, ms, unlocked: out.unlocked }));
-  }, [clk, haptics, hover.o, later, light, profile, setPhase, setSelected, theme, uid]);
+    const { stars, coins, xp, before, after, levelUps, unlocked } = out;
+    later(1500, () => setResult({ stars, coins, xp, before, after, levelUps, mistakes: mistakesRef.current, ms, unlocked }));
+  }, [blitz, clk, haptics, hover.o, later, light, pools, profile, setPhase, setSelected, theme, uid]);
 
   const mistake = useCallback(() => {
     mistakesRef.current += 1;
     setMistakesState(mistakesRef.current);
-    later(160, () => sfx.play('fs_heart'));
     haptics.wrong();
+    if (blitz) {
+      // Blitz: one mistake and the clock stops; the revive, or the run's over
+      clk.pause();
+      setPhase('held');
+      setSelected(null);
+      later(800, () => {
+        if (revivedRef.current) endRun('mistake');
+        else setBlitzCard('revive');
+      });
+      return;
+    }
+    later(160, () => sfx.play('fs_heart'));
     if (mistakesRef.current >= HEARTS) later(500, () => lose('hearts'));
-  }, [haptics, later, lose]);
+  }, [blitz, clk, endRun, haptics, later, lose, setPhase, setSelected]);
 
   // a piece let go (or a tapped spot): the board's rule, then the animation
   const handleDrop = useCallback(
@@ -630,8 +733,15 @@ export default function SortGame({ theme, startLv, pool, profile, uid, haptics: 
     if (S.mixed) notes.push('Some got mixed up inside!');
     say('PUT THEM BACK!', { small: true, sub: notes.join('  ') || 'Drag or tap them home', hold: 900 });
     if (S.mixed) later(300, () => sfx.play('fs_mixed'));
-    clk.start(S.limitMs);
-  }, [clk, later, say, setPhase]);
+    // Blitz: the run's one clock goes on from where the last round left it
+    if (!blitz) clk.start(S.limitMs);
+    else if (runStarted.current) clk.resume();
+    else {
+      runStarted.current = true;
+      setLeft(BLITZ_MS / 1000);
+      clk.start(BLITZ_MS);
+    }
+  }, [blitz, clk, later, say, setPhase]);
 
   const tumble = useCallback(() => {
     const { board: B, g: G } = live.current;
@@ -795,7 +905,8 @@ export default function SortGame({ theme, startLv, pool, profile, uid, haptics: 
   useEffect(() => {
     if (!g) return undefined;
     clearTimers();
-    clk.reset();
+    // (Blitz keeps its clock from round to round: again() resets it)
+    if (!blitz) clk.reset();
     setResult(null);
     setFail(null);
     setPaused(false);
@@ -804,7 +915,7 @@ export default function SortGame({ theme, startLv, pool, profile, uid, haptics: 
     setBanner(null);
     mistakesRef.current = 0;
     setMistakesState(0);
-    setLeft(0);
+    if (!blitz) setLeft(0);
     setPlay(startState(board));
     setShowInside(true);
     setFoodMoved(false);
@@ -823,19 +934,25 @@ export default function SortGame({ theme, startLv, pool, profile, uid, haptics: 
     });
     anims.forEach((a) => a.o.setValue(0));
     setPhase('intro');
+    // a bigger fridge (or cupboard) gets its own hello, a new shelf a chip
+    const bigger = !blitz && spec.first && spec.lv > 1;
     const chips = [];
-    chips.push(TIER_NAMES[spec.tier]);
+    if (bigger) chips.push(`LEVEL ${spec.lv}`);
+    chips.push(blitz ? t.name.toUpperCase() : TIER_NAMES[spec.tier]);
+    if (spec.more && !blitz) chips.push('+1 SHELF');
     if (spec.decoys) chips.push(`${spec.decoys} IMPOSTOR${spec.decoys > 1 ? 'S' : ''}`);
     if (spec.swaps) chips.push('SNEAKY SWAP');
     if (spec.mixed) chips.push('MIXED UP');
-    say(`LEVEL ${spec.lv}`, { chips, hold: 900 });
+    const sub = `${m.size} · ${m.name.toUpperCase()}`;
+    if (bigger) say(theme === 'fridge' ? 'BIGGER FRIDGE!' : 'BIGGER CUPBOARD!', { chips, sub, small: true, hold: 1400 });
+    else say(blitz ? `ROUND ${spec.round}` : `LEVEL ${spec.lv}`, { chips, sub, hold: 900 });
     sfx.play('sd_boardIn');
     Animated.spring(pop, { toValue: 1, friction: 6, tension: 70, useNativeDriver: true }).start();
     let gone = false;
     const t0 = Date.now();
     prefetchImages(board.pieces.map((p) => p.uri), 2500).then(() => {
       if (gone) return;
-      later(Math.max(0, 1300 - (Date.now() - t0)), deal);
+      later(Math.max(0, (bigger ? 1800 : 1300) - (Date.now() - t0)), deal);
     });
     return () => {
       gone = true;
@@ -889,6 +1006,32 @@ export default function SortGame({ theme, startLv, pool, profile, uid, haptics: 
     setRound((r) => r + 1);
   }, []);
   const replay = useCallback(() => setRound((r) => r + 1), []);
+  // Blitz: a fresh run from round 1
+  const again = useCallback(() => {
+    clearTimers();
+    clk.reset();
+    runStarted.current = false;
+    setBlitzCard(null);
+    setBlitzWin(null);
+    setRevived(false);
+    setDone(0);
+    setLeft(0);
+    setPaused(false);
+    setIdx(0);
+    setRun((r) => r + 1);
+  }, [clearTimers, clk, setPaused]);
+  // Blitz: the run's one revive (an ad, free with Remove Ads), back to sorting
+  const revive = useCallback(() => {
+    const back = () => {
+      setRevived(true);
+      setBlitzCard(null);
+      sfx.play('sd_revive');
+      setPhase('place');
+      clk.resume();
+    };
+    if (adsFree) back();
+    else ad?.show(back);
+  }, [ad, adsFree, clk, setPhase]);
 
   // --- drawing ---------------------------------------------------------------------------
 
@@ -952,21 +1095,32 @@ export default function SortGame({ theme, startLv, pool, profile, uid, haptics: 
         </RoundButton>
         <View style={styles.titleBox}>
           <Text style={[styles.themeName, { color: t.ring }]} numberOfLines={1}>
-            {t.name.toUpperCase()}
+            {blitz ? `BLITZ ⚡ · ${m.name.toUpperCase()}` : m.name.toUpperCase()}
           </Text>
           <View style={styles.row6}>
-            <Text style={styles.levelText}>{`LEVEL ${spec.lv}`}</Text>
+            <Text style={styles.levelText}>{blitz ? `ROUND ${spec.round}/${BLITZ_ROUNDS}` : `LEVEL ${spec.lv}`}</Text>
             <View style={[styles.challenge, { backgroundColor: TIER_COLORS[spec.tier] }]}>
               <Text style={styles.challengeText}>{TIER_NAMES[spec.tier]}</Text>
             </View>
           </View>
         </View>
-        <View style={styles.hearts}>
-          {hearts.map((on, i) => (
-            <Heart key={i} on={on} />
-          ))}
-        </View>
+        {blitz ? (
+          <Chip bg={revived ? '#b9a6cc' : '#ffb02e'} color="#ffffff">
+            {revived ? 'REVIVE USED' : '♥ 1 REVIVE'}
+          </Chip>
+        ) : (
+          <View style={styles.hearts}>
+            {hearts.map((on, i) => (
+              <Heart key={i} on={on} />
+            ))}
+          </View>
+        )}
       </View>
+      {blitz ? (
+        <View style={styles.pips}>
+          <Pips count={BLITZ_ROUNDS} done={done} current={blitzCard === 'fail' || blitzCard === 'win' ? -1 : idx} />
+        </View>
+      ) : null}
       {/* the peek's countdown, then the clock */}
       <View style={styles.bar}>
         {phase === 'peek' || phase === 'deal' ? (
@@ -974,9 +1128,10 @@ export default function SortGame({ theme, startLv, pool, profile, uid, haptics: 
             <Text style={styles.barLabel}>{phase === 'peek' ? `REMEMBER! ${peekLeft}` : 'GET READY'}</Text>
             <Bar frac={peekBar} colors={['#ffe45c', '#ff8a3d']} />
           </>
-        ) : phase === 'place' || phase === 'won' || phase === 'lost' ? (
+        ) : phase === 'place' || phase === 'won' || phase === 'lost' || blitz ? (
+          // (Blitz: the run's clock shows all the time, stopped between the sorting)
           <>
-            <Text style={[styles.barLabel, phase === 'place' && left <= 10 && { color: '#e01e4a' }]}>{clock(left > 0 ? left * 1000 : spec.limitMs)}</Text>
+            <Text style={[styles.barLabel, phase === 'place' && left <= 10 && { color: '#e01e4a' }]}>{clock(left > 0 || (blitz && runStarted.current) ? left * 1000 : blitz ? BLITZ_MS : spec.limitMs)}</Text>
             <Bar frac={clk.frac} colors={['#b8ffd9', '#3ddc97']} />
           </>
         ) : (
@@ -1003,7 +1158,7 @@ export default function SortGame({ theme, startLv, pool, profile, uid, haptics: 
             </View>
             {/* the container, shaking as one */}
             <Animated.View pointerEvents="none" style={[styles.wrap, { left: g.bx, top: g.by, transform: wrapTransform }]}>
-              <Container t={t} g={g} door={door} light={light} inside={insidePieces} slots={false} />
+              <Container m={m} g={g} door={door} light={light} inside={insidePieces} slots={false} />
             </Animated.View>
             {/* the spot under a dragged squishy */}
             <Animated.View pointerEvents="none" style={[styles.hover, { width: g.S, height: g.S, borderRadius: g.S * 0.24, opacity: hover.o, transform: [{ translateX: hover.x }, { translateY: hover.y }] }]} />
@@ -1027,17 +1182,28 @@ export default function SortGame({ theme, startLv, pool, profile, uid, haptics: 
         ) : null}
       </View>
 
-      <ResultCard visible={!!result} res={result} spec={spec} theme={t} last={lv >= LEVELS} onNext={next} onReplay={replay} onHub={leave} />
-      <FailCard visible={!!fail} reason={fail?.reason} uri={board.pieces[0]?.uri} onRetry={replay} onHub={leave} />
-      <PauseCard
-        visible={paused}
-        onResume={resume}
-        onRestart={() => {
-          setPaused(false);
-          replay();
-        }}
-        onQuit={leave}
-      />
+      {blitz ? (
+        <>
+          <BlitzPauseCard blitz visible={paused} onResume={resume} onRestart={again} onQuit={leave} />
+          <ReviveCard visible={blitzCard === 'revive'} board={idx + 1} unit="round" adReady={!!ad?.ready} adsFree={adsFree} onRevive={revive} onGiveUp={() => endRun('mistake')} />
+          <BlitzFailCard visible={blitzCard === 'fail'} reason={failReason} reached={idx + 1} best={record(profile).blitz.reached} unit="round" onAgain={again} onQuit={leave} />
+          <BlitzWinCard visible={blitzCard === 'win'} res={blitzWin} uris={blitzWin?.uris || []} unit="round" onAgain={again} onQuit={leave} />
+        </>
+      ) : (
+        <>
+          <ResultCard visible={!!result} res={result} spec={spec} theme={t} last={lv >= LEVELS} onNext={next} onReplay={replay} onHub={leave} />
+          <FailCard visible={!!fail} reason={fail?.reason} uri={board.pieces[0]?.uri} onRetry={replay} onHub={leave} />
+          <PauseCard
+            visible={paused}
+            onResume={resume}
+            onRestart={() => {
+              setPaused(false);
+              replay();
+            }}
+            onQuit={leave}
+          />
+        </>
+      )}
       {phase === 'load' ? <PopIn style={styles.loading}><Text style={styles.loadingText}>Getting the squishies…</Text></PopIn> : null}
     </View>
   );
@@ -1052,6 +1218,7 @@ const styles = StyleSheet.create({
   levelText: { fontFamily: F.display, fontSize: 21, color: '#ffffff', textShadowColor: INK, textShadowOffset: { width: 0, height: 2.5 }, textShadowRadius: 1, includeFontPadding: false },
   challenge: { paddingHorizontal: 7, paddingVertical: 1, borderRadius: 999, backgroundColor: '#e01e4a', borderWidth: 2, borderColor: '#ffffff' },
   challengeText: { fontFamily: F.display, fontSize: 10, letterSpacing: 0.6, color: '#ffffff' },
+  pips: { marginTop: 8 },
   hearts: { flexDirection: 'row', gap: 3, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.8)', borderWidth: 2, borderColor: '#ffffff' },
   heartBox: { width: 24, height: 24 },
   bar: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 30, paddingHorizontal: 16, marginTop: 6 },

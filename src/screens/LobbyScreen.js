@@ -15,16 +15,19 @@ import Freeze from '../components/Freeze';
 import SquadScreen from './SquadScreen';
 import GamePicker from './GamePicker';
 import TutTarget from '../tutorial/Target';
+import { LevelChip } from '../components/LevelBits';
 import { BY_ID, GROUPS, GROUP_INK, wallet } from '../squad/data';
 import { newIds, selectedId } from '../squad/lobby';
 import { ownedKey, rosterOf } from '../squishdoku/roster';
 import { poolOf } from '../sort/themes';
+import { castOf } from '../stack/roster';
 import { COIN, GEM } from '../squad/currencyArt';
 import { F, Ringed } from '../squad/ui';
 import { fmtNum } from '../format';
 
 // The home screen (the 2026-10-19 design's "Squad Lobby v2"): the SQUAD
-// header with the Crib (Home), trophies and settings, the coin and gem
+// header with the Crib (Home), trophies and settings, the player's LV chip
+// (its XP bar; it opens the level road, PLAYER_XP.md) and the coin and gem
 // purses, the selected squishy live and big (the design's own rig, in a
 // WebView: tap to poke, drag to spin), and the SQUAD button (with how many
 // squishies are NEW) beside PLAY, the same size, its name inside (user,
@@ -42,6 +45,11 @@ import { fmtNum } from '../format';
 // so they open at once.
 
 const STAGE = 330; // the design's creature area; the creature is 310 of it
+// how far its page reaches above and below the creature's box, as a share of
+// the box (measured over every move with tools/rig/bounds.mjs: Jinni's
+// "surprised" jumps 35 % over the top, Drako dips 8 % under the bottom)
+const BLEED_TOP = 0.4;
+const BLEED_BOTTOM = 0.12;
 const NAME_SHADOWS = [[0, 3.5], [2.5, 0], [-2.5, 0], [0, -2.5], [2, 2], [-2, 2]].map(([x, y]) => [x, y, '#45107a']);
 const PLAY_SHADOWS = [[0, 2.5], [2, 0], [-2, 0], [0, -1.5]].map(([x, y]) => [x, y, '#17652f']);
 const SQUAD_SHADOWS = [[0, 2.5], [2, 0], [-2, 0], [0, -1.5]].map(([x, y]) => [x, y, '#45189a']);
@@ -75,7 +83,7 @@ function SquadGlyph() {
     [13, 13],
   ];
   return (
-    <Svg width={28} height={28} viewBox="0 0 24 24">
+    <Svg width={20} height={20} viewBox="0 0 24 24">
       {cells.map(([x, y]) => (
         <Rect key={`s${x}${y}`} x={x} y={y + 1.5} width={8} height={8} rx={2.5} fill="#45189a" />
       ))}
@@ -86,12 +94,13 @@ function SquadGlyph() {
   );
 }
 
-// The SQUAD button: a violet candy twin of PLAY, NEW count on its corner.
+// The MY PALS button (SQUAD until the user renamed it, 2026-10-28; the lobby's
+// title too): a violet candy twin of PLAY, NEW count on its corner.
 function SquadTile({ count, onPress }) {
   return (
     <View style={styles.squadSlot}>
-      <Pressable onPress={onPress} style={({ pressed }) => pressed && { transform: [{ translateY: 5 }] }}>
-        <Ringed ring="#45189a" lip={7} ringW={2.5} border={3} radius={26} bg="#b65cff" innerStyle={styles.squadFace}>
+      <Pressable onPress={onPress} style={({ pressed }) => pressed && { transform: [{ translateY: 4 }] }}>
+        <Ringed ring="#45189a" lip={5} ringW={2.5} border={3} radius={20} bg="#b65cff" innerStyle={styles.squadFace}>
           <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
             <Defs>
               <RadialGradient id="squadFace" cx="35%" cy="25%" r="85%">
@@ -105,7 +114,7 @@ function SquadTile({ count, onPress }) {
           <Shine inset="6%" from={0.75} />
           <SquadGlyph />
           <ShadowText style={styles.squadText} shadows={SQUAD_SHADOWS}>
-            SQUAD
+            MY PALS
           </ShadowText>
         </Ringed>
         {count > 0 && (
@@ -123,10 +132,10 @@ function SquadTile({ count, onPress }) {
 function PlayButton({ onPress }) {
   return (
     <TutTarget name="play" style={styles.playSlot}>
-      <Pressable onPress={onPress} style={({ pressed }) => pressed && { transform: [{ translateY: 5 }] }}>
-        <Ringed ring="#17652f" lip={7} ringW={2.5} border={3} radius={26} colors={['#d8ffc2', '#6fe07a', '#26a94e']} innerStyle={styles.playFace}>
+      <Pressable onPress={onPress} style={({ pressed }) => pressed && { transform: [{ translateY: 4 }] }}>
+        <Ringed ring="#17652f" lip={5} ringW={2.5} border={3} radius={20} colors={['#d8ffc2', '#6fe07a', '#26a94e']} innerStyle={styles.playFace}>
           <Shine inset="6%" from={0.75} />
-          <Svg width={26} height={26} viewBox="0 0 24 24">
+          <Svg width={19} height={19} viewBox="0 0 24 24">
             <Path d="M7 6.5 L19 14 L7 21.5 Z" fill="#17652f" stroke="#17652f" strokeWidth={2.4} strokeLinejoin="round" />
             <Path d="M7 4.5 L19 12 L7 19.5 Z" fill="#ffffff" stroke="#ffffff" strokeWidth={2.4} strokeLinejoin="round" />
           </Svg>
@@ -183,7 +192,7 @@ function useSettled(active, ms) {
   return settled;
 }
 
-function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cribUnlocked = false, pickGames = true, onOpenCrib, onOpenAchievements, onOpenSettings, onOpenShop, onPlay, onOpenPuzzle, onOpenSort, onSelect, onSeen }) {
+function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cribUnlocked = false, pickGames = true, level = 1, xpInto = 0, xpNeed = 100, roadWaiting = 0, onOpenRoad, onOpenCrib, onOpenAchievements, onOpenSettings, onOpenShop, onPlay, onOpenPuzzle, onOpenSort, onOpenStack, onSelect, onSeen }) {
   const insets = useSafeAreaInsets();
   // off while the lobby is out of sight (a screen over it, the Shop's page
   // beside it): its live creature is taken out then. A WebView, even paused
@@ -241,7 +250,7 @@ function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cr
   // really hidden (display: none): kept laid out instead (off screen, or at
   // opacity 0) the phone still worked through them every frame, and the
   // lobby and the Squad dropped to ~10 fps (Galaxy A15 release, 2026-10-28).
-  const { height: winH } = useWindowDimensions();
+  const { width: winW, height: winH } = useWindowDimensions();
   const warmGames = useSettled(active, 2500);
   const warmSquad = useSettled(active, 4500);
   const [squadBuilt, setSquadBuilt] = useState(false);
@@ -295,13 +304,15 @@ function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cr
       // used to wait 0.2 s for a calm lobby first)
       if (game === 'squishdoku') onOpenPuzzle && onOpenPuzzle();
       else if (game === 'sort') onOpenSort && onOpenSort();
+      else if (game === 'stack') onOpenStack && onOpenStack();
       else play();
     },
-    [onOpenPuzzle, onOpenSort, play],
+    [onOpenPuzzle, onOpenSort, onOpenStack, play],
   );
   const owned = ownedKey(profile);
   const puzzleUris = useMemo(() => rosterOf(creatures, profile).slice(0, 8), [creatures, owned]); // eslint-disable-line react-hooks/exhaustive-deps
   const sortUris = useMemo(() => poolOf('fridge', creatures, hidden).slice(0, 3).map((c) => c.uri), [creatures, hidden]);
+  const stackCast = useMemo(() => castOf(creatures, profile, hidden).slice(0, 3), [creatures, hidden, owned]); // eslint-disable-line react-hooks/exhaustive-deps
   const creatureEntry = useMemo(() => (creatures || []).find((x) => String(x.id) === String(id)) || null, [creatures, id]);
   const creatureUri = creatureEntry && creatureEntry.thumb ? creatureEntry.thumb.url : null;
   // the squish game's model of the creature, loaded while the lobby is up
@@ -312,13 +323,20 @@ function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cr
     if (warmModel && creatureEntry) preloadCreatureModel(creatureEntry).catch(() => {});
   }, [warmModel, creatureEntry]);
   const creature = stage - 20;
+  // room for the moves that reach outside the creature's box (RigCreature
+  // `bleed`): out to the screen's sides, up over the name (behind the header),
+  // down behind the buttons
+  const bleed = useMemo(
+    () => ({ x: Math.max(0, Math.floor((winW - creature) / 2)), top: Math.round(creature * BLEED_TOP), bottom: Math.round(creature * BLEED_BOTTOM) }),
+    [winW, creature],
+  );
 
   return (
     <View style={styles.root}>
       <CandyBackground style={[{ paddingTop: insets.top }, covered && styles.gone]}>
         <View style={styles.top}>
           <View style={styles.titleRow}>
-            <OutlinedTitle text="SQUAD" fill="pink" size={25} outline={3} ring={2} drop={5} />
+            <OutlinedTitle text="MY PALS" fill="pink" size={25} outline={3} ring={2} drop={5} wordSpacing={8} />
             <View style={styles.icons}>
               {cribUnlocked ? (
                 <TutTarget name="crib">
@@ -336,6 +354,7 @@ function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cr
             </View>
           </View>
           <View style={styles.purses}>
+            <LevelChip level={level} into={xpInto} need={xpNeed} waiting={roadWaiting} onPress={onOpenRoad} />
             <Purse amount={w.coins} onPress={toGems} />
             <Purse gem amount={w.gems} onPress={toGems} />
           </View>
@@ -354,7 +373,7 @@ function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cr
               </View>
             ) : null}
             {c && !rigAway ? (
-              <RigCreature creatureKey={c.key} renderScale={scale} paused={!active || squadOpen || picking} rigShadow={false} onState={onState} onPerf={onPerf} onMounted={onRigDrawn} style={{ width: creature, height: creature }} />
+              <RigCreature creatureKey={c.key} renderScale={scale} paused={!active || squadOpen || picking} rigShadow={false} bleed={bleed} onState={onState} onPerf={onPerf} onMounted={onRigDrawn} style={{ width: creature, height: creature }} />
             ) : null}
           </View>
           <Text style={styles.hint}>Tap to poke · drag to spin</Text>
@@ -365,7 +384,7 @@ function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cr
           <PlayButton onPress={pickGames ? openGames : play} />
         </View>
 
-        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        <View style={[StyleSheet.absoluteFill, styles.over]} pointerEvents="box-none">
           <GamePicker
             visible={picking && active}
             warm={warmGames}
@@ -374,6 +393,7 @@ function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cr
             creatureUri={creatureUri}
             puzzleUris={puzzleUris}
             sortUris={sortUris}
+            stackCast={stackCast}
             onClose={closeGames}
             onPick={pickGame}
             onUp={setPickerUp}
@@ -383,7 +403,7 @@ function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cr
       {squadBuilt && (
         <Animated.View
           pointerEvents={squadOpen ? 'auto' : 'none'}
-          style={[StyleSheet.absoluteFill, { transform: [{ translateY: up.interpolate({ inputRange: [0, 1], outputRange: [winH, 0] }) }] }]}
+          style={[StyleSheet.absoluteFill, styles.over, { transform: [{ translateY: up.interpolate({ inputRange: [0, 1], outputRange: [winH, 0] }) }] }]}
         >
           <Freeze freeze={squadDone && !squadUp}>
             <SquadScreen active={active && squadOpen} profile={profile} creatures={creatures} hidden={hidden} setRewards={setRewards} onClose={closeSquad} onSelect={onSelect} onSeen={onSeen} onBuilt={onSquadBuilt} />
@@ -401,7 +421,10 @@ const styles = StyleSheet.create({
   // the creature's still, in the live creature's box, until it has drawn
   stillWrap: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   abs: { position: 'absolute' },
-  top: { gap: 9, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10 },
+  // over the creature, whose jumps reach up behind it (its page's `bleed`), so
+  // the header keeps its taps; the Squad screen and the game picker over both
+  top: { gap: 9, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10, zIndex: 1 },
+  over: { zIndex: 2 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   icons: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 'auto' },
   purses: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -415,17 +438,17 @@ const styles = StyleSheet.create({
   stage: { width: '100%', alignItems: 'center', justifyContent: 'center' },
   hint: { fontFamily: F.heavy, fontSize: 11.5, color: '#6a4a9a' },
   bottom: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 12, paddingTop: 14, paddingHorizontal: 16, paddingBottom: 22 },
-  // SQUAD and PLAY: two equal 76 px candy buttons
-  squadSlot: { flexBasis: 190, flexShrink: 1, minWidth: 0, marginBottom: 12 },
-  squadFace: { height: 76, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
-  squadText: { fontFamily: F.display, fontSize: 28, lineHeight: 34, letterSpacing: 1.2, color: '#ffffff', includeFontPadding: false },
+  // SQUAD and PLAY: two equal 54 px candy buttons (76 until 2026-10-28, then 64; the user asked twice for smaller)
+  squadSlot: { flexBasis: 150, flexShrink: 1, minWidth: 0, marginBottom: 12 },
+  squadFace: { height: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  squadText: { fontFamily: F.display, fontSize: 20, lineHeight: 25, letterSpacing: 1.2, color: '#ffffff', includeFontPadding: false },
   shine: { position: 'absolute', top: 3, borderRadius: 999 },
   badge: { position: 'absolute', right: -4, top: -8, borderRadius: 999, backgroundColor: '#8e1030', paddingBottom: 2 },
   badgeFace: { minWidth: 24, height: 24, paddingHorizontal: 6, borderRadius: 999, borderWidth: 2.5, borderColor: '#ffffff', alignItems: 'center', justifyContent: 'center' },
   badgeText: { fontFamily: F.display, fontSize: 13, color: '#ffffff', includeFontPadding: false },
-  playSlot: { flexBasis: 190, flexShrink: 1, minWidth: 0, marginBottom: 12 },
-  playFace: { height: 76, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  playText: { fontFamily: F.display, fontSize: 32, lineHeight: 36, letterSpacing: 1.5, color: '#ffffff', includeFontPadding: false },
+  playSlot: { flexBasis: 150, flexShrink: 1, minWidth: 0, marginBottom: 12 },
+  playFace: { height: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  playText: { fontFamily: F.display, fontSize: 23, lineHeight: 27, letterSpacing: 1.5, color: '#ffffff', includeFontPadding: false },
 });
 
 export default memo(LobbyScreen);

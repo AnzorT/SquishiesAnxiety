@@ -285,7 +285,7 @@ export function stepView({ tut, s, profile, creatures = [], mittens }) {
           text: 'You’re all set! A few more things to know:',
           items: [
             { icon: '★', color: '#f2b84a', title: 'Chests bring new squishies', desc: 'Free ones every day, more in the Shop. Squish them to grow them.' },
-            { icon: '✦', color: '#9b84d8', title: 'Your squad', desc: 'Tap Squad in the lobby to see everyone you’ve collected.' },
+            { icon: '✦', color: '#9b84d8', title: 'Your pals', desc: 'Tap My Pals in the lobby to see everyone you’ve collected.' },
             { icon: '×', color: '#f2665a', title: 'Remove ads', desc: 'A one-time purchase in Settings. No more ads, ever.' },
           ],
           buttons: [{ label: 'Start playing', next: 'done' }],

@@ -16,6 +16,10 @@ import { candyColors, candyFonts, TITLE_FILLS } from '../../theme/candyTheme';
 // and never drawn. A hair space between them gives the I its own glyph.
 const svgSafe = (text) => String(text).replace(/AI/g, 'A\u200AI');
 
+// `wordSpacing`: extra px at each space. A space is narrower than the two
+// outlines either side of it, so they ran the words together ("MY PALS"
+// read "MYPALS", 2026-10-28); RN text can't take it, so it's added to the
+// measured width.
 function OutlinedTitle({
   text,
   fill = 'pink', // 'pink' | 'gold' | { colors, locations }
@@ -24,6 +28,7 @@ function OutlinedTitle({
   ring = 2,
   drop: dropProp,
   letterSpacing = 1,
+  wordSpacing = 0,
   wobble = false,
   style,
 }) {
@@ -31,9 +36,10 @@ function OutlinedTitle({
   const grad = typeof fill === 'string' ? TITLE_FILLS[fill] || TITLE_FILLS.pink : fill;
   const halo = outline + ring;
   const drop = dropProp ?? (size >= 26 ? 5 : size >= 18 ? 4 : 3);
+  const spaces = wordSpacing ? String(text).split(' ').length - 1 : 0;
   // + a little slack: react-native-svg draws the letters a touch wider than
   // RN text measures them, which shaved the ends off some words
-  const width = Math.ceil(textW + halo * 2 + 2 + size * 0.12);
+  const width = Math.ceil(textW + spaces * wordSpacing + halo * 2 + 2 + size * 0.12);
   const height = Math.ceil(size * 1.22 + halo * 2 + drop);
   const baseline = halo + size * 0.96;
 
@@ -60,6 +66,7 @@ function OutlinedTitle({
     fontFamily: candyFonts.display,
     fontSize: size,
     letterSpacing,
+    wordSpacing,
     strokeLinejoin: 'round',
   };
 

@@ -9,12 +9,15 @@ import sfx from '../audio/sfx';
 import { F } from '../squad/ui';
 import Freeze from '../components/Freeze';
 import { PATCHES } from '../squishdoku/theme';
+import { headOf } from '../squishdoku/roster';
 import Tile from '../squishdoku/Tile';
-import { LEVELS, puzzleLevel, record } from '../squishdoku/levels';
+import { LEVELS, record } from '../squishdoku/levels';
 import { record as sortRecord } from '../sort/levels';
 import { THEMES } from '../sort/themes';
 import { MiniContainer } from '../sort/Container';
 import { useDoorLoop } from '../sort/Hub';
+import { LEVELS as STACK_LEVELS, record as stackRecord, starsOf as starsOfStack } from '../stack/levels';
+import { Cushion, OVER, Squishy, bodyH } from '../stack/Pieces';
 
 // The games, slid up over the Lobby by PLAY: a card per game with its own
 // little animated picture, flying in one after another. Tap one to play it.
@@ -24,6 +27,7 @@ import { useDoorLoop } from '../sort/Hub';
 //   onPick('squish')       the classic squish with the Lobby's creature
 //   onPick('squishdoku')   the puzzle (SQUISHDOKU.md)
 //   onPick('sort')         the memory game with the fridge (SQUISH_SORT.md)
+//   onPick('stack')        the Tower of Hanoi with squishies (SQUISH_STACK.md)
 // A last ghost card promises more.
 
 const ART = 104;
@@ -66,11 +70,11 @@ const SquishArt = memo(function SquishArt({ uri }) {
   );
 });
 
-// Squishdoku: a tiny 4×4 board whose creatures drop into place one by one,
-// hop when the board's full, and start over.
+// Squishdoku: a tiny 4×4 board whose creatures' heads zoom up into place one
+// by one (as on the real board), hop when the board's full, and start over.
 const MINI = [2, 0, 0, 1, 2, 0, 1, 1, 2, 3, 3, 1, 2, 3, 3, 3]; // patches
 const MINI_SOL = [1, 7, 8, 14]; // the cells the creatures land in, in order
-const MINI_COLORS = [PATCHES[0], PATCHES[3], PATCHES[6], PATCHES[8]];
+const MINI_COLORS = [PATCHES[0], PATCHES[1], PATCHES[2], PATCHES[4]];
 const SudokuArt = memo(function SudokuArt({ uris }) {
   const t = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -80,7 +84,7 @@ const SudokuArt = memo(function SudokuArt({ uris }) {
   }, [t]);
   const cs = (ART - 12) / 4;
   return (
-    <View style={[styles.art, { backgroundColor: '#d9c6f5', padding: 6 }]}>
+    <View style={[styles.art, { backgroundColor: '#e9dcf7', padding: 6 }]}>
       {MINI.map((reg, cell) => (
         <View key={cell} style={{ position: 'absolute', left: 6 + (cell % 4) * cs, top: 6 + Math.floor(cell / 4) * cs, width: cs, height: cs }}>
           <Tile size={cs} patch={MINI_COLORS[reg]} />
@@ -88,14 +92,16 @@ const SudokuArt = memo(function SudokuArt({ uris }) {
       ))}
       {MINI_SOL.map((cell, i) => {
         const a = 0.08 + i * 0.14;
-        const drop = t.interpolate({ inputRange: [0, a, a + 0.06, 1], outputRange: [-cs, -cs, 0, 0] });
+        const grow = t.interpolate({ inputRange: [0, a, a + 0.045, a + 0.06, 1], outputRange: [0.1, 0.1, 1.12, 1, 1] });
         const hop = t.interpolate({ inputRange: [0, 0.7 + i * 0.02, 0.74 + i * 0.02, 0.78 + i * 0.02, 1], outputRange: [0, 0, -cs * 0.35, 0, 0] });
         const opacity = t.interpolate({ inputRange: [0, a, a + 0.02, 0.88, 0.95, 1], outputRange: [0, 0, 1, 1, 0, 0] });
         const squash = t.interpolate({ inputRange: [0, a + 0.06, a + 0.08, a + 0.11, 1], outputRange: [1, 1, 0.75, 1, 1] });
+        const uri = uris[i % Math.max(1, uris.length)];
+        const head = uri ? headOf(uri) : null;
         return (
           <Animated.Image
             key={cell}
-            source={uris[i % Math.max(1, uris.length)] ? { uri: uris[i % uris.length] } : undefined}
+            source={head ? head.idle : uri ? { uri } : undefined}
             resizeMode="contain"
             fadeDuration={0}
             style={{
@@ -105,7 +111,7 @@ const SudokuArt = memo(function SudokuArt({ uris }) {
               width: cs * 0.88,
               height: cs * 0.88,
               opacity,
-              transform: [{ translateY: Animated.add(drop, hop) }, { scaleY: squash }],
+              transform: [{ translateY: hop }, { scale: grow }, { scaleY: squash }],
             }}
           />
         );
@@ -124,6 +130,52 @@ const SortArt = memo(function SortArt({ uris }) {
       <Animated.View style={{ transform: [{ rotate }, { scale: 0.92 }] }}>
         <MiniContainer t={THEMES.fridge} size={66} door={door} uris={uris} />
       </Animated.View>
+    </View>
+  );
+});
+
+// Squish Stack: a little tower on a cushion; the top one hops over to the
+// other cushion, squishes down, and hops back.
+const SC = { left: 30, right: 76, surface: 84, widths: [24, 32, 40] };
+const StackArt = memo(function StackArt({ cast }) {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(Animated.timing(t, { toValue: 1, duration: 3400, easing: Easing.linear, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [t]);
+  if (cast.length < 3) return <View style={[styles.art, { backgroundColor: '#e4d2ff' }]} />;
+  // the tower: biggest at the bottom, each sinking into the one under it
+  const h = SC.widths.map((w, r) => bodyH(cast[r], w));
+  const yb = [];
+  yb[2] = SC.surface;
+  yb[1] = yb[2] - h[2] * (1 - OVER);
+  yb[0] = yb[1] - h[1] * (1 - OVER);
+  const dyR = SC.surface - yb[0];
+  const x = t.interpolate({ inputRange: [0, 0.24, 0.4, 0.74, 0.88, 1], outputRange: [0, 0, SC.right - SC.left, SC.right - SC.left, 0, 0] });
+  const y = t.interpolate({ inputRange: [0, 0.12, 0.24, 0.4, 0.48, 0.66, 0.74, 0.88, 0.96, 1], outputRange: [0, 0, -14, -14, dyR, dyR, -14, -14, 0, 0] });
+  const sy = t.interpolate({ inputRange: [0, 0.48, 0.51, 0.56, 0.96, 0.985, 1], outputRange: [1, 1, 0.74, 1, 1, 0.78, 1] });
+  const sx = t.interpolate({ inputRange: [0, 0.48, 0.51, 0.56, 0.96, 0.985, 1], outputRange: [1, 1, 1.2, 1, 1, 1.18, 1] });
+  const at = (r) => ({ position: 'absolute', left: SC.left - SC.widths[r] / 2, top: yb[r] - h[r] });
+  return (
+    <View style={styles.art}>
+      <LinearGradient colors={['#fbf3ff', '#e4d2ff']} style={StyleSheet.absoluteFill} />
+      <View style={{ position: 'absolute', left: SC.left - 22, top: SC.surface - 6 }}>
+        <Cushion w={44} h={15} i={0} />
+      </View>
+      <View style={{ position: 'absolute', left: SC.right - 22, top: SC.surface - 6 }}>
+        <Cushion w={44} h={15} i={1} />
+      </View>
+      <View style={at(2)}>
+        <Squishy c={cast[2]} w={SC.widths[2]} />
+      </View>
+      <View style={at(1)}>
+        <Squishy c={cast[1]} w={SC.widths[1]} />
+      </View>
+      <Animated.View style={[at(0), { transform: [{ translateX: x }, { translateY: y }, { translateY: sy.interpolate({ inputRange: [0, 1], outputRange: [h[0] / 2, 0] }) }, { scaleX: sx }, { scaleY: sy }] }]}>
+        <Squishy c={cast[0]} w={SC.widths[0]} />
+      </Animated.View>
+      <Twinkle size={11} color="#ffffff" duration={1.8} style={{ position: 'absolute', top: 10, right: 12 }} />
     </View>
   );
 });
@@ -242,7 +294,7 @@ function GameCard({ index, trigger, colors, ring, title, lines, chips = [], art,
 
 // `warm`: build it now, unseen (the Lobby, a moment after it has settled).
 // `onUp(true)` once it's all the way up, `onUp(false)` as it starts down.
-function GamePicker({ visible, warm = false, profile, creatureName, creatureUri, puzzleUris, sortUris = [], onClose, onPick, onUp }) {
+function GamePicker({ visible, warm = false, profile, creatureName, creatureUri, puzzleUris, sortUris = [], stackCast = [], onClose, onPick, onUp }) {
   const { height } = useWindowDimensions();
   const t = useRef(new Animated.Value(0)).current;
   // built (kept from then on); open: on screen, from PLAY until the slide
@@ -286,8 +338,8 @@ function GamePicker({ visible, warm = false, profile, creatureName, creatureUri,
   if (!built) return null;
 
   const rec = record(profile);
-  const pl = puzzleLevel(rec.xp);
   const srt = sortRecord(profile);
+  const stk = stackRecord(profile);
   const pick = (game) => () => onPick(game);
   return (
     <Freeze freeze={slept && !open}>
@@ -323,7 +375,7 @@ function GamePicker({ visible, warm = false, profile, creatureName, creatureUri,
               ring="#0c5a9c"
               title="SQUISHDOKU"
               lines={['One creature per row, column and patch']}
-              chips={[`LEVEL ${Math.min(rec.lv, LEVELS)}/${LEVELS}`, `PUZZLE LV ${pl.level}`, ...(rec.blitz.reached ? [`BLITZ ${rec.blitz.reached}/10`] : [])]}
+              chips={[`LEVEL ${Math.min(rec.lv, LEVELS)}/${LEVELS}`, ...(rec.blitz.reached ? [`BLITZ ${rec.blitz.reached}/10`] : [])]}
               art={<SudokuArt uris={puzzleUris} />}
               onPress={pick('squishdoku')}
             />
@@ -334,11 +386,22 @@ function GamePicker({ visible, warm = false, profile, creatureName, creatureUri,
               ring="#a04a00"
               title="SQUISH SORT"
               lines={['Remember who sits where, then sort them back!']}
-              chips={[`FRIDGE LV ${srt.fridge.lv}`, `CUPBOARD LV ${srt.cupboard.lv}`, 'NEW!']}
+              chips={[`FRIDGE LV ${srt.fridge.lv}`, `CUPBOARD LV ${srt.cupboard.lv}`, srt.blitz.reached ? `BLITZ ${srt.blitz.reached}/10` : 'BLITZ ⚡']}
               art={<SortArt uris={sortUris} />}
               onPress={pick('sort')}
             />
-            <GameCard index={3} trigger={key} ghost colors={['#f7f2fc', '#ece3f7', '#ded2ee']} ring="#9a86c0" title="MORE SOON" lines={['New mini-games are on the way!']} art={<SoonArt />} />
+            <GameCard
+              index={3}
+              trigger={key}
+              colors={['#f6efff', '#d9c2ff', '#b48bff']}
+              ring="#45189a"
+              title="SQUISH STACK"
+              lines={['Stack them up! Big ones never sit on small ones']}
+              chips={[`LEVEL ${stk.lv}/${STACK_LEVELS}`, ...(starsOfStack(stk) ? [`★ ${starsOfStack(stk)}`] : []), stk.blitz.reached ? `BLITZ ${stk.blitz.reached}/10` : 'BLITZ ⚡', 'NEW!']}
+              art={<StackArt cast={stackCast} />}
+              onPress={pick('stack')}
+            />
+            <GameCard index={4} trigger={key} ghost colors={['#f7f2fc', '#ece3f7', '#ded2ee']} ring="#9a86c0" title="MORE SOON" lines={['New mini-games are on the way!']} art={<SoonArt />} />
           </ScrollView>
         </Animated.View>
       </View>

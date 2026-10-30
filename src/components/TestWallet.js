@@ -4,27 +4,32 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Pressable from './Pressable';
 import ToggleSwitch from './candy/ToggleSwitch';
 import callFunction from '../firebase/callFunction';
+import { tzOffsetMinutes } from '../dailySpin';
 import { F } from '../squad/ui';
 
 // The design's Test wallet ("Squish Squad App v4" dev panel): coins, gems
 // and the level, with quick buttons, and the FPS counter switch. Shown in
 // Settings only for a tester account (the `tester` claim); the testWallet
 // Cloud Function checks the claim again (REDESIGN_V6 ruling 5).
+// Replays too: the Deals streak's next day (or day 1 again), and the level
+// road's prizes with the LEVEL UP card.
 const n = (v) => Math.max(0, Math.round(Number(v) || 0));
 
 export default function TestWallet({ wallet, fpsOn, onToggleFps }) {
   const [draft, setDraft] = useState({});
   const [msg, setMsg] = useState('');
   useEffect(() => setDraft({}), [wallet.coins, wallet.gems, wallet.level]);
-  const set = async (w) => {
+  // `done`: what to say once it's set
+  const set = async (w, done = 'Done!') => {
     setMsg('…');
     try {
-      await callFunction('testWallet', w);
-      setMsg('Done!');
+      // the player's day, for the streak's "yesterday"
+      await callFunction('testWallet', { ...w, tzOffsetMinutes: tzOffsetMinutes() });
+      setMsg(done);
     } catch (e) {
       setMsg(e.code === 'functions/permission-denied' ? 'Not a tester account' : 'Could not set it');
     }
-    setTimeout(() => setMsg(''), 1500);
+    setTimeout(() => setMsg(''), done === 'Done!' ? 1500 : 3000);
   };
   const val = (k) => (draft[k] != null ? draft[k] : String(wallet[k] ?? 0));
   const apply = () => {
@@ -39,6 +44,8 @@ export default function TestWallet({ wallet, fpsOn, onToggleFps }) {
   );
   const gold = { borderColor: '#ffd27a', backgroundColor: '#fff6dc', color: '#b86200' };
   const violet = { borderColor: '#c9b2ff', backgroundColor: '#efe8ff', color: '#5a22c8' };
+  const fire = { borderColor: '#ffb98a', backgroundColor: '#fff0e4', color: '#c2531c' };
+  const pink = { borderColor: '#f2b3e6', backgroundColor: '#ffeefa', color: '#8e1580' };
   return (
     <View style={styles.box}>
       <LinearGradient colors={['#8a4dff', '#6a22d6', '#45107a']} locations={[0, 0.55, 1]} style={styles.head}>
@@ -73,6 +80,19 @@ export default function TestWallet({ wallet, fpsOn, onToggleFps }) {
           <Pressable onPress={() => set({ level: Math.min(99, n(wallet.level) + 1) })} style={styles.step}>
             <Text style={styles.stepText}>+</Text>
           </Pressable>
+        </View>
+        <View style={styles.row}>
+          <Text style={[styles.label, { color: '#c2531c' }]}>Daily streak (Shop)</Text>
+        </View>
+        <View style={styles.quicks}>
+          {quick('Next day', () => set({ streak: 'next' }, 'Next day ready in Deals'), fire)}
+          {quick('Start over', () => set({ streak: 'reset' }, 'Back to day 1'), fire)}
+        </View>
+        <View style={styles.row}>
+          <Text style={[styles.label, { color: '#8e1580' }]}>Level road</Text>
+        </View>
+        <View style={styles.quicks}>
+          {quick('Claim prizes again', () => set({ road: 'replay' }, 'LEVEL UP shows on the lobby'), pink)}
         </View>
         <View style={styles.row}>
           <Text style={[styles.label, { color: '#17652f' }]}>FPS counter</Text>

@@ -250,7 +250,7 @@ export default function RegularGame({ startLv, profile, uid, roster, head = fals
     const score = starsFor(game.spec, { ms, mistakes: g.mistakes, usedX: g.usedX });
     const res = { solved: true, ms, mistakes: g.mistakes, ...score };
     const out = afterLevel(profileRef.current, game.spec, res);
-    if (uid) saveSquishdoku(uid, out.update, out.coins);
+    if (uid) saveSquishdoku(uid, out.update, out.coins, out.xp, profileRef.current);
     if (out.unlocked) unlockedRef.current = game.spec.lv + 1;
     setTimeout(() => {
       sfx.play('sd_solve');

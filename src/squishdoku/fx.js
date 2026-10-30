@@ -12,6 +12,8 @@ const rnd = (a, b) => a + Math.random() * (b - a);
 const KINDS = {
   // the puff under a creature landing: soft white blobs sliding sideways
   dust: { count: 7, life: 420, size: [5, 10], dist: [14, 30], up: [-4, 6], colors: ['#ffffff', '#fff6fb'], shape: 'dot', spreadY: 0.25, fall: 0 },
+  // a ring of candy dots popping out round a head that zoomed up right
+  pop: { count: 10, life: 420, size: [4, 7], dist: [26, 40], up: [0, 0], colors: ['#ff8fd0', '#ffffff', '#ffe066', '#9ce8ff'], shape: 'dot', spreadY: 1, fall: 0 },
   // sparkles flying off a creature that landed right
   spark: { count: 8, life: 560, size: [5, 9], dist: [22, 46], up: [-6, 6], colors: ['#fff3a0', '#ffffff', '#ffd1f5', '#c9f5ff'], shape: 'star', spreadY: 1, fall: 10 },
   // a wrong creature popping off

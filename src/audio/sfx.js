@@ -4,6 +4,7 @@ import * as FileSystem from 'expo-file-system';
 import EFFECT_FILES from './effectFiles';
 import SQUISHDOKU_FILES from './squishdokuFiles';
 import SORT_FILES from './sortFiles';
+import STACK_FILES from './stackFiles';
 
 // The v3 design's sound: ~40 effects, five music moods and the Crib's tracks, rendered from the
 // design's own sfx.js (tools/audio) to files in assets/audio.
@@ -25,8 +26,9 @@ import SORT_FILES from './sortFiles';
 // start on the bubble (it had 150 ms of silence first) and kept outside
 // assets/audio/sfx, which encode.py clears.
 // Squishdoku's own effects (sd_*) are tools/audio/squishdoku_sfx.py's, Squish
-// Sort's (fs_*) tools/audio/sort_sfx.py's.
-const EFFECTS = { ...EFFECT_FILES, ...SQUISHDOKU_FILES, ...SORT_FILES, tap: require('../../assets/audio/bubble_tap.wav') };
+// Sort's (fs_*) tools/audio/sort_sfx.py's, Squish Stack's (st_*)
+// tools/audio/stack_sfx.py's.
+const EFFECTS = { ...EFFECT_FILES, ...SQUISHDOKU_FILES, ...SORT_FILES, ...STACK_FILES, tap: require('../../assets/audio/bubble_tap.wav') };
 // A second click this soon is the same press heard twice (the shared
 // Pressable plays it, and some handlers did already).
 const TAP_GAP_MS = 100;

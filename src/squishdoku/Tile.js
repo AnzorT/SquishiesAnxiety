@@ -1,35 +1,29 @@
 import React, { memo } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Image, StyleSheet, View } from 'react-native';
+import { FACE } from './cushions';
 
-// A board cell's candy button (the app's button look): a darker 3D base
-// under a gradient face with a soft rim, a shine stripe and a sparkle. It
-// fills its whole `size` × `size` cell, edge to edge with its neighbours (no
-// gaps), its corners only slightly rounded. `children` go on the face
-// (clipped to it: the board's flashes and the mistake's red glow). `patch`
-// is a PATCHES entry: [base, face, light top].
+// A board cell's plush cushion (since 2026-10-28; it was a glossy candy
+// button, which didn't match the plush creatures): a picture per patch
+// colour (tools/squishdoku/cushions.mjs: puffy shading, the rigs' fabric
+// grain, a soft shadow) filling its whole `size` × `size`
+// cell; the gaps round the cushions are the quilt's seams. `children` go on
+// the cushion, clipped to its shape (the board's flashes and the mistake's
+// red glow). `patch` is a PATCHES entry: { name, shade, src }.
 
+// where the cushion sits in its cell (lip: what's under it, for centring
+// the creature on it)
 export function tileBox(size) {
-  const lip = Math.max(2, size * 0.07);
-  return { m: 0, t: size, lip, radius: size * 0.14 };
+  return { left: size * FACE.left, top: size * FACE.top, right: size * FACE.right, bottom: size * FACE.bottom, lip: size * FACE.bottom, radius: size * FACE.radius };
 }
 
 function Tile({ size, patch, children }) {
-  const { m, t, lip, radius } = tileBox(size);
-  const small = size < 34;
+  const b = tileBox(size);
   return (
     <>
-      <View style={[styles.abs, { left: m, top: m, width: t, height: t, borderRadius: radius, backgroundColor: patch[0] }]} />
-      <View style={[styles.abs, styles.face, { left: m, top: m, width: t, height: t - lip, borderRadius: radius, backgroundColor: patch[1] }]}>
-        <LinearGradient colors={[patch[2], patch[1]]} locations={[0, 0.62]} style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, { borderRadius: radius, borderWidth: Math.max(1, size * 0.022), borderColor: 'rgba(255,255,255,0.55)' }]} />
-        <LinearGradient
-          colors={['rgba(255,255,255,0.9)', 'rgba(255,255,255,0)']}
-          style={[styles.abs, { left: '13%', right: '13%', top: '7%', height: '36%', borderRadius: radius * 0.8 }]}
-        />
-        {!small ? <View style={[styles.abs, styles.sparkle, { left: '17%', top: '13%', width: size * 0.1, height: size * 0.1, borderRadius: size }]} /> : null}
-        {children}
-      </View>
+      <Image source={patch.src} style={[styles.abs, { left: 0, top: 0, width: size, height: size }]} fadeDuration={0} />
+      {children ? (
+        <View style={[styles.abs, styles.face, { left: b.left, top: b.top, right: b.right, bottom: b.bottom, borderRadius: b.radius }]}>{children}</View>
+      ) : null}
     </>
   );
 }
@@ -37,7 +31,6 @@ function Tile({ size, patch, children }) {
 const styles = StyleSheet.create({
   abs: { position: 'absolute' },
   face: { overflow: 'hidden' },
-  sparkle: { backgroundColor: '#ffffff' },
 });
 
 export default memo(Tile);

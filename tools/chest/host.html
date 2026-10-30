@@ -40,11 +40,6 @@
   .banner { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 50px; line-height: 1; letter-spacing: 1px; color: #fff; }
   #bottom { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 16px calc(var(--inset-bottom, 0px) + 28px); display: flex; flex-direction: column; align-items: center; gap: 12px; pointer-events: none; transition: opacity 0.3s; }
   #hint { padding: 8px 18px; border-radius: 999px; background: rgba(255,255,255,0.94); color: #45107a; font-weight: 900; font-size: 14px; white-space: nowrap; box-shadow: 0 3px 0 rgba(90,40,10,0.25); animation: c2Rise 0.3s ease-out both; }
-  #powerRow { align-self: stretch; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border-radius: 16px; background: rgba(40,10,70,0.5); border: 2px solid rgba(255,255,255,0.55); }
-  #powerRow > span { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; color: #fff; letter-spacing: 0.5px; }
-  #powTrack { position: relative; flex: 1; min-width: 0; height: 14px; border-radius: 7px; background: rgba(255,255,255,0.22); overflow: hidden; }
-  #pow { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; border-radius: 7px; background: linear-gradient(90deg,#ffd23a,#ff5cc6); box-shadow: inset 0 2px 0 rgba(255,255,255,0.6); }
-  #sup { flex-shrink: 0; min-width: 74px; text-align: center; padding: 3px 8px; border-radius: 999px; font-weight: 900; font-size: 11px; letter-spacing: 0.5px; }
   #reveal { position: absolute; inset: 0; z-index: 20; overflow: hidden; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; box-sizing: border-box; background: radial-gradient(circle at 50% 42%, rgba(120,40,200,0.55) 0, rgba(28,6,56,0.92) 70%); animation: c2Fade 0.3s ease-out both; }
   #rays { position: absolute; left: 50%; top: 40%; width: 820px; height: 820px; margin: -410px 0 0 -410px; border-radius: 50%; background: repeating-conic-gradient(rgba(255,230,140,0.32) 0 8deg, rgba(255,255,255,0) 8deg 20deg); -webkit-mask-image: radial-gradient(circle, #000 15%, transparent 62%); mask-image: radial-gradient(circle, #000 15%, transparent 62%); animation: c2Rays 14s linear infinite; pointer-events: none; }
   #rvUp { position: relative; padding: 4px 14px; border-radius: 999px; background: #fff; font-weight: 900; font-size: 12px; letter-spacing: 1px; animation: c2Rise 0.4s 0.25s ease-out both; }
@@ -99,7 +94,6 @@
   <div id="bannerWrap"></div>
   <div id="bottom">
     <div id="hint"></div>
-    <div id="powerRow"><span>POWER</span><div id="powTrack"><div id="pow"></div></div><div id="sup"></div></div>
   </div>
   <div id="reveal">
     <div id="rays"></div>
@@ -141,8 +135,9 @@
   const $ = (id) => document.getElementById(id);
   const post = (m) => { const s = JSON.stringify(m); if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(s); else (window.__chestOut = window.__chestOut || []).push(m); };
 
-  let S = null, run = null, st = null, pow = 0, bk = 0, bannerT = 0, revealT = 0;
-  // st: { gk, start, final, tier, hp, max, name, phase, first, sup, reward, held }
+  // (no POWER bar or SUPER taps: the user, 2026-10-25)
+  let S = null, run = null, st = null, bk = 0, bannerT = 0, revealT = 0;
+  // st: { gk, start, final, tier, hp, max, name, phase, first, reward, held }
   // (phase 'wait': the scene is up and the server's answer on its way; `held`: a first tap meanwhile)
 
   function paint() {
@@ -157,16 +152,11 @@
     if (pips.children.length !== max) { pips.innerHTML = ''; for (let i = 0; i < max; i++) { const d = document.createElement('div'); d.className = 'pip'; pips.appendChild(d); } }
     [...pips.children].forEach((d, i) => { const on = i < st.hp; d.style.background = on ? '#7ee87a' : 'rgba(255,255,255,0.25)'; d.style.boxShadow = 'inset 0 -3px 0 ' + (on ? '#3aa83a' : 'rgba(0,0,0,0.15)') + ', inset 0 2px 0 rgba(255,255,255,0.55)'; });
     $('hp').textContent = st.hp + ' HP';
-    const idle = st.first && st.start <= 1 ? 'Tap to smash. The first tap might upgrade it!' : st.sup ? 'SUPER! Every tap hits double' : 'Keep tapping. Fast taps fill POWER';
+    const idle = st.first && st.start <= 1 ? 'Tap to smash. The first tap might upgrade it!' : 'Keep tapping!';
     const HINT = { idle, wait: idle, up: 'Upgrading… tap to skip', ko: 'Bursting open…', open: 'Opened!' };
     const hint = HINT[st.phase] || '';
     if ($('hint').textContent !== hint) { const h = $('hint'); h.textContent = hint; h.style.animation = 'none'; void h.offsetWidth; h.style.animation = ''; }
     $('bottom').style.opacity = st.phase === 'ko' || st.phase === 'open' ? 0.4 : 1;
-    const sup = $('sup');
-    sup.textContent = st.sup ? 'SUPER x' + st.sup : 'FILL IT';
-    sup.style.background = st.sup ? 'linear-gradient(180deg,#fff7b0,#ffb000)' : 'rgba(255,255,255,0.2)';
-    sup.style.color = st.sup ? '#7a3a00' : '#ffffff';
-    sup.style.animation = st.sup ? 'c2Glow 0.7s ease-in-out infinite' : 'none';
   }
 
   function banner(text, tier) {
@@ -216,9 +206,12 @@
     $('rvRar').style.color = has ? rw.rarInk : '#45107a';
     $('rvName').textContent = has ? rw.name : 'Loot!';
     $('rvConcept').textContent = rw.concept || '';
-    $('rvCoins').textContent = '+' + fmt((rw.coins || 0) + (rw.dupeCoins || 0) + (rw.setBonus || 0));
+    // coins only for a duplicate (or a finished set): no chip at all otherwise
+    const coins = (rw.coins || 0) + (rw.dupeCoins || 0) + (rw.setBonus || 0);
+    $('loot').style.display = coins ? 'flex' : 'none';
+    $('rvCoins').textContent = '+' + fmt(coins);
     $('rvDupe').style.display = !rw.isNew && rw.dupeCoins ? '' : 'none';
-    $('rvDupe').textContent = '+' + fmt(rw.dupeCoins || 0) + ' for a duplicate';
+    $('rvDupe').textContent = 'Duplicate';
     $('rvPity').style.display = rw.luck ? '' : 'none';
     // restart the card's entrance animations
     $('reveal').style.display = 'none'; void $('reveal').offsetWidth; $('reveal').style.display = 'flex';
@@ -232,7 +225,7 @@
     else if (e.type === 'hp') Object.assign(st, { hp: e.hp, max: e.max });
     else if (e.type === 'step') { Object.assign(st, { tier: e.tier, hp: e.hp, max: e.max, name: e.name }); banner(TN[e.tier].n.toUpperCase() + '!', e.tier); post({ type: 'step', tier: e.tier }); }
     else if (e.type === 'upgradeDone') st.phase = 'idle';
-    else if (e.type === 'koStart') { st.phase = 'ko'; st.sup = 0; }
+    else if (e.type === 'koStart') st.phase = 'ko';
     else if (e.type === 'ko') {
       st.phase = 'open'; banner('OPENED!', e.tier); post({ type: 'opened' });
       clearTimeout(revealT); revealT = setTimeout(showReveal, 1700);
@@ -250,21 +243,12 @@
       // the server's upgrade (rolled at the purchase), played on the first tap
       if (st.final > st.tier) { st.phase = 'up'; paint(); S.upgrade(st.final); post({ type: 'upgrade', to: st.final }); return; }
     }
-    let P = 1, dbl = false;
-    if (st.sup > 0) { P = 1.7; dbl = true; st.sup = Math.max(0, st.sup - 1); }
-    else { pow += 0.25; if (pow >= 1) { pow = 0; st.sup = 3; banner('SUPER!', 3); } }
-    S.hitAt(e.clientX, e.clientY, P);
-    if (dbl && S.hp > 0) S.hitAt(e.clientX + (Math.random() * 40 - 20), e.clientY + (Math.random() * 30 - 15), 1.3);
+    S.hitAt(e.clientX, e.clientY, 1);
     paint();
     post({ type: 'hit' });
   }
   $('cv').addEventListener('pointerdown', tap);
   $('collect').addEventListener('click', () => post({ type: 'collect' }));
-
-  // the POWER bar drains
-  let last = performance.now();
-  const loop = (t) => { requestAnimationFrame(loop); const dt = Math.min(0.05, Math.max(0, (t - last) / 1000)); last = t; pow = Math.max(0, pow - dt * 0.22); $('pow').style.width = (Math.min(1, pow) * 100).toFixed(1) + '%'; };
-  requestAnimationFrame(loop);
 
   window.chestHost = {
     // { group, size, final, reward: { name, rar, rarLabel, rarBg, rarInk, concept, img, isNew, copies, need, coins, dupeCoins, setBonus, luck }, sound, insetTop, insetBottom }
@@ -276,8 +260,7 @@
       document.documentElement.style.setProperty('--inset-top', (o.insetTop || 0) + 'px');
       document.documentElement.style.setProperty('--inset-bottom', (o.insetBottom || 0) + 'px');
       const gk = GROUPS[o.group] ? o.group : 'ocean', start = TI[o.size] ?? 0, final = Math.max(start, TI[o.final] ?? start);
-      st = { gk, start, final, tier: start, hp: 0, max: 1, name: '', phase: o.wait ? 'wait' : 'idle', first: true, sup: 0, reward: o.reward || null, held: null };
-      pow = 0;
+      st = { gk, start, final, tier: start, hp: 0, max: 1, name: '', phase: o.wait ? 'wait' : 'idle', first: true, reward: o.reward || null, held: null };
       const CM = window.ChestModels;
       if (!S) { S = new CM.Stage($('cv'), { group: gk, ground: 0.73, top: 178 + (o.insetTop || 0), onEvent: ev }); S.load(gk, start, true); }
       else S.reset(gk, start);

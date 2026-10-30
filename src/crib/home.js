@@ -29,9 +29,16 @@ import catalog from './catalog.js';
 import { CHEAP, CHEAP_RATES, FIXTURE_DECOR, NEW_SLOTS, SLEEPER_Y, TABLE_TOPS, THEME_EXTRA, blanketAt, blanketSvg, blanketTop } from './extra.js';
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
+
+// The level a piece needs: the design's 1-9 spread over 1-20 (1 stays 1, 9
+// is 20), since the level comes from XP now and keeps rising (the user,
+// 2026-10-25; PLAYER_XP.md).
+export const spreadLevel = (lvl) => (lvl > 1 ? Math.round(1 + ((lvl - 1) * 19) / 8) : lvl);
+const spreadAll = (list) => list.map((t) => (t.lvl ? { ...t, lvl: spreadLevel(t.lvl) } : t));
+
 export const PADS = catalog.pads; // [{ k, cx }]
-export const GAMES = catalog.games;
-export const EXTRAS = catalog.extras;
+export const GAMES = spreadAll(catalog.games);
+export const EXTRAS = spreadAll(catalog.extras);
 export const SONGS = catalog.songs;
 const BUILTIN_GAMES = ['swing', 'tramp', 'seesaw', 'ball']; // drawn by the app (the design's CSS)
 // the dance floor the app draws (Dance.js): its top and height
@@ -60,6 +67,7 @@ Object.values(catalog.slots).forEach((s) => {
   SLOTS[s.key] = { ...s, tiers: [cheap, ...up] };
 });
 Object.assign(SLOTS, NEW_SLOTS);
+Object.keys(SLOTS).forEach((k) => (SLOTS[k] = { ...SLOTS[k], tiers: spreadAll(SLOTS[k].tiers) }));
 
 // the tiers' rates, with the cheap tiers' in front
 const RATES = {
@@ -76,7 +84,7 @@ const RATES = {
   },
 };
 
-export const DECOR = [...catalog.decor, ...FIXTURE_DECOR];
+export const DECOR = spreadAll([...catalog.decor, ...FIXTURE_DECOR]);
 
 // Walls, floors, ceilings per room: the bare one first (free), the design's
 // (from the second on, at a price), a luxurious one last. The yard keeps the
@@ -88,7 +96,7 @@ Object.entries(catalog.themes).forEach(([room, kinds]) => {
   Object.entries(kinds).forEach(([kind, list]) => {
     const X = THEME_EXTRA[kind];
     const design = list.map((t, i) => ({ name: t.name, lvl: t.lvl, coins: i === 0 && room === 'yard' ? 0 : X ? X.prices[Math.min(i, X.prices.length - 1)] : 150 * i, design: i }));
-    THEMES[room][kind] = room === 'yard' || !X ? design : [X.first(room), ...design, X.last];
+    THEMES[room][kind] = spreadAll(room === 'yard' || !X ? design : [X.first(room), ...design, X.last]);
   });
 });
 export const themeId = (room, kind, i) => `th:${room}:${kind}:${i}`;
