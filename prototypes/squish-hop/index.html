@@ -224,16 +224,44 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
 .twistHead { margin-top: 6px; font: 700 12px/1.2 var(--display); letter-spacing: 1px; color: var(--sub); align-self: flex-start; }
 .twist { align-self: stretch; font: 800 11.5px/15.5px var(--body); color: var(--ink); }
 .twistName { font-family: var(--display); font-weight: 700; color: #e01e4a; }
-.levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 6px; align-self: stretch; margin-top: 4px; }
+.levels { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px 4px; align-self: stretch; margin-top: 4px; }
 .lvTile { display: flex; flex-direction: column; align-items: center; gap: 1px; }
-.lvTile .face { padding: 8px 0; width: 58px; }
+.lvTile .face { padding: 6px 0; width: 46px; }
 .lvStars { display: flex; gap: 1px; }
 .lvRoom { font: 700 9.5px/1.2 var(--display); letter-spacing: 0.3px; color: var(--sub); }
 .rock { animation: rock 1.8s ease-in-out infinite; }
 @keyframes rock { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
 
+/* the twists: arrows on cushions, bubbles over them, numbered friends,
+   beat tiles on the dance floor */
+.tile .mark { pointer-events: none; }
+.tile .mark svg { display: block; }
+.bubble { position: absolute; left: 0; top: 0; transform-origin: 50% 100%; pointer-events: none; }
+.bubble .bob { position: absolute; inset: 0; animation: bob 2.2s ease-in-out infinite; }
+.bubble .ball {
+  position: absolute; inset: 0; border-radius: 50%; border: 2.5px solid #ffffff;
+  background: radial-gradient(circle at 34% 30%, #ffffff 0 12%, rgba(255,255,255,0.6) 15%, rgba(150,214,255,0.55) 42%, rgba(200,170,255,0.6) 72%, rgba(255,170,225,0.75) 100%);
+  box-shadow: 0 0 0 1.5px rgba(60,120,190,0.55), 0 3px 8px rgba(40,60,140,0.3), inset -4px -5px 9px rgba(120,90,230,0.35);
+}
+.ordChip, .slotNum {
+  position: absolute; z-index: 2; border-radius: 999px; background: #ff5cc6; border: 2px solid var(--white); color: var(--white);
+  font: 700 11px/1 var(--display); display: flex; align-items: center; justify-content: center;
+}
+.ordChip { right: -8%; top: -6%; min-width: 22px; height: 22px; padding: 0 4px; }
+.slotNum { right: -5px; top: -5px; min-width: 14px; height: 14px; font-size: 8.5px; border-width: 1.5px; }
+.dt.beat:not(.lit) { background: color-mix(in srgb, var(--tc) 32%, #140818); box-shadow: inset 0 0 0 3px var(--tc); }
+.dt.beat:not(.lit)::after { opacity: 0.15; }
+.dt.beat.lit { animation: beatPulse 0.45s ease-in-out infinite alternate; }
+@keyframes beatPulse { from { box-shadow: inset 0 0 0 3px rgba(255,255,255,0.5), 0 0 8px var(--tc); } to { box-shadow: inset 0 0 0 3px rgba(255,255,255,0.9), 0 0 22px var(--tc); } }
+.beatPill { display: flex; align-items: center; gap: 4px; border-color: #ff5c8a; color: #8e1580; }
+.beatPill .bd { width: 9px; height: 9px; border-radius: 3px; opacity: 0.5; }
+.beatPill .bd.now { width: 13px; height: 13px; opacity: 1; box-shadow: 0 0 0 2px var(--white), 0 0 0 3.5px #140818; }
+.chHead { grid-column: 1 / -1; margin-top: 6px; font: 700 12px/1.2 var(--display); letter-spacing: 1px; color: var(--pink-ink); text-align: left; }
+#overlay .card.tall .cardFill { max-height: calc(100vh - 70px); }
+#levelList { max-height: 52vh; overflow-y: auto; padding: 2px 4px 6px; }
+
 @media (prefers-reduced-motion: reduce) {
-  .breathe, .friend .breathe, .rock, .starSlot .rays, .goalStar .bob, .dt.hue { animation: none; }
+  .breathe, .friend .breathe, .rock, .starSlot .rays, .goalStar .bob, .dt.hue, .bubble .bob, .dt.beat.lit { animation: none; }
 }
 </style>
 </head>
@@ -262,7 +290,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
       <div class="goalRow" id="goalRow"></div>
     </div>
     <div class="stripRight">
-      <div class="meterRow"><div class="meter" id="meter"></div><div class="pill" id="leftPill">LEFT 0</div><div class="pill hops" id="hops">HOPS 0</div></div>
+      <div class="meterRow"><div class="meter" id="meter"></div><div class="pill" id="leftPill">LEFT 0</div><div class="pill hops" id="hops">HOPS 0</div><div class="pill beatPill" id="beatPill" hidden>BEAT <span class="bd"></span><span class="bd"></span><span class="bd"></span></div></div>
       <div class="tip" id="tip"></div>
     </div>
   </section>
@@ -289,11 +317,24 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
   // tools/bundle.mjs can inline them.
   const A = {
     rooms: {
-      living: { base: '../../assets/crib/rooms/living-base.webp', over: { day: '../../assets/crib/rooms/living-over-day.webp', evening: '../../assets/crib/rooms/living-over-evening.webp' } },
-      kitchen: { base: '../../assets/crib/rooms/kitchen-base.webp', over: { morning: '../../assets/crib/rooms/kitchen-over-morning.webp' } },
+      living: {
+        base: '../../assets/crib/rooms/living-base.webp',
+        over: { morning: '../../assets/crib/rooms/living-over-morning.webp', day: '../../assets/crib/rooms/living-over-day.webp', evening: '../../assets/crib/rooms/living-over-evening.webp', night: '../../assets/crib/rooms/living-over-night.webp' },
+      },
+      kitchen: {
+        base: '../../assets/crib/rooms/kitchen-base.webp',
+        over: { morning: '../../assets/crib/rooms/kitchen-over-morning.webp', day: '../../assets/crib/rooms/kitchen-over-day.webp', evening: '../../assets/crib/rooms/kitchen-over-evening.webp', night: '../../assets/crib/rooms/kitchen-over-night.webp' },
+      },
       bath: { base: '../../assets/crib/rooms/bath-base.webp', over: { day: '../../assets/crib/rooms/bath-over-day.webp' } },
-      bed: { base: '../../assets/crib/rooms/bed-base.webp', over: { evening: '../../assets/crib/rooms/bed-over-evening.webp', night: '../../assets/crib/rooms/bed-over-night.webp' } },
-      yard: { base: '../../assets/crib/rooms/yard-base.webp', under: { evening: '../../assets/crib/rooms/yard-under-evening.webp' }, over: {} },
+      bed: {
+        base: '../../assets/crib/rooms/bed-base.webp',
+        over: { morning: '../../assets/crib/rooms/bed-over-morning.webp', day: '../../assets/crib/rooms/bed-over-day.webp', evening: '../../assets/crib/rooms/bed-over-evening.webp', night: '../../assets/crib/rooms/bed-over-night.webp' },
+      },
+      yard: {
+        base: '../../assets/crib/rooms/yard-base.webp',
+        under: { morning: '../../assets/crib/rooms/yard-under-morning.webp', day: '../../assets/crib/rooms/yard-under-day.webp', evening: '../../assets/crib/rooms/yard-under-evening.webp', night: '../../assets/crib/rooms/yard-under-night.webp' },
+        over: {},
+      },
       dance: { base: '../../assets/crib/rooms/dance-base.webp', over: { day: '../../assets/crib/rooms/dance-over-day.webp' } },
     },
     rug: '../../assets/crib/fixtures/living-rug.webp',
@@ -316,6 +357,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
       select: '../../assets/audio/squishdoku/sd_select.wav',
       hop: '../../assets/audio/stack/st_lift.wav',
       pop: '../../assets/audio/pop.mp3',
+      bubble: '../../assets/audio/bubble_tap.wav',
       bonk: '../../assets/audio/sfx/bonk.wav',
       undo: '../../assets/audio/stack/st_undo.wav',
       hint: '../../assets/audio/stack/st_hint.wav',
@@ -350,17 +392,6 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     yard: { name: 'Yard', short: 'Yard', floor: 214 / 393, cx: 0.66, cushion: 'pink', bg: '#96cb74', dent: 'rgba(255,255,255,0.8)' },
     dance: { name: 'Dance Room', short: 'Dance', floor: 200 / 393, cx: 0.24, dance: true, bg: '#3b2030' },
   };
-  // the trip through the Crib, a room and a time of day per level
-  const STAGES = [
-    { room: 'living', phase: 'day' },
-    { room: 'kitchen', phase: 'morning' },
-    { room: 'bath', phase: 'day' },
-    { room: 'bed', phase: 'evening' },
-    { room: 'yard', phase: 'evening' },
-    { room: 'living', phase: 'evening' },
-    { room: 'bed', phase: 'night' },
-    { room: 'dance', phase: 'day' },
-  ];
   // src/crib/data.js PHASES
   const PHASES = {
     morning: { label: 'MORNING', sun: '#ffe38a', tint: 'rgba(255,170,140,0.05)' },
@@ -368,6 +399,20 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     evening: { label: 'EVENING', sun: '#ffb36b', tint: 'rgba(90,20,120,0.1)' },
     night: { label: 'NIGHT', sun: '#fff6d8', tint: 'rgba(20,24,70,0.22)' },
   };
+  // the rooms in level order (runs of the same room in levels.js), and the
+  // time of day moving on through each room's levels
+  const CHAPTERS = [];
+  LEVELS.forEach((L, i) => {
+    const last = CHAPTERS[CHAPTERS.length - 1];
+    if (last && last.room === L.room) last.to = i;
+    else CHAPTERS.push({ room: L.room, from: i, to: i });
+  });
+  function stageOf(i) {
+    const ch = CHAPTERS.find((c) => i >= c.from && i <= c.to);
+    const phases = Object.keys(A.rooms[ch.room].over).length ? Object.keys(A.rooms[ch.room].over) : Object.keys(A.rooms[ch.room].under || { day: 1 });
+    const pos = (i - ch.from) / (ch.to - ch.from + 1);
+    return { room: ch.room, phase: phases[Math.min(phases.length - 1, Math.floor(pos * phases.length))], key: `${ch.room}:${Math.floor(pos * phases.length)}` };
+  }
   // Squish Stack's cushions (src/stack/Pieces.js CUSHIONS)
   const CUSH = {
     pink: { c1: '#ffd9f3', c2: '#ff86d3', ring: '#a3168f' },
@@ -375,16 +420,31 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     lilac: { c1: '#ebdcff', c2: '#a77bff', ring: '#4b1ca0' },
     peach: { c1: '#fff0cf', c2: '#ffb257', ring: '#9c4d06' },
   };
-  // the Crib's dance floor tile colours (src/crib/Dance.js TILE), in its 2 × 2 pattern
+  // the Crib's dance floor tile colours (src/crib/Dance.js TILE), in its 2 × 2
+  // pattern; on beat levels the plain tiles are its mint and the beats its
+  // pink, blue and yellow
   const DANCE_TILE = ['#7cb8ff', '#ff5c8a', '#ffd66b', '#5cf2c8'];
+  const BEAT_COL = ['#ff5c8a', '#7cb8ff', '#ffd66b'];
 
   const TIER_NAMES = ['EASY', 'MEDIUM', 'HARD', 'EXPERT'];
   const TIER_COLORS = ['#3ddc97', '#5fb8ff', '#ff8a4a', '#e01e4a'];
   const STAR_D = 'M12 2.2 L14.9 8.6 L21.8 9.3 L16.6 14 L18.1 20.9 L12 17.4 L5.9 20.9 L7.4 14 L2.2 9.3 L9.1 8.6 Z';
+  const CHEVRON = 'M15 4 L7 12 L15 20'; // the Crib's back icon (crib/Hud.js), turned
   const TITLES = ['', 'HOPPED!', 'NICE HOPPING!', 'ALL CLEAR!'];
   const NEWS = {
     friends: { text: 'FRIENDS!', sub: 'The ★ opens when everyone is with you.' },
-    doubles: { text: 'PILES!', sub: 'Two cushions on top of each other take two hops.' },
+    arrows: { text: 'ARROWS!', sub: 'Hop off an arrow cushion the way it points.' },
+    bubbles: { text: 'BUBBLES!', sub: 'Land on a bubble and it bounces you one further.' },
+    piles: { text: 'PILES!', sub: 'Two cushions on top of each other take two hops.' },
+    ordered: { text: 'IN ORDER!', sub: 'Pick the friends up 1, 2, 3…' },
+    beats: { text: 'ON THE BEAT!', sub: 'Coloured tiles light up every third hop. Land on them lit.' },
+  };
+  const WHY = {
+    arrow: 'Arrow cushions only let you hop off the way they point.',
+    bounce: 'That bubble has nowhere to bounce you.',
+    order: 'Pick up the friends in order: 1, 2, 3…',
+    beat: "That tile isn't lit on this hop. Wait for its beat!",
+    locked: 'Pick up every friend first. Then the ★ opens!',
   };
   const TILT = 38; // degrees the floor leans back
   const DEPTH = 13; // the perspective distance, in tiles
@@ -395,8 +455,8 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
   $('flashDots').style.backgroundImage = `url(${A.flashDots})`;
 
   // ---- saved progress (this browser only)
-  const SAVE_KEY = 'squishHop.v1';
-  let save = { best: {}, seenHow: false, seenNews: {}, muted: false };
+  const SAVE_KEY = 'squishHop.v2';
+  let save = { best: {}, seenHow: false, seenNews: {}, muted: false, at: 0 };
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) save = Object.assign(save, JSON.parse(raw));
@@ -438,6 +498,11 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
       return `<svg${c} width="${size}" height="${size}" viewBox="0 0 24 24"><path d="${STAR_D}" fill="#b86200" transform="translate(0 1.4)" stroke-linejoin="round"/><path d="${STAR_D}" fill="#ffd23a" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
     }
     return `<svg${c} width="${size}" height="${size}" viewBox="0 0 24 24"><path d="${STAR_D}" fill="${lit ? '#b86200' : 'rgba(69,16,122,0.25)'}" transform="translate(0 1.2)" stroke-linejoin="round"/><path d="${STAR_D}" fill="${lit ? '#ffd23a' : 'rgba(255,255,255,0.7)'}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"/>${lit ? '<path d="M8 9.6 L10.4 9.2 L11.3 7" stroke="#fff6c4" stroke-width="1.4" stroke-linecap="round" fill="none"/>' : ''}</svg>`;
+  }
+  // an arrow on a cushion: the Crib's chevron, white over a shadow of `ink`
+  function arrowSvg(dir, ink) {
+    const rot = [90, 180, 270, 0][dir];
+    return `<svg viewBox="0 0 24 24" width="100%" height="100%"><g transform="rotate(${rot} 12 12) translate(1.5 0) scale(0.8) translate(3 3)"><path d="${CHEVRON}" transform="translate(0 1.6)" stroke="${ink}" stroke-width="4.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="${CHEVRON}" stroke="#ffffff" stroke-width="4.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;
   }
 
   // Squish Stack's puffy cushion (Pieces.js Cushion), seen from above: ring,
@@ -511,17 +576,22 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
   function button(kind, label, { id = '', fs = 17, cls = '' } = {}) {
     return `<button class="sd k-${kind} ${cls}" ${id ? `id="${id}"` : ''}><span class="lip"></span><span class="rg"><span class="face"><span class="lbl" style="--fs:${fs}px">${label}</span></span></span></button>`;
   }
-  function headSticker(key, face, size, dim) {
-    return `<div class="headSticker${dim ? ' dim' : ''}" style="width:${size}px;height:${size}px"><div><img src="${A.heads[key][face]}" alt=""></div></div>`;
+  function headSticker(key, face, size, dim, num) {
+    return `<div class="headSticker${dim ? ' dim' : ''}" style="width:${size}px;height:${size}px"><div><img src="${A.heads[key][face]}" alt=""></div>${num ? `<span class="slotNum">${num}</span>` : ''}</div>`;
   }
 
   // ---- the game
   const G = {
-    idx: 0, def: null, lv: null, st: null, hist: [], hinted: false, asked: false, over: false, won: false,
+    idx: 0, def: null, lv: null, st: null, hist: [], moves: [], hinted: false, asked: false, over: false, won: false,
     busy: false, queue: [], feasible: true, T: 64, cells: {}, proj: {}, player: null, friends: {}, friendKeys: [], slots: [],
-    stage: null, room: ROOMS.living, goalStar: null,
+    bubbles: {}, stage: null, room: ROOMS.living, goalStar: null, sol: [], beats: false,
   };
   const xy = (i) => [i % G.lv.w, (i / G.lv.w) | 0];
+  const dirTo = (a, b) => {
+    const [ax, ay] = xy(a);
+    const [bx, by] = xy(b);
+    return by < ay ? 0 : bx > ax ? 1 : by > ay ? 2 : 3;
+  };
 
   // ---- the room picture: the room's layers scaled so its floor line sits
   // about a third of the way down, its floor repeated below to the bottom
@@ -532,7 +602,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const RATIO = 1704 / 786;
-    const floorY = Math.round(Math.min(330, Math.max(200, vh * 0.34)));
+    const floorY = Math.round(Math.min(330, Math.max(190, vh * 0.32)));
     let H = floorY / R.floor;
     if (H * RATIO < vw) H = vw / RATIO;
     const W = H * RATIO;
@@ -559,6 +629,35 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
   }
 
   // ---- the board: a plane of tiles leaned back, the squishies standing on it
+  function tileHtml(i, s) {
+    const { lv } = G;
+    const R = G.room;
+    const [x, y] = xy(i);
+    const goal = i === lv.goal;
+    const pile = lv.life[i] === 2;
+    const arrow = lv.arrow[i];
+    const beat = lv.beat[i];
+    let c0;
+    let c1 = '';
+    let mark = '';
+    if (R.dance) {
+      let col;
+      if (goal) col = '#ffffff';
+      else if (beat >= 0) col = BEAT_COL[beat];
+      else if (G.beats) col = DANCE_TILE[3];
+      else col = DANCE_TILE[y % 2 === 0 ? (x % 2 ? 1 : 0) : x % 2 ? 2 : 3];
+      const hue = !goal && !G.beats ? ' hue' : '';
+      c0 = `<div class="c0 dt${hue}${beat >= 0 ? ' beat' : ''}" style="--tc:${col}"></div>`;
+      if (pile) c1 = '<div class="c1 dring"></div>';
+      if (arrow >= 0) mark = `<div class="mark">${arrowSvg(arrow, '#140818')}</div>`;
+    } else {
+      c0 = `<div class="c0">${cushionSvg(s, goal ? 'peach' : R.cushion)}</div>`;
+      if (pile) c1 = `<div class="c1" style="transform:translateZ(${G.T * 0.17}px) scale(0.94)">${cushionSvg(s, R.cushion)}</div>`;
+      if (arrow >= 0) mark = `<div class="mark" style="transform:scale(0.62)">${arrowSvg(arrow, CUSH[R.cushion].ring)}</div>`;
+    }
+    return `<div class="tile" data-i="${i}" style="left:${x * G.T + G.gap}px;top:${y * G.T + G.gap}px;width:${s}px;height:${s}px"><div class="dent${R.dance ? ' dk' : ''}"></div>${c0}${c1}${mark}</div>`;
+  }
+
   function buildBoard() {
     const { lv } = G;
     const R = G.room;
@@ -568,9 +667,10 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     const floorY = G.floorScreenY - area.getBoundingClientRect().top;
     const rad = (TILT * Math.PI) / 180;
     const kH = (Math.cos(rad) * DEPTH) / (DEPTH + lv.h * Math.sin(rad)); // projected height per tile
-    const space = AH - Math.max(0, floorY) + AH * 0.04;
-    const T = Math.max(30, Math.floor(Math.min((AW - 6) / lv.w, space / (lv.h * kH), 96)));
+    const space = AH - Math.max(0, floorY) + AH * 0.06;
+    const T = Math.max(28, Math.floor(Math.min((AW - 4) / lv.w, space / (lv.h * kH), 96)));
     G.T = T;
+    G.gap = R.dance ? 1.5 : T * 0.04;
     const projH = T * lv.h * kH;
     const bottom = Math.min(AH - 6, Math.max(floorY, 0) + (AH - Math.max(floorY, 0)) / 2 + projH / 2);
     const plane = $('plane');
@@ -579,44 +679,43 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     plane.style.setProperty('--dent', R.dent || 'rgba(91,58,41,0.4)');
     plane.style.setProperty('--hz', `${Math.round(T * 0.22)}px`);
     let html = R.rug ? `<img class="rug" alt="" src="${A.rug}">` : '';
-    const g = R.dance ? 1.5 : T * 0.04;
-    for (let i = 0; i < lv.life.length; i++) {
-      if (!lv.life[i]) continue;
-      const [x, y] = xy(i);
-      const goal = i === lv.goal;
-      const s = T - 2 * g;
-      let c0;
-      let c1 = '';
-      if (R.dance) {
-        const k = y % 2 === 0 ? (x % 2 ? 1 : 0) : x % 2 ? 2 : 3;
-        const col = goal ? '#ffffff' : DANCE_TILE[k];
-        c0 = `<div class="c0 dt${goal ? '' : ' hue'}" style="--tc:${col}"></div>`;
-        if (!goal) c1 = '<div class="c1 dring"></div>';
-      } else {
-        c0 = `<div class="c0">${cushionSvg(s, goal ? 'peach' : R.cushion)}</div>`;
-        if (!goal) c1 = `<div class="c1" style="transform:translateZ(${T * 0.17}px) scale(0.94)">${cushionSvg(s, R.cushion)}</div>`;
-      }
-      html += `<div class="tile" data-i="${i}" style="left:${x * T + g}px;top:${y * T + g}px;width:${s}px;height:${s}px"><div class="dent${R.dance ? ' dk' : ''}"></div>${c0}${c1}</div>`;
-    }
+    const s = T - 2 * G.gap;
+    for (let i = 0; i < lv.life.length; i++) if (lv.life[i]) html += tileHtml(i, s);
     plane.innerHTML = html;
     G.cells = {};
     plane.querySelectorAll('.tile').forEach((el) => {
       const i = Number(el.dataset.i);
-      G.cells[i] = { el, dent: el.querySelector('.dent'), c0: el.querySelector('.c0'), c1: el.querySelector('.c1'), life: -1 };
+      G.cells[i] = { el, dent: el.querySelector('.dent'), c0: el.querySelector('.c0'), c1: el.querySelector('.c1'), mark: el.querySelector('.mark'), life: -1 };
     });
     measureProj();
     // pieces
     const layer = $('layer');
     layer.innerHTML = '';
+    layer.style.setProperty('--shade', R.dance ? 'rgba(255,255,255,0.3)' : 'rgba(69,16,122,0.28)');
     G.friends = {};
     lv.friends.forEach((cell, k) => {
       const key = G.friendKeys[k];
       const p = makePiece(key, 'friend', 0.8);
       p.k = k;
       p.el.style.setProperty('--fd', `${-(k * 0.9).toFixed(1)}s`);
+      if (lv.order[cell]) p.el.insertAdjacentHTML('beforeend', `<span class="ordChip">${lv.order[cell]}</span>`);
       layer.appendChild(p.el);
       G.friends[cell] = p;
       placePiece(p, cell);
+    });
+    // bubbles float over their cushions
+    G.bubbles = {};
+    lv.bubble.forEach((b, cell) => {
+      if (!b) return;
+      const q = G.proj[cell];
+      const sc = q.w / T;
+      const sz = T * 0.66;
+      const el = document.createElement('div');
+      el.className = 'bubble';
+      el.style.cssText = `width:${sz}px;height:${sz}px;transform:translate(${q.x - sz / 2}px,${q.y - sz - T * 0.12 * sc}px) scale(${sc});z-index:${10 + xy(cell)[1] * 3}`;
+      el.innerHTML = `<div class="bob" style="animation-delay:${-((cell * 0.37) % 2).toFixed(2)}s"><div class="ball"></div></div>`;
+      layer.appendChild(el);
+      G.bubbles[cell] = el;
     });
     // the ★, standing over its cushion
     const gs = document.createElement('div');
@@ -632,7 +731,6 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     gs.style.zIndex = 10 + xy(lv.goal)[1] * 3;
     G.player = makePiece(PLAYER, 'player', 0.92);
     layer.appendChild(G.player.el);
-    layer.style.setProperty('--shade', R.dance ? 'rgba(255,255,255,0.3)' : 'rgba(69,16,122,0.28)');
   }
 
   // where each tile's middle ends up on screen, and how big it looks there
@@ -642,14 +740,11 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     Object.entries(G.cells).forEach(([i, c]) => {
       const r = c.c0.getBoundingClientRect();
       let lift = 0;
-      if (c.c1) {
-        const was = c.c1.hidden;
-        c.c1.hidden = false;
+      if (c.c1 && !G.room.dance) {
         const r1 = c.c1.getBoundingClientRect();
-        c.c1.hidden = was;
         lift = r.top + r.height / 2 - (r1.top + r1.height / 2);
       }
-      G.proj[i] = { x: r.left + r.width / 2 - ar.left, y: r.top + r.height * 0.6 - ar.top, w: r.width, lift: G.room.dance ? 0 : lift };
+      G.proj[i] = { x: r.left + r.width / 2 - ar.left, y: r.top + r.height * 0.6 - ar.top, w: r.width, lift };
     });
   }
 
@@ -684,9 +779,12 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     c.dent.hidden = c.life > 0;
     c.c0.hidden = c.life === 0;
     if (c.c1) c.c1.hidden = c.life < 2;
+    if (c.mark) c.mark.hidden = c.life === 0;
+    const b = G.bubbles[i];
+    if (b) b.hidden = c.life === 0;
   }
   function baseOf(el) {
-    if (!el.classList.contains('c1')) return '';
+    if (!el.classList.contains('c1') && !el.classList.contains('mark')) return '';
     const t = el.style.transform || getComputedStyle(el).transform;
     return t && t !== 'none' ? t + ' ' : '';
   }
@@ -724,20 +822,38 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     if (from === life) return;
     c.life = life;
     if (!anim || from < 0) { paint(i); return; }
+    const b = G.bubbles[i];
     if (life < from) {
       if (from === 2 && c.c1) ghostOut(c, c.c1);
-      if (life === 0) ghostOut(c, c.c0);
-      paint(i);
+      if (life === 0) {
+        ghostOut(c, c.c0);
+        if (c.mark) ghostOut(c, c.mark);
+      }
+      if (b && life === 0) {
+        b.querySelector('.ball').animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1.5)', opacity: 0 }], { duration: ms(220), easing: 'ease-out' }).finished.then(() => paint(i));
+      }
+      if (!b) paint(i);
+      else {
+        c.dent.hidden = false;
+        c.c0.hidden = true;
+      }
       const q = G.proj[i];
       if (life === 0) {
-        burst('pop', q.x, q.y - q.w * 0.1);
-        Sound.play('pop', 0.6);
+        burst(b ? 'bubble' : 'pop', q.x, q.y - q.w * (b ? 0.5 : 0.1));
+        Sound.play(b ? 'bubble' : 'pop', 0.6);
       }
     } else {
       paint(i);
-      if (from === 0) puffIn(c.c0);
+      if (from === 0) {
+        puffIn(c.c0);
+        if (c.mark) puffIn(c.mark);
+        if (b) b.querySelector('.ball').animate([{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: ms(260), easing: 'ease-out' });
+      }
       if (life === 2 && c.c1) puffIn(c.c1, from === 0 ? 80 : 0);
     }
+  }
+  function syncCells(anim) {
+    Object.keys(G.cells).forEach((key) => setCell(Number(key), G.st.life[key], anim));
   }
 
   const popcount = (n) => { let c = 0; while (n) { c += n & 1; n >>= 1; } return c; };
@@ -759,10 +875,25 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
       Sound.play('unlock', 0.6);
     }
   }
+  // beat tiles light up on their beat: the beat of the next hop
+  function syncBeats() {
+    if (!G.beats) return;
+    const next = (G.st.hops + 1) % 3;
+    Object.entries(G.cells).forEach(([i, c]) => {
+      const b = G.lv.beat[i];
+      if (b >= 0) c.c0.classList.toggle('lit', b === next);
+    });
+    const dots = $('beatPill').querySelectorAll('.bd');
+    dots.forEach((d, k) => {
+      d.style.background = BEAT_COL[(next + k) % 3];
+      d.classList.toggle('now', k === 0);
+    });
+  }
 
   // ---- particles (squishdoku/fx.js KINDS)
   const KINDS = {
     pop: { count: 10, life: 420, size: [4, 7], dist: [26, 40], up: [0, 0], colors: ['#ff8fd0', '#ffffff', '#ffe066', '#9ce8ff'], spreadY: 0.6, fall: 0 },
+    bubble: { count: 9, life: 380, size: [4, 8], dist: [18, 34], up: [-6, 2], colors: ['#ffffff', '#c9f5ff', '#ffd1f5'], spreadY: 1, fall: 0 },
     spark: { count: 8, life: 560, size: [5, 9], dist: [22, 46], up: [-6, 6], colors: ['#fff3a0', '#ffffff', '#ffd1f5', '#c9f5ff'], spreadY: 1, fall: 10, star: true },
     dust: { count: 7, life: 420, size: [5, 10], dist: [14, 30], up: [-4, 6], colors: ['#ffffff', '#fff6fb'], spreadY: 0.25, fall: 0 },
     confetti: { count: 34, life: 1700, size: [7, 12], dist: [60, 190], up: [-260, -120], colors: ['#ff5cc6', '#ffd23a', '#3ddc97', '#5fb8ff', '#b65cff', '#ff8a4a', '#ffffff'], spreadY: 0.5, fall: 420, rect: true },
@@ -801,9 +932,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
   // ---- the strip and the top bar
   function renderGoalCard() {
     const n = G.lv.friends.length;
-    const size = n > 1 ? 24 : 27;
+    const size = n > 3 ? 19 : n > 1 ? 23 : 27;
     let html = '';
-    G.friendKeys.forEach((key, k) => { html += `<div data-slot="${k}">${headSticker(key, 'happy', size, true)}</div>`; });
+    G.friendKeys.forEach((key, k) => { html += `<div data-slot="${k}">${headSticker(key, 'happy', size, true, G.lv.order[G.lv.friends[k]] || 0)}</div>`; });
     if (n) html += '<span class="goalArrow">›</span>';
     html += `<div class="miniGoal">${G.room.dance ? '<svg width="36" height="36" viewBox="0 0 36 36"><rect x="3" y="3" width="30" height="30" rx="5" fill="#140818"/><rect x="5" y="5" width="26" height="26" rx="3" fill="#ffffff"/></svg>' : cushionSvg(36, 'peach')}${starSvg(20, true, 'badge', 'mstar')}</div>`;
     $('goalRow').innerHTML = html;
@@ -826,11 +957,12 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     $('phase').hidden = !!R.dance;
     $('sun').style.background = ph.sun;
     $('phaseText').textContent = ph.label;
+    $('beatPill').hidden = !G.beats;
   }
 
   function hud() {
     const { st, lv } = G;
-    $('hops').textContent = `HOPS ${st.hops}`;
+    $('hops').textContent = `HOPS ${G.moves.length}`;
     $('leftPill').textContent = `LEFT ${E.leftOf(lv, st.life)}`;
     let can = G.feasible ? 3 : 2;
     if (G.hinted) can = Math.max(1, can - 1);
@@ -841,21 +973,36 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     $('undo').disabled = !G.hist.length || G.won;
     $('restart').disabled = st.hops === 0 && !G.over;
     $('hint').disabled = !!G.won;
+    syncBeats();
   }
   function tipFor() {
     const { idx, def, st, lv } = G;
     const what = G.room.dance ? 'tiles' : 'cushions';
-    if (!G.feasible) return `Some ${what} can't be reached now. UNDO to go for 3 stars!`;
+    if (!G.feasible) return `Some ${what} can't be cleared now. UNDO to go for 3 stars!`;
     if (idx === 0 && st.hops === 0) return 'Swipe, use the arrow keys, or tap a cushion next to you to hop.';
     if (idx === 0) return 'Cushions puff away behind you. Clear them all, then hop onto the ★!';
     if (def.news === 'friends' && st.got !== lv.all) return 'Pick up the friend. The ★ opens when everyone is with you.';
-    if (def.news === 'doubles') return 'A pile of two cushions takes two hops to clear.';
-    if (G.room.dance) return 'Each tile goes dark after you hop off. Get every tile, then the ★!';
-    if (lv.friends.length && st.got !== lv.all) return 'Pick up every friend, clear every cushion, then hop onto the ★.';
-    return 'Clear every cushion, then hop onto the ★.';
+    if (def.news === 'arrows') return 'Arrow cushions: you can only hop off them the way they point.';
+    if (def.news === 'bubbles') return 'Hop onto a bubble and it bounces you one cushion further.';
+    if (def.news === 'piles') return 'A pile of two cushions takes two hops to clear.';
+    if (def.news === 'ordered') return 'Pick up the friends in number order: 1, then 2, then 3.';
+    if (G.beats) return `Coloured tiles are lit on their beat only. Next hop: the ${['pink', 'blue', 'yellow'][(st.hops + 1) % 3]} ones.`;
+    if (lv.friends.length && st.got !== lv.all) return `Pick up every friend${lv.order[lv.friends[0]] ? ' in order' : ''}, clear every ${what.slice(0, -1)}, then the ★.`;
+    return `Clear every ${what.slice(0, -1)}, then hop onto the ★.`;
   }
 
+  // Can everything still be cleared? With one full clear (every level but
+  // the first few), only by following it: the moves so far must be its start.
+  function onSolution() {
+    if (G.moves.length > G.sol.length) return false;
+    for (let k = 0; k < G.moves.length; k++) if (G.moves[k] !== G.sol[k]) return false;
+    return true;
+  }
   function check() {
+    if (G.def.sols === 1) {
+      G.feasible = onSolution();
+      return;
+    }
     const r = E.search(G.lv, G.st, { limit: 60000 });
     G.feasible = !!r.path || r.aborted;
   }
@@ -874,17 +1021,22 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
   function loadLevel(idx, { fresh = true } = {}) {
     closeCard();
     const go = () => setupLevel(idx, fresh);
-    if (G.lv && STAGES[idx] !== G.stage) roomFlash(go);
+    if (G.lv && stageOf(idx).key !== G.stage.key) roomFlash(go);
     else go();
   }
   function setupLevel(idx, fresh) {
     G.idx = idx;
+    save.at = idx;
+    store();
     G.def = LEVELS[idx];
-    G.stage = STAGES[idx];
+    G.stage = stageOf(idx);
     G.room = ROOMS[G.stage.room];
     G.lv = E.parse(G.def.map);
     G.st = E.newState(G.lv);
+    G.sol = [...G.def.solution].map((c) => E.DCH.indexOf(c));
+    G.beats = G.lv.beat.some((b) => b >= 0);
     G.hist = [];
+    G.moves = [];
     if (fresh) { G.hinted = false; G.asked = false; }
     G.over = false;
     G.won = false;
@@ -903,8 +1055,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
       const c = G.cells[i];
       c.life = i === G.lv.goal ? 1 : G.lv.life[i];
       paint(i);
-      const d = RM ? 0 : (x + y) * 28;
+      const d = RM ? 0 : (x + y) * 24;
       puffIn(c.c0, d);
+      if (c.mark) puffIn(c.mark, d + 60);
       if (c.life === 2 && c.c1) puffIn(c.c1, d + 70);
     });
     Sound.play('boardIn', 0.55);
@@ -912,6 +1065,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     const pose = G.player.pose;
     G.player.el.animate([{ opacity: 0, transform: `${pose} translateY(-60%)` }, { opacity: 1, transform: pose }], { duration: ms(380), delay: ms(260), easing: 'cubic-bezier(.3,1.5,.55,1)', fill: 'backwards' });
     Object.values(G.friends).forEach((p, k) => p.el.animate([{ opacity: 0, transform: `${p.pose} scale(0.3)` }, { opacity: 1, transform: p.pose }], { duration: ms(320), delay: ms(320 + k * 90), easing: 'cubic-bezier(.3,1.5,.55,1)', fill: 'backwards' }));
+    Object.values(G.bubbles).forEach((b) => b.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, delay: ms(360), fill: 'backwards' }));
     G.goalStar.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, delay: ms(300), fill: 'backwards' });
     G.lv.friends.forEach((_, k) => setSlot(k, false, false));
     setGoalLock(false);
@@ -938,50 +1092,46 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     placePiece(G.player, st.cur);
     Object.entries(G.friends).forEach(([cell, p]) => { p.el.hidden = !!(st.got & G.lv.fbit[cell]); });
     setGoalLock(false);
+    hud();
   }
 
   // ---- moving
-  function tryDir(dx, dy) {
-    const [x, y] = xy(G.st.cur);
-    const nx = x + dx;
-    const ny = y + dy;
-    if (nx < 0 || ny < 0 || nx >= G.lv.w || ny >= G.lv.h) return bonk(dx, dy);
-    tryCell(ny * G.lv.w + nx, dx, dy);
+  function tryDir(d) {
+    const m = E.tryMove(G.lv, G.st, d);
+    if (!m.ok) return blocked(d, m);
+    hop(d, m);
   }
-  function tryCell(j, dx, dy) {
-    const { lv, st } = G;
-    if (st.life[j] <= 0) return bonk(dx, dy);
-    if (j === lv.goal && st.got !== lv.all) {
-      bonk(dx, dy);
-      $('goalCard').animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(0)' }], { duration: 320 });
-      flashTip('Pick up every friend first. Then the ★ opens!');
-      return;
-    }
-    hop(j);
+  function blocked(d, m) {
+    bonk(d);
+    if (m.why === 'locked') $('goalCard').animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(0)' }], { duration: 320 });
+    if (m.why === 'arrow' && G.cells[G.st.cur] && G.cells[G.st.cur].mark) G.cells[G.st.cur].mark.animate([{ opacity: 1 }, { opacity: 0.3 }, { opacity: 1 }, { opacity: 0.3 }, { opacity: 1 }], { duration: 500 });
+    if (m.why === 'beat' && G.cells[m.cell]) G.cells[m.cell].c0.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(2)' }, { filter: 'brightness(1)' }], { duration: 400 });
+    if (WHY[m.why]) flashTip(WHY[m.why]);
   }
   function flashTip(text) {
     G.tipOverride = text;
     hud();
     clearTimeout(G.tipT);
-    G.tipT = setTimeout(() => { G.tipOverride = null; hud(); }, 2200);
+    G.tipT = setTimeout(() => { G.tipOverride = null; hud(); }, 2400);
   }
 
-  async function bonk(dx, dy) {
+  async function bonk(d) {
     Sound.play('bonk', 0.5);
     G.busy = true;
+    const [dx, dy] = E.DIRS[d];
     const n = G.T * 0.14;
     await G.player.squash.animate([{ transform: 'translate(0,0)' }, { transform: `translate(${dx * n}px,${dy * n * 0.6}px) scale(${dx ? 0.86 : 1.1},${dy ? 0.86 : 1.1})`, offset: 0.4 }, { transform: 'translate(0,0)' }], { duration: ms(200), easing: 'ease-out' }).finished;
     G.busy = false;
     next();
   }
 
-  async function moveTo(p, cell, dur, life) {
+  async function moveTo(p, cell, dur, life, hopH = 0.5) {
     const from = p.pose;
     p.cell = cell;
     p.pose = poseOf(p, cell, life);
     p.el.style.transform = p.pose;
     p.el.style.zIndex = 10 + xy(cell)[1] * 3 + 2;
-    const lift = G.T * 0.5;
+    const lift = G.T * hopH;
     const a = p.el.animate([{ transform: from }, { transform: p.pose }], { duration: dur, easing: 'ease-in-out' });
     p.lift.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-lift}px)`, easing: 'ease-in', offset: 0.5 }, { transform: 'translateY(0)' }], { duration: dur, easing: 'ease-out' });
     p.squash.animate([{ transform: 'scale(1)' }, { transform: 'scale(0.9,1.12)', offset: 0.4 }, { transform: 'scale(1)' }], { duration: dur });
@@ -990,19 +1140,28 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     p.squash.animate([{ transform: 'scale(1.14,0.86)' }, { transform: 'scale(0.96,1.05)', offset: 0.55 }, { transform: 'scale(1)' }], { duration: ms(220), easing: 'ease-out' });
   }
 
-  async function hop(j) {
+  async function hop(d, m) {
     const prev = G.st;
-    const nxt = E.step(G.lv, prev, j);
+    const nxt = m.st;
     G.hist.push(prev);
+    G.moves.push(d);
     G.st = nxt;
     G.busy = true;
     clearGlow();
     Sound.play('hop', 0.6);
     setCell(prev.cur, nxt.life[prev.cur]);
-    await moveTo(G.player, j, ms(190), nxt.life[j]);
-    const q = G.proj[j];
+    // hop onto each cell in turn; a bubble pops as it bounces you on
+    for (let k = 0; k < m.cells.length; k++) {
+      const c = m.cells[k];
+      const last = k === m.cells.length - 1;
+      await moveTo(G.player, c, ms(last ? 190 : 170), last ? nxt.life[c] : 1, k ? 0.8 : 0.5);
+      if (!last) setCell(c, 0);
+    }
+    const q = G.proj[nxt.cur];
     burst('dust', q.x, q.y);
-    if (nxt.got !== prev.got) collect(j);
+    m.cells.forEach((c) => {
+      if ((nxt.got & G.lv.fbit[c]) && !(prev.got & G.lv.fbit[c])) collect(c);
+    });
     if (nxt.done) return win();
     check();
     hud();
@@ -1054,24 +1213,31 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     });
   }
 
+  // put the board back to an earlier state: cushions puff back, friends hop back on
+  function restoreTo(target, dur) {
+    G.st = target;
+    syncCells(true);
+    Object.entries(G.friends).forEach(([cell, p]) => {
+      const got = !!(target.got & G.lv.fbit[cell]);
+      if (!got && p.el.hidden) {
+        p.el.hidden = false;
+        p.el.animate([{ transform: `${p.pose} scale(0.3)`, opacity: 0 }, { transform: p.pose, opacity: 1 }], { duration: ms(300), easing: 'cubic-bezier(.3,1.5,.55,1)' });
+      }
+      setSlot(p.k, got, false);
+    });
+    setGoalLock(false);
+    return moveTo(G.player, target.cur, dur, target.life[target.cur]);
+  }
+
   function undo() {
     if (!G.hist.length || G.won) return;
     clearGlow();
-    const was = G.st;
     const prev = G.hist.pop();
-    G.st = prev;
+    G.moves.pop();
     if (G.over) { G.over = false; closeCard(); }
     Sound.play('undo', 0.7);
-    setCell(prev.cur, prev.life[prev.cur]);
-    if (was.got !== prev.got) {
-      const p = G.friends[was.cur];
-      p.el.hidden = false;
-      p.el.animate([{ transform: `${p.pose} scale(0.3)`, opacity: 0 }, { transform: p.pose, opacity: 1 }], { duration: ms(300), easing: 'cubic-bezier(.3,1.5,.55,1)' });
-      setSlot(p.k, false, false);
-    }
-    setGoalLock(false);
     G.busy = true;
-    moveTo(G.player, prev.cur, ms(190), prev.life[prev.cur]).then(() => {
+    restoreTo(prev, ms(190)).then(() => {
       G.busy = false;
       next();
     });
@@ -1081,19 +1247,12 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
 
   // jump back to an earlier spot (the hint's rewind)
   function rewindTo(k) {
+    const back = G.hist.length - k;
     const target = G.hist[k];
-    const was = G.st;
     G.hist.length = k;
-    G.st = target;
-    Object.keys(G.cells).forEach((key) => setCell(Number(key), target.life[key]));
-    Object.entries(G.friends).forEach(([cell, p]) => {
-      const got = !!(target.got & G.lv.fbit[cell]);
-      if (!got && p.el.hidden) p.el.hidden = false;
-      setSlot(p.k, got, false);
-    });
-    setGoalLock(false);
-    moveTo(G.player, target.cur, ms(280), target.life[target.cur]);
-    return was.hops - target.hops;
+    G.moves.length = k;
+    restoreTo(target, ms(280));
+    return back;
   }
 
   function restart() {
@@ -1110,30 +1269,40 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     if (!G.asked) { showHintCard(); return; }
     giveHint();
   }
+  // the next move of a full clear: from here if there is one (searched on
+  // the small early levels, read off the one answer on the rest), else after
+  // going back to the last spot that had one
   function giveHint() {
     G.hinted = true;
     G.asked = true;
     let back = 0;
-    let r = E.search(G.lv, G.st, { limit: 300000 });
-    if (!r.path) {
-      // no full clear from here: go back to the last spot that has one
-      for (let k = G.hist.length - 1; k >= 0; k--) {
+    let d = -1;
+    if (G.def.sols === 1) {
+      let k = 0;
+      while (k < G.moves.length && G.moves[k] === G.sol[k]) k++;
+      if (k < G.moves.length) back = rewindTo(k);
+      d = G.sol[k];
+    } else {
+      let r = E.search(G.lv, G.st, { limit: 300000 });
+      for (let k = G.hist.length - 1; !r.path && k >= 0; k--) {
         const t = E.search(G.lv, G.hist[k], { limit: 300000 });
-        if (t.path) { back = rewindTo(k); r = t; break; }
+        if (t.path) { back = rewindTo(k); r = t; }
       }
+      if (r.path && r.path.length) d = r.path[0];
     }
     check();
     hud();
-    if (!r.path || !r.path.length) return;
-    const j = r.path[0];
+    if (d < 0) return;
+    const m = E.tryMove(G.lv, G.st, d);
+    if (!m.ok) return;
+    const j = m.cells[0];
     Sound.play('hint', 0.6);
     clearGlow();
     G.cells[j].el.classList.add('hint');
     G.glowT = setTimeout(clearGlow, 3200);
-    const [x, y] = xy(j);
-    const [px, py] = xy(G.st.cur);
+    const [dx, dy] = E.DIRS[d];
     const n = G.T * 0.1;
-    G.player.squash.animate([{ transform: 'translate(0,0)' }, { transform: `translate(${(x - px) * n}px,${(y - py) * n * 0.6 - G.T * 0.14}px)`, offset: 0.4 }, { transform: 'translate(0,0)' }], { duration: ms(360), delay: back ? ms(320) : 0, easing: 'ease-out' });
+    G.player.squash.animate([{ transform: 'translate(0,0)' }, { transform: `translate(${dx * n}px,${dy * n * 0.6 - G.T * 0.14}px)`, offset: 0.4 }, { transform: 'translate(0,0)' }], { duration: ms(360), delay: back ? ms(320) : 0, easing: 'ease-out' });
     if (back) flashTip(`Went back ${back} hop${back === 1 ? '' : 's'}. Try the glowing one!`);
   }
 
@@ -1159,7 +1328,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     const stars = E.starsFor(left, G.hinted);
     if (!save.best[G.idx] || stars > save.best[G.idx]) save.best[G.idx] = stars;
     store();
-    showResult({ stars, left, hops: G.st.hops });
+    showResult({ stars, left, hops: G.moves.length });
   }
 
   async function stuck() {
@@ -1184,21 +1353,21 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     await el.animate(
       [
         { opacity: 0, transform: 'scale(0.3) rotate(-12deg)' },
-        { opacity: 1, transform: 'scale(1) rotate(-3deg)', offset: 0.12 },
-        { opacity: 1, transform: 'scale(1) rotate(-3deg)', offset: 0.85 },
+        { opacity: 1, transform: 'scale(1) rotate(-3deg)', offset: 0.1 },
+        { opacity: 1, transform: 'scale(1) rotate(-3deg)', offset: 0.88 },
         { opacity: 0, transform: 'scale(1.25) rotate(0deg)' },
       ],
-      { duration: 2600, easing: 'ease-out' }
+      { duration: 3200, easing: 'ease-out' }
     ).finished;
     el.hidden = true;
   }
 
   // ---- cards
-  function showCard(html, { tint } = {}) {
+  function showCard(html, { tint, cls = '' } = {}) {
     const o = $('overlay');
     o.classList.remove('out');
     o.style.setProperty('--tint', tint || 'rgba(40,8,80,0.55)');
-    o.innerHTML = `<div class="tint"></div><div class="card"><div class="cardRim"><div class="cardFill">${html}</div></div></div>`;
+    o.innerHTML = `<div class="tint"></div><div class="card ${cls}"><div class="cardRim"><div class="cardFill">${html}</div></div></div>`;
     o.hidden = false;
     const b = o.querySelector('button');
     if (b) setTimeout(() => b.focus({ preventScroll: true }), 50);
@@ -1224,8 +1393,11 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
       </div>
       <div class="twistHead">ROOM BY ROOM</div>
       <div class="twist"><span class="twistName">FRIENDS · </span>pick them all up. The ★ opens when everyone is with you.</div>
-      <div class="twist"><span class="twistName">PILES · </span>two cushions on top of each other take two hops to clear.</div>
-      <div class="twist"><span class="twistName">DANCE ROOM · </span>the floor tiles go dark after you hop off them.</div>
+      <div class="twist"><span class="twistName">ARROWS · </span>you can only hop off an arrow cushion the way it points.</div>
+      <div class="twist"><span class="twistName">BUBBLES · </span>land on a bubble and it bounces you one cushion further.</div>
+      <div class="twist"><span class="twistName">PILES · </span>two cushions on top of each other take two hops.</div>
+      <div class="twist"><span class="twistName">IN ORDER · </span>numbered friends are picked up 1, 2, 3…</div>
+      <div class="twist"><span class="twistName">ON THE BEAT · </span>in the Dance Room, coloured tiles light up every third hop. Land on them lit.</div>
       ${button('green', 'GOT IT!', { id: 'cGot', fs: 18, cls: 'big' })}`);
     on('cGot', () => {
       save.seenHow = true;
@@ -1236,16 +1408,23 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
   }
 
   function showLevels() {
-    const tiles = LEVELS.map((L, i) => {
-      const best = save.best[i] || 0;
-      const stars = [0, 1, 2].map((k) => starSvg(13, k < best, 'meter')).join('');
-      return `<div class="lvTile">${button(i === G.idx ? 'pink' : 'purple', String(i + 1), { id: `lv${i}`, fs: 20 })}<div class="lvStars">${stars}</div><div class="lvRoom">${ROOMS[STAGES[i].room].short}</div></div>`;
-    }).join('');
-    showCard(`${titleSvg('SQUISH HOP', 'pink', 30)}<div class="sub">A HOP THROUGH THE CRIB · PICK A LEVEL</div><div class="levels">${tiles}</div>
-      <div class="btnRow">${button('white', 'HOW TO PLAY', { id: 'cHow', fs: 14 })}${button('white', save.muted ? 'SOUND: OFF' : 'SOUND: ON', { id: 'cMute', fs: 14 })}</div>`);
+    let html = '';
+    CHAPTERS.forEach((ch) => {
+      html += `<div class="chHead">${ROOMS[ch.room].name.toUpperCase()} · ${ch.from + 1}–${ch.to + 1}</div>`;
+      for (let i = ch.from; i <= ch.to; i++) {
+        const best = save.best[i] || 0;
+        const stars = [0, 1, 2].map((k) => starSvg(10, k < best, 'meter')).join('');
+        html += `<div class="lvTile">${button(i === G.idx ? 'pink' : best ? 'purple' : 'white', String(i + 1), { id: `lv${i}`, fs: 15 })}<div class="lvStars">${stars}</div></div>`;
+      }
+    });
+    const total = Object.values(save.best).reduce((a, b) => a + b, 0);
+    showCard(`${titleSvg('SQUISH HOP', 'pink', 30)}<div class="sub">A HOP THROUGH THE CRIB · ★ ${total} / ${LEVELS.length * 3}</div><div class="levels" id="levelList">${html}</div>
+      <div class="btnRow">${button('white', 'HOW TO PLAY', { id: 'cHow', fs: 14 })}${button('white', save.muted ? 'SOUND: OFF' : 'SOUND: ON', { id: 'cMute', fs: 14 })}</div>`, { cls: 'tall' });
     LEVELS.forEach((_, i) => on(`lv${i}`, () => loadLevel(i)));
     on('cHow', () => showHow(showLevels));
     on('cMute', () => { save.muted = !save.muted; store(); showLevels(); });
+    const cur = $(`lv${G.idx}`);
+    if (cur) cur.scrollIntoView({ block: 'center' });
   }
 
   function showPause() {
@@ -1271,7 +1450,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     const locked = G.lv.nbrs[G.st.cur].some((j) => j === G.lv.goal) && G.st.got !== G.lv.all;
     showCard(`${titleSvg('STUCK!', 'pink', 32)}
       <div class="rock">${headSticker(PLAYER, 'sad', 86, false)}</div>
-      <div class="body">${locked ? 'The ★ is shut until every friend is with you, and there is nowhere else to hop.' : 'There is nothing left to hop onto.'}</div>
+      <div class="body">${locked ? 'The ★ is shut until every friend is with you, and there is nowhere else to hop.' : 'There is nowhere left to hop.'}</div>
       <div class="btnRow">${button('white', 'UNDO', { id: 'cUndo', fs: 15 })}${button('pink', 'RETRY', { id: 'cRetry', fs: 18, cls: 'big' })}</div>`, { tint: 'rgba(80,0,30,0.5)' });
     on('cUndo', () => {
       G.player.squash.getAnimations().forEach((a) => a.cancel());
@@ -1288,7 +1467,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
       return `<div class="starSlot" style="width:${size + 20}px;height:${size + 20}px;margin-top:${big(i) ? -12 : 6}px"><div class="rays" style="width:${size * 1.8}px;height:${size * 1.8}px"></div><div class="star" data-lit="${i < res.stars ? 1 : 0}" style="opacity:0">${starSvg(size, i < res.stars, 'card')}</div></div>`;
     }).join('');
     const last = G.idx + 1 >= LEVELS.length;
-    const nextRoom = last ? '' : ROOMS[STAGES[G.idx + 1].room].name.toUpperCase();
+    const nextRoom = last ? '' : ROOMS[LEVELS[G.idx + 1].room].name.toUpperCase();
     showCard(`<div class="pop">${titleSvg(TITLES[res.stars], res.stars === 3 ? 'gold' : 'pink', 30)}</div>
       <div class="sub">LEVEL ${G.idx + 1} · ${tier} · ${res.hops} HOPS · ${res.left} LEFT${G.hinted ? ' · HINT' : ''}</div>
       ${res.left > 0 && !G.hinted ? `<div class="hintLine">Clear every ${G.room.dance ? 'tile' : 'cushion'} before the ★ for 3 stars!</div>` : ''}
@@ -1339,16 +1518,16 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
   }
 
   // ---- input
-  const KEYS = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0], W: [0, -1], S: [0, 1], A: [-1, 0], D: [1, 0] };
+  const KEYS = { ArrowUp: 0, ArrowRight: 1, ArrowDown: 2, ArrowLeft: 3, w: 0, d: 1, s: 2, a: 3, W: 0, D: 1, S: 2, A: 3 };
   window.addEventListener('keydown', (e) => {
     if (!$('overlay').hidden) {
       if (e.key === 'Escape') closeCard();
       return;
     }
-    if (KEYS[e.key]) {
+    if (e.key in KEYS) {
       e.preventDefault();
-      const [dx, dy] = KEYS[e.key];
-      input(() => tryDir(dx, dy));
+      const d = KEYS[e.key];
+      input(() => tryDir(d));
     } else if (e.key === 'z' || e.key === 'Z' || e.key === 'Backspace' || e.key === 'u') {
       e.preventDefault();
       $('undo').click();
@@ -1372,19 +1551,19 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     if (!drag || e.pointerId !== drag.id) return;
     const dx = e.clientX - drag.x;
     const dy = e.clientY - drag.y;
-    const th = Math.max(26, G.T * 0.45);
+    const th = Math.max(24, G.T * 0.45);
     if (Math.max(Math.abs(dx), Math.abs(dy)) < th) return;
     drag.moved = true;
     drag.x = e.clientX;
     drag.y = e.clientY;
-    if (Math.abs(dx) > Math.abs(dy)) input(() => tryDir(Math.sign(dx), 0));
-    else input(() => tryDir(0, Math.sign(dy)));
+    const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : dy > 0 ? 2 : 0;
+    input(() => tryDir(d));
   });
   area.addEventListener('pointerup', (e) => {
     if (!drag || e.pointerId !== drag.id) return;
-    const d = drag;
+    const dr = drag;
     drag = null;
-    if (d.moved || Math.hypot(e.clientX - d.x0, e.clientY - d.y0) > 10) return;
+    if (dr.moved || Math.hypot(e.clientX - dr.x0, e.clientY - dr.y0) > 10) return;
     // a tap: the tile under the finger (the board is in 3D, so ask the browser)
     const hit = document.elementsFromPoint(e.clientX, e.clientY).map((el) => el.closest && el.closest('.tile')).find(Boolean);
     const [px, py] = xy(G.st.cur);
@@ -1399,7 +1578,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     if (!hit) return;
     const j = Number(hit.dataset.i);
     const [x, y] = xy(j);
-    if (Math.abs(x - px) + Math.abs(y - py) === 1) input(() => tryCell(j, x - px, y - py));
+    if (Math.abs(x - px) + Math.abs(y - py) === 1) input(() => tryDir(dirTo(G.st.cur, j)));
   });
   area.addEventListener('pointercancel', () => { drag = null; });
   area.addEventListener('dragstart', (e) => e.preventDefault());
@@ -1423,7 +1602,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
 
   // ---- start
   function start() {
-    loadLevel(0);
+    loadLevel(Math.min(LEVELS.length - 1, save.at || 0));
     if (!save.seenHow) showHow();
   }
   const fontsReady = document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, wait(1500)]) : Promise.resolve();
