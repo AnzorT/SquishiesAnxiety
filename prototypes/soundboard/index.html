@@ -7,269 +7,317 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap">
 <style>
-/* Squish Soundboard: the Crib's DJ booth as a music toy. Two screens: the
-   Crib's Dance Room, where the equipped DJ booth (src/crib catalogue, via
-   djart.js) opens the soundboard from the DJ Deck up; and the soundboard,
-   a stage (the dance room, its light-up floor from src/crib/Dance.js, the
-   booth, five squishies) over a mixer in the dance room's song-pill plum
-   (src/crib/ui.js SongPill) with three tracks: VOICE (each squishy's own
-   squish recording), FX (the app's sounds) and MUSIC (the DJ's songs, the
-   Crib's club tracks). Buttons are the Crib's sticker and plain buttons;
-   the top bar is the Crib's HUD (src/crib/Hud.js). One look: no dark mode. */
+/* Squish Soundboard, in the look of the Squad House v6 design: its Dance
+   Club room with the most expensive walls, floor and ceiling, its club
+   items (RenoDraw art, art/items), its DJ crew (art/dj-crew.js) and club fog
+   (art/club-fx.js), and its wood drawer, tabs, catalog book, cards, buttons
+   and toast. Two screens on the house's 852 x 393 frame: the Dance Room,
+   where a DJ Console from the catalog opens the soundboard, and the
+   soundboard: the club stage over a mixer drawer with VOICE, FX and MUSIC.
+   One look: no dark mode, like the house. */
 :root {
-  --ink: #5b3a29;          /* the Crib's ink (crib/ui.js INK) */
-  --paper: #fff8ee;        /* crib/ui.js PAPER */
-  --soft: #8a6a50;         /* crib/ui.js SOFT */
-  --plum: rgba(42,20,48,0.92); /* the song pill */
-  --plum-solid: #2a1430;
-  --night: #140818;        /* the dance floor's lines */
-  --glass: rgba(91,58,41,0.75);
-  --white: #ffffff;
-  --pink: #ff5cc6;
-  --mint: #5cf2c8;
-  --gold: #ffd23a;
-  --lilac: #c9b6f0;        /* the song pill's count */
-  --plum-ink: #45107a;
-  --display: 'Fredoka', 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
-  --body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
-  color-scheme: dark;
+  --ink: #6b4426; --ink2: #5b3418; --mute: #8a6a4a; --orange: #c4651f; --cream: #fff6e2; --page: #2a1d14;
+  --brass: linear-gradient(180deg,#ffe9a0 0%,#e2b14a 60%,#b8862a 100%);
+  --woodBtn: radial-gradient(circle at 35% 30%, #f3cc98 0%, #d39a5e 55%, #ad723c 100%);
+  --green: repeating-linear-gradient(90deg, rgba(40,70,30,0.08) 0px, rgba(40,70,30,0.08) 2px, rgba(0,0,0,0) 2px, rgba(0,0,0,0) 22px), linear-gradient(180deg,#b6dc96 0%,#86bd68 55%,#679f4c 100%);
+  --wood: repeating-linear-gradient(90deg, rgba(107,68,38,0.08) 0px, rgba(107,68,38,0.08) 2px, rgba(0,0,0,0) 2px, rgba(0,0,0,0) 26px), linear-gradient(180deg,#e6b47c 0%,#cf955a 55%,#b47a42 100%);
+  --fred: 'Fredoka', 'Nunito', 'Trebuchet MS', sans-serif;
 }
 * { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page); font-family: 'Nunito', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
 [hidden] { display: none !important; }
-html { height: 100%; }
-body {
-  height: 100%; margin: 0; overflow: hidden; background: #3b2030; color: var(--white);
-  font-family: var(--body); -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
-}
-button { font: inherit; color: inherit; }
-button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 3px solid #3ff0ff; outline-offset: 2px; }
 img { -webkit-user-drag: none; }
 
-.screen { position: fixed; inset: 0; }
-.col {
-  position: relative; height: 100%; max-width: 460px; margin: 0 auto; display: flex; flex-direction: column;
-  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 8px 8px;
-}
+/* the house's frame: 852 x 393, scaled to fit */
+#app { position: absolute; left: 50%; top: 50%; width: 852px; height: 393px; transform-origin: 50% 50%; overflow: hidden; border-radius: 22px; background: #150b1e; box-shadow: 0 0 0 2px #3b2818, 0 14px 40px rgba(0,0,0,0.55); }
+.screen { position: absolute; inset: 0; }
+.scene { position: absolute; left: 0; top: 0; width: 852px; height: 393px; overflow: hidden; }
+.scene img.room { position: absolute; left: 0; width: 852px; height: 393px; display: block; pointer-events: none; }
+.item { position: absolute; display: block; pointer-events: none; }
+.item.float { animation: itFloat 2.6s ease-in-out infinite; }
+.item.holo { animation: itHolo 3.2s steps(1) infinite; }
+.item.float.holo { animation: itFloat 2.6s ease-in-out infinite, itHolo 3.2s steps(1) infinite; }
+@keyframes itFloat { 50% { translate: 0 -3px; } }
+@keyframes itHolo { 0%, 100% { opacity: 1; } 47% { opacity: 0.86; } 49% { opacity: 1; } 83% { opacity: 0.9; } 85% { opacity: 1; } }
+.cr { position: absolute; display: block; }
+.cr img, .cr .dj { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.cr .hop, .cr .sq { position: absolute; inset: 0; transform-origin: 50% 96%; }
+.cr .shadow { position: absolute; left: 18%; right: 18%; bottom: 0; height: 12%; border-radius: 50%; background: radial-gradient(closest-side, rgba(20,8,10,0.45), rgba(20,8,10,0)); }
 
-/* ---- the Crib's top bar */
-.top { position: relative; z-index: 20; display: flex; align-items: center; gap: 8px; }
-.cribBtn { position: relative; width: 50px; height: 54px; padding: 0; border: 0; background: none; cursor: pointer; flex: none; }
-.cribBtn .cc { position: absolute; left: 0; width: 50px; height: 50px; border-radius: 50%; background: var(--ink); }
-.cribBtn .cc1 { top: 4px; }
-.cribBtn .cc0 { top: 0; }
-.cribBtn .cface { position: absolute; left: 2px; top: 2px; width: 46px; height: 46px; border-radius: 50%; border: 2.5px solid var(--white); overflow: hidden; display: flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #ffd0f0 0%, #ff7fd0 55%, #d84aa8 100%); }
-.cribBtn:active .cc0, .cribBtn:active .cface { transform: translateY(3px); }
-.titleBox { flex: 1; min-width: 0; }
-.roomTitle { display: block; overflow: visible; max-width: 100%; }
-.roomSub { margin-top: -2px; font: 900 11px/1.3 var(--body); letter-spacing: 0.6px; color: var(--white); text-shadow: 0 1px 1.5px var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pill { display: flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; background: var(--glass); border: 2px solid rgba(255,255,255,0.9); flex: none; font: 900 11px/1.2 var(--body); letter-spacing: 0.6px; color: var(--white); font-variant-numeric: tabular-nums; }
+/* map button (the house's) */
+.mapBtn { position: absolute; left: 12px; top: 8px; z-index: 50; display: flex; flex-direction: column; align-items: center; padding: 0; border: none; background: none; filter: drop-shadow(0 2px 0 rgba(107,68,38,0.45)); }
+.mapBtn:active { transform: translateY(2px); }
+.mapBtn span { margin-top: 1px; font-family: var(--fred); font-weight: 700; font-size: 12px; color: #fff6e2; white-space: nowrap; text-shadow: 0 1.5px 0 #6b4426, 1.3px 0 0 #6b4426, -1.3px 0 0 #6b4426, 0 -1.3px 0 #6b4426; }
 
-/* ---- the dance room scene (852 x 393 scene units, scaled) */
-.sceneBox { position: relative; overflow: hidden; }
-.scene { position: absolute; left: 0; top: 0; width: 852px; height: 393px; transform-origin: 0 0; }
-.scene > img.room { position: absolute; left: 0; top: 0; width: 852px; height: 393px; }
-.booth { position: absolute; }
-.booth svg { display: block; width: 100%; height: 100%; }
-.floor { position: absolute; border-radius: 24px; background: var(--night); border: 3px solid #2a1430; overflow: hidden; box-shadow: 0 0 0 6px rgba(255,92,198,0.3); }
-.floor .ft { position: absolute; width: 56px; height: 56px; }
-.floor .glow { position: absolute; inset: 0; background: #ffffff; opacity: 0.05; }
-.sq { position: absolute; transform-origin: 50% 100%; cursor: pointer; }
-.sq .shadow { position: absolute; left: 14%; right: 14%; bottom: -4%; height: 13%; border-radius: 50%; background: rgba(255,255,255,0.28); }
-.sq .hop, .sq .squash { position: absolute; inset: 0; transform-origin: 50% 100%; }
-.sq img { position: absolute; inset: 0; width: 100%; height: 100%; }
-.sq .ring { position: absolute; left: 50%; top: 50%; width: 120%; padding-top: 120%; border-radius: 50%; border: 4px solid var(--c); transform: translate(-50%, -50%) scale(0.4); opacity: 0; pointer-events: none; }
-.fxLayer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-.part { position: absolute; left: 0; top: 0; border-radius: 50%; }
-.note { position: absolute; left: 0; top: 0; font: 700 22px/1 var(--display); color: var(--white); text-shadow: 0 2px 0 var(--c), 1px 0 0 var(--c), -1px 0 0 var(--c); }
-.bubbleFx { position: absolute; border-radius: 50%; border: 2px solid #ffffff; background: radial-gradient(circle at 34% 30%, #ffffff 0 12%, rgba(255,255,255,0.6) 15%, rgba(150,214,255,0.55) 42%, rgba(200,170,255,0.6) 72%, rgba(255,170,225,0.75) 100%); }
-.sweep { position: absolute; top: 0; bottom: 0; width: 40%; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.45), rgba(255,255,255,0)); }
+/* chips (the catalog's header chips) */
+.chips { position: absolute; right: 12px; top: 10px; z-index: 50; display: flex; gap: 6px; }
+.chip { display: flex; align-items: center; gap: 4px; height: 25px; padding: 0 9px 0 5px; border-radius: 7px; border: 2px solid #6b4426; background: #fff6e2; box-shadow: 0 2px 0 #6b4426; font-family: var(--fred); font-weight: 700; font-size: 12.5px; color: #5b3418; white-space: nowrap; }
+.chip.lv { background: var(--brass); box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.6), 0 2px 0 #6b4426; padding: 0 8px; }
+.coin { flex: none; width: 13px; height: 13px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff3c4 0%, #f2c255 45%, #b8862a 100%); box-shadow: 0 0 0 1.5px #6b4426; display: inline-block; }
 
-/* ---- Crib screen */
-#crib .sceneBox { position: absolute; left: 0; right: 0; top: 0; }
-#crib .col { justify-content: space-between; }
-.boothTag { position: absolute; z-index: 15; transform: translate(-50%, -100%); }
-.panel { position: relative; z-index: 20; border-radius: 22px; background: var(--glass); border: 2px solid rgba(255,255,255,0.9); padding: 10px; }
-.panelHead { font: 900 11px/1.3 var(--body); letter-spacing: 0.8px; color: #ffe6b8; margin: 0 2px 8px; }
-.tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.tierCard { position: relative; border: 2.5px solid rgba(255,255,255,0.5); border-radius: 16px; background: var(--paper); color: var(--ink); padding: 6px 4px 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; min-width: 0; }
-.tierCard.on { border-color: var(--white); box-shadow: 0 0 0 3px var(--pink); }
-.tierCard .ti { width: 100%; height: 32px; display: flex; align-items: center; justify-content: center; }
-.tierCard .ti svg { width: 92%; height: 32px; }
-.tierCard .tn { font: 700 12px/1.15 var(--display); }
-.tierCard .tp { font: 800 9.5px/1.2 var(--body); color: var(--soft); }
-.tierCard .ts { font: 800 9.5px/1.2 var(--body); color: #16a86a; }
-.tierCard .ts.no { color: #b07a5a; }
-.tierCard .onTag { position: absolute; top: -8px; right: -6px; padding: 1px 7px; border-radius: 999px; background: var(--pink); border: 2px solid var(--white); font: 700 9.5px/1.4 var(--display); color: var(--white); }
+/* wood: the drawer */
+.wood { border: 2.5px solid #6b4426; border-radius: 16px; background: var(--wood); box-shadow: inset 0 2px 0 rgba(255,240,210,0.55), inset 0 -3px 0 rgba(107,68,38,0.25), 0 4px 0 #6b4426, 0 10px 18px rgba(60,30,10,0.35); }
+.rivet { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff3c4, #e2b14a 55%, #8a5d1a); box-shadow: 0 0 0 1px #6b4426; }
+.rivet.tl { left: 5px; top: 5px; } .rivet.tr { right: 5px; top: 5px; } .rivet.bl { left: 5px; bottom: 5px; } .rivet.br { right: 5px; bottom: 5px; }
+.note { display: flex; flex-direction: column; padding: 4px 8px 5px; border-radius: 7px; background: #fff6e2; box-shadow: 0 0 0 2px #6b4426, 0 2.5px 0 2px rgba(107,68,38,0.35); transform: rotate(-2deg); }
+.cap { font-size: 9px; font-weight: 900; letter-spacing: 0.09em; color: #c4651f; white-space: nowrap; }
+.nt { font-family: var(--fred); font-weight: 700; font-size: 13px; line-height: 1.15; color: #5b3418; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ns { font-size: 9.5px; font-weight: 700; line-height: 1.2; color: #8a6a4a; white-space: nowrap; }
+.btn { height: 26px; padding: 0 10px; border-radius: 7px; border: 2px solid #6b4426; background: var(--brass); box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.6), 0 2px 0 #6b4426; font-family: var(--fred); font-weight: 700; font-size: 12.5px; color: #5b3418; white-space: nowrap; }
+.btn:active, .rbtn:active, .pal:active, .song:active { transform: translateY(2px); }
+.btn.wood2 { background: var(--woodBtn); color: #fff6e2; text-shadow: 0 1.5px 0 #6b4426, 1px 0 0 #6b4426, -1px 0 0 #6b4426; }
+.btn.green { background: var(--green); color: #fff6e2; text-shadow: 0 1.5px 0 #6b4426, 1px 0 0 #6b4426, -1px 0 0 #6b4426; }
+.btn.grey { background: linear-gradient(180deg,#e2dacd 0%,#bdb2a2 100%); border-color: #7a6a58; box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.6), 0 2px 0 #7a6a58; color: #5a4a3a; }
+.rbtn { flex: none; padding: 0; border-radius: 50%; border: 2.5px solid #6b4426; display: flex; align-items: center; justify-content: center; }
+.rbtn.brass { background: var(--brass); box-shadow: inset 0 2px 0 rgba(255,255,255,0.6), 0 3px 0 #6b4426, 0 6px 10px rgba(60,30,10,0.25); }
+.rbtn.woody { background: var(--woodBtn); box-shadow: inset 0 0 0 2px rgba(255,236,200,0.3), 0 2.5px 0 #6b4426; }
 
-/* Crib sticker / plain buttons (crib/ui.js) */
-.sticker { position: relative; display: inline-block; padding: 0 0 3px; border: 0; background: none; cursor: pointer; vertical-align: top; }
-.sticker .slip { position: absolute; left: 0; right: 0; top: 3px; bottom: 0; border-radius: 999px; background: var(--r); }
-.sticker .sring { position: relative; display: block; border-radius: 999px; padding: 2px; background: var(--r); }
-.sticker .sface { display: block; border-radius: 999px; border: 2.5px solid var(--white); padding: 8px 16px; background: linear-gradient(180deg, var(--c0) 0%, var(--c1) 45%, var(--c2) 100%); font: 700 14px/1.15 var(--display); letter-spacing: 0.5px; color: var(--white); text-shadow: 0 1.5px 1px var(--r); white-space: nowrap; text-align: center; }
-.sticker.small .sface { padding: 5px 12px; font-size: 12px; }
-.sticker:active:not(:disabled) .sring { transform: translateY(2px); }
-.sticker:disabled { opacity: 0.5; cursor: default; }
-.st-gold { --r: #a04a00; --c0: #fffbd6; --c1: #ffe045; --c2: #ff9500; }
-.st-pink { --r: #8a1f6a; --c0: #ffd0f0; --c1: #ff7fd0; --c2: #d84aa8; }
-.st-green { --r: #2e6b2a; --c0: #c9e8a8; --c1: #8fc46e; --c2: #5f9a4a; }
-.st-red { --r: #8e1580; --c0: #ffab98; --c1: #f2665a; --c2: #d9483e; }
-.st-purple { --r: #6a3a8a; --c0: #e9d6ff; --c1: #b38cff; --c2: #8a5fd6; }
-.st-grey { --r: #5a4a6a; --c0: #e6dcf0; --c1: #b9a6cc; --c2: #8f7bb8; }
-.plain { border-radius: 999px; border: 2.5px solid var(--ink); background: var(--paper); padding: 7px 14px; font: 700 13px/1.15 var(--display); color: var(--ink); cursor: pointer; white-space: nowrap; }
-.plain:active { opacity: 0.7; }
+/* toast (the house's) */
+#toast { position: absolute; left: 50%; top: 52px; z-index: 1100; max-width: 560px; transform: translate(-50%,0) rotate(-1.2deg); padding: 6px 14px; border-radius: 7px; background: #fff6e2; box-shadow: 0 0 0 2px #6b4426, 0 3px 0 2px rgba(107,68,38,0.35), 0 8px 14px rgba(60,30,10,0.25); color: #5b3418; font-family: var(--fred); font-weight: 600; font-size: 13.5px; text-align: center; pointer-events: none; }
+#fade { position: absolute; inset: 0; z-index: 2000; background: #150b1e; opacity: 0; pointer-events: none; }
+#turn { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%) rotate(-1.2deg); padding: 6px 14px; border-radius: 7px; background: #fff6e2; box-shadow: 0 0 0 2px #6b4426, 0 3px 0 2px rgba(107,68,38,0.35); color: #5b3418; font-family: var(--fred); font-weight: 600; font-size: 14px; white-space: nowrap; }
 
-/* ---- soundboard screen */
-#board .stage { flex: 1 1 auto; min-height: 190px; margin: 6px -16px 0; margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px))); }
-#board .stage .wallFill { position: absolute; left: 0; right: 0; top: 0; background: #61245d; }
-.mixer { position: relative; z-index: 10; margin-top: -14px; border-radius: 22px; background: var(--plum); border: 2.5px solid var(--white); padding: 8px 8px 8px; display: flex; flex-direction: column; gap: 6px; }
-.track { display: flex; gap: 6px; align-items: stretch; }
-.tlabel { width: 38px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: rgba(255,255,255,0.08); font: 700 10px/1 var(--display); letter-spacing: 0.8px; color: var(--lilac); writing-mode: vertical-rl; transform: rotate(180deg); }
-.cells { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
-.cell { position: relative; aspect-ratio: 1 / 0.92; border-radius: 9px; background: rgba(255,255,255,0.07); border: 1.5px dashed rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: visible; }
-.cell.down1 { background: rgba(255,255,255,0.12); }
-.cell .n { position: absolute; left: 3px; top: 1px; font: 700 7.5px/1 var(--display); color: rgba(255,255,255,0.35); }
-.cell.filled { border-style: solid; border-color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.1); }
-.cell img { width: 86%; height: 86%; object-fit: contain; border-radius: 50%; background: #f6efff; border: 1.5px solid #fff; }
-.cell .chip { width: 90%; height: 76%; border-radius: 8px; background: var(--c); display: flex; align-items: center; justify-content: center; font: 700 9px/1 var(--display); color: var(--white); text-shadow: 0 1px 0 rgba(42,20,48,0.6); letter-spacing: 0.2px; }
-.cell.now, .bar.now { box-shadow: 0 0 0 2px var(--pink), 0 0 12px rgba(255,92,198,0.9); }
-.bars { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
-.bar { height: 26px; border-radius: 9px; border: 1.5px solid rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; font: 700 10.5px/1 var(--display); letter-spacing: 0.4px; color: var(--white); background: linear-gradient(90deg, rgba(255,92,198,0.55), rgba(92,242,200,0.45)); }
-.bar.off { background: rgba(255,255,255,0.06); border-style: dashed; border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.45); }
-.tabs { display: flex; gap: 6px; }
-.tab { flex: 1; border-radius: 999px; border: 2px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.06); padding: 5px 0; font: 700 11.5px/1.2 var(--display); letter-spacing: 0.6px; color: var(--lilac); cursor: pointer; }
-.tab.on { background: linear-gradient(180deg, #ffd0f0 0%, #ff7fd0 55%, #d84aa8 100%); border-color: var(--white); color: var(--white); text-shadow: 0 1.5px 1px #8a1f6a; }
-.palette { display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px 6px; min-height: 66px; scrollbar-width: none; }
-.palette::-webkit-scrollbar { display: none; }
-.pal { flex: none; display: flex; flex-direction: column; align-items: center; gap: 3px; border: 0; background: none; padding: 0; cursor: pointer; width: 52px; }
-.pal .pi { width: 44px; height: 44px; border-radius: 50%; border: 2.5px solid #ffffff; background: #f6efff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.pal .pi img { width: 92%; height: 92%; object-fit: contain; }
-.pal .pi.fx { background: var(--c); font: 700 10px/1 var(--display); color: var(--white); text-shadow: 0 1px 0 rgba(42,20,48,0.6); }
-.pal .pn { font: 800 9.5px/1.1 var(--body); color: var(--lilac); white-space: nowrap; }
-.pal.sel .pi { box-shadow: 0 0 0 3px var(--pink), 0 0 12px rgba(255,92,198,0.8); }
-.pal.sel .pn { color: var(--white); }
-.song { flex: none; display: flex; align-items: center; gap: 6px; padding: 6px 12px 6px 9px; border-radius: 999px; border: 2.5px solid #ffffff; background: rgba(42,20,48,0.85); cursor: pointer; align-self: center; }
-.song .sn { font: 700 13px/1.1 var(--display); color: var(--white); white-space: nowrap; }
-.song .sb { font: 700 11px/1 var(--display); color: var(--lilac); white-space: nowrap; }
-.song.sel { box-shadow: 0 0 0 3px var(--pink), 0 0 12px rgba(255,92,198,0.8); }
-.song.locked { opacity: 0.55; border-style: dashed; }
-.transport { display: flex; gap: 6px; align-items: center; justify-content: space-between; }
-.transport .sticker { flex: 1; }
-.transport .sticker .sface { padding: 9px 4px; font-size: 13px; }
-.transport .play .sface { font-size: 15px; }
-.rec { flex: none; width: 46px; height: 40px; border-radius: 999px; border: 2.5px solid var(--white); background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; font: 700 10px/1 var(--display); color: var(--lilac); }
-.rec .dot { width: 11px; height: 11px; border-radius: 50%; background: #8f7bb8; }
-.rec.on { background: rgba(242,102,90,0.25); color: var(--white); }
-.rec.on .dot { background: #f2665a; box-shadow: 0 0 8px #f2665a; animation: blink 1s steps(2) infinite; }
-@keyframes blink { 50% { opacity: 0.3; } }
+/* ---- the Dance Room */
+#cribDrawer { position: absolute; left: 50%; bottom: -8px; z-index: 40; display: flex; align-items: flex-end; gap: 12px; padding: 8px 16px 15px; transform: translateX(-50%); }
+.dBtn { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0; border: none; background: none; filter: drop-shadow(0 2px 0 rgba(107,68,38,0.45)); }
+.dBtn:active { transform: translateY(2px); }
+.dBtn .lbl { font-family: var(--fred); font-weight: 700; font-size: 11.5px; line-height: 1.25; color: #5b3418; padding: 0 7px; border-radius: 6px; background: #fff6e2; box-shadow: 0 0 0 1.5px #6b4426; white-space: nowrap; }
+.dBtn .lock { position: absolute; right: -4px; top: -4px; width: 20px; height: 20px; }
+.spotTag { position: absolute; z-index: 30; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 0; border: none; background: none; }
+.spotTag .note { transform: rotate(-2deg); align-items: center; }
+.stamp { padding: 0 6px; border-radius: 4px; border: 2px solid #c23a3a; background: #fff6e2; font-family: var(--fred); font-weight: 700; font-size: 10.5px; line-height: 15px; color: #c23a3a; transform: rotate(-3deg); white-space: nowrap; }
+.sbTag { position: absolute; z-index: 30; transform: translate(-50%, -100%); padding: 0; border: none; background: none; }
+.sbTag .face { display: flex; align-items: center; gap: 5px; height: 28px; padding: 0 12px; border-radius: 8px; border: 2.5px solid #6b4426; background: var(--brass); box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.6), 0 3px 0 #6b4426, 0 0 16px rgba(255,225,79,0.55); font-family: var(--fred); font-weight: 700; font-size: 14px; color: #5b3418; white-space: nowrap; }
+.sbTag .face.pulse { animation: tagPulse 1s ease-in-out infinite alternate; }
+@keyframes tagPulse { to { transform: scale(1.07); box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.6), 0 3px 0 #6b4426, 0 0 26px rgba(255,225,79,0.9); } }
+.ghost { position: absolute; border-radius: 50%; border: 3px dashed #ffe14f; background: radial-gradient(closest-side, rgba(60,30,10,0.45), rgba(60,30,10,0.18)); box-shadow: 0 0 0 1.5px rgba(107,68,38,0.6), 0 0 14px rgba(255,225,79,0.7); animation: ghostPulse 1.4s ease-in-out infinite alternate; }
+@keyframes ghostPulse { to { opacity: 0.7; } }
 
-/* ---- the Crib's toast (crib/ui.js CribToast) and the shared cards */
-.toast { position: fixed; left: 50%; top: max(12px, env(safe-area-inset-top, 0px)); z-index: 60; width: min(420px, calc(100% - 32px)); transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 18px; background: var(--paper); border: 3px solid var(--white); box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
-.toast .tt { font: 700 14px/1.2 var(--display); color: var(--ink); }
-.toast .tb { font: 700 12px/1.3 var(--body); color: var(--soft); }
-#overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 18px max(18px, env(safe-area-inset-right, 0px)) 18px max(18px, env(safe-area-inset-left, 0px)); }
-#overlay .tint { position: absolute; inset: 0; background: rgba(40,8,80,0.55); animation: fadeIn 220ms ease-out both; }
-#overlay .card { position: relative; width: 100%; max-width: 360px; border-radius: 30px; background: #45189a; padding: 3px 3px 8px; animation: cardIn 420ms cubic-bezier(0.3, 1.5, 0.55, 1) both; }
-#overlay .cardRim { border-radius: 27px; background: var(--white); padding: 3px; }
-#overlay .cardFill { border-radius: 24px; padding: 18px 16px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; background: linear-gradient(180deg, #fff6fd 0%, #ffe3f6 55%, #efd8ff 100%); color: var(--plum-ink); text-align: center; }
-.cardBody { font: 800 14px/1.4 var(--body); color: var(--plum-ink); }
-.cardSub { font: 700 12px/1.35 var(--display); letter-spacing: 0.6px; color: #8a5fc0; }
-.cardBooth { width: 70%; }
-.cardBooth svg { width: 100%; height: auto; display: block; }
-.btnRow { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-@keyframes fadeIn { from { opacity: 0; } }
-@keyframes cardIn { from { opacity: 0; transform: translateY(120px) scale(0.7); } 30% { opacity: 1; } }
-.ot { display: block; overflow: visible; }
-#flash { position: fixed; inset: 0; z-index: 70; pointer-events: none; opacity: 0; }
-#flash img { position: absolute; inset: 0; width: 100%; height: 100%; }
-#flash .dots { position: absolute; inset: 0; background-size: 22px 22px; }
-.loading { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); z-index: 30; padding: 8px 14px; border-radius: 999px; background: rgba(42,20,48,0.85); border: 2.5px solid #fff; font: 700 13px/1.2 var(--display); color: #fff; }
+/* the catalog (the house's book) */
+#overlay { position: absolute; inset: 0; z-index: 1000; }
+.dim { position: absolute; inset: 0; background: rgba(40,22,10,0.55); }
+.book { position: absolute; left: 0; top: 0; width: 852px; height: 393px; animation: hsPop 0.2s ease-out both; }
+@keyframes hsPop { from { scale: 0.96; opacity: 0; } to { scale: 1; opacity: 1; } }
+#app.cat .chips { visibility: hidden; }
+.roomTab { position: absolute; left: 22px; top: 3px; height: 27px; display: flex; align-items: center; gap: 5px; padding: 0 12px 2px 9px; border: 2.5px solid #6b4426; border-bottom: none; border-radius: 9px 9px 0 0; background: #fff6e2; box-shadow: inset 0 2px 0 rgba(255,255,255,0.55); color: #5b3418; font-family: var(--fred); font-weight: 700; font-size: 13px; white-space: nowrap; }
+.bookHead { position: absolute; right: 38px; top: 1px; height: 28px; display: flex; align-items: center; gap: 6px; }
+.closeBtn { width: 25px; height: 25px; border-width: 2px; }
+.board { position: absolute; left: 16px; top: 29px; width: 800px; height: 360px; border-radius: 16px; background: linear-gradient(180deg,#8f5e36 0%,#7a4c2a 55%,#6b4426 100%); box-shadow: 0 0 0 2.5px #4a2c14, inset 0 2px 0 rgba(255,220,170,0.3), 0 14px 30px rgba(30,15,5,0.55); }
+.board::before { content: ''; position: absolute; inset: 3px; border-radius: 13px; border: 1.5px dashed rgba(255,226,180,0.4); pointer-events: none; }
+.pageL, .pageR { position: absolute; top: 8px; width: 388px; height: 344px; }
+.pageL { left: 9px; border-radius: 10px 3px 3px 10px; background: linear-gradient(90deg,#fff6e2 0%,#fff6e2 86%,#efdcb6 100%); box-shadow: inset -12px 0 16px -10px rgba(107,68,38,0.4), 0 2px 0 #4a2c14, -2px 2px 0 #e8d2a6, -3px 4px 0 #d9bf92; }
+.pageR { left: 403px; border-radius: 3px 10px 10px 3px; background: linear-gradient(270deg,#fff6e2 0%,#fff6e2 86%,#efdcb6 100%); box-shadow: inset 12px 0 16px -10px rgba(107,68,38,0.4), 0 2px 0 #4a2c14, 2px 2px 0 #e8d2a6, 3px 4px 0 #d9bf92; }
+.spine { position: absolute; left: 396px; top: 5px; width: 8px; height: 350px; border-radius: 4px; background: linear-gradient(90deg,#4a2c14,#8f5e36,#4a2c14); }
+.pageHead { position: absolute; left: 13px; top: 6px; right: 12px; height: 22px; display: flex; align-items: baseline; gap: 7px; white-space: nowrap; overflow: hidden; }
+.pageHead .cap { letter-spacing: 0.12em; }
+.pageHead .ttl { font-family: var(--fred); font-weight: 700; font-size: 15px; color: #5b3418; }
+.pageHead .sub { font-size: 10.5px; font-weight: 800; color: #8a6a4a; }
+.grid { position: absolute; left: 10px; top: 30px; width: 368px; height: 282px; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); grid-template-rows: repeat(2, minmax(0,1fr)); gap: 7px; }
+.card { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 3px; padding: 6px; border-radius: 9px; background: linear-gradient(180deg,#fbefd2 0%,#f4e2bc 100%); border: 2px solid #d4b685; box-shadow: inset 0 2px 0 rgba(255,255,255,0.7), 0 2px 0 rgba(107,68,38,0.18); text-align: left; }
+.card::before { content: ''; position: absolute; inset: 3px; border-radius: 6px; border: 1.5px dashed rgba(107,68,38,0.22); pointer-events: none; }
+.card.sel { border-color: #e2b14a; box-shadow: 0 0 0 2px #6b4426, 0 0 14px rgba(226,177,74,0.9); }
+.card .pic { position: relative; flex: 1; min-height: 0; margin-top: 8px; background-size: contain; background-position: center bottom; background-repeat: no-repeat; }
+.card:hover .pic { filter: drop-shadow(0 0 6px rgba(226,177,74,0.95)); }
+.tierTag { position: absolute; left: 7px; top: 6px; padding: 0 4px; border-radius: 4px; background: #c98d52; box-shadow: 0 0 0 1.5px #6b4426; font-family: var(--fred); font-weight: 700; font-size: 9.5px; line-height: 13px; color: #fff; }
+.cnt { position: absolute; right: 6px; top: 5px; padding: 0 5px; border-radius: 4px; border: 2px solid #2f7a42; background: #fff6e2; font-family: var(--fred); font-weight: 700; font-size: 10px; line-height: 13px; color: #2f7a42; transform: rotate(8deg); }
+.card .nm { position: relative; height: 23px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-family: var(--fred); font-weight: 700; font-size: 10px; line-height: 1.15; color: #5b3418; text-align: center; overflow: hidden; }
+.card .pr { position: relative; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--fred); font-weight: 700; font-size: 11.5px; color: #5b3418; }
+.card .pr .btn { height: 20px; padding: 0 8px; font-size: 10px; letter-spacing: 0.04em; border-radius: 6px; }
+.info { display: flex; flex-direction: column; gap: 3px; padding: 6px 8px; border-radius: 9px; background: #e6f7ff; box-shadow: 0 0 0 1.5px #1e8fc4; }
+.info .cap { color: #1e8fc4; }
+.info .tx { font-family: var(--fred); font-weight: 600; font-size: 11px; line-height: 1.25; color: #16668f; }
+.cats { position: absolute; left: 11px; top: 319px; display: flex; gap: 4px; }
+.cats .btn { height: 21px; padding: 0 6px; font-size: 10.5px; border-radius: 6px; background: #fff6e2; }
+.cats .btn.on { background: var(--brass); }
+.det { position: absolute; left: 14px; top: 30px; right: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 5px; }
+.det .big { flex: none; height: 138px; border-radius: 10px; background: radial-gradient(ellipse at 50% 80%, #f8eedb, #ead7b2 80%); box-shadow: inset 0 2px 6px rgba(107,68,38,0.35), 0 0 0 2px #6b4426; display: flex; align-items: center; justify-content: center; }
+.det .big div { width: 300px; height: 122px; background-size: contain; background-position: center; background-repeat: no-repeat; }
+.det .row { display: flex; align-items: center; gap: 7px; }
+.det .lvT { height: 20px; display: flex; align-items: center; padding: 0 9px; border-radius: 5px; border: 2px solid #6b4426; background: #c98d52; font-family: var(--fred); font-weight: 700; font-size: 11px; color: #fff6e2; text-shadow: 0 1px 0 #6b4426; white-space: nowrap; }
+.det .name { font-family: var(--fred); font-weight: 700; font-size: 15px; line-height: 1.12; color: #5b3418; }
+.det .room { font-size: 11px; font-weight: 800; color: #8a6a4a; }
+.det .bonus { font-size: 12px; font-weight: 800; color: #2f7a42; }
+.det .act { margin-top: auto; height: 34px; display: flex; align-items: center; justify-content: center; gap: 7px; border-radius: 8px; font-size: 15px; border-width: 2.5px; box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.6), 0 3px 0 #6b4426; }
 
+/* the unlock card (the house's detail card) */
+.ucard { position: absolute; left: 50%; top: 50%; width: 420px; transform: translate(-50%,-50%) rotate(-0.6deg); display: flex; gap: 14px; padding: 14px; border-radius: 14px; background: #fff6e2; box-shadow: 0 0 0 2.5px #6b4426, 0 5px 0 2.5px #6b4426, 0 18px 36px rgba(30,15,5,0.45); animation: hsPop 0.18s ease-out both; }
+.ucard::before { content: ''; position: absolute; inset: 5px; border-radius: 10px; border: 1.5px dashed rgba(107,68,38,0.28); pointer-events: none; }
+.ucard .pic { flex: none; width: 150px; height: 150px; border-radius: 10px; background: radial-gradient(ellipse at 50% 70%, #4a2a6a, #1d1030 80%); box-shadow: inset 0 2px 6px rgba(0,0,0,0.45), 0 0 0 2px #6b4426; overflow: hidden; position: relative; }
+.ucard .txt { flex: 1; display: flex; flex-direction: column; gap: 6px; padding-top: 4px; }
+.ucard .h { font-family: var(--fred); font-weight: 700; font-size: 20px; line-height: 1.1; color: #5b3418; }
+.ucard .b { font-size: 12px; font-weight: 700; line-height: 1.35; color: #7a5a3a; }
+.ucard .act { margin-top: auto; height: 34px; font-size: 15px; border-width: 2.5px; box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.5), 0 3px 0 #6b4426; }
+.ucard .x { position: absolute; right: -12px; top: -12px; width: 30px; height: 30px; }
+
+/* ---- the soundboard stage */
+.shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,6,32,0.32) 0%, rgba(20,6,32,0.12) 45%, rgba(20,6,32,0.22) 100%); pointer-events: none; }
+.signGlow { position: absolute; width: 240px; height: 90px; margin: -45px 0 0 -120px; border-radius: 50%; background: radial-gradient(closest-side, rgba(63,240,255,0.55), rgba(63,240,255,0)); mix-blend-mode: screen; opacity: 0.35; pointer-events: none; }
+.beam { position: absolute; width: 90px; height: 330px; margin-left: -45px; transform-origin: 50% 0; pointer-events: none; transition: transform 1.6s cubic-bezier(.45,0,.55,1); }
+.beam i { position: absolute; inset: 0; background: linear-gradient(180deg, var(--c) 0%, rgba(0,0,0,0) 88%); clip-path: polygon(44% 0, 56% 0, 100% 100%, 0 100%); mix-blend-mode: screen; opacity: 0.3; filter: blur(2px); transition: opacity 0.4s; }
+.lamp { position: absolute; width: 14px; height: 10px; margin: -5px 0 0 -7px; border-radius: 3px 3px 7px 7px; background: linear-gradient(180deg, #3a3350, #14121c); box-shadow: 0 0 0 1px #0c0c10, 0 4px 10px var(--c); }
+.pool { position: absolute; width: 170px; height: 46px; margin: -23px 0 0 -85px; border-radius: 50%; background: radial-gradient(closest-side, var(--c), rgba(0,0,0,0)); mix-blend-mode: screen; opacity: 0.22; pointer-events: none; transition: left 0.5s ease, top 0.5s ease, opacity 0.3s; }
+.spot { position: absolute; pointer-events: none; clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%); background: linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--c) 100%); mix-blend-mode: screen; opacity: 0.1; }
+.spotFloor { position: absolute; width: 96px; height: 22px; margin: -11px 0 0 -48px; border-radius: 50%; background: radial-gradient(closest-side, var(--c), rgba(0,0,0,0)); mix-blend-mode: screen; opacity: 0.35; pointer-events: none; }
+.selRing { position: absolute; width: 74px; height: 18px; margin: -9px 0 0 -37px; border-radius: 50%; border: 2.5px dashed #ffe14f; box-shadow: 0 0 10px rgba(255,225,79,0.8); pointer-events: none; animation: ring 6s linear infinite; }
+@keyframes ring { to { filter: hue-rotate(0deg); } }
+.tapTarget { cursor: pointer; }
+.crowd .cr img { filter: brightness(0.78) saturate(0.95); }
+.crowd .cr .hop { animation: idleSway 2.4s ease-in-out infinite; animation-delay: var(--d); }
+@keyframes idleSway { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg) translateY(-1.5px); } }
+#fxLayer, #fogLayer { position: absolute; inset: 0; pointer-events: none; }
+.note8 { position: absolute; left: 0; top: 0; font-family: var(--fred); font-weight: 700; font-size: 20px; color: #fff6e2; text-shadow: 0 0 0 #000, 0 2px 0 #6b4426, 1.5px 0 0 #6b4426, -1.5px 0 0 #6b4426, 0 -1.5px 0 #6b4426, 0 0 12px var(--c); pointer-events: none; }
+.part { position: absolute; left: 0; top: 0; border-radius: 50%; pointer-events: none; }
+.bubbleFx { position: absolute; border-radius: 50%; border: 2px solid rgba(255,255,255,0.85); background: radial-gradient(circle at 32% 28%, rgba(255,255,255,0.95) 0 9%, rgba(255,255,255,0) 24%), radial-gradient(circle, rgba(200,240,255,0.08) 60%, rgba(255,255,255,0.25) 100%); box-shadow: inset 4px -3px 6px rgba(120,220,255,0.45), inset -3px 4px 6px rgba(255,140,220,0.4); pointer-events: none; }
+.sweep { position: absolute; top: 0; left: 0; width: 140px; height: 262px; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,240,200,0.45), rgba(255,255,255,0)); mix-blend-mode: screen; transform: skewX(-18deg); pointer-events: none; }
+.songChip { position: absolute; right: 12px; top: 10px; z-index: 50; }
+
+/* the mixer drawer */
+#mixer { position: absolute; left: 8px; right: 8px; bottom: 5px; height: 127px; z-index: 60; display: flex; gap: 8px; padding: 7px 9px 8px; }
+.mxL { flex: none; width: 124px; display: flex; flex-direction: column; justify-content: space-between; padding: 2px 0 0; }
+.mxL .note { margin: 0 2px; }
+.transport { display: flex; align-items: center; justify-content: center; gap: 10px; padding-bottom: 2px; }
+#play { width: 46px; height: 46px; }
+#play.on { background: radial-gradient(circle at 35% 30%, #ffb3a6 0%, #e2554a 60%, #a8322a 100%); }
+#rec { width: 32px; height: 32px; }
+#rec.on { animation: recPulse 0.9s ease-in-out infinite alternate; }
+@keyframes recPulse { to { box-shadow: inset 0 0 0 2px rgba(255,236,200,0.3), 0 2.5px 0 #6b4426, 0 0 0 5px rgba(226,85,74,0.55); } }
+.tray { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; padding: 5px 7px 6px; border-radius: 10px; background: #f1dcb4; box-shadow: inset 0 2px 5px rgba(107,68,38,0.45), 0 0 0 2px #6b4426; }
+.palette { display: flex; gap: 5px; height: 31px; }
+.pal, .song { flex: 1; min-width: 0; height: 31px; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 0 3px; border: none; border-radius: 6px; background: #fff6e2; box-shadow: 0 0 0 1.5px #6b4426, 0 2.5px 0 1.5px rgba(107,68,38,0.35); font-family: var(--fred); font-weight: 600; font-size: 11px; color: #5b3418; white-space: nowrap; overflow: hidden; }
+.pal:nth-child(odd) { transform: rotate(-1.2deg); } .pal:nth-child(even) { transform: rotate(1deg); }
+.pal img { width: 24px; height: 24px; flex: none; }
+.pal .dot { flex: none; width: 13px; height: 13px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1.5px #6b4426, inset 0 2px 0 rgba(255,255,255,0.5); }
+.pal.sel, .song.sel { background: var(--brass); box-shadow: 0 0 0 2px #6b4426, 0 3px 0 2px #6b4426, 0 0 12px rgba(255,225,79,0.8); font-weight: 700; }
+.song { font-size: 10.5px; }
+.song .bpm { font-size: 9px; font-weight: 800; color: #8a6a4a; font-family: 'Nunito', sans-serif; }
+.song.locked { background: linear-gradient(180deg,#e2dacd 0%,#bdb2a2 100%); box-shadow: 0 0 0 1.5px #7a6a58, 0 2.5px 0 1.5px rgba(122,106,88,0.35); color: #5a4a3a; }
+.song .lk { font-size: 9px; font-weight: 900; padding: 0 4px; border-radius: 4px; background: #9a8f80; color: #fff; font-family: var(--fred); }
+.lanes { display: flex; flex-direction: column; gap: 3px; }
+.lane { display: flex; align-items: stretch; gap: 5px; height: 22px; }
+.laneTab { flex: none; width: 50px; padding: 0; border: 2.5px solid #6b4426; border-radius: 7px; background: linear-gradient(180deg,#c99364 0%,#a8733f 100%); box-shadow: inset 0 1.5px 0 rgba(255,240,210,0.3); font-family: var(--fred); font-weight: 700; font-size: 11.5px; line-height: 1; color: #f3dcb8; }
+.laneTab.on { background: linear-gradient(180deg,#b47a42 0%,#a86f3a 100%); color: #fff6e2; box-shadow: 0 2px 0 rgba(107,68,38,0.35), 0 0 0 2px #ffe14f; }
+.cells { flex: 1; min-width: 0; display: flex; touch-action: none; }
+.cell, .bar { position: relative; flex: 1; min-width: 0; margin-left: 2px; border-radius: 4px; background: #fff6e2; box-shadow: inset 0 0 0 1.5px rgba(107,68,38,0.3); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.cell:first-child, .bar:first-child { margin-left: 0; }
+.cell.b1:not(:first-child), .bar:not(:first-child) { margin-left: 5px; }
+.cell.b1 { box-shadow: inset 0 0 0 1.5px rgba(107,68,38,0.45), inset 2px 0 0 rgba(196,101,31,0.45); }
+.cell .n { position: absolute; left: 2px; top: 0; font-size: 7.5px; font-weight: 900; color: rgba(138,106,74,0.7); }
+.cell img { width: 20px; height: 20px; position: relative; }
+.cell.filled { background: color-mix(in srgb, var(--c) 30%, #fff6e2); box-shadow: inset 0 0 0 1.5px #6b4426; }
+.cell .fx { position: relative; max-width: 100%; padding: 0 2px; border-radius: 4px; background: var(--c); box-shadow: 0 0 0 1.2px #6b4426; font-family: var(--fred); font-weight: 700; font-size: 8px; letter-spacing: -0.2px; line-height: 13px; color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,0.35); overflow: hidden; white-space: nowrap; }
+.cell.now, .bar.now { box-shadow: inset 0 0 0 2px #e2b14a, 0 0 8px rgba(255,225,79,0.9); }
+.cell.now:not(.filled) { background: #ffe9a0; }
+.bar { font-family: var(--fred); font-weight: 700; font-size: 11px; color: #2f7a42; gap: 4px; background: #e8f4dc; box-shadow: inset 0 0 0 1.5px #2f7a42; }
+.bar.off { background: repeating-linear-gradient(-45deg, #efe2c8 0 6px, #e6d5b4 6px 12px); box-shadow: inset 0 0 0 1.5px rgba(107,68,38,0.4); color: #8a6a4a; }
+.bar.now { background: #ffe9a0; }
+.mxR { flex: none; width: 66px; display: flex; flex-direction: column; justify-content: center; gap: 9px; }
+.mxR .btn { width: 100%; padding: 0 4px; }
+.flashLane { animation: flashLane 0.5s ease-out; }
+@keyframes flashLane { 40% { box-shadow: 0 0 0 3px #e2554a; transform: scale(1.06); } }
 @media (prefers-reduced-motion: reduce) {
-  .rec.on .dot { animation: none; }
+  .item.float, .item.holo, .crowd .cr .hop, .sbTag .face.pulse, .ghost { animation: none !important; }
 }
 </style>
 </head>
 <body>
+<div id="app">
+  <!-- the Dance Room -->
+  <section class="screen" id="crib" aria-label="Dance Room">
+    <div class="scene" id="cribScene"></div>
+    <button class="mapBtn" id="cribMap" aria-label="Dance Room"></button>
+    <div class="chips"><span class="chip lv" id="lvChip">Lv 30</span><span class="chip"><span class="coin"></span><span id="coins">0</span></span></div>
+    <div class="wood" id="cribDrawer">
+      <span class="rivet tl"></span><span class="rivet tr"></span>
+      <button class="dBtn" id="openCatalog" aria-label="Catalog"></button>
+      <button class="dBtn" id="openSb" aria-label="Soundboard"></button>
+    </div>
+  </section>
 
-<!-- the Crib's Dance Room: the DJ booth opens the soundboard -->
-<div class="screen" id="crib">
-  <div class="sceneBox" id="cribScene"></div>
-  <div class="col">
-    <header class="top">
-      <button class="cribBtn" id="cribBack" aria-label="Back" disabled><span class="cc cc1"></span><span class="cc cc0"></span><span class="cface"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 L7 12 L15 20" transform="translate(0 1.5)" stroke="#8a1f6a" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 4 L7 12 L15 20" stroke="#ffffff" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
-      <div class="titleBox"><div id="cribTitle"></div><div class="roomSub">YOUR CRIB · TAP THE DJ BOOTH</div></div>
-    </header>
-    <section class="panel" id="tierPanel">
-      <div class="panelHead">PROTOTYPE · PUT ON A DJ BOOTH (IN THE APP: BUY IT IN THE HOME SHOP)</div>
-      <div class="tiers" id="tiers"></div>
-    </section>
-  </div>
-</div>
-
-<!-- the soundboard -->
-<div class="screen" id="board" hidden>
-  <div class="col">
-    <header class="top">
-      <button class="cribBtn" id="boardBack" aria-label="Back to the Crib"><span class="cc cc1"></span><span class="cc cc0"></span><span class="cface"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 L7 12 L15 20" transform="translate(0 1.5)" stroke="#8a1f6a" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 4 L7 12 L15 20" stroke="#ffffff" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
-      <div class="titleBox"><div id="boardTitle"></div><div class="roomSub" id="boardSub"></div></div>
-      <div class="pill" id="bpm">118 BPM</div>
-    </header>
-    <div class="sceneBox stage" id="stage"><div class="wallFill" id="wallFill"></div></div>
-    <section class="mixer" id="mixer">
-      <div class="track"><div class="tlabel">VOICE</div><div class="cells" id="vCells"></div></div>
-      <div class="track"><div class="tlabel">FX</div><div class="cells" id="fCells"></div></div>
-      <div class="track"><div class="tlabel">MUSIC</div><div class="bars" id="mBars"></div></div>
-      <div class="tabs" role="tablist">
-        <button class="tab on" data-tab="voice">VOICES</button>
-        <button class="tab" data-tab="fx">FX</button>
-        <button class="tab" data-tab="music">MUSIC</button>
+  <!-- the soundboard -->
+  <section class="screen" id="board" aria-label="Soundboard" hidden>
+    <div class="scene" id="stage"></div>
+    <button class="mapBtn" id="boardBack" aria-label="Back to the Dance Room"></button>
+    <div class="songChip chips" style="right:12px"><span class="chip" id="songChip">♪</span></div>
+    <div class="wood" id="mixer">
+      <span class="rivet tl"></span><span class="rivet tr"></span><span class="rivet bl"></span><span class="rivet br"></span>
+      <div class="mxL">
+        <div class="note"><span class="cap">SOUNDBOARD</span><span class="nt" id="mxSong">Squish Groove</span><span class="ns" id="mxPos">4 bars · 16 beats</span></div>
+        <div class="transport">
+          <button class="rbtn brass" id="play" aria-label="Play"></button>
+          <button class="rbtn woody" id="rec" aria-label="Record" aria-pressed="false"></button>
+        </div>
       </div>
-      <div class="palette" id="palette"></div>
-      <div class="transport">
-        <button class="sticker st-green play" id="play"><span class="slip"></span><span class="sring"><span class="sface" id="playLabel">▶ PLAY</span></span></button>
-        <button class="plain" id="clear">CLEAR</button>
-        <button class="sticker st-purple" id="mixIt"><span class="slip"></span><span class="sring"><span class="sface">MIX IT!</span></span></button>
-        <button class="rec" id="rec" aria-pressed="false"><span class="dot"></span>REC</button>
-        <button class="sticker st-gold" id="save"><span class="slip"></span><span class="sring"><span class="sface">SAVE</span></span></button>
+      <div class="tray">
+        <div class="palette" id="palette"></div>
+        <div class="lanes">
+          <div class="lane"><button class="laneTab" data-tab="voice">Voice</button><div class="cells" id="vCells"></div></div>
+          <div class="lane"><button class="laneTab" data-tab="fx">FX</button><div class="cells" id="fCells"></div></div>
+          <div class="lane"><button class="laneTab" data-tab="music">Music</button><div class="cells" id="mBars"></div></div>
+        </div>
       </div>
-    </section>
-  </div>
+      <div class="mxR">
+        <button class="btn" id="mixIt">Mix it!</button>
+        <button class="btn wood2" id="clear">Clear</button>
+        <button class="btn green" id="save">Save</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="overlay" hidden></div>
+  <div id="toast" hidden></div>
+  <div id="fade"></div>
 </div>
+<div id="turn" hidden>Turn your phone sideways</div>
 
-<div id="flash"><img alt="" src="../../assets/crib/flash-glow.png"><div class="dots" id="flashDots"></div></div>
-<div id="overlay" hidden></div>
-<div class="toast" id="toast" hidden></div>
-
-<script src="djart.js"></script>
+<script src="art/items.js"></script>
 <script src="voices.js"></script>
+<script>window.DJ_BASE = 'art/';</script>
+<script src="art/dj-crew.js"></script>
+<script src="art/club-fx.js"></script>
 <script>
 (function () {
   'use strict';
-  const DJ = window.DJ;
+  const ITEMS = window.CLUB_ITEMS;
   const VOICES = window.VOICES;
+  const $ = (id) => document.getElementById(id);
+  const wait = (t) => new Promise((r) => setTimeout(r, t));
+  const RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const pickOne = (a) => a[Math.floor(Math.random() * a.length)];
 
-  // ---- the repository's own art and sounds (literal paths, so
-  // tools/bundle.mjs can inline them)
-  const A = {
-    room: { base: '../../assets/crib/rooms/dance-base.webp', over: '../../assets/crib/rooms/dance-over-day.webp' },
-    flashDots: '../../assets/crib/flash-dots.png',
-    body: {
-      bubbly: '../../assets/stack/bubbly.webp', mittens: '../../assets/stack/mittens.webp', pip: '../../assets/stack/pip.webp',
-      frybo: '../../assets/stack/frybo.webp', twinkle: '../../assets/stack/twinkle.webp',
+  // ---- art (literal paths, so tools/bundle.mjs can inline them)
+  const ART = {
+    room: 'art/dance-club.webp',
+    items: {
+      'CLB-015': 'art/items/CLB-015.svg', 'CLB-035': 'art/items/CLB-035.svg', 'CLB-055': 'art/items/CLB-055.svg', 'CLB-075': 'art/items/CLB-075.svg', 'CLB-095': 'art/items/CLB-095.svg',
+      'CLB-098': 'art/items/CLB-098.svg', 'CLB-082': 'art/items/CLB-082.svg', 'CLB-086': 'art/items/CLB-086.svg', 'CLB-090': 'art/items/CLB-090.svg',
     },
-    head: {
-      bubbly: '../../assets/squishdoku/heads/bubbly-happy.webp', mittens: '../../assets/squishdoku/heads/mittens-happy.webp', pip: '../../assets/squishdoku/heads/pip-happy.webp',
-      frybo: '../../assets/squishdoku/heads/frybo-happy.webp', twinkle: '../../assets/squishdoku/heads/twinkle-happy.webp',
+    // the creatures' front pictures (the design's export/tripo)
+    sq: {
+      nimbo: 'art/export/tripo/nimbo/nimbo-front.svg', mittens: 'art/export/tripo/mittens/mittens-front.svg', mallow: 'art/export/tripo/mallow/mallow-front.svg',
+      bao: 'art/export/tripo/bao/bao-front.svg', dunkie: 'art/export/tripo/dunkie/dunkie-front.svg', frybo: 'art/export/tripo/frybo/frybo-front.svg',
+      pip: 'art/export/tripo/pip/pip-front.svg', bunbun: 'art/export/tripo/bunbun/bunbun-front.svg', jelli: 'art/export/tripo/jelli/jelli-front.svg',
+      pina: 'art/export/tripo/pina/pina-front.svg', finn: 'art/export/tripo/finn/finn-front.svg', sealy: 'art/export/tripo/sealy/sealy-front.svg',
+      biscuit: 'art/export/tripo/biscuit/biscuit-front.svg', hana: 'art/export/tripo/hana/hana-front.svg', choco: 'art/export/tripo/choco/choco-front.svg',
+      prickle: 'art/export/tripo/prickle/prickle-front.svg', lumi: 'art/export/tripo/lumi/lumi-front.svg', kiko: 'art/export/tripo/kiko/kiko-front.svg',
+      bubbly: 'art/export/tripo/bubbly/bubbly-front.svg', twinkle: 'art/export/tripo/twinkle/twinkle-front.svg',
     },
+  };
+  // ---- the app's sounds (the repo's assets)
+  const SND = {
     // each creature's own squish recording (src/audio/creatureSquishFiles.js: id -> file)
     voice: {
-      bubbly: '../../assets/audio/creatures/18.ogg', mittens: '../../assets/audio/creatures/1.ogg', pip: '../../assets/audio/creatures/6.ogg',
-      frybo: '../../assets/audio/creatures/5.ogg', twinkle: '../../assets/audio/creatures/19.ogg',
+      0: '../../assets/audio/creatures/0.ogg', 1: '../../assets/audio/creatures/1.ogg', 2: '../../assets/audio/creatures/2.ogg', 3: '../../assets/audio/creatures/3.ogg',
+      4: '../../assets/audio/creatures/4.ogg', 5: '../../assets/audio/creatures/5.ogg', 6: '../../assets/audio/creatures/6.ogg', 7: '../../assets/audio/creatures/7.ogg',
+      8: '../../assets/audio/creatures/8.ogg', 9: '../../assets/audio/creatures/9.ogg', 10: '../../assets/audio/creatures/10.ogg', 11: '../../assets/audio/creatures/11.ogg',
+      12: '../../assets/audio/creatures/12.ogg', 13: '../../assets/audio/creatures/13.ogg', 14: '../../assets/audio/creatures/14.ogg', 15: '../../assets/audio/creatures/15.ogg',
+      16: '../../assets/audio/creatures/16.ogg', 17: '../../assets/audio/creatures/17.ogg', 18: '../../assets/audio/creatures/18.ogg', 19: '../../assets/audio/creatures/19.ogg',
     },
-    // the DJ's songs (catalog.js songs): the Crib's club tracks, 8 bars each
+    // the DJ's songs (src/crib/home.js SONGS): the Crib's club tracks, 8 bars each
     music: {
       crib_dance: '../../assets/audio/music/crib_dance.ogg', club_disco: '../../assets/audio/music/club_disco.ogg', club_house: '../../assets/audio/music/club_house.ogg',
       club_synth: '../../assets/audio/music/club_synth.ogg', club_bounce: '../../assets/audio/music/club_bounce.ogg', club_turbo: '../../assets/audio/music/club_turbo.ogg',
@@ -282,52 +330,54 @@ img { -webkit-user-drag: none; }
     ui: {
       tap: '../../assets/audio/sfx/tap.wav', select: '../../assets/audio/squishdoku/sd_select.wav', locked: '../../assets/audio/squishdoku/sd_locked.wav',
       unlock: '../../assets/audio/sfx/unlock.ogg', room: '../../assets/audio/sfx/whoosh.wav', save: '../../assets/audio/squishdoku/sd_star3.ogg',
+      buy: '../../assets/audio/sfx/coin.wav',
     },
   };
-  // the stage: five squishies with their own squish recordings (functions/squad.js ids), tinted by the dance floor's colours
-  const LINEUP = [
-    { key: 'bubbly', id: 18, name: 'Bubbly', ar: 1.034, color: '#7cb8ff' },
-    { key: 'mittens', id: 1, name: 'Mittens', ar: 1.152, color: '#ffd66b' },
-    { key: 'pip', id: 6, name: 'Pip', ar: 0.957, color: '#5cf2c8' },
-    { key: 'frybo', id: 5, name: 'Frybo', ar: 1.116, color: '#ff5c8a' },
-    { key: 'twinkle', id: 19, name: 'Twinkle', ar: 1.069, color: '#b48bff' },
-  ];
-  const BY_KEY = Object.fromEntries(LINEUP.map((s) => [s.key, s]));
+
+  // ---- who's who (functions/squad.js ids: each has its own squish recording)
+  const SQUAD = [
+    ['nimbo', 0, 'Nimbo'], ['mittens', 1, 'Mittens'], ['mallow', 2, 'Mallow'], ['bao', 3, 'Bao'], ['dunkie', 4, 'Dunkie'], ['frybo', 5, 'Frybo'], ['pip', 6, 'Pip'],
+    ['bunbun', 7, 'Bunbun'], ['jelli', 8, 'Jelli'], ['pina', 9, 'Pina'], ['finn', 10, 'Finn'], ['sealy', 11, 'Sealy'], ['biscuit', 12, 'Biscuit'], ['hana', 13, 'Hana'],
+    ['choco', 14, 'Choco'], ['prickle', 15, 'Prickle'], ['lumi', 16, 'Lumi'], ['kiko', 17, 'Kiko'], ['bubbly', 18, 'Bubbly'], ['twinkle', 19, 'Twinkle'],
+  ].map(([key, id, name]) => ({ key, id, name }));
+  const SQ = Object.fromEntries(SQUAD.map((s) => [s.key, s]));
+  const DJ_KEY = 'mittens'; // the player's own character works the decks (in the app: the player's creature)
+  // the voices: the DJ and the four on the dance floor, each with a light colour
+  const VOICE_KEYS = ['mittens', 'bubbly', 'frybo', 'jelli', 'twinkle'];
+  const COLOR = { mittens: '#ffb35c', bubbly: '#7cc8ff', frybo: '#ff6b6b', jelli: '#c08bff', twinkle: '#ffe14f' };
+  const CROWD = SQUAD.map((s) => s.key).filter((k) => !VOICE_KEYS.includes(k));
   const FX = [
     { key: 'pop', name: 'Pop', short: 'POP', color: '#ff5cc6' },
-    { key: 'bubble', name: 'Bubble', short: 'BLUB', color: '#7cb8ff' },
-    { key: 'squeak', name: 'Squeak', short: 'EEK', color: '#ffb02e' },
-    { key: 'boing', name: 'Boing', short: 'BOING', color: '#3ddc97' },
-    { key: 'coin', name: 'Coin', short: 'COIN', color: '#e8a63a' },
-    { key: 'sparkle', name: 'Sparkle', short: '✦✦', color: '#b48bff' },
-    { key: 'bonk', name: 'Bonk', short: 'BONK', color: '#ff8a4a' },
-    { key: 'whoosh', name: 'Whoosh', short: 'WOOSH', color: '#22b8d0' },
+    { key: 'bubble', name: 'Bubble', short: 'BLUB', color: '#4fb6ff' },
+    { key: 'squeak', name: 'Squeak', short: 'EEK', color: '#ff9d3c' },
+    { key: 'boing', name: 'Boing', short: 'BOING', color: '#3dbd6a' },
+    { key: 'coin', name: 'Coin', short: 'COIN', color: '#e2a23a' },
+    { key: 'sparkle', name: 'Sparkle', short: '✦✦', color: '#b04bff' },
+    { key: 'bonk', name: 'Bonk', short: 'BONK', color: '#e2554a' },
+    { key: 'whoosh', name: 'Whoosh', short: 'WOOSH', color: '#1e8fc4' },
   ];
   const FX_BY = Object.fromEntries(FX.map((f) => [f.key, f]));
-  const UNLOCK_TIER = 2; // the DJ Deck: the first booth that opens the soundboard
-  const STEPS = 16; // beats in a pattern (4 bars); a song is 8 bars, so it plays the pattern twice
-  const SCENE_W = 852;
-  const SCENE_H = 393;
-  const FLOOR_TOP = 210; // src/crib/Dance.js
-  const FLOOR_H = 172;
-  const CELL = 56;
-  const DANCE_TILE = ['#7cb8ff', '#ff5c8a', '#ffd66b', '#5cf2c8'];
-  const RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const $ = (id) => document.getElementById(id);
-  const wait = (t) => new Promise((r) => setTimeout(r, t));
-  $('flashDots').style.backgroundImage = `url(${A.flashDots})`;
+  const SONGS = [
+    { name: 'Squish Groove', track: 'crib_dance' }, { name: 'Disco Fever', track: 'club_disco' }, { name: 'Bubble House', track: 'club_house' },
+    { name: 'Neon Synth', track: 'club_synth' }, { name: 'Jelly Bounce', track: 'club_bounce' }, { name: 'Turbo Beat', track: 'club_turbo' },
+  ];
+  // the catalog's DJ Console slot, tier 1 to 5; any of them opens the soundboard, better ones bring more songs
+  const CONSOLES = ['CLB-015', 'CLB-035', 'CLB-055', 'CLB-075', 'CLB-095'];
+  const SONGS_AT = [2, 3, 4, 5, 6];
+  // what's already in the Dance Room: the most expensive club pieces
+  const DECOR = ['CLB-082', 'CLB-086', 'CLB-090', 'CLB-098'];
+  const PLAYER_LV = 30; // the prototype's player level (the house's test controls)
+  const STEPS = 16;
 
-  // the demo mix the soundboard opens with
+  // ---- saved (this browser only)
+  const SAVE_KEY = 'squishSoundboard.v2';
   const DEMO = {
-    voice: ['bubbly', null, 'mittens', null, 'pip', null, 'frybo', null, 'bubbly', null, 'twinkle', null, 'pip', 'mittens', 'frybo', 'twinkle'],
+    voice: ['bubbly', null, 'mittens', null, 'jelli', null, 'frybo', null, 'bubbly', null, 'twinkle', null, 'jelli', 'mittens', 'frybo', 'twinkle'],
     fx: [null, 'pop', null, 'bubble', null, 'pop', null, 'boing', null, 'pop', null, 'bubble', 'sparkle', null, 'coin', 'whoosh'],
     music: [true, true, true, true],
     track: 'crib_dance',
   };
-
-  // ---- saved (this browser only)
-  const SAVE_KEY = 'squishSoundboard.v1';
-  let save = { tier: 0, mix: null };
+  let save = { coins: 60000, owned: {}, placed: null, mix: null };
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) save = Object.assign(save, JSON.parse(raw));
@@ -335,40 +385,54 @@ img { -webkit-user-drag: none; }
   const store = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ } };
   const clone = (o) => JSON.parse(JSON.stringify(o));
   let mix = clone(save.mix || DEMO);
+  const tierOf = (id) => (id ? CONSOLES.indexOf(id) + 1 : 0);
+  const unlocked = () => !!save.placed;
+  const songsHere = () => SONGS.slice(0, save.placed ? SONGS_AT[tierOf(save.placed) - 1] : 0);
+  const fmt = (n) => n.toLocaleString('en-US');
 
-  // ---- outlined titles (crib/Hud.js RoomTitle; OutlinedTitle.js for cards)
-  const measureCtx = document.createElement('canvas').getContext('2d');
-  const FONT = "Fredoka, 'Baloo 2', 'Trebuchet MS', sans-serif";
-  let titleN = 0;
-  const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  const textW = (text, size, sp) => { measureCtx.font = `700 ${size}px ${FONT}`; return measureCtx.measureText(text).width + text.length * sp; };
-  function roomTitleSvg(text) {
-    const size = 26;
-    const pad = 4;
-    const w = Math.ceil(textW(text, size, 0.5) + pad * 2 + 4);
-    const h = Math.ceil(size * 1.15 + pad * 2 + 3);
-    const y = pad + size * 0.92;
-    const id = `tf${++titleN}`;
-    const t = esc(text);
-    const common = `x="${pad}" font-family="${FONT}" font-weight="700" font-size="${size}" letter-spacing="0.5" stroke-linejoin="round"`;
-    return `<svg class="roomTitle" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${t}"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffaf0"/><stop offset="0.6" stop-color="#ffe6b8"/><stop offset="1" stop-color="#ffcf80"/></linearGradient></defs>
-      <text ${common} y="${y + 3}" fill="#5b3a29" stroke="#5b3a29" stroke-width="5">${t}</text><text ${common} y="${y}" fill="#5b3a29" stroke="#5b3a29" stroke-width="5">${t}</text><text ${common} y="${y}" fill="url(#${id})">${t}</text></svg>`;
+  // ---- the frame: the house's 852 x 393, scaled to fit
+  function fit() {
+    // the layout viewport (innerWidth grows on phones while the unscaled frame overflows)
+    const w = document.documentElement.clientWidth;
+    const h = document.documentElement.clientHeight;
+    const s = Math.min(w / 868, h / 409);
+    $('app').style.transform = `translate(-50%,-50%) scale(${s})`;
+    $('turn').hidden = !(h > w * 1.15);
   }
-  function titleSvg(text, fill = 'pink', size = 28) {
-    const FILLS = { gold: [['0', '#fffbd6'], ['0.45', '#ffe045'], ['1', '#ff9500']], pink: [['0', '#ffd6f4'], ['0.52', '#ff5cc6'], ['1', '#c02bd9']] };
-    const outline = 3;
-    const halo = outline + 2;
-    const drop = size >= 26 ? 5 : 4;
-    const w = Math.ceil(textW(text, size, 1) + halo * 2 + 2 + size * 0.12);
-    const h = Math.ceil(size * 1.22 + halo * 2 + drop);
-    const base = halo + size * 0.96;
-    const id = `tf${++titleN}`;
-    const t = esc(text);
-    const common = `x="${w / 2}" text-anchor="middle" font-family="${FONT}" font-weight="700" font-size="${size}" letter-spacing="1" stroke-linejoin="round"`;
-    return `<svg class="ot" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${t}"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">${FILLS[fill].map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('')}</linearGradient></defs>
-      <text ${common} y="${base + drop}" fill="#45107a" stroke="#45107a" stroke-width="${halo * 2}">${t}</text><text ${common} y="${base}" fill="#6a1b9a" stroke="#6a1b9a" stroke-width="${halo * 2}">${t}</text><text ${common} y="${base}" fill="#ffffff" stroke="#ffffff" stroke-width="${outline * 2}">${t}</text><text ${common} y="${base}" fill="url(#${id})">${t}</text></svg>`;
-  }
-  const sticker = (kind, label, id, cls = '') => `<button class="sticker st-${kind} ${cls}" ${id ? `id="${id}"` : ''}><span class="slip"></span><span class="sring"><span class="sface">${label}</span></span></button>`;
+  window.addEventListener('resize', fit);
+  fit();
+
+  // the house's map button
+  const MAP_SVG = `<svg width="64" height="50" viewBox="0 0 64 50" aria-hidden="true" style="display:block;overflow:visible">
+    <path d="M4 9 L22 4 L42 9 L60 4 L60 42 L42 47 L22 42 L4 47 Z" fill="#fff6e2"/><path d="M4 9 L22 4 V42 L4 47 Z" fill="#f3e2bf"/><path d="M42 9 L60 4 V42 L42 47 Z" fill="#f3e2bf"/>
+    <path d="M8 31 Q11 21 18 24 Q22 32 15 37 Q9 38 8 31 Z" fill="#9fc684"/><path d="M45 30 Q52 27 56 32 Q57 39 50 40 Q44 38 45 30 Z" fill="#9fc684"/><path d="M26 31 Q31 27 37 32 Q36 38 30 38 Q25 36 26 31 Z" fill="#8fc8e0"/>
+    <path d="M11 41 Q18 20 30 22 T50 21" fill="none" stroke="#c4651f" stroke-width="2" stroke-dasharray="3 3" stroke-linecap="round"/>
+    <path d="M4 9 L22 4 L42 9 L60 4 L60 42 L42 47 L22 42 L4 47 Z M22 4 V42 M42 9 V47" fill="none" stroke="#6b4426" stroke-width="2.2" stroke-linejoin="round"/>
+    <path d="M45 12 A5 5 0 0 1 55 12 Q55 16 50 22 Q45 16 45 12 Z" fill="#e2554a" stroke="#6b4426" stroke-width="1.8" stroke-linejoin="round"/><circle cx="50" cy="12" r="1.8" fill="#fff6e2"/>
+    <path d="M7.5 12.5 L19 9" stroke="#fffaf0" stroke-width="2" stroke-linecap="round" opacity="0.75"/></svg>`;
+  $('cribMap').innerHTML = `${MAP_SVG}<span>Dance Room</span>`;
+  $('boardBack').innerHTML = `${MAP_SVG}<span>Dance Room</span>`;
+  // the house's catalog icon
+  const CATALOG_SVG = `<svg width="50" height="44" viewBox="0 0 50 44" style="display:block;overflow:visible" aria-hidden="true">
+    <path d="M12 7 H40 L44 10 V41 H16 L12 38 Z" fill="#fff6e2" stroke="#6b4426" stroke-width="2" stroke-linejoin="round"/><path d="M41 12 V38 M43 13 V39" stroke="#d8c8aa" stroke-width="1"/>
+    <rect x="8" y="5" width="30" height="33" rx="3" fill="#6aa58f" stroke="#6b4426" stroke-width="2.2"/><rect x="8" y="5" width="6" height="33" rx="2" fill="#4f8a75" stroke="#6b4426" stroke-width="1.6"/>
+    <path d="M18 8.5 H34" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/><rect x="18" y="11" width="15" height="3.4" rx="1.7" fill="#fff6e2"/>
+    <rect x="19" y="18" width="13" height="7" rx="3" fill="#f2c255" stroke="#6b4426" stroke-width="1.5"/><rect x="17" y="23" width="17" height="7" rx="2.5" fill="#f2c255" stroke="#6b4426" stroke-width="1.5"/>
+    <path d="M19.5 30 V32.5 M31.5 30 V32.5" stroke="#6b4426" stroke-width="1.6" stroke-linecap="round"/><circle cx="40" cy="35" r="7" fill="#e2b14a" stroke="#6b4426" stroke-width="2"/><circle cx="40" cy="35" r="4" fill="none" stroke="#fff0b8" stroke-width="1.4"/></svg>`;
+  // a turntable, drawn the way the house draws its drawer icons (ink outline, cream and brass)
+  const DECK_SVG = `<svg width="50" height="44" viewBox="0 0 50 44" style="display:block;overflow:visible" aria-hidden="true">
+    <rect x="5" y="12" width="40" height="27" rx="4" fill="#c98d52" stroke="#6b4426" stroke-width="2.2"/><path d="M9 15.5 H41" stroke="#f0c58e" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="21" cy="26" r="10.5" fill="#3b2818" stroke="#6b4426" stroke-width="2"/><circle cx="21" cy="26" r="7" fill="none" stroke="#5b3a29" stroke-width="1"/><circle cx="21" cy="26" r="3.6" fill="#e2554a" stroke="#6b4426" stroke-width="1.4"/><circle cx="21" cy="26" r="1" fill="#fff6e2"/>
+    <path d="M37 16 L37 27 L31 33" fill="none" stroke="#6b4426" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M37 16 L37 27 L31 33" fill="none" stroke="#c9d1d6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="37" cy="16" r="2.6" fill="#e2b14a" stroke="#6b4426" stroke-width="1.5"/>
+    <path d="M30 4 V11 M30 4 L36 2.5 V9" fill="none" stroke="#6b4426" stroke-width="2" stroke-linecap="round"/><ellipse cx="28.2" cy="11" rx="2.4" ry="1.9" fill="#ff5cc6" stroke="#6b4426" stroke-width="1.3"/><ellipse cx="34.2" cy="9.4" rx="2.4" ry="1.9" fill="#3ff0ff" stroke="#6b4426" stroke-width="1.3"/></svg>`;
+  const LOCK_SVG = `<svg class="lock" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="#fff6e2" stroke="#c23a3a" stroke-width="2"/><rect x="6" y="9" width="8" height="6" rx="1.4" fill="#c23a3a"/><path d="M7.6 9 V7.4 A2.4 2.4 0 0 1 12.4 7.4 V9" fill="none" stroke="#c23a3a" stroke-width="1.8"/></svg>`;
+  const PLAY_SVG = '<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 3.5 L16.5 10 L6 16.5 Z" fill="#fff6e2" stroke="#6b4426" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke"/></svg>';
+  const STOP_SVG = '<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="3" y="3" width="12" height="12" rx="2.5" fill="#fff6e2" stroke="#6b4426" stroke-width="2.6" paint-order="stroke"/></svg>';
+  const REC_SVG = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="#e2554a" stroke="#6b4426" stroke-width="2"/><circle cx="6.4" cy="6.2" r="1.6" fill="#ffb3a6"/></svg>';
+  $('openCatalog').innerHTML = `${CATALOG_SVG}<span class="lbl">Catalog</span>`;
+  $('play').innerHTML = PLAY_SVG;
+  $('rec').innerHTML = REC_SVG;
 
   // ---- sound: Web Audio, so the voices and effects land exactly on the beat
   const AC = window.AudioContext || window.webkitAudioContext;
@@ -395,18 +459,15 @@ img { -webkit-user-drag: none; }
     audio.master.connect(comp);
     comp.connect(audio.ctx.destination);
     const jobs = [];
-    Object.entries(A.voice).forEach(([k, s]) => jobs.push(loadOne(`v:${k}`, s)));
-    Object.entries(A.music).forEach(([k, s]) => jobs.push(loadOne(`m:${k}`, s)));
-    Object.entries(A.fx).forEach(([k, s]) => jobs.push(loadOne(`f:${k}`, s)));
-    Object.entries(A.ui).forEach(([k, s]) => jobs.push(loadOne(`u:${k}`, s)));
+    Object.entries(SND.voice).forEach(([k, s]) => jobs.push(loadOne(`v:${k}`, s)));
+    Object.entries(SND.music).forEach(([k, s]) => jobs.push(loadOne(`m:${k}`, s)));
+    Object.entries(SND.fx).forEach(([k, s]) => jobs.push(loadOne(`f:${k}`, s)));
+    Object.entries(SND.ui).forEach(([k, s]) => jobs.push(loadOne(`u:${k}`, s)));
     loading = Promise.allSettled(jobs).then((r) => {
       audio.ready = true;
       audio.failed = r.every((x) => x.status === 'rejected');
-      if (audio.failed) showToast('No sound here', 'Open the bundled file, or serve this folder (npx serve), to hear it.');
-      if (!$('board').hidden) {
-        updateTop();
-        if (B.tab === 'music') renderPalette();
-      }
+      if (audio.failed) toast('No sound here. Open the bundled file, or serve this folder (npx serve).');
+      if (!$('board').hidden) { updateSong(); if (B.tab === 'music') renderPalette(); }
     });
     return loading;
   }
@@ -441,223 +502,422 @@ img { -webkit-user-drag: none; }
   // a squishy's voice: a slice of its squish recording, levelled (voices.js)
   const voiceNow = {};
   function playVoice(key, when) {
-    const s = BY_KEY[key];
+    const s = SQ[key];
     const v = VOICES[s.id] || { start: 0, peak: 0.2 };
     const gain = Math.max(0.6, Math.min(3.5, 0.32 / v.peak));
     const prev = voiceNow[key];
     if (prev) {
       try { prev.src.stop(Math.max(when, audio.ctx.currentTime) + 0.01); } catch (e) { /* ignore */ }
     }
-    voiceNow[key] = playBuf(`v:${key}`, when, { gain, offset: v.start, dur: 0.42 });
+    voiceNow[key] = playBuf(`v:${s.id}`, when, { gain, offset: v.start, dur: 0.42 });
   }
   const playFx = (key, when) => playBuf(`f:${key}`, when, { gain: 0.75 });
+  const bpmOf = (track) => { const b = audio.bufs[`m:${track}`]; return b ? Math.round((32 * 60) / b.duration) : null; };
 
-  // ---- the dance room scene (shared by both screens)
-  function hueRotate(hex, deg) { // src/crib/Dance.js, CSS's hue-rotate()
-    const n = parseInt(hex.slice(1), 16);
-    const r = (n >> 16) & 255;
-    const g = (n >> 8) & 255;
-    const b = n & 255;
-    const a = (deg * Math.PI) / 180;
-    const c = Math.cos(a);
-    const s = Math.sin(a);
-    const m = [
-      [0.213 + c * 0.787 - s * 0.213, 0.715 - c * 0.715 - s * 0.715, 0.072 - c * 0.072 + s * 0.928],
-      [0.213 - c * 0.213 + s * 0.143, 0.715 + c * 0.285 + s * 0.14, 0.072 - c * 0.072 - s * 0.283],
-      [0.213 - c * 0.213 - s * 0.787, 0.715 - c * 0.715 + s * 0.715, 0.072 + c * 0.928 + s * 0.072],
-    ];
-    const ch = (row) => Math.max(0, Math.min(255, Math.round(row[0] * r + row[1] * g + row[2] * b)));
-    return `rgb(${ch(m[0])},${ch(m[1])},${ch(m[2])})`;
+  // ---- drawing the room's things
+  const R1 = (n) => Math.round(n * 10) / 10;
+  // an item stands with its floor point (0, 0 in its art) at x, y, k px per unit
+  function itemHtml(id, x, y, k, { flip = false, z, cls = '' } = {}) {
+    const it = ITEMS[id];
+    const [vx, vy, vw, vh] = it.vb;
+    const left = flip ? x - (vw + vx) * k : x + vx * k;
+    const anim = `${it.float ? ' float' : ''}${it.holo ? ' holo' : ''}`;
+    return `<img class="item${anim} ${cls}" data-id="${id}" alt="" src="${ART.items[id]}" style="left:${R1(left)}px;top:${R1(y + vy * k)}px;width:${R1(vw * k)}px;height:${R1(vh * k)}px;z-index:${z == null ? Math.round(y) : z};${flip ? 'transform:scaleX(-1);' : ''}">`;
   }
-  const PALETTES = [0, 90, 180, 270].map((d) => DANCE_TILE.map((h) => hueRotate(h, d)));
+  // a creature's front picture (0..100 art, feet at 96) standing at x, y, h px tall
+  function crHtml(key, x, y, h, { z, cls = '', inner = '', css = '' } = {}) {
+    return `<div class="cr ${cls}" data-key="${key}" style="${css}left:${R1(x - h / 2)}px;top:${R1(y - h * 0.96)}px;width:${R1(h)}px;height:${R1(h)}px;z-index:${z == null ? Math.round(y) : z}"><div class="shadow"></div><div class="hop"><div class="sq"><img alt="${SQ[key].name}" src="${ART.sq[key]}"></div></div>${inner}</div>`;
+  }
 
-  function sceneHtml(tier, dancers) {
-    const fl = DJ.floor;
-    let tiles = '';
-    for (let y = 0; y < FLOOR_H; y += CELL) {
-      for (let x = 0; x < fl.w; x += CELL) {
-        const k = (y / CELL) % 2 === 0 ? ((x / CELL) % 2 ? 1 : 0) : (x / CELL) % 2 ? 2 : 3;
-        tiles += `<div class="ft" data-k="${k}" style="left:${x + 1.5}px;top:${y + 1.5}px;width:${CELL - 3}px;height:${CELL - 3}px"></div>`;
-      }
+  // ---- the DJ: the design's DJ crew (art/dj-crew.js) of the player's character, its groove set to the song's tempo
+  let djSvgRaw = null;
+  function djSvg(beat) {
+    if (!djSvgRaw) {
+      const uri = window.DJCrew && window.DJCrew.get(DJ_KEY);
+      if (!uri) return null;
+      djSvgRaw = decodeURIComponent(uri.slice(uri.indexOf(',') + 1));
     }
-    const b = tier.back;
-    const booth = b ? `<div class="booth" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px">${b.svg}</div>` : '';
-    const sqs = dancers.map((d, i) => {
-      const s = BY_KEY[d.key];
-      const w = d.w;
-      const h = w * s.ar;
-      return `<div class="sq" data-key="${s.key}" data-i="${i}" style="left:${d.x - w / 2}px;top:${d.y - h}px;width:${w}px;height:${h}px;z-index:${Math.round(d.y)};--c:${s.color}"><div class="shadow"></div><div class="hop"><div class="squash"><img alt="${s.name}" src="${A.body[s.key]}"></div></div><div class="ring"></div></div>`;
-    }).join('');
-    return `<img class="room" alt="" src="${A.room.base}"><img class="room" alt="" src="${A.room.over}">${booth}
-      <div class="floor" style="left:${fl.l}px;top:${FLOOR_TOP}px;width:${fl.w}px;height:${FLOOR_H}px">${tiles}<div class="glow"></div></div>${sqs}`;
+    const k = beat / 0.5; // dj-crew.js grooves at 120 BPM (0.5 s a beat)
+    return djSvgRaw.replace(/(dur|begin)="(-?[\d.]+)s"/g, (m, a, v) => `${a}="${(parseFloat(v) * k).toFixed(3)}s"`).replace(/width="240" height="240"/, 'width="100%" height="100%"');
   }
-  function paintFloor(root, step) {
-    const pal = PALETTES[step % 4];
-    root.querySelectorAll('.ft').forEach((t) => { t.style.background = pal[Number(t.dataset.k)]; });
-  }
-  // place a scene in its box: at least `visW` scene units across (more if
-  // the box is tall: the room always fills it), centred on `cx`, its floor
-  // at the bottom
-  function fitScene(box, scene, visW, cx, bottomPad = 0) {
-    const W = box.clientWidth;
-    const H = box.clientHeight;
-    const s = Math.max(W / visW, (H + bottomPad) / SCENE_H);
-    const ty = H - SCENE_H * s + bottomPad;
-    scene.style.transform = `translate(${W / 2 - cx * s}px, ${ty}px) scale(${s})`;
-    return { s, ty, W };
+  if (window.DJCrew) {
+    window.DJCrew.sub((k) => {
+      if (k !== DJ_KEY) return;
+      if (!$('crib').hidden) renderCrib();
+      else putDj();
+    });
+    window.DJCrew.get(DJ_KEY);
   }
 
-  // ---- the Crib screen
-  const cribState = { step: 0, timer: 0 };
-  function tierNow() { return DJ.tiers[save.tier] || DJ.tiers[0]; }
-  const unlocked = () => save.tier >= UNLOCK_TIER;
+  // ---- the Dance Room
+  const CRIB = { console: { x: 426, y: 236, k: 0.62 } };
+  const floorY0 = (x) => 152 + 78 * ((x - 426) / 426) ** 2;
   function renderCrib() {
-    $('cribTitle').innerHTML = roomTitleSvg('Dance Room');
-    const box = $('cribScene');
-    box.style.height = `${Math.round(window.innerHeight * 0.66)}px`;
-    const tier = tierNow();
-    const dancers = [{ key: 'pip', x: 330, y: 316, w: 62 }, { key: 'bubbly', x: 426, y: 334, w: 66 }, { key: 'mittens', x: 522, y: 316, w: 62 }];
-    box.innerHTML = `<div class="scene" id="cribSceneIn">${sceneHtml(tier, dancers)}</div>`;
-    const scene = $('cribSceneIn');
-    const { s, ty } = fitScene(box, scene, 300, 426, 0);
-    paintFloor(scene, cribState.step);
-    // the booth's tag: SOUNDBOARD (open) or the booth it needs (locked)
-    const b = tier.back;
-    const tag = document.createElement('div');
-    tag.className = 'boothTag';
-    const W = box.clientWidth;
-    tag.style.left = `${W / 2 + (b.x + b.w / 2 - 426) * s}px`;
-    tag.style.top = `${ty + (b.y - 6) * s}px`;
-    tag.innerHTML = unlocked() ? sticker('pink', '♪ SOUNDBOARD', 'openBoard', 'small') : sticker('grey', `LOCKED · ${DJ.tiers[UNLOCK_TIER].name.toUpperCase()}`, 'openBoard', 'small');
-    box.appendChild(tag);
-    if (unlocked() && !RM) tag.animate([{ transform: 'translate(-50%,-100%) scale(1)' }, { transform: 'translate(-50%,-100%) scale(1.06)' }], { duration: 800, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out' });
-    $('openBoard').addEventListener('click', tryOpen);
-    scene.querySelector('.booth').addEventListener('click', tryOpen);
-    scene.querySelector('.booth').style.cursor = 'pointer';
-    // the dancers bop to the room's slow step
-    scene.querySelectorAll('.sq').forEach((el, i) => {
-      if (!RM) el.querySelector('.hop').animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-10px)' }, { transform: 'translateY(0)' }], { duration: 600, iterations: Infinity, delay: i * 200, easing: 'ease-in-out' });
-    });
-    renderTiers();
+    const c = CRIB.console;
+    let h = `<img class="room" alt="" src="${ART.room}" style="top:0">`;
+    h += itemHtml('CLB-082', 196, 214, 0.5);
+    h += itemHtml('CLB-082', 656, 214, 0.5, { flip: true });
+    h += itemHtml('CLB-086', 96, 268, 0.55);
+    h += itemHtml('CLB-090', 760, 268, 0.5);
+    h += itemHtml('CLB-098', 300, 236, 0.42);
+    if (save.placed) {
+      // the DJ behind the console
+      const uri = window.DJCrew && window.DJCrew.get(DJ_KEY);
+      const djH = 84;
+      if (uri) h += `<img class="item" alt="Mittens the DJ" src="${uri}" style="left:${c.x - djH * 0.6}px;top:${c.y - 24 - djH * 1.06}px;width:${djH * 1.2}px;height:${djH * 1.2}px;z-index:${c.y - 2}">`;
+      h += itemHtml(save.placed, c.x, c.y, c.k, { cls: 'tapTarget', z: c.y });
+    } else {
+      h += `<div class="ghost" style="left:${c.x - 62}px;top:${c.y - 22}px;width:124px;height:44px;z-index:1"></div>`;
+      h += crHtml(DJ_KEY, 426, 318, 60);
+    }
+    h += crHtml('bubbly', 250, 322, 56);
+    h += crHtml('twinkle', 604, 322, 56);
+    h += crHtml('dunkie', 168, 352, 50);
+    h += crHtml('jelli', 690, 352, 52);
+    $('cribScene').innerHTML = h;
+    // over the console: SOUNDBOARD (open) or where it goes (locked)
+    const tag = document.createElement('button');
+    if (save.placed) {
+      tag.className = 'sbTag';
+      tag.style.left = `${c.x + 112}px`;
+      tag.style.top = `${c.y - 48}px`;
+      tag.innerHTML = `<span class="face${RM ? '' : ' pulse'}">♪ Soundboard</span>`;
+      tag.setAttribute('aria-label', 'Open the soundboard');
+    } else {
+      tag.className = 'spotTag';
+      tag.style.left = `${c.x}px`;
+      tag.style.top = `${c.y - 34}px`;
+      tag.innerHTML = '<span class="note"><span class="cap">DJ CONSOLE</span><span class="nt">Goes here</span><span class="ns">Opens the Soundboard</span></span><span class="stamp">LOCKED</span>';
+      tag.setAttribute('aria-label', 'DJ Console: open the catalog');
+    }
+    tag.style.zIndex = 400;
+    $('cribScene').appendChild(tag);
+    tag.addEventListener('click', tryOpen);
+    const con = $('cribScene').querySelector('.tapTarget');
+    if (con) { con.style.pointerEvents = 'auto'; con.style.cursor = 'pointer'; con.addEventListener('click', tryOpen); }
+    // the squad bobs about
+    if (!RM) $('cribScene').querySelectorAll('.cr .hop').forEach((el, i) => el.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-6px)' }, { transform: 'translateY(0)' }], { duration: 900 + i * 70, iterations: Infinity, delay: i * 230, easing: 'ease-in-out' }));
+    $('coins').textContent = fmt(save.coins);
+    $('lvChip').textContent = `Lv ${PLAYER_LV}`;
+    $('openSb').innerHTML = `${DECK_SVG}<span class="lbl">Soundboard</span>${save.placed ? '' : LOCK_SVG}`;
   }
-  function renderTiers() {
-    $('tiers').innerHTML = DJ.tiers.map((t, i) => {
-      const price = t.coins ? `LV ${t.lvl} · ${t.coins} COINS` : 'FREE';
-      const sb = i >= UNLOCK_TIER ? `<div class="ts">SOUNDBOARD · ${t.songs} SONG${t.songs > 1 ? 'S' : ''}</div>` : '<div class="ts no">NO SOUNDBOARD</div>';
-      return `<button class="tierCard${i === save.tier ? ' on' : ''}" data-tier="${i}" aria-pressed="${i === save.tier}"><div class="ti">${t.back ? t.back.svg : ''}</div><div class="tn">${t.name}</div><div class="tp">${price}</div>${sb}${i === save.tier ? '<span class="onTag">ON</span>' : ''}</button>`;
-    }).join('');
-    $('tiers').querySelectorAll('.tierCard').forEach((el) => el.addEventListener('click', () => equip(Number(el.dataset.tier))));
-  }
-  async function equip(i) {
-    await wake();
-    const was = unlocked();
-    save.tier = i;
-    store();
-    renderCrib();
-    if (!was && unlocked()) {
-      ui('unlock', 0.7);
-      showToast('Soundboard unlocked!', `Your ${tierNow().name} opens the soundboard. Tap the DJ booth to make a mix.`, { label: 'PLAY', fn: tryOpen });
-    } else ui('select', 0.5);
-  }
+  $('openCatalog').addEventListener('click', async () => { await wake(); ui('tap', 0.5); openCatalog(); });
+  $('openSb').addEventListener('click', tryOpen);
+  $('cribMap').addEventListener('click', async () => { await wake(); ui('tap', 0.4); toast('The other rooms are in the house. This prototype is the Dance Room.'); });
   async function tryOpen() {
     await wake();
     if (!unlocked()) {
       ui('locked', 0.7);
-      const need = DJ.tiers[UNLOCK_TIER];
-      showCard(`${titleSvg('DJ BOOTH', 'pink', 28)}
-        <div class="cardBooth">${need.back.svg}</div>
-        <div class="cardBody">The soundboard opens with the <b>${need.name}</b>. Buy it in the Home Shop and put it in your Dance Room.</div>
-        <div class="cardSub">LEVEL ${need.lvl} · ${need.coins} COINS · BETTER BOOTHS BRING MORE SONGS</div>
-        <div class="btnRow">${sticker('gold', 'GOT IT', 'cOk')}</div>`);
-      $('cOk').addEventListener('click', closeCard);
+      toast('Put a DJ Console in the Dance Room to unlock the Soundboard.');
+      openCatalog();
       return;
     }
-    roomFlash(openBoard);
+    roomFade(openBoard);
+  }
+
+  // ---- the catalog (the house's book), on the DJ Console page
+  let catSel = CONSOLES[4];
+  function openCatalog() {
+    const o = $('overlay');
+    o.hidden = false;
+    $('app').classList.add('cat');
+    renderCatalog();
+  }
+  function closeCatalog() { $('overlay').hidden = true; $('overlay').innerHTML = ''; $('app').classList.remove('cat'); }
+  function cardHtml(id) {
+    const it = ITEMS[id];
+    const own = !!save.owned[id];
+    const on = save.placed === id;
+    const lk = it.lv > PLAYER_LV;
+    const b = on ? '<button class="btn green" data-act="none">PLACED</button>' : own ? '<button class="btn green" data-act="place">PLACE</button>' : lk ? `<button class="btn grey" data-act="none">LV ${it.lv}</button>` : '<button class="btn" data-act="buy">BUY</button>';
+    return `<div class="card${catSel === id ? ' sel' : ''}" data-id="${id}">
+      <div class="pic" role="img" aria-label="${it.name}" style="background-image:url('${ART.items[id]}')"></div>
+      <span class="tierTag"${lk ? ' style="background:#9a8f80"' : ''}>Lv ${it.lv}</span>${own ? `<span class="cnt">${on ? 'ON' : 'x1'}</span>` : ''}
+      <div class="nm" title="${it.name}">${it.name}</div>
+      <div class="pr">${fmt(it.cost)}<span class="coin" style="width:11px;height:11px"></span>${b}</div></div>`;
+  }
+  function renderCatalog() {
+    const it = ITEMS[catSel];
+    const own = !!save.owned[catSel];
+    const on = save.placed === catSel;
+    const t = tierOf(catSel);
+    const can = save.coins >= it.cost;
+    const songs = SONGS.slice(0, SONGS_AT[t - 1]).map((s) => s.name).join(', ');
+    let act;
+    if (on) act = '<button class="btn green act" data-act="none">In your Dance Room ✓</button>';
+    else if (own) act = '<button class="btn green act" data-act="place">Place in the Dance Room</button>';
+    else act = `<button class="btn act${can ? '' : ' grey'}" data-act="buy"><span class="coin" style="width:16px;height:16px"></span>Buy · ${fmt(it.cost)}</button>`;
+    $('overlay').innerHTML = `<div class="dim"></div><div class="book" role="dialog" aria-label="Catalog">
+      <div class="roomTab"><svg width="16" height="14" viewBox="0 0 16 14" aria-hidden="true"><path d="M2 7 L8 2 L14 7 V13 H2 Z" fill="#c98d52" stroke="#6b4426" stroke-width="1.6" stroke-linejoin="round"/></svg>Dance Room</div>
+      <div class="bookHead"><span class="chip lv">Lv ${PLAYER_LV}</span><span class="chip"><span class="coin"></span>${fmt(save.coins)}</span></div>
+      <button class="rbtn woody closeBtn" id="catClose" aria-label="Close catalog" style="position:absolute;right:8px;top:2px"><svg viewBox="0 0 24 24" width="12" height="12"><path d="M6 6l12 12M18 6L6 18" stroke="#6b4426" stroke-width="6" stroke-linecap="round"/><path d="M6 6l12 12M18 6L6 18" stroke="#fff6e2" stroke-width="3" stroke-linecap="round"/></svg></button>
+      <div class="board">
+        <div class="pageL">
+          <div class="pageHead"><span class="cap">CATALOG</span><span class="ttl">Dance Room</span><span class="sub">· DJ Console</span></div>
+          <div class="grid">${CONSOLES.map(cardHtml).join('')}
+            <div class="info"><span class="cap">THE SOUNDBOARD</span><span class="tx">Any DJ Console in the Dance Room opens the Soundboard. Better consoles bring more songs: 2, 3, 4, 5, then all 6.</span></div></div>
+          <div class="cats"><span class="btn on">DJ Console</span></div>
+        </div>
+        <div class="spine"></div>
+        <div class="pageR">
+          <div class="det">
+            <div class="big"><div role="img" aria-label="${it.name}" style="background-image:url('${ART.items[catSel]}')"></div></div>
+            <div class="row"><span class="lvT">Lv ${it.lv}</span><span class="lvT" style="background:#e2b14a;color:#5b3418;text-shadow:none">Tier ${t}</span></div>
+            <span class="name">${it.name}</span>
+            <span class="room">Dance Room · DJ Console</span>
+            <div class="info"><span class="cap">WHAT IT DOES</span><span class="tx">Opens the Soundboard with ${SONGS_AT[t - 1]} songs: ${songs}.</span></div>
+            ${act}
+          </div>
+        </div>
+      </div></div>`;
+    $('overlay').querySelector('.dim').addEventListener('click', closeCatalog);
+    $('catClose').addEventListener('click', () => { ui('tap', 0.4); closeCatalog(); });
+    $('overlay').querySelectorAll('.card').forEach((c) => c.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-act]');
+      catSel = c.dataset.id;
+      if (b) act2(b.dataset.act); else { ui('tap', 0.4); renderCatalog(); }
+    }));
+    $('overlay').querySelector('.det .act').addEventListener('click', (e) => act2(e.currentTarget.dataset.act));
+  }
+  function act2(a) {
+    const it = ITEMS[catSel];
+    if (a === 'buy') {
+      if (save.coins < it.cost) { ui('locked', 0.6); toast('Not enough coins yet.'); return; }
+      save.coins -= it.cost;
+      save.owned[catSel] = true;
+      ui('buy', 0.7);
+      place(catSel);
+    } else if (a === 'place') {
+      place(catSel);
+    } else {
+      renderCatalog();
+    }
+  }
+  function place(id) {
+    const was = unlocked();
+    save.placed = id;
+    store();
+    closeCatalog();
+    renderCrib();
+    const con = $('cribScene').querySelector('.tapTarget');
+    if (con && !RM) con.animate([{ transform: 'translateY(-26px)', opacity: 0 }, { transform: 'translateY(3px)', opacity: 1, offset: 0.7 }, { transform: 'none' }], { duration: 420, easing: 'ease-out' });
+    if (!was) {
+      ui('unlock', 0.7);
+      unlockCard();
+    } else {
+      ui('select', 0.5);
+      toast(`${ITEMS[id].name.split(' with ')[0]} is in. ${SONGS_AT[tierOf(id) - 1]} songs on the Soundboard.`);
+    }
+  }
+  function unlockCard() {
+    const o = $('overlay');
+    o.hidden = false;
+    const uri = window.DJCrew && window.DJCrew.get(DJ_KEY);
+    o.innerHTML = `<div class="dim"></div><div class="ucard" role="dialog" aria-label="Soundboard unlocked">
+      <button class="rbtn woody x" id="uX" aria-label="Close"><svg viewBox="0 0 24 24" width="13" height="13"><path d="M6 6l12 12M18 6L6 18" stroke="#6b4426" stroke-width="6" stroke-linecap="round"/><path d="M6 6l12 12M18 6L6 18" stroke="#fff6e2" stroke-width="3" stroke-linecap="round"/></svg></button>
+      <div class="pic">${uri ? `<img alt="" src="${uri}" style="position:absolute;left:5px;top:-4px;width:140px;height:140px">` : ''}${itemHtml(save.placed, 75, 128, 0.62, { z: 2 })}</div>
+      <div class="txt"><span class="cap">NEW IN THE DANCE ROOM</span><span class="h">Soundboard unlocked!</span>
+        <span class="b">Your DJ Console opens the Soundboard. Put the squad's voices, effects and music on the beat, and make your own mix.</span>
+        <button class="btn green act" id="uGo">Play</button></div></div>`;
+    o.querySelector('.dim').addEventListener('click', closeCatalog);
+    $('uX').addEventListener('click', closeCatalog);
+    $('uGo').addEventListener('click', () => { closeCatalog(); tryOpen(); });
+  }
+
+  // ---- the soundboard stage: the club, zoomed in on the dance floor
+  const DY = -26; // the room sits 26px higher, so the dance floor clears the mixer
+  const floorY = (x) => 152 + DY + 78 * ((x - 426) / 426) ** 2;
+  const ST = {
+    console: { x: 426, y: 214, k: 0.92 },
+    dj: { x: 426, y: 178, h: 92 },
+    // the four on the dance floor, two each side of the booth
+    perf: [{ key: 'bubbly', x: 112, y: 246 }, { key: 'frybo', x: 254, y: 254 }, { key: 'jelli', x: 598, y: 254 }, { key: 'twinkle', x: 740, y: 246 }],
+    perfH: 84,
+  };
+  const LIGHT = ['#3ff0ff', '#ff4fb8', '#ffe14f', '#b48bff']; // dj-crew.js's ring-light colours and the room's purple
+  const BEAMS = [{ x: 150, y: 14 }, { x: 318, y: 2 }, { x: 534, y: 2 }, { x: 702, y: 14 }];
+  // the crowd: the rest of the squad, at the back of the floor each side of the booth
+  function crowdSpots() {
+    const xs = [40, 84, 128, 172, 214, 256, 300, 552, 596, 640, 684, 726, 768, 812];
+    return xs.map((x, i) => { const back = i % 2 === 0; return { key: CROWD[i], x, y: floorY(x) + (back ? 9 : 22), h: back ? 40 : 46 }; });
+  }
+  function renderStage() {
+    const c = ST.console;
+    let h = `<img class="room" alt="" src="${ART.room}" style="top:${DY}px"><div class="shade"></div>`;
+    h += `<div class="signGlow" id="signGlow" style="left:409px;top:${92 + DY}px"></div>`;
+    h += BEAMS.map((b, i) => `<div class="beam" data-i="${i}" style="left:${b.x}px;top:${b.y}px;--c:${LIGHT[i]};transform:rotate(${(i < 2 ? 1 : -1) * 18}deg);z-index:2"><i></i></div><div class="lamp" style="left:${b.x}px;top:${b.y}px;--c:${LIGHT[i]};z-index:3"></div>`).join('');
+    h += `<div class="crowd">${crowdSpots().map((s, i) => crHtml(s.key, s.x, s.y, s.h, { cls: 'tapTarget', z: 10 + Math.round(s.y), css: `--d:${(-i * 0.37).toFixed(2)}s;` })).join('')}</div>`;
+    // the room's club pieces around the booth
+    h += itemHtml('CLB-082', 318, 186, 0.52, { z: 196 });
+    h += itemHtml('CLB-082', 534, 186, 0.52, { flip: true, z: 196 });
+    h += itemHtml('CLB-086', 52, 214, 0.5, { z: 214 });
+    h += itemHtml('CLB-090', 800, 214, 0.46, { z: 214 });
+    // floor light pools
+    h += [0, 1, 2].map((i) => `<div class="pool" data-i="${i}" style="left:${300 + i * 130}px;top:${232}px;--c:${LIGHT[i]};z-index:205"></div>`).join('');
+    // the DJ behind the console (filled in by putDj), then the console in front
+    h += `<div class="cr tapTarget" id="djBox" data-key="${DJ_KEY}" style="left:${ST.dj.x - ST.dj.h * 0.6}px;top:${ST.dj.y - ST.dj.h * 1.06}px;width:${ST.dj.h * 1.2}px;height:${ST.dj.h * 1.2}px;z-index:207"><div class="hop"><div class="sq" id="djSq"></div></div></div>`;
+    if (save.placed) h += itemHtml(save.placed, c.x, c.y, c.k, { z: 210 });
+    // the dance floor: spotlights, selection ring, the four voices
+    ST.perf.forEach((p) => {
+      const topX = p.x + (p.x - 426) * 0.12;
+      const w = 104;
+      h += `<div class="spot" data-key="${p.key}" style="left:${p.x - w / 2}px;top:-10px;width:${w}px;height:${p.y + 10}px;--c:${COLOR[p.key]};z-index:220;transform-origin:50% 100%;transform:skewX(${((topX - p.x) / (p.y + 10)) * -57}deg)"></div>`;
+      h += `<div class="spotFloor" data-key="${p.key}" style="left:${p.x}px;top:${p.y - 2}px;--c:${COLOR[p.key]};z-index:221"></div>`;
+    });
+    h += '<div class="selRing" id="selRing" hidden style="z-index:222"></div>';
+    h += '<div id="fogLayer" style="z-index:223"></div>';
+    h += ST.perf.map((p) => crHtml(p.key, p.x, p.y, ST.perfH, { cls: 'tapTarget perf', z: 230 + Math.round(p.y) })).join('');
+    h += '<div id="fxLayer" style="z-index:600"></div>';
+    $('stage').innerHTML = h;
+    putDj();
+    $('stage').querySelectorAll('.tapTarget').forEach((el) => {
+      el.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        const key = el.dataset.key;
+        if (VOICE_KEYS.includes(key)) liveVoice(key);
+        else crowdVoice(el);
+      });
+    });
+    markSel();
+    idleLights();
+  }
+  let djEl = null;
+  function putDj() {
+    const host = $('djSq');
+    if (!host) return;
+    const svg = djSvg(B.beat || 0.5);
+    if (!svg) { host.innerHTML = `<img alt="Mittens the DJ" src="${ART.sq[DJ_KEY]}" style="transform:scale(0.83)">`; djEl = null; return; }
+    host.innerHTML = svg;
+    djEl = host.querySelector('svg');
+    djEl.setAttribute('role', 'img');
+    djEl.setAttribute('aria-label', 'Mittens the DJ');
+    if (!B.playing) { try { djEl.pauseAnimations(); djEl.setCurrentTime(0); } catch (e) { /* ignore */ } }
+  }
+  const perfOf = (key) => ST.perf.find((p) => p.key === key);
+  // where a voice is on stage (scene px)
+  function sqPoint(key) {
+    if (key === DJ_KEY) return { x: ST.dj.x, y: ST.dj.y - ST.dj.h * 0.75 };
+    const p = perfOf(key);
+    return { x: p.x, y: p.y - ST.perfH * 0.62 };
+  }
+  const sqEl = (key) => $('stage').querySelector(`.cr[data-key="${key}"]`);
+  function markSel() {
+    const r = $('selRing');
+    if (!r) return;
+    const k = B.tool.kind === 'voice' ? B.tool.key : null;
+    if (!k) { r.hidden = true; return; }
+    r.hidden = false;
+    if (k === DJ_KEY) { r.style.left = `${ST.dj.x}px`; r.style.top = `${ST.console.y + 26}px`; r.style.width = '120px'; r.style.marginLeft = '-60px'; return; }
+    const p = perfOf(k);
+    r.style.width = '';
+    r.style.marginLeft = '';
+    r.style.left = `${p.x}px`;
+    r.style.top = `${p.y}px`;
+  }
+
+  // ---- the lights
+  let lightT = 0;
+  let lightN = 0;
+  function moveLights(fast) {
+    lightN++;
+    $('stage').querySelectorAll('.beam').forEach((b, i) => {
+      const side = i < 2 ? 1 : -1;
+      const a = side * rnd(4, 34) * (lightN % 2 ? 1 : 0.6) + (fast ? rnd(-8, 8) : 0);
+      b.style.transitionDuration = fast ? `${Math.max(0.25, B.beat * 0.9)}s` : '2.2s';
+      b.style.transform = `rotate(${a.toFixed(1)}deg)`;
+      if (fast) b.style.setProperty('--c', LIGHT[(i + lightN) % 4]);
+      b.querySelector('i').style.opacity = fast ? '0.42' : '0.26';
+    });
+    $('stage').querySelectorAll('.pool').forEach((p, i) => {
+      const x = rnd(170, 690);
+      p.style.left = `${x}px`;
+      p.style.top = `${floorY(x) + rnd(70, 110)}px`;
+      if (fast) p.style.setProperty('--c', LIGHT[(i * 2 + lightN) % 4]);
+      p.style.opacity = fast ? '0.34' : '0.18';
+    });
+  }
+  function idleLights() {
+    clearInterval(lightT);
+    if (RM) return;
+    moveLights(false);
+    lightT = setInterval(() => { if (!B.playing && !$('board').hidden) moveLights(false); }, 2300);
+  }
+
+  // ---- fog: the design's club fog (art/club-fx.js) from the mist tower and the bass reactors while the music plays
+  function fogAnchor(id, x, y, k, flip) {
+    return () => {
+      const el = $('fogLayer');
+      if (!el) return null;
+      const PTS = { 'CLB-090': [[0, -76.8], [0, -89.6], [0, -100.6]], 'CLB-082': [[-2.3, -3]] };
+      const dir = id === 'CLB-090' ? [-0.94, 0.33] : [flip ? -0.94 : 0.94, 0.33];
+      return { el, pts: PTS[id].map((p) => ({ x: x + p[0] * k * (flip ? -1 : 1), y: y + p[1] * k })), fl: { x, y }, dir, s: k * 1.2, cf: null };
+    };
+  }
+  function fogOn() {
+    if (!window.ClubFog || RM) return;
+    window.ClubFog.start('sb:mist', fogAnchor('CLB-090', 800, 214, 0.46), { t: 4, style: 'mist', tint: ['#fff8ee', '#f4ece2', '#fff2e0'] });
+  }
+  function fogOff() { if (window.ClubFog) window.ClubFog.stopAll('sb:'); }
+  function fogBurst() {
+    if (!window.ClubFog || RM) return;
+    ['L', 'R'].forEach((s) => {
+      const key = `sb:ring${s}`;
+      window.ClubFog.start(key, fogAnchor('CLB-082', s === 'L' ? 318 : 534, 186, 0.52, s === 'R'), { t: 3, style: 'ring', tint: ['#eef6ff', '#f6ead6'] });
+      setTimeout(() => window.ClubFog.stop(key), 500);
+    });
   }
 
   // ---- the soundboard
-  const B = { tab: 'voice', tool: { kind: 'voice', key: 'bubbly' }, playing: false, rec: false, step: -1 };
-  const songsHere = () => DJ.songs.slice(0, tierNow().songs);
+  const B = { tab: 'voice', tool: { kind: 'voice', key: 'bubbly' }, playing: false, rec: false, step: -1, beat: 0.5 };
   function openBoard() {
     $('crib').hidden = true;
     $('board').hidden = false;
     if (!songsHere().some((s) => s.track === mix.track)) mix.track = songsHere()[0].track;
-    $('boardTitle').innerHTML = roomTitleSvg('Soundboard');
-    // the mixer first: the stage gets the height that's left
     renderMixer();
     renderPalette();
-    updateTop();
+    updateSong();
     renderStage();
   }
   function closeBoard() {
     stop();
-    roomFlash(() => {
+    roomFade(() => {
       $('board').hidden = true;
       $('crib').hidden = false;
+      clearInterval(lightT);
       renderCrib();
     });
   }
-  function updateTop() {
-    const song = DJ.songs.find((s) => s.track === mix.track);
-    const buf = audio.bufs[`m:${mix.track}`];
-    const bpm = buf ? Math.round((32 * 60) / buf.duration) : null;
-    $('boardSub').textContent = `${tierNow().name.toUpperCase()} · ${song ? song.name.toUpperCase() : ''}`;
-    $('bpm').textContent = bpm ? `♪ ${bpm} BPM` : '♪';
+  function updateSong() {
+    const song = SONGS.find((s) => s.track === mix.track);
+    const bpm = bpmOf(mix.track);
+    $('songChip').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17V5l10-2v12" stroke="#6b4426" stroke-width="2.8" fill="none"/><circle cx="6.5" cy="17.5" r="3.2" fill="#e2554a" stroke="#6b4426" stroke-width="1.5"/><circle cx="16.5" cy="15.5" r="3.2" fill="#3ff0ff" stroke="#6b4426" stroke-width="1.5"/></svg>${song.name}${bpm ? ` · ${bpm} BPM` : ''}`;
+    $('mxSong').textContent = song.name;
+    updatePos();
   }
-  function renderStage() {
-    const box = $('stage');
-    const dancers = LINEUP.map((s, i) => {
-      const off = Math.abs(i - 2);
-      return { key: s.key, x: 426 + (i - 2) * 76, y: 334 - off * 12 + (off === 0 ? 10 : 0), w: 66 };
-    });
-    box.querySelectorAll('.scene, .fxLayer').forEach((n) => n.remove());
-    box.insertAdjacentHTML('beforeend', `<div class="scene" id="stageScene">${sceneHtml(tierNow(), dancers)}</div><div class="fxLayer" id="fxLayer"></div>`);
-    const scene = $('stageScene');
-    // fit the lineup across the width, their feet just above the mixer; the
-    // room's wall colour fills in above the scene on a tall stage
-    const W = box.clientWidth;
-    const H = box.clientHeight;
-    const s = Math.min(W / 400, (H - 10) / 300);
-    const ty = H - 24 - 350 * s;
-    scene.style.transform = `translate(${W / 2 - 426 * s}px, ${ty}px) scale(${s})`;
-    $('wallFill').style.height = `${Math.max(0, ty + 2)}px`;
-    B.scale = s;
-    paintFloor(scene, 0);
-    scene.querySelectorAll('.sq').forEach((el) => {
-      el.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        liveVoice(el.dataset.key);
-      });
-    });
-  }
-  function sqEl(key) { return $('stageScene') && $('stageScene').querySelector(`.sq[data-key="${key}"]`); }
-  // where a squishy is on screen, in the stage box
-  function sqPoint(key) {
-    const el = sqEl(key);
-    const box = $('stage').getBoundingClientRect();
-    const r = el.getBoundingClientRect();
-    return { x: r.left + r.width / 2 - box.left, y: r.top + r.height * 0.35 - box.top, w: r.width };
+  function updatePos() {
+    const s = B.step;
+    $('mxPos').textContent = B.playing && s >= 0 ? `Bar ${Math.floor(s / 4) + 1} · Beat ${(s % 4) + 1}` : `${bpmOf(mix.track) || '…'} BPM · 4 bars`;
   }
 
   function cellHtml(track, i) {
     const v = mix[track][i];
-    let inner = `<span class="n">${i % 4 === 0 ? i / 4 + 1 : ''}</span>`;
-    if (v && track === 'voice') inner += `<img alt="${BY_KEY[v].name}" src="${A.head[v]}">`;
-    if (v && track === 'fx') inner += `<span class="chip" style="--c:${FX_BY[v].color}">${FX_BY[v].short}</span>`;
-    return `<div class="cell${v ? ' filled' : ''}${i % 4 === 0 ? ' down1' : ''}" data-track="${track}" data-i="${i}" role="button" aria-label="${track} beat ${i + 1}">${inner}</div>`;
+    let inner = i % 4 === 0 ? `<span class="n">${i / 4 + 1}</span>` : '';
+    let c = '';
+    if (v && track === 'voice') { inner += `<img alt="${SQ[v].name}" src="${ART.sq[v]}">`; c = COLOR[v]; }
+    if (v && track === 'fx') { inner += `<span class="fx" style="--c:${FX_BY[v].color}">${FX_BY[v].short}</span>`; c = FX_BY[v].color; }
+    return `<div class="cell${v ? ' filled' : ''}${i % 4 === 0 ? ' b1' : ''}" data-track="${track}" data-i="${i}" role="button" aria-label="${track} beat ${i + 1}${v ? `: ${track === 'voice' ? SQ[v].name : FX_BY[v].name}` : ''}"${c ? ` style="--c:${c}"` : ''}>${inner}</div>`;
   }
   function renderMixer() {
     $('vCells').innerHTML = mix.voice.map((_, i) => cellHtml('voice', i)).join('');
     $('fCells').innerHTML = mix.fx.map((_, i) => cellHtml('fx', i)).join('');
-    $('mBars').innerHTML = mix.music.map((on, i) => `<div class="bar${on ? '' : ' off'}" data-bar="${i}" role="button" aria-pressed="${on}">BAR ${i + 1} · ${on ? 'MUSIC' : 'BREAK'}</div>`).join('');
+    $('mBars').innerHTML = mix.music.map((on, i) => `<div class="bar${on ? '' : ' off'}" data-bar="${i}" role="button" aria-pressed="${on}" aria-label="Bar ${i + 1}: ${on ? 'music' : 'break'}">${on ? '♪ Music' : 'Break'}</div>`).join('');
     markStep(B.step);
   }
   function refreshCell(track, i) {
     const host = track === 'voice' ? $('vCells') : $('fCells');
-    const old = host.querySelector(`.cell[data-i="${i}"]`);
-    old.outerHTML = cellHtml(track, i);
+    host.querySelector(`.cell[data-i="${i}"]`).outerHTML = cellHtml(track, i);
     const el = host.querySelector(`.cell[data-i="${i}"]`);
-    if (mix[track][i]) el.animate([{ transform: 'scale(0.5)' }, { transform: 'scale(1.15)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: 260, easing: 'ease-out' });
+    if (mix[track][i] && !RM) el.animate([{ transform: 'scale(0.5)' }, { transform: 'scale(1.15)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: 260, easing: 'ease-out' });
     if (i === B.step) el.classList.add('now');
   }
   function markStep(i) {
@@ -667,45 +927,40 @@ img { -webkit-user-drag: none; }
     const bar = document.querySelector(`.bar[data-bar="${Math.floor(i / 4)}"]`);
     if (bar) bar.classList.add('now');
   }
-
   function renderPalette() {
-    document.querySelectorAll('.tab').forEach((t) => {
+    document.querySelectorAll('.laneTab').forEach((t) => {
       const on = t.dataset.tab === B.tab;
       t.classList.toggle('on', on);
-      t.setAttribute('aria-selected', on);
+      t.setAttribute('aria-pressed', on);
     });
-    let html = '';
+    let h = '';
+    const erase = `<button class="pal${B.tool.kind === 'erase' ? ' sel' : ''}" data-kind="erase"><span class="dot" style="--c:#fff6e2;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1;color:#6b4426">✕</span>Erase</button>`;
     if (B.tab === 'voice') {
-      html = LINEUP.map((s) => `<button class="pal${B.tool.kind === 'voice' && B.tool.key === s.key ? ' sel' : ''}" data-kind="voice" data-key="${s.key}"><span class="pi"><img alt="" src="${A.head[s.key]}"></span><span class="pn">${s.name}</span></button>`).join('');
-      html += `<button class="pal${B.tool.kind === 'erase' ? ' sel' : ''}" data-kind="erase"><span class="pi fx" style="--c:#5a4a6a">✕</span><span class="pn">Erase</span></button>`;
+      h = VOICE_KEYS.map((k) => `<button class="pal${B.tool.kind === 'voice' && B.tool.key === k ? ' sel' : ''}" data-kind="voice" data-key="${k}"><img alt="" src="${ART.sq[k]}">${SQ[k].name}${k === DJ_KEY ? ' (DJ)' : ''}</button>`).join('') + erase;
     } else if (B.tab === 'fx') {
-      html = FX.map((f) => `<button class="pal${B.tool.kind === 'fx' && B.tool.key === f.key ? ' sel' : ''}" data-kind="fx" data-key="${f.key}"><span class="pi fx" style="--c:${f.color}">${f.short}</span><span class="pn">${f.name}</span></button>`).join('');
-      html += `<button class="pal${B.tool.kind === 'erase' ? ' sel' : ''}" data-kind="erase"><span class="pi fx" style="--c:#5a4a6a">✕</span><span class="pn">Erase</span></button>`;
+      h = FX.map((f) => `<button class="pal${B.tool.kind === 'fx' && B.tool.key === f.key ? ' sel' : ''}" data-kind="fx" data-key="${f.key}"><span class="dot" style="--c:${f.color}"></span>${f.name}</button>`).join('') + erase;
     } else {
-      const n = tierNow().songs;
-      html = DJ.songs.map((s, i) => {
-        const buf = audio.bufs[`m:${s.track}`];
-        const bpm = buf ? `${Math.round((32 * 60) / buf.duration)}` : '';
+      const n = songsHere().length;
+      h = SONGS.map((s, i) => {
         if (i >= n) {
-          const need = DJ.tiers.find((t) => t.songs > i);
-          return `<button class="song locked" data-locked="${need ? need.name : ''}"><span class="sn">🔒 ${s.name}</span><span class="sb">${need ? need.name.toUpperCase() : ''}</span></button>`;
+          const t = SONGS_AT.findIndex((m) => m > i);
+          const need = ITEMS[CONSOLES[t]];
+          return `<button class="song locked" data-need="${CONSOLES[t]}" aria-label="${s.name}: locked, Lv ${need.lv} console"><span class="lk">Lv ${need.lv}</span>${s.name}</button>`;
         }
-        return `<button class="song${s.track === mix.track ? ' sel' : ''}" data-track="${s.track}"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17V5l10-2v12" stroke="#ff5cc6" stroke-width="2.6" fill="none"/><circle cx="6.5" cy="17.5" r="3" fill="#ff5cc6"/><circle cx="16.5" cy="15.5" r="3" fill="#5cf2c8"/></svg><span class="sn">${s.name}</span><span class="sb">${bpm}</span></button>`;
+        const bpm = bpmOf(s.track);
+        return `<button class="song${s.track === mix.track ? ' sel' : ''}" data-track="${s.track}">${s.name}${bpm ? `<span class="bpm">${bpm}</span>` : ''}</button>`;
       }).join('');
     }
-    $('palette').innerHTML = html;
+    $('palette').innerHTML = h;
+    markSel();
   }
 
   // ---- editing
   function paintCell(track, i) {
     const t = B.tool;
-    if (track === 'music') return;
     let v = mix[track][i];
     if (t.kind === 'erase') v = null;
-    else if (t.kind !== track) {
-      flashTab(track);
-      return;
-    } else v = v === t.key && !B.painting ? null : t.key;
+    else if (t.kind !== track) { flashLane(track); return; } else v = v === t.key && !B.painting ? null : t.key;
     if (mix[track][i] === v) return;
     mix[track][i] = v;
     refreshCell(track, i);
@@ -715,10 +970,12 @@ img { -webkit-user-drag: none; }
       });
     }
   }
-  function flashTab(track) {
-    const tab = document.querySelector(`.tab[data-tab="${track}"]`);
-    tab.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.12)' }, { transform: 'scale(1)' }], { duration: 300 });
-    showToast(track === 'voice' ? 'Pick a squishy first' : 'Pick a sound first', `Choose one in ${track === 'voice' ? 'VOICES' : 'FX'}, then tap the beats.`);
+  function flashLane(track) {
+    const tab = document.querySelector(`.laneTab[data-tab="${track}"]`);
+    tab.classList.remove('flashLane');
+    void tab.offsetWidth;
+    tab.classList.add('flashLane');
+    toast(track === 'voice' ? 'Tap VOICE and pick a squishy first.' : 'Tap FX and pick a sound first.');
   }
   // tap or drag across cells to fill them
   let painting = null;
@@ -733,7 +990,6 @@ img { -webkit-user-drag: none; }
       const before = mix[track][i];
       B.painting = false;
       paintCell(track, i);
-      // dragging fills (never clears) the cells it passes over
       painting = { track, filled: !!mix[track][i] && mix[track][i] !== before };
       try { host.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
     });
@@ -752,20 +1008,22 @@ img { -webkit-user-drag: none; }
     host.addEventListener('pointerup', end);
     host.addEventListener('pointercancel', end);
   });
-  $('mBars').addEventListener('click', (e) => {
+  $('mBars').addEventListener('click', async (e) => {
     const b = e.target.closest('.bar');
     if (!b) return;
+    await wake();
     const i = Number(b.dataset.bar);
     mix.music[i] = !mix.music[i];
     renderMixer();
     ui('tap', 0.5);
     changed();
   });
-  document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => {
+  document.querySelectorAll('.laneTab').forEach((t) => t.addEventListener('click', async () => {
     B.tab = t.dataset.tab;
-    if (B.tab !== 'music' && B.tool.kind !== 'erase' && B.tool.kind !== B.tab) B.tool = B.tab === 'voice' ? { kind: 'voice', key: LINEUP[0].key } : { kind: 'fx', key: FX[0].key };
+    if (B.tab !== 'music' && B.tool.kind !== 'erase' && B.tool.kind !== B.tab) B.tool = B.tab === 'voice' ? { kind: 'voice', key: VOICE_KEYS[1] } : { kind: 'fx', key: FX[0].key };
     renderPalette();
-    wake().then(() => ui('tap', 0.4));
+    await wake();
+    ui('tap', 0.4);
   }));
   $('palette').addEventListener('click', async (e) => {
     const p = e.target.closest('.pal, .song');
@@ -774,12 +1032,13 @@ img { -webkit-user-drag: none; }
     if (p.classList.contains('song')) {
       if (p.classList.contains('locked')) {
         ui('locked', 0.6);
-        showToast('Song locked', `${p.dataset.locked} brings this song. Buy it in the Home Shop.`);
+        const need = ITEMS[p.dataset.need];
+        toast(`A Lv ${need.lv} DJ Console brings this song. Find it in the Catalog.`);
         return;
       }
       mix.track = p.dataset.track;
       renderPalette();
-      updateTop();
+      updateSong();
       changed();
       if (B.playing) { stop(); play(); } else ui('select', 0.5);
       return;
@@ -789,11 +1048,9 @@ img { -webkit-user-drag: none; }
     renderPalette();
     if (kind === 'voice') { playVoice(p.dataset.key, 0); stageVoice(p.dataset.key); }
     if (kind === 'fx') { playFx(p.dataset.key, 0); stageFx(p.dataset.key); }
+    if (kind === 'erase') ui('tap', 0.4);
   });
-  function changed() {
-    // the mix is kept for the next visit only when SAVE is pressed; this marks it unsaved
-    $('save').querySelector('.sface').textContent = 'SAVE';
-  }
+  function changed() { $('save').textContent = 'Save'; }
 
   // ---- playing: a look-ahead scheduler on the audio clock
   let timer = 0;
@@ -819,9 +1076,11 @@ img { -webkit-user-drag: none; }
     B.nextStep = 0;
     B.nextTime = B.t0;
     B.playing = true;
-    $('playLabel').textContent = '■ STOP';
-    $('play').className = 'sticker st-red play';
-    updateTop();
+    $('play').innerHTML = STOP_SVG;
+    $('play').classList.add('on');
+    $('play').setAttribute('aria-label', 'Stop');
+    putDj();
+    fogOn();
     timer = setInterval(tick, 25);
     tick();
     raf = requestAnimationFrame(frame);
@@ -840,8 +1099,13 @@ img { -webkit-user-drag: none; }
     } catch (e) { /* ignore */ }
     B.step = -1;
     markStep(-1);
-    $('playLabel').textContent = '▶ PLAY';
-    $('play').className = 'sticker st-green play';
+    updatePos();
+    $('play').innerHTML = PLAY_SVG;
+    $('play').classList.remove('on');
+    $('play').setAttribute('aria-label', 'Play');
+    if (djEl) { try { djEl.pauseAnimations(); djEl.setCurrentTime(0); } catch (e) { /* ignore */ } }
+    fogOff();
+    idleLights();
   }
   function tick() {
     const ctx = audio.ctx;
@@ -866,7 +1130,8 @@ img { -webkit-user-drag: none; }
       const ev = queue.shift();
       B.step = ev.i;
       markStep(ev.i);
-      onBeat(ev.i);
+      updatePos();
+      onBeat(ev.i, ev.t);
       if (ev.v) stageVoice(ev.v);
       if (ev.f) stageFx(ev.f);
     }
@@ -874,31 +1139,46 @@ img { -webkit-user-drag: none; }
   }
 
   // ---- the stage's reactions
-  function onBeat(i) {
-    const scene = $('stageScene');
-    if (!scene) return;
-    paintFloor(scene, Math.floor(i / 1));
+  function onBeat(i, t) {
     const on = mix.music[Math.floor(i / 4)];
-    if (on && !RM) {
-      scene.querySelectorAll('.sq .hop').forEach((h, k) => h.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-6 - (k % 2) * 3}px)` }, { transform: 'translateY(0)' }], { duration: B.beat * 1000 * 0.9, easing: 'ease-out' }));
-      scene.querySelector('.floor .glow').animate([{ opacity: 0.16 }, { opacity: 0.04 }], { duration: B.beat * 1000, easing: 'ease-out' });
+    // the DJ's groove follows the song: back in step at every bar
+    if (djEl && i % 4 === 0) {
+      try {
+        djEl.setCurrentTime(((t - B.t0) % (B.beat * 8) + B.beat * 8) % (B.beat * 8));
+        if (on) djEl.unpauseAnimations(); else djEl.pauseAnimations();
+      } catch (e) { /* ignore */ }
+    }
+    if (RM) return;
+    if (on) {
+      moveLights(true);
+      const g = $('signGlow');
+      if (g) g.animate([{ opacity: 0.85 }, { opacity: 0.3 }], { duration: B.beat * 1000, easing: 'ease-out' });
+      const d = B.beat * 1000 * 0.9;
+      $('stage').querySelectorAll('.perf .hop').forEach((h, k) => h.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-5 - (k % 2) * 3}px)` }, { transform: 'translateY(0)' }], { duration: d, easing: 'ease-out' }));
+      $('stage').querySelectorAll('.crowd .sq').forEach((h, k) => {
+        if ((k + i) % 2) return;
+        h.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-rnd(4, 9)}px)` }, { transform: 'translateY(0)' }], { duration: d, delay: rnd(0, 40), easing: 'ease-out' });
+      });
     }
   }
   function stageVoice(key) {
     const el = sqEl(key);
     if (!el) return;
-    el.querySelector('.squash').animate([{ transform: 'scale(1,1)' }, { transform: 'scale(1.22,0.72)', offset: 0.25 }, { transform: 'scale(0.92,1.12)', offset: 0.6 }, { transform: 'scale(1,1)' }], { duration: 380, easing: 'ease-out' });
-    el.querySelector('.ring').animate([{ transform: 'translate(-50%,-50%) scale(0.5)', opacity: 0.9 }, { transform: 'translate(-50%,-50%) scale(1.3)', opacity: 0 }], { duration: 480, easing: 'ease-out' });
+    if (!RM) el.querySelector('.sq').animate([{ transform: 'scale(1,1)' }, { transform: 'scale(1.18,0.78)', offset: 0.25 }, { transform: 'scale(0.94,1.1)', offset: 0.6 }, { transform: 'scale(1,1)' }], { duration: 380, easing: 'ease-out' });
+    const spot = $('stage').querySelector(`.spot[data-key="${key}"]`);
+    if (spot) spot.animate([{ opacity: 0.6 }, { opacity: 0.1 }], { duration: 650, easing: 'ease-out' });
+    const fl = $('stage').querySelector(`.spotFloor[data-key="${key}"]`);
+    if (fl) fl.animate([{ opacity: 1, transform: 'scale(1.3)' }, { opacity: 0.35, transform: 'scale(1)' }], { duration: 650, easing: 'ease-out' });
+    if (RM) return;
     const p = sqPoint(key);
     const n = document.createElement('div');
-    n.className = 'note';
+    n.className = 'note8';
     n.textContent = Math.random() < 0.5 ? '♪' : '♫';
-    n.style.setProperty('--c', BY_KEY[key].color);
+    n.style.setProperty('--c', COLOR[key]);
     $('fxLayer').appendChild(n);
-    const dx = (Math.random() - 0.5) * 30;
-    n.animate([{ transform: `translate(${p.x}px,${p.y}px) scale(0.6)`, opacity: 0 }, { transform: `translate(${p.x + dx * 0.4}px,${p.y - 30}px) scale(1.1)`, opacity: 1, offset: 0.3 }, { transform: `translate(${p.x + dx}px,${p.y - 80}px) scale(0.9)`, opacity: 0 }], { duration: 900, easing: 'ease-out' }).finished.then(() => n.remove());
+    const dx = rnd(-15, 15);
+    n.animate([{ transform: `translate(${p.x}px,${p.y}px) scale(0.6)`, opacity: 0 }, { transform: `translate(${p.x + dx * 0.4}px,${p.y - 26}px) scale(1.1)`, opacity: 1, offset: 0.3 }, { transform: `translate(${p.x + dx}px,${p.y - 70}px) scale(0.9)`, opacity: 0 }], { duration: 900, easing: 'ease-out' }).finished.then(() => n.remove());
   }
-  const rnd = (a, b) => a + Math.random() * (b - a);
   function burst(x, y, colors, n = 10, dist = 40, star = false) {
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2 + rnd(-0.3, 0.3);
@@ -906,46 +1186,46 @@ img { -webkit-user-drag: none; }
       const s = rnd(5, 10);
       const p = document.createElement('div');
       p.className = 'part';
-      p.style.cssText = `width:${s}px;height:${s}px;margin:${-s / 2}px 0 0 ${-s / 2}px;background:${colors[i % colors.length]};${star ? `border-radius:${s * 0.18}px;` : ''}`;
+      p.style.cssText = `width:${s}px;height:${s}px;margin:${-s / 2}px 0 0 ${-s / 2}px;background:${colors[i % colors.length]};box-shadow:0 0 6px ${colors[i % colors.length]};${star ? `border-radius:${s * 0.18}px;` : ''}`;
       $('fxLayer').appendChild(p);
       const r = star ? 45 : 0;
       p.animate([{ transform: `translate(${x}px,${y}px) rotate(${r}deg) scale(0.3)`, opacity: 1 }, { transform: `translate(${x + Math.cos(a) * d}px,${y + Math.sin(a) * d + 10}px) rotate(${r}deg) scale(1)`, opacity: 0 }], { duration: 560, easing: 'ease-out' }).finished.then(() => p.remove());
     }
   }
   function stageFx(key) {
-    const box = $('stage');
-    if (!box || !$('stageScene')) return;
-    const W = box.clientWidth;
-    const H = box.clientHeight;
-    const pick = LINEUP[Math.floor(Math.random() * LINEUP.length)].key;
-    const p = sqPoint(pick);
+    if ($('board').hidden || !$('fxLayer')) return;
+    const who = pickOne(ST.perf).key;
+    const p = sqPoint(who);
+    if (RM) return;
     if (key === 'pop') burst(p.x, p.y, ['#ff8fd0', '#ffffff', '#ffe066', '#9ce8ff'], 10, 44);
-    else if (key === 'sparkle') for (let k = 0; k < 3; k++) burst(rnd(W * 0.2, W * 0.8), rnd(H * 0.15, H * 0.6), ['#fff3a0', '#ffffff', '#ffd1f5', '#c9f5ff'], 6, 30, true);
-    else if (key === 'coin') burst(W / 2, H * 0.35, ['#ffd23a', '#fff3a0', '#ffffff'], 14, 70, true);
+    else if (key === 'sparkle') for (let k = 0; k < 3; k++) burst(rnd(150, 700), rnd(60, 200), ['#fff3a0', '#ffffff', '#ffd1f5', '#c9f5ff'], 6, 30, true);
+    else if (key === 'coin') burst(ST.console.x, ST.console.y - 70, ['#ffd23a', '#fff3a0', '#ffffff'], 14, 70, true);
     else if (key === 'bubble') {
-      for (let k = 0; k < 6; k++) {
+      // from the mist tower's bubble cloud
+      for (let k = 0; k < 7; k++) {
         const b = document.createElement('div');
         b.className = 'bubbleFx';
-        const s = rnd(14, 26);
-        b.style.cssText = `width:${s}px;height:${s}px;left:${rnd(W * 0.15, W * 0.85)}px;top:${H - 20}px`;
+        const s = rnd(12, 24);
+        const x0 = rnd(560, 840);
+        b.style.cssText = `width:${s}px;height:${s}px;left:${x0}px;top:${rnd(150, 230)}px`;
         $('fxLayer').appendChild(b);
-        b.animate([{ transform: 'translateY(0) scale(0.6)', opacity: 0 }, { transform: `translateY(${-H * 0.3}px) scale(1)`, opacity: 1, offset: 0.3 }, { transform: `translate(${rnd(-20, 20)}px, ${-H * 0.8}px) scale(1.1)`, opacity: 0 }], { duration: 1400 + k * 80, easing: 'ease-out' }).finished.then(() => b.remove());
+        b.animate([{ transform: 'translateY(0) scale(0.5)', opacity: 0 }, { transform: `translate(${rnd(-60, -20)}px, -50px) scale(1)`, opacity: 1, offset: 0.3 }, { transform: `translate(${rnd(-160, -60)}px, -150px) scale(1.1)`, opacity: 0 }], { duration: 1500 + k * 90, easing: 'ease-out' }).finished.then(() => b.remove());
       }
     } else if (key === 'boing') {
-      $('stageScene').querySelectorAll('.sq .squash').forEach((s, k) => s.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-26px) scale(0.95,1.08)', offset: 0.4 }, { transform: 'translateY(0) scale(1.1,0.9)', offset: 0.8 }, { transform: 'translateY(0)' }], { duration: 480, delay: k * 30, easing: 'ease-out' }));
+      $('stage').querySelectorAll('.perf .sq, #djSq, .crowd .sq').forEach((s, k) => s.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-18px) scale(0.95,1.08)', offset: 0.4 }, { transform: 'translateY(0) scale(1.08,0.92)', offset: 0.8 }, { transform: 'translateY(0)' }], { duration: 460, delay: (k % 6) * 25, easing: 'ease-out' }));
     } else if (key === 'squeak') {
-      const s = sqEl(pick).querySelector('.squash');
-      s.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-12deg) scale(1.05)' }, { transform: 'rotate(12deg)' }, { transform: 'rotate(0)' }], { duration: 360 });
+      sqEl(who).querySelector('.sq').animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-12deg) scale(1.05)' }, { transform: 'rotate(12deg)' }, { transform: 'rotate(0)' }], { duration: 360 });
     } else if (key === 'bonk') {
-      box.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(0)' }], { duration: 300 });
+      $('stage').animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(0)' }], { duration: 300 });
     } else if (key === 'whoosh') {
       const s = document.createElement('div');
       s.className = 'sweep';
       $('fxLayer').appendChild(s);
-      s.animate([{ transform: `translateX(${-W * 0.5}px)` }, { transform: `translateX(${W * 1.2}px)` }], { duration: 520, easing: 'ease-in-out' }).finished.then(() => s.remove());
+      s.animate([{ transform: 'translateX(-200px) skewX(-18deg)' }, { transform: 'translateX(1000px) skewX(-18deg)' }], { duration: 520, easing: 'ease-in-out' }).finished.then(() => s.remove());
+      fogBurst();
     }
   }
-  // a tap on a squishy: its voice now, and with REC on, written onto the nearest beat
+  // a tap on a voice on stage: it sings now, and with REC on, it's written onto the nearest beat
   async function liveVoice(key) {
     await wake();
     playVoice(key, 0);
@@ -957,12 +1237,15 @@ img { -webkit-user-drag: none; }
       changed();
     }
   }
+  // the crowd: a squish and a hop (they cheer; they're not on the mixer)
+  async function crowdVoice(el) {
+    await wake();
+    playVoice(el.dataset.key, 0);
+    if (!RM) el.querySelector('.sq').animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-14px) scale(0.95,1.06)', offset: 0.4 }, { transform: 'translateY(0) scale(1.08,0.92)', offset: 0.8 }, { transform: 'none' }], { duration: 420, easing: 'ease-out' });
+  }
 
   // ---- transport
-  $('play').addEventListener('click', async () => {
-    if (B.playing) stop();
-    else play();
-  });
+  $('play').addEventListener('click', () => { if (B.playing) stop(); else play(); });
   $('clear').addEventListener('click', async () => {
     await wake();
     ui('tap', 0.5);
@@ -975,12 +1258,12 @@ img { -webkit-user-drag: none; }
   $('mixIt').addEventListener('click', async () => {
     await wake();
     ui('select', 0.5);
-    // a fresh groove: voices on the beats in pairs, effects on the off-beats, one break
-    const pair = [LINEUP[Math.floor(Math.random() * 5)].key, LINEUP[Math.floor(Math.random() * 5)].key];
-    mix.voice = mix.voice.map((_, i) => (i % 2 === 0 && Math.random() < 0.8 ? pair[(i / 2) % 2] : i % 4 === 3 && Math.random() < 0.3 ? LINEUP[Math.floor(Math.random() * 5)].key : null));
-    const fxPool = FX.map((f) => f.key);
-    const main = fxPool[Math.floor(Math.random() * fxPool.length)];
-    mix.fx = mix.fx.map((_, i) => (i % 2 === 1 && Math.random() < 0.6 ? (Math.random() < 0.6 ? main : fxPool[Math.floor(Math.random() * fxPool.length)]) : null));
+    // a fresh groove: voices on the beats in pairs, effects on the off-beats, sometimes a break
+    const pair = [pickOne(VOICE_KEYS), pickOne(VOICE_KEYS)];
+    mix.voice = mix.voice.map((_, i) => (i % 2 === 0 && Math.random() < 0.8 ? pair[(i / 2) % 2] : i % 4 === 3 && Math.random() < 0.3 ? pickOne(VOICE_KEYS) : null));
+    const pool = FX.map((f) => f.key);
+    const main = pickOne(pool);
+    mix.fx = mix.fx.map((_, i) => (i % 2 === 1 && Math.random() < 0.6 ? (Math.random() < 0.6 ? main : pickOne(pool)) : null));
     mix.music = [true, true, Math.random() < 0.6, true];
     renderMixer();
     changed();
@@ -991,72 +1274,48 @@ img { -webkit-user-drag: none; }
     $('rec').classList.toggle('on', B.rec);
     $('rec').setAttribute('aria-pressed', B.rec);
     ui('tap', 0.5);
-    if (B.rec) showToast('Recording', 'Press PLAY, then tap the squishies on stage. Each tap lands on the nearest beat.');
+    if (B.rec) toast('Recording: press Play, then tap the DJ and the dancers. Each tap lands on the beat.');
   });
   $('save').addEventListener('click', async () => {
     await wake();
     save.mix = clone(mix);
     store();
     ui('save', 0.6);
-    $('save').querySelector('.sface').textContent = 'SAVED ✓';
-    showToast('Mix saved', "It'll be here the next time you open the soundboard.");
+    $('save').textContent = 'Saved ✓';
+    toast("Mix saved. It'll be here the next time you open the Soundboard.");
   });
-  $('boardBack').addEventListener('click', () => { ui('tap', 0.5); closeBoard(); });
+  $('boardBack').addEventListener('click', async () => { await wake(); ui('tap', 0.5); closeBoard(); });
   window.addEventListener('keydown', (e) => {
     if ($('board').hidden || !$('overlay').hidden) return;
     if (e.code === 'Space') { e.preventDefault(); $('play').click(); }
   });
 
-  // ---- cards, toast, the room-switch flash
-  function showCard(html) {
-    const o = $('overlay');
-    o.innerHTML = `<div class="tint"></div><div class="card"><div class="cardRim"><div class="cardFill">${html}</div></div></div>`;
-    o.hidden = false;
-    o.querySelector('.tint').addEventListener('click', closeCard);
-  }
-  function closeCard() { $('overlay').hidden = true; $('overlay').innerHTML = ''; }
+  // ---- toast and the room change
   let toastT = 0;
-  function showToast(title, body, action) {
+  function toast(text) {
     const t = $('toast');
-    t.innerHTML = `<div style="flex:1;min-width:0"><div class="tt">${title}</div><div class="tb">${body}</div></div>${action ? sticker('gold', action.label, 'toastAct', 'small') : ''}`;
+    t.textContent = text;
     t.hidden = false;
-    t.animate([{ transform: 'translate(-50%,-70px) scale(0.92)', opacity: 0 }, { transform: 'translate(-50%,0) scale(1)', opacity: 1 }], { duration: 260, easing: 'ease-out' });
-    if (action) $('toastAct').addEventListener('click', () => { t.hidden = true; action.fn(); });
+    if (!RM) t.animate([{ transform: 'translate(-50%,-14px) rotate(-1.2deg)', opacity: 0 }, { transform: 'translate(-50%,0) rotate(-1.2deg)', opacity: 1 }], { duration: 220, easing: 'ease-out' });
     clearTimeout(toastT);
-    toastT = setTimeout(() => { t.hidden = true; }, 3600);
+    toastT = setTimeout(() => { t.hidden = true; }, 3200);
   }
-  async function roomFlash(change) {
+  async function roomFade(change) {
     ui('room', 0.5);
     if (RM) { change(); return; }
-    const f = $('flash');
+    const f = $('fade');
     await f.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, fill: 'forwards' }).finished;
     change();
-    await wait(80);
-    await f.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 320, fill: 'forwards' }).finished;
+    await wait(60);
+    await f.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }).finished;
   }
-
-  // the Crib's floor steps slowly while nobody's playing (Dance.js: 1200 ms)
-  setInterval(() => {
-    if (!$('crib').hidden) {
-      cribState.step++;
-      const sc = $('cribSceneIn');
-      if (sc) paintFloor(sc, cribState.step);
-    } else if (!B.playing && $('stageScene')) {
-      cribState.step++;
-      paintFloor($('stageScene'), cribState.step);
-    }
-  }, 1200);
-  window.addEventListener('resize', () => {
-    clearTimeout(window.__rz);
-    window.__rz = setTimeout(() => { if (!$('crib').hidden) renderCrib(); else renderStage(); }, 150);
-  });
 
   const fontsReady = document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, wait(1500)]) : Promise.resolve();
   fontsReady.then(() => {
     renderCrib();
     loadAll(); // decoding can start before the first tap; playing waits for it
   });
-  window.Soundboard = { B, mix: () => mix, audio, equip, tryOpen, play, stop };
+  window.Soundboard = { B, mix: () => mix, save: () => save, audio, tryOpen, openCatalog, place, play, stop, openBoard };
 })();
 </script>
 </body>
