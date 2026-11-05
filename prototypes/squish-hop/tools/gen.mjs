@@ -1,0 +1,178 @@
+// Squish Hop level search. For each level spec it makes random boards
+// (a w × h quilt with holes, a start, the ★, doubles and friends), keeps
+// those with a full clear, and picks the hardest that still fits the
+// level's slot: few full-clear paths, and random play rarely clearing it.
+// Each board found goes into picks.json at once, and ../levels.js is built
+// from picks.json.
+// Run: node prototypes/squish-hop/tools/gen.mjs [seconds per level] [--only=7,8]
+// (--only searches just those levels and keeps the other picks);
+// --write only rebuilds levels.js from picks.json.
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const E = require('../engine.js');
+
+const SECS = Number(process.argv[2] || 12);
+const onlyArg = process.argv.find((a) => a.startsWith('--only='));
+const ONLY = process.argv.includes('--write') ? [] : onlyArg ? onlyArg.slice(7).split(',').map(Number) : null;
+const PICKS = new URL('./picks.json', import.meta.url);
+
+// clear: the share of random playthroughs that clear everything (lower is
+// harder); maxSols: at most this many full-clear paths
+const SPECS = [
+  { w: 4, h: 3, holes: 0, doubles: 0, friends: 0, tier: 0, clear: [0.12, 0.45], maxSols: 6, news: null },
+  { w: 4, h: 4, holes: 2, doubles: 0, friends: 0, tier: 0, clear: [0.05, 0.2], maxSols: 4 },
+  { w: 5, h: 4, holes: 3, doubles: 0, friends: 0, tier: 1, clear: [0.01, 0.08], maxSols: 3 },
+  { w: 5, h: 5, holes: 4, doubles: 0, friends: 1, tier: 1, clear: [0.005, 0.05], maxSols: 3, news: 'friends' },
+  { w: 6, h: 5, holes: 5, doubles: 0, friends: 2, tier: 2, clear: [0, 0.02], maxSols: 2 },
+  { w: 5, h: 5, holes: 4, doubles: 2, friends: 0, tier: 1, clear: [0.005, 0.05], maxSols: 4, news: 'doubles' },
+  { w: 6, h: 6, holes: 6, doubles: 3, friends: 1, tier: 2, clear: [0, 0.05], maxSols: 40 },
+  { w: 7, h: 6, holes: 6, doubles: 3, friends: 2, tier: 3, clear: [0, 0.03], maxSols: 40 },
+];
+
+let seed = 20261105;
+const rand = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+const pickFrom = (arr) => arr.splice(Math.floor(rand() * arr.length), 1)[0];
+
+function connected(grid, w, h) {
+  const cells = [];
+  grid.forEach((v, i) => v && cells.push(i));
+  const seen = new Set([cells[0]]);
+  const q = [cells[0]];
+  while (q.length) {
+    const c = q.pop();
+    const x = c % w;
+    const y = (c / w) | 0;
+    for (const [dx, dy] of E.DIRS) {
+      const nx = x + dx;
+      const ny = y + dy;
+      const j = ny * w + nx;
+      if (nx >= 0 && ny >= 0 && nx < w && ny < h && grid[j] && !seen.has(j)) {
+        seen.add(j);
+        q.push(j);
+      }
+    }
+  }
+  return seen.size === cells.length;
+}
+
+function randomMap(s) {
+  const { w, h } = s;
+  const grid = new Array(w * h).fill(1);
+  let holes = 0;
+  let tries = 0;
+  while (holes < s.holes && tries++ < 200) {
+    const i = Math.floor(rand() * w * h);
+    if (!grid[i]) continue;
+    grid[i] = 0;
+    if (connected(grid, w, h)) holes++;
+    else grid[i] = 1;
+  }
+  if (holes < s.holes) return null;
+  const ch = grid.map((v) => (v ? '.' : '#'));
+  const free = [];
+  grid.forEach((v, i) => v && free.push(i));
+  const S = pickFrom(free);
+  const G = pickFrom(free);
+  const dist = Math.abs((S % w) - (G % w)) + Math.abs(((S / w) | 0) - ((G / w) | 0));
+  if (dist < 2) return null;
+  ch[S] = 'S';
+  ch[G] = 'G';
+  for (let k = 0; k < s.doubles; k++) ch[pickFrom(free)] = 'D';
+  for (let k = 0; k < s.friends; k++) ch[pickFrom(free)] = 'F';
+  const rows = [];
+  for (let y = 0; y < h; y++) rows.push(ch.slice(y * w, y * w + w).join(''));
+  return rows;
+}
+
+// random play: hop to any open cushion until the ★ or stuck
+function clearRate(lv, runs = 600) {
+  let clears = 0;
+  for (let r = 0; r < runs; r++) {
+    let st = E.newState(lv);
+    for (;;) {
+      const ms = E.moves(lv, st);
+      if (!ms.length) break;
+      st = E.step(lv, st, ms[Math.floor(rand() * ms.length)]);
+      if (st.done) break;
+    }
+    if (st.done && E.leftOf(lv, st.life) === 0) clears++;
+  }
+  return clears / runs;
+}
+
+// along the first answer: how many hops were real choices (2+ ways on)
+function choices(lv, path) {
+  let st = E.newState(lv);
+  let n = 0;
+  for (const j of path) {
+    if (E.moves(lv, st).length > 1) n++;
+    st = E.step(lv, st, j);
+  }
+  return n;
+}
+
+const picks = existsSync(PICKS) ? JSON.parse(readFileSync(PICKS, 'utf8')) : [];
+
+function save() {
+  writeFileSync(PICKS, JSON.stringify(picks, null, 1) + '\n');
+  const body = SPECS.map((s, idx) => {
+    const map = picks[idx];
+    if (!map) return null;
+    const lv = E.parse(map);
+    const r = E.search(lv, E.newState(lv), { count: true, cap: 1000, limit: 5e7 });
+    return `    { map: ${JSON.stringify(map)}, tier: ${s.tier}, news: ${JSON.stringify(s.news || null)}, sols: ${r.count}, solution: ${JSON.stringify(r.path)} },`;
+  })
+    .filter(Boolean)
+    .join('\n');
+  writeFileSync(
+    new URL('../levels.js', import.meta.url),
+    `// Generated by tools/gen.mjs from tools/picks.json: Squish Hop's levels.
+// Don't edit by hand. map: '#' no cushion, '.' cushion, 'D' double,
+// 'S' start, 'G' the ★, 'F' a friend. tier: 0 EASY … 3 EXPERT. news: what
+// the level brings in. sols: how many full-clear paths there are (counted
+// up to 1000). solution: one of them, as the cells hopped onto.
+(function (root) {
+  const LEVELS = [
+${body}
+  ];
+  if (typeof module !== 'undefined' && module.exports) module.exports = { LEVELS };
+  else root.HopLevels = LEVELS;
+})(typeof window !== 'undefined' ? window : globalThis);
+`
+  );
+}
+
+SPECS.forEach((s, idx) => {
+  if (ONLY && !ONLY.includes(idx + 1)) return;
+  const end = Date.now() + SECS * 1000;
+  let best = null;
+  let tried = 0;
+  let valid = 0;
+  while (Date.now() < end) {
+    const rows = randomMap(s);
+    if (!rows) continue;
+    tried++;
+    const lv = E.parse(rows);
+    if (!E.parityOk(lv)) continue;
+    const r = E.search(lv, E.newState(lv), { count: true, cap: s.maxSols + 1, limit: 3e6 });
+    if (r.aborted || r.count < 1 || r.count > s.maxSols) continue;
+    const rate = clearRate(lv);
+    if (rate < s.clear[0] || rate > s.clear[1]) continue;
+    valid++;
+    const ch = choices(lv, r.path);
+    // fewer answers and more real choices on the way: harder
+    const score = ch / (r.count + 1) - rate * 20;
+    if (!best || score > best.score) best = { rows, sols: r.count, rate, choices: ch, score };
+  }
+  if (!best) {
+    console.error(`level ${idx + 1}: nothing found (tried ${tried}); kept the old pick`);
+    return;
+  }
+  console.log(`level ${idx + 1}: tried ${tried}, valid ${valid}; ${best.sols} full clear(s), random clear ${(best.rate * 100).toFixed(1)}%, ${best.choices} choices`);
+  console.log(best.rows.map((r) => '   ' + r).join('\n'));
+  picks[idx] = best.rows;
+  save();
+});
+save();
+console.log('wrote picks.json and levels.js');
