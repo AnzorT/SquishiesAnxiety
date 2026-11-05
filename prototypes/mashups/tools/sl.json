@@ -1,0 +1,1223 @@
+{
+ "tried": 882313,
+ "solved": 44275,
+ "best": [
+  {
+   "score": 176,
+   "len": 105,
+   "kinds": {
+    "move": 49,
+    "push": 15,
+    "squeeze": 14,
+    "puff": 17,
+    "shove": 10
+   },
+   "sol": "uuurldduururrdddluurrddlruullllddrruurrrddllduullddrluuurddruurrddllluulldruurrrdddlulullurrldddrrrrlurld",
+   "lvl": {
+    "map": [
+     "#########",
+     "#.......#",
+     "#....#..#",
+     "#.....#.#",
+     "#.......#",
+     "#.......#",
+     "#####..o#",
+     "#####.#.#",
+     "#########"
+    ],
+    "plush": [
+     {
+      "x": 1,
+      "y": 4,
+      "bed": [
+       5,
+       5
+      ]
+     },
+     {
+      "x": 3,
+      "y": 2,
+      "bed": [
+       6,
+       1
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      6,
+      4
+     ]
+    ]
+   }
+  },
+  {
+   "score": 78,
+   "len": 47,
+   "kinds": {
+    "move": 32,
+    "push": 7,
+    "squeeze": 2,
+    "puff": 0,
+    "shove": 6
+   },
+   "sol": "lludrrrullldllulurrdrdrruddlllurrrlurdllllluddr",
+   "lvl": {
+    "map": [
+     "##########",
+     "######.###",
+     "#.....####",
+     "#.......##",
+     "#.......##",
+     "#.......##",
+     "##.....o##",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 5,
+      "y": 5,
+      "bed": [
+       2,
+       4
+      ]
+     },
+     {
+      "x": 5,
+      "y": 3,
+      "bed": [
+       3,
+       2
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      4,
+      4
+     ]
+    ]
+   }
+  },
+  {
+   "score": 75,
+   "len": 48,
+   "kinds": {
+    "move": 28,
+    "push": 8,
+    "squeeze": 2,
+    "puff": 5,
+    "shove": 5
+   },
+   "sol": "ruurdldrururrdllullldrrrddurruullddllurdldrrldrr",
+   "lvl": {
+    "map": [
+     "##########",
+     "##########",
+     "##.......#",
+     "##.......#",
+     "##.......#",
+     "##.....o.#",
+     "#.###....#",
+     "##.##....#",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 2,
+      "y": 4,
+      "bed": [
+       7,
+       6
+      ]
+     },
+     {
+      "x": 4,
+      "y": 4,
+      "bed": [
+       6,
+       2
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      7,
+      4
+     ]
+    ]
+   }
+  },
+  {
+   "score": 74,
+   "len": 39,
+   "kinds": {
+    "move": 16,
+    "push": 8,
+    "squeeze": 4,
+    "puff": 5,
+    "shove": 6
+   },
+   "sol": "lullddddrrururddluullddrulurrldrulrulld",
+   "lvl": {
+    "map": [
+     "#########",
+     "##.....o#",
+     "##..#...#",
+     "##......#",
+     "##......#",
+     "##......#",
+     "##.....##",
+     "#########"
+    ],
+    "plush": [
+     {
+      "x": 6,
+      "y": 2,
+      "bed": [
+       2,
+       2
+      ]
+     },
+     {
+      "x": 4,
+      "y": 3,
+      "bed": [
+       5,
+       5
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      4,
+      5
+     ]
+    ]
+   }
+  },
+  {
+   "score": 73,
+   "len": 46,
+   "kinds": {
+    "move": 22,
+    "push": 12,
+    "squeeze": 2,
+    "puff": 5,
+    "shove": 5
+   },
+   "sol": "dduuddrrrruulrdlullldduurlddrlurrrlllluldrrrru",
+   "lvl": {
+    "map": [
+     "##########",
+     "##########",
+     "#####....#",
+     "#........#",
+     "#........#",
+     "#........#",
+     "##o.###.##",
+     "##..######",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 1,
+      "y": 3,
+      "bed": [
+       5,
+       2
+      ]
+     },
+     {
+      "x": 3,
+      "y": 4,
+      "bed": [
+       7,
+       2
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      6,
+      4
+     ]
+    ]
+   }
+  },
+  {
+   "score": 71,
+   "len": 46,
+   "kinds": {
+    "move": 22,
+    "push": 6,
+    "squeeze": 3,
+    "puff": 11,
+    "shove": 4
+   },
+   "sol": "drldddlurruurlulldldlrdrululrudddlrdulruurrrdd",
+   "lvl": {
+    "map": [
+     "##########",
+     "###......#",
+     "###...#..#",
+     "###......#",
+     "#........#",
+     "#......###",
+     "###....###",
+     "###..o.###",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 3,
+      "y": 1,
+      "bed": [
+       7,
+       3
+      ]
+     },
+     {
+      "x": 2,
+      "y": 4,
+      "bed": [
+       5,
+       3
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      5,
+      2
+     ]
+    ]
+   }
+  },
+  {
+   "score": 70,
+   "len": 37,
+   "kinds": {
+    "move": 16,
+    "push": 8,
+    "squeeze": 3,
+    "puff": 4,
+    "shove": 6
+   },
+   "sol": "dddruruuruldrddddluruurluldldrdulrrur",
+   "lvl": {
+    "map": [
+     "########",
+     "##....##",
+     "##....##",
+     "#......#",
+     "#.....o#",
+     "#....###",
+     "#....###",
+     "#....###",
+     "########"
+    ],
+    "plush": [
+     {
+      "x": 1,
+      "y": 3,
+      "bed": [
+       4,
+       3
+      ]
+     },
+     {
+      "x": 3,
+      "y": 5,
+      "bed": [
+       1,
+       6
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      3,
+      4
+     ]
+    ]
+   }
+  },
+  {
+   "score": 69,
+   "len": 50,
+   "kinds": {
+    "move": 33,
+    "push": 10,
+    "squeeze": 2,
+    "puff": 2,
+    "shove": 3
+   },
+   "sol": "rurrrdllddlrudlllurrrdrrrrulllddlllrrrruulllrrrddd",
+   "lvl": {
+    "map": [
+     "##########",
+     "#o.......#",
+     "#........#",
+     "#........#",
+     "#........#",
+     "#####..#.#",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 3,
+      "y": 3,
+      "bed": [
+       5,
+       4
+      ]
+     },
+     {
+      "x": 3,
+      "y": 1,
+      "bed": [
+       7,
+       2
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      6,
+      3
+     ]
+    ]
+   }
+  },
+  {
+   "score": 67,
+   "len": 44,
+   "kinds": {
+    "move": 22,
+    "push": 3,
+    "squeeze": 8,
+    "puff": 10,
+    "shove": 1
+   },
+   "sol": "llllurrdrruuuullldurrrdddddlllluuruduurrrddd",
+   "lvl": {
+    "map": [
+     "##########",
+     "#........#",
+     "##...##..#",
+     "###..##..#",
+     "#.....#..#",
+     "#.....#..#",
+     "#..#.....#",
+     "#.....#..#",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 7,
+      "y": 6,
+      "bed": [
+       7,
+       4
+      ]
+     },
+     {
+      "x": 2,
+      "y": 4,
+      "bed": [
+       4,
+       5
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": []
+   }
+  },
+  {
+   "score": 65,
+   "len": 40,
+   "kinds": {
+    "move": 21,
+    "push": 8,
+    "squeeze": 3,
+    "puff": 4,
+    "shove": 4
+   },
+   "sol": "ruuuulddrddluruuuuldlddlrrddruuulluurdlu",
+   "lvl": {
+    "map": [
+     "##########",
+     "###....###",
+     "###....###",
+     "#.#o...###",
+     "#......###",
+     "#......###",
+     "#......###",
+     "#......###",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 4,
+      "y": 6,
+      "bed": [
+       4,
+       1
+      ]
+     },
+     {
+      "x": 2,
+      "y": 5,
+      "bed": [
+       5,
+       4
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      4,
+      4
+     ]
+    ]
+   }
+  },
+  {
+   "score": 65,
+   "len": 38,
+   "kinds": {
+    "move": 18,
+    "push": 3,
+    "squeeze": 6,
+    "puff": 8,
+    "shove": 3
+   },
+   "sol": "llruulllllduurrrrrddlldlulrrrruullldlr",
+   "lvl": {
+    "map": [
+     "##########",
+     "#....###.#",
+     "#........#",
+     "#....##..#",
+     "#....###.#",
+     "#........#",
+     "####.....#",
+     "##.#.....#",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 7,
+      "y": 5,
+      "bed": [
+       2,
+       3
+      ]
+     },
+     {
+      "x": 5,
+      "y": 5,
+      "bed": [
+       1,
+       1
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": []
+   }
+  },
+  {
+   "score": 63,
+   "len": 40,
+   "kinds": {
+    "move": 21,
+    "push": 6,
+    "squeeze": 2,
+    "puff": 7,
+    "shove": 4
+   },
+   "sol": "drlurrdddlrrurullddlldlurulrddlururddrru",
+   "lvl": {
+    "map": [
+     "##########",
+     "#o.......#",
+     "#....#...#",
+     "#....#...#",
+     "#........#",
+     "#.#......#",
+     "#........#",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 1,
+      "y": 2,
+      "bed": [
+       6,
+       3
+      ]
+     },
+     {
+      "x": 3,
+      "y": 2,
+      "bed": [
+       7,
+       1
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      5,
+      5
+     ]
+    ]
+   }
+  },
+  {
+   "score": 63,
+   "len": 40,
+   "kinds": {
+    "move": 24,
+    "push": 7,
+    "squeeze": 2,
+    "puff": 3,
+    "shove": 4
+   },
+   "sol": "rrrdllllullldrrrdrrdrluldllluuurddldrluu",
+   "lvl": {
+    "map": [
+     "##########",
+     "##########",
+     "#...######",
+     "#....#####",
+     "#........#",
+     "#........#",
+     "#...o....#",
+     "####.....#",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 3,
+      "y": 3,
+      "bed": [
+       1,
+       3
+      ]
+     },
+     {
+      "x": 6,
+      "y": 6,
+      "bed": [
+       7,
+       4
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      5,
+      6
+     ]
+    ]
+   }
+  },
+  {
+   "score": 63,
+   "len": 42,
+   "kinds": {
+    "move": 20,
+    "push": 12,
+    "squeeze": 3,
+    "puff": 4,
+    "shove": 3
+   },
+   "sol": "ruluruurldlrddruulurddddrulluuudddldrruull",
+   "lvl": {
+    "map": [
+     "##########",
+     "###.....##",
+     "###.....##",
+     "#.......##",
+     "#......###",
+     "#......###",
+     "#.....o###",
+     "##########",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 3,
+      "y": 5,
+      "bed": [
+       2,
+       3
+      ]
+     },
+     {
+      "x": 5,
+      "y": 3,
+      "bed": [
+       5,
+       1
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      3,
+      2
+     ]
+    ]
+   }
+  },
+  {
+   "score": 62,
+   "len": 43,
+   "kinds": {
+    "move": 26,
+    "push": 6,
+    "squeeze": 2,
+    "puff": 6,
+    "shove": 3
+   },
+   "sol": "uuuullldrrdrduluurrdullldrrlddduuuluurrdllu",
+   "lvl": {
+    "map": [
+     "#########",
+     "#......##",
+     "#......##",
+     "#......##",
+     "#.....o##",
+     "####...##",
+     "####...##",
+     "####...##",
+     "#########"
+    ],
+    "plush": [
+     {
+      "x": 5,
+      "y": 6,
+      "bed": [
+       3,
+       1
+      ]
+     },
+     {
+      "x": 2,
+      "y": 3,
+      "bed": [
+       4,
+       4
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      4,
+      3
+     ]
+    ]
+   }
+  },
+  {
+   "score": 60,
+   "len": 37,
+   "kinds": {
+    "move": 20,
+    "push": 4,
+    "squeeze": 4,
+    "puff": 6,
+    "shove": 3
+   },
+   "sol": "luullldrrurrddrdddluuuluurrdddlduuluu",
+   "lvl": {
+    "map": [
+     "##########",
+     "#......###",
+     "#...#....#",
+     "#...#...##",
+     "#.......##",
+     "####....##",
+     "####....##",
+     "####....##",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 6,
+      "y": 3,
+      "bed": [
+       2,
+       1
+      ]
+     },
+     {
+      "x": 2,
+      "y": 3,
+      "bed": [
+       6,
+       6
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": []
+   }
+  },
+  {
+   "score": 58,
+   "len": 37,
+   "kinds": {
+    "move": 20,
+    "push": 8,
+    "squeeze": 3,
+    "puff": 3,
+    "shove": 3
+   },
+   "sol": "rrdddlludrruuulrdddllulurrdlddrrullrd",
+   "lvl": {
+    "map": [
+     "##########",
+     "###...####",
+     "#......###",
+     "#......###",
+     "#....#.###",
+     "#.o....###",
+     "###....###",
+     "###....###",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 3,
+      "y": 2,
+      "bed": [
+       4,
+       6
+      ]
+     },
+     {
+      "x": 3,
+      "y": 4,
+      "bed": [
+       5,
+       2
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      5,
+      5
+     ]
+    ]
+   }
+  },
+  {
+   "score": 57,
+   "len": 32,
+   "kinds": {
+    "move": 17,
+    "push": 1,
+    "squeeze": 3,
+    "puff": 7,
+    "shove": 4
+   },
+   "sol": "rrrdllullllduurrrrdddlllurrrdrrr",
+   "lvl": {
+    "map": [
+     "##########",
+     "#....#####",
+     "#.......##",
+     "#....#...#",
+     "#........#",
+     "####.....#",
+     "######...#",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 2,
+      "y": 2,
+      "bed": [
+       7,
+       4
+      ]
+     },
+     {
+      "x": 5,
+      "y": 4,
+      "bed": [
+       6,
+       2
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": []
+   }
+  },
+  {
+   "score": 56,
+   "len": 41,
+   "kinds": {
+    "move": 27,
+    "push": 1,
+    "squeeze": 4,
+    "puff": 8,
+    "shove": 1
+   },
+   "sol": "ddrrrrudlldllluuuuurdlddddrrurrrddluulluu",
+   "lvl": {
+    "map": [
+     "##########",
+     "#....#.###",
+     "#....#####",
+     "#....##..#",
+     "#........#",
+     "#...#....#",
+     "#...#....#",
+     "#........#",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 2,
+      "y": 4,
+      "bed": [
+       2,
+       1
+      ]
+     },
+     {
+      "x": 6,
+      "y": 4,
+      "bed": [
+       1,
+       6
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": []
+   }
+  },
+  {
+   "score": 56,
+   "len": 43,
+   "kinds": {
+    "move": 22,
+    "push": 10,
+    "squeeze": 3,
+    "puff": 7,
+    "shove": 1
+   },
+   "sol": "drrruldllluuddrurldluuruurdrrdullldrrrllluu",
+   "lvl": {
+    "map": [
+     "#########",
+     "##..#####",
+     "#...#.###",
+     "#.....###",
+     "#.......#",
+     "#.....o##",
+     "#...#...#",
+     "#.......#",
+     "#########"
+    ],
+    "plush": [
+     {
+      "x": 2,
+      "y": 5,
+      "bed": [
+       1,
+       2
+      ]
+     },
+     {
+      "x": 3,
+      "y": 3,
+      "bed": [
+       5,
+       6
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      4,
+      5
+     ]
+    ]
+   }
+  },
+  {
+   "score": 55,
+   "len": 36,
+   "kinds": {
+    "move": 17,
+    "push": 10,
+    "squeeze": 2,
+    "puff": 4,
+    "shove": 3
+   },
+   "sol": "rrddddluuruldrddrddlruuudrullddlrrur",
+   "lvl": {
+    "map": [
+     "#########",
+     "#########",
+     "##o....##",
+     "###....##",
+     "###.....#",
+     "#.......#",
+     "#.......#",
+     "#.......#",
+     "#########"
+    ],
+    "plush": [
+     {
+      "x": 3,
+      "y": 2,
+      "bed": [
+       4,
+       4
+      ]
+     },
+     {
+      "x": 2,
+      "y": 5,
+      "bed": [
+       5,
+       6
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      4,
+      6
+     ]
+    ]
+   }
+  },
+  {
+   "score": 55,
+   "len": 32,
+   "kinds": {
+    "move": 16,
+    "push": 7,
+    "squeeze": 4,
+    "puff": 2,
+    "shove": 3
+   },
+   "sol": "dddrrruuuullullddduuurrdddrdllrr",
+   "lvl": {
+    "map": [
+     "##########",
+     "#.......##",
+     "#.......##",
+     "#.......##",
+     "###.#...##",
+     "###.....##",
+     "###o....##",
+     "##########",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 3,
+      "y": 1,
+      "bed": [
+       6,
+       5
+      ]
+     },
+     {
+      "x": 5,
+      "y": 3,
+      "bed": [
+       1,
+       1
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      5,
+      2
+     ]
+    ]
+   }
+  },
+  {
+   "score": 54,
+   "len": 35,
+   "kinds": {
+    "move": 21,
+    "push": 8,
+    "squeeze": 2,
+    "puff": 1,
+    "shove": 3
+   },
+   "sol": "lldrddlllruurulruulllrrrrurdllldrrd",
+   "lvl": {
+    "map": [
+     "##########",
+     "######...#",
+     "##.......#",
+     "##.......#",
+     "##......o#",
+     "##.......#",
+     "##.##....#",
+     "##.......#",
+     "##########"
+    ],
+    "plush": [
+     {
+      "x": 7,
+      "y": 2,
+      "bed": [
+       6,
+       5
+      ]
+     },
+     {
+      "x": 4,
+      "y": 4,
+      "bed": [
+       2,
+       4
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      5,
+      6
+     ]
+    ]
+   }
+  },
+  {
+   "score": 52,
+   "len": 33,
+   "kinds": {
+    "move": 17,
+    "push": 7,
+    "squeeze": 2,
+    "puff": 4,
+    "shove": 3
+   },
+   "sol": "dldrdruulurdlddlddrulluuddrllldrd",
+   "lvl": {
+    "map": [
+     "########",
+     "##....##",
+     "##....##",
+     "#.....##",
+     "#......#",
+     "#...o..#",
+     "#.....##",
+     "##.#####",
+     "########"
+    ],
+    "plush": [
+     {
+      "x": 2,
+      "y": 2,
+      "bed": [
+       2,
+       5
+      ]
+     },
+     {
+      "x": 5,
+      "y": 4,
+      "bed": [
+       4,
+       1
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      3,
+      4
+     ]
+    ]
+   }
+  },
+  {
+   "score": 52,
+   "len": 31,
+   "kinds": {
+    "move": 15,
+    "push": 6,
+    "squeeze": 3,
+    "puff": 4,
+    "shove": 3
+   },
+   "sol": "dluldrdluulldrrurrrrdlldlldlrud",
+   "lvl": {
+    "map": [
+     "#########",
+     "#.......#",
+     "#..#o...#",
+     "#.......#",
+     "#.......#",
+     "#....####",
+     "#########"
+    ],
+    "plush": [
+     {
+      "x": 6,
+      "y": 1,
+      "bed": [
+       2,
+       4
+      ]
+     },
+     {
+      "x": 4,
+      "y": 3,
+      "bed": [
+       1,
+       1
+      ],
+      "sleepy": true
+     }
+    ],
+    "blocks": [
+     [
+      2,
+      3
+     ]
+    ]
+   }
+  }
+ ]
+}
