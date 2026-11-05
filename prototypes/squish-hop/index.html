@@ -9,25 +9,27 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800;900&display=swap">
 <style>
-/* Squish Hop: one phone-width column on the app's sky stage: the top bar,
-   the goal card and star meter, the cushion quilt, then UNDO / RESTART /
-   HINT. Every value is the app's own (src/theme/candyTheme.js,
-   src/components/candy/*, src/squishdoku/{theme,ui,Board,Hud}.js,
-   src/stack/{Game,Cards,Pieces}.js). One look, like the app: no dark mode. */
+/* Squish Hop: a trip through the Squad Crib. Each level is one of the
+   Crib's rooms (src/crib/roomArt.js layers, cut at the room's floor line),
+   with the board laid on its floor in perspective: Squish Stack's stitched
+   cushions (src/stack/Pieces.js), or in the Dance Room the Crib's light-up
+   floor tiles (src/crib/Dance.js). The squishies stand on it as Squish
+   Stack's full-body cut-outs. The top bar is the Crib's HUD
+   (src/crib/Hud.js: round button, room title, time-of-day pill); the goal
+   and stars sit in a brown glass strip at the bottom; the cards are the
+   mini-games' own (squishdoku/Overlays.js). One look, like the app: no
+   dark mode. */
 :root {
-  --ink: #45107a;          /* the app's deep plum (squishdoku/theme INK) */
-  --ring: #45189a;         /* rings, frames, card rims */
-  --outline: #6a1b9a;      /* title halo */
-  --outline-deep: #45107a; /* title drop */
-  --pink-ink: #8e1580;     /* game name, rule titles */
-  --sub: #8a5fc0;          /* card sub-lines */
-  --gold-ink: #b86200;
+  --ink: #45107a;            /* the app's deep plum */
+  --brown: #5b3a29;          /* the Crib's ink (crib/Hud.js INK) */
+  --glass: rgba(91, 58, 41, 0.75); /* the Crib's pills */
+  --ring: #45189a;
+  --pink-ink: #8e1580;
+  --sub: #8a5fc0;
   --gold: #ffd23a;
-  --coin-text: #ffe045;
-  --seam: #e9dcf7;         /* the quilt's seams */
-  --glass: rgba(80, 12, 140, 0.42);
+  --gold-ink: #b86200;
   --white: #ffffff;
-  --sky-0: #8fd0ff; --sky-1: #b9e2ff; --sky-2: #e6dcff; --sky-3: #ffd6f4;
+  --scene: #dba163;          /* the room's floor colour, set per room */
   --display: 'Fredoka', 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
   --body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
   color-scheme: light;
@@ -36,30 +38,21 @@
 [hidden] { display: none !important; }
 html { height: 100%; }
 body {
-  height: 100%; margin: 0; overflow: hidden; background: var(--sky-1); color: var(--ink);
+  height: 100%; margin: 0; overflow: hidden; background: var(--scene); color: var(--ink);
   font-family: var(--body); -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
 }
 button { font: inherit; color: inherit; }
 button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; border-radius: 999px; }
 
-/* ---- the stage: CandyBackground (sky, five cloud wisps, dots every 26px) + Sparkles */
-#stage {
-  position: fixed; inset: 0; pointer-events: none;
-  background:
-    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.8) 1.3px, transparent 1.6px) 0 0 / 26px 26px,
-    radial-gradient(ellipse 90px 26px at 12% 9%, rgba(255,255,255,0.95) 60%, transparent 100%),
-    radial-gradient(ellipse 60px 20px at 24% 7%, rgba(255,255,255,0.95) 55%, transparent 100%),
-    radial-gradient(ellipse 110px 30px at 88% 15%, rgba(255,255,255,0.9) 55%, transparent 100%),
-    radial-gradient(ellipse 130px 34px at 8% 52%, rgba(255,255,255,0.7) 50%, transparent 100%),
-    radial-gradient(ellipse 120px 30px at 96% 70%, rgba(255,255,255,0.7) 50%, transparent 100%),
-    linear-gradient(180deg, var(--sky-0) 0%, var(--sky-1) 38%, var(--sky-2) 68%, var(--sky-3) 100%);
-}
-#sparkles { position: absolute; inset: 0; opacity: 0.7; }
-.twinkle {
-  position: absolute; line-height: 1.1; text-shadow: 0 0 8px rgba(255,200,245,0.95);
-  animation: twinkle var(--d) ease-in-out var(--dl) infinite alternate;
-}
-@keyframes twinkle { from { opacity: 0.2; transform: scale(0.6) rotate(0deg); } to { opacity: 1; transform: scale(1.1) rotate(20deg); } }
+/* ---- the room */
+#scene { position: fixed; inset: 0; overflow: hidden; background: var(--scene); }
+#room { position: absolute; top: 0; }
+#room img { position: absolute; left: 0; display: block; }
+#room .clip { position: absolute; left: 0; top: 0; overflow: hidden; }
+#tint { position: absolute; inset: 0; pointer-events: none; }
+#flash { position: fixed; inset: 0; z-index: 70; pointer-events: none; opacity: 0; }
+#flash img { position: absolute; inset: 0; width: 100%; height: 100%; }
+#flash .dots { position: absolute; inset: 0; background-size: 22px 22px; }
 
 /* ---- the column */
 #app {
@@ -68,125 +61,124 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
   padding-block: 8px 6px;
 }
 
-/* the top bar (stack/Game.js hud) */
-.hud { display: flex; align-items: center; gap: 10px; }
+/* the Crib's top bar: round button, room title, time-of-day pill */
+.top { display: flex; align-items: center; gap: 8px; position: relative; z-index: 20; }
+.cribBtn { position: relative; width: 50px; height: 54px; padding: 0; border: 0; background: none; cursor: pointer; flex: none; }
+.cribBtn .cc { position: absolute; left: 0; width: 50px; height: 50px; border-radius: 50%; background: var(--brown); }
+.cribBtn .cc1 { top: 4px; }
+.cribBtn .cc0 { top: 0; }
+.cribBtn .cface { position: absolute; left: 2px; top: 2px; width: 46px; height: 46px; border-radius: 50%; border: 2.5px solid var(--white); overflow: hidden; display: flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #ffd0f0 0%, #ff7fd0 55%, #d84aa8 100%); }
+.cribBtn:active .cc0, .cribBtn:active .cface, .cribBtn.down .cc0, .cribBtn.down .cface { transform: translateY(3px); }
 .titleBox { flex: 1; min-width: 0; }
-.gameName { font: 700 13px/1.2 var(--display); letter-spacing: 1px; color: var(--pink-ink); }
-.row6 { display: flex; align-items: center; gap: 6px; }
-.levelText { font: 700 21px/1.15 var(--display); color: var(--white); text-shadow: 0 2.5px 1px var(--ink); }
-.chip { padding: 1px 7px; border-radius: 999px; border: 2px solid var(--white); font: 700 10px/1.3 var(--display); letter-spacing: 0.6px; color: var(--white); }
-.movesPill { min-width: 64px; padding: 3px 10px; border-radius: 16px; background: var(--glass); border: 2.5px solid var(--white); text-align: center; }
-.movesLabel { font: 700 10px/1.2 var(--display); letter-spacing: 1px; color: var(--white); }
-.movesNum { font: 700 22px/1 var(--display); color: var(--coin-text); font-variant-numeric: tabular-nums; }
+.roomTitle { display: block; overflow: visible; max-width: 100%; }
+.roomSub { display: flex; align-items: center; gap: 6px; margin-top: -2px; font: 900 11px/1.3 var(--body); letter-spacing: 0.6px; color: var(--white); text-shadow: 0 1px 1.5px var(--brown); white-space: nowrap; }
+.chip { padding: 0 6px; border-radius: 999px; border: 2px solid var(--white); font: 700 9.5px/1.4 var(--display); letter-spacing: 0.6px; color: var(--white); text-shadow: none; }
+.phase { display: flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; background: var(--glass); border: 2px solid rgba(255,255,255,0.9); flex: none; }
+.phase .sun { width: 9px; height: 9px; border-radius: 5px; }
+.phase span:last-child { font: 900 11px/1.2 var(--body); color: var(--white); letter-spacing: 0.6px; }
 
-/* RoundButton, violet */
-.round { position: relative; width: 40px; height: 44px; padding: 0; border: 0; background: none; cursor: pointer; flex: none; }
-.round .rlip { display: block; position: absolute; left: 0; top: 4px; width: 40px; height: 40px; border-radius: 50%; background: var(--ring); }
-.round .rface {
-  display: block; position: absolute; left: 0; top: 0; width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--ring);
-  background: var(--ring); transition: transform 80ms;
+/* the board on the floor */
+.area { position: relative; flex: 1; min-height: 0; touch-action: none; -webkit-touch-callout: none; z-index: 5; }
+.area img { pointer-events: none; -webkit-user-drag: none; }
+.plane { position: absolute; transform-origin: 50% 100%; transform-style: preserve-3d; }
+.plane.dance { background: #140818; border: 3px solid #2a1430; box-shadow: 0 0 0 6px rgba(255,92,198,0.3); }
+.plane .rug { position: absolute; left: -16%; top: -12%; width: 132%; height: 124%; }
+.tile { position: absolute; transform-style: preserve-3d; }
+.tile > * { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+.tile svg { display: block; overflow: visible; }
+.dent { border-radius: 22%; border: 2.5px dashed var(--dent, rgba(91,58,41,0.4)); transform: scale(0.84); }
+.dent.dk { border: 0; border-radius: 0; background: rgba(255,255,255,0.04); transform: none; }
+.dt { background: var(--tc); box-shadow: inset 0 0 0 3px rgba(255,255,255,0.28), 0 0 12px var(--tc); }
+.dt::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 45%, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0) 62%); }
+.dt.hue { animation: hueStep 4.8s infinite; }
+@keyframes hueStep { 0%, 24.99% { filter: none; } 25%, 49.99% { filter: hue-rotate(90deg); } 50%, 74.99% { filter: hue-rotate(180deg); } 75%, 100% { filter: hue-rotate(270deg); } }
+.dring { border: 3px solid var(--white); box-shadow: 0 0 10px var(--white), inset 0 0 10px var(--white); transform: translateZ(1px) scale(0.62); }
+.tile.hint::after {
+  content: ''; position: absolute; left: -2%; top: -2%; width: 104%; height: 104%; border-radius: 24%; border: 3px solid var(--gold);
+  box-shadow: 0 0 14px 2px rgba(255,226,92,0.9), inset 0 0 12px rgba(255,226,92,0.8); animation: hintPulse 0.5s ease-in-out 6 alternate;
 }
-.round .rin {
-  position: absolute; inset: 0; border-radius: 50%; border: 2.5px solid var(--white); overflow: hidden;
-  background: radial-gradient(circle at 35% 25%, #f3d2ff 0%, #b65cff 36%, #6a22d6 80%);
+@keyframes hintPulse { from { opacity: 0.45; } to { opacity: 1; } }
+.tile.hint .c0 { animation: hintHop 0.5s ease-in-out 6 alternate; }
+@keyframes hintHop { from { transform: translateZ(0); } to { transform: translateZ(var(--hz, 8px)); } }
+.layer { position: absolute; inset: 0; pointer-events: none; }
+.piece { position: absolute; left: 0; top: 0; transform-origin: 50% 100%; }
+.piece .shadow { position: absolute; left: 14%; right: 14%; bottom: -5%; height: 15%; border-radius: 50%; background: var(--shade, rgba(69,16,122,0.28)); }
+.piece .lift, .piece .squash, .piece .breathe { position: absolute; inset: 0; transform-origin: 50% 100%; }
+.piece img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+.breathe { animation: breathe 2.6s ease-in-out infinite; }
+@keyframes breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.03, 0.97); } }
+.friend .breathe { animation: breathe 2.2s ease-in-out infinite, peek 6s ease-in-out infinite; animation-delay: var(--fd), var(--fd); }
+@keyframes peek { 0%, 84%, 100% { rotate: 0deg; } 88% { rotate: -9deg; } 92% { rotate: 8deg; } 96% { rotate: -3deg; } }
+.goalStar { position: absolute; left: 0; top: 0; transform-origin: 50% 100%; }
+.goalStar .bob { position: absolute; inset: 0; animation: bob 1.8s ease-in-out infinite; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8%); } }
+.goalStar svg { display: block; width: 100%; height: 100%; transition: filter 300ms, opacity 300ms; }
+.goalStar.locked svg { filter: grayscale(1) brightness(1.15); opacity: 0.7; }
+.lockCount {
+  position: absolute; right: -16%; top: -10%; min-width: 46%; height: 46%; padding: 0 8%; border-radius: 999px;
+  background: #ff5cc6; border: 2px solid var(--white); color: var(--white); font: 700 11px/1 var(--display);
   display: flex; align-items: center; justify-content: center;
 }
-.round .rin::before { content: ''; position: absolute; left: 9%; right: 9%; top: 0; height: 44%; border-radius: 999px; background: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.1)); }
-.round .glyph { position: relative; font: 900 24px/26px var(--body); margin-top: -3px; color: var(--white); text-shadow: 0 2px 1px var(--ring); }
-.round:active .rface, .round.down .rface { transform: translateY(3px); }
+.part { position: absolute; left: 0; top: 0; border-radius: 50%; }
 
-/* the goal card and the meter (stack/Game.js info, Pieces.js GoalCard) */
-.info { display: flex; align-items: stretch; gap: 10px; margin-top: 8px; min-height: 72px; }
-.goalCard {
-  width: 118px; flex: none; background: rgba(255,255,255,0.95); border-radius: 16px; border: 3px solid var(--white);
-  padding: 2px 5px 6px; display: flex; flex-direction: column; align-items: center;
-}
+/* the news banner (sort/Game.js Banner) */
+.banner { position: absolute; left: 0; right: 0; top: 2%; display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 30; }
+.bannerText { font: 700 40px/1 var(--display); color: var(--white); text-shadow: 0 3px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink); text-align: center; }
+.bannerSub { margin-top: 6px; padding: 4px 12px; border-radius: 999px; background: rgba(69,16,122,0.8); font: 700 13px/1.3 var(--display); color: var(--white); text-align: center; }
+
+/* the goal and the stars, in the Crib's brown glass */
+.strip { position: relative; z-index: 20; display: flex; align-items: stretch; gap: 10px; margin: 4px 0 6px; padding: 6px; border-radius: 20px; background: var(--glass); border: 2px solid rgba(255,255,255,0.9); }
+.goalCard { width: 112px; flex: none; background: rgba(255,255,255,0.95); border-radius: 15px; border: 3px solid var(--white); padding: 2px 5px 5px; display: flex; flex-direction: column; align-items: center; }
 .goalLabel { font: 700 10.5px/1.3 var(--display); letter-spacing: 1.2px; color: #6b3fa0; }
 .goalRow { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; }
 .goalArrow { font: 700 13px/1 var(--display); color: #b9a6cc; }
-.miniGoal { position: relative; width: 38px; height: 38px; }
-.miniGoal img { width: 100%; height: 100%; display: block; }
-.miniGoal svg { position: absolute; left: 50%; top: 47%; width: 20px; height: 20px; transform: translate(-50%, -50%); }
-.infoRight { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
-.meterRow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.miniGoal { position: relative; width: 36px; height: 36px; flex: none; }
+.miniGoal > svg:first-child { position: absolute; inset: 0; }
+.miniGoal .mstar { position: absolute; left: 50%; top: 46%; width: 20px; height: 20px; transform: translate(-50%, -50%); transition: filter 300ms, opacity 300ms; }
+.miniGoal.locked .mstar { filter: grayscale(1) brightness(1.15); opacity: 0.6; }
+.stripRight { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px; }
+.meterRow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .meter { display: flex; align-items: flex-start; gap: 1px; }
 .meter svg { display: block; }
-.parPill { padding: 2px 10px; border-radius: 999px; background: var(--white); border: 2.5px solid var(--gold); font: 700 13px/1.3 var(--display); color: var(--gold-ink); letter-spacing: 0.6px; font-variant-numeric: tabular-nums; }
-.tip { font: 800 12.5px/16px var(--body); color: var(--ink); min-height: 32px; }
-.tip.warn { color: #e01e4a; }
+.pill { padding: 1px 9px; border-radius: 999px; background: var(--white); border: 2.5px solid var(--gold); font: 700 12.5px/1.3 var(--display); color: var(--gold-ink); letter-spacing: 0.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pill.hops { border-color: #ffe6b8; color: var(--brown); }
+.tip { font: 800 12px/15px var(--body); color: var(--white); min-height: 30px; }
+.tip.warn { color: #ffd0d6; }
 
 /* Head: a creature in a white sticker circle (squishdoku/ui.js) */
 .headSticker { position: relative; border-radius: 50%; background: var(--white); padding: 6%; flex: none; }
 .headSticker > div { width: 100%; height: 100%; border-radius: 50%; background: #f6efff; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .headSticker img { width: 92%; height: 92%; object-fit: contain; display: block; }
-.headSticker.dim img { opacity: 0.25; }
 .headSticker.dim { background: rgba(255,255,255,0.55); }
+.headSticker.dim img { opacity: 0.25; }
 .headSticker.dim > div { background: rgba(255,255,255,0.35); }
 
-/* ---- the board (squishdoku/Board.js frame: ring, white rim, lilac seams) */
-.area { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; touch-action: none; -webkit-touch-callout: none; }
-.area img { pointer-events: none; -webkit-user-drag: none; }
-.board { position: relative; }
-.bLip { position: absolute; left: 0; top: 5px; right: 0; bottom: 0; border-radius: 20px; background: var(--ring); }
-.bFrame { position: relative; border-radius: 20px; background: var(--ring); padding: 2.5px; }
-.bRim { border-radius: 17.5px; background: var(--white); padding: 3.5px; }
-.bGrid { position: relative; border-radius: 13px; overflow: hidden; background: var(--seam); }
-.layer { position: absolute; left: 6px; top: 6px; pointer-events: none; }
-.cell { position: absolute; }
-.cell img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
-.cell img.base2 { filter: brightness(0.84) saturate(1.05); }
-.cell img.top2 { transform: translateY(-7%) scale(0.86); }
-.dent { position: absolute; left: 6%; top: 6%; right: 6%; bottom: 9%; border-radius: 26%; border: 2px dashed rgba(69,16,122,0.2); background: rgba(69,16,122,0.05); }
-.badge { position: absolute; left: 50%; top: 47%; transform: translate(-50%, -50%); transition: filter 300ms, opacity 300ms; }
-.badge.locked { filter: grayscale(1) brightness(1.15); opacity: 0.6; }
-.lockCount {
-  position: absolute; right: 9%; top: 6%; min-width: 22%; height: 22%; padding: 0 4%; border-radius: 999px;
-  background: #ff5cc6; border: 2px solid var(--white); color: var(--white); font: 700 11px/1 var(--display);
-  display: flex; align-items: center; justify-content: center;
-}
-.piece { position: absolute; left: 0; top: 0; }
-.piece .shadow { position: absolute; left: 50%; bottom: 2%; width: 62%; height: 14%; margin-left: -31%; border-radius: 50%; background: rgba(69,16,122,0.28); }
-.piece .lift, .piece .squash { position: absolute; inset: 0; }
-.piece .squash { transform-origin: 50% 92%; }
-.piece img { width: 100%; height: 100%; display: block; object-fit: contain; }
-.breathe { animation: breathe 2.6s ease-in-out infinite; transform-origin: 50% 92%; position: absolute; inset: 0; }
-@keyframes breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.03, 0.97); } }
-.friend .breathe { animation: breathe 2.2s ease-in-out infinite, peek 6s ease-in-out infinite; animation-delay: var(--fd), var(--fd); }
-@keyframes peek { 0%, 84%, 100% { rotate: 0deg; } 88% { rotate: -9deg; } 92% { rotate: 8deg; } 96% { rotate: -3deg; } }
-.tear { position: absolute; width: 12%; height: 12%; background: #8fdcff; border: 1px solid var(--white); border-radius: 50% 0 50% 50%; transform: rotate(-45deg); opacity: 0; }
-.hintGlow {
-  position: absolute; border-radius: 26%; border: 3px solid var(--gold);
-  box-shadow: 0 0 14px 2px rgba(255,226,92,0.9), inset 0 0 12px rgba(255,226,92,0.8); animation: hintPulse 0.5s ease-in-out 6 alternate;
-}
-@keyframes hintPulse { from { transform: scale(0.94); opacity: 0.55; } to { transform: scale(1.04); opacity: 1; } }
-.part { position: absolute; left: 0; top: 0; border-radius: 50%; }
-
-/* the news banner (sort/Game.js Banner) */
-.banner { position: absolute; left: 0; right: 0; top: 4%; display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 5; }
-.bannerText { font: 700 40px/1 var(--display); color: var(--white); text-shadow: 0 3px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink); text-align: center; }
-.bannerSub { margin-top: 6px; padding: 4px 12px; border-radius: 999px; background: rgba(69,16,122,0.8); font: 700 13px/1.3 var(--display); color: var(--white); text-align: center; }
-
-/* ---- SdButton (squishdoku/ui.js): ring + lip, white border, gradient face, top shine */
+/* ---- pill buttons (SdButton's shape; the Crib's faces and brown ring under the board) */
 .sd { position: relative; display: inline-block; vertical-align: top; padding: 0 0 5px; border: 0; background: none; cursor: pointer; transition: transform 70ms; }
 .sd .lip { display: block; position: absolute; left: 0; right: 0; top: 5px; bottom: 0; border-radius: 999px; background: var(--r); }
 .sd .rg { display: block; position: relative; padding: 2.5px; border-radius: 999px; background: var(--r); transition: transform 70ms; }
 .sd .face {
   position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 18px;
   border: 3px solid var(--white); border-radius: 999px; overflow: hidden;
-  background: linear-gradient(180deg, var(--c0) 0%, var(--c1) 50%, var(--c2) 100%);
+  background: linear-gradient(180deg, var(--c0) 0%, var(--c1) var(--mid, 50%), var(--c2) 100%);
 }
 .sd .face::before { content: ''; position: absolute; left: 8%; right: 8%; top: 2px; height: 42%; border-radius: 999px; background: rgba(255,255,255,0.45); pointer-events: none; }
 .sd .lbl { position: relative; font: 700 var(--fs, 17px)/1.15 var(--display); color: var(--white); white-space: nowrap; text-shadow: 0 2px 0 var(--lr), 1px 0 0 var(--lr), -1px 0 0 var(--lr); }
 .sd:active:not(:disabled), .sd.down:not(:disabled) { transform: scale(0.93); }
 .sd:active:not(:disabled) .rg, .sd.down:not(:disabled) .rg { transform: translateY(4px); }
-.sd:disabled { cursor: default; --r: #7a6a8c; --c0: #e6dcf0; --c1: #c9b9da; --c2: #b9a6cc; }
+.sd:disabled { cursor: default; --c0: #e6dcf0; --c1: #c9b9da; --c2: #b9a6cc; }
+.sd:disabled .lbl { opacity: 0.85; }
 .k-pink { --r: #8e1580; --c0: #ffd6f4; --c1: #ff5cc6; --c2: #c02bd9; --lr: #8e1580; }
 .k-gold { --r: #9c4d06; --c0: #fff7b0; --c1: #ffd23a; --c2: #ff9c0a; --lr: #9c4d06; }
 .k-green { --r: #0d7a4a; --c0: #b8ffd9; --c1: #3ddc97; --c2: #16a86a; --lr: #0d7a4a; }
 .k-purple { --r: #45189a; --c0: #efe6ff; --c1: #b48bff; --c2: #8f3cf2; --lr: #45189a; }
 .k-white { --r: #45189a; --c0: #ffffff; --c1: #f6efff; --c2: #e4d6ff; --lr: #45189a; }
+/* crib/Hud.js FACES on the Crib's brown ring */
+.k-cblue { --r: #5b3a29; --c0: #d6ecff; --c1: #8fc4f0; --c2: #5a92c8; --lr: #2f5f8f; --mid: 55%; }
+.k-cpurple { --r: #5b3a29; --c0: #e9d6ff; --c1: #b38cff; --c2: #8a5fd6; --lr: #6a3a8a; --mid: 55%; }
+.k-cgold { --r: #5b3a29; --c0: #fff2c2; --c1: #ffd36a; --c2: #e8a63a; --lr: #9c5a12; --mid: 55%; }
 
-.controls { display: flex; justify-content: center; gap: 8px; padding-top: 4px; }
+.controls { position: relative; z-index: 20; display: flex; justify-content: center; gap: 8px; }
 .controls .sd { flex: 1; max-width: 130px; }
 .controls .face { padding: 10px 6px; }
 
@@ -232,58 +224,57 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
 .twistHead { margin-top: 6px; font: 700 12px/1.2 var(--display); letter-spacing: 1px; color: var(--sub); align-self: flex-start; }
 .twist { align-self: stretch; font: 800 11.5px/15.5px var(--body); color: var(--ink); }
 .twistName { font-family: var(--display); font-weight: 700; color: #e01e4a; }
-.levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 8px; align-self: stretch; margin-top: 4px; }
-.lvTile { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 6px; align-self: stretch; margin-top: 4px; }
+.lvTile { display: flex; flex-direction: column; align-items: center; gap: 1px; }
 .lvTile .face { padding: 8px 0; width: 58px; }
 .lvStars { display: flex; gap: 1px; }
+.lvRoom { font: 700 9.5px/1.2 var(--display); letter-spacing: 0.3px; color: var(--sub); }
 .rock { animation: rock 1.8s ease-in-out infinite; }
 @keyframes rock { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .twinkle, .breathe, .friend .breathe, .rock, .starSlot .rays { animation: none; }
+  .breathe, .friend .breathe, .rock, .starSlot .rays, .goalStar .bob, .dt.hue { animation: none; }
 }
 </style>
 </head>
 <body>
-<div id="stage"><div id="sparkles"></div></div>
+<div id="scene"><div id="room"></div><div id="tint"></div></div>
 
 <div id="app">
-  <header class="hud">
-    <button class="round" id="back" aria-label="Pause"><span class="rlip"></span><span class="rface"><span class="rin"><span class="glyph">‹</span></span></span></button>
+  <header class="top">
+    <button class="cribBtn" id="back" aria-label="Pause"><span class="cc cc1"></span><span class="cc cc0"></span><span class="cface"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 L7 12 L15 20" transform="translate(0 1.5)" stroke="#8a1f6a" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 4 L7 12 L15 20" stroke="#ffffff" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
     <div class="titleBox">
-      <div class="gameName">SQUISH HOP</div>
-      <div class="row6"><span class="levelText" id="levelText">LEVEL 1</span><span class="chip" id="tier">EASY</span></div>
+      <div id="roomTitle"></div>
+      <div class="roomSub"><span id="levelText">SQUISH HOP · LEVEL 1</span><span class="chip" id="tier">EASY</span></div>
     </div>
-    <div class="movesPill"><div class="movesLabel">HOPS</div><div class="movesNum" id="hops">0</div></div>
+    <div class="phase" id="phase"><span class="sun" id="sun"></span><span id="phaseText">DAYTIME</span></div>
   </header>
 
-  <section class="info">
+  <main class="area" id="area">
+    <div class="plane" id="plane"></div>
+    <div class="layer" id="layer"></div>
+    <div class="banner" id="banner" hidden></div>
+  </main>
+
+  <section class="strip">
     <div class="goalCard" id="goalCard">
       <div class="goalLabel">GOAL</div>
       <div class="goalRow" id="goalRow"></div>
     </div>
-    <div class="infoRight">
-      <div class="meterRow"><div class="meter" id="meter"></div><div class="parPill" id="leftPill">LEFT 0</div></div>
+    <div class="stripRight">
+      <div class="meterRow"><div class="meter" id="meter"></div><div class="pill" id="leftPill">LEFT 0</div><div class="pill hops" id="hops">HOPS 0</div></div>
       <div class="tip" id="tip"></div>
     </div>
   </section>
 
-  <main class="area" id="area">
-    <div class="board" id="board">
-      <div class="bLip"></div>
-      <div class="bFrame"><div class="bRim"><div class="bGrid" id="grid"></div></div></div>
-      <div class="layer" id="layer"></div>
-    </div>
-    <div class="banner" id="banner" hidden></div>
-  </main>
-
   <footer class="controls">
-    <button class="sd k-white" id="undo"><span class="lip"></span><span class="rg"><span class="face"><span class="lbl" style="--fs:15px;--lr:#45189a">UNDO</span></span></span></button>
-    <button class="sd k-purple" id="restart"><span class="lip"></span><span class="rg"><span class="face"><span class="lbl" style="--fs:15px">RESTART</span></span></span></button>
-    <button class="sd k-gold" id="hint"><span class="lip"></span><span class="rg"><span class="face"><span class="lbl" style="--fs:15px">HINT</span></span></span></button>
+    <button class="sd k-cblue" id="undo"><span class="lip"></span><span class="rg"><span class="face"><span class="lbl" style="--fs:15px">UNDO</span></span></span></button>
+    <button class="sd k-cpurple" id="restart"><span class="lip"></span><span class="rg"><span class="face"><span class="lbl" style="--fs:15px">RESTART</span></span></span></button>
+    <button class="sd k-cgold" id="hint"><span class="lip"></span><span class="rg"><span class="face"><span class="lbl" style="--fs:15px">HINT</span></span></span></button>
   </footer>
 </div>
 
+<div id="flash"><img alt="" src="../../assets/crib/flash-glow.png"><div class="dots" id="flashDots"></div></div>
 <div id="overlay" hidden></div>
 
 <script src="engine.js"></script>
@@ -294,22 +285,31 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
   const E = window.HopEngine;
   const LEVELS = window.HopLevels;
 
-  // ---- the repository's own assets (heads: tools/rig/heads.mjs; cushions:
-  // tools/squishdoku/cushions.mjs; sounds: tools/audio/*). Literal paths, so
+  // ---- the repository's own art and sounds. Literal paths, so
   // tools/bundle.mjs can inline them.
   const A = {
-    cush: {
-      violet: '../../assets/squishdoku/cushions/violet.webp',
-      magenta: '../../assets/squishdoku/cushions/magenta.webp',
-      gold: '../../assets/squishdoku/cushions/gold.webp',
+    rooms: {
+      living: { base: '../../assets/crib/rooms/living-base.webp', over: { day: '../../assets/crib/rooms/living-over-day.webp', evening: '../../assets/crib/rooms/living-over-evening.webp' } },
+      kitchen: { base: '../../assets/crib/rooms/kitchen-base.webp', over: { morning: '../../assets/crib/rooms/kitchen-over-morning.webp' } },
+      bath: { base: '../../assets/crib/rooms/bath-base.webp', over: { day: '../../assets/crib/rooms/bath-over-day.webp' } },
+      bed: { base: '../../assets/crib/rooms/bed-base.webp', over: { evening: '../../assets/crib/rooms/bed-over-evening.webp', night: '../../assets/crib/rooms/bed-over-night.webp' } },
+      yard: { base: '../../assets/crib/rooms/yard-base.webp', under: { evening: '../../assets/crib/rooms/yard-under-evening.webp' }, over: {} },
+      dance: { base: '../../assets/crib/rooms/dance-base.webp', over: { day: '../../assets/crib/rooms/dance-over-day.webp' } },
+    },
+    rug: '../../assets/crib/fixtures/living-rug.webp',
+    flashDots: '../../assets/crib/flash-dots.png',
+    // full bodies (tools/stack/fit.py) and the heads with faces (tools/rig/heads.mjs)
+    body: {
+      bubbly: '../../assets/stack/bubbly.webp', boba: '../../assets/stack/boba.webp', mochi: '../../assets/stack/mochi.webp',
+      berri: '../../assets/stack/berri.webp', dunkie: '../../assets/stack/dunkie.webp', pip: '../../assets/stack/pip.webp',
     },
     heads: {
-      bubbly: { idle: '../../assets/squishdoku/heads/bubbly-idle.webp', happy: '../../assets/squishdoku/heads/bubbly-happy.webp', sad: '../../assets/squishdoku/heads/bubbly-sad.webp' },
-      boba: { idle: '../../assets/squishdoku/heads/boba-idle.webp', happy: '../../assets/squishdoku/heads/boba-happy.webp' },
-      mochi: { idle: '../../assets/squishdoku/heads/mochi-idle.webp', happy: '../../assets/squishdoku/heads/mochi-happy.webp' },
-      berri: { idle: '../../assets/squishdoku/heads/berri-idle.webp', happy: '../../assets/squishdoku/heads/berri-happy.webp' },
-      dunkie: { idle: '../../assets/squishdoku/heads/dunkie-idle.webp', happy: '../../assets/squishdoku/heads/dunkie-happy.webp' },
-      pip: { idle: '../../assets/squishdoku/heads/pip-idle.webp', happy: '../../assets/squishdoku/heads/pip-happy.webp' },
+      bubbly: { happy: '../../assets/squishdoku/heads/bubbly-happy.webp', sad: '../../assets/squishdoku/heads/bubbly-sad.webp' },
+      boba: { happy: '../../assets/squishdoku/heads/boba-happy.webp' },
+      mochi: { happy: '../../assets/squishdoku/heads/mochi-happy.webp' },
+      berri: { happy: '../../assets/squishdoku/heads/berri-happy.webp' },
+      dunkie: { happy: '../../assets/squishdoku/heads/dunkie-happy.webp' },
+      pip: { happy: '../../assets/squishdoku/heads/pip-happy.webp' },
     },
     snd: {
       tap: '../../assets/audio/sfx/tap.wav',
@@ -331,24 +331,68 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
       perfect: '../../assets/audio/squishdoku/sd_perfect.ogg',
       boardIn: '../../assets/audio/squishdoku/sd_boardIn.wav',
       news: '../../assets/audio/stack/st_news.wav',
+      room: '../../assets/audio/sfx/swoosh.wav',
     },
   };
+  // height / width of each body (src/stack/art.js)
+  const AR = { bubbly: 1.034, boba: 1.295, mochi: 0.989, berri: 1.003, dunkie: 0.952, pip: 0.957 };
   const PLAYER = 'bubbly';
-  // where Bubbly's eyes are on its head picture (src/squishdoku/heads.js EYES)
-  const PLAYER_EYES = [[0.436, 0.536], [0.666, 0.536]];
   const FRIENDS = ['boba', 'mochi', 'berri', 'dunkie', 'pip'];
+
+  // The Crib's rooms (src/crib/roomArt.js FLOOR_TOP / SCENE_H: where the
+  // floor starts), the part of the room to show on a phone, the cushion
+  // colour that stands out on its floor, and the floor colour behind it.
+  const ROOMS = {
+    living: { name: 'Living Room', short: 'Living', floor: 200 / 393, cx: 0.5, cushion: 'mint', rug: true, bg: '#dba163' },
+    kitchen: { name: 'Kitchen', short: 'Kitchen', floor: 236 / 393, cx: 0.42, cushion: 'lilac', bg: '#efc499' },
+    bath: { name: 'Bathroom', short: 'Bath', floor: 236 / 393, cx: 0.45, cushion: 'pink', bg: '#ffffff', dent: 'rgba(60,110,150,0.45)' },
+    bed: { name: 'Bedroom', short: 'Bedroom', floor: 212 / 393, cx: 0.5, cushion: 'lilac', bg: '#dba163' },
+    yard: { name: 'Yard', short: 'Yard', floor: 214 / 393, cx: 0.66, cushion: 'pink', bg: '#96cb74', dent: 'rgba(255,255,255,0.8)' },
+    dance: { name: 'Dance Room', short: 'Dance', floor: 200 / 393, cx: 0.24, dance: true, bg: '#3b2030' },
+  };
+  // the trip through the Crib, a room and a time of day per level
+  const STAGES = [
+    { room: 'living', phase: 'day' },
+    { room: 'kitchen', phase: 'morning' },
+    { room: 'bath', phase: 'day' },
+    { room: 'bed', phase: 'evening' },
+    { room: 'yard', phase: 'evening' },
+    { room: 'living', phase: 'evening' },
+    { room: 'bed', phase: 'night' },
+    { room: 'dance', phase: 'day' },
+  ];
+  // src/crib/data.js PHASES
+  const PHASES = {
+    morning: { label: 'MORNING', sun: '#ffe38a', tint: 'rgba(255,170,140,0.05)' },
+    day: { label: 'DAYTIME', sun: '#fff3a0', tint: null },
+    evening: { label: 'EVENING', sun: '#ffb36b', tint: 'rgba(90,20,120,0.1)' },
+    night: { label: 'NIGHT', sun: '#fff6d8', tint: 'rgba(20,24,70,0.22)' },
+  };
+  // Squish Stack's cushions (src/stack/Pieces.js CUSHIONS)
+  const CUSH = {
+    pink: { c1: '#ffd9f3', c2: '#ff86d3', ring: '#a3168f' },
+    mint: { c1: '#cffff7', c2: '#3fd6c6', ring: '#0b6670' },
+    lilac: { c1: '#ebdcff', c2: '#a77bff', ring: '#4b1ca0' },
+    peach: { c1: '#fff0cf', c2: '#ffb257', ring: '#9c4d06' },
+  };
+  // the Crib's dance floor tile colours (src/crib/Dance.js TILE), in its 2 × 2 pattern
+  const DANCE_TILE = ['#7cb8ff', '#ff5c8a', '#ffd66b', '#5cf2c8'];
+
   const TIER_NAMES = ['EASY', 'MEDIUM', 'HARD', 'EXPERT'];
   const TIER_COLORS = ['#3ddc97', '#5fb8ff', '#ff8a4a', '#e01e4a'];
   const STAR_D = 'M12 2.2 L14.9 8.6 L21.8 9.3 L16.6 14 L18.1 20.9 L12 17.4 L5.9 20.9 L7.4 14 L2.2 9.3 L9.1 8.6 Z';
   const TITLES = ['', 'HOPPED!', 'NICE HOPPING!', 'ALL CLEAR!'];
   const NEWS = {
     friends: { text: 'FRIENDS!', sub: 'The ★ opens when everyone is with you.' },
-    doubles: { text: 'DOUBLES!', sub: 'Pink cushions take two hops to clear.' },
+    doubles: { text: 'PILES!', sub: 'Two cushions on top of each other take two hops.' },
   };
+  const TILT = 38; // degrees the floor leans back
+  const DEPTH = 13; // the perspective distance, in tiles
   const RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const ms = (t) => (RM ? Math.round(t * 0.4) : t);
   const $ = (id) => document.getElementById(id);
   const wait = (t) => new Promise((r) => setTimeout(r, t));
+  $('flashDots').style.backgroundImage = `url(${A.flashDots})`;
 
   // ---- saved progress (this browser only)
   const SAVE_KEY = 'squishHop.v1';
@@ -384,179 +428,273 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     return { play };
   })();
 
-  // ---- small drawing helpers
-  function starSvg(size, lit, kind) {
+  // ---- drawing helpers
+  function starSvg(size, lit, kind, cls = '') {
+    const c = cls ? ` class="${cls}"` : '';
     if (kind === 'meter') {
-      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24"><path d="${STAR_D}" fill="${lit ? '#ffd23a' : 'rgba(255,255,255,0.55)'}" stroke="${lit ? '#b86200' : '#b9a6cc'}" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+      return `<svg${c} width="${size}" height="${size}" viewBox="0 0 24 24"><path d="${STAR_D}" fill="${lit ? '#ffd23a' : 'rgba(255,255,255,0.55)'}" stroke="${lit ? '#b86200' : '#b9a6cc'}" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
     }
     if (kind === 'badge') {
-      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24"><path d="${STAR_D}" fill="#b86200" transform="translate(0 1.4)" stroke-linejoin="round"/><path d="${STAR_D}" fill="#ffd23a" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+      return `<svg${c} width="${size}" height="${size}" viewBox="0 0 24 24"><path d="${STAR_D}" fill="#b86200" transform="translate(0 1.4)" stroke-linejoin="round"/><path d="${STAR_D}" fill="#ffd23a" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
     }
-    // the result card's star (sort/Cards.js Star)
-    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24"><path d="${STAR_D}" fill="${lit ? '#b86200' : 'rgba(69,16,122,0.25)'}" transform="translate(0 1.2)" stroke-linejoin="round"/><path d="${STAR_D}" fill="${lit ? '#ffd23a' : 'rgba(255,255,255,0.7)'}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"/>${lit ? '<path d="M8 9.6 L10.4 9.2 L11.3 7" stroke="#fff6c4" stroke-width="1.4" stroke-linecap="round" fill="none"/>' : ''}</svg>`;
+    return `<svg${c} width="${size}" height="${size}" viewBox="0 0 24 24"><path d="${STAR_D}" fill="${lit ? '#b86200' : 'rgba(69,16,122,0.25)'}" transform="translate(0 1.2)" stroke-linejoin="round"/><path d="${STAR_D}" fill="${lit ? '#ffd23a' : 'rgba(255,255,255,0.7)'}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"/>${lit ? '<path d="M8 9.6 L10.4 9.2 L11.3 7" stroke="#fff6c4" stroke-width="1.4" stroke-linecap="round" fill="none"/>' : ''}</svg>`;
   }
 
-  // OutlinedTitle (components/candy/OutlinedTitle.js): gradient letters, a
-  // white outline, a purple halo and a deep drop, drawn as stacked SVG text
-  const FILLS = { gold: [['0', '#fffbd6'], ['0.45', '#ffe045'], ['1', '#ff9500']], pink: [['0', '#ffd6f4'], ['0.52', '#ff5cc6'], ['1', '#c02bd9']] };
+  // Squish Stack's puffy cushion (Pieces.js Cushion), seen from above: ring,
+  // white piping, a soft face with stitching round it and a tuft
+  let gradN = 0;
+  function cushionSvg(size, col) {
+    const c = CUSH[col];
+    const id = `cg${++gradN}`;
+    const k = size / 2;
+    const r = k - 1;
+    const rr = (x) => (r - x) * 0.42;
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><defs><radialGradient id="${id}" cx="50%" cy="34%" r="70%"><stop offset="0" stop-color="${c.c1}"/><stop offset="1" stop-color="${c.c2}"/></radialGradient></defs>
+      <rect x="${k - r}" y="${k - r + size * 0.06}" width="${2 * r}" height="${2 * r}" rx="${rr(0)}" fill="${c.ring}"/>
+      <rect x="${k - r}" y="${k - r}" width="${2 * r}" height="${2 * r}" rx="${rr(0)}" fill="${c.ring}"/>
+      <rect x="${k - r + size * 0.035}" y="${k - r + size * 0.035}" width="${2 * r - size * 0.07}" height="${2 * r - size * 0.07}" rx="${rr(size * 0.035)}" fill="#ffffff"/>
+      <rect x="${k - r + size * 0.075}" y="${k - r + size * 0.075}" width="${2 * r - size * 0.15}" height="${2 * r - size * 0.15}" rx="${rr(size * 0.075)}" fill="url(#${id})"/>
+      <rect x="${k - r + size * 0.17}" y="${k - r + size * 0.17}" width="${2 * r - size * 0.34}" height="${2 * r - size * 0.34}" rx="${rr(size * 0.17)}" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="2" stroke-dasharray="5 4"/>
+      <ellipse cx="${k}" cy="${k + size * 0.03}" rx="${size * 0.065}" ry="${size * 0.055}" fill="${c.ring}" opacity="0.45"/></svg>`;
+  }
+
+  // Outlined titles drawn as stacked SVG text: the mini-games' card titles
+  // (OutlinedTitle.js: gradient, white outline, purple halo, deep drop) and
+  // the Crib's room title (crib/Hud.js RoomTitle: cream-to-peach in a brown
+  // outline with a deeper drop)
+  const FILLS = {
+    gold: [['0', '#fffbd6'], ['0.45', '#ffe045'], ['1', '#ff9500']],
+    pink: [['0', '#ffd6f4'], ['0.52', '#ff5cc6'], ['1', '#c02bd9']],
+    room: [['0', '#fffaf0'], ['0.6', '#ffe6b8'], ['1', '#ffcf80']],
+  };
   const measureCtx = document.createElement('canvas').getContext('2d');
   let titleN = 0;
+  const FONT = "Fredoka, 'Baloo 2', 'Trebuchet MS', sans-serif";
+  const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  function textW(text, size, spacing) {
+    measureCtx.font = `700 ${size}px ${FONT}`;
+    return measureCtx.measureText(text).width + text.length * spacing;
+  }
   function titleSvg(text, fill = 'pink', size = 30) {
     const outline = 3;
     const halo = outline + 2;
     const drop = size >= 26 ? 5 : size >= 18 ? 4 : 3;
-    measureCtx.font = `700 ${size}px Fredoka, 'Baloo 2', 'Trebuchet MS', sans-serif`;
-    const textW = measureCtx.measureText(text).width + text.length * 1;
-    const w = Math.ceil(textW + halo * 2 + 2 + size * 0.12);
+    const w = Math.ceil(textW(text, size, 1) + halo * 2 + 2 + size * 0.12);
     const h = Math.ceil(size * 1.22 + halo * 2 + drop);
     const base = halo + size * 0.96;
     const id = `tf${++titleN}`;
-    const esc = text.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-    const common = `x="${w / 2}" text-anchor="middle" font-family="Fredoka, 'Baloo 2', 'Trebuchet MS', sans-serif" font-weight="700" font-size="${size}" letter-spacing="1" stroke-linejoin="round"`;
-    return `<svg class="ot" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc}">
+    const t = esc(text);
+    const common = `x="${w / 2}" text-anchor="middle" font-family="${FONT}" font-weight="700" font-size="${size}" letter-spacing="1" stroke-linejoin="round"`;
+    return `<svg class="ot" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${t}">
       <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">${FILLS[fill].map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('')}</linearGradient></defs>
-      <text ${common} y="${base + drop}" fill="#45107a" stroke="#45107a" stroke-width="${halo * 2}">${esc}</text>
-      <text ${common} y="${base}" fill="#6a1b9a" stroke="#6a1b9a" stroke-width="${halo * 2}">${esc}</text>
-      <text ${common} y="${base}" fill="#ffffff" stroke="#ffffff" stroke-width="${outline * 2}">${esc}</text>
-      <text ${common} y="${base}" fill="url(#${id})">${esc}</text></svg>`;
+      <text ${common} y="${base + drop}" fill="#45107a" stroke="#45107a" stroke-width="${halo * 2}">${t}</text>
+      <text ${common} y="${base}" fill="#6a1b9a" stroke="#6a1b9a" stroke-width="${halo * 2}">${t}</text>
+      <text ${common} y="${base}" fill="#ffffff" stroke="#ffffff" stroke-width="${outline * 2}">${t}</text>
+      <text ${common} y="${base}" fill="url(#${id})">${t}</text></svg>`;
+  }
+  function roomTitleSvg(text) {
+    const size = 26;
+    const pad = 4;
+    const w = Math.ceil(textW(text, size, 0.5) + pad * 2 + 4);
+    const h = Math.ceil(size * 1.15 + pad * 2 + 3);
+    const y = pad + size * 0.92;
+    const id = `tf${++titleN}`;
+    const t = esc(text);
+    const common = `x="${pad}" font-family="${FONT}" font-weight="700" font-size="${size}" letter-spacing="0.5" stroke-linejoin="round"`;
+    return `<svg class="roomTitle" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${t}">
+      <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">${FILLS.room.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('')}</linearGradient></defs>
+      <text ${common} y="${y + 3}" fill="#5b3a29" stroke="#5b3a29" stroke-width="5">${t}</text>
+      <text ${common} y="${y}" fill="#5b3a29" stroke="#5b3a29" stroke-width="5">${t}</text>
+      <text ${common} y="${y}" fill="url(#${id})">${t}</text></svg>`;
   }
 
-  function button(kind, label, { id = '', fs = 17, lr, cls = '' } = {}) {
-    const lrStyle = lr ? `;--lr:${lr}` : '';
-    return `<button class="sd k-${kind} ${cls}" ${id ? `id="${id}"` : ''}><span class="lip"></span><span class="rg"><span class="face"><span class="lbl" style="--fs:${fs}px${lrStyle}">${label}</span></span></span></button>`;
+  function button(kind, label, { id = '', fs = 17, cls = '' } = {}) {
+    return `<button class="sd k-${kind} ${cls}" ${id ? `id="${id}"` : ''}><span class="lip"></span><span class="rg"><span class="face"><span class="lbl" style="--fs:${fs}px">${label}</span></span></span></button>`;
   }
-
   function headSticker(key, face, size, dim) {
     return `<div class="headSticker${dim ? ' dim' : ''}" style="width:${size}px;height:${size}px"><div><img src="${A.heads[key][face]}" alt=""></div></div>`;
   }
 
-  // ---- background sparkles (components/candy/Sparkles.js SPARKLES table)
-  (function sparkles() {
-    const COLORS = ['#ffffff', '#fff3a0', '#ffd1f5', '#ffffff'];
-    let html = '';
-    for (let i = 0; i < 14; i++) {
-      const x = ((i * 37 + 11) % 92) + 2;
-      const y = ((i * 53 + 7) % 88) + 4;
-      const size = 10 + ((i * 7) % 14);
-      html += `<span class="twinkle" style="left:${x}%;top:${y}%;font-size:${size}px;color:${COLORS[i % 4]};--d:${1.8 + (i % 5) * 0.5}s;--dl:${((i * 0.37) % 2).toFixed(2)}s">✦</span>`;
-    }
-    $('sparkles').innerHTML = html;
-  })();
-
   // ---- the game
   const G = {
-    idx: 0, def: null, lv: null, st: null, hist: [], hinted: false, asked: false,
-    over: false, busy: false, queue: [], feasible: true, plan: null, S: 56,
-    cells: {}, player: null, friends: {}, friendKeys: [], slots: [], glow: null,
+    idx: 0, def: null, lv: null, st: null, hist: [], hinted: false, asked: false, over: false, won: false,
+    busy: false, queue: [], feasible: true, T: 64, cells: {}, proj: {}, player: null, friends: {}, friendKeys: [], slots: [],
+    stage: null, room: ROOMS.living, goalStar: null,
   };
+  const xy = (i) => [i % G.lv.w, (i / G.lv.w) | 0];
 
-  function xy(i) { return [i % G.lv.w, (i / G.lv.w) | 0]; }
-  function center(i) {
-    const [x, y] = xy(i);
-    return [x * G.S + G.S / 2, y * G.S + G.S * 0.47];
+  // ---- the room picture: the room's layers scaled so its floor line sits
+  // about a third of the way down, its floor repeated below to the bottom
+  function buildRoom() {
+    const R = G.room;
+    const stage = G.stage;
+    const art = A.rooms[stage.room];
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const RATIO = 1704 / 786;
+    const floorY = Math.round(Math.min(330, Math.max(200, vh * 0.34)));
+    let H = floorY / R.floor;
+    if (H * RATIO < vw) H = vw / RATIO;
+    const W = H * RATIO;
+    const left = Math.min(0, Math.max(vw - W, vw / 2 - R.cx * W));
+    const room = $('room');
+    room.style.cssText = `left:${left}px;width:${W}px;height:${vh}px`;
+    document.documentElement.style.setProperty('--scene', R.bg);
+    let html = '';
+    // the floor again and again below, each copy under the one above
+    const step = H * (1 - R.floor) - H * 0.06;
+    const copies = [];
+    for (let k = 1; H + (k - 1) * step < vh; k++) copies.push(H + (k - 1) * step - (R.floor + 0.05) * H);
+    copies.reverse().forEach((top) => { html += `<img alt="" src="${art.base}" style="top:${top}px;width:${W}px;height:${H}px">`; });
+    const under = art.under && art.under[stage.phase];
+    if (under) html += `<img alt="" src="${under}" style="top:0;width:${W}px;height:${H}px">`;
+    html += `<img alt="" src="${art.base}" style="top:0;width:${W}px;height:${H}px">`;
+    const over = art.over && art.over[stage.phase];
+    // the room's things down to the floor line (what stands on the floor is cut off there)
+    if (over) html += `<div class="clip" style="width:${W}px;height:${H * (R.floor + 0.012)}px"><img alt="" src="${over}" style="top:0;width:${W}px;height:${H}px"></div>`;
+    room.innerHTML = html;
+    const tint = PHASES[stage.phase].tint;
+    $('tint').style.background = tint || 'transparent';
+    G.floorScreenY = H * R.floor;
   }
 
-  // board size from the room the area has
-  function measure() {
-    const area = $('area');
-    const aw = area.clientWidth - 12;
-    const ah = area.clientHeight - 12 - 5 - 8;
-    G.S = Math.max(28, Math.floor(Math.min(aw / G.lv.w, ah / G.lv.h, 78)));
-  }
-
+  // ---- the board: a plane of tiles leaned back, the squishies standing on it
   function buildBoard() {
     const { lv } = G;
-    measure();
-    const S = G.S;
-    const grid = $('grid');
-    const layer = $('layer');
-    grid.innerHTML = '';
-    layer.innerHTML = '';
-    grid.style.width = lv.w * S + 'px';
-    grid.style.height = lv.h * S + 'px';
-    layer.style.width = lv.w * S + 'px';
-    layer.style.height = lv.h * S + 'px';
-    G.cells = {};
+    const R = G.room;
+    const area = $('area');
+    const AW = area.clientWidth;
+    const AH = area.clientHeight;
+    const floorY = G.floorScreenY - area.getBoundingClientRect().top;
+    const rad = (TILT * Math.PI) / 180;
+    const kH = (Math.cos(rad) * DEPTH) / (DEPTH + lv.h * Math.sin(rad)); // projected height per tile
+    const space = AH - Math.max(0, floorY) + AH * 0.04;
+    const T = Math.max(30, Math.floor(Math.min((AW - 6) / lv.w, space / (lv.h * kH), 96)));
+    G.T = T;
+    const projH = T * lv.h * kH;
+    const bottom = Math.min(AH - 6, Math.max(floorY, 0) + (AH - Math.max(floorY, 0)) / 2 + projH / 2);
+    const plane = $('plane');
+    plane.className = `plane${R.dance ? ' dance' : ''}`;
+    plane.style.cssText = `left:${(AW - lv.w * T) / 2}px;top:${bottom - lv.h * T}px;width:${lv.w * T}px;height:${lv.h * T}px;transform:perspective(${T * DEPTH}px) rotateX(${TILT}deg);border-radius:${R.dance ? T * 0.3 : 0}px`;
+    plane.style.setProperty('--dent', R.dent || 'rgba(91,58,41,0.4)');
+    plane.style.setProperty('--hz', `${Math.round(T * 0.22)}px`);
+    let html = R.rug ? `<img class="rug" alt="" src="${A.rug}">` : '';
+    const g = R.dance ? 1.5 : T * 0.04;
     for (let i = 0; i < lv.life.length; i++) {
       if (!lv.life[i]) continue;
       const [x, y] = xy(i);
-      const el = document.createElement('div');
-      el.className = 'cell';
-      el.style.cssText = `left:${x * S}px;top:${y * S}px;width:${S}px;height:${S}px`;
-      const dent = document.createElement('div');
-      dent.className = 'dent';
-      const c0 = document.createElement('img');
-      c0.alt = '';
-      const c1 = document.createElement('img');
-      c1.alt = '';
-      c1.className = 'top2';
-      c1.src = A.cush.magenta;
-      el.append(dent, c0, c1);
-      const c = { el, dent, c0, c1, life: -1 };
-      if (i === lv.goal) {
-        c0.src = A.cush.gold;
-        const badge = document.createElement('div');
-        badge.className = 'badge';
-        badge.innerHTML = starSvg(Math.round(S * 0.5), true, 'badge');
-        const lock = document.createElement('div');
-        lock.className = 'lockCount';
-        lock.style.fontSize = Math.max(9, Math.round(S * 0.2)) + 'px';
-        el.append(badge, lock);
-        c.badge = badge;
-        c.lock = lock;
-        c1.hidden = true;
-        dent.hidden = true;
+      const goal = i === lv.goal;
+      const s = T - 2 * g;
+      let c0;
+      let c1 = '';
+      if (R.dance) {
+        const k = y % 2 === 0 ? (x % 2 ? 1 : 0) : x % 2 ? 2 : 3;
+        const col = goal ? '#ffffff' : DANCE_TILE[k];
+        c0 = `<div class="c0 dt${goal ? '' : ' hue'}" style="--tc:${col}"></div>`;
+        if (!goal) c1 = '<div class="c1 dring"></div>';
+      } else {
+        c0 = `<div class="c0">${cushionSvg(s, goal ? 'peach' : R.cushion)}</div>`;
+        if (!goal) c1 = `<div class="c1" style="transform:translateZ(${T * 0.17}px) scale(0.94)">${cushionSvg(s, R.cushion)}</div>`;
       }
-      grid.appendChild(el);
-      G.cells[i] = c;
+      html += `<div class="tile" data-i="${i}" style="left:${x * T + g}px;top:${y * T + g}px;width:${s}px;height:${s}px"><div class="dent${R.dance ? ' dk' : ''}"></div>${c0}${c1}</div>`;
     }
-    // friends, then the player on top
+    plane.innerHTML = html;
+    G.cells = {};
+    plane.querySelectorAll('.tile').forEach((el) => {
+      const i = Number(el.dataset.i);
+      G.cells[i] = { el, dent: el.querySelector('.dent'), c0: el.querySelector('.c0'), c1: el.querySelector('.c1'), life: -1 };
+    });
+    measureProj();
+    // pieces
+    const layer = $('layer');
+    layer.innerHTML = '';
     G.friends = {};
     lv.friends.forEach((cell, k) => {
       const key = G.friendKeys[k];
-      const p = makePiece(A.heads[key].idle, S * 0.74, 'friend');
-      p.key = key;
+      const p = makePiece(key, 'friend', 0.8);
       p.k = k;
       p.el.style.setProperty('--fd', `${-(k * 0.9).toFixed(1)}s`);
       layer.appendChild(p.el);
       G.friends[cell] = p;
       placePiece(p, cell);
     });
-    G.player = makePiece(A.heads[PLAYER].idle, S * 0.88, 'player');
+    // the ★, standing over its cushion
+    const gs = document.createElement('div');
+    gs.className = 'goalStar';
+    const sz = T * 0.5;
+    gs.style.width = gs.style.height = sz + 'px';
+    gs.innerHTML = `<div class="bob">${starSvg(sz, true, 'badge')}<div class="lockCount" style="font-size:${Math.max(9, Math.round(sz * 0.36))}px"></div></div>`;
+    layer.appendChild(gs);
+    G.goalStar = gs;
+    const gp = G.proj[lv.goal];
+    const gsc = gp.w / T;
+    gs.style.transform = `translate(${gp.x - sz / 2}px,${gp.y - sz - T * 0.18 * gsc}px) scale(${gsc})`;
+    gs.style.zIndex = 10 + xy(lv.goal)[1] * 3;
+    G.player = makePiece(PLAYER, 'player', 0.92);
     layer.appendChild(G.player.el);
+    layer.style.setProperty('--shade', R.dance ? 'rgba(255,255,255,0.3)' : 'rgba(69,16,122,0.28)');
   }
 
-  function makePiece(src, size, kind) {
+  // where each tile's middle ends up on screen, and how big it looks there
+  function measureProj() {
+    const ar = $('area').getBoundingClientRect();
+    G.proj = {};
+    Object.entries(G.cells).forEach(([i, c]) => {
+      const r = c.c0.getBoundingClientRect();
+      let lift = 0;
+      if (c.c1) {
+        const was = c.c1.hidden;
+        c.c1.hidden = false;
+        const r1 = c.c1.getBoundingClientRect();
+        c.c1.hidden = was;
+        lift = r.top + r.height / 2 - (r1.top + r1.height / 2);
+      }
+      G.proj[i] = { x: r.left + r.width / 2 - ar.left, y: r.top + r.height * 0.6 - ar.top, w: r.width, lift: G.room.dance ? 0 : lift };
+    });
+  }
+
+  function makePiece(key, kind, scale) {
+    const B = G.T * scale;
+    const H = B * AR[key];
     const el = document.createElement('div');
     el.className = `piece ${kind}`;
-    el.style.width = el.style.height = size + 'px';
-    el.innerHTML = `<div class="shadow"></div><div class="lift"><div class="squash"><div class="breathe"><img alt="" src="${src}"></div></div></div>`;
-    return { el, size, lift: el.querySelector('.lift'), squash: el.querySelector('.squash'), img: el.querySelector('img'), shadow: el.querySelector('.shadow'), pos: [0, 0] };
+    el.style.width = B + 'px';
+    el.style.height = H + 'px';
+    el.innerHTML = `<div class="shadow"></div><div class="lift"><div class="squash"><div class="breathe"><img alt="" src="${A.body[key]}"></div></div></div>`;
+    return { el, key, B, H, lift: el.querySelector('.lift'), squash: el.querySelector('.squash'), shadow: el.querySelector('.shadow'), cell: -1 };
+  }
+  // the transform that stands piece p on cell
+  function poseOf(p, cell, life) {
+    const q = G.proj[cell];
+    const s = q.w / G.T;
+    const up = life === 2 ? q.lift : 0;
+    return `translate(${q.x - p.B / 2}px,${q.y - up - p.H}px) scale(${s})`;
   }
   function placePiece(p, cell) {
-    const [cx, cy] = center(cell);
-    p.pos = [cx - p.size / 2, cy - p.size / 2];
-    p.el.style.transform = `translate(${p.pos[0]}px,${p.pos[1]}px)`;
+    p.cell = cell;
+    p.pose = poseOf(p, cell, G.st.life[cell]);
+    p.el.style.transform = p.pose;
+    p.el.style.zIndex = 10 + xy(cell)[1] * 3 + (p === G.player ? 2 : 1);
   }
-  function face(f) { G.player.img.src = A.heads[PLAYER][f]; }
 
-  // a cushion cell's look for its hops left: 0 a dent, 1 a cushion, 2 a pink double
+  // a tile's look for its hops left: 0 a dent, 1 a cushion, 2 a pile of two
   function paint(i) {
     const c = G.cells[i];
     if (i === G.lv.goal) return;
-    const life = c.life;
-    c.dent.hidden = life > 0;
-    c.c0.hidden = life === 0;
-    c.c1.hidden = life < 2;
-    c.c0.src = life === 2 ? A.cush.magenta : A.cush.violet;
-    c.c0.className = life === 2 ? 'base2' : '';
+    c.dent.hidden = c.life > 0;
+    c.c0.hidden = c.life === 0;
+    if (c.c1) c.c1.hidden = c.life < 2;
   }
-
-  function ghostOut(c, img) {
-    const g = img.cloneNode();
+  function baseOf(el) {
+    if (!el.classList.contains('c1')) return '';
+    const t = el.style.transform || getComputedStyle(el).transform;
+    return t && t !== 'none' ? t + ' ' : '';
+  }
+  function ghostOut(c, el) {
+    const g = el.cloneNode(true);
     g.hidden = false;
     c.el.appendChild(g);
-    const base = img.className === 'top2' ? 'translateY(-7%) scale(0.86) ' : '';
+    const base = baseOf(el);
     g.animate(
       [
         { transform: `${base}scale(1)`, opacity: 1 },
@@ -566,19 +704,19 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
       { duration: ms(260), easing: 'ease-out' }
     ).finished.then(() => g.remove());
   }
-  function puffIn(img, delay = 0) {
-    const base = img.className === 'top2' ? 'translateY(-7%) scale(0.86) ' : '';
-    img.animate(
+  function puffIn(el, delay = 0) {
+    const base = baseOf(el);
+    el.animate(
       [
         { transform: `${base}scale(0)`, opacity: 0 },
         { transform: `${base}scale(1.1)`, opacity: 1, offset: 0.6 },
         { transform: `${base}scale(1)`, opacity: 1 },
       ],
-      { duration: ms(280), delay, easing: 'ease-out', fill: 'backwards' }
+      { duration: ms(300), delay, easing: 'ease-out', fill: 'backwards' }
     );
   }
 
-  // move a cell to `life` hops left, animated
+  // move a tile to `life` hops left, animated
   function setCell(i, life, anim = true) {
     const c = G.cells[i];
     if (!c || i === G.lv.goal) return;
@@ -587,55 +725,54 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     c.life = life;
     if (!anim || from < 0) { paint(i); return; }
     if (life < from) {
-      if (from === 2) ghostOut(c, c.c1);
+      if (from === 2 && c.c1) ghostOut(c, c.c1);
       if (life === 0) ghostOut(c, c.c0);
       paint(i);
+      const q = G.proj[i];
       if (life === 0) {
-        const [cx, cy] = center(i);
-        burst('pop', cx, cy + G.S * 0.03);
+        burst('pop', q.x, q.y - q.w * 0.1);
         Sound.play('pop', 0.6);
-      } else {
-        c.c0.animate([{ transform: 'scale(0.9)' }, { transform: 'scale(1.06)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: ms(260), easing: 'ease-out' });
       }
     } else {
       paint(i);
       if (from === 0) puffIn(c.c0);
-      if (life === 2) puffIn(c.c1, from === 0 ? 80 : 0);
+      if (life === 2 && c.c1) puffIn(c.c1, from === 0 ? 80 : 0);
     }
   }
 
+  const popcount = (n) => { let c = 0; while (n) { c += n & 1; n >>= 1; } return c; };
   function setGoalLock(anim) {
-    const c = G.cells[G.lv.goal];
     const left = G.lv.friends.length - popcount(G.st.got);
     const locked = left > 0;
-    const was = c.badge.classList.contains('locked');
-    c.badge.classList.toggle('locked', locked);
-    c.lock.hidden = !locked;
-    c.lock.textContent = left;
+    const gs = G.goalStar;
+    const was = gs.classList.contains('locked');
+    gs.classList.toggle('locked', locked);
+    const lc = gs.querySelector('.lockCount');
+    lc.hidden = !locked;
+    lc.textContent = left;
+    const mini = $('goalRow').querySelector('.miniGoal');
+    if (mini) mini.classList.toggle('locked', locked);
     if (anim && was && !locked) {
-      c.badge.animate([{ transform: 'translate(-50%,-50%) scale(1)' }, { transform: 'translate(-50%,-50%) scale(1.45)', offset: 0.45 }, { transform: 'translate(-50%,-50%) scale(1)' }], { duration: ms(520), easing: 'ease-out' });
-      const [cx, cy] = center(G.lv.goal);
-      burst('spark', cx, cy);
+      gs.querySelector('.bob').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.5)', offset: 0.45 }, { transform: 'scale(1)' }], { duration: ms(520), easing: 'ease-out' });
+      const q = G.proj[G.lv.goal];
+      burst('spark', q.x, q.y - G.T * 0.4);
       Sound.play('unlock', 0.6);
     }
-    const mini = $('goalRow').querySelector('.miniGoal svg');
-    if (mini) mini.style.filter = locked ? 'grayscale(1) brightness(1.15)' : '';
-    if (mini) mini.style.opacity = locked ? '0.6' : '1';
   }
-  const popcount = (n) => { let c = 0; while (n) { c += n & 1; n >>= 1; } return c; };
 
   // ---- particles (squishdoku/fx.js KINDS)
   const KINDS = {
-    pop: { count: 10, life: 420, size: [4, 7], dist: [26, 40], up: [0, 0], colors: ['#ff8fd0', '#ffffff', '#ffe066', '#9ce8ff'], spreadY: 1, fall: 0 },
+    pop: { count: 10, life: 420, size: [4, 7], dist: [26, 40], up: [0, 0], colors: ['#ff8fd0', '#ffffff', '#ffe066', '#9ce8ff'], spreadY: 0.6, fall: 0 },
     spark: { count: 8, life: 560, size: [5, 9], dist: [22, 46], up: [-6, 6], colors: ['#fff3a0', '#ffffff', '#ffd1f5', '#c9f5ff'], spreadY: 1, fall: 10, star: true },
     dust: { count: 7, life: 420, size: [5, 10], dist: [14, 30], up: [-4, 6], colors: ['#ffffff', '#fff6fb'], spreadY: 0.25, fall: 0 },
     confetti: { count: 34, life: 1700, size: [7, 12], dist: [60, 190], up: [-260, -120], colors: ['#ff5cc6', '#ffd23a', '#3ddc97', '#5fb8ff', '#b65cff', '#ff8a4a', '#ffffff'], spreadY: 0.5, fall: 420, rect: true },
   };
   const rnd = (a, b) => a + Math.random() * (b - a);
-  function burst(kind, x, y, layer = $('layer')) {
+  function burst(kind, x, y) {
     if (RM && kind === 'confetti') return;
+    const layer = $('layer');
     const k = KINDS[kind];
-    const sc = kind === 'confetti' ? 1 : G.S / 56;
+    const sc = kind === 'confetti' ? 1 : G.T / 60;
     for (let i = 0; i < k.count; i++) {
       const a = (i / k.count) * Math.PI * 2 + rnd(-0.3, 0.3);
       const d = rnd(k.dist[0], k.dist[1]) * sc;
@@ -645,7 +782,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
       const size = rnd(k.size[0], k.size[1]) * sc;
       const p = document.createElement('div');
       p.className = 'part';
-      p.style.cssText = `width:${size}px;height:${k.rect ? size * 0.5 : size}px;background:${k.colors[i % k.colors.length]};margin:${-size / 2}px 0 0 ${-size / 2}px;${k.rect ? 'border-radius:2px;' : k.star ? `border-radius:${size * 0.18}px;` : ''}`;
+      p.style.cssText = `z-index:90;width:${size}px;height:${k.rect ? size * 0.5 : size}px;background:${k.colors[i % k.colors.length]};margin:${-size / 2}px 0 0 ${-size / 2}px;${k.rect ? 'border-radius:2px;' : k.star ? `border-radius:${size * 0.18}px;` : ''}`;
       layer.appendChild(p);
       const rot = k.star ? 45 : 0;
       const spin = rnd(-1, 1) * (k.rect ? 900 : 240);
@@ -661,17 +798,14 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     }
   }
 
-  // ---- the HUD
+  // ---- the strip and the top bar
   function renderGoalCard() {
     const n = G.lv.friends.length;
-    const size = n > 2 ? 22 : 26;
+    const size = n > 1 ? 24 : 27;
     let html = '';
-    G.slots = [];
-    G.friendKeys.forEach((key, k) => {
-      html += `<div data-slot="${k}">${headSticker(key, 'happy', size, true)}</div>`;
-    });
+    G.friendKeys.forEach((key, k) => { html += `<div data-slot="${k}">${headSticker(key, 'happy', size, true)}</div>`; });
     if (n) html += '<span class="goalArrow">›</span>';
-    html += `<div class="miniGoal"><img alt="" src="${A.cush.gold}">${starSvg(20, true, 'badge')}</div>`;
+    html += `<div class="miniGoal">${G.room.dance ? '<svg width="36" height="36" viewBox="0 0 36 36"><rect x="3" y="3" width="30" height="30" rx="5" fill="#140818"/><rect x="5" y="5" width="26" height="26" rx="3" fill="#ffffff"/></svg>' : cushionSvg(36, 'peach')}${starSvg(20, true, 'badge', 'mstar')}</div>`;
     $('goalRow').innerHTML = html;
     G.slots = [...$('goalRow').querySelectorAll('[data-slot]')];
   }
@@ -682,15 +816,25 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     st.classList.toggle('dim', !got);
     if (got && anim) st.animate([{ transform: 'scale(0.4)' }, { transform: 'scale(1.25)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: ms(380), easing: 'ease-out' });
   }
+  function renderTop() {
+    const R = G.room;
+    const ph = PHASES[G.stage.phase];
+    $('roomTitle').innerHTML = roomTitleSvg(R.name);
+    $('levelText').textContent = `SQUISH HOP · LEVEL ${G.idx + 1}`;
+    $('tier').textContent = TIER_NAMES[G.def.tier];
+    $('tier').style.background = TIER_COLORS[G.def.tier];
+    $('phase').hidden = !!R.dance;
+    $('sun').style.background = ph.sun;
+    $('phaseText').textContent = ph.label;
+  }
 
   function hud() {
     const { st, lv } = G;
-    $('hops').textContent = st.hops;
-    const left = E.leftOf(lv, st.life);
-    $('leftPill').textContent = `LEFT ${left}`;
+    $('hops').textContent = `HOPS ${st.hops}`;
+    $('leftPill').textContent = `LEFT ${E.leftOf(lv, st.life)}`;
     let can = G.feasible ? 3 : 2;
     if (G.hinted) can = Math.max(1, can - 1);
-    $('meter').innerHTML = [0, 1, 2].map((i) => `<div style="margin-top:${i === 1 ? 0 : 4}px">${starSvg(i === 1 ? 26 : 21, i < can, 'meter')}</div>`).join('');
+    $('meter').innerHTML = [0, 1, 2].map((i) => `<div style="margin-top:${i === 1 ? 0 : 3}px">${starSvg(i === 1 ? 24 : 19, i < can, 'meter')}</div>`).join('');
     const tip = $('tip');
     tip.classList.toggle('warn', !G.feasible && !G.over);
     tip.textContent = G.tipOverride || tipFor();
@@ -700,11 +844,13 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
   }
   function tipFor() {
     const { idx, def, st, lv } = G;
-    if (!G.feasible) return "Some cushions can't be reached now. UNDO to go for 3 stars!";
+    const what = G.room.dance ? 'tiles' : 'cushions';
+    if (!G.feasible) return `Some ${what} can't be reached now. UNDO to go for 3 stars!`;
     if (idx === 0 && st.hops === 0) return 'Swipe, use the arrow keys, or tap a cushion next to you to hop.';
     if (idx === 0) return 'Cushions puff away behind you. Clear them all, then hop onto the ★!';
     if (def.news === 'friends' && st.got !== lv.all) return 'Pick up the friend. The ★ opens when everyone is with you.';
-    if (def.news === 'doubles') return 'Pink cushions take two hops to clear.';
+    if (def.news === 'doubles') return 'A pile of two cushions takes two hops to clear.';
+    if (G.room.dance) return 'Each tile goes dark after you hop off. Get every tile, then the ★!';
     if (lv.friends.length && st.got !== lv.all) return 'Pick up every friend, clear every cushion, then hop onto the ★.';
     return 'Clear every cushion, then hop onto the ★.';
   }
@@ -712,14 +858,30 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
   function check() {
     const r = E.search(G.lv, G.st, { limit: 60000 });
     G.feasible = !!r.path || r.aborted;
-    G.plan = r.path;
   }
 
-  // ---- levels
+  // ---- levels (the Crib's room-switch flash between rooms)
+  async function roomFlash(change) {
+    if (RM) { change(); return; }
+    const f = $('flash');
+    Sound.play('room', 0.5);
+    await f.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, fill: 'forwards' }).finished;
+    change();
+    await wait(80);
+    await f.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 320, fill: 'forwards' }).finished;
+  }
+
   function loadLevel(idx, { fresh = true } = {}) {
     closeCard();
+    const go = () => setupLevel(idx, fresh);
+    if (G.lv && STAGES[idx] !== G.stage) roomFlash(go);
+    else go();
+  }
+  function setupLevel(idx, fresh) {
     G.idx = idx;
     G.def = LEVELS[idx];
+    G.stage = STAGES[idx];
+    G.room = ROOMS[G.stage.room];
     G.lv = E.parse(G.def.map);
     G.st = E.newState(G.lv);
     G.hist = [];
@@ -730,28 +892,27 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     G.queue = [];
     G.tipOverride = null;
     G.friendKeys = G.lv.friends.map((_, k) => FRIENDS[(idx * 2 + k) % FRIENDS.length]);
-    $('levelText').textContent = `LEVEL ${idx + 1}`;
-    $('tier').textContent = TIER_NAMES[G.def.tier];
-    $('tier').style.background = TIER_COLORS[G.def.tier];
+    buildRoom();
+    renderTop();
     renderGoalCard();
     buildBoard();
-    // the quilt fluffs in, corner to corner (sd_boardIn)
+    // the board fluffs in, back to front
     Object.keys(G.cells).forEach((key) => {
       const i = Number(key);
       const [x, y] = xy(i);
       const c = G.cells[i];
-      c.life = G.lv.life[i];
+      c.life = i === G.lv.goal ? 1 : G.lv.life[i];
       paint(i);
       const d = RM ? 0 : (x + y) * 28;
       puffIn(c.c0, d);
-      if (c.life === 2) puffIn(c.c1, d + 60);
-      if (c.badge) c.badge.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: d + 120, fill: 'backwards' });
+      if (c.life === 2 && c.c1) puffIn(c.c1, d + 70);
     });
     Sound.play('boardIn', 0.55);
     placePiece(G.player, G.st.cur);
-    face('idle');
-    G.player.el.animate([{ opacity: 0, transform: `translate(${G.player.pos[0]}px,${G.player.pos[1] - G.S * 0.6}px)` }, { opacity: 1, transform: `translate(${G.player.pos[0]}px,${G.player.pos[1]}px)` }], { duration: ms(360), delay: ms(260), easing: 'cubic-bezier(.3,1.5,.55,1)', fill: 'backwards' });
-    Object.values(G.friends).forEach((p, k) => p.el.animate([{ opacity: 0, transform: `translate(${p.pos[0]}px,${p.pos[1]}px) scale(0.3)` }, { opacity: 1, transform: `translate(${p.pos[0]}px,${p.pos[1]}px) scale(1)` }], { duration: ms(320), delay: ms(320 + k * 90), easing: 'cubic-bezier(.3,1.5,.55,1)', fill: 'backwards' }));
+    const pose = G.player.pose;
+    G.player.el.animate([{ opacity: 0, transform: `${pose} translateY(-60%)` }, { opacity: 1, transform: pose }], { duration: ms(380), delay: ms(260), easing: 'cubic-bezier(.3,1.5,.55,1)', fill: 'backwards' });
+    Object.values(G.friends).forEach((p, k) => p.el.animate([{ opacity: 0, transform: `${p.pose} scale(0.3)` }, { opacity: 1, transform: p.pose }], { duration: ms(320), delay: ms(320 + k * 90), easing: 'cubic-bezier(.3,1.5,.55,1)', fill: 'backwards' }));
+    G.goalStar.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, delay: ms(300), fill: 'backwards' });
     G.lv.friends.forEach((_, k) => setSlot(k, false, false));
     setGoalLock(false);
     check();
@@ -765,11 +926,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
 
   function relayout() {
     if (!G.lv) return;
-    const S0 = G.S;
-    measure();
-    if (G.S === S0) return;
-    // rebuild at the new size, keeping the state
     const st = G.st;
+    buildRoom();
+    renderTop();
     buildBoard();
     Object.keys(G.cells).forEach((key) => {
       const i = Number(key);
@@ -810,18 +969,20 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
   async function bonk(dx, dy) {
     Sound.play('bonk', 0.5);
     G.busy = true;
-    const n = G.S * 0.14;
-    await G.player.squash.animate([{ transform: 'translate(0,0)' }, { transform: `translate(${dx * n}px,${dy * n}px) scale(${dx ? 0.86 : 1.1},${dy ? 0.86 : 1.1})`, offset: 0.4 }, { transform: 'translate(0,0)' }], { duration: ms(200), easing: 'ease-out' }).finished;
+    const n = G.T * 0.14;
+    await G.player.squash.animate([{ transform: 'translate(0,0)' }, { transform: `translate(${dx * n}px,${dy * n * 0.6}px) scale(${dx ? 0.86 : 1.1},${dy ? 0.86 : 1.1})`, offset: 0.4 }, { transform: 'translate(0,0)' }], { duration: ms(200), easing: 'ease-out' }).finished;
     G.busy = false;
     next();
   }
 
-  async function moveTo(p, cell, dur) {
-    const [x0, y0] = p.pos;
-    placePiece(p, cell);
-    const [x1, y1] = p.pos;
-    const lift = G.S * 0.34;
-    const a = p.el.animate([{ transform: `translate(${x0}px,${y0}px)` }, { transform: `translate(${x1}px,${y1}px)` }], { duration: dur, easing: 'ease-in-out' });
+  async function moveTo(p, cell, dur, life) {
+    const from = p.pose;
+    p.cell = cell;
+    p.pose = poseOf(p, cell, life);
+    p.el.style.transform = p.pose;
+    p.el.style.zIndex = 10 + xy(cell)[1] * 3 + 2;
+    const lift = G.T * 0.5;
+    const a = p.el.animate([{ transform: from }, { transform: p.pose }], { duration: dur, easing: 'ease-in-out' });
     p.lift.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-lift}px)`, easing: 'ease-in', offset: 0.5 }, { transform: 'translateY(0)' }], { duration: dur, easing: 'ease-out' });
     p.squash.animate([{ transform: 'scale(1)' }, { transform: 'scale(0.9,1.12)', offset: 0.4 }, { transform: 'scale(1)' }], { duration: dur });
     p.shadow.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(0.6)', opacity: 0.5, offset: 0.5 }, { transform: 'scale(1)', opacity: 1 }], { duration: dur });
@@ -838,9 +999,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     clearGlow();
     Sound.play('hop', 0.6);
     setCell(prev.cur, nxt.life[prev.cur]);
-    await moveTo(G.player, j, ms(170));
-    const [cx, cy] = center(j);
-    burst('dust', cx, cy + G.S * 0.36);
+    await moveTo(G.player, j, ms(190), nxt.life[j]);
+    const q = G.proj[j];
+    burst('dust', q.x, q.y);
     if (nxt.got !== prev.got) collect(j);
     if (nxt.done) return win();
     check();
@@ -852,11 +1013,10 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
 
   function next() {
     if (G.busy || G.over || !G.queue.length) return;
-    const fn = G.queue.shift();
-    fn();
+    G.queue.shift()();
   }
   function input(fn) {
-    if (G.over || document.getElementById('overlay').hidden === false) return;
+    if (G.over || !$('overlay').hidden) return;
     if (G.busy) {
       if (G.queue.length < 2) G.queue.push(fn);
       return;
@@ -864,17 +1024,16 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     fn();
   }
 
-  // a friend hopped onto: happy, a squeak, and off to its slot on the goal card
+  // a friend hopped onto: a squeak, and off to its slot in the goal card
   function collect(cell) {
     const p = G.friends[cell];
     if (!p) return;
     Sound.play('squeak', 0.7);
-    p.img.src = A.heads[p.key].happy;
-    const from = p.img.getBoundingClientRect();
+    const from = p.el.getBoundingClientRect();
     const slot = G.slots[p.k].getBoundingClientRect();
     p.el.hidden = true;
     const fly = document.createElement('img');
-    fly.src = p.img.src;
+    fly.src = A.body[p.key];
     fly.alt = '';
     fly.style.cssText = `position:fixed;left:${from.left}px;top:${from.top}px;width:${from.width}px;height:${from.height}px;z-index:40;pointer-events:none`;
     document.body.appendChild(fly);
@@ -884,10 +1043,10 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     fly.animate(
       [
         { transform: 'translate(0,0) scale(1)' },
-        { transform: `translate(0,${-G.S * 0.5}px) scale(1.2)`, offset: 0.25 },
-        { transform: `translate(${dx}px,${dy}px) scale(${sc})` },
+        { transform: `translate(0,${-G.T * 0.6}px) scale(1.2)`, offset: 0.25 },
+        { transform: `translate(${dx}px,${dy}px) scale(${sc})`, opacity: 0.6 },
       ],
-      { duration: ms(620), easing: 'ease-in-out' }
+      { duration: ms(640), easing: 'ease-in-out' }
     ).finished.then(() => {
       fly.remove();
       setSlot(p.k, true, true);
@@ -902,19 +1061,17 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     const prev = G.hist.pop();
     G.st = prev;
     if (G.over) { G.over = false; closeCard(); }
-    face('idle');
     Sound.play('undo', 0.7);
     setCell(prev.cur, prev.life[prev.cur]);
     if (was.got !== prev.got) {
       const p = G.friends[was.cur];
       p.el.hidden = false;
-      p.img.src = A.heads[p.key].idle;
-      p.el.animate([{ transform: `translate(${p.pos[0]}px,${p.pos[1]}px) scale(0.3)`, opacity: 0 }, { transform: `translate(${p.pos[0]}px,${p.pos[1]}px) scale(1)`, opacity: 1 }], { duration: ms(300), easing: 'cubic-bezier(.3,1.5,.55,1)' });
+      p.el.animate([{ transform: `${p.pose} scale(0.3)`, opacity: 0 }, { transform: p.pose, opacity: 1 }], { duration: ms(300), easing: 'cubic-bezier(.3,1.5,.55,1)' });
       setSlot(p.k, false, false);
     }
     setGoalLock(false);
     G.busy = true;
-    moveTo(G.player, prev.cur, ms(170)).then(() => {
+    moveTo(G.player, prev.cur, ms(190), prev.life[prev.cur]).then(() => {
       G.busy = false;
       next();
     });
@@ -922,23 +1079,20 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     hud();
   }
 
-  // jump back to an earlier state (the hint's rewind)
+  // jump back to an earlier spot (the hint's rewind)
   function rewindTo(k) {
     const target = G.hist[k];
     const was = G.st;
     G.hist.length = k;
     G.st = target;
-    Object.keys(G.cells).forEach((key) => setCell(Number(key), Number(key) === G.lv.goal ? 1 : target.life[key]));
+    Object.keys(G.cells).forEach((key) => setCell(Number(key), target.life[key]));
     Object.entries(G.friends).forEach(([cell, p]) => {
       const got = !!(target.got & G.lv.fbit[cell]);
-      if (!got && p.el.hidden) {
-        p.el.hidden = false;
-        p.img.src = A.heads[p.key].idle;
-      }
+      if (!got && p.el.hidden) p.el.hidden = false;
       setSlot(p.k, got, false);
     });
     setGoalLock(false);
-    moveTo(G.player, target.cur, ms(260));
+    moveTo(G.player, target.cur, ms(280), target.life[target.cur]);
     return was.hops - target.hops;
   }
 
@@ -948,14 +1102,12 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
   }
 
   function clearGlow() {
-    if (G.glow) { G.glow.remove(); G.glow = null; }
+    document.querySelectorAll('.tile.hint').forEach((t) => t.classList.remove('hint'));
+    clearTimeout(G.glowT);
   }
   function askHint() {
     if (G.won || G.busy) return;
-    if (!G.asked) {
-      showHintCard();
-      return;
-    }
+    if (!G.asked) { showHintCard(); return; }
     giveHint();
   }
   function giveHint() {
@@ -969,7 +1121,6 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
         const t = E.search(G.lv, G.hist[k], { limit: 300000 });
         if (t.path) { back = rewindTo(k); r = t; break; }
       }
-      if (G.over) { G.over = false; closeCard(); face('idle'); }
     }
     check();
     hud();
@@ -977,20 +1128,13 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     const j = r.path[0];
     Sound.play('hint', 0.6);
     clearGlow();
+    G.cells[j].el.classList.add('hint');
+    G.glowT = setTimeout(clearGlow, 3200);
     const [x, y] = xy(j);
-    const g = document.createElement('div');
-    g.className = 'hintGlow';
-    const S = G.S;
-    g.style.cssText = `left:${x * S + S * 0.04}px;top:${y * S + S * 0.04}px;width:${S * 0.92}px;height:${S * 0.9}px`;
-    $('layer').insertBefore(g, $('layer').firstChild);
-    G.glow = g;
-    setTimeout(() => { if (G.glow === g) clearGlow(); }, 3200);
     const [px, py] = xy(G.st.cur);
-    const dx = x - px;
-    const dy = y - py;
-    const n = S * 0.1;
-    G.player.squash.animate([{ transform: 'translate(0,0)' }, { transform: `translate(${dx * n}px,${dy * n - S * 0.12}px)`, offset: 0.4 }, { transform: 'translate(0,0)' }], { duration: ms(360), delay: back ? ms(300) : 0, easing: 'ease-out' });
-    if (back) flashTip(`Went back ${back} hop${back === 1 ? '' : 's'}. Try the glowing cushion!`);
+    const n = G.T * 0.1;
+    G.player.squash.animate([{ transform: 'translate(0,0)' }, { transform: `translate(${(x - px) * n}px,${(y - py) * n * 0.6 - G.T * 0.14}px)`, offset: 0.4 }, { transform: 'translate(0,0)' }], { duration: ms(360), delay: back ? ms(320) : 0, easing: 'ease-out' });
+    if (back) flashTip(`Went back ${back} hop${back === 1 ? '' : 's'}. Try the glowing one!`);
   }
 
   // ---- the end of a level
@@ -999,43 +1143,34 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     G.won = true;
     G.busy = true;
     hud();
-    const S = G.S;
-    const [cx, cy] = center(G.lv.goal);
+    const q = G.proj[G.lv.goal];
     Sound.play('land', 0.6);
-    face('happy');
-    burst('spark', cx, cy);
+    G.goalStar.animate([{ opacity: 1 }, { opacity: 0, transform: `${G.goalStar.style.transform} translateY(-60%) scale(1.4)` }], { duration: ms(420), fill: 'forwards' });
+    burst('spark', q.x, q.y - G.T * 0.5);
     await wait(ms(160));
     Sound.play('solve', 0.7);
-    burst('confetti', cx, cy - S * 0.3);
+    burst('confetti', q.x, q.y - G.T * 0.6);
     for (let k = 0; k < 2; k++) {
-      await G.player.lift.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-S * 0.4}px)`, offset: 0.45 }, { transform: 'translateY(0)' }], { duration: ms(340), easing: 'ease-in-out' }).finished;
+      await G.player.lift.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-G.T * 0.55}px)`, offset: 0.45 }, { transform: 'translateY(0)' }], { duration: ms(340), easing: 'ease-in-out' }).finished;
       G.player.squash.animate([{ transform: 'scale(1.12,0.88)' }, { transform: 'scale(1)' }], { duration: ms(160) });
     }
     await wait(ms(380));
     const left = E.leftOf(G.lv, G.st.life);
     const stars = E.starsFor(left, G.hinted);
-    const unlocked = G.idx + 1 < LEVELS.length;
     if (!save.best[G.idx] || stars > save.best[G.idx]) save.best[G.idx] = stars;
     store();
-    showResult({ stars, left, hops: G.st.hops, unlocked });
+    showResult({ stars, left, hops: G.st.hops });
   }
 
   async function stuck() {
     G.over = true;
     G.busy = false;
     hud();
-    face('sad');
     Sound.play('wrong', 0.6);
-    const sz = G.player.size;
-    PLAYER_EYES.forEach(([ex, ey], k) => {
-      const t = document.createElement('div');
-      t.className = 'tear';
-      t.style.left = `${ex * 100 - 6}%`;
-      t.style.top = `${ey * 100 + 4}%`;
-      G.player.squash.querySelector('.breathe').appendChild(t);
-      t.animate([{ opacity: 0, transform: 'translateY(0) rotate(-45deg)' }, { opacity: 1, offset: 0.2 }, { opacity: 0, transform: `translateY(${sz * 0.35}px) rotate(-45deg)` }], { duration: ms(1100), delay: k * 140, easing: 'ease-in' }).finished.then(() => t.remove());
-    });
-    G.player.squash.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-8deg)' }, { transform: 'rotate(8deg)' }, { transform: 'rotate(-5deg)' }, { transform: 'rotate(0)' }], { duration: ms(700), delay: 200 });
+    G.player.squash.animate(
+      [{ transform: 'rotate(0)' }, { transform: 'rotate(-8deg) scale(1,0.92)' }, { transform: 'rotate(8deg) scale(1,0.92)' }, { transform: 'rotate(-5deg) scale(1,0.92)' }, { transform: 'rotate(0) scale(1,0.94)' }],
+      { duration: ms(800), fill: 'forwards' }
+    );
     await wait(ms(1000));
     if (G.over && !G.won) showStuck();
   }
@@ -1085,11 +1220,12 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
       <div class="rules">
         <div class="rule"><div class="ruleNum">1</div><div><div class="ruleTitle">HOP</div><div class="ruleLine">Swipe, use the arrow keys, or tap a cushion next to you.</div></div></div>
         <div class="rule"><div class="ruleNum">2</div><div><div class="ruleTitle">PUFF!</div><div class="ruleLine">The cushion you hop off puffs away. No going back!</div></div></div>
-        <div class="rule"><div class="ruleNum">3</div><div><div class="ruleTitle">THE ★ CUSHION</div><div class="ruleLine">Hop onto it to finish. Clear every other cushion first for 3 stars.</div></div></div>
+        <div class="rule"><div class="ruleNum">3</div><div><div class="ruleTitle">THE ★</div><div class="ruleLine">Hop onto it to finish. Clear every other cushion first for 3 stars.</div></div></div>
       </div>
-      <div class="twistHead">LATER ON</div>
+      <div class="twistHead">ROOM BY ROOM</div>
       <div class="twist"><span class="twistName">FRIENDS · </span>pick them all up. The ★ opens when everyone is with you.</div>
-      <div class="twist"><span class="twistName">DOUBLES · </span>pink cushions take two hops to clear.</div>
+      <div class="twist"><span class="twistName">PILES · </span>two cushions on top of each other take two hops to clear.</div>
+      <div class="twist"><span class="twistName">DANCE ROOM · </span>the floor tiles go dark after you hop off them.</div>
       ${button('green', 'GOT IT!', { id: 'cGot', fs: 18, cls: 'big' })}`);
     on('cGot', () => {
       save.seenHow = true;
@@ -1103,9 +1239,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     const tiles = LEVELS.map((L, i) => {
       const best = save.best[i] || 0;
       const stars = [0, 1, 2].map((k) => starSvg(13, k < best, 'meter')).join('');
-      return `<div class="lvTile">${button(i === G.idx ? 'pink' : 'purple', String(i + 1), { id: `lv${i}`, fs: 20 })}<div class="lvStars">${stars}</div></div>`;
+      return `<div class="lvTile">${button(i === G.idx ? 'pink' : 'purple', String(i + 1), { id: `lv${i}`, fs: 20 })}<div class="lvStars">${stars}</div><div class="lvRoom">${ROOMS[STAGES[i].room].short}</div></div>`;
     }).join('');
-    showCard(`${titleSvg('SQUISH HOP', 'pink', 30)}<div class="sub">PICK A LEVEL</div><div class="levels">${tiles}</div>
+    showCard(`${titleSvg('SQUISH HOP', 'pink', 30)}<div class="sub">A HOP THROUGH THE CRIB · PICK A LEVEL</div><div class="levels">${tiles}</div>
       <div class="btnRow">${button('white', 'HOW TO PLAY', { id: 'cHow', fs: 14 })}${button('white', save.muted ? 'SOUND: OFF' : 'SOUND: ON', { id: 'cMute', fs: 14 })}</div>`);
     LEVELS.forEach((_, i) => on(`lv${i}`, () => loadLevel(i)));
     on('cHow', () => showHow(showLevels));
@@ -1135,9 +1271,12 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     const locked = G.lv.nbrs[G.st.cur].some((j) => j === G.lv.goal) && G.st.got !== G.lv.all;
     showCard(`${titleSvg('STUCK!', 'pink', 32)}
       <div class="rock">${headSticker(PLAYER, 'sad', 86, false)}</div>
-      <div class="body">${locked ? 'The ★ is shut until every friend is with you, and there is nowhere else to hop.' : 'There is no cushion left to hop onto.'}</div>
+      <div class="body">${locked ? 'The ★ is shut until every friend is with you, and there is nowhere else to hop.' : 'There is nothing left to hop onto.'}</div>
       <div class="btnRow">${button('white', 'UNDO', { id: 'cUndo', fs: 15 })}${button('pink', 'RETRY', { id: 'cRetry', fs: 18, cls: 'big' })}</div>`, { tint: 'rgba(80,0,30,0.5)' });
-    on('cUndo', undo, null);
+    on('cUndo', () => {
+      G.player.squash.getAnimations().forEach((a) => a.cancel());
+      undo();
+    }, null);
     on('cRetry', () => loadLevel(G.idx, { fresh: false }));
   }
 
@@ -1149,12 +1288,13 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
       return `<div class="starSlot" style="width:${size + 20}px;height:${size + 20}px;margin-top:${big(i) ? -12 : 6}px"><div class="rays" style="width:${size * 1.8}px;height:${size * 1.8}px"></div><div class="star" data-lit="${i < res.stars ? 1 : 0}" style="opacity:0">${starSvg(size, i < res.stars, 'card')}</div></div>`;
     }).join('');
     const last = G.idx + 1 >= LEVELS.length;
-    showCard(`<div class="pop">${titleSvg(TITLES[res.stars], res.stars === 3 ? 'gold' : 'pink', res.stars === 3 ? 30 : 30)}</div>
+    const nextRoom = last ? '' : ROOMS[STAGES[G.idx + 1].room].name.toUpperCase();
+    showCard(`<div class="pop">${titleSvg(TITLES[res.stars], res.stars === 3 ? 'gold' : 'pink', 30)}</div>
       <div class="sub">LEVEL ${G.idx + 1} · ${tier} · ${res.hops} HOPS · ${res.left} LEFT${G.hinted ? ' · HINT' : ''}</div>
-      ${res.left > 0 && !G.hinted ? '<div class="hintLine">Clear every cushion before the ★ for 3 stars!</div>' : ''}
+      ${res.left > 0 && !G.hinted ? `<div class="hintLine">Clear every ${G.room.dance ? 'tile' : 'cushion'} before the ★ for 3 stars!</div>` : ''}
       ${G.hinted ? '<div class="hintLine">A hint costs one star</div>' : ''}
       <div class="stars">${stars}</div>
-      ${res.unlocked && !last ? `<div class="sub" style="color:#16a86a">LEVEL ${G.idx + 2} IS OPEN</div>` : ''}
+      ${last ? '<div class="sub" style="color:#16a86a">YOU HOPPED THROUGH THE WHOLE CRIB!</div>' : `<div class="sub" style="color:#16a86a">NEXT: LEVEL ${G.idx + 2} · ${nextRoom}</div>`}
       <div class="btnRow" id="resBtns" style="opacity:0">${button('white', 'MENU', { id: 'cMenu', fs: 15 })}${button('purple', 'REPLAY', { id: 'cReplay', fs: 15 })}${last ? '' : button('green', 'NEXT ▶', { id: 'cNext', fs: 18, cls: 'big' })}</div>`);
     const STEP = 480;
     const t = document.querySelector('#overlay .pop');
@@ -1170,8 +1310,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
         if (lit) {
           slot.querySelector('.rays').animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, fill: 'forwards' });
           const r = slot.getBoundingClientRect();
-          const o = $('overlay');
-          burstFixed(r.left + r.width / 2, r.top + r.height / 2, o);
+          burstFixed(r.left + r.width / 2, r.top + r.height / 2, $('overlay'));
         }
       }, ms(380 + i * STEP));
     });
@@ -1222,7 +1361,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     }
   });
 
-  // swipes (one hop per 28px of drag, so a long drag can turn corners) and taps
+  // swipes (one hop per half a tile of drag, so a long drag can turn corners) and taps
   const area = $('area');
   let drag = null;
   area.addEventListener('pointerdown', (e) => {
@@ -1233,7 +1372,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     if (!drag || e.pointerId !== drag.id) return;
     const dx = e.clientX - drag.x;
     const dy = e.clientY - drag.y;
-    const th = Math.max(26, G.S * 0.5);
+    const th = Math.max(26, G.T * 0.45);
     if (Math.max(Math.abs(dx), Math.abs(dy)) < th) return;
     drag.moved = true;
     drag.x = e.clientX;
@@ -1246,26 +1385,28 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
     const d = drag;
     drag = null;
     if (d.moved || Math.hypot(e.clientX - d.x0, e.clientY - d.y0) > 10) return;
-    const r = $('layer').getBoundingClientRect();
-    const x = Math.floor((e.clientX - r.left) / G.S);
-    const y = Math.floor((e.clientY - r.top) / G.S);
-    if (x < 0 || y < 0 || x >= G.lv.w || y >= G.lv.h) return;
+    // a tap: the tile under the finger (the board is in 3D, so ask the browser)
+    const hit = document.elementsFromPoint(e.clientX, e.clientY).map((el) => el.closest && el.closest('.tile')).find(Boolean);
     const [px, py] = xy(G.st.cur);
-    if (x === px && y === py) {
+    const pr = G.player.el.getBoundingClientRect();
+    const onPlayer = e.clientX >= pr.left && e.clientX <= pr.right && e.clientY >= pr.top && e.clientY <= pr.bottom;
+    if (onPlayer && (!hit || Number(hit.dataset.i) === G.st.cur)) {
       // a tap on the squishy: a squeak and a wiggle, just for fun
       Sound.play('squeak', 0.6);
       G.player.squash.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-10deg) scale(1.06)' }, { transform: 'rotate(10deg)' }, { transform: 'rotate(0)' }], { duration: ms(360) });
       return;
     }
-    if (Math.abs(x - px) + Math.abs(y - py) === 1) input(() => tryCell(y * G.lv.w + x, x - px, y - py));
+    if (!hit) return;
+    const j = Number(hit.dataset.i);
+    const [x, y] = xy(j);
+    if (Math.abs(x - px) + Math.abs(y - py) === 1) input(() => tryCell(j, x - px, y - py));
   });
   area.addEventListener('pointercancel', () => { drag = null; });
-  // a press on a cushion picture mustn't start the browser's image drag
   area.addEventListener('dragstart', (e) => e.preventDefault());
 
-  // the buttons squash as they're pressed (SdButton / RoundButton)
+  // the buttons sink as they're pressed
   document.addEventListener('pointerdown', (e) => {
-    const b = e.target.closest && e.target.closest('.sd, .round');
+    const b = e.target.closest && e.target.closest('.sd, .cribBtn');
     if (b && !b.disabled) {
       b.classList.add('down');
       const up = () => { b.classList.remove('down'); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); };
@@ -1278,7 +1419,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; bord
   $('restart').addEventListener('click', () => { Sound.play('select', 0.6); restart(); });
   $('hint').addEventListener('click', () => { Sound.play('select', 0.6); askHint(); });
   $('back').addEventListener('click', () => { Sound.play('tap', 0.6); showPause(); });
-  window.addEventListener('resize', () => { clearTimeout(G.rz); G.rz = setTimeout(relayout, 120); });
+  window.addEventListener('resize', () => { clearTimeout(G.rz); G.rz = setTimeout(relayout, 150); });
 
   // ---- start
   function start() {
