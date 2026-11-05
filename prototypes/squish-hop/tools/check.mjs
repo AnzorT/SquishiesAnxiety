@@ -1,8 +1,13 @@
-// Tests for engine.js: the solver's shortcuts (the shape checks that cut
-// the search short) never lose an answer. On many small random boards it
-// counts the full-clear paths both with the solver and with a plain
-// brute-force search, and they must agree. Then every shipped level must
-// have a full clear. Run: node prototypes/squish-hop/tools/check.mjs
+// Tests for engine.js. On thousands of small random boards with every
+// twist (piles, friends, numbered friends, arrows, bubbles, beat tiles),
+// the solver's count of full clears must equal a plain brute-force count
+// (so its shortcuts never lose an answer), every answer it gives must
+// replay to a full clear, and the chessboard check must never turn down a
+// board that has one. Then every shipped level must have exactly the
+// number of full clears levels.js says, and its stored
+// solution must replay to a full clear. (Levels 1-4, the first steps, may
+// have up to three; every later level has exactly one.)
+// Run: node prototypes/squish-hop/tools/check.mjs
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const E = require('../engine.js');
@@ -18,20 +23,28 @@ function brute(lv) {
       if (E.leftOf(lv, st.life) === 0) count++;
       return;
     }
-    for (const j of E.moves(lv, st)) walk(E.step(lv, st, j));
+    for (const m of E.moves(lv, st)) walk(m.st);
   };
   walk(E.newState(lv));
   return count;
 }
 
-function randomBoard(w, h) {
+const FEATURES = [
+  ['.', 0.46], ['#', 0.08], ['D', 0.07], ['F', 0.05], ['^', 0.035], ['>', 0.035], ['v', 0.035], ['<', 0.035],
+  ['o', 0.07], ['a', 0.03], ['b', 0.03], ['c', 0.03],
+];
+function feature() {
+  let r = rand();
+  for (const [ch, p] of FEATURES) {
+    if ((r -= p) < 0) return ch;
+  }
+  return '.';
+}
+function randomBoard(w, h, ordered) {
   const rows = [];
   for (let y = 0; y < h; y++) {
     let r = '';
-    for (let x = 0; x < w; x++) {
-      const p = rand();
-      r += p < 0.15 ? '#' : p < 0.27 ? 'D' : p < 0.33 ? 'F' : '.';
-    }
+    for (let x = 0; x < w; x++) r += feature();
     rows.push(r);
   }
   const cells = [];
@@ -41,37 +54,66 @@ function randomBoard(w, h) {
   const put = ([x, y], ch) => (rows[y] = rows[y].slice(0, x) + ch + rows[y].slice(x + 1));
   put(pick(), 'S');
   put(pick(), 'G');
+  if (ordered) {
+    let k = 1;
+    rows.forEach((r, y) => [...r].forEach((c, x) => c === 'F' && put([x, y], String(k++))));
+  }
   return rows;
 }
 
 let boards = 0;
 let solvable = 0;
-for (let t = 0; t < 3000; t++) {
-  const rows = randomBoard(2 + Math.floor(rand() * 3), 2 + Math.floor(rand() * 3));
+const COVER = { piles: /D/, friends: /F/, ordered: /[1-9]/, arrows: /[\^>v<]/, bubbles: /o/, beats: /[abc]/ };
+const covered = Object.fromEntries(Object.keys(COVER).map((k) => [k, 0]));
+for (let t = 0; t < 40000; t++) {
+  const rows = randomBoard(2 + Math.floor(rand() * 4), 2 + Math.floor(rand() * 3), rand() < 0.4);
   if (!rows) continue;
   const lv = E.parse(rows);
   if (lv.friends.length > 4) continue;
   const want = brute(lv);
-  const got = E.search(lv, E.newState(lv), { count: true, cap: 1e9, limit: 1e9 }).count;
-  if (want !== got) {
-    console.error('MISMATCH', rows, 'brute', want, 'search', got);
+  const r = E.search(lv, E.newState(lv), { count: true, cap: 1e9, limit: 1e9 });
+  if (want !== r.count) {
+    console.error('MISMATCH', rows, 'brute', want, 'search', r.count);
     process.exit(1);
+  }
+  for (const s of r.sols) {
+    const p = E.replay(lv, s);
+    if (!p.ok || !p.st.done || E.leftOf(lv, p.st.life) !== 0) {
+      console.error('BAD ANSWER', rows, s);
+      process.exit(1);
+    }
   }
   if (want > 0 && !E.parityOk(lv)) {
     console.error('PARITY WRONG', rows);
     process.exit(1);
   }
   boards++;
-  if (want) solvable++;
+  if (want) {
+    solvable++;
+    const all = rows.join('');
+    for (const [name, re] of Object.entries(COVER)) if (re.test(all)) covered[name]++;
+  }
 }
 console.log(`solver agrees with brute force on ${boards} boards (${solvable} clearable)`);
-
-LEVELS.forEach((L, i) => {
-  const lv = E.parse(L.map);
-  const r = E.search(lv, E.newState(lv), { count: true, cap: 1e6, limit: 5e7 });
-  if (!r.count) {
-    console.error(`level ${i + 1} has no full clear`);
+console.log('clearable boards with each twist:', JSON.stringify(covered));
+for (const [name, n] of Object.entries(covered)) {
+  if (n < 30) {
+    console.error(`too few clearable boards with ${name}`);
     process.exit(1);
   }
-  console.log(`level ${i + 1}: ${r.count}${r.aborted ? '+' : ''} full clears, ${E.leftOf(lv, lv.life)} hops`);
+}
+
+let bad = 0;
+LEVELS.forEach((L, i) => {
+  const lv = E.parse(L.map);
+  const r = E.search(lv, E.newState(lv), { count: true, cap: L.sols + 1, limit: 4e7 });
+  const dirs = [...L.solution].map((c) => E.DCH.indexOf(c));
+  const p = E.replay(lv, dirs);
+  const okSol = p.ok && p.st.done && E.leftOf(lv, p.st.life) === 0;
+  if (r.aborted || r.count !== L.sols || (i >= 4 && L.sols !== 1) || !okSol) {
+    console.error(`level ${i + 1}: ${r.count}${r.aborted ? '+ (search cut short)' : ''} full clears, stored answer ${okSol ? 'ok' : 'BROKEN'}`);
+    bad++;
+  }
 });
+if (bad) process.exit(1);
+console.log(`all ${LEVELS.length} levels have the full clears levels.js says (exactly one from level 5 on), and their stored answers replay`);
