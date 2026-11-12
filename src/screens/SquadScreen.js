@@ -8,7 +8,8 @@ import CandyBackground from '../components/candy/CandyBackground';
 import RoundButton from '../components/candy/RoundButton';
 import ShadowText from '../components/candy/ShadowText';
 import RigCreature from '../components/RigCreature';
-import { BY_ID, GROUPS, GROUP_INK, HIDDEN, RAR_LOOK, ROSTER, SET_REWARDS, copyProgress, isOut, owns } from '../squad/data';
+import { BY_ID, GROUPS, GROUP_INK, HIDDEN, RAR_LOOK, ROSTER, SET_REWARDS, SIZES, copyProgress, dropRar, isOut, owns } from '../squad/data';
+import GCHEST, { CHEST_NAMES } from '../squad/groupChestArt';
 import { isNewId, ownedIdList, selectedId } from '../squad/lobby';
 import { F, Ringed } from '../squad/ui';
 import { useProgressive } from '../components/Skeleton';
@@ -189,22 +190,45 @@ const ICONS = {
   ),
 };
 
-// The pill under the hero: SELECT, SELECTED, or where it comes from (FROM
-// CHESTS …, a small icon before it), all one small size (the big one was too
-// big, user 2026-10-28, twice).
+// The pill under the hero: SELECT, SELECTED, or where it comes from, all one
+// small size (the big one was too big, user 2026-10-28, twice). One found in
+// chests shows the chest itself, the shop's art for its group at its rarity's
+// size, popping up out of the pill's left end (the note under the button
+// saying how many more copies to find is gone, user 2026-11-07); a set
+// reward or the pass's creature keeps the small gift.
 function MainButton({ m, onPress }) {
+  const h = m.chest ? CHEST_BOX[m.chestTi] : 0;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.mainSlot, pressed && { transform: [{ translateY: 3 }, { scale: 0.98 }] }]}>
-      <Ringed ring={m.lip} lip={4} ringW={2} border={2.5} radius={999} colors={m.bg} innerStyle={styles.mainFace}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.mainSlot, m.chest && styles.mainSlotChest, pressed && { transform: [{ translateY: 3 }, { scale: 0.98 }] }]}>
+      <Ringed ring={m.lip} lip={4} ringW={2} border={2.5} radius={999} colors={m.bg} innerStyle={[styles.mainFace, m.chest && styles.mainFaceChest]}>
         <LinearGradient pointerEvents="none" colors={['rgba(255,255,255,0.6)', 'rgba(255,255,255,0.04)']} style={styles.mainShine} />
         {m.ic ? ICONS[m.ic](m.lip) : null}
-        <ShadowText style={[styles.mainText, m.ic && styles.mainTextIc, { color: m.ink }]} shadows={m.ts ? OUTLINE(m.ts) : []} numberOfLines={1}>
+        <ShadowText style={[styles.mainText, (m.ic || m.chest) && styles.mainTextIc, m.chest && styles.mainTextChest, { color: m.ink }]} shadows={m.ts ? OUTLINE(m.ts) : []} numberOfLines={1}>
           {m.label}
         </ShadowText>
       </Ringed>
+      {/* outside the pill's face, which clips (Ringed's overflow) */}
+      {m.chest ? (
+        <Image
+          source={m.chest}
+          style={[styles.mainChest, { width: h * 1.2, height: h, left: CHEST_X - h * 0.6, bottom: 3 - (m.chestTi < 3 ? h * 0.05 : 0) }]}
+          resizeMode="contain"
+          fadeDuration={0}
+          pointerEvents="none"
+        />
+      ) : null}
     </Pressable>
   );
 }
+
+// the shop's short size names (its size picker's), for the pill
+const CHEST_WORD = ['COMMON', 'RARE', 'EPIC', 'LEGEND', 'RAINBOW'];
+// The chest art's box (240 × 200, its height here) by size. The chest in it
+// grows with the size (a Common one fills about 2/3 of the box, a Legendary
+// all of it, with a little air under the smaller ones), so each is drawn to
+// show about 46 tall, rising out of the 44-tall pill, centred CHEST_X in.
+const CHEST_BOX = [70, 63, 62, 48, 46];
+const CHEST_X = 24;
 
 // `hidden`: the groups and creatures not out yet (config/roster), left out
 // of the grid unless owned. `setRewards`: a set's reward creature comes from
@@ -324,8 +348,6 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
   const R = RAR_LOOK[c.rar];
   const group = GROUP_NAME[c.set];
   const prog = copyProgress(profile, view);
-  const more = Math.max(1, prog.need - prog.have);
-  const findMore = `Find ${more} more ${more === 1 ? 'copy' : 'copies'}`;
 
   let m;
   if (isSel) m = { label: 'SELECTED', bg: ['#ffffff', '#f4fdf1', '#eafbe4'], lip: '#6fbf7e', ink: '#26a94e', tap: () => flash(`${c.name} is in your lobby`) };
@@ -345,19 +367,17 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
   else {
     // not yet: only chests unlock it, by its copies (no coin price)
     const viaSet = c.reward && setRewards;
-    m = {
-      ic: 'gift',
-      label: viaSet ? 'SET REWARD' : c.season ? 'SEASON CHEST' : 'FROM CHESTS',
-      bg: ['#ffffff', '#f7f2fd', '#efe6fb'],
-      lip: '#b8a0dc',
-      ink: '#6a22d6',
-      note: viaSet
-        ? `Collect the whole ${group} set to get ${c.name}.`
-        : c.season
-          ? `${findMore} in Spooky Squish season chests.`
-          : `${findMore} in ${group} chests in the shop to unlock ${c.name}.`,
-      tap: () => flash(viaSet ? `Finish the ${group} set first` : `${findMore} in ${c.season ? 'season' : group} chests`),
-    };
+    const look = { bg: ['#ffffff', '#f7f2fd', '#efe6fb'], lip: '#b8a0dc', ink: '#6a22d6' };
+    if (viaSet || c.pass) {
+      // the pass's creature is in no chest (Squishies' "Season Pass exclusive")
+      m = { ...look, ic: 'gift', label: viaSet ? 'SET REWARD' : 'SEASON PASS', tap: () => flash(viaSet ? `Finish the ${group} set first` : `${c.name} comes with the season pass`) };
+    } else {
+      // its group's chest of the size for its rarity (a set reward drops as a Legendary)
+      const ti = Math.min(dropRar(c), SIZES.length - 1);
+      const chest = (GCHEST[c.set] || GCHEST.snack)[`${SIZES[ti].k}-grow`];
+      const name = (CHEST_NAMES[c.set] || [])[ti];
+      m = { ...look, chest, chestTi: ti, label: `${CHEST_WORD[ti]} CHEST`, tap: () => flash(name ? `${c.name} is in the ${name}` : `${c.name} is in ${group} chests`) };
+    }
   }
 
   return (
@@ -403,7 +423,6 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
           {!own && !(c.reward && setRewards) ? <CopyBar big have={prog.have} need={prog.need} style={styles.heroCopies} /> : null}
         </View>
         <MainButton m={m} onPress={m.tap} />
-        {m.note ? <Text style={styles.note}>{m.note}</Text> : null}
       </View>
 
       <View style={styles.divider} />
@@ -463,9 +482,15 @@ const styles = StyleSheet.create({
   mainFace: { height: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 8 },
   mainShine: { position: 'absolute', left: '8%', right: '8%', top: 2, height: '38%', borderRadius: 999 },
   mainText: { fontFamily: F.display, fontSize: 16, lineHeight: 20, letterSpacing: 1, includeFontPadding: false },
-  // the longer FROM CHESTS / SEASON CHEST / SET REWARD, beside their icon
+  // the longer EPIC CHEST / SEASON CHEST / SET REWARD, beside their icon
   mainTextIc: { fontSize: 12, lineHeight: 16, letterSpacing: 0.3 },
-  note: { marginTop: 7, maxWidth: 260, fontFamily: F.heavy, fontSize: 11.5, lineHeight: 15, color: '#45107a', textAlign: 'center' },
+  // a chest's pill: a little wider, its label clear of the chest at the left
+  // (its top margin: room for the chest rising above it, under the FOUND bar)
+  mainSlotChest: { maxWidth: 178, marginTop: 5 },
+  mainFaceChest: { paddingLeft: 52, paddingRight: 6 },
+  mainTextChest: { letterSpacing: 0 },
+  // sized and placed by its size (CHEST_BOX)
+  mainChest: { position: 'absolute' },
   divider: { height: 3, backgroundColor: '#ffffff', zIndex: 3, borderBottomWidth: 1, borderBottomColor: 'rgba(201,176,236,0.9)', elevation: 4, shadowColor: '#45107a' },
   gridBox: { flex: 1, minHeight: 0 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 9, paddingTop: 12, paddingHorizontal: 12, paddingBottom: 24 },
