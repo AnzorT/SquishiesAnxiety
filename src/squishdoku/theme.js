@@ -22,5 +22,6 @@ export const MODE_COLORS = {
   blitz: { ring: '#0c5a9c', colors: ['#b0fbff', '#3fd7f6', '#1695d6'] },
 };
 
-export const TIER_NAMES = ['EASY', 'MEDIUM', 'HARD', 'EXPERT'];
-export const TIER_COLORS = ['#3ddc97', '#5fb8ff', '#ff8a4a', '#e01e4a'];
+// MASTER and LEGEND: the 600 levels' hardest boards (levels.js tierOfEffort)
+export const TIER_NAMES = ['EASY', 'MEDIUM', 'HARD', 'EXPERT', 'MASTER', 'LEGEND'];
+export const TIER_COLORS = ['#3ddc97', '#5fb8ff', '#ff8a4a', '#e01e4a', '#8f3cf2', '#f5a300'];

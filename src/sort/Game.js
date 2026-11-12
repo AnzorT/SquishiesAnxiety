@@ -5,6 +5,7 @@ import Svg, { Defs, Ellipse, Path, RadialGradient, Stop } from 'react-native-svg
 import RoundButton, { BackGlyph } from '../components/candy/RoundButton';
 import ShadowText, { outline3 } from '../components/candy/ShadowText';
 import useRewardedAd from '../components/useRewardedAd';
+import { Heart } from '../components/Hearts';
 import sfx from '../audio/sfx';
 import { FxLayer, PopIn } from '../squishdoku/fx';
 import { makeHaptics, pickCreatures, prefetchImages, useClock } from '../squishdoku/game';
@@ -114,29 +115,6 @@ const Piece = memo(function Piece({ uri, size, a, mixed, selected, locked }) {
         </Animated.View>
       ) : null}
     </Animated.View>
-  );
-});
-
-// the hearts in the corner; a lost one pops and greys
-const HEART_D = 'M12 21 C5 15.5 2 12 2 7.8 C2 4.6 4.4 2.5 7.2 2.5 C9.2 2.5 11 3.6 12 5.4 C13 3.6 14.8 2.5 16.8 2.5 C19.6 2.5 22 4.6 22 7.8 C22 12 19 15.5 12 21 Z';
-const Heart = memo(function Heart({ on }) {
-  const t = useRef(new Animated.Value(on ? 1 : 0)).current;
-  useEffect(() => {
-    if (on) t.setValue(1);
-    else Animated.sequence([Animated.timing(t, { toValue: 1.6, duration: 120, useNativeDriver: true }), Animated.spring(t, { toValue: 0, friction: 5, tension: 120, useNativeDriver: true })]).start();
-  }, [on, t]);
-  return (
-    <View style={styles.heartBox}>
-      <Svg width={24} height={24} viewBox="0 0 24 24" style={StyleSheet.absoluteFill}>
-        <Path d={HEART_D} fill="rgba(69,16,122,0.22)" stroke="#ffffff" strokeWidth={2} />
-      </Svg>
-      <Animated.View style={[StyleSheet.absoluteFill, { opacity: t.interpolate({ inputRange: [0, 0.3, 1.6], outputRange: [0, 1, 1], extrapolate: 'clamp' }), transform: [{ scale: t.interpolate({ inputRange: [0, 1, 1.6], outputRange: [0.4, 1, 1.35], extrapolate: 'clamp' }) }] }]}>
-        <Svg width={24} height={24} viewBox="0 0 24 24">
-          <Path d={HEART_D} fill="#ff4d7d" stroke="#ffffff" strokeWidth={2} />
-          <Path d="M6.5 7 C7 5.6 8.2 5 9.2 5.2" stroke="#ffd6e4" strokeWidth={1.6} strokeLinecap="round" fill="none" />
-        </Svg>
-      </Animated.View>
-    </View>
   );
 });
 
@@ -1220,7 +1198,6 @@ const styles = StyleSheet.create({
   challengeText: { fontFamily: F.display, fontSize: 10, letterSpacing: 0.6, color: '#ffffff' },
   pips: { marginTop: 8 },
   hearts: { flexDirection: 'row', gap: 3, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.8)', borderWidth: 2, borderColor: '#ffffff' },
-  heartBox: { width: 24, height: 24 },
   bar: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 30, paddingHorizontal: 16, marginTop: 6 },
   barLabel: { minWidth: 64, fontFamily: F.display, fontSize: 13, letterSpacing: 0.6, color: INK },
   track: { flex: 1, height: 14, borderRadius: 7, backgroundColor: 'rgba(69,16,122,0.18)', borderWidth: 2, borderColor: '#ffffff', overflow: 'hidden' },

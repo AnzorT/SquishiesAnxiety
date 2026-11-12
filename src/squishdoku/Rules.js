@@ -37,7 +37,7 @@ const RULES = [
   ['1', 'One creature in every ROW and every COLUMN.'],
   ['2', 'One creature in every coloured PATCH.'],
   ['3', "Creatures can't TOUCH, not even corner to corner."],
-  ['✕', 'Tap to place. Rule cells out with ✕ (MARK, or long-press). A wrong tap is a mistake.'],
+  ['✕', 'Tap to place. Rule cells out with ✕ (MARK, or long-press). A wrong tap is a mistake. From level 46 you have 3 hearts: the third mistake and you try the board again.'],
   ['★', 'No ✕ and no mistakes = PERFECT: all 3 creatures and triple coins. Otherwise beat the clock to keep them.'],
   ['⚡', 'BLITZ: 10 boards, one clock, no ✕. One mistake sends you back to board 1, with one revive per run.'],
 ];

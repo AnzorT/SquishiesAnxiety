@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useMemo, useRef } from 'react';
+import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import sfx from '../audio/sfx';
@@ -7,10 +7,16 @@ import { useProgressive } from '../components/Skeleton';
 import { usePingPong } from '../components/idleLoop';
 import { FxLayer } from './fx';
 import { Head } from './ui';
-import { LEVEL_LIST, LEVELS } from './levels';
+import { CHAPTER, CHAPTERS, LEVEL_LIST, LEVELS, chapterOf, roomOfChapter } from './levels';
+import { RoomCard } from '../hop/Room';
+import { ROOMS } from '../hop/levels';
+import RoundButton from '../components/candy/RoundButton';
 import { F, INK, TIER_COLORS } from './theme';
 
-// The 50 levels on a winding path, level 1 at the top. Done levels are gold
+// The levels on a winding path, a chapter (20 levels, one Crib room) a page:
+// the room's picture and name on top, ◀ ▶ to the chapters either side, and
+// NEXT CHAPTER at the bottom (600 levels in one page was 60,000 points tall).
+// Done levels are gold
 // with the creatures they earned, the next one pink and pulsing with a
 // creature bobbing on it, the rest locked. Nodes pop in around the current
 // one; a level just unlocked breaks its lock open. The nodes are built
@@ -20,9 +26,7 @@ import { F, INK, TIER_COLORS } from './theme';
 const GAP = 96;
 const NODE = 62;
 const TOP = 140;
-const BAND_GAP = 80; // extra room between bands for the banner
-
-const bandOf = (i) => LEVEL_LIST[i].n;
+const HEAD = 96; // the chapter's picture and banner, over the first node
 
 const Node = memo(function Node({ lv, x, y, state, stars, perfect, heads, delay, onPress, unlocking, mascot, mascotLeft }) {
   const t = useRef(new Animated.Value(0)).current;
@@ -122,28 +126,27 @@ const Node = memo(function Node({ lv, x, y, state, stars, perfect, heads, delay,
 function LevelMap({ rec, roster, onPlay, justUnlocked }) {
   const { width } = useWindowDimensions();
   const scroll = useRef(null);
-  const cur = rec.lv; // the next level to beat
+  const cur = Math.min(rec.lv, LEVELS); // the next level to beat
+  const [chapter, setChapter] = useState(() => chapterOf(justUnlocked || cur));
+  const from = (chapter - 1) * CHAPTER; // its first level's index
+  const count = Math.min(CHAPTER, LEVELS - from);
   const points = useMemo(() => {
     const amp = Math.min(110, width * 0.27);
-    let y = TOP;
-    return Array.from({ length: LEVELS }, (_, i) => {
-      if (i > 0 && bandOf(i) !== bandOf(i - 1)) y += BAND_GAP; // room for the band's banner
-      const p = { x: width / 2 + Math.sin(i * 1.05) * amp, y };
-      y += GAP;
-      return p;
-    });
-  }, [width]);
-  const height = points[LEVELS - 1].y + 120;
+    return Array.from({ length: count }, (_, i) => ({ x: width / 2 + Math.sin((from + i) * 1.05) * amp, y: TOP + HEAD + i * GAP }));
+  }, [width, from, count]);
+  const height = points[count - 1].y + 170;
   // a creature for each node's score heads (fixed per level) and the mascot
-  const heads = useMemo(() => Array.from({ length: LEVELS }, (_, i) => [0, 1, 2].map((k) => roster.length && roster[((i + 1) * 7 + k * 13) % roster.length])), [roster]);
+  const heads = useMemo(() => Array.from({ length: count }, (_, i) => [0, 1, 2].map((k) => roster.length && roster[((from + i + 1) * 7 + k * 13) % roster.length])), [roster, from, count]);
   const mascot = roster.length ? roster[(cur * 11) % roster.length] : null;
 
-  const order = useMemo(() => Array.from({ length: LEVELS }, (_, i) => i).sort((a, b) => Math.abs(a + 1 - cur) - Math.abs(b + 1 - cur)), [cur]);
-  const n = useProgressive(LEVELS, 12, 10);
+  const order = useMemo(() => Array.from({ length: count }, (_, i) => i).sort((a, b) => Math.abs(from + a + 1 - cur) - Math.abs(from + b + 1 - cur)), [cur, from, count]);
+  const n = useProgressive(count, 12, 10);
   const built = useMemo(() => new Set(order.slice(0, n)), [order, n]);
 
+  // the current level in view (the top of the page on another chapter)
   useEffect(() => {
-    const y = Math.max(0, points[cur - 1].y - 260);
+    const i = cur - 1 - from;
+    const y = i >= 0 && i < count ? Math.max(0, points[i].y - 260) : 0;
     const t = setTimeout(() => scroll.current?.scrollTo({ y, animated: false }), 0);
     // the nodes round the current one pop in with rising bubbles
     const pops = [];
@@ -153,38 +156,48 @@ function LevelMap({ rec, roster, onPlay, justUnlocked }) {
       pops.forEach(clearTimeout);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [chapter]);
+  const turn = (c) => {
+    if (c < 1 || c > CHAPTERS) return;
+    sfx.play('sd_select');
+    setChapter(c);
+  };
 
   const dots = [];
-  for (let i = 0; i < LEVELS - 1; i++) {
+  for (let i = 0; i < count - 1; i++) {
     if (!built.has(i) || !built.has(i + 1)) continue;
     const a = points[i];
     const b = points[i + 1];
     for (let k = 1; k <= 3; k++) {
       const f = k / 4;
-      dots.push(<View key={`d${i}-${k}`} style={[styles.dot, { left: a.x + (b.x - a.x) * f - 4, top: a.y + (b.y - a.y) * f - 4, backgroundColor: i + 1 < cur ? '#ffd23a' : 'rgba(255,255,255,0.75)' }]} />);
+      dots.push(<View key={`d${i}-${k}`} style={[styles.dot, { left: a.x + (b.x - a.x) * f - 4, top: a.y + (b.y - a.y) * f - 4, backgroundColor: from + i + 1 < cur ? '#ffd23a' : 'rgba(255,255,255,0.75)' }]} />);
     }
   }
-  const banners = [];
-  for (let i = 0; i < LEVELS; i++) {
-    if (i === 0 || bandOf(i) !== bandOf(i - 1)) {
-      const n = bandOf(i);
-      banners.push(
-        // above the node and the creature bobbing on it
-        <View key={`b${n}`} style={[styles.banner, { top: points[i].y - 112 }]}>
-          <Text style={styles.bannerText}>{`${n} × ${n}`}</Text>
-        </View>,
-      );
-    }
-  }
+  const room = roomOfChapter(chapter);
+  const sizes = [...new Set(LEVEL_LIST.slice(from, from + count).map((x) => x.n))].sort((a, b) => a - b);
 
   return (
     <ScrollView ref={scroll} style={styles.fill} contentContainerStyle={{ height }} showsVerticalScrollIndicator={false}>
+      {/* the chapter: its room, its name, the chapters either side */}
+      <View style={[styles.chapter, { top: TOP - 120 }]}>
+        <RoomCard room={room} />
+        <View style={styles.chapterRow}>
+          <RoundButton size={36} onPress={() => turn(chapter - 1)} disabled={chapter <= 1} dim={chapter <= 1}>
+            <Text style={styles.arrow}>◀</Text>
+          </RoundButton>
+          <View style={styles.chapterBox}>
+            <Text style={styles.bannerText}>{`CHAPTER ${chapter} · ${ROOMS[room].name.toUpperCase()}`}</Text>
+            <Text style={styles.chapterSub}>{`LEVELS ${from + 1}-${from + count} · ${sizes.map((s) => `${s}×${s}`).join(' ')}`}</Text>
+          </View>
+          <RoundButton size={36} onPress={() => turn(chapter + 1)} disabled={chapter >= CHAPTERS} dim={chapter >= CHAPTERS}>
+            <Text style={styles.arrow}>▶</Text>
+          </RoundButton>
+        </View>
+      </View>
       {dots}
-      {banners}
       {points.map((p, i) => {
         if (!built.has(i)) return null;
-        const lv = i + 1;
+        const lv = from + i + 1;
         // every level before the unlocked one was beaten to get there
         const state = lv < cur ? 'done' : lv === cur ? (rec.best[lv] ? 'done' : 'current') : 'locked';
         return (
@@ -205,6 +218,13 @@ function LevelMap({ rec, roster, onPlay, justUnlocked }) {
           />
         );
       })}
+      {chapter < CHAPTERS ? (
+        <View style={[styles.nextWrap, { top: points[count - 1].y + 70 }]}>
+          <Pressable onPress={() => turn(chapter + 1)} hitSlop={8} style={styles.nextBtn}>
+            <Text style={styles.nextText}>{`CHAPTER ${chapter + 1} ▶`}</Text>
+          </Pressable>
+        </View>
+      ) : null}
     </ScrollView>
   );
 }
@@ -226,7 +246,14 @@ const styles = StyleSheet.create({
   heads: { flexDirection: 'row', marginTop: 4, gap: 1 },
   mascot: { position: 'absolute', top: 8, zIndex: 3 },
   dot: { position: 'absolute', width: 8, height: 8, borderRadius: 4 },
-  banner: { position: 'absolute', alignSelf: 'center', left: 0, right: 0, alignItems: 'center' },
+  chapter: { position: 'absolute', left: 0, right: 0, alignItems: 'center', gap: 8 },
+  chapterRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14 },
+  chapterBox: { alignItems: 'center', gap: 3 },
+  chapterSub: { fontFamily: F.display, fontSize: 11, letterSpacing: 1, color: INK },
+  arrow: { fontFamily: F.display, fontSize: 14, color: '#ffffff', includeFontPadding: false },
+  nextWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+  nextBtn: { backgroundColor: '#7a2fd6', borderRadius: 999, borderWidth: 3, borderColor: '#ffffff', paddingHorizontal: 22, paddingVertical: 9 },
+  nextText: { fontFamily: F.display, fontSize: 15, letterSpacing: 1.5, color: '#ffffff' },
   bannerText: { fontFamily: F.display, fontSize: 15, letterSpacing: 2, color: '#ffffff', backgroundColor: '#7a2fd6', borderRadius: 999, borderWidth: 2.5, borderColor: '#ffffff', paddingHorizontal: 14, paddingVertical: 3, overflow: 'hidden' },
 });
 

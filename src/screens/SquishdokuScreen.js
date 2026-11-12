@@ -10,10 +10,11 @@ import LevelMap from '../squishdoku/LevelMap';
 import RegularGame from '../squishdoku/RegularGame';
 import BlitzGame from '../squishdoku/BlitzGame';
 import RulesCard from '../squishdoku/Rules';
-import { PLAY_SOUNDS, RESULT_SOUNDS, prefetchPuzzle } from '../squishdoku/game';
-import { levelSpec, record } from '../squishdoku/levels';
+import { PLAY_SOUNDS, RESULT_SOUNDS } from '../squishdoku/game';
+import { record } from '../squishdoku/levels';
 import { xpView } from '../playerXp';
 import { ownedKey, rosterOf } from '../squishdoku/roster';
+import { castOf } from '../stack/roster';
 import { BY_ID } from '../squad/data';
 import { selectedId } from '../squad/lobby';
 import { saveSquishdoku } from '../firebase/firestore';
@@ -42,6 +43,8 @@ function SquishdokuScreen({ profile, creatures, uid, adsFree, haptics, onBack })
   // re-picked only when what the player owns changes
   const owned = ownedKey(profile);
   const roster = useMemo(() => rosterOf(creatures, profile), [creatures, owned]); // eslint-disable-line react-hooks/exhaustive-deps
+  // the board's creatures, standing on their cushions (Squish Stack's cut-outs)
+  const cast = useMemo(() => castOf(creatures, profile), [creatures, owned]); // eslint-disable-line react-hooks/exhaustive-deps
   // the buddy under the board: the creature picked in the Lobby
   const buddyId = selectedId(profile);
   const buddyKey = BY_ID[buddyId] ? BY_ID[buddyId].key : null;
@@ -64,9 +67,6 @@ function SquishdokuScreen({ profile, creatures, uid, adsFree, haptics, onBack })
     sfx.music('dream');
     // a level's sounds, made while the player looks at the menus
     sfx.preload([...PLAY_SOUNDS, 'sd_timeUp', 'sd_select', ...RESULT_SOUNDS]);
-    // the next level's board, made while the player looks at the menus
-    const s = levelSpec(rec.lv, rec.skill, rec.head);
-    prefetchPuzzle(s.n, s.tier);
     // first visit: the rules
     if (!rec.plays) setTimeout(() => setRules(true), 700);
     return () => sfx.setBudget(null);
@@ -111,7 +111,9 @@ function SquishdokuScreen({ profile, creatures, uid, adsFree, haptics, onBack })
   const pl = xpView(profile);
 
   return (
-    <CandyBackground style={{ paddingTop: insets.top }} sparkles>
+    // a level or a Blitz run fills the screen, room and all (it keeps clear of
+    // the status bar itself)
+    <CandyBackground style={{ paddingTop: view === 'play' || view === 'blitz' ? 0 : insets.top }} sparkles={view !== 'play' && view !== 'blitz'}>
       {view === 'hub' || view === 'map' ? (
         <View style={styles.header}>
           <RoundButton size={40} onPress={() => (view === 'map' ? go('hub') : onBack())}>
@@ -138,10 +140,10 @@ function SquishdokuScreen({ profile, creatures, uid, adsFree, haptics, onBack })
               <Hub rec={rec} pl={pl} roster={roster} head={head} onToggleHead={toggleHead} onRegular={() => go('map')} onBlitz={() => go('blitz')} onRules={() => setRules(true)} />
             ) : null}
             {view === 'play' ? (
-              <RegularGame startLv={playLv} profile={profile} uid={uid} roster={roster} head={head} buddyKey={buddyKey} buddyUri={buddyUri} haptics={haptics} onExit={leaveLevel} />
+              <RegularGame startLv={playLv} profile={profile} uid={uid} roster={roster} cast={cast} head={head} buddyKey={buddyKey} buddyUri={buddyUri} haptics={haptics} onExit={leaveLevel} />
             ) : null}
             {view === 'blitz' ? (
-              <BlitzGame profile={profile} uid={uid} roster={roster} adsFree={adsFree} head={head} buddyKey={buddyKey} buddyUri={buddyUri} haptics={haptics} onExit={leaveBlitz} />
+              <BlitzGame profile={profile} uid={uid} roster={roster} cast={cast} adsFree={adsFree} head={head} buddyKey={buddyKey} buddyUri={buddyUri} haptics={haptics} onExit={leaveBlitz} />
             ) : null}
           </ViewSlot>
         ) : null}

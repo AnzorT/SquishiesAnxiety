@@ -32,6 +32,8 @@ const FACES = {
 const c = (col, t) => t || col;
 const ICONS = {
   back: (t) => <Path d="M15 4 L7 12 L15 20" stroke={c('#ffffff', t)} strokeWidth={3.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />,
+  // Squishdoku's pause, in the Crib's look (two bars)
+  pause: (t) => <Path d="M8.5 5 V19 M15.5 5 V19" stroke={c('#ffffff', t)} strokeWidth={3.8} fill="none" strokeLinecap="round" />,
   music: (t, off) => (
     <>
       <Path d="M9 17V5l10-2v12" stroke={c('#ffffff', t)} strokeWidth={2.6} fill="none" strokeLinejoin="round" strokeLinecap="round" />

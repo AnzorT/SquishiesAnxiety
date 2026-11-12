@@ -13,7 +13,7 @@ A Queens-style logic puzzle, like Pengudoku (Google Play), built with our creatu
 - **✕ mark** (Regular only): with the ✕ tool on, tap or drag over cells to mark them; tap a ✕ again to clear it. A long press also marks a ✕ while the tool is off.
 - Tapping a placed creature makes it squeak and wiggle. That's just for fun and has no effect on the game.
 
-## Regular mode: 50 levels
+## Regular mode: 50 levels (until 2026-11-07; see "600 fixed levels" below)
 | Levels | Grid |
 |---|---|
 | 1-3 | 4×4 |
@@ -96,6 +96,159 @@ Everything moves, and everything has its own sound, generated in Python (`tools/
 - **Placed creatures breathe and sway.**
   - Every 1.3 s one of them does a trick: hop, wiggle, spin or peek. Tricks keep the eyes open: a happy face (eyes shut) flashing on its own read as the creature closing and opening its eyes, so since 2026-10-28 it only shows when a creature lands right, cheers a new one, is tapped, or on the solve.
   - They hop to cheer each new creature (with their happy face) and flinch at a mistake (with a worried look).
+
+## In the Crib's rooms (2026-11-07)
+The user asked for a Squishdoku remodel done "the same method" as Squish Hop (SQUISH_HOP.md), "that it happens in the rooms instead of the regular board", "and the characters look like" Squish Hop's.
+
+- **The room:** a level is played in one of the Crib's rooms (src/hop/Room.js), with the time of day.
+  - For now each grid size has its room: 4×4 Living Room, 5×5 Kitchen, 6×6 Bathroom, 7×7 Bedroom, 8×8 Yard, 9×9 Dance Room (`levels.js` `stageOf`).
+  - A Blitz run is in the Dance Room.
+- **The board** lies on the room's floor in Squish Hop's perspective (src/hop/board.js), leaned back 30° rather than Hop's 38°, so a 9×9 keeps big cells (`RoomBoard.js` `SDK_TILT`).
+  - The patches are plush cushions drawn as tilted SVG, in the Jewel colours: the body colour in the middle going to the deep edge, on a darker ring.
+  - ✕ marks are printed on the cushions, white with a plum edge.
+- **The creatures stand on their cushions,** body and all: Squish Stack's cut-outs (`stack/roster.js` `castOf`, the player's own; all of them if they own none).
+  - A right one drops on and lands with a squash, sparks fly, its patch ripples (the cushions bob), its row and column bob, and everyone hops to cheer.
+  - A wrong one drops on with the cell glowing red, shakes its head, and shrinks away in a poof. The board shakes, and the cell gets its ✕.
+  - A placed creature breathes, peeks about, and now and then does a hop or a wiggle.
+  - Since the heads are gone, the board shows no happy or sad faces. The score creatures, the clock, the result cards and the Buddy are unchanged.
+- **The screen:**
+  - The Crib's top bar: pause (or back), the room's title, LEVEL n · size, the tier and HEAD START chips, and the time-of-day pill.
+  - The score creatures and the clock on the Crib's brown glass.
+  - The Buddy and the PLACE / MARK tools on a glass strip at the bottom.
+- **Code:**
+  - `src/squishdoku/RoomBoard.js`: the board, the same contract and ref API as `Board.js`, which is kept but no longer used by the games.
+  - `RegularGame.js` and `BlitzGame.js`: the room layout.
+  - `SquishdokuScreen.js`: hands the games `cast`, and gives a level or a run the whole screen.
+- **Checked on the Pixel_8_Pro (debug):**
+  - Regular level 17 (6×6, Bathroom): HEAD START's creature, a solve tap by tap, PERFECT SQUISH, level 18 unlocked.
+  - Level 18: a wrong tap (red glow, poof, auto ✕).
+  - The pause card; Blitz board 1 in the Dance Room.
+- **Not checked yet:** a 9×9 in a room on a phone, the ✕ drag and long press on the tilted board, and speed on the A15.
+- **Next:** done, see "600 fixed levels".
+
+## 600 fixed levels (2026-11-07)
+The user's rulings:
+- Instead of a board that "remodels itself" every time a level is played, 600 levels, each with a decided difficulty.
+- No hidden skill score.
+- Players keep their level number.
+- Squishdoku goes first of the mini-games.
+
+This replaces "Regular mode: 50 levels" above (its random boards, the tier per level, and the skill score). Blitz is unchanged: it still deals fresh boards each run, with its own `bSkill`.
+
+**Every level is one board, the same for everyone, every time.**
+- REPLAY, RETRY (time's up) and the pause card's RESTART (was NEW BOARD) all play it again.
+- `src/squishdoku/levelData.js` holds all 600 (75 KB).
+- `tools/squishdoku/levels600.mjs` makes them on the PC with the game's own engine, in 8 seeded jobs with fixed counts, so a run gives the same levels on any machine: about 95 s on 8 cores. Its steps:
+  1. Make boards of every size.
+  2. Drop repeats: the same patches turned or mirrored count once.
+  3. Give each level the unused board nearest its target effort, the hardest first.
+  4. Check every board again: exactly one answer, solved by logic.
+  5. Print a table per chapter.
+
+**Difficulty is the grader's effort** (engine.js `grade`: how much thinking a board takes; 8 ≈ needs a chain, 16 two, 24 three).
+- The plan, `plan()` in the tool, is what to change to re-tune.
+- **30 chapters of 20 levels.** Inside a chapter the target rises. The 5th, 10th and 15th levels are breathers, and the 20th is the chapter's hardest.
+- **Sizes:**
+
+| Levels | Size | Notes |
+|---|---|---|
+| 1-4 | 4×4 | always effort 0-1 |
+| 5-22 | 5×5 | |
+| 23-45 | 6×6 | |
+| 46-80 | 7×7 | |
+| 81-130 | 8×8 | |
+| 131-600 | 9×9 | breathers are 8×8, or 7×7 on the 15th |
+
+  9×9 stays the top size. A 10×10 would need a 10th patch colour and gets small on the tilted board.
+- **The 9×9 years:** the base effort climbs from 4 (level 131) to 32 (level 600), a chapter adds up to 4, and a boss is 8 over its base (up to 40). (Before "Harder" below: 4 → 24, +3, boss +5, and level 600 at 29.)
+- **Tiers by effort:** EASY ≤1, MEDIUM ≤3, HARD ≤7, EXPERT ≤15, then the new **MASTER** (16-23) and **LEGEND** (24+), so the long 9×9 climb shows. Their colours are purple `#8f3cf2` and amber `#f5a300` (theme.js).
+- **What the engine can reach** (measured 2026-11-07):
+  - 4×4 is always easy, and 5×5 rarely passes 3.
+  - At 9×9, the top 10% is effort ≥6, the top 1% ≥13, and the top 0.1% ≥25. The best seen was 27. Past that the tool climbs (see "Harder" below).
+  - The effort score piles up at 8, 16 and 24.
+  - `makePuzzle` hangs for n < 4.
+- **The clock:** the size's times (TIMES) × (1 + 0.05 per point of effort, up to 30), rounded to 5 s. A 9×9 at effort 24 has 2.2 × as long, and from 30 on 2.5 ×. HEAD START is still × 0.8.
+- **Coins and XP** grow with the tier as before (+15% coins and +5 XP per tier), now up to LEGEND.
+
+**Rooms by chapter:** chapter c is in room (c - 1) mod 6 of Living Room, Kitchen, Bathroom, Bedroom, Yard, Dance Room. The time of day moves through the chapter, 5 levels each for the rooms with four times of day (`levels.js` `stageOf`, replacing the room-per-size of the section above).
+
+**The patch colours:** a level gets the first n colours of theme.js PATCHES, whose order puts the most different hues first, shuffled by level. A random n of the 9 had put sky next to sapphire.
+
+**The map:** one chapter a page. The chapter's room picture is on top with CHAPTER n · ROOM, its levels and sizes, ◀ ▶ to the chapters either side, and CHAPTER n+1 ▶ at the bottom. It opens on the current level's chapter. 600 levels on one page would have been about 60,000 points tall.
+
+**Saved data:**
+- `sdk.lv`, `sdk.best` and `sdk.perfect` keep their meaning, and the level number carries over (a player on 18 of 50 is on 18 of 600).
+- `sdk.skill` is no longer written or read.
+
+**Tests:** `node src/squishdoku/levels.test.js`.
+- Every board has one answer (its stored one), the grader solves it by logic with its stored effort, and it has n different colours.
+- No board appears twice.
+- Sizes rise; from chapter 8 each chapter is mostly 9×9 and its median effort never falls; the last chapter's median is 28 or more, and level 600 is a LEGEND of 36 or more.
+- Every 9×9 fits the shape guard, and at least 60 are past effort 25.
+- Hearts from level 46; the clock stops growing at effort 30.
+- Rooms, clocks, HEAD START, and level numbers carried over.
+
+**Checked on the Pixel_8_Pro:**
+- The hub shows Level 18 of 600.
+- Chapter 1's page (Living Room, ◀ dimmed) and chapter 2 (Kitchen, locked).
+- Level 18 from the data: Living Room at night, 5×5, MEDIUM, HEAD START. It was solved by tapping the stored answer, and its colours are distinct after the colour fix.
+
+## Harder (2026-11-07)
+The user asked what else could make Squishdoku harder, and chose two things: hearts, and harder boards from the tool. (Not chosen for now: furniture on some cushions as a later twist, and two creatures per row, column and patch on 10×10.)
+
+**1. Hearts.** Before, a wrong tap was rejected at once and given its ✕, and cost nothing but the stars. A hard board could be beaten by tapping around until the creatures landed, so its thinking score didn't count.
+- From level 46 (the first 7×7) a level has 3 hearts (`levels.js` `HEARTS`, `HEARTS_FROM`; `levelSpec` gives `hearts`, 0 before 46).
+- A mistake costs one: the heart pops and greys (`components/Hearts.js`, Squish Sort's heart, now shared) with Sort's `fs_heart` sound.
+- The third locks the board at once and stops the clock. The wrong creature's shake plays out, then **OUT OF HEARTS!** with RETRY (the same board) and MAP (`TimeUpCard` with `hearts`). It counts as a play, like time's up.
+- Levels 1-45 keep free mistakes, for learning. Stars are unchanged: a mistake still leaves 1.
+- The hearts sit at the right of the score creatures, on the glass. Level 46's banner says "NEW: 3 HEARTS! A MISTAKE COSTS ONE" and stays up longer. The rules card says it too.
+- Blitz is unchanged: one mistake already ends a run there.
+
+**2. Harder boards: the climb.** The plain maker's 9×9s top out about 25-27. The tool now also climbs:
+- A board's patches are reshaped a cell at a time. A change is kept if the patch it left is still in one piece, there's still exactly one answer, the grader still solves it by logic, and the effort didn't drop. A climb stops after 150·n tries without a gain.
+- **The shape guard** (`tools/squishdoku/shape.mjs`): unguarded, the climb wins by growing snakes and one-cell-wide passages (17 of those "corridor" cells on a board, against 7 on a plain one). So a change is kept only if the board's corridors, tips, total edges and perimeter ratios are each within the 95th percentile of 1,500 plain 9×9s. Since the second run every 9×9, plain ones too, must fit: the plain maker's rare hard boards were often snaky as well.
+- Guarded, one minute of 8 workers climbed 175 boards: 34 at effort 30 or more, the best 48.
+- Each of the 8 jobs climbs 100 boards after its plain ones (`CLIMBS`), seeded, so a run is still the same on any machine. It takes about 7.5 minutes.
+- What the run gave:
+
+```
+chapter  levels    sizes                 effort min / median / max   (targets)
+   1     1-20    4×4 16×5                0 /   1 /   3      (0-3)
+   2    21-40    2×5 18×6                1 /   3 /   5      (1-5)
+   3    41-60    5×6 15×7                1 /   3 /   8      (1-8)
+   4    61-80    20×7                    2 /   6 /   8      (2-8)
+   5    81-100   20×8                    3 /   4 /  10      (3-10)
+   6   101-120   20×8                    3 /   7 /  10      (3-10)
+   7   121-140   1×7 10×8 9×9            3 /   9 /  13      (3-13)
+   8   141-160   1×7 2×8 17×9            4 /   7 /  14      (4-14)
+   9   161-180   1×7 2×8 17×9            5 /   8 /  15      (5-15)
+  10   181-200   1×7 2×8 17×9            5 /   9 /  16      (5-16)
+  11   201-220   1×7 2×8 17×9            6 /  10 /  17      (6-17)
+  12   221-240   1×7 2×8 17×9            6 /  12 /  19      (6-19)
+  13   241-260   1×7 2×8 17×9            7 /  13 /  20      (7-20)
+  14   261-280   1×7 2×8 17×9            7 /  14 /  21      (7-21)
+  15   281-300   1×7 2×8 17×9            8 /  15 /  22      (8-22)
+  16   301-320   1×7 2×8 17×9            8 /  16 /  23      (8-23)
+  17   321-340   1×7 2×8 17×9            8 /  18 /  25      (8-24)
+  18   341-360   1×7 2×8 17×9            8 /  19 /  26      (8-26)
+  19   361-380   1×7 2×8 17×9            8 /  20 /  27      (8-27)
+  20   381-400   1×7 2×8 17×9            8 /  21 /  28      (8-28)
+  21   401-420   1×7 2×8 17×9            8 /  22 /  29      (8-29)
+  22   421-440   1×7 2×8 17×9            8 /  24 /  30      (8-30)
+  23   441-460   1×7 2×8 17×9            8 /  25 /  32      (8-32)
+  24   461-480   1×7 2×8 17×9            8 /  26 /  33      (8-33)
+  25   481-500   1×7 2×8 17×9            8 /  27 /  34      (8-34)
+  26   501-520   1×7 2×8 17×9            8 /  28 /  35      (8-35)
+  27   521-540   1×7 2×8 17×9            8 /  29 /  36      (8-36)
+  28   541-560   1×7 2×8 17×9            8 /  30 /  37      (8-38)
+  29   561-580   1×7 2×8 17×9            8 /  32 /  38      (8-39)
+  30   581-600   1×7 2×8 17×9            8 /  33 /  40      (8-40)
+
+levels more than 2 off their target: 0
+climbed boards used: 215, plain: 385
+  plain 9×9    185 boards: corridors 7.63, tips 16.57, edges 140.85, perimeter ratio 1.26
+  climbed 9×9  215 boards: corridors 10.20, tips 18.36, edges 148.05, perimeter ratio 1.30
+```
 
 ## Saved data
 The profile's `sdk` field is client-written, like coins:

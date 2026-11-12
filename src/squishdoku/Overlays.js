@@ -248,18 +248,19 @@ export function ResultCard({ visible, res, spec, uris, onNext, onReplay, onMap, 
 const coinsAt = (res) => 420 + 3 * 520 + (res.perfect ? 600 : 100);
 
 // Time's up: the timer-creature snoozing, RETRY or MAP.
-export function TimeUpCard({ visible, onRetry, onMap, uri }) {
+// The clock ran out, or (`hearts`: the hearts were all lost) the mistakes did.
+export function TimeUpCard({ visible, onRetry, onMap, uri, hearts = 0 }) {
   return (
     <Overlay visible={visible} tint="rgba(80,0,30,0.5)">
       <PopIn trigger={visible} delay={60}>
-        <OutlinedTitle text="TIME'S UP!" size={32} fill="pink" />
+        <OutlinedTitle text={hearts ? 'OUT OF HEARTS!' : "TIME'S UP!"} size={hearts ? 28 : 32} fill="pink" />
       </PopIn>
       <PopIn trigger={visible} delay={220}>
         <Rock deg={8} ms={1800}>
           <Head uri={uri} size={86} dim ring="#ffffff" bg="#efe9f5" />
         </Rock>
       </PopIn>
-      <Text style={styles.body}>A fresh board is waiting. Same level, new puzzle!</Text>
+      <Text style={styles.body}>{hearts ? `${hearts} mistakes. The same board is waiting: think it through and try again!` : 'The same board is waiting. Try it again!'}</Text>
       <SlideIn trigger={visible} delay={380} style={styles.btnRow}>
         <SdButton kind="white" onPress={onMap} sound="sd_select" faceStyle={styles.smallFace}>
           <BtnLabel kind="purple" size={15}>MAP</BtnLabel>
@@ -284,7 +285,7 @@ export function PauseCard({ visible, onResume, onRestart, onQuit, blitz }) {
           <BtnLabel kind="green" size={18}>RESUME</BtnLabel>
         </SdButton>
         <SdButton kind="purple" onPress={onRestart} sound="sd_select" faceStyle={styles.wideFace}>
-          <BtnLabel kind="purple" size={16}>{blitz ? 'START OVER' : 'NEW BOARD'}</BtnLabel>
+          <BtnLabel kind="purple" size={16}>{blitz ? 'START OVER' : 'RESTART'}</BtnLabel>
         </SdButton>
         <SdButton kind="white" onPress={onQuit} sound="sd_boardOut" faceStyle={styles.wideFace}>
           <BtnLabel kind="purple" size={16}>QUIT</BtnLabel>

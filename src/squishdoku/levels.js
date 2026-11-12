@@ -3,24 +3,32 @@
 // writes what they return. The XP goes to the player's level
 // (src/playerXp.js; it was the game's own Puzzle Level until 2026-10-25).
 import { addXp, gameXp, winXp, xpRules } from '../playerXp.js';
+import LEVEL_DATA from './levelData.js';
 
-export const LEVELS = 50;
+// 600 levels, one fixed board each (the user, 2026-11-07: no board that
+// "remodels itself" on every play). levelData.js holds them, made and checked
+// offline by tools/squishdoku/levels600.mjs: sizes rise 4×4 → 9×9 over the
+// first 130 levels, then the boards get harder by how much thinking they take
+// (the grader's effort), chapter by chapter. No skill score: a level is the
+// same for everyone, every time.
+export const LEVELS = LEVEL_DATA.length;
 
-// The grid size of each band, and the tier each of its levels asks for
-// (0 easy, 1 medium, 2 hard, 3 expert): rising, with a breather now and then.
-const BANDS = [
-  { n: 4, tiers: [0, 0, 0] },
-  { n: 5, tiers: [0, 0, 1, 0, 1, 1, 1] },
-  { n: 6, tiers: [0, 0, 1, 1, 1, 2, 1, 2, 2, 2] },
-  { n: 7, tiers: [0, 1, 1, 1, 2, 2, 1, 2, 2, 3] },
-  { n: 8, tiers: [1, 1, 1, 2, 2, 1, 2, 2, 3, 3] },
-  { n: 9, tiers: [1, 1, 2, 2, 1, 2, 2, 3, 2, 3] },
-];
-export const LEVEL_LIST = BANDS.flatMap((b) => b.tiers.map((tier) => ({ n: b.n, tier })));
+// 30 chapters of 20, each in one of the Crib's rooms (stageOf)
+export const CHAPTER = 20;
+export const CHAPTERS = Math.ceil(LEVELS / CHAPTER);
+export const chapterOf = (lv) => Math.floor((Math.max(1, Math.min(LEVELS, lv)) - 1) / CHAPTER) + 1;
+
+// Tiers by effort (engine.js grade): EASY ≤1, MEDIUM ≤3, HARD ≤7, EXPERT ≤15,
+// then MASTER (16+: two chains or more) and LEGEND (24+), so the long climb
+// through the 9×9 chapters shows (theme.js TIER_NAMES).
+export const tierOfEffort = (e) => (e <= 1 ? 0 : e <= 3 ? 1 : e <= 7 ? 2 : e <= 15 ? 3 : e <= 23 ? 4 : 5);
+
+export const LEVEL_LIST = LEVEL_DATA.map((d) => ({ n: d.n, tier: tierOfEffort(d.e), effort: d.e }));
 
 // Seconds per grid size: the level's limit, and the times A (3 creatures)
-// and B (2 creatures). Harder tiers get 20% more of each. First guesses —
-// tune after playing (SQUISHDOKU.md).
+// and B (2 creatures), for an effortless board; a board gets 5% more of each
+// per point of effort up to 30 (a 9×9 at effort 24 has 2.2 × as long, and
+// from 30 on, 2.5 ×: the hardest boards are about thinking, not the clock).
 const TIMES = {
   4: [60, 15, 30],
   5: [90, 30, 55],
@@ -35,30 +43,55 @@ const TIMES = {
 // XP smaller.
 export const HEAD_START = { time: 0.8, reward: 0.6 };
 
-// Level `lv` (1-50): { lv, n, tier, limitMs, aMs, bMs, head } — `skill`
-// (the profile's) moves the tier one step either way; `head` is HEAD START.
-export function levelSpec(lv, skill = 0, head = false) {
-  const base = LEVEL_LIST[Math.max(0, Math.min(LEVELS, lv) - 1)];
-  const tier = Math.max(0, Math.min(3, base.tier + skillShift(skill)));
-  const k = (1 + 0.2 * tier) * (head ? HEAD_START.time : 1);
-  const [limit, a, b] = TIMES[base.n].map((s) => Math.round(s * k) * 1000);
-  return { lv, n: base.n, tier, baseTier: base.tier, limitMs: limit, aMs: a, bMs: b, head: !!head };
+// Hearts (the user, 2026-11-07): from level 46 (the first 7×7) a level has 3,
+// a mistake costs one, and the third ends the try (RETRY: the same board).
+// Before, mistakes were free bar the stars, so a hard board could be beaten
+// by tapping around until the creatures landed. Levels 1-45 are for learning
+// and keep free mistakes (`hearts` 0).
+export const HEARTS = 3;
+export const HEARTS_FROM = 46;
+
+// Level `lv` (1-600): { lv, n, tier, effort, puzzle, limitMs, aMs, bMs, head, hearts }.
+// `puzzle` is the board: { n, regions (each cell's patch), solution (each
+// row's column), colors (each patch's PATCHES colour) }.
+export function levelSpec(lv, head = false) {
+  const L = Math.max(1, Math.min(LEVELS, Math.floor(lv) || 1));
+  const d = LEVEL_DATA[L - 1];
+  const k = (1 + 0.05 * Math.min(30, d.e)) * (head ? HEAD_START.time : 1);
+  const [limit, a, b] = TIMES[d.n].map((s) => Math.round((s * k) / 5) * 5 * 1000);
+  const puzzle = {
+    n: d.n,
+    regions: [...d.r].map((ch) => ch.charCodeAt(0) - 97),
+    solution: [...d.s].map(Number),
+    colors: [...d.c].map(Number),
+    effort: d.e,
+  };
+  return { lv: L, n: d.n, tier: tierOfEffort(d.e), effort: d.e, puzzle, limitMs: limit, aMs: a, bMs: b, head: !!head, hearts: L >= HEARTS_FROM ? HEARTS : 0 };
 }
 
-// --- adaptive difficulty -------------------------------------------------------
+// The Crib room a level is played in, and its time of day (the user,
+// 2026-11-07: Squishdoku in the rooms, Squish Hop's way). Each chapter has a
+// room, round the six in turn; the time of day moves on through the chapter.
+const CHAPTER_ROOMS = ['living', 'kitchen', 'bath', 'bed', 'yard', 'dance'];
+const PHASES_OF = { living: ['morning', 'day', 'evening', 'night'], kitchen: ['morning', 'day', 'evening', 'night'], bath: ['day'], bed: ['morning', 'day', 'evening', 'night'], yard: ['morning', 'day', 'evening', 'night'], dance: ['day'] };
+export const roomOfChapter = (c) => CHAPTER_ROOMS[(c - 1) % CHAPTER_ROOMS.length];
+export function stageOf(lv) {
+  const L = Math.max(1, Math.min(LEVELS, lv));
+  const c = chapterOf(L);
+  const room = roomOfChapter(c);
+  const phases = PHASES_OF[room];
+  const k = Math.min(phases.length - 1, Math.floor((((L - 1) % CHAPTER) / CHAPTER) * phases.length));
+  return { room, phase: phases[k], key: `${room}:${k}` };
+}
+
+// --- adaptive difficulty (Blitz only) ----------------------------------------------
+// Regular has no skill score since the 600 fixed levels; Blitz still deals
+// fresh boards, and its own skill (bSkill) moves their tiers.
 
 export const SKILL_MIN = -2;
 export const SKILL_MAX = 2;
 export const skillShift = (skill) => (skill <= -1 ? -1 : skill >= 1.2 ? 1 : 0);
 const clampSkill = (s) => Math.round(Math.max(SKILL_MIN, Math.min(SKILL_MAX, s)) * 100) / 100;
-
-// The skill after a level: fast clean solves raise it, mistakes and running
-// out of time lower it.
-export function nextSkill(skill = 0, { solved, stars = 0, mistakes = 0 }) {
-  if (!solved) return clampSkill(skill - 0.5);
-  const gain = stars === 3 ? 0.35 : stars === 2 ? 0.15 : 0;
-  return clampSkill(skill + gain - 0.12 * Math.min(3, mistakes));
-}
 
 // --- scoring --------------------------------------------------------------------
 
@@ -135,10 +168,7 @@ export function record(profile) {
 // (`before` / `after`: the result's XP bar).
 export function afterLevel(profile, spec, result) {
   const rec = record(profile);
-  const update = {
-    'sdk.plays': rec.plays + 1,
-    'sdk.skill': nextSkill(rec.skill, result),
-  };
+  const update = { 'sdk.plays': rec.plays + 1 };
   if (!result.solved) return { update, coins: 0, xp: 0, levelUps: [], unlocked: false };
   const { stars, perfect } = result;
   const coins = coinsFor(spec, result);

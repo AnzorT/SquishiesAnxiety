@@ -1,9 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, AppState, BackHandler, Easing, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import RoundButton from '../components/candy/RoundButton';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useRewardedAd from '../components/useRewardedAd';
 import sfx from '../audio/sfx';
-import Board from './Board';
+import RoomBoard, { SDK_TILT } from './RoomBoard';
+import Room, { roomGeometry } from '../hop/Room';
+import { layout } from '../hop/board';
+import { CribButton, RoomTitle } from '../crib/Hud';
 import Buddy from './Buddy';
 import { Pips, TimerBar } from './Hud';
 import { BlitzFailCard, BlitzWinCard, PauseCard, ReviveCard } from './Overlays';
@@ -11,24 +14,24 @@ import { FxLayer } from './fx';
 import { getPuzzle, makeHaptics, pickCreatures, prefetchImages, prefetchPuzzle, PLAY_SOUNDS, useClock } from './game';
 import { afterBlitz, BLITZ_SIZES, blitzMs, blitzSpec, clock, record } from './levels';
 import { Chip } from './ui';
-import { F, INK } from './theme';
+import { F } from './theme';
 import { saveSquishdoku } from '../firebase/firestore';
 
 // Blitz: ten boards on one clock, no ✕. One mistake (or the clock running
 // out) sends the run back to board 1 with new boards; one revive per run
 // (a rewarded ad, free with Remove Ads) keeps you on the board you're on.
+// Since 2026-11-07 a run is played in the Crib's Dance Room (party music,
+// party room), on Regular's room board (RoomBoard.js).
+
+const ROOM = 'dance';
 
 const BOARDS = BLITZ_SIZES.length;
-const PAUSE_GLYPH = (
-  <View style={{ flexDirection: 'row', gap: 4 }}>
-    <View style={{ width: 5, height: 15, borderRadius: 2, backgroundColor: '#ffffff' }} />
-    <View style={{ width: 5, height: 15, borderRadius: 2, backgroundColor: '#ffffff' }} />
-  </View>
-);
-
-export default function BlitzGame({ profile, uid, roster, adsFree, head = false, buddyKey, buddyUri, haptics: hapticsOn = true, onExit }) {
+export default function BlitzGame({ profile, uid, roster, cast = [], adsFree, head = false, buddyKey, buddyUri, haptics: hapticsOn = true, onExit }) {
   const RUN_MS = blitzMs(head);
   const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const castRef = useRef(cast);
+  castRef.current = cast;
   const haptics = useRef(makeHaptics(hapticsOn)).current;
   const ad = useRewardedAd();
   const [run, setRun] = useState(0);
@@ -87,8 +90,9 @@ export default function BlitzGame({ profile, uid, roster, adsFree, head = false,
     g.combo = 0;
     (async () => {
       const puzzle = await getPuzzle(spec.n, spec.tier);
-      const pieces = pickCreatures(roster, spec.n);
-      await prefetchImages(pieces, 1000);
+      const mine = castRef.current.filter((c) => c.mine);
+      const pieces = pickCreatures(mine.length ? mine : castRef.current, spec.n);
+      await prefetchImages(pieces.map((c) => c && c.source && c.source.uri), 1000);
       if (!alive) return;
       // HEAD START: the first row's creature, placed for you
       const given = head ? puzzle.solution[0] : null;
@@ -310,42 +314,56 @@ export default function BlitzGame({ profile, uid, roster, adsFree, head = false,
   }, [pause]);
 
   const again = () => setRun((r) => r + 1);
-  // room left under it for the buddy
-  const boardSize = Math.min(width - 24, height - 360, 460);
-  const barW = Math.min(width - 40, 420);
+  const barW = Math.min(width - 48, 400);
+  // the room fills the screen; the board lies on its floor
+  const [root, setRoot] = useState(null);
+  const [area, setArea] = useState(null);
+  const onRoot = useCallback((e) => {
+    const { width: w, height: h } = e.nativeEvent.layout;
+    setRoot((r) => (r && r.w === w && r.h === h ? r : { w, h }));
+  }, []);
+  const onArea = useCallback((e) => {
+    const { width: w, height: h, y } = e.nativeEvent.layout;
+    setArea((a) => (a && a.w === w && a.h === h && a.y === y ? a : { w, h, y }));
+  }, []);
+  const n = game ? game.puzzle.n : 4;
+  const floorY = root ? roomGeometry(ROOM, root.w, root.h).floorY : 0;
+  const B = useMemo(() => (area && root ? layout(n, n, area.w, area.h, floorY - area.y, SDK_TILT, 80) : null), [area, root, n, floorY]);
 
   return (
-    <View style={styles.fill}>
-      <View style={styles.header}>
-        <RoundButton size={40} onPress={phase === 'play' ? pause : exit}>
-          {phase === 'play' ? PAUSE_GLYPH : <Text style={styles.backText}>‹</Text>}
-        </RoundButton>
+    <View style={styles.fill} onLayout={onRoot}>
+      {root ? <Room room={ROOM} phase="day" width={root.w} height={root.h} /> : null}
+      {/* the Crib's top bar: pause (back once it's over), BLITZ and the board */}
+      <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
+        <CribButton face="pink" icon={phase === 'play' ? 'pause' : 'back'} size={44} onPress={phase === 'play' ? pause : exit} />
         <View style={styles.titleBox}>
-          <Text style={styles.title}>BLITZ ⚡</Text>
+          <RoomTitle title="Blitz ⚡" />
           <Text style={styles.boardNo}>{`BOARD ${Math.min(idx + 1, BOARDS)} OF ${BOARDS}`}</Text>
         </View>
-        <View style={{ width: 40 }} />
       </View>
-      <Pips done={done} current={phase === 'fail' || phase === 'win' ? -1 : idx} />
-      <View style={styles.rules}>
-        <Chip bg="#e01e4a" color="#ffffff">1 MISTAKE = BOARD 1</Chip>
-        <Chip bg={revived ? '#b9a6cc' : '#ffb02e'} color="#ffffff">
-          {revived ? 'REVIVE USED' : '♥ 1 REVIVE'}
-        </Chip>
-      </View>
-      <View style={styles.barRow}>
-        <TimerBar frac={clk.frac} width={barW} warn={warn} label={label} />
+      {/* the boards done, the rules and the run's clock, on the Crib's brown glass */}
+      <View style={styles.glass}>
+        <Pips done={done} current={phase === 'fail' || phase === 'win' ? -1 : idx} />
+        <View style={styles.rules}>
+          <Chip bg="#e01e4a" color="#ffffff">1 MISTAKE = BOARD 1</Chip>
+          <Chip bg={revived ? '#b9a6cc' : '#ffb02e'} color="#ffffff">
+            {revived ? 'REVIVE USED' : '♥ 1 REVIVE'}
+          </Chip>
+        </View>
+        <View style={styles.barRow}>
+          <TimerBar frac={clk.frac} width={barW} warn={warn} label={label} />
+        </View>
       </View>
 
-      <View style={styles.boardArea}>
-        {game ? (
+      <View style={styles.boardArea} onLayout={onArea}>
+        {game && B ? (
           // hidden while paused, and during the countdown until GO drops it in
-          <View style={{ opacity: phase === 'paused' || (phase === 'countdown' && count !== 'GO!') ? 0 : 1 }}>
-            <Board
+          <View style={[StyleSheet.absoluteFill, { opacity: phase === 'paused' || (phase === 'countdown' && count !== 'GO!') ? 0 : 1 }]}>
+            <RoomBoard
               key={game.id}
               ref={board}
               puzzle={game.puzzle}
-              size={boardSize}
+              B={B}
               pieces={game.pieces}
               allowX={false}
               locked={phase !== 'play'}
@@ -357,8 +375,8 @@ export default function BlitzGame({ profile, uid, roster, adsFree, head = false,
         {count != null ? <Countdown value={count} /> : null}
       </View>
       {/* the player's Lobby creature cheering them on */}
-      <View style={styles.bottom}>
-        <Buddy ref={buddy} creatureKey={buddyKey} uri={buddyUri} paused={phase === 'paused' || phase === 'fail' || phase === 'win' || phase === 'revive'} size={88} />
+      <View style={[styles.bottom, { marginBottom: Math.max(insets.bottom, 6) + 4 }]}>
+        <Buddy ref={buddy} creatureKey={buddyKey} uri={buddyUri} paused={phase === 'paused' || phase === 'fail' || phase === 'win' || phase === 'revive'} size={80} />
         <Text style={styles.hint}>{'Tap to place · no ✕ in Blitz\nthink before you tap!'}</Text>
       </View>
 
@@ -406,18 +424,18 @@ export function Countdown({ value }) {
   );
 }
 
+const GLASS = 'rgba(91,58,41,0.75)'; // the Crib's pills
 const styles = StyleSheet.create({
-  fill: { flex: 1, alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', paddingHorizontal: 14, paddingTop: 6, paddingBottom: 6 },
-  backText: { fontFamily: F.display, fontSize: 28, color: '#ffffff', marginTop: -4 },
-  titleBox: { flex: 1, alignItems: 'center' },
-  title: { fontFamily: F.display, fontSize: 24, color: '#ffffff', textShadowColor: '#0c5a9c', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 1, letterSpacing: 1.5 },
-  boardNo: { fontFamily: F.display, fontSize: 12, color: INK, letterSpacing: 1 },
-  rules: { flexDirection: 'row', gap: 6, marginTop: 8 },
-  barRow: { marginTop: 10, marginBottom: 4 },
-  boardArea: { flex: 1, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch' },
-  bottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 4, marginBottom: 10 },
-  hint: { fontFamily: F.heavy, fontSize: 11.5, color: '#6a4a9a', lineHeight: 16 },
+  fill: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', gap: 8, paddingHorizontal: 12, zIndex: 3 },
+  titleBox: { flex: 1, minWidth: 0 },
+  boardNo: { fontFamily: F.heavy, fontSize: 11, color: '#ffffff', letterSpacing: 0.8, marginTop: -2, textShadowColor: '#5b3a29', textShadowRadius: 1.5, textShadowOffset: { width: 0, height: 1 } },
+  glass: { alignSelf: 'center', alignItems: 'center', marginTop: 6, paddingHorizontal: 12, paddingTop: 6, paddingBottom: 6, borderRadius: 20, backgroundColor: GLASS, borderWidth: 2, borderColor: 'rgba(255,255,255,0.9)', zIndex: 1 },
+  rules: { flexDirection: 'row', gap: 6, marginTop: 6 },
+  barRow: { marginTop: 8 },
+  boardArea: { flex: 1, alignSelf: 'stretch', zIndex: 2 },
+  bottom: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 4, borderRadius: 22, backgroundColor: GLASS, borderWidth: 2, borderColor: 'rgba(255,255,255,0.9)', zIndex: 1 },
+  hint: { fontFamily: F.heavy, fontSize: 11.5, color: '#ffffff', lineHeight: 16 },
   // the cards sit at elevation 50 (Overlays.js)
   fxTop: { zIndex: 60, elevation: 60 },
   countWrap: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
