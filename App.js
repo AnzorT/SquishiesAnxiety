@@ -25,6 +25,7 @@ import LobbyScreen from './src/screens/LobbyScreen';
 import SquishdokuScreen from './src/screens/SquishdokuScreen';
 import SortScreen from './src/screens/SortScreen';
 import StackScreen from './src/screens/StackScreen';
+import HopScreen from './src/screens/HopScreen';
 import DailySpinScreen from './src/screens/DailySpinScreen';
 import LoadingScreen from './src/screens/LoadingScreen';
 import SquishScreen from './src/screens/SquishScreen';
@@ -126,7 +127,7 @@ const APP_TOAST_AT = { position: 'absolute', left: 0, right: 0, bottom: 150, hei
 // one empty object, so a memoized screen sees the same prop every render
 const NO_ACHIEVEMENTS = {};
 
-const SLIDE_IN = new Set(['crib', 'create', 'achievements', 'stats', 'streak', 'loading', 'squishdoku', 'sort', 'stack', 'road']);
+const SLIDE_IN = new Set(['crib', 'create', 'achievements', 'stats', 'streak', 'loading', 'squishdoku', 'sort', 'stack', 'hop', 'road']);
 // creature pictures fetched into the image cache at a time (see below)
 const PREFETCH_AT_ONCE = 6;
 // Screens over Home that need it truly hidden (Freeze, display: none) rather
@@ -159,6 +160,8 @@ const MUSIC_FOR_STAGE = {
   sort: 'party',
   // Squish Stack: calm, cosy stacking
   stack: 'cozy',
+  // Squish Hop: cosy, a hop through the Crib's rooms
+  hop: 'cozy',
   // the Crib plays its rooms' own music (CribScreen)
 };
 
@@ -558,6 +561,7 @@ export default function App() {
   const openSquishdoku = useCallback(() => setScreen('squishdoku'), []);
   const openSort = useCallback(() => setScreen('sort'), []);
   const openStack = useCallback(() => setScreen('stack'), []);
+  const openHop = useCallback(() => setScreen('hop'), []);
   const openRoad = useCallback(() => {
     setRoadAuto(null);
     setScreen('road');
@@ -1052,6 +1056,7 @@ export default function App() {
                   onOpenPuzzle={openSquishdoku}
                   onOpenSort={openSort}
                   onOpenStack={openStack}
+                  onOpenHop={openHop}
                   pickGames={tutorial.step === 'done'}
                   creatures={creatures}
                   hidden={hidden}
@@ -1143,6 +1148,11 @@ export default function App() {
           {stage === 'stack' && (
             <WhenScreenReady placeholder={<ScreenBones kind="hub" />}>
               <StackScreen profile={profile} creatures={creatures} hidden={hidden} uid={authUser?.uid} adsFree={adsFree} haptics={vibrationEnabled} onBack={goHome} />
+            </WhenScreenReady>
+          )}
+          {stage === 'hop' && (
+            <WhenScreenReady placeholder={<ScreenBones kind="map" />}>
+              <HopScreen profile={profile} creatures={creatures} hidden={hidden} uid={authUser?.uid} adsFree={adsFree} haptics={vibrationEnabled} onBack={goHome} />
             </WhenScreenReady>
           )}
           {stage === 'stats' && (

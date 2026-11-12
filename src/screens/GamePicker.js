@@ -18,6 +18,8 @@ import { MiniContainer } from '../sort/Container';
 import { useDoorLoop } from '../sort/Hub';
 import { LEVELS as STACK_LEVELS, record as stackRecord, starsOf as starsOfStack } from '../stack/levels';
 import { Cushion, OVER, Squishy, bodyH } from '../stack/Pieces';
+import { LEVELS as HOP_LEVELS, record as hopRecord, starsOf as starsOfHop } from '../hop/levels';
+import { FlatCushion, Star } from '../hop/Pieces';
 
 // The games, slid up over the Lobby by PLAY: a card per game with its own
 // little animated picture, flying in one after another. Tap one to play it.
@@ -28,6 +30,7 @@ import { Cushion, OVER, Squishy, bodyH } from '../stack/Pieces';
 //   onPick('squishdoku')   the puzzle (SQUISHDOKU.md)
 //   onPick('sort')         the memory game with the fridge (SQUISH_SORT.md)
 //   onPick('stack')        the Tower of Hanoi with squishies (SQUISH_STACK.md)
+//   onPick('hop')          the cushion-hopping path puzzle (SQUISH_HOP.md)
 // A last ghost card promises more.
 
 const ART = 104;
@@ -174,6 +177,52 @@ const StackArt = memo(function StackArt({ cast }) {
       </View>
       <Animated.View style={[at(0), { transform: [{ translateX: x }, { translateY: y }, { translateY: sy.interpolate({ inputRange: [0, 1], outputRange: [h[0] / 2, 0] }) }, { scaleX: sx }, { scaleY: sy }] }]}>
         <Squishy c={cast[0]} w={SC.widths[0]} />
+      </Animated.View>
+      <Twinkle size={11} color="#ffffff" duration={1.8} style={{ position: 'absolute', top: 10, right: 12 }} />
+    </View>
+  );
+});
+
+// Squish Hop: a squishy hops along three cushions to the ★ one, each cushion
+// puffing away behind it, then they all puff back. One native loop.
+const HC = { y: 66, xs: [20, 52, 84], size: 28 };
+const HopArt = memo(function HopArt({ cast }) {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(Animated.timing(t, { toValue: 1, duration: 3600, easing: Easing.linear, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [t]);
+  const c = cast[0];
+  if (!c) return <View style={[styles.art, { backgroundColor: '#cffff7' }]} />;
+  const w = 26;
+  const h = bodyH(c, w);
+  const [x0, x1, x2] = HC.xs;
+  const x = t.interpolate({ inputRange: [0, 0.14, 0.3, 0.44, 0.6, 1], outputRange: [x0, x0, x1, x1, x2, x2] });
+  const y = t.interpolate({ inputRange: [0, 0.14, 0.22, 0.3, 0.44, 0.52, 0.6, 0.7, 0.74, 0.78, 1], outputRange: [0, 0, -18, 0, 0, -18, 0, 0, -9, 0, 0] });
+  const sy = t.interpolate({ inputRange: [0, 0.3, 0.32, 0.36, 0.6, 0.62, 0.66, 1], outputRange: [1, 1, 0.8, 1, 1, 0.8, 1, 1] });
+  const o = t.interpolate({ inputRange: [0, 0.03, 0.86, 0.92, 1], outputRange: [0, 1, 1, 0, 0] });
+  // a cushion there until it's hopped off (`at`), back for the next loop
+  const there = (at) => t.interpolate({ inputRange: [0, at, at + 0.06, 0.94, 0.99, 1], outputRange: [1, 1, 0, 0, 1, 1] });
+  const cushion = (k, col, at) => {
+    const a = at == null ? null : there(at);
+    return (
+      <Animated.View key={k} style={{ position: 'absolute', left: HC.xs[k] - HC.size / 2, top: HC.y - HC.size * 0.45, opacity: a || 1, transform: a ? [{ scale: a.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }) }] : [] }}>
+        <FlatCushion size={HC.size} col={col} id={`pick${k}`} />
+      </Animated.View>
+    );
+  };
+  return (
+    <View style={styles.art}>
+      <LinearGradient colors={['#fff4e2', '#f4c98f']} style={StyleSheet.absoluteFill} />
+      {cushion(0, 'mint', 0.16)}
+      {cushion(1, 'mint', 0.46)}
+      {cushion(2, 'peach', null)}
+      <View style={{ position: 'absolute', left: x2 - 7, top: HC.y - 6 }}>
+        <Star size={14} />
+      </View>
+      <Animated.View style={{ position: 'absolute', left: -w / 2, top: HC.y - h + 2, opacity: o, transform: [{ translateX: x }, { translateY: y }, { translateY: h / 2 }, { scaleY: sy }, { scaleX: Animated.add(2, Animated.multiply(sy, -1)) }, { translateY: -h / 2 }] }}>
+        <Squishy c={c} w={w} />
       </Animated.View>
       <Twinkle size={11} color="#ffffff" duration={1.8} style={{ position: 'absolute', top: 10, right: 12 }} />
     </View>
@@ -340,6 +389,7 @@ function GamePicker({ visible, warm = false, profile, creatureName, creatureUri,
   const rec = record(profile);
   const srt = sortRecord(profile);
   const stk = stackRecord(profile);
+  const hop = hopRecord(profile);
   const pick = (game) => () => onPick(game);
   return (
     <Freeze freeze={slept && !open}>
@@ -401,7 +451,18 @@ function GamePicker({ visible, warm = false, profile, creatureName, creatureUri,
               art={<StackArt cast={stackCast} />}
               onPress={pick('stack')}
             />
-            <GameCard index={4} trigger={key} ghost colors={['#f7f2fc', '#ece3f7', '#ded2ee']} ring="#9a86c0" title="MORE SOON" lines={['New mini-games are on the way!']} art={<SoonArt />} />
+            <GameCard
+              index={4}
+              trigger={key}
+              colors={['#f0fffb', '#b8f5e8', '#6fdcc8']}
+              ring="#0b6670"
+              title="SQUISH HOP"
+              lines={['Hop every cushion before the ★! They puff away behind you']}
+              chips={[`LEVEL ${hop.lv}/${HOP_LEVELS}`, ...(starsOfHop(hop) ? [`★ ${starsOfHop(hop)}`] : []), 'NEW!']}
+              art={<HopArt cast={stackCast} />}
+              onPress={pick('hop')}
+            />
+            <GameCard index={5} trigger={key} ghost colors={['#f7f2fc', '#ece3f7', '#ded2ee']} ring="#9a86c0" title="MORE SOON" lines={['New mini-games are on the way!']} art={<SoonArt />} />
           </ScrollView>
         </Animated.View>
       </View>

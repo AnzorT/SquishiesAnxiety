@@ -256,6 +256,9 @@ export const saveSort = (uid, update, coins = 0, xp = 0, profile = null) => save
 // Squish Stack (SQUISH_STACK.md): the `stack` record.
 export const saveStack = (uid, update, coins = 0, xp = 0, profile = null) => saveGame('saveStack', uid, update, coins, xp, profile);
 
+// Squish Hop (SQUISH_HOP.md): the `hop` record (src/hop/levels.js afterLevel).
+export const saveHop = (uid, update, coins = 0, xp = 0, profile = null) => saveGame('saveHop', uid, update, coins, xp, profile);
+
 // Accounts created before this app matched the new roster have an
 // `ownedIds` that predates STARTER_CREATURE_IDS (e.g. the old single 'buddy'
 // starter) — without this, the free starter (Glorp) would show up locked for

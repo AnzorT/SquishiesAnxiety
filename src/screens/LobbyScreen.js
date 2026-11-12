@@ -192,7 +192,7 @@ function useSettled(active, ms) {
   return settled;
 }
 
-function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cribUnlocked = false, pickGames = true, level = 1, xpInto = 0, xpNeed = 100, roadWaiting = 0, onOpenRoad, onOpenCrib, onOpenAchievements, onOpenSettings, onOpenShop, onPlay, onOpenPuzzle, onOpenSort, onOpenStack, onSelect, onSeen }) {
+function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cribUnlocked = false, pickGames = true, level = 1, xpInto = 0, xpNeed = 100, roadWaiting = 0, onOpenRoad, onOpenCrib, onOpenAchievements, onOpenSettings, onOpenShop, onPlay, onOpenPuzzle, onOpenSort, onOpenStack, onOpenHop, onSelect, onSeen }) {
   const insets = useSafeAreaInsets();
   // off while the lobby is out of sight (a screen over it, the Shop's page
   // beside it): its live creature is taken out then. A WebView, even paused
@@ -305,9 +305,10 @@ function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cr
       if (game === 'squishdoku') onOpenPuzzle && onOpenPuzzle();
       else if (game === 'sort') onOpenSort && onOpenSort();
       else if (game === 'stack') onOpenStack && onOpenStack();
+      else if (game === 'hop') onOpenHop && onOpenHop();
       else play();
     },
-    [onOpenPuzzle, onOpenSort, onOpenStack, play],
+    [onOpenPuzzle, onOpenSort, onOpenStack, onOpenHop, play],
   );
   const owned = ownedKey(profile);
   const puzzleUris = useMemo(() => rosterOf(creatures, profile).slice(0, 8), [creatures, owned]); // eslint-disable-line react-hooks/exhaustive-deps
