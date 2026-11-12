@@ -11,7 +11,7 @@ import useRewardedAd from '../components/useRewardedAd';
 import { PRODUCTS, GEM_KEYS } from '../economy';
 import { todayKey } from '../dailySpin';
 import sfx from '../audio/sfx';
-import { BY_ID, GDEAL, HIDDEN, SET_REWARDS, SEASON, SIZES, SIZE_I, SWAPS, AD_CHESTS, lineup, outIds, owns, wallet } from '../squad/data';
+import { BY_ID, GDEAL, GROUPS, HIDDEN, RAINBOW, SET_REWARDS, SEASON, SIZES, SIZE_I, SWAPS, AD_CHESTS, lineup, outIds, owns, rainbowProgress, rainbowReady, wallet } from '../squad/data';
 import * as squad from '../squad/api';
 import { BtnText, CandyBtn, CoinIcon, F, GemIcon, GOLD_RING, PINK_RING, Ringed, untilMidnight } from '../squad/ui';
 import ChestsTabV6, { ChestSheetBody, OddsSheetBody } from './ShopChests';
@@ -63,7 +63,10 @@ const ERRORS = {
   need_pass: 'This reward needs the season pass',
   season_over: 'The season is over',
   unknown_reward: 'That reward isn\'t there any more',
+  rainbow_locked: 'Unlock the rest of the group first',
+  rainbow_opened: 'That Rainbow chest is already open',
 };
+const GROUP_NAME = Object.fromEntries(GROUPS.map((g) => [g.key, g.name]));
 const fmt = fmtNum;
 // the season's last minute (its chest's "Ends in" countdown)
 const SEASON_END = new Date(2026, 9, 31, 23, 59);
@@ -239,7 +242,7 @@ const GemsTab = memo(function GemsTab({ firstBought, adsFree, priceOf, onPack, o
 
 // --- the sheet ---------------------------------------------------------------------
 
-function Sheet({ sheet, profile, catalog, artIds, setRewards, wallet: w, onClose, onBroke, onBuyGroup }) {
+function Sheet({ sheet, profile, catalog, artIds, setRewards, rainbow, wallet: w, onClose, onBroke, onBuyGroup }) {
   const up = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     up.setValue(0);
@@ -249,11 +252,11 @@ function Sheet({ sheet, profile, catalog, artIds, setRewards, wallet: w, onClose
   const translateY = up.interpolate({ inputRange: [0, 1], outputRange: [500, 0] });
   let body = null;
   if (sheet.type === 'odds') {
-    body = <OddsSheetBody />;
+    body = <OddsSheetBody rainbow={rainbow} />;
   } else if (sheet.type === 'gchest') {
     body = (
       <ScrollView style={styles.sheetScroll} contentContainerStyle={{ paddingBottom: 6 }} showsVerticalScrollIndicator={false}>
-        <ChestSheetBody gk={sheet.gk} size={sheet.size} profile={profile} artIds={artIds} setRewards={setRewards} catalog={catalog} wallet={w} onBuy={onBuyGroup} />
+        <ChestSheetBody gk={sheet.gk} size={sheet.size} profile={profile} artIds={artIds} setRewards={setRewards} rainbow={rainbow} catalog={catalog} wallet={w} onBuy={onBuyGroup} />
       </ScrollView>
     );
   } else if (sheet.type === 'broke') {
@@ -332,8 +335,9 @@ export const ShopPageBones = memo(function ShopPageBones() {
 // `openKey`: bumped by App each time something opens the Shop on a tab
 // (`startTab`); the Shop goes there without being rebuilt. `hidden`: the
 // groups and creatures not out yet; `setRewards`: whether set rewards stay
-// out of chests (config/roster)
-function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRewards = SET_REWARDS, onSeenOffer, onBuyProduct, priceOf, onBack, startTab = 'chests', openKey = 0, onImmersive }) {
+// out of chests; `rainbow`: Rainbow chests earned once per group ('chest')
+// or sold ('shop') (config/roster)
+function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRewards = SET_REWARDS, rainbow = RAINBOW, onSeenOffer, onBuyProduct, priceOf, onBack, startTab = 'chests', openKey = 0, onImmersive }) {
   const insets = useSafeAreaInsets();
   // the tab's content is built a couple of frames after the Shop opens
   // (placeholders until then), so its first frame is up at once
@@ -434,18 +438,35 @@ function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRew
     if (r && r.id) {
       const name = BY_ID[r.id].name;
       // a copy toward unlocking it, the copy that unlocks it, or a duplicate
-      flash(r.isNew ? `${name} joined your squad!` : r.copies ? `${name}: ${r.copies} / ${r.need} found` : `${name} again: +${fmt(r.dupeCoins)} coins`);
+      if (r.rainbow) flash(`${name} joined! The ${GROUP_NAME[r.rainbow]} Rainbow chest is yours to open`);
+      else flash(r.isNew ? `${name} joined your squad!` : r.copies ? `${name}: ${r.copies} / ${r.need} found` : `${name} again: +${fmt(r.dupeCoins)} coins`);
     }
   }, [smash, flash]);
+  // A group's earned Rainbow chest (squad rainbowChest): free, once, when
+  // the rest of the group is unlocked; until then, or once it's open, a note.
+  const openRainbow = useCallback(
+    (gk) => {
+      const p = profile || {};
+      const r = rainbowProgress(p, gk, artIds);
+      if (!r.reward || !artIds.includes(r.reward)) return flash(`${GROUP_NAME[gk]} has no Rainbow chest`);
+      if (owns(p, r.reward)) return flash(`${BY_ID[r.reward].name} is already in your squad`);
+      if (!rainbowReady(p, gk, artIds)) return flash(`Unlock every ${GROUP_NAME[gk]} pal to earn it: ${r.have} / ${r.need}`);
+      sfx.play('coin');
+      openGroup(() => squad.rainbowChest(gk), undefined, { group: gk, size: 'set' });
+    },
+    [profile, artIds, openGroup, flash],
+  );
   const buyGroup = useCallback(
     (gk, size) => {
+      // (a Rainbow chest isn't sold while they're earned: it's opened)
+      if (size === 'set' && rainbow === 'chest') return openRainbow(gk);
       const T = SIZES[SIZE_I[size]];
       const cur = T.price.cur;
       if (w[cur] < T.price.n) return setSheet({ type: 'broke', cur, need: T.price.n - w[cur] });
       sfx.play('coin');
       openGroup(() => squad.groupChest(gk, size), () => T.price.n - w[cur], { group: gk, size });
     },
-    [openGroup, w],
+    [openGroup, openRainbow, rainbow, w],
   );
   const freeGroup = useCallback(() => {
     if ((profile?.freeAt || 0) > Date.now() && !profile?.freeBonus) return flash(ERRORS.not_yet);
@@ -659,6 +680,7 @@ function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRew
                   artIds={artIds}
                   hidden={hidden}
                   setRewards={setRewards}
+                  rainbow={rainbow}
                   onFree={freeGroup}
                   onAd={adGroup}
                   onDeal={dealGroup}
@@ -687,6 +709,7 @@ function ShopScreen({ profile, creatures, offers = null, hidden = HIDDEN, setRew
           catalog={catalog}
           artIds={artIds}
           setRewards={setRewards}
+          rainbow={rainbow}
           wallet={w}
           onBuyGroup={buyGroup}
           onClose={() => setSheet(null)}

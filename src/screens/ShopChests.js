@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
 import Pressable from '../components/Pressable';
 import ShadowText from '../components/candy/ShadowText';
-import { BY_ID, GDEAL, GROUPS, LUCK_MAX, RAR_LOOK, ROSTER, SEASON, SIZES, SIZE_I, UPGRADE, AD_CHESTS, copyProgress, dropRar, dupeCoinsFor, groupOut, inGroupChest, owns, lineup } from '../squad/data';
+import { BY_ID, GDEAL, GROUPS, LUCK_MAX, RAINBOW, RAR_LOOK, ROSTER, SEASON, SET_OF, SIZES, SIZE_I, UPGRADE, AD_CHESTS, copyProgress, dropRar, dupeCoinsFor, groupOut, inGroupChest, owns, lineup, rainbowProgress, rainbowReady } from '../squad/data';
 import GCHEST, { CHEST_NAMES } from '../squad/groupChestArt';
 import { COIN, GEM } from '../squad/currencyArt';
 import { Bob, F, TickingText, hms, untilMidnight } from '../squad/ui';
@@ -57,11 +57,38 @@ export function allChests(day, hidden) {
   ];
 }
 
+// A group's earned Rainbow chest (functions/squad.js RAINBOW): not sold, it
+// opens free once the rest of the group is unlocked, with the group's
+// Rainbow creature inside. `pool`: the rest of the group (what earns it).
+// `earned`: { reward (null: the group has none out), ready, opened, have, need }
+const GREEN_LOOK = { bg: GREEN, rim: '#17652f', ink: '#ffffff', ts: '#17652f' };
+function rainbowInfo(gk, profile, artIds) {
+  const p = profile || {};
+  const r = rainbowProgress(p, gk, artIds);
+  const reward = r.reward && artIds.includes(r.reward) ? BY_ID[r.reward] : null;
+  const opened = !!reward && owns(p, reward.id);
+  const ready = rainbowReady(p, gk, artIds);
+  const ti = SIZE_I.set;
+  return {
+    ti,
+    T: SIZES[ti],
+    pool: ((SET_OF[gk] && SET_OF[gk].ids) || []).filter((id) => artIds.includes(id)).map((id) => BY_ID[id]),
+    have: r.have,
+    name: (CHEST_NAMES[gk] || [])[ti] || 'Rainbow chest',
+    look: ready ? GREEN_LOOK : GREY,
+    odds: reward ? `${reward.name} 100%` : '',
+    dupeCoins: '',
+    upNote: '',
+    earned: { reward, ready, opened, have: r.have, need: r.need },
+  };
+}
+
 // A group's chest of a size: what the card and the sheet say.
-export function chestInfo(gk, size, profile, artIds, setRewards) {
+export function chestInfo(gk, size, profile, artIds, setRewards, rainbow = RAINBOW) {
+  if (size === 'set' && rainbow === 'chest') return rainbowInfo(gk, profile, artIds);
   const ti = SIZE_I[size];
   const T = SIZES[ti];
-  const pool = ROSTER.filter((c) => inGroupChest(c, gk, setRewards) && artIds.includes(c.id));
+  const pool = ROSTER.filter((c) => inGroupChest(c, gk, setRewards, rainbow) && artIds.includes(c.id));
   const have = pool.filter((c) => owns(profile || {}, c.id)).length;
   const epicUp = Math.round((T.odds[2] + T.odds[3]) * 10) / 10;
   return {
@@ -224,7 +251,10 @@ const Deal = memo(function Deal({ gk, done, onBuy }) {
 // pictures are ~2.3 MB of texture each, and nine whole cards at once were a
 // 0.25 s frame as the Shop was built); the others are an empty card of the
 // same width until a swipe brings them near (2026-10-28).
-const Card = memo(function Card({ x, size, info, width, index, near = true, onSize, onOpen, onBuy }) {
+// `rb`: the group's earned Rainbow chest while those are earned (rainbowInfo's
+// `earned`), else null: its size button only shows when the group has one,
+// with a dot when it's ready.
+const Card = memo(function Card({ x, size, info, rb, width, index, near = true, onSize, onOpen, onBuy }) {
   const C = info;
   const tc = TC[C.ti];
   const gemsCur = C.T.price.cur === 'gems';
@@ -275,55 +305,97 @@ const Card = memo(function Card({ x, size, info, width, index, near = true, onSi
           </View>
           <View style={styles.sizes}>
             {SIZES.map((T, ti) => {
+              if (T.k === 'set' && rb && !rb.reward) return null;
               const on = T.k === size;
               const q = TC[ti];
               return (
                 <Pressable key={T.k} onPress={() => onSize(x.k, T.k)} style={[styles.sizeBtn, { backgroundColor: on ? q.soft : '#f7f3fc', borderColor: on ? q.c : '#ece4f7' }]}>
                   <LinearGradient colors={q.dot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.sizeDot, on && { shadowColor: q.c, elevation: 3 }]} />
                   <Text style={[styles.sizeText, { color: on ? q.c : '#8a78b0' }]}>{ti === 3 ? 'Legend' : T.k === 'set' ? 'Rainbow' : SIZE_NAME[ti]}</Text>
+                  {T.k === 'set' && rb && rb.ready ? <View style={styles.readyDot} /> : null}
                 </Pressable>
               );
             })}
           </View>
-          {!!C.upNote && (
-            <View style={styles.upNote}>
-              <Svg width={16} height={16} viewBox="0 0 24 24">
-                <Circle cx={12} cy={12} r={11} fill="#26a94e" />
-                <Path d="M12 17.5V7M7.5 11.5L12 7L16.5 11.5" stroke="#ffffff" strokeWidth={2.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-              <Text style={styles.upNoteText}>{C.upNote}</Text>
-            </View>
-          )}
-          <View style={styles.row6}>
-            <View style={[styles.info, { backgroundColor: '#f4eefc' }]}>
-              <Text style={[styles.infoLabel, { color: '#8a78b0' }]}>DROP ODDS</Text>
-              <Text style={[styles.infoValue, { color: '#45107a' }]}>{C.odds}</Text>
-            </View>
-            <View style={[styles.info, { backgroundColor: '#fff6dc' }]}>
-              <Text style={[styles.infoLabel, { color: '#b88a40' }]}>DUPLICATE</Text>
-              <Text style={[styles.infoValue, { color: '#b86200' }]}>{`${C.dupeCoins} coins`}</Text>
-            </View>
-          </View>
-          <TutTarget name={index === 0 ? 'buy:hot' : `buy:${x.k}`}>
-            <Candy colors={C.look.bg} rim={C.look.rim} lip={5} radius={20} height={54} onPress={() => onBuy(x.k, size)}>
-              <View style={styles.buyRow}>
-                <Label size={20} color={C.look.ink} ts={C.look.ts}>
-                  Open
-                </Label>
-                <View style={styles.pricePill}>
-                  <Image source={gemsCur ? GEM[0] : COIN[0]} style={styles.icon28} />
-                  <Text style={[styles.priceText, { color: gemsCur ? '#5a22c8' : '#b86200' }]}>{fmt(C.T.price.n)}</Text>
-                </View>
+          {C.earned ? (
+            <EarnedBody C={C} onPress={() => onBuy(x.k, size)} />
+          ) : (
+            <>
+            {!!C.upNote && (
+              <View style={styles.upNote}>
+                <Svg width={16} height={16} viewBox="0 0 24 24">
+                  <Circle cx={12} cy={12} r={11} fill="#26a94e" />
+                  <Path d="M12 17.5V7M7.5 11.5L12 7L16.5 11.5" stroke="#ffffff" strokeWidth={2.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+                <Text style={styles.upNoteText}>{C.upNote}</Text>
               </View>
-            </Candy>
-          </TutTarget>
+            )}
+            <View style={styles.row6}>
+              <View style={[styles.info, { backgroundColor: '#f4eefc' }]}>
+                <Text style={[styles.infoLabel, { color: '#8a78b0' }]}>DROP ODDS</Text>
+                <Text style={[styles.infoValue, { color: '#45107a' }]}>{C.odds}</Text>
+              </View>
+              <View style={[styles.info, { backgroundColor: '#fff6dc' }]}>
+                <Text style={[styles.infoLabel, { color: '#b88a40' }]}>DUPLICATE</Text>
+                <Text style={[styles.infoValue, { color: '#b86200' }]}>{`${C.dupeCoins} coins`}</Text>
+              </View>
+            </View>
+            <TutTarget name={index === 0 ? 'buy:hot' : `buy:${x.k}`}>
+              <Candy colors={C.look.bg} rim={C.look.rim} lip={5} radius={20} height={54} onPress={() => onBuy(x.k, size)}>
+                <View style={styles.buyRow}>
+                  <Label size={20} color={C.look.ink} ts={C.look.ts}>
+                    Open
+                  </Label>
+                  <View style={styles.pricePill}>
+                    <Image source={gemsCur ? GEM[0] : COIN[0]} style={styles.icon28} />
+                    <Text style={[styles.priceText, { color: gemsCur ? '#5a22c8' : '#b86200' }]}>{fmt(C.T.price.n)}</Text>
+                  </View>
+                </View>
+              </Candy>
+            </TutTarget>
+            </>
+          )}
         </View>
       </View>
     </View>
   );
 });
 
-function Carousel({ list, profile, artIds, setRewards, onOpen, onBuy }) {
+// An earned Rainbow chest's part of a card (rainbowInfo): what's inside and
+// how far the group is, then Open free (ready), the group still to finish,
+// or Opened. The Shop (buyGroup) says which when it's tapped.
+function EarnedBody({ C, onPress }) {
+  const e = C.earned;
+  const label = e.opened ? 'Opened' : e.ready ? 'Open free!' : `Unlock all ${e.need} pals`;
+  return (
+    <>
+      <View style={[styles.upNote, styles.rbNote]}>
+        <Text style={[styles.upNoteText, { color: '#8e1580' }]}>
+          {e.opened ? `${e.reward.name} is in your squad.` : e.ready ? `Ready! ${e.reward.name} is inside, all yours.` : `Not sold. Unlock every other pal of this group to earn it, once, with ${e.reward ? e.reward.name : 'its Rainbow pal'} inside.`}
+        </Text>
+      </View>
+      <View style={styles.row6}>
+        <View style={[styles.info, { backgroundColor: '#ffe6f6' }]}>
+          <Text style={[styles.infoLabel, { color: '#d6249a' }]}>INSIDE</Text>
+          <Text style={[styles.infoValue, { color: '#8e1580' }]} numberOfLines={1}>
+            {e.reward ? `${e.reward.name} · Rainbow` : '-'}
+          </Text>
+        </View>
+        <View style={[styles.info, { backgroundColor: '#f4eefc' }]}>
+          <Text style={[styles.infoLabel, { color: '#8a78b0' }]}>ONCE ONLY</Text>
+          <Text style={[styles.infoValue, { color: '#45107a' }]}>{e.opened ? 'Opened' : `${e.have} / ${e.need} pals`}</Text>
+        </View>
+      </View>
+      <Candy colors={C.look.bg} rim={C.look.rim} lip={5} radius={20} height={54} onPress={onPress}>
+        <Label size={20} color={C.look.ink} ts={C.look.ts}>
+          {label}
+        </Label>
+      </Candy>
+    </>
+  );
+}
+
+function Carousel({ list, profile, artIds, setRewards, rainbow, onOpen, onBuy }) {
   const { width: winW } = useWindowDimensions();
   const cardW = winW - 40;
   const step = cardW + 12;
@@ -401,8 +473,10 @@ function Carousel({ list, profile, artIds, setRewards, onOpen, onBuy }) {
         contentContainerStyle={styles.car}
       >
         {list.map((x, i) => {
-          const size = sel[x.k] || 'epic';
-          return <Card key={x.k} x={x} index={i} size={size} width={cardW} near={Math.abs(i - seen) <= 1} info={chestInfo(x.k, size, profile, artIds, setRewards)} onSize={onSize} onOpen={onOpen} onBuy={onBuy} />;
+          // a group's earned Rainbow chest shows first while it waits
+          const rb = rainbow === 'chest' ? rainbowInfo(x.k, profile, artIds).earned : null;
+          const size = sel[x.k] || (rb && rb.ready ? 'set' : 'epic');
+          return <Card key={x.k} x={x} index={i} size={size} width={cardW} near={Math.abs(i - seen) <= 1} info={chestInfo(x.k, size, profile, artIds, setRewards, rainbow)} rb={rb} onSize={onSize} onOpen={onOpen} onBuy={onBuy} />;
         })}
       </ScrollView>
     </>
@@ -444,7 +518,7 @@ function Lucky({ epic }) {
 // rest): built in one go, the tab's views and chest pictures made one ~0.25 s
 // frame on the Galaxy A15 when the Shop was built again after the Crib
 // (2026-10-28).
-function ChestsTab({ profile, day, artIds, hidden, setRewards, onFree, onAd, onDeal, onOpenSheet, onBuy, onOdds }) {
+function ChestsTab({ profile, day, artIds, hidden, setRewards, rainbow = RAINBOW, onFree, onAd, onDeal, onOpenSheet, onBuy, onOdds }) {
   const hot = useMemo(() => lineup(day, hidden), [day, hidden]);
   const welcome = !!profile && !owns(profile, '1') && !profile.chestOpens;
   const list = useMemo(() => allChests(day, hidden), [day, hidden]);
@@ -469,7 +543,7 @@ function ChestsTab({ profile, day, artIds, hidden, setRewards, onFree, onAd, onD
           </View>
         </View>
       )}
-      {parts >= 2 && <Carousel list={list} profile={profile} artIds={artIds} setRewards={setRewards} onOpen={onOpenSheet} onBuy={onBuy} />}
+      {parts >= 2 && <Carousel list={list} profile={profile} artIds={artIds} setRewards={setRewards} rainbow={rainbow} onOpen={onOpenSheet} onBuy={onBuy} />}
       {parts >= 3 && <Lucky epic={profile?.epic || 0} />}
       {parts >= 3 && (
         <Pressable onPress={onOdds} style={styles.oddsLink}>
@@ -483,8 +557,9 @@ export default memo(ChestsTab);
 
 // --- the sheets: a chest's details, and every size's odds ----------------------------------
 
-export function ChestSheetBody({ gk, size, profile, artIds, setRewards, catalog, wallet, onBuy }) {
-  const C = chestInfo(gk, size, profile, artIds, setRewards);
+export function ChestSheetBody({ gk, size, profile, artIds, setRewards, rainbow = RAINBOW, catalog, wallet, onBuy }) {
+  const C = chestInfo(gk, size, profile, artIds, setRewards, rainbow);
+  if (C.earned) return <EarnedSheetBody gk={gk} C={C} profile={profile} catalog={catalog} onBuy={() => onBuy(gk, size)} />;
   const tc = TC[C.ti];
   const gemsCur = C.T.price.cur === 'gems';
   const afford = (gemsCur ? wallet.gems : wallet.coins) >= C.T.price.n;
@@ -544,18 +619,79 @@ export function ChestSheetBody({ gk, size, profile, artIds, setRewards, catalog,
   );
 }
 
-export function OddsSheetBody() {
+// An earned Rainbow chest's sheet: the chest, who's inside, the rest of the
+// group (what earns it), and the card's button.
+function EarnedSheetBody({ gk, C, profile, catalog, onBuy }) {
+  const e = C.earned;
+  const tc = TC[C.ti];
+  const rewardUri = e.reward ? catalog[e.reward.id]?.thumb?.url : null;
+  return (
+    <View style={styles.sheetBody}>
+      <ImageBackground source={GCHEST[gk].bg} style={styles.sheetArt} imageStyle={{ borderRadius: 22 }} resizeMode="cover">
+        <Bob ms={2600} style={styles.sheetChest}>
+          <Image source={GCHEST[gk]['set-grow']} style={styles.fill} resizeMode="contain" fadeDuration={0} />
+        </Bob>
+      </ImageBackground>
+      <View style={styles.sheetTag}>
+        <Text style={[styles.sheetTagText, { color: tc.c }]}>{`${GROUP_LABEL[gk]} · RAINBOW · ONCE ONLY`}</Text>
+      </View>
+      <Text style={styles.sheetName}>{C.name}</Text>
+      <Text style={styles.rbSheetNote}>
+        {e.opened ? `Opened: ${e.reward.name} is in your squad.` : `Not sold in the shop. Unlock every other pal of this group and it's yours, once, free.`}
+      </Text>
+      {e.reward ? (
+        <View style={styles.rbInside}>
+          <View style={styles.rbInsideImg}>{rewardUri ? <Image source={{ uri: rewardUri }} style={styles.monImg} resizeMode="contain" /> : null}</View>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={styles.rbInsideLabel}>INSIDE</Text>
+            <Text style={styles.rbInsideName}>{e.reward.name}</Text>
+            <Text style={styles.rbInsideSub}>Rainbow pal · joins whole, no copies</Text>
+          </View>
+        </View>
+      ) : null}
+      <View style={styles.sheetRow}>
+        <Text style={styles.sheetInside}>The rest of the group</Text>
+        <Text style={styles.sheetHave}>{`${e.have} / ${e.need} unlocked`}</Text>
+      </View>
+      <View style={styles.mons}>
+        {C.pool.map((c) => {
+          const o = owns(profile || {}, c.id);
+          const uri = catalog[c.id]?.thumb?.url;
+          const cp = o ? null : copyProgress(profile, c.id);
+          return (
+            <View key={c.id} style={[styles.mon, { backgroundColor: o ? '#ffffff' : '#f7f3fc', borderColor: o ? '#26a94e' : '#ece4f7' }]}>
+              {uri ? <Image source={{ uri }} style={[styles.monImg, { opacity: o ? 1 : 0.45 }]} resizeMode="contain" /> : null}
+              {cp && (
+                <View style={styles.monNew}>
+                  <Text style={styles.monNewText}>{`${cp.have}/${cp.need}`}</Text>
+                </View>
+              )}
+            </View>
+          );
+        })}
+      </View>
+      <Candy colors={C.look.bg} rim={C.look.rim} lip={5} radius={20} height={58} style={{ alignSelf: 'stretch' }} onPress={onBuy}>
+        <Label size={20} color={C.look.ink} ts={C.look.ts}>
+          {e.opened ? 'Opened' : e.ready ? 'Open free!' : `Unlock all ${e.need} pals`}
+        </Label>
+      </Candy>
+    </View>
+  );
+}
+
+export function OddsSheetBody({ rainbow = RAINBOW }) {
+  const earned = rainbow === 'chest';
   return (
     <View style={styles.sheetBody}>
       <Text style={styles.sheetName}>Drop odds</Text>
       {SIZES.map((T, i) => (
         <View key={T.k} style={styles.oddsRow}>
           <Text style={[styles.oddsRowName, { color: TC[i].c }]}>{SIZE_NAME[i]}</Text>
-          <Text style={styles.oddsRowOdds}>{T.odds.map((o) => `${o}%`).join(' / ')}</Text>
+          <Text style={styles.oddsRowOdds}>{earned && T.k === 'set' ? "Not sold: earned once by unlocking a group, with its Rainbow pal" : T.odds.map((o) => `${o}%`).join(' / ')}</Text>
         </View>
       ))}
       <Text style={styles.oddsNote}>
-        Order: Common / Rare / Epic / Legendary. Common and Rare chests can upgrade on your first smash. The lucky meter guarantees an Epic or better at least every 10 chests. Duplicates turn into coins.
+        {`Order: Common / Rare / Epic / Legendary. Common and Rare chests can upgrade on your first smash. The lucky meter guarantees an Epic or better at least every 10 chests. Duplicates turn into coins.${earned ? " Rainbow pals come only from their group's Rainbow chest." : ''}`}
       </Text>
     </View>
   );
@@ -634,6 +770,15 @@ const styles = StyleSheet.create({
   sizeText: { fontFamily: F.black, fontSize: 9.5 },
   upNote: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 12, backgroundColor: '#e6fbec', borderWidth: 2, borderColor: '#c6efd3' },
   upNoteText: { flex: 1, fontFamily: F.heavy, fontSize: 11.5, lineHeight: 14.5, color: '#17652f' },
+  // the earned Rainbow chest
+  rbNote: { backgroundColor: '#fff0fa', borderColor: '#ffc8ec' },
+  readyDot: { position: 'absolute', top: 3, right: 5, width: 10, height: 10, borderRadius: 5, backgroundColor: '#ff3d6e', borderWidth: 2, borderColor: '#ffffff' },
+  rbSheetNote: { fontFamily: F.heavy, fontSize: 12.5, lineHeight: 17, color: '#8e1580', textAlign: 'center' },
+  rbInside: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderRadius: 18, backgroundColor: '#fff0fa', borderWidth: 2, borderColor: '#ffc8ec' },
+  rbInsideImg: { width: 72, height: 72, borderRadius: 16, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  rbInsideLabel: { fontFamily: F.black, fontSize: 10, letterSpacing: 1, color: '#d6249a' },
+  rbInsideName: { fontFamily: F.display, fontSize: 20, lineHeight: 22, color: '#45107a' },
+  rbInsideSub: { fontFamily: F.heavy, fontSize: 11, color: '#8a78b0' },
   info: { flex: 1, minWidth: 0, gap: 1, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 12 },
   infoLabel: { fontFamily: F.heavy, fontSize: 9.5, letterSpacing: 0.8 },
   infoValue: { fontFamily: F.black, fontSize: 12 },

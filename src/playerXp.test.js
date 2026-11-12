@@ -1,6 +1,7 @@
 // node src/playerXp.test.js — the player's XP and level (src/playerXp.js).
 import assert from 'node:assert/strict';
 import { addXp, gameXp, migrateXp, prizeText, pxpOf, roadClaimable, roadPrize, roadView, setLevelsConfig, winXp, xpRules, xpToNext, xpToReach, xpView } from './playerXp.js';
+import { setRainbowMode } from './squad/data.js';
 
 // a profile from before player XP: its level's XP plus its Puzzle XP
 assert.equal(pxpOf({ level: 3 }), 500);
@@ -44,7 +45,12 @@ assert.equal(roadPrize(51), null);
 assert.equal(prizeText({ k: 'coins', n: 1200 }), '1,200 coins');
 assert.equal(prizeText({ k: 'gems', n: 30 }), '30 gems');
 assert.equal(prizeText({ k: 'chest', t: 'epic' }), 'an Epic chest');
+// a Rainbow chest from the road comes as a Legendary while Rainbow chests are
+// earned (the default), and as itself when they're sold (config/roster)
+assert.equal(prizeText({ k: 'chest', t: 'set' }), 'a Legendary chest');
+setRainbowMode({ rainbow: 'shop' });
 assert.equal(prizeText({ k: 'chest', t: 'set' }), 'a Rainbow chest');
+setRainbowMode(null);
 
 // config/levels changes the curve, the road and the XP at once
 setLevelsConfig({ xpPerLevel: 50, road: [{ k: 'coins', n: 1 }, { k: 'gems', n: 2 }, { k: 'coins', n: 3 }], xp: { replay: 0.25, games: 2, challenge: 40 } });

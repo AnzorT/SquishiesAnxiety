@@ -8,13 +8,14 @@ import { BtnText, CandyBtn, F, GOLD, GOLD_RING, Ringed } from '../squad/ui';
 import GCHEST from '../squad/groupChestArt';
 import { COIN, GEM } from '../squad/currencyArt';
 import { CHEST_NAME } from '../playerXp';
+import { shownSize } from '../squad/data';
 import { fmtNum } from '../format';
 
 // The player level's pieces (PLAYER_XP.md): a level road prize's art, the
 // lobby's LV chip, and the LEVEL UP card App shows when the level rises.
 
 // "1,200 coins", "50 gems", "Rare chest"
-export const prizeLabel = (r) => (!r ? '' : r.k === 'coins' ? `${fmtNum(r.n)} coins` : r.k === 'gems' ? `${fmtNum(r.n)} gems` : `${CHEST_NAME[r.t] || ''} chest`);
+export const prizeLabel = (r) => (!r ? '' : r.k === 'coins' ? `${fmtNum(r.n)} coins` : r.k === 'gems' ? `${fmtNum(r.n)} gems` : `${CHEST_NAME[shownSize(r.t)] || ''} chest`);
 
 // A prize's picture: a coin or gem (one of the six stamped ones, by `i`),
 // or the chest of its size in `group`'s art (the group its chest opens in).
@@ -24,7 +25,7 @@ export const PrizeArt = memo(function PrizeArt({ r, group, i = 0, size = 44, dim
   if (r.k === 'chest') {
     // the art is 480 × 400 with the chest about half its width: drawn
     // bigger, spilling over its `size` box
-    const art = (GCHEST[group] || GCHEST.snack)[`${r.t}-grow`];
+    const art = (GCHEST[group] || GCHEST.snack)[`${shownSize(r.t)}-grow`];
     const w = size * 2;
     const h = (w * 400) / 480;
     return <Image source={art} style={[{ width: w, height: h, marginHorizontal: (size - w) / 2, marginVertical: (size - h) / 2 }, op]} resizeMode="contain" fadeDuration={0} />;

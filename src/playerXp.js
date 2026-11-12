@@ -5,6 +5,7 @@
 // it pays the road's prizes: `levelClaim`), so they change without an app
 // update. Pure functions: src/firebase/firestore.js writes what they return.
 import squad from '../functions/squad.js';
+import { shownSize } from './squad/data.js';
 
 // config/levels as App last saw it (setLevelsConfig, before the screens
 // redraw; nothing yet: the defaults)
@@ -87,10 +88,12 @@ export const roadPrize = (lv) => levelsConfig().road[lv - 1] || null;
 export const CHEST_NAME = { common: 'Common', rare: 'Rare', epic: 'Epic', legendary: 'Legendary', set: 'Rainbow' };
 const fmt = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-// "1,200 coins", "50 gems", "a Rare chest"
+// "1,200 coins", "50 gems", "a Rare chest" (a Rainbow one is a Legendary
+// while Rainbow chests are earned: src/squad/data.js shownSize)
 export function prizeText(r) {
   if (!r) return '';
   if (r.k === 'coins') return `${fmt(r.n)} coins`;
   if (r.k === 'gems') return `${fmt(r.n)} gems`;
-  return `${r.t === 'epic' ? 'an' : 'a'} ${CHEST_NAME[r.t] || ''} chest`;
+  const t = shownSize(r.t);
+  return `${t === 'epic' ? 'an' : 'a'} ${CHEST_NAME[t] || ''} chest`;
 }

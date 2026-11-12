@@ -136,7 +136,7 @@ function checkAppleTransaction(tx, uid, productId) {
 // `result` goes back to the app.
 // An offer's grant (config/offers): `set` holds the profile fields to write
 // as they are (verifyPurchase writes them as given).
-function offerGrant(offer, profile, offers, { artIds = [], hidden, setRewards, need, day, random } = {}) {
+function offerGrant(offer, profile, offers, { artIds = [], hidden, setRewards, need, rainbow, day, random } = {}) {
   const num = (n) => (typeof n === 'number' && Number.isFinite(n) ? n : 0);
   const bought = { ...(profile.offersBought || {}), [offer.id]: true };
   if (offer.kind === 'bundle') {
@@ -146,7 +146,9 @@ function offerGrant(offer, profile, offers, { artIds = [], hidden, setRewards, n
     let set = { gems: p.gems, coins: p.coins, totalEarned: p.totalEarned };
     const hot = lineup(day, hidden);
     const chests = (offer.chests || []).map((size, i) => {
-      const o = openGroup(p, hot[i % hot.length], size, { artIds, random, setRewards, need });
+      // (a Rainbow chest in a bundle opens as a Legendary while those are
+      // earned: squad.js RAINBOW)
+      const o = openGroup(p, hot[i % hot.length], size, { artIds, random, setRewards, need, rainbow });
       Object.entries(o.set).forEach(([k, v]) => {
         if (k.startsWith('col.')) p = { ...p, col: { ...(p.col || {}), [k.slice(4)]: v } };
         else p = { ...p, [k]: v };
@@ -167,14 +169,14 @@ function offerGrant(offer, profile, offers, { artIds = [], hidden, setRewards, n
   return { error: 'unknown_product' };
 }
 
-function grantFor({ productId, creatureId, profile, rosterIds, offers = null, artIds = [], hidden, setRewards, need, day, random }) {
+function grantFor({ productId, creatureId, profile, rosterIds, offers = null, artIds = [], hidden, setRewards, need, rainbow, day, random }) {
   const base = baseProduct(productId);
   if (!base) return { error: 'unknown_product' };
 
   if (base.startsWith('offer_')) {
     const offer = offerFor(productId, offers);
     if (!offer) return { error: 'unknown_product' };
-    return offerGrant(offer, profile, offers, { artIds, hidden, setRewards, need, day, random });
+    return offerGrant(offer, profile, offers, { artIds, hidden, setRewards, need, rainbow, day, random });
   }
 
   if (GEM_PACKS[base]) {

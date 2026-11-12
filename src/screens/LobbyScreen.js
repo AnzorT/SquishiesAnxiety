@@ -192,7 +192,7 @@ function useSettled(active, ms) {
   return settled;
 }
 
-function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cribUnlocked = false, pickGames = true, level = 1, xpInto = 0, xpNeed = 100, roadWaiting = 0, onOpenRoad, onOpenCrib, onOpenAchievements, onOpenSettings, onOpenShop, onPlay, onOpenPuzzle, onOpenSort, onOpenStack, onOpenHop, onSelect, onSeen }) {
+function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, rainbow, cribUnlocked = false, pickGames = true, level = 1, xpInto = 0, xpNeed = 100, roadWaiting = 0, onOpenRoad, onOpenCrib, onOpenAchievements, onOpenSettings, onOpenShop, onPlay, onOpenPuzzle, onOpenSort, onOpenStack, onOpenHop, onSelect, onSeen }) {
   const insets = useSafeAreaInsets();
   // off while the lobby is out of sight (a screen over it, the Shop's page
   // beside it): its live creature is taken out then. A WebView, even paused
@@ -407,7 +407,7 @@ function LobbyScreen({ active = true, profile, creatures, hidden, setRewards, cr
           style={[StyleSheet.absoluteFill, styles.over, { transform: [{ translateY: up.interpolate({ inputRange: [0, 1], outputRange: [winH, 0] }) }] }]}
         >
           <Freeze freeze={squadDone && !squadUp}>
-            <SquadScreen active={active && squadOpen} profile={profile} creatures={creatures} hidden={hidden} setRewards={setRewards} onClose={closeSquad} onSelect={onSelect} onSeen={onSeen} onBuilt={onSquadBuilt} />
+            <SquadScreen active={active && squadOpen} profile={profile} creatures={creatures} hidden={hidden} setRewards={setRewards} rainbow={rainbow} onClose={closeSquad} onSelect={onSelect} onSeen={onSeen} onBuilt={onSquadBuilt} />
           </Freeze>
         </Animated.View>
       )}

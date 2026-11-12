@@ -7,7 +7,7 @@ import ShadowText, { outline3 } from '../components/candy/ShadowText';
 import ShineSweep from '../components/candy/ShineSweep';
 import { RaysSpin } from '../components/candy/Decor';
 import { Twinkle } from '../components/candy/Sparkles';
-import { SWAPS, jarGems, lineup, offersOf } from '../squad/data';
+import { SWAPS, jarGems, lineup, offersOf, shownSize } from '../squad/data';
 import GCHEST from '../squad/groupChestArt';
 import { COIN, GEM } from '../squad/currencyArt';
 import { F, hms, untilMidnight } from '../squad/ui';
@@ -44,7 +44,7 @@ const GREEN_BTN = { colors: ['#e2ffcf', '#7be884', '#26a94e'], rim: '#17652f' };
 const GOLD_BTN = { colors: ['#fff9c9', '#ffd84a', '#ffa60a'], rim: '#9c4d06' };
 const PINK_BTN = { colors: ['#ffe0f7', '#ff6fcf', '#c02bd9'], rim: '#8e1580' };
 const PURPLE_BTN = { colors: ['#f1e2ff', '#b67cff', '#7a2fe0'], rim: '#45189a' };
-const rewardText = (r) => (r.k === 'coins' ? `${fmt(r.n)}` : r.k === 'gems' ? `${r.n}` : SIZE_NAME[r.t] || '');
+const rewardText = (r) => (r.k === 'coins' ? `${fmt(r.n)}` : r.k === 'gems' ? `${r.n}` : SIZE_NAME[shownSize(r.t)] || '');
 const DAY = 864e5;
 
 // --- shared pieces -----------------------------------------------------------------------
@@ -323,7 +323,7 @@ const DAY_LOOK = {
   done: { bg: ['#fff6ea', '#ffe0c2'], ring: '#d98a52', ink: '#b8662a' },
   big: { bg: ['#fbf5ff', '#dcc6ff'], ring: '#6a22d6', ink: '#5a22c8' },
 };
-const rewardLong = (r) => (r.k === 'coins' ? `${fmt(r.n)} coins` : r.k === 'gems' ? `${r.n} gems` : `${SIZE_NAME[r.t] || ''} chest`);
+const rewardLong = (r) => (r.k === 'coins' ? `${fmt(r.n)} coins` : r.k === 'gems' ? `${r.n} gems` : `${SIZE_NAME[shownSize(r.t)] || ''} chest`);
 // day i's coin or gem (its claim flies out as this)
 const dayBit = (r, i) => (r.k === 'gems' ? GEM[i % 6] : COIN[i % 6]);
 
@@ -344,7 +344,7 @@ function StreakDay({ r, i, last, done, today, hot, artRef, onPress }) {
   }, [today, bob]);
   const art =
     r.k === 'chest' ? (
-      <Image source={GCHEST[hot][`${r.t}-grow`]} style={last ? styles.dayChestBig : styles.dayChest} resizeMode="contain" />
+      <Image source={GCHEST[hot][`${shownSize(r.t)}-grow`]} style={last ? styles.dayChestBig : styles.dayChest} resizeMode="contain" />
     ) : (
       <Image source={dayBit(r, i)} style={last ? styles.dayImgBig : styles.dayImg} />
     );
@@ -544,9 +544,9 @@ function Bundle({ offer, hot, price, seenAt, onBuy, index }) {
             {chests.length > 0 && (
               <Pod
                 wide
-                img={GCHEST[hot[0]][`${chests[0]}-grow`]}
+                img={GCHEST[hot[0]][`${shownSize(chests[0])}-grow`]}
                 imgStyle={styles.podChest}
-                amount={`${chests.length > 1 ? `${chests.length}× ` : ''}${SIZE_NAME[chests[0]]} chest${chests.length > 1 ? 's' : ''}`}
+                amount={`${chests.length > 1 ? `${chests.length}× ` : ''}${SIZE_NAME[shownSize(chests[0])]} chest${chests.length > 1 ? 's' : ''}`}
                 ink={INK}
               />
             )}
@@ -576,7 +576,7 @@ function PassNode({ r, i, xp, got, prem, onPress }) {
   const bit = r.k === 'gems' ? GEM[(i + 2) % 6] : COIN[(i + 1) % 6];
   const img = (
     <View ref={icon} collapsable={false}>
-      {r.k === 'chest' ? <Image source={GCHEST.spooky[`${r.t}-grow`]} style={styles.nodeChest} resizeMode="contain" /> : <Image source={bit} style={styles.nodeImg} />}
+      {r.k === 'chest' ? <Image source={GCHEST.spooky[`${shownSize(r.t)}-grow`]} style={styles.nodeChest} resizeMode="contain" /> : <Image source={bit} style={styles.nodeImg} />}
     </View>
   );
   return (

@@ -49,7 +49,7 @@ import { subscribeToAuthUser, logout, needsVerification } from './src/firebase/a
 import { listenForSocial } from './src/firebase/social';
 import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
 import FpsCounter from './src/components/FpsCounter';
-import { BY_ID, hiddenOf, isOut, lineup, owns, setCopyCounts, setRewardsOf, wallet as walletOf } from './src/squad/data';
+import { BY_ID, hiddenOf, isOut, lineup, owns, rainbowOf, setCopyCounts, setRainbowMode, setRewardsOf, wallet as walletOf } from './src/squad/data';
 import {
   subscribeToUserProfile,
   subscribeToCreatures,
@@ -373,6 +373,7 @@ export default function App() {
     if (!authUser) return undefined;
     return subscribeToRoster((cfg) => {
       setCopyCounts(cfg);
+      setRainbowMode(cfg);
       setRosterCfg(cfg);
     });
   }, [authUser]);
@@ -388,6 +389,8 @@ export default function App() {
     });
   }, [authUser]);
   const setRewards = setRewardsOf(rosterCfg);
+  // Rainbow chests earned once per group, or sold (config/roster { rainbow })
+  const rainbow = rainbowOf(rosterCfg);
   // the catalog less what's not out yet (one already owned stays): what the
   // achievements and stats count
   const counted = useMemo(
@@ -1061,6 +1064,7 @@ export default function App() {
                   creatures={creatures}
                   hidden={hidden}
                   setRewards={setRewards}
+                  rainbow={rainbow}
                   onSelect={selectSquishy}
                   onSeen={squadSeen}
                 />
@@ -1074,6 +1078,7 @@ export default function App() {
                   offers={offers}
                   hidden={hidden}
                   setRewards={setRewards}
+                  rainbow={rainbow}
                   onSeenOffer={seenOffer}
                   onBuyProduct={purchase}
                   priceOf={priceOf}

@@ -143,8 +143,10 @@ p = { ownedIds: fruit.ids.slice(0, -1), coins: 0, copies: ready(fruit.ids[fruit.
 // for now (SET_REWARDS off, config/roster's setRewards) it brings nothing extra
 assert.strictEqual(S.SET_REWARDS, false);
 assert.strictEqual(S.setRewardsOf(null), false);
-assert.strictEqual(S.setRewardsOf({ setRewards: true }), true);
-assert.strictEqual(S.setRewardsOf({ setRewards: 'yes' }), false);
+// (only with Rainbow chests sold: while they're earned, set rewards are off)
+assert.strictEqual(S.setRewardsOf({ setRewards: true }), false);
+assert.strictEqual(S.setRewardsOf({ setRewards: true, rainbow: 'shop' }), true);
+assert.strictEqual(S.setRewardsOf({ setRewards: 'yes', rainbow: 'shop' }), false);
 g = S.grant(p, fruit.ids[fruit.ids.length - 1], 'n');
 assert.strictEqual(g.result.reward, null);
 assert.strictEqual(g.result.coins, 0);
@@ -260,14 +262,14 @@ assert.ok(m.result.isNew);
 assert.strictEqual(m.result.copies, 5);
 assert.deepStrictEqual(m.set.ownedIds, [oceanId]);
 // a Rainbow (a set reward from a chest) takes 15
-m = S.MOVES.groupChest({ gems: 1e4, ownedIds: ['28'] }, { group: 'snack', size: 'set', artIds: ALL, random: seq(0.99, 0.99, 0.5) });
+m = S.MOVES.groupChest({ gems: 1e4, ownedIds: ['28'] }, { group: 'snack', size: 'set', artIds: ALL, rainbow: 'shop', random: seq(0.99, 0.99, 0.5) });
 assert.strictEqual(m.result.need, 15);
 // prices and money checks
 assert.strictEqual(S.MOVES.groupChest({ coins: 299 }, { group: 'ocean', size: 'common', artIds: ALL }).error, 'not_enough_coins');
 assert.strictEqual(S.MOVES.groupChest({ gems: 119 }, { group: 'ocean', size: 'epic', artIds: ALL }).error, 'not_enough_gems');
 assert.strictEqual(S.MOVES.groupChest({ gems: 1e4 }, { group: 'nope', size: 'epic', artIds: ALL }).error, 'unknown_chest');
 assert.strictEqual(S.MOVES.groupChest({ gems: 1e4 }, { group: 'ocean', size: 'huge', artIds: ALL }).error, 'unknown_chest');
-m = S.MOVES.groupChest({ gems: 700, coins: 0 }, { group: 'pet', size: 'set', artIds: ALL, random: seq(0.5) });
+m = S.MOVES.groupChest({ gems: 700, coins: 0 }, { group: 'pet', size: 'set', artIds: ALL, rainbow: 'shop', random: seq(0.5) });
 assert.strictEqual(m.set.gems, 20);
 assert.ok(m.result.rar >= 2); // a Rainbow chest is Epic or Legendary
 assert.strictEqual(m.set.epic, 0);
@@ -301,29 +303,29 @@ assert.strictEqual(m.result.dupeCoins, 336);
 assert.strictEqual(m.set.coins, 700 + 336);
 // with set rewards on, never a set reward; never a creature without art
 for (let i = 0; i < 200; i++) {
-  const r = S.MOVES.groupChest({ gems: 1e4 }, { group: 'snack', size: 'set', artIds: ALL, setRewards: true }).result;
+  const r = S.MOVES.groupChest({ gems: 1e4 }, { group: 'snack', size: 'set', artIds: ALL, rainbow: 'shop', setRewards: true }).result;
   assert.ok(!S.BY_ID[r.id].reward);
 }
 // for now a set reward drops too, as a Legendary of its group (Chef Bun with Boba)
 const chefBun = S.SET_OF.snack.reward;
 let gotReward = 0;
 for (let i = 0; i < 400; i++) {
-  const r = S.MOVES.groupChest({ gems: 1e4 }, { group: 'snack', size: 'set', artIds: ALL }).result;
+  const r = S.MOVES.groupChest({ gems: 1e4 }, { group: 'snack', size: 'set', artIds: ALL, rainbow: 'shop' }).result;
   assert.ok(S.BY_ID[r.id].set === 'snack' && S.dropRar(S.BY_ID[r.id]) >= 2);
   if (r.id === chefBun) gotReward++;
 }
 assert.ok(gotReward > 0);
 // a Legendary roll: Boba or Chef Bun, unowned ones 3x as likely
-m = S.MOVES.groupChest({ gems: 1e4, ownedIds: ['28'] }, { group: 'snack', size: 'set', artIds: ALL, random: seq(0.99, 0.99, 0.5) });
+m = S.MOVES.groupChest({ gems: 1e4, ownedIds: ['28'] }, { group: 'snack', size: 'set', artIds: ALL, rainbow: 'shop', random: seq(0.99, 0.99, 0.5) });
 assert.strictEqual(m.result.id, chefBun);
 assert.strictEqual(m.result.rar, 4);
 assert.strictEqual(m.result.reward, null);
 // its duplicate pays 7% of the Rainbow chest's worth
-m = S.MOVES.groupChest({ gems: 1e4, ownedIds: ['28', chefBun] }, { group: 'snack', size: 'set', artIds: ALL, random: seq(0.99, 0.99, 0.9) });
+m = S.MOVES.groupChest({ gems: 1e4, ownedIds: ['28', chefBun] }, { group: 'snack', size: 'set', artIds: ALL, rainbow: 'shop', random: seq(0.99, 0.99, 0.9) });
 assert.strictEqual(m.result.dupeCoins, S.dupeCoinsFor('set'));
 // with set rewards on, a set's last member from a chest brings the reward
 const snackLast = S.SET_OF.snack.ids;
-m = S.MOVES.groupChest({ coins: 1e4, ownedIds: snackLast.slice(1), copies: ready(snackLast[0]) }, { group: 'snack', size: 'common', artIds: [snackLast[0]], setRewards: true, random: seq(0.99, 0.1, 0.1, 0.5) });
+m = S.MOVES.groupChest({ coins: 1e4, ownedIds: snackLast.slice(1), copies: ready(snackLast[0]) }, { group: 'snack', size: 'common', artIds: [snackLast[0]], setRewards: true, rainbow: 'shop', random: seq(0.99, 0.1, 0.1, 0.5) });
 assert.strictEqual(m.result.reward, chefBun);
 assert.strictEqual(S.MOVES.groupChest({ gems: 1e4 }, { group: 'snack', size: 'epic', artIds: [] }).result.id, null);
 // the free chest: today's first HOT group, Common, every 4 h
@@ -475,5 +477,109 @@ assert.strictEqual(S.levelsOf({ xp: { replay: 7 } }).xp.replay, 0.5);
 assert.strictEqual(S.levelsOf({ xp: { challenge: 40 } }).xp.challenge, 40);
 assert.strictEqual(S.levelsOf({ xp: { challenge: 40 } }).xp.chest, 100);
 assert.strictEqual(S.offersOf(null).road, undefined, 'the road left config/offers');
+
+// --- the Rainbow chest (user, 2026-11-12): earned once, never sold ---------------
+// config/roster { rainbow }: 'chest' (also missing or anything else) or 'shop'
+assert.strictEqual(S.RAINBOW, 'chest');
+assert.strictEqual(S.rainbowOf(null), 'chest');
+assert.strictEqual(S.rainbowOf({ rainbow: 'shop' }), 'shop');
+assert.strictEqual(S.rainbowOf({ rainbow: 'chest' }), 'chest');
+assert.strictEqual(S.rainbowOf({ rainbow: 'yes' }), 'chest');
+assert.strictEqual(S.givenSize('set'), 'legendary');
+assert.strictEqual(S.givenSize('set', 'shop'), 'set');
+assert.strictEqual(S.givenSize('epic'), 'epic');
+// not sold: neither the group chest nor the old Rainbow tier
+assert.strictEqual(S.MOVES.groupChest({ gems: 1e4 }, { group: 'snack', size: 'set', artIds: ALL }).error, 'unknown_chest');
+assert.strictEqual(S.MOVES.groupChest({ gems: 1e4 }, { group: 'snack', size: 'set', artIds: ALL, rainbow: 'chest' }).error, 'unknown_chest');
+assert.strictEqual(S.MOVES.buyChest({ gems: 1e4 }, { tier: 'rainbow', day: DAY }).error, 'unknown_chest');
+assert.ok(!S.MOVES.buyChest({ gems: 1e4 }, { tier: 'rainbow', day: DAY, rainbow: 'shop' }).error);
+// a Rainbow creature drops from no chest (a Legendary chest's top is Boba)
+for (let i = 0; i < 300; i++) {
+  const r = S.MOVES.groupChest({ gems: 1e4 }, { group: 'snack', size: 'legendary', artIds: ALL }).result;
+  assert.ok(!S.BY_ID[r.id].reward);
+}
+m = S.MOVES.groupChest({ gems: 1e4, ownedIds: ['28'] }, { group: 'snack', size: 'legendary', artIds: ALL, random: seq(0.99, 0.99, 0.5) });
+assert.strictEqual(m.result.id, '28');
+// nor from the old tiers' chests
+for (let i = 0; i < 100; i++) {
+  const r = S.MOVES.openChest({ chestBag: { rainbow: 1 } }, { tier: 'rainbow', artIds: ALL }).result;
+  assert.ok(!S.BY_ID[r.id].reward);
+}
+// a Rainbow chest from anywhere else is a Legendary: a reward, a bundle…
+m = S.openGroup({}, 'snack', 'set', { artIds: ALL, random: seq(0.5) });
+assert.strictEqual(m.result.size, 'legendary');
+assert.strictEqual(m.result.final, 'legendary');
+assert.ok(!m.result.upgraded);
+assert.strictEqual(S.openGroup({}, 'snack', 'set', { artIds: ALL, random: seq(0.5), rainbow: 'shop' }).result.size, 'set');
+// …and the first-smash upgrade tops out at Legendary (the share roll 0.99
+// would be Rainbow)
+m = S.MOVES.groupChest({ coins: 1000 }, { group: 'snack', size: 'common', artIds: ALL, random: seq(0.1, 0.99, 0.5, 0.5, 0.5) });
+assert.strictEqual(m.result.final, 'legendary');
+m = S.MOVES.groupChest({ coins: 1000 }, { group: 'snack', size: 'common', artIds: ALL, rainbow: 'shop', random: seq(0.1, 0.99, 0.5, 0.5, 0.5) });
+assert.strictEqual(m.result.final, 'set');
+// the way to it: the group's other creatures that are out
+const snack = S.SET_OF.snack;
+assert.deepStrictEqual(S.rainbowProgress({}, 'snack', ALL), { have: 0, need: snack.ids.length, reward: snack.reward });
+assert.deepStrictEqual(S.rainbowProgress({ ownedIds: snack.ids.slice(1) }, 'snack', ALL).have, snack.ids.length - 1);
+// one hidden (not in artIds) isn't needed
+assert.strictEqual(S.rainbowProgress({}, 'snack', ALL.filter((id) => id !== snack.ids[0])).need, snack.ids.length - 1);
+assert.strictEqual(S.rainbowReady({ ownedIds: snack.ids.slice(1) }, 'snack', ALL), false);
+assert.strictEqual(S.rainbowReady({ ownedIds: snack.ids.slice(1) }, 'snack', ALL.filter((id) => id !== snack.ids[0])), true);
+assert.strictEqual(S.rainbowReady({ ownedIds: snack.ids }, 'snack', ALL), true);
+// not once the Rainbow creature is owned, nor with it hidden; no group
+// without one has a Rainbow chest
+assert.strictEqual(S.rainbowReady({ ownedIds: [...snack.ids, snack.reward] }, 'snack', ALL), false);
+assert.strictEqual(S.rainbowReady({ ownedIds: snack.ids }, 'snack', ALL.filter((id) => id !== snack.reward)), false);
+assert.strictEqual(S.rainbowReady({ ownedIds: S.SET_OF.dream.ids }, 'dream', ALL), false);
+assert.strictEqual(S.rainbowReady({ ownedIds: ALL }, 'spooky', ALL), false);
+// the chest that unlocks a group's last creature says it earned the Rainbow
+// chest (the last: the first Common, the one a 0.1 pick lands on)
+const last = snack.ids.find((id) => S.BY_ID[id].rar === 0);
+const others = snack.ids.filter((id) => id !== last);
+m = S.MOVES.groupChest({ coins: 1e4, ownedIds: others, copies: ready(last) }, { group: 'snack', size: 'common', artIds: [...snack.ids, snack.reward], random: seq(0.99, 0.1, 0.1, 0.5) });
+assert.strictEqual(m.result.id, last);
+assert.ok(m.result.isNew);
+assert.strictEqual(m.result.rainbow, 'snack');
+assert.strictEqual(m.result.reward, null);
+assert.ok(!m.set.ownedIds.includes(snack.reward));
+// a copy short of it, or with set rewards' old way, it doesn't
+m = S.MOVES.groupChest({ coins: 1e4, ownedIds: others }, { group: 'snack', size: 'common', artIds: [...snack.ids, snack.reward], random: seq(0.99, 0.1, 0.1, 0.5) });
+assert.strictEqual(m.result.id, last);
+assert.strictEqual(m.result.rainbow, null);
+m = S.MOVES.groupChest({ coins: 1e4, ownedIds: others, copies: ready(last) }, { group: 'snack', size: 'common', artIds: [...snack.ids, snack.reward], rainbow: 'shop', random: seq(0.99, 0.1, 0.1, 0.5) });
+assert.strictEqual(m.result.id, last);
+assert.strictEqual(m.result.rainbow, null);
+// opening it: free, the Rainbow creature whole, once
+p = { coins: 50, gems: 7, ownedIds: [...snack.ids], copies: { [snack.reward]: 3 }, chestOpens: 4, passXp: 10 };
+m = S.MOVES.rainbowChest(p, { group: 'snack', artIds: ALL });
+assert.ok(!m.error, m.error);
+assert.strictEqual(m.result.id, snack.reward);
+assert.strictEqual(m.result.size, 'set');
+assert.strictEqual(m.result.final, 'set');
+assert.strictEqual(m.result.rar, 4);
+assert.ok(m.result.isNew);
+assert.strictEqual(m.result.copies, m.result.need);
+assert.ok(m.set.ownedIds.includes(snack.reward));
+assert.deepStrictEqual(m.set[`col.${snack.reward}`], { f: { n: 1 }, eq: 'n', st: 0 });
+assert.deepStrictEqual(m.set.copies, {});
+assert.strictEqual(m.set.coins, undefined);
+assert.strictEqual(m.set.gems, undefined);
+assert.strictEqual(m.set.chestOpens, 5);
+assert.strictEqual(m.set.passXp, 10 + 80);
+assert.strictEqual(m.set.tierPulls['Set reward'], 1);
+p = { ...p, ownedIds: m.set.ownedIds, col: { [snack.reward]: m.set[`col.${snack.reward}`] } };
+assert.strictEqual(S.MOVES.rainbowChest(p, { group: 'snack', artIds: ALL }).error, 'rainbow_opened');
+// not before the group is done, not for a group without one, not when sold
+assert.strictEqual(S.MOVES.rainbowChest({ ownedIds: snack.ids.slice(1) }, { group: 'snack', artIds: ALL }).error, 'rainbow_locked');
+assert.strictEqual(S.MOVES.rainbowChest({ ownedIds: S.SET_OF.dream.ids }, { group: 'dream', artIds: ALL }).error, 'unknown_chest');
+assert.strictEqual(S.MOVES.rainbowChest({ ownedIds: snack.ids }, { group: 'nope', artIds: ALL }).error, 'unknown_chest');
+assert.strictEqual(S.MOVES.rainbowChest({ ownedIds: snack.ids }, { group: 'snack', artIds: ALL, rainbow: 'shop' }).error, 'unknown_chest');
+// every group with a Rainbow creature can earn it
+for (const k of S.SETS) {
+  const s = S.SET_OF[k];
+  if (!s.reward) continue;
+  m = S.MOVES.rainbowChest({ ownedIds: s.ids }, { group: k, artIds: ALL });
+  assert.strictEqual(m.result.id, s.reward, k);
+}
 
 console.log('squad.test.js: all passed');

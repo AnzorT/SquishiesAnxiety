@@ -5,7 +5,7 @@
 // look and open, and reads of the profile for the screens.
 import squad from '../../functions/squad.js';
 
-export const { RARITY, GROUPS, SETS, SEASON, ROSTER, BY_ID, SET_OF, HIDDEN, hiddenOf, isOut, groupOut, outIds, SET_REWARDS, setRewardsOf, COPIES, copiesOf, needOf, copiesHad, dropRar, inGroupChest, DUPE, SET_BONUS, FIN, STAGES, CHESTS, PITY_MAX, EPIC_MAX, DEAL, VIDEO_CHESTS, SWAPS, GEM_PACKS, START, owns, SIZES, SIZE_I, dupeCoinsFor, LUCK_MAX, UPGRADE, FREE_MS, AD_CHESTS, GDEAL, lineup, DEFAULT_OFFERS, offersOf, jarGems } = squad;
+export const { RARITY, GROUPS, SETS, SEASON, ROSTER, BY_ID, SET_OF, HIDDEN, hiddenOf, isOut, groupOut, outIds, SET_REWARDS, setRewardsOf, RAINBOW, rainbowOf, givenSize, rainbowProgress, rainbowReady, COPIES, copiesOf, needOf, copiesHad, dropRar, inGroupChest, DUPE, SET_BONUS, FIN, STAGES, CHESTS, PITY_MAX, EPIC_MAX, DEAL, VIDEO_CHESTS, SWAPS, GEM_PACKS, START, owns, SIZES, SIZE_I, dupeCoinsFor, LUCK_MAX, UPGRADE, FREE_MS, AD_CHESTS, GDEAL, lineup, DEFAULT_OFFERS, offersOf, jarGems } = squad;
 
 // Shop order and how each chest opens (the design's TIERS: TAP, HOLD,
 // SWIPE, MIX); the season chest opens like a Basic one.
@@ -65,6 +65,18 @@ export const setCopyCounts = (cfg) => {
   counts = copiesOf(cfg);
 };
 export const copyCounts = () => counts;
+
+// --- the Rainbow chest -------------------------------------------------------------
+// Earned once per group, or sold as before (functions/squad.js RAINBOW;
+// config/roster { rainbow }). App passes the doc in here as it changes, for
+// the places that only name a chest a reward or an offer gives: a Rainbow one
+// of those comes as a Legendary while Rainbow chests are earned (givenSize).
+let rainbowMode = RAINBOW;
+export const setRainbowMode = (cfg) => {
+  rainbowMode = rainbowOf(cfg);
+};
+// the size a reward's or an offer's chest `t` is given at
+export const shownSize = (t) => givenSize(t, rainbowMode);
 // { have, need } for one not unlocked yet (have: the copies found so far)
 export const copyProgress = (profile, id) => ({ have: copiesHad(profile || {}, String(id)), need: needOf(BY_ID[String(id)], counts) });
 

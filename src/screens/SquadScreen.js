@@ -8,7 +8,7 @@ import CandyBackground from '../components/candy/CandyBackground';
 import RoundButton from '../components/candy/RoundButton';
 import ShadowText from '../components/candy/ShadowText';
 import RigCreature from '../components/RigCreature';
-import { BY_ID, GROUPS, GROUP_INK, HIDDEN, RAR_LOOK, ROSTER, SET_REWARDS, SIZES, copyProgress, dropRar, isOut, owns } from '../squad/data';
+import { BY_ID, GROUPS, GROUP_INK, HIDDEN, RAINBOW, RAR_LOOK, ROSTER, SET_REWARDS, SIZES, SIZE_I, copyProgress, dropRar, isOut, outIds, owns, rainbowProgress, rainbowReady } from '../squad/data';
 import GCHEST, { CHEST_NAMES } from '../squad/groupChestArt';
 import { isNewId, ownedIdList, selectedId } from '../squad/lobby';
 import { F, Ringed } from '../squad/ui';
@@ -93,15 +93,16 @@ const Cell = memo(function Cell({ c, uri, mine, have, need, sel, fresh, on, onVi
   );
 });
 
-// The copies found of one not unlocked yet: a candy bar with "2/5".
-function CopyBar({ have, need, big = false, style }) {
+// The copies found of one not unlocked yet: a candy bar with "2/5" (`label`
+// on the big one: FOUND, or PALS for a Rainbow pal's group).
+function CopyBar({ have, need, big = false, label = 'FOUND', style }) {
   const pct = `${Math.round((Math.min(have, need) / Math.max(1, need)) * 100)}%`;
   return (
     <View style={[styles.copyRow, style]} pointerEvents="none">
       <View style={[styles.copyTrack, big && styles.copyTrackBig]}>
         {have > 0 ? <LinearGradient colors={['#ffd6f4', '#ff5cc6', '#c02bd9']} locations={[0, 0.45, 1]} style={[styles.copyFill, { width: pct }]} /> : null}
         {big ? (
-          <Text style={styles.copyBigText}>{`FOUND ${Math.min(have, need)} / ${need}`}</Text>
+          <Text style={styles.copyBigText}>{`${label} ${Math.min(have, need)} / ${need}`}</Text>
         ) : null}
       </View>
       {big ? null : <Text style={styles.copyText}>{`${Math.min(have, need)}/${need}`}</Text>}
@@ -232,24 +233,34 @@ const CHEST_X = 24;
 
 // `hidden`: the groups and creatures not out yet (config/roster), left out
 // of the grid unless owned. `setRewards`: a set's reward creature comes from
-// finishing the set (else from its group's chests).
+// finishing the set (else from its group's chests). `rainbow`: 'chest' while
+// a Rainbow pal comes only from its group's earned Rainbow chest (its bar
+// then counts the rest of the group, not copies).
 // `onBuilt()`: once every tile is built (the lobby lets it sleep then)
-function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRewards = SET_REWARDS, onClose, onSelect, onSeen, onBuilt }) {
+function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRewards = SET_REWARDS, rainbow = RAINBOW, onClose, onSelect, onSeen, onBuilt }) {
   const insets = useSafeAreaInsets();
   const sel = selectedId(profile);
   const [view, setView] = useState(sel);
   const [toast, setToast] = useState(null);
   const catalog = useMemo(() => Object.fromEntries((creatures || []).map((c) => [c.id, c])), [creatures]);
+  // the ones with art that are out (as the server counts a group)
+  const artIds = useMemo(() => outIds(Object.keys(catalog), hidden), [catalog, hidden]);
+  // a creature's bar: its copies, or for a Rainbow pal while those come from
+  // the earned chest, the rest of its group unlocked
+  const barOf = useCallback(
+    (c) => (c.reward && rainbow === 'chest' ? { ...rainbowProgress(profile || {}, c.set, artIds), label: 'PALS' } : { ...copyProgress(profile, c.id), label: 'FOUND' }),
+    [profile, rainbow, artIds],
+  );
   const ownedN = ownedIdList(profile).filter((id) => BY_ID[id]).length;
   const shown = useMemo(() => ORDER.filter((x) => isOut(x, hidden) || owns(profile || {}, x.id)), [profile, hidden]);
   // what each tile shows, worked out once per profile (not on every render)
   const tileInfo = useMemo(
     () =>
       shown.map((x) => {
-        const p = copyProgress(profile, x.id);
+        const p = barOf(x);
         return { x, mine: owns(profile || {}, x.id), have: p.have, need: p.need, fresh: isNewId(profile, x.id) };
       }),
-    [shown, profile],
+    [shown, profile, barOf],
   );
   // the grid's tiles a few a frame (first build only), never all at once
   const tiles = useProgressive(shown.length, 12, 8);
@@ -347,7 +358,7 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
   const isSel = own && view === sel;
   const R = RAR_LOOK[c.rar];
   const group = GROUP_NAME[c.set];
-  const prog = copyProgress(profile, view);
+  const prog = barOf(c);
 
   let m;
   if (isSel) m = { label: 'SELECTED', bg: ['#ffffff', '#f4fdf1', '#eafbe4'], lip: '#6fbf7e', ink: '#26a94e', tap: () => flash(`${c.name} is in your lobby`) };
@@ -368,7 +379,13 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
     // not yet: only chests unlock it, by its copies (no coin price)
     const viaSet = c.reward && setRewards;
     const look = { bg: ['#ffffff', '#f7f2fd', '#efe6fb'], lip: '#b8a0dc', ink: '#6a22d6' };
-    if (viaSet || c.pass) {
+    if (c.reward && rainbow === 'chest') {
+      // its group's Rainbow chest, earned once by unlocking the rest of the group
+      const ti = SIZE_I.set;
+      const chest = (GCHEST[c.set] || GCHEST.snack)[`${SIZES[ti].k}-grow`];
+      const ready = rainbowReady(profile || {}, c.set, artIds);
+      m = { ...look, chest, chestTi: ti, label: ready ? 'OPEN IN SHOP!' : 'RAINBOW CHEST', tap: () => flash(ready ? `The ${group} Rainbow chest is ready in the Shop!` : `Unlock every other ${group} pal to earn its Rainbow chest: ${prog.have} / ${prog.need}`) };
+    } else if (viaSet || c.pass) {
       // the pass's creature is in no chest (Squishies' "Season Pass exclusive")
       m = { ...look, ic: 'gift', label: viaSet ? 'SET REWARD' : 'SEASON PASS', tap: () => flash(viaSet ? `Finish the ${group} set first` : `${c.name} comes with the season pass`) };
     } else {
@@ -420,7 +437,7 @@ function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRe
             </Svg>
             <Text style={styles.spinText}>Drag to spin</Text>
           </View>
-          {!own && !(c.reward && setRewards) ? <CopyBar big have={prog.have} need={prog.need} style={styles.heroCopies} /> : null}
+          {!own && !(c.reward && setRewards) ? <CopyBar big have={prog.have} need={prog.need} label={prog.label} style={styles.heroCopies} /> : null}
         </View>
         <MainButton m={m} onPress={m.tap} />
       </View>

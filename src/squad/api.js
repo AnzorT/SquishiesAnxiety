@@ -25,8 +25,12 @@ export const swapGems = (i) => move('swap', { i });
 
 // --- the v6 group chests (REDESIGN_V6 step 5): each opens at once and
 // resolves → { group, size, final, upgraded, id, rar, isNew, coins,
-// dupeCoins, reward, setBonus, luck } (functions/squad.js openGroup)
+// dupeCoins, reward, setBonus, luck, rainbow } (functions/squad.js openGroup;
+// `rainbow`: the group whose Rainbow chest this pull earned)
 export const groupChest = (group, size) => move('groupChest', { group, size });
+// a group's earned Rainbow chest (functions/squad.js rainbowChest): free,
+// once, its Rainbow creature whole; the same result as a group chest's
+export const rainbowChest = (group) => move('rainbowChest', { group });
 export const freeChest = () => move('freeChest');
 export const adChest = () => move('adChest');
 export const dealChest = () => move('dealChest');

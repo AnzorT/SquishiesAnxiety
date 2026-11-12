@@ -14,7 +14,7 @@
 
 const { SignedDataVerifier, Environment } = require('@apple/app-store-server-library');
 const { CREATURE_KEY, BUNDLE_ID, baseProduct, isConsumable, sha256, checkPlayPurchase, checkAppleTransaction, grantFor } = require('./purchases');
-const { hiddenOf, outIds, setRewardsOf, copiesOf } = require('./squad');
+const { hiddenOf, outIds, setRewardsOf, copiesOf, rainbowOf } = require('./squad');
 const { dayKey } = require('./dailySpin');
 
 // verifyApple(jws) for makeVerifyPurchase: checks a StoreKit 2 signed
@@ -102,6 +102,7 @@ function makeVerifyPurchase({ db, FieldValue, HttpsError, logger, playApi, verif
     const hidden = hiddenOf(rosterCfg);
     const setRewards = setRewardsOf(rosterCfg);
     const need = copiesOf(rosterCfg);
+    const rainbow = rainbowOf(rosterCfg);
     const day = dayKey(Date.now(), data.tzOffsetMinutes);
 
     const result = await db.runTransaction(async (tx) => {
@@ -111,7 +112,7 @@ function makeVerifyPurchase({ db, FieldValue, HttpsError, logger, playApi, verif
         return { ...record.data().result, already: true };
       }
       if (!user.exists) throw new HttpsError('failed-precondition', 'No profile.');
-      const grant = grantFor({ productId, creatureId: checked.creatureId, profile: user.data(), rosterIds, offers, artIds: outIds(rosterIds, hidden), hidden, setRewards, need, day });
+      const grant = grantFor({ productId, creatureId: checked.creatureId, profile: user.data(), rosterIds, offers, artIds: outIds(rosterIds, hidden), hidden, setRewards, need, rainbow, day });
       if (grant.error) throw new HttpsError('failed-precondition', grant.error);
 
       const g = grant.update;

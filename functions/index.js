@@ -404,7 +404,7 @@ exports.squad = onCall(async (request) => {
   if (!fn) throw new HttpsError('invalid-argument', 'Unknown move.');
   const db = admin.firestore();
   const day = dayKey(Date.now(), data.tzOffsetMinutes);
-  const needsArt = ['openChest', 'groupChest', 'freeChest', 'adChest', 'dealChest', 'passClaim', 'streakClaim', 'levelClaim', 'levelClaimAll'].includes(data.move);
+  const needsArt = ['buyChest', 'openChest', 'groupChest', 'freeChest', 'adChest', 'dealChest', 'passClaim', 'streakClaim', 'levelClaim', 'levelClaimAll', 'rainbowChest'].includes(data.move);
   // the season pass and the 7-day streak read what config/offers sets, the
   // level road what config/levels does
   const needsOffers = ['passClaim', 'streakClaim'].includes(data.move);
@@ -434,6 +434,8 @@ exports.squad = onCall(async (request) => {
     setRewards: squad.setRewardsOf(rosterCfg),
     // how many copies unlock a creature (config/roster, else squad.js COPIES)
     need: squad.copiesOf(rosterCfg),
+    // Rainbow chests earned or sold (config/roster, else squad.js RAINBOW)
+    rainbow: squad.rainbowOf(rosterCfg),
   };
 
   const userRef = db.collection('users').doc(uid);
