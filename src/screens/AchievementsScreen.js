@@ -1,5 +1,6 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated, Easing, Pressable, PanResponder } from 'react-native';
+import { View, Text, StyleSheet, Animated, Easing, PanResponder } from 'react-native';
+import Pressable from '../components/Pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Stop, Circle, Ellipse } from 'react-native-svg';
@@ -13,7 +14,10 @@ import OutlinedTitle from '../components/candy/OutlinedTitle';
 import ShadowText, { outline3 } from '../components/candy/ShadowText';
 import CreatureThumbnail from '../components/CreatureThumbnail';
 import AdStrip from '../components/AdStrip';
+import { Bone, Reveal, useProgressive } from '../components/Skeleton';
+import { useScreenReady } from '../components/ScreenLayer';
 import sfx from '../audio/sfx';
+import { fmtNum } from '../format';
 
 // Achievements, as the v3 design's carousel: one big badge at a time under
 // spinning rays and a pulsing halo, neighbours fanned out smaller to either
@@ -25,7 +29,10 @@ import sfx from '../audio/sfx';
 const BADGE = 124; // the badge (white rim included); its ring sits outside
 const RING = 3;
 const LIP = 7;
-const WINDOW = 5; // badges mounted either side of the current one
+// badges mounted either side of the current one: the two on screen, plus
+// one so a swipe has its next badge ready (5 made the screen ~40% slower to
+// build)
+const WINDOW = 3;
 
 // Where a badge `d` steps from the centre sits — the design's numbers.
 const xOf = (d) => (d === 0 ? 0 : Math.sign(d) * (112 + (Math.abs(d) - 1) * 80));
@@ -43,7 +50,8 @@ const FADE = { duration: 350, easing: Easing.bezier(0.25, 0.1, 0.25, 1) };
 const DONE_STOPS = [[0, '#fffbe0', 1], [0.3, '#ffe45c', 1], [0.62, '#ffc21a', 1], [1, '#e08a00', 1]];
 const LOCKED_STOPS = [[0, '#ffffff', 0.55], [0.45, '#e6b4ff', 0.4], [1, '#823cd2', 0.55]];
 
-const OFFSETS = Array.from({ length: 11 }, (_, k) => k - WINDOW);
+// the curves' key points: d = -5 … 5 (they don't depend on WINDOW)
+const OFFSETS = Array.from({ length: 11 }, (_, k) => k - 5);
 
 function curve(pos, index, fn) {
   // pos → value for a badge at `index`: it sits at d = index - pos
@@ -51,7 +59,11 @@ function curve(pos, index, fn) {
   return pos.interpolate({ inputRange: pairs.map((p) => p[0]), outputRange: pairs.map((p) => p[1]), extrapolate: 'clamp' });
 }
 
-const Badge = memo(function Badge({ entry, index, move, fade, z, onSelect }) {
+// `live`: the centre badge. Only its creature cycles its moods (a timer
+// re-rendering it every 3 s); with every mounted badge cycling on its own
+// clock, the screen re-rendered a creature about every 270 ms and taps
+// (the back button too) waited behind those renders.
+const Badge = memo(function Badge({ entry, index, move, fade, z, live, onSelect }) {
   const done = entry.done;
   const ring = done ? '#a0520a' : candyColors.outline;
   const label = String(entry.badgeLabel ?? '');
@@ -78,17 +90,22 @@ const Badge = memo(function Badge({ entry, index, move, fade, z, onSelect }) {
       ]}
     >
       <Pressable onPress={() => onSelect(index)} style={styles.fill}>
-        <Animated.View pointerEvents="none" style={[styles.glow, { width: glowR * 2, height: glowR * 2, marginLeft: -glowR, marginTop: -glowR, opacity: anim.glow }]}>
-          <Svg width={glowR * 2} height={glowR * 2}>
-            <Defs>
-              <RadialGradient id="badgeGlow" cx="50%" cy="50%" r="50%">
-                <Stop offset={(BADGE / 2 - 4) / glowR} stopColor="#ffdc78" stopOpacity={0.9} />
-                <Stop offset="1" stopColor="#ffdc78" stopOpacity={0} />
-              </RadialGradient>
-            </Defs>
-            <Circle cx={glowR} cy={glowR} r={glowR} fill="url(#badgeGlow)" />
-          </Svg>
-        </Animated.View>
+        {/* the gold glow only shows on the centre badge: built for it and its
+            neighbours (for the swipe's crossfade), not for every badge
+            (each was a large SVG to create and draw) */}
+        {z >= 49 ? (
+          <Animated.View pointerEvents="none" style={[styles.glow, { width: glowR * 2, height: glowR * 2, marginLeft: -glowR, marginTop: -glowR, opacity: anim.glow }]}>
+            <Svg width={glowR * 2} height={glowR * 2}>
+              <Defs>
+                <RadialGradient id="badgeGlow" cx="50%" cy="50%" r="50%">
+                  <Stop offset={(BADGE / 2 - 4) / glowR} stopColor="#ffdc78" stopOpacity={0.9} />
+                  <Stop offset="1" stopColor="#ffdc78" stopOpacity={0} />
+                </RadialGradient>
+              </Defs>
+              <Circle cx={glowR} cy={glowR} r={glowR} fill="url(#badgeGlow)" />
+            </Svg>
+          </Animated.View>
+        ) : null}
         <View style={[styles.lip, { backgroundColor: ring }]} />
         <View style={[styles.ring, { backgroundColor: ring }]}>
           <View style={styles.rim}>
@@ -104,7 +121,7 @@ const Badge = memo(function Badge({ entry, index, move, fade, z, onSelect }) {
             </Svg>
             <View style={styles.content}>
               {entry.creature ? (
-                <CreatureThumbnail creature={entry.creature} mood="cycle" size={84} locked={!done} />
+                <CreatureThumbnail creature={entry.creature} mood={live ? 'cycle' : 'idle'} size={84} locked={!done} />
               ) : (
                 <ShadowText
                   style={[styles.badgeLabel, { fontSize: label.length > 3 ? 30 : 40 }]}
@@ -186,32 +203,41 @@ function Details({ entry, index, total }) {
   const done = entry.done;
   const prog = entry.progress;
   const statusRing = done ? candyColors.goldRing : candyColors.outlineDeep;
+  // every entry takes the tallest entry's room (two description lines and a
+  // progress bar): the stage above is flex, so a taller block here moved the
+  // badges up from one achievement to the next. With no bar, an invisible
+  // one under the status keeps its room.
+  const bar = (
+    <View style={[styles.progWrap, !prog && styles.unseen]} pointerEvents="none">
+      <CandyProgress pct={prog ? (prog.cur / prog.max) * 100 : 0} height={12} ring={candyColors.pinkRing} fill={['#ffa8e6', '#ff4fbf']} horizontal={false} style={styles.progBar} />
+      <ShadowText style={styles.progText} shadows={[[0, 1.5, candyColors.outlineDeep]]}>
+        {prog ? `${fmtNum(prog.cur)} / ${fmtNum(prog.max)}` : '0 / 0'}
+      </ShadowText>
+    </View>
+  );
   return (
     <Animated.View style={[styles.details, { opacity, transform: [{ translateY }, { scale }] }]}>
       <ShadowText style={styles.pos} shadows={[[0, 1.5, candyColors.outlineDeep]]}>
         {`${index + 1} OF ${total}`}
       </ShadowText>
       <OutlinedTitle text={entry.title} fill={done ? 'gold' : 'pink'} size={26} outline={2.5} ring={2} drop={4} letterSpacing={0} style={styles.title} />
-      <ShadowText style={styles.desc} shadows={[[0, 2, candyColors.outlineDeep]]} numberOfLines={2}>
-        {entry.desc}
-      </ShadowText>
-      {prog ? (
-        <View style={styles.progWrap}>
-          <CandyProgress pct={(prog.cur / prog.max) * 100} height={12} ring={candyColors.pinkRing} fill={['#ffa8e6', '#ff4fbf']} horizontal={false} style={styles.progBar} />
-          <ShadowText style={styles.progText} shadows={[[0, 1.5, candyColors.outlineDeep]]}>
-            {`${prog.cur.toLocaleString()} / ${prog.max.toLocaleString()}`}
-          </ShadowText>
-        </View>
-      ) : null}
+      <View style={styles.descBox}>
+        <ShadowText style={styles.desc} shadows={[[0, 2, candyColors.outlineDeep]]} numberOfLines={2}>
+          {entry.desc}
+        </ShadowText>
+      </View>
+      {prog ? bar : null}
       <ShadowText style={[styles.status, { color: done ? candyColors.goldText : '#ffffff' }]} shadows={outline3(statusRing)}>
         {done ? '★ UNLOCKED' : 'LOCKED'}
       </ShadowText>
+      {prog ? null : bar}
     </Animated.View>
   );
 }
 
-export default function AchievementsScreen({ creatures = [], profile = null, customCount = 0, onBack }) {
+function AchievementsScreen({ creatures = [], profile = null, customCount = 0, onBack }) {
   const insets = useSafeAreaInsets();
+  const ready = useScreenReady();
   const entries = useMemo(() => computeAchievements(creatures, profile || {}, customCount), [creatures, profile, customCount]);
   const adsFree = !!profile?.adsFree;
   const doneCount = entries.filter((e) => e.done).length;
@@ -264,11 +290,15 @@ export default function AchievementsScreen({ creatures = [], profile = null, cus
   );
 
   const current = entries[index] || entries[0];
-  const lo = Math.max(0, span[0] - WINDOW);
-  const hi = Math.min(entries.length - 1, span[1] + WINDOW);
+  // the badge in view first, then one more each side a frame: all seven at
+  // once (each with its SVG glow) were one 0.15 s frame as the screen's
+  // content came in (Galaxy A15 release, 2026-10-28)
+  const win = useProgressive(WINDOW + 1, 1, 1, ready) - 1;
+  const lo = Math.max(0, span[0] - win);
+  const hi = Math.min(entries.length - 1, span[1] + win);
   const badges = [];
   for (let i = lo; i <= hi; i++) {
-    badges.push(<Badge key={entries[i].key} entry={entries[i]} index={i} move={move} fade={fade} z={50 - Math.abs(i - index)} onSelect={select} />);
+    badges.push(<Badge key={entries[i].key} entry={entries[i]} index={i} move={move} fade={fade} z={50 - Math.abs(i - index)} live={i === index} onSelect={select} />);
   }
 
   return (
@@ -286,36 +316,57 @@ export default function AchievementsScreen({ creatures = [], profile = null, cus
         <CandyProgress pct={(doneCount / Math.max(1, entries.length)) * 100} height={12} />
       </View>
 
-      <View style={styles.stage} {...pan.panHandlers}>
-        <View style={styles.center} pointerEvents="none">
-          <RaysSpin size={360} durationMs={12000} rayDeg={9} gapDeg={13} opacity={0.4} fadeStart={0.14} fadeEnd={0.62} />
-          <Halo />
-        </View>
-        <View style={styles.shadowSpot} pointerEvents="none">
-          <Svg width={150} height={26}>
-            <Defs>
-              <RadialGradient id="spot" cx="50%" cy="50%" r="50%">
-                <Stop offset="0" stopColor="#3c006e" stopOpacity={0.35} />
-                <Stop offset="0.7" stopColor="#3c006e" stopOpacity={0} />
-              </RadialGradient>
-            </Defs>
-            <Ellipse cx={75} cy={13} rx={75} ry={13} fill="url(#spot)" />
-          </Svg>
-        </View>
-        <View style={styles.center}>{badges}</View>
-        <RoundButton size={38} onPress={() => go(index - 1)} style={[styles.arrow, { left: 10, opacity: index === 0 ? 0.4 : 1 }]}>
-          <Triangle dir="left" size={8} />
-        </RoundButton>
-        <RoundButton size={38} onPress={() => go(index + 1)} style={[styles.arrow, { right: 10, opacity: index === entries.length - 1 ? 0.4 : 1 }]}>
-          <Triangle dir="right" size={8} />
-        </RoundButton>
-      </View>
+      {/* placeholders while it slides in, then a crossfade to the real thing */}
+      <Reveal
+        fill
+        ready={ready}
+        placeholder={
+          <>
+            <View style={[styles.stage, styles.boneStage]}>
+              <Bone tone="sky" w={150} h={150} r={34} />
+            </View>
+            <View style={[styles.details, { paddingBottom: adsFree ? 26 + insets.bottom : 16 }]}>
+              <Bone tone="sky" w={180} h={22} r={11} />
+              <Bone tone="sky" w={240} h={12} r={6} />
+              <Bone tone="sky" w={200} h={12} r={6} />
+              <Bone tone="sky" w={200} h={10} r={5} style={{ marginTop: 6 }} />
+            </View>
+          </>
+        }
+      >
+        <>
+          <View style={styles.stage} {...pan.panHandlers}>
+            <View style={styles.center} pointerEvents="none">
+              <RaysSpin size={360} durationMs={12000} rayDeg={9} gapDeg={13} opacity={0.4} fadeStart={0.14} fadeEnd={0.62} />
+              <Halo />
+            </View>
+            <View style={styles.shadowSpot} pointerEvents="none">
+              <Svg width={150} height={26}>
+                <Defs>
+                  <RadialGradient id="spot" cx="50%" cy="50%" r="50%">
+                    <Stop offset="0" stopColor="#3c006e" stopOpacity={0.35} />
+                    <Stop offset="0.7" stopColor="#3c006e" stopOpacity={0} />
+                  </RadialGradient>
+                </Defs>
+                <Ellipse cx={75} cy={13} rx={75} ry={13} fill="url(#spot)" />
+              </Svg>
+            </View>
+            <View style={styles.center}>{badges}</View>
+            <RoundButton size={38} onPress={() => go(index - 1)} style={[styles.arrow, { left: 10, opacity: index === 0 ? 0.4 : 1 }]}>
+              <Triangle dir="left" size={8} />
+            </RoundButton>
+            <RoundButton size={38} onPress={() => go(index + 1)} style={[styles.arrow, { right: 10, opacity: index === entries.length - 1 ? 0.4 : 1 }]}>
+              <Triangle dir="right" size={8} />
+            </RoundButton>
+          </View>
 
-      {current ? (
-        <View style={{ paddingBottom: adsFree ? 26 + insets.bottom : 16 }}>
-          <Details key={current.key} entry={current} index={index} total={entries.length} />
-        </View>
-      ) : null}
+          {current ? (
+            <View style={{ paddingBottom: adsFree ? 26 + insets.bottom : 16 }}>
+              <Details key={current.key} entry={current} index={index} total={entries.length} />
+            </View>
+          ) : null}
+        </>
+      </Reveal>
       {/* the ad strip along the bottom, as on Home (none with Remove Ads) */}
       {adsFree ? null : <AdStrip />}
     </CandyBackground>
@@ -338,6 +389,7 @@ const styles = StyleSheet.create({
   },
   totalBar: { paddingHorizontal: 20, paddingTop: 2 },
   stage: { flex: 1, minHeight: 220, overflow: 'hidden' },
+  boneStage: { alignItems: 'center', justifyContent: 'center' },
   center: { position: 'absolute', left: 0, right: 0, top: '46%', height: 0, alignItems: 'center', justifyContent: 'center' },
   halo: { position: 'absolute' },
   shadowSpot: { position: 'absolute', left: 0, right: 0, top: '78%', alignItems: 'center' },
@@ -375,6 +427,8 @@ const styles = StyleSheet.create({
   // the sticker title's SVG carries its outline margin (4.5px round + 4px
   // drop) — pulled in so the spacing matches the design's 7px gaps
   title: { marginTop: -4.5, marginBottom: -8.5 },
+  // two lines of desc (lineHeight 20), a one-line one centred in them
+  descBox: { height: 40, justifyContent: 'center' },
   desc: {
     color: '#ffffff',
     fontFamily: candyFonts.displayMedium,
@@ -386,6 +440,7 @@ const styles = StyleSheet.create({
   },
   progWrap: { width: 200, alignItems: 'center', gap: 4, marginTop: 2 },
   progBar: { width: '100%' },
+  unseen: { opacity: 0 },
   progText: {
     color: '#ffffff',
     fontFamily: candyFonts.displaySemi,
@@ -394,3 +449,7 @@ const styles = StyleSheet.create({
   },
   status: { fontFamily: candyFonts.display, fontSize: 13, letterSpacing: 1, includeFontPadding: false },
 });
+
+// memoized: App re-renders while this is open (Home going to sleep under it,
+// a profile change), and those re-rendered the whole screen
+export default memo(AchievementsScreen);

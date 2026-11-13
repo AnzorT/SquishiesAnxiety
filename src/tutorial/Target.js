@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { View } from 'react-native';
-import { registerTarget, unregisterTarget, measureTarget } from './store';
+import { currentTarget, registerTarget, unregisterTarget, measureTarget } from './store';
 
 // Marks a view the tutorial can point at (the design's `data-tut="…"`):
 //   <TutTarget name="box"> <MysteryBoxBanner … /> </TutTarget>
@@ -14,7 +14,12 @@ export default function TutTarget({ name, style, pointerEvents, host = null, chi
     registerTarget(name, ref, host);
     return () => unregisterTarget(name, ref);
   }, [name, host]);
-  const onLayout = useCallback(() => measureTarget(name), [name]);
+  // only the target the guide points at is measured (the Guide also polls
+  // it); measuring every target on every layout cost a native round trip
+  // each, for nothing
+  const onLayout = useCallback(() => {
+    if (currentTarget() === name) measureTarget(name);
+  }, [name]);
   return (
     <View ref={ref} collapsable={false} style={style} pointerEvents={pointerEvents} onLayout={onLayout}>
       {children}

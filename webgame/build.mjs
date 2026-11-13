@@ -50,7 +50,7 @@ const REACT_SWAP = [
 ];
 
 // loaded by every page, in this order, before support.js (roster.js is written by the build from webgame/data)
-const APP_SCRIPTS = ['boot.js', 'roster.js', 'bridge.js', 'config.js'];
+const APP_SCRIPTS = ['boot.js', 'roster.js', 'bridge.js', 'config.js', 'games.js'];
 
 const clean = s => s.split('?')[0].split('#')[0].replace(/^\.\//, '');
 

@@ -1,5 +1,6 @@
 import React, { memo, useMemo, useRef } from 'react';
-import { Animated, Image, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, PanResponder, StyleSheet, Text, View } from 'react-native';
+import Pressable from '../components/Pressable';
 import { SvgXml } from 'react-native-svg';
 import { candyFonts } from '../theme/candyTheme';
 import { decorPos, gameOf, itemOf, lightOn, movables, padBox, padLimits, padOffset, unitOffset } from './home';

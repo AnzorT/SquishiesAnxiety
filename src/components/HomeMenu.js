@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import Pressable from './Pressable';
 import { candyColors, candyFonts } from '../theme/candyTheme';
 import RoundButton from './candy/RoundButton';
 import { SoftPulse } from './candy/Decor';
 import TutTarget from '../tutorial/Target';
-import { useTutorialStore } from '../tutorial/store';
+import { useTutorialSelect } from '../tutorial/store';
 import { Flame } from './StreakIcons';
 
 // Home's menu button (beside the Crib, shop and settings buttons): it drops
@@ -57,7 +58,9 @@ function Badge({ n, hot, gold = false }) {
   return null;
 }
 
-function Row({ item, t, i, onPick }) {
+// memoized: the rows stay built (see HomeMenu), and the menu re-renders
+// with the screen
+const Row = memo(function Row({ item, t, i, onPick }) {
   const a = Math.min(0.45, i * 0.07);
   const opacity = t.interpolate({ inputRange: [a, a + 0.35], outputRange: [0, 1], extrapolate: 'clamp' });
   const translateY = t.interpolate({ inputRange: [a, a + 0.55], outputRange: [-(ITEM + 8) * (i + 1) * 0.6, 0], extrapolate: 'clamp' });
@@ -81,18 +84,27 @@ function Row({ item, t, i, onPick }) {
       {item.tut ? <TutTarget name={item.tut}>{button}</TutTarget> : button}
     </Animated.View>
   );
-}
+});
 
-export default function HomeMenu({ items, anchor, badge = 0, hot = false, onOpenChange }) {
+
+function HomeMenu({ items, anchor, badge = 0, hot = false, onOpenChange }) {
   const [open, setOpen] = useState(false);
   // the tutorial's guide points at one of the items: open, and stay open
-  const tut = useTutorialStore();
-  const target = tut.screen === 'home' && tut.ui && tut.ui.target;
+  const target = useTutorialSelect((s) => (s.screen === 'home' && s.ui && typeof s.ui.target === 'string' ? s.ui.target : null));
   const forced = !!target && items.some((it) => it.tut === target);
   const shown = open || forced;
 
   const t = useRef(new Animated.Value(0)).current;
+  // The rows are built once and then kept (hidden while closed): building
+  // them on each open took ~270 ms in a debug build before the menu could
+  // move. They're built in the background a moment after Home is up, so
+  // even the first open is only the animation.
   const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    if (mounted) return undefined;
+    const id = setTimeout(() => setMounted(true), 3000);
+    return () => clearTimeout(id);
+  }, [mounted]);
   useEffect(() => {
     if (shown) setMounted(true);
     Animated.timing(t, {
@@ -100,9 +112,7 @@ export default function HomeMenu({ items, anchor, badge = 0, hot = false, onOpen
       duration: shown ? 520 : 200,
       easing: shown ? Easing.out(Easing.cubic) : Easing.in(Easing.quad),
       useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished && !shown) setMounted(false);
-    });
+    }).start();
   }, [shown, t]);
   useEffect(() => {
     if (onOpenChange) onOpenChange(shown);
@@ -124,7 +134,7 @@ export default function HomeMenu({ items, anchor, badge = 0, hot = false, onOpen
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       {mounted ? (
         <Animated.View style={[StyleSheet.absoluteFill, styles.scrim, { opacity: scrim }]} pointerEvents={shown ? 'auto' : 'none'}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={close} />
+          <Pressable silent style={StyleSheet.absoluteFill} onPress={close} />
         </Animated.View>
       ) : null}
       <View style={[styles.trigger, { top: anchor.top, right: anchor.right }]}>
@@ -187,3 +197,5 @@ const styles = StyleSheet.create({
   badgeGoldText: { color: '#7a3d00' },
   badgeText: { fontFamily: candyFonts.bodyBlack, fontSize: 10, color: '#ffffff', includeFontPadding: false },
 });
+
+export default memo(HomeMenu);

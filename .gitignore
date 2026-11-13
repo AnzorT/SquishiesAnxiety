@@ -56,3 +56,12 @@ webgame/.cache-npm-*/
 # the built offline game (node webgame/build.mjs)
 android/app/src/main/assets/webgame/
 webgame/test/out/
+
+# tools/shop-art: the design screens decoded from "Squish Squad App.html"
+tools/shop-art/design/
+
+# 2026-10-19 design drop, unpacked from ASMR Creature Squash Game.zip
+tools/design-v6/
+
+# rig thumbnails (regenerate with node tools/rig/thumbs.mjs)
+tools/rig/out/

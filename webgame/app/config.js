@@ -36,7 +36,13 @@
     get raw() { return cfg; },
     set: function (next) { cfg = next || {}; index(); C.applyLive(); },
 
-    creatureOn: function (key) { var c = (cfg.creatures || {})[key]; return !c || c.on !== false; },
+    // off in the admin's creature switch, or in a group that isn't out (the app's config/roster: hiddenKeys)
+    creatureOn: function (key) {
+      var c = (cfg.creatures || {})[key];
+      if (c && c.on === false) return false;
+      var hk = window.SquishApp && window.SquishApp.state && window.SquishApp.state.hiddenKeys;
+      return !(hk && hk.indexOf(key) >= 0);
+    },
     rarity: function (key, fallback) { var c = (cfg.creatures || {})[key]; return c && typeof c.rar === 'number' ? c.rar : fallback; },
     // idle can never be switched off: it is what everything falls back to.
     // "bedin" / "bedout" / "bedwake" (the steps into and out of "bed") follow bed's switch.

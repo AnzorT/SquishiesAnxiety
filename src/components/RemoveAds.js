@@ -32,7 +32,8 @@ export function NoAdsIcon({ size = 40 }) {
 
 const PERKS = ['No ad banner, no ad breaks', '2 free Mystery Boxes every day', '×2 ×3 ×4 boosts without videos'];
 
-export function RemoveAdsSheet({ visible, adsFree, price, buying, onBuy, onClose }) {
+// memoized: it re-rendered with App on every screen change
+export const RemoveAdsSheet = memo(function RemoveAdsSheet({ visible, adsFree, price, buying, onBuy, onClose }) {
   return (
     <CandyPopup visible={visible} onClose={onClose}>
       <NoAdsIcon size={70} />
@@ -71,7 +72,7 @@ export function RemoveAdsSheet({ visible, adsFree, price, buying, onBuy, onClose
       {adsFree ? null : <Text style={styles.small}>One-time purchase · comes back on any phone you sign in on</Text>}
     </CandyPopup>
   );
-}
+});
 
 // The floating offer on Home's lists: a gold candy pill — the no-ads badge,
 // "NO ADS", and a white price tag — bobbing gently in the corner under the

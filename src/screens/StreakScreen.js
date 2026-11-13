@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Pressable from '../components/Pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { candyColors, candyFonts } from '../theme/candyTheme';
@@ -12,11 +13,13 @@ import { CandyProgress, RaysSpin, SoftPulse } from '../components/candy/Decor';
 import { Twinkle } from '../components/candy/Sparkles';
 import ShineSweep from '../components/candy/ShineSweep';
 import { CoinIcon } from '../components/candy/Coin';
-import CreatureToken from '../components/candy/Tokens';
 import CreatureThumbnail from '../components/CreatureThumbnail';
-import { BigFlame, BoxGlyph, Flame, TokenGlyph } from '../components/StreakIcons';
+import { BigFlame, Flame } from '../components/StreakIcons';
+import { Chest, GemIcon } from '../squad/ui';
 import { CHEST_COINS, STREAK_BONUS, STREAK_DAYS, dailyView, streakReward, streakRewardText } from '../progression';
 import sfx from '../audio/sfx';
+import { Bone, BoneCard, Reveal } from '../components/Skeleton';
+import { useScreenReady } from '../components/ScreenLayer';
 
 // The daily streak's own screen (the rules are src/progression.js: the
 // streak grows each day the daily chest is opened, every chest pays that
@@ -31,8 +34,7 @@ import sfx from '../audio/sfx';
 // Top to bottom: the fire (a big flame with the streak on it, one of the
 // player's own squishies cheering beside it), what today needs and how long
 // is left, then all ten days' prizes — days 1-9 as tiles, day 10 as the
-// jackpot bar. Token days show the creature the tokens go to (the chest's
-// token goes to the cheapest locked creature, `tokenCreature`).
+// jackpot bar.
 
 const GRID_GAP = 9;
 
@@ -167,8 +169,8 @@ const LOOK = {
   next: { colors: ['#ffffff', '#faf3ff', '#ecdcff'], ring: '#a23ad8', text: candyColors.ink },
 };
 
-// The prize's picture: coins, the creature's token, the gift box.
-function RewardArt({ reward, tokenCreature, size }) {
+// The prize's picture: coins, gems, a chest (an extra free one in the Shop).
+function RewardArt({ reward, size }) {
   if (reward.kind === 'coins') {
     const big = reward.amount >= 400;
     return (
@@ -179,15 +181,15 @@ function RewardArt({ reward, tokenCreature, size }) {
       </View>
     );
   }
-  if (reward.kind === 'tokens') return tokenCreature ? <CreatureToken creature={tokenCreature} size={size} /> : <TokenGlyph size={size} />;
-  if (reward.kind === 'box') return <BoxGlyph size={size} />;
+  if (reward.kind === 'gems') return <GemIcon size={size * 0.8} />;
+  if (reward.kind === 'chest') return <Chest tier="silver" size={size * 1.1} />;
   return null;
 }
 
-function rewardCaption(reward, tokenCreature) {
+function rewardCaption(reward) {
   if (reward.kind === 'coins') return `${reward.amount}`;
-  if (reward.kind === 'tokens') return `+${reward.amount} ${tokenCreature ? tokenCreature.name : reward.amount === 1 ? 'token' : 'tokens'}`;
-  if (reward.kind === 'box') return 'FREE BOX';
+  if (reward.kind === 'gems') return `+${reward.amount} GEMS`;
+  if (reward.kind === 'chest') return 'FREE CHEST';
   return '50% OFF';
 }
 
@@ -207,17 +209,17 @@ function useEnter(enter, i) {
   return { opacity, transform: [{ scale }] };
 }
 
-const DayTile = memo(function DayTile({ day, tokenCreature, enter, i }) {
+const DayTile = memo(function DayTile({ day, enter, i }) {
   const look = day.done ? LOOK.done : day.today ? LOOK.today : LOOK.next;
   const tile = (
     <View style={[styles.tileRing, { backgroundColor: look.ring }, day.today && styles.tileRingToday]}>
       <LinearGradient colors={look.colors} locations={[0, 0.5, 1]} style={styles.tile}>
         <Text style={[styles.tileDay, { color: look.text }]}>{`DAY ${day.n}`}</Text>
         <View style={[styles.tileArt, day.done && { opacity: 0.55 }]}>
-          <RewardArt reward={day.reward} tokenCreature={tokenCreature} size={36} />
+          <RewardArt reward={day.reward} size={36} />
         </View>
         <Text style={[styles.tileCaption, { color: look.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-          {rewardCaption(day.reward, tokenCreature)}
+          {rewardCaption(day.reward)}
         </Text>
         {day.done ? <Check /> : null}
       </LinearGradient>
@@ -269,18 +271,50 @@ function Jackpot({ day, enter }) {
 
 // ---- the screen ---------------------------------------------------------------
 
-export default function StreakScreen({ profile, mascot, tokenCreature, intro = false, onClose, onOpenDaily }) {
+// The page while it slides in: the flame and squishy, today's card and the
+// prize tiles as placeholders.
+function StreakBones() {
+  return (
+    <>
+      <View style={[styles.hero, { gap: 10 }]}>
+        <Bone tone="sky" w={150} h={150} r={75} />
+        <Bone tone="sky" w={220} h={14} r={7} />
+      </View>
+      <BoneCard style={{ gap: 8 }}>
+        <Bone w="45%" h={18} r={9} />
+        <Bone w="90%" h={11} r={6} />
+        <Bone w="100%" h={12} r={6} />
+      </BoneCard>
+      <View style={[styles.sectionHead, { gap: 6 }]}>
+        <Bone tone="sky" w={170} h={16} r={8} />
+        <Bone tone="sky" w={240} h={10} r={5} />
+      </View>
+      <View style={styles.grid}>
+        {Array.from({ length: STREAK_DAYS - 1 }, (_, i) => (
+          <View key={i} style={styles.tileSlot}>
+            <Bone tone="sky" h={96} r={18} />
+          </View>
+        ))}
+      </View>
+    </>
+  );
+}
+
+function StreakScreen({ profile, mascot, intro = false, onClose, onOpenDaily }) {
   const insets = useSafeAreaInsets();
+  const ready = useScreenReady();
   const [clock, setClock] = useState(() => new Date());
   useEffect(() => {
     const iv = setInterval(() => setClock(new Date()), 30000);
     return () => clearInterval(iv);
   }, []);
   const enter = useRef(new Animated.Value(0)).current;
+  // the tiles' entrance plays once they're built (after the slide-in)
   useEffect(() => {
+    if (!ready) return;
     sfx.play(intro ? 'sparkle' : 'popOpen');
     Animated.timing(enter, { toValue: 1, duration: 1400, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
-  }, [enter, intro]);
+  }, [enter, intro, ready]);
 
   const v = dailyView(profile, clock);
   const todayDay = v.track.find((d) => d.today) || v.track[0];
@@ -306,19 +340,21 @@ export default function StreakScreen({ profile, mascot, tokenCreature, intro = f
       </View>
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        <Hero streak={v.streak} mascot={mascot} line={line} />
-        <TodayCard v={v} todayDay={todayDay} />
+        <Reveal ready={ready} placeholder={<StreakBones />} contentStyle={styles.stack}>
+            <Hero streak={v.streak} mascot={mascot} line={line} />
+            <TodayCard v={v} todayDay={todayDay} />
 
-        <View style={styles.sectionHead}>
-          <HaloText style={styles.sectionTitle}>THE DAILY PRIZES</HaloText>
-          <HaloText style={styles.sectionNote}>{`Every chest: ${CHEST_COINS} coins + 1 token + the day’s prize`}</HaloText>
-        </View>
-        <View style={styles.grid}>
-          {tiles.map((d, i) => (
-            <DayTile key={d.n} day={d} tokenCreature={tokenCreature} enter={enter} i={i} />
-          ))}
-        </View>
-        <Jackpot day={jackpot} enter={enter} />
+            <View style={styles.sectionHead}>
+              <HaloText style={styles.sectionTitle}>THE DAILY PRIZES</HaloText>
+              <HaloText style={styles.sectionNote}>{`Every chest: ${CHEST_COINS} coins + 1 token + the day’s prize`}</HaloText>
+            </View>
+            <View style={styles.grid}>
+              {tiles.map((d, i) => (
+                <DayTile key={d.n} day={d} enter={enter} i={i} />
+              ))}
+            </View>
+            <Jackpot day={jackpot} enter={enter} />
+        </Reveal>
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
@@ -342,6 +378,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 },
   headerSide: { width: 36 },
   body: { paddingHorizontal: 16, paddingBottom: 16, gap: 12 },
+  stack: { gap: 12 }, // the body's gap, inside Reveal's wrapper
 
   hero: { alignItems: 'center', paddingTop: 6, paddingBottom: 2 },
   rays: { position: 'absolute', top: -60, alignSelf: 'center' },
@@ -459,3 +496,7 @@ const styles = StyleSheet.create({
   later: { paddingVertical: 4, paddingHorizontal: 18 },
   laterText: { fontFamily: candyFonts.bodyHeavy, fontSize: 13 },
 });
+
+// memoized: App re-renders while this is open (Home going to sleep under it,
+// a profile change), and those re-rendered the whole screen
+export default memo(StreakScreen);

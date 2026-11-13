@@ -18,7 +18,7 @@ export function notifyPrices() {
   priceListeners.forEach((fn) => fn({ ...prices }));
 }
 
-// `key` is a PRODUCTS key ('removeAds', 'creatureKey', 'creation', …): the
+// `key` is a PRODUCTS key ('removeAds', 'gems950', 'creation', …): the
 // store's price for the product sold right now (its price level from
 // config/pricing), or the dollar price until that has loaded.
 export function priceLabel(key, loaded = prices) {

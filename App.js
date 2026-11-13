@@ -6,7 +6,7 @@
 // including SquishyToy.js) gets evaluated.
 import 'fast-text-encoding';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Alert, Image, AppState } from 'react-native';
+import { View, Alert, Image, AppState, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import mobileAds from 'react-native-google-mobile-ads';
@@ -16,46 +16,52 @@ import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraB
 import { Fredoka_500Medium, Fredoka_600SemiBold, Fredoka_700Bold } from '@expo-google-fonts/fredoka';
 import SplashScreen from './src/screens/SplashScreen';
 import AuthScreen from './src/screens/AuthScreen';
-import HomeScreen from './src/screens/HomeScreen';
+import MainScreen, { ShopAway } from './src/screens/MainScreen';
+import SettingsSheet from './src/screens/SettingsSheet';
 import AchievementsScreen from './src/screens/AchievementsScreen';
 import StatsScreen from './src/screens/StatsScreen';
-import StoreScreen from './src/screens/StoreScreen';
-import MysteryBoxScreen from './src/screens/MysteryBoxScreen';
+import ShopScreen from './src/screens/ShopScreen';
+import LobbyScreen from './src/screens/LobbyScreen';
+import SquishdokuScreen from './src/screens/SquishdokuScreen';
+import SortScreen from './src/screens/SortScreen';
+import StackScreen from './src/screens/StackScreen';
+import HopScreen from './src/screens/HopScreen';
 import DailySpinScreen from './src/screens/DailySpinScreen';
-import CreatureReelScreen from './src/screens/CreatureReelScreen';
 import LoadingScreen from './src/screens/LoadingScreen';
 import SquishScreen from './src/screens/SquishScreen';
 import CribScreen from './src/screens/CribScreen';
 import DailyChallengesSheet from './src/screens/DailyChallengesSheet';
 import StreakScreen from './src/screens/StreakScreen';
+import LevelRoadScreen from './src/screens/LevelRoadScreen';
+import { LevelUpCard } from './src/components/LevelBits';
+import { roadClaimable, roadPrize, roadView, setLevelsConfig, xpView } from './src/playerXp';
 import TutorialGuide from './src/tutorial/Guide';
 import useTutorial from './src/tutorial/useTutorial';
 import { report as tutReport } from './src/tutorial/store';
 import { tutorialActive } from './src/tutorial/steps';
 import { streakMultiplier, streakOf, TUTORIAL_BOOST, cribUnlocked, dailyUnlocked as dailyIsUnlocked, dailyView, level as levelOf } from './src/progression';
-import { tokenCandidates } from './src/economy';
 import AchievementToast from './src/components/squad/AchievementToast';
 import Toast from './src/components/squad/Toast';
 import { TurnWithCrib } from './src/crib/orientation';
-import UnlockSheet from './src/components/UnlockSheet';
-import { RemoveAdsSheet } from './src/components/RemoveAds';
 import ForcedInterstitialAd from './src/components/ForcedInterstitialAd';
 import { computeAchievements } from './src/achievements';
-import { subscribeToAuthUser, logout } from './src/firebase/auth';
+import { subscribeToAuthUser, logout, needsVerification } from './src/firebase/auth';
+import { listenForSocial } from './src/firebase/social';
+import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
+import FpsCounter from './src/components/FpsCounter';
+import { BY_ID, hiddenOf, isOut, lineup, owns, rainbowOf, setCopyCounts, setRainbowMode, setRewardsOf, wallet as walletOf } from './src/squad/data';
 import {
   subscribeToUserProfile,
   subscribeToCreatures,
-  subscribeToBoxConfig,
   subscribeToPricing,
+  subscribeToOffers,
+  subscribeToRoster,
+  subscribeToLevels,
+  setOfferSeen,
   addCoins,
-  unlockWithKey,
   recordPress,
   markAchievement,
   recordAdWatched,
-  payBoxWithAd,
-  payBoxWithCoins,
-  openBox,
-  doubleBox,
   updateNickname,
   submitFeedback,
   ensureStarterCreaturesOwned,
@@ -66,26 +72,38 @@ import {
   newCustomCreatureId,
   setTutorialStep,
   setLevel,
+  migrateToXp,
+  markLevelSeen,
   markStreakSeen,
   bumpDaily,
   claimDailyChallenge,
   claimDailyChest,
+  setLobbySelected,
+  markSquadSeen,
 } from './src/firebase/firestore';
+import { isNewId, lobbySeeded, ownedIdList, selectedId as selectedIdOf } from './src/squad/lobby';
+import GameScreen from './src/game/GameScreen';
+import ClassicBack from './src/game/ClassicBack';
+import { gamePlayer, idOfKey } from './src/game/player';
+import { NEW_DESIGN, NEW_DESIGN_DURING_TUTORIAL } from './src/game/flags';
+import { stageOf } from './src/squad/data';
 import { uploadSourceImage, deleteCustomAssets } from './src/firebase/storage';
 import { loadCachedCreatures, saveCreaturesToCache } from './src/data/creatureCache';
 import CreateScreen from './src/screens/CreateScreen';
+import Freeze, { Hold } from './src/components/Freeze';
+import { LoopsOn, RigAway } from './src/components/idleLoop';
+import { fmtNum } from './src/format';
+import { preloadCrib } from './src/firebase/firestore';
+import ScreenLayer, { WhenScreenReady } from './src/components/ScreenLayer';
+import ScreenBones from './src/components/ScreenBones';
+import CribBones from './src/crib/CribBones';
 import { plushArtUrls } from './src/components/CreatureThumbnail';
-import { boxPayMode, boxPriceLabel, ownedCount, boxRoster } from './src/mysteryBox';
 import * as billing from './src/billing';
-import { setBoxSettings, setPricing } from './src/economy';
+import { setOfferProducts, setPricing } from './src/economy';
 import { adSpinsLeft, hasSpunToday, todayKey, tzOffsetMinutes } from './src/dailySpin';
 import callFunction from './src/firebase/callFunction';
+import { dailyGift as squadDailyGift, startSquad } from './src/squad/api';
 import sfx from './src/audio/sfx';
-import DEV_CATALOG from './src/data/devCatalog'; // TEMP-DEV-CATALOG: preview of the unpublished roster (tools/plush-art/serve.mjs)
-import GameScreen from './src/game/GameScreen';
-import ClassicBack from './src/game/ClassicBack';
-import { creatureKey } from './src/game/gameData';
-import { NEW_DESIGN, NEW_DESIGN_DURING_TUTORIAL } from './src/game/flags';
 
 // GLTFParser's constructor (three.js, used by SquishyToy.js's Glorp build
 // path) sniffs navigator.userAgent to work around known Safari ImageBitmap
@@ -105,25 +123,50 @@ mobileAds()
 sfx.init();
 
 // Background music for each screen (the design's MUSIC table).
-const NO_TOKENS = {};
 const APP_TOAST_AT = { position: 'absolute', left: 0, right: 0, bottom: 150, height: 0, zIndex: 70, elevation: 70 };
 
+// Screens that slide in over Home (the others replace it without a slide:
+// the wheel and the streak's intro come before Home, the squish screen
+// after its loading screen).
+// one empty object, so a memoized screen sees the same prop every render
+const NO_ACHIEVEMENTS = {};
+
+const SLIDE_IN = new Set(['crib', 'create', 'achievements', 'stats', 'streak', 'loading', 'squishdoku', 'sort', 'stack', 'hop', 'road']);
+// creature pictures fetched into the image cache at a time (see below)
+const PREFETCH_AT_ONCE = 6;
+// Screens over Home that need it truly hidden (Freeze, display: none) rather
+// than only held and out of sight (none now), and those that need only the
+// Shop page hidden (MainScreen's ShopAway): the Crib, whose pictures and the
+// Shop's together overflowed the texture cache (every Crib frame ~150 ms)
+const SHOP_AWAY_UNDER = new Set(['crib']);
+const FREEZE_UNDER = new Set([]);
+
+// The splash is silent; Butterscotch Bounce is the game's theme from the
+// end of the splash on, one track across the menus (it doesn't restart
+// between them).
 const MUSIC_FOR_STAGE = {
-  splash: 'dream',
-  auth: 'dream',
-  wheel: 'party',
-  reel: 'party',
-  streak: 'party',
-  home: 'cozy',
-  store: 'cozy',
-  achievements: 'cozy',
-  stats: 'cozy',
-  create: 'cozy',
+  splash: null,
+  auth: 'bounce',
+  wheel: 'bounce',
+  streak: 'bounce',
+  home: 'bounce',
+  store: 'bounce',
+  achievements: 'bounce',
+  stats: 'bounce',
+  road: 'bounce',
+  create: 'bounce',
   loading: 'calm',
   toy: 'calm',
   box: 'mystery',
-  // the Crib plays its rooms' own music (CribScreen); the new design's Main Menu and house play their own sounds
-  classic: 'cozy',
+  // Squishdoku: thinking music; its Blitz switches to 'party' itself
+  squishdoku: 'dream',
+  // Squish Sort: party music
+  sort: 'party',
+  // Squish Stack: calm, cosy stacking
+  stack: 'cozy',
+  // Squish Hop: cosy, a hop through the Crib's rooms
+  hop: 'cozy',
+  // the Crib plays its rooms' own music (CribScreen)
 };
 
 // The creature cheering on the streak screen: the owned one squished the
@@ -160,15 +203,13 @@ export default function App() {
   // card, then clears this (clearMineFocus).
   const [mineFocus, setMineFocus] = useState(null); // { id, token }
   const clearMineFocus = useCallback(() => setMineFocus(null), []);
-  // Which OUR CREATURES card Home shows — a ref, not state: Home owns its
-  // paging and only reports back so it can reopen on the same card after a
-  // squish session. Keeping it out of state means paging never re-renders
-  // the whole app.
-  const homeIndexRef = useRef(0);
-  const setHomeIndex = useCallback((i) => {
-    homeIndexRef.current = i;
-  }, []);
-  const [screen, setScreen] = useState('home'); // 'home' | 'classic' | 'achievements' | 'stats' | 'store' | 'create' | 'box' | 'crib' | 'streak' — only relevant once signed in
+  const [screen, setScreen] = useState('home'); // 'home' | 'achievements' | 'stats' | 'create' | 'crib' | … — only relevant once signed in
+  // 'home' is the app shell (MainScreen): its open tab ('squish' | 'shop'),
+  // and the Shop's own tab to open on (`shopKey` sends the Shop there)
+  const [mainTab, setMainTab] = useState('squish');
+  const [shopTab, setShopTab] = useState('chests');
+  const [shopKey, setShopKey] = useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   // A card tap moves a creature into `loadingToy` (LoadingScreen's "getting
   // ready" beat) before it graduates to `activeToy` (SquishScreen actually
   // mounted) — kept as two separate slots so the transition screen has
@@ -196,18 +237,13 @@ export default function App() {
   const [pokeOutward, setPokeOutward] = useState(false);
 
   // Daily Spin: 'unknown' until the profile loads, then 'show' (today's spin
-  // is waiting — it comes before Home) or 'done'. `reel` holds a FREE
-  // creature prize while its reel plays.
+  // is waiting — it comes before Home) or 'done'.
   const [spinState, setSpinState] = useState('unknown');
-  const [reel, setReel] = useState(null);
 
-  // Unlocking and purchases: which locked creature's popup is open
-  // (UnlockSheet), the creature the Key Shop should open on, the Remove Ads
-  // popup, what's being bought right now ('removeAds' or a creature id),
-  // Google Play's prices, and a toast for how a purchase went.
-  const [unlockForId, setUnlockForId] = useState(null);
-  const [storeFocusId, setStoreFocusId] = useState(null);
-  const [removeAdsOpen, setRemoveAdsOpen] = useState(false);
+  // Purchases: what's being bought right now ('removeAds', a gem pack, a
+  // creation), Google Play's prices, and a toast for how a purchase went.
+  // (Remove Ads is sold in the Shop's Deals tab only; Settings no longer
+  // has it, user 2026-10-24.)
   const [buying, setBuying] = useState(null);
   const [storePrices, setStorePrices] = useState({});
   const [appToast, setAppToast] = useState(null);
@@ -217,6 +253,11 @@ export default function App() {
   // the streak screen opening by itself, once a day after the Daily Spin
   // (StreakScreen's `intro`; from the menu it's just a screen)
   const [streakIntro, setStreakIntro] = useState(false);
+  // the player level (src/playerXp.js, PLAYER_XP.md): the LEVEL UP card
+  // ({ level, levels }: the levels it announces) and the levels the level
+  // road claims as it opens (its COLLECT)
+  const [levelUp, setLevelUp] = useState(null);
+  const [roadAuto, setRoadAuto] = useState(null);
 
   const prevAchievementsRef = useRef(null);
 
@@ -228,6 +269,27 @@ export default function App() {
       }),
     []
   );
+  // Google / Facebook / TikTok: the browser comes back with a token
+  useEffect(() => listenForSocial(() => Alert.alert('Sign-in', "That didn't work. Please try again.")), []);
+  // an email account that hasn't confirmed its address yet waits on the
+  // verify screen (`verifiedNow`: confirmed during this run)
+  const [verifiedNow, setVerifiedNow] = useState(false);
+  const mustVerify = !!authUser && needsVerification(authUser) && !verifiedNow;
+  // a tester account (the `tester` claim, tools/admin/tester.mjs): the Test
+  // wallet and the FPS counter (REDESIGN_V6 ruling 5)
+  const [tester, setTester] = useState(false);
+  const [fpsOverlay, setFpsOverlay] = useState(false);
+  useEffect(() => {
+    setTester(false);
+    if (!authUser) return;
+    authUser
+      .getIdTokenResult(true)
+      .then((t) => setTester(!!(t && t.claims && t.claims.tester)))
+      .catch(() => {});
+  }, [authUser]);
+  const toggleFps = useCallback(() => setFpsOverlay((v) => !v), []);
+  // a different account (or none) starts unconfirmed again
+  useEffect(() => setVerifiedNow(false), [authUser?.uid]);
 
   useEffect(() => {
     if (!authUser) {
@@ -278,24 +340,13 @@ export default function App() {
     return () => sub.remove();
   }, []);
 
-  // The Mystery Box numbers from config/mysteryBox (src/economy.js falls back
-  // to BOX_DEFAULTS); a re-render picks them up.
-  const [boxConfigVersion, setBoxConfigVersion] = useState(0);
-  useEffect(() => {
-    if (!authUser) return undefined;
-    return subscribeToBoxConfig((doc) => {
-      setBoxSettings(doc);
-      setBoxConfigVersion((v) => v + 1);
-    });
-  }, [authUser]);
-
   // In-app purchases (src/billing): Google Play's prices, and any purchase
   // not yet granted (or Remove Ads bought on another phone) sent to the
   // server once signed in.
   useEffect(() => billing.subscribePrices(setStorePrices), []);
   // Which price level each product sells at (config/pricing): a change
   // loads that level's store price; the re-render updates every label.
-  const [, setPricingVersion] = useState(0);
+  const [pricingVersion, setPricingVersion] = useState(0);
   useEffect(() => {
     if (!authUser) return undefined;
     return subscribeToPricing((doc) => {
@@ -304,9 +355,58 @@ export default function App() {
       billing.loadProducts();
     });
   }, [authUser]);
+  // What the Shop's Deals and Gems tabs sell (config/offers): its offers'
+  // store products load with the rest.
+  const [offers, setOffers] = useState(null);
+  useEffect(() => {
+    if (!authUser) return undefined;
+    return subscribeToOffers((doc) => {
+      setOffers(doc);
+      setOfferProducts(doc);
+      setPricingVersion((v) => v + 1);
+      billing.loadProducts();
+    });
+  }, [authUser]);
+  const seenOffer = useCallback((id, at) => authUser && setOfferSeen(authUser.uid, id, at), [authUser]);
+  // The groups and creatures not out yet and the set-reward rule
+  // (config/roster, else functions/squad.js HIDDEN and SET_REWARDS): the
+  // Shop and the Squad grid follow them. Its copy counts (how many finds
+  // unlock a creature) go to src/squad/data.js before the screens redraw.
+  const [rosterCfg, setRosterCfg] = useState(null);
+  useEffect(() => {
+    if (!authUser) return undefined;
+    return subscribeToRoster((cfg) => {
+      setCopyCounts(cfg);
+      setRainbowMode(cfg);
+      setRosterCfg(cfg);
+    });
+  }, [authUser]);
+  const hidden = useMemo(() => hiddenOf(rosterCfg), [rosterCfg]);
+  // What the levels are (config/levels: the road, the curve, what earns XP):
+  // into src/playerXp.js before the screens redraw, as the roster's counts
+  const [levelsCfg, setLevelsCfg] = useState(null);
+  useEffect(() => {
+    if (!authUser) return undefined;
+    return subscribeToLevels((cfg) => {
+      setLevelsConfig(cfg);
+      setLevelsCfg(cfg);
+    });
+  }, [authUser]);
+  const setRewards = setRewardsOf(rosterCfg);
+  // Rainbow chests earned once per group, or sold (config/roster { rainbow })
+  const rainbow = rainbowOf(rosterCfg);
+  // the catalog less what's not out yet (one already owned stays): what the
+  // achievements and stats count
+  const counted = useMemo(
+    () => creatures.filter((c) => !BY_ID[String(c.id)] || isOut(BY_ID[String(c.id)], hidden) || owns(profile || {}, String(c.id))),
+    [creatures, hidden, profile],
+  );
   useEffect(() => {
     if (!authUser) return;
     billing.loadProducts().then(() => billing.syncPurchases());
+    // the starting 600 gems, once (until the `squad` function
+    // is deployed this fails quietly; the wallet shows them anyway)
+    startSquad().catch(() => {});
   }, [authUser]);
 
   // One-time backward-compat migration for accounts created before the new
@@ -318,13 +418,38 @@ export default function App() {
     // re-running after it succeeds is harmless (arrayUnion) but pointless.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser, profile?.ownedIds]);
+  // …and for those from before player XP: their level (and Squishdoku's
+  // Puzzle XP) become `pxp`, once
+  const hasXp = typeof profile?.pxp === 'number';
+  useEffect(() => {
+    if (authUser && profile && !hasXp) migrateToXp(authUser.uid, profile);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser, !!profile, hasXp]);
+
+  // The lobby's NEW badges count what came after the first visit: the
+  // first time, everything owned then counts as seen (src/squad/lobby.js).
+  const lobbyReady = !!profile && lobbySeeded(profile);
+  useEffect(() => {
+    if (authUser && profile && !lobbyReady) markSquadSeen(authUser.uid, ownedIdList(profile));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser, !!profile, lobbyReady]);
+
+  // The Crib's saved state, read in the background once it's unlocked, so
+  // opening the Crib never waits on Firestore (src/firebase/firestore.js)
+  const cribIsOpen = !!authUser && !!profile && cribUnlocked(profile);
+  useEffect(() => {
+    if (cribIsOpen) preloadCrib(authUser.uid);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cribIsOpen]);
 
   // Seeds `creatures` from the on-device cache immediately (before auth even
   // resolves — SplashScreen needs something to render at cold start), then
   // the live Firestore subscription below takes over once signed in and
   // refreshes the cache for next time.
   useEffect(() => {
-    loadCachedCreatures().then(() => setCreatures(DEV_CATALOG)); // TEMP-DEV-CATALOG
+    loadCachedCreatures().then((cached) => {
+      if (cached.length) setCreatures((cur) => (cur.length ? cur : cached));
+    });
   }, []);
 
   useEffect(() => {
@@ -336,7 +461,8 @@ export default function App() {
     if (!authUser) return undefined;
     return subscribeToCreatures((list) => {
       if (list.length) {
-        setCreatures(DEV_CATALOG); // TEMP-DEV-CATALOG (was: setCreatures(list); saveCreaturesToCache(list);)
+        setCreatures(list);
+        saveCreaturesToCache(list);
       }
       // An empty list here means a transient error — keep whatever the
       // cache (or a prior successful fetch) already put in state rather
@@ -346,14 +472,31 @@ export default function App() {
 
   // Warm the image cache with every creature's art as soon as the catalog
   // arrives, so paging through Home or opening a screen never waits on the
-  // network for a picture.
+  // network for a picture. PREFETCH_AT_ONCE at a time: all of them at once
+  // (hundreds) flooded the bridge while the app started ("Excessive number
+  // of pending callbacks: 501", 2026-10-28).
   const prefetchedRef = useRef(new Set());
+  const prefetchQueue = useRef([]);
+  const prefetching = useRef(0);
   useEffect(() => {
+    const pump = () => {
+      while (prefetching.current < PREFETCH_AT_ONCE && prefetchQueue.current.length) {
+        const url = prefetchQueue.current.shift();
+        prefetching.current += 1;
+        Image.prefetch(url)
+          .catch(() => prefetchedRef.current.delete(url))
+          .finally(() => {
+            prefetching.current -= 1;
+            pump();
+          });
+      }
+    };
     plushArtUrls(creatures).forEach((url) => {
       if (prefetchedRef.current.has(url)) return;
       prefetchedRef.current.add(url);
-      Image.prefetch(url).catch(() => prefetchedRef.current.delete(url));
+      prefetchQueue.current.push(url);
     });
+    pump();
   }, [creatures]);
 
   // Fires a top-banner toast the instant an achievement flips from
@@ -361,8 +504,8 @@ export default function App() {
   // than stored server-side, since every achievement is itself derived from
   // the profile (see src/achievements.js).
   useEffect(() => {
-    if (!profile || !creatures.length) return;
-    const current = computeAchievements(creatures, profile, customCreatures.length);
+    if (!profile || !counted.length) return;
+    const current = computeAchievements(counted, profile, customCreatures.length);
     const prev = prevAchievementsRef.current;
     if (prev) {
       const newlyDone = current.find((entry) => entry.done && !prev[entry.key]);
@@ -373,9 +516,33 @@ export default function App() {
       }
     }
     prevAchievementsRef.current = Object.fromEntries(current.map((entry) => [entry.key, entry.done]));
-  }, [profile, creatures, customCreatures.length]);
+  }, [profile, counted, customCreatures.length]);
 
   const openToy = useCallback((creature) => setLoadingToy(creature), []);
+  // --- the lobby (src/screens/LobbyScreen.js) ---
+  // PLAY: the selected squishy (its catalog doc, the game's creature)
+  const creaturesRef = useRef(creatures);
+  creaturesRef.current = creatures;
+  const playSelected = useCallback((id) => {
+    const creature = creaturesRef.current.find((c) => c.id === id);
+    // with its growth stage: the game's card is scaled (and crowned) by it
+    if (creature) setLoadingToy({ ...creature, stage: stageOf(profileRef.current, id) });
+  }, []);
+  // the Squad screen's SELECT: that squishy is the lobby's
+  const selectSquishy = useCallback(
+    (id) => {
+      if (authUser) setLobbySelected(authUser.uid, id);
+    },
+    [authUser],
+  );
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
+  const squadSeen = useCallback(
+    (id) => {
+      if (authUser && isNewId(profileRef.current, id)) markSquadSeen(authUser.uid, [id]);
+    },
+    [authUser],
+  );
   const finishLoadingToy = useCallback(() => {
     setActiveToy(loadingToy);
     setLoadingToy(null);
@@ -386,44 +553,40 @@ export default function App() {
   }, []);
 
   // --- Daily Spin (src/dailySpin.js; the server rolls it) ---
-  // `bonus`: a SPIN AGAIN, paid with a rewarded video on the wheel screen.
-  // No ad break follows the wheel any more (SPIN AGAIN replaced it).
+  // `bonus`: "Watch ad, spin again", paid with a rewarded video on the
+  // wheel screen. The prizes (coins, gems) are paid by the server.
   const handleSpin = useCallback((bonus = false) => callFunction('spinWheel', { tzOffsetMinutes: tzOffsetMinutes(), bonus }), []);
-  const handleSpinClaim = useCallback((result) => {
+  const handleSpinDone = useCallback(() => {
     setSpinState('done');
-    if (result.kind === 'unlock' && result.creatureId) {
-      setReel({ lockedIds: result.lockedIds || [], winnerId: result.creatureId });
-      setScreen('home');
-      return;
-    }
-    setScreen(result.kind === 'create' ? 'create' : 'home');
+    setScreen('home');
   }, []);
-  const handleSpinSkip = useCallback(() => setSpinState('done'), []);
-  const handleReelDone = useCallback(
-    (creatureId) => {
-      const i = creatures.findIndex((c) => c.id === creatureId);
-      if (i >= 0) homeIndexRef.current = i;
-      setReel(null);
-      setScreen('home');
-    },
-    [creatures]
-  );
 
   // --- custom creatures (the "Create your own squishy" flow) ---
   const handleOpenCreator = useCallback(() => setScreen('create'), []);
   const openAchievements = useCallback(() => setScreen('achievements'), []);
   const openStats = useCallback(() => setScreen('stats'), []);
+  const openSquishdoku = useCallback(() => setScreen('squishdoku'), []);
+  const openSort = useCallback(() => setScreen('sort'), []);
+  const openStack = useCallback(() => setScreen('stack'), []);
+  const openHop = useCallback(() => setScreen('hop'), []);
+  const openRoad = useCallback(() => {
+    setRoadAuto(null);
+    setScreen('road');
+  }, []);
   // the tutorial's current step (useTutorial runs further down; this ref is
   // for callbacks declared before it)
   const tutorialStepRef = useRef('done');
-  const openStore = useCallback(() => {
-    // the tutorial's "keys unlock creatures" step points at the first locked
-    // creature: open the shop on its row
-    const firstLocked = tutorialStepRef.current === 'store' ? tokenCandidates(boxRoster(creatures), profile)[0] : null;
-    setStoreFocusId(firstLocked ? firstLocked.id : null);
-    setScreen('store');
-  }, [creatures, profile]);
-  const openBoxScreen = useCallback(() => setScreen('box'), []);
+  // the Shop tab, on one of its own tabs
+  const openShopAt = useCallback((tab = 'chests') => {
+    setShopTab(tab);
+    setShopKey((k) => k + 1);
+    setMainTab('shop');
+    setScreen('home');
+  }, []);
+  const openSettings = useCallback(() => setSettingsOpen(true), []);
+  // stable, so the memoized Shop only re-renders when the prices change
+  const priceOf = useCallback((key) => billing.priceLabel(key, storePrices), [storePrices, pricingVersion]); // eslint-disable-line react-hooks/exhaustive-deps
+  const closeSettings = useCallback(() => setSettingsOpen(false), []);
   const openCrib = useCallback(() => setScreen('crib'), []);
 
   const flashApp = useCallback((msg) => {
@@ -453,7 +616,6 @@ export default function App() {
     !!authUser &&
     !!profile &&
     spinState === 'done' &&
-    !reel &&
     screen === 'home' &&
     !activeToy &&
     !loadingToy &&
@@ -471,9 +633,16 @@ export default function App() {
     setStreakIntro(true);
   }, [streakIntroDue, authUser]);
   const openStreak = useCallback(() => setScreen('streak'), []);
+  // back to Home with the layer's slide, like every other screen (it used to
+  // swap straight to Home, which showed nothing until Home had re-rendered)
   const closeStreak = useCallback(() => {
-    setStreakIntro(false);
-    setScreen('home');
+    const done = () => {
+      setStreakIntro(false);
+      setScreen('home');
+    };
+    const layer = layerRef.current;
+    if (layer) layer.exit(done);
+    else done();
   }, []);
   const streakToDaily = useCallback(() => {
     setStreakIntro(false);
@@ -483,23 +652,23 @@ export default function App() {
   const handleClaimDaily = useCallback(
     (id) => {
       if (!authUser) return;
-      const coins = claimDailyChallenge(authUser.uid, profile, id);
-      if (coins) flashApp(`+${coins} coins!`);
+      const r = claimDailyChallenge(authUser.uid, profile, id);
+      if (r) flashApp(`+${r.coins} coins · +${r.xp} XP!`);
     },
     [authUser, profile, flashApp]
   );
-  // the chest's token goes to the cheapest locked creature (the design's
-  // shared token became one creature's token here)
-  // (the streak day's reward too: src/progression.js STREAK_REWARDS)
+  // the daily chest: its coins here, a streak day's gems or extra free chest
+  // from the server — squad dailyGift
+  // (the streak day's reward: src/progression.js STREAK_REWARDS)
   const handleClaimChest = useCallback(() => {
     if (!authUser) return;
-    const next = tokenCandidates(boxRoster(creatures), profile)[0] || null;
-    const r = claimDailyChest(authUser.uid, profile, next ? next.id : null);
+    const r = claimDailyChest(authUser.uid, profile);
     if (!r) return;
-    const tokens = r.tokens ? ` + ${r.tokens} ${next.name} ${r.tokens === 1 ? 'token' : 'tokens'}` : '';
-    const extra = r.reward.kind === 'box' ? ' + a free Mystery Box' : r.reward.kind === 'half' ? ' + half price on your next creation' : '';
-    flashApp(`Daily chest: +${r.coins} coins${tokens}${extra}!`);
-  }, [authUser, profile, creatures, flashApp]);
+    const gift = r.reward.kind === 'gems' || r.reward.kind === 'chest' ? r.reward : null;
+    squadDailyGift(gift).catch(() => {});
+    const extra = r.reward.kind === 'gems' ? ` + ${r.reward.amount} gems` : r.reward.kind === 'chest' ? ' + a free chest in the Shop' : r.reward.kind === 'half' ? ' + half price on your next creation' : '';
+    flashApp(`Daily chest: +${r.coins} coins · +${r.xp} XP${extra}!`);
+  }, [authUser, profile, flashApp]);
   const dailyToCrib = useCallback(() => {
     setDailyOpen(false);
     setScreen('crib');
@@ -512,67 +681,50 @@ export default function App() {
     creatures,
     signedIn: !!authUser && !!profile,
     setStep: useCallback((step) => authUser && setTutorialStep(authUser.uid, step), [authUser]),
-    setLevel: useCallback((lv) => authUser && setLevel(authUser.uid, lv), [authUser]),
+    setLevel: useCallback((lv) => authUser && setLevel(authUser.uid, lv, profileRef.current), [authUser]),
   });
   tutorialStepRef.current = tutorial.step;
 
-  // --- the new design (src/game, webgame/): its Main Menu is Home, its house is the Crib ---
-  // The tutorial still points at the classic Home and Crib, so a player in it stays there (src/game/flags.js).
+  // --- the new design (src/game, webgame/): its Main Menu is Home's squish tab, its house is the Crib ---
+  // The tutorial still points at the Lobby and the old Crib, so a player in it stays there (src/game/flags.js).
+  // The Menu's settings gear opens the Lobby ("classic" Home: Squad, level road, trophies, settings…) with a
+  // MAIN MENU pill back. SHOP is Home's Shop tab, as before.
   const newDesign = NEW_DESIGN && (NEW_DESIGN_DURING_TUTORIAL || !tutorialActive(profile));
-  const ownedKeys = useMemo(
-    () => creatures.filter((c) => (profile?.ownedIds || []).includes(c.id)).map(creatureKey),
-    [creatures, profile?.ownedIds]
-  );
-  // the Main Menu's settings gear: the classic Home, for everything the new design has no screen for yet
-  const openClassic = useCallback(() => setScreen('classic'), []);
-  const backToGameMenu = useCallback(() => setScreen('home'), []);
-  // a Crib request (daily challenges, the classic Home) walks into the new house, then Home is the Main Menu again
-  const gameHouseShown = useCallback(() => setScreen((s) => (s === 'crib' ? 'home' : s)), []);
-  // Squish Time on the Main Menu's games page: the squish screen, with the creature the menu shows
+  const [classicHome, setClassicHome] = useState(false);
+  const openClassic = useCallback(() => {
+    setClassicHome(true);
+    setMainTab('squish');
+    setScreen('home');
+  }, []);
+  const backToGameMenu = useCallback(() => {
+    setClassicHome(false);
+    setMainTab('squish');
+  }, []);
+  // a Crib request (the Lobby's Crib button, daily challenges) walks into the new house; then Home is the Menu again
+  const gameHouseShown = useCallback(() => {
+    setClassicHome(false);
+    setMainTab('squish');
+    setScreen((s) => (s === 'crib' ? 'home' : s));
+  }, []);
+  const openGameShop = useCallback(() => openShopAt('chests'), [openShopAt]);
+  // the Menu's games page: Squish Time (with the Menu's creature) or one of the app's games
   const handleGamePlay = useCallback(
-    (key) => {
-      const c = creatures.find((x) => creatureKey(x) === key);
-      if (c && (profile?.ownedIds || []).includes(c.id)) openToy(c);
-      else flashApp(c ? `Unlock ${c.name} to squish it!` : 'This squishy comes to Squish Time soon!');
+    (mode, key) => {
+      if (mode === 'squishdoku') openSquishdoku();
+      else if (mode === 'sort') openSort();
+      else if (mode === 'stack') openStack();
+      else if (mode === 'hop') openHop();
+      else playSelected(idOfKey(key) || selectedIdOf(profileRef.current));
     },
-    [creatures, profile?.ownedIds, openToy, flashApp]
+    [openSquishdoku, openSort, openStack, openHop, playSelected],
   );
+  // the creature picked on the Menu (CREATURES) is the player's selected squishy (the Lobby's too)
+  const handleGameSelect = useCallback((key) => {
+    const id = idOfKey(key);
+    if (id) selectSquishy(id);
+  }, [selectSquishy]);
+  const gamePlayerNow = useMemo(() => gamePlayer(profile, { level: xpView(profile).level, hidden }), [profile, hidden]);
 
-  // --- Mystery Box (src/mysteryBox.js) ---
-  const handleOpenBox = useCallback((pull, paidAhead) => (authUser ? openBox(authUser.uid, profile, pull, paidAhead) : false), [authUser, profile]);
-  // DOUBLE IT on the reveal: the doubled pull, or null
-  const handleDoubleBox = useCallback(
-    (pull) => {
-      if (!authUser) return null;
-      const doubled = doubleBox(authUser.uid, profile, pull);
-      if (doubled && !profile?.adsFree) {
-        recordAdWatched(authUser.uid, 0).catch(() => {});
-        noteDaily('ad');
-      }
-      return doubled;
-    },
-    [authUser, profile, noteDaily]
-  );
-  // A daily box's video was watched: count the ad and pay for the box.
-  const handleVideoBoxWatched = useCallback(() => {
-    if (!authUser) return;
-    recordAdWatched(authUser.uid, 0).catch(() => {});
-    payBoxWithAd(authUser.uid, profile);
-    noteDaily('ad');
-  }, [authUser, profile, noteDaily]);
-  const handlePayBoxCoins = useCallback(() => (authUser ? payBoxWithCoins(authUser.uid, profile) : false), [authUser, profile]);
-  // SQUISH IT: straight to the creature that came out of the box.
-  const handleSquishFromBox = useCallback(
-    (creatureId) => {
-      const i = creatures.findIndex((c) => c.id === creatureId);
-      if (i >= 0) {
-        homeIndexRef.current = i;
-        setScreen('home');
-        setLoadingToy(creatures[i]);
-      }
-    },
-    [creatures]
-  );
   const handleCreatureCreated = useCallback(
     // Photo path: upload the resized JPEG to Storage, then write a
     // `status: 'pending'` doc — the generateCustomModel Cloud Function runs
@@ -643,9 +795,11 @@ export default function App() {
   );
 
   const handleLogout = useCallback(async () => {
+    // closed, so the next sign-in doesn't open on it
+    setSettingsOpen(false);
     setActiveToy(null);
     setLoadingToy(null);
-    setHomeIndex(0);
+    setMainTab('squish');
     setScreen('home');
     await logout();
   }, []);
@@ -660,7 +814,7 @@ export default function App() {
   );
 
   // Real-money purchases through Google Play / the App Store (src/billing):
-  // Remove Ads, a creature's key, or a custom creation. The server grants
+  // Remove Ads, a gem pack, or a custom creation. The server grants
   // them; the profile snapshot brings the change in. Resolves with the
   // server's answer, or null if nothing was granted (yet).
   const purchase = useCallback(
@@ -671,8 +825,8 @@ export default function App() {
         const r = await billing.buy(key, { uid: authUser.uid, creatureId: creature ? creature.id : '' });
         if (r.pending) flashApp('Payment pending — it arrives as soon as it clears');
         else if (r.granted === 'adsFree' || r.granted === 'restored') flashApp('Ads removed — thank you!');
-        else if (r.granted === 'key') flashApp(`The ${creature ? creature.name : ''} key is ready — hold the card to unlock!`);
-        else if (r.granted === 'coins') flashApp(`Already unlocked — here are ${r.coins.toLocaleString()} coins instead`);
+        else if (r.granted === 'coins') flashApp(`Already unlocked — here are ${fmtNum(r.coins)} coins instead`);
+        else if (r.granted === 'gems' && !r.offer) flashApp(`+${fmtNum(r.gems)} gems${r.doubled ? ' (doubled!)' : ''}`);
         return r.pending ? null : r;
       } catch (e) {
         if (e.code === 'cancelled') return null;
@@ -689,8 +843,6 @@ export default function App() {
     },
     [authUser, buying, flashApp]
   );
-  const handleBuyNow = useCallback((creature) => purchase('creatureKey', creature), [purchase]);
-  const buyRemoveAds = useCallback(() => purchase('removeAds'), [purchase]);
   // a creation: the half-price product while the 10-day streak's reward is
   // waiting, else the 15%-off one while the Daily Spin prize is (each is
   // used up by its own product; the half price is the better deal)
@@ -699,38 +851,8 @@ export default function App() {
     const r = await purchase(creationKey);
     return !!r && r.granted === 'creation';
   }, [purchase, creationKey]);
-  const openRemoveAds = useCallback(() => setRemoveAdsOpen(true), []);
-  const closeRemoveAds = useCallback(() => setRemoveAdsOpen(false), []);
-  const showUnlock = useCallback((creatureOrId) => setUnlockForId(typeof creatureOrId === 'string' ? creatureOrId : creatureOrId?.id ?? null), []);
-  const closeUnlock = useCallback(() => setUnlockForId(null), []);
-  // from a box reveal: the Key Shop on that creature's row, or its Home
-  // card when its tokens just filled (hold it to unlock)
-  const boxOpenShop = useCallback((creatureId = null) => {
-    setStoreFocusId(creatureId);
-    setScreen('store');
-  }, []);
-  const boxUnlockIt = useCallback(
-    (creatureId) => {
-      const i = creatures.findIndex((c) => c.id === creatureId);
-      if (i >= 0) homeIndexRef.current = i;
-      setScreen('home');
-    },
-    [creatures]
-  );
-  // the popup's SHOP button: the Key Shop, on this creature's row
-  const unlockOpenShop = useCallback((creature) => {
-    setUnlockForId(null);
-    setStoreFocusId(creature.id);
-    setScreen('store');
-  }, []);
-
-  const handleUnlockWithKey = useCallback(
-    (creatureId) => {
-      if (!authUser) return;
-      unlockWithKey(authUser.uid, creatureId).catch(() => {});
-    },
-    [authUser]
-  );
+  // a locked creature's card: the Shop's squishies (coins or chests)
+  const showUnlock = useCallback(() => openShopAt('chests'), [openShopAt]);
 
   const handleRecordPress = useCallback(
     (creatureId, holdMs) => {
@@ -779,20 +901,110 @@ export default function App() {
   let stage = 'splash';
   if (splashDone && authChecked) {
     if (!authUser) stage = 'auth';
+    else if (mustVerify) stage = 'verify';
     else if (spinState === 'show') stage = 'wheel';
-    else if (reel) stage = 'reel';
     else if (streakIntro) stage = 'streak';
     else if (activeToy) stage = 'toy';
     else if (loadingToy) stage = 'loading';
     else stage = screen;
   }
+  // the new design's Menu (and house) is on screen: Home's squish tab, or a Crib request
+  const gameHome = newDesign && ((!classicHome && mainTab === 'squish') || stage === 'crib');
+  const onGame = gameHome && (stage === 'home' || stage === 'crib');
+
+  // LEVEL UP (src/components/LevelBits.js): once a level is reached past the
+  // tutorial's 2 and 3 (it has its own cards for those), on the lobby with
+  // nothing else up. `lvSeen` on the profile keeps it to once a level on
+  // every device; the ref covers a failed write. COLLECT claims every prize
+  // waiting on the level road.
+  const lvNow = profile ? levelOf(profile) : 1;
+  const lvSeen = Math.max(3, Math.floor(profile?.lvSeen ?? 0));
+  const shownLvRef = useRef(0);
+  // the test wallet's "Claim prizes again" lowers `lvSeen`: the card may
+  // show again for a level it already showed this session
+  const lastLvSeenRef = useRef(lvSeen);
+  if (lvSeen < lastLvSeenRef.current) shownLvRef.current = Math.min(shownLvRef.current, lvSeen);
+  lastLvSeenRef.current = lvSeen;
+  const levelUpDue =
+    !!authUser && hasXp && lvNow > lvSeen && lvNow > shownLvRef.current && stage === 'home' && mainTab === 'squish' && !dailyOpen && !settingsOpen && !levelUp && !tutorialActive(profile);
+  useEffect(() => {
+    if (!levelUpDue) return;
+    shownLvRef.current = lvNow;
+    markLevelSeen(authUser.uid, lvNow);
+    setLevelUp({ level: lvNow });
+    sfx.play('sd_levelUp');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [levelUpDue]);
+  const closeLevelUp = useCallback(() => setLevelUp(null), []);
+  const collectLevelUp = useCallback(() => {
+    setLevelUp(null);
+    setRoadAuto(
+      roadView(profileRef.current)
+        .filter((n) => n.claimable)
+        .map((n) => n.lv),
+    );
+    setScreen('road');
+  }, []);
+
+  // Home stays mounted once built, under whatever screen opens from it, so
+  // going back is instant (it used to be rebuilt from scratch every time).
+  // Once the screen on top covers it (`homeCovered`), it's held (Hold: not
+  // re-rendered), moved out of sight and its loops and live creature stop
+  // (LoopsOn). It isn't hidden with display: none (Freeze) any more except
+  // under FREEZE_UNDER: hiding and showing its thousands of views cost a
+  // 0.4-0.65 s frame as each screen came in and again on the way back
+  // (Galaxy A15 debug, 2026-10-28). Signing out lets it go.
+  const [homeAlive, setHomeAlive] = useState(false);
+  const [homeCovered, setHomeCovered] = useState(false);
+  useEffect(() => {
+    if (stage === 'home') {
+      setHomeAlive(true);
+      setHomeCovered(false);
+    } else if (stage === 'splash' || stage === 'auth' || stage === 'verify') {
+      setHomeAlive(false);
+    }
+  }, [stage]);
+  const coverHome = useCallback(() => setHomeCovered(true), []);
+  // the lobby's live creature let go under a screen (RigAway, idleLoop.js):
+  // from when it has slid in until Home is the screen again (after the slide
+  // back, not during it)
+  const [rigAway, setRigAway] = useState(false);
+  useEffect(() => {
+    if (homeCovered && stage !== 'home') setRigAway(true);
+    else if (stage === 'home') setRigAway(false);
+  }, [homeCovered, stage]);
+  // the Shop page truly hidden (MainScreen ShopAway) under SHOP_AWAY_UNDER:
+  // from when the screen has slid in until a moment after it has slid away
+  // again (not in the same frame the screen is taken down: together they
+  // were one 0.3 s frame)
+  const [shopAway, setShopAway] = useState(false);
+  useEffect(() => {
+    if (homeCovered && SHOP_AWAY_UNDER.has(stage)) {
+      // a few frames after the screen's own content is built, not in the
+      // same frame
+      const t = setTimeout(() => setShopAway(true), 120);
+      return () => clearTimeout(t);
+    }
+    if (stage !== 'home') return undefined;
+    const t = setTimeout(() => setShopAway(false), 900);
+    return () => clearTimeout(t);
+  }, [homeCovered, stage]);
+  const uncoverHome = useCallback(() => setHomeCovered(false), []);
+  // Back to Home from a screen over it: it slides away first (ScreenLayer's
+  // exit), with Home already under it; the screen switch follows the slide.
+  const layerRef = useRef(null);
+  const goHome = useCallback(() => {
+    const layer = layerRef.current;
+    if (layer) layer.exit(() => setScreen('home'));
+    else setScreen('home');
+  }, []);
 
   // --- sound (src/audio/sfx.js): each screen's music, a whoosh between
   // screens, and coins coming in or going out. The squish screen and the
   // Mystery Box play their own coin sounds.
-  const onGame = newDesign && (stage === 'home' || stage === 'crib');
   useEffect(() => {
     if (stage === 'crib' && !onGame) return;
+    // the new design's Menu and house play their own sounds
     sfx.music(fontsLoaded && !onGame ? MUSIC_FOR_STAGE[stage] : null);
   }, [stage, fontsLoaded, onGame]);
   const prevStageRef = useRef(stage);
@@ -802,8 +1014,8 @@ export default function App() {
   }, [stage]);
   // the tutorial follows the screen; it hides behind popups
   useEffect(() => {
-    tutReport({ screen: stage === 'classic' ? 'home' : stage, busy: removeAdsOpen || !!unlockForId || dailyOpen });
-  }, [stage, removeAdsOpen, unlockForId, dailyOpen]);
+    tutReport({ screen: stage === 'home' && mainTab === 'shop' ? 'store' : stage, busy: dailyOpen || settingsOpen });
+  }, [stage, mainTab, dailyOpen, settingsOpen]);
   const coinsNow = profile?.coins;
   const prevCoinsRef = useRef(coinsNow);
   useEffect(() => {
@@ -827,201 +1039,262 @@ export default function App() {
   }
 
   const ownedIds = profile?.ownedIds ?? [];
-  const keys = profile?.keys ?? {};
   // A creation's price comes from the store: the half-price product while
   // the streak's reward waits (−50%), the 15%-off one while the Daily Spin's
   // CREATE prize, creationDiscountPct, does.
   const discountPct = profile?.streakDiscount ? 50 : profile?.creationDiscountPct ?? 0;
   const priceLabel = billing.priceLabel(creationKey, storePrices);
-  const boxMode = boxPayMode(profile);
   const adsFree = profile?.adsFree ?? false;
-  const removeAdsPrice = billing.priceLabel('removeAds', storePrices);
-  const creatureKeyPrice = billing.priceLabel('creatureKey', storePrices);
-  const unlockCreature = unlockForId && !ownedIds.includes(unlockForId) ? creatures.find((c) => c.id === unlockForId) : null;
-  const boxLabel = `${ownedCount(creatures, ownedIds)}/${boxRoster(creatures).length || 30} · ${profile?.secretFound ? 'SECRET FOUND' : 'A SECRET AWAITS'}`;
   const dailyNow = profile ? dailyView(profile) : null;
+  // the player's level and XP, and the level road's prizes waiting (not
+  // shown during the tutorial)
+  const xpNow = xpView(profile);
+  const roadWaiting = profile && !tutorialActive(profile) ? roadClaimable(profile) : 0;
+  const lvPrize = levelUp && !(profile?.levelGot || {})[levelUp.level] ? roadPrize(levelUp.level) : null;
   // the streak screen's squishy (the one squished longest, else the first
-  // owned) and the creature the chest's tokens go to
+  // owned)
   const mascot = stage === 'streak' ? streakMascot(creatures, profile) : null;
-  const tokenCreature = stage === 'streak' ? tokenCandidates(boxRoster(creatures), profile)[0] || null : null;
   // squish coins: the streak's +5% a day, ×10 in the tutorial's goal step
   const coinMultiplier = streakMultiplier(profile) * (tutorial.step === 'goal' ? TUTORIAL_BOOST : 1);
 
-  // Every screen sits on the v3 candy stage (pink at the top), where light
-  // status-bar icons still read clearly.
-  const statusBarStyle = 'light';
+  // Every screen sits on the design's light sky (blue at the top), so the
+  // status-bar icons are dark; the Crib's HUD is dark brown, so light there.
+  const statusBarStyle = stage === 'crib' ? 'light' : 'dark';
+
+  const onHome = stage === 'home';
+  const showHome = onHome || (homeAlive && stage !== 'splash' && stage !== 'auth' && stage !== 'verify');
+  // every other screen once signed in sits in a ScreenLayer over Home
+  const overlay0 = !onHome && stage !== 'splash' && stage !== 'auth' && stage !== 'verify';
+  // under the new design's Menu, Home (the Lobby / Shop) isn't kept: the Menu is its own screen, landscape
+  const showMain = showHome && !gameHome;
+  const overlay = overlay0 && !onGame;
 
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider style={styles.app}>
       <StatusBar style={statusBarStyle} />
-      {stage === 'splash' && <SplashScreen onFinish={() => setSplashDone(true)} ownedIds={ownedIds} creatures={creatures} />}
+      {/* the splash moves on once sign-in is known and, signed in, the
+          profile and the catalog are here */}
+      {stage === 'splash' && <SplashScreen onFinish={() => setSplashDone(true)} ready={authChecked && (!authUser || (!!profile && creatures.length > 0))} creatures={creatures} />}
       {stage === 'auth' && <AuthScreen />}
+      {stage === 'verify' && <VerifyEmailScreen email={authUser?.email} onVerified={() => setVerifiedNow(true)} onLogout={handleLogout} />}
       {onGame &&
         (profile ? (
           <GameScreen
             uid={authUser.uid}
-            level={levelOf(profile)}
-            coins={profile.coins ?? 0}
-            ownedKeys={ownedKeys}
+            player={gamePlayerNow}
             wantHouse={stage === 'crib'}
             onHouseShown={gameHouseShown}
-            onShop={openStore}
+            onShop={openGameShop}
             onSettings={openClassic}
             onPlay={handleGamePlay}
+            onSelect={handleGameSelect}
           />
         ) : (
           <View style={{ flex: 1, backgroundColor: '#24123f' }} />
         ))}
-      {((stage === 'home' && !newDesign) || stage === 'classic') && (
-        <HomeScreen
-          creatures={creatures}
-          ownedIds={ownedIds}
-          keys={keys}
-          coins={profile?.coins ?? 0}
-          index={homeIndexRef.current}
-          onChangeIndex={setHomeIndex}
-          onSelectToy={openToy}
-          onUnlockWithKey={handleUnlockWithKey}
-          tokens={profile?.tokens ?? NO_TOKENS}
-          boxConfigVersion={boxConfigVersion}
-          onShowUnlock={showUnlock}
-          nickname={profile?.nickname ?? 'Squisher'}
-          onSaveNickname={handleSaveNickname}
-          adsFree={adsFree}
-          removeAdsPrice={removeAdsPrice}
-          onOpenRemoveAds={openRemoveAds}
-          onSubmitFeedback={handleSubmitFeedback}
-          onLogout={handleLogout}
-          onOpenAchievements={openAchievements}
-          onOpenStats={openStats}
-          onOpenStore={openStore}
-          customCreatures={customCreatures}
-          onOpenCreator={handleOpenCreator}
-          onSelectCustom={handleSelectCustom}
-          onDeleteCustom={handleDeleteCustom}
-          onRetryCustom={handleRetryCustom}
-          focusMine={mineFocus}
-          onFocusMineDone={clearMineFocus}
-          generationCredits={profile?.generationCredits ?? 1}
-          paidCredits={profile?.paidCredits ?? 0}
-          priceLabel={priceLabel}
-          discountPct={discountPct}
-          boxLabel={boxLabel}
-          boxPrice={boxPriceLabel(boxMode)}
-          boxVideos={boxMode === 'ad' ? 1 : 0}
-          boxCoins={boxMode === 'coins'}
-          onOpenBox={openBoxScreen}
-          level={levelOf(profile)}
-          dailyUnlocked={dailyIsUnlocked(profile)}
-          cribUnlocked={cribUnlocked(profile)}
-          dailyBadge={dailyNow ? dailyNow.claimable : 0}
-          onOpenDaily={openDaily}
-          streak={streakOf(profile)}
-          streakHot={!!dailyNow && dailyNow.streak > 0 && !dailyNow.chestDone}
-          onOpenStreak={openStreak}
-          onOpenCrib={openCrib}
-          onReplayTutorial={replayTutorial}
-        />
+      {showMain && (
+        <Freeze freeze={!onHome && homeCovered && FREEZE_UNDER.has(stage)}>
+        {/* (the Shop page stays hidden through the slide back: it's out of
+            sight beside the lobby, and showing it mid-slide stalled the slide) */}
+        <ShopAway.Provider value={shopAway}>
+        <View style={styles.homeClip} removeClippedSubviews>
+        <RigAway.Provider value={rigAway}>
+        <LoopsOn.Provider value={onHome || !homeCovered}>
+        <Hold hold={!onHome && homeCovered}>
+          <View style={[styles.home, !onHome && homeCovered && styles.homeAway]} collapsable={false} pointerEvents={onHome ? 'auto' : 'none'}>
+            <MainScreen
+              tab={mainTab}
+              onTab={setMainTab}
+              adsFree={adsFree}
+              active={onHome}
+              squishies={
+                <LobbyScreen
+                  active={onHome && mainTab === 'squish'}
+                  profile={profile}
+                  cribUnlocked={cribUnlocked(profile)}
+                  level={xpNow.level}
+                  xpInto={xpNow.into}
+                  xpNeed={xpNow.need}
+                  roadWaiting={roadWaiting}
+                  onOpenRoad={openRoad}
+                  onOpenCrib={openCrib}
+                  onOpenAchievements={openAchievements}
+                  onOpenSettings={openSettings}
+                  onOpenShop={openShopAt}
+                  onPlay={playSelected}
+                  onOpenPuzzle={openSquishdoku}
+                  onOpenSort={openSort}
+                  onOpenStack={openStack}
+                  onOpenHop={openHop}
+                  pickGames={tutorial.step === 'done'}
+                  creatures={creatures}
+                  hidden={hidden}
+                  setRewards={setRewards}
+                  rainbow={rainbow}
+                  onSelect={selectSquishy}
+                  onSeen={squadSeen}
+                />
+              }
+              renderShop={(onImmersive) => (
+                <ShopScreen
+                  openKey={shopKey}
+                  startTab={shopTab}
+                  creatures={creatures}
+                  profile={profile}
+                  offers={offers}
+                  hidden={hidden}
+                  setRewards={setRewards}
+                  rainbow={rainbow}
+                  onSeenOffer={seenOffer}
+                  onBuyProduct={purchase}
+                  priceOf={priceOf}
+                  onImmersive={onImmersive}
+                />
+              )}
+            />
+          </View>
+        </Hold>
+        </LoopsOn.Provider>
+        </RigAway.Provider>
+        </View>
+        </ShopAway.Provider>
+        </Freeze>
       )}
-      {stage === 'classic' && <ClassicBack onBack={backToGameMenu} />}
-      {stage === 'crib' && !newDesign && (
-        <CribScreen
-          authUser={authUser}
-          profile={profile}
-          creatures={creatures}
-          onBack={() => setScreen('home')}
-          noteDaily={noteDaily}
-          daily={{ unlocked: dailyIsUnlocked(profile), badge: dailyNow ? dailyNow.claimable : 0, onClaim: handleClaimDaily, onClaimChest: handleClaimChest }}
-          tutorialStep={tutorial.step}
-          onTutorialAction={tutorial.onAction}
-        />
-      )}
-      {stage === 'wheel' && (
-        <DailySpinScreen onSpin={handleSpin} onClaim={handleSpinClaim} onSkip={handleSpinSkip} bonusLeft={adSpinsLeft(profile)} adsFree={profile?.adsFree ?? false} />
-      )}
-      {stage === 'streak' && (
-        <StreakScreen profile={profile} mascot={mascot} tokenCreature={tokenCreature} intro={streakIntro} onClose={closeStreak} onOpenDaily={streakToDaily} />
-      )}
-      {stage === 'reel' && reel && <CreatureReelScreen creatures={creatures} lockedIds={reel.lockedIds} winnerId={reel.winnerId} onDone={handleReelDone} />}
-      {stage === 'box' && (
-        <MysteryBoxScreen
-          profile={profile}
-          creatures={creatures}
-          onBack={() => setScreen('home')}
-          onOpen={handleOpenBox}
-          onDouble={handleDoubleBox}
-          onVideoBoxWatched={handleVideoBoxWatched}
-          onPayCoins={handlePayBoxCoins}
-          onSquish={handleSquishFromBox}
-          onOpenShop={boxOpenShop}
-          onUnlockIt={boxUnlockIt}
-        />
-      )}
-      {stage === 'create' && (
-        <CreateScreen
-          onBack={() => setScreen('home')}
-          onCreated={handleCreatureCreated}
-          generationCredits={profile?.generationCredits ?? 1}
-          paidCredits={profile?.paidCredits ?? 0}
-          priceLabel={priceLabel}
-          discountPct={discountPct}
-          onBuyCreation={buyCreation}
-          buying={buying === 'creation' || buying === 'creationDiscount' || buying === 'creationHalf'}
-        />
-      )}
-      {stage === 'achievements' && (
-        <AchievementsScreen creatures={creatures} profile={profile} customCount={customCreatures.length} onBack={() => setScreen('home')} />
-      )}
-      {stage === 'stats' && (
-        <StatsScreen creatures={creatures} customCreatures={customCreatures} profile={profile} onBack={() => setScreen('home')} />
-      )}
-      {stage === 'store' && (
-        <StoreScreen
-          creatures={creatures}
-          profile={profile}
-          onBuyNow={handleBuyNow}
-          moneyPrice={creatureKeyPrice}
-          buyingId={buying}
-          focusId={storeFocusId}
-          onBack={() => setScreen('home')}
-        />
-      )}
-      {stage === 'loading' && <LoadingScreen creature={loadingToy} onFinish={finishLoadingToy} />}
-      {stage === 'toy' && activeToy && (
-        <SquishScreen
-          toy={activeToy}
-          coins={profile?.coins ?? 0}
-          onBack={backToHome}
-          onEarnCoins={handleEarnCoins}
-          onRecordPress={handleRecordPress}
-          achievements={profile?.achievements ?? {}}
-          onMarkAchievement={handleMarkAchievement}
-          onAdWatched={handleAdWatched}
-          squishSoundEnabled={squishSoundEnabled}
-          onToggleSquishSound={setSquishSoundEnabled}
-          coinSoundEnabled={coinSoundEnabled}
-          onToggleCoinSound={setCoinSoundEnabled}
-          releaseSoundEnabled={releaseSoundEnabled}
-          onToggleReleaseSound={setReleaseSoundEnabled}
-          vibrationEnabled={vibrationEnabled}
-          onToggleVibration={setVibrationEnabled}
-          showFps={showFps}
-          onToggleShowFps={setShowFps}
-          pokeStrength={pokeStrength}
-          onChangePokeStrength={setPokeStrength}
-          pokeOutward={pokeOutward}
-          onChangePokeOutward={setPokeOutward}
-          adsFree={adsFree}
-          coinMultiplier={coinMultiplier}
-          hideHints={tutorial.step !== 'done'}
-        />
+      {newDesign && classicHome && stage === 'home' && mainTab === 'squish' && <ClassicBack onBack={backToGameMenu} />}
+      {overlay && (
+        <ScreenLayer ref={layerRef} key={stage} slide={showMain && SLIDE_IN.has(stage)} onCovered={coverHome} onUncover={showMain ? uncoverHome : undefined}>
+          {stage === 'crib' && !newDesign && (
+            <WhenScreenReady placeholder={<CribBones />}>
+              <CribScreen
+                authUser={authUser}
+                profile={profile}
+                creatures={creatures}
+                onBack={goHome}
+                noteDaily={noteDaily}
+                daily={{ unlocked: dailyIsUnlocked(profile), badge: dailyNow ? dailyNow.claimable : 0, onClaim: handleClaimDaily, onClaimChest: handleClaimChest }}
+                tutorialStep={tutorial.step}
+                onTutorialAction={tutorial.onAction}
+              />
+            </WhenScreenReady>
+          )}
+          {stage === 'wheel' && (
+            <DailySpinScreen
+              onSpin={handleSpin}
+              onDone={handleSpinDone}
+              bonusLeft={adSpinsLeft(profile)}
+              adsFree={profile?.adsFree ?? false}
+              name={profile?.nickname}
+              creatures={creatures}
+            />
+          )}
+          {stage === 'streak' && (
+            <StreakScreen profile={profile} mascot={mascot} intro={streakIntro} onClose={closeStreak} onOpenDaily={streakToDaily} />
+          )}
+          {stage === 'create' && (
+            <CreateScreen
+              onBack={goHome}
+              onCreated={handleCreatureCreated}
+              generationCredits={profile?.generationCredits ?? 1}
+              paidCredits={profile?.paidCredits ?? 0}
+              priceLabel={priceLabel}
+              discountPct={discountPct}
+              onBuyCreation={buyCreation}
+              buying={buying === 'creation' || buying === 'creationDiscount' || buying === 'creationHalf'}
+            />
+          )}
+          {stage === 'achievements' && (
+            <AchievementsScreen creatures={counted} profile={profile} customCount={customCreatures.length} onBack={goHome} />
+          )}
+          {/* the games and the level road slide in as placeholders and are
+              built once the slide is over (ScreenLayer) */}
+          {stage === 'squishdoku' && (
+            <WhenScreenReady placeholder={<ScreenBones kind="hub" />}>
+              <SquishdokuScreen profile={profile} creatures={creatures} hidden={hidden} uid={authUser?.uid} adsFree={adsFree} haptics={vibrationEnabled} onBack={goHome} />
+            </WhenScreenReady>
+          )}
+          {stage === 'sort' && (
+            <WhenScreenReady placeholder={<ScreenBones kind="hub" />}>
+              <SortScreen profile={profile} creatures={creatures} hidden={hidden} uid={authUser?.uid} adsFree={adsFree} haptics={vibrationEnabled} onBack={goHome} />
+            </WhenScreenReady>
+          )}
+          {stage === 'stack' && (
+            <WhenScreenReady placeholder={<ScreenBones kind="hub" />}>
+              <StackScreen profile={profile} creatures={creatures} hidden={hidden} uid={authUser?.uid} adsFree={adsFree} haptics={vibrationEnabled} onBack={goHome} />
+            </WhenScreenReady>
+          )}
+          {stage === 'hop' && (
+            <WhenScreenReady placeholder={<ScreenBones kind="map" />}>
+              <HopScreen profile={profile} creatures={creatures} hidden={hidden} uid={authUser?.uid} adsFree={adsFree} haptics={vibrationEnabled} onBack={goHome} />
+            </WhenScreenReady>
+          )}
+          {stage === 'stats' && (
+            <StatsScreen creatures={counted} customCreatures={customCreatures} profile={profile} onBack={goHome} />
+          )}
+          {stage === 'road' && (
+            <WhenScreenReady placeholder={<ScreenBones kind="list" />}>
+              <LevelRoadScreen profile={profile} levels={levelsCfg} creatures={creatures} hidden={hidden} autoClaim={roadAuto} onBack={goHome} />
+            </WhenScreenReady>
+          )}
+          {stage === 'loading' && <LoadingScreen creature={loadingToy} onFinish={finishLoadingToy} />}
+          {stage === 'toy' && activeToy && (
+            <SquishScreen
+              toy={activeToy}
+              coins={profile?.coins ?? 0}
+              onBack={backToHome}
+              onEarnCoins={handleEarnCoins}
+              onRecordPress={handleRecordPress}
+              achievements={profile?.achievements ?? NO_ACHIEVEMENTS}
+              onMarkAchievement={handleMarkAchievement}
+              onAdWatched={handleAdWatched}
+              squishSoundEnabled={squishSoundEnabled}
+              onToggleSquishSound={setSquishSoundEnabled}
+              coinSoundEnabled={coinSoundEnabled}
+              onToggleCoinSound={setCoinSoundEnabled}
+              releaseSoundEnabled={releaseSoundEnabled}
+              onToggleReleaseSound={setReleaseSoundEnabled}
+              vibrationEnabled={vibrationEnabled}
+              onToggleVibration={setVibrationEnabled}
+              showFps={showFps}
+              onToggleShowFps={setShowFps}
+              pokeStrength={pokeStrength}
+              onChangePokeStrength={setPokeStrength}
+              pokeOutward={pokeOutward}
+              onChangePokeOutward={setPokeOutward}
+              adsFree={adsFree}
+              coinMultiplier={coinMultiplier}
+              hideHints={tutorial.step !== 'done'}
+            />
+          )}
+        </ScreenLayer>
       )}
       {authUser ? (
         <>
-          <UnlockSheet creature={unlockCreature} profile={profile} moneyPrice={creatureKeyPrice} onClose={closeUnlock} onOpenShop={unlockOpenShop} />
-          <RemoveAdsSheet visible={removeAdsOpen} adsFree={adsFree} price={removeAdsPrice} buying={buying === 'removeAds'} onBuy={buyRemoveAds} onClose={closeRemoveAds} />
+          <SettingsSheet
+            visible={settingsOpen}
+            onClose={closeSettings}
+            nickname={profile?.nickname ?? 'Squisher'}
+            onSaveNickname={handleSaveNickname}
+            onSubmitFeedback={handleSubmitFeedback}
+            onLogout={handleLogout}
+            onReplayTutorial={replayTutorial}
+            onOpenStats={openStats}
+            tester={tester}
+            wallet={{ ...walletOf(profile), level: xpNow.level }}
+            fpsOn={fpsOverlay}
+            onToggleFps={toggleFps}
+          />
           <DailyChallengesSheet visible={dailyOpen} profile={profile} onClose={closeDaily} onClaim={handleClaimDaily} onClaimChest={handleClaimChest} onOpenCrib={dailyToCrib} />
         </>
+      ) : null}
+      {levelUp ? (
+        <LevelUpCard
+          level={levelUp.level}
+          prize={lvPrize}
+          more={Math.max(0, roadWaiting - (lvPrize ? 1 : 0))}
+          group={lineup(todayKey(), hidden)[0]}
+          onCollect={collectLevelUp}
+          onLater={closeLevelUp}
+        />
       ) : null}
       {/* above the ad strip and the Mystery Box banner */}
       {/* (turned with the Crib while it's landscape, so they come from its top) */}
@@ -1032,8 +1305,21 @@ export default function App() {
         <AchievementToast title={achToast} messageKey={achToastKey} />
       </TurnWithCrib>
       <ForcedInterstitialAd trigger={freeGenAdTrigger} />
+      {tester && fpsOverlay ? <FpsCounter /> : null}
       {/* the guided tutorial's coach marks, over everything */}
       <TutorialGuide onAction={tutorial.onAction} />
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  // the sky's own blue behind everything: a screen sliding away before the
+  // one under it has drawn shows sky, never a white flash
+  app: { backgroundColor: '#b9e2ff' },
+  fill: { flex: 1 },
+  // Home, and Home moved out of its clip while a screen covers it (the
+  // clip's removeClippedSubviews then takes it out of the drawing)
+  homeClip: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
+  home: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
+  homeAway: { top: 100000, bottom: -100000 },
+});

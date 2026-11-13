@@ -53,6 +53,73 @@ export const PATCHES = [
     find: 'if (rows.length) { this.rows = rows; this.byId = new Map(rows.map(x => [x.id, x])); return; }',
     replace: 'if (rows.length) { this.byId = new Map(rows.map(x => [x.id, x])); this.rows = window.SquishConfig ? window.SquishConfig.visibleItems(rows) : rows; return; }',
   },
+  // ---- the Main Menu's Mini Games page: the app's games (PLAY / GAMES); the yard games only from the backyard ----
+  {
+    file: 'main-menu.js',
+    why: 'PLAY / GAMES lists the app\'s games (Squish Time, Squishdoku, Sort, Stack, Hop: app/games.js), not the yard games',
+    find: 'const games = () => [SQUISH].concat((window.YardGames && window.YardGames.GAMES) || []);',
+    replace: 'const games = () => (window.SquishApp && window.SquishApp.menuGames && window.SquishApp.menuGames(SQUISH)) || [SQUISH].concat((window.YardGames && window.YardGames.GAMES) || []);',
+  },
+  {
+    file: 'main-menu.js',
+    why: 'an app game is open unless the app says it isn\'t (the yard games keep the Backyard rule)',
+    find: "const open = G => G.id === 'squish' || !!(st && st.open.backyard);",
+    replace: "const open = G => G.app ? G.open !== false : (G.id === 'squish' || !!(st && st.open.backyard));",
+  },
+  {
+    file: 'main-menu.js',
+    why: 'an app game\'s card shows its progress (e.g. "Level 37 / 600")',
+    find: "'<div class=\"best\">' + (B[g.id] ? '★ Best ' + B[g.id] : 'New!') + '</div>'",
+    replace: "'<div class=\"best\">' + (g.best != null ? esc(g.best) : B[g.id] ? '★ Best ' + B[g.id] : 'New!') + '</div>'",
+  },
+  {
+    file: 'main-menu.js',
+    why: 'PLAY on an app game opens it in the app',
+    find: "    function playGame(g) {\n      if (g.id === 'squish') {",
+    replace: "    function playGame(g) {\n      if (g.app && opts.onPlay) { opts.onPlay(g.id, selId()); return; }\n      if (g.id === 'squish') {",
+  },
+  {
+    file: 'main-menu.js',
+    why: 'the same page, as the Yard Games (the backyard\'s button: kind "yard"), also from inside the house',
+    find: "    function openGames() {\n      if (busy || inside) return; const G = games(), B = yb(), c = cre();",
+    replace: "    function openGames(kind) {\n      if (busy || (inside && kind !== 'yard')) return; opts._yard = kind === 'yard'; const G = opts._yard ? ((window.YardGames && window.YardGames.GAMES) || []) : games(), B = yb(), c = cre();",
+  },
+  {
+    file: 'main-menu.js',
+    why: 'the Yard Games page\'s title',
+    find: "ft('Mini Games', 'gold', 30)",
+    replace: "ft(opts._yard ? 'Yard Games' : 'Mini Games', 'gold', 30)",
+  },
+  {
+    file: 'main-menu.js',
+    why: 'the app games page\'s subtitle (the app\'s note; the yard page keeps the design\'s)',
+    find: "' ready · your creature plays every game</div>",
+    replace: "' ready · ' + (!opts._yard && window.SquishApp && window.SquishApp.gamesNote || 'your creature plays every game') + '</div>",
+  },
+  {
+    file: 'main-menu.js',
+    why: 'a yard page opened from the house shows over the house (it sits in the menu frame, under the house)',
+    find: "ov.appendChild(page); fitFT(page); return page; }",
+    replace: "ov.appendChild(page); if (opts._yard && inside) { host.style.position = 'relative'; host.style.zIndex = '30'; } fitFT(page); return page; }",
+  },
+  {
+    file: 'main-menu.js',
+    why: 'closing it shows the house again',
+    find: "if (page) { page.remove(); page = null; } }",
+    replace: "if (page) { page.remove(); page = null; } host.style.zIndex = ''; }",
+  },
+  {
+    file: 'main-menu.js',
+    why: 'a yard game\'s back button returns to the Yard Games, not the app games',
+    find: "p.querySelector('[data-x]').onclick = () => openGames();",
+    replace: "p.querySelector('[data-x]').onclick = () => openGames(opts._yard ? 'yard' : undefined);",
+  },
+  {
+    file: 'main-menu.js',
+    why: 'and so does finishing one',
+    find: "if (page && page.contains(mid)) openGames(); }, 0);",
+    replace: "if (page && page.contains(mid)) openGames(opts._yard ? 'yard' : undefined); }, 0);",
+  },
 ];
 
 export function applyPatches(rel, text) {

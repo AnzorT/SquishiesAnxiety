@@ -2,7 +2,7 @@
 // The pages are the prototype's own code, so they look exactly like the design. This screen hands them the player
 // (coins, level, owned creatures, the saved house) and the admin's remote config, and turns what they send back into
 // app actions (shop, settings, Squish Time) and Firestore writes (coins, house layout). Messages: webgame/README.md.
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BackHandler, Platform, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as ScreenOrientation from 'expo-screen-orientation';
@@ -17,7 +17,9 @@ const BG = '#24123f'; // the design's page colour, so nothing flashes while it l
 const LS = String.fromCharCode(0x2028), PS = String.fromCharCode(0x2029);
 const toJs = (v) => JSON.stringify(v).split(LS).join('\\u2028').split(PS).join('\\u2029');
 
-export default function GameScreen({ uid, level, coins, ownedKeys, wantHouse, onHouseShown, onShop, onSettings, onPlay }) {
+// player: what the game shows of the player (src/game/player.js gamePlayer): level, coins, gems, owned creature keys,
+// their collection entries, the selected one, the creatures not out (groups switched off), the app's games list.
+export default function GameScreen({ uid, player, wantHouse, onHouseShown, onShop, onSettings, onPlay, onSelect }) {
   const web = useRef(null);
   const ready = useRef(false);
   const queue = useRef([]);
@@ -62,7 +64,7 @@ export default function GameScreen({ uid, level, coins, ownedKeys, wantHouse, on
   }, []);
 
   // what the page starts with (later changes are sent as messages)
-  const state = useMemo(() => ({ level, coins, owned: ownedKeys }), [level, coins, ownedKeys]);
+  const state = player;
   const startRef = useRef(null);
   if (!startRef.current && house !== undefined && config) {
     startRef.current = { screen: 'menu', state: { ...state, house: house || undefined }, config };
@@ -115,7 +117,11 @@ export default function GameScreen({ uid, level, coins, ownedKeys, wantHouse, on
           else if (p.what === 'settings') onSettings && onSettings();
           break;
         case 'play':
-          onPlay && onPlay(p.key, p.mode);
+          // p.mode: 'squish' (Squish Time) or an app game id ('squishdoku', 'sort', 'stack', 'hop')
+          onPlay && onPlay(p.mode, p.key);
+          break;
+        case 'select':
+          onSelect && onSelect(p.key);
           break;
         case 'backUnhandled':
           BackHandler.exitApp();
@@ -127,7 +133,7 @@ export default function GameScreen({ uid, level, coins, ownedKeys, wantHouse, on
           break;
       }
     },
-    [uid, send, onShop, onSettings, onPlay]
+    [uid, send, onShop, onSettings, onPlay, onSelect]
   );
 
   // the page's process died (low memory): start it again

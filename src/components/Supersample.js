@@ -38,9 +38,18 @@ const SLOW_STREAK = 2;
 const CLEAN_STREAK = 8;
 const FACTOR_STEPS = [2, 1.5, 1];
 
+// Self-lit surfaces (emissive: the squish game's card art, REDESIGN_V6
+// step 4) are light too and get the same headroom; left out, they came back
+// 4× too bright and tone-mapped to near white. Each material once, however
+// many meshes share it.
 function scaleLights(scene, factor) {
+  const seen = new Set();
   scene.traverse((obj) => {
     if (obj.isLight) obj.intensity *= factor;
+    else if (obj.isMesh && obj.material && obj.material.emissiveIntensity !== undefined && !seen.has(obj.material)) {
+      seen.add(obj.material);
+      obj.material.emissiveIntensity *= factor;
+    }
   });
 }
 

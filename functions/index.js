@@ -337,27 +337,25 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // --- Daily Spin ---------------------------------------------------------
 // One free spin of the wheel per calendar day (the player's own day — the
 // app sends its UTC offset). The server rolls the prize and hands it out in
-// the same transaction, because one prize — 15% off the next custom
-// creature, which costs real money — must not be something the app can
-// grant itself (firestore.rules stops the client writing `lastSpinDay`,
-// `creationDiscountPct`, `spins` and `wheelJackpot`). Rules and odds live in
-// dailySpin.js. The app calls this over plain HTTPS with its ID token
+// the same transaction, so the app can't grant itself gems (firestore.rules
+// stops the client writing `lastSpinDay`, `spins` and `wheelJackpot`, and
+// the squad economy's fields). Rules and odds live in dailySpin.js. The app
+// calls this over plain HTTPS with its ID token
 // (src/firebase/callFunction.js), so it needs no extra native module.
 //
-// `bonus: true` is a SPIN AGAIN, paid with a rewarded video the app played:
-// allowed after the day's free spin, up to MAX_AD_SPINS a day (dailySpin.js).
+// `bonus: true` is "Watch ad, spin again", paid with a rewarded video the
+// app played: allowed after the day's free spin, MAX_AD_SPINS a day.
 //
 // Returns { already: true } if today's spin is used (or, for a bonus spin,
-// the day's video spins), otherwise the prize:
-// { index, kind: 'coins' | 'create' | 'unlock', amount?, discountPct?,
-//   creatureId?, lockedIds?, allOwned? }.
+// the day's video spin), otherwise the prize:
+// { index, kind: 'coins' | 'gems', amount, jackpot? }.
 //
-// `creationDiscountPct` is only recorded for now: there's no purchase flow
-// yet. Whatever sells a creation later must charge 15% less while it's set
-// and clear it once used.
+// A profile that hasn't made a squad move yet gets its starting gems first
+// (squad.withStart), or a gems prize would stand in for them.
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { FieldValue } = require('firebase-admin/firestore');
-const { WHEEL, rollWheel, dayKey, spinOutcome, spinAllowed } = require('./dailySpin');
+const { rollWheel, dayKey, spinOutcome, spinAllowed } = require('./dailySpin');
+const { withStart } = require('./squad');
 
 exports.spinWheel = onCall(async (request) => {
   const uid = request.auth && request.auth.uid;
@@ -366,36 +364,94 @@ exports.spinWheel = onCall(async (request) => {
   const day = dayKey(Date.now(), request.data && request.data.tzOffsetMinutes);
   const bonus = !!(request.data && request.data.bonus);
   const index = rollWheel();
-  // The FREE creature needs the catalog (the numbered roster — 30 creatures
-  // since the 2026-10-03 plush roster; any numeric id counts).
-  const rosterIds =
-    WHEEL[index].kind === 'unlock'
-      ? (await db.collection('creatures').select().get()).docs.map((d) => d.id).filter((id) => /^\d+$/.test(id))
-      : [];
 
   const userRef = db.collection('users').doc(uid);
   return db.runTransaction(async (tx) => {
     const snap = await tx.get(userRef);
     if (!snap.exists) throw new HttpsError('failed-precondition', 'No profile.');
-    const profile = snap.data();
-    const allowed = spinAllowed(profile, day, bonus);
+    const allowed = spinAllowed(snap.data(), day, bonus);
     if (!allowed) return { already: true, day, bonus };
 
-    const { result, changes } = spinOutcome({ profile, rosterIds, day, index });
-    const update = { ...allowed, spins: FieldValue.increment(changes.spins) };
+    const { result, changes } = spinOutcome({ day, index });
+    const begun = withStart(snap.data());
+    const update = { ...begun.set, ...allowed, spins: FieldValue.increment(changes.spins) };
     if (changes.coins) {
       update.coins = FieldValue.increment(changes.coins);
       update.totalEarned = FieldValue.increment(changes.coins);
     }
+    if (changes.gems) update.gems = (Number(begun.p.gems) || 0) + changes.gems;
     if (changes.jackpot) update.wheelJackpot = true;
-    if (changes.discountPct) update.creationDiscountPct = changes.discountPct;
-    if (changes.unlockId) {
-      update.ownedIds = FieldValue.arrayUnion(changes.unlockId);
-      update[`keys.${changes.unlockId}`] = false;
-    }
     tx.update(userRef, update);
-    logger.info(`[${uid}] daily spin ${day}${bonus ? ' (video)' : ''}: ${result.kind}`, result);
+    logger.info(`[${uid}] daily spin ${day}${bonus ? ' (video)' : ''}: ${result.amount} ${result.kind}`, result);
     return result;
+  });
+});
+
+// --- The squad economy: chests, gems, the collection -------------------------
+//
+// One callable for every move (the rules: squad.js). The app sends
+// { move, ...args, tzOffsetMinutes }; the move runs in a transaction on the
+// player's profile and the result goes back. Chests can only drop creatures
+// that have art (the catalog's numbered creature docs) and are out (not on
+// config/roster's hidden list: squad.js HIDDEN).
+const squad = require('./squad');
+
+exports.squad = onCall(async (request) => {
+  const uid = request.auth && request.auth.uid;
+  if (!uid) throw new HttpsError('unauthenticated', 'Sign in first.');
+  const data = request.data || {};
+  const fn = squad.MOVES[data.move];
+  if (!fn) throw new HttpsError('invalid-argument', 'Unknown move.');
+  const db = admin.firestore();
+  const day = dayKey(Date.now(), data.tzOffsetMinutes);
+  const needsArt = ['buyChest', 'openChest', 'groupChest', 'freeChest', 'adChest', 'dealChest', 'passClaim', 'streakClaim', 'levelClaim', 'levelClaimAll', 'rainbowChest'].includes(data.move);
+  // the season pass and the 7-day streak read what config/offers sets, the
+  // level road what config/levels does
+  const needsOffers = ['passClaim', 'streakClaim'].includes(data.move);
+  const offersSnap = needsOffers ? await db.collection('config').doc('offers').get() : null;
+  const needsLevels = ['levelClaim', 'levelClaimAll'].includes(data.move);
+  const levelsSnap = needsLevels ? await db.collection('config').doc('levels').get() : null;
+  const [artSnap, rosterSnap] = needsArt ? await Promise.all([db.collection('creatures').select().get(), db.collection('config').doc('roster').get()]) : [null, null];
+  const rosterCfg = rosterSnap && rosterSnap.exists ? rosterSnap.data() : null;
+  const hidden = squad.hiddenOf(rosterCfg);
+  const artIds = artSnap ? squad.outIds(artSnap.docs.map((d) => d.id).filter((id) => /^\d+$/.test(id)), hidden) : [];
+  const args = {
+    tier: String(data.tier || ''),
+    deal: !!data.deal,
+    id: String(data.id ?? ''),
+    f: String(data.f || ''),
+    i: Number(data.i),
+    reward: data.reward && typeof data.reward === 'object' ? { kind: String(data.reward.kind || ''), amount: Number(data.reward.amount) || 0 } : null,
+    // a group chest (REDESIGN_V6 step 5)
+    group: String(data.group || ''),
+    size: String(data.size || ''),
+    now: Date.now(),
+    offers: offersSnap && offersSnap.exists ? offersSnap.data() : null,
+    levels: levelsSnap && levelsSnap.exists ? levelsSnap.data() : null,
+    day,
+    artIds,
+    hidden,
+    setRewards: squad.setRewardsOf(rosterCfg),
+    // how many copies unlock a creature (config/roster, else squad.js COPIES)
+    need: squad.copiesOf(rosterCfg),
+    // Rainbow chests earned or sold (config/roster, else squad.js RAINBOW)
+    rainbow: squad.rainbowOf(rosterCfg),
+  };
+
+  const userRef = db.collection('users').doc(uid);
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(userRef);
+    if (!snap.exists) throw new HttpsError('failed-precondition', 'No profile.');
+    const begun = squad.withStart(snap.data());
+    const out = fn(begun.p, args);
+    if (out.error) {
+      if (Object.keys(begun.set).length) tx.update(userRef, begun.set);
+      return { error: out.error };
+    }
+    const update = { ...begun.set, ...out.set };
+    if (Object.keys(update).length) tx.update(userRef, update);
+    logger.info(`[${uid}] squad ${data.move}`, out.result);
+    return out.result;
   });
 });
 
@@ -472,4 +528,148 @@ exports.rebuildGameConfig = onSchedule('every 1 minutes', async () => {
     if (now.exists && now.data().at && at && now.data().at.isEqual(at)) tx.delete(db.doc('config/gameDirty'));
   });
   logger.info('config/game rebuilt', { creatures: Object.keys(live.creatures).length, items: Object.keys(live.items).length, animsOff: live.animsOff.length });
+});
+
+// --- Social sign-in: Google, Facebook, TikTok (REDESIGN_V6 step 8) -----------
+//
+// One web flow for all three (the rules and pages: oauth.js). The browser
+// opens /oauth/start?provider=…; the provider sends it back to
+// /oauth/callback; the player comes back to the app with a custom token for
+// the Firebase user `<provider>:<id>` (made, with a profile, the first time).
+// Setup (once per provider): its client id + secret in Firestore
+// secrets/oauth (tools/admin/oauth.mjs), with this redirect URI registered at
+// the provider:
+//   https://us-central1-squishy-app-61445.cloudfunctions.net/oauth/callback
+// and the functions' service account allowed to sign tokens ("Service
+// Account Token Creator" on itself, in Google Cloud IAM).
+const { onRequest } = require('firebase-functions/v2/https');
+const oauth = require('./oauth');
+
+const OAUTH_REDIRECT = 'https://us-central1-squishy-app-61445.cloudfunctions.net/oauth/callback';
+
+async function oauthFetch(req) {
+  const res = await fetch(req.url, { method: req.method, headers: req.headers, body: req.body });
+  const text = await res.text();
+  let json = null;
+  try {
+    json = JSON.parse(text);
+  } catch (e) {
+    // not JSON
+  }
+  if (!res.ok || !json) throw new Error(`${req.url.split('?')[0]} → HTTP ${res.status} ${text.slice(0, 200)}`);
+  return json;
+}
+
+exports.oauth = onRequest(async (req, res) => {
+  const db = admin.firestore();
+  const sec = (await db.collection('secrets').doc('oauth').get()).data() || {};
+  const page = (code, html) => res.status(code).set('Content-Type', 'text/html; charset=utf-8').send(html);
+  const route = req.path.replace(/\/+$/, '');
+  try {
+    if (route.endsWith('/start')) {
+      const provider = String(req.query.provider || '');
+      const P = oauth.PROVIDERS[provider];
+      const cfg = sec[provider];
+      if (!P) return page(400, oauth.messagePage('Unknown sign-in', "That way of signing in isn't available."));
+      if (!cfg || !cfg[P.idKey] || !cfg.secret || !sec.stateKey) return page(200, oauth.messagePage(`${P.name} sign-in is coming soon`, 'For now, log in or register with your email.'));
+      return res.redirect(oauth.authorizeUrl(provider, cfg, OAUTH_REDIRECT, oauth.makeState(provider, sec.stateKey)));
+    }
+    if (route.endsWith('/callback')) {
+      const st = sec.stateKey ? oauth.readState(req.query.state, sec.stateKey) : null;
+      if (!st) return page(400, oauth.messagePage('That took too long', 'Please try signing in again.'));
+      if (req.query.error || !req.query.code) return page(200, oauth.messagePage('Sign-in cancelled', 'No worries, try again any time.'));
+      const provider = st.p;
+      const cfg = sec[provider];
+      const tok = await oauthFetch(oauth.tokenRequest(provider, cfg, String(req.query.code), OAUTH_REDIRECT));
+      const preq = oauth.profileRequest(provider, tok);
+      const prof = preq ? await oauthFetch(preq) : null;
+      const who = oauth.userOf(provider, tok, prof);
+      if (!who) throw new Error(`${provider}: no user in the answer`);
+      const uid = oauth.uidOf(provider, who.id);
+      const auth = admin.auth();
+      try {
+        await auth.getUser(uid);
+      } catch (e) {
+        await auth
+          .createUser({ uid, displayName: who.name || undefined, ...(who.email ? { email: who.email, emailVerified: who.emailVerified } : {}) })
+          // that email is already some other account's: make the user without it
+          .catch(() => auth.createUser({ uid, displayName: who.name || undefined }));
+      }
+      // the profile Register would make (createUserProfile in the app); no
+      // age is asked here: the provider's own age rules stand in
+      const userRef = db.collection('users').doc(uid);
+      if (!(await userRef.get()).exists) {
+        await userRef.set({
+          email: who.email || null,
+          age: null,
+          nickname: oauth.nicknameOf(who.name),
+          provider,
+          coins: 250,
+          totalEarned: 250,
+          adsFree: false,
+          generationCredits: 1,
+          ownedIds: ['0'],
+          stats: { presses: 0, longestHoldMs: 0, playTime: {} },
+          achievements: { speedTap: false, watchAd: false },
+          tut: 'start',
+          level: 1,
+          pxp: 0,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+      }
+      const token = await auth.createCustomToken(uid, { provider });
+      logger.info(`[${uid}] ${provider} sign-in`);
+      return page(200, oauth.returnPage(token));
+    }
+    return page(404, oauth.messagePage('Not found', ''));
+  } catch (e) {
+    logger.error('oauth failed', e.message);
+    return page(500, oauth.messagePage("Sign-in didn't work", 'Something went wrong on our side. Please try again in a moment.'));
+  }
+});
+
+// --- The test wallet (REDESIGN_V6 step 9, ruling 5) ---------------------------
+//
+// Sets coins, gems and the level (as the XP that reaches it) for testing — only for an account with the
+// `tester: true` custom claim (set once with tools/admin/tester.mjs for the
+// owner's own account). The claim is checked here, on the server; the app
+// also hides the panel without it. Nobody else can use it, debug or release.
+// Also replays rewards (2026-10-28): `streak: 'next'` makes the Deals
+// streak's next day claimable now (its last claim moves to yesterday, the
+// count kept), `streak: 'reset'` starts it over at day 1, and `road:
+// 'replay'` makes every reached level's prize claimable again and brings the
+// LEVEL UP card back for the level (`lvSeen` one below it).
+exports.testWallet = onCall(async (request) => {
+  const uid = request.auth && request.auth.uid;
+  if (!uid) throw new HttpsError('unauthenticated', 'Sign in first.');
+  if (!request.auth.token || request.auth.token.tester !== true) throw new HttpsError('permission-denied', 'Not a tester account.');
+  const d = request.data || {};
+  const n = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(Number(v) || 0)));
+  const userRef = admin.firestore().collection('users').doc(uid);
+  const levelsCfg = async () => {
+    const levels = await admin.firestore().collection('config').doc('levels').get();
+    return levels.exists ? levels.data() : null;
+  };
+  const update = {};
+  if (d.coins != null) update.coins = n(d.coins, 0, 99999999);
+  if (d.gems != null) update.gems = n(d.gems, 0, 99999999);
+  if (d.level != null) {
+    update.level = n(d.level, 1, 999);
+    update.pxp = squad.xpToReach(update.level, await levelsCfg());
+  }
+  if (d.streak === 'reset') update.shopStreak = FieldValue.delete();
+  if (d.streak === 'next' || d.road === 'replay') {
+    const p = (await userRef.get()).data() || {};
+    if (d.streak === 'next') update.shopStreak = { count: n((p.shopStreak || {}).count, 0, 99999), last: dayKey(Date.now() - 864e5, d.tzOffsetMinutes) };
+    if (d.road === 'replay') {
+      update.levelGot = FieldValue.delete();
+      update.lvSeen = squad.playerLevel(p.pxp, await levelsCfg()).level - 1;
+    }
+  }
+  if (!Object.keys(update).length) return { ok: true };
+  await userRef.update(update);
+  logger.info(`[${uid}] test wallet`, update);
+  // the plain values only (a FieldValue.delete() can't go back as JSON)
+  const { coins, gems, level, pxp } = update;
+  return { ok: true, coins, gems, level, pxp };
 });

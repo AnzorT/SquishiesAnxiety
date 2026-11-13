@@ -55,6 +55,8 @@ export function pickPlushArt(creature, box, locked, faceless = false) {
 export function plushArtUrls(creatures = []) {
   const urls = [];
   creatures.forEach((c) => {
+    // the rig still (REDESIGN_V6: the Squad grid and other static pictures)
+    if (c && c.thumb && c.thumb.url) urls.push(c.thumb.url);
     const p = c && c.plush;
     if (!p) return;
     Object.keys(p).forEach((k) => p[k] && p[k].url && urls.push(p[k].url));

@@ -1,0 +1,544 @@
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, Image, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Circle, Defs, Ellipse, Path, Pattern, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Pressable from '../components/Pressable';
+import CandyBackground from '../components/candy/CandyBackground';
+import RoundButton from '../components/candy/RoundButton';
+import ShadowText from '../components/candy/ShadowText';
+import RigCreature from '../components/RigCreature';
+import { BY_ID, GROUPS, GROUP_INK, HIDDEN, RAINBOW, RAR_LOOK, ROSTER, SET_REWARDS, SIZES, SIZE_I, copyProgress, dropRar, isOut, outIds, owns, rainbowProgress, rainbowReady } from '../squad/data';
+import GCHEST, { CHEST_NAMES } from '../squad/groupChestArt';
+import { isNewId, ownedIdList, selectedId } from '../squad/lobby';
+import { F, Ringed } from '../squad/ui';
+import { useProgressive } from '../components/Skeleton';
+
+// The Squad screen, titled "My Pals" (user 2026-10-28; the design's "Squad
+// Select v2"), sliding up over the lobby (no coin purse: user 2026-10-28):
+// the squishy you're looking at, live (drag to spin), with
+// its name, group and rarity and one button — SELECTED, SELECT (it
+// becomes the lobby's), or where it comes from (no coin price: chest copies
+// are the only way to unlock, user 2026-10-24) — over a
+// grid of all 86 but the ones not out yet (rig stills from the catalog's
+// `thumb.url`): rarity chip,
+// a lock and the copies found so far (a creature joins after its rarity's
+// number of finds: functions/squad.js COPIES) when missing, a green tick on
+// the selected one, NEW until looked at, a soft pink tile behind the one
+// you're viewing. Rarest last, as the design sorts them (Rainbows, the sets' reward
+// creatures, between Epic and Legendary).
+//
+// Growth stages and finishes (the old Squishies sheet) aren't on this
+// screen in the design; the server still keeps both.
+
+const OUTLINE = (c) => [[0, 2, c], [1.5, 0, c], [-1.5, 0, c], [0, -1, c]];
+const NAME_SHADOWS = [[0, 3.5], [2.5, 0], [-2.5, 0], [0, -2.5], [2, 2], [-2, 2]].map(([x, y]) => [x, y, '#45107a']);
+const TITLE_SHADOWS = [[0, 2.5], [1.5, 0], [-1.5, 0], [0, -1.5]].map(([x, y]) => [x, y, '#45107a']);
+const GROUP_NAME = Object.fromEntries(GROUPS.map((g) => [g.key, g.name]));
+const rank = (c) => (c.rar === 4 ? 2.5 : c.rar);
+const ORDER = ROSTER.slice().sort((a, b) => rank(a) - rank(b) || Number(a.id) - Number(b.id));
+const GREEN = ['#d8ffc2', '#6fe07a', '#26a94e'];
+// a tile's floor shadow: the soft purple ellipse the tiles had as an SVG
+// radial gradient, as one shared image (assets/squad/tile-floor.png). SVGs
+// are drawn on the UI thread one by one: ~80 floors and ~70 locks showing
+// at once were a 0.3 s hitch every time the Squad slid up (2026-10-28).
+const FLOOR = require('../../assets/squad/tile-floor.png');
+
+// --- the grid ---------------------------------------------------------------------
+
+const Cell = memo(function Cell({ c, uri, mine, have, need, sel, fresh, on, onView, size }) {
+  const r = RAR_LOOK[c.rar];
+  return (
+    <Pressable style={({ pressed }) => [styles.cell, size, pressed && { transform: [{ translateY: 2 }] }]} onPress={() => onView(c.id)}>
+      {/* the one in view sits on a soft candy tile (the design's pink ring
+          under it read as a hard bar, user 2026-10-24); every one has the
+          same soft floor shadow */}
+      {on ? (
+        <View style={styles.tileOn} pointerEvents="none">
+          <LinearGradient colors={['#fff6fd', '#ffe3f6']} style={StyleSheet.absoluteFill} />
+        </View>
+      ) : null}
+      <Image source={FLOOR} style={styles.ground} resizeMode="stretch" fadeDuration={0} />
+      {uri ? <Image source={{ uri }} style={[styles.thumb, !mine && styles.thumbLocked]} resizeMode="contain" fadeDuration={150} /> : null}
+      {!mine && <CopyBar have={have} need={need} style={styles.cellCopies} />}
+      {sel && (
+        <View style={styles.tickWrap} pointerEvents="none">
+          <LinearGradient colors={GREEN} locations={[0, 0.55, 1]} style={styles.tick}>
+            <Svg width={12} height={10} viewBox="0 0 12 10">
+              <Path d="M1.5 5 L4.5 8 L10.5 2" stroke="#ffffff" strokeWidth={2.4} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </LinearGradient>
+        </View>
+      )}
+      {fresh && (
+        <View style={styles.newWrap} pointerEvents="none">
+          <LinearGradient colors={['#ff8fd8', '#e0249f']} style={styles.newTag}>
+            <Text style={styles.newText}>NEW</Text>
+          </LinearGradient>
+        </View>
+      )}
+      <View style={styles.cellFoot}>
+        <View style={[styles.rarChip, { backgroundColor: r.bg }]}>
+          <Text style={[styles.rarText, { color: r.ink }]} numberOfLines={1}>
+            {r.label}
+          </Text>
+        </View>
+        {!mine && (
+          <View style={styles.lock}>
+            <LockMini />
+          </View>
+        )}
+      </View>
+    </Pressable>
+  );
+});
+
+// The copies found of one not unlocked yet: a candy bar with "2/5" (`label`
+// on the big one: FOUND, or PALS for a Rainbow pal's group).
+function CopyBar({ have, need, big = false, label = 'FOUND', style }) {
+  const pct = `${Math.round((Math.min(have, need) / Math.max(1, need)) * 100)}%`;
+  return (
+    <View style={[styles.copyRow, style]} pointerEvents="none">
+      <View style={[styles.copyTrack, big && styles.copyTrackBig]}>
+        {have > 0 ? <LinearGradient colors={['#ffd6f4', '#ff5cc6', '#c02bd9']} locations={[0, 0.45, 1]} style={[styles.copyFill, { width: pct }]} /> : null}
+        {big ? (
+          <Text style={styles.copyBigText}>{`${label} ${Math.min(have, need)} / ${need}`}</Text>
+        ) : null}
+      </View>
+      {big ? null : <Text style={styles.copyText}>{`${Math.min(have, need)}/${need}`}</Text>}
+    </View>
+  );
+}
+
+function LockGlyph({ size, color }) {
+  return (
+    <Svg width={size} height={size * 1.1} viewBox="0 0 13 14">
+      <Rect x={1.5} y={6} width={10} height={7} rx={2} fill={color} />
+      <Path d="M3.8 6 V4.2 A2.7 2.7 0 0 1 9.2 4.2 V6" stroke={color} strokeWidth={1.8} fill="none" />
+    </Svg>
+  );
+}
+
+// The tile's small lock, LockGlyph's shape at 10 px in plain views.
+function LockMini() {
+  return (
+    <View style={styles.lockMini}>
+      <View style={styles.lockShackle} />
+      <View style={styles.lockBody} />
+    </View>
+  );
+}
+
+// The grid's own backdrop: purple dots every 14px on a white wash.
+// Sized in numbers (`w` × `h`, the grid's measured box), not "100%":
+// react-native-svg on Android keeps a 100% rect at the size it first drew,
+// and the grid starts short (the hero's stage is full height until the page
+// is measured), so the wash stopped a row down and the page's pink showed
+// under the rest (user 2026-10-28).
+const GridBack = memo(function GridBack({ w, h }) {
+  const W = w || '100%';
+  const H = h || '100%';
+  return (
+    <Svg style={StyleSheet.absoluteFill} width={W} height={H} pointerEvents="none">
+      <Defs>
+        <Pattern id="ssDots" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
+          <Circle cx="1.5" cy="1.5" r="1.4" fill="#8f3cf2" fillOpacity={0.13} />
+        </Pattern>
+      </Defs>
+      <Rect x="0" y="0" width={W} height={H} fill="#ffffff" fillOpacity={0.45} />
+      <Rect x="0" y="0" width={W} height={H} fill="url(#ssDots)" />
+    </Svg>
+  );
+});
+
+// --- the hero ------------------------------------------------------------------
+
+const HeroBack = memo(function HeroBack({ k = 1 }) {
+  return (
+    <>
+      <Svg pointerEvents="none" width={230} height={230} style={[styles.heroGlow, { transform: [{ scale: k }] }]}>
+        <Defs>
+          <RadialGradient id="ssGlow" cx="50%" cy="50%" r="50%">
+            <Stop offset="0" stopColor="#ffffff" stopOpacity={0.95} />
+            <Stop offset="0.45" stopColor="#ffffff" stopOpacity={0.55} />
+            <Stop offset="0.72" stopColor="#ffffff" stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Circle cx={115} cy={115} r={115} fill="url(#ssGlow)" />
+      </Svg>
+      <Svg pointerEvents="none" width={150} height={22} style={[styles.heroFloor, { bottom: 14 * k, transform: [{ scale: k }] }]}>
+        <Defs>
+          <RadialGradient id="ssFloor" cx="50%" cy="50%" r="50%">
+            <Stop offset="0" stopColor="#45107a" stopOpacity={0.28} />
+            <Stop offset="0.7" stopColor="#45107a" stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Ellipse cx={75} cy={11} rx={75} ry={11} fill="url(#ssFloor)" />
+      </Svg>
+    </>
+  );
+});
+
+const ICONS = {
+  lock: (lip) => <LockGlyph size={20} color={lip} />,
+  gift: () => (
+    <Svg width={16} height={16} viewBox="0 0 22 22">
+      <Rect x={3} y={9} width={16} height={10} rx={2} fill="#6a22d6" />
+      <Rect x={2} y={6} width={18} height={4.5} rx={1.5} fill="#8f3cf2" />
+      <Rect x={9.7} y={6} width={2.6} height={13} fill="#ffd83a" />
+      <Path d="M11 6 C8 1.5 4.5 3.5 7 6 M11 6 C14 1.5 17.5 3.5 15 6" stroke="#ffd83a" strokeWidth={2} fill="none" strokeLinecap="round" />
+    </Svg>
+  ),
+};
+
+// The pill under the hero: SELECT, SELECTED, or where it comes from, all one
+// small size (the big one was too big, user 2026-10-28, twice). One found in
+// chests shows the chest itself, the shop's art for its group at its rarity's
+// size, popping up out of the pill's left end (the note under the button
+// saying how many more copies to find is gone, user 2026-11-07); a set
+// reward or the pass's creature keeps the small gift.
+function MainButton({ m, onPress }) {
+  const h = m.chest ? CHEST_BOX[m.chestTi] : 0;
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.mainSlot, m.chest && styles.mainSlotChest, pressed && { transform: [{ translateY: 3 }, { scale: 0.98 }] }]}>
+      <Ringed ring={m.lip} lip={4} ringW={2} border={2.5} radius={999} colors={m.bg} innerStyle={[styles.mainFace, m.chest && styles.mainFaceChest]}>
+        <LinearGradient pointerEvents="none" colors={['rgba(255,255,255,0.6)', 'rgba(255,255,255,0.04)']} style={styles.mainShine} />
+        {m.ic ? ICONS[m.ic](m.lip) : null}
+        <ShadowText style={[styles.mainText, (m.ic || m.chest) && styles.mainTextIc, m.chest && styles.mainTextChest, { color: m.ink }]} shadows={m.ts ? OUTLINE(m.ts) : []} numberOfLines={1}>
+          {m.label}
+        </ShadowText>
+      </Ringed>
+      {/* outside the pill's face, which clips (Ringed's overflow) */}
+      {m.chest ? (
+        <Image
+          source={m.chest}
+          style={[styles.mainChest, { width: h * 1.2, height: h, left: CHEST_X - h * 0.6, bottom: 3 - (m.chestTi < 3 ? h * 0.05 : 0) }]}
+          resizeMode="contain"
+          fadeDuration={0}
+          pointerEvents="none"
+        />
+      ) : null}
+    </Pressable>
+  );
+}
+
+// the shop's short size names (its size picker's), for the pill
+const CHEST_WORD = ['COMMON', 'RARE', 'EPIC', 'LEGEND', 'RAINBOW'];
+// The chest art's box (240 × 200, its height here) by size. The chest in it
+// grows with the size (a Common one fills about 2/3 of the box, a Legendary
+// all of it, with a little air under the smaller ones), so each is drawn to
+// show about 46 tall, rising out of the 44-tall pill, centred CHEST_X in.
+const CHEST_BOX = [70, 63, 62, 48, 46];
+const CHEST_X = 24;
+
+// `hidden`: the groups and creatures not out yet (config/roster), left out
+// of the grid unless owned. `setRewards`: a set's reward creature comes from
+// finishing the set (else from its group's chests). `rainbow`: 'chest' while
+// a Rainbow pal comes only from its group's earned Rainbow chest (its bar
+// then counts the rest of the group, not copies).
+// `onBuilt()`: once every tile is built (the lobby lets it sleep then)
+function SquadScreen({ active = true, profile, creatures, hidden = HIDDEN, setRewards = SET_REWARDS, rainbow = RAINBOW, onClose, onSelect, onSeen, onBuilt }) {
+  const insets = useSafeAreaInsets();
+  const sel = selectedId(profile);
+  const [view, setView] = useState(sel);
+  const [toast, setToast] = useState(null);
+  const catalog = useMemo(() => Object.fromEntries((creatures || []).map((c) => [c.id, c])), [creatures]);
+  // the ones with art that are out (as the server counts a group)
+  const artIds = useMemo(() => outIds(Object.keys(catalog), hidden), [catalog, hidden]);
+  // a creature's bar: its copies, or for a Rainbow pal while those come from
+  // the earned chest, the rest of its group unlocked
+  const barOf = useCallback(
+    (c) => (c.reward && rainbow === 'chest' ? { ...rainbowProgress(profile || {}, c.set, artIds), label: 'PALS' } : { ...copyProgress(profile, c.id), label: 'FOUND' }),
+    [profile, rainbow, artIds],
+  );
+  const ownedN = ownedIdList(profile).filter((id) => BY_ID[id]).length;
+  const shown = useMemo(() => ORDER.filter((x) => isOut(x, hidden) || owns(profile || {}, x.id)), [profile, hidden]);
+  // what each tile shows, worked out once per profile (not on every render)
+  const tileInfo = useMemo(
+    () =>
+      shown.map((x) => {
+        const p = barOf(x);
+        return { x, mine: owns(profile || {}, x.id), have: p.have, need: p.need, fresh: isNewId(profile, x.id) };
+      }),
+    [shown, profile, barOf],
+  );
+  // the grid's tiles a few a frame (first build only), never all at once
+  const tiles = useProgressive(shown.length, 12, 8);
+  const built = tiles >= shown.length;
+  useEffect(() => {
+    if (built && onBuilt) onBuilt();
+  }, [built, onBuilt]);
+  // 4 columns, 9px apart, 12px from the edges; each 0.84 as wide as tall
+  const { width: winW } = useWindowDimensions();
+  // The hero's stage gives way on short pages (the banner ad takes room the
+  // design doesn't have), so the grid keeps about two rows in view.
+  const [pageH, setPageH] = useState(0);
+  const onRoot = useCallback((e) => {
+    const h = e.nativeEvent.layout.height;
+    if (h > 0) setPageH(h);
+  }, []);
+  const stageH = pageH ? Math.max(150, Math.min(236, Math.round(pageH - 470))) : 236;
+  const [gridBox, setGridBox] = useState(null);
+  const onGrid = useCallback((e) => {
+    const { width: w, height: h } = e.nativeEvent.layout;
+    if (w > 0 && h > 0) setGridBox((b) => (b && b.w === w && b.h === h ? b : { w, h }));
+  }, []);
+  const heroSize = stageH - 10;
+  // room for the moves that reach past the creature's box (RigCreature
+  // `bleed`): out to the screen's sides, up over the name, down behind the
+  // button. In the bare box its edges cut them off straight (user 2026-10-28).
+  const heroBleed = useMemo(
+    () => ({ x: Math.max(0, Math.floor((winW - heroSize) / 2)), top: Math.round(heroSize * 0.25), bottom: Math.round(heroSize * 0.12) }),
+    [winW, heroSize],
+  );
+  const cellSize = useMemo(() => {
+    const cw = Math.floor(((winW - 24 - 27) / 4) * 10) / 10;
+    return { width: cw, height: Math.round((cw / 0.84) * 10) / 10 };
+  }, [winW]);
+
+  const flash = useCallback((text) => setToast({ text, key: Date.now() }), []);
+  useEffect(() => {
+    if (!toast) return undefined;
+    const t = setTimeout(() => setToast(null), 2200);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  // the one in view isn't NEW any more (the selected one too, on opening)
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
+  useEffect(() => {
+    if (isNewId(profileRef.current, view)) onSeen(view);
+  }, [view, onSeen]);
+
+  // A new squishy pops in: squashed small, stretches up, settles (the
+  // design's reveal); the rig swaps creatures under the first, hidden third.
+  const pop = useRef(new Animated.Value(1)).current;
+  // stable, so a tap re-renders only the two cells whose ring moves
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  const viewNow = useCallback(
+    (id) => {
+      if (id === viewRef.current) return;
+      setView(id);
+      pop.setValue(0);
+      Animated.timing(pop, { toValue: 1, duration: 520, easing: Easing.bezier(0.3, 1.5, 0.5, 1), useNativeDriver: true }).start();
+    },
+    [pop],
+  );
+  const popStyle = {
+    opacity: pop.interpolate({ inputRange: [0, 0.3, 0.62, 1], outputRange: [0, 0, 1, 1] }),
+    transform: [
+      { translateY: pop.interpolate({ inputRange: [0, 0.3, 0.62, 0.8, 1], outputRange: [40, 40, -14, 0, 0] }) },
+      { scaleX: pop.interpolate({ inputRange: [0, 0.3, 0.62, 0.8, 1], outputRange: [0.25, 0.25, 0.9, 1.1, 1] }) },
+      { scaleY: pop.interpolate({ inputRange: [0, 0.3, 0.62, 0.8, 1], outputRange: [0.25, 0.25, 1.18, 0.9, 1] }) },
+    ],
+  };
+
+  // The live hero is made each time the screen is up (once its slide is
+  // over) and let go when it closes. The app's WebViews share Chromium's tile
+  // memory: one made off screen and asleep never drew, and one kept while
+  // closed left the lobby's own creature blank when it came back ("tile
+  // memory limits exceeded", 2026-10-28). The creature's still shows until
+  // the rig has drawn.
+  const rig = useRef(null);
+  const [rigLive, setRigLive] = useState(false);
+  const [rigDrawn, setRigDrawn] = useState(false);
+  useEffect(() => {
+    if (!active) {
+      setRigLive(false);
+      setRigDrawn(false);
+      return undefined;
+    }
+    const t = setTimeout(() => setRigLive(true), 450);
+    return () => clearTimeout(t);
+  }, [active]);
+  const onRigDrawn = useCallback(() => setRigDrawn(true), []);
+  const c = BY_ID[view];
+  const own = owns(profile || {}, view);
+  const isSel = own && view === sel;
+  const R = RAR_LOOK[c.rar];
+  const group = GROUP_NAME[c.set];
+  const prog = barOf(c);
+
+  let m;
+  if (isSel) m = { label: 'SELECTED', bg: ['#ffffff', '#f4fdf1', '#eafbe4'], lip: '#6fbf7e', ink: '#26a94e', tap: () => flash(`${c.name} is in your lobby`) };
+  else if (own)
+    m = {
+      label: 'SELECT',
+      bg: GREEN,
+      lip: '#17652f',
+      ink: '#ffffff',
+      ts: '#17652f',
+      tap: () => {
+        onSelect(c.id);
+        flash(`${c.name} is in your lobby`);
+        rig.current?.play('happy');
+      },
+    };
+  else {
+    // not yet: only chests unlock it, by its copies (no coin price)
+    const viaSet = c.reward && setRewards;
+    const look = { bg: ['#ffffff', '#f7f2fd', '#efe6fb'], lip: '#b8a0dc', ink: '#6a22d6' };
+    if (c.reward && rainbow === 'chest') {
+      // its group's Rainbow chest, earned once by unlocking the rest of the group
+      const ti = SIZE_I.set;
+      const chest = (GCHEST[c.set] || GCHEST.snack)[`${SIZES[ti].k}-grow`];
+      const ready = rainbowReady(profile || {}, c.set, artIds);
+      m = { ...look, chest, chestTi: ti, label: ready ? 'OPEN IN SHOP!' : 'RAINBOW CHEST', tap: () => flash(ready ? `The ${group} Rainbow chest is ready in the Shop!` : `Unlock every other ${group} pal to earn its Rainbow chest: ${prog.have} / ${prog.need}`) };
+    } else if (viaSet || c.pass) {
+      // the pass's creature is in no chest (Squishies' "Season Pass exclusive")
+      m = { ...look, ic: 'gift', label: viaSet ? 'SET REWARD' : 'SEASON PASS', tap: () => flash(viaSet ? `Finish the ${group} set first` : `${c.name} comes with the season pass`) };
+    } else {
+      // its group's chest of the size for its rarity (a set reward drops as a Legendary)
+      const ti = Math.min(dropRar(c), SIZES.length - 1);
+      const chest = (GCHEST[c.set] || GCHEST.snack)[`${SIZES[ti].k}-grow`];
+      const name = (CHEST_NAMES[c.set] || [])[ti];
+      m = { ...look, chest, chestTi: ti, label: `${CHEST_WORD[ti]} CHEST`, tap: () => flash(name ? `${c.name} is in the ${name}` : `${c.name} is in ${group} chests`) };
+    }
+  }
+
+  return (
+    <CandyBackground style={{ paddingTop: insets.top }}>
+      <View style={StyleSheet.absoluteFill} onLayout={onRoot} pointerEvents="none" />
+      <View style={styles.head}>
+        <RoundButton size={42} onPress={onClose}>
+          <Svg width={20} height={20} viewBox="0 0 24 24">
+            <Path d="M15 5.5 L7 13.5 L15 21.5" stroke="#45189a" strokeWidth={4} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <Path d="M15 4 L7 12 L15 20" stroke="#ffffff" strokeWidth={4} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </Svg>
+        </RoundButton>
+        <View style={styles.headText}>
+          <ShadowText style={styles.title} shadows={TITLE_SHADOWS}>
+            My Pals
+          </ShadowText>
+          <Text style={styles.have}>{`${ownedN} / ${shown.length} collected`}</Text>
+        </View>
+      </View>
+
+      <View style={styles.hero}>
+        <ShadowText style={styles.heroName} shadows={NAME_SHADOWS} numberOfLines={1}>
+          {c.name}
+        </ShadowText>
+        <View style={styles.heroTags}>
+          <Text style={[styles.heroGroup, { color: GROUP_INK[c.set] || '#45107a' }]}>{group}</Text>
+          <View style={[styles.heroRar, { backgroundColor: R.bg }]}>
+            <Text style={[styles.heroRarText, { color: R.ink }]}>{R.label}</Text>
+          </View>
+        </View>
+        <View style={[styles.heroStage, { height: stageH }]}>
+          <HeroBack k={stageH / 236} />
+          <Animated.View style={[{ width: heroSize, height: heroSize }, popStyle]}>
+            {!rigDrawn && catalog[view]?.thumb?.url ? <Image source={{ uri: catalog[view].thumb.url }} style={StyleSheet.absoluteFill} resizeMode="contain" fadeDuration={0} /> : null}
+            {rigLive ? <RigCreature ref={rig} creatureKey={c.key} paused={!active} rigShadow={false} bleed={heroBleed} onMounted={onRigDrawn} style={{ width: heroSize, height: heroSize }} /> : null}
+          </Animated.View>
+          <View style={styles.spinHint} pointerEvents="none">
+            <Svg width={16} height={10} viewBox="0 0 16 10">
+              <Path d="M1 5 H15 M4 2 L1 5 L4 8 M12 2 L15 5 L12 8" stroke="#6a4a9a" strokeWidth={1.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+            <Text style={styles.spinText}>Drag to spin</Text>
+          </View>
+          {!own && !(c.reward && setRewards) ? <CopyBar big have={prog.have} need={prog.need} label={prog.label} style={styles.heroCopies} /> : null}
+        </View>
+        <MainButton m={m} onPress={m.tap} />
+      </View>
+
+      <View style={styles.divider} />
+      <View style={styles.gridBox} onLayout={onGrid}>
+        <GridBack w={gridBox?.w} h={gridBox?.h} />
+        {/* tiles scrolled out of sight are taken out of the drawing: with all
+            ~80 in it, every frame of the live hero re-prepared every tile's
+            picture (66 ms a frame, the screen at ~25 fps on the Galaxy A15,
+            2026-10-28) */}
+        <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false} removeClippedSubviews>
+          {tileInfo.slice(0, tiles).map(({ x, mine, have, need, fresh }) => (
+            <Cell
+              key={x.id}
+              c={x}
+              uri={catalog[x.id]?.thumb?.url || null}
+              mine={mine}
+              have={have}
+              need={need}
+              sel={x.id === sel}
+              fresh={fresh}
+              on={x.id === view}
+              onView={viewNow}
+              size={cellSize}
+            />
+          ))}
+        </ScrollView>
+      </View>
+
+      {toast && (
+        <View style={styles.toast} pointerEvents="none">
+          <Text style={styles.toastText}>{toast.text}</Text>
+        </View>
+      )}
+    </CandyBackground>
+  );
+}
+
+const styles = StyleSheet.create({
+  // over the hero, whose creature's moves reach up behind it (its `bleed`), so the back button keeps its taps
+  head: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 10, paddingHorizontal: 14, paddingBottom: 4, zIndex: 1 },
+  headText: { gap: 1, minWidth: 0 },
+  title: { fontFamily: F.display, fontSize: 22, lineHeight: 25, color: '#ffffff', includeFontPadding: false },
+  have: { fontFamily: F.black, fontSize: 11, color: '#45107a' },
+  hero: { alignItems: 'center', paddingTop: 2, paddingHorizontal: 16, paddingBottom: 12 },
+  heroName: { fontFamily: F.display, fontSize: 34, lineHeight: 38, color: '#ffffff', textAlign: 'center', includeFontPadding: false },
+  heroTags: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  heroGroup: { fontFamily: F.display, fontSize: 16, includeFontPadding: false },
+  heroRar: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 1, borderWidth: 2, borderColor: '#ffffff' },
+  heroRarText: { fontFamily: F.black, fontSize: 10, letterSpacing: 0.6 },
+  heroStage: { width: '100%', alignItems: 'center', justifyContent: 'center' },
+  heroGlow: { position: 'absolute', left: '50%', top: '50%', marginLeft: -115, marginTop: -115 },
+  heroFloor: { position: 'absolute', left: '50%', bottom: 14, marginLeft: -75 },
+  spinHint: { position: 'absolute', right: 4, bottom: 6, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  spinText: { fontFamily: F.heavy, fontSize: 10.5, color: '#6a4a9a' },
+  // 140 × 44 with its ring and lip (235 × 73 until 2026-10-28)
+  mainSlot: { width: '100%', maxWidth: 140 },
+  mainFace: { height: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 8 },
+  mainShine: { position: 'absolute', left: '8%', right: '8%', top: 2, height: '38%', borderRadius: 999 },
+  mainText: { fontFamily: F.display, fontSize: 16, lineHeight: 20, letterSpacing: 1, includeFontPadding: false },
+  // the longer EPIC CHEST / SEASON CHEST / SET REWARD, beside their icon
+  mainTextIc: { fontSize: 12, lineHeight: 16, letterSpacing: 0.3 },
+  // a chest's pill: a little wider, its label clear of the chest at the left
+  // (its top margin: room for the chest rising above it, under the FOUND bar)
+  mainSlotChest: { maxWidth: 178, marginTop: 5 },
+  mainFaceChest: { paddingLeft: 52, paddingRight: 6 },
+  mainTextChest: { letterSpacing: 0 },
+  // sized and placed by its size (CHEST_BOX)
+  mainChest: { position: 'absolute' },
+  divider: { height: 3, backgroundColor: '#ffffff', zIndex: 3, borderBottomWidth: 1, borderBottomColor: 'rgba(201,176,236,0.9)', elevation: 4, shadowColor: '#45107a' },
+  gridBox: { flex: 1, minHeight: 0 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 9, paddingTop: 12, paddingHorizontal: 12, paddingBottom: 24 },
+  cell: { alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 2 },
+  ground: { position: 'absolute', left: '14%', right: '14%', bottom: '17%', height: '13%' },
+  tileOn: { position: 'absolute', left: -4, right: -4, top: -4, bottom: -3, borderRadius: 18, borderWidth: 2.5, borderColor: '#ffb3e4', overflow: 'hidden' },
+  thumb: { position: 'absolute', left: '4%', right: '4%', top: 0, height: '78%' },
+  thumbLocked: { opacity: 0.72 },
+  copyRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  copyTrack: { flex: 1, height: 7, borderRadius: 4, backgroundColor: 'rgba(69,16,122,0.16)', borderWidth: 1.5, borderColor: '#ffffff', overflow: 'hidden', justifyContent: 'center' },
+  copyTrackBig: { height: 22, borderRadius: 11, borderWidth: 2.5, backgroundColor: 'rgba(69,16,122,0.2)' },
+  copyFill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 999 },
+  copyText: { fontFamily: F.black, fontSize: 8.5, color: '#45107a', includeFontPadding: false },
+  copyBigText: { textAlign: 'center', fontFamily: F.display, fontSize: 12, letterSpacing: 0.8, color: '#ffffff', textShadowColor: '#45107a', textShadowOffset: { width: 0, height: 1.5 }, textShadowRadius: 1, includeFontPadding: false },
+  cellCopies: { position: 'absolute', left: '9%', right: '9%', bottom: 19 },
+  heroCopies: { position: 'absolute', bottom: 2, width: '54%', maxWidth: 220 },
+  tickWrap: { position: 'absolute', left: -2, top: -2, borderRadius: 999, backgroundColor: '#17652f', paddingBottom: 2 },
+  tick: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#ffffff', alignItems: 'center', justifyContent: 'center' },
+  newWrap: { position: 'absolute', right: -4, top: -4, borderTopLeftRadius: 9, borderTopRightRadius: 9, borderBottomRightRadius: 9, borderBottomLeftRadius: 2, backgroundColor: '#8e1580', paddingBottom: 2 },
+  newTag: { borderTopLeftRadius: 9, borderTopRightRadius: 9, borderBottomRightRadius: 9, borderBottomLeftRadius: 2, borderWidth: 2, borderColor: '#ffffff', paddingHorizontal: 6, paddingVertical: 1 },
+  newText: { fontFamily: F.display, fontSize: 10, lineHeight: 12, letterSpacing: 0.5, color: '#ffffff', includeFontPadding: false },
+  cellFoot: { maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: 3 },
+  rarChip: { flexShrink: 1, minWidth: 0, borderRadius: 999, paddingHorizontal: 6, paddingVertical: 1, borderWidth: 1.5, borderColor: '#ffffff', borderBottomColor: 'rgba(69,16,122,0.18)' },
+  rarText: { fontFamily: F.black, fontSize: 8, letterSpacing: 0.5 },
+  lock: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#ffffff', borderWidth: 1.5, borderColor: '#c9b0ec', borderBottomWidth: 3, alignItems: 'center', justifyContent: 'center' },
+  // LockGlyph (viewBox 13×14) at 10 px: the shackle's arc, the body
+  lockMini: { width: 10, height: 11, alignItems: 'center' },
+  lockShackle: { width: 5.5, height: 4.3, marginTop: 0.5, borderWidth: 1.4, borderBottomWidth: 0, borderColor: '#8a6ab8', borderTopLeftRadius: 2.75, borderTopRightRadius: 2.75 },
+  lockBody: { width: 7.7, height: 5.4, borderRadius: 1.5, backgroundColor: '#8a6ab8' },
+  toast: { position: 'absolute', alignSelf: 'center', bottom: 26, maxWidth: '86%', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, backgroundColor: '#45107a', borderWidth: 2.5, borderColor: '#ffffff', zIndex: 9 },
+  toastText: { fontFamily: F.heavy, fontSize: 13, lineHeight: 17, color: '#ffffff', textAlign: 'center' },
+});
+
+export default memo(SquadScreen);

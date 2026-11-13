@@ -1,13 +1,17 @@
 import { todayKey } from './dailySpin.js';
+import { xpRules, xpView } from './playerXp.js';
 
 // Progression (the 2026-10-03 design: daily-challenges.js + the tutorial's
 // level cards): levels, daily challenges, the daily chest and the streak.
 // All of it lives on the player's profile document, written by the app like
 // coins are (prototype-grade trust, see src/firebase/firestore.js):
 //
-//   level      1+. 2 when the first key arrives (the tutorial), 3 when the
-//              Crib tutorial is done, then +1 for every day the daily chest
-//              is opened (levelDay: the day it last rose).
+//   pxp        the player's XP, which the level comes from (src/playerXp.js,
+//              PLAYER_XP.md). The tutorial brings it to level 2 (the first
+//              key) and 3 (the Crib tutorial done); then the mini-games, each
+//              challenge claimed, the chest and squishing fill it (how much:
+//              config/levels `xp`, xpRules). `level` is written beside it
+//              (the console's, the test wallet's).
 //   tut        the tutorial step (src/tutorial/steps.js), 'done' when over.
 //   daily      { date, prog: { squish, earn, ad, bath, feed, sleep, dance,
 //              tv, play }, claimed: { [challengeId]: true }, chest: bool } —
@@ -16,8 +20,8 @@ import { todayKey } from './dailySpin.js';
 //   streak     days in a row the chest was opened; lastFull the last one.
 //              Each streak day adds STREAK_BONUS to squish coins (up to
 //              STREAK_DAYS days). A missed day resets it. Every chest also
-//              pays that streak day's reward (STREAK_REWARDS: coins, tokens,
-//              a free box, and on day 10 half price on the next creation —
+//              pays that streak day's reward (STREAK_REWARDS: coins, gems,
+//              an extra free chest, and on day 10 half price on the next creation —
 //              `streakDiscount`); the track starts over after day 10.
 //              bestStreak is the longest one, chests the chests opened.
 //
@@ -31,24 +35,29 @@ export const STREAK_DAYS = 10;
 export const STREAK_REWARDS = [
   { day: 1, kind: 'coins', amount: 100, label: '100' },
   { day: 2, kind: 'coins', amount: 150, label: '150' },
-  { day: 3, kind: 'tokens', amount: 1, label: '+1' },
+  { day: 3, kind: 'gems', amount: 10, label: '+10' },
   { day: 4, kind: 'coins', amount: 250, label: '250' },
-  { day: 5, kind: 'box', label: 'BOX' },
+  { day: 5, kind: 'chest', label: 'CHEST' },
   { day: 6, kind: 'coins', amount: 400, label: '400' },
-  { day: 7, kind: 'tokens', amount: 2, label: '+2' },
+  { day: 7, kind: 'gems', amount: 20, label: '+20' },
   { day: 8, kind: 'coins', amount: 600, label: '600' },
-  { day: 9, kind: 'box', label: 'BOX' },
+  { day: 9, kind: 'chest', label: 'CHEST' },
   { day: 10, kind: 'half', label: '50%' },
 ];
 // the reward for streak day `n` (1, 2, … — day 11 pays day 1's again)
 export const streakReward = (n) => STREAK_REWARDS[(Math.max(1, n) - 1) % STREAK_DAYS];
 export function streakRewardText(r) {
   if (r.kind === 'coins') return `+${r.amount} coins`;
-  if (r.kind === 'tokens') return `+${r.amount} creature ${r.amount === 1 ? 'token' : 'tokens'}`;
-  if (r.kind === 'box') return 'a free Mystery Box';
+  if (r.kind === 'gems') return `+${r.amount} gems`;
+  if (r.kind === 'chest') return 'a free chest in the Shop';
   return 'half price on your next creation';
 }
 export const TUTORIAL_BOOST = 10; // ×10 coins during the tutorial's goal step
+
+// The XP they pay, with their coins (the user, 2026-10-25): config/levels
+// `xp` (xpRules) — these are its defaults. Squishing: 1 XP every
+// squishEvery squishes, up to squishDay a day.
+export const { challenge: CHALLENGE_XP, chest: CHEST_XP, squishEvery: SQUISH_XP, squishDay: SQUISH_XP_DAY } = xpRules();
 
 // The design's challenge pool: 3 game challenges every day, plus 3 of the 6
 // Crib ones, each at one of its goal sizes. Picked by the date, so every
@@ -111,6 +120,7 @@ export function dailyRows(profile, date = todayKey()) {
       pct: Math.round((prog / c.goal) * 100),
       label: `${prog} / ${c.goal}`,
       reward: def.reward,
+      xp: xpRules().challenge,
       claimable: full && !claimed,
       claimed,
       open: !full,
@@ -137,6 +147,7 @@ export function dailyView(profile, now = new Date()) {
     chestReady: claimedN === rows.length && !s.chest,
     chestDone: s.chest,
     chestReward: CHEST_COINS,
+    chestXp: xpRules().chest,
     resetIn: `${Math.floor(mins / 60)}h ${mins % 60}m`,
     streak: streakOf(profile, now),
     track: streakTrack(profile, now),
@@ -158,7 +169,7 @@ export function streakTrack(profile, now = new Date()) {
   });
 }
 
-export const level = (profile) => Math.max(1, Math.floor(profile?.level ?? 1));
+export const level = (profile) => xpView(profile).level;
 // The tutorial (src/tutorial/steps.js) hands out levels 2 and 3. Daily
 // Challenges wait until it has shown them (its c_daily step) or is over — a
 // replay doesn't bring them back early; the Crib opens at level 2.
@@ -186,48 +197,47 @@ export const streakMultiplier = (profile, now) => 1 + STREAK_BONUS * Math.min(ST
 
 // --- the profile updates (Firestore merge-style patches) -----------------
 
-// `n` more of event `ev` today. Returns the fields to write, and the titles
-// of the challenges this just completed (for the toast).
+// `n` more of event `ev` today. Returns the fields to write, the titles of
+// the challenges this just completed (for the toast), and the XP it earned
+// (squishes only: today's squish count passing a squishEvery step).
 export function bumpDaily(profile, ev, n = 1, date = todayKey()) {
   const before = dailyRows(profile, date);
   const s = dailyState(profile, date);
-  const prog = { ...s.prog, [ev]: (s.prog[ev] || 0) + n };
+  const had = s.prog[ev] || 0;
+  const prog = { ...s.prog, [ev]: had + n };
   const next = { ...profile, daily: { ...s, prog } };
   const completed = dailyRows(next, date)
     .filter((r, i) => r.claimable && !before[i].claimable)
     .map((r) => r.title);
-  return { update: { daily: { date, prog, claimed: s.claimed, chest: s.chest } }, completed };
+  const { squishEvery, squishDay } = xpRules();
+  const steps = (k) => Math.min(squishDay, Math.floor(k / squishEvery));
+  const xp = ev === 'squish' ? steps(had + n) - steps(had) : 0;
+  return { update: { daily: { date, prog, claimed: s.claimed, chest: s.chest } }, completed, xp };
 }
 
-// Claims a completed challenge: its coins. Null if it can't be claimed.
+// Claims a completed challenge: its coins and XP. Null if it can't
+// be claimed.
 export function claimDaily(profile, id, date = todayKey()) {
   const row = dailyRows(profile, date).find((r) => r.id === id);
   if (!row || !row.claimable) return null;
   const s = dailyState(profile, date);
-  return { coins: row.reward, update: { daily: { date, prog: s.prog, claimed: { ...s.claimed, [id]: true }, chest: s.chest } } };
+  return { coins: row.reward, xp: xpRules().challenge, update: { daily: { date, prog: s.prog, claimed: { ...s.claimed, [id]: true }, chest: s.chest } } };
 }
 
-// Opens the chest once every challenge is claimed: CHEST_COINS, one token
-// of `tokenCreatureId` (the caller picks it — the design's shared token
-// became one creature's token here), the streak and its day's reward
-// (`reward`, applied by the caller) and, from level 3, a level a day. Null
-// if it isn't ready.
+// Opens the chest once every challenge is claimed: CHEST_COINS, its XP,
+// the streak and its day's reward (`reward`, applied by the caller: coins
+// here, gems and chests by the server's dailyGift). Null if it isn't ready.
 export function claimChest(profile, date = todayKey()) {
   const s = dailyState(profile, date);
   const rows = dailyRows(profile, date);
   if (s.chest || !rows.every((r) => r.claimed)) return null;
   const alive = profile?.lastFull === dayBefore(date);
   const streak = alive ? Math.floor(profile?.streak ?? 0) + 1 : profile?.lastFull === date ? Math.floor(profile?.streak ?? 0) : 1;
-  const lv = level(profile);
   const update = {
     daily: { date, prog: s.prog, claimed: s.claimed, chest: true },
     streak,
     lastFull: date,
     bestStreak: Math.max(streak, Math.floor(profile?.bestStreak ?? 0)),
   };
-  if (lv >= DAILY_LEVEL && profile?.levelDay !== date) {
-    update.level = lv + 1;
-    update.levelDay = date;
-  }
-  return { coins: CHEST_COINS, update, reward: streakReward(streak) };
+  return { coins: CHEST_COINS, xp: xpRules().chest, update, reward: streakReward(streak) };
 }

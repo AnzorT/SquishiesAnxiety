@@ -6,7 +6,7 @@ import CreatureThumbnail from '../components/CreatureThumbnail';
 import DailyChallengesSheet from './DailyChallengesSheet';
 import TutorialGuide from '../tutorial/Guide';
 import { report as tutReport } from '../tutorial/store';
-import { cribCoins, loadCrib, noteCribBuy, saveCrib, setCribSize } from '../firebase/firestore';
+import { cribCoins, loadCrib, noteCribBuy, peekCrib, saveCrib, setCribSize } from '../firebase/firestore';
 import sfx from '../audio/sfx';
 import { level as levelOf } from '../progression';
 import Scene from '../crib/Scene';
@@ -22,8 +22,9 @@ import { CRIB_MAX, advanceOffline, applyLayout, buyFood, coinRate, freshState, l
 import { buy as buyItem, canBuy, equip, fridgeFoods, itemOf, nextSong, placeGame, setDecorPos, setPad, setTheme, setUnitPos, sleepCount, sleeperY, dinerY, song, songs, toggleLight, toggleStore } from '../crib/home';
 import { CribToast, INK, PAPER, PanButton, SongPill } from '../crib/ui';
 import { Pantry } from '../crib/Pantry';
-import { CoinsPill, CribButton, LevelPill, PhasePill, RoomTitle } from '../crib/Hud';
+import { CoinsPill, CribButton, LevelPill, PhasePill, RoomFlash, RoomTitle } from '../crib/Hud';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useEveryOtherFrame } from '../components/Skeleton';
 
 // The Squad Crib (the 2026-10-03 design's "Squad Crib v5" and "Squad Crib
 // Vertical"): the creatures' home. Seven rooms drawn by Scene.js from the
@@ -105,10 +106,19 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
 
   const model = useRef(null);
   const [loaded, setLoaded] = useState(false);
+  // The Crib comes in a part every other frame: the HUD, then the room
+  // dock, then the room scene (its art, decor and creatures: most of the
+  // Crib's views; Scene builds itself in parts too). All at once was one
+  // 0.4 s frame as the Crib came in, and the HUD and the dock together still
+  // one of 0.2 s (Galaxy A15 release, 2026-10-28).
+  const part = useEveryOtherFrame(3);
+  const sceneOn = part >= 3 && loaded;
   const [frame, setFrame] = useState(0);
   const bump = useCallback(() => setFrame((f) => f + 1), []);
   const [room, setRoom] = useState('living');
-  const [landscape, setLandscape] = useState(false);
+  // the saved orientation from the first render when the Crib's state is
+  // already in memory, so it isn't built in portrait and then rebuilt
+  const [landscape, setLandscape] = useState(() => !!(uid && peekCrib(uid) && peekCrib(uid).landscape));
   const W = box ? box.width : win.width;
   const H = box ? box.height : win.height;
   const [sel, setSel] = useState(null);
@@ -148,9 +158,7 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
   useEffect(() => {
     if (!ready || loaded) return undefined;
     let alive = true;
-    (async () => {
-      const doc = uid ? await loadCrib(uid) : null;
-      if (!alive) return;
+    const build = (doc) => {
       const t = Date.now();
       const st = doc ? normalize(doc, ownedIds, t) : freshState(ownedIds, t, { tutorial: !!tutorialOn });
       if (doc) advanceOffline(st, t);
@@ -165,7 +173,15 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
       setLandscape(!!st.landscape);
       dirty.current = true;
       setLoaded(true);
-    })();
+    };
+    // in memory already (an earlier visit, or the preload after sign-in):
+    // built right away; otherwise read first
+    const cached = uid ? peekCrib(uid) : null;
+    if (cached !== undefined) build(cached ? JSON.parse(JSON.stringify(cached)) : null);
+    else
+      loadCrib(uid).then((doc) => {
+        if (alive) build(doc ? JSON.parse(JSON.stringify(doc)) : null);
+      });
     return () => {
       alive = false;
     };
@@ -788,15 +804,17 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
 
   const selPet = sel && model.current ? model.current.pets[sel] : null;
   const roomName = ROOMS[room].name.toUpperCase();
-  const roomSub = room === 'hatch' ? `${members}/${CRIB_MAX} live in the Crib · tap one to move` : `${summary[room].count} friends here · ${ROOMS[room].sub}`;
+  const owner = profile && profile.nickname ? `${profile.nickname}’s home · ` : '';
+  const roomSub = owner + (room === 'hatch' ? `${members}/${CRIB_MAX} live in the Crib · tap one to move` : `${summary[room].count} friends here · ${ROOMS[room].sub}`);
 
   const canEdit = EDITABLE.includes(room);
   // The HUD, as the design lays it out (src/crib/Hud.js). Landscape: every
   // button in a row on the left — back, music, rotate, map, shop, edit,
   // daily, and in the kitchen the pantry — then the level, the coins and the
-  // time of day on the right. Portrait: back, music, shop, edit, rotate on
-  // the left and the pantry (kitchen), daily on the right, the room's big
-  // title and the coins under them.
+  // time of day on the right. Portrait (Crib Vertical v2): back, music,
+  // shop, edit, daily, rotate on the left and the pantry (kitchen) on the
+  // right, the room's big title and the coins under them. v2 hides rotate
+  // inside the app; we keep it (both orientations, the 2026-10-03 ruling).
   const dailyBtn = daily && daily.unlocked ? <CribButton face="yellow" icon="daily" onPress={() => setDailyOpen(true)} badge={daily.badge || 0} badgeKind="red" /> : null;
   const pantryBtn = room === 'kitchen' && !edit ? <CribButton face="red" icon="pantry" iconSize={26} onPress={openPantry} /> : null;
   const hud = landscape ? (
@@ -827,10 +845,10 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
         <CribButton face="gold" icon="music" off={!musicOn} onPress={toggleMusic} />
         <CribButton face="purple" icon="shop" size={42} iconSize={26} onPress={openShop} />
         <CribButton face="orange" icon="edit" size={42} iconSize={22} onPress={openEdit} dim={!canEdit || edit} />
+        {dailyBtn}
         <CribButton face="blue" icon="rotate" size={42} iconSize={22} turn onPress={toggleLandscape} />
         <View style={{ flex: 1 }} />
         {pantryBtn}
-        {dailyBtn}
       </View>
       <View style={styles.hudRowPort2} pointerEvents="box-none">
         <View pointerEvents="none" style={{ flexShrink: 1 }}>
@@ -842,8 +860,11 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
     </View>
   );
 
-  const scene = loaded ? (
+  // keyed by the room: a switch builds the new room in Scene's parts (under
+  // the room flash), not in one go
+  const scene = sceneOn ? (
     <Scene
+      key={room}
       room={room}
       phase={phase}
       scale={scale}
@@ -877,7 +898,9 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
 
   const overlays = (
     <>
-      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#ffffff', opacity: flash }]} />
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: flash }]}>
+        <RoomFlash />
+      </Animated.View>
       {songPill}
       {toast && !edit ? (
         <View pointerEvents="box-none" style={[styles.toastAt, { top: topPad + 52, left: landscape ? cw * 0.2 : 12, right: landscape ? cw * 0.2 : 12 }]}>
@@ -1005,7 +1028,7 @@ export default function CribScreen({ authUser, profile, creatures, onBack, noteD
           />
         </View>
       ) : (
-        <RoomDock summary={summary} current={room} onGo={goRoom} phase={PH[phase]} level={level} tileH={Math.max(92, Math.min(TILE_H, Math.floor((ch - sceneH - insets.bottom - 92) / 2)))} bottomPad={insets.bottom} />
+        part >= 2 && <RoomDock summary={summary} current={room} onGo={goRoom} phase={PH[phase]} level={level} tileH={Math.max(92, Math.min(TILE_H, Math.floor((ch - sceneH - insets.bottom - 92) / 2)))} bottomPad={insets.bottom} />
       )}
       {hud}
       {overlays}

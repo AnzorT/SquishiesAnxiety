@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<!-- Host page for the design's live rig creatures (REDESIGN_V6 step 0). Built into
+     android/app/src/main/assets/rig/ by tools/rig/build.mjs and loaded by src/components/RigCreature.js.
+     The rig scripts are the design's own files, copied unchanged. -->
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; -webkit-tap-highlight-color: transparent; }
+  #stage { position: absolute; inset: 0; touch-action: none; }
+</style>
+<script>
+// The rig fetch()es each creature's front SVG by relative URL. Android's WebView refuses fetch() on
+// file:// pages, but XHR works there (allowFileAccessFromFileURLs), so relative fetches go through XHR.
+(function () {
+  const realFetch = window.fetch ? window.fetch.bind(window) : null;
+  window.fetch = function (url, opts) {
+    const u = String(url);
+    if (location.protocol !== 'file:' || /^[a-z]+:/i.test(u)) return realFetch(url, opts);
+    return new Promise((ok, bad) => {
+      const x = new XMLHttpRequest(); x.open('GET', u.replace(/\?.*$/, ''));
+      x.onload = () => ok({ ok: true, status: 200, text: () => Promise.resolve(x.responseText), json: () => Promise.resolve(JSON.parse(x.responseText)) });
+      x.onerror = () => bad(new TypeError('load failed: ' + u));
+      x.send();
+    });
+  };
+  // Time every animation-frame callback so the perf report can split rig JS from the rest of the frame.
+  // Pause (rigHost.pause, while the app's screen is hidden) holds the frame callbacks and stops the
+  // clock: performance.now() and the frame times leave out the paused time, so the rig resumes where
+  // it was instead of jumping (the rig scripts time everything with those two).
+  const raf = window.requestAnimationFrame.bind(window), caf = window.cancelAnimationFrame.bind(window);
+  const realNow = performance.now.bind(performance);
+  let held = null, pausedAt = 0, lost = 0, heldId = 0;
+  window.__rigJs = 0;
+  performance.now = () => (held ? pausedAt : realNow()) - lost;
+  window.requestAnimationFrame = cb => {
+    if (held) { held.push({ id: --heldId, cb }); return heldId; }
+    return raf(t => { const a = realNow(); try { cb(t - lost); } finally { window.__rigJs += realNow() - a; } });
+  };
+  window.cancelAnimationFrame = id => { if (id < 0) { if (held) held = held.filter(h => h.id !== id); } else caf(id); };
+  window.__rigPause = on => {
+    if (on && !held) { held = []; pausedAt = realNow(); }
+    else if (!on && held) { lost += realNow() - pausedAt; const q = held; held = null; q.forEach(h => window.requestAnimationFrame(h.cb)); }
+  };
+  window.__rigPaused = () => !!held;
+})();
+</script>
+<script src="rive-rig.js"></script>
+<script src="rive-generic.js"></script>
+<script src="pet-defs.js"></script>
+<script src="mittens-moves.js"></script>
+<script src="rig-shuffle.js"></script>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+(function () {
+  const post = m => { const s = JSON.stringify(m); if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(s); else (window.__rigOut = window.__rigOut || []).push(m); };
+  const stage = document.getElementById('stage');
+  let ctrl = null, sh = null, key = null, shuffleOn = true;
+
+  // Fabric grain. Each creature's art carries a live-noise filter (feTurbulence) applied to 2-4 parts
+  // separately, which costs a full-size offscreen pass per part every frame: on the Galaxy A15 that
+  // alone took the median creature from 90 to 74 fps. Same fix the design made for Mittens: the noise is
+  // baked once into a tile (same code as rive-rig.js fabricFx), and one grain filter goes on the parts'
+  // common parent. Glow/other filters are left alone.
+  let FAB = null;
+  function fabric() {
+    if (FAB !== null) return FAB; FAB = '';
+    try { const S = 128, cv = document.createElement('canvas'); cv.width = cv.height = S; const x = cv.getContext('2d'), im = x.createImageData(S, S);
+      let sd = 7; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+      const oct = n => { const g = []; for (let i = 0; i < n * n; i++) g.push(rnd()); const c = S / n, sm = t => t * t * (3 - 2 * t);
+        return (px, py) => { const gx = px / c, gy = py / c, x0 = Math.floor(gx), y0 = Math.floor(gy), fx = sm(gx - x0), fy = sm(gy - y0), a = (i, j) => g[((j % n + n) % n) * n + ((i % n + n) % n)];
+          const t = a(x0, y0) + (a(x0 + 1, y0) - a(x0, y0)) * fx, b = a(x0, y0 + 1) + (a(x0 + 1, y0 + 1) - a(x0, y0 + 1)) * fx; return t + (b - t) * fy; }; };
+      const o1 = oct(32), o2 = oct(64);
+      for (let y = 0; y < S; y++) for (let X = 0; X < S; X++) { const v = (o1(X, y) + o2(X, y)) / 2, k = (y * S + X) * 4; im.data[k + 3] = Math.round(0.2 * 255 * v); }
+      x.putImageData(im, 0, 0); const B = 1024, cb = document.createElement('canvas'); cb.width = cb.height = B; const xb = cb.getContext('2d'); xb.fillStyle = xb.createPattern(cv, 'repeat'); xb.fillRect(0, 0, B, B); FAB = cb.toDataURL('image/png'); } catch (e) { FAB = ''; }
+    return FAB;
+  }
+  const isGrain = f => f && f.querySelector('feTurbulence') && !f.querySelector('feDisplacementMap') && f.querySelector('feBlend[mode="multiply"]');
+  function bakeGrain() {
+    const svg = stage.querySelector('svg'); if (!svg || !fabric()) return;
+    const els = [...svg.querySelectorAll('[filter]')].filter(e => { const id = (e.getAttribute('filter').match(/url\(#([^)]+)\)/) || [])[1]; return id && isGrain(svg.getElementById(id)); });
+    if (!els.length) return;
+    const id = els[0].getAttribute('filter').match(/url\(#([^)]+)\)/)[1], f = svg.getElementById(id), t = f.querySelector('feTurbulence');
+    const im = document.createElementNS('http://www.w3.org/2000/svg', 'feImage');
+    [['href', FAB], ['x', -30], ['y', -30], ['width', 160], ['height', 160], ['preserveAspectRatio', 'none']].forEach(([a, v]) => im.setAttribute(a, v));
+    const cm = t.nextElementSibling; t.replaceWith(im); if (cm && cm.tagName === 'feColorMatrix') cm.remove();
+    let top = els[0].parentNode; while (top !== svg && !els.every(e => top.contains(e))) top = top.parentNode;
+    if (top === svg) { els.forEach(e => e.setAttribute('filter', 'url(#' + id + ')')); return; }
+    els.forEach(e => e.removeAttribute('filter')); top.setAttribute('filter', 'url(#' + id + ')');
+  }
+
+  function mount(k) {
+    if (ctrl) ctrl.destroy(); if (sh) sh.stop();
+    key = k; const t0 = performance.now();
+    if (window.__rgI) delete window.__rgI[k]; // else a re-mount reads the previous instance's ready flag
+    sh = window.RigShuffle ? window.RigShuffle() : null;
+    const me = window.RiveRig.mount(stage, k, { onState: a => { if (ctrl !== me) return; if (sh && shuffleOn) sh.onState(a); post({ type: 'state', state: a }); } });
+    ctrl = me; if (sh && shuffleOn) sh.attach(me);
+    // Generic creatures parse their SVG asynchronously; report when the first full frame is drawn.
+    const done = () => {
+      if (ctrl !== me) return;
+      const I = (window.__rgI || {})[k], generic = !window.RiveRig.DEFS[k];
+      if (generic && !(I && I.ready)) { if (performance.now() - t0 < 8000) setTimeout(done, 16); else post({ type: 'error', message: 'timeout loading ' + k }); return; }
+      bakeGrain();
+      post({ type: 'mounted', key: k, ms: Math.round(performance.now() - t0), nodes: stage.getElementsByTagName('*').length });
+    };
+    done();
+  }
+
+  window.rigHost = {
+    mount,
+    play: n => { if (ctrl) ctrl.play(n); },
+    shuffle: on => { shuffleOn = !!on; if (!sh) return; if (on && ctrl) sh.attach(ctrl); else sh.stop(); },
+    destroy: () => { if (sh) sh.stop(); if (ctrl) ctrl.destroy(); ctrl = null; },
+    pause: on => window.__rigPause(on),
+  };
+
+  // Once a second: frames drawn, worst frame gap, and the JS time spent in animation callbacks.
+  let frames = 0, worst = 0, prev = performance.now(), winStart = prev;
+  const meter = () => { const n = performance.now(); worst = Math.max(worst, n - prev); prev = n; frames++; requestAnimationFrame(meter); };
+  requestAnimationFrame(meter);
+  setInterval(() => {
+    // nothing is drawn while paused: no report, and the next window starts fresh
+    if (window.__rigPaused()) { frames = 0; worst = 0; prev = winStart = performance.now(); window.__rigJs = 0; return; }
+    const n = performance.now(), sec = (n - winStart) / 1000;
+    post({ type: 'perf', fps: Math.round(frames / sec * 10) / 10, worstMs: Math.round(worst), jsMs: Math.round(window.__rigJs / Math.max(1, frames) * 100) / 100,
+      heapMb: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576 * 10) / 10 : null });
+    frames = 0; worst = 0; winStart = n; window.__rigJs = 0;
+  }, 1000);
+
+  const boot = () => { const R = window.RiveRig; if (R && R.REST && R.DEFS && R.DEFS.prickle && R.movesV && window.RiveGeneric) post({ type: 'ready' }); else setTimeout(boot, 25); };
+  boot();
+})();
+</script>
+</body>
+</html>

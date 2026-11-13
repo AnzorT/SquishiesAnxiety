@@ -1,5 +1,6 @@
 import React, { forwardRef, memo, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import { PanResponder, StyleSheet, Text, View } from 'react-native';
+import Pressable from './Pressable';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';

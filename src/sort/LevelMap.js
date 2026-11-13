@@ -1,0 +1,220 @@
+import React, { memo, useEffect, useMemo, useRef } from 'react';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
+import sfx from '../audio/sfx';
+import { Bob } from '../squad/ui';
+import { useProgressive } from '../components/Skeleton';
+import { usePingPong } from '../components/idleLoop';
+import { FxLayer } from '../squishdoku/fx';
+import { Head } from '../squishdoku/ui';
+import { F, INK } from '../squishdoku/theme';
+import { LEVEL_LIST, TIER_COLORS } from './levels';
+
+// A container's 50 levels on a winding path, level 1 at the top (as
+// Squishdoku's map): beaten levels gold with their stars, the next one pink
+// and pulsing with a squishy bobbing beside it, the rest locked. A banner
+// opens each size band (5 SHELVES × 4 …), with a picture over it when
+// `iconOf` draws one (Squish Sort's fridges and cupboards); the dot on a
+// node is its tier. Squish Stack's map is this one with its own `list` and
+// `bannerOf`. The
+// nodes are built nearest the current one first, a few a frame
+// (useProgressive), so the map is up at once and fills outwards.
+
+const GAP = 92;
+const NODE = 60;
+const TOP = 130;
+const BAND_GAP = 76;
+// a band's picture, over its banner
+const ICON_H = 116;
+const STAR_D = 'M12 2.2 L14.9 8.6 L21.8 9.3 L16.6 14 L18.1 20.9 L12 17.4 L5.9 20.9 L7.4 14 L2.2 9.3 L9.1 8.6 Z';
+
+const shelves = (L) => `${L.rows} ${L.rows > 1 ? 'SHELVES' : 'SHELF'} · ${L.cols} SPOTS`;
+
+const Stars = ({ n }) => (
+  <View style={styles.stars}>
+    {[0, 1, 2].map((i) => (
+      <Svg key={i} width={i === 1 ? 20 : 16} height={i === 1 ? 20 : 16} viewBox="0 0 24 24" style={{ marginTop: i === 1 ? 0 : 4 }}>
+        <Path d={STAR_D} fill={i < n ? '#ffd23a' : 'rgba(255,255,255,0.75)'} stroke={i < n ? '#b86200' : '#c9b9da'} strokeWidth={1.6} strokeLinejoin="round" />
+      </Svg>
+    ))}
+  </View>
+);
+
+const Node = memo(function Node({ lv, tier, x, y, state, stars, delay, onPress, mascot, mascotLeft }) {
+  const t = useRef(new Animated.Value(0)).current;
+  const shake = useRef(new Animated.Value(0)).current;
+  // the next level's pulse: one native loop (src/components/idleLoop.js)
+  const pulse = usePingPong(1400, { on: state === 'current' });
+  const fx = useRef(null);
+  useEffect(() => {
+    Animated.spring(t, { toValue: 1, friction: 5, tension: 150, delay, useNativeDriver: true }).start();
+  }, [t, delay]);
+  const press = () => {
+    if (state === 'locked') {
+      sfx.play('sd_locked');
+      shake.setValue(0);
+      Animated.sequence([1, -1, 0.7, -0.7, 0.3, 0].map((k) => Animated.timing(shake, { toValue: k, duration: 45, useNativeDriver: true }))).start();
+      return;
+    }
+    sfx.play('sd_select');
+    fx.current?.burst('spark', NODE / 2, NODE / 2, 0.8);
+    onPress(lv);
+  };
+  const colors = state === 'done' ? ['#fff7b0', '#ffd23a', '#ff9c0a'] : state === 'current' ? ['#ffd6f4', '#ff5cc6', '#c02bd9'] : ['#ece6f3', '#cfc3dd', '#b3a5c4'];
+  const ring = state === 'done' ? '#9c4d06' : state === 'current' ? '#8e1580' : '#7a6a8c';
+  return (
+    <Animated.View
+      style={[
+        styles.node,
+        {
+          left: x - NODE / 2,
+          top: y - NODE / 2,
+          opacity: t,
+          transform: [
+            { scale: Animated.multiply(t, pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] })) },
+            { translateX: shake.interpolate({ inputRange: [-1, 1], outputRange: [-6, 6] }) },
+            { rotate: shake.interpolate({ inputRange: [-1, 1], outputRange: ['-8deg', '8deg'] }) },
+          ],
+        },
+      ]}
+    >
+      {state === 'current' && mascot ? (
+        <Bob style={[styles.mascot, mascotLeft ? { right: NODE + 6 } : { left: NODE + 6 }]} dy={6} ms={1400}>
+          <Head uri={mascot} size={40} ring="#ffffff" />
+        </Bob>
+      ) : null}
+      <Pressable onPress={press} hitSlop={8}>
+        <View style={[styles.nodeLip, { backgroundColor: ring }]} />
+        <View style={[styles.nodeRing, { backgroundColor: ring }]}>
+          <LinearGradient colors={colors} locations={[0, 0.5, 1]} style={styles.nodeFace}>
+            <View style={styles.nodeShine} />
+            <Text style={[styles.nodeNum, state === 'locked' && { color: '#8f80a3' }]}>{lv}</Text>
+            <View style={[styles.tierDot, { backgroundColor: TIER_COLORS[tier] }]} />
+          </LinearGradient>
+        </View>
+        {state === 'locked' ? (
+          <View style={styles.lock}>
+            <View style={styles.lockShackle} />
+            <View style={styles.lockBody} />
+          </View>
+        ) : null}
+      </Pressable>
+      {state === 'done' ? <Stars n={stars} /> : null}
+      <FxLayer ref={fx} />
+    </Animated.View>
+  );
+});
+
+// list: [{ band, tier, … }] a level each; bannerOf(level) names its band,
+// iconOf(level) draws its picture (or null)
+function LevelMap({ rec, uris = [], onPlay, list = LEVEL_LIST, bannerOf = shelves, iconOf }) {
+  const { width } = useWindowDimensions();
+  const scroll = useRef(null);
+  const cur = rec.lv;
+  const LEVELS = list.length;
+  const bandOf = (i) => list[i].band;
+  const points = useMemo(() => {
+    const amp = Math.min(110, width * 0.27);
+    let y = TOP;
+    return Array.from({ length: LEVELS }, (_, i) => {
+      if (i > 0 && list[i].band !== list[i - 1].band) y += BAND_GAP;
+      if (iconOf && (i === 0 || list[i].band !== list[i - 1].band) && iconOf(list[i])) y += ICON_H;
+      const p = { x: width / 2 + Math.sin(i * 1.05) * amp, y };
+      y += GAP;
+      return p;
+    });
+  }, [width, list, LEVELS, iconOf]);
+  const height = points[LEVELS - 1].y + 120;
+  const mascot = uris.length ? uris[(cur * 11) % uris.length] : null;
+
+  const order = useMemo(() => Array.from({ length: LEVELS }, (_, i) => i).sort((a, b) => Math.abs(a + 1 - cur) - Math.abs(b + 1 - cur)), [cur, LEVELS]);
+  const n = useProgressive(LEVELS, 12, 10);
+  const built = useMemo(() => new Set(order.slice(0, n)), [order, n]);
+
+  useEffect(() => {
+    const y = Math.max(0, points[cur - 1].y - 260);
+    const tm = setTimeout(() => scroll.current?.scrollTo({ y, animated: false }), 0);
+    const pops = [];
+    for (let k = 0; k < 6; k++) pops.push(setTimeout(() => sfx.play('sd_nodePop', { rate: 0.9 + k * 0.07 }), 120 + k * 70));
+    return () => {
+      clearTimeout(tm);
+      pops.forEach(clearTimeout);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const dots = [];
+  for (let i = 0; i < LEVELS - 1; i++) {
+    if (!built.has(i) || !built.has(i + 1)) continue;
+    const a = points[i];
+    const b = points[i + 1];
+    for (let k = 1; k <= 3; k++) {
+      const f = k / 4;
+      dots.push(<View key={`d${i}-${k}`} style={[styles.dot, { left: a.x + (b.x - a.x) * f - 4, top: a.y + (b.y - a.y) * f - 4, backgroundColor: i + 1 < cur ? '#ffd23a' : 'rgba(255,255,255,0.75)' }]} />);
+    }
+  }
+  const banners = [];
+  for (let i = 0; i < LEVELS; i++) {
+    if (i === 0 || bandOf(i) !== bandOf(i - 1)) {
+      const L = list[i];
+      // (the picture comes with its level's node, a few a frame)
+      const icon = iconOf ? iconOf(L) : null;
+      banners.push(
+        <View key={`b${L.band}`} style={[styles.banner, { top: points[i].y - 104 - (icon ? ICON_H : 0) }]}>
+          {icon ? <View style={styles.icon}>{built.has(i) ? icon : null}</View> : null}
+          <Text style={styles.bannerText}>{bannerOf(L)}</Text>
+        </View>,
+      );
+    }
+  }
+
+  return (
+    <ScrollView ref={scroll} style={styles.fill} contentContainerStyle={{ height }} showsVerticalScrollIndicator={false}>
+      {dots}
+      {banners}
+      {points.map((p, i) => {
+        if (!built.has(i)) return null;
+        const lv = i + 1;
+        const state = lv < cur ? 'done' : lv === cur ? (rec.best[lv] ? 'done' : 'current') : 'locked';
+        return (
+          <Node
+            key={lv}
+            lv={lv}
+            tier={list[i].tier}
+            x={p.x}
+            y={p.y}
+            state={state}
+            stars={rec.best[lv] || 0}
+            delay={Math.min(700, Math.abs(lv - cur) * 45)}
+            onPress={onPlay}
+            mascot={lv === cur ? mascot : null}
+            mascotLeft={p.x > width / 2}
+          />
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  fill: { flex: 1 },
+  node: { position: 'absolute', width: NODE, alignItems: 'center' },
+  nodeLip: { position: 'absolute', top: 5, left: 0, width: NODE, height: NODE, borderRadius: NODE / 2 },
+  nodeRing: { width: NODE, height: NODE, borderRadius: NODE / 2, padding: 2.5 },
+  nodeFace: { flex: 1, borderRadius: NODE / 2, borderWidth: 3, borderColor: '#ffffff', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  nodeShine: { position: 'absolute', top: 3, left: 8, right: 8, height: '38%', borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.5)' },
+  nodeNum: { fontFamily: F.display, fontSize: 22, color: '#ffffff', textShadowColor: INK, textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 1, includeFontPadding: false },
+  tierDot: { position: 'absolute', bottom: 5, width: 8, height: 8, borderRadius: 4, borderWidth: 1.5, borderColor: '#ffffff' },
+  lock: { position: 'absolute', right: -6, top: -6, width: 26, height: 28, alignItems: 'center' },
+  lockShackle: { width: 14, height: 14, borderRadius: 7, borderWidth: 3.5, borderColor: '#7a6a8c', borderBottomWidth: 0 },
+  lockBody: { width: 22, height: 15, borderRadius: 5, backgroundColor: '#7a6a8c', borderWidth: 2, borderColor: '#ffffff', marginTop: -3 },
+  stars: { flexDirection: 'row', marginTop: 4, gap: 1 },
+  mascot: { position: 'absolute', top: 8, zIndex: 3 },
+  dot: { position: 'absolute', width: 8, height: 8, borderRadius: 4 },
+  banner: { position: 'absolute', alignSelf: 'center', left: 0, right: 0, alignItems: 'center' },
+  bannerText: { fontFamily: F.display, fontSize: 14, letterSpacing: 1.5, color: '#ffffff', textAlign: 'center', backgroundColor: '#7a2fd6', borderRadius: 16, borderWidth: 2.5, borderColor: '#ffffff', paddingHorizontal: 14, paddingVertical: 3, overflow: 'hidden' },
+  icon: { height: ICON_H - 8, justifyContent: 'flex-end', marginBottom: 6 },
+});
+
+export default memo(LevelMap);

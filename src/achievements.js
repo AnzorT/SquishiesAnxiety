@@ -8,18 +8,20 @@
 //   adsWatched / maxMult (recordAdWatched), the custom creature count, and
 //   the `achievements` flags for the two live SquishScreen events that have
 //   no counter (speedTap: 60 taps in 60s; watchAd: first rewarded ad).
-// The Mystery Box ones read boxOpens / tierPulls / secretFound (written by
-// openBox) and boxDoublesTotal (doubleBox), the Daily Spin ones spins /
-// wheelJackpot (written by the spinWheel Cloud Function).
+// The chest ones read chestOpens / tierPulls (written by the `squad` Cloud
+// Function as chests open; the old Mystery Box's boxOpens still count), the
+// finish, set and growth ones the collection (`col`), the Daily Spin ones
+// spins / wheelJackpot (written by the spinWheel Cloud Function).
 //
 // Since the 2026-10-03 drop there are more, for what the game has now: the
-// level (up to 100 — a level a day once Daily Challenges open, see
-// src/progression.js), the daily streak (bestStreak) and chests opened
+// level (up to 100 — it comes from the player's XP, src/playerXp.js), the daily streak (bestStreak) and chests opened
 // (chests), and the Crib: care given (cribCare, counted with the Crib's
 // daily-challenge events), furniture bought (cribBuys) and how many friends
 // live there (cribSize).
 
 import { creaturesOfTier } from './theme/candyTheme';
+import { SETS, setInfo } from './squad/data';
+import { level as levelOf } from './progression';
 
 const A =(key, title, desc, look, value, max = 1) => ({ key, title, desc, ...look, value, max });
 const creature = (id) => ({ creatureId: String(id) });
@@ -47,16 +49,20 @@ export function computeAchievements(creatures = [], profile = {}, customCount = 
   const holdS = Math.floor((stats.longestHoldMs ?? 0) / 1000);
   const played = Object.values(stats.playTime ?? {}).filter((ms) => ms > 0).length;
   const ads = Math.max(profile.adsWatched ?? 0, flags.watchAd ? 1 : 0);
-  const boxes = profile.boxOpens ?? 0;
+  const boxes = (profile.chestOpens ?? 0) + (profile.boxOpens ?? 0);
   const pulls = profile.tierPulls ?? {};
   const spins = profile.spins ?? 0;
-  const lv = Math.max(1, Math.floor(profile.level ?? 1));
+  const lv = levelOf(profile);
   const bestStreak = Math.max(profile.bestStreak ?? 0, profile.streak ?? 0);
   const chests = profile.chests ?? 0;
   const care = profile.cribCare ?? 0;
   const buys = profile.cribBuys ?? 0;
   const cribSize = profile.cribSize ?? 0;
-  const doubles = profile.boxDoublesTotal ?? 0;
+  const col = Object.values(profile.col ?? {});
+  const finishes = (k) => col.filter((e) => e.f && e.f[k]).length;
+  const grown = col.filter((e) => (e.st ?? 0) >= 1).length;
+  const bestFriends = col.filter((e) => e.st === 2).length;
+  const setsDone = SETS.filter((k) => setInfo(profile, k).done).length;
 
   const list = [
     A('unlock3', 'Bun Appétit', `Unlock ${nameOf(3, 'Bao')}`, creature(3), has(3)),
@@ -88,35 +94,35 @@ export function computeAchievements(creatures = [], profile = {}, customCount = 
     A('own15', 'Almost There', 'Own 15 creatures', badge('×15'), ownedCount, 15),
     A('own16', 'Legend Found', 'Unlock a Legendary creature', firstOfTier('Legendary', 24), ownedOfTier('Legendary')),
     A('own17', 'Twin Legends', 'Unlock 2 Legendary creatures', firstOfTier('Legendary', 24), ownedOfTier('Legendary'), 2),
-    A('own18', 'Over the Rainbow', 'Unlock the Rainbow creature', firstOfTier('Rainbow', 28), ownedOfTier('Rainbow')),
-    A('own19', 'Golden Touch', 'Unlock the Golden creature', firstOfTier('Golden', 29), ownedOfTier('Golden')),
-    A('box1', 'Peek Inside', 'Open your first mystery box', badge('BOX'), boxes),
-    A('box5', 'Box Fan', 'Open 5 mystery boxes', badge('5'), boxes, 5),
-    A('box10', 'Unboxing Pro', 'Open 10 mystery boxes', badge('10'), boxes, 10),
-    A('box25', 'Box Hoarder', 'Open 25 mystery boxes', badge('25'), boxes, 25),
-    A('box50', 'Mystery Master', 'Open 50 mystery boxes', badge('50'), boxes, 50),
-    A('pullEpic', 'Epic Luck', 'Pull an Epic from a box', badge('EPIC'), pulls.Epic ?? 0),
-    A('pullLegendary', 'Legendary Pull', 'Pull a Legendary from a box', badge('LEG'), pulls.Legendary ?? 0),
-    A('pullRainbow', 'Rainbow Pull', 'Pull a Rainbow from a box', badge('RBW'), pulls.Rainbow ?? 0),
-    A('pullGolden', 'Pure Gold', 'Pull a Golden from a box', badge('GLD'), pulls.Golden ?? 0),
-    A('secret', 'Secret Keeper', 'Find the Secret creature', badge('?'), profile.secretFound ? 1 : 0),
+    A('own18', 'Over the Rainbow', 'Get a Rainbow squishy', badge('RBW'), finishes('r')),
+    A('own19', 'Golden Touch', 'Get a Golden squishy', badge('GLD'), finishes('g')),
+    A('box1', 'Peek Inside', 'Open your first chest', badge('BOX'), boxes),
+    A('box5', 'Box Fan', 'Open 5 chests', badge('5'), boxes, 5),
+    A('box10', 'Unboxing Pro', 'Open 10 chests', badge('10'), boxes, 10),
+    A('box25', 'Box Hoarder', 'Open 25 chests', badge('25'), boxes, 25),
+    A('box50', 'Mystery Master', 'Open 50 chests', badge('50'), boxes, 50),
+    A('pullEpic', 'Epic Luck', 'Pull an Epic from a chest', badge('EPIC'), pulls.Epic ?? 0),
+    A('pullLegendary', 'Legendary Pull', 'Pull a Legendary from a chest', badge('LEG'), pulls.Legendary ?? 0),
+    A('pullRainbow', 'Rainbow Pull', 'Pull a Rainbow finish from a chest', badge('RBW'), pulls.Rainbow ?? 0),
+    A('pullGolden', 'Pure Gold', 'Pull a Golden finish from a chest', badge('GLD'), pulls.Golden ?? 0),
+    A('secret', 'Set Collector', 'Complete a set', badge('SET'), setsDone),
     A('spin1', 'Lucky Spin', 'Spin the daily wheel', badge('SPIN'), spins),
     A('spin7', 'Week of Spins', 'Spin the wheel 7 times', badge('7'), spins, 7),
-    A('jackpot', 'Jackpot!', 'Win a free creature or 15% off a creation on the wheel', badge('★'), profile.wheelJackpot ? 1 : 0),
+    A('jackpot', 'Jackpot!', 'Win the 50 gems JACKPOT on the Daily Spin', badge('★'), profile.wheelJackpot ? 1 : 0),
     A('ads5', 'Movie Night', 'Watch 5 video ads', badge('▶5'), ads, 5),
     A('boost4', 'Max Boost', 'Activate a ×4 coin boost', badge('×4'), (profile.maxMult ?? 0) >= 4 ? 1 : 0),
     A('custom1', 'Creator', 'Create your own squishy', badge('NEW'), customCount),
     A('custom3', 'Toy Designer', 'Create 3 custom squishies', badge('×3'), customCount, 3),
     A('play5', 'Friendly Squisher', 'Play with 5 different creatures', badge('5♥'), played, 5),
     A('play10', 'Best Friends', 'Play with 10 different creatures', badge('10♥'), played, 10),
-    // levels: 2 and 3 come with the tutorial, then one a day from the chest
+    // levels: 2 and 3 come with the tutorial, then from XP (PLAYER_XP.md)
     A('lv3', 'Challenger', 'Reach level 3 and unlock Daily Challenges', badge('LV3'), lv, 3),
     A('lv5', 'Rising Star', 'Reach level 5', badge('LV5'), lv, 5),
     A('lv10', 'Squish Regular', 'Reach level 10', badge('10'), lv, 10),
     A('lv25', 'Dedicated Squisher', 'Reach level 25', badge('25'), lv, 25),
     A('lv50', 'Half Way There', 'Reach level 50', badge('50'), lv, 50),
     A('lv75', 'Squish Veteran', 'Reach level 75', badge('75'), lv, 75),
-    A('lv100', 'Squish Centurion', 'Reach level 100 with the Daily Challenges', badge('100'), lv, 100),
+    A('lv100', 'Squish Centurion', 'Reach level 100', badge('100'), lv, 100),
     // the daily chest and the streak
     A('chest1', 'Treasure Hunter', 'Open your first daily chest', badge('CHEST'), chests),
     A('chest30', 'Chest Collector', 'Open 30 daily chests', badge('×30'), chests, 30),
@@ -133,8 +139,8 @@ export function computeAchievements(creatures = [], profile = {}, customCount = 
     A('buy30', 'Dream House', 'Buy 30 things for the Crib', badge('×30'), buys, 30),
     A('crib10', 'Full House', 'Have 10 friends living in the Crib', badge('10'), cribSize, 10),
     // the box's DOUBLE IT
-    A('double1', 'Double Trouble', 'Double a Mystery Box prize', badge('×2'), doubles),
-    A('double25', 'Twice as Nice', 'Double 25 Mystery Box prizes', badge('25'), doubles, 25),
+    A('double1', 'Growing Up', 'Grow a squishy to Grown', badge('UP'), grown),
+    A('double25', 'Best Friends', 'Make a squishy your Best Friend', badge('BFF'), bestFriends),
   ];
 
   return list.map(({ creatureId, value, max, ...rest }) => {

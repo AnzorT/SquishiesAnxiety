@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
-import { View, Text, Image, Pressable, StyleSheet, Animated, Easing } from 'react-native';
+import { View, Text, Image, StyleSheet, Animated, Easing } from 'react-native';
+import Pressable from './Pressable';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Stop, Circle } from 'react-native-svg';
 import { BUTTON_VARIANTS, candyColors, candyFonts } from '../theme/candyTheme';
@@ -161,7 +162,7 @@ export function PhotoBadge({ uri, size, busy = false, dim = false }) {
 }
 
 // The custom creature's art, bobbing gently like the premade ones' idle mood.
-function CustomArt({ creature, size, busy, dim }) {
+export function CustomArt({ creature, size, busy, dim }) {
   const bob = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (busy || dim) return undefined;

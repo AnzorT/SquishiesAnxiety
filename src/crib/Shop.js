@@ -1,5 +1,6 @@
 import React, { memo, useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import Pressable from '../components/Pressable';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { SvgXml } from 'react-native-svg';
 import { candyFonts } from '../theme/candyTheme';
@@ -7,6 +8,7 @@ import { CoinGlyph, INK, SOFT } from './ui';
 import { DECOR, EXTRAS, GAMES, ITEMS, THEMES, slotsIn } from './home';
 import { ItemArt, ThemeSwatch } from './art';
 import catalog from './catalog';
+import { fmtNum } from '../format';
 
 // The Home Shop (the design's "HOME SHOP" page in "Squad Crib v5"): a tab
 // per room, and its furniture (a section per slot, from the free cheap tier
@@ -130,8 +132,8 @@ function Card({ it, home, level, coins, width, onBuy }) {
         </View>
       ) : (
         <Pressable onPress={() => onBuy(it.id)} style={({ pressed }) => [styles.buy, { opacity: afford ? 1 : 0.55 }, pressed && { transform: [{ translateY: 2 }] }]}>
-          <CoinGlyph size={14} />
-          <Text style={styles.buyText}>{(item.coins || 0).toLocaleString()}</Text>
+          <CoinGlyph size={15} />
+          <Text style={styles.buyText}>{fmtNum(item.coins || 0)}</Text>
         </Pressable>
       )}
     </View>
@@ -153,8 +155,8 @@ export const Shop = memo(function Shop({ home, homeRev, room, level, coins, msg,
         <Text style={styles.level}>{`LEVEL ${level}`}</Text>
         <View style={{ flex: 1 }} />
         <View style={styles.coins}>
-          <CoinGlyph size={14} />
-          <Text style={styles.coinsText}>{Math.max(0, Math.round(coins)).toLocaleString()}</Text>
+          <CoinGlyph size={17} />
+          <Text style={styles.coinsText}>{fmtNum(Math.max(0, coins))}</Text>
         </View>
         <Pressable onPress={onClose} hitSlop={8} style={styles.close}>
           <Text style={styles.closeText}>✕</Text>

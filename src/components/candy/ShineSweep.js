@@ -29,7 +29,7 @@ export default function ShineSweep({ durationMs = 2200, delayMs = 0, strength = 
     outputRange: [-0.7 * w, 1.4 * w, 1.4 * w],
   });
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
+    <View pointerEvents="none" style={StyleSheet.absoluteFill} onLayout={(e) => e.nativeEvent.layout.width > 0 && setW(e.nativeEvent.layout.width)}>
       {w ? (
         <Animated.View style={[styles.streak, { width: w * 0.4, transform: [{ translateX }] }]}>
           <LinearGradient

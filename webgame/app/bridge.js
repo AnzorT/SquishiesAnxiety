@@ -13,7 +13,7 @@
   var init = window.__SQUISH_INIT__ || {};
   var subs = {};
   var KEYS = window.__SQUISH_ROSTER_KEYS || []; // roster id -> creature key (app/roster.js, written by the build)
-  var PROFILE = 'squishsquad.profile.v1', COLLECTION = 'squishsquad.collection.v1', HOUSE = 'ssHouse5b';
+  var PROFILE = 'squishsquad.profile.v1', COLLECTION = 'squishsquad.collection.v1', HOUSE = 'ssHouse5b', LOBBY = 'squishsquad.lobby.v1';
   var ls = window.localStorage;
   var rawSet = Storage.prototype.setItem;
   var quiet = 0; // > 0 while this file writes, so its own writes aren't reported back to the app
@@ -24,7 +24,9 @@
   var App = {
     inApp: !!window.ReactNativeWebView,
     screen: init.screen || null,
-    state: init.state || {},     // the player: { level, coins, gems, owned: [creature keys], house: '<ssHouse5b JSON>' }
+    // the player: { level, coins, gems, owned: [creature keys], col: { key: { f, eq, st } }, sel: key,
+    //              hiddenKeys: [creature keys not out], games: [...], house: '<ssHouse5b JSON>' }
+    state: init.state || {},
     config: init.config || {},   // the admin's remote config (Firestore config/game), applied by app/config.js
     send: function (type, payload) {
       var msg = JSON.stringify({ type: type, payload: payload === undefined ? null : payload });
@@ -63,7 +65,7 @@
   window.SquishApp = App;
 
   // ---- 1. the app's player -> the engines' localStorage (before they load) ----
-  var lastCoins = null;
+  var lastCoins = null, lastSel = null;
   function seed(st) {
     if (!st || !App.inApp && !window.__squishOutbox) return; // a plain browser keeps the prototype's own demo save
     var p = readJSON(PROFILE) || {};
@@ -71,14 +73,23 @@
     if (typeof st.coins === 'number') { p.coins = st.coins; lastCoins = st.coins; }
     p.owned = []; // ownership lives in the collection below (the profile's list is the old 30-creature one)
     write(PROFILE, p);
-    if (st.owned) {
+    if (st.owned || st.col) {
       var c = readJSON(COLLECTION) || {};
       if (c.v !== 1) c = { v: 1, fp11: 1, gems: 600, stars: 180, pity: 18, epic: 4, col: {} };
       var col = {};
-      st.owned.forEach(function (key) { var id = App.idOf(key); if (id != null) col[id] = (c.col && c.col[id]) || { f: { n: 1 }, eq: 'n', st: 0, xp: 0 }; });
+      // the app's collection entries (finishes, growth stage) when it sends them, else plain ones
+      var entry = function (key, id) {
+        var e = st.col && st.col[key];
+        return e ? { f: e.f || { n: 1 }, eq: e.eq || 'n', st: e.st || 0, xp: (c.col && c.col[id] && c.col[id].xp) || 0 } : (c.col && c.col[id]) || { f: { n: 1 }, eq: 'n', st: 0, xp: 0 };
+      };
+      (st.owned || Object.keys(st.col)).forEach(function (key) { var id = App.idOf(key); if (id != null) col[id] = entry(key, id); });
       c.col = col;
       if (typeof st.gems === 'number') c.gems = st.gems;
       write(COLLECTION, c);
+    }
+    if (st.sel) {
+      var sid = App.idOf(st.sel), lb = readJSON(LOBBY) || { seen: [] };
+      if (sid != null) { lb.sel = sid; lastSel = sid; write(LOBBY, lb); }
     }
     if (typeof st.house === 'string' && st.house) write(HOUSE, st.house);
   }
@@ -97,6 +108,10 @@
         lastCoins = p.coins;
         App.send('coins', { coins: p.coins, delta: delta });
       }
+    } else if (k === LOBBY) {
+      // the creature picked on the menu (CREATURES): the app keeps it as the player's selected squishy
+      var lb = null; try { lb = JSON.parse(v); } catch (e) { /* not ours */ }
+      if (lb && lb.sel != null && lb.sel !== lastSel) { lastSel = lb.sel; App.send('select', { id: lb.sel, key: App.keyOf(lb.sel) }); }
     } else if (k === HOUSE) {
       // the house saves on every change: tell the app once things settle
       clearTimeout(houseT);
@@ -111,6 +126,11 @@
       var Q0 = window.SquishSquad;
       st.owned.forEach(function (key) { var id = App.idOf(key); if (id != null && !Q0.owns(id)) Q0.grant(id); });
     }
+    if (typeof st.gems === 'number' && window.SquishSquad && window.SquishSquad.setWallet) {
+      quiet++;
+      try { window.SquishSquad.setWallet({ gems: st.gems }); } finally { quiet--; }
+    }
+    if (st.hiddenKeys) window.dispatchEvent(new CustomEvent('squishsquad'));
     if (typeof st.coins === 'number') {
       lastCoins = st.coins;
       var Q = window.SquishSquad;

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import Pressable from './Pressable';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RewardedAd, RewardedAdEventType, AdEventType } from 'react-native-google-mobile-ads';
 import { REWARDED_AD_UNIT_ID } from '../firebase/ads';

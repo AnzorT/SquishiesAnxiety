@@ -170,8 +170,10 @@ const seq = (...vals) => {
   const h = s.home;
   // tier 0 is the cheap washtub; the design's tubs follow (its Bubble Bath is tub2)
   assert.deepEqual(canBuy(h, 'tub2', { level: 1, coins: 9999 }), { ok: false, reason: 'level' });
-  assert.deepEqual(canBuy(h, 'tub2', { level: 2, coins: 100 }), { ok: false, reason: 'coins' });
-  assert.deepEqual(canBuy(h, 'tub2', { level: 2, coins: 300 }), { ok: true, cost: 300 });
+  // (the design's level 2, spread to 3: home.js spreadLevel)
+  assert.deepEqual(canBuy(h, 'tub2', { level: 2, coins: 9999 }), { ok: false, reason: 'level' });
+  assert.deepEqual(canBuy(h, 'tub2', { level: 3, coins: 100 }), { ok: false, reason: 'coins' });
+  assert.deepEqual(canBuy(h, 'tub2', { level: 3, coins: 300 }), { ok: true, cost: 300 });
   assert.deepEqual(canBuy(h, 'tub1', { level: 1, coins: 150 }), { ok: true, cost: 150 });
   assert.equal(canBuy(h, 'tub0', { level: 9, coins: 9999 }).reason, 'owned');
   buy(h, 'tub2');

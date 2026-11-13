@@ -17,7 +17,19 @@ const DIR = path.join(HERE, 'out/webgame');
 
 const INIT = {
   screen: 'menu',
-  state: { level: 8, coins: 7777, owned: ['mittens', 'nimbo', 'mallow', 'bao', 'biscuit'] },
+  state: {
+    level: 8, coins: 7777, gems: 321,
+    owned: ['mittens', 'nimbo', 'mallow', 'bao', 'biscuit', 'wisecrack'],
+    col: { mittens: { f: { n: 1, g: 1 }, eq: 'g', st: 2 } },
+    sel: 'nimbo',
+    hiddenKeys: ['wisecrack'], // the Masked Heroes group is switched off (config/roster groups)
+    games: [
+      { id: 'squishdoku', name: 'Squishdoku', item: '600 puzzle levels', best: 'Level 37 / 600', color: '#3fc4ec' },
+      { id: 'sort', name: 'Squish Sort', item: 'Fridge & cupboard', best: 'Fridge 4 · Cupboard 2', color: '#ff9a3c' },
+      { id: 'stack', name: 'Squish Stack', item: 'Tower puzzles', best: 'Level 9 / 50', color: '#9b6bff' },
+      { id: 'hop', name: 'Squish Hop', item: 'Cushion hopping', best: 'Level 3 / 100', color: '#2fc6a8' },
+    ],
+  },
   config: {
     v: 1,
     animsOff: ['spin'],
@@ -48,7 +60,9 @@ const hud = await page.evaluate(() => document.querySelector('.mm-hud').innerTex
 check(/7,?777/.test(hud), 'the menu shows the app\'s coins (7777)', hud.slice(0, 120));
 check(await page.evaluate(() => window.SquishProfile.get().level) === 8, 'the game\'s level is the app\'s (8)');
 const owned = await page.evaluate(() => window.SquishSquad.ownedIds().map(id => window.SquishSquad.ROSTER[id].key).sort());
-check(JSON.stringify(owned) === JSON.stringify(['biscuit', 'mallow', 'mittens', 'nimbo']), 'owned creatures = the app\'s, minus Bao (switched off)', owned);
+check(JSON.stringify(owned) === JSON.stringify(['biscuit', 'mallow', 'mittens', 'nimbo']), 'owned creatures = the app\'s, minus Bao (switched off) and Wisecrack (his group is off)', owned);
+const coll = await page.evaluate(() => ({ sel: window.SquadLobby.selected(), mit: window.SquishSquad.entry(1), gems: window.SquishSquad.wallet().gems }));
+check(coll.sel === 0 && coll.mit && coll.mit.eq === 'g' && coll.mit.st === 2 && coll.gems === 321, 'the app\'s selected creature (Nimbo), Mittens\' gold finish and stage, and gems reach the game', coll);
 check((await page.evaluate(() => window.__sent.map(m => m.type))).includes('ready'), 'the game says ready');
 
 // ---- animations ----
@@ -108,14 +122,55 @@ const back = await page.evaluate(() => window.SquishApp.back());
 await page.waitForTimeout(1500);
 check(back === true && !(await page.$('.mm-hback')), 'Android back leaves the house');
 
-// Squish Time on the games page asks the app for the squish screen, with the menu's creature
+// PLAY: the design's Mini Games page with the app's games (no yard games there)
 await page.click('.mm-play');
 await page.waitForTimeout(1200);
+const cards = await page.evaluate(() => [...document.querySelectorAll('.mm-gc')].map(e => e.dataset.g + ':' + (e.querySelector('.best') || {}).textContent));
+check(JSON.stringify(cards.map(c => c.split(':')[0])) === JSON.stringify(['squish', 'squishdoku', 'sort', 'stack', 'hop']) && cards[1].includes('Level 37 / 600'), 'PLAY lists Squish Time, Squishdoku (Level 37 / 600), Sort, Stack, Hop', cards);
+await page.evaluate(() => { window.__sent.length = 0; });
+await page.click('.mm-gc[data-g="squishdoku"] .go');
+await page.waitForTimeout(300);
+const sdk = await page.evaluate(() => window.__sent.find(m => m.type === 'play'));
+check(sdk && sdk.payload.mode === 'squishdoku', 'PLAY on Squishdoku asks the app for Squishdoku', sdk);
+// Squish Time asks the app for the squish screen, with the menu's creature
 await page.evaluate(() => { window.__sent.length = 0; });
 await page.click('.mm-pg .go >> nth=0');
 await page.waitForTimeout(500);
 const playMsg = await page.evaluate(() => window.__sent.find(m => m.type === 'play'));
 check(playMsg && playMsg.payload.mode === 'squish' && ['mittens', 'nimbo', 'mallow', 'biscuit'].includes(playMsg.payload.key), 'Squish Time asks the app to squish the menu\'s creature', playMsg);
+
+// the creature picked on the menu (CREATURES) goes to the app
+await page.click('.mm-pg [data-x]');
+await page.waitForTimeout(600);
+await page.click('.mm-tab[data-tab="creatures"]');
+await page.waitForTimeout(900);
+await page.evaluate(() => { window.__sent.length = 0; });
+await page.click('.mm-pick .it[data-id="1"]');
+await page.waitForTimeout(400);
+const sel = await page.evaluate(() => window.__sent.find(m => m.type === 'select'));
+check(sel && sel.payload.key === 'mittens', 'picking Mittens on the menu tells the app', sel);
+
+// the yard games: only from the backyard's YARD GAMES button
+await page.click('.mm-tab[data-tab="house"]');
+await page.waitForFunction(() => window.__sh && window.__sh.byId && document.querySelector('.mm-hback'), null, { timeout: 90000 });
+await page.waitForTimeout(2500);
+const btnLiving = await page.evaluate(() => { const x = document.querySelector('.sq-yard-wrap'); return !!x && x.style.display !== 'none'; });
+await page.evaluate(() => window.__sh.enterRoom('backyard'));
+await page.waitForTimeout(9000);
+const btnYard = await page.evaluate(() => { const x = document.querySelector('.sq-yard-wrap'); return !!x && x.style.display !== 'none'; });
+check(!btnLiving && btnYard, 'the YARD GAMES button is in the backyard only', { btnLiving, btnYard });
+await page.click('.sq-yard');
+await page.waitForTimeout(1500);
+const yard = await page.evaluate(() => ({ cards: [...document.querySelectorAll('.mm-gc')].map(e => e.dataset.g), over: document.querySelector('.mm-host').style.zIndex }));
+check(yard.cards.join() === 'hoop,soccer,hop,tramp,slide,corn,pong' && yard.over === '30', 'it opens the 7 yard games, over the house', yard);
+await page.click('.mm-gc[data-g="hoop"] .go');
+await page.waitForTimeout(2000);
+await page.click('.mm-gp [data-x]');
+await page.waitForTimeout(1000);
+await page.click('.mm-pg [data-x]');
+await page.waitForTimeout(800);
+const backIn = await page.evaluate(() => ({ page: !!document.querySelector('.mm-page2'), z: document.querySelector('.mm-host').style.zIndex, room: window.__sh.state.cur }));
+check(!backIn.page && backIn.z === '' && backIn.room === 'backyard', 'a yard game\'s back goes to the Yard Games, and back again to the backyard', backIn);
 
 // the app asks for the house right at start (a daily challenge's "go to the house"): the menu walks in once it's ready
 const page2 = await browser.newPage({ viewport: { width: 852, height: 393 } });
