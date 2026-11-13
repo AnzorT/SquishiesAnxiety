@@ -64,6 +64,16 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // The in-app game's controls, edited by the admin in the console (functions/gameConfig.js):
+    // one doc per creature (animation switches, rarity, walk style) and per house item (price, unlock level).
+    // Clients never read them: the scheduled rebuildGameConfig function boils them down into config/game.
+    match /gameCreatures/{key} {
+      allow read, write: if false;
+    }
+    match /gameItems/{itemId} {
+      allow read, write: if false;
+    }
+
     // Google Play purchases already granted (verifyPurchase's ledger) —
     // server only.
     match /purchases/{purchaseId} {

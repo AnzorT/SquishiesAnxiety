@@ -50,3 +50,9 @@ src/data/devCatalog.js
 
 # Python bytecode caches (tools/icon, tools/audio)
 __pycache__/
+# webgame build cache (the unpacked prototype zip)
+webgame/.cache/
+webgame/.cache-npm-*/
+# the built offline game (node webgame/build.mjs)
+android/app/src/main/assets/webgame/
+webgame/test/out/

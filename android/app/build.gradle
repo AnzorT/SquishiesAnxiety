@@ -206,3 +206,10 @@ if (rnVersion < versionToNumber(0, 75, 0)) {
 }
 
 apply plugin: 'com.google.gms.google-services'
+// The new design's game (webgame/, the prototype's Main Menu and house): node webgame/build.mjs builds it from the
+// prototype zip into src/main/assets/webgame (git-ignored) before every build, so the APK always carries it.
+def buildWebgame = tasks.register("buildWebgame", Exec) {
+    workingDir projectRoot
+    commandLine("node", "webgame/build.mjs")
+}
+preBuild.dependsOn(buildWebgame)

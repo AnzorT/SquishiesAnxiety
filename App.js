@@ -5,7 +5,7 @@
 // TextEncoder polyfill is in place before any other module (transitively
 // including SquishyToy.js) gets evaluated.
 import 'fast-text-encoding';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Alert, Image, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -82,6 +82,10 @@ import { adSpinsLeft, hasSpunToday, todayKey, tzOffsetMinutes } from './src/dail
 import callFunction from './src/firebase/callFunction';
 import sfx from './src/audio/sfx';
 import DEV_CATALOG from './src/data/devCatalog'; // TEMP-DEV-CATALOG: preview of the unpublished roster (tools/plush-art/serve.mjs)
+import GameScreen from './src/game/GameScreen';
+import ClassicBack from './src/game/ClassicBack';
+import { creatureKey } from './src/game/gameData';
+import { NEW_DESIGN, NEW_DESIGN_DURING_TUTORIAL } from './src/game/flags';
 
 // GLTFParser's constructor (three.js, used by SquishyToy.js's Glorp build
 // path) sniffs navigator.userAgent to work around known Safari ImageBitmap
@@ -118,7 +122,8 @@ const MUSIC_FOR_STAGE = {
   loading: 'calm',
   toy: 'calm',
   box: 'mystery',
-  // the Crib plays its rooms' own music (CribScreen)
+  // the Crib plays its rooms' own music (CribScreen); the new design's Main Menu and house play their own sounds
+  classic: 'cozy',
 };
 
 // The creature cheering on the streak screen: the owned one squished the
@@ -163,7 +168,7 @@ export default function App() {
   const setHomeIndex = useCallback((i) => {
     homeIndexRef.current = i;
   }, []);
-  const [screen, setScreen] = useState('home'); // 'home' | 'achievements' | 'stats' | 'store' | 'create' | 'box' — only relevant once signed in
+  const [screen, setScreen] = useState('home'); // 'home' | 'classic' | 'achievements' | 'stats' | 'store' | 'create' | 'box' | 'crib' | 'streak' — only relevant once signed in
   // A card tap moves a creature into `loadingToy` (LoadingScreen's "getting
   // ready" beat) before it graduates to `activeToy` (SquishScreen actually
   // mounted) — kept as two separate slots so the transition screen has
@@ -511,6 +516,28 @@ export default function App() {
   });
   tutorialStepRef.current = tutorial.step;
 
+  // --- the new design (src/game, webgame/): its Main Menu is Home, its house is the Crib ---
+  // The tutorial still points at the classic Home and Crib, so a player in it stays there (src/game/flags.js).
+  const newDesign = NEW_DESIGN && (NEW_DESIGN_DURING_TUTORIAL || !tutorialActive(profile));
+  const ownedKeys = useMemo(
+    () => creatures.filter((c) => (profile?.ownedIds || []).includes(c.id)).map(creatureKey),
+    [creatures, profile?.ownedIds]
+  );
+  // the Main Menu's settings gear: the classic Home, for everything the new design has no screen for yet
+  const openClassic = useCallback(() => setScreen('classic'), []);
+  const backToGameMenu = useCallback(() => setScreen('home'), []);
+  // a Crib request (daily challenges, the classic Home) walks into the new house, then Home is the Main Menu again
+  const gameHouseShown = useCallback(() => setScreen((s) => (s === 'crib' ? 'home' : s)), []);
+  // Squish Time on the Main Menu's games page: the squish screen, with the creature the menu shows
+  const handleGamePlay = useCallback(
+    (key) => {
+      const c = creatures.find((x) => creatureKey(x) === key);
+      if (c && (profile?.ownedIds || []).includes(c.id)) openToy(c);
+      else flashApp(c ? `Unlock ${c.name} to squish it!` : 'This squishy comes to Squish Time soon!');
+    },
+    [creatures, profile?.ownedIds, openToy, flashApp]
+  );
+
   // --- Mystery Box (src/mysteryBox.js) ---
   const handleOpenBox = useCallback((pull, paidAhead) => (authUser ? openBox(authUser.uid, profile, pull, paidAhead) : false), [authUser, profile]);
   // DOUBLE IT on the reveal: the doubled pull, or null
@@ -763,10 +790,11 @@ export default function App() {
   // --- sound (src/audio/sfx.js): each screen's music, a whoosh between
   // screens, and coins coming in or going out. The squish screen and the
   // Mystery Box play their own coin sounds.
+  const onGame = newDesign && (stage === 'home' || stage === 'crib');
   useEffect(() => {
-    if (stage === 'crib') return;
-    sfx.music(fontsLoaded ? MUSIC_FOR_STAGE[stage] : null);
-  }, [stage, fontsLoaded]);
+    if (stage === 'crib' && !onGame) return;
+    sfx.music(fontsLoaded && !onGame ? MUSIC_FOR_STAGE[stage] : null);
+  }, [stage, fontsLoaded, onGame]);
   const prevStageRef = useRef(stage);
   useEffect(() => {
     if (prevStageRef.current !== stage) sfx.play('whoosh');
@@ -774,7 +802,7 @@ export default function App() {
   }, [stage]);
   // the tutorial follows the screen; it hides behind popups
   useEffect(() => {
-    tutReport({ screen: stage, busy: removeAdsOpen || !!unlockForId || dailyOpen });
+    tutReport({ screen: stage === 'classic' ? 'home' : stage, busy: removeAdsOpen || !!unlockForId || dailyOpen });
   }, [stage, removeAdsOpen, unlockForId, dailyOpen]);
   const coinsNow = profile?.coins;
   const prevCoinsRef = useRef(coinsNow);
@@ -828,7 +856,23 @@ export default function App() {
       <StatusBar style={statusBarStyle} />
       {stage === 'splash' && <SplashScreen onFinish={() => setSplashDone(true)} ownedIds={ownedIds} creatures={creatures} />}
       {stage === 'auth' && <AuthScreen />}
-      {stage === 'home' && (
+      {onGame &&
+        (profile ? (
+          <GameScreen
+            uid={authUser.uid}
+            level={levelOf(profile)}
+            coins={profile.coins ?? 0}
+            ownedKeys={ownedKeys}
+            wantHouse={stage === 'crib'}
+            onHouseShown={gameHouseShown}
+            onShop={openStore}
+            onSettings={openClassic}
+            onPlay={handleGamePlay}
+          />
+        ) : (
+          <View style={{ flex: 1, backgroundColor: '#24123f' }} />
+        ))}
+      {((stage === 'home' && !newDesign) || stage === 'classic') && (
         <HomeScreen
           creatures={creatures}
           ownedIds={ownedIds}
@@ -879,7 +923,8 @@ export default function App() {
           onReplayTutorial={replayTutorial}
         />
       )}
-      {stage === 'crib' && (
+      {stage === 'classic' && <ClassicBack onBack={backToGameMenu} />}
+      {stage === 'crib' && !newDesign && (
         <CribScreen
           authUser={authUser}
           profile={profile}

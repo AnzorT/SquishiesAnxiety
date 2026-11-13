@@ -25,3 +25,9 @@ yard games). To take fresh ones after a change (works in a cloud session too, wh
     node shoot.js ../design-nov13/squish-squad ./out "Main Menu.dc.html"   # one page
 
 To show them in a cloud session, commit the pictures and push, then open them on GitHub.
+
+## In the app
+
+The app now runs this prototype's Main Menu and Squad House v6 as its Home and house, pixel for pixel. Creature
+animations, house item prices and unlock levels are controlled from Firebase. How it's built, tested and controlled:
+`webgame/README.md`.

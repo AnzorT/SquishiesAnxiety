@@ -450,3 +450,26 @@ const verifyApple = makeVerifyApple({
 exports.verifyPurchase = onCall(
   makeVerifyPurchase({ db: admin.firestore(), FieldValue, HttpsError, logger, playApi, verifyApple })
 );
+
+// --- game config (the in-app game's creatures, animations, house items) -------------
+// The admin edits gameCreatures/*, gameItems/* and config/animations in the console (see gameConfig.js). Each edit
+// only marks config/gameDirty; once a minute, if something changed, config/game (the one small doc the app reads)
+// is rebuilt. A burst of edits (or a re-seed of ~900 docs) costs one rebuild, and the app sees it within a minute.
+const { rebuildGameConfig } = require('./gameConfig');
+const markGameDirty = () => admin.firestore().doc('config/gameDirty').set({ at: FieldValue.serverTimestamp() });
+exports.gameCreatureWritten = onDocumentWritten('gameCreatures/{key}', markGameDirty);
+exports.gameItemWritten = onDocumentWritten('gameItems/{itemId}', markGameDirty);
+exports.gameAnimationsWritten = onDocumentWritten('config/animations', markGameDirty);
+exports.rebuildGameConfig = onSchedule('every 1 minutes', async () => {
+  const db = admin.firestore();
+  const dirty = await db.doc('config/gameDirty').get();
+  if (!dirty.exists) return;
+  const at = dirty.data().at;
+  const live = await rebuildGameConfig(db, FieldValue);
+  // only clear the flag if no edit came in while rebuilding (else the next run picks it up)
+  await db.runTransaction(async (tx) => {
+    const now = await tx.get(db.doc('config/gameDirty'));
+    if (now.exists && now.data().at && at && now.data().at.isEqual(at)) tx.delete(db.doc('config/gameDirty'));
+  });
+  logger.info('config/game rebuilt', { creatures: Object.keys(live.creatures).length, items: Object.keys(live.items).length, animsOff: live.animsOff.length });
+});

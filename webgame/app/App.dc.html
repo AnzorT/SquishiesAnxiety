@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Squish Squad</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+/* The app's root page: the design's own pages, full screen, in their "bare" (no test controls, no phone frame) mode. */
+html, body { margin:0; height:100%; overflow:hidden; background:#24123f; -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; overscroll-behavior:none; }
+.app-screen { position:fixed; left:0; top:0; right:0; bottom:0; }
+/* bare Main Menu: its host div has no height of its own (mm-root / mm-frame are 100% of it), so give it the screen */
+.app-screen .mm-page.bare .mm-host { height:100%; }
+</style>
+</helmet>
+<div class="app-screen">
+  <sc-if value="{{ isMenu }}" hint-placeholder-val="{{ true }}">
+    <dc-import name="Main Menu" bare="{{ true }}" on-play="{{ onPlay }}" on-shop="{{ onShop }}" on-settings="{{ onSettings }}" hint-size="100%,100%" style="position:absolute; left:0; top:0; width:100%; height:100%;"></dc-import>
+  </sc-if>
+  <sc-if value="{{ isHouse }}" hint-placeholder-val="{{ false }}">
+    <dc-import name="Squad House v6" bare="{{ true }}" start-room="{{ room }}" dev-levels="{{ false }}" hint-size="100%,100%" style="position:absolute; left:0; top:0; width:100%; height:100%;"></dc-import>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  // Which screen the app asked for: window.SquishApp (app/bridge.js) holds the app's state; ?screen=house opens the house directly.
+  state = { screen: (window.SquishApp && window.SquishApp.screen) || new URLSearchParams(location.search).get('screen') || 'menu', room: new URLSearchParams(location.search).get('room') || 'living' };
+  componentDidMount() {
+    // the app asks for the house (e.g. from a daily challenge): from the menu, walk home the way the MY HOUSE tab does
+    // (the menu may still be loading: wait for its tab, up to 20 s)
+    const goHouse = n => {
+      if (this._dead || this.state.screen === 'house' || document.querySelector('.mm-hback')) return;
+      const tab = document.querySelector('.mm-tab[data-tab="house"]');
+      if (tab) tab.click(); else if (n < 200) this._hT = setTimeout(() => goHouse(n + 1), 100);
+    };
+    this._off = window.SquishApp && window.SquishApp.on('screen', s => { if (s.screen === 'house') goHouse(0); else this.setState({ screen: 'menu' }); });
+    if (window.SquishApp) window.SquishApp.send('ready', { screen: this.state.screen });
+  }
+  componentWillUnmount() { this._dead = true; clearTimeout(this._hT); if (this._off) this._off(); }
+  // Squish Time on the games page: the squish game is the app's own screen. key = the creature playing (roster key).
+  onPlay = (mode, id) => { if (window.SquishApp) window.SquishApp.send('play', { mode, id, key: window.SquishApp.keyOf(id) }); };
+  onShop = () => { if (window.SquishApp) window.SquishApp.send('open', { what: 'shop' }); };
+  onSettings = () => { if (window.SquishApp) window.SquishApp.send('open', { what: 'settings' }); };
+  renderVals() {
+    return { isMenu: this.state.screen !== 'house', isHouse: this.state.screen === 'house', room: this.state.room, onPlay: this.onPlay, onShop: this.onShop, onSettings: this.onSettings };
+  }
+}
+</script>
+</body>
+</html>
