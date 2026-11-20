@@ -31,6 +31,14 @@ import { HintCard, PauseCard, ResultCard, StuckCard } from './Cards';
 // animates them.
 
 const LOAD_SOUNDS = ['st_lift', 'st_land', 'st_undo', 'st_hint', 'st_news', 'fs_pop', 'tap', 'bonk', 'sd_squeak', 'sd_unlock', 'sd_wrong', 'sd_solve', 'sd_confetti', 'sd_boardIn', 'swoosh'];
+// The game's sounds pile up. Every hop is a lift and a puff, a friend's squeak lands on the next hop's lift, and a
+// swipe hops ~5 times a second. At full volume, all at once, a hop alone peaked at -1.4 dBFS, a hop onto a friend
+// went past full scale, and so did the win (st_land + sd_solve + sd_confetti). The user heard it harsh, too loud
+// and crackly on a Galaxy A16 (2026-11-20). So they play softer, and the puff a moment after the lift. The worst
+// pile-up (a swipe through four friends, the ★ opening) now peaks at about -4 dBFS and the win at -3.3.
+const VOL = { st_lift: 0.8, fs_pop: 0.8, sd_squeak: 0.7, sd_unlock: 0.75, sd_wrong: 0.8, st_land: 0.8, sd_solve: 0.75, sd_confetti: 0.6 };
+const PUFF_DELAY = 70; // ms after the lift (st_lift rings 80)
+const play = (name, opts) => sfx.play(name, { volume: VOL[name] ?? 1, ...opts });
 
 // why a hop bumped, said in the tip line
 const WHY = {
@@ -276,10 +284,10 @@ export default function HopGame({ startLv = 1, cast, profile, uid, adsFree, hapt
         if (bub) {
           timing(bub, 0, 220, Easing.out(Easing.quad)).start();
           fx.current?.burst('poof', q.x, q.y - q.s * 0.45, q.s / 60);
-          sfx.play('tap');
+          play('tap');
         } else {
           fx.current?.burst('pop', q.x, q.y - q.s * 0.1, q.s / 60);
-          sfx.play('fs_pop');
+          play('fs_pop', { delay: PUFF_DELAY });
         }
       }
     } else {
@@ -327,7 +335,7 @@ export default function HopGame({ startLv = 1, cast, profile, uid, adsFree, hapt
     hop(d, m);
   }
   function bump(d, m) {
-    sfx.play('bonk');
+    play('bonk');
     haptics.tap();
     G.busy = true;
     nudge(d, 0.14).then(() => {
@@ -354,7 +362,7 @@ export default function HopGame({ startLv = 1, cast, profile, uid, adsFree, hapt
     G.st = nxt;
     G.busy = true;
     setGlow(-1);
-    sfx.play('st_lift');
+    play('st_lift');
     haptics.tap();
     setCell(prev.cur, nxt.life[prev.cur]);
     // onto each cell in turn; a bubble pops as it bounces you on
@@ -404,7 +412,7 @@ export default function HopGame({ startLv = 1, cast, profile, uid, adsFree, hapt
     const a = friendA[k];
     const c = friends[k];
     if (!a || !c) return;
-    sfx.play('sd_squeak');
+    play('sd_squeak');
     const fh = bodyH(c, fw);
     const to = slotAt.current[k];
     a.shadow.setValue(0);
@@ -428,7 +436,7 @@ export default function HopGame({ startLv = 1, cast, profile, uid, adsFree, hapt
         timing(starPop, 1, 520, Easing.out(Easing.quad)).start();
         const q = standOn(B, board.goal);
         fx.current?.burst('spark', q.x, q.y - B.T * 0.4, q.s / 60);
-        sfx.play('sd_unlock');
+        play('sd_unlock');
       }
     });
   }
@@ -476,7 +484,7 @@ export default function HopGame({ startLv = 1, cast, profile, uid, adsFree, hapt
       player.rot.stopAnimation();
       player.rot.setValue(0);
     }
-    sfx.play('st_undo');
+    play('st_undo');
     G.busy = true;
     restoreTo(prev, 190).then(() => {
       G.busy = false;
@@ -571,7 +579,7 @@ export default function HopGame({ startLv = 1, cast, profile, uid, adsFree, hapt
     if (d == null || d < 0) return;
     const m = tryMove(board, G.st, d);
     if (!m.ok) return;
-    sfx.play('st_hint');
+    play('st_hint');
     setGlow(m.cells[0]);
     later(3200, () => setGlow(-1));
     nudge(d, 0.1, 360, back ? 320 : 0);
@@ -587,12 +595,12 @@ export default function HopGame({ startLv = 1, cast, profile, uid, adsFree, hapt
     setPhase('won');
     sync();
     const q = standOn(B, board.goal);
-    sfx.play('st_land');
+    play('st_land');
     timing(starGone, 1, 420, Easing.out(Easing.quad)).start();
     fx.current?.burst('spark', q.x, q.y - B.T * 0.5, q.s / 60);
     later(160, () => {
-      sfx.play('sd_solve');
-      sfx.play('sd_confetti');
+      play('sd_solve');
+      play('sd_confetti');
       haptics.win();
       fx.current?.burst('confetti', q.x, q.y - B.T * 0.6, 1);
       // two happy hops on the ★
@@ -611,7 +619,7 @@ export default function HopGame({ startLv = 1, cast, profile, uid, adsFree, hapt
     G.over = true;
     G.busy = false;
     setPhase('stuck');
-    sfx.play('sd_wrong');
+    play('sd_wrong');
     haptics.wrong();
     wobble([-0.8, 0.8, -0.5, 0], 800);
     later(1000, () => {
@@ -692,14 +700,14 @@ export default function HopGame({ startLv = 1, cast, profile, uid, adsFree, hapt
       Animated.parallel([timing(a.k, q.k, 320, Easing.out(Easing.back(1.6)), 320 + k * 90), timing(a.y, q.y, 320, Easing.out(Easing.back(1.6)), 320 + k * 90), timing(a.o, 1, 160, Easing.linear, 320 + k * 90)]).start();
       slotPop[k].setValue(1);
     });
-    sfx.play('sd_boardIn');
+    play('sd_boardIn');
     setPhase('play');
     if (forget) {
       say(`LEVEL ${spec.lv}`, { chips: [TIER_NAMES[spec.tier], room.name.toUpperCase()], hold: 800 });
       const news = spec.news && !record(profileRef.current).best[spec.lv] ? TWISTS[spec.news] : null;
       if (news)
         later(1500, () => {
-          sfx.play('st_news');
+          play('st_news');
           say(news.text, { small: true, sub: news.sub, hold: 1700, ink: '#0c5a9c' });
         });
     }
@@ -752,7 +760,7 @@ export default function HopGame({ startLv = 1, cast, profile, uid, adsFree, hapt
         return;
       }
       // a new room (or time of day): the Crib's room-switch flash
-      sfx.play('swoosh');
+      play('swoosh');
       timing(flash, 1, 200, Easing.linear).start(() => {
         setLv(to);
         setTimeout(() => timing(flash, 0, 320, Easing.linear, 120).start(), 30);
@@ -842,7 +850,7 @@ export default function HopGame({ startLv = 1, cast, profile, uid, adsFree, hapt
           const cur = G.st.cur;
           const j = cellAt(b, T.x0, T.y0);
           if (j === cur) {
-            sfx.play('sd_squeak');
+            play('sd_squeak');
             acts.current.wiggle();
             return;
           }

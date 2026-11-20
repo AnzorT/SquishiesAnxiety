@@ -10,7 +10,7 @@ import STACK_FILES from './stackFiles';
 // assets/audio, and one music track, the user's own Velvet Map Study. (The design's five music moods, the Crib's
 // room tracks and its club songs were removed on 2026-11-16: the user kept only Velvet Map Study.)
 //
-//   sfx.play('tap')                 one-shot effect
+//   sfx.play('tap')                 one-shot effect (options: delay, rate, volume)
 //   const h = sfx.loop('reelLoop')  looping effect → h.setRate(r), h.stop()
 //   sfx.music('theme')              fades the track in (null = silence)
 //
@@ -155,7 +155,9 @@ function preload(names) {
   if (!preloading) pumpPreload();
 }
 
-function play(name, { delay = 0, rate } = {}) {
+// `volume` (0-1) is for a game whose sounds pile up (Squish Hop: a lift and a puff on every hop, ~5 hops a second on
+// a swipe), so together they stay under full scale.
+function play(name, { delay = 0, rate = 1, volume = 1 } = {}) {
   if (!state.effectsOn || !state.active) return;
   if (name === 'tap' && !delay) {
     const now = Date.now();
@@ -169,8 +171,10 @@ function play(name, { delay = 0, rate } = {}) {
     e.next = (e.next + 1) % e.voices.length;
     const sound = await voice;
     if (!sound) return;
-    // one native call: restart, at this rate if one's given
-    quiet(sound.replayAsync(rate ? { rate, shouldCorrectPitch: false } : {}));
+    // One native call: restart, at this rate and volume. Both go every time: a sound keeps the last ones it was given,
+    // so a play without them kept another game's. Sort deals fs_pop up to ~2× fast and Stack plays st_lift at
+    // 0.8-1.25×, so Squish Hop's puffs and hops could come out at those speeds, pitched up (2026-11-20).
+    quiet(sound.replayAsync({ rate, shouldCorrectPitch: false, volume }));
   };
   if (delay) setTimeout(go, delay);
   else go();

@@ -53,6 +53,8 @@ Unlike the other three mini-games, a level is the same board every time: played,
 - **Hooked into the app:** the PICK A GAME card (`GamePicker.js` `HopArt`: a squishy hopping along three cushions that puff away), `LobbyScreen` `onOpenHop`, `App.js` stage `hop` (music: cozy).
 - **Saved on the profile** (written by the client): `hop.{lv, best, plays, wins, seen}` through `saveHop`. firestore.rules doesn't block `hop`, so there's nothing to deploy.
 - **Sounds:** all existing ones. Hop: `st_lift`. Puff: `fs_pop`. Bubble: `tap` (the bubble). Bump: `bonk`. Friend: `sd_squeak`. ★ opens: `sd_unlock`. Stuck: `sd_wrong`. Win: `st_land`, `sd_solve`, `sd_confetti`. Room change: `swoosh`.
+  - They play softer than full volume (`VOL` in `Game.js`), and the puff 70 ms after the lift. At full volume, all at once, a hop alone peaked at -1.4 dBFS, and a hop onto a friend and the win went past full scale. The user heard the game harsh, too loud and crackly on a Galaxy A16 (2026-11-20), and this is the likely cause. Now the worst pile-up peaks at about -4 dBFS. Not yet heard on the A16.
+  - `sfx.play` now sends rate 1 and volume 1 when none is given. Before, a sound kept the last rate another game gave it (Sort's deal plays `fs_pop` up to ~2× fast).
 - **Tests:** `node src/hop/engine.test.js`.
   - Every level's stored clear replays to a full clear, and the first eight have the number of clears the data says.
   - A tap anywhere in any cell finds that cell, on every board, at three area sizes, and the board fits.
