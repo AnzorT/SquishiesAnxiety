@@ -37,11 +37,26 @@ Feel and speed are checked on the phone.
      it uses, innerHTML, getBBox, a canvas for the fabric grain, fetch), driven by a host clock
      (`tools/unity/rig/virtual-clock.js`). Unity reads the element tree each frame and draws it on the GPU. What made
      the WebView slow is gone: style and layout, re-rasterising SVG with filters, and compositing.
-   - ✅ **Proven:** `node tools/unity/rig/parity.mjs` runs the creatures in Chrome and on the stand-in, frame by frame,
-     through idle, dance, hop, squish, wave and happy, and compares the whole SVG tree: **identical**. That covers
-     every rig family (Mittens, built-in pets, generic, snack 3D, fruit 3D) and effects (Lumi's lantern, Nimbo's rain,
-     Zappi's sparks, Bubbly's shimmer). Matching Chrome needed its exact rules for bounding boxes: transformed
-     children's corner-mapped boxes, and 32-bit floats.
+   - ✅ **Proven on all 118 creatures:** `node tools/unity/rig/parity.mjs` runs each creature in Chrome and on the
+     stand-in through idle, dance, hop, squish, wave and happy, compares the whole SVG tree every 15 frames, and
+     draws any snapshot that differs as text both ways to compare pixels. Over 300 frames each:
+     - 110 identical in every snapshot
+     - 7 identical to the eye, at most 12 pixels of 475x475 apart: Sea Turtle, Marina, Jinni, Cuppy, Sugarplum, Toco, Shelly
+     - 1 visibly different, Puff, and only in its first snapshot, before the first frame (68 px). It's identical from the first frame on.
+
+     The to-the-eye differences are the JS engines' last bits: Node's V8 is not Chrome's V8, and the phone's isn't
+     either.
+   - Matching Chrome needed its exact geometry rules, because the rigs size parts from `getBBox`:
+     - a box is an SVGRect whose numbers are prototype getters, so `Object.assign({}, box)` copies nothing. In the
+       app this makes the shadow width NaN for some creatures, e.g. Kiko: kept, so Unity matches the app, and fixable
+       later in one place.
+     - 32-bit floats throughout
+     - quadratic curves kept as quadratics, arcs as Skia's conics
+     - transformed children mapped by their corners
+     - gfx::RectF's grow-to-contain rule
+
+     `bbox-fuzz.mjs` checks this against Chrome on random paths: ~83 % to the bit. The rest are rotated or tiny arcs,
+     where even phones differ.
    - Cost: one creature frame takes 2-5 ms in Node's V8 on this machine (Mittens 2.2, Biscuit 3.0, Lumi 2.2, Ember
      5.2), so maybe 5-12 ms on the A15. The stand-in is ~2 % of that. The rig's own maths is ~70 % (the `glob` warp,
      `clamp`, `r2` rounding, `toD` path building), and the WebView pays it today too, plus all its drawing. One

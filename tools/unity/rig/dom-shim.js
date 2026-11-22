@@ -470,8 +470,6 @@
     }
     return null;
   }
-  // a path's tight box (curve extrema), into b; with a matrix, sampled points mapped through it
-  function addPt(b, m, x, y) { if (m) { var X = m[0] * x + m[2] * y + m[4], Y = m[1] * x + m[3] * y + m[5]; x = X; y = Y; } if (x < b.x0) b.x0 = x; if (x > b.x1) b.x1 = x; if (y < b.y0) b.y0 = y; if (y > b.y1) b.y1 = y; }
   function mul(a, c) { if (!a) return c; if (!c) return a; return [a[0] * c[0] + a[2] * c[1], a[1] * c[0] + a[3] * c[1], a[0] * c[2] + a[2] * c[3], a[1] * c[2] + a[3] * c[3], a[0] * c[4] + a[2] * c[5] + a[4], a[1] * c[4] + a[3] * c[5] + a[5]]; }
   function parseTransform(s) {
     if (!s) return null;
@@ -488,42 +486,6 @@
     }
     return m;
   }
-  function cubicExt(p0, p1, p2, p3, f) {
-    // roots of the derivative: where a cubic Bézier turns
-    var a = -p0 + 3 * p1 - 3 * p2 + p3, bb = 2 * (p0 - 2 * p1 + p2), c = p1 - p0, ts = [];
-    if (Math.abs(a) < 1e-12) { if (Math.abs(bb) > 1e-12) ts.push(-c / bb); }
-    else { var d = bb * bb - 4 * a * c; if (d >= 0) { var s = Math.sqrt(d); ts.push((-bb + s) / (2 * a), (-bb - s) / (2 * a)); } }
-    for (var i = 0; i < ts.length; i++) if (ts[i] > 0 && ts[i] < 1) f(ts[i]);
-  }
-  function pathBox(d, b, m) {
-    var tk = d.match(/[a-zA-Z]|-?\d*\.?\d+(?:e-?\d+)?/g) || [], i = 0, cmd = '', x = 0, y = 0, sx = 0, sy = 0, px = 0, py = 0, lastC = '';
-    var n = function () { return F(+tk[i++]); };
-    var cubic = function (x1, y1, x2, y2, X, Y) {
-      addPt(b, m, X, Y);
-      var at = function (t) { var u = 1 - t; addPt(b, m, u * u * u * x + 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t * X, u * u * u * y + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t * Y); };
-      if (m) for (var s = 1; s < 16; s++) at(s / 16); else { cubicExt(x, x1, x2, X, at); cubicExt(y, y1, y2, Y, at); }
-      px = x2; py = y2; x = X; y = Y;
-    };
-    while (i < tk.length) {
-      if (/[a-zA-Z]/.test(tk[i])) cmd = tk[i++];
-      var C = cmd.toUpperCase(), rel = cmd !== C, ox = rel ? x : 0, oy = rel ? y : 0;
-      if (C === 'Z') { x = sx; y = sy; lastC = 'Z'; continue; }
-      if (C === 'M') { x = ox + n(); y = oy + n(); sx = x; sy = y; addPt(b, m, x, y); cmd = rel ? 'l' : 'L'; lastC = 'M'; continue; }
-      if (C === 'L') { x = ox + n(); y = oy + n(); addPt(b, m, x, y); }
-      else if (C === 'H') { x = ox + n(); addPt(b, m, x, y); }
-      else if (C === 'V') { y = oy + n(); addPt(b, m, x, y); }
-      else if (C === 'C') { var a1 = ox + n(), b1 = oy + n(), a2 = ox + n(), b2 = oy + n(); cubic(a1, b1, a2, b2, ox + n(), oy + n()); lastC = 'C'; continue; }
-      else if (C === 'S') { var r1x = lastC === 'C' ? 2 * x - px : x, r1y = lastC === 'C' ? 2 * y - py : y, c2x = ox + n(), c2y = oy + n(); cubic(r1x, r1y, c2x, c2y, ox + n(), oy + n()); lastC = 'C'; continue; }
-      else if (C === 'Q' || C === 'T') {
-        var qx, qy; if (C === 'Q') { qx = ox + n(); qy = oy + n(); } else { qx = lastC === 'Q' ? 2 * x - px : x; qy = lastC === 'Q' ? 2 * y - py : y; }
-        var X = ox + n(), Y = oy + n(); cubic(x + 2 / 3 * (qx - x), y + 2 / 3 * (qy - y), X + 2 / 3 * (qx - X), Y + 2 / 3 * (qy - Y), X, Y); px = qx; py = qy; lastC = 'Q'; continue;
-      }
-      else if (C === 'A') { var rx = n(), ry = n(); n(); n(); n(); var ex = ox + n(), ey = oy + n(); for (var s2 = 0; s2 <= 16; s2++) { var t2 = s2 / 16; addPt(b, m, x + (ex - x) * t2, y + (ey - y) * t2); } addPt(b, m, x - rx, y - ry); x = ex; y = ey; }
-      else i++;
-      lastC = C;
-    }
-  }
-
   // ---------- canvas 2D: just enough for the fabric-grain tile (pixels kept for the host) ----------
   var CANVASES = {};
   function Ctx2D(cv) { this.canvas = cv; this.fillStyle = '#000'; this.globalAlpha = 1; }
