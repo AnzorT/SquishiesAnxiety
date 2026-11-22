@@ -1,23 +1,27 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 import Pressable from './Pressable';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RewardedAd, RewardedAdEventType, AdEventType } from 'react-native-google-mobile-ads';
 import { REWARDED_AD_UNIT_ID } from '../firebase/ads';
 import { BUTTON_VARIANTS, candyFonts } from '../theme/candyTheme';
 import { Shine } from './candy/CandyButton';
+import { InkText } from '../royal/parts';
 import { stepKeys, useKeyLoop } from './idleLoop';
 
-// One "watch ad for a coin multiplier" CTA at the bottom of SquishScreen —
-// there are three of these side by side (×2/×3/×4, see SquishScreen.js),
-// each holding its own independently-loaded rewarded ad (kept for the
-// session in adPool, below). In the v3 look it's
-// a gold candy button: a little play-screen badge beside a big "×N", and
-// "WATCH AD" / "LONG AD" underneath. It breathes (a slow scale pulse) and a
-// light streak sweeps across it, but ONLY while it's actually tappable — see
-// `isStill` below. A reward earned here opens SquishScreen's 60s ×N window
-// (see handleAdReward); this component only loads/shows a real rewarded ad
-// and reports back.
+// One "watch ad for a coin multiplier" button on Squish Time's rail at the
+// right edge — three of them down it (×2/×3/×4, see SquishScreen.js), each
+// holding its own independently-loaded rewarded ad (kept for the session in
+// adPool, below). Since the 2026-11-21 remodel it's a round gold coin of a
+// button: "×N" in the middle, a little play badge on its rim, and "AD" /
+// "LONG AD" under it. It breathes (a slow scale pulse) and a light streak
+// sweeps across it, but ONLY while it's actually tappable — see `isStill`
+// below. A reward earned here opens SquishScreen's 60s ×N window (see
+// handleAdReward); this component only loads/shows a real rewarded ad and
+// reports back. While its window runs (`endsAt`, `total` ms long), a ring
+// round it runs down and the time left shows under it (it was a separate
+// banner before the remodel).
 //
 // `activeMultiplier` is the multiplier currently running (or null) — shared
 // across all three buttons, from SquishScreen. Only one bonus window can run
@@ -37,7 +41,12 @@ const BREATHE = stepKeys(1, [
 // the light streak sweeps across in the first 60% of its 2.8 s, then holds
 // off the right edge for the remaining 40%
 const SHEEN_AT = [0, 0.6, 1];
-const SHEEN_X = [-70, 160, 160];
+const SHEEN_X = [-40, 80, 80];
+// the coin's size (dp) and the countdown ring round it
+export const BOOST_SIZE = 58;
+const RING_R = BOOST_SIZE / 2 + 5;
+const RING_BOX = RING_R * 2 + 6;
+const RING_LEN = 2 * Math.PI * RING_R;
 
 // PERF 2026-11-20: the rewarded ads live for the whole session, one per multiplier, instead of one per visit to Squish
 // Time. Every ad that arrives makes Google's SDK build a WebView on the main thread (55-175 ms on the Galaxy A16: the
@@ -71,7 +80,7 @@ function pooledAd(multiplier, fresh) {
   return entry;
 }
 
-export default function WatchAdButton({ multiplier, onRewardEarned, activeMultiplier, adFree = false, rechargeUntil = 0 }) {
+export default function WatchAdButton({ multiplier, onRewardEarned, activeMultiplier, adFree = false, rechargeUntil = 0, endsAt = 0, total = 60000 }) {
   const rewardedRef = useRef(null);
   const earnedRef = useRef(false);
   const [adReady, setReady] = useState(false);
@@ -92,6 +101,14 @@ export default function WatchAdButton({ multiplier, onRewardEarned, activeMultip
   }, [adFree, rechargeUntil]);
 
   const isThisActive = activeMultiplier === multiplier;
+  // this button's window running: its own 250 ms tick (only this button re-renders)
+  const counting = isThisActive && endsAt > 0;
+  useEffect(() => {
+    if (!counting) return undefined;
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, [counting]);
   const isLockedByOther = activeMultiplier != null && !isThisActive;
   // "Still": no ad ready yet, or another multiplier's window is running —
   // the two cases the button must go grey + unpressable + animation-frozen
@@ -152,73 +169,99 @@ export default function WatchAdButton({ multiplier, onRewardEarned, activeMultip
     rewardedRef.current.show();
   }, [ready, isDisabled, adFree, onRewardEarned]);
 
-  const sub = isThisActive
-    ? 'ACTIVE'
-    : recharging
-      ? `READY IN ${Math.ceil((rechargeUntil - now) / 1000)}s`
-      : adFree
-        ? 'NO AD'
-        : multiplier >= 4
-          ? 'LONG AD'
-          : 'WATCH AD';
+  const left = counting ? Math.max(0, endsAt - now) : 0;
+  const secs = Math.ceil(left / 1000);
+  const sub = counting
+    ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`
+    : isThisActive
+      ? 'ACTIVE'
+      : recharging
+        ? `${Math.ceil((rechargeUntil - now) / 1000)}s`
+        : adFree
+          ? 'FREE'
+          : multiplier >= 4
+            ? 'LONG AD'
+            : 'AD';
 
   return (
     <Animated.View style={[styles.wrap, { transform: [{ scale }] }, isStill && styles.dim]}>
-      <Pressable onPress={handlePress} disabled={isDisabled} style={styles.press}>
+      <Pressable onPress={handlePress} disabled={isDisabled} hitSlop={6} style={styles.press}>
+        {counting ? (
+          // the window's time left, running down clockwise from the top
+          <Svg pointerEvents="none" width={RING_BOX} height={RING_BOX} style={styles.countRing}>
+            <Circle cx={RING_BOX / 2} cy={RING_BOX / 2} r={RING_R} stroke="rgba(107,68,38,0.45)" strokeWidth={5} fill="none" />
+            <Circle
+              cx={RING_BOX / 2}
+              cy={RING_BOX / 2}
+              r={RING_R}
+              stroke="#fff3a0"
+              strokeWidth={5}
+              strokeLinecap="round"
+              fill="none"
+              strokeDasharray={`${RING_LEN} ${RING_LEN}`}
+              strokeDashoffset={RING_LEN * (1 - Math.min(1, left / total))}
+              transform={`rotate(-90 ${RING_BOX / 2} ${RING_BOX / 2})`}
+            />
+          </Svg>
+        ) : null}
         <View style={styles.lip} />
         <View style={styles.ring}>
           <LinearGradient colors={GOLD.colors} locations={GOLD.locations} style={styles.face}>
-            <Shine radius={14} height="42%" />
+            <Shine radius={BOOST_SIZE / 2} height="46%" />
             <Animated.View pointerEvents="none" style={[styles.sheen, { transform: [{ translateX: sheenX }, { skewX: '-20deg' }] }]} />
-            <View style={styles.topRow}>
-              {adFree ? null : (
-                <View style={styles.screen}>
-                  <View style={styles.play} />
-                </View>
-              )}
-              <Text style={styles.mult}>×{multiplier}</Text>
-            </View>
-            <Text style={styles.sub}>{sub}</Text>
+            <Text style={styles.mult}>×{multiplier}</Text>
           </LinearGradient>
         </View>
+        {adFree ? null : (
+          <View style={styles.badge}>
+            <View style={styles.play} />
+          </View>
+        )}
       </Pressable>
+      <InkText size={10.5} style={styles.sub}>
+        {sub}
+      </InkText>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, minWidth: 0 },
+  wrap: { alignItems: 'center', gap: 1 },
   dim: { opacity: 0.5 },
-  press: { paddingBottom: 5 },
-  lip: { position: 'absolute', left: 0, right: 0, top: 5, bottom: 0, borderRadius: 22, backgroundColor: GOLD.ring },
+  press: { width: BOOST_SIZE, height: BOOST_SIZE + 4 },
+  countRing: { position: 'absolute', left: (BOOST_SIZE - RING_BOX) / 2, top: (BOOST_SIZE - RING_BOX) / 2 },
+  lip: { position: 'absolute', left: 0, top: 4, width: BOOST_SIZE, height: BOOST_SIZE, borderRadius: BOOST_SIZE / 2, backgroundColor: GOLD.ring },
   ring: {
-    borderRadius: 22,
+    width: BOOST_SIZE,
+    height: BOOST_SIZE,
+    borderRadius: BOOST_SIZE / 2,
     padding: 2.5,
     backgroundColor: GOLD.ring,
-    shadowColor: '#320064',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 9,
-    elevation: 6,
+    shadowColor: '#3f2412',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 5,
   },
   face: {
-    borderRadius: 20,
+    flex: 1,
+    borderRadius: BOOST_SIZE / 2,
     borderWidth: 3,
     borderColor: '#ffffff',
     overflow: 'hidden',
     alignItems: 'center',
-    paddingTop: 6,
-    paddingBottom: 7,
-    paddingHorizontal: 4,
-    gap: 2,
+    justifyContent: 'center',
   },
-  sheen: { position: 'absolute', top: 0, bottom: 0, width: 30, backgroundColor: 'rgba(255,255,255,0.55)' },
-  topRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  screen: {
-    width: 28,
-    height: 20,
-    borderRadius: 6,
-    backgroundColor: '#f2b52a',
+  sheen: { position: 'absolute', top: 0, bottom: 0, left: 0, width: 16, backgroundColor: 'rgba(255,255,255,0.55)' },
+  // the play badge on the rim, top right
+  badge: {
+    position: 'absolute',
+    right: -4,
+    top: -3,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#e8681c',
     borderWidth: 2,
     borderColor: '#ffffff',
     alignItems: 'center',
@@ -228,30 +271,22 @@ const styles = StyleSheet.create({
     width: 0,
     height: 0,
     marginLeft: 2,
-    borderTopWidth: 5,
-    borderBottomWidth: 5,
-    borderLeftWidth: 8,
+    borderTopWidth: 4.5,
+    borderBottomWidth: 4.5,
+    borderLeftWidth: 7,
     borderTopColor: 'transparent',
     borderBottomColor: 'transparent',
     borderLeftColor: '#ffffff',
   },
   mult: {
     fontFamily: candyFonts.display,
-    fontSize: 22,
-    lineHeight: 24,
+    fontSize: 23,
+    lineHeight: 26,
     color: '#ffffff',
     includeFontPadding: false,
     textShadowColor: GOLD.ring,
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 1,
   },
-  sub: {
-    fontFamily: candyFonts.display,
-    fontSize: 10,
-    letterSpacing: 0.8,
-    color: '#ffffff',
-    textShadowColor: GOLD.ring,
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 1,
-  },
+  sub: { letterSpacing: 0.6 },
 });

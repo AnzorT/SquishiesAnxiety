@@ -23,6 +23,7 @@ import StackScreen from '../screens/StackScreen';
 import HopScreen from '../screens/HopScreen';
 import SquishdokuScreen from '../screens/SquishdokuScreen';
 import SortScreen from '../screens/SortScreen';
+import SquishScreen from '../screens/SquishScreen';
 import DailySpinScreen from '../screens/DailySpinScreen';
 import ShopScreen from '../screens/ShopScreen';
 import { WHEEL, todayKey } from '../dailySpin';
@@ -195,6 +196,15 @@ function StackForestPreview() {
   return <StackScreen profile={{ ownedIds: [sel], lobby: { sel }, stack: { lv, best, seen: true } }} creatures={[]} uid={null} onBack={noop} />;
 }
 
+// Mallow as the catalog has it (creatures/2): its card and the Tripo model the user gave it on 2026-11-21
+const MALLOW = {
+  id: '2',
+  key: 'mallow',
+  name: 'Mallow',
+  card: { url: 'https://firebasestorage.googleapis.com/v0/b/squishy-app-61445.firebasestorage.app/o/creatureArt%2Fcard-v1%2Fmallow.png?alt=media&token=1fdb3176-dd31-4a47-91bd-9956987415ba' },
+  modelUrl: 'https://firebasestorage.googleapis.com/v0/b/squishy-app-61445.firebasestorage.app/o/models%2Fmallow-v1.glb?alt=media&token=2a876106-5ec7-4c86-a496-c989f4e4c228',
+};
+
 const CARDS = {
   'sort-fridges': () => <FridgeGallery />,
   'sd-result': (v) => <SD.ResultCard visible={v} res={withStars(res)} titles={SD.SD_RESULT_TITLES} perfectTitle="PERFECT SQUISH!" uris={uris} keys={KEYS} coins={res.levelCoins} backLabel="MAP" onNext={noop} onReplay={noop} onBack={noop} />,
@@ -245,6 +255,10 @@ const CARDS = {
   // their three faces (squishdoku/bodies.js); window.__sdk plays them (answer(), miss(), tap(cell), timeUp(), save())
   'sd-level': () => <SdRegular startLv={param('lv', 12)} cast={SD_CAST} roster={SD_ROSTER} profile={PROFILE} head={param('head', 0) > 0} uid={null} onExit={noop} />,
   'sd-blitz': () => <SdBlitz cast={SD_CAST} roster={SD_ROSTER} profile={{ ...PROFILE, sdk: { blitz: { top: param('top', 3) } } }} uid={null} adsFree onExit={noop} />,
+  // Squish Time with Mallow (catalog creatures/2): `squish` plays its Tripo model (modelUrl), `squish-card` its card;
+  // &stage=0|1|2 (Baby, Grown, Best Friend). Coins earned go nowhere; the boosts are free (adsFree).
+  squish: () => <SquishScreen toy={{ ...MALLOW, stage: param('stage', 1) }} onBack={noop} onEarnCoins={noop} onRecordPress={noop} adsFree />,
+  'squish-card': () => <SquishScreen toy={{ ...MALLOW, modelUrl: undefined, stage: param('stage', 1) }} onBack={noop} onEarnCoins={noop} onRecordPress={noop} adsFree />,
   // a whole screen: a new account's email check (its buttons only call Firebase when tapped)
   vault: () => <VaultPreview />,
   smash: () => <SmashPreview />,

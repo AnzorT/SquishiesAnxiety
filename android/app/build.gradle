@@ -213,3 +213,16 @@ def buildWebgame = tasks.register("buildWebgame", Exec) {
     commandLine("node", "webgame/build.mjs")
 }
 preBuild.dependsOn(buildWebgame)
+
+// Developer mode (src/webDebug.js, tools/build/dev-apk.mjs): EXPO_PUBLIC_DEV_MODE=1 bakes it into the JS bundle.
+// Gradle doesn't count environment variables as inputs, so it could keep an old bundle after the switch flips; make
+// it one. And never let it into a Play Store upload (an AAB: bundleRelease).
+def devMode = System.getenv("EXPO_PUBLIC_DEV_MODE") ?: ""
+tasks.matching { it.name.startsWith("createBundle") && it.name.endsWith("JsAndAssets") }.configureEach {
+    inputs.property("expoPublicDevMode", devMode)
+}
+gradle.taskGraph.whenReady { graph ->
+    if (devMode == "1" && graph.allTasks.any { it.name == "bundleRelease" }) {
+        throw new GradleException("EXPO_PUBLIC_DEV_MODE=1 is set: this would put developer mode (no email verification) into a store build. Unset it and build again.")
+    }
+}

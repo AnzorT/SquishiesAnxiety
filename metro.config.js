@@ -2,6 +2,10 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 config.transformer.unstable_allowRequireContext = true;
+// Developer mode (src/webDebug.js): EXPO_PUBLIC_DEV_MODE is inlined into the code at build time, but Metro's
+// transform cache doesn't know about it, so a build with the switch could reuse files cached by one without it (or
+// the reverse). Custom transformer keys go into the cache key, so flipping the switch re-transforms.
+config.transformer.squishDevMode = process.env.EXPO_PUBLIC_DEV_MODE || '';
 // Not in Metro's default asset list — needed so require('./glorp_3d.glb')
 // bundles as a binary asset (resolved via expo-asset) instead of Metro
 // trying to parse it as source. See SquishyToy.js's Glorp build path.

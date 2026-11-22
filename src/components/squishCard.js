@@ -202,41 +202,87 @@ function wave(c, t) {
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
+// Where the card's creature stands (its feet), in stage units: on the
+// cushion (SquishScreen's camera is set so this line is the cushion's top).
+const FLOOR = -CARD_W * 0.46;
+export const CARD_FLOOR = FLOOR;
+// A roster creature's Tripo model (its doc's `modelUrl`) stands still on the
+// cushion, as tall as the stage allows (2026-11-21, the user: "I don't want
+// him to move at all", and bigger, to squash a bigger him). Its feet reach out
+// toward the camera, so it stands at MODEL_FLOOR to look on the card's line.
+// Its height doesn't follow the growth stage; at Best Friend it is a little
+// shorter, to leave room for the crown above it. (Tuned by rendering the
+// screen at the phone's size: the model's top about 8% from the stage's top.)
+const MODEL_FLOOR = -1.16;
+const MODEL_H = 1.8;
+const MODEL_H_CROWNED = 1.6;
+// …and no wider than this (a wide model on a phone's stage)
+const MODEL_MAX_W = 3.3;
+
+// A roster creature (one the design gives moves to)
+export const hasCardMoves = (id) => !!CARD_MOVES[String(id)];
+
+// The design's own squash springs for a creature (creatures-v2.js `sq`)
+function springs(id) {
+  const data = CARD_MOVES[String(id)];
+  const q = (data && data.sq) || {};
+  return {
+    sqSt: clamp((q.k || 500) / 1250, 0.15, 0.75),
+    sqDp: clamp(0.92 - (q.z || 0.32) * 0.6, 0.6, 0.9),
+    sqX: 0.14 * ((q.x || 0.2) / 0.2),
+    sqY: 0.26 * ((q.y || 0.26) / 0.26),
+    sqR: q.r || 0,
+  };
+}
+
+// The Best Friend crown (on top, at `crownY`) and the gold glow behind (at
+// `glowZ`), added to the group; nothing at the other stages.
+function bestFriendBits(fx, group, crownY, glowZ) {
+  if (!fx.crown) return { glowMesh: null, cardExtras: [] };
+  const crownTex = new THREE.TextureLoader().load(require('../../assets/squad/crown.png'));
+  crownTex.colorSpace = THREE.SRGBColorSpace;
+  const crown = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.465), new THREE.MeshBasicMaterial({ map: crownTex, transparent: true, alphaTest: 0.1, side: THREE.DoubleSide }));
+  crown.position.set(0.2, crownY, 0.12);
+  crown.rotation.z = -0.22;
+  group.add(crown);
+  const glowMesh = new THREE.Mesh(new THREE.CircleGeometry(1.35, 48), new THREE.MeshBasicMaterial({ color: 0xffd24a, transparent: true, opacity: 0.22, depthWrite: false }));
+  glowMesh.position.set(0, 0, glowZ);
+  group.add(glowMesh);
+  return { glowMesh, cardExtras: [crown, glowMesh] };
+}
+
 // The card's own state, merged into SquishyToy's: moves, springs, stage, and
 // the crown and glow meshes (added to the group).
 export function cardState(id, stage, group) {
   const data = CARD_MOVES[String(id)] || { head: 20, moves: null, sq: null };
-  const q = data.sq || {};
   const fx = STAGE_FX[stage] || STAGE_FX[1];
-  let glowMesh = null;
-  const extras = [];
-  if (fx.crown) {
-    const crownTex = new THREE.TextureLoader().load(require('../../assets/squad/crown.png'));
-    crownTex.colorSpace = THREE.SRGBColorSpace;
-    const crown = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.465), new THREE.MeshBasicMaterial({ map: crownTex, transparent: true, alphaTest: 0.1, side: THREE.DoubleSide }));
-    crown.position.set(0.2, ((50 - data.head) / 100) * CARD_W + 0.17, 0.12);
-    crown.rotation.z = -0.22;
-    group.add(crown);
-    glowMesh = new THREE.Mesh(new THREE.CircleGeometry(1.35, 48), new THREE.MeshBasicMaterial({ color: 0xffd24a, transparent: true, opacity: 0.22, depthWrite: false }));
-    glowMesh.position.set(0, 0, -0.25);
-    group.add(glowMesh);
-    extras.push(crown, glowMesh);
-  }
   return {
     card: true,
     moves: data.moves,
     seed: Math.random() * 10000,
     reactT: 0,
     stK: [fx.sx, fx.sy],
-    stY: -(1 - fx.sy) * CARD_W * 0.46,
-    glowMesh,
-    cardExtras: extras,
+    // keeps the feet on the floor whatever the stage's size
+    stY: FLOOR - FLOOR * fx.sy,
+    ...bestFriendBits(fx, group, ((50 - data.head) / 100) * CARD_W + 0.17, -0.25),
     mv: { sx: 1, sy: 1, rot: 0, tx: 0, ty: 0, spin: 0 },
-    sqSt: clamp((q.k || 500) / 1250, 0.15, 0.75),
-    sqDp: clamp(0.92 - (q.z || 0.32) * 0.6, 0.6, 0.9),
-    sqX: 0.14 * ((q.x || 0.2) / 0.2),
-    sqY: 0.26 * ((q.y || 0.26) / 0.26),
-    sqR: q.r || 0,
+    ...springs(id),
+  };
+}
+
+// A roster creature's model: { still: true } (SquishyToy draws it where this
+// puts it, with no dance, sway or breathing), its size and place on the
+// cushion, the Best Friend crown and glow, and its squash springs. `body`:
+// the model's box as loaded, { top, bottom, back, width }.
+export function modelState(id, stage, group, body) {
+  const fx = STAGE_FX[stage] || STAGE_FX[1];
+  const k = Math.min((fx.crown ? MODEL_H_CROWNED : MODEL_H) / (body.top - body.bottom), MODEL_MAX_W / body.width);
+  return {
+    still: true,
+    stK: [k, k],
+    stY: MODEL_FLOOR - body.bottom * k,
+    ...bestFriendBits(fx, group, body.top + 0.12 / k, body.back - 0.05),
+    ...springs(id),
   };
 }
 

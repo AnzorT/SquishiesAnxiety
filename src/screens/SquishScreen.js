@@ -1,11 +1,11 @@
 import React, { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, PanResponder, Animated, Easing, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, PanResponder, Animated, Easing, Dimensions, Image } from 'react-native';
 import Pressable from '../components/Pressable';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Canvas } from '@react-three/fiber';
 import { NeutralToneMapping } from 'three';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Defs, Ellipse, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
 import SquishyToy from '../components/SquishyToy';
 import SquishyToy2D from '../components/SquishyToy2D';
@@ -15,9 +15,10 @@ import { useAfterFirstFrame } from '../components/Skeleton';
 import { INTERSTITIAL_AD_UNIT_ID } from '../firebase/ads';
 
 // A creature with a `card` (every roster creature since REDESIGN_V6 step 4:
-// the design's card, src/components/squishCard.js) or a `modelUrl` (a
-// photo-path custom one) mounts the 3D stage; everything else falls back to
-// 2D art (SquishyToy2D).
+// the design's card, src/components/squishCard.js) or a `modelUrl` (a Tripo
+// model: a roster creature given one, which then plays it instead of its
+// card, or a photo-path custom one) mounts the 3D stage; everything else
+// falls back to 2D art (SquishyToy2D).
 import SquishSound from '../audio/SquishSound';
 import squishSoundFor from '../audio/creatureSquish';
 import { pressHaptic, moveHaptic, releaseHaptic } from '../haptics/squishHaptics';
@@ -26,19 +27,42 @@ import PopSound from '../audio/PopSound';
 import { candyColors, candyFonts, BUTTON_VARIANTS } from '../theme/candyTheme';
 import WatchAdButton from '../components/WatchAdButton';
 import { AD_FREE_BOOST_RECHARGE_MS } from '../economy';
-import SkyBackground from '../squad/SkyBackground';
-import CandyButton, { Shine } from '../components/candy/CandyButton';
-import RoundButton, { BackGlyph, CloseGlyph, GearIcon } from '../components/candy/RoundButton';
+import CandyButton from '../components/candy/CandyButton';
+import RoundButton, { CloseGlyph } from '../components/candy/RoundButton';
 import { CoinIcon, GlassPill } from '../components/candy/Coin';
 import OutlinedTitle from '../components/candy/OutlinedTitle';
 import ToggleSwitch from '../components/candy/ToggleSwitch';
+import Room from '../hop/Room';
+import { CUSH } from '../hop/Pieces';
+import { CARD_FLOOR } from '../components/squishCard';
+import { ICON, Icon, InkText, Orb, Plaque } from '../royal';
+import { COIN } from '../squad/currencyArt';
 import sfx from '../audio/sfx';
 import { fmtNum } from '../format';
 
-// Stage size: the screen's shorter side, its height (REDESIGN_V7 step 5),
-// capped for tablets. The creature's own size inside it is
-// MODEL_TUNING.visual in SquishyToy.js.
-const STAGE_SIZE = Math.min(Math.round(Math.min(Dimensions.get('window').width, Dimensions.get('window').height)), 420);
+// The 2026-11-21 remodel (the user: a cozy room, a slim rail of boosts, the
+// gear in the top-right corner, a bigger creature): the creature stands on a
+// cushion in the Crib's living room, the stage is the screen's whole height
+// (half again as wide, centred), the back button and the coins earned sit
+// top left, the gear top right, and the ×2/×3/×4 boosts are round buttons
+// down the right edge.
+const WINDOW = Dimensions.get('window');
+const SCREEN_W = Math.max(WINDOW.width, WINDOW.height);
+const SCREEN_H = Math.min(WINDOW.width, WINDOW.height);
+const STAGE_H = Math.round(SCREEN_H);
+const STAGE_W = Math.min(Math.round(SCREEN_W), Math.round(STAGE_H * 1.5));
+const STAGE_LEFT = Math.round((SCREEN_W - STAGE_W) / 2);
+// the 2D art's square (a creature without a card or model), in the stage's middle
+const STAGE_SIZE = STAGE_H;
+// The 3D stage's camera: 30° tall, looking straight ahead, lowered from 0.1
+// (before the remodel, when creatures stood at the stage's bottom) so the
+// card's floor (CARD_FLOOR) is 81% of the way down: the cushion's top.
+const CAM_Y = -0.39;
+const CAM_Z = 4.6;
+const FEET_Y = Math.round((STAGE_H * (1 - (CARD_FLOOR - CAM_Y) / (CAM_Z * Math.tan(Math.PI / 12)))) / 2);
+// the cushion under the creature (a Squish Hop cushion, seen from the front)
+const CUSHION_W = Math.round(STAGE_H * 0.78);
+const CUSHION_COLOR = 'mint';
 const RIPPLE_LIFETIME_MS = 620;
 // 60s window where an ad-watch doubles squish rewards.
 const BONUS_MS = 60000;
@@ -185,20 +209,64 @@ const StageEffects = memo(forwardRef(function StageEffects(_props, ref) {
   );
 }));
 
-// Top-bar "+N EARNED" pill: the coins earned since the screen opened (v5).
-// Counts up through its ref on each earn tick, so the tick re-renders only
-// this pill instead of the whole screen mid-squish.
+// Top-bar "+N EARNED" pill: the coins earned since the screen opened, on the
+// menu's wood pill (the 2026-11-21 remodel). Counts up through its ref on
+// each earn tick, so the tick re-renders only this pill instead of the whole
+// screen mid-squish.
 const CoinCounter = memo(forwardRef(function CoinCounter(_props, ref) {
   const [value, setValue] = useState(0);
   useImperativeHandle(ref, () => ({ add: (n) => setValue((c) => c + n) }), []);
   return (
-    <View style={styles.coinPill}>
-      <CoinIcon size={17} />
-      <Text style={styles.coinPillText}>+{fmtNum(value)}</Text>
-      <Text style={styles.coinPillEarned}>EARNED</Text>
-    </View>
+    <Plaque variant="vel" style={styles.coinPill}>
+      <Image source={COIN[0]} style={styles.coinPillImg} />
+      <InkText size={14}>+{fmtNum(value)}</InkText>
+      <InkText size={9.5} style={styles.coinPillEarned}>
+        EARNED
+      </InkText>
+    </Plaque>
   );
 }));
+
+// The cushion the creature stands on: a Squish Hop cushion (hop/Pieces.js
+// CUSH colours and layers: the ring and its lip, white piping, the soft face,
+// stitching) seen from the front, its top centred where the feet are, with a
+// soft shadow on the floor. Drawn behind the stage's transparent 3D canvas.
+const Cushion = memo(function Cushion() {
+  const c = CUSH[CUSHION_COLOR];
+  const W = CUSHION_W;
+  const H = Math.round(W * 0.24);
+  const lip = Math.round(W * 0.07);
+  const k = W / 300;
+  const boxH = H + lip + Math.round(H * 0.5);
+  const rect = (x, y, w, h, rx, ry, props) => <Rect x={x} y={y} width={w} height={h} rx={rx} ry={ry} {...props} />;
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', left: Math.round(SCREEN_W / 2 - W / 2) - 20, top: FEET_Y - H / 2, width: W + 40, height: boxH }}>
+      <Svg width={W + 40} height={boxH}>
+        <Defs>
+          <RadialGradient id="cushFace" cx="50%" cy="40%" rx="70%" ry="70%">
+            <Stop offset="0" stopColor={c.c1} />
+            <Stop offset="1" stopColor={c.c2} />
+          </RadialGradient>
+          <RadialGradient id="cushShade" cx="50%" cy="50%" rx="50%" ry="50%">
+            <Stop offset="0" stopColor="#5a280a" stopOpacity={0.35} />
+            <Stop offset="1" stopColor="#5a280a" stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Ellipse cx={20 + W / 2} cy={H + lip * 0.9} rx={W * 0.58} ry={H * 0.42} fill="url(#cushShade)" />
+        {rect(20, lip, W, H, W * 0.2, H * 0.45, { fill: c.ring })}
+        {rect(20, 0, W, H, W * 0.2, H * 0.45, { fill: c.ring })}
+        {rect(20 + 4 * k, 3 * k, W - 8 * k, H - 6 * k, W * 0.19, H * 0.43, { fill: '#ffffff' })}
+        {rect(20 + 9 * k, 6 * k, W - 18 * k, H - 12 * k, W * 0.18, H * 0.4, { fill: 'url(#cushFace)' })}
+        {rect(20 + 24 * k, 13 * k, W - 48 * k, H - 26 * k, W * 0.15, H * 0.33, {
+          fill: 'none',
+          stroke: 'rgba(255,255,255,0.75)',
+          strokeWidth: 2.5 * k,
+          strokeDasharray: `${7 * k} ${5 * k}`,
+        })}
+      </Svg>
+    </View>
+  );
+});
 
 // Live frames-per-second pill. Counts requestAnimationFrame callbacks — the
 // same JS-thread frame loop the 3D stage renders on, so a slow squish frame
@@ -231,56 +299,6 @@ function FpsCounter() {
     <GlassPill style={styles.fpsPill}>
       <Text style={[styles.fpsText, { color }]}>{fps == null ? '–' : fps} FPS</Text>
     </GlassPill>
-  );
-}
-
-// Live ×N-coins countdown bar. Ticks its own `now` every 250ms in isolation
-// so that redraw stays scoped to this small subtree instead of re-rendering
-// the whole SquishScreen (which would otherwise drag the 3D Canvas/SquishyToy
-// tree and its inline props through reconciliation 4x/sec, competing with the
-// per-frame squish physics on the JS thread and making the squish feel
-// laggy while a bonus window is running).
-//
-// Always mounted, invisible while no window runs: it sits between the stage
-// and the bottom panel, so mounting it only while active shifted the whole
-// stage (and the creature) up when a boost started and down when it ended.
-function BonusBanner({ endsAt, multiplier, coinAnim }) {
-  const active = !!endsAt;
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!active) return undefined;
-    setNow(Date.now());
-    const id = setInterval(() => setNow(Date.now()), 250);
-    return () => clearInterval(id);
-  }, [active]);
-  const remain = active ? Math.max(0, endsAt - now) : 0;
-  const secs = Math.ceil(remain / 1000);
-  const timeText = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
-  const pct = Math.max(0, Math.min(100, (remain / BONUS_MS) * 100));
-  const coinScale = coinAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] });
-  const gold = BUTTON_VARIANTS.gold;
-  return (
-    <View style={[styles.bonusBar, !active && styles.bonusHidden]} pointerEvents="none">
-      <View style={styles.bonusLip} />
-      <View style={styles.bonusRing}>
-        <LinearGradient colors={gold.colors} locations={gold.locations} style={styles.bonusInner}>
-          <Shine radius={14} />
-          <Animated.View style={[styles.bonusCoin, { transform: [{ scale: coinScale }] }]}>
-            <LinearGradient colors={['#fffbe0', '#ffe45c', '#ffc21a', '#e08a00']} locations={[0, 0.3, 0.62, 1]} style={StyleSheet.absoluteFillObject} />
-            <Text style={styles.bonusCoinText}>×{multiplier}</Text>
-          </Animated.View>
-          <View style={styles.bonusBody}>
-            <View style={styles.bonusTopRow}>
-              <Text style={styles.bonusLabel}>×{multiplier} COINS ACTIVE</Text>
-              <Text style={styles.bonusTime}>{timeText}</Text>
-            </View>
-            <View style={styles.bonusTrack}>
-              <LinearGradient colors={['#ffffff', '#fff3a0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.bonusFill, { width: `${pct}%` }]} />
-            </View>
-          </View>
-        </LinearGradient>
-      </View>
-    </View>
   );
 }
 
@@ -397,6 +415,8 @@ function GestureHint({ side, d, creaseD, tip, label, touchAnim, gestureAnim }) {
 const POINT_HAND_W = 44;
 const GEAR_SIZE = 42;
 const GEAR_RIGHT = 14;
+// the top corners' buttons, from the top
+const HUD_TOP = 12;
 
 function SettingsHint({ top, opacity, bobAnim, pulseAnim }) {
   const k = POINT_HAND_W / 82;
@@ -460,6 +480,7 @@ const SquishStage = memo(function SquishStage({
   rotateAnim,
   touchAnim,
   dentScale,
+  squishLevel,
   dentOutward,
 }) {
   return (
@@ -467,7 +488,7 @@ const SquishStage = memo(function SquishStage({
       {toyIs3D(toy) ? (
         <Canvas
           frameloop="always"
-          camera={{ fov: 30, position: [0, 0.1, 4.6], near: 0.1, far: 100 }}
+          camera={{ fov: 30, position: [0, CAM_Y, CAM_Z], near: 0.1, far: 100 }}
           // Khronos "PBR Neutral" tone mapping keeps each creature's texture
           // colours true to how Tripo shows them. R3F's default (ACES) washed
           // saturated colours (Bubbles' cyan, Tako's pink) out to pastels.
@@ -494,19 +515,23 @@ const SquishStage = memo(function SquishStage({
             onSquish={onSquish}
             onRelease={onRelease}
             dentScale={dentScale}
+            squishLevel={squishLevel}
             dentOutward={dentOutward}
           />
         </Canvas>
       ) : (
-        <SquishyToy2D
-          ref={toyRef}
-          creature={toy}
-          imageUri={toy.isCustom ? toy.image : undefined}
-          build={toy.isCustom ? toy.build : undefined}
-          size={STAGE_SIZE}
-          onSquish={onSquish}
-          onRelease={onRelease}
-        />
+        // (pointerEvents none: touches land on the stage, whose coordinates ndcFromLocation reads)
+        <View pointerEvents="none" style={styles.stage2D}>
+          <SquishyToy2D
+            ref={toyRef}
+            creature={toy}
+            imageUri={toy.isCustom ? toy.image : undefined}
+            build={toy.isCustom ? toy.build : undefined}
+            size={STAGE_SIZE}
+            onSquish={onSquish}
+            onRelease={onRelease}
+          />
+        </View>
       )}
 
       <StageEffects ref={effectsRef} />
@@ -559,7 +584,8 @@ function Segmented({ options, value, onChange }) {
 }
 
 // Poke strength setting (1-5) -> multiplier on SquishyToy's tuned dent depth.
-// 3 is the tuned default.
+// 3 is the tuned default. (A Tripo model's pillow squish maps the level
+// itself: SquishyToy's PILLOW_LEVEL_SCALES, from the `squishLevel` prop.)
 const POKE_STRENGTH_SCALES = [0.5, 0.75, 1, 1.25, 1.5];
 const POKE_STRENGTH_OPTIONS = [1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) }));
 const POKE_DIRECTION_OPTIONS = [
@@ -820,10 +846,10 @@ function SquishScreen({
   const [doubleFlashKey, setDoubleFlashKey] = useState(0);
   // Bonus window end time + which of the three ad buttons opened it (2/3/4).
   // Only one window can run at a time — see WatchAdButton's `activeMultiplier`
-  // handling. The live countdown (text/progress bar, ticking every 250ms)
-  // lives in the BonusBanner child below so that its frequent re-renders stay
-  // scoped to that small subtree instead of the whole screen (which includes
-  // the 3D Canvas/SquishyToy tree and its per-frame squish physics).
+  // handling. The live countdown (time and ring, ticking every 250ms) lives
+  // in that button so that its frequent re-renders stay scoped to it instead
+  // of the whole screen (which includes the 3D Canvas/SquishyToy tree and its
+  // per-frame squish physics).
   const [bonusEndsAt, setBonusEndsAt] = useState(null);
   const [bonusMultiplier, setBonusMultiplier] = useState(2);
 
@@ -853,10 +879,9 @@ function SquishScreen({
     });
   }, [settingsHintOpacity]);
   useEffect(() => () => clearTimeout(settingsHintTimerRef.current), []);
-  const bonusCoinAnim = useLoopAnim({ duration: 1300 });
-
   // Only re-renders SquishScreen once, when the window actually expires —
-  // the per-250ms countdown tick lives inside BonusBanner instead.
+  // the per-250ms countdown tick lives inside the running boost's button
+  // (WatchAdButton) instead.
   useEffect(() => {
     if (!bonusEndsAt) return undefined;
     const remain = bonusEndsAt - Date.now();
@@ -943,8 +968,8 @@ function SquishScreen({
   };
 
   // Stable identity (deps: []) so SquishyToy/SquishyToy2D's React.memo isn't
-  // defeated by a fresh closure on every SquishScreen re-render — see
-  // BonusBanner above for why keeping that subtree from reconciling matters.
+  // defeated by a fresh closure on every SquishScreen re-render (that subtree
+  // must not reconcile mid-squish: it competes with the per-frame physics).
   const handleToySquish = useCallback(() => {
     if (latestRef.current.squishSoundEnabled) soundRef.current?.start();
   }, []);
@@ -1037,10 +1062,12 @@ function SquishScreen({
     if (adWatched) adWatched(multiplier);
   }, []);
 
-  const ndcFromLocation = (locationX, locationY) => ({
-    x: (locationX / STAGE_SIZE) * 2 - 1,
-    y: -((locationY / STAGE_SIZE) * 2 - 1),
-  });
+  // the 3D canvas spans the whole stage; the 2D art its middle square
+  const flat = !toyIs3D(toy);
+  const ndcFromLocation = (locationX, locationY) =>
+    flat
+      ? { x: ((locationX - (STAGE_W - STAGE_SIZE) / 2) / STAGE_SIZE) * 2 - 1, y: -((locationY / STAGE_SIZE) * 2 - 1) }
+      : { x: (locationX / STAGE_W) * 2 - 1, y: -((locationY / STAGE_H) * 2 - 1) };
 
   const centroidOf = (touches) => {
     let sx = 0;
@@ -1192,67 +1219,63 @@ function SquishScreen({
   ).current;
 
   return (
-    <SkyBackground style={styles.container}>
-      <View style={styles.stageArea}>
-        <View style={[styles.topLeft, { top: insets.top + 14 }]}>
-          <View>
-            <RoundButton size={34} onPress={onBack} hitSlop={8}>
-              <BackGlyph />
-            </RoundButton>
-          </View>
-          <CoinCounter ref={coinCounterRef} />
-          {showFps && <FpsCounter />}
-        </View>
+    <View style={styles.container}>
+      {/* the 2026-11-21 remodel: the Crib's living room in daylight, a cushion to stand on */}
+      <Room room="living" phase="day" width={SCREEN_W} height={SCREEN_H} full />
+      <Cushion />
 
-        {showSettingsHint ? (
-          <SettingsHint top={insets.top + 14} opacity={settingsHintOpacity} bobAnim={settingsPointAnim} pulseAnim={gearPulseAnim} />
-        ) : null}
-
-        <View style={[styles.wheelButton, { top: insets.top + 14 }]}>
-          <RoundButton size={GEAR_SIZE} onPress={openSettings}>
-            <Animated.View style={{ transform: [{ rotate: wheelRotate }] }}>
-              <GearIcon />
-            </Animated.View>
-          </RoundButton>
-        </View>
-
-        <View>
-          <SquishStage
-            toy={toy}
-            toyRef={toyRef}
-            effectsRef={effectsRef}
-            panHandlers={panResponder.panHandlers}
-            onSquish={handleToySquish}
-            onRelease={handleToyRelease}
-            hintOpacity={gestureHintOpacity}
-            showHints={showHints}
-            squishAnim={gestureAnim}
-            rotateAnim={gestureAnim}
-            touchAnim={gestureAnim}
-            dentScale={dentScale}
-            dentOutward={pokeOutward}
-          />
-        </View>
+      <View style={styles.stageWrap}>
+        <SquishStage
+          toy={toy}
+          toyRef={toyRef}
+          effectsRef={effectsRef}
+          panHandlers={panResponder.panHandlers}
+          onSquish={handleToySquish}
+          onRelease={handleToyRelease}
+          hintOpacity={gestureHintOpacity}
+          showHints={showHints}
+          squishAnim={gestureAnim}
+          rotateAnim={gestureAnim}
+          touchAnim={gestureAnim}
+          dentScale={dentScale}
+          squishLevel={pokeStrength}
+          dentOutward={pokeOutward}
+        />
       </View>
 
-      {/* REDESIGN_V7 step 5: the bonus and the boosts in a panel at the right, no banner ad */}
-      <View style={styles.sidePanel}>
-        <BonusBanner endsAt={bonusEndsAt} multiplier={bonusMultiplier} coinAnim={bonusCoinAnim} />
+      <View style={[styles.topLeft, { top: insets.top + HUD_TOP }]}>
+        <Orb icon="back" size={40} onPress={onBack} />
+        <CoinCounter ref={coinCounterRef} />
+        {showFps && <FpsCounter />}
+      </View>
 
-        <View style={styles.sideInner}>
-          <View style={styles.sideCol}>
-            {[2, 3, 4].map((m) => (
-              <WatchAdButton
-                key={m}
-                multiplier={m}
-                onRewardEarned={() => handleAdReward(m)}
-                activeMultiplier={bonusActive ? bonusMultiplier : null}
-                adFree={adsFree}
-                rechargeUntil={boostRechargeUntil}
-              />
-            ))}
-          </View>
-        </View>
+      {showSettingsHint ? (
+        <SettingsHint top={insets.top + HUD_TOP} opacity={settingsHintOpacity} bobAnim={settingsPointAnim} pulseAnim={gearPulseAnim} />
+      ) : null}
+
+      {/* the gear: the screen's top-right corner (the user, 2026-11-21) */}
+      <View style={[styles.wheelButton, { top: insets.top + HUD_TOP }]}>
+        <Orb size={GEAR_SIZE} onPress={openSettings}>
+          <Animated.View style={{ transform: [{ rotate: wheelRotate }] }}>
+            <Icon d={ICON.gear} size={GEAR_SIZE * 0.56} width={2.2} />
+          </Animated.View>
+        </Orb>
+      </View>
+
+      {/* the boosts: a slim rail of round buttons down the right edge, under the gear */}
+      <View style={[styles.rail, { top: insets.top + HUD_TOP + GEAR_SIZE + 8 }]}>
+        {[2, 3, 4].map((m) => (
+          <WatchAdButton
+            key={m}
+            multiplier={m}
+            onRewardEarned={() => handleAdReward(m)}
+            activeMultiplier={bonusActive ? bonusMultiplier : null}
+            adFree={adsFree}
+            rechargeUntil={boostRechargeUntil}
+            endsAt={bonusActive && bonusMultiplier === m ? bonusEndsAt : 0}
+            total={BONUS_MS}
+          />
+        ))}
       </View>
 
       {doubleFlash && (
@@ -1265,7 +1288,7 @@ function SquishScreen({
 
       {settingsOpen && (
         <SettingsModal
-          top={insets.top + 14 + GEAR_SIZE + 8}
+          top={insets.top + HUD_TOP + GEAR_SIZE + 8}
           onClose={closeSettings}
           squishSoundEnabled={squishSoundEnabled}
           onToggleSquishSound={onToggleSquishSound}
@@ -1285,47 +1308,19 @@ function SquishScreen({
       )}
 
       <PunishmentModal visible={punishOpen} onDismiss={dismissPunishment} adsFree={adsFree} />
-    </SkyBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, flexDirection: 'row' },
-  sidePanel: { width: 210, justifyContent: 'center', paddingRight: 14, paddingLeft: 4, gap: 10 },
-  sideInner: { borderRadius: 22, backgroundColor: 'rgba(107,68,38,0.4)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.6)', padding: 10 },
-  // (the boost buttons stretch to fill (flex: 1): a column needs a height for them)
-  sideCol: { gap: 10, height: 230 },
-  // the stage claims whatever the side panel leaves
-  stageArea: { flex: 1, position: 'relative', alignItems: 'center', justifyContent: 'center' },
-  topLeft: { position: 'absolute', left: 14, flexDirection: 'row', alignItems: 'center', gap: 8, zIndex: 3 },
-  coinPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.9)',
-    backgroundColor: 'rgba(90,50,20,0.42)',
-  },
-  coinPillText: {
-    color: '#ffffff',
-    fontFamily: candyFonts.bodyHeavy,
-    fontSize: 13,
-    textShadowColor: '#6b4426',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 1,
-  },
-  coinPillEarned: {
-    color: '#ffe9a8',
-    fontFamily: candyFonts.bodyHeavy,
-    fontSize: 9,
-    letterSpacing: 0.8,
-    textShadowColor: '#6b4426',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 1,
-  },
+  container: { flex: 1, backgroundColor: '#dba163', overflow: 'hidden' },
+  stageWrap: { position: 'absolute', left: STAGE_LEFT, top: 0 },
+  topLeft: { position: 'absolute', left: 14, flexDirection: 'row', alignItems: 'center', gap: 12, zIndex: 3 },
+  // the coins earned: the menu's coin pill (royal/parts.js Pill), its coin big over the left end
+  coinPill: { height: 32, flexDirection: 'row', alignItems: 'center', gap: 5, paddingLeft: 32, paddingRight: 14, marginLeft: 8 },
+  coinPillImg: { position: 'absolute', left: -15, top: -6, width: 44, height: 44, resizeMode: 'contain' },
+  coinPillEarned: { letterSpacing: 0.8 },
+  rail: { position: 'absolute', right: 16, bottom: 10, justifyContent: 'space-evenly', alignItems: 'center', zIndex: 3 },
   fpsPill: { paddingHorizontal: 10, paddingVertical: 4 },
   fpsText: {
     fontFamily: candyFonts.bodyHeavy,
@@ -1345,7 +1340,8 @@ const styles = StyleSheet.create({
     borderColor: '#ff8a3d',
   },
   gearHint: { position: 'absolute', right: 10, alignItems: 'flex-end', gap: 4 },
-  stage: { width: STAGE_SIZE, height: STAGE_SIZE },
+  stage: { width: STAGE_W, height: STAGE_H },
+  stage2D: { position: 'absolute', left: (STAGE_W - STAGE_SIZE) / 2, top: 0, width: STAGE_SIZE, height: STAGE_SIZE },
   ripple: {
     position: 'absolute',
     left: 0,
@@ -1435,68 +1431,6 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 6,
   },
-  bonusBar: { marginHorizontal: 16, marginBottom: 8, paddingBottom: 4 },
-  bonusHidden: { opacity: 0 },
-  bonusLip: { position: 'absolute', left: 0, right: 0, top: 4, bottom: 0, borderRadius: 21, backgroundColor: '#9c4d06' },
-  bonusRing: {
-    borderRadius: 21,
-    padding: 2.5,
-    backgroundColor: '#9c4d06',
-    shadowColor: '#ffd23c',
-    shadowOpacity: 0.6,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 6,
-  },
-  bonusInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    borderRadius: 18,
-    borderWidth: 3,
-    borderColor: '#ffffff',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    overflow: 'hidden',
-  },
-  bonusCoin: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    overflow: 'hidden',
-    borderWidth: 2.5,
-    borderColor: '#ffffff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bonusCoinText: {
-    fontFamily: candyFonts.display,
-    fontSize: 12,
-    color: '#5a3a00',
-    includeFontPadding: false,
-    textAlignVertical: 'center',
-  },
-  bonusBody: { flex: 1, gap: 5 },
-  bonusTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  bonusLabel: {
-    color: '#ffffff',
-    fontFamily: candyFonts.display,
-    fontSize: 12,
-    letterSpacing: 1,
-    textShadowColor: '#9c4d06',
-    textShadowOffset: { width: 0, height: 1.5 },
-    textShadowRadius: 1,
-  },
-  bonusTime: {
-    fontFamily: candyFonts.display,
-    fontSize: 17,
-    color: '#ffffff',
-    textShadowColor: '#9c4d06',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 1,
-  },
-  bonusTrack: { height: 8, borderRadius: 4, backgroundColor: 'rgba(156,77,6,0.35)', borderWidth: 1.5, borderColor: '#ffffff', overflow: 'hidden' },
-  bonusFill: { height: '100%', borderRadius: 3 },
   flashOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
