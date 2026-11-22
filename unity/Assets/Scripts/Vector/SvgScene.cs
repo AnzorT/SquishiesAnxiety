@@ -45,14 +45,17 @@ namespace SquishSquad.Vector
         }
 
         // the outermost <svg> mapped onto a box of `size` px (viewBox, preserveAspectRatio xMidYMid meet)
-        public static SvgScene Compile(SvgNode root, double width, double height)
+        public static SvgScene Compile(SvgNode root, double width, double height) => Compile(root, width, height, Affine.Identity);
+
+        // `outer` maps the <svg>'s width x height box into the output (e.g. a margin for parts drawn outside it)
+        public static SvgScene Compile(SvgNode root, double width, double height, Affine outer)
         {
             var sc = new SvgScene();
             Index(root, sc.Ids);
             var svg = Find(root, "svg");
             sc.Root = new LayerNode { Name = "root" };
             if (svg == null) return sc;
-            var m = ViewBoxTransform(svg, width, height);
+            var m = outer * ViewBoxTransform(svg, width, height);
             sc.Children(svg, m, new Style(), sc.Root.Children);
             return sc;
         }

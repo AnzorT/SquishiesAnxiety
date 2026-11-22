@@ -76,9 +76,16 @@ Feel and speed are checked on the phone.
        grain sampling
      - mean difference 0.5-2.2 levels of 255
      - compiling a frame takes 4.1 ms on this machine (it was 52 ms when shapes were triangulated)
+   - **GPU side written** (`Assets/Scripts/Vector/Gpu/VectorRenderer.cs`, shaders in `Assets/Resources/VectorShaders/`):
+     - one RenderTexture per creature (4x MSAA, stencil), stencil fans and cover quads in a CommandBuffer
+     - gradients from a ramp texture, layers in temporary targets
+     - filters as passes; the noise is computed once into a texture
+     It compiles against Unity's libraries; the first CI run with a license is its first real test.
+   - **The menu's Mittens is animated** (`Assets/Scripts/Creatures/`): `CreatureView` draws a frame each tick.
+     - Until the JS engine is in, the frames are 8 s of Mittens' idle, recorded from the rig code by
+       `tools/unity/rig/record.mjs` (240 frames, 785 KB) and looped.
+     - Recorded frames through the renderer core vs Chrome: ~200 px visibly different of 225,625, mean 0.5 levels.
    - Next:
-     - the GPU side: one RenderTexture per creature with MSAA and a stencil; fan and cover draws in a CommandBuffer;
-       a ramp texture per gradient; layers as temporary targets; the grain and fuzz noise computed once into textures
      - the JS engine in Unity: PuerTS with V8 on Android (it has a JIT, like the WebView's own engine). Its package
        comes from openupm, which CI can reach but this session can't
      - Hand the tree to C# without re-parsing text, then profile on the phone and port hot spots to C#.

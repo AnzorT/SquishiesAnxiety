@@ -31,19 +31,10 @@ namespace SquishSquad.EditorTools
                 var outDir = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "CiOut"));
                 Directory.CreateDirectory(outDir);
                 EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-                foreach (var (name, w, h) in Screens)
-                {
-                    var root = new GameObject("Capture").transform;
-                    var cam = MenuScreen.CreateCamera(root);
-                    MenuScreen.FitCamera(cam, w, h);
-                    var view = new MenuView(layout, root, w, h, layout.reference.level, layout.reference.season);
-                    view.Tick(0f);
-                    var png = Render(cam, w, h);
-                    File.WriteAllBytes(Path.Combine(outDir, name + ".png"), png);
-                    Debug.Log($"[CiBuild] {name}.png {w}x{h}");
-                    view.Dispose();
-                    UnityEngine.Object.DestroyImmediate(root.gameObject);
-                }
+                // menu-a15.png (compared with the app's screenshot) shows the creature's still, as the reference does;
+                // menu-a15-live.png and the others show it drawn live from its recorded rig frames (frame 0)
+                foreach (var (name, w, h) in Screens) Shot(layout, outDir, name, w, h, name != "menu-a15");
+                Shot(layout, outDir, "menu-a15-live", 2340, 1080, true);
                 Exit(0);
             }
             catch (Exception e)
@@ -51,6 +42,21 @@ namespace SquishSquad.EditorTools
                 Debug.LogException(e);
                 Exit(1);
             }
+        }
+
+        static void Shot(MenuLayout layout, string outDir, string name, int w, int h, bool live)
+        {
+            var root = new GameObject("Capture").transform;
+            var cam = MenuScreen.CreateCamera(root);
+            MenuScreen.FitCamera(cam, w, h);
+            var view = new MenuView(layout, root, w, h, layout.reference.level, layout.reference.season, "mittens", live);
+            view.Tick(0f);
+            if (view.Creature != null) view.Creature.RenderAt(0f);
+            var png = Render(cam, w, h);
+            File.WriteAllBytes(Path.Combine(outDir, name + ".png"), png);
+            Debug.Log($"[CiBuild] {name}.png {w}x{h}{(view.Creature != null ? " (live creature)" : "")}");
+            view.Dispose();
+            UnityEngine.Object.DestroyImmediate(root.gameObject);
         }
 
         static byte[] Render(Camera cam, int w, int h)

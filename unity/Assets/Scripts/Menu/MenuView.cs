@@ -8,6 +8,7 @@
 // move with it, and the HUD keeps its size in dp and holds to the nearest screen edge.
 using System;
 using System.Collections.Generic;
+using SquishSquad.Creatures;
 using UnityEngine;
 
 namespace SquishSquad.Menu
@@ -25,6 +26,7 @@ namespace SquishSquad.Menu
         readonly List<BirdView> _birds = new List<BirdView>();
         MenuLayout.Weather _weather;
         float _w, _h;
+        readonly string _creatureKey;
 
         // the current screen's geometry
         float _k, _ox, _oy;          // scene: px per viewBox unit and where viewBox (0, 0) lands
@@ -35,8 +37,12 @@ namespace SquishSquad.Menu
         public int Level { get; private set; }
         public IReadOnlyList<PieceView> Pieces => _pieces;
 
-        public MenuView(MenuLayout layout, Transform parent, float width, float height, int level, string season)
+        /// <summary>The creature drawn live from its rig frames (null: its still picture is shown).</summary>
+        public CreatureView Creature { get; private set; }
+
+        public MenuView(MenuLayout layout, Transform parent, float width, float height, int level, string season, string creatureKey = "mittens", bool liveCreature = true)
         {
+            _creatureKey = liveCreature ? creatureKey : null;
             _layout = layout;
             _root = new GameObject("Menu").transform;
             _root.SetParent(parent, false);
@@ -75,6 +81,18 @@ namespace SquishSquad.Menu
             BuildWeather();
             order = HudOrder;
             foreach (var p in _layout.hud) if (!p.world) _pieces.Add(new PieceView(this, p, order++));
+
+            // the creature, animated by the app's own rig code (recorded frames for now), in place of its still
+            if (_creatureKey != null)
+            {
+                var piece = _pieces.Find(x => x.Data.id == "creature");
+                var rig = piece != null ? RecordedRig.Load(_creatureKey) : null;
+                if (rig != null)
+                {
+                    Creature = CreatureView.Create(_root, rig, piece.Hit, piece.Order);
+                    piece.UseLive();
+                }
+            }
         }
 
         void BuildWeather()
@@ -230,11 +248,16 @@ namespace SquishSquad.Menu
             readonly SpriteRenderer _art, _fl;
             readonly Sprite[] _frames;
             readonly float _scale;
-            bool _pressed;
+            bool _pressed, _live;
+            public readonly int Order;
+
+            // a live creature draws itself (CreatureView): no still, no placeholder breath
+            public void UseLive() { _live = true; _art.enabled = false; }
 
             public PieceView(MenuView v, MenuLayout.Piece p, int order)
             {
                 Data = p;
+                Order = order;
                 _scale = v.ScaleOf(p);
                 var h0 = v.Map(p, new Vector2(p.hit[0], p.hit[1]));
                 Hit = new Rect(h0.x, h0.y, p.hit[2] * _scale, p.hit[3] * _scale);
@@ -287,7 +310,7 @@ namespace SquishSquad.Menu
                     _art.enabled = frame < 0;
                     if (frame >= 0) _fl.sprite = _frames[frame];
                 }
-                if (Data.id == "creature")
+                if (Data.id == "creature" && !_live)
                 {
                     // placeholder until the creature rig is ported: a slow breath around its feet (none at ms = 0, so
                     // the CI screenshot still matches the reference)

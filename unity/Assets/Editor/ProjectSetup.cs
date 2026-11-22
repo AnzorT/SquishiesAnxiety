@@ -84,8 +84,16 @@ namespace SquishSquad.EditorTools
     {
         void OnPreprocessTexture()
         {
-            if (!assetPath.StartsWith("Assets/Resources/Menu/")) return;
             var ti = (TextureImporter)assetImporter;
+            if (assetPath.StartsWith("Assets/Resources/Creatures/"))
+            {
+                // the rigs' fabric-grain tile: exact pixels, repeated over the creature
+                ti.textureType = TextureImporterType.Default; ti.npotScale = TextureImporterNPOTScale.None; ti.mipmapEnabled = false;
+                ti.wrapMode = TextureWrapMode.Repeat; ti.filterMode = FilterMode.Point; ti.sRGBTexture = true; ti.alphaSource = TextureImporterAlphaSource.FromInput;
+                ti.textureCompression = TextureImporterCompression.Uncompressed;
+                return;
+            }
+            if (!assetPath.StartsWith("Assets/Resources/Menu/")) return;
             ti.textureType = TextureImporterType.Default;
             ti.npotScale = TextureImporterNPOTScale.None;
             ti.mipmapEnabled = false;
