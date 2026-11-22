@@ -26,11 +26,27 @@ Feel and speed are checked on the phone.
 ## Order
 
 1. **Main Menu.** ✅ First pass (below).
-2. **Creature rigs** (`rive-rig.js`, `rive-generic.js`, `pet-defs.js`, the family `*-anims.js`). The single biggest
-   piece, and every screen with a live creature needs it (menu, house, Characters, Squad, game buddies). Plan: each
-   creature's front art is cut into the same parts the rig uses (head, body, ears, paws…), each part becomes a
-   texture, and the rig's bone and warp maths run in C# on a mesh. That's what the JS does with SVG points, but on the
-   GPU. Checked frame by frame against the JS rig (`*-check.html` sheets).
+2. **Creature animations** (`rive-rig.js`, `rive-generic.js`, the defs, the move and family files: ~2.3 MB of JS,
+   3,934 states, 821k keyframes). The single biggest piece, and every screen with a live creature needs it (menu,
+   house, Characters, Squad, game buddies). Each frame, the rig rebuilds every part's outline as Bézier paths from
+   warp functions, generated ears, limbs and tails, and per-frame props and particles. It's deterministic: with a
+   fixed clock and seeded randomness it produces the same frames every time.
+   - **Approach: keep the original animation code, replace the browser.** Rewriting 2.3 MB of animation code in C#
+     would take months and drift from the original in small ways. Instead, the rig code runs unchanged in a JS engine
+     inside Unity, on a small stand-in for the browser (`tools/unity/rig/dom-shim.js`: SVG element tree, the selectors
+     it uses, innerHTML, getBBox, a canvas for the fabric grain, fetch), driven by a host clock
+     (`tools/unity/rig/virtual-clock.js`). Unity reads the element tree each frame and draws it on the GPU. What made
+     the WebView slow is gone: style and layout, re-rasterising SVG with filters, and compositing.
+   - ✅ **Proven:** `node tools/unity/rig/parity.mjs` runs the creatures in Chrome and on the stand-in, frame by frame,
+     through idle, dance, hop, squish, wave and happy, and compares the whole SVG tree: **identical**. That covers
+     every rig family (Mittens, built-in pets, generic, snack 3D, fruit 3D) and effects (Lumi's lantern, Nimbo's rain,
+     Zappi's sparks, Bubbly's shimmer). Matching Chrome needed its exact rules for bounding boxes: transformed
+     children's corner-mapped boxes, and 32-bit floats.
+   - Next:
+     - A Unity renderer for the tree: paths flattened and triangulated, gradients in shaders, clip paths in the
+       stencil, masks, the grain multiply, blur. Checked against Chrome's rasterisation of the same frames.
+     - The JS engine in Unity: PuerTS with V8 on Android. It has a JIT, like the WebView's own engine.
+     - Hot spots ported to C# only if profiling on the phone asks for it.
 3. **App shell + Firebase**: sign-in, profile, roster and config, so coins, gems, level, name and creature are real.
    The backend doesn't change.
 4. **The menu's pages** (`webgame/app/menu.js`): PLAY → Game Park carousel with the game clips, CHARACTERS, the Level Pass.
