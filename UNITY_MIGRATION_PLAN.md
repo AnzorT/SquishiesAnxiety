@@ -42,11 +42,16 @@ Feel and speed are checked on the phone.
      every rig family (Mittens, built-in pets, generic, snack 3D, fruit 3D) and effects (Lumi's lantern, Nimbo's rain,
      Zappi's sparks, Bubbly's shimmer). Matching Chrome needed its exact rules for bounding boxes: transformed
      children's corner-mapped boxes, and 32-bit floats.
+   - Cost: one creature frame takes 2-5 ms in Node's V8 on this machine (Mittens 2.2, Biscuit 3.0, Lumi 2.2, Ember
+     5.2), so maybe 5-12 ms on the A15. The stand-in is ~2 % of that. The rig's own maths is ~70 % (the `glob` warp,
+     `clamp`, `r2` rounding, `toD` path building), and the WebView pays it today too, plus all its drawing. One
+     creature on the menu fits a frame. A house full of them will need the hottest render functions ported to C#,
+     checked against the JS by the same parity test.
    - Next:
      - A Unity renderer for the tree: paths flattened and triangulated, gradients in shaders, clip paths in the
        stencil, masks, the grain multiply, blur. Checked against Chrome's rasterisation of the same frames.
      - The JS engine in Unity: PuerTS with V8 on Android. It has a JIT, like the WebView's own engine.
-     - Hot spots ported to C# only if profiling on the phone asks for it.
+     - Profile on the phone, then port hot spots to C#.
 3. **App shell + Firebase**: sign-in, profile, roster and config, so coins, gems, level, name and creature are real.
    The backend doesn't change.
 4. **The menu's pages** (`webgame/app/menu.js`): PLAY → Game Park carousel with the game clips, CHARACTERS, the Level Pass.

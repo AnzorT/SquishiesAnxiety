@@ -37,6 +37,17 @@ design changes. `--levels 1,5 --seasons rainy` exports fewer states; `--no-build
 `node tools/unity/compare.mjs --compose` rebuilds the menu from those pieces with the same placement rules as
 `MenuView.cs` and compares it with the reference (it matches except JPEG noise on edges and sub-pixel rain).
 
+## The creatures' animations: `tools/unity/rig/`
+
+The creatures move exactly as in the app because Unity will run the app's own animation code (`rive-rig.js` and
+friends, unchanged) on a small stand-in for the browser, `dom-shim.js`, driven by `virtual-clock.js`, and draw the
+shapes it produces each frame. (Drawing them in Unity and running a JS engine inside Unity are the next steps.)
+
+- `node tools/unity/rig/parity.mjs mittens lumi ...` runs creatures in Chrome and on the stand-in, through idle, dance,
+  hop, squish, wave and happy, and compares the whole SVG tree every few frames. Text differences are drawn both ways
+  and compared by pixels. `--log-bbox` lists every measurement the rig takes on both sides.
+- `node tools/unity/rig/bbox-fuzz.mjs` checks the stand-in's `getBBox` against Chrome's, to the bit, on random paths.
+
 ## CI: screenshots and an APK on every push (`.github/workflows/unity.yml`)
 
 Needs a Unity license as repository secrets (GitHub → Settings → Secrets and variables → Actions → New repository
