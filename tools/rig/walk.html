@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<!-- The player's selected character on Squish Stack's forest road (src/stack/ForestMap.js, through src/hop/RigStage.js
+     with page="walk"): the design's live 2.5D rig, standing on the next level and walking the road to the one after a
+     win, with its own gait from the Squad House (house-walk.js + the per-creature profiles, the same walk the menu's
+     PLAY uses). The app moves the page along the road; the page turns the character, walks its legs and turns it back.
+     The page is the character's box, 1:1 in dp, the feet at the middle of its bottom edge (`foot` dp up). The rig
+     scripts are the design's own, unchanged (tools/rig/build.mjs copies this page and them into the Android assets). -->
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  #ch { position: absolute; left: 0; top: 0; width: 100px; height: 100px; transform-origin: 0 0; opacity: 0; transition: opacity 0.25s; }
+  #ch > div { position: absolute; inset: 0; }
+  /* the rig's own floor shadow, softer on the road */
+  #ch ellipse[fill="#6a1b9a"] { opacity: 0.4; }
+</style>
+<script>
+// Same start as host.html: relative fetch() through XHR on file:// pages (Android's WebView), and a pause that holds
+// the frames and the clock while the app's screen is hidden.
+(function () {
+  const realFetch = window.fetch ? window.fetch.bind(window) : null;
+  window.fetch = function (url, opts) {
+    const u = String(url);
+    if (location.protocol !== 'file:' || /^[a-z]+:/i.test(u)) return realFetch(url, opts);
+    return new Promise((ok, bad) => {
+      const x = new XMLHttpRequest(); x.open('GET', u.replace(/\?.*$/, ''));
+      x.onload = () => ok({ ok: true, status: 200, text: () => Promise.resolve(x.responseText), json: () => Promise.resolve(JSON.parse(x.responseText)) });
+      x.onerror = () => bad(new TypeError('load failed: ' + u));
+      x.send();
+    });
+  };
+  const raf = window.requestAnimationFrame.bind(window), caf = window.cancelAnimationFrame.bind(window);
+  const realNow = performance.now.bind(performance);
+  let held = null, pausedAt = 0, lost = 0, heldId = 0;
+  performance.now = () => (held ? pausedAt : realNow()) - lost;
+  window.requestAnimationFrame = cb => {
+    if (held) { held.push({ id: --heldId, cb }); return heldId; }
+    return raf(t => cb(t - lost));
+  };
+  window.cancelAnimationFrame = id => { if (id < 0) { if (held) held = held.filter(h => h.id !== id); } else caf(id); };
+  window.__rigPause = on => {
+    if (on && !held) { held = []; pausedAt = realNow(); }
+    else if (!on && held) { lost += realNow() - pausedAt; const q = held; held = null; q.forEach(h => window.requestAnimationFrame(h.cb)); }
+  };
+})();
+</script>
+<script src="rive-rig.js"></script>
+<script src="rive-generic.js"></script>
+<script src="pet-defs.js"></script>
+<script src="mittens-moves.js"></script>
+<script src="look-lines.js"></script>
+<script src="rig-look.js"></script>
+<!-- the walks: the gaits, then every creature's own (the later groups' files also queue house-only moves, unused here) -->
+<script src="house-walk.js"></script>
+<script src="house-walk-c.js"></script>
+<script src="fruit-house.js"></script>
+<script src="pet2-house.js"></script>
+<script src="snack2-house.js"></script>
+</head>
+<body>
+<div id="ch"><div id="rig"></div></div>
+<script>
+(function () {
+  const post = m => { const s = JSON.stringify(m); if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(s); else (window.__walkOut = window.__walkOut || []).push(m); };
+  const el = document.getElementById('ch'), host = document.getElementById('rig');
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  // Fabric grain baked into a tile, one filter on the parts' common parent (host.html's fix for the A15).
+  let FAB = null;
+  function fabric() {
+    if (FAB !== null) return FAB; FAB = '';
+    try { const S = 128, cv = document.createElement('canvas'); cv.width = cv.height = S; const x = cv.getContext('2d'), im = x.createImageData(S, S);
+      let sd = 7; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+      const oct = n => { const g = []; for (let i = 0; i < n * n; i++) g.push(rnd()); const c = S / n, sm = t => t * t * (3 - 2 * t);
+        return (px, py) => { const gx = px / c, gy = py / c, x0 = Math.floor(gx), y0 = Math.floor(gy), fx = sm(gx - x0), fy = sm(gy - y0), a = (i, j) => g[((j % n + n) % n) * n + ((i % n + n) % n)];
+          const t = a(x0, y0) + (a(x0 + 1, y0) - a(x0, y0)) * fx, b = a(x0, y0 + 1) + (a(x0 + 1, y0 + 1) - a(x0, y0 + 1)) * fx; return t + (b - t) * fy; }; };
+      const o1 = oct(32), o2 = oct(64);
+      for (let y = 0; y < S; y++) for (let X = 0; X < S; X++) { const v = (o1(X, y) + o2(X, y)) / 2, k = (y * S + X) * 4; im.data[k + 3] = Math.round(0.2 * 255 * v); }
+      x.putImageData(im, 0, 0); const B = 1024, cb = document.createElement('canvas'); cb.width = cb.height = B; const xb = cb.getContext('2d'); xb.fillStyle = xb.createPattern(cv, 'repeat'); xb.fillRect(0, 0, B, B); FAB = cb.toDataURL('image/png'); } catch (e) { FAB = ''; }
+    return FAB;
+  }
+  const isGrain = f => f && f.querySelector('feTurbulence') && !f.querySelector('feDisplacementMap') && f.querySelector('feBlend[mode="multiply"]');
+  function bakeGrain(svg) {
+    if (!svg || !fabric()) return;
+    const els = [...svg.querySelectorAll('[filter]')].filter(e => { const id = (e.getAttribute('filter').match(/url\(#([^)]+)\)/) || [])[1]; return id && isGrain(svg.getElementById(id)); });
+    if (!els.length) return;
+    const id = els[0].getAttribute('filter').match(/url\(#([^)]+)\)/)[1], f = svg.getElementById(id), t = f.querySelector('feTurbulence');
+    const im = document.createElementNS('http://www.w3.org/2000/svg', 'feImage');
+    [['href', FAB], ['x', -30], ['y', -30], ['width', 160], ['height', 160], ['preserveAspectRatio', 'none']].forEach(([a, v]) => im.setAttribute(a, v));
+    const cm = t.nextElementSibling; t.replaceWith(im); if (cm && cm.tagName === 'feColorMatrix') cm.remove();
+    let top = els[0].parentNode; while (top !== svg && !els.every(e => top.contains(e))) top = top.parentNode;
+    if (top === svg) { els.forEach(e => e.setAttribute('filter', 'url(#' + id + ')')); return; }
+    els.forEach(e => e.removeAttribute('filter')); top.setAttribute('filter', 'url(#' + id + ')');
+  }
+
+  // --- the character ------------------------------------------------------------------------------------------------
+  let ctrl = null, I = null, key = null, bb = null, W = 56, foot = 14, lookN = 0, t0 = 0, tag = 0;
+  // the rig's body box at rest (its floor shadow and particles left out), in its 0-100 units
+  function measure() {
+    const svg = host.querySelector('svg'); if (!svg) return null;
+    const sh = [...svg.querySelectorAll('ellipse[fill="#6a1b9a"]')]; sh.forEach(e => (e.style.display = 'none'));
+    let b = null; try { b = svg.getBBox(); } catch (e) {}
+    sh.forEach(e => (e.style.display = ''));
+    if (!b || !(b.width > 1)) return null;
+    return { cx: b.x + b.width / 2, gy: b.y + b.height, bw: b.width, bh: b.height };
+  }
+  // its body W dp wide, the feet on the middle of the page's bottom edge, `foot` dp up
+  function place() {
+    if (!bb) return;
+    const k = W / Math.max(bb.bw, bb.bh * 0.8); // (a tall one is sized by its height, so it fits the page)
+    el.style.transform = 'translate(' + (innerWidth / 2 - bb.cx * k).toFixed(2) + 'px,' + (innerHeight - foot - bb.gy * k).toFixed(2) + 'px) scale(' + k.toFixed(4) + ')';
+  }
+  window.addEventListener('resize', place);
+
+  function mount(k, w, look) {
+    if (w) W = w; if (look != null) lookN = +look || 0;
+    if (k === key && ctrl) { place(); return; }
+    if (ctrl) ctrl.destroy();
+    key = k; bb = null; el.style.opacity = '0'; walking = null;
+    if (window.__rgI) delete window.__rgI[k]; // else a re-mount reads the previous instance's ready flag
+    const me = ctrl = window.RiveRig.mount(host, k, {});
+    I = me._I; t0 = performance.now(); const myTag = ++tag;
+    const done = () => {
+      if (ctrl !== me) return;
+      if (I.generic && !I.ready) { if (performance.now() - t0 < 9000) setTimeout(done, 30); else post({ type: 'cast', ok: false, key: k }); return; }
+      me._pose('idle', 0);
+      bb = measure(); if (!bb) { if (performance.now() - t0 < 9000) setTimeout(done, 30); else post({ type: 'cast', ok: false, key: k }); return; }
+      bakeGrain(host.querySelector('svg'));
+      if (window.RigLook) window.RigLook.apply(me, k, lookN);
+      place(); el.style.opacity = '1';
+      post({ type: 'cast', ok: true, key: k, tag: myTag });
+    };
+    done();
+  }
+
+  // --- the walk: turn to the way it goes, walk its own gait for `ms`, turn back to the camera -----------------------
+  const TURN = 300;
+  let walking = null, E = {}, ws = {};
+  function walk(ms, dir) {
+    if (!ctrl || !I) { setTimeout(() => post({ type: 'walked' }), (ms || 0) + 2 * TURN); return; }
+    const now = performance.now(), spin = dir < 0 ? -90 : 90;
+    ctrl.play('idle');
+    I.spinTw = { from: I.spinOff || 0, to: spin, t0: now, d: TURN };
+    walking = { t0: now + TURN, ms: Math.max(200, ms || 0), spin, last: now + TURN, back: false };
+    E = {}; ws = {}; I.ext = E;
+    requestAnimationFrame(step);
+  }
+  function step() {
+    const w = walking; if (!w || !I) return;
+    const now = performance.now(), t = (now - w.t0) / w.ms, HW = window.HouseWalk;
+    if (t < 0) { requestAnimationFrame(step); return; }
+    for (const k in E) E[k] = 0;
+    if (t < 1) {
+      const dt = Math.min(0.05, (now - w.last) / 1000); w.last = now;
+      const wt = clamp(Math.min(1, t / 0.08, (1 - t) / 0.1), 0, 1);
+      if (HW) try { HW.step(key, ws, E, wt, dt, 1, w.spin); } catch (e) { /* no gait for him */ }
+      requestAnimationFrame(step);
+      return;
+    }
+    // there: face the camera again, a happy little bounce
+    I.spinTw = { from: I.spinOff || 0, to: 0, t0: now, d: TURN + 40 };
+    walking = null;
+    setTimeout(() => { if (I) I.ext = {}; if (ctrl) ctrl.play('happy'); post({ type: 'walked' }); }, TURN + 40);
+  }
+
+  window.walkStage = {
+    mount,
+    walk,
+    // facing the camera, or turned a little toward `dir` (the way the next level is)
+    face: dir => { if (I) I.spinTw = { from: I.spinOff || 0, to: dir ? dir * 20 : 0, t0: performance.now(), d: TURN }; },
+    play: n => { if (ctrl) ctrl.play(n); },
+    look: n => { lookN = +n || 0; if (ctrl && key && window.RigLook) window.RigLook.apply(ctrl, key, lookN); },
+    pause: on => window.__rigPause(on),
+  };
+
+  const boot = () => { const R = window.RiveRig; if (R && R.REST && R.DEFS && R.DEFS.prickle && R.movesV && window.RiveGeneric) post({ type: 'ready' }); else setTimeout(boot, 25); };
+  boot();
+})();
+</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, RadialGradient, ClipPath, Stop, Circle, Ellipse, Path, G } from 'react-native-svg';
-import { candyColors, candyFonts } from '../../theme/candyTheme';
+import { candyColors } from '../../theme/candyTheme';
 
 // The design's gold coin, drawn from its CSS (a 14px circle): 1.5px white
 // rim around a radial gold face, a brown ring with a two-tone 3D lip under
@@ -77,41 +77,11 @@ export function GlassPill({ children, style }) {
   return <View style={[styles.glass, style]}>{children}</View>;
 }
 
-// Coin counter. A notch bigger than the design's 14px coin / 13px count, on
-// request, with the same proportions.
-export function CoinPill({ coins, style, size = 17, textStyle }) {
-  return (
-    <GlassPill style={[styles.coinPill, style]}>
-      <CoinIcon size={size} />
-      <Text style={[styles.coinText, textStyle]}>{coins}</Text>
-    </GlassPill>
-  );
-}
-
 const styles = StyleSheet.create({
   glass: {
     backgroundColor: candyColors.glass,
     borderWidth: 2,
     borderColor: candyColors.glassBorder,
     borderRadius: 999,
-  },
-  coinPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    paddingLeft: 11,
-    paddingRight: 13,
-    paddingTop: 4,
-    paddingBottom: 6,
-  },
-  coinText: {
-    color: candyColors.goldText,
-    fontFamily: candyFonts.bodyHeavy,
-    fontSize: 15,
-    lineHeight: 19,
-    textShadowColor: candyColors.outline,
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 0.1,
-    includeFontPadding: false,
   },
 });

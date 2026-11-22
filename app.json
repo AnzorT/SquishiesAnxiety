@@ -4,10 +4,10 @@
     "slug": "plushcrush",
     "version": "1.0.0",
     "icon": "./assets/icons/app_icon.png",
-    "orientation": "portrait",
+    "orientation": "landscape",
     "userInterfaceStyle": "light",
     "splash": {
-      "backgroundColor": "#1A1326"
+      "backgroundColor": "#2A1608"
     },
     "assetBundlePatterns": [
       "**/*"

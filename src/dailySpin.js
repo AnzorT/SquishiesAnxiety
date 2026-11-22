@@ -1,17 +1,24 @@
+import { fmtNum } from './format';
+
 // Daily Spin, app side. The server (spinWheel in functions/index.js, rules in
 // functions/dailySpin.js) rolls and hands out the prize; the app draws the
 // wheel and lands it on the slice the server picked. The eight slices here
 // must match functions/dailySpin.js, in the same order.
 
+// The shell's wheel (2026-10-08): coins and gems; `tone` is the slice's
+// look on the wood-and-gold wheel (DailySpinScreen TONES; 2026-11-17, the
+// user: the wheel remodelled to the game's look). The 150 coins slice is a
+// Common chest since 2026-11-17 (the user: "1 mystery box"): today's first
+// HOT group's, opened by the server, smashed after the prize card.
 export const WHEEL = [
-  { kind: 'coins', amount: 60, label: '60', color: '#ff4fbf' },
-  { kind: 'coins', amount: 120, label: '120', color: '#9d4dff' },
-  { kind: 'create', label: 'CREATE', color: '#ffb81f' },
-  { kind: 'coins', amount: 200, label: '200', color: '#ff4fbf' },
-  { kind: 'coins', amount: 80, label: '80', color: '#9d4dff' },
-  { kind: 'unlock', label: 'FREE', color: '#2fc8f0' },
-  { kind: 'coins', amount: 150, label: '150', color: '#9d4dff' },
-  { kind: 'coins', amount: 300, label: '300', color: '#ff4fbf' },
+  { kind: 'coins', amount: 100, tone: 'cream' },
+  { kind: 'gems', amount: 5, tone: 'wood' },
+  { kind: 'coins', amount: 250, tone: 'cream' },
+  { kind: 'chest', amount: 1, size: 'common', tone: 'gold' },
+  { kind: 'coins', amount: 50, tone: 'cream' },
+  { kind: 'gems', amount: 15, tone: 'wood' },
+  { kind: 'coins', amount: 500, tone: 'cream' },
+  { kind: 'gems', amount: 50, tone: 'jewel' },
 ];
 export const SLICE = 360 / WHEEL.length;
 
@@ -31,10 +38,10 @@ export function hasSpunToday(profile, now = new Date()) {
   return !!profile && !!profile.lastSpinDay && profile.lastSpinDay >= todayKey(now);
 }
 
-// SPIN AGAIN: after the free spin, up to MAX_AD_SPINS more a day for a
-// rewarded video each (free with Remove Ads). The server counts them in
+// "Watch ad, spin again": after the free spin, MAX_AD_SPINS more a day for
+// a rewarded video (free with Remove Ads). The server counts them in
 // `adSpins: { day, n }` (functions/dailySpin.js has the same number).
-export const MAX_AD_SPINS = 3;
+export const MAX_AD_SPINS = 1;
 export function adSpinsLeft(profile, now = new Date()) {
   const day = todayKey(now);
   const a = profile && profile.adSpins;
@@ -42,30 +49,13 @@ export function adSpinsLeft(profile, now = new Date()) {
   return Math.max(0, MAX_AD_SPINS - used);
 }
 
-// The prize card under the wheel (the design's prizeTitle / prizeDesc /
-// prizeCta), for a spinWheel result.
+// The prize popup (the design's prizeTitle / prizeAmt / prizeWhat) for a
+// spinWheel result.
 export function prizeCard(result) {
   if (!result) return null;
-  if (result.kind === 'coins') {
-    return {
-      title: `+${result.amount.toLocaleString()} COINS`,
-      desc: result.allOwned ? 'You already own every creature, so here are coins instead.' : 'Straight into your balance.',
-      cta: 'COLLECT',
-      color: '#c25e00',
-    };
-  }
-  if (result.kind === 'create') {
-    return {
-      title: `${result.discountPct}% OFF CREATING`,
-      desc: `Your next custom squishy costs ${result.discountPct}% less.`,
-      cta: 'CONTINUE',
-      color: '#0f9d90',
-    };
-  }
   return {
-    title: 'FREE CREATURE',
-    desc: 'Spin the reel and keep whichever creature it lands on.',
-    cta: 'CONTINUE',
-    color: '#0f9d90',
+    title: result.kind === 'gems' && result.amount >= 50 ? 'JACKPOT!' : 'You won!',
+    amount: `+${fmtNum(result.amount)}`,
+    what: result.kind === 'chest' ? 'MYSTERY BOX' : result.kind.toUpperCase(),
   };
 }

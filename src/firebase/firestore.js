@@ -1,9 +1,7 @@
 import firestore from '@react-native-firebase/firestore';
-import { STARTER_CREATURE_IDS } from '../data/creatures';
-import { boxPayMode, boxPrice, dailyBoxUse, doublePull, doublesLeft } from '../mysteryBox';
-import { todayKey } from '../dailySpin';
-import { tokenCount, tokenPrice } from '../economy';
+import { NEW_PLAYER_CREATURE_IDS, STARTER_CREATURE_IDS } from '../data/creatures';
 import { bumpDaily as bumpDailyRules, claimDaily as claimDailyRules, claimChest as claimChestRules } from '../progression';
+import { addXp, migrateXp, pxpOf } from '../playerXp';
 
 // Coins and unlocks are client-authoritative (writes go straight from the
 // device to Firestore, guarded only by firestore.rules) — fine for a
@@ -33,20 +31,15 @@ export async function createUserProfile(uid, { email, age, nickname }) {
     // itself. More come from a real-money purchase, reconciled by hand for
     // now by setting this directly in the Firebase console.
     generationCredits: 1,
-    ownedIds: STARTER_CREATURE_IDS,
-    // Creature ids a key has been bought for but not yet redeemed via the
-    // Home card's hold-to-unlock gesture — see openBox (a full set of a
-    // creature's tokens) and unlockWithKey below.
-    keys: {},
+    ownedIds: NEW_PLAYER_CREATURE_IDS,
     stats: { presses: 0, longestHoldMs: 0, playTime: {} },
     // The two achievements with no natural profile-derived signal (the rest
     // — creature unlocks, earn10k/100k, unlockAll — are computed straight
     // from ownedIds/totalEarned, see src/achievements.js).
     achievements: { speedTap: false, watchAd: false },
-    // Progression (src/progression.js): the guided tutorial starts at its
-    // first step, level 1.
-    tut: 'start',
+    // Progression (src/progression.js): level 1, no XP yet.
     level: 1,
+    pxp: 0,
     createdAt: firestore.FieldValue.serverTimestamp(),
   });
 }
@@ -55,12 +48,48 @@ export async function createUserProfile(uid, { email, age, nickname }) {
 //
 // Client-written like coins (see the note at the top).
 
-export function setTutorialStep(uid, step) {
-  userDocRef(uid).update({ tut: step }).catch(logFail('setTutorialStep'));
+// --- the player's XP (src/playerXp.js, PLAYER_XP.md) -----------------------
+//
+// The fields that add `n` XP, merged into the write that earned it: an
+// increment, and the level when it rises (a profile not moved over yet gets
+// its whole total). Returns them with addXp's { xp, before, after, levelUps }.
+function xpFields(profile, n) {
+  const r = addXp(profile, n);
+  const fields = {};
+  if (r.xp) fields.pxp = typeof profile?.pxp === 'number' ? inc(r.xp) : pxpOf(profile) + r.xp;
+  if (r.levelUps.length) fields.level = r.after.level;
+  return { ...r, fields };
 }
 
-export function setLevel(uid, level) {
-  userDocRef(uid).update({ level }).catch(logFail('setLevel'));
+// The one-time move over to player XP (an older profile's level and Puzzle
+// XP become `pxp`); nothing once done.
+export function migrateToXp(uid, profile) {
+  const update = migrateXp(profile);
+  if (update) userDocRef(uid).update(update).catch(logFail('migrateToXp'));
+}
+
+// The highest level whose LEVEL UP card has been shown.
+export function markLevelSeen(uid, level) {
+  userDocRef(uid).update({ lvSeen: level }).catch(logFail('markLevelSeen'));
+}
+
+// --- the lobby (src/squad/lobby.js) ------------------------------------------
+//
+// `lobby.sel`: the squishy shown in the lobby; `lobby.seen`: the owned ones
+// already looked at (the rest wear NEW). Client-written.
+
+export function setLobbySelected(uid, id) {
+  userDocRef(uid)
+    .update({ 'lobby.sel': String(id), 'lobby.seen': firestore.FieldValue.arrayUnion(String(id)) })
+    .catch(logFail('setLobbySelected'));
+}
+
+// A one-time offer's window (config/offers windowHours) runs from when the
+// player first saw it: offerSeen.<id> = ms.
+export function setOfferSeen(uid, id, at) {
+  userDocRef(uid)
+    .update({ [`offerSeen.${id}`]: at })
+    .catch(logFail('setOfferSeen'));
 }
 
 // The day the streak screen last opened by itself (after the Daily Spin),
@@ -74,21 +103,25 @@ export function markStreakSeen(uid, date) {
 // (a friend sent to a bath, a snack…) also count as care given, for the
 // achievements (`cribCare`).
 const CRIB_EVENTS = ['bath', 'feed', 'sleep', 'dance', 'tv', 'play'];
+// Squishes also earn XP (src/progression.js bumpDaily).
 export function bumpDaily(uid, profile, ev, n = 1) {
-  const { update, completed } = bumpDailyRules(profile, ev, n);
+  const { update, completed, xp } = bumpDailyRules(profile, ev, n);
   if (CRIB_EVENTS.includes(ev)) update.cribCare = inc(n);
-  userDocRef(uid).update(update).catch(logFail('bumpDaily'));
+  userDocRef(uid)
+    .update({ ...update, ...xpFields(profile, xp).fields })
+    .catch(logFail('bumpDaily'));
   return completed;
 }
 
-// Claims a finished challenge: its coins. Returns them (0 if nothing).
+// Claims a finished challenge: its coins and XP. Returns { coins, xp } (null
+// if nothing).
 export function claimDailyChallenge(uid, profile, id) {
   const r = claimDailyRules(profile, id);
-  if (!r) return 0;
+  if (!r) return null;
   userDocRef(uid)
-    .update({ ...r.update, coins: inc(r.coins), totalEarned: inc(r.coins) })
+    .update({ ...r.update, coins: inc(r.coins), totalEarned: inc(r.coins), ...xpFields(profile, r.xp).fields })
     .catch(logFail('claimDailyChallenge'));
-  return r.coins;
+  return { coins: r.coins, xp: r.xp };
 }
 
 // Opens the daily chest: its coins, one token of `tokenCreatureId` (the
@@ -99,70 +132,45 @@ export function claimDailyChallenge(uid, profile, id) {
 // (`streakDiscount`, used up by buying it — functions/purchases.js).
 // Returns { coins, reward } (null if it isn't ready). Tokens that fill a set
 // put the key on the card, as a box does.
-export function claimDailyChest(uid, profile, tokenCreatureId) {
+// The daily chest's coins, XP and streak (a streak day's gems or chest are
+// the server's: squad dailyGift, which the caller sends).
+export function claimDailyChest(uid, profile) {
   const r = claimChestRules(profile);
   if (!r) return null;
   const reward = r.reward;
   let coins = r.coins;
-  const update = { ...r.update, chests: inc(1) };
-  let tokens = 1;
+  const update = { ...r.update, chests: inc(1), ...xpFields(profile, r.xp).fields };
   if (reward.kind === 'coins') coins += reward.amount;
-  else if (reward.kind === 'tokens') tokens += reward.amount;
-  else if (reward.kind === 'box') {
-    if (profile?.boxPending) coins += boxPrice();
-    else update.boxPending = true;
-  } else if (reward.kind === 'half') update.streakDiscount = true;
+  else if (reward.kind === 'half') update.streakDiscount = true;
   update.coins = inc(coins);
   update.totalEarned = inc(coins);
-  if (tokenCreatureId) {
-    const have = tokenCount(profile, tokenCreatureId);
-    const need = tokenPrice(tokenCreatureId);
-    if (have + tokens >= need) {
-      update[`keys.${tokenCreatureId}`] = true;
-      update[`tokens.${tokenCreatureId}`] = need;
-    } else update[`tokens.${tokenCreatureId}`] = inc(tokens);
-  }
   userDocRef(uid).update(update).catch(logFail('claimDailyChest'));
-  return { coins, reward, tokens: tokenCreatureId ? tokens : 0 };
+  return { coins, xp: r.xp, reward };
 }
 
-// --- the Squad Crib (src/crib/): the squad's rooms, stats and furniture, one
-// document per player (users/{uid}/crib/state), written by the Crib screen
-// alone — it loads it once, simulates, and saves (see CribScreen.js).
-
-const cribDocRef = (uid) => userDocRef(uid).collection('crib').doc('state');
-
-export async function loadCrib(uid) {
-  try {
-    const snap = await cribDocRef(uid).get();
-    return snap.exists ? snap.data() : null;
-  } catch (e) {
-    console.warn('loadCrib failed:', e);
-    return null;
+// A mini-game's record and what a level or run paid: coins, and XP for the
+// player (`profile`: the one the XP was worked out from).
+function saveGame(what, uid, update, coins, xp, profile) {
+  const all = { ...update, ...(xp > 0 ? xpFields(profile, xp).fields : {}) };
+  if (coins > 0) {
+    all.coins = inc(coins);
+    all.totalEarned = inc(coins);
   }
+  userDocRef(uid).update(all).catch(logFail(what));
 }
 
-export function saveCrib(uid, state) {
-  cribDocRef(uid).set(state).catch(logFail('saveCrib'));
-}
+// A Squishdoku level or Blitz run (src/squishdoku/levels.js afterLevel /
+// afterBlitz): its `sdk.*` fields.
+export const saveSquishdoku = (uid, update, coins = 0, xp = 0, profile = null) => saveGame('saveSquishdoku', uid, update, coins, xp, profile);
 
-// Something bought in the Crib's shop (its coins go through cribCoins), and
-// how many friends live in the Crib — both for the achievements.
-export function noteCribBuy(uid) {
-  userDocRef(uid).update({ cribBuys: inc(1) }).catch(logFail('noteCribBuy'));
-}
-export function setCribSize(uid, n) {
-  userDocRef(uid).update({ cribSize: n }).catch(logFail('setCribSize'));
-}
+// Squish Sort's record (`sort.*` fields, src/sort/levels.js afterLevel).
+export const saveSort = (uid, update, coins = 0, xp = 0, profile = null) => saveGame('saveSort', uid, update, coins, xp, profile);
 
-// Coins the squad made (or cost) in the Crib; only earnings count towards
-// the lifetime total. The caller keeps `coins` from going under zero.
-export function cribCoins(uid, n) {
-  if (!n) return;
-  const update = { coins: inc(n) };
-  if (n > 0) update.totalEarned = inc(n);
-  userDocRef(uid).update(update).catch(logFail('cribCoins'));
-}
+// Squish Stack (SQUISH_STACK.md): the `stack` record.
+export const saveStack = (uid, update, coins = 0, xp = 0, profile = null) => saveGame('saveStack', uid, update, coins, xp, profile);
+
+// Squish Hop (SQUISH_HOP.md): the `hop` record (src/hop/levels.js afterLevel).
+export const saveHop = (uid, update, coins = 0, xp = 0, profile = null) => saveGame('saveHop', uid, update, coins, xp, profile);
 
 // Accounts created before this app matched the new roster have an
 // `ownedIds` that predates STARTER_CREATURE_IDS (e.g. the old single 'buddy'
@@ -212,27 +220,6 @@ export async function submitFeedback(uid, text) {
   });
 }
 
-// The hold-to-unlock gesture on a locked-but-keyed Home card calls this once
-// the hold completes — consumes the key and adds the creature to ownedIds.
-export async function unlockWithKey(uid, creatureId) {
-  const ref = userDocRef(uid);
-  return firestore().runTransaction(async (transaction) => {
-    const snap = await transaction.get(ref);
-    const data = snap.data() || {};
-    const ownedIds = data.ownedIds ?? [];
-    const keys = data.keys ?? {};
-
-    if (ownedIds.includes(creatureId)) return { ok: true };
-    if (!keys[creatureId]) return { ok: false, reason: 'no_key' };
-
-    transaction.update(ref, {
-      ownedIds: firestore.FieldValue.arrayUnion(creatureId),
-      [`keys.${creatureId}`]: false,
-    });
-    return { ok: true };
-  });
-}
-
 // Called once per squish-and-release on SquishScreen — tracks the three
 // numbers SettingsSheet's "YOUR STATS" block shows (total presses, longest
 // single hold, and — derived from playTime by the caller — the favorite
@@ -247,11 +234,15 @@ export async function recordPress(uid, creatureId, holdMs) {
     const longestHoldMs = Math.max(stats.longestHoldMs ?? 0, holdMs);
     const priorPlay = (stats.playTime ?? {})[creatureId] ?? 0;
 
-    transaction.update(ref, {
+    const update = {
       'stats.presses': firestore.FieldValue.increment(1),
       'stats.longestHoldMs': longestHoldMs,
       [`stats.playTime.${creatureId}`]: priorPlay + holdMs,
-    });
+    };
+    // a roster creature's growth XP: 1 per squish (the squad economy's
+    // `xp`, which the server reads when it grows one — functions/squad.js)
+    if (/^\d+$/.test(String(creatureId))) update[`xp.${creatureId}`] = firestore.FieldValue.increment(1);
+    transaction.update(ref, update);
     return { ok: true };
   });
 }
@@ -275,75 +266,7 @@ export async function recordAdWatched(uid, multiplier, currentMaxMult = 0, watch
   if (Object.keys(update).length) await userDocRef(uid).update(update);
 }
 
-// --- Mystery Box (rules in src/mysteryBox.js) ---------------------------
-//
-// These work from the profile the app already has and skip the transaction:
-// Firestore applies a write to its local cache at once (and queues it while
-// offline), so the box never waits on the network. Like the rest of the
-// economy above, this is client-trusted.
-
-// A daily box's video was watched: that box is paid for (one of today's
-// dailyBoxes() used) and waits as `boxPending` until it's opened, even if the
-// player leaves first.
-export function payBoxWithAd(uid, profile) {
-  userDocRef(uid)
-    .update({ boxPending: true, ...dailyBoxUse(profile) })
-    .catch(logFail('payBoxWithAd'));
-}
-
-// Today's boxes are used up: charge boxPrice() and set the box up to be
-// opened. False if there aren't enough coins.
-export function payBoxWithCoins(uid, profile) {
-  const price = boxPrice();
-  if ((profile?.coins ?? 0) < price) return false;
-  userDocRef(uid).update({ coins: inc(-price), boxPending: true }).catch(logFail('payBoxWithCoins'));
-  return true;
-}
-
-// Opens a box in one write and hands out `pull` (rolled beforehand with
-// rollBox, see MysteryBoxScreen): a creature's tokens — a full set puts its
-// key on its Home card (the other way to a key is $0.99, src/billing; coins
-// only buy boxes) — or coins, or the Secret. A free daily box (Remove Ads) uses up one of today's boxes
-// here; a paid one was settled when it was paid for. `paidAhead` covers a
-// payment made a moment ago that the profile passed in doesn't show yet.
-// Returns false if this box still has to be paid for.
-export function openBox(uid, profile, pull, paidAhead = false) {
-  const mode = paidAhead ? 'paid' : boxPayMode(profile);
-  if (!pull || (mode !== 'free' && mode !== 'paid')) return false;
-  const update = { boxPending: false, boxOpens: inc(1), [`tierPulls.${pull.tier}`]: inc(1) };
-  if (mode === 'free') Object.assign(update, dailyBoxUse(profile));
-  if (pull.kind === 'secret') update.secretFound = true;
-  else if (pull.kind === 'coins') update.coins = inc(pull.amount);
-  else if (pull.complete) {
-    update[`keys.${pull.id}`] = true;
-    update[`tokens.${pull.id}`] = tokenPrice(pull.id);
-  } else update[`tokens.${pull.id}`] = inc(pull.amount);
-  userDocRef(uid).update(update).catch(logFail('openBox'));
-  return true;
-}
-
-// DOUBLE IT on a box's reveal (its video watched): the same prize again,
-// counted in the day's `boxDoubles`. Returns the doubled pull to show, or
-// null when there's nothing to double or today's doubles are used up.
-export function doubleBox(uid, profile, pull) {
-  if (doublesLeft(profile) <= 0) return null;
-  const d = doublePull(pull);
-  if (!d) return null;
-  const today = todayKey();
-  const used = profile?.boxDoubles?.day === today ? profile.boxDoubles.n || 0 : 0;
-  const update = { boxDoubles: { day: today, n: used + 1 }, boxDoublesTotal: inc(1) };
-  if (d.coins) {
-    update.coins = inc(d.coins);
-    update.totalEarned = inc(d.coins);
-  } else if (d.pull.complete) {
-    update[`keys.${pull.id}`] = true;
-    update[`tokens.${pull.id}`] = tokenPrice(pull.id);
-  } else update[`tokens.${pull.id}`] = inc(d.tokens);
-  userDocRef(uid).update(update).catch(logFail('doubleBox'));
-  return d.pull;
-}
-
-// --- player-made creatures (the "Create your own squishy" flow) ---------
+// --- player-made creatures (the retired "Create your own squishy" flow; read for the achievements and stats) ---
 //
 // Stored under users/{uid}/customCreatures. Two kinds:
 //  · photo path  — { sourceImageUrl, status: 'pending' }. The
@@ -371,45 +294,6 @@ export function subscribeToCustomCreatures(uid, onChange) {
     );
 }
 
-// Create the doc. Pass a pre-generated `id` when the caller has already
-// uploaded customUploads/{uid}/{id}.jpg (so paths line up). Returns the id.
-export async function addCustomCreature(uid, { id, name, sourceImageUrl, sourceImagePath, build, audio }) {
-  const doc = {
-    name: name?.trim() || 'My Squishy',
-    audio: audio || null,
-    build: build || null,
-    sourceImageUrl: sourceImageUrl || null,
-    sourceImagePath: sourceImagePath || null,
-    // photo → Tripo has to run; assemble → nothing to generate.
-    status: sourceImageUrl ? 'pending' : 'ready',
-    progress: 0,
-    created: new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-    createdAt: firestore.FieldValue.serverTimestamp(),
-  };
-  if (id) {
-    await customCreaturesRef(uid).doc(id).set(doc);
-    return id;
-  }
-  const ref = await customCreaturesRef(uid).add(doc);
-  return ref.id;
-}
-
-// Re-arm a failed generation (the Cloud Function re-triggers on the write).
-export async function retryCustomCreature(uid, creatureId) {
-  await customCreaturesRef(uid).doc(creatureId).set(
-    { status: 'pending', progress: 0, error: firestore.FieldValue.delete() },
-    { merge: true }
-  );
-}
-
-export async function deleteCustomCreature(uid, creatureId) {
-  await customCreaturesRef(uid).doc(creatureId).delete();
-}
-
-export function newCustomCreatureId(uid) {
-  return customCreaturesRef(uid).doc().id;
-}
-
 export function subscribeToCreatures(onChange) {
   return firestore()
     .collection('creatures')
@@ -423,19 +307,55 @@ export function subscribeToCreatures(onChange) {
     );
 }
 
-// The Mystery Box numbers (rarity odds, token odds, token prices) — a
-// hand-edited doc, config/mysteryBox (see BOX_DEFAULTS in src/economy.js).
-// `onChange` gets null until it exists.
-export function subscribeToBoxConfig(onChange) {
+// What the Shop's Deals and Gems tabs sell — config/offers (REDESIGN_V6
+// step 7; functions/squad.js DEFAULT_OFFERS documents it). `onChange` gets
+// null until it exists.
+export function subscribeToOffers(onChange) {
   return firestore()
     .collection('config')
-    .doc('mysteryBox')
+    .doc('offers')
     .onSnapshot(
       (snap) => onChange(snap.exists ? snap.data() : null),
-      (error) => {
-        console.error('subscribeToBoxConfig failed:', error);
-        onChange(null);
-      }
+      () => onChange(null),
+    );
+}
+
+// What the levels are — config/levels (the road, the curve, what earns XP:
+// functions/squad.js DEFAULT_LEVELS documents it). `onChange` gets null
+// until it exists.
+export function subscribeToLevels(onChange) {
+  return firestore()
+    .collection('config')
+    .doc('levels')
+    .onSnapshot(
+      (snap) => onChange(snap.exists ? snap.data() : null),
+      () => onChange(null),
+    );
+}
+
+// The groups and creatures not out yet — config/roster { hidden: [...] }
+// (functions/squad.js HIDDEN documents it). `onChange` gets null until it
+// exists.
+export function subscribeToRoster(onChange) {
+  return firestore()
+    .collection('config')
+    .doc('roster')
+    .onSnapshot(
+      (snap) => onChange(snap.exists ? snap.data() : null),
+      () => onChange(null),
+    );
+}
+
+// The weathers the game may show — a hand-edited doc, config/weather
+// { options: ['sunny', 'rainy', 'snowy'] } (src/weather.js). `onChange` gets
+// null until it exists.
+export function subscribeToWeather(onChange) {
+  return firestore()
+    .collection('config')
+    .doc('weather')
+    .onSnapshot(
+      (snap) => onChange(snap.exists ? snap.data() : null),
+      () => onChange(null),
     );
 }
 

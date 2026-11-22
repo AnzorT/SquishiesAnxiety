@@ -1,46 +1,44 @@
 import React, { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, PanResponder, Animated, Pressable, Easing, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, PanResponder, Animated, Easing, Dimensions } from 'react-native';
+import Pressable from '../components/Pressable';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Canvas } from '@react-three/fiber';
 import { NeutralToneMapping } from 'three';
-import Svg, { Defs, LinearGradient as SvgGradient, Stop, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
 import SquishyToy from '../components/SquishyToy';
 import SquishyToy2D from '../components/SquishyToy2D';
 import Supersample from '../components/Supersample';
+import { stepKeys, useKeyLoop } from '../components/idleLoop';
+import { useAfterFirstFrame } from '../components/Skeleton';
 import { INTERSTITIAL_AD_UNIT_ID } from '../firebase/ads';
 
-// A creature with a `modelUrl` (every premade creature, plus a photo-path
-// custom one) mounts the 3D mesh; everything else falls back to 2D art
-// (SquishyToy2D).
+// A creature with a `card` (every roster creature since REDESIGN_V6 step 4:
+// the design's card, src/components/squishCard.js) or a `modelUrl` (a
+// photo-path custom one) mounts the 3D stage; everything else falls back to
+// 2D art (SquishyToy2D).
 import SquishSound from '../audio/SquishSound';
 import squishSoundFor from '../audio/creatureSquish';
 import { pressHaptic, moveHaptic, releaseHaptic } from '../haptics/squishHaptics';
 import CoinSound from '../audio/CoinSound';
 import PopSound from '../audio/PopSound';
 import { candyColors, candyFonts, BUTTON_VARIANTS } from '../theme/candyTheme';
-import AdStrip from '../components/AdStrip';
 import WatchAdButton from '../components/WatchAdButton';
-import TutTarget from '../tutorial/Target';
-import { report as tutReport } from '../tutorial/store';
 import { AD_FREE_BOOST_RECHARGE_MS } from '../economy';
-import CandyBackground from '../components/candy/CandyBackground';
+import SkyBackground from '../squad/SkyBackground';
 import CandyButton, { Shine } from '../components/candy/CandyButton';
 import RoundButton, { BackGlyph, CloseGlyph, GearIcon } from '../components/candy/RoundButton';
 import { CoinIcon, GlassPill } from '../components/candy/Coin';
 import OutlinedTitle from '../components/candy/OutlinedTitle';
-import ShadowText from '../components/candy/ShadowText';
 import ToggleSwitch from '../components/candy/ToggleSwitch';
 import sfx from '../audio/sfx';
+import { fmtNum } from '../format';
 
-// Stage size for a 2D creature: the full screen width (capped for tablets).
-// A 3D creature's stage is instead the whole free area between the top
-// buttons and the bottom panel (measured on layout — see stageBox), and
-// SquishyToy fits the camera so the creature is about this share of the
-// screen's height.
-const STAGE_SIZE = Math.min(Math.round(Dimensions.get('window').width), 420);
-const CREATURE_SCREEN_SHARE = 0.7;
+// Stage size: the screen's shorter side, its height (REDESIGN_V7 step 5),
+// capped for tablets. The creature's own size inside it is
+// MODEL_TUNING.visual in SquishyToy.js.
+const STAGE_SIZE = Math.min(Math.round(Math.min(Dimensions.get('window').width, Dimensions.get('window').height)), 420);
 const RIPPLE_LIFETIME_MS = 620;
 // 60s window where an ad-watch doubles squish rewards.
 const BONUS_MS = 60000;
@@ -81,7 +79,7 @@ const ABUSE_MAX_WINDOW_MS = Math.max(...ABUSE_RULES.map((r) => r.windowMs));
 const RIPPLE_MAX = 180;
 
 // True for 3D-mesh creatures; picks Canvas vs SquishyToy2D in SquishStage.
-const toyIs3D = (t) => !!(t && t.modelUrl);
+const toyIs3D = (t) => !!(t && ((t.card && t.card.url) || t.modelUrl));
 
 // Ring that blooms from the touch point and fades. Pooled: a few of these
 // stay mounted (invisible when finished) and `play` just moves one to the
@@ -187,16 +185,18 @@ const StageEffects = memo(forwardRef(function StageEffects(_props, ref) {
   );
 }));
 
-// Top-bar coin pill. Counts up through its ref on each earn tick, so the
-// tick re-renders only this pill instead of the whole screen mid-squish.
-const CoinCounter = memo(forwardRef(function CoinCounter({ initial }, ref) {
-  const [value, setValue] = useState(initial);
+// Top-bar "+N EARNED" pill: the coins earned since the screen opened (v5).
+// Counts up through its ref on each earn tick, so the tick re-renders only
+// this pill instead of the whole screen mid-squish.
+const CoinCounter = memo(forwardRef(function CoinCounter(_props, ref) {
+  const [value, setValue] = useState(0);
   useImperativeHandle(ref, () => ({ add: (n) => setValue((c) => c + n) }), []);
   return (
-    <GlassPill style={styles.coinPill}>
-      <CoinIcon size={14} />
-      <Text style={styles.coinPillText}>{value}</Text>
-    </GlassPill>
+    <View style={styles.coinPill}>
+      <CoinIcon size={17} />
+      <Text style={styles.coinPillText}>+{fmtNum(value)}</Text>
+      <Text style={styles.coinPillEarned}>EARNED</Text>
+    </View>
   );
 }));
 
@@ -328,31 +328,19 @@ const HAND_ASPECT = 110 / 82;
 // fingertip of each hand, in path units — where its touch ring sits
 const SQUISH_TIP = { x: 30, y: 11 };
 const ROTATE_TIP = { x: 31, y: 12 };
-const HINT_INK = '#45189a';
-const HINT_TEXT_SHADOWS = [
-  [0, 2, HINT_INK],
-  [1, 0, HINT_INK],
-  [-1, 0, HINT_INK],
-];
+const HINT_INK = '#6b4426'; // (the wood look's brown, REDESIGN_V8)
 
 function CandyHand({ d, creaseD, width }) {
   return (
     <Svg width={width} height={width * HAND_ASPECT} viewBox={HAND_VIEWBOX}>
-      <Defs>
-        <SvgGradient id="candyHand" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#ffffff" />
-          <Stop offset="1" stopColor="#f0dcff" />
-        </SvgGradient>
-      </Defs>
-      <Path d={d} fill={HINT_INK} stroke={HINT_INK} strokeWidth={7} strokeLinejoin="round" transform="translate(0,4)" />
-      <Path d={d} fill={HINT_INK} stroke={HINT_INK} strokeWidth={7} strokeLinejoin="round" />
-      <Path d={d} fill="url(#candyHand)" stroke="#ffffff" strokeWidth={2.4} strokeLinejoin="round" />
-      <Path d={creaseD} stroke="#c28cf0" strokeWidth={2.4} strokeLinecap="round" fill="none" />
+      <Path d={d} fill="rgba(107,63,160,0.16)" transform="translate(0,3)" />
+      <Path d={d} fill="rgba(255,255,255,0.9)" stroke={HINT_INK} strokeWidth={2.8} strokeLinejoin="round" />
+      <Path d={creaseD} stroke="rgba(107,63,160,0.6)" strokeWidth={2} strokeLinecap="round" fill="none" />
     </Svg>
   );
 }
 
-// Pink ring with a white rim, pulsing where the finger lands.
+// Pink ring pulsing where the finger lands.
 function TouchRing({ anim, style }) {
   return (
     <Animated.View
@@ -365,18 +353,17 @@ function TouchRing({ anim, style }) {
         },
       ]}
     >
-      <View style={styles.touchRingInner} />
     </Animated.View>
   );
 }
 
-// The glass caption pill (the Mystery Box's hint look).
+// v5's caption: dark purple caps with a white glow, no pill.
 function HintPill({ label, sub, align = 'center' }) {
   return (
-    <View style={[styles.hintPill, { alignItems: align === 'right' ? 'flex-end' : 'center' }]}>
-      <ShadowText style={styles.hintPillText} shadows={HINT_TEXT_SHADOWS} numberOfLines={1}>
+    <View style={{ alignItems: align === 'right' ? 'flex-end' : 'center' }}>
+      <Text style={styles.hintPillText} numberOfLines={1}>
         {label}
-      </ShadowText>
+      </Text>
       {sub ? (
         <Text style={styles.hintPillSub} numberOfLines={1}>
           {sub}
@@ -386,12 +373,12 @@ function HintPill({ label, sub, align = 'center' }) {
   );
 }
 
-const HAND_W = 50;
+const HAND_W = 52;
 
 function GestureHint({ side, d, creaseD, tip, label, touchAnim, gestureAnim }) {
   const sideStyle = side === 'left' ? { left: '4%' } : { right: '4%' };
   const k = HAND_W / 82;
-  const ring = { left: (tip.x + 5) * k - 14, top: (tip.y + 5) * k - 14 };
+  const ring = { left: (tip.x + 5) * k - 13, top: (tip.y + 5) * k - 13 };
   return (
     <View style={[styles.gestureHint, sideStyle]} pointerEvents="none">
       <Animated.View style={[styles.gestureHandWrap, { transform: gestureAnim }]}>
@@ -439,20 +426,19 @@ function SettingsHint({ top, opacity, bobAnim, pulseAnim }) {
   );
 }
 
+// 0 → 1 → 0, `config.duration` each way, eased, forever: one native loop
+// (idleLoop.js; a loop around the two timings went back to JS at every turn)
+const LOOP_EASE = Easing.inOut(Easing.ease);
 function useLoopAnim(config) {
-  const anim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(anim, { toValue: 1, duration: config.duration, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(anim, { toValue: 0, duration: config.duration, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return anim;
+  const keys = useMemo(
+    () =>
+      stepKeys(0, [
+        [1, config.duration, LOOP_EASE],
+        [0, config.duration, LOOP_EASE],
+      ]),
+    [config.duration]
+  );
+  return useKeyLoop(keys.ms, keys);
 }
 
 // The stage itself: touch surface, 3D Canvas (or the 2D rig), touch effects
@@ -475,15 +461,10 @@ const SquishStage = memo(function SquishStage({
   touchAnim,
   dentScale,
   dentOutward,
-  stageBox,
 }) {
-  const is3D = toyIs3D(toy);
   return (
-    <View
-      style={is3D ? { width: stageBox.w, height: stageBox.h, marginTop: stageBox.top } : styles.stage}
-      {...panHandlers}
-    >
-      {is3D ? (
+    <View style={styles.stage} {...panHandlers}>
+      {toyIs3D(toy) ? (
         <Canvas
           frameloop="always"
           camera={{ fov: 30, position: [0, 0.1, 4.6], near: 0.1, far: 100 }}
@@ -507,12 +488,13 @@ const SquishStage = memo(function SquishStage({
             ref={toyRef}
             creatureId={toy.id}
             modelUrl={toy.modelUrl}
+            cardUrl={toy.card ? toy.card.url : null}
+            stage={toy.stage ?? 1}
             visual={toy.visual}
             onSquish={onSquish}
             onRelease={onRelease}
             dentScale={dentScale}
             dentOutward={dentOutward}
-            fillHeight={Math.round(Dimensions.get('window').height * CREATURE_SCREEN_SHARE)}
           />
         </Canvas>
       ) : (
@@ -576,11 +558,9 @@ function Segmented({ options, value, onChange }) {
   );
 }
 
-// Squish level setting (1-5) -> multiplier on SquishyToy's squish, which is
-// tuned for level 5 (the strongest): it scales the dent's depth, the pull
-// into it, the whole-body squeeze and the flatten together. 3 is the
-// default.
-const POKE_STRENGTH_SCALES = [0.35, 0.55, 0.78, 0.9, 1];
+// Poke strength setting (1-5) -> multiplier on SquishyToy's tuned dent depth.
+// 3 is the tuned default.
+const POKE_STRENGTH_SCALES = [0.5, 0.75, 1, 1.25, 1.5];
 const POKE_STRENGTH_OPTIONS = [1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) }));
 const POKE_DIRECTION_OPTIONS = [
   { value: false, label: 'Push in' },
@@ -596,9 +576,11 @@ function SettingsRow({ label, children }) {
   );
 }
 
-// Settings popup opened from the gear. Tapping outside the card or the X
-// closes it.
+// Settings dropdown opened from the gear: v5's white card hanging under the
+// gear, with no scrim. Tapping anywhere outside it (the gear included) or
+// the ✕ closes it.
 function SettingsModal({
+  top,
   onClose,
   squishSoundEnabled,
   onToggleSquishSound,
@@ -615,44 +597,55 @@ function SettingsModal({
   pokeOutward,
   onChangePokeOutward,
 }) {
+  // REDESIGN_V8: wide, in two columns (sound and display | the squish), so it fits under the gear
+  const sound = (
+    <>
+      <Text style={styles.settingsSection}>SOUND</Text>
+      <SettingsRow label="Squish sound">
+        <ToggleSwitch value={squishSoundEnabled} onToggle={() => onToggleSquishSound(!squishSoundEnabled)} />
+      </SettingsRow>
+      <SettingsRow label="Coin sound">
+        <ToggleSwitch value={coinSoundEnabled} onToggle={() => onToggleCoinSound(!coinSoundEnabled)} />
+      </SettingsRow>
+      <SettingsRow label="Release sound">
+        <ToggleSwitch value={releaseSoundEnabled} onToggle={() => onToggleReleaseSound(!releaseSoundEnabled)} />
+      </SettingsRow>
+
+      <Text style={styles.settingsSection}>DISPLAY</Text>
+      <SettingsRow label="Show FPS">
+        <ToggleSwitch value={showFps} onToggle={() => onToggleShowFps(!showFps)} />
+      </SettingsRow>
+    </>
+  );
+  const squish = (
+    <>
+      <Text style={styles.settingsSection}>SQUISH</Text>
+      <SettingsRow label="Vibration">
+        <ToggleSwitch value={vibrationEnabled} onToggle={() => onToggleVibration(!vibrationEnabled)} />
+      </SettingsRow>
+      <Text style={styles.settingsLabel}>Poke strength</Text>
+      <Segmented options={POKE_STRENGTH_OPTIONS} value={pokeStrength} onChange={onChangePokeStrength} />
+      <Text style={styles.settingsHint}>1 = gentle · 5 = deepest (the vibration follows it)</Text>
+      <Text style={[styles.settingsLabel, styles.settingsLabelSpaced]}>Poke direction</Text>
+      <Segmented options={POKE_DIRECTION_OPTIONS} value={pokeOutward} onChange={onChangePokeOutward} />
+    </>
+  );
   return (
     <View style={styles.settingsOverlay}>
-      <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
-      <View style={styles.settingsCard}>
+      <Pressable silent style={StyleSheet.absoluteFillObject} onPress={onClose} />
+      <View style={[styles.settingsCard, { top }]}>
         <View style={styles.settingsHeader}>
-          <Text style={styles.settingsTitle}>SETTINGS</Text>
-          <TutTarget name="gearClose">
-            <RoundButton size={32} onPress={onClose} hitSlop={10}>
+          <Text style={styles.settingsTitle}>Settings</Text>
+          <View>
+            <RoundButton size={26} onPress={onClose} hitSlop={10}>
               <CloseGlyph />
             </RoundButton>
-          </TutTarget>
+          </View>
         </View>
-
-        <Text style={styles.settingsSection}>SOUND</Text>
-        <SettingsRow label="Squish sound">
-          <ToggleSwitch value={squishSoundEnabled} onToggle={() => onToggleSquishSound(!squishSoundEnabled)} />
-        </SettingsRow>
-        <SettingsRow label="Coin sound">
-          <ToggleSwitch value={coinSoundEnabled} onToggle={() => onToggleCoinSound(!coinSoundEnabled)} />
-        </SettingsRow>
-        <SettingsRow label="Release sound">
-          <ToggleSwitch value={releaseSoundEnabled} onToggle={() => onToggleReleaseSound(!releaseSoundEnabled)} />
-        </SettingsRow>
-
-        <Text style={styles.settingsSection}>DISPLAY</Text>
-        <SettingsRow label="Show FPS">
-          <ToggleSwitch value={showFps} onToggle={() => onToggleShowFps(!showFps)} />
-        </SettingsRow>
-
-        <Text style={styles.settingsSection}>SQUISH</Text>
-        <SettingsRow label="Vibration">
-          <ToggleSwitch value={vibrationEnabled} onToggle={() => onToggleVibration(!vibrationEnabled)} />
-        </SettingsRow>
-        <Text style={styles.settingsLabel}>Squish level</Text>
-        <Segmented options={POKE_STRENGTH_OPTIONS} value={pokeStrength} onChange={onChangePokeStrength} />
-        <Text style={styles.settingsHint}>1 = gentle · 5 = strongest (the vibration follows it)</Text>
-        <Text style={[styles.settingsLabel, styles.settingsLabelSpaced]}>Poke direction</Text>
-        <Segmented options={POKE_DIRECTION_OPTIONS} value={pokeOutward} onChange={onChangePokeOutward} />
+        <View style={styles.settingsCols}>
+          <View style={styles.settingsCol}>{sound}</View>
+          <View style={styles.settingsCol}>{squish}</View>
+        </View>
       </View>
     </View>
   );
@@ -746,25 +739,19 @@ function PunishCard({ children }) {
   );
 }
 
-// 🚨 that won't sit still (the design's hintShake, looped).
+// 🚨 that won't sit still (the design's hintShake, looped): a 360 ms shake,
+// then still for 420 ms. One native loop, the pause a rest in its keyframes
+// (an Animated.delay ran on JS, and held InteractionManager while it did).
+const SIREN_AT = [0, 360 / 780, 1];
+const SIREN_T = [0, 1, 1];
 function Siren() {
-  const t = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(t, { toValue: 1, duration: 360, easing: Easing.linear, useNativeDriver: true }),
-        Animated.delay(420),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [t]);
-  const translateX = t.interpolate({ inputRange: [0, 0.25, 0.75, 1], outputRange: [0, -6, 6, 0] });
-  const rotate = t.interpolate({ inputRange: [0, 0.25, 0.75, 1], outputRange: ['0deg', '-10deg', '10deg', '0deg'] });
+  const t = useKeyLoop(780, { at: SIREN_AT, values: SIREN_T });
+  const translateX = useMemo(() => t.interpolate({ inputRange: [0, 0.25, 0.75, 1], outputRange: [0, -6, 6, 0] }), [t]);
+  const rotate = useMemo(() => t.interpolate({ inputRange: [0, 0.25, 0.75, 1], outputRange: ['0deg', '-10deg', '10deg', '0deg'] }), [t]);
   return <Animated.Text style={[styles.punishEmoji, { transform: [{ translateX }, { rotate }] }]}>🚨</Animated.Text>;
 }
 
-export default function SquishScreen({
+function SquishScreen({
   toy,
   coins = 0,
   onBack,
@@ -788,31 +775,17 @@ export default function SquishScreen({
   pokeOutward = false,
   onChangePokeOutward,
   adsFree = false,
-  // the streak's +5% a day and the tutorial's ×10 (src/progression.js), on
-  // top of a ×N boost
+  // the streak's +5% a day (src/progression.js), on top of a ×N boost
   coinMultiplier = 1,
-  // the guided tutorial is on: its coach marks replace the stage's own hints
-  hideHints = false,
+  // called once the screen's views are built and drawn (App.js: the loading beat over it waits for this)
+  onShown,
 }) {
   const insets = useSafeAreaInsets();
-  // A 3D creature's stage: the free area under the top buttons (the stage
-  // area's size comes from its onLayout). stageBoxRef feeds the touch math
-  // in the PanResponder, which is created once.
-  const [stageArea, setStageArea] = useState(null);
-  const stageTop = insets.top + 14 + GEAR_SIZE + 6;
-  const stageBox = useMemo(
-    () =>
-      stageArea
-        ? { w: stageArea.width, h: Math.max(stageArea.height - stageTop, STAGE_SIZE * 0.6), top: stageTop }
-        : { w: STAGE_SIZE, h: STAGE_SIZE, top: 0 },
-    [stageArea, stageTop]
-  );
-  const stageBoxRef = useRef(stageBox);
-  stageBoxRef.current = toyIs3D(toy) ? stageBox : { w: STAGE_SIZE, h: STAGE_SIZE, top: 0 };
-  const onStageAreaLayout = useCallback((e) => {
-    const { width, height } = e.nativeEvent.layout;
-    setStageArea((prev) => (prev && prev.width === width && prev.height === height ? prev : { width, height }));
-  }, []);
+  const shown = useAfterFirstFrame();
+  useEffect(() => {
+    if (shown && onShown) onShown();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shown]);
   const toyRef = useRef(null);
   const soundRef = useRef(null);
   const coinSoundRef = useRef(null);
@@ -855,19 +828,18 @@ export default function SquishScreen({
   const [bonusMultiplier, setBonusMultiplier] = useState(2);
 
   const wheelAnim = useRef(new Animated.Value(0)).current;
-  const gestureSquishAnim = useLoopAnim({ duration: 1700 });
-  const gestureRotateAnim = useLoopAnim({ duration: 1700 });
-  const gestureTouchAnim = useLoopAnim({ duration: 1700 });
+  // the gesture hints' squish, turn and touch rings, in step: one loop for the three
+  const gestureAnim = useLoopAnim({ duration: 1700 });
   // Fades the on-stage gesture tutorial out the first time the player
   // actually touches the toy — see onPanResponderGrant below. Stays hidden
   // for the rest of this screen's lifetime (hintDismissedRef).
   const gestureHintOpacity = useRef(new Animated.Value(1)).current;
-  const hintDismissedRef = useRef(hideHints);
-  const [showHints, setShowHints] = useState(!hideHints);
+  const hintDismissedRef = useRef(false);
+  const [showHints, setShowHints] = useState(true);
   // The settings pointer fades when the gear is opened, or 4 s after the
   // first squish, then unmounts (its loops stop with it).
   const settingsHintOpacity = useRef(new Animated.Value(1)).current;
-  const [showSettingsHint, setShowSettingsHint] = useState(!hideHints);
+  const [showSettingsHint, setShowSettingsHint] = useState(true);
   const settingsHintTimerRef = useRef(null);
   const settingsPointAnim = useLoopAnim({ duration: 650 });
   const gearPulseAnim = useLoopAnim({ duration: 900 });
@@ -935,14 +907,10 @@ export default function SquishScreen({
     (visible) => {
       sfx.play(visible ? 'popOpen' : 'popClose');
       setSettingsOpen(visible);
-      tutReport({ settingsOpen: visible });
       Animated.timing(wheelAnim, { toValue: visible ? 1 : 0, duration: 400, useNativeDriver: true }).start();
     },
     [wheelAnim]
   );
-  // the tutorial watches the finger and the twist (src/tutorial/steps.js)
-  const rotateAccRef = useRef(0);
-  useEffect(() => () => tutReport({ holdActive: false, settingsOpen: false }), []);
   const openSettings = useCallback(() => {
     dismissSettingsHint();
     setSettingsVisible(true);
@@ -1024,7 +992,6 @@ export default function SquishScreen({
     return earned;
   }, []);
 
-
   // Trips the punishment after too many quick taps. Every rule's tap-rate is
   // expressed as a percentage of its allowance (count / limit); crossing
   // 100% on any rule counts as abuse. Not gated by a cooldown — the alarm
@@ -1071,8 +1038,8 @@ export default function SquishScreen({
   }, []);
 
   const ndcFromLocation = (locationX, locationY) => ({
-    x: (locationX / stageBoxRef.current.w) * 2 - 1,
-    y: -((locationY / stageBoxRef.current.h) * 2 - 1),
+    x: (locationX / STAGE_SIZE) * 2 - 1,
+    y: -((locationY / STAGE_SIZE) * 2 - 1),
   });
 
   const centroidOf = (touches) => {
@@ -1119,7 +1086,6 @@ export default function SquishScreen({
           return;
         }
         gestureModeRef.current = 'poke';
-        tutReport({ holdActive: true });
         const { locationX, locationY } = evt.nativeEvent;
         lastTouch.current = { x: locationX, y: locationY };
         soundAnchorRef.current = { x: locationX, y: locationY };
@@ -1146,12 +1112,6 @@ export default function SquishScreen({
           }
           const c = centroidOf(touches);
           toyRef.current?.orbit(c.x - lastCentroidRef.current.x, c.y - lastCentroidRef.current.y);
-          // the tutorial's rotate step counts the twist (every 20 px)
-          rotateAccRef.current += Math.abs(c.x - lastCentroidRef.current.x) * 1.5;
-          if (rotateAccRef.current - (tutReport.lastRot || 0) >= 20) {
-            tutReport.lastRot = rotateAccRef.current;
-            tutReport({ rotateAcc: Math.round(rotateAccRef.current) });
-          }
           lastCentroidRef.current = c;
           return;
         }
@@ -1186,7 +1146,6 @@ export default function SquishScreen({
         const hadTwo = gestureHadTwoRef.current;
         gestureModeRef.current = 'none';
         gestureHadTwoRef.current = false;
-        tutReport({ holdActive: false });
         // Orbit gestures never earn coins or play the release sound.
         if (mode === 'orbit' || hadTwo) {
           toyRef.current?.endOrbit();
@@ -1223,7 +1182,6 @@ export default function SquishScreen({
       onPanResponderTerminate: () => {
         gestureModeRef.current = 'none';
         gestureHadTwoRef.current = false;
-        tutReport({ holdActive: false });
         toyRef.current?.endOrbit();
         toyRef.current?.pointerUp();
         soundRef.current?.stop();
@@ -1234,15 +1192,15 @@ export default function SquishScreen({
   ).current;
 
   return (
-    <CandyBackground style={styles.container}>
-      <View style={styles.stageArea} onLayout={onStageAreaLayout}>
+    <SkyBackground style={styles.container}>
+      <View style={styles.stageArea}>
         <View style={[styles.topLeft, { top: insets.top + 14 }]}>
-          <TutTarget name="back">
+          <View>
             <RoundButton size={34} onPress={onBack} hitSlop={8}>
               <BackGlyph />
             </RoundButton>
-          </TutTarget>
-          <CoinCounter ref={coinCounterRef} initial={coins} />
+          </View>
+          <CoinCounter ref={coinCounterRef} />
           {showFps && <FpsCounter />}
         </View>
 
@@ -1250,15 +1208,15 @@ export default function SquishScreen({
           <SettingsHint top={insets.top + 14} opacity={settingsHintOpacity} bobAnim={settingsPointAnim} pulseAnim={gearPulseAnim} />
         ) : null}
 
-        <TutTarget name="gear" style={[styles.wheelButton, { top: insets.top + 14 }]}>
+        <View style={[styles.wheelButton, { top: insets.top + 14 }]}>
           <RoundButton size={GEAR_SIZE} onPress={openSettings}>
             <Animated.View style={{ transform: [{ rotate: wheelRotate }] }}>
               <GearIcon />
             </Animated.View>
           </RoundButton>
-        </TutTarget>
+        </View>
 
-        <TutTarget name="stage">
+        <View>
           <SquishStage
             toy={toy}
             toyRef={toyRef}
@@ -1268,35 +1226,34 @@ export default function SquishScreen({
             onRelease={handleToyRelease}
             hintOpacity={gestureHintOpacity}
             showHints={showHints}
-            squishAnim={gestureSquishAnim}
-            rotateAnim={gestureRotateAnim}
-            touchAnim={gestureTouchAnim}
+            squishAnim={gestureAnim}
+            rotateAnim={gestureAnim}
+            touchAnim={gestureAnim}
             dentScale={dentScale}
             dentOutward={pokeOutward}
-            stageBox={stageBox}
           />
-        </TutTarget>
-      </View>
-
-      <BonusBanner endsAt={bonusEndsAt} multiplier={bonusMultiplier} coinAnim={bonusCoinAnim} />
-
-      <View style={styles.bottomPanel}>
-        <View style={styles.bottomRow}>
-          {[2, 3, 4].map((m) => (
-            <WatchAdButton
-              key={m}
-              multiplier={m}
-              onRewardEarned={() => handleAdReward(m)}
-              activeMultiplier={bonusActive ? bonusMultiplier : null}
-              adFree={adsFree}
-              rechargeUntil={boostRechargeUntil}
-            />
-          ))}
         </View>
       </View>
 
-      {/* the same full-width strip as Home's (none with Remove Ads) */}
-      {adsFree ? <View style={{ height: insets.bottom }} /> : <AdStrip />}
+      {/* REDESIGN_V7 step 5: the bonus and the boosts in a panel at the right, no banner ad */}
+      <View style={styles.sidePanel}>
+        <BonusBanner endsAt={bonusEndsAt} multiplier={bonusMultiplier} coinAnim={bonusCoinAnim} />
+
+        <View style={styles.sideInner}>
+          <View style={styles.sideCol}>
+            {[2, 3, 4].map((m) => (
+              <WatchAdButton
+                key={m}
+                multiplier={m}
+                onRewardEarned={() => handleAdReward(m)}
+                activeMultiplier={bonusActive ? bonusMultiplier : null}
+                adFree={adsFree}
+                rechargeUntil={boostRechargeUntil}
+              />
+            ))}
+          </View>
+        </View>
+      </View>
 
       {doubleFlash && (
         <View style={styles.flashOverlay} pointerEvents="none">
@@ -1308,6 +1265,7 @@ export default function SquishScreen({
 
       {settingsOpen && (
         <SettingsModal
+          top={insets.top + 14 + GEAR_SIZE + 8}
           onClose={closeSettings}
           squishSoundEnabled={squishSoundEnabled}
           onToggleSquishSound={onToggleSquishSound}
@@ -1327,22 +1285,44 @@ export default function SquishScreen({
       )}
 
       <PunishmentModal visible={punishOpen} onDismiss={dismissPunishment} adsFree={adsFree} />
-    </CandyBackground>
+    </SkyBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  // Bottom panel no longer carries a tall hint list, so the stage claims
-  // whatever's left instead of a fixed 70/30 split (see bottomPanel below).
+  container: { flex: 1, flexDirection: 'row' },
+  sidePanel: { width: 210, justifyContent: 'center', paddingRight: 14, paddingLeft: 4, gap: 10 },
+  sideInner: { borderRadius: 22, backgroundColor: 'rgba(107,68,38,0.4)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.6)', padding: 10 },
+  // (the boost buttons stretch to fill (flex: 1): a column needs a height for them)
+  sideCol: { gap: 10, height: 230 },
+  // the stage claims whatever the side panel leaves
   stageArea: { flex: 1, position: 'relative', alignItems: 'center', justifyContent: 'center' },
   topLeft: { position: 'absolute', left: 14, flexDirection: 'row', alignItems: 'center', gap: 8, zIndex: 3 },
-  coinPill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 4 },
+  coinPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: 'rgba(90,50,20,0.42)',
+  },
   coinPillText: {
-    color: candyColors.goldText,
+    color: '#ffffff',
     fontFamily: candyFonts.bodyHeavy,
     fontSize: 13,
-    textShadowColor: candyColors.outline,
+    textShadowColor: '#6b4426',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
+  },
+  coinPillEarned: {
+    color: '#ffe9a8',
+    fontFamily: candyFonts.bodyHeavy,
+    fontSize: 9,
+    letterSpacing: 0.8,
+    textShadowColor: '#6b4426',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 1,
   },
@@ -1362,7 +1342,7 @@ const styles = StyleSheet.create({
     height: GEAR_SIZE + 10,
     borderRadius: (GEAR_SIZE + 10) / 2,
     borderWidth: 3,
-    borderColor: '#ff4fbf',
+    borderColor: '#ff8a3d',
   },
   gearHint: { position: 'absolute', right: 10, alignItems: 'flex-end', gap: 4 },
   stage: { width: STAGE_SIZE, height: STAGE_SIZE },
@@ -1378,51 +1358,46 @@ const styles = StyleSheet.create({
   },
   floatingCoin: { position: 'absolute', left: 0, top: 0, flexDirection: 'row', alignItems: 'center', gap: 2, zIndex: 6 },
 
-  settingsOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: candyColors.scrim,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    zIndex: 40,
-  },
+  settingsOverlay: { ...StyleSheet.absoluteFillObject, zIndex: 40 },
   settingsCard: {
-    width: '100%',
-    maxWidth: 360,
-    backgroundColor: candyColors.sheet,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: candyColors.inkSoft,
-    paddingHorizontal: 18,
-    paddingTop: 16,
-    paddingBottom: 20,
-    shadowColor: '#6b3fa0',
+    position: 'absolute',
+    right: GEAR_RIGHT,
+    width: 470,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#6b4426',
+    padding: 14,
+    paddingTop: 10,
+    shadowColor: '#3f2412',
     shadowOpacity: 0.28,
     shadowRadius: 15,
     shadowOffset: { width: 0, height: 12 },
     elevation: 10,
   },
+  settingsCols: { flexDirection: 'row', gap: 22 },
+  settingsCol: { flex: 1 },
   settingsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  settingsTitle: { fontFamily: candyFonts.display, fontSize: 20, letterSpacing: 1, color: candyColors.ink },
+  settingsTitle: { fontFamily: candyFonts.display, fontSize: 15, color: '#5b3418' },
   settingsSection: {
-    marginTop: 14,
-    marginBottom: 4,
-    color: candyColors.goldInk,
+    marginTop: 8,
+    marginBottom: 1,
+    color: '#b08560',
     fontFamily: candyFonts.bodyHeavy,
-    fontSize: 10.5,
-    letterSpacing: 1.4,
+    fontSize: 9.5,
+    letterSpacing: 1.2,
   },
-  settingsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 7 },
-  settingsLabel: { color: candyColors.inkSoft, fontFamily: candyFonts.body, fontSize: 13 },
-  settingsLabelSpaced: { marginTop: 12 },
-  settingsHint: { marginTop: 4, color: candyColors.mutedLight, fontFamily: candyFonts.body, fontSize: 10.5 },
-  segmented: { flexDirection: 'row', gap: 6, marginTop: 8 },
+  settingsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 3 },
+  settingsLabel: { color: '#5b3418', fontFamily: candyFonts.bodyHeavy, fontSize: 12.5 },
+  settingsLabelSpaced: { marginTop: 8 },
+  settingsHint: { marginTop: 3, color: '#b08560', fontFamily: candyFonts.body, fontSize: 9.5 },
+  segmented: { flexDirection: 'row', gap: 4, marginTop: 5 },
   segment: {
     flex: 1,
-    paddingVertical: 9,
-    borderRadius: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#e3cff5',
+    borderColor: '#ecd3b0',
     backgroundColor: '#ffffff',
     alignItems: 'center',
     overflow: 'hidden',
@@ -1431,29 +1406,35 @@ const styles = StyleSheet.create({
   segmentText: { color: candyColors.ink, fontFamily: candyFonts.display, fontSize: 13 },
   segmentTextActive: { color: '#ffffff', textShadowColor: candyColors.pinkRing, textShadowOffset: { width: 0, height: 1.5 }, textShadowRadius: 1 },
 
-  bottomPanel: { backgroundColor: 'rgba(70,10,130,0.35)', borderTopWidth: 2, borderTopColor: 'rgba(255,255,255,0.6)' },
-  bottomRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10 },
   gestureHint: { position: 'absolute', top: '50%', alignItems: 'center', gap: 6 },
   gestureHandWrap: { width: HAND_W, height: HAND_W * HAND_ASPECT },
   touchRing: {
     position: 'absolute',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 3,
-    borderColor: '#ff4fbf',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2.5,
+    borderColor: '#ff6fbd',
   },
-  touchRingInner: { flex: 1, borderRadius: 11, borderWidth: 2, borderColor: '#ffffff' },
-  hintPill: {
-    borderRadius: 14,
-    backgroundColor: 'rgba(60,8,110,0.45)',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.75)',
-    paddingVertical: 4,
-    paddingHorizontal: 11,
+  hintPillText: {
+    color: '#5b3418',
+    fontFamily: candyFonts.bodyHeavy,
+    fontSize: 10,
+    letterSpacing: 1.1,
+    textShadowColor: '#ffffff',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 6,
+    includeFontPadding: false,
   },
-  hintPillText: { color: '#ffffff', fontFamily: candyFonts.display, fontSize: 12, letterSpacing: 0.8, includeFontPadding: false },
-  hintPillSub: { color: '#ffe6fa', fontFamily: candyFonts.bodyHeavy, fontSize: 10.5, marginTop: 1 },
+  hintPillSub: {
+    color: '#6b4426',
+    fontFamily: candyFonts.bodyHeavy,
+    fontSize: 9.5,
+    marginTop: 2,
+    textShadowColor: '#ffffff',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 6,
+  },
   bonusBar: { marginHorizontal: 16, marginBottom: 8, paddingBottom: 4 },
   bonusHidden: { opacity: 0 },
   bonusLip: { position: 'absolute', left: 0, right: 0, top: 4, bottom: 0, borderRadius: 21, backgroundColor: '#9c4d06' },
@@ -1527,7 +1508,7 @@ const styles = StyleSheet.create({
 
   punishOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(74,26,115,0.55)',
+    backgroundColor: 'rgba(50,24,6,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 26,
@@ -1539,7 +1520,7 @@ const styles = StyleSheet.create({
     borderRadius: 31,
     padding: 3,
     backgroundColor: candyColors.danger,
-    shadowColor: '#320064',
+    shadowColor: '#3f2412',
     shadowOffset: { width: 0, height: 14 },
     shadowOpacity: 0.5,
     shadowRadius: 18,
@@ -1560,3 +1541,7 @@ const styles = StyleSheet.create({
   punishButton: { alignSelf: 'stretch' },
   punishButtonText: { fontSize: 15 },
 });
+
+// memo: App re-renders on things the stage doesn't show (sheets, toasts);
+// each of those used to re-render this whole screen
+export default React.memo(SquishScreen);

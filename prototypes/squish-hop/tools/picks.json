@@ -1,0 +1,1629 @@
+[
+ {
+  "n": 1,
+  "room": "living",
+  "news": null,
+  "map": [
+   "...",
+   ".S.",
+   "..G"
+  ],
+  "solution": "DLUURRDD",
+  "sols": 2,
+  "effort": 8.25
+ },
+ {
+  "n": 2,
+  "room": "living",
+  "news": null,
+  "map": [
+   "G...",
+   "S...",
+   "...."
+  ],
+  "solution": "DRURDRUULLL",
+  "sols": 2,
+  "effort": 11.5
+ },
+ {
+  "n": 3,
+  "room": "living",
+  "news": null,
+  "map": [
+   "##..",
+   ".G..",
+   "....",
+   "S..."
+  ],
+  "solution": "RRRUUULDDLLUR",
+  "sols": 1,
+  "effort": 14.5
+ },
+ {
+  "n": 4,
+  "room": "living",
+  "news": null,
+  "map": [
+   ".....",
+   ".....",
+   "#.S#.",
+   "#G..."
+  ],
+  "solution": "DRRUUULDLULLDRDD",
+  "sols": 2,
+  "effort": 20.5
+ },
+ {
+  "n": 5,
+  "room": "living",
+  "news": null,
+  "map": [
+   "..G..",
+   "..##.",
+   ".....",
+   "..S.."
+  ],
+  "solution": "LLUUURDDRRDRUUULL",
+  "sols": 1,
+  "effort": 19.75
+ },
+ {
+  "n": 6,
+  "room": "living",
+  "news": null,
+  "map": [
+   ".....",
+   ".#.S.",
+   ".#G..",
+   ".##..",
+   "....."
+  ],
+  "solution": "URDDLDRDLLLLUUUURRDD",
+  "sols": 1,
+  "effort": 29
+ },
+ {
+  "n": 7,
+  "room": "living",
+  "news": null,
+  "map": [
+   "#....",
+   ".....",
+   ".##..",
+   ".G...",
+   "...S."
+  ],
+  "solution": "RULURUULDLULDLDDDRRUL",
+  "sols": 1,
+  "effort": 32
+ },
+ {
+  "n": 8,
+  "room": "living",
+  "news": "friends",
+  "map": [
+   "....#",
+   ".##..",
+   ".G#..",
+   "S.F..",
+   "....."
+  ],
+  "solution": "DRURDRRULURULULLLDDR",
+  "sols": 1,
+  "effort": 29
+ },
+ {
+  "n": 9,
+  "room": "living",
+  "news": null,
+  "map": [
+   "##F...",
+   "##....",
+   ".G.S..",
+   "...#..",
+   "......"
+  ],
+  "solution": "LUURDRURDDLDRDLLLULDLUUR",
+  "sols": 1,
+  "effort": 43.75
+ },
+ {
+  "n": 10,
+  "room": "living",
+  "news": null,
+  "map": [
+   "FF...#",
+   "..G#..",
+   "..##..",
+   "......",
+   "....S."
+  ],
+  "solution": "RULURULULLLLDDDDRRRULLUUR",
+  "sols": 1,
+  "effort": 32.75
+ },
+ {
+  "n": 11,
+  "room": "living",
+  "news": null,
+  "map": [
+   ".....",
+   ".....",
+   "F.#..",
+   ".##..",
+   "F#GS.",
+   "....."
+  ],
+  "solution": "DRUULURUULDLULLDRDLDDDRRU",
+  "sols": 1,
+  "effort": 46
+ },
+ {
+  "n": 12,
+  "room": "living",
+  "news": null,
+  "map": [
+   "..F...",
+   "......",
+   ".###..",
+   ".##G..",
+   ".##.S.",
+   "......"
+  ],
+  "solution": "DRUULURUULDLULDLULDDDDDRRRUU",
+  "sols": 1,
+  "effort": 72.25
+ },
+ {
+  "n": 13,
+  "room": "living",
+  "news": null,
+  "map": [
+   "F.....",
+   "..##..",
+   "..##..",
+   "..##..",
+   "..SG..",
+   "F....."
+  ],
+  "solution": "DLLURULURULURRRRRDLDRDLDRDLLU",
+  "sols": 1,
+  "effort": 93
+ },
+ {
+  "n": 14,
+  "room": "living",
+  "news": null,
+  "map": [
+   "....##",
+   "....#G",
+   ".#.FF.",
+   ".#.S..",
+   "......",
+   "......"
+  ],
+  "solution": "LURUULDLULDDDDDRURDRURDRUULURU",
+  "sols": 1,
+  "effort": 280.75
+ },
+ {
+  "n": 15,
+  "room": "kitchen",
+  "news": "arrows",
+  "map": [
+   "....v",
+   ".^S..",
+   "..v.#",
+   "v..#G",
+   "....."
+  ],
+  "solution": "URRDLDLDLUUULDDDDRRRRU",
+  "sols": 1,
+  "effort": 27.25
+ },
+ {
+  "n": 16,
+  "room": "kitchen",
+  "news": null,
+  "map": [
+   ".FFS.",
+   ".#.<.",
+   ".G#^.",
+   ".....",
+   "^...."
+  ],
+  "solution": "RDDDDLLLLURRRUULULLDDR",
+  "sols": 1,
+  "effort": 35
+ },
+ {
+  "n": 17,
+  "room": "kitchen",
+  "news": null,
+  "map": [
+   ".....",
+   "...G.",
+   "..##v",
+   ".F..v",
+   ".#...",
+   ".S..."
+  ],
+  "solution": "LUUUUURRRRDDDDDLLURULLUURR",
+  "sols": 1,
+  "effort": 48.25
+ },
+ {
+  "n": 18,
+  "room": "kitchen",
+  "news": null,
+  "map": [
+   "..G..",
+   ".##..",
+   "....^",
+   ".S#.^",
+   ".....",
+   "....."
+  ],
+  "solution": "LDDRURDRRULURUUULDDLLLUURR",
+  "sols": 1,
+  "effort": 54.5
+ },
+ {
+  "n": 19,
+  "room": "kitchen",
+  "news": null,
+  "map": [
+   "G....#",
+   "#^...#",
+   "....S.",
+   "..<..v",
+   ".>^..v",
+   "......"
+  ],
+  "solution": "RDDDLUULDDLLLURRULLURRRURULLDLUL",
+  "sols": 1,
+  "effort": 121
+ },
+ {
+  "n": 20,
+  "room": "kitchen",
+  "news": null,
+  "map": [
+   ".>.F..",
+   ".v.F.<",
+   "..>>..",
+   "S...<.",
+   "..<<##",
+   "....G#"
+  ],
+  "solution": "UUURRRRRDLLLLDDRURRRDLLDLLLDRRRR",
+  "sols": 1,
+  "effort": 63.5
+ },
+ {
+  "n": 21,
+  "room": "kitchen",
+  "news": null,
+  "map": [
+   "....##",
+   ".^<S#G",
+   "...v..",
+   "......",
+   ".>...F",
+   "......"
+  ],
+  "solution": "ULDLULDDRRRDLLLDDRURDRURDRUULURU",
+  "sols": 1,
+  "effort": 109.25
+ },
+ {
+  "n": 22,
+  "room": "kitchen",
+  "news": null,
+  "map": [
+   "##....",
+   "#G..^.",
+   "..S.^.",
+   "^.v..v",
+   "...>..",
+   "...<.."
+  ],
+  "solution": "UURDDDLDRRUUUURDDDDDLLLLLURULURU",
+  "sols": 1,
+  "effort": 113.5
+ },
+ {
+  "n": 23,
+  "room": "kitchen",
+  "news": null,
+  "map": [
+   "..v..#",
+   ".#...#",
+   ".<<S..",
+   "......",
+   ".v.G..",
+   "...^..",
+   "..^..."
+  ],
+  "solution": "LLLUURRDRURDDRDDDDLLLUULDDLUUURRRRDDLU",
+  "sols": 1,
+  "effort": 186.25
+ },
+ {
+  "n": 24,
+  "room": "kitchen",
+  "news": null,
+  "map": [
+   "F.<..#",
+   "..>.^.",
+   ".^..>.",
+   "v.^.F.",
+   "G.<...",
+   "#..S..",
+   "#>...."
+  ],
+  "solution": "LLDRRRRULURULLDLLURULURRDRRULULLLLDDDD",
+  "sols": 1,
+  "effort": 255
+ },
+ {
+  "n": 25,
+  "room": "kitchen",
+  "news": null,
+  "map": [
+   "v.S..##",
+   ".....G#",
+   ".<<<...",
+   "...>>>.",
+   ".^.<...",
+   "..F...."
+  ],
+  "solution": "LLDRRRURDDLLLLDDDRRRRRRULLLLLURRRRRULU",
+  "sols": 1,
+  "effort": 89.25
+ },
+ {
+  "n": 26,
+  "room": "kitchen",
+  "news": null,
+  "map": [
+   ".......",
+   "..^.S..",
+   ".v^....",
+   "...#...",
+   "...G..#",
+   "^.<.<.#"
+  ],
+  "solution": "URRDLDRDLDDLLLLLUUUUURDDDDRUUUURDDRDDL",
+  "sols": 1,
+  "effort": 289
+ },
+ {
+  "n": 27,
+  "room": "kitchen",
+  "news": null,
+  "map": [
+   "...>..",
+   ".##...",
+   ".#....",
+   ".G.S>.",
+   ".<....",
+   "....<.",
+   ".<...."
+  ],
+  "solution": "DRURDDDLULDLLLURRULLUUUURRRRRDDLULDLDL",
+  "sols": 1,
+  "effort": 352.5
+ },
+ {
+  "n": 28,
+  "room": "kitchen",
+  "news": null,
+  "map": [
+   ".....v",
+   "F##...",
+   "...G^.",
+   ".>....",
+   ".<.F.^",
+   "...S..",
+   "..<..."
+  ],
+  "solution": "DRRULURULLDLDDLLURULURRULLUURRRRRDDLULD",
+  "sols": 1,
+  "effort": 454.75
+ },
+ {
+  "n": 29,
+  "room": "kitchen",
+  "news": null,
+  "map": [
+   "#G.<...",
+   "#F..^..",
+   "....S..",
+   ".....>.",
+   "....<..",
+   ".#..v..",
+   "...<..."
+  ],
+  "solution": "RRUULDLULLDRDLDRRRRDDDLUULLLDRRDLLLLUURULURUU",
+  "sols": 1,
+  "effort": 1193.75
+ },
+ {
+  "n": 30,
+  "room": "kitchen",
+  "news": null,
+  "map": [
+   ".......",
+   ".S.....",
+   "..<v<..",
+   ".##G...",
+   "......v",
+   ".......",
+   "..<...."
+  ],
+  "solution": "LURRRRRRDDDDDDLLLLLLURRRRRUUUULLLDLLDDRRRRUULD",
+  "sols": 1,
+  "effort": 2881.75
+ },
+ {
+  "n": 31,
+  "room": "bath",
+  "news": "bubbles",
+  "map": [
+   "..G..",
+   "o...o",
+   ".o..S",
+   ".o.o#",
+   ".o..#"
+  ],
+  "solution": "ULDDDLLURULURDRU",
+  "sols": 1,
+  "effort": 17.75
+ },
+ {
+  "n": 32,
+  "room": "bath",
+  "news": null,
+  "map": [
+   "....#",
+   "G.SFF",
+   "#..<o",
+   "...^o",
+   ".o.o."
+  ],
+  "solution": "URDRDLLURRRULLUULD",
+  "sols": 1,
+  "effort": 25
+ },
+ {
+  "n": 33,
+  "room": "bath",
+  "news": null,
+  "map": [
+   "...oG#",
+   "..^.##",
+   "......",
+   "....>.",
+   "S..o..",
+   "...o.."
+  ],
+  "solution": "DRRRRULLLULUUURDDRDRRRULLULUR",
+  "sols": 1,
+  "effort": 65.5
+ },
+ {
+  "n": 34,
+  "room": "bath",
+  "news": null,
+  "map": [
+   ".....<",
+   ".ooF..",
+   "o.>.S.",
+   "v.....",
+   "G#.v.v",
+   "##...."
+  ],
+  "solution": "RUULDLULDRDRRDDLULDLUULUULDDD",
+  "sols": 1,
+  "effort": 69
+ },
+ {
+  "n": 35,
+  "room": "bath",
+  "news": null,
+  "map": [
+   "......",
+   "..^##.",
+   "...#G.",
+   ".o.S>.",
+   ".o..<o",
+   "..^..."
+  ],
+  "solution": "RRDLULDLUUULDLUUUUURDRURRRDDL",
+  "sols": 1,
+  "effort": 56
+ },
+ {
+  "n": 36,
+  "room": "bath",
+  "news": null,
+  "map": [
+   "....G#",
+   "....##",
+   "...oF.",
+   "...F..",
+   "....o.",
+   ".ooS.."
+  ],
+  "solution": "LURRRURDRUUULLDLLURULURRDRUR",
+  "sols": 1,
+  "effort": 89.5
+ },
+ {
+  "n": 37,
+  "room": "bath",
+  "news": null,
+  "map": [
+   ".v..##",
+   "......",
+   ".o...<",
+   "voS...",
+   "......",
+   "...<..",
+   ".G#.o."
+  ],
+  "solution": "LDRRRUULLUURDRURDRRDLDRDLDRDLULLLDR",
+  "sols": 1,
+  "effort": 152.5
+ },
+ {
+  "n": 38,
+  "room": "bath",
+  "news": null,
+  "map": [
+   ".o>o..",
+   ".oS...",
+   "....>.",
+   "..>..F",
+   ".o....",
+   ".##^..",
+   ".G#..."
+  ],
+  "solution": "LURRRDLLDLLLDRRRRURDDLDRDLLUULLDDR",
+  "sols": 1,
+  "effort": 172.25
+ },
+ {
+  "n": 39,
+  "room": "bath",
+  "news": null,
+  "map": [
+   "....o..",
+   ".oS....",
+   "^....o.",
+   ".#G..o.",
+   ".##..o.",
+   ".....^."
+  ],
+  "solution": "URRRDDDDDLULLDRDLDRDLLLLUUUUURDRD",
+  "sols": 1,
+  "effort": 227.25
+ },
+ {
+  "n": 40,
+  "room": "bath",
+  "news": null,
+  "map": [
+   "FS.v.o.",
+   "F..>...",
+   ".o...>.",
+   "..^...o",
+   "...G#..",
+   ".o.##.."
+  ],
+  "solution": "LDRRURDRURDLDRDDLUULULDLULDRDLDRUR",
+  "sols": 1,
+  "effort": 74.75
+ },
+ {
+  "n": 41,
+  "room": "bath",
+  "news": null,
+  "map": [
+   "..>.o.",
+   "...##o",
+   ".S..#.",
+   ".....o",
+   ".v.o..",
+   "G.....",
+   "..^..."
+  ],
+  "solution": "LUURDRURRDDDDLULDLUURULULDLLDRDDLU",
+  "sols": 1,
+  "effort": 241.75
+ },
+ {
+  "n": 42,
+  "room": "bath",
+  "news": null,
+  "map": [
+   "S..oo.",
+   "......",
+   ".G.<..",
+   "F##o..",
+   "..o...",
+   "......",
+   "....^."
+  ],
+  "solution": "RRRDDDDDDLUUUUULLLLDDDDDRRRULLURULL",
+  "sols": 1,
+  "effort": 337.25
+ },
+ {
+  "n": 43,
+  "room": "bath",
+  "news": null,
+  "map": [
+   "..vo...",
+   "...>>..",
+   ".......",
+   ">...^..",
+   "..>...S",
+   "...o.oG",
+   "..#..##"
+  ],
+  "solution": "UUUULLLDRRRDDDLUULDLULUULDDDRDLDDRURURDRUR",
+  "sols": 1,
+  "effort": 616.5
+ },
+ {
+  "n": 44,
+  "room": "bath",
+  "news": null,
+  "map": [
+   "....F..",
+   "o.^.^#.",
+   ".oF.v#.",
+   ".^.S...",
+   "o.....o",
+   "v......",
+   "....G.."
+  ],
+  "solution": "URDRDLLLUUUURDRURRDDDDDLULLLLUUUULDDDDRRRR",
+  "sols": 1,
+  "effort": 1145
+ },
+ {
+  "n": 45,
+  "room": "bath",
+  "news": null,
+  "map": [
+   ".v.v...",
+   ".o.o.#.",
+   "S.....<",
+   "..#.<..",
+   "..G...v",
+   "....o..",
+   "...o.<."
+  ],
+  "solution": "UURDRUURDRUURRDDLDRDDDLLLLLUUURDDRRRULULDL",
+  "sols": 1,
+  "effort": 152.5
+ },
+ {
+  "n": 46,
+  "room": "bath",
+  "news": null,
+  "map": [
+   ">.....#",
+   ".....o#",
+   ".<..S.G",
+   ".....Fv",
+   "..>.o..",
+   ".....<.",
+   ".o....."
+  ],
+  "solution": "DLULDDRRURDDDLULDLULDLURULURULUURDRURDRURDR",
+  "sols": 1,
+  "effort": 4784.25
+ },
+ {
+  "n": 47,
+  "room": "bed",
+  "news": "piles",
+  "map": [
+   ".S...",
+   "o..v.",
+   ".Do.#",
+   "oD.##",
+   "....G"
+  ],
+  "solution": "LDDRUUURURRDLDLDRDRR",
+  "sols": 1,
+  "effort": 25.75
+ },
+ {
+  "n": 48,
+  "room": "bed",
+  "news": null,
+  "map": [
+   "G.<v.",
+   "#DD..",
+   "vD^D.",
+   "..S.<",
+   "##.o."
+  ],
+  "solution": "DRULURUULDDLULDLDRUURULL",
+  "sols": 1,
+  "effort": 60.5
+ },
+ {
+  "n": 49,
+  "room": "bed",
+  "news": null,
+  "map": [
+   ".v..##",
+   ".D.o##",
+   "^D<vG.",
+   ".o..o.",
+   "o...o.",
+   "S....."
+  ],
+  "solution": "UUUURDDDDRRRRULLUULURURDDRUL",
+  "sols": 1,
+  "effort": 135
+ },
+ {
+  "n": 50,
+  "room": "bed",
+  "news": null,
+  "map": [
+   ".v..##",
+   ".v^...",
+   "S.....",
+   ".DvD<#",
+   ".o.D.#",
+   ".^.^.G"
+  ],
+  "solution": "UURDDDLDDRURDDRUUULUURDRRDLDLDRDR",
+  "sols": 1,
+  "effort": 100.75
+ },
+ {
+  "n": 51,
+  "room": "bed",
+  "news": null,
+  "map": [
+   "......",
+   "..>...",
+   "..>...",
+   "..DD..",
+   "##So.G",
+   "##...."
+  ],
+  "solution": "DRULURDLLLURULURRDRURRDLDRDLDDRU",
+  "sols": 1,
+  "effort": 145.25
+ },
+ {
+  "n": 52,
+  "room": "bed",
+  "news": null,
+  "map": [
+   "..o...",
+   "....<.",
+   "#.D.>.",
+   ".^D^..",
+   ".#DS..",
+   "..D>G#"
+  ],
+  "solution": "RRULLURRUULDLULLDRRDDDDLLUURURDDDRR",
+  "sols": 1,
+  "effort": 265.5
+ },
+ {
+  "n": 53,
+  "room": "bed",
+  "news": null,
+  "map": [
+   "...o..",
+   "...>..",
+   "..GDD.",
+   ".^...o",
+   ".<oS..",
+   "...v##",
+   "....##"
+  ],
+  "solution": "ULDRDLLLURULURULUURDRURRDDDLUULURDLL",
+  "sols": 1,
+  "effort": 425
+ },
+ {
+  "n": 54,
+  "room": "bed",
+  "news": null,
+  "map": [
+   "##.v..",
+   "#>D..G",
+   ".DDS..",
+   ".^.v..",
+   ".o<..<",
+   "......",
+   "...^.."
+  ],
+  "solution": "LLLDRUURURDLDDRDLLDDRURDRURDRUULURULUURD",
+  "sols": 1,
+  "effort": 450.5
+ },
+ {
+  "n": 55,
+  "room": "bed",
+  "news": "ordered",
+  "map": [
+   "1S.o3G",
+   ".2o.D.",
+   "...>.#",
+   ".#..o.",
+   "......"
+  ],
+  "solution": "LDRDLDDRRRRRULLUURDLDRURU",
+  "sols": 1,
+  "effort": 58.5
+ },
+ {
+  "n": 56,
+  "room": "bed",
+  "news": null,
+  "map": [
+   "...o<<.",
+   ".2o..G.",
+   "1...##.",
+   "o..S#..",
+   "D<...^.",
+   "DDD...3"
+  ],
+  "solution": "LDDLLUUUURDDDDLDRRRURDRRULURUUULLLDRURR",
+  "sols": 1,
+  "effort": 1018
+ },
+ {
+  "n": 57,
+  "room": "bed",
+  "news": null,
+  "map": [
+   "..G<3.",
+   "..o...",
+   "..2...",
+   "..o..<",
+   "..SDD^",
+   "1.v...",
+   "...###"
+  ],
+  "solution": "RRDRUULDLDLDLLURULURRULLLUURDRRDRUULLL",
+  "sols": 1,
+  "effort": 568.75
+ },
+ {
+  "n": 58,
+  "room": "bed",
+  "news": null,
+  "map": [
+   ".3....",
+   ".v21.^",
+   "......",
+   "...^..",
+   "..DDS.",
+   "G#>D.4",
+   "##...."
+  ],
+  "solution": "RUUUULLDRDDLULUULLDRDLDRRDRDRRDLLLURULLLD",
+  "sols": 1,
+  "effort": 988.5
+ },
+ {
+  "n": 59,
+  "room": "bed",
+  "news": null,
+  "map": [
+   "##.3...",
+   "#..2D<.",
+   "G..>...",
+   "..D..o.",
+   "1<.....",
+   ">o..S.o",
+   ".....^."
+  ],
+  "solution": "DLLLLURRURULLDLLURRURRUURRDDDDDLUUUULLULDLDL",
+  "sols": 1,
+  "effort": 1286.75
+ },
+ {
+  "n": 60,
+  "room": "bed",
+  "news": null,
+  "map": [
+   ".....##",
+   "..oS...",
+   ".<^.<^D",
+   "1..DD.D",
+   "2..^..3",
+   "..^G..^",
+   "..o.o.."
+  ],
+  "solution": "URDDLLULLDRDLDDDDRRRRUUUULURDDLLLLLDDRURURDRDLL",
+  "sols": 1,
+  "effort": 235
+ },
+ {
+  "n": 61,
+  "room": "bed",
+  "news": null,
+  "map": [
+   "..o12..",
+   "..o..<3",
+   "S......",
+   ".....#.",
+   ".DDo...",
+   "..#....",
+   "....^4G"
+  ],
+  "solution": "UURRRRRDLLLLDDLDRRRRDDLULDLLLURURUURDRURRDDDD",
+  "sols": 1,
+  "effort": 3879.25
+ },
+ {
+  "n": 62,
+  "room": "bed",
+  "news": null,
+  "map": [
+   ".>....<",
+   ".#.<...",
+   "......3",
+   ".D..v.^",
+   "..2DD.^",
+   ".....1.",
+   "#GS..>."
+  ],
+  "solution": "RRRRULLLLURRRRUUUULDDDLDLULLLUUURRRRDDLULDLDDLDRD",
+  "sols": 1,
+  "effort": 16297.25
+ },
+ {
+  "n": 63,
+  "room": "yard",
+  "news": null,
+  "map": [
+   ".....F",
+   "o.<^..",
+   "o#>...",
+   ".v..##",
+   ".FS...",
+   "G#.F.F"
+  ],
+  "solution": "DRRRULLULURRRUULDLULDLULDRDLD",
+  "sols": 1,
+  "effort": 33.5
+ },
+ {
+  "n": 64,
+  "room": "yard",
+  "news": null,
+  "map": [
+   ".v....",
+   ".o.##.",
+   "..o#Gv",
+   "S.Do..",
+   ">...1.",
+   "3.2..."
+  ],
+  "solution": "UUURDDRUURRRDDDDDLULDLLLURRURU",
+  "sols": 1,
+  "effort": 90.25
+ },
+ {
+  "n": 65,
+  "room": "yard",
+  "news": null,
+  "map": [
+   "##G#FF",
+   ".DDvF^",
+   "^o.Do.",
+   ".<>.S.",
+   "......",
+   ".o...<"
+  ],
+  "solution": "RDDLULDLLURRURURUULDLDLULDLUURRU",
+  "sols": 1,
+  "effort": 96.5
+ },
+ {
+  "n": 66,
+  "room": "yard",
+  "news": null,
+  "map": [
+   "#.2...",
+   "#G.<>.",
+   "..1...",
+   "^D^...",
+   ">D.S..",
+   ".<oo..",
+   "##...."
+  ],
+  "solution": "DLULDLURULURDRURDRDDDRUUUULURULLDLULD",
+  "sols": 1,
+  "effort": 186.25
+ },
+ {
+  "n": 67,
+  "room": "yard",
+  "news": null,
+  "map": [
+   "......",
+   ".##G<o",
+   ".#>...",
+   "....<.",
+   "....o.",
+   ".#So.v",
+   "......"
+  ],
+  "solution": "URDLLLUURULUUURRRRRDDDDDLUULLURRUL",
+  "sols": 1,
+  "effort": 161.75
+ },
+ {
+  "n": 68,
+  "room": "yard",
+  "news": null,
+  "map": [
+   "......v",
+   "1..vo..",
+   ".S.<o.2",
+   "..D....",
+   "G>.##..",
+   "#...4<3"
+  ],
+  "solution": "LUURDRURDDLDRRURRDLDRDLDRDLLLLLURULLD",
+  "sols": 1,
+  "effort": 192.5
+ },
+ {
+  "n": 69,
+  "room": "yard",
+  "news": null,
+  "map": [
+   ".....o.",
+   "oo.<.GF",
+   "..DD.#o",
+   ".#.oS.<",
+   "^#.FFD.",
+   ".....^."
+  ],
+  "solution": "LURULURRRDDLDRDLULDLULDLLUUUURDRRRUR",
+  "sols": 1,
+  "effort": 449
+ },
+ {
+  "n": 70,
+  "room": "yard",
+  "news": null,
+  "map": [
+   "....o..",
+   ".###G<D",
+   ">....oD",
+   "....oo.",
+   "32<..o.",
+   "S1....."
+  ],
+  "solution": "RRRRRRULLLLLURRRRUUULLLLLDDRRRRRULL",
+  "sols": 1,
+  "effort": 119.25
+ },
+ {
+  "n": 71,
+  "room": "yard",
+  "news": null,
+  "map": [
+   "..F....",
+   "...#..o",
+   "^.G##..",
+   "^...F..",
+   "....v..",
+   ">o.....",
+   "...S..."
+  ],
+  "solution": "LLLURRULLLUUUURDDDRRRDDDRRULURULURULDLULLDD",
+  "sols": 1,
+  "effort": 548
+ },
+ {
+  "n": 72,
+  "room": "yard",
+  "news": null,
+  "map": [
+   ">v.....",
+   "o....v.",
+   ".......",
+   ">....o.",
+   ".D>..##",
+   ">.S.v#G",
+   "......."
+  ],
+  "solution": "RDLLLURULURDRRULULLURDRURDDRUURRDLDRDLDDDRRU",
+  "sols": 1,
+  "effort": 956.75
+ },
+ {
+  "n": 73,
+  "room": "yard",
+  "news": null,
+  "map": [
+   ".F<<..",
+   "o...>^",
+   "..D.SF",
+   "##Dv..",
+   "G.D.Fo",
+   "..oo..",
+   "F...<."
+  ],
+  "solution": "RDDDLLLLLURRUULDLUURURRULLLLLDRURDDDLL",
+  "sols": 1,
+  "effort": 758
+ },
+ {
+  "n": 74,
+  "room": "yard",
+  "news": null,
+  "map": [
+   "..##..",
+   "^.1.<.",
+   "..D.v.",
+   ".SD^>.",
+   "...G.2",
+   "o...3.",
+   ".o...."
+  ],
+  "solution": "LUUURDDRDRURDRUUULDLLDDDDLULDRRRRUULDLU",
+  "sols": 1,
+  "effort": 1476
+ },
+ {
+  "n": 75,
+  "room": "yard",
+  "news": null,
+  "map": [
+   "##....",
+   "F.vS..",
+   "..>.>F",
+   "..<..o",
+   ".v.v^.",
+   "...oF.",
+   ".G...."
+  ],
+  "solution": "RRULLLDDRRRDDDLUUULDDLUUULUULDDDRDLDR",
+  "sols": 1,
+  "effort": 103.5
+ },
+ {
+  "n": 76,
+  "room": "yard",
+  "news": null,
+  "map": [
+   "......<",
+   "2..#...",
+   "..#G...",
+   ".....D.",
+   ".<vo..S",
+   "....o..",
+   ".....1."
+  ],
+  "solution": "DDLUUURUUULDDDLDDLUULDDDLLURULURULUURDRURRDDL",
+  "sols": 1,
+  "effort": 1733
+ },
+ {
+  "n": 77,
+  "room": "yard",
+  "news": null,
+  "map": [
+   ".o.>...",
+   ".>....<",
+   ".......",
+   ".o>DDo.",
+   "vo.....",
+   "....D.G",
+   "..o.S##"
+  ],
+  "solution": "UUUUULURRRDLDRDLLULDRDLDLUURULDDDDDDRRURRURD",
+  "sols": 1,
+  "effort": 3089.25
+ },
+ {
+  "n": 78,
+  "room": "yard",
+  "news": null,
+  "map": [
+   "..<o421",
+   "o.o....",
+   "..v...^",
+   "..D..S.",
+   "..D>...",
+   "#....#3",
+   "G..<..."
+  ],
+  "solution": "RUUULDDLDLULDDRRRRDDLLULDLUUULUURRULLLDDDRDDL",
+  "sols": 1,
+  "effort": 2331.25
+ },
+ {
+  "n": 79,
+  "room": "yard",
+  "news": null,
+  "map": [
+   "....S>.",
+   ".......",
+   "...>...",
+   "F.F.o<.",
+   "..o.##.",
+   "v....G.",
+   ".....F."
+  ],
+  "solution": "LLLLDDDDDDRUUUUURRRRURDDDDDDLLLLUUURRRDLDDRR",
+  "sols": 1,
+  "effort": 4109.25
+ },
+ {
+  "n": 80,
+  "room": "yard",
+  "news": null,
+  "map": [
+   ".......",
+   ".......",
+   "..S..v.",
+   ".1...2.",
+   "...o...",
+   ".vD>.3#",
+   "......G"
+  ],
+  "solution": "DRURDDLDRRDLLULDLUURULURULURRDRURDRURDDLDRDLDDR",
+  "sols": 1,
+  "effort": 11615
+ },
+ {
+  "n": 81,
+  "room": "dance",
+  "news": "beats",
+  "map": [
+   "..b.#",
+   "...aG",
+   ".a#..",
+   ".....",
+   "...S."
+  ],
+  "solution": "RUULDLDLLURULUURDRURDR",
+  "sols": 1,
+  "effort": 28
+ },
+ {
+  "n": 82,
+  "room": "dance",
+  "news": null,
+  "map": [
+   "..#.b",
+   "o..oa",
+   "..bD.",
+   "..SDb",
+   "ac.G#"
+  ],
+  "solution": "DLLURULURDRDRDRUUULDDD",
+  "sols": 1,
+  "effort": 56.75
+ },
+ {
+  "n": 83,
+  "room": "dance",
+  "news": null,
+  "map": [
+   "#2..c",
+   "G<1a.",
+   "#..S.",
+   "b...o",
+   "....."
+  ],
+  "solution": "RDLULDLLURURURRULLLDL",
+  "sols": 1,
+  "effort": 37
+ },
+ {
+  "n": 84,
+  "room": "dance",
+  "news": null,
+  "map": [
+   ".F.c..",
+   "aFDb#G",
+   "aFD.o.",
+   "o.D.F.",
+   ".c#Sc.",
+   "..#>.."
+  ],
+  "solution": "DRRULURULDLUUULLDRDLDDRUURUURURRD",
+  "sols": 1,
+  "effort": 247
+ },
+ {
+  "n": 85,
+  "room": "dance",
+  "news": null,
+  "map": [
+   "c...##",
+   "..c.G#",
+   ".c.<..",
+   ".Sa.3^",
+   "..Db.2",
+   ".1>.a."
+  ],
+  "solution": "LDDRURDRRRULLLURRRULLLLLUURDRURDR",
+  "sols": 1,
+  "effort": 93
+ },
+ {
+  "n": 86,
+  "room": "dance",
+  "news": null,
+  "map": [
+   "G#..S.",
+   ".cc...",
+   ".b...o",
+   ".D....",
+   ">D....",
+   "b.oo..",
+   "##...."
+  ],
+  "solution": "RDDDDDLUUUUULULDDRDDDLUULDDLURULURULU",
+  "sols": 1,
+  "effort": 479
+ },
+ {
+  "n": 87,
+  "room": "dance",
+  "news": null,
+  "map": [
+   "v...b.",
+   "F##.S.",
+   ".G#...",
+   "......",
+   "co....",
+   ".a.c..",
+   "b.o.F."
+  ],
+  "solution": "URDDDDDDLLLLURRRRULLLURRRRULUULLLDDR",
+  "sols": 1,
+  "effort": 427.25
+ },
+ {
+  "n": 88,
+  "room": "dance",
+  "news": null,
+  "map": [
+   "..ob...",
+   "4b3.cab",
+   "..a...2",
+   ".cDDDo.",
+   "G#^coS1",
+   "##....."
+  ],
+  "solution": "RDLLURUUULLDRDLDLDDLUURULDLUURRULLDDDD",
+  "sols": 1,
+  "effort": 720.5
+ },
+ {
+  "n": 89,
+  "room": "dance",
+  "news": null,
+  "map": [
+   "...a...",
+   "..^.^.<",
+   "21.....",
+   "..DbS..",
+   "G#..3.a",
+   "##ba..."
+  ],
+  "solution": "LLULLUURDRURDDRUURRDLDRDLDRDLLULDLUULLD",
+  "sols": 1,
+  "effort": 456.5
+ },
+ {
+  "n": 90,
+  "room": "dance",
+  "news": null,
+  "map": [
+   "..o....",
+   "c#a...S",
+   "..D^.Dc",
+   "^..##..",
+   ".o.bG..",
+   ".......",
+   ".....b."
+  ],
+  "solution": "ULDDRDDDDLLLLLLUUUUUURRRDDRDDDLLLLUURRULDDDRR",
+  "sols": 1,
+  "effort": 276
+ },
+ {
+  "n": 91,
+  "room": "dance",
+  "news": null,
+  "map": [
+   ".......",
+   ".>.....",
+   "1...v..",
+   ".S..G#.",
+   "v...##.",
+   ".a....2",
+   "..boc.."
+  ],
+  "solution": "LDDDRUURUULLUURDRURRRRDDDDDDLULDLURUUUURRDLD",
+  "sols": 1,
+  "effort": 1694.25
+ },
+ {
+  "n": 92,
+  "room": "dance",
+  "news": null,
+  "map": [
+   "###a<.a",
+   "c4<..b.",
+   "DD...S.",
+   "..G.D1.",
+   ".3.b.c.",
+   ".....o.",
+   "2..o..."
+  ],
+  "solution": "RDDDDLUULUURRULLLDDDRDDDLLLURRRULLLUURRULLDRDR",
+  "sols": 1,
+  "effort": 5881.5
+ },
+ {
+  "n": 93,
+  "room": "dance",
+  "news": null,
+  "map": [
+   "...Fcc.",
+   "a...ba.",
+   "#.^....",
+   "#F..S.b",
+   "#F.....",
+   "G.D..<.",
+   ".c<...."
+  ],
+  "solution": "URDRUUULDLULDDDDRRRDDLULDLULUUUUULLDRDDDDRDLLU",
+  "sols": 1,
+  "effort": 4520.25
+ },
+ {
+  "n": 94,
+  "room": "dance",
+  "news": null,
+  "map": [
+   "ab..c.",
+   "...o..",
+   "DD.S.o",
+   "......",
+   "..a...",
+   "b..c..",
+   "#G.a..",
+   "##...."
+  ],
+  "solution": "ULDDLLUURDDLDDDRUURDDRUURUUURDDDLDRDDLULDLUL",
+  "sols": 1,
+  "effort": 6922.75
+ },
+ {
+  "n": 95,
+  "room": "dance",
+  "news": null,
+  "map": [
+   ".1..#G",
+   ".S.v#.",
+   "..2...",
+   "ac....",
+   "o.....",
+   "..o^..",
+   "..c.cb",
+   "......"
+  ],
+  "solution": "ULDDRRUURDDDLLLDDDRUUURDDRRRULLUURDRUULURUU",
+  "sols": 1,
+  "effort": 220
+ },
+ {
+  "n": 96,
+  "room": "dance",
+  "news": null,
+  "map": [
+   "......a",
+   "SFF...<",
+   "#......",
+   ".DDD.#.",
+   "v.>.G#o",
+   ".b.b.co",
+   "..>..F.",
+   "..cFao."
+  ],
+  "solution": "URDRURRRRDLLLDRRRDDDLLLLLURRRRRULLLURULULDLDDRUURRRD",
+  "sols": 1,
+  "effort": 15026.5
+ },
+ {
+  "n": 97,
+  "room": "dance",
+  "news": null,
+  "map": [
+   "#G#.<.c",
+   ".D.3.b.",
+   ".b..b.2",
+   "..b....",
+   "v..S...",
+   "......1",
+   ".......",
+   ".c<...."
+  ],
+  "solution": "URDRURDDLDRDLLLLLLURRRRULLUUURRRRUULDLULDLLLDDDDRUUUUU",
+  "sols": 1,
+  "effort": 31058.75
+ },
+ {
+  "n": 98,
+  "room": "dance",
+  "news": null,
+  "map": [
+   ".......",
+   "G....S.",
+   ".b.D...",
+   "..cD.oo",
+   "....a..",
+   ".......",
+   ".##...c",
+   "...c..<"
+  ],
+  "solution": "URDDDDDDLLURUUULDLULDLULDDRRDLLDDRRRUURULUUURULLDLULD",
+  "sols": 1,
+  "effort": 85918.5
+ },
+ {
+  "n": 99,
+  "room": "dance",
+  "news": null,
+  "map": [
+   "....b..",
+   "a....F.",
+   ".....^.",
+   ">.o..#.",
+   ".S...#.",
+   ".....G.",
+   "F...b..",
+   ".b.c..."
+  ],
+  "solution": "LURULUURDRURRDLDLDDLLDDRURDRRULURULURURUURDDDDDDDLUU",
+  "sols": 1,
+  "effort": 12987
+ },
+ {
+  "n": 100,
+  "room": "dance",
+  "news": null,
+  "map": [
+   "#.o..4a",
+   "....^..",
+   "2.DDD..",
+   "3.....G",
+   ".....o#",
+   "a..1S..",
+   ".bb....",
+   ".....ba"
+  ],
+  "solution": "ULUURDRDRDDLULDLLURULUUUURULDLDDDDDDRUUUUURRRUURRDLDRD",
+  "sols": 1,
+  "effort": 113950.25
+ }
+]

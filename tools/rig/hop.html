@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<!-- Squish Hop's characters as the design's live 2.5D rigs (SQUISH_HOP.md, "Rig characters"). One page draws the
+     hopper and every friend on the board; src/hop/RigStage.js lays it over the board and tells it what to do (hop,
+     bump, pick up, win, stuck…). The rig scripts are the design's own, unchanged (tools/rig/build.mjs copies this page
+     and them into android/app/src/main/assets/rig/). The page is the screen, 1:1 in dp. -->
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  #board { position: absolute; inset: 0; pointer-events: none; }
+  .ch { position: absolute; left: 0; top: 0; width: 100px; height: 100px; transform-origin: 0 0; }
+  .ch > div { position: absolute; inset: 0; }
+  /* the rig's own floor shadow: the board draws none of its own under a rig */
+  .ch ellipse[fill="#6a1b9a"] { opacity: 0.45; }
+</style>
+<script>
+// Same start as host.html: relative fetch() through XHR on file:// pages (Android's WebView), and a pause that holds
+// the frames and the clock while the app's screen is hidden.
+(function () {
+  const realFetch = window.fetch ? window.fetch.bind(window) : null;
+  window.fetch = function (url, opts) {
+    const u = String(url);
+    if (location.protocol !== 'file:' || /^[a-z]+:/i.test(u)) return realFetch(url, opts);
+    return new Promise((ok, bad) => {
+      const x = new XMLHttpRequest(); x.open('GET', u.replace(/\?.*$/, ''));
+      x.onload = () => ok({ ok: true, status: 200, text: () => Promise.resolve(x.responseText), json: () => Promise.resolve(JSON.parse(x.responseText)) });
+      x.onerror = () => bad(new TypeError('load failed: ' + u));
+      x.send();
+    });
+  };
+  const raf = window.requestAnimationFrame.bind(window), caf = window.cancelAnimationFrame.bind(window);
+  const realNow = performance.now.bind(performance);
+  let held = null, pausedAt = 0, lost = 0, heldId = 0;
+  performance.now = () => (held ? pausedAt : realNow()) - lost;
+  window.requestAnimationFrame = cb => {
+    if (held) { held.push({ id: --heldId, cb }); return heldId; }
+    return raf(t => cb(t - lost));
+  };
+  window.cancelAnimationFrame = id => { if (id < 0) { if (held) held = held.filter(h => h.id !== id); } else caf(id); };
+  window.__rigPause = on => {
+    if (on && !held) { held = []; pausedAt = realNow(); }
+    else if (!on && held) { lost += realNow() - pausedAt; const q = held; held = null; q.forEach(h => window.requestAnimationFrame(h.cb)); }
+  };
+})();
+</script>
+<script src="rive-rig.js"></script>
+<script src="rive-generic.js"></script>
+<script src="pet-defs.js"></script>
+<script src="mittens-moves.js"></script>
+</head>
+<body>
+<div id="board"></div>
+<script>
+(function () {
+  const post = m => { const s = JSON.stringify(m); if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(s); else (window.__hopOut = window.__hopOut || []).push(m); };
+  const board = document.getElementById('board');
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + (b - a) * t;
+  const SM = x => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+  // keyframes [[t, v, ease]] at t (the rig's own reader and easings: 'l' 'io' 's' 'o' 'i' 'bk')
+  let kv = null;
+  const parab = u => (u <= 0 || u >= 1 ? 0 : 4 * u * (1 - u));
+
+  // Fabric grain baked into a tile, one filter on the parts' common parent (host.html's fix for the A15).
+  let FAB = null;
+  function fabric() {
+    if (FAB !== null) return FAB; FAB = '';
+    try { const S = 128, cv = document.createElement('canvas'); cv.width = cv.height = S; const x = cv.getContext('2d'), im = x.createImageData(S, S);
+      let sd = 7; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+      const oct = n => { const g = []; for (let i = 0; i < n * n; i++) g.push(rnd()); const c = S / n, sm = t => t * t * (3 - 2 * t);
+        return (px, py) => { const gx = px / c, gy = py / c, x0 = Math.floor(gx), y0 = Math.floor(gy), fx = sm(gx - x0), fy = sm(gy - y0), a = (i, j) => g[((j % n + n) % n) * n + ((i % n + n) % n)];
+          const t = a(x0, y0) + (a(x0 + 1, y0) - a(x0, y0)) * fx, b = a(x0, y0 + 1) + (a(x0 + 1, y0 + 1) - a(x0, y0 + 1)) * fx; return t + (b - t) * fy; }; };
+      const o1 = oct(32), o2 = oct(64);
+      for (let y = 0; y < S; y++) for (let X = 0; X < S; X++) { const v = (o1(X, y) + o2(X, y)) / 2, k = (y * S + X) * 4; im.data[k + 3] = Math.round(0.2 * 255 * v); }
+      x.putImageData(im, 0, 0); const B = 1024, cb = document.createElement('canvas'); cb.width = cb.height = B; const xb = cb.getContext('2d'); xb.fillStyle = xb.createPattern(cv, 'repeat'); xb.fillRect(0, 0, B, B); FAB = cb.toDataURL('image/png'); } catch (e) { FAB = ''; }
+    return FAB;
+  }
+  const isGrain = f => f && f.querySelector('feTurbulence') && !f.querySelector('feDisplacementMap') && f.querySelector('feBlend[mode="multiply"]');
+  function bakeGrain(svg) {
+    if (!svg || !fabric()) return;
+    const els = [...svg.querySelectorAll('[filter]')].filter(e => { const id = (e.getAttribute('filter').match(/url\(#([^)]+)\)/) || [])[1]; return id && isGrain(svg.getElementById(id)); });
+    if (!els.length) return;
+    const id = els[0].getAttribute('filter').match(/url\(#([^)]+)\)/)[1], f = svg.getElementById(id), t = f.querySelector('feTurbulence');
+    const im = document.createElementNS('http://www.w3.org/2000/svg', 'feImage');
+    [['href', FAB], ['x', -30], ['y', -30], ['width', 160], ['height', 160], ['preserveAspectRatio', 'none']].forEach(([a, v]) => im.setAttribute(a, v));
+    const cm = t.nextElementSibling; t.replaceWith(im); if (cm && cm.tagName === 'feColorMatrix') cm.remove();
+    let top = els[0].parentNode; while (top !== svg && !els.every(e => top.contains(e))) top = top.parentNode;
+    if (top === svg) { els.forEach(e => e.setAttribute('filter', 'url(#' + id + ')')); return; }
+    els.forEach(e => e.removeAttribute('filter')); top.setAttribute('filter', 'url(#' + id + ')');
+  }
+
+  // --- moves the rig plays (the design's state format: keyframes per pose value over ms) ------------------------
+  function addStates() {
+    const AR = K => ({ armL: K, armR: K }), ER = K => ({ earL: K, earR: K });
+    // the rig's particles drawn bigger: its own are sized for the lobby's big creature, and a board squishy is a
+    // third of that (a sweat drop came out a pixel tall)
+    Object.assign(window.RiveRig.PRE, {
+      hopSweat: { n: 1, sp: 0, vy: 6, g: 34, life: 950, r: [2.6, 3], col: ['#8fd3ff'], kind: 'drop' },
+      hopDust: { n: 7, sp: 26, vy: -5, g: 10, life: 620, r: [2, 3.6], col: ['#ffffff', '#fdf3ff', '#efe4ff'], kind: 'dot' },
+      hopHeart: { n: 1, sp: 9, vy: -16, g: -3, life: 1200, r: [1.6, 2], kind: 'heart' },
+      hopSpark: { n: 6, sp: 30, vy: -10, g: 0, life: 700, r: [3.2, 5], col: ['#fff3a0', '#ffffff', '#ffd23a'], kind: 'star' },
+      hopPop: { n: 6, sp: 30, vy: -6, g: -4, life: 560, r: [2.2, 3.8], kind: 'bubble' },
+    });
+    window.RiveRig.add({
+      // stuck: droops (sinks, head down, ears and arms hanging), looks left, then right, sweats, then sways slowly
+      hopSad: { loop: 2400, blend: 220, k: {
+        sq: [[0, 0.14]], pitch: [[0, -0.55]], ly: [[0, 0.55]], frown: [[0, 1]], teary: [[0, 0.7]], smile: [[0, 0]],
+        ...ER([[0, -18]]), ...AR([[0, -14]]),
+        lean: [[0, 0], [600, -2.4, 's'], [1200, 0, 's'], [1800, 2.4, 's'], [2400, 0, 's']],
+        tilt: [[0, 0], [600, -3, 's'], [1200, 0, 's'], [1800, 3, 's'], [2400, 0, 's']] } },
+      // the look left and right at the start of stuck (played once, then hopSad)
+      hopSadLook: { dur: 850, blend: 160, next: 'hopSad', k: {
+        sq: [[0, 0], [260, 0.14, 'o']], pitch: [[0, 0], [260, -0.45, 'io']], frown: [[0, 0], [200, 1, 'io']], teary: [[0, 0], [400, 0.5, 'io']],
+        ...ER([[0, 0], [260, -18, 'o']]), ...AR([[0, 0], [260, -14, 'o']]),
+        turn: [[0, 0], [200, 0], [330, -0.95, 'io'], [480, -0.95], [610, 0.95, 'io'], [760, 0.95], [850, 0, 'io']],
+        lx: [[0, 0], [200, 0], [300, -1, 'o'], [480, -1], [580, 1, 'io'], [760, 1], [850, 0, 'io']] } },
+      // back to normal after an UNDO: a quick perk-up
+      hopPerk: { dur: 320, blend: 90, k: { sq: [[0, 0.08], [90, -0.16, 'o'], [200, 0.05, 'io'], [320, 0, 'io']], lift: [[0, 0], [90, 3, 'o'], [200, 0, 'i']], hap: [[0, 0.6], [320, 0]], ...ER([[0, 0], [90, 10, 'o'], [320, 0, 'io']]) } },
+      // a tap on the hopper: a giggle
+      hopGiggle: { dur: 620, blend: 90, k: { sq: [[0, 0], [80, 0.18, 'o'], [180, -0.12, 'o'], [300, 0.05, 'io'], [420, 0, 'io']], hap: [[0, 0], [80, 1, 'o'], [520, 1], [620, 0, 'io']], smile: [[0, 0], [80, 1]], blush: [[0, 0], [120, 1], [520, 1], [620, 0]],
+        tilt: [[0, 0], [120, -6, 'io'], [260, 6, 'io'], [400, -3, 'io'], [520, 0, 'io']], ...AR([[0, 0], [100, 30, 'o'], [400, 24], [620, 0, 'io']]) } },
+      // a bump: eyes wide, a frown, ears back (the squish and the head shake are added on top)
+      hopOops: { dur: 560, blend: 60, k: { wide: [[0, 0], [60, 1, 'o'], [380, 1], [560, 0, 'io']], frown: [[0, 0], [60, 0.8, 'o'], [400, 0.8], [560, 0, 'io']], ...ER([[0, 0], [60, -16, 'o'], [420, -10], [560, 0, 'io']]) } },
+      // happy face for a win, a pickup or a cheer
+      hopJoy: { dur: 1300, blend: 80, k: { hap: [[0, 1]], smile: [[0, 1]], open: [[0, 0.6]], blush: [[0, 0.6]], wag: [[0, 0], [200, 18, 'io'], [400, -18, 'io'], [600, 18, 'io'], [800, -18, 'io'], [1000, 12, 'io'], [1300, 0, 'io']] },
+        },
+    });
+  }
+
+  // --- the characters ---------------------------------------------------------------------------------------------
+  // C: { id, key, W: body width (dp, at scale 1), el, inner, ctrl, I, bb: { cx, gy, bw } once drawn, x, y, s (feet on
+  // screen, its scale), z, o (opacity), k (shown scale on top), face (-1 … 1, its turn), moves: [], ext }
+  const C = new Map();
+  let origin = [0, 0];
+  let castTag = null;
+
+  function mount(c) {
+    c.el = document.createElement('div'); c.el.className = 'ch'; c.inner = document.createElement('div'); c.el.appendChild(c.inner); board.appendChild(c.el);
+    c.el.style.opacity = '0';
+    if (window.__rgI) delete window.__rgI[c.key];
+    c.ctrl = window.RiveRig.mount(c.inner, c.key, { fidgets: false });
+    c.I = c.ctrl._I;
+    c.t0 = performance.now();
+  }
+  // the rig's body box at rest (its floor shadow and particles left out), in its 0-100 units
+  function measure(c) {
+    const svg = c.inner.querySelector('svg'); if (!svg) return null;
+    const sh = [...svg.querySelectorAll('ellipse[fill="#6a1b9a"]')]; sh.forEach(e => (e.style.display = 'none'));
+    let b = null; try { b = svg.getBBox(); } catch (e) {}
+    sh.forEach(e => (e.style.display = ''));
+    if (!b || !(b.width > 1)) return null;
+    return { cx: b.x + b.width / 2, gy: b.y + b.height, bw: b.width, top: b.y };
+  }
+  function ready(c) {
+    if (c.bb) return true;
+    if (!c.I) return false;
+    if (c.I.generic && !c.I.ready) return false;
+    c.ctrl._pose('idle', 0);
+    const bb = measure(c); if (!bb) return false;
+    c.bb = bb; bakeGrain(c.inner.querySelector('svg'));
+    return true;
+  }
+
+  // where it's drawn: its feet on (x, y) plus the move's offsets, its body W × s wide
+  function draw(c, now) {
+    if (!c.bb || !c.el) return;
+    const m = c.cur || {};
+    const s = c.s * (m.k == null ? 1 : m.k) * (c.k == null ? 1 : c.k);
+    const k = (c.W * s) / c.bb.bw;
+    const x = c.x + (m.dx || 0), y = c.y + (m.dy || 0);
+    c.el.style.transform = 'translate(' + (x - c.bb.cx * k).toFixed(2) + 'px,' + (y - c.bb.gy * k).toFixed(2) + 'px) scale(' + k.toFixed(4) + ')';
+    c.el.style.zIndex = String(m.z != null ? m.z : c.z);
+    const o = c.o * (m.o == null ? 1 : m.o);
+    c.el.style.opacity = String(Math.round(o * 100) / 100);
+    c.kNow = k;
+  }
+
+  // --- moves: each a function of time (ms) giving the place offsets and the pose added to the rig (ext) -----------
+  // A move: { t0, dur, run(c, t) → { dx, dy, k, o, z, ext }, done() }. Several can run at once (a landing still
+  // settling as the next hop crouches); their pose values add up.
+  function start(c, mv) { mv.t0 = performance.now() + (mv.delay || 0); c.moves.push(mv); kick(); return mv; }
+  function stopMoves(c, kind) { c.moves = c.moves.filter(m => (kind ? m.kind !== kind : false)); }
+
+  // lift is in the rig's own units (0-100 box); dp → units at the character's current size
+  const toU = (c, dp) => (c.kNow ? dp / c.kNow : 0);
+
+  // one leg of a hop: a crouch (no travel yet), up and over in an arc stretched tall, leaning into it and turned
+  // toward where it's going; `boing` springs off a bubble instead of crouching
+  const CROUCH = 0.24, SPRING = 0.18;
+  function leg(c, L, from, dir, onDone) {
+    const D = L.ms, hold = L.boing ? SPRING : CROUCH, H = L.h; // H: the arc's height in dp
+    const dx = DIRS[dir] ? DIRS[dir][0] : 0, dy = DIRS[dir] ? DIRS[dir][1] : 0;
+    const ease = u => (u <= hold * 0.8 ? 0 : SM((u - hold * 0.8) / (1 - hold * 0.8)));
+    const crouch = L.boing
+      ? [[0, 0.45], [D * SPRING, 0.4, 'o'], [D * (SPRING + 0.1), -0.42, 'o'], [D * 0.45, -0.18, 'io'], [D * 0.6, 0.12, 'io'], [D * 0.75, -0.12, 'io'], [D * 0.9, 0.06, 'io'], [D, -0.14, 'io']]
+      : [[0, 0], [D * 0.2, 0.24, 'io'], [D * 0.34, -0.3, 'o'], [D * 0.55, -0.1, 'io'], [D * 0.86, -0.2, 'io'], [D, -0.12, 'io']];
+    const arms = L.boing ? [[0, -10], [D * 0.3, 46, 'o'], [D * 0.8, 30, 'io'], [D, 20, 'io']] : [[0, 0], [D * 0.2, -14, 'io'], [D * 0.36, 40, 'o'], [D * 0.75, 28, 'io'], [D, 18, 'io']];
+    const lean = [[0, 0], [D * 0.2, -0.4, 'io'], [D * 0.38, 1, 'o'], [D * 0.7, 0.55, 'io'], [D, 0.15, 'io']];
+    return start(c, { kind: 'hop', dur: D, run(c, t) {
+      const u = clamp(t / D, 0, 1), e = ease(u);
+      c.x = lerp(from.x, L.x, e); c.y = lerp(from.y, L.y, e); c.s = lerp(from.s, L.s, e);
+      const air = parab((u - hold) / (1 - hold)) * (L.boing ? 1.2 : 1);
+      const ln = kv(lean, t);
+      return { z: Math.max(from.z, L.z), ext: {
+        lift: toU(c, H * air), sq: kv(crouch, t), armL: kv(arms, t), armR: kv(arms, t),
+        tilt: ln * 11 * dx, lean: ln * 3 * dx, pitch: -ln * 0.55 * dy, ly: ln * 0.7 * dy,
+      } };
+    }, done: onDone });
+  }
+  // the landing: squashed flat, springing back up with a wobble (the rig's springs add the jiggle)
+  function land(c) {
+    const D = 400;
+    const sq = [[0, 0], [40, 0.3, 'o'], [140, -0.14, 'io'], [240, 0.07, 'io'], [330, -0.03, 'io'], [D, 0, 'io']];
+    const arms = [[0, 18], [60, -18, 'o'], [200, 10, 'io'], [D, 0, 'io']];
+    stopMoves(c, 'land');
+    if (c.I && c.bb) burst(c, 'hopDust', 'feet'); // a puff of dust off the cushion, round its feet
+    start(c, { kind: 'land', dur: D, run(c, t) { return { ext: { sq: kv(sq, t), armL: kv(arms, t), armR: kv(arms, t) } }; } });
+  }
+  // facing: turned toward the way it hops (left -1, right 1), and kept; up and down turn it back to the camera
+  function faceTo(c, dir) {
+    const to = dir === 1 ? 0.55 : dir === 3 ? -0.55 : dir === 0 || dir === 2 ? 0 : c.face;
+    if (to === c.face) return;
+    const from = c.face; c.face = to;
+    stopMoves(c, 'face');
+    start(c, { kind: 'face', dur: 140, keep: true, run(c, t) { c.faceNow = lerp(from, to, SM(t / 140)); return {}; } });
+  }
+  const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+
+  // --- what the app asks for -------------------------------------------------------------------------------------
+  const api = {
+    origin(x, y) { origin = [x, y]; },
+    // the board's characters: [{ id, key, W, x, y, s, z, o }] (positions in the board area); `tag` names this cast
+    cast(list, tag) {
+      castTag = tag;
+      const ids = new Set(list.map(c => c.id));
+      for (const [id, c] of C) if (!ids.has(id)) { if (c.ctrl) c.ctrl.destroy(); if (c.el) c.el.remove(); C.delete(id); }
+      for (const it of list) {
+        let c = C.get(it.id);
+        if (c && c.key !== it.key) { if (c.ctrl) c.ctrl.destroy(); if (c.el) c.el.remove(); C.delete(it.id); c = null; }
+        if (!c) { c = { id: it.id, key: it.key, moves: [], face: 0, faceNow: 0, o: 1, k: 1 }; C.set(it.id, c); mount(c); }
+        Object.assign(c, { W: it.W, x: it.x + origin[0], y: it.y + origin[1], s: it.s, z: it.z, o: it.o == null ? 1 : it.o });
+        c.moves = []; c.cur = null;
+      }
+      kick();
+    },
+    place(id, p) { const c = C.get(id); if (!c) return; c.moves = c.moves.filter(m => m.keep); Object.assign(c, { x: p.x + origin[0], y: p.y + origin[1], s: p.s, z: p.z }); if (p.o != null) c.o = p.o; c.k = 1; kick(); },
+    show(id, o) { const c = C.get(id); if (c) { c.o = o; kick(); } },
+    // drops in from above (the hopper) or pops up (a friend), after `delay` ms
+    enter(id, p, delay, pop) {
+      const c = C.get(id); if (!c) return;
+      clearInterval(c.sweat);
+      c.moves = []; Object.assign(c, { x: p.x + origin[0], y: p.y + origin[1], s: p.s, z: p.z, o: 1, k: 1, face: 0, faceNow: 0 });
+      if (c.ctrl) c.ctrl.play('idle');
+      const D = pop ? 340 : 460;
+      start(c, { kind: 'enter', delay, dur: D, before: { o: 0 }, run(c, t) {
+        if (pop) { const u = t / D; return { k: 0.3 + 0.7 * kv([[0, 0], [D * 0.7, 1.12, 'o'], [D, 1, 'io']], t), o: clamp(u * 3, 0, 1), ext: { sq: kv([[0, 0], [D * 0.5, -0.2, 'o'], [D * 0.8, 0.1, 'io'], [D, 0, 'io']], t) } }; }
+        const fall = kv([[0, 1], [D * 0.62, 0, 'i'], [D, 0]], t);
+        return { o: clamp(t / 120, 0, 1), ext: { lift: toU(c, 90 * c.s) * fall, sq: kv([[0, -0.2], [D * 0.62, -0.25, 'i'], [D * 0.7, 0.4, 'o'], [D * 0.85, -0.1, 'io'], [D, 0, 'io']], t), armL: kv([[0, 40], [D * 0.62, 40], [D * 0.75, -14, 'o'], [D, 0, 'io']], t), armR: kv([[0, 40], [D * 0.62, 40], [D * 0.75, -14, 'o'], [D, 0, 'io']], t) } };
+      } });
+    },
+    // a hop: legs [{ x, y, s, z, ms, h, boing }] one after another (a bubble boings it on), toward `dir` (-1: none, an UNDO)
+    hop(id, legs, dir) {
+      const c = C.get(id); if (!c) return;
+      c.moves = c.moves.filter(m => m.kind === 'land' || m.keep);
+      if (c.ctrl && c.I && c.I.cur.name !== 'idle') c.ctrl.play('idle');
+      if (dir >= 0) faceTo(c, dir);
+      let i = 0;
+      const next = () => {
+        if (i >= legs.length) return;
+        const L = Object.assign({}, legs[i]); L.x += origin[0]; L.y += origin[1];
+        const from = { x: c.x, y: c.y, s: c.s, z: c.z };
+        const last = i === legs.length - 1; i++;
+        if (L.boing && c.I && c.bb) burst(c, 'hopPop', 'feet'); // the bubble it springs off pops
+        leg(c, L, from, dir, () => { c.x = L.x; c.y = L.y; c.s = L.s; c.z = L.z; if (last) land(c); next(); });
+      };
+      next();
+    },
+    // bumped against the way it can't go (dx, dy in dp): squished against it, then a shake of the head
+    bump(id, dx, dy, shake) {
+      const c = C.get(id); if (!c) return;
+      if (shake && c.ctrl) c.ctrl.play('hopOops');
+      const D = shake ? 620 : 380, side = Math.sign(dx);
+      start(c, { kind: 'bump', dur: D, run(c, t) {
+        const out = kv([[0, 0], [70, 1, 'o'], [200, 0, 'io']], t);
+        const no = shake ? kv([[0, 0], [150, 0], [220, 0.9, 'io'], [320, -0.8, 'io'], [420, 0.5, 'io'], [520, -0.25, 'io'], [D, 0, 'io']], t) : 0;
+        const squish = shake ? kv([[0, 0], [70, 1, 'o'], [180, 0, 'io']], t) : 0;
+        return { dx: dx * out, dy: dy * out, ext: { turn: no, sq: squish * (side ? 0.18 : 0.32), tilt: -side * squish * 9, x: -side * squish * 2.5, lx: no } };
+      } });
+    },
+    // a friend picked up: a happy hop with hearts, then off to (tx, ty) in a spin, shrinking into the goal card
+    pickup(id, tx, ty, ms) {
+      const c = C.get(id); if (!c) return;
+      c.moves = [];
+      if (c.ctrl) c.ctrl.play('hopJoy');
+      hearts(c, 2, 160);
+      const D = ms || 760, go = D * 0.34, from = { x: c.x, y: c.y };
+      const to = { x: tx + origin[0], y: ty + origin[1] }, kEnd = c.bb ? Math.max(0.15, 26 / (c.W * c.s)) : 0.3;
+      start(c, { kind: 'pickup', dur: D, run(c, t) {
+        const u = t < go ? 0 : SM((t - go) / (D - go));
+        c.x = lerp(from.x, to.x, u); c.y = lerp(from.y, to.y, u);
+        const hopUp = parab(t / (go * 0.9)) * 26, fly = parab((t - go) / (D - go)) * 60;
+        return { z: t < go ? c.z : 90, k: lerp(1, kEnd, u), o: t < D * 0.8 ? 1 : 1 - (t - D * 0.8) / (D * 0.2), ext: {
+          lift: toU(c, (hopUp + fly) * c.s), sq: kv([[0, 0], [go * 0.15, 0.3, 'io'], [go * 0.32, -0.3, 'o'], [go * 0.8, -0.05, 'io'], [go, 0.25, 'o'], [go * 1.15, -0.3, 'o'], [D, 0, 'io']], t),
+          armL: kv([[0, 0], [go * 0.3, 50, 'o'], [D, 40]], t), armR: kv([[0, 0], [go * 0.3, 50, 'o'], [D, 40]], t),
+          tilt: kv([[0, 0], [go * 0.3, 8, 'io'], [go * 0.6, -8, 'io'], [go, 0, 'io']], t), spin: kv([[0, 0], [go, 0], [D * 0.9, 360, 'io'], [D, 360]], t) } };
+      }, done() { c.o = 0; c.x = to.x; c.y = to.y; } });
+    },
+    // back on its cushion (an UNDO took the pickup back): pops up
+    restore(id, p) {
+      const c = C.get(id); if (!c) return;
+      c.moves = []; Object.assign(c, { x: p.x + origin[0], y: p.y + origin[1], s: p.s, z: p.z, o: 1, k: 1 });
+      if (c.ctrl) c.ctrl.play('idle');
+      const D = 300;
+      start(c, { kind: 'enter', dur: D, run(c, t) { return { k: 0.3 + 0.7 * kv([[0, 0], [D * 0.7, 1.12, 'o'], [D, 1, 'io']], t) }; } });
+    },
+    // the win: three happy jumps on the ★ (tilting right, then left), the last one higher with a spin round, sparkles
+    win(id, ms) {
+      const c = C.get(id); if (!c) return;
+      if (c.ctrl) c.ctrl.play('hopJoy');
+      const D = ms || 1150;
+      faceTo(c, 2);
+      const lift = [[0, 0], [D * 0.05, 0], [D * 0.145, 34, 'o'], [D * 0.24, 0, 'i'], [D * 0.34, 0], [D * 0.45, 40, 'o'], [D * 0.56, 0, 'i'], [D * 0.64, 0], [D * 0.8, 62, 'o'], [D * 0.95, 0, 'i'], [D, 0]];
+      const sq = [[0, 0], [D * 0.04, 0.22, 'io'], [D * 0.08, -0.3, 'o'], [D * 0.2, -0.08, 'io'], [D * 0.25, 0.26, 'o'], [D * 0.31, 0.2, 'io'], [D * 0.37, -0.3, 'o'], [D * 0.5, -0.08, 'io'], [D * 0.56, 0.26, 'o'], [D * 0.62, 0.24, 'io'], [D * 0.68, -0.36, 'o'], [D * 0.86, -0.1, 'io'], [D * 0.95, 0.28, 'o'], [D, 0.06, 'io']];
+      const arm = [[0, 0], [D * 0.08, 46, 'o'], [D * 0.9, 46], [D, 10, 'io']];
+      const tilt = [[0, 0], [D * 0.13, 7, 'io'], [D * 0.27, 0, 'io'], [D * 0.43, -7, 'io'], [D * 0.57, 0, 'io']];
+      const spin = [[0, 0], [D * 0.68, 0], [D * 0.92, 360, 'io'], [D, 360]];
+      start(c, { kind: 'win', dur: D, run(c, t) {
+        return { ext: { lift: toU(c, kv(lift, t) * c.s), sq: kv(sq, t), armL: kv(arm, t), armR: kv(arm, t), tilt: kv(tilt, t), spin: t < D ? kv(spin, t) : 0 } };
+      }, done() { land(c); } });
+      [0.26, 0.56, 0.96].forEach(f => setTimeout(() => { if (c.I && c.bb) burst(c, 'hopSpark', 'feet', 4); }, D * f));
+      setTimeout(() => { if (c.I && c.bb) burst(c, 'hopSpark', 'head', 7); }, D * 0.8);
+      hearts(c, 4, 260);
+    },
+    // stuck: the sad look round, then the slow sad sway, until unstuck
+    stuck(id) {
+      const c = C.get(id); if (!c) return;
+      c.moves = c.moves.filter(m => m.kind === 'land' || m.keep);
+      if (c.ctrl) c.ctrl.play('hopSadLook');
+      faceTo(c, 2); // back to the camera first: the look round turns its head on top of that
+      // a sweat drop off the side of its head, again and again
+      clearInterval(c.sweat); const drip = () => { if (c.I && c.bb) burst(c, 'hopSweat', 'temple'); };
+      setTimeout(drip, 360); c.sweat = setInterval(drip, 720);
+    },
+    unstuck(id) { const c = C.get(id); if (!c) return; clearInterval(c.sweat); if (c.ctrl) c.ctrl.play('hopPerk'); },
+    giggle(id) { const c = C.get(id); if (c && c.ctrl) c.ctrl.play('hopGiggle'); },
+    pause(on) { window.__rigPause(on); },
+  };
+  function hearts(c, n, every) { for (let i = 0; i < n; i++) setTimeout(() => { if (c.I && c.bb) burst(c, 'hopHeart', 'head', 1); }, i * every); }
+  function burst(c, kind, where, n) {
+    const b = c.bb, W = c.I.W || {};
+    const p = where === 'feet' ? [b.cx, b.gy - 2] : where === 'head' ? [b.cx, b.top + 4] : where === 'temple' ? [b.cx + b.bw * 0.34, b.top + b.bw * 0.2] : W[where] || [50, 50];
+    try { const e = window.RiveRig.emit; if (e) e(c.I, kind, p, n); } catch (x) {}
+  }
+
+  // --- the frame loop: moves → place and pose; runs while anything moves or a rig is still loading ----------------
+  let running = false;
+  function frame() {
+    const now = performance.now();
+    let busy = false, allReady = true;
+    for (const c of C.values()) {
+      if (!ready(c)) {
+        // a rig that never draws (its art didn't load): the app keeps the cut-outs
+        if (now - c.t0 > 9000 && castTag != null && api._sent !== castTag) { api._sent = castTag; post({ type: 'cast', tag: castTag, ok: false, key: c.key }); }
+        allReady = false; busy = now - c.t0 < 9000; continue;
+      }
+      const ext = {}; let cur = { dx: 0, dy: 0 };
+      // (a move that ends can start the next one, a landing or the next leg: those land in the fresh list)
+      const list = c.moves; c.moves = [];
+      const kept = list.filter(m => {
+        const t = now - m.t0;
+        if (t < 0) { if (m.before) cur = Object.assign(cur, m.before); return true; }
+        if (t >= m.dur) { if (m.run) m.run(c, m.dur); if (m.done) m.done(); return false; }
+        const r = m.run(c, t) || {};
+        if (r.dx) cur.dx += r.dx; if (r.dy) cur.dy += r.dy;
+        if (r.k != null) cur.k = (cur.k == null ? 1 : cur.k) * r.k;
+        if (r.o != null) cur.o = (cur.o == null ? 1 : cur.o) * r.o;
+        if (r.z != null) cur.z = r.z;
+        if (r.ext) for (const k in r.ext) ext[k] = (ext[k] || 0) + r.ext[k];
+        return true;
+      });
+      c.moves = kept.concat(c.moves);
+      if (c.moves.length) busy = true;
+      ext.turn = (ext.turn || 0) + c.faceNow;
+      if (ext.sq != null) ext.sq = clamp(ext.sq, -0.45, 0.4);
+      c.cur = cur;
+      if (c.ctrl) c.ctrl.ext(ext);
+      draw(c, now);
+    }
+    if (allReady && castTag != null && C.size && !api._sent) { api._sent = castTag; post({ type: 'cast', tag: castTag, ok: true }); }
+    if (busy) requestAnimationFrame(frame); else running = false;
+  }
+  function kick() { if (!running) { running = true; requestAnimationFrame(frame); } }
+  // a new cast reports once it's all drawn
+  const castRaw = api.cast;
+  api.cast = (list, tag) => { api._sent = null; castRaw(list, tag); };
+
+  window.hopStage = api;
+  api._C = C; // (for the browser tests: the characters)
+  const boot = () => {
+    const R = window.RiveRig;
+    if (R && R.REST && R.DEFS && R.DEFS.prickle && R.movesV && window.RiveGeneric) { kv = R.kv; addStates(); post({ type: 'ready' }); }
+    else setTimeout(boot, 25);
+  };
+  boot();
+  window.onerror = (m) => post({ type: 'error', message: String(m) });
+})();
+</script>
+</body>
+</html>

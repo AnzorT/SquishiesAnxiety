@@ -63,6 +63,14 @@ The line number changes on every launch.
 
 This setting survives app restarts. It's lost if the app is uninstalled or the emulator is wiped; set it again if that happens.
 
+## Stuck on "Loading from 10.0.2.2:8081…"
+
+**What you see:** a white screen with a grey "Loading from 10.0.2.2:8081…" bar at the top, and it never finishes. Seen on 2026-10-07 and 2026-10-08 on `emulator-5554` (a fresh AVD whose app had never had its bundle location set).
+
+**Why:** the emulator can't reach the PC at `10.0.2.2:8081` at all. `adb shell "toybox nc -z -w 3 10.0.2.2 8081"` times out, even though Metro serves the app fine on the PC. Most likely Windows Firewall blocks that route for this AVD.
+
+**Fix:** same as above. With `adb reverse tcp:8081 tcp:8081` in place (`adb reverse --list` shows it), shake the emulator or press Ctrl+M, choose **Change bundle location**, enter `localhost:8081`, then reload.
+
 ## "Unable to load script. Make sure you're either running Metro…"
 
 **What you see:** a red screen with that message.

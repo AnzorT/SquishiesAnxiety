@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<!-- The result card's three characters as the design's live 2.5D rigs (the user, 2026-11-17: "i dont want there to be
+     the circle and a static image of the creatures, i want a genuine character there that is grayed and once they are
+     filled their color changes and they jump from joy, not a fast jump, a slow one and they show happy animations").
+     src/squishdoku/Trio.js lays this page over the card's row (through hop/RigStage.js) and tells it the plan: all
+     three pop in grey, then each earned one fills with colour from its feet up, jumps slowly for joy and keeps playing
+     happy moves; a missed one sighs and stays grey. The rig scripts are the design's own, unchanged; the loader, the
+     pause and the grain fix are hop.html's. The page is the row and the room round it, 1:1 in dp.
+
+     A rig costs a lot to draw: the grey ones are drawn once they've settled and then kept as they are (rive-rig's
+     generic rigs skip drawing while `I.ready` is off); the happy ones draw every other frame between their moves (the
+     page moves the whole drawing every frame: the hops, squash and sway) and every frame through the fill and the
+     jump. -->
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  #board { position: absolute; inset: 0; pointer-events: none; }
+  .ch { position: absolute; left: 0; top: 0; width: 100px; height: 100px; transform-origin: 0 0; }
+  .ch > .rig { position: absolute; inset: 0; }
+  /* the page draws the floor shadows (they stay on the floor as a character jumps) */
+  .ch ellipse[fill="#6a1b9a"] { display: none; }
+  /* grey until it's filled; while it fills, its own SVG filter (#fill-<id>, below) greys it only above the colour's
+     edge, rising from the feet. (Not a backdrop-filter veil: that greys whatever is behind the page too, a pale box.) */
+  .ch.grey > .rig { filter: grayscale(1) brightness(1.12); }
+  #defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+  /* the edge of the colour as it rises: a soft gold shine */
+  .edge { position: absolute; left: 0; top: 0; width: 0; height: 10px; pointer-events: none; opacity: 0;
+          background: radial-gradient(closest-side, rgba(255, 246, 190, 0.95), rgba(255, 214, 90, 0.55) 55%, rgba(255, 214, 90, 0)); }
+  .sh { position: absolute; left: 0; top: 0; width: 100px; height: 100px; transform-origin: 0 0; border-radius: 50%;
+        background: radial-gradient(closest-side, rgba(107, 68, 38, 0.3), rgba(107, 68, 38, 0.16) 55%, rgba(107, 68, 38, 0)); }
+</style>
+<script>
+// hop.html's start: relative fetch() through XHR on file:// pages (Android's WebView), and a pause that holds the
+// frames and the clock (the app's pause, and the page's own sleep while nothing moves).
+(function () {
+  const realFetch = window.fetch ? window.fetch.bind(window) : null;
+  window.fetch = function (url, opts) {
+    const u = String(url);
+    if (location.protocol !== 'file:' || /^[a-z]+:/i.test(u)) return realFetch(url, opts);
+    return new Promise((ok, bad) => {
+      const x = new XMLHttpRequest(); x.open('GET', u.replace(/\?.*$/, ''));
+      x.onload = () => ok({ ok: true, status: 200, text: () => Promise.resolve(x.responseText), json: () => Promise.resolve(JSON.parse(x.responseText)) });
+      x.onerror = () => bad(new TypeError('load failed: ' + u));
+      x.send();
+    });
+  };
+  const raf = window.requestAnimationFrame.bind(window), caf = window.cancelAnimationFrame.bind(window);
+  const realNow = performance.now.bind(performance);
+  let held = null, pausedAt = 0, lost = 0, heldId = 0;
+  performance.now = () => (held ? pausedAt : realNow()) - lost;
+  window.requestAnimationFrame = cb => {
+    if (held) { held.push({ id: --heldId, cb }); return heldId; }
+    return raf(t => cb(t - lost));
+  };
+  window.cancelAnimationFrame = id => { if (id < 0) { if (held) held = held.filter(h => h.id !== id); } else caf(id); };
+  window.__rigPause = on => {
+    if (on && !held) { held = []; pausedAt = realNow(); }
+    else if (!on && held) { lost += realNow() - pausedAt; const q = held; held = null; q.forEach(h => window.requestAnimationFrame(h.cb)); }
+  };
+})();
+</script>
+<script src="rive-rig.js"></script>
+<script src="rive-generic.js"></script>
+<script src="pet-defs.js"></script>
+<script src="mittens-moves.js"></script>
+</head>
+<body>
+<div id="board"></div>
+<svg id="defs" aria-hidden="true"><defs></defs></svg>
+<script>
+(function () {
+  const post = m => { const s = JSON.stringify(m); if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(s); else (window.__resultOut = window.__resultOut || []).push(m); };
+  const board = document.getElementById('board');
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + (b - a) * t;
+  const SM = x => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+  const outQ = u => 1 - (1 - u) * (1 - u), inQ = u => u * u;
+  const outBack = u => { const v = u - 1; return 1 + 2.70158 * v * v * v + 1.70158 * v * v; };
+  const parab = u => (u <= 0 || u >= 1 ? 0 : 4 * u * (1 - u));
+  // keyframes [[t, v, ease]] at t (the rig's own reader and easings: 'l' 'io' 's' 'o' 'i' 'bk')
+  let kv = null;
+  const AR = K => ({ armL: K, armR: K }), ER = K => ({ earL: K, earR: K });
+  const NS = 'http://www.w3.org/2000/svg';
+  const defs = document.getElementById('defs').querySelector('defs');
+
+  // Fabric grain baked into a tile, one filter on the parts' common parent (host.html's fix for the A15).
+  let FAB = null;
+  function fabric() {
+    if (FAB !== null) return FAB; FAB = '';
+    try { const S = 128, cv = document.createElement('canvas'); cv.width = cv.height = S; const x = cv.getContext('2d'), im = x.createImageData(S, S);
+      let sd = 7; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+      const oct = n => { const g = []; for (let i = 0; i < n * n; i++) g.push(rnd()); const c = S / n, sm = t => t * t * (3 - 2 * t);
+        return (px, py) => { const gx = px / c, gy = py / c, x0 = Math.floor(gx), y0 = Math.floor(gy), fx = sm(gx - x0), fy = sm(gy - y0), a = (i, j) => g[((j % n + n) % n) * n + ((i % n + n) % n)];
+          const t = a(x0, y0) + (a(x0 + 1, y0) - a(x0, y0)) * fx, b = a(x0, y0 + 1) + (a(x0 + 1, y0 + 1) - a(x0, y0 + 1)) * fx; return t + (b - t) * fy; }; };
+      const o1 = oct(32), o2 = oct(64);
+      for (let y = 0; y < S; y++) for (let X = 0; X < S; X++) { const v = (o1(X, y) + o2(X, y)) / 2, k = (y * S + X) * 4; im.data[k + 3] = Math.round(0.2 * 255 * v); }
+      x.putImageData(im, 0, 0); const B = 1024, cb = document.createElement('canvas'); cb.width = cb.height = B; const xb = cb.getContext('2d'); xb.fillStyle = xb.createPattern(cv, 'repeat'); xb.fillRect(0, 0, B, B); FAB = cb.toDataURL('image/png'); } catch (e) { FAB = ''; }
+    return FAB;
+  }
+  const isGrain = f => f && f.querySelector('feTurbulence') && !f.querySelector('feDisplacementMap') && f.querySelector('feBlend[mode="multiply"]');
+  function bakeGrain(svg) {
+    if (!svg || !fabric()) return;
+    const els = [...svg.querySelectorAll('[filter]')].filter(e => { const id = (e.getAttribute('filter').match(/url\(#([^)]+)\)/) || [])[1]; return id && isGrain(svg.getElementById(id)); });
+    if (!els.length) return;
+    const id = els[0].getAttribute('filter').match(/url\(#([^)]+)\)/)[1], f = svg.getElementById(id), t = f.querySelector('feTurbulence');
+    const im = document.createElementNS('http://www.w3.org/2000/svg', 'feImage');
+    [['href', FAB], ['x', -30], ['y', -30], ['width', 160], ['height', 160], ['preserveAspectRatio', 'none']].forEach(([a, v]) => im.setAttribute(a, v));
+    const cm = t.nextElementSibling; t.replaceWith(im); if (cm && cm.tagName === 'feColorMatrix') cm.remove();
+    let top = els[0].parentNode; while (top !== svg && !els.every(e => top.contains(e))) top = top.parentNode;
+    if (top === svg) { els.forEach(e => e.setAttribute('filter', 'url(#' + id + ')')); return; }
+    els.forEach(e => e.removeAttribute('filter')); top.setAttribute('filter', 'url(#' + id + ')');
+  }
+
+  // --- the faces the rig plays (the design's state format: keyframes per pose value over ms) -----------------------
+  function addStates() {
+    // the rig's particles drawn bigger: a character here is a third of the lobby's
+    Object.assign(window.RiveRig.PRE, {
+      resSpark: { n: 8, sp: 36, vy: -14, g: 0, life: 780, r: [3.4, 5.6], col: ['#fff3a0', '#ffffff', '#ffd23a', '#ffd1f5'], kind: 'star' },
+      resDust: { n: 7, sp: 26, vy: -5, g: 10, life: 620, r: [2, 3.6], col: ['#ffffff', '#fff6e6', '#f6e2c4'], kind: 'dot' },
+      resHeart: { n: 1, sp: 9, vy: -16, g: -3, life: 1300, r: [1.8, 2.2], kind: 'heart' },
+      resTear: { n: 1, sp: 0.6, vy: 3, g: 18, life: 1100, r: [2.2, 2.5], col: ['#b9c4cc'], kind: 'drop' },
+    });
+    window.RiveRig.add({
+      // grey, waiting to be filled: a hopeful little look up
+      resWait: { loop: 2000, blend: 160, k: { smile: [[0, 0.2]], pitch: [[0, 0.12]], ly: [[0, -0.35]], ...ER([[0, -4]]) } },
+      // filled: delighted, the face lighting up as the colour reaches it
+      resWow: { dur: 700, blend: 70, next: 'resHappy', k: { wide: [[0, 0], [120, 1, 'o'], [520, 1], [700, 0.2, 'io']], open: [[0, 0], [120, 0.8, 'o'], [520, 0.7], [700, 0.5, 'io']], smile: [[0, 0.3], [160, 1, 'o']],
+        hap: [[0, 0], [450, 0], [700, 1, 'io']], blush: [[0, 0], [300, 0.7, 'io']], ...ER([[0, -4], [120, 16, 'o'], [700, 10, 'io']]) } },
+      // happy, for as long as the card is open (the arms, hops and sways are the page's, on top)
+      resHappy: { loop: 1800, blend: 160, k: { hap: [[0, 1]], smile: [[0, 1]], blush: [[0, 0.6]],
+        open: [[0, 0.35], [450, 0.6, 'io'], [900, 0.35, 'io'], [1350, 0.6, 'io'], [1800, 0.35, 'io']],
+        wag: [[0, 0], [300, 16, 'io'], [600, -16, 'io'], [900, 16, 'io'], [1200, -16, 'io'], [1500, 12, 'io'], [1800, 0, 'io']],
+        ...ER([[0, 10], [900, 14, 'io'], [1800, 10, 'io']]) } },
+      // missed: a little sigh, and it stays a bit sad
+      resMiss: { dur: 760, blend: 120, next: 'resSad', k: {
+        sq: [[0, 0], [260, -0.1, 'o'], [520, 0.18, 'io'], [760, 0.1, 'io']], pitch: [[0, 0.1], [600, -0.45, 'io']], ly: [[0, 0], [500, 0.45, 'io']],
+        frown: [[0, 0], [300, 0.8, 'io']], teary: [[0, 0], [600, 0.5, 'io']], smile: [[0, 0]], close: [[0, 0], [260, 0.4, 'io'], [520, 0.2, 'io']],
+        ...ER([[0, 0], [600, -14, 'io']]), ...AR([[0, 0], [600, -12, 'io']]) } },
+      resSad: { loop: 2600, blend: 220, noBlink: true, k: { sq: [[0, 0.1]], pitch: [[0, -0.45]], ly: [[0, 0.45]], frown: [[0, 0.8]], teary: [[0, 0.5]], smile: [[0, 0]], ...ER([[0, -14]]), ...AR([[0, -12]]) } },
+    });
+  }
+
+  // --- the characters ---------------------------------------------------------------------------------------------
+  // C: { id, key, W, H (its body's most width and height, dp), x, y (its feet), el, inner, filt + flood (its fill filter), edge, sh, ctrl, I, bb,
+  // moves: [], happy (its happy loop, once it's landed), mode ('wait' | 'fill' | 'happy' | 'miss') }
+  const C = new Map();
+  let castTag = null;
+
+  function mount(c) {
+    c.sh = document.createElement('div'); c.sh.className = 'sh'; c.sh.style.opacity = '0'; board.appendChild(c.sh);
+    c.el = document.createElement('div'); c.el.className = 'ch grey';
+    c.inner = document.createElement('div'); c.inner.className = 'rig'; c.el.appendChild(c.inner);
+    // the fill: grey (CSS grayscale(1) brightness(1.12), in the filter's own words) laid over the character inside a
+    // box from above its head down to the colour's edge (the flood), in the rig's 0-100 units
+    const fl = document.createElementNS(NS, 'filter');
+    fl.id = 'fill-' + c.id;
+    [['filterUnits', 'userSpaceOnUse'], ['x', -80], ['y', -80], ['width', 260], ['height', 260], ['color-interpolation-filters', 'sRGB']].forEach(([a, v]) => fl.setAttribute(a, v));
+    fl.innerHTML = '<feColorMatrix in="SourceGraphic" type="saturate" values="0" result="g0"/>'
+      + '<feComponentTransfer in="g0" result="g"><feFuncR type="linear" slope="1.12"/><feFuncG type="linear" slope="1.12"/><feFuncB type="linear" slope="1.12"/></feComponentTransfer>'
+      + '<feFlood flood-color="#000" x="-80" y="-80" width="260" height="0" result="m"/>'
+      + '<feComposite in="g" in2="m" operator="in" result="top"/>'
+      + '<feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="top"/></feMerge>';
+    defs.appendChild(fl); c.flood = fl.querySelector('feFlood'); c.filt = fl;
+    c.edge = document.createElement('div'); c.edge.className = 'edge'; c.el.appendChild(c.edge);
+    board.appendChild(c.el);
+    c.el.style.opacity = '0';
+    if (window.__rgI) delete window.__rgI[c.key];
+    c.ctrl = window.RiveRig.mount(c.inner, c.key, { fidgets: false });
+    c.I = c.ctrl._I;
+    c.t0 = performance.now();
+  }
+  function unmount(c) { if (c.ctrl) c.ctrl.destroy(); if (c.el) c.el.remove(); if (c.sh) c.sh.remove(); if (c.filt) c.filt.remove(); }
+  // the rig's body box at rest (its floor shadow and particles left out), in its 0-100 units
+  function measure(c) {
+    const svg = c.inner.querySelector('svg'); if (!svg) return null;
+    let b = null; try { b = svg.getBBox(); } catch (e) {}
+    if (!b || !(b.width > 1)) return null;
+    return { cx: b.x + b.width / 2, gy: b.y + b.height, bw: b.width, bh: b.height, top: b.y, left: b.x };
+  }
+  function ready(c) {
+    if (c.bb) return true;
+    if (!c.I) return false;
+    if (c.I.generic && !c.I.ready) return false;
+    c.ctrl._pose('idle', 0);
+    const bb = measure(c); if (!bb) return false;
+    c.bb = bb; bakeGrain(c.inner.querySelector('svg'));
+    c.settle = performance.now() + 120;
+    return true;
+  }
+  // how much of it has its colour, from the feet up (0 grey … 1 all colour), while it fills: its filter's grey box
+  // (from above it down to the colour's edge), and the shine on that edge
+  function setFill(c, f) {
+    const b = c.bb; if (!b) return;
+    const T = b.top - 14, B = b.gy + 6;
+    const edgeY = B - (B - T) * f;
+    if (c.flood) c.flood.setAttribute('height', Math.max(0, edgeY + 80).toFixed(1));
+    const on = f > 0.02 && f < 0.98;
+    c.edge.style.cssText = 'left:' + (b.left - b.bw * 0.05).toFixed(1) + 'px;top:' + (edgeY - 6).toFixed(1) + 'px;width:' + (b.bw * 1.1).toFixed(1) + 'px;height:12px;opacity:' + (on ? 1 : 0);
+  }
+
+  // drawn with its feet on (x, y): its body as big as fits W × H. `b` is the body's own move about its feet (lift dp,
+  // squash, tilt°), moved by the page every frame.
+  function draw(c, b) {
+    if (!c.bb || !c.el) return;
+    const m = c.cur || {};
+    const k = Math.min(c.W / c.bb.bw, c.H / c.bb.bh) * (m.k == null ? 1 : m.k);
+    const fx = c.bb.cx, fy = c.bb.gy, sq = clamp(b.sq || 0, -0.45, 0.45);
+    const sx = 1 + sq * 0.42, sy = 1 - sq * 0.5;
+    const x = c.x - fx * k + (m.dx || 0), y = c.y - fy * k - (b.lift || 0);
+    let tf = 'translate(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px) scale(' + k.toFixed(4) + ')';
+    if (sq || b.tilt) tf += ' translate(' + fx.toFixed(2) + 'px,' + fy.toFixed(2) + 'px) rotate(' + (b.tilt || 0).toFixed(2) + 'deg) scale(' + sx.toFixed(3) + ',' + sy.toFixed(3) + ') translate(' + (-fx).toFixed(2) + 'px,' + (-fy).toFixed(2) + 'px)';
+    c.el.style.transform = tf;
+    const o = (c.shown ? 1 : 0) * (m.o == null ? 1 : m.o);
+    c.el.style.opacity = String(Math.round(o * 100) / 100);
+    c.kNow = k;
+    // its floor shadow, smaller and fainter the higher it is
+    const up = (b.lift || 0), f = 1 - clamp(up / (c.H * 0.9), 0, 0.6);
+    const w = c.bb.bw * k * 0.9 * f, h = w * 0.2;
+    c.sh.style.transform = 'translate(' + (c.x + (m.dx || 0) - w / 2).toFixed(2) + 'px,' + (c.y - h * 0.55).toFixed(2) + 'px) scale(' + (w / 100).toFixed(4) + ',' + (h / 100).toFixed(4) + ')';
+    c.sh.style.opacity = String(Math.round(o * f * 100) / 100);
+  }
+
+  // --- moves: each a function of time (ms) -------------------------------------------------------------------------
+  // A move: { kind, t0, dur, every, run(c, t) → { k, o, dx, ext, body }, done() }. `ext` is added to the rig's pose,
+  // `body` moves the whole drawing. `every`: the rig is drawn every frame while it runs (else every other frame).
+  function start(c, mv) { mv.t0 = performance.now() + (mv.delay || 0); c.moves.push(mv); kick(); return mv; }
+  const later = (ms, fn) => setTimeout(fn, ms);
+  const play = (c, name) => { if (c.ctrl && c.I && c.I.cur.name !== name) c.ctrl.play(name); };
+  function burst(c, kind, where, n) {
+    if (!c.I || !c.bb) return;
+    const b = c.bb, W = c.I.W || {};
+    const p = where === 'feet' ? [b.cx, b.gy - 2] : where === 'head' ? [b.cx, b.top + 4] : W[where] || [50, 50];
+    try { const e = window.RiveRig.emit; if (e) e(c.I, kind, p, n); } catch (x) {}
+  }
+  // (a particle burst wants the rig drawn every frame while it flies)
+  const glow = (c, ms) => start(c, { kind: 'glow', dur: ms, every: true, run() { return {}; } });
+
+  // popping in, grey
+  function enter(c, delay) {
+    const D = 440;
+    start(c, { kind: 'enter', delay, dur: D, every: true, before: { o: 0 }, run(c, t) {
+      return { k: 0.3 + 0.7 * outBack(clamp(t / D, 0, 1)), o: clamp(t / 120, 0, 1), body: { sq: kv([[0, 0], [D * 0.45, -0.2, 'o'], [D * 0.75, 0.1, 'io'], [D, 0, 'io']], t) } };
+    } });
+    later(delay, () => play(c, 'resWait'));
+  }
+
+  // Filled: the colour rises from its feet to its head, it lights up, crouches, and jumps for joy, slowly: a long
+  // float up with its arms up and a turn round, a moment hanging at the top, down, a squashy landing with sparkles.
+  const FILL = 560, CROUCH = 360, RISE = 640, HANG = 320, FALL = 460, LAND = 480;
+  function filled(c) {
+    c.mode = 'fill';
+    play(c, 'resWait');
+    const H = c.H * 0.62; // how high (dp)
+    const a = FILL, b = a + CROUCH, top = b + RISE, down = top + HANG, ground = down + FALL, D = ground + LAND;
+    // grey → its fill filter (the same grey, all over it to start with), in one frame
+    setFill(c, 0);
+    c.inner.style.filter = 'url(#fill-' + c.id + ')';
+    c.el.classList.remove('grey');
+    later(FILL * 0.62, () => play(c, 'resWow'));
+    later(FILL, () => { burst(c, 'resSpark', 'head', 7); });
+    later(b + 40, () => post({ type: 'jump', id: c.id }));
+    later(ground, () => { burst(c, 'resDust', 'feet'); burst(c, 'resSpark', 'feet', 5); post({ type: 'land', id: c.id }); });
+    later(top - 120, () => { burst(c, 'resHeart', 'head', 1); });
+    later(top + 160, () => { burst(c, 'resHeart', 'head', 1); });
+    start(c, { kind: 'fill', dur: D, every: true, run(c, t) {
+      setFill(c, SM(t / FILL));
+      // the body: a little stretch as it fills, the crouch, the float up and down, the landing
+      let lift = 0;
+      if (t > b && t <= top) lift = H * outQ((t - b) / RISE);
+      else if (t > top && t <= down) lift = H * (1 - 0.06 * SM((t - top) / HANG));
+      else if (t > down && t <= ground) lift = H * 0.94 * (1 - inQ((t - down) / FALL));
+      const sq = kv([[0, 0], [a * 0.7, -0.08, 'io'], [a, 0, 'io'], [b, 0.32, 'io'], [b + 110, -0.3, 'o'], [top, -0.08, 'io'], [down, -0.04, 'io'], [ground - 60, -0.18, 'i'],
+        [ground, 0.34, 'o'], [ground + 130, -0.16, 'io'], [ground + 250, 0.08, 'io'], [ground + 360, -0.03, 'io'], [D, 0, 'io']], t);
+      const arm = kv([[0, 0], [a, 6, 'io'], [b, -16, 'io'], [b + 160, 52, 'o'], [down, 46, 'io'], [ground, 30, 'io'], [ground + 120, -10, 'o'], [D, 14, 'io']], t);
+      const wave = t > b + 160 && t < down ? 10 * Math.sin((t - b) / 95) : 0;
+      const tilt = kv([[0, 0], [b, 0], [b + 200, 5, 'io'], [top, -4, 'io'], [down, 3, 'io'], [ground, 0, 'io']], t);
+      // a slow turn round in the air
+      const spin = t < b + 80 ? 0 : t > ground - 40 ? 0 : 360 * SM((t - b - 80) / (ground - 40 - b - 80));
+      return { body: { lift, sq, tilt }, ext: { armL: arm + wave, armR: arm - wave, spin, footL: t > b && t < ground ? 2 : 0, footR: t > b && t < ground ? 2 : 0 } };
+    }, done() { setFill(c, 1); c.inner.style.filter = ''; c.mode = 'happy'; c.happy = { t0: performance.now(), n: c.idx }; play(c, 'resHappy'); kick(); } });
+  }
+
+  // Missed: grey still, a little sigh.
+  function missed(c) {
+    c.mode = 'miss';
+    play(c, 'resMiss');
+    start(c, { kind: 'miss', dur: 900, run(c, t) { return { body: { sq: kv([[0, 0], [300, -0.06, 'o'], [600, 0.08, 'io'], [900, 0.05, 'io']], t) } }; } });
+    later(700, () => { burst(c, 'resTear', 'eyeL'); glow(c, 1100); });
+  }
+
+  // The happy loop, once landed: a sway on the spot, and one of its happy moves every couple of seconds, taking
+  // turns (two little bounces; a wave hello; a wiggle side to side; a hop with a twirl), each a different one at a time.
+  const HAPPY = [
+    { ms: 1000, f(t) { const u = t / 1000, h = Math.max(parab(u * 2), parab(u * 2 - 1)); return { body: { lift: 0.2 * h, sq: -0.14 * h + 0.16 * Math.max(0, Math.cos(u * Math.PI * 4)) * (1 - h) }, ext: AR(30 * h + 8) }; } },
+    { ms: 1300, f(t) { const e = Math.sin(clamp(t / 1300, 0, 1) * Math.PI), w = Math.sin(t / 85); return { body: { tilt: -4 * e }, ext: { armR: (54 + 16 * w) * e, armL: -6 * e, htilt: 6 * e } }; } },
+    { ms: 1100, f(t) { const e = Math.sin(clamp(t / 1100, 0, 1) * Math.PI), w = Math.sin(t / 90); return { body: { tilt: 8 * w * e, sq: 0.05 * Math.abs(w) * e }, ext: { lean: 2.2 * w * e, armL: (24 + 14 * w) * e, armR: (24 - 14 * w) * e } }; } },
+    { ms: 1200, f(t) { const u = t / 1200, h = parab((u - 0.15) / 0.7); return { body: { lift: 0.32 * h, sq: kv([[0, 0], [150, 0.24, 'io'], [260, -0.26, 'o'], [900, -0.06, 'io'], [1000, 0.22, 'o'], [1200, 0, 'io']], t) }, ext: Object.assign({ spin: 360 * SM((u - 0.2) / 0.62) }, AR(40 * h)) }; } },
+  ];
+  // After CALM_MS of it (a card left open), it calms down: the sway fades, and between its moves it stands still (not
+  // drawn), resting longer, woken by a timer (the page sleeps meanwhile, its clock held).
+  const CALM_MS = 15000;
+  function happyNow(c, now) {
+    const hp = c.happy; if (!hp) return null;
+    const w = (now - hp.t0) / 1000;
+    const calm = now - hp.t0 > CALM_MS, sway = 1 - clamp((now - hp.t0 - CALM_MS) / 900, 0, 1);
+    const out = { body: { tilt: 2.5 * sway * Math.sin(w * 2.2 + c.idx), sq: 0.03 * sway * Math.sin(w * 4.4 + c.idx) }, ext: AR(10 + 6 * sway * Math.sin(w * 3 + c.idx)), every: false };
+    // its next move: after a rest, a different one each time (and the three not at once)
+    if (!hp.mv && now >= (hp.next || hp.t0 + 500 + c.idx * 650)) {
+      hp.mv = HAPPY[hp.n % HAPPY.length]; hp.n += 1; hp.at = now;
+      if (hp.n % 2 === 0) burst(c, 'resHeart', 'head', 1);
+    }
+    if (hp.mv) {
+      const t = now - hp.at;
+      if (t >= hp.mv.ms) {
+        hp.mv = null;
+        if (!calm) hp.next = now + 900 + ((c.idx * 397 + hp.n * 211) % 700);
+        else { hp.next = Infinity; clearTimeout(hp.wake); hp.wake = setTimeout(() => { hp.next = 0; kick(); }, 2600 + ((c.idx * 523 + hp.n * 311) % 1800)); }
+      }
+      else {
+        const r = hp.mv.f(t);
+        if (r.body) for (const k in r.body) out.body[k] = (out.body[k] || 0) + (k === 'lift' ? r.body[k] * c.H : r.body[k]);
+        if (r.ext) for (const k in r.ext) out.ext[k] = (out.ext[k] || 0) + r.ext[k];
+        out.every = true;
+      }
+    }
+    out.idle = calm && sway <= 0 && !hp.mv;
+    return out;
+  }
+
+  // --- what the app asks for -------------------------------------------------------------------------------------
+  const api = {
+    // the three: [{ id, key, W, H, x, y }] (feet at x, y in the page); `tag` names this cast
+    cast(list, tag) {
+      castTag = tag;
+      const ids = new Set(list.map(c => c.id));
+      for (const [id, c] of C) if (!ids.has(id)) { unmount(c); C.delete(id); }
+      list.forEach((it, i) => {
+        let c = C.get(it.id);
+        if (c && c.key !== it.key) { unmount(c); C.delete(it.id); c = null; }
+        if (!c) { c = { id: it.id, key: it.key, moves: [], mode: 'wait', idx: i, settle: 0 }; C.set(it.id, c); mount(c); }
+        Object.assign(c, { W: it.W, H: it.H, x: it.x, y: it.y, idx: i });
+      });
+      kick();
+    },
+    // the plan: [{ id, at, earned }]: all pop in grey now, one after another; at `at` ms an earned one fills and jumps,
+    // a missed one sighs
+    run(plan) {
+      plan.forEach((p, i) => {
+        const c = C.get(p.id); if (!c) return;
+        if (c.happy) clearTimeout(c.happy.wake);
+        c.moves = []; c.happy = null; c.mode = 'wait'; c.shown = true;
+        c.inner.style.filter = ''; c.el.classList.add('grey'); setFill(c, 1);
+        enter(c, i * 90);
+        later(p.at, () => (p.earned ? filled(c) : missed(c)));
+      });
+    },
+    pause(on) { userPaused = !!on; sync(); },
+  };
+
+  // --- the frame loop: moves → place and pose, then who's drawn this frame ------------------------------------------
+  let running = false, userPaused = false, sleeping = false, tick = 0;
+  const sync = () => window.__rigPause(userPaused || sleeping);
+  function frame() {
+    const now = performance.now();
+    tick++;
+    let busy = false, allReady = true;
+    for (const c of C.values()) {
+      if (!ready(c)) {
+        // a rig that never draws (its art didn't load): the app keeps its stills
+        if (now - c.t0 > 9000 && castTag != null && api._sent !== castTag) { api._sent = castTag; post({ type: 'cast', tag: castTag, ok: false, key: c.key }); }
+        allReady = false; busy = busy || now - c.t0 < 9000; continue;
+      }
+      const ext = {}, body = {}; const cur = {};
+      let every = false;
+      const list = c.moves; c.moves = [];
+      const kept = [];
+      for (const m of list) {
+        const t = now - m.t0;
+        if (t < 0) { if (m.before) Object.assign(cur, m.before); kept.push(m); continue; }
+        if (t >= m.dur) { m.run(c, m.dur); if (m.done) m.done(); continue; }
+        const r = m.run(c, t) || {};
+        if (m.every) every = true;
+        if (r.dx) cur.dx = (cur.dx || 0) + r.dx;
+        if (r.k != null) cur.k = (cur.k == null ? 1 : cur.k) * r.k;
+        if (r.o != null) cur.o = (cur.o == null ? 1 : cur.o) * r.o;
+        if (r.ext) for (const k in r.ext) ext[k] = (ext[k] || 0) + r.ext[k];
+        if (r.body) for (const k in r.body) body[k] = (body[k] || 0) + r.body[k];
+        kept.push(m);
+      }
+      c.moves = kept.concat(c.moves);
+      const hp = happyNow(c, now);
+      if (hp) {
+        for (const k in hp.body) body[k] = (body[k] || 0) + hp.body[k];
+        for (const k in hp.ext) ext[k] = (ext[k] || 0) + hp.ext[k];
+        if (hp.every) every = true;
+      }
+      if (ext.sq != null) ext.sq = clamp(ext.sq, -0.45, 0.45);
+      c.cur = cur;
+      if (c.ctrl) c.ctrl.ext(ext);
+      draw(c, body);
+      if (c.moves.length || (hp && !hp.idle)) c.settle = now + 450;
+      const live = c.moves.length > 0 || now < c.settle;
+      // drawn: every frame through its moves, every other frame while happy between them, then kept as it is
+      if (c.I && c.I.generic) c.I.ready = live && (every || !c.happy || (tick + c.idx) % 2 === 0);
+      if (live) {
+        busy = true;
+        // (not frozen mid-blink)
+        if ((!c.happy || hp.idle) && c.I && now > c.settle - 450) c.I.blinkAt = Math.max(c.I.blinkAt || 0, now + 700);
+      }
+    }
+    if (allReady && castTag != null && C.size && !api._sent) { api._sent = castTag; post({ type: 'cast', tag: castTag, ok: true }); }
+    if (busy) requestAnimationFrame(frame);
+    else { running = false; sleeping = true; sync(); }
+  }
+  function kick() { if (sleeping) { sleeping = false; sync(); } if (!running) { running = true; requestAnimationFrame(frame); } }
+  // a new cast reports once it's all drawn
+  const castRaw = api.cast;
+  api.cast = (list, tag) => { api._sent = null; castRaw(list, tag); };
+
+  window.resultStage = api;
+  api._C = C; // (for the browser tests: the characters)
+  api._state = () => ({ sleeping, userPaused, drawn: [...C.values()].filter(c => c.I && c.I.ready).map(c => c.id), modes: [...C.values()].map(c => c.mode) });
+  const boot = () => {
+    const R = window.RiveRig;
+    if (R && R.REST && R.DEFS && R.DEFS.prickle && R.movesV && window.RiveGeneric) { kv = R.kv; addStates(); post({ type: 'ready' }); }
+    else setTimeout(boot, 25);
+  };
+  boot();
+  window.onerror = (m) => post({ type: 'error', message: String(m) });
+})();
+</script>
+</body>
+</html>

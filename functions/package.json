@@ -2,7 +2,7 @@
   "name": "plushcrush-functions",
   "description": "Cloud Functions for PlushCrush — image-to-3D via Tripo",
   "engines": {
-    "node": "20"
+    "node": "22"
   },
   "main": "index.js",
   "scripts": {

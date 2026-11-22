@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import React, { useRef } from 'react';
+import { Animated, Pressable, StyleSheet, View, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BUTTON_VARIANTS, candyFonts } from '../../theme/candyTheme';
 import ShadowText, { outline3 } from './ShadowText';
 import sfx from '../../audio/sfx';
+import { usePingPong } from '../idleLoop';
 
 // The v3 "candy" button: a gradient face inside a white border, wrapped in a
 // dark ring whose colour also forms a thick bottom lip, with a glossy shine
@@ -74,29 +75,15 @@ export default function CandyButton({
   const v = BUTTON_VARIANTS[variant] || BUTTON_VARIANTS.pink;
   const sz = SIZES[size] || SIZES.md;
   const press = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(0)).current;
-
   const pulseSpec = pulse ? PULSES[pulse === true ? 'cta' : pulse] : null;
-  useEffect(() => {
-    if (!pulseSpec || disabled) return undefined;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1, duration: pulseSpec.half, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 0, duration: pulseSpec.half, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => {
-      loop.stop();
-      pulseAnim.setValue(0);
-    };
-  }, [pulseSpec, disabled, pulseAnim]);
+  // one native loop (idleLoop.js), back at 1 while it's off
+  const pulsing = usePingPong(pulseSpec ? pulseSpec.half * 2 : 1600, { from: 1, to: pulseSpec ? pulseSpec.to : 1, on: !!pulseSpec && !disabled });
 
   const sink = (to) => Animated.timing(press, { toValue: to, duration: 80, useNativeDriver: true }).start();
 
   const faceY = press.interpolate({ inputRange: [0, 1], outputRange: [0, sz.lip - 1] });
   const pressScale = press.interpolate({ inputRange: [0, 1], outputRange: [1, 0.97] });
-  const pulseScale = pulseSpec ? pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, pulseSpec.to] }) : 1;
+  const pulseScale = pulseSpec ? pulsing : 1;
 
   const outerR = radius;
   const innerR = Math.max(0, radius - sz.ring);
@@ -154,44 +141,6 @@ export default function CandyButton({
   );
 }
 
-// Non-interactive candy pill (card status rows like PLAY ▶ / LOCKED · GET
-// KEY) — same look as a small CandyButton, for places where the whole card
-// is already the tap target. `pulse` breathes it 1→1.04. Padding and letter
-// spacing follow the design per use (PLAY ▶ 5/16 at 13px, the locked states
-// 4/12 at 12px).
-export function CandyPill({ variant = 'pink', label, pulse = false, halfMs = 800, fontSize, padV = 4, padH = 14, letterSpacing, style }) {
-  const v = BUTTON_VARIANTS[variant] || BUTTON_VARIANTS.pink;
-  const anim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (!pulse) return undefined;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(anim, { toValue: 1, duration: halfMs, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(anim, { toValue: 0, duration: halfMs, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [pulse, halfMs, anim]);
-  const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] });
-  return (
-    <Animated.View style={[{ transform: [{ scale }] }, style]}>
-      <View style={[styles.pillLip, { backgroundColor: v.ring }]}>
-        <View style={[styles.pillRing, { backgroundColor: v.ring }]}>
-          <LinearGradient colors={v.colors} locations={v.locations} style={styles.pillFace}>
-            <Shine />
-            <View style={{ paddingVertical: padV, paddingHorizontal: padH }}>
-              <ButtonText ring={v.ring} size={fontSize || (variant === 'blue' ? 13 : 12)} style={letterSpacing != null ? { letterSpacing } : null}>
-                {label}
-              </ButtonText>
-            </View>
-          </LinearGradient>
-        </View>
-      </View>
-    </Animated.View>
-  );
-}
-
 // White caption outlined in the button's ring colour — the design's
 // `text-shadow: 0 2px 0 ring, 1px 0 0 ring, -1px 0 0 ring` on every button.
 // Exposed for custom button content.
@@ -212,9 +161,6 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   face: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  pillLip: { borderRadius: 999, paddingBottom: 4 },
-  pillRing: { borderRadius: 999, padding: 2 },
-  pillFace: { borderRadius: 999, borderWidth: 3, borderColor: '#ffffff', overflow: 'hidden' },
   label: {
     fontFamily: candyFonts.display,
     color: '#ffffff',

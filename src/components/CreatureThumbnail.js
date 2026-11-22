@@ -5,6 +5,7 @@ import { FACE_FOR_MOOD, faceSvg, lidsSvg } from '../plush/faces';
 import { runTrack, hashOf, CYCLE, CYCLE_STEP_MS } from '../plush/motion';
 import { planMood } from '../plush/care';
 import { FOODS } from '../crib/data';
+import { stepKeys, useKeyLoop } from './idleLoop';
 
 // Draws a creature from its Firestore catalog entry (`creatures/{id}`).
 //
@@ -55,6 +56,8 @@ export function pickPlushArt(creature, box, locked, faceless = false) {
 export function plushArtUrls(creatures = []) {
   const urls = [];
   creatures.forEach((c) => {
+    // the rig still (REDESIGN_V6: the Squad grid and other static pictures)
+    if (c && c.thumb && c.thumb.url) urls.push(c.thumb.url);
     const p = c && c.plush;
     if (!p) return;
     Object.keys(p).forEach((k) => p[k] && p[k].url && urls.push(p[k].url));
@@ -200,23 +203,22 @@ const Face = memo(function Face({ rig, faceKey, box, mouth = true }) {
 
 // The blink while the drawing's own face shows: lids in the patch's colour,
 // down for 70 ms and up in 130 ms, every 2.4-5.6 s, sometimes twice.
+// One native loop: the round of waits and blinks is keyframes of a phase
+// (idleLoop.js), the waits rests in them. (Not Animated.delay, which runs on
+// the JS driver and counts as an "interaction": a few dozen of these looping
+// kept InteractionManager busy, and FlatList only builds rows between
+// interactions. Nor a loop of a sequence, which JS restarted at every step.)
+const BLINK = [
+  [1, 70, CSS_EASE_IN_OUT],
+  [0, 130, CSS_EASE_IN_OUT],
+];
 const Blink = memo(function Blink({ rig, box, h }) {
   const xml = useMemo(() => lidsSvg(rig), [rig]);
-  const t = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const down = Animated.timing(t, { toValue: 1, duration: 70, easing: CSS_EASE_IN_OUT, useNativeDriver: true });
-    const up = Animated.timing(t, { toValue: 0, duration: 130, easing: CSS_EASE_IN_OUT, useNativeDriver: true });
-    const blink = () => [down, up];
-    // The pauses are native timings that hold 0, NOT Animated.delay: delay()
-    // runs on the JS driver and counts as an "interaction", and a few dozen
-    // of these looping would keep InteractionManager busy forever — and
-    // FlatList (the Key Shop) only builds its rows between interactions.
-    const hold = (ms) => Animated.timing(t, { toValue: 0, duration: ms, useNativeDriver: true });
-    const wait = (k) => hold(2400 + ((h * 37 + k * 1009) % 3200));
-    const loop = Animated.loop(Animated.sequence([wait(1), ...blink(), wait(2), ...blink(), hold(240), ...blink(), wait(3), ...blink()]));
-    loop.start();
-    return () => loop.stop();
-  }, [t, h]);
+  const keys = useMemo(() => {
+    const wait = (k) => [0, 2400 + ((h * 37 + k * 1009) % 3200)];
+    return stepKeys(0, [wait(1), ...BLINK, wait(2), ...BLINK, [0, 240], ...BLINK, wait(3), ...BLINK]);
+  }, [h]);
+  const t = useKeyLoop(keys.ms, keys);
   return (
     <Animated.View style={[StyleSheet.absoluteFill, { width: box, height: box, opacity: t }]} pointerEvents="none">
       <SvgXml xml={xml} width={box} height={box} />
@@ -224,22 +226,14 @@ const Blink = memo(function Blink({ rig, box, h }) {
   );
 });
 
-// The component's two ✦ (creTwinkle: fade/grow in while turning 45°).
+// The component's two ✦ (creTwinkle: fade/grow in while turning 45°), 1.1 s
+// in and 1.1 s out, one native loop each.
+const TWINKLE = stepKeys(0, [
+  [1, 1100, CSS_EASE_IN_OUT],
+  [0, 1100, CSS_EASE_IN_OUT],
+]);
 function CreatureSparkle({ size, color, delay, style }) {
-  const t = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(t, { toValue: 1, duration: 1100, easing: CSS_EASE_IN_OUT, useNativeDriver: true }),
-        Animated.timing(t, { toValue: 0, duration: 1100, easing: CSS_EASE_IN_OUT, useNativeDriver: true }),
-      ])
-    );
-    const start = setTimeout(() => loop.start(), delay);
-    return () => {
-      clearTimeout(start);
-      loop.stop();
-    };
-  }, [t, delay]);
+  const t = useKeyLoop(TWINKLE.ms, { at: TWINKLE.at, values: TWINKLE.values, delay });
   return (
     <Animated.Text
       pointerEvents="none"
@@ -269,22 +263,16 @@ function CreatureSparkle({ size, color, delay, style }) {
 // of the art through the rainbow (the design's hue-rotate `holo`), 'gold'
 // pulses a gold-tinted copy (its sepia `goldGlint`).
 const HOLO_HUES = ['#ff5c8a', '#ffc233', '#5cf08a', '#3fd7f6', '#7c6cff', '#e25cff'];
+// one native loop either way: the rainbow's 3 s sweep, or gold's 1 s up and 1 s down
+const HOLO_KEYS = { ms: 3000, at: [0, 1], values: [0, 1] };
+const GOLD_KEYS = stepKeys(0, [
+  [1, 1000, CSS_EASE_IN_OUT],
+  [0, 1000, CSS_EASE_IN_OUT],
+]);
 
 function Wash({ kind, uri, style }) {
-  const t = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const anim =
-      kind === 'holo'
-        ? Animated.loop(Animated.timing(t, { toValue: 1, duration: 3000, easing: Easing.linear, useNativeDriver: true }))
-        : Animated.loop(
-            Animated.sequence([
-              Animated.timing(t, { toValue: 1, duration: 1000, easing: CSS_EASE_IN_OUT, useNativeDriver: true }),
-              Animated.timing(t, { toValue: 0, duration: 1000, easing: CSS_EASE_IN_OUT, useNativeDriver: true }),
-            ])
-          );
-    anim.start();
-    return () => anim.stop();
-  }, [kind, t]);
+  const keys = kind === 'holo' ? HOLO_KEYS : GOLD_KEYS;
+  const t = useKeyLoop(keys.ms, keys);
   if (kind === 'gold') {
     const opacity = t.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.55] });
     return <Animated.Image source={{ uri }} fadeDuration={0} resizeMode="stretch" style={[style, { tintColor: '#ffb81f', opacity }]} />;

@@ -11,6 +11,7 @@ import * as FileSystem from 'expo-file-system';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { PHYS } from '../data/creatures';
 import perf from '../perfProbe';
+import { CARD_FRAGMENT, CARD_TUNING, cardGeometryData, cardMaterial, cardMotion, cardState, cardSway, loadCardTexture } from './squishCard';
 
 // Used by buildCreature's procedural-sphere path (and prepareModelData's
 // no-texture-map fallback tint) whenever the caller doesn't have a real
@@ -28,9 +29,9 @@ const DEFAULT_VISUAL = { color: '#2dd4bf', accent: '#0d9488', accessory: 'antenn
 // Soft-body dent physics, originally ported from "ASMR Creature Squash
 // Game.html"'s buildCreature/tickPhysics/applyDentAtLocalPoint: a spring
 // toward a dent target (the "jelly" lag), a global squash spring, release
-// wobble, and orbit. The squish now runs on the GPU and moves the whole body
-// like a pillow (a wide dent, a swelling rim, the surface pulled into the
-// dent, and a whole-body squeeze): the vertex shader evaluates it per vertex
+// wobble, and orbit. The dent has since been reshaped from the spec's radial
+// Gaussian into a pointed funnel pushed along the press direction, and it
+// now runs on the GPU: the vertex shader evaluates the funnel per vertex
 // from a short list of press points, each driven by one scalar spring on the
 // JS thread (see "the squish itself" below).
 
@@ -193,15 +194,9 @@ function buildCreature(id, visual) {
     vertCount: count,
     sampleStride: 1,
     // Dent shape for the unit-radius procedural sphere — see MODEL_TUNING.
-    dentDepth: 0.67,
-    dentRadius: 0.5,
-    dentRim: 0.35,
-    dentRimWidth: 1.6,
-    dentPull: 0.45,
-    dentPullWidth: 0.75,
-    dentSqueeze: 0.14,
-    bottomY: -1,
-    extent: { w: 2, h: 2, midY: 0 },
+    dentDepth: 0.6,
+    dentRadius: 0.33,
+    dentTip: 0.05,
     featureBases,
     featureMeshes,
     featureScaleBase,
@@ -215,6 +210,7 @@ function buildCreature(id, visual) {
     blinkTimer: 2 + Math.random() * 3,
     ...makeSquishState(),
   };
+  if (card) Object.assign(s, cardState(id, stage, group));
   installSquishShader(bodyMat, s);
   return s;
 }
@@ -242,45 +238,17 @@ function buildCreature(id, visual) {
 // rescaled so its largest dimension == this many units; 2 == same size as
 // the procedural spheres). The camera (SquishScreen) sees 2.47 units top to
 // bottom, so 2.25 fills 91% of the stage; only the very top of a tall
-// creature can touch the edge at the peak of a deep pop-out press.
-//
-// The press squishes it like a head sinking into a pillow, not a finger
-// poking a balloon: the whole body gives (see "the squish itself" below and
-// computeDentFall / applyDentScale / tickPhysics).
-// - `dentDepth`: how deep the middle of the dent goes when held (model units).
-// - `dentRadius`: the dent's width (a smooth bell, its sigma). Wide on
-//   purpose: the dent covers most of the side that was pressed.
-// - `dentRim` / `dentRimWidth`: the ring around the dent rises by this
-//   fraction of the depth, over this many times the dent's width, as the
-//   pushed-in stuffing goes into the sides.
-// - `dentPull` / `dentPullWidth`: the surface around the dent is pulled in
-//   toward the press, so the fabric folds into the dent (at most this
-//   fraction of the way), over this many times the dent's width. Narrower
-//   than the dent so the creature's outline isn't pulled in with it.
-// - `dentSqueeze`: the whole body is squeezed along the press direction by up
-//   to this fraction, and spreads out sideways by a quarter of that (less
-//   than a real volume would: the stage has little room to the sides).
-// These are the strongest squish (Squish level 5 in the squish screen's
-// settings): the player's level scales the depth, the pull, the squeeze and
-// the floor flatten together (`dentUserScale`).
+// creature can touch the edge at the peak of a deep pop-out press. The dent is a pointed funnel pushed in along the
+// press direction, like a finger or spear poking in (see computeDentFall /
+// applyDentScale / tickPhysics): `dentDepth` is how deep the tip goes when
+// held (model units), `dentRadius` how quickly it fades away from the tip,
+// and `dentTip` rounds the very tip so it isn't a single-vertex spike.
 // `fallbackColor` only matters for the rare mesh with no baked texture map
 // (see prepareModelData).
-// Until 2026-10-05 the dent was a pointed funnel (dentDepth 0.6, a cusp of
-// radius 0.33), which read as a spear going into a balloon. The widths are
-// sized for a creature with a head about 1.3 units across: pressing the face
-// caves the face in and pulls it together while the head keeps its outline
-// (a dent wider than the head shrank the whole head).
-const MODEL_TUNING = {
-  visual: 2.25,
-  dentDepth: 0.75,
-  dentRadius: 0.55,
-  dentRim: 0.35,
-  dentRimWidth: 1.6,
-  dentPull: 0.45,
-  dentPullWidth: 0.75,
-  dentSqueeze: 0.14,
-  fallbackColor: '#2dd4bf',
-};
+// dentRadius was 0.14 until 2026-09-29: on a phone the finger itself covers
+// about 0.35 units of the body, so a dent that narrow hid under it. At 0.33
+// the visible rim reaches ~0.75 units, well clear of the fingertip.
+const MODEL_TUNING = { visual: 2.25, dentDepth: 0.6, dentRadius: 0.33, dentTip: 0.05, fallbackColor: '#2dd4bf' };
 
 // Creatures that get a soft glossy sheen over their texture, like Tripo's
 // viewer shows them. Tripo exports carry no shine data (just a colour
@@ -331,9 +299,19 @@ function loadGltfFromUrl(url) {
 // per-instance geometry/mesh construction from this cached data, so a
 // revisit — or the normal preload-then-mount path — never re-pays it.
 const remoteModelDataPromises = new Map();
+// urls whose model data is ready (their promise above has resolved)
+const readyModelUrls = new Set();
 function loadModelDataFromUrl(creatureId, url) {
   if (!remoteModelDataPromises.has(url)) {
-    remoteModelDataPromises.set(url, loadGltfFromUrl(url).then((gltf) => prepareModelData(creatureId, MODEL_TUNING, gltf)));
+    remoteModelDataPromises.set(
+      url,
+      loadGltfFromUrl(url)
+        .then((gltf) => prepareModelData(creatureId, MODEL_TUNING, gltf))
+        .then((data) => {
+          readyModelUrls.add(url);
+          return data;
+        }),
+    );
   }
   return remoteModelDataPromises.get(url);
 }
@@ -347,8 +325,38 @@ function loadModelDataFromUrl(creatureId, url) {
 // the same in-flight/resolved promise — a creature with no modelUrl
 // (2D/procedural) resolves immediately.
 export function preloadCreatureModel(creature) {
+  if (creature && creature.card && creature.card.url) return loadCardDataFromUrl(creature.card.url);
   if (!creature || !creature.modelUrl) return Promise.resolve();
   return loadModelDataFromUrl(creature.id, creature.modelUrl);
+}
+
+// The design's card (src/components/squishCard.js): one geometry and pick
+// grid shared by every card, and each creature's atlas as its texture.
+let cardGeometry = null;
+function loadCardDataFromUrl(url) {
+  if (!remoteModelDataPromises.has(url)) {
+    remoteModelDataPromises.set(
+      url,
+      loadCardTexture(url).then((map) => {
+        if (!cardGeometry) {
+          const g = cardGeometryData();
+          cardGeometry = { ...g, grid: buildTriangleGrid(g.basePos, g.indexArray) };
+        }
+        readyModelUrls.add(url);
+        return { ...cardGeometry, map, fallbackColor: new THREE.Color(CARD_TUNING.fallbackColor), card: true };
+      }),
+    );
+    remoteModelDataPromises.get(url).catch(() => remoteModelDataPromises.delete(url));
+  }
+  return remoteModelDataPromises.get(url);
+}
+
+// True when SquishScreen can show this creature without waiting: it has no
+// model to load (2D art), or its model was already loaded this app run.
+// LoadingScreen then skips its "Getting Ready" beat.
+export function isCreatureModelReady(creature) {
+  if (creature && creature.card && creature.card.url) return readyModelUrls.has(creature.card.url);
+  return !creature || !creature.modelUrl || readyModelUrls.has(creature.modelUrl);
 }
 
 // Low-poly exports (Tripo retopo included) commonly split a vertex into two
@@ -554,208 +562,95 @@ function prepareModelData(id, cfg, gltf) {
 
 // ---- the squish itself: a vertex shader ----
 //
-// A press squishes the toy like a head on a pillow. Every vertex moves, by
-// the sum of four parts, all measured on the REST surface:
-// 1. the dent: a wide smooth bell pushed in along the press direction,
-//    deepest under the finger;
-// 2. the rim: a wider, shallower bell in the other direction, so the ring
-//    around the dent swells up as the stuffing is pushed aside;
-// 3. the pull: the surface around the dent slides in toward the press point
-//    (sideways to the press), so the fabric folds into the dent instead of
-//    just dipping;
-// 4. the squeeze: the whole body is compressed along the press direction and
-//    spreads out sideways, so even the far side reacts.
-// Each press point is one damped spring on the JS thread (its amplitude);
-// when the finger slides, the old spot springs back while the new one grows
-// (that superposition is the "jelly" lag).
+// The dent is a pointed funnel pushed in along the press direction — deepest
+// right under the finger and fading exponentially (a cusp, not a bell) with
+// distance, like a finger or spear poking in. Its depth follows the finger
+// through a damped spring, and when the finger slides, the old spot's funnel
+// springs back while the new one grows (that superposition is the "jelly"
+// lag). Every vertex used to be its own spring, updated on the JS thread and
+// re-uploaded every frame, with the normals recomputed from the triangles:
+// 10-20 ms a frame on a 6k-vertex Tripo mesh under Hermes (no JIT), which
+// is what made squishing drop to 25-45 fps on a mid-range phone.
 //
-// The mesh never changes on the CPU (that cost 10-20 ms a frame on a 6k-
-// vertex Tripo mesh under Hermes). The GPU evaluates the displacement per
-// vertex from a short list of press points (position + spring amplitude,
-// uSquishPress), and transforms the authored normal by the cofactor of the
-// displacement's Jacobian, so shading follows the squish without any
+// Now the mesh never changes on the CPU. The GPU evaluates the same funnel
+// per vertex from a short list of press points (position + spring
+// amplitude, uSquishPress), and tilts the authored normal by the exact
+// Jacobian of that displacement, so shading follows the dent without any
 // normal recomputation. tickPhysics only advances one scalar spring per
-// press point.
+// press point. The old per-vertex simulation also diffused the dent across
+// neighbouring vertices; measured at equilibrium on the real meshes, that
+// changed the profile by under 1% (RMS 4e-4 units), so the plain funnel is
+// used as is.
 const SQUISH_MAX_PRESSES = 24;
 
-// uSquishDir: press direction * push-in/pop-out sign / lift.
-// uSquishDent: x = 1/sigma^2 of the dent, y = pull strength (signed, per
-// unit of amplitude), z = overshoot guard on the depth, w = squeeze amount
-// (signed). uSquishRim: x = 1/sigma^2 of the rim, y = rim height ratio,
-// z = 1/sigma^2 of the pull.
 const SQUISH_VERTEX_GLSL = `
 #define SQUISH_MAX ${SQUISH_MAX_PRESSES}
 uniform vec4 uSquishPress[SQUISH_MAX];
 uniform int uSquishCount;
 uniform vec3 uSquishDir;
 uniform vec4 uSquishDent;
-uniform vec3 uSquishRim;
-uniform vec3 uWrinkleSize;
-varying vec3 vSquishRest;
-varying float vSquishShade;
 vec3 squishGrad;
-vec3 squishPull;
-mat3 squishPullJ;
-float squishDepth(vec3 p, mat3 sideways) {
+float squishDepth(vec3 p) {
   float depth = 0.0;
   squishGrad = vec3(0.0);
-  squishPull = vec3(0.0);
-  squishPullJ = mat3(0.0);
+  float tip = uSquishDent.y;
+  float invRadius = 1.0 / uSquishDent.x;
   for (int j = 0; j < SQUISH_MAX; j++) {
     if (j >= uSquishCount) break;
     vec3 q = p - uSquishPress[j].xyz;
-    float qq = dot(q, q);
-    float amp = uSquishPress[j].w;
-    float dent = exp(-0.5 * qq * uSquishDent.x) * amp;
-    float rim = exp(-0.5 * qq * uSquishRim.x) * amp * uSquishRim.y;
-    depth += dent - rim;
-    squishGrad -= q * (dent * uSquishDent.x - rim * uSquishRim.x);
-    vec3 t = sideways * q;
-    float k = uSquishDent.y * exp(-0.5 * qq * uSquishRim.z) * amp;
-    squishPull -= t * k;
-    squishPullJ -= k * (sideways - mat3(t * q.x, t * q.y, t * q.z) * uSquishRim.z);
+    float rt = sqrt(dot(q, q) + tip * tip);
+    float f = exp(-(rt - tip) * invRadius) * uSquishPress[j].w;
+    depth += f;
+    squishGrad -= q * (f * invRadius / rt);
   }
   return depth;
 }
 `;
 
 // After three's own "objectNormal = normal": the displaced surface's normal
-// is cof(J) * normal for the displacement's Jacobian J (columns c0..c2:
-// cof(J) has columns c1 x c2, c2 x c0, c0 x c1). If an extreme press ever
-// folds the surface, the rest normal is kept rather than flipping the
-// shading.
+// is J^-T · normal for the displacement's Jacobian J = I + dir ⊗ ∇depth
+// (Sherman–Morrison gives the closed form). The denominator is kept away
+// from zero so an extreme fold never flips the shading.
 const SQUISH_NORMAL_GLSL = `
 #include <beginnormal_vertex>
-vec3 squishAxis = normalize(uSquishDir);
-mat3 squishAlong = mat3(squishAxis * squishAxis.x, squishAxis * squishAxis.y, squishAxis * squishAxis.z);
-mat3 squishSqueezeJ = uSquishDent.w * (0.25 * mat3(1.0) - 1.25 * squishAlong);
-float squishD = squishDepth(position, mat3(1.0) - squishAlong);
+float squishD = squishDepth(position);
 {
-  vec3 g = squishD < uSquishDent.z ? squishGrad : vec3(0.0);
-  mat3 J = mat3(1.0) + mat3(uSquishDir * g.x, uSquishDir * g.y, uSquishDir * g.z) + squishPullJ + squishSqueezeJ;
-  vec3 n = cross(J[1], J[2]) * objectNormal.x + cross(J[2], J[0]) * objectNormal.y + cross(J[0], J[1]) * objectNormal.z;
-  if (dot(n, objectNormal) > 0.0) objectNormal = normalize(n);
+  float dn = dot(uSquishDir, objectNormal);
+  float den = max(1.0 + dot(uSquishDir, squishGrad), 0.15);
+  objectNormal = normalize(objectNormal - squishGrad * (dn / den));
 }
 `;
 
-// After three's "transformed = position": move the vertex. The squeeze is
-// linear in the position (compress along the press, spread sideways by a
-// quarter of that), so its Jacobian above is the matrix itself.
+// After three's "transformed = position": push the vertex in. uSquishDir
+// already carries the press direction, the push-in/pop-out sign and the
+// 1/lift factor; uSquishDent.z is the overshoot guard on the depth.
 const SQUISH_POSITION_GLSL = `
 #include <begin_vertex>
-transformed += uSquishDir * min(squishD, uSquishDent.z) + squishPull + squishSqueezeJ * position;
-vSquishRest = position;
-vSquishShade = step(0.0, uSquishDent.y) * clamp(squishD * uWrinkleSize.z, 0.0, 1.0);
+transformed += uSquishDir * min(squishD, uSquishDent.z);
 `;
-
-// ---- the skin: wrinkles and the dent's shadow (fragment shader) ----
-//
-// Pressing a squishy stretches its skin toward the finger: thin bright
-// creases spread out from the press point across the face and down the
-// body, and they fade out slowly after the release, after the shape has
-// already sprung back. They're drawn per pixel around the latest press
-// point (on the rest surface, so they stay put on the skin): spokes at
-// random angles that wiggle and end at random lengths, in three layers,
-// with a constant thickness on the
-// surface. The long ones start at the press point; the others start a little
-// further out (they read as branches); each is jagged and broken in places.
-// The dent itself is also shaded darker, the deeper it is.
-//
-// uWrinkle: xyz = centre (rest space), w = strength 0..1.
-// uWrinkleAxis: the press direction. uWrinkleSize: x = reach, y = spoke
-// count, z = 1 / the full dent depth (for the dent's shadow).
-const SQUISH_FRAGMENT_GLSL = `
-uniform vec4 uWrinkle;
-uniform vec3 uWrinkleAxis;
-uniform vec3 uWrinkleSize;
-varying vec3 vSquishRest;
-varying float vSquishShade;
-float squishHash(float n) { return fract(sin(n * 127.1 + 311.7) * 43758.5453); }
-float squishWrinkles() {
-  if (uWrinkle.w < 0.003) return 0.0;
-  vec3 ax = uWrinkleAxis;
-  vec3 q = vSquishRest - uWrinkle.xyz;
-  vec3 t = q - ax * dot(q, ax);
-  float r = length(t);
-  float reach = uWrinkleSize.x;
-  if (r > reach || dot(q, ax) > reach * 0.6) return 0.0;
-  vec3 u = normalize(cross(ax, abs(ax.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0)));
-  vec3 v = cross(ax, u);
-  float ang = atan(dot(t, v), dot(t, u)) / 6.2831853 + 0.5;
-  float sum = 0.0;
-  for (int layer = 0; layer < 3; layer++) {
-    float fl = float(layer);
-    float count = uWrinkleSize.y * (1.0 + fl * 0.9);
-    float a = ang * count + fl * 0.37;
-    float cell = floor(a);
-    float h1 = squishHash(cell + fl * 91.0);
-    float h2 = squishHash(cell * 1.7 + 13.0 + fl * 37.0);
-    float h3 = squishHash(cell * 2.3 + 71.0 + fl * 17.0);
-    float wig = (h1 - 0.5) * 0.3
-      + 0.07 * sin(r * (23.0 + 17.0 * h2) + h1 * 40.0)
-      + 0.05 * sin(r * (61.0 + 23.0 * h3) + h2 * 20.0);
-    float f = abs(fract(a) - 0.5 - wig);
-    float spacing = max(r * 6.2831853 / count, 1e-4);
-    float w = min(0.005 / spacing, 0.3);
-    float line = 1.0 - smoothstep(w * 0.3, w * 1.3, f);
-    float r0 = fl * reach * 0.12 * h3;
-    float len = reach * (0.18 + 0.7 * h2 * h2) * (1.0 - 0.3 * fl);
-    line *= smoothstep(r0, r0 + 0.04, r) * (1.0 - smoothstep(r0 + len * 0.6, r0 + len, r));
-    line *= step(0.22, squishHash(cell * 3.1 + floor(r * 14.0) * 7.7 + fl * 5.0));
-    sum += line * (0.45 + 0.55 * h3) * (1.0 - 0.3 * fl);
-  }
-  float fade = smoothstep(0.015, 0.09, length(q)) * (1.0 - smoothstep(0.55, 1.0, length(q) / reach));
-  return clamp(sum, 0.0, 1.0) * fade * uWrinkle.w;
-}
-`;
-
-// After the texture colour: the dent is shaded darker the deeper it is.
-const SQUISH_COLOR_GLSL = `
-#include <map_fragment>
-diffuseColor.rgb *= 1.0 - 0.4 * vSquishShade;
-`;
-
-// Before three writes the pixel: the creases catch the light.
-const SQUISH_LIGHT_GLSL = `
-outgoingLight = mix(outgoingLight, vec3(1.0), squishWrinkles() * 0.6);
-#include <opaque_fragment>
-`;
-
-// How far the creases reach (times the dent's width), how many long ones
-// there are, and how long they take to fade after the release (seconds to
-// drop to about a third).
-const WRINKLE_REACH = 1.6;
-const WRINKLE_SPOKES = 30;
-const WRINKLE_FADE = 0.7;
 
 // Hooks the squish into a body material's vertex shader and hands the state
 // its uniforms (they exist once three compiles the program — on the first
 // render — so tickPhysics writes into them only from then on).
 function installSquishShader(material, s) {
-  material.customProgramCacheKey = () => 'squish';
+  const card = !!material.userData.cardDecode;
+  material.customProgramCacheKey = () => (card ? 'squish-card' : 'squish');
   material.onBeforeCompile = (shader) => {
+    if (card) Object.entries(CARD_FRAGMENT).forEach(([chunk, code]) => (shader.fragmentShader = shader.fragmentShader.replace(chunk, code)));
     shader.uniforms.uSquishPress = { value: s.pressUniform };
     shader.uniforms.uSquishCount = { value: 0 };
     shader.uniforms.uSquishDir = { value: new THREE.Vector3(0, 0, -1) };
-    shader.uniforms.uSquishDent = { value: new THREE.Vector4(1 / (s.dentRadius * s.dentRadius), 0, s.dentDepth * 1.5, 0) };
-    shader.uniforms.uSquishRim = { value: new THREE.Vector3() };
-    shader.uniforms.uWrinkle = { value: new THREE.Vector4() };
-    shader.uniforms.uWrinkleAxis = { value: new THREE.Vector3(0, 0, -1) };
-    shader.uniforms.uWrinkleSize = { value: new THREE.Vector3(s.dentRadius * WRINKLE_REACH, WRINKLE_SPOKES, 1 / s.dentDepth) };
+    shader.uniforms.uSquishDent = { value: new THREE.Vector4(s.dentRadius, s.dentTip, s.dentDepth * 1.5, 0) };
     shader.vertexShader = shader.vertexShader
       .replace('void main() {', `${SQUISH_VERTEX_GLSL}\nvoid main() {`)
       .replace('#include <beginnormal_vertex>', SQUISH_NORMAL_GLSL)
       .replace('#include <begin_vertex>', SQUISH_POSITION_GLSL);
-    shader.fragmentShader = shader.fragmentShader
-      .replace('void main() {', `${SQUISH_FRAGMENT_GLSL}\nvoid main() {`)
-      .replace('#include <map_fragment>', SQUISH_COLOR_GLSL)
-      .replace('#include <opaque_fragment>', SQUISH_LIGHT_GLSL);
     s.squishUniforms = shader.uniforms;
   };
 }
 
 // The per-toy squish state shared by both builders: the live press points
-// (each a spring: `amp` is its dent's middle depth, `meanF` the dent's mean
+// (each a spring: `amp` is its funnel's tip depth, `meanF` the funnel's mean
 // over the mesh, for the whole-body puff), the shader's uniform storage, and
 // the gesture bookkeeping.
 function makeSquishState() {
@@ -763,21 +658,13 @@ function makeSquishState() {
     presses: [],
     pressUniform: new Float32Array(SQUISH_MAX_PRESSES * 4),
     squishUniforms: null,
-    // Player settings (see the SquishyToy props): the squish level's
-    // multiplier on the whole squish, and 1 = push in / -1 = pop out.
+    // Player settings (see the SquishyToy props): depth multiplier, and
+    // 1 = push in / -1 = pop out.
     dentUserScale: 1,
     dentSign: 1,
     pressDir: new THREE.Vector3(0, 0, -1),
-    rayDirLocal: new THREE.Vector3(0, 0, -1),
     // Whole-body puff from the mean push-in, applied on the group transform.
     lift: 1,
-    // The whole-body squeeze along the press direction (see the shader).
-    squeeze: 0,
-    // The skin's creases: strength 0..1, where they centre (rest space) and
-    // the press direction they spread around.
-    wrinkleAmt: 0,
-    wrinkleCenter: new THREE.Vector3(),
-    wrinkleAxis: new THREE.Vector3(0, 0, -1),
     dentTargetActive: false,
     atRest: true,
     pendingMove: null,
@@ -807,8 +694,8 @@ function makeSquishState() {
 // Cheap per-instance construction from prepareModelData's cached output: a
 // BufferGeometry over the cached arrays (nothing here is ever written to —
 // the squish happens in the shader) plus fresh material/mesh/group.
-function buildModelCreature(id, cfg, modelData) {
-  const { basePos, baseNormals, uvArray, indexArray, grid, vertCount, map, fallbackColor } = modelData;
+function buildModelCreature(id, cfg, modelData, stage = 1) {
+  const { basePos, baseNormals, uvArray, indexArray, grid, vertCount, map, fallbackColor, card } = modelData;
 
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(basePos, 3));
@@ -828,9 +715,11 @@ function buildModelCreature(id, cfg, modelData) {
     side: THREE.FrontSide,
     flatShading: false,
   };
-  const bodyMat = shiny
-    ? new THREE.MeshPhysicalMaterial({ ...matParams, clearcoat: 0.6, clearcoatRoughness: 0.25 })
-    : new THREE.MeshStandardMaterial(matParams);
+  const bodyMat = card
+    ? cardMaterial(map)
+    : shiny
+      ? new THREE.MeshPhysicalMaterial({ ...matParams, clearcoat: 0.6, clearcoatRoughness: 0.25 })
+      : new THREE.MeshStandardMaterial(matParams);
   const bodyMesh = new THREE.Mesh(geo, bodyMat);
   const group = new THREE.Group();
   group.add(bodyMesh);
@@ -845,6 +734,8 @@ function buildModelCreature(id, cfg, modelData) {
   shadowMesh.scale.set(cfg.visual * 0.62, cfg.visual * 0.26, 1);
   shadowMesh.position.set(0, -cfg.visual * 0.52, -0.3);
   shadowMesh.rotation.x = -Math.PI / 2.5;
+  // the design's card casts no floor shadow
+  if (card) shadowMesh.visible = false;
 
   const s = {
     group,
@@ -857,19 +748,13 @@ function buildModelCreature(id, cfg, modelData) {
     grid,
     boundRadius: computeBoundRadius(basePos),
     vertCount,
-    // Vertices sampled for a press point's mean dent (the puff): about
+    // Vertices sampled for a press point's mean funnel (the puff): about
     // 1500 of them, whatever the mesh size.
     sampleStride: Math.max(1, Math.ceil(vertCount / 1500)),
     // Dent shape — see MODEL_TUNING.
     dentDepth: cfg.dentDepth,
     dentRadius: cfg.dentRadius,
-    dentRim: cfg.dentRim,
-    dentRimWidth: cfg.dentRimWidth,
-    dentPull: cfg.dentPull,
-    dentPullWidth: cfg.dentPullWidth,
-    dentSqueeze: cfg.dentSqueeze,
-    bottomY: lowestY(basePos),
-    extent: extentOf(basePos),
+    dentTip: cfg.dentTip,
     // No separate face meshes — Glorp's face is in its texture.
     featureBases: [],
     featureMeshes: [],
@@ -884,41 +769,21 @@ function buildModelCreature(id, cfg, modelData) {
     blinkTimer: 999,
     ...makeSquishState(),
   };
+  if (card) Object.assign(s, cardState(id, stage, group));
   installSquishShader(bodyMat, s);
   return s;
 }
 
-// The lowest point of the rest mesh: the squash keeps it on the floor.
-// The rest mesh's width and height (model units), for the camera fit.
-function extentOf(basePos) {
-  let minX = Infinity;
-  let maxX = -Infinity;
-  let minY = Infinity;
-  let maxY = -Infinity;
-  for (let i = 0; i < basePos.length; i += 3) {
-    const x = basePos[i];
-    const y = basePos[i + 1];
-    if (x < minX) minX = x;
-    if (x > maxX) maxX = x;
-    if (y < minY) minY = y;
-    if (y > maxY) maxY = y;
-  }
-  return { w: maxX - minX, h: maxY - minY, midY: (minY + maxY) / 2 };
-}
-
-function lowestY(basePos) {
-  let min = 0;
-  for (let i = 1; i < basePos.length; i += 3) if (basePos[i] < min) min = basePos[i];
-  return min;
-}
-
-// The dent's mean over the mesh for a press at (px, py, pz) — what the
+// The funnel's mean over the mesh for a press at (px, py, pz) — what the
 // whole-body puff (lift) is driven by. Sampled every `sampleStride`th
-// vertex; past the reach the bell is under 0.2% of its middle and skipped.
+// vertex; past FALL_REACH the funnel is under 0.2% of its tip and skipped.
 const FALL_EPS = 2e-3;
 function meanFunnel(s, px, py, pz) {
-  const invS2 = 1 / (s.dentRadius * s.dentRadius);
-  const reach2 = (2 * Math.log(1 / FALL_EPS)) / invS2;
+  const radius = s.dentRadius;
+  const tip = s.dentTip;
+  const tip2 = tip * tip;
+  const reach = tip + radius * Math.log(1 / FALL_EPS);
+  const reach2 = reach * reach;
   const base = s.basePos;
   const n = s.vertCount;
   const stride = s.sampleStride;
@@ -929,24 +794,17 @@ function meanFunnel(s, px, py, pz) {
     const dy = base[i * 3 + 1] - py;
     const dz = base[i * 3 + 2] - pz;
     const d2 = dx * dx + dy * dy + dz * dz;
-    if (d2 < reach2) sum += Math.exp(-0.5 * d2 * invS2);
+    if (d2 < reach2) sum += Math.exp(-(Math.sqrt(d2 + tip2) - tip) / radius);
     count++;
   }
   return count ? sum / count : 0;
 }
 
-// A finger that slides less than this per frame (model units; the body is
-// ~2.25 across) just moves the current press point along with it. Further
-// than that and a new press point starts while the old one springs back —
-// the lag the per-vertex springs used to give. It was 0.008: a finger's
-// natural jitter on a phone crossed that, so a held press kept restarting
-// in a new spot and smeared. Against the wide dent (0.85) this much
-// sliding is invisible.
-const PRESS_MOVE_EPS = 0.06;
-
-// How much the push direction leans toward the body's centre instead of
-// straight into the screen (see computeDentFall).
-const PRESS_TOWARD_CENTRE = 0.15;
+// A finger that slides less than this (model units; the body is ~1.9
+// across) just moves the current press point along. Further than that and
+// a new press point starts while the old one springs back — the lag the
+// per-vertex springs used to give.
+const PRESS_MOVE_EPS = 0.008;
 
 // The press point moved (pointerDown / the once-per-frame pointerMove).
 function computeDentFall(s, localPoint) {
@@ -994,21 +852,12 @@ function computeDentFall(s, localPoint) {
     }
     presses.push({ x: px, y: py, z: pz, amp: 0, vel: 0, target: 0, meanF: meanFunnel(s, px, py, pz), driven: true });
   }
-  // Push direction: mostly straight into the screen, along the finger's ray
-  // (so the dent stays under the finger), with a little toward the body's
-  // centre so a press near the outline still sinks in rather than sliding
-  // the surface sideways. Every dented vertex moves along this one direction
-  // (the pull, the squeeze and the creases are measured against it too). It
-  // used to point at the centre only, which on a creature with a head on a
-  // body pushed a press on the face diagonally down, away from the finger.
+  // Push direction: from the touch point straight in toward the body's
+  // centre. Every dented vertex moves along this one direction, which is
+  // what makes it a funnel rather than a shrink.
   const len = Math.hypot(px, py, pz);
-  const ray = s.rayDirLocal;
-  if (len > 1e-6) {
-    const k = PRESS_TOWARD_CENTRE / len;
-    const w = 1 - PRESS_TOWARD_CENTRE;
-    s.pressDir.set(ray.x * w - px * k, ray.y * w - py * k, ray.z * w - pz * k).normalize();
-  }
-  const featureSigma = s.dentRadius;
+  if (len > 1e-6) s.pressDir.set(-px / len, -py / len, -pz / len);
+  const featureSigma = 0.24;
   const featureSigmaFactor = -1 / (2 * featureSigma * featureSigma);
   for (let j = 0; j < s.featureBases.length; j++) {
     const b = s.featureBases[j];
@@ -1019,22 +868,11 @@ function computeDentFall(s, localPoint) {
   }
 }
 
-// How long a press takes to sink all the way in (seconds).
-const PRESS_SINK_TIME = 0.75;
-
-// A press sinks in smoothly from nothing: quickly at first, then slower and
-// slower until it settles at the full depth (an ease-out over
-// PRESS_SINK_TIME), like a head settling into a pillow. It used to jump
-// straight to 60% of the depth on the first frame, which read as a sudden
-// jump of the whole creature. The dent, the squeeze, the floor flatten and
-// the creases all follow this one curve, so the whole squish moves
-// together; the squish level scales it.
+// A press goes straight to 60% of the full depth, then sinks the rest of the
+// way in over about a second of holding. The whole funnel scales together,
+// so it only ever gets deeper, never flattens into a plateau.
 function applyDentScale(s, holdSeconds) {
-  const x = Math.min(holdSeconds / PRESS_SINK_TIME, 1);
-  const progress = 1 - (1 - x) * (1 - x) * (1 - x);
-  const tipDepth = s.dentDepth * s.dentUserScale * progress;
-  // A push-in flattens the whole body; a pop-out stretches it instead.
-  s.globalSquashTarget = 0.55 * s.dentUserScale * s.dentSign * progress;
+  const tipDepth = s.dentDepth * s.dentUserScale * (0.6 + 0.4 * (1 - Math.exp(-holdSeconds * 1.5)));
   const presses = s.presses;
   for (let j = 0; j < presses.length; j++) presses[j].target = presses[j].driven ? tipDepth : 0;
   for (let j = 0; j < s.featureBases.length; j++) s.featureDentTarget[j] = tipDepth * s.featureDentFall[j] * 1.1;
@@ -1183,7 +1021,7 @@ function raycastGrid(s, ox, oy, oz, dx, dy, dz) {
 // Nearest front-facing hit on the body's REST (undeformed) surface, in the
 // mesh's local space. The dent is measured against the rest positions, and
 // picking against the deformed surface let a deep dent "run away" from the
-// finger: the ray hit the dent's floor, deep inside, which weakened the
+// finger: the ray hit the funnel's floor, deep inside, which weakened the
 // dent. Imported meshes go through their triangle grid (raycastGrid); the
 // procedural sphere just tests every triangle.
 const _ray = new THREE.Ray();
@@ -1197,8 +1035,6 @@ function raycastLocal(s, camera, raycaster, ndcX, ndcY) {
   const dx = _ray.direction.x;
   const dy = _ray.direction.y;
   const dz = _ray.direction.z;
-  // The finger's direction in the mesh's space, for the push direction.
-  s.rayDirLocal.set(dx, dy, dz).normalize();
 
   // Ray passes wide of the body's bounding sphere -> no triangle can be hit.
   const tc = -(ox * dx + oy * dy + oz * dz);
@@ -1328,7 +1164,6 @@ const REST_EPS = 1e-4;
 function settleToRest(s) {
   s.presses.length = 0;
   s.lift = 1;
-  s.squeeze = 0;
   s.atRest = true;
 }
 
@@ -1351,52 +1186,8 @@ function uploadSquish(s) {
   u.uSquishDir.value.set(s.pressDir.x * sign * invLift, s.pressDir.y * sign * invLift, s.pressDir.z * sign * invLift);
   // Only a guard against runaway spring overshoot; a normal press stays
   // well under it, so it never flattens the tip.
-  const fullDepth = s.dentDepth * s.dentUserScale;
-  u.uSquishDent.value.set(
-    1 / (s.dentRadius * s.dentRadius),
-    (s.dentPull / s.dentDepth) * sign * invLift,
-    fullDepth * 1.5,
-    s.squeeze * sign
-  );
-  u.uSquishRim.value.set(1 / (s.dentRadius * s.dentRimWidth) ** 2, s.dentRim, 1 / (s.dentRadius * s.dentPullWidth) ** 2);
+  u.uSquishDent.value.set(s.dentRadius, s.dentTip, s.dentDepth * s.dentUserScale * 1.5, 0);
 }
-
-// The skin's creases (see the fragment shader): while the finger is down
-// they follow it and grow with the dent (so the squish level scales them
-// too); after the release they stay where they were and fade out slowly,
-// well after the shape has sprung back.
-function tickWrinkles(s, dt) {
-  let target = 0;
-  if (s.mode === 'poke') {
-    const presses = s.presses;
-    let ampSum = 0;
-    let driven = null;
-    for (let j = 0; j < presses.length; j++) {
-      ampSum += presses[j].amp;
-      if (presses[j].driven) driven = presses[j];
-    }
-    if (driven) {
-      target = clamp(ampSum / s.dentDepth, 0, 1);
-      s.wrinkleCenter.set(driven.x, driven.y, driven.z);
-      s.wrinkleAxis.copy(s.pressDir);
-    }
-  }
-  const before = s.wrinkleAmt;
-  if (target > s.wrinkleAmt) s.wrinkleAmt += (target - s.wrinkleAmt) * Math.min(1, dt * 12);
-  else s.wrinkleAmt *= Math.exp(-dt / WRINKLE_FADE);
-  if (s.wrinkleAmt < 1e-3) s.wrinkleAmt = 0;
-  const u = s.squishUniforms;
-  if (!u || (before === 0 && s.wrinkleAmt === 0)) return;
-  u.uWrinkle.value.set(s.wrinkleCenter.x, s.wrinkleCenter.y, s.wrinkleCenter.z, s.wrinkleAmt);
-  u.uWrinkleAxis.value.copy(s.wrinkleAxis);
-}
-
-// A released press springs back softly, like foam rising: back in about
-// 0.4 s with a small (~9%) jiggle past the rest shape. With the press's own
-// stiff spring (PHYS) it overshot by ~40%, so the face popped out toward
-// the camera and swelled past the stage edge for a moment.
-const RELEASE_STIFF = 0.1;
-const RELEASE_DAMP = 0.7;
 
 function tickPhysics(s, dt) {
   const k = dt * 60;
@@ -1419,16 +1210,14 @@ function tickPhysics(s, dt) {
   // rings back to zero — the same spring every vertex used to run.
   const dentStiff = 1 - Math.pow(1 - PHYS.stiff, k);
   const dentDamp = Math.pow(PHYS.damp, k);
-  const releaseStiff = 1 - Math.pow(1 - RELEASE_STIFF, k);
-  const releaseDamp = Math.pow(RELEASE_DAMP, k);
   let meanDent = 0;
   if (!s.atRest) {
     const presses = s.presses;
     let motion = 0;
     for (let j = presses.length - 1; j >= 0; j--) {
       const pr = presses[j];
-      pr.vel += (pr.target - pr.amp) * (pr.driven ? dentStiff : releaseStiff);
-      pr.vel *= pr.driven ? dentDamp : releaseDamp;
+      pr.vel += (pr.target - pr.amp) * dentStiff;
+      pr.vel *= dentDamp;
       pr.amp += pr.vel;
       const aa = Math.abs(pr.amp);
       const av = Math.abs(pr.vel);
@@ -1444,18 +1233,12 @@ function tickPhysics(s, dt) {
     // slightly with a pop-out), as if that volume went somewhere — on the
     // group transform, below.
     s.lift = Math.min(1 + s.dentSign * meanDent * 0.2, MAX_BULGE);
-    // The squeeze follows the presses' springs, so it rings back (and
-    // briefly stretches) on release along with the dent.
-    let ampSum = 0;
-    for (let j = 0; j < presses.length; j++) ampSum += presses[j].amp;
-    s.squeeze = clamp((ampSum / s.dentDepth) * s.dentSqueeze, -s.dentSqueeze, s.dentSqueeze * 1.4);
     if (!s.dentTargetActive && (presses.length === 0 || motion < REST_EPS)) {
       settleToRest(s);
       meanDent = 0;
     }
     uploadSquish(s);
   }
-  tickWrinkles(s, dt);
 
   for (let j = 0; j < s.featureBases.length; j++) {
     s.featureDentVel[j] += (s.featureDentTarget[j] - s.featureDentAmt[j]) * dentStiff;
@@ -1470,8 +1253,9 @@ function tickPhysics(s, dt) {
     mesh.scale.set(sb.x * squish, sb.y * squish, sb.z * squish);
   }
 
-  const squashStiff = 1 - Math.pow(1 - 0.4, k);
-  const squashDamp = Math.pow(0.72, k);
+  // (a card has its own springs: squishCard.js cardState)
+  const squashStiff = 1 - Math.pow(1 - (s.sqSt || 0.4), k);
+  const squashDamp = Math.pow(s.sqDp || 0.72, k);
   s.globalSquashV += (s.globalSquashTarget - s.globalSquash) * squashStiff;
   s.globalSquashV *= squashDamp;
   s.globalSquash += s.globalSquashV;
@@ -1497,6 +1281,7 @@ function tickPhysics(s, dt) {
     s.orbitTargetY += s.orbitVelY * k;
     s.orbitTargetX += s.orbitVelX * k;
   }
+  if (s.card) cardSway(s);
   const orbitCatchup = Math.min(1, 0.22 * k);
   s.userRotY += (s.orbitTargetY - s.userRotY) * orbitCatchup;
   s.userRotX += (s.orbitTargetX - s.userRotX) * orbitCatchup;
@@ -1507,19 +1292,17 @@ function tickPhysics(s, dt) {
   // never repainted).
   const breathe = 1 + Math.sin(s.idlePhase * 0.45) * 0.012;
   const lift = s.lift;
-  // The sideways spread is kept small (the shader's squeeze adds its own):
-  // the stage is only ~9% wider than the widest creature.
-  const sx = (1 + s.globalSquash * 0.03) * breathe * lift;
-  const sy = (1 - s.globalSquash * 0.1) * breathe * lift;
-  const sz = (1 + s.globalSquash * 0.03) * breathe * lift;
+  const sqX = s.sqX || 0.14;
+  const sqY = s.sqY || 0.26;
+  const sx = (1 + s.globalSquash * sqX) * breathe * lift;
+  const sy = (1 - s.globalSquash * sqY) * breathe * lift;
+  const sz = (1 + s.globalSquash * sqX) * breathe * lift;
   s.group.rotation.y = s.userRotY;
   s.group.rotation.x = s.userRotX + s.wobbleRotX;
   s.group.rotation.z = s.wobbleRotZ;
   s.group.scale.set(sx, sy, sz);
-  // Flattening keeps the bottom on the floor, so the body sinks down under
-  // the press instead of shrinking toward its middle. A stretch (the release
-  // overshoot) stays centred, so the top doesn't leave the stage.
-  s.group.position.y = s.bottomY * (1 - Math.min(sy, 1));
+  // the card's dance cycle and stage on top (squishCard.js)
+  if (s.card) cardMotion(s, k, sx, sy, sz);
 
   if (s.eyeStyle === 'round') {
     const blinkScale = 1 - s.blinkAmt * 0.88;
@@ -1532,10 +1315,10 @@ function tickPhysics(s, dt) {
 // timers, etc.) doesn't force React to reconcile this subtree — the per-frame
 // squish physics already runs in useFrame and shouldn't compete with that.
 const SquishyToy = memo(forwardRef(function SquishyToy(
-  { creatureId = '0', modelUrl, visual, onSquish, onRelease, dentScale = 1, dentOutward = false, fillHeight = 0 },
+  { creatureId = '0', modelUrl, cardUrl, stage = 1, visual, onSquish, onRelease, dentScale = 1, dentOutward = false },
   ref
 ) {
-  const { camera, gl, size } = useThree();
+  const { camera, gl } = useThree();
   const toyRef = useRef(null);
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const [built, setBuilt] = useState(null);
@@ -1547,6 +1330,11 @@ const SquishyToy = memo(forwardRef(function SquishyToy(
       if (!result) return;
       result.bodyGeo.dispose();
       result.bodyMat.dispose();
+      (result.cardExtras || []).forEach((m) => {
+        m.geometry.dispose();
+        if (m.material.map) m.material.map.dispose();
+        m.material.dispose();
+      });
       if (result.shadowMesh) {
         result.shadowMesh.geometry.dispose();
         result.shadowMesh.material.dispose();
@@ -1563,7 +1351,9 @@ const SquishyToy = memo(forwardRef(function SquishyToy(
     // synchronously.
     const modelId = Number(creatureId);
     let pending;
-    if (modelUrl) {
+    if (cardUrl) {
+      pending = loadCardDataFromUrl(cardUrl).then((modelData) => buildModelCreature(creatureId, CARD_TUNING, modelData, stage));
+    } else if (modelUrl) {
       pending = loadModelDataFromUrl(creatureId, modelUrl).then((modelData) => buildModelCreature(creatureId, MODEL_TUNING, modelData));
     } else {
       pending = Promise.resolve(buildCreature(modelId, visual));
@@ -1613,24 +1403,6 @@ const SquishyToy = memo(forwardRef(function SquishyToy(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Size on screen: the camera moves in or out so the creature is
-  // `fillHeight` px tall (SquishScreen asks for ~70% of the screen), but
-  // never taller than 90% of the stage, and never wider than the stage
-  // with room for the squish to spread sideways. It looks at the
-  // creature's middle. Without `fillHeight` the camera stays where the
-  // Canvas put it.
-  useEffect(() => {
-    const s = toyRef.current;
-    if (!s || !fillHeight || !size.width || !size.height) return;
-    const { w, h, midY } = s.extent;
-    const tanHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-    const heightPx = Math.min(fillHeight, size.height * 0.9);
-    const view = Math.max((h * size.height) / heightPx, (w * 1.06 * size.height) / (size.width * 0.96));
-    camera.position.set(0, midY, view / (2 * tanHalf));
-    camera.lookAt(0, midY, 0);
-    camera.updateMatrixWorld();
-  }, [built, camera, fillHeight, size.width, size.height]);
-
   // The player's poke settings (the squish screen's settings popup). Applied
   // live: a change takes effect on the next press, or the current one.
   useEffect(() => {
@@ -1655,6 +1427,8 @@ const SquishyToy = memo(forwardRef(function SquishyToy(
         s.pendingMove = null;
         computeDentFall(s, local);
         applyDentScale(s, 0);
+        // A push-in flattens the whole body; a pop-out stretches it instead.
+        s.globalSquashTarget = 0.55 * s.dentSign;
         onSquish && onSquish();
       },
       // Only records where the finger is now — applyPendingMove (in useFrame)
@@ -1704,13 +1478,15 @@ const SquishyToy = memo(forwardRef(function SquishyToy(
         // The under-damped spring (see tickPhysics) overshoots on its own —
         // g springs from ~0.85 back through 0 into a tall stretch and bounces
         // down to rest.
-        const kick = PHYS.wobbleKick * 0.5;
+        const kick = PHYS.wobbleKick;
         s.wobbleRotXV += clamp((Math.random() - 0.5) * kick, -kick, kick);
         s.wobbleRotZV += clamp((Math.random() - 0.5) * kick, -kick, kick);
         s.pressLocalSmoothed = null;
         s.pressHoldTime = 0;
         s.pendingMove = null;
         s.mode = null;
+        // the card's happy reaction (squishCard.js cardMotion)
+        if (s.card) s.reactT = Date.now();
         onRelease && onRelease(holdSeconds);
         return { wasPoke: true, holdSeconds };
       },
@@ -1731,8 +1507,12 @@ const SquishyToy = memo(forwardRef(function SquishyToy(
 
   if (!built) return null;
 
-  // The creature stands on its own: no drop shadow under it.
-  return <primitive object={built.group} />;
+  return (
+    <>
+      <primitive object={built.group} />
+      <primitive object={built.shadowMesh} />
+    </>
+  );
 }));
 
 export default SquishyToy;

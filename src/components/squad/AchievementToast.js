@@ -30,7 +30,7 @@ export default function AchievementToast({ title, messageKey }) {
 
   return (
     <Animated.View style={[styles.wrap, { top: insets.top + 12, opacity: anim, transform: [{ translateY }] }]} pointerEvents="none">
-      <LinearGradient colors={['#ffe27a', '#ff9fd6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.pill}>
+      <LinearGradient colors={['#ffe27a', '#ffb35c']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.pill}>
         <Text style={styles.text}>🏆 ACHIEVEMENT: {title}</Text>
       </LinearGradient>
     </Animated.View>
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    shadowColor: '#6b3fa0',
+    shadowColor: '#6b4426',
     shadowOpacity: 0.22,
     shadowRadius: 11,
     shadowOffset: { width: 0, height: 10 },

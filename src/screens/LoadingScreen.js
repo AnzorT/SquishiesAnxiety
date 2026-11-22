@@ -1,74 +1,32 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Image, StyleSheet, Animated, Easing } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BUTTON_VARIANTS } from '../theme/candyTheme';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
 import CreatureThumbnail from '../components/CreatureThumbnail';
-import CandyBackground from '../components/candy/CandyBackground';
-import OutlinedTitle from '../components/candy/OutlinedTitle';
-import { Shine } from '../components/candy/CandyButton';
-import { Twinkle } from '../components/candy/Sparkles';
-import AssembleCreature from '../components/AssembleCreature';
-import { preloadCreatureModel } from '../components/SquishyToy';
+import { useAfterFirstFrame } from '../components/Skeleton';
+import { usePingPong } from '../components/idleLoop';
+import { isCreatureModelReady, preloadCreatureModel } from '../components/SquishyToy';
+import { Lettering, WoodBg } from '../royal';
 import sfx from '../audio/sfx';
 
-// Brief "getting the toy ready" beat between picking a card on Home and
-// SquishScreen actually mounting — the v3 loading screen: the creature
-// bouncing on the candy stage over a gold "Getting Ready" sticker and three
-// hopping candy balls, then a wobbling pink "✦ I AM READY! ✦" sticker, then
-// a fade to the toy. The
-// "ready" beat now also gates on the creature's .glb actually being
-// fetched/parsed (preloadCreatureModel, cached and shared with SquishyToy's
-// own loader) so "I AM READY!" is true, not just a timer — otherwise the
-// model could still be loading once SquishScreen mounts and pop in there.
+// The short "getting your creature ready" beat between PLAY (Squish Time) and the squish stage: the creature on a warm
+// glow over the wood, "Getting ready" with three hopping gold dots while its model loads, then "I AM READY!" and a fade
+// to the stage. The ready beat waits for the creature's .glb (preloadCreatureModel, shared with SquishyToy's loader)
+// so the stage never pops it in late; with nothing to wait for (model loaded, or none) it's just "I AM READY!", ~0.6 s.
+//
+// 2026-11-20 (the user: "the loading screens, I only hear the audio and when I see them they are half way done"):
+// - Nothing runs on a clock before the screen is on screen: the beats (and the "ready" sound) start once its first
+//   frame has painted (useAfterFirstFrame), so the sound is never ahead of the picture, and once the stage under it
+//   is built (`hold`), so building it doesn't freeze them.
+// - The wood look of the rest of the game (it was the old design's candy sky and pink sticker).
 
-const PREP_MS = 1500;
-const READY_MS = 1000;
-const FADE_MS = 500;
-// Never block navigation forever on a slow/failed fetch — proceed anyway
-// after this, same as today's fixed-timer behavior in the worst case.
+const PREP_MS = 600;
+const READY_MS = 600;
+const FADE_MS = 260;
+const QUICK_READY_MS = 450;
+const QUICK_FADE_MS = 150;
+// Never block navigation forever on a slow/failed fetch — proceed anyway after this.
 const MAX_WAIT_MS = 8000;
 
-// One bouncing candy ball: the candy buttons' look (dark ring, white rim,
-// glossy gradient face, a lip underneath) at dot size. Each hops in turn on
-// the design's dotBounce cycle (up by 40% of 1 s, down by 80%, brighter at
-// the top) and squashes a little as it lands.
-const DOT = 18;
-const HOP = 9;
-const hopIn = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.85, 0.92, 1];
-const hopY = [0, 0.44, 0.75, 0.94, 1, 0.94, 0.75, 0.44, 0, 0, 0, 0].map((f) => -f * HOP);
-
-function Dot({ delay, variant }) {
-  const v = BUTTON_VARIANTS[variant];
-  const p = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const anim = Animated.sequence([
-      Animated.delay(delay),
-      Animated.loop(Animated.timing(p, { toValue: 1, duration: 1000, easing: Easing.linear, useNativeDriver: true })),
-    ]);
-    anim.start();
-    return () => anim.stop();
-  }, [p, delay]);
-  const translateY = p.interpolate({ inputRange: hopIn, outputRange: hopY });
-  const scaleX = p.interpolate({ inputRange: [0, 0.8, 0.85, 0.92, 1], outputRange: [1, 1, 1.18, 1, 1] });
-  const scaleY = p.interpolate({ inputRange: [0, 0.8, 0.85, 0.92, 1], outputRange: [1, 1, 0.8, 1, 1] });
-  const opacity = p.interpolate({ inputRange: [0, 0.4, 0.8, 1], outputRange: [0.65, 1, 0.65, 0.65] });
-  return (
-    <Animated.View style={[styles.dot, { opacity, transform: [{ translateY }, { scaleX }, { scaleY }] }]}>
-      <View style={[styles.dotLip, { backgroundColor: v.ring }]} />
-      <View style={[styles.dotRing, { backgroundColor: v.ring }]}>
-        <View style={styles.dotRim}>
-          <LinearGradient colors={v.colors} locations={v.locations} style={styles.dotFace}>
-            <Shine />
-          </LinearGradient>
-        </View>
-      </View>
-    </Animated.View>
-  );
-}
-
-// The design's `popIn` keyframe: springs in from a small, tilted, invisible
-// state, overshoots to 1.12x / +3deg, then settles. Used for "I AM READY!"
-// (and mirrored by the "×N COINS!" flash on SquishScreen).
+// springs in from small and tilted, overshoots, settles (the design's popIn)
 function PopIn({ style, children }) {
   const t = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -80,80 +38,98 @@ function PopIn({ style, children }) {
   return <Animated.View style={[style, { opacity, transform: [{ scale }, { rotate }] }]}>{children}</Animated.View>;
 }
 
-export default function LoadingScreen({ creature, onFinish }) {
-  const [stage, setStage] = useState('prep');
+// one hopping gold dot (a native loop each, a beat apart)
+function Dot({ delay, on }) {
+  const translateY = usePingPong(640, { from: 0, to: -7, delay, on });
+  return <Animated.View style={[styles.dot, { transform: [{ translateY }] }]} />;
+}
+
+// `hold`: the squish stage is still being built under this screen (App.js). Building it holds the UI thread for
+// 0.2-0.3 s on the Galaxy A16 (~230 native views, the stage's SVGs painted in software), which froze whatever was
+// moving here: the beat waits, on its first frame (still), until the stage is up. Never longer than HOLD_MAX_MS.
+const HOLD_MAX_MS = 1500;
+
+export default function LoadingScreen({ creature, onFinish, hold = false }) {
+  const [quick] = useState(() => isCreatureModelReady(creature));
+  const [stage, setStage] = useState(quick ? 'ready' : 'prep');
   const opacity = useRef(new Animated.Value(1)).current;
+  const painted = useAfterFirstFrame();
+  const [begun, setBegun] = useState(false);
+  useEffect(() => {
+    if (!painted || begun) return undefined;
+    if (!hold) {
+      setBegun(true);
+      return undefined;
+    }
+    const t = setTimeout(() => setBegun(true), HOLD_MAX_MS);
+    return () => clearTimeout(t);
+  }, [painted, hold, begun]);
+
+  // the model starts loading at once (it isn't a clock)
+  const modelReady = useRef(null);
+  if (!quick && !modelReady.current) modelReady.current = preloadCreatureModel(creature).catch(() => {});
 
   useEffect(() => {
+    if (!begun) return undefined;
     let cancelled = false;
     const timers = [];
     const wait = (ms) => new Promise((resolve) => { timers.push(setTimeout(resolve, ms)); });
-
     (async () => {
-      const modelReady = preloadCreatureModel(creature).catch(() => {});
-      // Dots show for at least PREP_MS, and longer still if the model isn't
-      // loaded yet — but never past MAX_WAIT_MS total.
-      await Promise.race([Promise.all([wait(PREP_MS), modelReady]), wait(MAX_WAIT_MS)]);
-      if (cancelled) return;
-      setStage('ready');
+      if (!quick) {
+        // the dots show for at least PREP_MS, longer while the model is still loading, never past MAX_WAIT_MS
+        await Promise.race([Promise.all([wait(PREP_MS), modelReady.current]), wait(MAX_WAIT_MS)]);
+        if (cancelled) return;
+        setStage('ready');
+      }
       sfx.play('ready');
-      await wait(READY_MS);
+      await wait(quick ? QUICK_READY_MS : READY_MS);
       if (cancelled) return;
-      Animated.timing(opacity, { toValue: 0, duration: FADE_MS, useNativeDriver: true }).start();
-      await wait(FADE_MS);
+      const fade = quick ? QUICK_FADE_MS : FADE_MS;
+      Animated.timing(opacity, { toValue: 0, duration: fade, useNativeDriver: true }).start();
+      await wait(fade);
       if (cancelled) return;
       onFinish();
     })();
-
     return () => {
       cancelled = true;
       timers.forEach(clearTimeout);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [begun]);
 
   return (
     <Animated.View style={[styles.flex, { opacity }]}>
-      <CandyBackground style={styles.container}>
-        {creature?.isCustom && creature.image ? (
-          <Image source={{ uri: creature.image }} style={styles.customArt} />
-        ) : creature?.isCustom && creature.build ? (
-          <AssembleCreature build={creature.build} size={170} />
-        ) : (
-          <CreatureThumbnail creature={creature} mood="ready" size={224} bleed={16} />
-        )}
+      <WoodBg />
+      <View style={styles.center}>
+        <View style={styles.halo} />
+        <CreatureThumbnail creature={creature} mood="ready" size={210} bleed={16} />
         {stage === 'prep' ? (
-          <View style={styles.prepRow}>
-            <OutlinedTitle text="Getting Ready" fill="gold" size={22} outline={2.5} ring={1.5} />
+          <View style={styles.row}>
+            <Lettering text="Getting ready" variant="gold" size={24} />
             <View style={styles.dots}>
-              <Dot delay={0} variant="pink" />
-              <Dot delay={150} variant="gold" />
-              <Dot delay={300} variant="blue" />
+              <Dot delay={0} on={begun} />
+              <Dot delay={160} on={begun} />
+              <Dot delay={320} on={begun} />
             </View>
           </View>
-        ) : (
-          <PopIn style={styles.readyRow}>
-            <Twinkle size={18} duration={1.4} />
-            <OutlinedTitle text="I AM READY!" fill="pink" size={30} wobble />
-            <Twinkle size={18} duration={1.4} delay={0.7} />
+        ) : begun ? (
+          <PopIn style={styles.row}>
+            <Lettering text="I AM READY!" variant="gold" size={30} />
           </PopIn>
+        ) : (
+          <View style={styles.row} />
         )}
-      </CandyBackground>
+      </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  customArt: { width: 170, height: 170, borderRadius: 85 },
-  prepRow: { marginTop: 22, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  // room above for the hop, so the row doesn't grow while the dots jump
-  dots: { flexDirection: 'row', gap: 5, paddingTop: HOP },
-  dot: { width: DOT, height: DOT + 2 },
-  dotLip: { position: 'absolute', top: 2, left: 0, width: DOT, height: DOT, borderRadius: DOT / 2 },
-  dotRing: { width: DOT, height: DOT, borderRadius: DOT / 2, padding: 1.5 },
-  dotRim: { flex: 1, borderRadius: DOT / 2, backgroundColor: '#ffffff', padding: 1.5 },
-  dotFace: { flex: 1, borderRadius: DOT / 2, overflow: 'hidden' },
-  readyRow: { marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  // a soft warm light under the creature (the Characters page's lit pad, flat)
+  halo: { position: 'absolute', width: 300, height: 300, borderRadius: 150, backgroundColor: 'rgba(255,214,110,0.22)' },
+  row: { marginTop: 14, height: 46, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  dots: { flexDirection: 'row', alignItems: 'flex-end', gap: 6, paddingTop: 10 },
+  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#ffd24a', borderWidth: 2, borderColor: '#6b4426' },
 });

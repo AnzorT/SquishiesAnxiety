@@ -1,14 +1,17 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import Pressable from './Pressable';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RewardedAd, RewardedAdEventType, AdEventType } from 'react-native-google-mobile-ads';
 import { REWARDED_AD_UNIT_ID } from '../firebase/ads';
 import { BUTTON_VARIANTS, candyFonts } from '../theme/candyTheme';
 import { Shine } from './candy/CandyButton';
+import { stepKeys, useKeyLoop } from './idleLoop';
 
 // One "watch ad for a coin multiplier" CTA at the bottom of SquishScreen —
 // there are three of these side by side (×2/×3/×4, see SquishScreen.js),
-// each holding its own independently-loaded rewarded ad. In the v3 look it's
+// each holding its own independently-loaded rewarded ad (kept for the
+// session in adPool, below). In the v3 look it's
 // a gold candy button: a little play-screen badge beside a big "×N", and
 // "WATCH AD" / "LONG AD" underneath. It breathes (a slow scale pulse) and a
 // light streak sweeps across it, but ONLY while it's actually tappable — see
@@ -26,6 +29,47 @@ import { Shine } from './candy/CandyButton';
 // straight away, the caption reads "NO AD", and after each boost the buttons
 // recharge until `rechargeUntil` (a timestamp), counting the seconds down.
 const GOLD = BUTTON_VARIANTS.gold;
+// the breath: 1 → 1.035 → 1, 1.2 s each way, eased
+const BREATHE = stepKeys(1, [
+  [1.035, 1200, Easing.inOut(Easing.ease)],
+  [1, 1200, Easing.inOut(Easing.ease)],
+]);
+// the light streak sweeps across in the first 60% of its 2.8 s, then holds
+// off the right edge for the remaining 40%
+const SHEEN_AT = [0, 0.6, 1];
+const SHEEN_X = [-70, 160, 160];
+
+// PERF 2026-11-20: the rewarded ads live for the whole session, one per multiplier, instead of one per visit to Squish
+// Time. Every ad that arrives makes Google's SDK build a WebView on the main thread (55-175 ms on the Galaxy A16: the
+// stage and its hints froze), and the three buttons loaded three new ads on every visit, throwing the loaded ones away
+// on the way out. Now a second visit finds them loaded (ready at once, nothing built). The pool's own listeners keep
+// each entry's state while no button is on screen; a used (closed), failed or old ad is replaced by a new one (AdMob ads
+// expire after an hour).
+const AD_MAX_AGE_MS = 50 * 60 * 1000;
+const adPool = new Map(); // multiplier -> { ad, state: 'loading' | 'loaded' | 'gone', at }
+
+function pooledAd(multiplier, fresh) {
+  const had = adPool.get(multiplier);
+  const usable =
+    had &&
+    !fresh &&
+    (had.state === 'loading' || (had.state === 'loaded' && had.ad.loaded && Date.now() - had.at < AD_MAX_AGE_MS));
+  if (usable) return had;
+  const entry = { ad: RewardedAd.createForAdRequest(REWARDED_AD_UNIT_ID), state: 'loading', at: 0 };
+  entry.ad.addAdEventListener(RewardedAdEventType.LOADED, () => {
+    entry.state = 'loaded';
+    entry.at = Date.now();
+  });
+  entry.ad.addAdEventListener(AdEventType.ERROR, () => {
+    entry.state = 'gone';
+  });
+  entry.ad.addAdEventListener(AdEventType.CLOSED, () => {
+    entry.state = 'gone';
+  });
+  adPool.set(multiplier, entry);
+  entry.ad.load();
+  return entry;
+}
 
 export default function WatchAdButton({ multiplier, onRewardEarned, activeMultiplier, adFree = false, rechargeUntil = 0 }) {
   const rewardedRef = useRef(null);
@@ -46,8 +90,6 @@ export default function WatchAdButton({ multiplier, onRewardEarned, activeMultip
     }, 1000);
     return () => clearInterval(id);
   }, [adFree, rechargeUntil]);
-  const breatheAnim = useRef(new Animated.Value(0)).current;
-  const sheenAnim = useRef(new Animated.Value(0)).current;
 
   const isThisActive = activeMultiplier === multiplier;
   const isLockedByOther = activeMultiplier != null && !isThisActive;
@@ -58,37 +100,22 @@ export default function WatchAdButton({ multiplier, onRewardEarned, activeMultip
   const isStill = !ready || isLockedByOther || recharging;
   const isDisabled = isStill || isThisActive;
 
-  useEffect(() => {
-    if (isStill) return undefined;
-    const breathe = Animated.loop(
-      Animated.sequence([
-        Animated.timing(breatheAnim, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(breatheAnim, { toValue: 0, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ])
-    );
-    const sheen = Animated.loop(
-      Animated.timing(sheenAnim, { toValue: 1, duration: 2800, easing: Easing.linear, useNativeDriver: true })
-    );
-    breathe.start();
-    sheen.start();
-    return () => {
-      breathe.stop();
-      sheen.stop();
-      // Reset so a re-render while still frozen doesn't briefly show a
-      // mid-cycle pose from the last time it was animating.
-      breatheAnim.setValue(0);
-      sheenAnim.setValue(0);
-    };
-  }, [isStill, breatheAnim, sheenAnim]);
+  // The breath and the sheen, one native loop each while it's tappable, back
+  // at rest while it's still (so a frozen button never shows a mid-cycle pose).
+  const scale = useKeyLoop(BREATHE.ms, { at: BREATHE.at, values: BREATHE.values, on: !isStill });
+  const sheenX = useKeyLoop(2800, { at: SHEEN_AT, values: SHEEN_X, on: !isStill });
 
   useEffect(() => {
     if (adFree) return undefined; // nothing to load
     let unsub = [];
 
-    const load = () => {
-      setReady(false);
-      const rewarded = RewardedAd.createForAdRequest(REWARDED_AD_UNIT_ID);
+    // this multiplier's ad from the session's pool (adPool below): already loaded on a second visit
+    const load = (fresh) => {
+      unsub.forEach((fn) => fn());
+      const entry = pooledAd(multiplier, fresh);
+      const rewarded = entry.ad;
       rewardedRef.current = rewarded;
+      setReady(entry.state === 'loaded');
 
       unsub = [
         rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => setReady(true)),
@@ -103,15 +130,14 @@ export default function WatchAdButton({ multiplier, onRewardEarned, activeMultip
             earnedRef.current = false;
             onRewardEarned && onRewardEarned();
           }
-          load();
+          // that ad is used up: the pool loads the next one
+          load(true);
         }),
         rewarded.addAdEventListener(AdEventType.ERROR, () => setReady(false)),
       ];
-
-      rewarded.load();
     };
 
-    load();
+    load(false);
     return () => unsub.forEach((fn) => fn());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adFree]);
@@ -126,10 +152,6 @@ export default function WatchAdButton({ multiplier, onRewardEarned, activeMultip
     rewardedRef.current.show();
   }, [ready, isDisabled, adFree, onRewardEarned]);
 
-  const scale = breatheAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.035] });
-  // Sweep the light streak across in the first 60% of the loop, then hold it
-  // off the right edge for the remaining 40%.
-  const sheenX = sheenAnim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [-70, 160, 160] });
   const sub = isThisActive
     ? 'ACTIVE'
     : recharging

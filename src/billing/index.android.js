@@ -56,7 +56,7 @@ const deliver = (purchase) =>
   verify({ platform: 'android', productId: purchase.products && purchase.products[0], purchaseToken: purchase.purchaseToken });
 
 // Buys `key` (a PRODUCTS key) for the signed-in player. Resolves with the
-// server's answer ({ granted: 'adsFree' | 'key' | 'coins' | 'creation', … }),
+// server's answer ({ granted: 'adsFree' | 'key' | 'coins' | 'creation' | 'gems', … }),
 // or { pending: true } for a payment Google Play hasn't cleared yet (it's
 // granted by syncPurchases once it does). Rejects with a PurchaseError.
 export async function buy(key, { uid, creatureId = '' }, retried = false) {

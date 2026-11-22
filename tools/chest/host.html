@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<!-- The chest smash (REDESIGN_V6 step 6): the design's "Chest Smash v2" — its own chest engine
+     (chest-models.js + chest-<group>.js: dents, cracks, holes, torn parts, burst, loot) and sounds
+     (chest-sfx.js), copied unchanged by tools/chest/build.mjs — with the page's overlay rebuilt here
+     without the design tool's framework. The server has already rolled the chest (squad groupChest
+     and friends): this plays that result, upgrade included, and says when COLLECT is tapped.
+     src/components/ChestSmash.js drives it: rigHost-style `chestHost.start({...})`. -->
+<style>
+  @font-face { font-family: 'Fredoka'; font-weight: 700; src: url('fonts/Fredoka_700Bold.ttf'); }
+  @font-face { font-family: 'Nunito'; font-weight: 700; src: url('fonts/Nunito_700Bold.ttf'); }
+  @font-face { font-family: 'Nunito'; font-weight: 800; src: url('fonts/Nunito_800ExtraBold.ttf'); }
+  @font-face { font-family: 'Nunito'; font-weight: 900; src: url('fonts/Nunito_900Black.ttf'); }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #22160e; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; font-family: 'Nunito', sans-serif; }
+  @keyframes c2Slam { 0%{ transform:scale(2.6) rotate(-8deg); opacity:0;} 40%{ transform:scale(0.92) rotate(2deg); opacity:1;} 65%{ transform:scale(1.06) rotate(-1deg);} 100%{ transform:scale(1) rotate(0deg); opacity:1;} }
+  @keyframes c2Rise { from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:translateY(0);} }
+  @keyframes c2Hue { from{ filter:hue-rotate(0deg);} to{ filter:hue-rotate(360deg);} }
+  @keyframes c2Fade { from{ opacity:0;} to{ opacity:1;} }
+  @keyframes c2Rays { from{ transform:rotate(0deg);} to{ transform:rotate(360deg);} }
+  @keyframes c2Card { 0%{ transform:scale(0.2) rotate(-14deg); opacity:0;} 55%{ transform:scale(1.08) rotate(3deg); opacity:1;} 100%{ transform:scale(1) rotate(0deg); opacity:1;} }
+  @keyframes c2Bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-5px);} }
+  @keyframes c2Shine { 0%{ transform:translateX(-120%) skewX(-20deg);} 60%,100%{ transform:translateX(220%) skewX(-20deg);} }
+  @keyframes c2Glow { 0%,100%{ filter:brightness(1);} 50%{ filter:brightness(1.25);} }
+  .abs { position: absolute; }
+  #stage { position: absolute; inset: 0; }
+  #bg { position: absolute; inset: 0; background: #c88a50; }
+  /* REDESIGN_V9 (2026-11-16): the chest stands in the squad's treasure vault (tools/chest/vault-room.mjs ->
+     vault-room.jpg), where "To the treasure vault" flies in. Redrawn the same day after the user: "the vault is not
+     looking great, it should be in the same warm and cozy Squish Squad app": honey wood, an open brass vault door behind
+     the chest, a red rug it stands on, string lights. #vault is the picture's own box (it covers the screen from the
+     bottom middle, as the picture was drawn), so the twinkles sit on the picture on any phone shape.
+     The treasure in it is the app's coins and gems and the opened chest's group's own chests (the user, 2026-11-16), so
+     there's a picture per group, vault/<group>.webp, put up by start() (roomFor). */
+  #floor { display: none; }
+  #vault { position: absolute; left: 50%; bottom: 0; width: max(100vw, 216.67vh); height: max(100vh, 46.15vw); transform: translateX(-50%); background: #c88a50 0 0 / 100% 100% no-repeat; pointer-events: none; }
+  /* The shine on the treasure (the user, 2026-11-16: "add the shiny flicker that pops on gold and gems, and on the
+     legendary and rainbow chests"): the menu crest's twinkle (a cream four-point star that pops, turns and fades),
+     with a glow, on spots tools/chest/vault-room.mjs saved (vault/spots.js): coin tops, gems, and the group's
+     Legendary and Rainbow chests. Sixteen at a time (eight in lite), each popping somewhere else when it's done. */
+  #vault .tw { position: absolute; width: 2.4%; aspect-ratio: 1; opacity: 0; transform: translate(-50%, -50%) scale(.3); background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cdefs%3E%3CradialGradient id='g'%3E%3Cstop offset='0' stop-color='%23fffdf0' stop-opacity='.95'/%3E%3Cstop offset='.32' stop-color='%23ffe680' stop-opacity='.75'/%3E%3Cstop offset='1' stop-color='%23ffd84a' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='20' cy='20' r='20' fill='url%28%23g%29'/%3E%3Cpath d='M20 1 Q21.8 18.2 39 20 Q21.8 21.8 20 39 Q18.2 21.8 1 20 Q18.2 18.2 20 1Z' fill='%23fffdf0'/%3E%3C/svg%3E") center / contain no-repeat; }
+  #vault .tw.gem { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cdefs%3E%3CradialGradient id='g'%3E%3Cstop offset='0' stop-color='%23fffdf0' stop-opacity='.95'/%3E%3Cstop offset='.32' stop-color='%23d6e6ff' stop-opacity='.75'/%3E%3Cstop offset='1' stop-color='%23b8c8ff' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='20' cy='20' r='20' fill='url%28%23g%29'/%3E%3Cpath d='M20 1 Q21.8 18.2 39 20 Q21.8 21.8 20 39 Q18.2 21.8 1 20 Q18.2 18.2 20 1Z' fill='%23fffdf0'/%3E%3C/svg%3E"); }
+  #vault .tw.rb { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cdefs%3E%3CradialGradient id='g'%3E%3Cstop offset='0' stop-color='%23fffdf0' stop-opacity='.95'/%3E%3Cstop offset='.32' stop-color='%23ffb8e6' stop-opacity='.75'/%3E%3Cstop offset='1' stop-color='%239fd8ff' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='20' cy='20' r='20' fill='url%28%23g%29'/%3E%3Cpath d='M20 1 Q21.8 18.2 39 20 Q21.8 21.8 20 39 Q18.2 21.8 1 20 Q18.2 18.2 20 1Z' fill='%23fffdf0'/%3E%3C/svg%3E"); }
+  #vault .tw.on { animation: vTw var(--d, .9s) ease-in-out; }
+  @keyframes vTw { 0%,100% { opacity: 0; transform: translate(-50%, -50%) scale(.3) rotate(0); } 45% { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(45deg); } 70% { opacity: 0; transform: translate(-50%, -50%) scale(.4) rotate(90deg); } }
+  /* (the two wall lanterns' flicker and the two group-colour banners were taken out 2026-11-21, the user: "take out
+     the 2 lamps and the two flags") */
+  #floor { position: absolute; left: 0; right: 0; bottom: 0; height: 27%; box-shadow: inset 0 4px 0 rgba(255,240,220,0.55); }
+  #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: manipulation; }
+  #top { position: absolute; left: 0; right: 0; top: 0; padding: calc(var(--inset-top, 24px) + 28px) 16px 0; display: flex; flex-direction: column; align-items: center; gap: 7px; pointer-events: none; }
+  /* the app's look: a cream chip with a brown rim; the name in the gold lettering (src/royal theme LETTERING.gold: a
+     white sticker edge, a dark outline and drop, the gold fill) */
+  #tierLabel { min-height: 16px; line-height: 16px; padding: 3px 13px; border-radius: 999px; background: #fff6e2; border: 2px solid #6b4426; box-shadow: 0 2.5px 0 #6b4426; font-weight: 900; font-size: 12px; letter-spacing: 1.4px; }
+  #name { position: relative; isolation: isolate; min-height: 1.1em; white-space: nowrap; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.1; letter-spacing: 0.5px; text-align: center; color: #4a1f04; -webkit-text-stroke: 6px #4a1f04; text-shadow: 0 3px 0 #4a1f04; }
+  #name::before, #name::after { content: attr(data-t); position: absolute; left: 0; right: 0; top: 0; text-shadow: none; }
+  #name::before { z-index: -1; color: #fff; -webkit-text-stroke: 12px #fff; }
+  #name::after { color: transparent; -webkit-text-stroke: 0; background: linear-gradient(180deg, #fffbe6 8%, #ffe57e 38%, #ffbe2e 68%, #f08c10 96%); -webkit-background-clip: text; background-clip: text; }
+  /* the HP meter is the vault lock's plate: wood in a brown rim (the app's plaques), a brass padlock on its left end that
+     shakes when hit and opens when the chest bursts, five gold bars for the HP left (a fifth each, draining as it's hit) */
+  #hpbar { position: relative; display: flex; align-items: center; gap: 7px; min-height: 31px; width: 300px; max-width: 100%; box-sizing: border-box; padding: 5px 7px 5px 30px; border-radius: 14px; background: linear-gradient(180deg, #e9b97c 0%, #cf955a 55%, #a86c38 100%); border: 2.5px solid #5b3418; box-shadow: 0 4px 0 #5b3418, inset 0 2px 0 rgba(255,236,200,0.6), 0 7px 12px rgba(40,20,5,0.3); }
+  #lock { position: absolute; left: -16px; top: 50%; width: 38px; height: 44px; margin-top: -25px; transform-origin: 50% 40%; }
+  #lock svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  #lock .shackle { transition: transform 0.35s cubic-bezier(0.2, 1.6, 0.4, 1); }
+  #lock.open .shackle { transform: translate(-3px, -7px) rotate(-14deg); }
+  #lock.hit { animation: lockHit 0.36s ease-out; }
+  @keyframes lockHit { 0% { transform: rotate(0); } 25% { transform: rotate(-16deg) scale(1.08); } 50% { transform: rotate(11deg); } 75% { transform: rotate(-5deg); } 100% { transform: rotate(0); } }
+  #pips { flex: 1; min-width: 0; display: flex; gap: 3px; }
+  .pip { flex: 1; min-width: 0; height: 14px; border-radius: 4px; overflow: hidden; background: rgba(70,34,10,0.55); box-shadow: inset 0 2px 2px rgba(0,0,0,0.35); }
+  .pip i { display: block; height: 100%; box-sizing: border-box; border-radius: 4px; background: linear-gradient(180deg, #fff6c4 0%, #ffd84a 45%, #e8a020 100%); border: 1.5px solid #7a4510; box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.7); transition: width 0.2s; }
+  #hp { flex-shrink: 0; padding: 1px 8px; border-radius: 999px; background: #fff6e2; border: 2px solid #5b3418; color: #5b3418; font-weight: 900; font-size: 11px; }
+  #bannerWrap { position: absolute; left: 0; right: 0; top: 30%; display: flex; justify-content: center; pointer-events: none; }
+  .banner { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 50px; line-height: 1; letter-spacing: 1px; color: #fff; }
+  #bottom { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 16px calc(var(--inset-bottom, 0px) + 28px); display: flex; flex-direction: column; align-items: center; gap: 12px; pointer-events: none; transition: opacity 0.3s; }
+  #hint { padding: 6px 18px; border-radius: 999px; background: #fff6e2; border: 2.5px solid #6b4426; color: #5b3418; font-weight: 900; font-size: 14px; white-space: nowrap; box-shadow: 0 3px 0 #6b4426; animation: c2Rise 0.3s ease-out both; }
+  #hint:empty { display: none; }
+  #reveal.on { display: flex; }
+  #reveal { position: absolute; inset: 0; z-index: 20; overflow: hidden; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; box-sizing: border-box; background: radial-gradient(circle at 50% 42%, rgba(255,184,90,0.5) 0, rgba(34,22,14,0.92) 70%); animation: c2Fade 0.3s ease-out both; }
+  #rays { position: absolute; left: 50%; top: 40%; width: 820px; height: 820px; margin: -410px 0 0 -410px; border-radius: 50%; background: repeating-conic-gradient(rgba(255,230,140,0.32) 0 8deg, rgba(255,255,255,0) 8deg 20deg); -webkit-mask-image: radial-gradient(circle, #000 15%, transparent 62%); mask-image: radial-gradient(circle, #000 15%, transparent 62%); animation: c2Rays 14s linear infinite; pointer-events: none; }
+  /* The reveal in the app's look (2026-11-17, the user: "display them with the new card designs + the +1 copy, the
+     progress bar and the collect need their designs updated"):
+     - the card is the Characters screen's card (the design's cards v6, webgame/export/cards4: the rarity's frame, the
+       group's background in its window, the creature's still in its Firebase look, its name in the rarity's lettering),
+       as the design's own Chest Smash v2 reveal draws it;
+     - +1 COPY (and NEW SQUISHY! / UNLOCKED!) is gold lettering on a wood plaque, as the chest's name over the vault;
+     - the copies bar is the vault lock's wood plate: the creature's head in a cream disc on its left end (where the lock
+       has its padlock), a dark groove and a gold fill;
+     - COLLECT is the app's gold button (the games' RESUME / RETRY: src/squishdoku/ui.js BTN.gold). */
+  #rvUp { position: relative; padding: 3px 13px; border-radius: 999px; background: #fff6e2; border: 2px solid #6b4426; box-shadow: 0 2.5px 0 #6b4426; font-weight: 900; font-size: 12px; letter-spacing: 1.2px; animation: c2Rise 0.4s 0.25s ease-out both; }
+  @keyframes c2Pop { 0% { opacity: 0; transform: scale(0.4) rotate(-6deg); } 60% { opacity: 1; transform: scale(1.12) rotate(2deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+  /* a wood plaque (the lock plate's wood and rim) */
+  .plq { background: linear-gradient(180deg, #e9b97c 0%, #cf955a 55%, #a86c38 100%); border: 2.5px solid #5b3418; box-shadow: 0 4px 0 #5b3418, inset 0 2px 0 rgba(255,236,200,0.6), 0 8px 14px rgba(40,20,5,0.35); }
+  #rvNew { position: relative; padding: 3px 22px 6px; border-radius: 16px; animation: c2Pop 0.5s 0.35s cubic-bezier(0.2,0.9,0.3,1.3) both; }
+  /* gold lettering (as #name): a white sticker edge, a dark outline and drop, the gold fill */
+  .gl { position: relative; isolation: isolate; display: block; white-space: nowrap; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 25px; line-height: 1.15; letter-spacing: 0.8px; word-spacing: 4px; text-align: center; color: #4a1f04; -webkit-text-stroke: 6px #4a1f04; text-shadow: 0 3px 0 #4a1f04; }
+  .gl::before, .gl::after { content: attr(data-t); position: absolute; left: 0; right: 0; top: 0; text-shadow: none; }
+  .gl::before { z-index: -1; color: #fff; -webkit-text-stroke: 11px #fff; }
+  .gl::after { color: transparent; -webkit-text-stroke: 0; background: linear-gradient(180deg, #fffbe6 8%, #ffe57e 38%, #ffbe2e 68%, #f08c10 96%); -webkit-background-clip: text; background-clip: text; }
+  /* (portrait: the labels over the card, the card, then the rest; sideways: the card on the left, the rest beside it) */
+  #rvSide { display: contents; }
+  /* (#rvStart, the labels, the bar and the coins, and #rvEnd, COLLECT: in portrait one column with the card; sideways
+     either side of it) */
+  #rvStart, #rvEnd { display: contents; }
+  #rvUp, #rvNew { order: 1; }
+  #rvMain { --cw: 230px; order: 2; position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  #rvCopies, #loot, #rvPity, #collect { order: 3; }
+  /* the card: the cards v6 layers (boxes from SQ_CARD4.of, % of the card) */
+  #card { position: relative; width: var(--cw); aspect-ratio: 1696 / 2528; container-type: inline-size; animation: c2Card 0.6s cubic-bezier(0.2,0.9,0.3,1.2) both; }
+  #card .glow { position: absolute; left: -14%; right: -14%; top: -9%; bottom: -9%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,226,130,0.7), rgba(255,226,130,0.25) 60%, rgba(255,226,130,0)); pointer-events: none; }
+  #card .ly { position: absolute; pointer-events: none; }
+  #cdBg { object-fit: cover; object-position: center bottom; }
+  #art { display: flex; align-items: flex-end; justify-content: center; animation: c2Bob 2.4s ease-in-out infinite; }
+  #art img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 6px 8px rgba(60,30,10,0.3)); }
+  #cdShine { overflow: hidden; }
+  #cardShine { position: absolute; top: 0; bottom: 0; left: 0; width: 40%; background: linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.55),rgba(255,255,255,0)); animation: c2Shine 2.6s 0.6s ease-in-out infinite; }
+  #cdFrame { inset: 0; width: 100%; height: 100%; }
+  #cdName { object-fit: contain; }
+  #cdNameT { display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 9cqw; line-height: 1; }
+  /* no cards v6 (its script didn't load, or no creature): a cream card in a brown rim, the picture and the name on it */
+  #card.plain::before { content: ''; position: absolute; inset: 0; border-radius: 9%/6%; background: linear-gradient(180deg, #fffaf0, #f6e4c4); box-shadow: 0 0 0 3px #6b4426, 0 6px 0 3px #6b4426; }
+  #card.plain #cdNameT { font-size: 13cqw; color: #5b3418; }
+  #rvAbout { display: flex; flex-direction: column; align-items: center; gap: 5px; animation: c2Rise 0.4s 0.45s ease-out both; }
+  #rvRar { padding: 2px 12px; border-radius: 999px; border: 2px solid #fff; font-weight: 900; font-size: 12px; letter-spacing: 1px; box-shadow: 0 2px 0 rgba(40,20,5,0.35); }
+  #rvConcept { max-width: 260px; font-weight: 800; font-size: 12.5px; color: #fff3dc; text-align: center; text-shadow: 0 1.5px 0 rgba(40,20,5,0.7), 0 0 6px rgba(40,20,5,0.6); }
+  #rvConcept:empty { display: none; }
+  #loot { position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; animation: c2Rise 0.4s 0.5s ease-out both; }
+  .chip { display: flex; align-items: center; gap: 6px; padding: 6px 14px 6px 8px; border-radius: 999px; background: #fff; box-shadow: 0 0 0 2px #a04a00, 0 3px 0 2px #a04a00; }
+  .coin { width: 20px; height: 20px; border-radius: 50%; box-sizing: border-box; background: radial-gradient(circle at 50% 42%, #fff6a8 0%, #ffd83a 42%, #ffb000 72%, #f08c00 100%); border: 2px solid #fff; box-shadow: 0 0 0 1px #a04a00; }
+  .chip span { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 18px; color: #b86200; }
+  #rvDupe { display: flex; align-items: center; padding: 6px 14px; border-radius: 999px; background: #fff3c4; box-shadow: 0 0 0 2px #a04a00, 0 3px 0 2px #a04a00; font-weight: 900; font-size: 13px; color: #8a4a00; }
+  #rvPity { position: relative; font-weight: 900; font-size: 13px; color: #ffe27a; }
+  /* the copies bar: the lock plate's wood, the creature's head where the lock has its padlock, a gold fill in a dark
+     groove (the lock's gold bars), the count on it; it shines once the last copy is in */
+  #rvCopies { position: relative; width: 270px; display: none; flex-direction: column; align-items: center; gap: 7px; animation: c2Rise 0.4s 0.45s ease-out both; }
+  #cpTrack { position: relative; width: 100%; height: 36px; box-sizing: border-box; display: flex; align-items: center; padding: 0 9px 0 34px; border-radius: 15px; }
+  #cpHead { position: absolute; left: -16px; top: 50%; width: 44px; height: 44px; margin-top: -23px; box-sizing: border-box; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 38%, #fffaf0 0%, #fff0d4 60%, #f0d6a8 100%); border: 2.5px solid #5b3418; box-shadow: 0 3px 0 #5b3418, inset 0 -3px 4px rgba(160,100,40,0.25); }
+  #cpHead img { position: absolute; left: 7%; top: 9%; width: 86%; height: 86%; object-fit: contain; object-position: center bottom; }
+  #cpGroove { position: relative; flex: 1; min-width: 0; height: 18px; border-radius: 9px; overflow: hidden; background: rgba(70,34,10,0.6); box-shadow: inset 0 2px 3px rgba(0,0,0,0.4), 0 1px 0 rgba(255,236,200,0.45); }
+  #cpFill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; box-sizing: border-box; border-radius: 9px; overflow: hidden; background: linear-gradient(180deg, #fff6c4 0%, #ffd84a 45%, #e8a020 100%); border: 1.5px solid #7a4510; box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.75); transition: width 0.8s cubic-bezier(0.2,0.9,0.3,1.2); }
+  #cpFill.full::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 45%; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.8), rgba(255,255,255,0)); animation: c2Shine 1.8s 1.2s ease-in-out infinite; }
+  #cpText { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.8px; color: #fff; text-shadow: 0 1.5px 0 #4a1f04, 1.5px 0 0 #4a1f04, -1.5px 0 0 #4a1f04, 0 -1px 0 #4a1f04; }
+  #cpNote { font-weight: 900; font-size: 13.5px; color: #fff3dc; text-align: center; text-shadow: 0 1.5px 0 rgba(40,20,5,0.8), 0 0 6px rgba(40,20,5,0.6); }
+  #cpNote b { color: #ffd84a; }
+  /* the app's gold button (src/squishdoku/ui.js SdButton kind gold): a white edge, the dark gold ring and its lip, the
+     shine on its top half, white lettering outlined in the ring's colour */
+  #collect { position: relative; overflow: hidden; width: 230px; height: 60px; padding: 0; border: 3px solid #fff; border-radius: 999px; background: linear-gradient(180deg, #fff7b0 0%, #ffd23a 50%, #ff9c0a 100%); box-shadow: 0 0 0 2.5px #9c4d06, 0 5px 0 2.5px #9c4d06, 0 11px 18px rgba(60,30,5,0.4); font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 26px; letter-spacing: 1px; color: #fff; text-shadow: 0 2.5px 0 #9c4d06, 2px 0 0 #9c4d06, -2px 0 0 #9c4d06, 0 -1.5px 0 #9c4d06; cursor: pointer; animation: c2Rise 0.4s 0.7s ease-out both; }
+  #collect::before { content: ''; position: absolute; left: 8%; right: 8%; top: 2px; height: 42%; border-radius: 999px; background: rgba(255,255,255,0.45); pointer-events: none; }
+  #collect::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 34%; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.6), rgba(255,255,255,0)); animation: c2Shine 2.8s 1.4s ease-in-out infinite; pointer-events: none; }
+  #collect span { position: relative; }
+  #collect:active { transform: translateY(4px); box-shadow: 0 0 0 2.5px #9c4d06, 0 1px 0 2.5px #9c4d06, 0 5px 10px rgba(60,30,5,0.35); }
+  /* ---- THE UNLOCK (2026-11-17, the user: "after we reach the number of cards we need to receive the character i [want]
+     there to be an animation where all the cards come together and them bam comes out the character"). When the chest
+     brings the copy that unlocks its creature, the reveal opens on its copies: the ones found before fan out of the
+     middle into a ring round a count (1 / 12 … 11 / 12), the new one flies up from where the chest stood (12 / 12), the
+     ring spins in, the cards go white-hot into one stack that shakes, and BAM: a flash, a shockwave, sparks, and the
+     creature bursts out as its live 2.5D rig (the rig pages' scripts, ../rig/, loaded only for this), twirls, lands and
+     cheers. Then UNLOCKED!, the full bar, "<name> joins your squad!" and COLLECT come in as on any reveal. A tap skips to
+     the BAM. #merge holds the cards and the effects (drawn by merge() in the script), #hero takes the card's place, and
+     #heroRig, over the reveal, is the live creature (its still in #heroImg when the rig can't be drawn). ---- */
+  #merge { position: absolute; inset: 0; z-index: 3; display: none; pointer-events: none; }
+  #reveal.unlock #merge { display: block; }
+  /* (while the cards gather, the reveal's own parts wait, hidden, their entrances held until the BAM) */
+  #reveal.merging #rvSide *, #reveal.merging #rvAbout, #reveal.merging #heroNm { visibility: hidden; animation: none !important; }
+  /* a copy: the cards v6 card again, small (the layers' boxes from SQ_CARD4.of, as #card) */
+  .mc { position: absolute; left: 0; top: 0; width: var(--mw, 58px); aspect-ratio: 1696 / 2528; container-type: inline-size; opacity: 0; will-change: transform, opacity; }
+  .mc .ly { position: absolute; pointer-events: none; }
+  .mc .bg { object-fit: cover; object-position: center bottom; }
+  .mc .art { display: flex; align-items: flex-end; justify-content: center; }
+  .mc .art img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
+  .mc .fr { left: 0; top: 0; width: 100%; height: 100%; }
+  .mc .nm { object-fit: contain; }
+  .mc .nt { display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 9cqw; line-height: 1; }
+  .mc.plain::before { content: ''; position: absolute; inset: 0; border-radius: 9%/6%; background: linear-gradient(180deg, #fffaf0, #f6e4c4); box-shadow: 0 0 0 2px #6b4426; }
+  .mc.plain .nt { font-size: 13cqw; color: #5b3418; }
+  /* white-hot as they gather (the script sets how much) */
+  .mc .hot { left: 3%; right: 3%; top: 2%; bottom: 2%; border-radius: 11%/7%; background: radial-gradient(closest-side, #fffef8, #fff4c8 55%, #ffd86e); box-shadow: 0 0 16px 6px rgba(255,232,150,0.9); opacity: 0; will-change: opacity; }
+  /* the new copy, the one from this chest: a gold glow round it */
+  .mc.new::after { content: ''; position: absolute; inset: -6%; border-radius: 12%/8%; box-shadow: 0 0 0 3px #ffe27a, 0 0 18px 7px rgba(255,214,90,0.85); animation: c2Glow 0.9s ease-in-out infinite; pointer-events: none; }
+  /* the count in the ring's middle: gold lettering on a wood plaque, popping as each copy lands */
+  #mgCount { position: absolute; left: 0; top: 0; opacity: 0; will-change: transform, opacity; }
+  #mgCount .in { padding: 3px 18px 7px; border-radius: 16px; transform: translate(-50%, -50%); }
+  #mgCount .in.pop { animation: mgPop 0.3s cubic-bezier(0.2,0.9,0.3,1.4); }
+  #mgCount .in.full { box-shadow: 0 4px 0 #5b3418, 0 0 0 3px #ffe27a, 0 0 22px 8px rgba(255,214,90,0.8); }
+  #mgCount .gl { font-size: 30px; }
+  @keyframes mgPop { 0% { transform: translate(-50%, -50%) scale(1); } 40% { transform: translate(-50%, -50%) scale(1.25); } 100% { transform: translate(-50%, -50%) scale(1); } }
+  /* the light in the middle that grows as they gather, the BAM's flash, its shockwaves and sparks */
+  #mgGlow { position: absolute; left: 0; top: 0; width: 360px; height: 360px; margin: -180px 0 0 -180px; border-radius: 50%; background: radial-gradient(closest-side, #fffff4, rgba(255,240,170,0.85) 28%, rgba(255,206,100,0.35) 60%, rgba(255,206,100,0)); opacity: 0; will-change: transform, opacity; }
+  #mgFlash { position: absolute; inset: 0; opacity: 0; background: radial-gradient(circle at var(--fx, 50%) var(--fy, 50%), #ffffff 0, rgba(255,251,230,0.96) 22%, rgba(255,228,150,0.75) 55%, rgba(255,210,110,0.4) 100%); }
+  #reveal.burst #mgFlash { animation: mgFlash 0.75s ease-out both; }
+  @keyframes mgFlash { 0% { opacity: 0; } 7% { opacity: 1; } 100% { opacity: 0; } }
+  .mgRing, .mgPing { position: absolute; left: 0; top: 0; width: 200px; height: 200px; margin: -100px 0 0 -100px; box-sizing: border-box; border-radius: 50%; border: 10px solid rgba(255,240,180,0.95); box-shadow: 0 0 20px rgba(255,220,120,0.8), inset 0 0 20px rgba(255,220,120,0.8); opacity: 0; }
+  #reveal.burst .mgRing { animation: mgRing 0.65s cubic-bezier(0.1,0.7,0.3,1) both; }
+  #reveal.burst .mgRing.b { animation-delay: 0.1s; border-width: 5px; border-color: #ffffff; }
+  .mgPing { width: 110px; height: 110px; margin: -55px 0 0 -55px; border-width: 6px; animation: mgRing 0.55s cubic-bezier(0.1,0.7,0.3,1) both; }
+  @keyframes mgRing { 0% { opacity: 1; transform: scale(0.15); } 100% { opacity: 0; transform: scale(3.2); } }
+  .mgBit { position: absolute; left: 0; top: 0; width: 16px; height: 16px; margin: -8px 0 0 -8px; opacity: 0; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M20 1 Q21.8 18.2 39 20 Q21.8 21.8 20 39 Q18.2 21.8 1 20 Q18.2 18.2 20 1Z' fill='%23fffbe0' stroke='%23ffc93a' stroke-width='2'/%3E%3C/svg%3E") center / contain no-repeat; }
+  .mgBit.c { width: 9px; height: 13px; margin: -6px 0 0 -4px; border-radius: 2px; background: var(--c, #ffd84a); }
+  #reveal.burst .mgBit { animation: mgBit var(--d, 0.9s) cubic-bezier(0.15,0.75,0.35,1) both; }
+  @keyframes mgBit { 0% { opacity: 1; transform: translate(0, 0) rotate(0) scale(0.5); } 45% { opacity: 1; transform: translate(calc(var(--dx) * 0.8), calc(var(--dy) * 0.8)) rotate(calc(var(--r) * 0.5)) scale(1); } 100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + var(--fall, 80px))) rotate(var(--r)) scale(0.9); } }
+  #reveal.shake #rvMain, #reveal.shake #merge { animation: mgShake 0.42s linear; }
+  @keyframes mgShake { 0%, 100% { transform: translate(0, 0); } 12% { transform: translate(-8px, 5px); } 26% { transform: translate(7px, -6px); } 40% { transform: translate(-6px, -3px); } 55% { transform: translate(5px, 4px); } 70% { transform: translate(-3px, 2px); } 85% { transform: translate(2px, -1px); } }
+  /* the creature's place, where the card would be: the glow it stands in, its floor shadow, its still (when its rig
+     can't be drawn) and its name in the gold lettering under its feet */
+  #hero { display: none; position: relative; width: var(--cw); aspect-ratio: 1696 / 2528; }
+  #reveal.unlock #card { display: none; }
+  #reveal.unlock #hero { display: block; }
+  #hero .hglow { position: absolute; left: -32%; right: -32%; top: 4%; height: 88%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,238,170,0.8), rgba(255,214,110,0.32) 55%, rgba(255,214,110,0)); opacity: 0; }
+  #reveal.burst #hero .hglow { animation: c2Fade 0.4s ease-out both, c2Glow 2.4s 0.4s ease-in-out infinite; }
+  #hero .hfloor { position: absolute; left: 16%; right: 16%; top: 77%; height: 6%; border-radius: 50%; background: radial-gradient(closest-side, rgba(40,20,5,0.5), rgba(40,20,5,0)); opacity: 0; transition: opacity 0.3s 0.35s; }
+  #reveal.burst #hero .hfloor { opacity: 1; }
+  #heroImg { position: absolute; left: 2%; width: 96%; top: 14%; height: 66%; object-fit: contain; object-position: center bottom; opacity: 0; transform-origin: 50% 100%; filter: drop-shadow(0 6px 8px rgba(60,30,10,0.3)); transition: opacity 0.25s; }
+  #heroImg.on { opacity: 1; animation: unPop 0.9s cubic-bezier(0.2,0.9,0.3,1.2) both, c2Bob 2.4s 0.9s ease-in-out infinite; }
+  #heroImg.on.off { opacity: 0; }
+  @keyframes unPop { 0% { opacity: 0; transform: translateY(-34%) scale(0.2); } 35% { opacity: 1; transform: translateY(-26%) scale(1.15); } 70% { transform: translateY(0) scale(1.06, 0.9); } 85% { transform: scale(0.97, 1.04); } 100% { opacity: 1; transform: none; } }
+  #heroNm { position: absolute; left: -30%; right: -30%; top: 83%; display: flex; justify-content: center; animation: c2Pop 0.5s 0.15s cubic-bezier(0.2,0.9,0.3,1.3) both; }
+  #heroNm .gl { font-size: 24px; }
+  /* the live creature: over the reveal, on #hero in page pixels (100 x 100 is the rig's own box, scaled by the script),
+     unseen while it loads; its floor shadow is the page's (.hfloor) */
+  #heroRig { position: absolute; left: 0; top: 0; z-index: 21; width: 100px; height: 100px; transform-origin: 0 0; visibility: hidden; pointer-events: none; }
+  #heroRig.on { visibility: visible; }
+  #heroRig .rig { position: absolute; inset: 0; pointer-events: auto; }
+  #heroRig ellipse[fill="#6a1b9a"] { display: none; }
+  /* ---- landscape (REDESIGN_V7: the whole app is sideways now) ---- */
+  @media (orientation: landscape) {
+    #top { padding-top: calc(var(--inset-top, 0px) + 8px); gap: 4px; }
+    #name { font-size: 24px; }
+    #bottom { padding-bottom: calc(var(--inset-bottom, 0px) + 10px); }
+    #bannerWrap { top: 24%; }
+    /* the reveal in three columns, the card in the middle of the screen (the user, 2026-11-17, first for the unlock: "the
+       animation should be played in the middle as well as the character that we just unlocked", then for every card:
+       "put the card in the middle and the progress bar in the left side like you did in the animation"):
+       - left (#rvStart): what came, +1 COPY / NEW SQUISHY! / UNLOCKED!, the bar, coins, the lucky meter;
+       - middle (#rvMain): the card (or the unlocked creature), as tall as the screen allows, its rarity and line under it;
+       - right (#rvEnd): COLLECT.
+       The rays are behind the card; the unlock's ring, BAM and rig follow #hero, so they're in the middle too. */
+    #reveal.on { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; column-gap: 22px; padding: 12px 20px; }
+    #rays { left: 50%; top: 50%; }
+    #rvMain { grid-column: 2; grid-row: 1; --cw: calc(min(300px, 100vh - 74px) * 1696 / 2528); gap: 7px; }
+    #rvAbout { flex-direction: row; gap: 8px; max-width: calc(var(--cw) + 40px); }
+    #rvConcept { text-align: left; }
+    #rvStart, #rvEnd { grid-row: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0; }
+    #rvStart { grid-column: 1; }
+    #rvEnd { grid-column: 3; }
+    #rvCopies { width: min(272px, 100% - 16px); }
+    #rvPity { text-align: center; }
+    #collect { width: min(230px, 100%); }
+  }
+</style>
+<script>
+// Performance (2026-11-14): the chest engine draws its whole canvas every frame at up to 2x the CSS size, so its cost
+// grows with the resolution. Here it's capped at 1.5x, and drops to 1x (with half the particles) when the phone
+// can't keep up (fps watched while the chest is up, watchFps below), or from the start on a phone with 2 GB of memory
+// or 2 cores or fewer.
+// Each chest opening loads this page afresh, so on a slow phone every smash began at full quality and stuttered until
+// the watcher stepped down. It's remembered now (localStorage, shared with the menu's page): a smash that needed lite,
+// or the menu having had to slow its creatures (webgame/app/perf.js 'sq.perfStep'), starts the next chests in lite.
+// Forgotten after 14 days, so a phone is tried at full quality again now and then.
+// Sharpness (2026-11-16, the user: the chests "look blurred"): the A15's screen is 2.81x, so the 1.5x canvas was
+// stretched almost 2x, and 1x in lite almost 3x. The canvas is now the screen's own resolution (up to 3x). Lite halves the
+// particles; only the chest page's own slowness (its watcher, or its remembered sq.chestLite) also lowers the resolution,
+// to 2x, and a weak phone starts at 1.5x. The menu's slow step (sq.perfStep) still starts the chest in lite, but no longer
+// blurs it: the menu's creatures being slow says little about this canvas.
+(function () {
+  var DAYS14 = 14 * 864e5, now = Date.now(), seen = false, slowHere = false;
+  try {
+    slowHere = now - (+localStorage.getItem('sq.chestLite') || 0) < DAYS14;
+    var m = JSON.parse(localStorage.getItem('sq.perfStep') || 'null');
+    seen = slowHere || !!(m && m.step >= 2 && now - m.t < DAYS14);
+  } catch (e) { /* no storage */ }
+  var weak = (navigator.deviceMemory && navigator.deviceMemory <= 2) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2);
+  var lite = !!(weak || seen);
+  var real = window.devicePixelRatio || 1, cap = Math.min(real, weak ? 1.5 : slowHere ? 2 : 3);
+  try { Object.defineProperty(window, 'devicePixelRatio', { configurable: true, get: function () { return cap; } }); } catch (e) { /* old WebView */ }
+  window.chestPerf = {
+    lite: lite, remembered: seen, real: real, cap: function () { return cap; }, setCap: function (c) { cap = c; },
+    remember: function () { try { localStorage.setItem('sq.chestLite', String(Date.now())); } catch (e) { /* no storage */ } },
+  };
+})();
+</script>
+<script src="vault/spots.js"></script>
+<!-- the Characters screen's cards (the game pages' cards v6, in the app's assets beside this page): SQ_CARD4 lays a
+     card out, SQ_NAMES has each creature's name in its rarity's lettering. Their paths are the game pages' own
+     (export/cards4/...), so the reveal puts ../webgame/ in front. -->
+<script src="../webgame/export/cards4/cards4.js"></script>
+<script src="../webgame/export/cards4/names.js"></script>
+<script src="chest-sfx.js"></script>
+<script src="chest-models.js"></script>
+<script src="chest-fruit.js"></script>
+<script src="chest-ocean.js"></script>
+<script src="chest-pet.js"></script>
+<script src="chest-kit.js"></script>
+<script src="chest-forest.js"></script>
+<script src="chest-sky.js"></script>
+<script src="chest-dream.js"></script>
+<script src="chest-bakery.js"></script>
+<script src="chest-heroes.js"></script>
+<script src="chest-elemental.js"></script>
+<script src="chest-spooky.js"></script>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"></div>
+  <div id="vault"></div>
+  <div id="floor"></div>
+  <canvas id="cv"></canvas>
+  <div id="top">
+    <div id="tierLabel"></div>
+    <div id="name"></div>
+    <div id="hpbar">
+      <div id="lock"><svg viewBox="0 0 38 44">
+        <defs>
+          <linearGradient id="lkBrass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff1b0"/><stop offset=".4" stop-color="#f6c64e"/><stop offset="1" stop-color="#b8781e"/></linearGradient>
+          <linearGradient id="lkSteel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c98a24"/><stop offset=".5" stop-color="#ffe08a"/><stop offset="1" stop-color="#c98a24"/></linearGradient>
+        </defs>
+        <g class="shackle"><path d="M11 22 V14 a8 8 0 0 1 16 0 V22" fill="none" stroke="#5b3418" stroke-width="8" stroke-linecap="round"/><path d="M11 22 V14 a8 8 0 0 1 16 0 V22" fill="none" stroke="url(#lkSteel)" stroke-width="4" stroke-linecap="round"/></g>
+        <rect x="3.5" y="19" width="31" height="23" rx="6.5" fill="url(#lkBrass)" stroke="#5b3418" stroke-width="2.6"/>
+        <path d="M7.5 23.5 H30.5" stroke="#fff8d8" stroke-width="1.8" stroke-linecap="round" opacity=".7"/>
+        <circle cx="19" cy="29" r="3.4" fill="#5b3418"/><path d="M17.4 30 H20.6 L21.4 37 H16.6Z" fill="#5b3418"/>
+      </svg></div>
+      <div id="pips"></div><div id="hp"></div>
+    </div>
+  </div>
+  <div id="bannerWrap"></div>
+  <div id="bottom">
+    <div id="hint"></div>
+  </div>
+  <div id="reveal">
+    <div id="rays"></div>
+    <div id="rvMain">
+      <div id="card"><div class="glow"></div><img id="cdBg" class="ly" alt=""><div id="art" class="ly"><img id="rvImg" alt=""></div><div id="cdShine" class="ly"><div id="cardShine"></div></div><img id="cdFrame" class="ly" alt=""><img id="cdName" class="ly" alt=""><div id="cdNameT" class="ly"></div></div>
+      <div id="hero"><div class="hglow"></div><div class="hfloor"></div><img id="heroImg" alt=""><div id="heroNm"><span class="gl" id="heroNmT" data-t=""></span></div></div>
+      <div id="rvAbout"><div id="rvRar"></div><div id="rvConcept"></div></div>
+    </div>
+    <div id="rvSide">
+      <div id="rvStart">
+      <div id="rvUp"></div>
+      <div id="rvNew" class="plq"><span class="gl" id="rvNewT" data-t="NEW SQUISHY!">NEW SQUISHY!</span></div>
+      <div id="rvCopies"><div id="cpTrack" class="plq"><div id="cpHead"><img id="cpImg" alt=""></div><div id="cpGroove"><div id="cpFill"></div><div id="cpText"></div></div></div><div id="cpNote"></div></div>
+      <div id="loot"><div class="chip"><div class="coin"></div><span id="rvCoins"></span></div><div id="rvDupe"></div></div>
+      <div id="rvPity">Lucky meter paid out: guaranteed Epic or better!</div>
+      </div>
+      <div id="rvEnd">
+      <button id="collect"><span>COLLECT</span></button>
+      </div>
+    </div>
+    <div id="merge"><div id="mgGlow"></div><div id="mgCards"></div><div id="mgCount"><div class="in plq"><span class="gl" id="mgCountT" data-t=""></span></div></div><div id="mgFlash"></div><i class="mgRing"></i><i class="mgRing b"></i><div id="mgBits"></div></div>
+  </div>
+  <div id="heroRig"><div class="rig"></div></div>
+</div>
+<script>
+(function () {
+  // Chest Smash v2's tables
+  const TN = [
+    { n: 'Common', c: '#8d7b6a', ink: '#5a4636' },
+    { n: 'Rare', c: '#2f8cff', ink: '#0e4aa8' },
+    { n: 'Epic', c: '#a24bf0', ink: '#5a1a9a' },
+    { n: 'Legendary', c: '#f08c00', ink: '#9a4a00' },
+    { n: 'Rainbow', c: '#e0459f', ink: '#8a1a6a' },
+  ];
+  const TI = { common: 0, rare: 1, epic: 2, legendary: 3, set: 4, rainbow: 4 };
+  // THE CHEST HP, by rarity, the same in every group (the user, 2026-11-17): Common, Rare, Epic, Legendary, Rainbow.
+  // One tap = 1 HP. These replace the design's own (6/8/10/12/14 in tools/design-v6/chest-*.js): see rarityHp().
+  const HP = [15, 20, 30, 40, 50];
+  const GROUPS = {
+    snack: { n: 'Snack Shack', bg: 'repeating-conic-gradient(#ffb59a 0 25%, #fff0e2 0 50%) 0 0/56px 56px', floor: 'linear-gradient(180deg,#e7b88a 0%,#d39a68 40%,#b97c4c 100%)' },
+    fruit: { n: 'Fruit Patch', bg: 'repeating-conic-gradient(#c4eba4 0 25%, #f4ffe6 0 50%) 0 0/56px 56px', floor: 'linear-gradient(180deg,#a8dc78 0%,#7cc458 40%,#4f9a3c 100%)' },
+    ocean: { n: 'Ocean Pals', bg: 'repeating-conic-gradient(#a8e2ff 0 25%, #eefaff 0 50%) 0 0/56px 56px', floor: 'linear-gradient(180deg,#f8e2ae 0%,#ecc884 40%,#cfa25e 100%)' },
+    pet: { n: 'Pet Shop', bg: 'repeating-conic-gradient(#e6caff 0 25%, #fbf2ff 0 50%) 0 0/56px 56px', floor: 'linear-gradient(180deg,#deae7e 0%,#c08a5c 40%,#98663c 100%)' },
+    forest: { n: 'Forest Friends', bg: 'repeating-conic-gradient(#b8e0a0 0 25%, #f2fbe8 0 50%) 0 0/56px 56px', floor: 'linear-gradient(180deg,#8ac86a 0%,#5fa848 40%,#3e7a30 100%)' },
+    sky: { n: 'Sky & Stars', bg: 'repeating-conic-gradient(#b8c8ff 0 25%, #eef2ff 0 50%) 0 0/56px 56px', floor: 'linear-gradient(180deg,#d8e4ff 0%,#b0c4f4 40%,#8a9ee0 100%)' },
+    dream: { n: 'Dreamland', bg: 'repeating-conic-gradient(#e2d2ff 0 25%, #faf6ff 0 50%) 0 0/56px 56px', floor: 'linear-gradient(180deg,#d8c8f4 0%,#bca8e8 40%,#9a84d0 100%)' },
+    bakery: { n: 'Sweet Bakery', bg: 'repeating-conic-gradient(#bff0e2 0 25%, #fff8f0 0 50%) 0 0/56px 56px', floor: 'linear-gradient(180deg,#f2d4b4 0%,#e0b48a 40%,#c08a5c 100%)' },
+    heroes: { n: 'Masked Heroes', bg: 'repeating-conic-gradient(#ffc2c2 0 25%, #fff4ee 0 50%) 0 0/56px 56px', floor: 'linear-gradient(180deg,#a8b4d0 0%,#7e8cb0 40%,#58668e 100%)' },
+    elemental: { n: 'Elemental Heroes', bg: 'repeating-conic-gradient(#c8ccf0 0 25%, #f2f2fc 0 50%) 0 0/56px 56px', floor: 'linear-gradient(180deg,#b8b2c0 0%,#8e8898 40%,#625c6e 100%)' },
+    spooky: { n: 'Spooky Squish', bg: 'repeating-conic-gradient(#d8c2f4 0 25%, #f6f0fc 0 50%) 0 0/56px 56px', floor: 'linear-gradient(180deg,#8a6aa8 0%,#6a4a8a 40%,#4a2e6a 100%)' },
+  };
+  const fmt = (n) => Number(n || 0).toLocaleString('en-US');
+  const $ = (id) => document.getElementById(id);
+  const post = (m) => { const s = JSON.stringify(m); if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(s); else (window.__chestOut = window.__chestOut || []).push(m); };
+
+  // (no POWER bar or SUPER taps: the user, 2026-10-25)
+  let S = null, run = null, st = null, bk = 0, bannerT = 0, revealT = 0;
+  // st: { gk, start, final, tier, hp, max, name, phase, first, reward, held }
+  // (phase 'wait': the scene is up and the server's answer on its way; `held`: a first tap meanwhile)
+
+  function paint() {
+    if (!st) return;
+    const T = TN[st.tier] || TN[2], G = GROUPS[st.gk] || GROUPS.ocean;
+    $('tierLabel').textContent = G.n.toUpperCase() + ' · ' + T.n.toUpperCase();
+    $('tierLabel').style.color = T.ink;
+    if ($('name').textContent !== st.name) { $('name').textContent = st.name; $('name').dataset.t = st.name; }
+    // five bars, a fifth of the HP each (up to 50 HP: one bar a hit no longer fits); the one being hit drains bit by bit
+    const pips = $('pips'), per = Math.max(1, st.max) / 5;
+    if (!pips.children.length) for (let i = 0; i < 5; i++) { const d = document.createElement('div'); d.className = 'pip'; d.appendChild(document.createElement('i')); pips.appendChild(d); }
+    [...pips.children].forEach((d, i) => { const f = Math.max(0, Math.min(1, (st.hp - i * per) / per)); d.firstChild.style.width = f * 100 + '%'; d.firstChild.style.visibility = f > 0 ? 'visible' : 'hidden'; });
+    $('hp').textContent = st.hp + ' HP';
+    $('lock').classList.toggle('open', st.phase === 'ko' || st.phase === 'open');
+    const idle = st.first && st.start <= 1 ? 'Tap to smash. The first tap might upgrade it!' : 'Keep tapping!';
+    const HINT = { idle, wait: idle, up: 'Upgrading… tap to skip', ko: 'Bursting open…', open: 'Opened!' };
+    const hint = HINT[st.phase] || '';
+    if ($('hint').textContent !== hint) { const h = $('hint'); h.textContent = hint; h.style.animation = 'none'; void h.offsetWidth; h.style.animation = ''; }
+    $('bottom').style.opacity = st.phase === 'ko' || st.phase === 'open' ? 0.4 : 1;
+  }
+
+  function banner(text, tier) {
+    clearTimeout(bannerT);
+    const ink = TN[tier].ink, glow = TN[tier].c, w = $('bannerWrap');
+    w.innerHTML = '';
+    const b = document.createElement('div');
+    b.className = 'banner'; b.textContent = text; b.dataset.k = ++bk;
+    b.style.textShadow = ['3px 0 0', '-3px 0 0', '0 3px 0', '0 -3px 0', '2.4px 2.4px 0', '-2.4px -2.4px 0', '2.4px -2.4px 0', '-2.4px 2.4px 0', '0 7px 0', '0 0 28px'].map((s) => s + ' ' + ink).join(', ') + ', 0 0 54px ' + glow;
+    b.style.animation = tier === 4 ? 'c2Slam 0.6s cubic-bezier(0.2,0.9,0.3,1.2) both, c2Hue 2s linear infinite' : 'c2Slam 0.6s cubic-bezier(0.2,0.9,0.3,1.2) both';
+    w.appendChild(b);
+    bannerT = setTimeout(() => (w.innerHTML = ''), 1500);
+  }
+
+  // The reveal's card: the Characters screen's card (cards v6, SQ_CARD4) for the creature: its rarity's frame, its
+  // group's background in the window, its still (rw.img: its picture in the Firebase look) and its name in its rarity's
+  // lettering (as text when there's none drawn for its rarity). Without SQ_CARD4, or with no creature (loot only), a
+  // cream card with the picture and the name on it.
+  const C4URL = (u) => (u ? '../webgame/' + u : '');
+  function layout(rw, gk) {
+    const C4 = window.SQ_CARD4;
+    return rw && rw.name && C4 ? C4.of({ rar: rw.rar | 0, set: rw.set || gk, key: rw.key || '', name: rw.name }) : null;
+  }
+  function cardFor(rw) {
+    const d = layout(rw, st.gk);
+    const put = (id, l, t, w, h) => Object.assign($(id).style, { left: l, top: t, width: w, height: h });
+    $('card').classList.toggle('plain', !d);
+    $('cdBg').style.display = $('cdFrame').style.display = $('cdShine').style.display = d ? '' : 'none';
+    if (d) {
+      $('cdBg').src = C4URL(d.cdBg);
+      $('cdFrame').src = C4URL(d.cdFrame);
+      put('cdBg', d.cdBgL, d.cdBgT, d.cdBgW, d.cdBgH);
+      put('cdShine', d.cdBgL, d.cdBgT, d.cdBgW, d.cdBgH);
+      put('art', d.cdArtL, d.cdArtT, d.cdArtW, d.cdArtH);
+      put('cdName', d.cdNmL, d.cdNmT, d.cdNmW, d.cdNmH);
+      put('cdNameT', d.cdNmL, d.cdNmT, d.cdNmW, d.cdNmH);
+      $('cdNameT').style.color = d.cdInk;
+    } else {
+      put('art', '12%', '10%', '76%', '58%');
+      put('cdNameT', '8%', '72%', '84%', '16%');
+      $('cdNameT').style.color = '';
+    }
+    const named = !!(d && d.cdHasName);
+    $('cdName').style.display = named ? '' : 'none';
+    if (named) $('cdName').src = C4URL(d.cdName);
+    $('cdNameT').style.display = named ? 'none' : '';
+    $('cdNameT').textContent = rw && rw.name ? rw.name : 'Loot!';
+    $('rvImg').style.display = rw && rw.img ? '' : 'none';
+    if (rw && rw.img) $('rvImg').src = rw.img;
+  }
+  // the reveal's pictures, fetched while the chest is being smashed, so the card never comes up half drawn
+  let warm = [];
+  function preload(rw, gk) {
+    if (!rw) return;
+    const d = layout(rw, gk);
+    const urls = [rw.img, d && C4URL(d.cdBg), d && C4URL(d.cdFrame), d && d.cdHasName && C4URL(d.cdName)].filter(Boolean);
+    warm = urls.map((u) => { const im = new Image(); im.src = u; return im; });
+  }
+
+  function showReveal() {
+    const rw = st.reward || {}, T = TN[st.tier] || TN[2], G = GROUPS[st.gk] || GROUPS.ocean;
+    $('rvUp').style.display = st.tier > st.start ? '' : 'none';
+    $('rvUp').textContent = 'UPGRADED TO ' + T.n.toUpperCase() + '!';
+    $('rvUp').style.color = T.c;
+    // a copy toward unlocking it (+1 COPY and the bar), the copy that unlocks
+    // it (UNLOCKED!), or one that came whole (NEW SQUISHY!)
+    const copy = !rw.isNew && rw.copies > 0;
+    const counted = rw.need > 1 && (copy || rw.isNew);
+    $('rvNew').style.display = rw.isNew || copy ? '' : 'none';
+    const label = copy ? '+1 COPY' : counted ? 'UNLOCKED!' : 'NEW SQUISHY!';
+    $('rvNewT').textContent = label; $('rvNewT').dataset.t = label;
+    $('rvCopies').style.display = counted ? 'flex' : 'none';
+    let growBar = null;
+    if (counted) {
+      const fill = $('cpFill'), n = Math.min(rw.copies, rw.need);
+      fill.className = n >= rw.need ? 'full' : '';
+      fill.style.transition = 'none';
+      fill.style.width = (((n - 1) / rw.need) * 100).toFixed(1) + '%';
+      void fill.offsetWidth;
+      fill.style.transition = '';
+      growBar = () => (fill.style.width = ((n / rw.need) * 100).toFixed(1) + '%');
+      $('cpText').textContent = n + ' / ' + rw.need;
+      $('cpImg').style.display = rw.img ? '' : 'none';
+      if (rw.img) $('cpImg').src = rw.img;
+      // "Find <b>5 more</b> to unlock Melo!", or "Melo joins your squad!" with the last copy
+      const left = rw.need - n, note = $('cpNote');
+      note.textContent = '';
+      if (left > 0) { const b = document.createElement('b'); b.textContent = left + ' more'; note.append('Find ', b, ' to unlock ' + rw.name + '!'); }
+      else note.textContent = rw.name + ' joins your squad!';
+    }
+    const has = !!rw.name;
+    cardFor(has ? rw : null);
+    $('rvRar').textContent = has ? rw.rarLabel : G.n.toUpperCase();
+    $('rvRar').style.background = has ? rw.rarBg : '#ffffff';
+    $('rvRar').style.color = has ? rw.rarInk : '#5b3418';
+    $('rvConcept').textContent = rw.concept || '';
+    // coins only for a duplicate (or a finished set): no chip at all otherwise
+    const coins = (rw.coins || 0) + (rw.dupeCoins || 0) + (rw.setBonus || 0);
+    $('loot').style.display = coins ? 'flex' : 'none';
+    $('rvCoins').textContent = '+' + fmt(coins);
+    $('rvDupe').style.display = !rw.isNew && rw.dupeCoins ? '' : 'none';
+    $('rvDupe').textContent = 'Duplicate';
+    $('rvPity').style.display = rw.luck ? '' : 'none';
+    // the copy that unlocks it: its copies come together first, and BAM, the creature (THE UNLOCK, below)
+    const unlock = unlocks(rw), rv = $('reveal');
+    rv.classList.remove('burst', 'shake');
+    rv.classList.toggle('unlock', unlock);
+    rv.classList.toggle('merging', unlock);
+    // restart the card's entrance animations
+    // (a class, not an inline display: the landscape layout is a grid)
+    rv.classList.remove('on'); rv.style.display = 'none'; void rv.offsetWidth; rv.style.display = ''; rv.classList.add('on');
+    // the bar's last copy going in, and where COLLECT ends up (after its entrance), for the app's tutorial: now, or after
+    // the BAM
+    const sideIn = () => {
+      if (growBar) later(growBar, 900);
+      later(() => { const r = $('collect').getBoundingClientRect(); post({ type: 'reveal', collect: { x: r.left, y: r.top, w: r.width, h: r.height } }); }, 1150);
+    };
+    if (unlock) mergeStart(rw, sideIn);
+    else sideIn();
+  }
+
+  // ---- THE UNLOCK (see #merge in the styles): the copies come together, and BAM, the creature ----------------------
+  // A creature's copies are counted toward unlocking it (rw.need of them, 5 to 14 by rarity); `isNew` with a count is
+  // the copy that unlocks it. (A creature a chest gives whole says the same, copies = need, and plays this too.)
+  const unlocks = (rw) => !!(rw && rw.isNew && rw.need > 1 && rw.name);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const SM = (x) => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+  const outQ = (u) => 1 - (1 - u) * (1 - u), inQ = (u) => u * u, outC = (u) => 1 - Math.pow(1 - u, 3);
+  const outBack = (u) => { const v = u - 1; return 1 + 2.70158 * v * v * v + 1.70158 * v * v; };
+  const bez = (a, b, c, u) => (1 - u) * (1 - u) * a + 2 * (1 - u) * u * b + u * u * c;
+  // the reveal's timers (cleared by the next chest)
+  const tms = [];
+  const later = (fn, ms) => tms.push(setTimeout(fn, ms));
+
+  // The timeline (ms from the reveal opening): the copies found before fan out of the middle one after another (OUT,
+  // STEP apart, FLY each), the new one flies up from the chest (NEW) once they're nearly all out, a moment (HOLD), the
+  // ring spins in (GATHER), the stack shakes (CHARGE), BAM. The creature then flies out and lands (POP, below), and the
+  // rest of the reveal comes in SIDE after the BAM. About 3 s to the BAM for 5 copies, 3.5 s for 14.
+  const MG = { OUT: 150, STEP: 55, FLY: 480, NEW: 650, HOLD: 330, GATHER: 1000, CHARGE: 430, SIDE: 350 };
+  let mg = null;
+
+  // a copy: the reveal's card (cards v6), small, with its white-hot layer
+  function miniCard(rw, d) {
+    const el = document.createElement('div');
+    el.className = 'mc' + (d ? '' : ' plain');
+    const add = (tag, cls, box, src) => {
+      const e = document.createElement(tag);
+      e.className = 'ly ' + cls;
+      if (box) Object.assign(e.style, { left: box[0], top: box[1], width: box[2], height: box[3] });
+      if (src) { e.src = src; e.alt = ''; }
+      el.appendChild(e);
+      return e;
+    };
+    if (d) add('img', 'bg', [d.cdBgL, d.cdBgT, d.cdBgW, d.cdBgH], C4URL(d.cdBg));
+    const art = add('div', 'art', d ? [d.cdArtL, d.cdArtT, d.cdArtW, d.cdArtH] : ['12%', '10%', '76%', '58%']);
+    if (rw.img) { const im = document.createElement('img'); im.src = rw.img; im.alt = ''; art.appendChild(im); }
+    if (d) add('img', 'fr', null, C4URL(d.cdFrame));
+    const nb = d ? [d.cdNmL, d.cdNmT, d.cdNmW, d.cdNmH] : ['8%', '72%', '84%', '16%'];
+    if (d && d.cdHasName) add('img', 'nm', nb, C4URL(d.cdName));
+    else { const t = add('div', 'nt', nb); t.textContent = rw.name; if (d) t.style.color = d.cdInk; }
+    add('div', 'hot');
+    return el;
+  }
+
+  // where it all happens: round the middle of the creature's place (#hero), the ring as big as the screen allows
+  function mgGeom() {
+    const W = innerWidth, H = innerHeight, r = $('hero').getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height * 0.45;
+    const mw = Math.round(clamp(Math.min(W, H) * 0.155, 40, 64)), mh = (mw * 2528) / 1696;
+    const rx = clamp(Math.min(cx - mw / 2 - 8, W - cx - mw / 2 - 8, W * 0.36), 60, 250);
+    const ry = clamp(Math.min(cy - mh / 2 - 6, H - cy - mh / 2 - 6), 50, 150);
+    Object.assign(mg, { W, H, cx, cy, mw, mh, rx, ry });
+    $('merge').style.setProperty('--mw', mw + 'px');
+    for (const el of [$('mgGlow'), ...document.querySelectorAll('#merge .mgRing')]) { el.style.left = cx + 'px'; el.style.top = cy + 'px'; }
+    $('mgFlash').style.setProperty('--fx', cx + 'px');
+    $('mgFlash').style.setProperty('--fy', cy + 'px');
+  }
+  // card j's place in the ring (clockwise from the top; the new one, last, just left of the top)
+  const slot = (j) => { const a = -Math.PI / 2 + (2 * Math.PI * j) / mg.n; return [mg.cx + Math.cos(a) * mg.rx, mg.cy + Math.sin(a) * mg.ry, a]; };
+
+  function setCount(k, full) {
+    const t = $('mgCountT'), s = k + ' / ' + mg.n, box = t.parentNode;
+    t.textContent = s; t.dataset.t = s;
+    box.classList.toggle('full', !!full);
+    box.classList.remove('pop'); void box.offsetWidth; box.classList.add('pop');
+  }
+
+  function mergeStart(rw, sideIn) {
+    // (only a merge still running stops here: the reveal's classes are already set, and the rig is on its way)
+    if (mg) { cancelAnimationFrame(mg.raf); mg.snd.forEach((x) => { try { x.stop(); } catch (e) { /* done */ } }); }
+    const n =clamp(rw.need | 0, 2, 16), d = layout(rw, st.gk), box = $('mgCards');
+    const newAt = MG.OUT + (n - 1) * MG.STEP + MG.FLY * 0.5, newEnd = newAt + MG.NEW, gather = newEnd + MG.HOLD, charge = gather + MG.GATHER;
+    mg = { rw, n, sideIn, cards: [], count: 0, t0: performance.now(), newAt, newEnd, gather, charge, bam: charge + MG.CHARGE, snd: [], raf: 0 };
+    box.innerHTML = ''; box.style.display = '';
+    for (let j = 0; j < n; j++) {
+      const isNew = j === n - 1, el = miniCard(rw, d), s = isNew ? newAt : MG.OUT + j * MG.STEP;
+      if (isNew) el.classList.add('new');
+      box.appendChild(el);
+      mg.cards.push({ el, hot: el.querySelector('.hot'), j, isNew, s, end: s + (isNew ? MG.NEW : MG.FLY), tilt: (((j * 37) % 11) - 5) * 1.3, landed: false, hotV: -1 });
+    }
+    $('mgCountT').textContent = ''; $('mgCountT').dataset.t = '';
+    $('mgCount').style.opacity = '0'; $('mgGlow').style.opacity = '0';
+    $('mgBits').innerHTML = '';
+    $('heroImg').classList.remove('on', 'off');
+    if (rw.img) $('heroImg').src = rw.img;
+    $('heroNmT').textContent = rw.name; $('heroNmT').dataset.t = rw.name;
+    mgGeom();
+    // the live creature (normally on its way since the chest burst open)
+    rigPrepare(rw);
+    mg.raf = requestAnimationFrame(mgFrame);
+  }
+  function mergeStop() {
+    tms.forEach(clearTimeout); tms.length = 0;
+    if (mg) { cancelAnimationFrame(mg.raf); mg.snd.forEach((x) => { try { x.stop(); } catch (e) { /* done */ } }); }
+    mg = null;
+    $('mgCards').innerHTML = ''; $('mgBits').innerHTML = '';
+    document.querySelectorAll('#merge .mgPing').forEach((e) => e.remove());
+    $('reveal').classList.remove('unlock', 'merging', 'burst', 'shake');
+    $('heroImg').classList.remove('on', 'off');
+    rigDrop();
+  }
+
+  function mgFrame() {
+    if (!mg) return;
+    mg.raf = requestAnimationFrame(mgFrame);
+    const now = performance.now(), t = now - mg.t0, M = mg;
+    if (t < M.bam) {
+      // the stack's shake (one for all of them: they're one stack by then)
+      const cu = t >= M.charge ? (t - M.charge) / MG.CHARGE : 0, amp = cu ? 1.5 + 6 * cu : 0;
+      const jx = (Math.random() - 0.5) * 2 * amp, jy = (Math.random() - 0.5) * 2 * amp, jr = (Math.random() - 0.5) * 8 * cu;
+      for (const c of M.cards) cardAt(c, t, jx, jy, jr);
+      // the new one on its way, then in: the count full
+      if (!M.flew && t >= M.newAt) { M.flew = true; if (!M.quiet) SND.fly(); }
+      if (!M.full && t >= M.newEnd) {
+        M.full = true; M.count = M.n; setCount(M.n, true);
+        const [x, y] = slot(M.n - 1), p = document.createElement('i');
+        p.className = 'mgPing'; p.style.left = x + 'px'; p.style.top = y + 'px';
+        $('merge').appendChild(p); later(() => p.remove(), 700);
+        if (!M.quiet) SND.full();
+      }
+      if (!M.gathering && t >= M.gather) { M.gathering = true; if (!M.quiet) M.snd = SND.gather((MG.GATHER + MG.CHARGE) / 1000); }
+      // the count over the middle, fading as they gather into it
+      const cnt = $('mgCount'), gu = t < M.gather ? 0 : clamp((t - M.gather) / (MG.GATHER * 0.35), 0, 1);
+      cnt.style.opacity = M.count ? String(1 - gu) : '0';
+      cnt.style.transform = 'translate(' + M.cx.toFixed(1) + 'px,' + M.cy.toFixed(1) + 'px) scale(' + (1 + 0.4 * gu).toFixed(3) + ')';
+      // the light in the middle: growing as they gather, blazing as they shake
+      let go = 0, gs = 0.4;
+      if (t >= M.charge) { go = 0.85 + 0.15 * cu; gs = 1.1 + 0.25 * cu + 0.06 * Math.sin(cu * 40); }
+      else if (t >= M.gather) { const u = (t - M.gather) / MG.GATHER; go = 0.25 + 0.6 * u; gs = 0.5 + 0.6 * u; }
+      else if (t >= M.newEnd - 200) { const u = clamp((t - M.newEnd + 200) / 500, 0, 1); go = 0.25 * u; gs = 0.4 + 0.1 * u; }
+      $('mgGlow').style.opacity = go.toFixed(3);
+      $('mgGlow').style.transform = 'scale(' + gs.toFixed(3) + ')';
+      return;
+    }
+    if (!M.bammed) bam();
+    const tb = t - M.bam;
+    // the light bursts out and fades
+    const u = clamp(tb / 450, 0, 1);
+    $('mgGlow').style.opacity = (1 - u).toFixed(3);
+    $('mgGlow').style.transform = 'scale(' + (1.35 + 1.6 * outQ(u)).toFixed(3) + ')';
+    if (!M.side && tb >= MG.SIDE) { M.side = true; $('reveal').classList.remove('merging'); M.sideIn(); }
+    if (tb > 1200) { cancelAnimationFrame(M.raf); M.raf = 0; }
+  }
+
+  // one copy at time t: flying out to its place (or, the new one, up from the chest), bobbing there, spinning in with
+  // the ring as it shrinks and they go white-hot, then shaking in the stack
+  function cardAt(c, t, jx, jy, jr) {
+    const M = mg, [sx, sy, a0] = slot(c.j);
+    let x, y, s, rot, o, hot = 0;
+    if (t < M.gather) {
+      const u = clamp((t - c.s) / (c.end - c.s), 0, 1);
+      if (u <= 0) { x = M.cx; y = M.cy; s = 0.3; rot = 0; o = 0; }
+      else if (!c.isNew) {
+        const e = outBack(u), q = outQ(u), a = a0 - (1 - q) * 1.2;
+        x = M.cx + Math.cos(a) * M.rx * e; y = M.cy + Math.sin(a) * M.ry * e;
+        s = 0.35 + 0.65 * q; rot = c.tilt - (1 - q) * 220; o = clamp(u * 5, 0, 1);
+      } else {
+        // from where the chest stood, in an arc up and over, spinning, big
+        const e = outC(u), p0x = M.W / 2, p0y = M.H * 0.8, kx = p0x + (sx - p0x) * 0.25, ky = Math.min(p0y, sy) - M.H * 0.25;
+        x = bez(p0x, kx, sx, e); y = bez(p0y, ky, sy, e);
+        s = 1.7 - 0.7 * e; rot = c.tilt - 540 * (1 - e); o = clamp(u * 6, 0, 1);
+      }
+      if (u >= 1) {
+        if (!c.landed) { c.landed = true; if (!c.isNew) { M.count++; setCount(M.count, false); if (!M.quiet) SND.card(M.count - 1); } }
+        y += Math.sin(t / 140 + c.j) * 2.5 * clamp((t - c.end) / 300, 0, 1);
+      }
+    } else if (t < M.charge) {
+      // the ring swells a little, then spins in faster and faster
+      const u = (t - M.gather) / MG.GATHER, spin = Math.PI * 2 * 1.2 * u * u;
+      const rf = u < 0.15 ? 1 + 0.1 * Math.sin(((u / 0.15) * Math.PI) / 2) : 1.1 * (1 - inQ((u - 0.15) / 0.85));
+      x = M.cx + Math.cos(a0 + spin) * M.rx * rf; y = M.cy + Math.sin(a0 + spin) * M.ry * rf;
+      s = 1 - 0.28 * u; rot = c.tilt * (1 - u) + spin * 57.3 * 0.4; o = 1; hot = SM((u - 0.2) / 0.65);
+    } else {
+      // one stack, shaking harder, swelling, then squeezed small just before it bursts
+      const u = (t - M.charge) / MG.CHARGE;
+      x = M.cx + jx; y = M.cy + jy; rot = jr;
+      s = 0.72 + 0.14 * Math.sin(u * Math.PI) - 0.25 * SM((u - 0.72) / 0.28); o = 1; hot = 1;
+    }
+    c.el.style.transform = 'translate(' + (x - M.mw / 2).toFixed(1) + 'px,' + (y - M.mh / 2).toFixed(1) + 'px) rotate(' + rot.toFixed(1) + 'deg) scale(' + s.toFixed(3) + ')';
+    c.el.style.opacity = String(o);
+    if (Math.abs(c.hotV - hot) > 0.004) { c.hotV = hot; c.hot.style.opacity = hot.toFixed(3); }
+  }
+
+  // BAM: the cards are gone in a flash, a shockwave and sparks (the creature's rarity colour among the gold), the
+  // screen shakes, and the creature bursts out
+  function bam() {
+    const M = mg;
+    M.bammed = true;
+    $('mgCards').style.display = 'none';
+    $('mgCount').style.opacity = '0';
+    const box = $('mgBits'), lite = chestPerf.lite, n = lite ? 18 : 30, cols = ['#ffe27a', '#fff6c4', '#ffffff', '#ffb52e', M.rw.rarBg || '#ffd84a'];
+    box.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+      const e = document.createElement('i'), star = i % 3 === 0, a = (i / n) * Math.PI * 2 + Math.random() * 0.4, dd = 110 + Math.random() * 230;
+      e.className = 'mgBit' + (star ? '' : ' c');
+      e.style.left = M.cx + 'px'; e.style.top = M.cy + 'px';
+      e.style.setProperty('--dx', (Math.cos(a) * dd).toFixed(0) + 'px');
+      e.style.setProperty('--dy', (Math.sin(a) * dd * 0.8).toFixed(0) + 'px');
+      e.style.setProperty('--fall', (50 + Math.random() * 100).toFixed(0) + 'px');
+      e.style.setProperty('--r', ((Math.random() - 0.5) * 900).toFixed(0) + 'deg');
+      e.style.setProperty('--d', (0.8 + Math.random() * 0.5).toFixed(2) + 's');
+      if (!star) e.style.setProperty('--c', cols[i % cols.length]);
+      box.appendChild(e);
+    }
+    heroBox(); // (before the shake moves it)
+    const rv = $('reveal');
+    rv.classList.add('burst', 'shake');
+    later(() => rv.classList.remove('shake'), 450);
+    M.snd.forEach((x) => { try { x.stop(); } catch (e) { /* done */ } });
+    SND.bam();
+    post({ type: 'unlock' });
+    heroUp();
+  }
+
+  // a tap while they gather: straight to the BAM
+  $('reveal').addEventListener('pointerdown', () => {
+    if (!mg || mg.bammed) return;
+    const t = performance.now() - mg.t0;
+    if (t >= mg.bam - 60) return;
+    mg.quiet = true;
+    mg.snd.forEach((x) => { try { x.stop(); } catch (e) { /* done */ } });
+    mg.t0 -= mg.bam - t;
+  });
+  addEventListener('resize', () => {
+    if (mg && !mg.bammed) mgGeom();
+    if (RIG.live) { heroBox(); if (!RIG.pop) rigPlace({}); }
+  });
+
+  // ---- the creature: its live rig ---------------------------------------------------------------------------------
+  // The rig pages' own scripts (android assets rig/, as tools/rig/result.html loads them), added to this page only when a
+  // chest unlocks a creature (about 0.9 MB), from the moment the chest bursts. A rig built from the creature's art (most
+  // of them) is built then and kept unseen (not drawn) until its BAM; one of the design's own (Mittens and friends) is
+  // made at the BAM. If it isn't ready by then, its still pops out instead and the rig takes over once it is; if it never
+  // is (no art), the still stays. Its border look (rw.look) is the outline the app's other rigs wear (rig-look.js).
+  const RIG = { p: null, loaded: false, key: null, look: 0, ctrl: null, I: null, bb: null, box: null, ok: false, live: false, pop: null, sh: null, shuffling: false, wait: false, fail: false, t0: 0 };
+  function rigScripts() {
+    if (RIG.p) return RIG.p;
+    // the art the generic rigs fetch is beside the rig pages (export/tripo/…: ../rig/export/… from here), and file://
+    // pages (Android's WebView) fetch through XHR (the rig pages' own fix)
+    const real = window.fetch ? window.fetch.bind(window) : null;
+    window.fetch = function (url, opts) {
+      let u = String(url);
+      if (/^export\//.test(u)) u = '../rig/' + u;
+      if (location.protocol !== 'file:' || /^[a-z]+:/i.test(u)) return real(u, opts);
+      return new Promise((ok, bad) => {
+        const x = new XMLHttpRequest();
+        x.open('GET', u.replace(/\?.*$/, ''));
+        x.onload = () => ok({ ok: true, status: 200, text: () => Promise.resolve(x.responseText), json: () => Promise.resolve(JSON.parse(x.responseText)) });
+        x.onerror = () => bad(new TypeError('load failed: ' + u));
+        x.send();
+      });
+    };
+    const files = ['rive-rig.js', 'rive-generic.js', 'pet-defs.js', 'mittens-moves.js', 'rig-shuffle.js', 'look-lines.js', 'rig-look.js'];
+    RIG.p = new Promise((ok, bad) => {
+      files.forEach((f, i) => {
+        const s = document.createElement('script');
+        s.src = '../rig/' + f; s.async = false; // (in order)
+        s.onerror = () => bad(new Error('no ' + f));
+        if (i === files.length - 1) s.onload = ok;
+        document.head.appendChild(s);
+      });
+    }).then(() => {
+      RIG.loaded = true;
+      // its landing's dust and sparkles, drawn to its size here
+      Object.assign(window.RiveRig.PRE, {
+        unDust: { n: 8, sp: 26, vy: -5, g: 10, life: 650, r: [1.4, 2.6], col: ['#ffffff', '#fff6e6', '#f6e2c4'], kind: 'dot' },
+        unSpark: { n: 8, sp: 34, vy: -14, g: 0, life: 800, r: [2.2, 3.8], col: ['#fff3a0', '#ffffff', '#ffd23a', '#ffd1f5'], kind: 'star' },
+      });
+    });
+    RIG.p.catch(() => { RIG.p = null; }); // (tried again on the next unlock)
+    return RIG.p;
+  }
+  function rigPrepare(rw) {
+    if (!unlocks(rw) || !rw.key) return;
+    if (RIG.key === rw.key && (RIG.ctrl || RIG.wait || RIG.fail)) return;
+    rigDrop();
+    const key = rw.key;
+    Object.assign(RIG, { key, look: rw.look | 0, wait: true });
+    const p = rigScripts();
+    p.then(() => {
+      if (RIG.key !== key) return;
+      RIG.wait = false;
+      if (!window.RiveRig.DEFS[key] || (mg && mg.heroUp)) rigMount();
+    }, () => { if (RIG.key === key) { RIG.wait = false; RIG.fail = true; } });
+  }
+  function rigMount() {
+    const host = $('heroRig').firstChild, key = RIG.key;
+    if (window.__rgI) delete window.__rgI[key]; // (else a new one reads the last one's ready flag)
+    RIG.sh = window.RigShuffle ? window.RigShuffle() : null;
+    const me = window.RiveRig.mount(host, key, {
+      fidgets: true,
+      // after its cheer, now and then one of its happy moves (the lobby's shuffle)
+      onState: (a) => {
+        if (RIG.ctrl !== me || !RIG.sh) return;
+        if (RIG.shuffling) RIG.sh.onState(a);
+        else if (a === 'idle' && RIG.live && !RIG.pop) { RIG.shuffling = true; RIG.sh.attach(me); }
+      },
+    });
+    Object.assign(RIG, { ctrl: me, I: me._I, t0: performance.now() });
+    rigReady(me);
+  }
+  // once it's drawn: its body box at rest, the grain baked, its look; then unseen and not drawn until its BAM
+  function rigReady(me) {
+    if (RIG.ctrl !== me) return;
+    const I = RIG.I, retry = () => { if (performance.now() - RIG.t0 < 9000) setTimeout(() => rigReady(me), 30); else RIG.fail = true; };
+    if (I.generic && !I.ready) return retry();
+    me._pose('idle', 0);
+    const svg = $('heroRig').querySelector('svg');
+    let b = null;
+    try { b = svg && svg.getBBox(); } catch (e) { /* not drawn yet */ }
+    if (!b || !(b.width > 1)) return retry();
+    RIG.bb = { cx: b.x + b.width / 2, gy: b.y + b.height, bw: b.width, bh: b.height, top: b.y };
+    bakeGrain(svg);
+    if (window.RigLook) window.RigLook.apply(me, RIG.key, RIG.look); // (after the grain: its filter stays first)
+    RIG.ok = true;
+    if (!RIG.live && I.generic) I.ready = false;
+    // its still came out at the BAM: it takes over
+    if (mg && mg.heroUp && !RIG.live) { $('heroImg').classList.add('off'); rigLive(false); }
+  }
+  function rigDrop() {
+    if (RIG.sh) RIG.sh.stop();
+    if (RIG.ctrl) { try { RIG.ctrl.destroy(); } catch (e) { /* gone */ } }
+    Object.assign(RIG, { key: null, ctrl: null, I: null, bb: null, box: null, ok: false, live: false, pop: null, sh: null, shuffling: false, wait: false, fail: false });
+    $('heroRig').classList.remove('on');
+    $('heroRig').style.transform = '';
+  }
+  // the creature's place in page pixels: its feet at 80% of #hero, its body as big as fits 96% x 66% of it
+  function heroBox() {
+    const r = $('hero').getBoundingClientRect();
+    RIG.box = { fx: r.left + r.width / 2, fy: r.top + r.height * 0.8, W: r.width * 0.96, H: r.height * 0.66 };
+  }
+  // drawn with its feet on its place; `b` moves its whole body about its feet: lift (px), k (size), sq (squash), tilt
+  function rigPlace(b) {
+    const B = RIG.box, bb = RIG.bb;
+    if (!B || !bb) return;
+    const k = Math.min(B.W / bb.bw, B.H / bb.bh) * (b.k == null ? 1 : b.k);
+    const fx = bb.cx, fy = bb.gy, sq = clamp(b.sq || 0, -0.45, 0.45), sx = 1 + sq * 0.42, sy = 1 - sq * 0.5;
+    let tf = 'translate(' + (B.fx - fx * k).toFixed(2) + 'px,' + (B.fy - fy * k - (b.lift || 0)).toFixed(2) + 'px) scale(' + k.toFixed(4) + ')';
+    if (sq || b.tilt) tf += ' translate(' + fx.toFixed(2) + 'px,' + fy.toFixed(2) + 'px) rotate(' + (b.tilt || 0).toFixed(2) + 'deg) scale(' + sx.toFixed(3) + ',' + sy.toFixed(3) + ') translate(' + (-fx).toFixed(2) + 'px,' + (-fy).toFixed(2) + 'px)';
+    $('heroRig').style.transform = tf;
+  }
+  // BAM: the creature, or its still while its rig isn't ready
+  function heroUp() {
+    const R = window.RiveRig;
+    if (!RIG.ctrl && RIG.loaded && RIG.key && R && R.DEFS[RIG.key]) rigMount();
+    if (RIG.ok) rigLive(true);
+    else $('heroImg').classList.add('on');
+    mg.heroUp = true;
+  }
+  // Out of the burst: it grows out of the middle of the light (its middle kept on it, stretched tall, arms up, turning
+  // round once), hops (as high as the room over its head allows: it's drawn big), lands on its place, squashes, wobbles,
+  // and cheers (the rig's 'happy'). Taking over from its still: a small pop.
+  const POP = { GROW: 340, HOP: 300, SET: 420 };
+  function popAt(t) {
+    const B = RIG.box, bb = RIG.bb, k0 = 0.2, K = 1.12, grow = POP.GROW, land = grow + POP.HOP, end = land + POP.SET;
+    const tall = bb.bh * Math.min(B.W / bb.bw, B.H / bb.bh), cy = mg ? mg.cy : B.fy - tall / 2;
+    // the lift that keeps its middle on the burst at size k; the hop: up to a fifth of its height, its head kept on screen
+    const mid = (k) => Math.max(0, B.fy - cy - (tall * k) / 2);
+    const hop = clamp(B.fy - 8 - tall * K - mid(K), 0, tall * 0.2);
+    let lift = 0, k = 1, sq = 0;
+    if (t < grow) { const u = t / grow; k = k0 + (K - k0) * outBack(u); lift = mid(k); sq = -0.26 * (1 - u); }
+    else if (t < land) { const u = (t - grow) / POP.HOP; k = K - (K - 1) * u; lift = mid(K) * (1 - u) + hop * 4 * u * (1 - u); sq = -0.1 * Math.sin(u * Math.PI); }
+    else { const u = clamp((t - land) / POP.SET, 0, 1); sq = 0.32 * Math.cos(u * Math.PI * 2.5) * (1 - u); }
+    const arm = t < land ? 55 * SM(t / 160) : 55 * (1 - SM((t - land) / 250));
+    return { body: { lift, k, sq }, ext: { spin: t < land ? 360 * SM(t / (land - 40)) : 0, armL: arm, armR: arm }, land: t >= land, done: t >= end };
+  }
+  const swapAt = (t) => ({ body: { k: 0.85 + 0.15 * outBack(clamp(t / 320, 0, 1)) }, ext: {}, land: t >= 320, done: t >= 320 });
+  function rigLive(full) {
+    if (!RIG.ok || RIG.live) return;
+    RIG.live = true;
+    if (!RIG.box) heroBox();
+    if (RIG.I.generic) RIG.I.ready = true;
+    $('heroRig').classList.add('on');
+    const me = RIG.ctrl;
+    if (full) me.play('surprised');
+    RIG.pop = { t0: performance.now(), full };
+    const step = () => {
+      if (RIG.ctrl !== me || !RIG.pop) return;
+      const r = (RIG.pop.full ? popAt : swapAt)(performance.now() - RIG.pop.t0);
+      me.ext(r.ext);
+      rigPlace(r.body);
+      if (r.land && !RIG.pop.landed) {
+        RIG.pop.landed = true;
+        // landed: dust at its feet, sparkles over its head, and it cheers
+        if (RIG.pop.full) {
+          try { window.RiveRig.emit(RIG.I, 'unDust', [RIG.bb.cx, RIG.bb.gy - 2]); window.RiveRig.emit(RIG.I, 'unSpark', [RIG.bb.cx, RIG.bb.top + 4]); } catch (e) { /* no particles */ }
+          SND.land();
+        }
+        me.play('happy');
+      }
+      if (r.done) { RIG.pop = null; me.ext({}); rigPlace({}); return; }
+      requestAnimationFrame(step);
+    };
+    step();
+  }
+
+  // Fabric grain baked into a tile, one filter on the parts' common parent (the rig pages' fix for the A15: each
+  // creature's art carries a live-noise filter on several parts, a full-size pass each every frame)
+  let FAB = null;
+  function fabric() {
+    if (FAB !== null) return FAB;
+    FAB = '';
+    try {
+      const S0 = 128, cv = document.createElement('canvas'); cv.width = cv.height = S0;
+      const x = cv.getContext('2d'), im = x.createImageData(S0, S0);
+      let sd = 7; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+      const oct = (n) => { const g = []; for (let i = 0; i < n * n; i++) g.push(rnd()); const c = S0 / n, sm = (t) => t * t * (3 - 2 * t);
+        return (px, py) => { const gx = px / c, gy = py / c, x0 = Math.floor(gx), y0 = Math.floor(gy), fx = sm(gx - x0), fy = sm(gy - y0), a = (i, j) => g[(((j % n) + n) % n) * n + (((i % n) + n) % n)];
+          const t = a(x0, y0) + (a(x0 + 1, y0) - a(x0, y0)) * fx, b = a(x0, y0 + 1) + (a(x0 + 1, y0 + 1) - a(x0, y0 + 1)) * fx; return t + (b - t) * fy; }; };
+      const o1 = oct(32), o2 = oct(64);
+      for (let y = 0; y < S0; y++) for (let X = 0; X < S0; X++) { const v = (o1(X, y) + o2(X, y)) / 2, k = (y * S0 + X) * 4; im.data[k + 3] = Math.round(0.2 * 255 * v); }
+      x.putImageData(im, 0, 0);
+      const B = 1024, cb = document.createElement('canvas'); cb.width = cb.height = B;
+      const xb = cb.getContext('2d'); xb.fillStyle = xb.createPattern(cv, 'repeat'); xb.fillRect(0, 0, B, B); FAB = cb.toDataURL('image/png');
+    } catch (e) { FAB = ''; }
+    return FAB;
+  }
+  const isGrain = (f) => f && f.querySelector('feTurbulence') && !f.querySelector('feDisplacementMap') && f.querySelector('feBlend[mode="multiply"]');
+  function bakeGrain(svg) {
+    if (!svg || !fabric()) return;
+    const els = [...svg.querySelectorAll('[filter]')].filter((e) => { const id = (e.getAttribute('filter').match(/url\(#([^)]+)\)/) || [])[1]; return id && isGrain(svg.getElementById(id)); });
+    if (!els.length) return;
+    const id = els[0].getAttribute('filter').match(/url\(#([^)]+)\)/)[1], f = svg.getElementById(id), tb = f.querySelector('feTurbulence');
+    const im = document.createElementNS('http://www.w3.org/2000/svg', 'feImage');
+    [['href', FAB], ['x', -30], ['y', -30], ['width', 160], ['height', 160], ['preserveAspectRatio', 'none']].forEach(([a, v]) => im.setAttribute(a, v));
+    const cm = tb.nextElementSibling; tb.replaceWith(im); if (cm && cm.tagName === 'feColorMatrix') cm.remove();
+    let top = els[0].parentNode;
+    while (top !== svg && !els.every((e) => top.contains(e))) top = top.parentNode;
+    if (top === svg) { els.forEach((e) => e.setAttribute('filter', 'url(#' + id + ')')); return; }
+    els.forEach((e) => e.removeAttribute('filter')); top.setAttribute('filter', 'url(#' + id + ')');
+  }
+
+  // ---- its sounds (the page's own, synthesized; off with the app's effects) -----------------------------------------
+  // a bell a step up the scale for each copy landing, a whoosh for the new one and a chord when it's in, a rising rush
+  // as they gather, the BAM (a deep thump, a blast and a fan of bells and sparkles), a soft thump as the creature lands
+  const AU = { c: null };
+  function au() {
+    if (!S || !S.sound) return null;
+    try {
+      if (!AU.c) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        const c = (AU.c = new AC()), comp = c.createDynamicsCompressor();
+        comp.threshold.value = -14; comp.ratio.value = 6; comp.connect(c.destination);
+        AU.o = c.createGain(); AU.o.gain.value = 0.7; AU.o.connect(comp);
+        const len = c.sampleRate, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+        AU.nz = buf;
+      }
+      if (AU.c.state === 'suspended') AU.c.resume();
+      return AU.c;
+    } catch (e) { return null; }
+  }
+  function env(g, t, a, d, v) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(d, a + 0.02)); }
+  function tone(f, t, d, o) {
+    const c = AU.c, os = c.createOscillator(), g = c.createGain();
+    os.type = o.type || 'sine';
+    os.frequency.setValueAtTime(f, t);
+    if (o.to) os.frequency.exponentialRampToValueAtTime(o.to, t + (o.slide || d));
+    env(g, t, o.a || 0.006, d, o.vol || 0.1);
+    os.connect(g); g.connect(AU.o); os.start(t); os.stop(t + d + 0.05);
+    return os;
+  }
+  function noise(t, d, o) {
+    const c = AU.c, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = AU.nz; s.loop = true;
+    f.type = o.ft || 'bandpass'; f.Q.value = o.q || 1;
+    f.frequency.setValueAtTime(o.f || 1000, t);
+    if (o.fTo) f.frequency.exponentialRampToValueAtTime(o.fTo, t + d);
+    env(g, t, o.a || 0.006, d, o.vol || 0.1);
+    s.connect(f); f.connect(g); g.connect(AU.o); s.start(t); s.stop(t + d + 0.05);
+    return s;
+  }
+  const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  const bell = (f, t, d, v) => { tone(f, t, d, { vol: v }); tone(f * 2.76, t, d * 0.45, { vol: v * 0.3 }); tone(f * 5.4, t, d * 0.2, { vol: v * 0.12 }); };
+  const PENT = [0, 2, 4, 7, 9];
+  const SND = {
+    card(i) { if (!au()) return; const t = AU.c.currentTime + 0.005; bell(mtof(67 + 12 * Math.floor(i / 5) + PENT[i % 5]), t, 0.5, 0.07); noise(t, 0.05, { ft: 'highpass', f: 4000, vol: 0.04 }); },
+    fly() { if (!au()) return; noise(AU.c.currentTime, 0.6, { f: 500, fTo: 3500, q: 1.2, a: 0.45, vol: 0.12 }); },
+    full() { if (!au()) return; const t = AU.c.currentTime + 0.01; [79, 83, 86, 91].forEach((m, i) => bell(mtof(m), t + i * 0.06, 0.9, 0.08)); },
+    gather(d) { if (!au()) return []; const t = AU.c.currentTime; return [noise(t, d, { f: 250, fTo: 4200, q: 1.4, a: d * 0.95, vol: 0.22 }), tone(140, t, d, { type: 'triangle', to: 880, a: d * 0.9, vol: 0.09 })]; },
+    bam() {
+      if (!au()) return;
+      const t = AU.c.currentTime + 0.005;
+      tone(90, t, 0.9, { to: 30, slide: 0.5, vol: 0.9 });
+      tone(180, t, 0.3, { type: 'triangle', to: 60, vol: 0.35 });
+      noise(t, 0.9, { ft: 'lowpass', f: 5000, fTo: 200, vol: 0.55 });
+      [72, 76, 79, 84, 88, 91, 96].forEach((m, i) => bell(mtof(m), t + 0.12 + i * 0.055, 1.1, 0.07));
+      for (let i = 0; i < 12; i++) bell(1800 + Math.random() * 2400, t + 0.5 + i * (0.04 + Math.random() * 0.05), 0.4, 0.035);
+    },
+    land() { if (!au()) return; const t = AU.c.currentTime; tone(120, t, 0.22, { to: 55, vol: 0.4 }); noise(t, 0.18, { ft: 'lowpass', f: 900, fTo: 200, vol: 0.2 }); },
+  };
+
+  function ev(e) {
+    if (!st) return;
+    if (e.type === 'loaded') Object.assign(st, { tier: e.tier, hp: e.hp, max: e.max, name: e.name });
+    else if (e.type === 'hp') {
+      Object.assign(st, { hp: e.hp, max: e.max });
+      // the padlock shakes with every hit
+      const lk = $('lock'); lk.classList.remove('hit'); void lk.offsetWidth; lk.classList.add('hit');
+    }
+    else if (e.type === 'step') { Object.assign(st, { tier: e.tier, hp: e.hp, max: e.max, name: e.name }); banner(TN[e.tier].n.toUpperCase() + '!', e.tier); post({ type: 'step', tier: e.tier }); }
+    else if (e.type === 'upgradeDone') st.phase = 'idle';
+    else if (e.type === 'koStart') st.phase = 'ko';
+    else if (e.type === 'ko') {
+      st.phase = 'open'; banner('OPENED!', e.tier); post({ type: 'opened' });
+      // the copy that unlocks its creature: the creature's live rig gets ready for its BAM (THE UNLOCK)
+      rigPrepare(st.reward);
+      clearTimeout(revealT); revealT = setTimeout(showReveal, 1700);
+    }
+    paint();
+  }
+
+  // Every chest loads with HP[its tier] in place of the design's own hp (the model is the engine's cached object, so
+  // load(), hit() and the events all see it). The design punches a hole on a share of the hits past its holeFrom; with
+  // more hits that share shrinks to match, so a chest still ends up with about the holes the design gave it.
+  function rarityHp(proto, CM) {
+    const L0 = proto.load, C0 = proto.chunk;
+    proto.load = function (g, t, pop) {
+      const m = CM.model(g, t);
+      if (m._hp0 == null) m._hp0 = m.hp;
+      m.hp = HP[Math.max(0, Math.min(4, t))] || m._hp0;
+      return L0.call(this, g, t, pop);
+    };
+    proto.chunk = function (x, y, P) {
+      const m = this.chest && this.chest.m;
+      if (m && m._hp0 && m.hp > m._hp0 && Math.random() > m._hp0 / m.hp) return;
+      return C0.call(this, x, y, P);
+    };
+  }
+
+  function tap(e) {
+    if (!S || !st) return;
+    if (st.phase === 'wait') { if (!st.held) st.held = { clientX: e.clientX, clientY: e.clientY }; return; }
+    if (st.phase === 'up') { S.skipUp(); return; }
+    if (st.phase !== 'idle') return;
+    if (st.first) {
+      st.first = false;
+      // the server's upgrade (rolled at the purchase), played on the first tap
+      if (st.final > st.tier) { st.phase = 'up'; paint(); S.upgrade(st.final); post({ type: 'upgrade', to: st.final }); return; }
+    }
+    S.hitAt(e.clientX, e.clientY, 1);
+    paint();
+    post({ type: 'hit' });
+  }
+  $('cv').addEventListener('pointerdown', tap);
+  $('collect').addEventListener('click', () => post({ type: 'collect' }));
+
+  // The vault room of the chest's group (vault/<group>.webp: its heaps of the app's coins and gems, and that group's
+  // chests; tools/chest/vault-room.mjs), decoded before it goes up so it never shows half drawn. At most ~0.8 s.
+  let roomKey = null;
+  const rooms = {};
+  function roomFor(gk) {
+    if (roomKey === gk) return Promise.resolve();
+    const url = 'vault/' + gk + '.webp';
+    if (!rooms[gk]) {
+      const im = new Image();
+      im.src = url;
+      rooms[gk] = (im.decode ? im.decode() : new Promise((r) => { im.onload = r; im.onerror = r; })).catch(() => {});
+    }
+    const up = () => { if (st && st.gk === gk && roomKey !== gk) { roomKey = gk; $('vault').style.backgroundImage = 'url(' + url + ')'; } };
+    return Promise.race([rooms[gk], new Promise((r) => setTimeout(r, 800))]).then(up);
+  }
+
+  // The twinkles over the room's treasure (see #vault .tw): each one pops on a spot, then after a moment on another:
+  // coins half the time, gems a quarter, the group's Legendary and Rainbow chests the rest (more on those, as there are
+  // only three of them)
+  let twOn = false;
+  function twinkles() {
+    const SP = window.VAULT_SPOTS;
+    if (twOn || !SP) return;
+    twOn = true;
+    const v = $('vault'), n = chestPerf.lite ? 8 : 16, any = (a) => a[Math.floor(Math.random() * a.length)];
+    const place = (el) => {
+      const boxes = (roomKey && SP.chests[roomKey]) || [], r = Math.random();
+      let x, y, size, kind = '';
+      if (boxes.length && r < 0.28) {
+        const b = any(boxes);
+        x = b[0] + Math.random() * (b[2] - b[0]); y = b[1] + Math.random() * (b[3] - b[1]); size = 34 + Math.random() * 18; kind = b[4] === 'rb' ? 'rb' : '';
+      } else if (r < 0.52) {
+        const g = any(SP.gems);
+        x = g[0] + (Math.random() - 0.5) * g[2] * 0.5; y = g[1] + (Math.random() - 0.6) * g[2] * 0.5; size = g[2] * 0.95; kind = 'gem';
+      } else {
+        const c = any(SP.gold);
+        x = c[0] + (Math.random() - 0.5) * c[2] * 0.6; y = c[1] - c[2] * (0.1 + Math.random() * 0.25); size = c[2] * 1.1;
+      }
+      el.className = 'tw' + (kind ? ' ' + kind : '');
+      el.style.left = x / 10 + '%'; el.style.top = y / 4.6 + '%'; el.style.width = size / 10 + '%';
+      el.style.setProperty('--d', (0.75 + Math.random() * 0.4).toFixed(2) + 's');
+      void el.offsetWidth;
+      el.classList.add('on');
+    };
+    for (let i = 0; i < n; i++) {
+      const el = document.createElement('i');
+      el.className = 'tw';
+      v.appendChild(el);
+      el.addEventListener('animationend', () => { el.classList.remove('on'); setTimeout(() => place(el), 120 + Math.random() * 900); });
+      setTimeout(() => place(el), Math.random() * 1400);
+    }
+  }
+
+  window.chestHost = {
+    // { group, size, final, reward: { name, rar, rarLabel, rarBg, rarInk, concept, img, isNew, copies, need, coins, dupeCoins, setBonus, luck }, sound, insetTop, insetBottom }
+    // (img: the creature's front art, ../rig/export/tripo/<key>/<key>-front.svg)
+    // `wait`: no final/reward yet, fill() brings them. Says 'shown' once the scene is painted.
+    start(o) {
+      clearTimeout(revealT); clearTimeout(bannerT);
+      mergeStop();
+      $('bannerWrap').innerHTML = ''; $('reveal').style.display = 'none'; $('reveal').classList.remove('on');
+      document.documentElement.style.setProperty('--inset-top', (o.insetTop || 0) + 'px');
+      document.documentElement.style.setProperty('--inset-bottom', (o.insetBottom || 0) + 'px');
+      const gk = GROUPS[o.group] ? o.group : 'ocean', start = TI[o.size] ?? 0, final = Math.max(start, TI[o.final] ?? start);
+      st = { gk, start, final, tier: start, hp: 0, max: 1, name: '', phase: o.wait ? 'wait' : 'idle', first: true, reward: o.reward || null, held: null };
+      preload(st.reward, gk);
+      const CM = window.ChestModels;
+      if (!S) {
+        // lite: every other particle (bursts and dust are the costliest part of a smash)
+        const P0 = CM.Stage.prototype.P;
+        if (!CM.Stage.prototype._sqP) { CM.Stage.prototype._sqP = 1; CM.Stage.prototype.P = function (q) { if (chestPerf.lite && (this._pk = (this._pk || 0) + 1) % 2) return; return P0.call(this, q); }; fitStage(CM.Stage.prototype); cacheLayer(CM.Stage.prototype); rarityHp(CM.Stage.prototype, CM); }
+        S = new CM.Stage($('cv'), { group: gk, ground: 0.73, top: 178 + (o.insetTop || 0), insetTop: o.insetTop || 0, insetBottom: o.insetBottom || 0, onEvent: ev }); S.load(gk, start, true);
+      }
+      else {
+        if (S.o.insetTop !== (o.insetTop || 0) || S.o.insetBottom !== (o.insetBottom || 0)) { S.o.insetTop = o.insetTop || 0; S.o.insetBottom = o.insetBottom || 0; S.resize(); }
+        S.reset(gk, start);
+      }
+      $('lock').classList.remove('hit', 'open');
+      watchFps();
+      S.sound = o.sound !== false;
+      paint();
+      // 'shown' once the group's vault room is up too (the loader in front leaves on it)
+      roomFor(gk).then(() => { twinkles(); requestAnimationFrame(() => requestAnimationFrame(() => post({ type: 'shown' }))); });
+    },
+    // the server's answer for the chest start({ wait }) put up: { final, reward }
+    fill(o) {
+      if (!st) return;
+      st.final = Math.max(st.start, TI[o.final] ?? st.start);
+      st.reward = o.reward || null;
+      preload(st.reward, st.gk);
+      if (st.phase !== 'wait') return;
+      st.phase = 'idle';
+      const h = st.held;
+      st.held = null;
+      if (h) tap(h); else paint();
+    },
+    sound(on) { if (S) S.sound = !!on; },
+    // The tester's FPS counter (src/components/FpsCounter.js): while on, this page's own frames go to the app every
+    // half second: { type: 'fps', fps, low: the slowest frame as fps, lite }. Off unless the app asks.
+    meter(on) {
+      if (on && !meterId) { mt = 0; meterId = requestAnimationFrame(meter); }
+      else if (!on && meterId) { cancelAnimationFrame(meterId); meterId = 0; }
+    },
+  };
+  let mt = 0, mlast = 0, mn = 0, mworst = 0, meterId = 0;
+  function meter(now) {
+    meterId = requestAnimationFrame(meter);
+    if (!mt || document.hidden) { mt = mlast = now; mn = 0; mworst = 0; return; }
+    const dt = now - mlast; mlast = now; mn++;
+    if (dt > mworst) mworst = dt;
+    if (now - mt < 500) return;
+    post({ type: 'fps', fps: Math.round((mn * 1000) / (now - mt)), low: Math.round(1000 / Math.max(mworst, 1)), lite: chestPerf.lite });
+    mt = now; mn = 0; mworst = 0;
+  }
+
+  // While a chest is up: a second under ~48 fps twice in a row, or one under ~35 -> lite (2x canvas at most, half the
+  // particles), kept for the rest of this chest. (It looked at the first ~1.5 s only: the idle chest often passed and
+  // the smash, the costliest part, then ran at full quality.) A gap of over a second is the page paused, not slow.
+  // Remembered for the next chests (chestPerf.remember) unless it was the very first second measured: that one can be
+  // slow from the page loading its art, not from the phone.
+  let watching = false;
+  function watchFps() {
+    if (chestPerf.lite || watching) return;
+    watching = true;
+    let t0 = 0, last = 0, n = 0, slow = 0, secs = 0;
+    const f = (now) => {
+      if (chestPerf.lite || !S) { watching = false; return; }
+      requestAnimationFrame(f);
+      if (document.hidden || now - last > 1000) t0 = 0;
+      last = now;
+      if (!t0) { t0 = now; n = 0; return; }
+      n++;
+      if (now - t0 < 1000) return;
+      const fps = (n * 1000) / (now - t0);
+      t0 = now; n = 0; secs++;
+      slow = fps < 48 ? slow + 1 : 0;
+      if (fps < 35 || slow >= 2) {
+        chestPerf.lite = true; chestPerf.setCap(Math.min(chestPerf.cap(), 2)); S.resize(); watching = false;
+        if (secs >= 2) chestPerf.remember();
+      }
+    };
+    setTimeout(() => requestAnimationFrame(f), 400);
+  }
+
+  // The chest's size and sharpness (2026-11-16, the user: the chests "look blurred" and "are too small"). The engine's own
+  // resize sizes the chest for a portrait screen (from y 178 down to 73% of the height) and caps the canvas at 2x. On a
+  // sideways phone that left the chest at its smallest scale (0.6: a Rare chest ~75 dp tall on a 384 dp screen).
+  // Landscape here: the chest stands just over the hint at the bottom (FOOT) and its tallest model (a Rainbow, ~220
+  // units: TALL) reaches the HUD's bottom, so every chest is about 1.7x bigger and still grows when it upgrades. The
+  // canvas uses chestPerf.cap() (the screen's resolution, see the top), not the engine's 2x. Portrait keeps the engine's
+  // sizing. LW/LH are chest-models.js's layer box (const LW = 300, LH = 290).
+  // BIG (2026-11-21, the user: "make the chest 50% bigger than what it is now"): landscape's fit times 1.5, the foot
+  // still on the rug, so the tallest chests (Legendary, Rainbow) now reach up behind the name plate and HP bar.
+  const LW = 300, LH = 290, TALL = 225, FOOT = 50, BIG = 1.5;
+  function fitStage(proto) {
+    proto.resize = function () {
+      const r = this.cv.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      const dpr = chestPerf.cap();
+      this.w = r.width; this.h = r.height; this.dpr = dpr;
+      this.cv.width = Math.round(r.width * dpr); this.cv.height = Math.round(r.height * dpr);
+      this.gx = this.w / 2;
+      if (this.w > this.h) {
+        const hud = $('top').getBoundingClientRect().bottom, top = hud > 0 ? hud + 4 : (this.o.insetTop || 0) + 104;
+        this.gy = this.h - (this.o.insetBottom || 0) - FOOT;
+        this.s = Math.max(0.6, Math.min(this.w / 290, (BIG * (this.gy - top)) / TALL));
+      } else {
+        this.gy = this.h * (this.o.ground || 0.8);
+        this.s = Math.max(0.6, Math.min(this.w / 290, (this.gy - (this.o.top || 120)) / 238));
+      }
+      this.k = this.s * dpr;
+      this.layer.width = this.scr.width = Math.ceil(LW * this.k); this.layer.height = this.scr.height = Math.ceil(LH * this.k);
+    };
+  }
+
+  // The chest's picture (Stage.renderLayer: every part, dent, crack and hole drawn as vectors into an off-screen
+  // canvas) was drawn again every frame, though most frames only move it (the wobble, the hop and the shake are
+  // transforms in draw()). It's drawn again only when something it shows has changed: a hit (hp), the damage, the
+  // dents, cracks, holes and torn parts, a hinged part's swing, the hit flash, the burst, a charge-up (every frame),
+  // a spinning gradient (every frame) or the scale. resize() clears the canvas, so it forgets the picture.
+  // In lite, the soft changes (a swing, the flash fading, the burst, a charge-up, a spin) update the picture every other
+  // frame; the hard ones (a hit, the damage, the scale) at once. The chest still moves every frame. (2026-11-14)
+  function cacheLayer(proto) {
+    const RL0 = proto.renderLayer, RS0 = proto.resize;
+    const spinning = (f) => !!(f && typeof f === 'object' && f.k && f.spin);
+    const spins = (m) => {
+      if (m._sqSpin == null) m._sqSpin = m.parts.some((p) => p.sh.concat(p.scar || []).some((s) => spinning(s.f) || spinning(s.s)));
+      return m._sqSpin;
+    };
+    proto.renderLayer = function () {
+      const c = this.chest;
+      if (!c) return RL0.call(this);
+      const hard = this.k + '|' + c.seed + '|' + this.hp + '|' + c.d + '|' + c.dents.length + '|' + c.cracks.length + '|' + c.holes.length + '|' + Object.keys(c.torn).length;
+      let soft = this.flash + '|' + (this.burst > 0.55 ? this.burst : 0);
+      for (const id in c.ang) soft += '|' + Math.round(c.ang[id] * 3000);
+      if (this.charge || spins(c.m)) soft += '|' + this.time;
+      if (hard === this._sqHard && soft === this._sqSoft) return;
+      if (hard === this._sqHard && chestPerf.lite && this._sqDrew) { this._sqDrew = false; return; }
+      this._sqHard = hard; this._sqSoft = soft; this._sqDrew = true;
+      return RL0.call(this);
+    };
+    proto.resize = function () { this._sqHard = null; return RS0.apply(this, arguments); };
+  }
+  const boot = () => { const CM = window.ChestModels; if (CM && Object.keys(GROUPS).every((g) => CM.groups.includes(g))) post({ type: 'ready' }); else setTimeout(boot, 30); };
+  boot();
+})();
+</script>
+</body>
+</html>

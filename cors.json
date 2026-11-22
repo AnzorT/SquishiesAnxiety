@@ -1,0 +1,7 @@
+[
+  {
+    "origin": ["https://squishy-app-61445.web.app", "https://squishy-app-61445.firebaseapp.com", "http://localhost:8081"],
+    "method": ["GET"],
+    "maxAgeSeconds": 3600
+  }
+]

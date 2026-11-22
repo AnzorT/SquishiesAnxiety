@@ -1,0 +1,1614 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Squish Hop</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800;900&display=swap">
+<style>
+/* Squish Hop: a trip through the Squad Crib. Each level is one of the
+   Crib's rooms (src/crib/roomArt.js layers, cut at the room's floor line),
+   with the board laid on its floor in perspective: Squish Stack's stitched
+   cushions (src/stack/Pieces.js), or in the Dance Room the Crib's light-up
+   floor tiles (src/crib/Dance.js). The squishies stand on it as Squish
+   Stack's full-body cut-outs. The top bar is the Crib's HUD
+   (src/crib/Hud.js: round button, room title, time-of-day pill); the goal
+   and stars sit in a brown glass strip at the bottom; the cards are the
+   mini-games' own (squishdoku/Overlays.js). One look, like the app: no
+   dark mode. */
+:root {
+  --ink: #45107a;            /* the app's deep plum */
+  --brown: #5b3a29;          /* the Crib's ink (crib/Hud.js INK) */
+  --glass: rgba(91, 58, 41, 0.75); /* the Crib's pills */
+  --ring: #45189a;
+  --pink-ink: #8e1580;
+  --sub: #8a5fc0;
+  --gold: #ffd23a;
+  --gold-ink: #b86200;
+  --white: #ffffff;
+  --scene: #dba163;          /* the room's floor colour, set per room */
+  --display: 'Fredoka', 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
+  --body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { height: 100%; }
+body {
+  height: 100%; margin: 0; overflow: hidden; background: var(--scene); color: var(--ink);
+  font-family: var(--body); -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+}
+button { font: inherit; color: inherit; }
+button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; border-radius: 999px; }
+
+/* ---- the room */
+#scene { position: fixed; inset: 0; overflow: hidden; background: var(--scene); }
+#room { position: absolute; top: 0; }
+#room img { position: absolute; left: 0; display: block; }
+#room .clip { position: absolute; left: 0; top: 0; overflow: hidden; }
+#tint { position: absolute; inset: 0; pointer-events: none; }
+#flash { position: fixed; inset: 0; z-index: 70; pointer-events: none; opacity: 0; }
+#flash img { position: absolute; inset: 0; width: 100%; height: 100%; }
+#flash .dots { position: absolute; inset: 0; background-size: 22px 22px; }
+
+/* ---- the column */
+#app {
+  position: relative; height: 100%; max-width: 460px; margin: 0 auto; display: flex; flex-direction: column;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 8px 6px;
+}
+
+/* the Crib's top bar: round button, room title, time-of-day pill */
+.top { display: flex; align-items: center; gap: 8px; position: relative; z-index: 20; }
+.cribBtn { position: relative; width: 50px; height: 54px; padding: 0; border: 0; background: none; cursor: pointer; flex: none; }
+.cribBtn .cc { position: absolute; left: 0; width: 50px; height: 50px; border-radius: 50%; background: var(--brown); }
+.cribBtn .cc1 { top: 4px; }
+.cribBtn .cc0 { top: 0; }
+.cribBtn .cface { position: absolute; left: 2px; top: 2px; width: 46px; height: 46px; border-radius: 50%; border: 2.5px solid var(--white); overflow: hidden; display: flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #ffd0f0 0%, #ff7fd0 55%, #d84aa8 100%); }
+.cribBtn:active .cc0, .cribBtn:active .cface, .cribBtn.down .cc0, .cribBtn.down .cface { transform: translateY(3px); }
+.titleBox { flex: 1; min-width: 0; }
+.roomTitle { display: block; overflow: visible; max-width: 100%; }
+.roomSub { display: flex; align-items: center; gap: 6px; margin-top: -2px; font: 900 11px/1.3 var(--body); letter-spacing: 0.6px; color: var(--white); text-shadow: 0 1px 1.5px var(--brown); white-space: nowrap; }
+.chip { padding: 0 6px; border-radius: 999px; border: 2px solid var(--white); font: 700 9.5px/1.4 var(--display); letter-spacing: 0.6px; color: var(--white); text-shadow: none; }
+.phase { display: flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; background: var(--glass); border: 2px solid rgba(255,255,255,0.9); flex: none; }
+.phase .sun { width: 9px; height: 9px; border-radius: 5px; }
+.phase span:last-child { font: 900 11px/1.2 var(--body); color: var(--white); letter-spacing: 0.6px; }
+
+/* the board on the floor */
+.area { position: relative; flex: 1; min-height: 0; touch-action: none; -webkit-touch-callout: none; z-index: 5; }
+.area img { pointer-events: none; -webkit-user-drag: none; }
+.plane { position: absolute; transform-origin: 50% 100%; transform-style: preserve-3d; }
+.plane.dance { background: #140818; border: 3px solid #2a1430; box-shadow: 0 0 0 6px rgba(255,92,198,0.3); }
+.plane .rug { position: absolute; left: -16%; top: -12%; width: 132%; height: 124%; }
+.tile { position: absolute; transform-style: preserve-3d; }
+.tile > * { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+.tile svg { display: block; overflow: visible; }
+.dent { border-radius: 22%; border: 2.5px dashed var(--dent, rgba(91,58,41,0.4)); transform: scale(0.84); }
+.dent.dk { border: 0; border-radius: 0; background: rgba(255,255,255,0.04); transform: none; }
+.dt { background: var(--tc); box-shadow: inset 0 0 0 3px rgba(255,255,255,0.28), 0 0 12px var(--tc); }
+.dt::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 45%, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0) 62%); }
+.dt.hue { animation: hueStep 4.8s infinite; }
+@keyframes hueStep { 0%, 24.99% { filter: none; } 25%, 49.99% { filter: hue-rotate(90deg); } 50%, 74.99% { filter: hue-rotate(180deg); } 75%, 100% { filter: hue-rotate(270deg); } }
+.dring { border: 3px solid var(--white); box-shadow: 0 0 10px var(--white), inset 0 0 10px var(--white); transform: translateZ(1px) scale(0.62); }
+.tile.hint::after {
+  content: ''; position: absolute; left: -2%; top: -2%; width: 104%; height: 104%; border-radius: 24%; border: 3px solid var(--gold);
+  box-shadow: 0 0 14px 2px rgba(255,226,92,0.9), inset 0 0 12px rgba(255,226,92,0.8); animation: hintPulse 0.5s ease-in-out 6 alternate;
+}
+@keyframes hintPulse { from { opacity: 0.45; } to { opacity: 1; } }
+.tile.hint .c0 { animation: hintHop 0.5s ease-in-out 6 alternate; }
+@keyframes hintHop { from { transform: translateZ(0); } to { transform: translateZ(var(--hz, 8px)); } }
+.layer { position: absolute; inset: 0; pointer-events: none; }
+.piece { position: absolute; left: 0; top: 0; transform-origin: 50% 100%; }
+.piece .shadow { position: absolute; left: 14%; right: 14%; bottom: -5%; height: 15%; border-radius: 50%; background: var(--shade, rgba(69,16,122,0.28)); }
+.piece .lift, .piece .squash, .piece .breathe { position: absolute; inset: 0; transform-origin: 50% 100%; }
+.piece img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+.breathe { animation: breathe 2.6s ease-in-out infinite; }
+@keyframes breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.03, 0.97); } }
+.friend .breathe { animation: breathe 2.2s ease-in-out infinite, peek 6s ease-in-out infinite; animation-delay: var(--fd), var(--fd); }
+@keyframes peek { 0%, 84%, 100% { rotate: 0deg; } 88% { rotate: -9deg; } 92% { rotate: 8deg; } 96% { rotate: -3deg; } }
+.goalStar { position: absolute; left: 0; top: 0; transform-origin: 50% 100%; }
+.goalStar .bob { position: absolute; inset: 0; animation: bob 1.8s ease-in-out infinite; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8%); } }
+.goalStar svg { display: block; width: 100%; height: 100%; transition: filter 300ms, opacity 300ms; }
+.goalStar.locked svg { filter: grayscale(1) brightness(1.15); opacity: 0.7; }
+.lockCount {
+  position: absolute; right: -16%; top: -10%; min-width: 46%; height: 46%; padding: 0 8%; border-radius: 999px;
+  background: #ff5cc6; border: 2px solid var(--white); color: var(--white); font: 700 11px/1 var(--display);
+  display: flex; align-items: center; justify-content: center;
+}
+.part { position: absolute; left: 0; top: 0; border-radius: 50%; }
+
+/* the news banner (sort/Game.js Banner) */
+.banner { position: absolute; left: 0; right: 0; top: 2%; display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 30; }
+.bannerText { font: 700 40px/1 var(--display); color: var(--white); text-shadow: 0 3px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink); text-align: center; }
+.bannerSub { margin-top: 6px; padding: 4px 12px; border-radius: 999px; background: rgba(69,16,122,0.8); font: 700 13px/1.3 var(--display); color: var(--white); text-align: center; }
+
+/* the goal and the stars, in the Crib's brown glass */
+.strip { position: relative; z-index: 20; display: flex; align-items: stretch; gap: 10px; margin: 4px 0 6px; padding: 6px; border-radius: 20px; background: var(--glass); border: 2px solid rgba(255,255,255,0.9); }
+.goalCard { width: 112px; flex: none; background: rgba(255,255,255,0.95); border-radius: 15px; border: 3px solid var(--white); padding: 2px 5px 5px; display: flex; flex-direction: column; align-items: center; }
+.goalLabel { font: 700 10.5px/1.3 var(--display); letter-spacing: 1.2px; color: #6b3fa0; }
+.goalRow { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; }
+.goalArrow { font: 700 13px/1 var(--display); color: #b9a6cc; }
+.miniGoal { position: relative; width: 36px; height: 36px; flex: none; }
+.miniGoal > svg:first-child { position: absolute; inset: 0; }
+.miniGoal .mstar { position: absolute; left: 50%; top: 46%; width: 20px; height: 20px; transform: translate(-50%, -50%); transition: filter 300ms, opacity 300ms; }
+.miniGoal.locked .mstar { filter: grayscale(1) brightness(1.15); opacity: 0.6; }
+.stripRight { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px; }
+.meterRow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.meter { display: flex; align-items: flex-start; gap: 1px; }
+.meter svg { display: block; }
+.pill { padding: 1px 9px; border-radius: 999px; background: var(--white); border: 2.5px solid var(--gold); font: 700 12.5px/1.3 var(--display); color: var(--gold-ink); letter-spacing: 0.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pill.hops { border-color: #ffe6b8; color: var(--brown); }
+.tip { font: 800 12px/15px var(--body); color: var(--white); min-height: 30px; }
+.tip.warn { color: #ffd0d6; }
+
+/* Head: a creature in a white sticker circle (squishdoku/ui.js) */
+.headSticker { position: relative; border-radius: 50%; background: var(--white); padding: 6%; flex: none; }
+.headSticker > div { width: 100%; height: 100%; border-radius: 50%; background: #f6efff; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.headSticker img { width: 92%; height: 92%; object-fit: contain; display: block; }
+.headSticker.dim { background: rgba(255,255,255,0.55); }
+.headSticker.dim img { opacity: 0.25; }
+.headSticker.dim > div { background: rgba(255,255,255,0.35); }
+
+/* ---- pill buttons (SdButton's shape; the Crib's faces and brown ring under the board) */
+.sd { position: relative; display: inline-block; vertical-align: top; padding: 0 0 5px; border: 0; background: none; cursor: pointer; transition: transform 70ms; }
+.sd .lip { display: block; position: absolute; left: 0; right: 0; top: 5px; bottom: 0; border-radius: 999px; background: var(--r); }
+.sd .rg { display: block; position: relative; padding: 2.5px; border-radius: 999px; background: var(--r); transition: transform 70ms; }
+.sd .face {
+  position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 18px;
+  border: 3px solid var(--white); border-radius: 999px; overflow: hidden;
+  background: linear-gradient(180deg, var(--c0) 0%, var(--c1) var(--mid, 50%), var(--c2) 100%);
+}
+.sd .face::before { content: ''; position: absolute; left: 8%; right: 8%; top: 2px; height: 42%; border-radius: 999px; background: rgba(255,255,255,0.45); pointer-events: none; }
+.sd .lbl { position: relative; font: 700 var(--fs, 17px)/1.15 var(--display); color: var(--white); white-space: nowrap; text-shadow: 0 2px 0 var(--lr), 1px 0 0 var(--lr), -1px 0 0 var(--lr); }
+.sd:active:not(:disabled), .sd.down:not(:disabled) { transform: scale(0.93); }
+.sd:active:not(:disabled) .rg, .sd.down:not(:disabled) .rg { transform: translateY(4px); }
+.sd:disabled { cursor: default; --c0: #e6dcf0; --c1: #c9b9da; --c2: #b9a6cc; }
+.sd:disabled .lbl { opacity: 0.85; }
+.k-pink { --r: #8e1580; --c0: #ffd6f4; --c1: #ff5cc6; --c2: #c02bd9; --lr: #8e1580; }
+.k-gold { --r: #9c4d06; --c0: #fff7b0; --c1: #ffd23a; --c2: #ff9c0a; --lr: #9c4d06; }
+.k-green { --r: #0d7a4a; --c0: #b8ffd9; --c1: #3ddc97; --c2: #16a86a; --lr: #0d7a4a; }
+.k-purple { --r: #45189a; --c0: #efe6ff; --c1: #b48bff; --c2: #8f3cf2; --lr: #45189a; }
+.k-white { --r: #45189a; --c0: #ffffff; --c1: #f6efff; --c2: #e4d6ff; --lr: #45189a; }
+/* crib/Hud.js FACES on the Crib's brown ring */
+.k-cblue { --r: #5b3a29; --c0: #d6ecff; --c1: #8fc4f0; --c2: #5a92c8; --lr: #2f5f8f; --mid: 55%; }
+.k-cpurple { --r: #5b3a29; --c0: #e9d6ff; --c1: #b38cff; --c2: #8a5fd6; --lr: #6a3a8a; --mid: 55%; }
+.k-cgold { --r: #5b3a29; --c0: #fff2c2; --c1: #ffd36a; --c2: #e8a63a; --lr: #9c5a12; --mid: 55%; }
+
+.controls { position: relative; z-index: 20; display: flex; justify-content: center; gap: 8px; }
+.controls .sd { flex: 1; max-width: 130px; }
+.controls .face { padding: 10px 6px; }
+
+/* ---- cards (squishdoku/Overlays.js Overlay) */
+#overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 18px max(18px, env(safe-area-inset-right, 0px)) 18px max(18px, env(safe-area-inset-left, 0px)); }
+#overlay .tint { position: absolute; inset: 0; background: var(--tint, rgba(40,8,80,0.55)); animation: fadeIn 220ms ease-out both; }
+#overlay .card { position: relative; width: 100%; max-width: 380px; max-height: 100%; border-radius: 30px; background: var(--ring); padding: 3px 3px 8px; animation: cardIn 420ms cubic-bezier(0.3, 1.5, 0.55, 1) both; }
+#overlay .cardRim { border-radius: 27px; background: var(--white); padding: 3px; }
+#overlay .cardFill {
+  border-radius: 24px; padding: 18px 16px 16px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  background: linear-gradient(180deg, #fff6fd 0%, #ffe3f6 55%, #efd8ff 100%); overflow-y: auto; max-height: calc(100vh - 60px);
+}
+#overlay.out .tint { animation: fadeOut 180ms ease-in both; }
+#overlay.out .card { animation: cardOut 180ms ease-in both; }
+@keyframes fadeIn { from { opacity: 0; } }
+@keyframes fadeOut { to { opacity: 0; } }
+@keyframes cardIn { from { opacity: 0; transform: translateY(120px) scale(0.7); } 30% { opacity: 1; } }
+@keyframes cardOut { to { opacity: 0; transform: translateY(120px) scale(0.7); } }
+.ot { display: block; overflow: visible; }
+.sub { font: 700 12px/1.35 var(--display); letter-spacing: 0.6px; color: var(--sub); text-align: center; }
+.hintLine { font: 800 11.5px/1.35 var(--body); color: var(--gold-ink); text-align: center; }
+.body { font: 800 14px/1.35 var(--body); color: var(--ink); text-align: center; padding: 0 6px; }
+.btnRow { display: flex; align-items: flex-start; justify-content: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.btnRow .face { padding: 10px 12px; }
+.btnRow .big .face { padding: 12px 18px; }
+.col { align-self: stretch; display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.col .sd { width: 100%; }
+.col .face { padding: 12px; }
+.stars { display: flex; align-items: center; justify-content: center; margin: 4px 0 8px; }
+.starSlot { position: relative; display: flex; align-items: center; justify-content: center; }
+.starSlot .rays {
+  position: absolute; border-radius: 50%; opacity: 0;
+  background: repeating-conic-gradient(rgba(255,228,92,0.6) 0deg 8deg, transparent 8deg 22deg);
+  -webkit-mask: radial-gradient(circle, #000 15%, transparent 65%); mask: radial-gradient(circle, #000 15%, transparent 65%);
+  animation: spin 14s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.rules { align-self: stretch; display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.rule { display: flex; align-items: center; gap: 10px; }
+.ruleNum { width: 30px; height: 30px; flex: none; border-radius: 50%; background: #ff5cc6; border: 2.5px solid var(--white); display: flex; align-items: center; justify-content: center; font: 700 15px/1 var(--display); color: var(--white); }
+.ruleTitle { font: 700 15px/1.2 var(--display); color: var(--pink-ink); }
+.ruleLine { font: 800 12px/16px var(--body); color: var(--ink); }
+.twistHead { margin-top: 6px; font: 700 12px/1.2 var(--display); letter-spacing: 1px; color: var(--sub); align-self: flex-start; }
+.twist { align-self: stretch; font: 800 11.5px/15.5px var(--body); color: var(--ink); }
+.twistName { font-family: var(--display); font-weight: 700; color: #e01e4a; }
+.levels { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px 4px; align-self: stretch; margin-top: 4px; }
+.lvTile { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.lvTile .face { padding: 6px 0; width: 46px; }
+.lvStars { display: flex; gap: 1px; }
+.lvRoom { font: 700 9.5px/1.2 var(--display); letter-spacing: 0.3px; color: var(--sub); }
+.rock { animation: rock 1.8s ease-in-out infinite; }
+@keyframes rock { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+
+/* the twists: arrows on cushions, bubbles over them, numbered friends,
+   beat tiles on the dance floor */
+.tile .mark { pointer-events: none; }
+.tile .mark svg { display: block; }
+.bubble { position: absolute; left: 0; top: 0; transform-origin: 50% 100%; pointer-events: none; }
+.bubble .bob { position: absolute; inset: 0; animation: bob 2.2s ease-in-out infinite; }
+.bubble .ball {
+  position: absolute; inset: 0; border-radius: 50%; border: 2.5px solid #ffffff;
+  background: radial-gradient(circle at 34% 30%, #ffffff 0 12%, rgba(255,255,255,0.6) 15%, rgba(150,214,255,0.55) 42%, rgba(200,170,255,0.6) 72%, rgba(255,170,225,0.75) 100%);
+  box-shadow: 0 0 0 1.5px rgba(60,120,190,0.55), 0 3px 8px rgba(40,60,140,0.3), inset -4px -5px 9px rgba(120,90,230,0.35);
+}
+.ordChip, .slotNum {
+  position: absolute; z-index: 2; border-radius: 999px; background: #ff5cc6; border: 2px solid var(--white); color: var(--white);
+  font: 700 11px/1 var(--display); display: flex; align-items: center; justify-content: center;
+}
+.ordChip { right: -8%; top: -6%; min-width: 22px; height: 22px; padding: 0 4px; }
+.slotNum { right: -5px; top: -5px; min-width: 14px; height: 14px; font-size: 8.5px; border-width: 1.5px; }
+.dt.beat:not(.lit) { background: color-mix(in srgb, var(--tc) 32%, #140818); box-shadow: inset 0 0 0 3px var(--tc); }
+.dt.beat:not(.lit)::after { opacity: 0.15; }
+.dt.beat.lit { animation: beatPulse 0.45s ease-in-out infinite alternate; }
+@keyframes beatPulse { from { box-shadow: inset 0 0 0 3px rgba(255,255,255,0.5), 0 0 8px var(--tc); } to { box-shadow: inset 0 0 0 3px rgba(255,255,255,0.9), 0 0 22px var(--tc); } }
+.beatPill { display: flex; align-items: center; gap: 4px; border-color: #ff5c8a; color: #8e1580; }
+.beatPill .bd { width: 9px; height: 9px; border-radius: 3px; opacity: 0.5; }
+.beatPill .bd.now { width: 13px; height: 13px; opacity: 1; box-shadow: 0 0 0 2px var(--white), 0 0 0 3.5px #140818; }
+.chHead { grid-column: 1 / -1; margin-top: 6px; font: 700 12px/1.2 var(--display); letter-spacing: 1px; color: var(--pink-ink); text-align: left; }
+#overlay .card.tall .cardFill { max-height: calc(100vh - 70px); }
+#levelList { max-height: 52vh; overflow-y: auto; padding: 2px 4px 6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .breathe, .friend .breathe, .rock, .starSlot .rays, .goalStar .bob, .dt.hue, .bubble .bob, .dt.beat.lit { animation: none; }
+}
+</style>
+</head>
+<body>
+<div id="scene"><div id="room"></div><div id="tint"></div></div>
+
+<div id="app">
+  <header class="top">
+    <button class="cribBtn" id="back" aria-label="Pause"><span class="cc cc1"></span><span class="cc cc0"></span><span class="cface"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 L7 12 L15 20" transform="translate(0 1.5)" stroke="#8a1f6a" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 4 L7 12 L15 20" stroke="#ffffff" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
+    <div class="titleBox">
+      <div id="roomTitle"></div>
+      <div class="roomSub"><span id="levelText">SQUISH HOP · LEVEL 1</span><span class="chip" id="tier">EASY</span></div>
+    </div>
+    <div class="phase" id="phase"><span class="sun" id="sun"></span><span id="phaseText">DAYTIME</span></div>
+  </header>
+
+  <main class="area" id="area">
+    <div class="plane" id="plane"></div>
+    <div class="layer" id="layer"></div>
+    <div class="banner" id="banner" hidden></div>
+  </main>
+
+  <section class="strip">
+    <div class="goalCard" id="goalCard">
+      <div class="goalLabel">GOAL</div>
+      <div class="goalRow" id="goalRow"></div>
+    </div>
+    <div class="stripRight">
+      <div class="meterRow"><div class="meter" id="meter"></div><div class="pill" id="leftPill">LEFT 0</div><div class="pill hops" id="hops">HOPS 0</div><div class="pill beatPill" id="beatPill" hidden>BEAT <span class="bd"></span><span class="bd"></span><span class="bd"></span></div></div>
+      <div class="tip" id="tip"></div>
+    </div>
+  </section>
+
+  <footer class="controls">
+    <button class="sd k-cblue" id="undo"><span class="lip"></span><span class="rg"><span class="face"><span class="lbl" style="--fs:15px">UNDO</span></span></span></button>
+    <button class="sd k-cpurple" id="restart"><span class="lip"></span><span class="rg"><span class="face"><span class="lbl" style="--fs:15px">RESTART</span></span></span></button>
+    <button class="sd k-cgold" id="hint"><span class="lip"></span><span class="rg"><span class="face"><span class="lbl" style="--fs:15px">HINT</span></span></span></button>
+  </footer>
+</div>
+
+<div id="flash"><img alt="" src="../../assets/crib/flash-glow.png"><div class="dots" id="flashDots"></div></div>
+<div id="overlay" hidden></div>
+
+<script src="engine.js"></script>
+<script src="levels.js"></script>
+<script>
+(function () {
+  'use strict';
+  const E = window.HopEngine;
+  const LEVELS = window.HopLevels;
+
+  // ---- the repository's own art and sounds. Literal paths, so
+  // tools/bundle.mjs can inline them.
+  const A = {
+    rooms: {
+      living: {
+        base: '../../assets/crib/rooms/living-base.webp',
+        over: { morning: '../../assets/crib/rooms/living-over-morning.webp', day: '../../assets/crib/rooms/living-over-day.webp', evening: '../../assets/crib/rooms/living-over-evening.webp', night: '../../assets/crib/rooms/living-over-night.webp' },
+      },
+      kitchen: {
+        base: '../../assets/crib/rooms/kitchen-base.webp',
+        over: { morning: '../../assets/crib/rooms/kitchen-over-morning.webp', day: '../../assets/crib/rooms/kitchen-over-day.webp', evening: '../../assets/crib/rooms/kitchen-over-evening.webp', night: '../../assets/crib/rooms/kitchen-over-night.webp' },
+      },
+      bath: { base: '../../assets/crib/rooms/bath-base.webp', over: { day: '../../assets/crib/rooms/bath-over-day.webp' } },
+      bed: {
+        base: '../../assets/crib/rooms/bed-base.webp',
+        over: { morning: '../../assets/crib/rooms/bed-over-morning.webp', day: '../../assets/crib/rooms/bed-over-day.webp', evening: '../../assets/crib/rooms/bed-over-evening.webp', night: '../../assets/crib/rooms/bed-over-night.webp' },
+      },
+      yard: {
+        base: '../../assets/crib/rooms/yard-base.webp',
+        under: { morning: '../../assets/crib/rooms/yard-under-morning.webp', day: '../../assets/crib/rooms/yard-under-day.webp', evening: '../../assets/crib/rooms/yard-under-evening.webp', night: '../../assets/crib/rooms/yard-under-night.webp' },
+        over: {},
+      },
+      dance: { base: '../../assets/crib/rooms/dance-base.webp', over: { day: '../../assets/crib/rooms/dance-over-day.webp' } },
+    },
+    rug: '../../assets/crib/fixtures/living-rug.webp',
+    flashDots: '../../assets/crib/flash-dots.png',
+    // full bodies (tools/stack/fit.py) and the heads with faces (tools/rig/heads.mjs)
+    body: {
+      bubbly: '../../assets/stack/bubbly.webp', boba: '../../assets/stack/boba.webp', mochi: '../../assets/stack/mochi.webp',
+      berri: '../../assets/stack/berri.webp', dunkie: '../../assets/stack/dunkie.webp', pip: '../../assets/stack/pip.webp',
+    },
+    heads: {
+      bubbly: { happy: '../../assets/squishdoku/heads/bubbly-happy.webp', sad: '../../assets/squishdoku/heads/bubbly-sad.webp' },
+      boba: { happy: '../../assets/squishdoku/heads/boba-happy.webp' },
+      mochi: { happy: '../../assets/squishdoku/heads/mochi-happy.webp' },
+      berri: { happy: '../../assets/squishdoku/heads/berri-happy.webp' },
+      dunkie: { happy: '../../assets/squishdoku/heads/dunkie-happy.webp' },
+      pip: { happy: '../../assets/squishdoku/heads/pip-happy.webp' },
+    },
+    snd: {
+      tap: '../../assets/audio/sfx/tap.wav',
+      select: '../../assets/audio/squishdoku/sd_select.wav',
+      hop: '../../assets/audio/stack/st_lift.wav',
+      pop: '../../assets/audio/pop.mp3',
+      bubble: '../../assets/audio/bubble_tap.wav',
+      bonk: '../../assets/audio/sfx/bonk.wav',
+      undo: '../../assets/audio/stack/st_undo.wav',
+      hint: '../../assets/audio/stack/st_hint.wav',
+      squeak: '../../assets/audio/squishdoku/sd_squeak.wav',
+      unlock: '../../assets/audio/squishdoku/sd_unlock.wav',
+      wrong: '../../assets/audio/squishdoku/sd_wrong.wav',
+      land: '../../assets/audio/stack/st_land.wav',
+      solve: '../../assets/audio/squishdoku/sd_solve.ogg',
+      star1: '../../assets/audio/squishdoku/sd_star1.wav',
+      star2: '../../assets/audio/squishdoku/sd_star2.ogg',
+      star3: '../../assets/audio/squishdoku/sd_star3.ogg',
+      starEmpty: '../../assets/audio/squishdoku/sd_starEmpty.wav',
+      perfect: '../../assets/audio/squishdoku/sd_perfect.ogg',
+      boardIn: '../../assets/audio/squishdoku/sd_boardIn.wav',
+      news: '../../assets/audio/stack/st_news.wav',
+      room: '../../assets/audio/sfx/swoosh.wav',
+    },
+  };
+  // height / width of each body (src/stack/art.js)
+  const AR = { bubbly: 1.034, boba: 1.295, mochi: 0.989, berri: 1.003, dunkie: 0.952, pip: 0.957 };
+  const PLAYER = 'bubbly';
+  const FRIENDS = ['boba', 'mochi', 'berri', 'dunkie', 'pip'];
+
+  // The Crib's rooms (src/crib/roomArt.js FLOOR_TOP / SCENE_H: where the
+  // floor starts), the part of the room to show on a phone, the cushion
+  // colour that stands out on its floor, and the floor colour behind it.
+  const ROOMS = {
+    living: { name: 'Living Room', short: 'Living', floor: 200 / 393, cx: 0.5, cushion: 'mint', rug: true, bg: '#dba163' },
+    kitchen: { name: 'Kitchen', short: 'Kitchen', floor: 236 / 393, cx: 0.42, cushion: 'lilac', bg: '#efc499' },
+    bath: { name: 'Bathroom', short: 'Bath', floor: 236 / 393, cx: 0.45, cushion: 'pink', bg: '#ffffff', dent: 'rgba(60,110,150,0.45)' },
+    bed: { name: 'Bedroom', short: 'Bedroom', floor: 212 / 393, cx: 0.5, cushion: 'lilac', bg: '#dba163' },
+    yard: { name: 'Yard', short: 'Yard', floor: 214 / 393, cx: 0.66, cushion: 'pink', bg: '#96cb74', dent: 'rgba(255,255,255,0.8)' },
+    dance: { name: 'Dance Room', short: 'Dance', floor: 200 / 393, cx: 0.24, dance: true, bg: '#3b2030' },
+  };
+  // src/crib/data.js PHASES
+  const PHASES = {
+    morning: { label: 'MORNING', sun: '#ffe38a', tint: 'rgba(255,170,140,0.05)' },
+    day: { label: 'DAYTIME', sun: '#fff3a0', tint: null },
+    evening: { label: 'EVENING', sun: '#ffb36b', tint: 'rgba(90,20,120,0.1)' },
+    night: { label: 'NIGHT', sun: '#fff6d8', tint: 'rgba(20,24,70,0.22)' },
+  };
+  // the rooms in level order (runs of the same room in levels.js), and the
+  // time of day moving on through each room's levels
+  const CHAPTERS = [];
+  LEVELS.forEach((L, i) => {
+    const last = CHAPTERS[CHAPTERS.length - 1];
+    if (last && last.room === L.room) last.to = i;
+    else CHAPTERS.push({ room: L.room, from: i, to: i });
+  });
+  function stageOf(i) {
+    const ch = CHAPTERS.find((c) => i >= c.from && i <= c.to);
+    const phases = Object.keys(A.rooms[ch.room].over).length ? Object.keys(A.rooms[ch.room].over) : Object.keys(A.rooms[ch.room].under || { day: 1 });
+    const pos = (i - ch.from) / (ch.to - ch.from + 1);
+    return { room: ch.room, phase: phases[Math.min(phases.length - 1, Math.floor(pos * phases.length))], key: `${ch.room}:${Math.floor(pos * phases.length)}` };
+  }
+  // Squish Stack's cushions (src/stack/Pieces.js CUSHIONS)
+  const CUSH = {
+    pink: { c1: '#ffd9f3', c2: '#ff86d3', ring: '#a3168f' },
+    mint: { c1: '#cffff7', c2: '#3fd6c6', ring: '#0b6670' },
+    lilac: { c1: '#ebdcff', c2: '#a77bff', ring: '#4b1ca0' },
+    peach: { c1: '#fff0cf', c2: '#ffb257', ring: '#9c4d06' },
+  };
+  // the Crib's dance floor tile colours (src/crib/Dance.js TILE), in its 2 × 2
+  // pattern; on beat levels the plain tiles are its mint and the beats its
+  // pink, blue and yellow
+  const DANCE_TILE = ['#7cb8ff', '#ff5c8a', '#ffd66b', '#5cf2c8'];
+  const BEAT_COL = ['#ff5c8a', '#7cb8ff', '#ffd66b'];
+
+  const TIER_NAMES = ['EASY', 'MEDIUM', 'HARD', 'EXPERT'];
+  const TIER_COLORS = ['#3ddc97', '#5fb8ff', '#ff8a4a', '#e01e4a'];
+  const STAR_D = 'M12 2.2 L14.9 8.6 L21.8 9.3 L16.6 14 L18.1 20.9 L12 17.4 L5.9 20.9 L7.4 14 L2.2 9.3 L9.1 8.6 Z';
+  const CHEVRON = 'M15 4 L7 12 L15 20'; // the Crib's back icon (crib/Hud.js), turned
+  const TITLES = ['', 'HOPPED!', 'NICE HOPPING!', 'ALL CLEAR!'];
+  const NEWS = {
+    friends: { text: 'FRIENDS!', sub: 'The ★ opens when everyone is with you.' },
+    arrows: { text: 'ARROWS!', sub: 'Hop off an arrow cushion the way it points.' },
+    bubbles: { text: 'BUBBLES!', sub: 'Land on a bubble and it bounces you one further.' },
+    piles: { text: 'PILES!', sub: 'Two cushions on top of each other take two hops.' },
+    ordered: { text: 'IN ORDER!', sub: 'Pick the friends up 1, 2, 3…' },
+    beats: { text: 'ON THE BEAT!', sub: 'Coloured tiles light up every third hop. Land on them lit.' },
+  };
+  const WHY = {
+    arrow: 'Arrow cushions only let you hop off the way they point.',
+    bounce: 'That bubble has nowhere to bounce you.',
+    order: 'Pick up the friends in order: 1, 2, 3…',
+    beat: "That tile isn't lit on this hop. Wait for its beat!",
+    locked: 'Pick up every friend first. Then the ★ opens!',
+  };
+  const TILT = 38; // degrees the floor leans back
+  const DEPTH = 13; // the perspective distance, in tiles
+  const RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ms = (t) => (RM ? Math.round(t * 0.4) : t);
+  const $ = (id) => document.getElementById(id);
+  const wait = (t) => new Promise((r) => setTimeout(r, t));
+  $('flashDots').style.backgroundImage = `url(${A.flashDots})`;
+
+  // ---- saved progress (this browser only)
+  const SAVE_KEY = 'squishHop.v2';
+  let save = { best: {}, seenHow: false, seenNews: {}, muted: false, at: 0 };
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) save = Object.assign(save, JSON.parse(raw));
+  } catch (e) { /* no storage: play without saving */ }
+  function store() {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ }
+  }
+
+  // ---- sounds: a few <audio> players per sound, so quick repeats overlap
+  const Sound = (() => {
+    const pools = {};
+    function play(name, vol = 0.75) {
+      if (save.muted) return;
+      const src = A.snd[name];
+      if (!src) return;
+      const pool = pools[name] || (pools[name] = []);
+      let a = pool.find((x) => x.paused || x.ended);
+      if (!a) {
+        if (pool.length >= 4) a = pool[0];
+        else { a = new Audio(src); pool.push(a); }
+      }
+      try {
+        a.currentTime = 0;
+        a.volume = vol;
+        const p = a.play();
+        if (p && p.catch) p.catch(() => {});
+      } catch (e) { /* ignore */ }
+    }
+    return { play };
+  })();
+
+  // ---- drawing helpers
+  function starSvg(size, lit, kind, cls = '') {
+    const c = cls ? ` class="${cls}"` : '';
+    if (kind === 'meter') {
+      return `<svg${c} width="${size}" height="${size}" viewBox="0 0 24 24"><path d="${STAR_D}" fill="${lit ? '#ffd23a' : 'rgba(255,255,255,0.55)'}" stroke="${lit ? '#b86200' : '#b9a6cc'}" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+    }
+    if (kind === 'badge') {
+      return `<svg${c} width="${size}" height="${size}" viewBox="0 0 24 24"><path d="${STAR_D}" fill="#b86200" transform="translate(0 1.4)" stroke-linejoin="round"/><path d="${STAR_D}" fill="#ffd23a" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+    }
+    return `<svg${c} width="${size}" height="${size}" viewBox="0 0 24 24"><path d="${STAR_D}" fill="${lit ? '#b86200' : 'rgba(69,16,122,0.25)'}" transform="translate(0 1.2)" stroke-linejoin="round"/><path d="${STAR_D}" fill="${lit ? '#ffd23a' : 'rgba(255,255,255,0.7)'}" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"/>${lit ? '<path d="M8 9.6 L10.4 9.2 L11.3 7" stroke="#fff6c4" stroke-width="1.4" stroke-linecap="round" fill="none"/>' : ''}</svg>`;
+  }
+  // an arrow on a cushion: the Crib's chevron, white over a shadow of `ink`
+  function arrowSvg(dir, ink) {
+    const rot = [90, 180, 270, 0][dir];
+    return `<svg viewBox="0 0 24 24" width="100%" height="100%"><g transform="rotate(${rot} 12 12) translate(1.5 0) scale(0.8) translate(3 3)"><path d="${CHEVRON}" transform="translate(0 1.6)" stroke="${ink}" stroke-width="4.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="${CHEVRON}" stroke="#ffffff" stroke-width="4.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;
+  }
+
+  // Squish Stack's puffy cushion (Pieces.js Cushion), seen from above: ring,
+  // white piping, a soft face with stitching round it and a tuft
+  let gradN = 0;
+  function cushionSvg(size, col) {
+    const c = CUSH[col];
+    const id = `cg${++gradN}`;
+    const k = size / 2;
+    const r = k - 1;
+    const rr = (x) => (r - x) * 0.42;
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><defs><radialGradient id="${id}" cx="50%" cy="34%" r="70%"><stop offset="0" stop-color="${c.c1}"/><stop offset="1" stop-color="${c.c2}"/></radialGradient></defs>
+      <rect x="${k - r}" y="${k - r + size * 0.06}" width="${2 * r}" height="${2 * r}" rx="${rr(0)}" fill="${c.ring}"/>
+      <rect x="${k - r}" y="${k - r}" width="${2 * r}" height="${2 * r}" rx="${rr(0)}" fill="${c.ring}"/>
+      <rect x="${k - r + size * 0.035}" y="${k - r + size * 0.035}" width="${2 * r - size * 0.07}" height="${2 * r - size * 0.07}" rx="${rr(size * 0.035)}" fill="#ffffff"/>
+      <rect x="${k - r + size * 0.075}" y="${k - r + size * 0.075}" width="${2 * r - size * 0.15}" height="${2 * r - size * 0.15}" rx="${rr(size * 0.075)}" fill="url(#${id})"/>
+      <rect x="${k - r + size * 0.17}" y="${k - r + size * 0.17}" width="${2 * r - size * 0.34}" height="${2 * r - size * 0.34}" rx="${rr(size * 0.17)}" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="2" stroke-dasharray="5 4"/>
+      <ellipse cx="${k}" cy="${k + size * 0.03}" rx="${size * 0.065}" ry="${size * 0.055}" fill="${c.ring}" opacity="0.45"/></svg>`;
+  }
+
+  // Outlined titles drawn as stacked SVG text: the mini-games' card titles
+  // (OutlinedTitle.js: gradient, white outline, purple halo, deep drop) and
+  // the Crib's room title (crib/Hud.js RoomTitle: cream-to-peach in a brown
+  // outline with a deeper drop)
+  const FILLS = {
+    gold: [['0', '#fffbd6'], ['0.45', '#ffe045'], ['1', '#ff9500']],
+    pink: [['0', '#ffd6f4'], ['0.52', '#ff5cc6'], ['1', '#c02bd9']],
+    room: [['0', '#fffaf0'], ['0.6', '#ffe6b8'], ['1', '#ffcf80']],
+  };
+  const measureCtx = document.createElement('canvas').getContext('2d');
+  let titleN = 0;
+  const FONT = "Fredoka, 'Baloo 2', 'Trebuchet MS', sans-serif";
+  const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  function textW(text, size, spacing) {
+    measureCtx.font = `700 ${size}px ${FONT}`;
+    return measureCtx.measureText(text).width + text.length * spacing;
+  }
+  function titleSvg(text, fill = 'pink', size = 30) {
+    const outline = 3;
+    const halo = outline + 2;
+    const drop = size >= 26 ? 5 : size >= 18 ? 4 : 3;
+    const w = Math.ceil(textW(text, size, 1) + halo * 2 + 2 + size * 0.12);
+    const h = Math.ceil(size * 1.22 + halo * 2 + drop);
+    const base = halo + size * 0.96;
+    const id = `tf${++titleN}`;
+    const t = esc(text);
+    const common = `x="${w / 2}" text-anchor="middle" font-family="${FONT}" font-weight="700" font-size="${size}" letter-spacing="1" stroke-linejoin="round"`;
+    return `<svg class="ot" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${t}">
+      <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">${FILLS[fill].map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('')}</linearGradient></defs>
+      <text ${common} y="${base + drop}" fill="#45107a" stroke="#45107a" stroke-width="${halo * 2}">${t}</text>
+      <text ${common} y="${base}" fill="#6a1b9a" stroke="#6a1b9a" stroke-width="${halo * 2}">${t}</text>
+      <text ${common} y="${base}" fill="#ffffff" stroke="#ffffff" stroke-width="${outline * 2}">${t}</text>
+      <text ${common} y="${base}" fill="url(#${id})">${t}</text></svg>`;
+  }
+  function roomTitleSvg(text) {
+    const size = 26;
+    const pad = 4;
+    const w = Math.ceil(textW(text, size, 0.5) + pad * 2 + 4);
+    const h = Math.ceil(size * 1.15 + pad * 2 + 3);
+    const y = pad + size * 0.92;
+    const id = `tf${++titleN}`;
+    const t = esc(text);
+    const common = `x="${pad}" font-family="${FONT}" font-weight="700" font-size="${size}" letter-spacing="0.5" stroke-linejoin="round"`;
+    return `<svg class="roomTitle" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${t}">
+      <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">${FILLS.room.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('')}</linearGradient></defs>
+      <text ${common} y="${y + 3}" fill="#5b3a29" stroke="#5b3a29" stroke-width="5">${t}</text>
+      <text ${common} y="${y}" fill="#5b3a29" stroke="#5b3a29" stroke-width="5">${t}</text>
+      <text ${common} y="${y}" fill="url(#${id})">${t}</text></svg>`;
+  }
+
+  function button(kind, label, { id = '', fs = 17, cls = '' } = {}) {
+    return `<button class="sd k-${kind} ${cls}" ${id ? `id="${id}"` : ''}><span class="lip"></span><span class="rg"><span class="face"><span class="lbl" style="--fs:${fs}px">${label}</span></span></span></button>`;
+  }
+  function headSticker(key, face, size, dim, num) {
+    return `<div class="headSticker${dim ? ' dim' : ''}" style="width:${size}px;height:${size}px"><div><img src="${A.heads[key][face]}" alt=""></div>${num ? `<span class="slotNum">${num}</span>` : ''}</div>`;
+  }
+
+  // ---- the game
+  const G = {
+    idx: 0, def: null, lv: null, st: null, hist: [], moves: [], hinted: false, asked: false, over: false, won: false,
+    busy: false, queue: [], feasible: true, T: 64, cells: {}, proj: {}, player: null, friends: {}, friendKeys: [], slots: [],
+    bubbles: {}, stage: null, room: ROOMS.living, goalStar: null, sol: [], beats: false,
+  };
+  const xy = (i) => [i % G.lv.w, (i / G.lv.w) | 0];
+  const dirTo = (a, b) => {
+    const [ax, ay] = xy(a);
+    const [bx, by] = xy(b);
+    return by < ay ? 0 : bx > ax ? 1 : by > ay ? 2 : 3;
+  };
+
+  // ---- the room picture: the room's layers scaled so its floor line sits
+  // about a third of the way down, its floor repeated below to the bottom
+  function buildRoom() {
+    const R = G.room;
+    const stage = G.stage;
+    const art = A.rooms[stage.room];
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const RATIO = 1704 / 786;
+    const floorY = Math.round(Math.min(330, Math.max(190, vh * 0.32)));
+    let H = floorY / R.floor;
+    if (H * RATIO < vw) H = vw / RATIO;
+    const W = H * RATIO;
+    const left = Math.min(0, Math.max(vw - W, vw / 2 - R.cx * W));
+    const room = $('room');
+    room.style.cssText = `left:${left}px;width:${W}px;height:${vh}px`;
+    document.documentElement.style.setProperty('--scene', R.bg);
+    let html = '';
+    // the floor again and again below, each copy under the one above
+    const step = H * (1 - R.floor) - H * 0.06;
+    const copies = [];
+    for (let k = 1; H + (k - 1) * step < vh; k++) copies.push(H + (k - 1) * step - (R.floor + 0.05) * H);
+    copies.reverse().forEach((top) => { html += `<img alt="" src="${art.base}" style="top:${top}px;width:${W}px;height:${H}px">`; });
+    const under = art.under && art.under[stage.phase];
+    if (under) html += `<img alt="" src="${under}" style="top:0;width:${W}px;height:${H}px">`;
+    html += `<img alt="" src="${art.base}" style="top:0;width:${W}px;height:${H}px">`;
+    const over = art.over && art.over[stage.phase];
+    // the room's things down to the floor line (what stands on the floor is cut off there)
+    if (over) html += `<div class="clip" style="width:${W}px;height:${H * (R.floor + 0.012)}px"><img alt="" src="${over}" style="top:0;width:${W}px;height:${H}px"></div>`;
+    room.innerHTML = html;
+    const tint = PHASES[stage.phase].tint;
+    $('tint').style.background = tint || 'transparent';
+    G.floorScreenY = H * R.floor;
+  }
+
+  // ---- the board: a plane of tiles leaned back, the squishies standing on it
+  function tileHtml(i, s) {
+    const { lv } = G;
+    const R = G.room;
+    const [x, y] = xy(i);
+    const goal = i === lv.goal;
+    const pile = lv.life[i] === 2;
+    const arrow = lv.arrow[i];
+    const beat = lv.beat[i];
+    let c0;
+    let c1 = '';
+    let mark = '';
+    if (R.dance) {
+      let col;
+      if (goal) col = '#ffffff';
+      else if (beat >= 0) col = BEAT_COL[beat];
+      else if (G.beats) col = DANCE_TILE[3];
+      else col = DANCE_TILE[y % 2 === 0 ? (x % 2 ? 1 : 0) : x % 2 ? 2 : 3];
+      const hue = !goal && !G.beats ? ' hue' : '';
+      c0 = `<div class="c0 dt${hue}${beat >= 0 ? ' beat' : ''}" style="--tc:${col}"></div>`;
+      if (pile) c1 = '<div class="c1 dring"></div>';
+      if (arrow >= 0) mark = `<div class="mark">${arrowSvg(arrow, '#140818')}</div>`;
+    } else {
+      c0 = `<div class="c0">${cushionSvg(s, goal ? 'peach' : R.cushion)}</div>`;
+      if (pile) c1 = `<div class="c1" style="transform:translateZ(${G.T * 0.17}px) scale(0.94)">${cushionSvg(s, R.cushion)}</div>`;
+      if (arrow >= 0) mark = `<div class="mark" style="transform:scale(0.62)">${arrowSvg(arrow, CUSH[R.cushion].ring)}</div>`;
+    }
+    return `<div class="tile" data-i="${i}" style="left:${x * G.T + G.gap}px;top:${y * G.T + G.gap}px;width:${s}px;height:${s}px"><div class="dent${R.dance ? ' dk' : ''}"></div>${c0}${c1}${mark}</div>`;
+  }
+
+  function buildBoard() {
+    const { lv } = G;
+    const R = G.room;
+    const area = $('area');
+    const AW = area.clientWidth;
+    const AH = area.clientHeight;
+    const floorY = G.floorScreenY - area.getBoundingClientRect().top;
+    const rad = (TILT * Math.PI) / 180;
+    const kH = (Math.cos(rad) * DEPTH) / (DEPTH + lv.h * Math.sin(rad)); // projected height per tile
+    const space = AH - Math.max(0, floorY) + AH * 0.06;
+    const T = Math.max(28, Math.floor(Math.min((AW - 4) / lv.w, space / (lv.h * kH), 96)));
+    G.T = T;
+    G.gap = R.dance ? 1.5 : T * 0.04;
+    const projH = T * lv.h * kH;
+    const bottom = Math.min(AH - 6, Math.max(floorY, 0) + (AH - Math.max(floorY, 0)) / 2 + projH / 2);
+    const plane = $('plane');
+    plane.className = `plane${R.dance ? ' dance' : ''}`;
+    plane.style.cssText = `left:${(AW - lv.w * T) / 2}px;top:${bottom - lv.h * T}px;width:${lv.w * T}px;height:${lv.h * T}px;transform:perspective(${T * DEPTH}px) rotateX(${TILT}deg);border-radius:${R.dance ? T * 0.3 : 0}px`;
+    plane.style.setProperty('--dent', R.dent || 'rgba(91,58,41,0.4)');
+    plane.style.setProperty('--hz', `${Math.round(T * 0.22)}px`);
+    let html = R.rug ? `<img class="rug" alt="" src="${A.rug}">` : '';
+    const s = T - 2 * G.gap;
+    for (let i = 0; i < lv.life.length; i++) if (lv.life[i]) html += tileHtml(i, s);
+    plane.innerHTML = html;
+    G.cells = {};
+    plane.querySelectorAll('.tile').forEach((el) => {
+      const i = Number(el.dataset.i);
+      G.cells[i] = { el, dent: el.querySelector('.dent'), c0: el.querySelector('.c0'), c1: el.querySelector('.c1'), mark: el.querySelector('.mark'), life: -1 };
+    });
+    measureProj();
+    // pieces
+    const layer = $('layer');
+    layer.innerHTML = '';
+    layer.style.setProperty('--shade', R.dance ? 'rgba(255,255,255,0.3)' : 'rgba(69,16,122,0.28)');
+    G.friends = {};
+    lv.friends.forEach((cell, k) => {
+      const key = G.friendKeys[k];
+      const p = makePiece(key, 'friend', 0.8);
+      p.k = k;
+      p.el.style.setProperty('--fd', `${-(k * 0.9).toFixed(1)}s`);
+      if (lv.order[cell]) p.el.insertAdjacentHTML('beforeend', `<span class="ordChip">${lv.order[cell]}</span>`);
+      layer.appendChild(p.el);
+      G.friends[cell] = p;
+      placePiece(p, cell);
+    });
+    // bubbles float over their cushions
+    G.bubbles = {};
+    lv.bubble.forEach((b, cell) => {
+      if (!b) return;
+      const q = G.proj[cell];
+      const sc = q.w / T;
+      const sz = T * 0.66;
+      const el = document.createElement('div');
+      el.className = 'bubble';
+      el.style.cssText = `width:${sz}px;height:${sz}px;transform:translate(${q.x - sz / 2}px,${q.y - sz - T * 0.12 * sc}px) scale(${sc});z-index:${10 + xy(cell)[1] * 3}`;
+      el.innerHTML = `<div class="bob" style="animation-delay:${-((cell * 0.37) % 2).toFixed(2)}s"><div class="ball"></div></div>`;
+      layer.appendChild(el);
+      G.bubbles[cell] = el;
+    });
+    // the ★, standing over its cushion
+    const gs = document.createElement('div');
+    gs.className = 'goalStar';
+    const sz = T * 0.5;
+    gs.style.width = gs.style.height = sz + 'px';
+    gs.innerHTML = `<div class="bob">${starSvg(sz, true, 'badge')}<div class="lockCount" style="font-size:${Math.max(9, Math.round(sz * 0.36))}px"></div></div>`;
+    layer.appendChild(gs);
+    G.goalStar = gs;
+    const gp = G.proj[lv.goal];
+    const gsc = gp.w / T;
+    gs.style.transform = `translate(${gp.x - sz / 2}px,${gp.y - sz - T * 0.18 * gsc}px) scale(${gsc})`;
+    gs.style.zIndex = 10 + xy(lv.goal)[1] * 3;
+    G.player = makePiece(PLAYER, 'player', 0.92);
+    layer.appendChild(G.player.el);
+  }
+
+  // where each tile's middle ends up on screen, and how big it looks there
+  function measureProj() {
+    const ar = $('area').getBoundingClientRect();
+    G.proj = {};
+    Object.entries(G.cells).forEach(([i, c]) => {
+      const r = c.c0.getBoundingClientRect();
+      let lift = 0;
+      if (c.c1 && !G.room.dance) {
+        const r1 = c.c1.getBoundingClientRect();
+        lift = r.top + r.height / 2 - (r1.top + r1.height / 2);
+      }
+      G.proj[i] = { x: r.left + r.width / 2 - ar.left, y: r.top + r.height * 0.6 - ar.top, w: r.width, lift };
+    });
+  }
+
+  function makePiece(key, kind, scale) {
+    const B = G.T * scale;
+    const H = B * AR[key];
+    const el = document.createElement('div');
+    el.className = `piece ${kind}`;
+    el.style.width = B + 'px';
+    el.style.height = H + 'px';
+    el.innerHTML = `<div class="shadow"></div><div class="lift"><div class="squash"><div class="breathe"><img alt="" src="${A.body[key]}"></div></div></div>`;
+    return { el, key, B, H, lift: el.querySelector('.lift'), squash: el.querySelector('.squash'), shadow: el.querySelector('.shadow'), cell: -1 };
+  }
+  // the transform that stands piece p on cell
+  function poseOf(p, cell, life) {
+    const q = G.proj[cell];
+    const s = q.w / G.T;
+    const up = life === 2 ? q.lift : 0;
+    return `translate(${q.x - p.B / 2}px,${q.y - up - p.H}px) scale(${s})`;
+  }
+  function placePiece(p, cell) {
+    p.cell = cell;
+    p.pose = poseOf(p, cell, G.st.life[cell]);
+    p.el.style.transform = p.pose;
+    p.el.style.zIndex = 10 + xy(cell)[1] * 3 + (p === G.player ? 2 : 1);
+  }
+
+  // a tile's look for its hops left: 0 a dent, 1 a cushion, 2 a pile of two
+  function paint(i) {
+    const c = G.cells[i];
+    if (i === G.lv.goal) return;
+    c.dent.hidden = c.life > 0;
+    c.c0.hidden = c.life === 0;
+    if (c.c1) c.c1.hidden = c.life < 2;
+    if (c.mark) c.mark.hidden = c.life === 0;
+    const b = G.bubbles[i];
+    if (b) b.hidden = c.life === 0;
+  }
+  function baseOf(el) {
+    if (!el.classList.contains('c1') && !el.classList.contains('mark')) return '';
+    const t = el.style.transform || getComputedStyle(el).transform;
+    return t && t !== 'none' ? t + ' ' : '';
+  }
+  function ghostOut(c, el) {
+    const g = el.cloneNode(true);
+    g.hidden = false;
+    c.el.appendChild(g);
+    const base = baseOf(el);
+    g.animate(
+      [
+        { transform: `${base}scale(1)`, opacity: 1 },
+        { transform: `${base}scale(1.16, 0.62)`, opacity: 1, offset: 0.3 },
+        { transform: `${base}scale(0.25)`, opacity: 0 },
+      ],
+      { duration: ms(260), easing: 'ease-out' }
+    ).finished.then(() => g.remove());
+  }
+  function puffIn(el, delay = 0) {
+    const base = baseOf(el);
+    el.animate(
+      [
+        { transform: `${base}scale(0)`, opacity: 0 },
+        { transform: `${base}scale(1.1)`, opacity: 1, offset: 0.6 },
+        { transform: `${base}scale(1)`, opacity: 1 },
+      ],
+      { duration: ms(300), delay, easing: 'ease-out', fill: 'backwards' }
+    );
+  }
+
+  // move a tile to `life` hops left, animated
+  function setCell(i, life, anim = true) {
+    const c = G.cells[i];
+    if (!c || i === G.lv.goal) return;
+    const from = c.life;
+    if (from === life) return;
+    c.life = life;
+    if (!anim || from < 0) { paint(i); return; }
+    const b = G.bubbles[i];
+    if (life < from) {
+      if (from === 2 && c.c1) ghostOut(c, c.c1);
+      if (life === 0) {
+        ghostOut(c, c.c0);
+        if (c.mark) ghostOut(c, c.mark);
+      }
+      if (b && life === 0) {
+        b.querySelector('.ball').animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1.5)', opacity: 0 }], { duration: ms(220), easing: 'ease-out' }).finished.then(() => paint(i));
+      }
+      if (!b) paint(i);
+      else {
+        c.dent.hidden = false;
+        c.c0.hidden = true;
+      }
+      const q = G.proj[i];
+      if (life === 0) {
+        burst(b ? 'bubble' : 'pop', q.x, q.y - q.w * (b ? 0.5 : 0.1));
+        Sound.play(b ? 'bubble' : 'pop', 0.6);
+      }
+    } else {
+      paint(i);
+      if (from === 0) {
+        puffIn(c.c0);
+        if (c.mark) puffIn(c.mark);
+        if (b) b.querySelector('.ball').animate([{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: ms(260), easing: 'ease-out' });
+      }
+      if (life === 2 && c.c1) puffIn(c.c1, from === 0 ? 80 : 0);
+    }
+  }
+  function syncCells(anim) {
+    Object.keys(G.cells).forEach((key) => setCell(Number(key), G.st.life[key], anim));
+  }
+
+  const popcount = (n) => { let c = 0; while (n) { c += n & 1; n >>= 1; } return c; };
+  function setGoalLock(anim) {
+    const left = G.lv.friends.length - popcount(G.st.got);
+    const locked = left > 0;
+    const gs = G.goalStar;
+    const was = gs.classList.contains('locked');
+    gs.classList.toggle('locked', locked);
+    const lc = gs.querySelector('.lockCount');
+    lc.hidden = !locked;
+    lc.textContent = left;
+    const mini = $('goalRow').querySelector('.miniGoal');
+    if (mini) mini.classList.toggle('locked', locked);
+    if (anim && was && !locked) {
+      gs.querySelector('.bob').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.5)', offset: 0.45 }, { transform: 'scale(1)' }], { duration: ms(520), easing: 'ease-out' });
+      const q = G.proj[G.lv.goal];
+      burst('spark', q.x, q.y - G.T * 0.4);
+      Sound.play('unlock', 0.6);
+    }
+  }
+  // beat tiles light up on their beat: the beat of the next hop
+  function syncBeats() {
+    if (!G.beats) return;
+    const next = (G.st.hops + 1) % 3;
+    Object.entries(G.cells).forEach(([i, c]) => {
+      const b = G.lv.beat[i];
+      if (b >= 0) c.c0.classList.toggle('lit', b === next);
+    });
+    const dots = $('beatPill').querySelectorAll('.bd');
+    dots.forEach((d, k) => {
+      d.style.background = BEAT_COL[(next + k) % 3];
+      d.classList.toggle('now', k === 0);
+    });
+  }
+
+  // ---- particles (squishdoku/fx.js KINDS)
+  const KINDS = {
+    pop: { count: 10, life: 420, size: [4, 7], dist: [26, 40], up: [0, 0], colors: ['#ff8fd0', '#ffffff', '#ffe066', '#9ce8ff'], spreadY: 0.6, fall: 0 },
+    bubble: { count: 9, life: 380, size: [4, 8], dist: [18, 34], up: [-6, 2], colors: ['#ffffff', '#c9f5ff', '#ffd1f5'], spreadY: 1, fall: 0 },
+    spark: { count: 8, life: 560, size: [5, 9], dist: [22, 46], up: [-6, 6], colors: ['#fff3a0', '#ffffff', '#ffd1f5', '#c9f5ff'], spreadY: 1, fall: 10, star: true },
+    dust: { count: 7, life: 420, size: [5, 10], dist: [14, 30], up: [-4, 6], colors: ['#ffffff', '#fff6fb'], spreadY: 0.25, fall: 0 },
+    confetti: { count: 34, life: 1700, size: [7, 12], dist: [60, 190], up: [-260, -120], colors: ['#ff5cc6', '#ffd23a', '#3ddc97', '#5fb8ff', '#b65cff', '#ff8a4a', '#ffffff'], spreadY: 0.5, fall: 420, rect: true },
+  };
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  function burst(kind, x, y) {
+    if (RM && kind === 'confetti') return;
+    const layer = $('layer');
+    const k = KINDS[kind];
+    const sc = kind === 'confetti' ? 1 : G.T / 60;
+    for (let i = 0; i < k.count; i++) {
+      const a = (i / k.count) * Math.PI * 2 + rnd(-0.3, 0.3);
+      const d = rnd(k.dist[0], k.dist[1]) * sc;
+      const dx = Math.cos(a) * d;
+      const dy = Math.sin(a) * d * k.spreadY + rnd(k.up[0], k.up[1]) * sc;
+      const fall = k.fall * sc * rnd(0.7, 1.3);
+      const size = rnd(k.size[0], k.size[1]) * sc;
+      const p = document.createElement('div');
+      p.className = 'part';
+      p.style.cssText = `z-index:90;width:${size}px;height:${k.rect ? size * 0.5 : size}px;background:${k.colors[i % k.colors.length]};margin:${-size / 2}px 0 0 ${-size / 2}px;${k.rect ? 'border-radius:2px;' : k.star ? `border-radius:${size * 0.18}px;` : ''}`;
+      layer.appendChild(p);
+      const rot = k.star ? 45 : 0;
+      const spin = rnd(-1, 1) * (k.rect ? 900 : 240);
+      p.animate(
+        [
+          { transform: `translate(${x}px,${y}px) rotate(${rot}deg) scale(0.2)`, opacity: 0 },
+          { transform: `translate(${x + dx * 0.15}px,${y + dy * 0.15}px) rotate(${rot}deg) scale(1)`, opacity: 1, offset: 0.12 },
+          { transform: `translate(${x + dx * 0.8}px,${y + dy * 0.8}px) rotate(${rot + spin * 0.5}deg) scale(1)`, opacity: 1, offset: 0.55 },
+          { transform: `translate(${x + dx}px,${y + dy + fall}px) rotate(${rot + spin}deg) scale(${k.rect ? 0.9 : 0.4})`, opacity: 0 },
+        ],
+        { duration: k.life, easing: 'ease-out' }
+      ).finished.then(() => p.remove());
+    }
+  }
+
+  // ---- the strip and the top bar
+  function renderGoalCard() {
+    const n = G.lv.friends.length;
+    const size = n > 3 ? 19 : n > 1 ? 23 : 27;
+    let html = '';
+    G.friendKeys.forEach((key, k) => { html += `<div data-slot="${k}">${headSticker(key, 'happy', size, true, G.lv.order[G.lv.friends[k]] || 0)}</div>`; });
+    if (n) html += '<span class="goalArrow">›</span>';
+    html += `<div class="miniGoal">${G.room.dance ? '<svg width="36" height="36" viewBox="0 0 36 36"><rect x="3" y="3" width="30" height="30" rx="5" fill="#140818"/><rect x="5" y="5" width="26" height="26" rx="3" fill="#ffffff"/></svg>' : cushionSvg(36, 'peach')}${starSvg(20, true, 'badge', 'mstar')}</div>`;
+    $('goalRow').innerHTML = html;
+    G.slots = [...$('goalRow').querySelectorAll('[data-slot]')];
+  }
+  function setSlot(k, got, anim) {
+    const s = G.slots[k];
+    if (!s) return;
+    const st = s.firstElementChild;
+    st.classList.toggle('dim', !got);
+    if (got && anim) st.animate([{ transform: 'scale(0.4)' }, { transform: 'scale(1.25)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: ms(380), easing: 'ease-out' });
+  }
+  function renderTop() {
+    const R = G.room;
+    const ph = PHASES[G.stage.phase];
+    $('roomTitle').innerHTML = roomTitleSvg(R.name);
+    $('levelText').textContent = `SQUISH HOP · LEVEL ${G.idx + 1}`;
+    $('tier').textContent = TIER_NAMES[G.def.tier];
+    $('tier').style.background = TIER_COLORS[G.def.tier];
+    $('phase').hidden = !!R.dance;
+    $('sun').style.background = ph.sun;
+    $('phaseText').textContent = ph.label;
+    $('beatPill').hidden = !G.beats;
+  }
+
+  function hud() {
+    const { st, lv } = G;
+    $('hops').textContent = `HOPS ${G.moves.length}`;
+    $('leftPill').textContent = `LEFT ${E.leftOf(lv, st.life)}`;
+    let can = G.feasible ? 3 : 2;
+    if (G.hinted) can = Math.max(1, can - 1);
+    $('meter').innerHTML = [0, 1, 2].map((i) => `<div style="margin-top:${i === 1 ? 0 : 3}px">${starSvg(i === 1 ? 24 : 19, i < can, 'meter')}</div>`).join('');
+    const tip = $('tip');
+    tip.classList.toggle('warn', !G.feasible && !G.over);
+    tip.textContent = G.tipOverride || tipFor();
+    $('undo').disabled = !G.hist.length || G.won;
+    $('restart').disabled = st.hops === 0 && !G.over;
+    $('hint').disabled = !!G.won;
+    syncBeats();
+  }
+  function tipFor() {
+    const { idx, def, st, lv } = G;
+    const what = G.room.dance ? 'tiles' : 'cushions';
+    if (!G.feasible) return `Some ${what} can't be cleared now. UNDO to go for 3 stars!`;
+    if (idx === 0 && st.hops === 0) return 'Swipe, use the arrow keys, or tap a cushion next to you to hop.';
+    if (idx === 0) return 'Cushions puff away behind you. Clear them all, then hop onto the ★!';
+    if (def.news === 'friends' && st.got !== lv.all) return 'Pick up the friend. The ★ opens when everyone is with you.';
+    if (def.news === 'arrows') return 'Arrow cushions: you can only hop off them the way they point.';
+    if (def.news === 'bubbles') return 'Hop onto a bubble and it bounces you one cushion further.';
+    if (def.news === 'piles') return 'A pile of two cushions takes two hops to clear.';
+    if (def.news === 'ordered') return 'Pick up the friends in number order: 1, then 2, then 3.';
+    if (G.beats) return `Coloured tiles are lit on their beat only. Next hop: the ${['pink', 'blue', 'yellow'][(st.hops + 1) % 3]} ones.`;
+    if (lv.friends.length && st.got !== lv.all) return `Pick up every friend${lv.order[lv.friends[0]] ? ' in order' : ''}, clear every ${what.slice(0, -1)}, then the ★.`;
+    return `Clear every ${what.slice(0, -1)}, then hop onto the ★.`;
+  }
+
+  // Can everything still be cleared? With one full clear (every level but
+  // the first few), only by following it: the moves so far must be its start.
+  function onSolution() {
+    if (G.moves.length > G.sol.length) return false;
+    for (let k = 0; k < G.moves.length; k++) if (G.moves[k] !== G.sol[k]) return false;
+    return true;
+  }
+  function check() {
+    if (G.def.sols === 1) {
+      G.feasible = onSolution();
+      return;
+    }
+    const r = E.search(G.lv, G.st, { limit: 60000 });
+    G.feasible = !!r.path || r.aborted;
+  }
+
+  // ---- levels (the Crib's room-switch flash between rooms)
+  async function roomFlash(change) {
+    if (RM) { change(); return; }
+    const f = $('flash');
+    Sound.play('room', 0.5);
+    await f.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, fill: 'forwards' }).finished;
+    change();
+    await wait(80);
+    await f.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 320, fill: 'forwards' }).finished;
+  }
+
+  function loadLevel(idx, { fresh = true } = {}) {
+    closeCard();
+    const go = () => setupLevel(idx, fresh);
+    if (G.lv && stageOf(idx).key !== G.stage.key) roomFlash(go);
+    else go();
+  }
+  function setupLevel(idx, fresh) {
+    G.idx = idx;
+    save.at = idx;
+    store();
+    G.def = LEVELS[idx];
+    G.stage = stageOf(idx);
+    G.room = ROOMS[G.stage.room];
+    G.lv = E.parse(G.def.map);
+    G.st = E.newState(G.lv);
+    G.sol = [...G.def.solution].map((c) => E.DCH.indexOf(c));
+    G.beats = G.lv.beat.some((b) => b >= 0);
+    G.hist = [];
+    G.moves = [];
+    if (fresh) { G.hinted = false; G.asked = false; }
+    G.over = false;
+    G.won = false;
+    G.busy = false;
+    G.queue = [];
+    G.tipOverride = null;
+    G.friendKeys = G.lv.friends.map((_, k) => FRIENDS[(idx * 2 + k) % FRIENDS.length]);
+    buildRoom();
+    renderTop();
+    renderGoalCard();
+    buildBoard();
+    // the board fluffs in, back to front
+    Object.keys(G.cells).forEach((key) => {
+      const i = Number(key);
+      const [x, y] = xy(i);
+      const c = G.cells[i];
+      c.life = i === G.lv.goal ? 1 : G.lv.life[i];
+      paint(i);
+      const d = RM ? 0 : (x + y) * 24;
+      puffIn(c.c0, d);
+      if (c.mark) puffIn(c.mark, d + 60);
+      if (c.life === 2 && c.c1) puffIn(c.c1, d + 70);
+    });
+    Sound.play('boardIn', 0.55);
+    placePiece(G.player, G.st.cur);
+    const pose = G.player.pose;
+    G.player.el.animate([{ opacity: 0, transform: `${pose} translateY(-60%)` }, { opacity: 1, transform: pose }], { duration: ms(380), delay: ms(260), easing: 'cubic-bezier(.3,1.5,.55,1)', fill: 'backwards' });
+    Object.values(G.friends).forEach((p, k) => p.el.animate([{ opacity: 0, transform: `${p.pose} scale(0.3)` }, { opacity: 1, transform: p.pose }], { duration: ms(320), delay: ms(320 + k * 90), easing: 'cubic-bezier(.3,1.5,.55,1)', fill: 'backwards' }));
+    Object.values(G.bubbles).forEach((b) => b.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, delay: ms(360), fill: 'backwards' }));
+    G.goalStar.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, delay: ms(300), fill: 'backwards' });
+    G.lv.friends.forEach((_, k) => setSlot(k, false, false));
+    setGoalLock(false);
+    check();
+    hud();
+    if (G.def.news && !save.seenNews[G.def.news]) {
+      save.seenNews[G.def.news] = true;
+      store();
+      setTimeout(() => showBanner(NEWS[G.def.news]), ms(700));
+    }
+  }
+
+  function relayout() {
+    if (!G.lv) return;
+    const st = G.st;
+    buildRoom();
+    renderTop();
+    buildBoard();
+    Object.keys(G.cells).forEach((key) => {
+      const i = Number(key);
+      G.cells[i].life = i === G.lv.goal ? 1 : st.life[i];
+      paint(i);
+    });
+    placePiece(G.player, st.cur);
+    Object.entries(G.friends).forEach(([cell, p]) => { p.el.hidden = !!(st.got & G.lv.fbit[cell]); });
+    setGoalLock(false);
+    hud();
+  }
+
+  // ---- moving
+  function tryDir(d) {
+    const m = E.tryMove(G.lv, G.st, d);
+    if (!m.ok) return blocked(d, m);
+    hop(d, m);
+  }
+  function blocked(d, m) {
+    bonk(d);
+    if (m.why === 'locked') $('goalCard').animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(0)' }], { duration: 320 });
+    if (m.why === 'arrow' && G.cells[G.st.cur] && G.cells[G.st.cur].mark) G.cells[G.st.cur].mark.animate([{ opacity: 1 }, { opacity: 0.3 }, { opacity: 1 }, { opacity: 0.3 }, { opacity: 1 }], { duration: 500 });
+    if (m.why === 'beat' && G.cells[m.cell]) G.cells[m.cell].c0.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(2)' }, { filter: 'brightness(1)' }], { duration: 400 });
+    if (WHY[m.why]) flashTip(WHY[m.why]);
+  }
+  function flashTip(text) {
+    G.tipOverride = text;
+    hud();
+    clearTimeout(G.tipT);
+    G.tipT = setTimeout(() => { G.tipOverride = null; hud(); }, 2400);
+  }
+
+  async function bonk(d) {
+    Sound.play('bonk', 0.5);
+    G.busy = true;
+    const [dx, dy] = E.DIRS[d];
+    const n = G.T * 0.14;
+    await G.player.squash.animate([{ transform: 'translate(0,0)' }, { transform: `translate(${dx * n}px,${dy * n * 0.6}px) scale(${dx ? 0.86 : 1.1},${dy ? 0.86 : 1.1})`, offset: 0.4 }, { transform: 'translate(0,0)' }], { duration: ms(200), easing: 'ease-out' }).finished;
+    G.busy = false;
+    next();
+  }
+
+  async function moveTo(p, cell, dur, life, hopH = 0.5) {
+    const from = p.pose;
+    p.cell = cell;
+    p.pose = poseOf(p, cell, life);
+    p.el.style.transform = p.pose;
+    p.el.style.zIndex = 10 + xy(cell)[1] * 3 + 2;
+    const lift = G.T * hopH;
+    const a = p.el.animate([{ transform: from }, { transform: p.pose }], { duration: dur, easing: 'ease-in-out' });
+    p.lift.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-lift}px)`, easing: 'ease-in', offset: 0.5 }, { transform: 'translateY(0)' }], { duration: dur, easing: 'ease-out' });
+    p.squash.animate([{ transform: 'scale(1)' }, { transform: 'scale(0.9,1.12)', offset: 0.4 }, { transform: 'scale(1)' }], { duration: dur });
+    p.shadow.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(0.6)', opacity: 0.5, offset: 0.5 }, { transform: 'scale(1)', opacity: 1 }], { duration: dur });
+    await a.finished;
+    p.squash.animate([{ transform: 'scale(1.14,0.86)' }, { transform: 'scale(0.96,1.05)', offset: 0.55 }, { transform: 'scale(1)' }], { duration: ms(220), easing: 'ease-out' });
+  }
+
+  async function hop(d, m) {
+    const prev = G.st;
+    const nxt = m.st;
+    G.hist.push(prev);
+    G.moves.push(d);
+    G.st = nxt;
+    G.busy = true;
+    clearGlow();
+    Sound.play('hop', 0.6);
+    setCell(prev.cur, nxt.life[prev.cur]);
+    // hop onto each cell in turn; a bubble pops as it bounces you on
+    for (let k = 0; k < m.cells.length; k++) {
+      const c = m.cells[k];
+      const last = k === m.cells.length - 1;
+      await moveTo(G.player, c, ms(last ? 190 : 170), last ? nxt.life[c] : 1, k ? 0.8 : 0.5);
+      if (!last) setCell(c, 0);
+    }
+    const q = G.proj[nxt.cur];
+    burst('dust', q.x, q.y);
+    m.cells.forEach((c) => {
+      if ((nxt.got & G.lv.fbit[c]) && !(prev.got & G.lv.fbit[c])) collect(c);
+    });
+    if (nxt.done) return win();
+    check();
+    hud();
+    if (!E.moves(G.lv, G.st).length) return stuck();
+    G.busy = false;
+    next();
+  }
+
+  function next() {
+    if (G.busy || G.over || !G.queue.length) return;
+    G.queue.shift()();
+  }
+  function input(fn) {
+    if (G.over || !$('overlay').hidden) return;
+    if (G.busy) {
+      if (G.queue.length < 2) G.queue.push(fn);
+      return;
+    }
+    fn();
+  }
+
+  // a friend hopped onto: a squeak, and off to its slot in the goal card
+  function collect(cell) {
+    const p = G.friends[cell];
+    if (!p) return;
+    Sound.play('squeak', 0.7);
+    const from = p.el.getBoundingClientRect();
+    const slot = G.slots[p.k].getBoundingClientRect();
+    p.el.hidden = true;
+    const fly = document.createElement('img');
+    fly.src = A.body[p.key];
+    fly.alt = '';
+    fly.style.cssText = `position:fixed;left:${from.left}px;top:${from.top}px;width:${from.width}px;height:${from.height}px;z-index:40;pointer-events:none`;
+    document.body.appendChild(fly);
+    const dx = slot.left + slot.width / 2 - (from.left + from.width / 2);
+    const dy = slot.top + slot.height / 2 - (from.top + from.height / 2);
+    const sc = slot.width / from.width;
+    fly.animate(
+      [
+        { transform: 'translate(0,0) scale(1)' },
+        { transform: `translate(0,${-G.T * 0.6}px) scale(1.2)`, offset: 0.25 },
+        { transform: `translate(${dx}px,${dy}px) scale(${sc})`, opacity: 0.6 },
+      ],
+      { duration: ms(640), easing: 'ease-in-out' }
+    ).finished.then(() => {
+      fly.remove();
+      setSlot(p.k, true, true);
+      setGoalLock(true);
+    });
+  }
+
+  // put the board back to an earlier state: cushions puff back, friends hop back on
+  function restoreTo(target, dur) {
+    G.st = target;
+    syncCells(true);
+    Object.entries(G.friends).forEach(([cell, p]) => {
+      const got = !!(target.got & G.lv.fbit[cell]);
+      if (!got && p.el.hidden) {
+        p.el.hidden = false;
+        p.el.animate([{ transform: `${p.pose} scale(0.3)`, opacity: 0 }, { transform: p.pose, opacity: 1 }], { duration: ms(300), easing: 'cubic-bezier(.3,1.5,.55,1)' });
+      }
+      setSlot(p.k, got, false);
+    });
+    setGoalLock(false);
+    return moveTo(G.player, target.cur, dur, target.life[target.cur]);
+  }
+
+  function undo() {
+    if (!G.hist.length || G.won) return;
+    clearGlow();
+    const prev = G.hist.pop();
+    G.moves.pop();
+    if (G.over) { G.over = false; closeCard(); }
+    Sound.play('undo', 0.7);
+    G.busy = true;
+    restoreTo(prev, ms(190)).then(() => {
+      G.busy = false;
+      next();
+    });
+    check();
+    hud();
+  }
+
+  // jump back to an earlier spot (the hint's rewind)
+  function rewindTo(k) {
+    const back = G.hist.length - k;
+    const target = G.hist[k];
+    G.hist.length = k;
+    G.moves.length = k;
+    restoreTo(target, ms(280));
+    return back;
+  }
+
+  function restart() {
+    if (G.st.hops === 0 && !G.over) return;
+    loadLevel(G.idx, { fresh: false });
+  }
+
+  function clearGlow() {
+    document.querySelectorAll('.tile.hint').forEach((t) => t.classList.remove('hint'));
+    clearTimeout(G.glowT);
+  }
+  function askHint() {
+    if (G.won || G.busy) return;
+    if (!G.asked) { showHintCard(); return; }
+    giveHint();
+  }
+  // the next move of a full clear: from here if there is one (searched on
+  // the small early levels, read off the one answer on the rest), else after
+  // going back to the last spot that had one
+  function giveHint() {
+    G.hinted = true;
+    G.asked = true;
+    let back = 0;
+    let d = -1;
+    if (G.def.sols === 1) {
+      let k = 0;
+      while (k < G.moves.length && G.moves[k] === G.sol[k]) k++;
+      if (k < G.moves.length) back = rewindTo(k);
+      d = G.sol[k];
+    } else {
+      let r = E.search(G.lv, G.st, { limit: 300000 });
+      for (let k = G.hist.length - 1; !r.path && k >= 0; k--) {
+        const t = E.search(G.lv, G.hist[k], { limit: 300000 });
+        if (t.path) { back = rewindTo(k); r = t; }
+      }
+      if (r.path && r.path.length) d = r.path[0];
+    }
+    check();
+    hud();
+    if (d < 0) return;
+    const m = E.tryMove(G.lv, G.st, d);
+    if (!m.ok) return;
+    const j = m.cells[0];
+    Sound.play('hint', 0.6);
+    clearGlow();
+    G.cells[j].el.classList.add('hint');
+    G.glowT = setTimeout(clearGlow, 3200);
+    const [dx, dy] = E.DIRS[d];
+    const n = G.T * 0.1;
+    G.player.squash.animate([{ transform: 'translate(0,0)' }, { transform: `translate(${dx * n}px,${dy * n * 0.6 - G.T * 0.14}px)`, offset: 0.4 }, { transform: 'translate(0,0)' }], { duration: ms(360), delay: back ? ms(320) : 0, easing: 'ease-out' });
+    if (back) flashTip(`Went back ${back} hop${back === 1 ? '' : 's'}. Try the glowing one!`);
+  }
+
+  // ---- the end of a level
+  async function win() {
+    G.over = true;
+    G.won = true;
+    G.busy = true;
+    hud();
+    const q = G.proj[G.lv.goal];
+    Sound.play('land', 0.6);
+    G.goalStar.animate([{ opacity: 1 }, { opacity: 0, transform: `${G.goalStar.style.transform} translateY(-60%) scale(1.4)` }], { duration: ms(420), fill: 'forwards' });
+    burst('spark', q.x, q.y - G.T * 0.5);
+    await wait(ms(160));
+    Sound.play('solve', 0.7);
+    burst('confetti', q.x, q.y - G.T * 0.6);
+    for (let k = 0; k < 2; k++) {
+      await G.player.lift.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-G.T * 0.55}px)`, offset: 0.45 }, { transform: 'translateY(0)' }], { duration: ms(340), easing: 'ease-in-out' }).finished;
+      G.player.squash.animate([{ transform: 'scale(1.12,0.88)' }, { transform: 'scale(1)' }], { duration: ms(160) });
+    }
+    await wait(ms(380));
+    const left = E.leftOf(G.lv, G.st.life);
+    const stars = E.starsFor(left, G.hinted);
+    if (!save.best[G.idx] || stars > save.best[G.idx]) save.best[G.idx] = stars;
+    store();
+    showResult({ stars, left, hops: G.moves.length });
+  }
+
+  async function stuck() {
+    G.over = true;
+    G.busy = false;
+    hud();
+    Sound.play('wrong', 0.6);
+    G.player.squash.animate(
+      [{ transform: 'rotate(0)' }, { transform: 'rotate(-8deg) scale(1,0.92)' }, { transform: 'rotate(8deg) scale(1,0.92)' }, { transform: 'rotate(-5deg) scale(1,0.92)' }, { transform: 'rotate(0) scale(1,0.94)' }],
+      { duration: ms(800), fill: 'forwards' }
+    );
+    await wait(ms(1000));
+    if (G.over && !G.won) showStuck();
+  }
+
+  // ---- the banner
+  async function showBanner(b) {
+    const el = $('banner');
+    el.innerHTML = `<div class="bannerText">${b.text}</div><div class="bannerSub">${b.sub}</div>`;
+    el.hidden = false;
+    Sound.play('news', 0.5);
+    await el.animate(
+      [
+        { opacity: 0, transform: 'scale(0.3) rotate(-12deg)' },
+        { opacity: 1, transform: 'scale(1) rotate(-3deg)', offset: 0.1 },
+        { opacity: 1, transform: 'scale(1) rotate(-3deg)', offset: 0.88 },
+        { opacity: 0, transform: 'scale(1.25) rotate(0deg)' },
+      ],
+      { duration: 3200, easing: 'ease-out' }
+    ).finished;
+    el.hidden = true;
+  }
+
+  // ---- cards
+  function showCard(html, { tint, cls = '' } = {}) {
+    const o = $('overlay');
+    o.classList.remove('out');
+    o.style.setProperty('--tint', tint || 'rgba(40,8,80,0.55)');
+    o.innerHTML = `<div class="tint"></div><div class="card ${cls}"><div class="cardRim"><div class="cardFill">${html}</div></div></div>`;
+    o.hidden = false;
+    const b = o.querySelector('button');
+    if (b) setTimeout(() => b.focus({ preventScroll: true }), 50);
+    return o;
+  }
+  function closeCard() {
+    const o = $('overlay');
+    if (o.hidden) return;
+    o.classList.add('out');
+    setTimeout(() => { if (o.classList.contains('out')) { o.hidden = true; o.innerHTML = ''; o.classList.remove('out'); } }, 180);
+  }
+  function on(id, fn, sound = 'select') {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', () => { if (sound) Sound.play(sound, 0.6); fn(); });
+  }
+
+  function showHow(then) {
+    showCard(`${titleSvg('HOW TO PLAY', 'pink', 28)}
+      <div class="rules">
+        <div class="rule"><div class="ruleNum">1</div><div><div class="ruleTitle">HOP</div><div class="ruleLine">Swipe, use the arrow keys, or tap a cushion next to you.</div></div></div>
+        <div class="rule"><div class="ruleNum">2</div><div><div class="ruleTitle">PUFF!</div><div class="ruleLine">The cushion you hop off puffs away. No going back!</div></div></div>
+        <div class="rule"><div class="ruleNum">3</div><div><div class="ruleTitle">THE ★</div><div class="ruleLine">Hop onto it to finish. Clear every other cushion first for 3 stars.</div></div></div>
+      </div>
+      <div class="twistHead">ROOM BY ROOM</div>
+      <div class="twist"><span class="twistName">FRIENDS · </span>pick them all up. The ★ opens when everyone is with you.</div>
+      <div class="twist"><span class="twistName">ARROWS · </span>you can only hop off an arrow cushion the way it points.</div>
+      <div class="twist"><span class="twistName">BUBBLES · </span>land on a bubble and it bounces you one cushion further.</div>
+      <div class="twist"><span class="twistName">PILES · </span>two cushions on top of each other take two hops.</div>
+      <div class="twist"><span class="twistName">IN ORDER · </span>numbered friends are picked up 1, 2, 3…</div>
+      <div class="twist"><span class="twistName">ON THE BEAT · </span>in the Dance Room, coloured tiles light up every third hop. Land on them lit.</div>
+      ${button('green', 'GOT IT!', { id: 'cGot', fs: 18, cls: 'big' })}`);
+    on('cGot', () => {
+      save.seenHow = true;
+      store();
+      closeCard();
+      if (then) then();
+    });
+  }
+
+  function showLevels() {
+    let html = '';
+    CHAPTERS.forEach((ch) => {
+      html += `<div class="chHead">${ROOMS[ch.room].name.toUpperCase()} · ${ch.from + 1}–${ch.to + 1}</div>`;
+      for (let i = ch.from; i <= ch.to; i++) {
+        const best = save.best[i] || 0;
+        const stars = [0, 1, 2].map((k) => starSvg(10, k < best, 'meter')).join('');
+        html += `<div class="lvTile">${button(i === G.idx ? 'pink' : best ? 'purple' : 'white', String(i + 1), { id: `lv${i}`, fs: 15 })}<div class="lvStars">${stars}</div></div>`;
+      }
+    });
+    const total = Object.values(save.best).reduce((a, b) => a + b, 0);
+    showCard(`${titleSvg('SQUISH HOP', 'pink', 30)}<div class="sub">A HOP THROUGH THE CRIB · ★ ${total} / ${LEVELS.length * 3}</div><div class="levels" id="levelList">${html}</div>
+      <div class="btnRow">${button('white', 'HOW TO PLAY', { id: 'cHow', fs: 14 })}${button('white', save.muted ? 'SOUND: OFF' : 'SOUND: ON', { id: 'cMute', fs: 14 })}</div>`, { cls: 'tall' });
+    LEVELS.forEach((_, i) => on(`lv${i}`, () => loadLevel(i)));
+    on('cHow', () => showHow(showLevels));
+    on('cMute', () => { save.muted = !save.muted; store(); showLevels(); });
+    const cur = $(`lv${G.idx}`);
+    if (cur) cur.scrollIntoView({ block: 'center' });
+  }
+
+  function showPause() {
+    if (!$('overlay').hidden) return;
+    showCard(`${titleSvg('PAUSED', 'pink', 30)}<div class="col">
+      ${button('green', 'RESUME', { id: 'cRes', fs: 18 })}
+      ${button('purple', 'RESTART', { id: 'cRe', fs: 16 })}
+      ${button('white', 'LEVELS', { id: 'cLv', fs: 16 })}</div>`);
+    on('cRes', closeCard);
+    on('cRe', () => loadLevel(G.idx, { fresh: false }));
+    on('cLv', showLevels);
+  }
+
+  function showHintCard() {
+    showCard(`${titleSvg('NEED A HINT?', 'gold', 28)}
+      <div class="body">We'll show you the next hop. A hint makes this level give one star less.</div>
+      <div class="btnRow">${button('white', 'NO THANKS', { id: 'cNo', fs: 15 })}${button('gold', 'SHOW ME', { id: 'cShow', fs: 18, cls: 'big' })}</div>`);
+    on('cNo', closeCard);
+    on('cShow', () => { closeCard(); setTimeout(giveHint, 200); }, null);
+  }
+
+  function showStuck() {
+    const locked = G.lv.nbrs[G.st.cur].some((j) => j === G.lv.goal) && G.st.got !== G.lv.all;
+    showCard(`${titleSvg('STUCK!', 'pink', 32)}
+      <div class="rock">${headSticker(PLAYER, 'sad', 86, false)}</div>
+      <div class="body">${locked ? 'The ★ is shut until every friend is with you, and there is nowhere else to hop.' : 'There is nowhere left to hop.'}</div>
+      <div class="btnRow">${button('white', 'UNDO', { id: 'cUndo', fs: 15 })}${button('pink', 'RETRY', { id: 'cRetry', fs: 18, cls: 'big' })}</div>`, { tint: 'rgba(80,0,30,0.5)' });
+    on('cUndo', () => {
+      G.player.squash.getAnimations().forEach((a) => a.cancel());
+      undo();
+    }, null);
+    on('cRetry', () => loadLevel(G.idx, { fresh: false }));
+  }
+
+  function showResult(res) {
+    const tier = TIER_NAMES[G.def.tier];
+    const big = (i) => i === 1;
+    const stars = [0, 1, 2].map((i) => {
+      const size = big(i) ? 74 : 60;
+      return `<div class="starSlot" style="width:${size + 20}px;height:${size + 20}px;margin-top:${big(i) ? -12 : 6}px"><div class="rays" style="width:${size * 1.8}px;height:${size * 1.8}px"></div><div class="star" data-lit="${i < res.stars ? 1 : 0}" style="opacity:0">${starSvg(size, i < res.stars, 'card')}</div></div>`;
+    }).join('');
+    const last = G.idx + 1 >= LEVELS.length;
+    const nextRoom = last ? '' : ROOMS[LEVELS[G.idx + 1].room].name.toUpperCase();
+    showCard(`<div class="pop">${titleSvg(TITLES[res.stars], res.stars === 3 ? 'gold' : 'pink', 30)}</div>
+      <div class="sub">LEVEL ${G.idx + 1} · ${tier} · ${res.hops} HOPS · ${res.left} LEFT${G.hinted ? ' · HINT' : ''}</div>
+      ${res.left > 0 && !G.hinted ? `<div class="hintLine">Clear every ${G.room.dance ? 'tile' : 'cushion'} before the ★ for 3 stars!</div>` : ''}
+      ${G.hinted ? '<div class="hintLine">A hint costs one star</div>' : ''}
+      <div class="stars">${stars}</div>
+      ${last ? '<div class="sub" style="color:#16a86a">YOU HOPPED THROUGH THE WHOLE CRIB!</div>' : `<div class="sub" style="color:#16a86a">NEXT: LEVEL ${G.idx + 2} · ${nextRoom}</div>`}
+      <div class="btnRow" id="resBtns" style="opacity:0">${button('white', 'MENU', { id: 'cMenu', fs: 15 })}${button('purple', 'REPLAY', { id: 'cReplay', fs: 15 })}${last ? '' : button('green', 'NEXT ▶', { id: 'cNext', fs: 18, cls: 'big' })}</div>`);
+    const STEP = 480;
+    const t = document.querySelector('#overlay .pop');
+    if (t) t.animate([{ transform: 'scale(0.3)', opacity: 0 }, { transform: 'scale(1.08)', opacity: 1, offset: 0.6 }, { transform: 'scale(1)' }], { duration: ms(420), delay: 80, easing: 'ease-out', fill: 'backwards' });
+    const slots = [...document.querySelectorAll('#overlay .starSlot')];
+    slots.forEach((slot, i) => {
+      const s = slot.querySelector('.star');
+      const lit = s.dataset.lit === '1';
+      setTimeout(() => {
+        Sound.play(lit ? `star${i + 1}` : 'starEmpty', 0.7);
+        s.style.opacity = 1;
+        s.animate(lit ? [{ transform: 'scale(0) rotate(-40deg)', opacity: 0 }, { transform: 'scale(1.18) rotate(4deg)', opacity: 1, offset: 0.6 }, { transform: 'scale(1) rotate(0)' }] : [{ transform: 'scale(1.5)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: ms(lit ? 520 : 300), easing: 'ease-out' });
+        if (lit) {
+          slot.querySelector('.rays').animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, fill: 'forwards' });
+          const r = slot.getBoundingClientRect();
+          burstFixed(r.left + r.width / 2, r.top + r.height / 2, $('overlay'));
+        }
+      }, ms(380 + i * STEP));
+    });
+    if (res.stars === 3) setTimeout(() => Sound.play('perfect', 0.7), ms(380 + 3 * STEP));
+    setTimeout(() => {
+      const b = $('resBtns');
+      if (b) b.animate([{ opacity: 0, transform: 'translateY(30px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 320, easing: 'ease-out', fill: 'forwards' });
+    }, ms(380 + 2 * STEP + 300));
+    on('cMenu', showLevels);
+    on('cReplay', () => loadLevel(G.idx));
+    on('cNext', () => loadLevel(G.idx + 1));
+  }
+  // gold sparks round a result star (fx.js 'gold')
+  function burstFixed(x, y, host) {
+    if (RM) return;
+    const colors = ['#ffd23a', '#fff3a0', '#ffffff'];
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2 + rnd(-0.3, 0.3);
+      const d = rnd(40, 80);
+      const s = rnd(6, 11);
+      const p = document.createElement('div');
+      p.style.cssText = `position:fixed;left:${x - s / 2}px;top:${y - s / 2}px;width:${s}px;height:${s}px;border-radius:${s * 0.18}px;background:${colors[i % 3]};z-index:60;pointer-events:none`;
+      host.appendChild(p);
+      p.animate([{ transform: 'translate(0,0) rotate(45deg) scale(0.2)', opacity: 0 }, { transform: `translate(${Math.cos(a) * d * 0.8}px,${Math.sin(a) * d * 0.8}px) rotate(45deg) scale(1)`, opacity: 1, offset: 0.5 }, { transform: `translate(${Math.cos(a) * d}px,${Math.sin(a) * d + 18}px) rotate(45deg) scale(0.4)`, opacity: 0 }], { duration: 700, easing: 'ease-out' }).finished.then(() => p.remove());
+    }
+  }
+
+  // ---- input
+  const KEYS = { ArrowUp: 0, ArrowRight: 1, ArrowDown: 2, ArrowLeft: 3, w: 0, d: 1, s: 2, a: 3, W: 0, D: 1, S: 2, A: 3 };
+  window.addEventListener('keydown', (e) => {
+    if (!$('overlay').hidden) {
+      if (e.key === 'Escape') closeCard();
+      return;
+    }
+    if (e.key in KEYS) {
+      e.preventDefault();
+      const d = KEYS[e.key];
+      input(() => tryDir(d));
+    } else if (e.key === 'z' || e.key === 'Z' || e.key === 'Backspace' || e.key === 'u') {
+      e.preventDefault();
+      $('undo').click();
+    } else if (e.key === 'r' || e.key === 'R') {
+      $('restart').click();
+    } else if (e.key === 'h' || e.key === 'H') {
+      $('hint').click();
+    } else if (e.key === 'Escape') {
+      showPause();
+    }
+  });
+
+  // swipes (one hop per half a tile of drag, so a long drag can turn corners) and taps
+  const area = $('area');
+  let drag = null;
+  area.addEventListener('pointerdown', (e) => {
+    drag = { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, moved: false, id: e.pointerId };
+    try { area.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  });
+  area.addEventListener('pointermove', (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x;
+    const dy = e.clientY - drag.y;
+    const th = Math.max(24, G.T * 0.45);
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < th) return;
+    drag.moved = true;
+    drag.x = e.clientX;
+    drag.y = e.clientY;
+    const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : dy > 0 ? 2 : 0;
+    input(() => tryDir(d));
+  });
+  area.addEventListener('pointerup', (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dr = drag;
+    drag = null;
+    if (dr.moved || Math.hypot(e.clientX - dr.x0, e.clientY - dr.y0) > 10) return;
+    // a tap: the tile under the finger (the board is in 3D, so ask the browser)
+    const hit = document.elementsFromPoint(e.clientX, e.clientY).map((el) => el.closest && el.closest('.tile')).find(Boolean);
+    const [px, py] = xy(G.st.cur);
+    const pr = G.player.el.getBoundingClientRect();
+    const onPlayer = e.clientX >= pr.left && e.clientX <= pr.right && e.clientY >= pr.top && e.clientY <= pr.bottom;
+    if (onPlayer && (!hit || Number(hit.dataset.i) === G.st.cur)) {
+      // a tap on the squishy: a squeak and a wiggle, just for fun
+      Sound.play('squeak', 0.6);
+      G.player.squash.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-10deg) scale(1.06)' }, { transform: 'rotate(10deg)' }, { transform: 'rotate(0)' }], { duration: ms(360) });
+      return;
+    }
+    if (!hit) return;
+    const j = Number(hit.dataset.i);
+    const [x, y] = xy(j);
+    if (Math.abs(x - px) + Math.abs(y - py) === 1) input(() => tryDir(dirTo(G.st.cur, j)));
+  });
+  area.addEventListener('pointercancel', () => { drag = null; });
+  area.addEventListener('dragstart', (e) => e.preventDefault());
+
+  // the buttons sink as they're pressed
+  document.addEventListener('pointerdown', (e) => {
+    const b = e.target.closest && e.target.closest('.sd, .cribBtn');
+    if (b && !b.disabled) {
+      b.classList.add('down');
+      const up = () => { b.classList.remove('down'); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); };
+      window.addEventListener('pointerup', up);
+      window.addEventListener('pointercancel', up);
+    }
+  });
+
+  $('undo').addEventListener('click', () => input(undo));
+  $('restart').addEventListener('click', () => { Sound.play('select', 0.6); restart(); });
+  $('hint').addEventListener('click', () => { Sound.play('select', 0.6); askHint(); });
+  $('back').addEventListener('click', () => { Sound.play('tap', 0.6); showPause(); });
+  window.addEventListener('resize', () => { clearTimeout(G.rz); G.rz = setTimeout(relayout, 150); });
+
+  // ---- start
+  function start() {
+    loadLevel(Math.min(LEVELS.length - 1, save.at || 0));
+    if (!save.seenHow) showHow();
+  }
+  const fontsReady = document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, wait(1500)]) : Promise.resolve();
+  fontsReady.then(start);
+  window.SquishHop = { G, loadLevel, tryDir, undo };
+})();
+</script>
+</body>
+</html>

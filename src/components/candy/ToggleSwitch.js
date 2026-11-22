@@ -21,7 +21,7 @@ const KNOB = H - (RING + RIM) * 2 - 4; // 4px of track showing round it
 const TRAVEL = W - (RING + RIM) * 2 - KNOB - 4;
 
 const ON = { colors: ['#c8fff4', '#4fe6cf', '#14b3a0'], ring: '#0b6f68' };
-const OFF = { colors: ['#eee6f8', '#c3b3dd', '#9a86c0'], ring: '#5a4a80' };
+const OFF = { colors: ['#efe6dc', '#d6c2a8', '#b39878'], ring: '#6b4426' };
 
 export default function ToggleSwitch({ value, onToggle }) {
   const pos = useRef(new Animated.Value(value ? 1 : 0)).current;
@@ -70,7 +70,7 @@ export default function ToggleSwitch({ value, onToggle }) {
             <Shine />
             <Animated.View style={[styles.knobWrap, { transform: [{ translateX: knobX }, { scaleX: knobScaleX }, { scaleY: knobScaleY }] }]}>
               <View style={styles.knobShadow} />
-              <LinearGradient colors={['#ffffff', '#fbeaff', '#e2c9f5']} locations={[0, 0.5, 1]} style={styles.knob}>
+              <LinearGradient colors={['#ffffff', '#fff6ea', '#f0dcc0']} locations={[0, 0.5, 1]} style={styles.knob}>
                 <View style={styles.knobShine} />
               </LinearGradient>
             </Animated.View>

@@ -1,0 +1,97 @@
+<title>Squish Squad Test Build</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<!-- The web demo's page (tools/web/demo.mjs): the demo (app.html, src/web/Demo.js) in a phone held sideways, at the
+     Galaxy A15's screen in dp (832 x 384), scaled to fit. Like src/web/PhoneFrame.js, without React. -->
+<style>
+  /* layout: one phone centred on a dark stage, a thin bar of controls under it */
+  :root {
+    --stage: #170c22;
+    --stage-glow: #2d1747;
+    --bezel: #0b0b0f;
+    --bezel-edge: #2a2a33;
+    --ink: #e8dcff;
+    --muted: #bfaee0;
+    --button: #2e1d4a;
+    --button-edge: #4b3474;
+    --focus: #ffd23a;
+    --ui: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body {
+    background: radial-gradient(circle at 50% 40%, var(--stage-glow), var(--stage) 70%) var(--stage);
+    color: var(--ink);
+    font-family: var(--ui);
+    overflow: hidden;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .stage { flex: 1; min-height: 0; position: relative; }
+  .phone {
+    position: absolute; left: 50%; top: 50%;
+    width: calc(832px + 24px); height: calc(384px + 24px);
+    transform-origin: center center;
+    background: var(--bezel); border-radius: 34px;
+    box-shadow: 0 0 0 2px var(--bezel-edge), 0 24px 60px rgba(0, 0, 0, 0.55);
+  }
+  .phone iframe {
+    position: absolute; left: 12px; top: 12px; width: 832px; height: 384px;
+    border: 0; border-radius: 22px; background: #1a1326; display: block;
+  }
+  .bar { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 12px; font-size: 13px; color: var(--muted); }
+  .bar button {
+    font: inherit; color: var(--ink); background: var(--button); border: 1px solid var(--button-edge);
+    border-radius: 8px; padding: 5px 12px; cursor: pointer;
+  }
+  .bar button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .turn { color: var(--focus); }
+  @media (orientation: landscape) { .turn { display: none; } }
+</style>
+
+<div class="stage" id="stage">
+  <div class="phone" id="phone">
+    <iframe id="app" src="app.html" title="Squish Squad" allow="autoplay; fullscreen"></iframe>
+  </div>
+</div>
+<div class="bar">
+  <span id="size">Galaxy A15 · 832 × 384</span>
+  <button type="button" id="back" title="The phone's back button (Esc)">◁ Back</button>
+  <button type="button" id="restart">Restart</button>
+  <span class="turn">Turn your phone sideways for a bigger view</span>
+</div>
+
+<script>
+  (function () {
+    var stage = document.getElementById('stage');
+    var phone = document.getElementById('phone');
+    var app = document.getElementById('app');
+    var size = document.getElementById('size');
+    var W = 832 + 24;
+    var H = 384 + 24;
+    function fit() {
+      var s = Math.max(0.25, Math.min(stage.clientWidth / W, stage.clientHeight / H, 1.6));
+      phone.style.transform = 'translate(-50%, -50%) scale(' + s + ')';
+      size.textContent = 'Galaxy A15 · 832 × 384 · ' + Math.round(s * 100) + '%';
+    }
+    window.addEventListener('resize', fit);
+    fit();
+    // the phone's back button: the app's own (src/web/setup.js window.__webBack)
+    function back() {
+      try {
+        if (app.contentWindow && app.contentWindow.__webBack) app.contentWindow.__webBack();
+      } catch (e) {}
+    }
+    document.getElementById('back').addEventListener('click', back);
+    window.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') back();
+    });
+    document.getElementById('restart').addEventListener('click', function () {
+      app.src = 'app.html';
+    });
+  })();
+</script>

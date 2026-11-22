@@ -12,13 +12,16 @@
 // dance room's club songs) comes from that drop's newer music engine, so it
 // has its own mode: `--crib` renders just those tracks (the effects and the
 // five moods above were rendered from the earlier drop's sfx.js, whose
-// music code the new file no longer has — their WAVs stay in out/).
+// music code the new file no longer has).
+//
+// The app doesn't use any of this music any more: on 2026-11-16 the user kept only their own Velvet Map Study, and
+// the rendered and encoded tracks were deleted. encode.py skips any music-*.wav this still renders.
 //
 // Usage (from the repo root):
 //   python -m zipfile -e "ASMR Creature Squash Game.zip" tools/plush-art/design
 //   node tools/audio/render.mjs          → tools/audio/out/*.wav
-//   node tools/audio/render.mjs --crib   → tools/audio/out/music-crib_*.wav, music-club_*.wav
-//   python tools/audio/encode.py         → assets/audio/sfx, assets/audio/music, src/audio/effectFiles.js
+//   node tools/audio/render.mjs --crib   → tools/audio/out/music-crib_*.wav, music-club_*.wav (unused)
+//   python tools/audio/encode.py         → assets/audio/sfx, src/audio/effectFiles.js
 
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';

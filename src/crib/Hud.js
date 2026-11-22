@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { memo, useState } from 'react';
+import { Image, StyleSheet, Text, View } from 'react-native';
+import Pressable from '../components/Pressable';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, G, LinearGradient as SvgLinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { candyFonts } from '../theme/candyTheme';
@@ -8,8 +9,8 @@ import { candyFonts } from '../theme/candyTheme';
 // Vertical", the <!-- HUD --> block): round 46px buttons with a white rim,
 // a three-stop gradient face, a brown ring and a 4px brown lip under it, and
 // the design's own icons with their 1.5px drop shadow (a copy of the icon in
-// the shadow colour, under it); the gold and red badges; the LV, coins and
-// time-of-day pills; and the vertical page's big room title.
+// the shadow colour, under it); the gold and red badges; the time-of-day
+// pill; and the vertical page's big room title.
 
 const INK = '#5b3a29';
 
@@ -29,6 +30,8 @@ const FACES = {
 const c = (col, t) => t || col;
 const ICONS = {
   back: (t) => <Path d="M15 4 L7 12 L15 20" stroke={c('#ffffff', t)} strokeWidth={3.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />,
+  // Squishdoku's pause, in the Crib's look (two bars)
+  pause: (t) => <Path d="M8.5 5 V19 M15.5 5 V19" stroke={c('#ffffff', t)} strokeWidth={3.8} fill="none" strokeLinecap="round" />,
   music: (t, off) => (
     <>
       <Path d="M9 17V5l10-2v12" stroke={c('#ffffff', t)} strokeWidth={2.6} fill="none" strokeLinejoin="round" strokeLinecap="round" />
@@ -135,47 +138,6 @@ export function CribButton({ face, icon, size = 46, iconSize = 24, onPress, badg
   );
 }
 
-// "LV 3": the gold pill
-export function LevelPill({ level }) {
-  return (
-    <View style={styles.lvRing}>
-      <View style={styles.lvFace}>
-        <Text style={styles.lvText}>{`LV ${level}`}</Text>
-      </View>
-    </View>
-  );
-}
-
-// the design's gold coin (15px: radial gold, white rim, brown ring)
-export function HudCoin({ size = 15 }) {
-  return (
-    <Svg width={size + 2} height={size + 2} viewBox="-1 -1 17 17">
-      <Defs>
-        <SvgLinearGradient id="hudCoin" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#fff6a8" />
-          <Stop offset="0.42" stopColor="#ffd83a" />
-          <Stop offset="0.72" stopColor="#ffb000" />
-          <Stop offset="1" stopColor="#f08c00" />
-        </SvgLinearGradient>
-      </Defs>
-      <Circle cx={7.5} cy={7.5} r={8} fill="#a04a00" />
-      <Circle cx={7.5} cy={7.5} r={7} fill="#ffffff" />
-      <Circle cx={7.5} cy={7.5} r={5.6} fill="url(#hudCoin)" />
-    </Svg>
-  );
-}
-
-// "1,261 · +4.5/s": the brown glass pill
-export function CoinsPill({ coins, rate }) {
-  const r = rate == null ? '' : ` · ${rate >= 0 ? '+' : ''}${rate.toFixed(1)}/s`;
-  return (
-    <View style={styles.coins}>
-      <HudCoin />
-      <Text style={styles.coinsText} numberOfLines={1}>{`${Math.max(0, Math.round(coins)).toLocaleString()}${r}`}</Text>
-    </View>
-  );
-}
-
 // "● EVENING"
 export function PhasePill({ sun, label }) {
   return (
@@ -185,6 +147,22 @@ export function PhasePill({ sun, label }) {
     </View>
   );
 }
+
+// The room-switch flash (Crib Vertical v2): white dots every 22px over a
+// radial white → lavender → sky blue. The screen fades it in and out. Two
+// pictures (tools/crib-art/flash.py), not an SVG: Android draws an SVG in
+// software on the UI thread, and this one, full-screen and mounted (unseen)
+// from the Crib's first frame, held the frame the Crib opened on.
+const FLASH_GLOW = require('../../assets/crib/flash-glow.png');
+const FLASH_DOTS = require('../../assets/crib/flash-dots.png');
+export const RoomFlash = memo(function RoomFlash() {
+  return (
+    <View style={StyleSheet.absoluteFill}>
+      <Image source={FLASH_GLOW} fadeDuration={0} resizeMode="stretch" style={styles.flashFill} />
+      <Image source={FLASH_DOTS} fadeDuration={0} resizeMode="repeat" style={styles.flashFill} />
+    </View>
+  );
+});
 
 // The vertical page's room title: Fredoka 26, a cream-to-peach gradient
 // inside a brown outline with a deeper drop; the line under it in white
@@ -224,7 +202,7 @@ export function RoomTitle({ title, sub }) {
         <View style={{ height: size * 1.15 + pad * 2 + 3 }} />
       )}
       {sub ? (
-        <Text style={styles.sub} numberOfLines={1}>
+        <Text style={styles.sub} numberOfLines={2}>
           {sub}
         </Text>
       ) : null}
@@ -233,6 +211,7 @@ export function RoomTitle({ title, sub }) {
 }
 
 const styles = StyleSheet.create({
+  flashFill: { position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' },
   circle: { position: 'absolute', left: 0, backgroundColor: INK },
   face: { position: 'absolute', left: 2, top: 2, borderWidth: 2.5, borderColor: '#ffffff', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   badgeRing: { position: 'absolute', borderRadius: 11, padding: 1 },
@@ -242,11 +221,6 @@ const styles = StyleSheet.create({
   badgeRound: { minWidth: 18, width: 18, paddingHorizontal: 0 },
   badgeRed: { backgroundColor: '#f2665a' },
   badgeText: { fontFamily: candyFonts.bodyBlack, fontSize: 11, lineHeight: 14, includeFontPadding: false },
-  lvRing: { borderRadius: 999, padding: 1.5, backgroundColor: INK },
-  lvFace: { borderRadius: 999, borderWidth: 2, borderColor: '#ffffff', backgroundColor: '#ffd66b', paddingHorizontal: 9, paddingVertical: 2 },
-  lvText: { fontFamily: candyFonts.display, fontSize: 12, color: INK },
-  coins: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(91,58,41,0.75)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.9)', borderRadius: 999, paddingHorizontal: 11, paddingVertical: 4 },
-  coinsText: { fontFamily: candyFonts.bodyHeavy, fontSize: 14, color: '#fff3a0', textShadowColor: '#6a1b9a', textShadowRadius: 0.5, textShadowOffset: { width: 0, height: 1 } },
   phase: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 11, paddingVertical: 4, borderRadius: 999, backgroundColor: 'rgba(91,58,41,0.75)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.9)' },
   sun: { width: 9, height: 9, borderRadius: 5 },
   phaseText: { fontFamily: candyFonts.bodyBlack, fontSize: 11, color: '#ffffff', letterSpacing: 0.6 },

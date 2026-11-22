@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<!-- Squish Sort's squishies as the design's live 2.5D rigs (SQUISH_SORT.md, "Character animations"). One page draws
+     every squishy in play (and the impostors); src/hop/RigStage.js lays it over the play area and src/sort/Game.js
+     tells it what happens (the tumble, a grab and drag, a right or wrong spot, an impostor found out, the win, the
+     loss). Each rig is drawn where its still would be (the stills are the rigs at rest, tools/rig/thumbs.mjs: the
+     rig's 0-100 box over the middle 88% of the picture). The rig scripts are the design's own, unchanged; the
+     loader, the pause and the grain fix are hop.html's. The page is the play area, 1:1 in dp.
+
+     A level has up to 16 squishies, and a rig costs a lot to draw: the page draws only the ones moving. The one in
+     the hand, and one doing something on its own (landing in its spot, shaking its head, caught out), draw every
+     frame; the rest take turns, two a frame (the tumble, the win's wave, the droop), their bodies' hop, squash and
+     tilt moved smoothly by the page around the still drawing; one standing still keeps its last drawing (rive-rig's
+     generic rigs skip drawing while `I.ready` is off). With nothing moving, the page sleeps. -->
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  #board { position: absolute; inset: 0; pointer-events: none; }
+  .ch { position: absolute; left: 0; top: 0; width: 100px; height: 100px; transform-origin: 0 0; }
+  .ch > div { position: absolute; inset: 0; }
+  /* the page draws the floor shadows (they stay on the floor as a squishy hops) */
+  .ch ellipse[fill="#6a1b9a"] { display: none; }
+  .sh { position: absolute; left: 0; top: 0; width: 100px; height: 100px; transform-origin: 0 0; border-radius: 50%;
+        background: radial-gradient(closest-side, rgba(106, 27, 154, 0.34), rgba(106, 27, 154, 0.2) 55%, rgba(106, 27, 154, 0)); }
+</style>
+<script>
+// hop.html's start: relative fetch() through XHR on file:// pages (Android's WebView), and a pause that holds the
+// frames and the clock (the app's pause, and the page's own sleep while nothing moves).
+(function () {
+  const realFetch = window.fetch ? window.fetch.bind(window) : null;
+  window.fetch = function (url, opts) {
+    const u = String(url);
+    if (location.protocol !== 'file:' || /^[a-z]+:/i.test(u)) return realFetch(url, opts);
+    return new Promise((ok, bad) => {
+      const x = new XMLHttpRequest(); x.open('GET', u.replace(/\?.*$/, ''));
+      x.onload = () => ok({ ok: true, status: 200, text: () => Promise.resolve(x.responseText), json: () => Promise.resolve(JSON.parse(x.responseText)) });
+      x.onerror = () => bad(new TypeError('load failed: ' + u));
+      x.send();
+    });
+  };
+  const raf = window.requestAnimationFrame.bind(window), caf = window.cancelAnimationFrame.bind(window);
+  const realNow = performance.now.bind(performance);
+  let held = null, pausedAt = 0, lost = 0, heldId = 0;
+  performance.now = () => (held ? pausedAt : realNow()) - lost;
+  window.requestAnimationFrame = cb => {
+    if (held) { held.push({ id: --heldId, cb }); return heldId; }
+    return raf(t => cb(t - lost));
+  };
+  window.cancelAnimationFrame = id => { if (id < 0) { if (held) held = held.filter(h => h.id !== id); } else caf(id); };
+  window.__rigPause = on => {
+    if (on && !held) { held = []; pausedAt = realNow(); }
+    else if (!on && held) { lost += realNow() - pausedAt; const q = held; held = null; q.forEach(h => window.requestAnimationFrame(h.cb)); }
+  };
+})();
+</script>
+<script src="rive-rig.js"></script>
+<script src="rive-generic.js"></script>
+<script src="pet-defs.js"></script>
+<script src="mittens-moves.js"></script>
+</head>
+<body>
+<div id="board"></div>
+<script>
+(function () {
+  const post = m => { const s = JSON.stringify(m); if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(s); else (window.__sortOut = window.__sortOut || []).push(m); };
+  const board = document.getElementById('board');
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + (b - a) * t;
+  const SM = x => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+  const outQ = u => 1 - (1 - u) * (1 - u);
+  const outBack = u => { const v = u - 1; return 1 + 2.70158 * v * v * v + 1.70158 * v * v; };
+  // RN's Easing.bounce, for the tumble into the tray (the game's own curve)
+  const bounce = t => { if (t < 1 / 2.75) return 7.5625 * t * t; if (t < 2 / 2.75) { const u = t - 1.5 / 2.75; return 7.5625 * u * u + 0.75; } if (t < 2.5 / 2.75) { const u = t - 2.25 / 2.75; return 7.5625 * u * u + 0.9375; } const u = t - 2.625 / 2.75; return 7.5625 * u * u + 0.984375; };
+  const parab = u => (u <= 0 || u >= 1 ? 0 : 4 * u * (1 - u));
+  // keyframes [[t, v, ease]] at t (the rig's own reader and easings: 'l' 'io' 's' 'o' 'i' 'bk')
+  let kv = null;
+  const AR = K => ({ armL: K, armR: K }), ER = K => ({ earL: K, earR: K });
+  // drawn each frame besides the ones that must be: the rest take turns
+  const BUDGET = 2;
+  const LIFT_CAP = 40;
+
+  // Fabric grain baked into a tile, one filter on the parts' common parent (host.html's fix for the A15).
+  let FAB = null;
+  function fabric() {
+    if (FAB !== null) return FAB; FAB = '';
+    try { const S = 128, cv = document.createElement('canvas'); cv.width = cv.height = S; const x = cv.getContext('2d'), im = x.createImageData(S, S);
+      let sd = 7; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+      const oct = n => { const g = []; for (let i = 0; i < n * n; i++) g.push(rnd()); const c = S / n, sm = t => t * t * (3 - 2 * t);
+        return (px, py) => { const gx = px / c, gy = py / c, x0 = Math.floor(gx), y0 = Math.floor(gy), fx = sm(gx - x0), fy = sm(gy - y0), a = (i, j) => g[((j % n + n) % n) * n + ((i % n + n) % n)];
+          const t = a(x0, y0) + (a(x0 + 1, y0) - a(x0, y0)) * fx, b = a(x0, y0 + 1) + (a(x0 + 1, y0 + 1) - a(x0, y0 + 1)) * fx; return t + (b - t) * fy; }; };
+      const o1 = oct(32), o2 = oct(64);
+      for (let y = 0; y < S; y++) for (let X = 0; X < S; X++) { const v = (o1(X, y) + o2(X, y)) / 2, k = (y * S + X) * 4; im.data[k + 3] = Math.round(0.2 * 255 * v); }
+      x.putImageData(im, 0, 0); const B = 1024, cb = document.createElement('canvas'); cb.width = cb.height = B; const xb = cb.getContext('2d'); xb.fillStyle = xb.createPattern(cv, 'repeat'); xb.fillRect(0, 0, B, B); FAB = cb.toDataURL('image/png'); } catch (e) { FAB = ''; }
+    return FAB;
+  }
+  const isGrain = f => f && f.querySelector('feTurbulence') && !f.querySelector('feDisplacementMap') && f.querySelector('feBlend[mode="multiply"]');
+  function bakeGrain(svg) {
+    if (!svg || !fabric()) return;
+    const els = [...svg.querySelectorAll('[filter]')].filter(e => { const id = (e.getAttribute('filter').match(/url\(#([^)]+)\)/) || [])[1]; return id && isGrain(svg.getElementById(id)); });
+    if (!els.length) return;
+    const id = els[0].getAttribute('filter').match(/url\(#([^)]+)\)/)[1], f = svg.getElementById(id), t = f.querySelector('feTurbulence');
+    const im = document.createElementNS('http://www.w3.org/2000/svg', 'feImage');
+    [['href', FAB], ['x', -30], ['y', -30], ['width', 160], ['height', 160], ['preserveAspectRatio', 'none']].forEach(([a, v]) => im.setAttribute(a, v));
+    const cm = t.nextElementSibling; t.replaceWith(im); if (cm && cm.tagName === 'feColorMatrix') cm.remove();
+    let top = els[0].parentNode; while (top !== svg && !els.every(e => top.contains(e))) top = top.parentNode;
+    if (top === svg) { els.forEach(e => e.setAttribute('filter', 'url(#' + id + ')')); return; }
+    els.forEach(e => e.removeAttribute('filter')); top.setAttribute('filter', 'url(#' + id + ')');
+  }
+
+  // --- the faces and loops the rig plays (the design's state format: keyframes per pose value over ms) -----------
+  function addStates() {
+    // the rig's particles drawn bigger: a squishy on a shelf is a fifth of the lobby's creature
+    Object.assign(window.RiveRig.PRE, {
+      sortSweat: { n: 1, sp: 0, vy: 6, g: 34, life: 950, r: [3, 3.4], col: ['#8fd3ff'], kind: 'drop' },
+      sortSpark: { n: 7, sp: 34, vy: -12, g: 0, life: 720, r: [3.6, 5.6], col: ['#fff3a0', '#ffffff', '#ffd23a', '#ffd1f5'], kind: 'star' },
+      sortHeart: { n: 1, sp: 9, vy: -16, g: -3, life: 1100, r: [1.8, 2.2], kind: 'heart' },
+      sortTear: { n: 1, sp: 0.6, vy: 3, g: 18, life: 1100, r: [2.2, 2.5], col: ['#8fd3ff'], kind: 'drop' },
+    });
+    window.RiveRig.add({
+      // picked up: thrilled to be carried (the stretch and the wiggle are the move's, on top)
+      sortHeld: { loop: 1000, blend: 90, k: { smile: [[0, 0.8]], open: [[0, 0.45]], hap: [[0, 0.35]], wide: [[0, 0.35]], blush: [[0, 0.4]], ...ER([[0, 12]]) } },
+      // put in its spot, and the win: a big happy face
+      sortJoy: { dur: 1500, blend: 80, k: { hap: [[0, 1], [1200, 1], [1500, 0, 'io']], smile: [[0, 1], [1200, 1], [1500, 0, 'io']], open: [[0, 0.6], [1100, 0.6], [1500, 0, 'io']], blush: [[0, 0.6], [1200, 0.6], [1500, 0, 'io']],
+        wag: [[0, 0], [200, 18, 'io'], [400, -18, 'io'], [600, 18, 'io'], [800, -12, 'io'], [1100, 0, 'io']] } },
+      // the wrong spot: a frown, ears back, eyes a little wet (the head shake is the move's)
+      sortNope: { dur: 1700, blend: 70, k: { frown: [[0, 1], [1400, 1], [1700, 0, 'io']], wide: [[0, 0.35], [1400, 0.35], [1700, 0, 'io']], teary: [[0, 0.35], [1400, 0.35], [1700, 0, 'io']], smile: [[0, 0]],
+        ...ER([[0, -16], [1400, -12], [1700, 0, 'io']]) } },
+      // an impostor found out: caught, eyes wide, mouth open, ears pinned back, blushing
+      sortCaught: { dur: 1400, blend: 50, k: { wide: [[0, 1]], open: [[0, 0.75]], frown: [[0, 0.55]], smile: [[0, 0]], blush: [[0, 0.8]], ...ER([[0, -18]]) } },
+      // mixed up inside: puzzled, looking one way and the other (once, now and then)
+      sortHuh: { dur: 1600, blend: 160, k: { frown: [[0, 0.3], [1300, 0.3], [1600, 0, 'io']], smile: [[0, 0]],
+        htilt: [[0, 0], [300, 7, 'io'], [700, 7], [1000, -7, 'io'], [1400, -7], [1600, 0, 'io']],
+        lx: [[0, 0], [300, -0.9, 'io'], [700, -0.9], [1000, 0.9, 'io'], [1400, 0.9], [1600, 0, 'io']] } },
+      // the level lost: a deflating sigh (head down, ears and arms hanging), then held sad (the page sways it)
+      sortDroop: { dur: 760, blend: 120, next: 'sortSad', k: {
+        sq: [[0, 0], [260, -0.12, 'o'], [520, 0.24, 'io'], [760, 0.16, 'io']], pitch: [[0, 0], [280, 0.15, 'o'], [600, -0.6, 'io']], ly: [[0, 0], [500, 0.6, 'io']],
+        frown: [[0, 0], [300, 1, 'io']], teary: [[0, 0], [600, 0.7, 'io']], smile: [[0, 0]], close: [[0, 0], [260, 0.5, 'io'], [520, 0.25, 'io']],
+        ...ER([[0, 0], [600, -18, 'io']]), ...AR([[0, 0], [600, -16, 'io']]) } },
+      sortSad: { loop: 2600, blend: 220, noBlink: true, k: {
+        sq: [[0, 0.16]], pitch: [[0, -0.6]], ly: [[0, 0.6]], frown: [[0, 1]], teary: [[0, 0.7]], smile: [[0, 0]], close: [[0, 0.25]],
+        ...ER([[0, -18]]), ...AR([[0, -16]]) } },
+    });
+  }
+
+  // --- the squishies ------------------------------------------------------------------------------------------------
+  // C: { id, key, P (its still's side, dp), x, y (the still's top-left), s (its scale, about the still's middle), o, z,
+  // el, sh (its floor shadow), inner, ctrl, I, bb (the body's box at rest, rig units), moves, held, vx/vy (drag speed),
+  // want/prio/lastR/settle (drawing turns) }
+  const C = new Map();
+  let castTag = null;
+
+  function mount(c) {
+    c.sh = document.createElement('div'); c.sh.className = 'sh'; c.sh.style.opacity = '0'; board.appendChild(c.sh);
+    c.el = document.createElement('div'); c.el.className = 'ch'; c.inner = document.createElement('div'); c.el.appendChild(c.inner); board.appendChild(c.el);
+    c.el.style.opacity = '0';
+    if (window.__rgI) delete window.__rgI[c.key];
+    c.ctrl = window.RiveRig.mount(c.inner, c.key, { fidgets: false });
+    c.I = c.ctrl._I;
+    c.t0 = performance.now();
+  }
+  function unmount(c) { if (c.ctrl) c.ctrl.destroy(); if (c.el) c.el.remove(); if (c.sh) c.sh.remove(); }
+  // the rig's body box at rest (its floor shadow and particles left out), in its 0-100 units
+  function measure(c) {
+    const svg = c.inner.querySelector('svg'); if (!svg) return null;
+    let b = null; try { b = svg.getBBox(); } catch (e) {}
+    if (!b || !(b.width > 1)) return null;
+    return { cx: b.x + b.width / 2, gy: b.y + b.height, bw: b.width, top: b.y };
+  }
+  function ready(c) {
+    if (c.bb) return true;
+    if (!c.I) return false;
+    if (c.I.generic && !c.I.ready) return false;
+    c.ctrl._pose('idle', 0);
+    const bb = measure(c); if (!bb) return false;
+    c.bb = bb; bakeGrain(c.inner.querySelector('svg'));
+    c.settle = performance.now() + 80; // drawn a couple of times at rest, then still
+    return true;
+  }
+
+  // Drawn where its still would be: the still's square (side P × s about its middle, plus the move's offsets), the
+  // rig's 0-100 box over the middle 88% of it. `b` is the body's own move (lift dp, squash, tilt°) about its feet.
+  function draw(c, b) {
+    if (!c.bb || !c.el) return;
+    const m = c.cur || {};
+    const side = c.P * c.s * (m.k == null ? 1 : m.k);
+    const k = (0.88 * side) / 100;
+    const x = c.x + c.P / 2 + (m.dx || 0) - side / 2 + 0.06 * side, y = c.y + c.P / 2 + (m.dy || 0) - side / 2 + 0.06 * side;
+    const fx = c.bb.cx, fy = c.bb.gy, sq = clamp(b.sq || 0, -0.45, 0.45);
+    const sx = 1 + sq * 0.42, sy = 1 - sq * 0.5;
+    let tf = 'translate(' + x.toFixed(2) + 'px,' + (y - (b.lift || 0)).toFixed(2) + 'px) scale(' + k.toFixed(4) + ')';
+    if (sq || b.tilt) tf += ' translate(' + fx.toFixed(2) + 'px,' + fy.toFixed(2) + 'px) rotate(' + (b.tilt || 0).toFixed(2) + 'deg) scale(' + sx.toFixed(3) + ',' + sy.toFixed(3) + ') translate(' + (-fx).toFixed(2) + 'px,' + (-fy).toFixed(2) + 'px)';
+    c.el.style.transform = tf;
+    const z = m.z != null ? m.z : c.z;
+    c.el.style.zIndex = String(z);
+    const o = c.o * (m.o == null ? 1 : m.o);
+    c.el.style.opacity = String(Math.round(o * 100) / 100);
+    c.kNow = k;
+    // its floor shadow, under its feet on the floor, smaller and fainter the higher it is (none while it's carried)
+    const up = (b.lift || 0) + (b.rigLift || 0) * k, f = 1 - clamp(up / (c.P * 0.9), 0, 0.55);
+    const w = c.bb.bw * k * 0.94 * f, h = w * 0.2;
+    const shx = x + fx * k - w / 2, shy = y + fy * k - h * 0.55;
+    c.sh.style.transform = 'translate(' + shx.toFixed(2) + 'px,' + shy.toFixed(2) + 'px) scale(' + (w / 100).toFixed(4) + ',' + (h / 100).toFixed(4) + ')';
+    c.sh.style.zIndex = String(z - 1);
+    c.sh.style.opacity = c.el.classList.contains('air') ? '0' : String(Math.round(o * f * 100) / 100);
+  }
+  // dp → rig units at its current size
+  const toU = (c, dp) => (c.kNow ? dp / c.kNow : 0);
+
+  // --- moves: each a function of time (ms) -------------------------------------------------------------------------
+  // A move: { kind, t0, dur, prio, run(c, t) → { dx, dy, k, o, z, ext, body }, done(), before }. `ext` is added to the
+  // rig's pose (drawn when it's its turn), `body` moves the whole drawing (every frame). `prio` 2: it draws every
+  // frame (one squishy on its own), 1: it takes turns (a crowd). Several run at once and add up. stop() kills moves: a
+  // killed one never calls done(), so a chain of moves (the wrong spot's shake, then the bounce back) ends with it.
+  function start(c, mv) { mv.t0 = performance.now() + (mv.delay || 0); if (mv.prio == null) mv.prio = 2; c.moves.push(mv); kick(); return mv; }
+  function stop(c, kinds) {
+    const hit = m => !kinds || kinds.includes(m.kind);
+    c.moves.forEach(m => { if (hit(m)) m.dead = true; });
+    if (c.iter) c.iter.forEach(m => { if (hit(m)) m.dead = true; });
+    c.moves = c.moves.filter(m => !m.dead);
+  }
+  const TRAVEL = ['go', 'tumble', 'correct', 'wrong', 'caught', 'win', 'land', 'huh', 'sad'];
+
+  // a landing: squashed flat, springing back up with a wobble (`crowd`: the page squashes it, not the rig)
+  function land(c, hard = 0.3, crowd = false) {
+    const D = 380;
+    const sq = [[0, 0], [40, hard, 'o'], [140, -hard * 0.45, 'io'], [240, hard * 0.2, 'io'], [320, -hard * 0.08, 'io'], [D, 0, 'io']];
+    const arms = [[0, 16], [60, -16, 'o'], [200, 8, 'io'], [D, 0, 'io']];
+    return start(c, { kind: 'land', dur: D, prio: crowd ? 1 : 2, run(c, t) {
+      const s = kv(sq, t), a = kv(arms, t);
+      return crowd ? { body: { sq: s }, ext: { armL: a, armR: a } } : { ext: { sq: s, armL: a, armR: a } };
+    } });
+  }
+  // travel to `to` ({ x, y, s, z }) in an arc `h` dp high, stretched tall in the air and leaning the way it goes
+  // (`crowd`: one of many at once)
+  function travel(c, to, o, then) {
+    const from = { x: c.x, y: c.y, s: c.s };
+    const dist = Math.hypot(to.x - from.x, to.y - from.y);
+    const D = o.ms || clamp(200 + dist * 0.6, 220, 520);
+    const H = o.h != null ? o.h : Math.min(c.P * 0.7, 8 + dist * 0.25);
+    const side = Math.sign(to.x - from.x) * Math.min(1, Math.abs(to.x - from.x) / (c.P * 1.5));
+    const ease = o.back ? outBack : outQ, crowd = !!o.crowd;
+    return start(c, { kind: o.kind || 'go', delay: o.delay, dur: D, prio: crowd ? 1 : 2, run(c, t) {
+      const u = clamp(t / D, 0, 1), e = ease(u), air = parab(u);
+      c.x = lerp(from.x, to.x, e); c.y = lerp(from.y, to.y, e); c.s = lerp(from.s, to.s == null ? from.s : to.s, outQ(u));
+      const arms = { armL: 34 * air, armR: 34 * air, lean: side * 2.5 * air };
+      return crowd
+        ? { z: 40, body: { lift: H * air, sq: -0.24 * air, tilt: side * 10 * air }, ext: arms }
+        : { z: 40, ext: Object.assign({ lift: toU(c, H * air), sq: -0.24 * air, tilt: side * 10 * air }, arms) };
+    }, done() { c.x = to.x; c.y = to.y; if (to.s != null) c.s = to.s; c.z = to.z != null ? to.z : 10; if (o.land !== false) land(c, o.land || 0.3, crowd); if (then) then(); } });
+  }
+  function burst(c, kind, where, n) {
+    if (!c.I || !c.bb) return;
+    const b = c.bb, W = c.I.W || {};
+    const p = where === 'feet' ? [b.cx, b.gy - 2] : where === 'head' ? [b.cx, b.top + 4] : where === 'temple' ? [b.cx + b.bw * 0.34, b.top + b.bw * 0.2] : W[where] || [50, 50];
+    try { const e = window.RiveRig.emit; if (e) e(c.I, kind, p, n); } catch (x) {}
+  }
+  // (a particle burst wants the rig drawn every frame while it flies: `glow` keeps it on)
+  const glow = (c, ms) => start(c, { kind: 'glow', dur: ms, run() { return {}; } });
+  const later = (ms, fn) => setTimeout(fn, ms);
+  // out of the hand: the held wiggle fades out (over its own 160 ms)
+  const letGo = c => { if (c.held && !c.held.rel) c.held.rel = performance.now(); c.held = null; c.el.classList.remove('air'); };
+  const play = (c, name) => { if (c.ctrl && c.I && c.I.cur.name !== name) c.ctrl.play(name); };
+
+  // --- the door clip: the win's doors shut over the shelves ----------------------------------------------------------
+  // The doors are the app's (Container.js Door): each turns about its hinge edge with a perspective about its middle.
+  // The page clips the squishies to the part of the shelves no door covers yet, on the same clock and curve.
+  let shut = null;
+  function edgeOf(d, th, p) {
+    const f = p / (p - d.w * Math.sin(th)), r = (d.w * Math.cos(th) - d.w / 2) * f;
+    return d.hinge === 'left' ? d.x0 + d.w / 2 + r : d.x0 + d.w / 2 - r;
+  }
+  function doorClip(now) {
+    if (!shut) return false;
+    const t = now - shut.t0;
+    if (t < 0) return true;
+    const u = clamp(t / shut.ms, 0, 1), open = 1 - u * u; // RN's Easing.in(Easing.quad), 1 → 0
+    const th = (shut.deg * open * Math.PI) / 180;
+    let L = -1e4, R = 1e4;
+    for (const d of shut.list) {
+      const e = edgeOf(d, th, shut.persp);
+      // (a door turned past square covers none of the shelves; the clip runs `lead` px ahead of the door's edge, as
+      // the page's clock can trail the app's by a frame)
+      if (d.hinge === 'left') { if (e > d.x0) L = Math.max(L, e + shut.lead); }
+      else if (e < d.x0 + d.w) R = Math.min(R, e - shut.lead);
+    }
+    const W = window.innerWidth;
+    board.style.clipPath = L >= R ? 'inset(0 0 0 100%)' : 'inset(0px ' + Math.max(0, W - R).toFixed(1) + 'px 0px ' + Math.max(0, L).toFixed(1) + 'px)';
+    return u < 1;
+  }
+
+  // --- what the app asks for -----------------------------------------------------------------------------------------
+  const api = {
+    // the squishies of this deal: [{ id, key, P }], all hidden until they come out; `tag` names the cast
+    cast(list, tag) {
+      castTag = tag; api._sent = null; shut = null; board.style.clipPath = '';
+      const ids = new Set(list.map(c => c.id));
+      for (const [id, c] of C) if (!ids.has(id)) { unmount(c); C.delete(id); }
+      for (const it of list) {
+        let c = C.get(it.id);
+        if (c && c.key !== it.key) { unmount(c); C.delete(it.id); c = null; }
+        if (!c) { c = { id: it.id, key: it.key, moves: [], vx: 0, vy: 0, lastR: 0, settle: 0 }; C.set(it.id, c); mount(c); }
+        Object.assign(c, { P: it.P, x: -1000, y: -1000, s: 1, o: 0, z: 10, held: null, cur: null, sway: null });
+        c.moves = []; c.el.classList.remove('air');
+        if (c.bb) { play(c, 'idle'); c.settle = performance.now() + 300; }
+      }
+      kick();
+    },
+    // straight to a spot ({ x, y, s, o, z }), nothing moving
+    place(id, p) {
+      const c = C.get(id); if (!c) return;
+      stop(c); c.held = null; c.sway = null; c.el.classList.remove('air');
+      Object.assign(c, { x: p.x, y: p.y, s: p.s == null ? 1 : p.s, z: p.z == null ? 10 : p.z }); if (p.o != null) c.o = p.o;
+      play(c, 'idle'); c.settle = performance.now() + 300; kick();
+    },
+    hideAll() { for (const c of C.values()) { stop(c); c.held = null; c.sway = null; c.o = 0; } shut = null; board.style.clipPath = ''; kick(); },
+    // out of the fridge into the tray: shown at `from` after `delay`, up and over, bouncing down into its spot,
+    // arms flailing (`peak`: the top of the arc). `inside`: a mixed-up one, left on the shelves (fades in there).
+    tumble(id, from, to, delay, peak, inside) {
+      const c = C.get(id); if (!c) return;
+      stop(c); c.held = null; c.sway = null; play(c, 'idle');
+      if (inside) {
+        Object.assign(c, { x: to.x, y: to.y, s: to.s, z: 10, o: 1 });
+        start(c, { kind: 'tumble', dur: 140, prio: 1, run(c, t) { return { o: t / 140 }; } });
+        return;
+      }
+      Object.assign(c, { x: from.x, y: from.y, s: from.s, z: 30, o: 1 });
+      const D = 560, up = 230;
+      start(c, { kind: 'tumble', delay, dur: D, prio: 1, before: { o: 0 }, run(c, t) {
+        const u = t / D;
+        c.x = lerp(from.x, to.x, outQ(u));
+        c.y = t < up ? lerp(from.y, peak, outQ(t / up)) : lerp(peak, to.y, bounce((t - up) / (D - up)));
+        c.s = lerp(from.s, to.s, u);
+        const fall = t < up ? 1 : clamp(1 - (t - up) / 160, 0, 1);
+        return { o: clamp(t / 90, 0, 1), body: { sq: -0.2 * fall, tilt: 9 * fall * Math.sin(t / 45) }, ext: { armL: 44 * fall, armR: 44 * fall, wide: fall, open: 0.5 * fall } };
+      }, done() { c.x = to.x; c.y = to.y; c.s = to.s; c.z = 10; land(c, 0.26, true); } });
+    },
+    // picked up: `mode` 'drag' (off the floor, under the finger) or 'tap' (chosen, lifted where it is); null lets go.
+    // Stretched tall, thrilled, a wiggle with its feet kicking, and swinging the way it's carried.
+    hold(id, mode) {
+      const c = C.get(id); if (!c) return;
+      // (let go of one already taken out of the hand, by a landing or a head shake: nothing to do, its face is theirs)
+      if (!mode) { if (!c.held) return; c.held.rel = performance.now(); c.held = null; c.el.classList.remove('air'); play(c, 'idle'); kick(); return; }
+      stop(c, TRAVEL.concat('held')); c.sway = null;
+      c.vx = 0; c.vy = 0;
+      if (mode === 'drag') c.el.classList.add('air'); else c.el.classList.remove('air');
+      play(c, 'sortHeld');
+      const h = { mode, rel: 0 };
+      c.held = h;
+      start(c, { kind: 'held', dur: 1e9, prio: 3, run(c, t) {
+        const now = performance.now();
+        const env = h.rel ? 1 - clamp((now - h.rel) / 160, 0, 1) : clamp(t / 110, 0, 1);
+        if (h.rel && env <= 0) { this.fin = true; return {}; }
+        const drag = h.mode === 'drag', w = t / 1000;
+        // the pop up into the stretch, then a wiggle (a shimmy side to side, the feet kicking)
+        const pop = kv([[0, 0], [90, -0.36, 'o'], [220, -0.18, 'io'], [340, -0.24, 'io']], Math.min(t, 340));
+        const wig = Math.sin(w * Math.PI * 2 * (drag ? 3.2 : 2.2));
+        const sway = clamp(-c.vx * 0.022, -16, 16); // swinging behind the way it's carried
+        const lift = drag ? 5 : 6 + 2 * Math.sin(w * Math.PI * 2 * 1.2);
+        const kick = drag ? Math.sin(w * Math.PI * 2 * 3.2) : 0;
+        return { z: 60, ext: {
+          lift: toU(c, lift * env),
+          sq: (pop + (drag ? 0.04 : 0.03) * Math.sin(w * Math.PI * 2 * 4.4)) * env,
+          tilt: ((drag ? 7 : 4) * wig + sway) * env, lean: ((drag ? 1.6 : 1) * wig + sway * 0.12) * env,
+          x: clamp(-c.vx * 0.004, -3, 3) * env,
+          armL: (38 + 10 * wig - sway * 0.8) * env, armR: (38 - 10 * wig - sway * 0.8) * env,
+          earL: -sway * 0.7 * env, earR: -sway * 0.7 * env,
+          footL: 2.4 * Math.max(0, kick) * env, footR: 2.4 * Math.max(0, -kick) * env,
+        } };
+      } });
+    },
+    // where the held one is while dragged (its still's top-left)
+    drag(id, x, y) {
+      const c = C.get(id); if (!c) return;
+      const now = performance.now(), dt = Math.max(8, now - (c.dragAt || now - 16));
+      const vx = ((x - c.x) / dt) * 1000, vy = ((y - c.y) / dt) * 1000;
+      c.vx = lerp(c.vx, clamp(vx, -2500, 2500), 0.35); c.vy = lerp(c.vy, clamp(vy, -2500, 2500), 0.35);
+      c.dragAt = now; c.x = x; c.y = y; c.s = 1; kick();
+    },
+    // a plain move (back to the tray, a bump out of a spot, home at the end): an arc and a landing
+    // (o: { ms, h, delay, crowd, land })
+    go(id, to, o) { const c = C.get(id); if (!c) return; stop(c, TRAVEL); letGo(c); c.sway = null; travel(c, to, o || {}); },
+    // the right spot: into it (from the finger, or a hop from the tray), squashed flat as it lands, then a happy hop
+    // with its arms up and sparkles
+    correct(id, to) {
+      const c = C.get(id); if (!c) return;
+      stop(c, TRAVEL); letGo(c); c.sway = null;
+      const dist = Math.hypot(to.x - c.x, to.y - c.y);
+      travel(c, to, { kind: 'correct', ms: clamp(170 + dist * 0.5, 200, 440), h: Math.min(c.P * 0.6, dist * 0.3), back: true, land: false }, () => {
+        play(c, 'sortJoy');
+        const sq = [[0, 0], [50, 0.34, 'o'], [150, 0.3, 'io'], [200, -0.3, 'o'], [380, -0.12, 'io'], [520, 0.3, 'o'], [620, -0.1, 'io'], [720, 0.05, 'io'], [800, 0, 'io']];
+        const lift = [[0, 0], [170, 0], [360, c.P * 0.34, 'o'], [520, 0, 'i'], [800, 0]];
+        const arms = [[0, -12], [150, -14], [220, 50, 'o'], [480, 44], [560, -10, 'o'], [800, 0, 'io']];
+        start(c, { kind: 'correct', dur: 800, run(c, t) {
+          const L = kv(lift, t);
+          return { ext: { sq: kv(sq, t), lift: toU(c, L), armL: kv(arms, t), armR: kv(arms, t), close: kv([[0, 0], [40, 0.7, 'o'], [160, 0.7], [220, 0, 'o']], t), tilt: kv([[0, 0], [260, 6, 'io'], [420, -6, 'io'], [560, 0, 'io']], t) } };
+        } });
+        glow(c, 1600);
+        later(240, () => burst(c, 'sortSpark', 'head', 7));
+        later(520, () => burst(c, 'sortSpark', 'feet', 5));
+        later(300, () => burst(c, 'sortHeart', 'head', 1));
+      });
+    },
+    // the wrong spot: onto it, a shake of the head (no!) with a frown and a sweat drop, then a bounce back to the
+    // tray (`back`), sweating
+    wrong(id, at, back) {
+      const c = C.get(id); if (!c) return;
+      stop(c, TRAVEL); letGo(c); c.sway = null;
+      const shake = () => {
+        play(c, 'sortNope');
+        burst(c, 'sortSweat', 'temple');
+        later(380, () => burst(c, 'sortSweat', 'temple'));
+        const no = [[0, 0], [70, 0.95, 'io'], [170, -0.95, 'io'], [270, 0.85, 'io'], [370, -0.65, 'io'], [460, 0.3, 'io'], [540, 0, 'io']];
+        start(c, { kind: 'wrong', dur: 560, run(c, t) {
+          const n = kv(no, t);
+          return { ext: { turn: n, lx: n, htilt: n * 5, sq: kv([[0, 0.2], [80, 0.05, 'io'], [560, 0.04]], t), ...AR(kv([[0, -6], [120, -14, 'io'], [560, -12]], t)) } };
+        }, done() {
+          // boing: back to the tray in one big bounce
+          travel(c, back, { kind: 'wrong', ms: 460, h: c.P * 0.75, land: 0.34 }, () => { burst(c, 'sortSweat', 'temple'); glow(c, 1000); });
+        } });
+      };
+      glow(c, 2400);
+      if (Math.hypot(at.x - c.x, at.y - c.y) > 3) travel(c, at, { kind: 'wrong', ms: 200, h: 10, land: false }, shake);
+      else shake();
+    },
+    // an impostor found out: a guilty jump on the spot (caught, hands up, sweating), then it spins away off the
+    // side (`dir` -1 left, 1 right), smaller and smaller
+    caught(id, dir, delay) {
+      const c = C.get(id); if (!c) return;
+      stop(c, TRAVEL); letGo(c); c.sway = null;
+      later(delay || 0, () => { play(c, 'sortCaught'); burst(c, 'sortSweat', 'temple'); later(160, () => burst(c, 'sortSweat', 'temple')); });
+      const J = 420, D = 1150, from = { x: c.x, y: c.y };
+      const W = window.innerWidth, off = dir < 0 ? -c.P * 1.6 - from.x : W - from.x + c.P * 0.6;
+      // the jump: a startled squash, up with its hands up, settling a little at the top as it starts to spin
+      const up = [[0, 0], [70, 0], [J * 0.55, c.P * 0.5, 'o'], [J, c.P * 0.38, 'io'], [D, c.P * 0.38]];
+      start(c, { kind: 'caught', delay, dur: D, run(c, t) {
+        const lift = kv(up, t);
+        const away = t < J * 0.75 ? 0 : SM((t - J * 0.75) / (D - J * 0.75));
+        c.x = from.x + off * away; c.y = from.y - c.P * 0.9 * Math.sin(away * Math.PI * 0.6);
+        return { z: 70, k: lerp(1, 0.45, away), o: away < 0.7 ? 1 : 1 - (away - 0.7) / 0.3, ext: {
+          lift: toU(c, lift), sq: kv([[0, 0], [60, 0.3, 'o'], [140, -0.34, 'o'], [J, -0.2, 'io'], [D, -0.1]], t),
+          ...AR(kv([[0, 0], [100, 52, 'o'], [J, 46], [D, 40]], t)), wide: 1,
+          spin: kv([[0, 0], [J * 0.8, 0], [D, dir * 900, 'i']], t), tilt: kv([[0, 0], [J * 0.8, 0], [D, dir * 40, 'i']], t),
+        } };
+      }, done() { c.o = 0; } });
+    },
+    // mixed up inside: the puzzled look round, once
+    huh(id) {
+      const c = C.get(id); if (!c || c.held || c.moves.length) return;
+      play(c, 'sortHuh');
+      start(c, { kind: 'huh', dur: 1700, run() { return {}; } });
+    },
+    // the win: a bounce wave along the shelves (`list` [{ id, delay }]) while the doors swing shut over them
+    // (`doors` { delay, ms, deg, persp, list: [{ x0, w, hinge }] }: Container.js's doors in the play area)
+    win(list, doors) {
+      const now = performance.now();
+      for (const it0 of list) {
+        const c = C.get(it0.id); if (!c) continue;
+        letGo(c); c.sway = null;
+        // (the last one in is still hopping for joy in its spot: it joins the wave once it's down)
+        const rem = c.moves.filter(m => !m.dead && m.dur < 1e8 && m.kind !== 'glow').reduce((a, m) => Math.max(a, m.t0 + m.dur - now), 0);
+        const it = { id: it0.id, delay: Math.max(it0.delay, rem) };
+        later(it.delay, () => play(c, 'sortJoy'));
+        const D = 760, h = c.P * 0.42;
+        const sq = [[0, 0], [70, 0.26, 'o'], [150, -0.32, 'o'], [330, -0.12, 'io'], [420, 0.3, 'o'], [480, -0.1, 'io'], [600, 0.18, 'o'], [680, -0.05, 'io'], [D, 0, 'io']];
+        const lift = [[0, 0], [80, 0], [250, h, 'o'], [420, 0, 'i'], [480, 0], [540, h * 0.3, 'o'], [600, 0, 'i'], [D, 0]];
+        const wave = [[0, 0], [90, 54, 'o'], [200, 40, 'io'], [300, 56, 'io'], [420, 30, 'io'], [D, 0, 'io']];
+        start(c, { kind: 'win', delay: it.delay, dur: D, prio: 1, run(c, t) {
+          const wv = kv(wave, t);
+          return { body: { sq: kv(sq, t), lift: kv(lift, t), tilt: kv([[0, 0], [150, -5, 'io'], [330, 5, 'io'], [480, 0, 'io']], t) }, ext: { armL: wv, armR: wv * 0.85 } };
+        } });
+      }
+      if (doors) { shut = { t0: performance.now() + (doors.delay || 0), ms: doors.ms, deg: doors.deg, persp: doors.persp, list: doors.list, lead: doors.lead || 3 }; kick(); }
+    },
+    // the doors open again (a new deal)
+    unshut() { shut = null; board.style.clipPath = ''; },
+    // the level lost: everyone droops (`list` [{ id, delay }]) with a deflating sigh, then sways slowly, a tear or two
+    lose(list) {
+      for (const it of list) {
+        const c = C.get(it.id); if (!c) continue;
+        letGo(c);
+        later(it.delay, () => {
+          stop(c, ['huh']); play(c, 'sortDroop');
+          start(c, { kind: 'sad', dur: 1100, prio: 1, run() { return {}; } });
+          c.sway = { t0: performance.now() + 700, ph: Math.random() * Math.PI * 2 };
+          later(800, () => { burst(c, 'sortTear', 'eyeL'); glow(c, 1200); });
+        });
+      }
+    },
+    pause(on) { userPaused = !!on; sync(); },
+  };
+
+  // --- the frame loop: moves → place and pose, then whose turn it is to be drawn -------------------------------------
+  let running = false, userPaused = false, sleeping = false;
+  const sync = () => window.__rigPause(userPaused || sleeping);
+  function frame() {
+    const now = performance.now();
+    let busy = doorClip(now), allReady = true;
+    const want = [];
+    for (const c of C.values()) {
+      if (!ready(c)) {
+        // a rig that never draws (its art didn't load): the app keeps the stills
+        if (now - c.t0 > 9000 && castTag != null && api._sent !== castTag) { api._sent = castTag; post({ type: 'cast', tag: castTag, ok: false, key: c.key }); }
+        allReady = false; busy = busy || now - c.t0 < 9000; continue;
+      }
+      const ext = {}, body = {}; const cur = { dx: 0, dy: 0 };
+      let prio = 0;
+      // (a move that ends can start the next one: those land in the fresh list)
+      const list = c.moves; c.moves = []; c.iter = list;
+      const kept = [];
+      for (const m of list) {
+        if (m.dead) continue;
+        const t = now - m.t0;
+        if (t < 0) { if (m.before) Object.assign(cur, m.before); kept.push(m); continue; }
+        if (t >= m.dur) { m.run(c, m.dur); if (!m.dead && m.done) m.done(); continue; }
+        const r = m.run(c, t) || {};
+        if (m.fin) continue;
+        prio = Math.max(prio, m.prio);
+        if (r.dx) cur.dx += r.dx; if (r.dy) cur.dy += r.dy;
+        if (r.k != null) cur.k = (cur.k == null ? 1 : cur.k) * r.k;
+        if (r.o != null) cur.o = (cur.o == null ? 1 : cur.o) * r.o;
+        if (r.z != null) cur.z = Math.max(cur.z || 0, r.z);
+        if (r.ext) for (const k in r.ext) ext[k] = (ext[k] || 0) + r.ext[k];
+        if (r.body) for (const k in r.body) body[k] = (body[k] || 0) + r.body[k];
+        kept.push(m);
+      }
+      c.iter = null;
+      c.moves = kept.filter(m => !m.dead).concat(c.moves);
+      // the drag's swing settles once the finger stops
+      c.vx *= 0.86; c.vy *= 0.86;
+      // the sad sway (after the droop), moved by the page alone: the rig stays as it was last drawn
+      if (c.sway && now > c.sway.t0) { const w = (now - c.sway.t0) / 1000; body.tilt = (body.tilt || 0) + 3 * Math.sin(w * 2.4 + c.sway.ph); body.sq = (body.sq || 0) + 0.02 * Math.sin(w * 4.8 + c.sway.ph); busy = true; }
+      if (ext.sq != null) ext.sq = clamp(ext.sq, -0.45, 0.45);
+      // the rig lifts itself only so far (its own floor shadow's size goes below nothing past ~70 of its units): the
+      // rest of a big jump moves the whole drawing; the page's shadow goes by the two together
+      if (ext.lift > LIFT_CAP) { body.lift = (body.lift || 0) + (ext.lift - LIFT_CAP) * (c.kNow || 0); ext.lift = LIFT_CAP; }
+      body.rigLift = ext.lift || 0;
+      c.cur = cur;
+      if (c.ctrl) c.ctrl.ext(ext);
+      draw(c, body);
+      // drawn while it moves, and a moment after (settling, eyes open: not frozen mid-blink)
+      if (c.moves.length) { c.settle = now + 450; busy = true; }
+      c.prio = prio;
+      if (c.moves.length || now < c.settle) {
+        want.push(c);
+        if (c.I) { c.I.blinkAt = Math.max(c.I.blinkAt, now + 700); if (!c.moves.length) { c.I.gl = [0, 0]; c.I.glAt = now + 4000; } }
+        busy = true;
+      }
+    }
+    // whose turn: the held one and anyone on their own always, the crowd in turns (longest waiting first)
+    const must = want.filter(c => c.prio >= 2);
+    const rest = want.filter(c => c.prio < 2).sort((a, b) => a.lastR - b.lastR).slice(0, BUDGET);
+    const on = new Set(must.concat(rest));
+    for (const c of C.values()) {
+      if (!c.bb || !c.I || !c.I.generic) continue;
+      // (one still settling with no turn yet is drawn at its next)
+      c.I.ready = on.has(c);
+      if (c.I.ready) c.lastR = now;
+    }
+    if (allReady && castTag != null && C.size && !api._sent) { api._sent = castTag; post({ type: 'cast', tag: castTag, ok: true }); }
+    if (busy) requestAnimationFrame(frame);
+    else { running = false; sleeping = true; sync(); }
+  }
+  function kick() { if (sleeping) { sleeping = false; sync(); } if (!running) { running = true; requestAnimationFrame(frame); } }
+
+  window.sortStage = api;
+  api._C = C; // (for the browser tests: the squishies)
+  api._state = () => ({ sleeping, userPaused, drawn: [...C.values()].filter(c => c.I && c.I.ready).map(c => c.id) });
+  const boot = () => {
+    const R = window.RiveRig;
+    if (R && R.REST && R.DEFS && R.DEFS.prickle && R.movesV && window.RiveGeneric) { kv = R.kv; addStates(); post({ type: 'ready' }); }
+    else setTimeout(boot, 25);
+  };
+  boot();
+  window.onerror = (m) => post({ type: 'error', message: String(m) });
+})();
+</script>
+</body>
+</html>
