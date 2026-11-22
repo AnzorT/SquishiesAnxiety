@@ -62,11 +62,26 @@ Feel and speed are checked on the phone.
      `clamp`, `r2` rounding, `toD` path building), and the WebView pays it today too, plus all its drawing. One
      creature on the menu fits a frame. A house full of them will need the hottest render functions ported to C#,
      checked against the JS by the same parity test.
+   - **Drawing it** (`unity/Assets/Scripts/Vector/`, plain C#, no Unity dependency): each frame's SVG is parsed and
+     compiled into shapes and layers:
+     - shapes: polygons plus a fill rule, to be filled on the GPU by stencil-then-cover, so there's no triangulation
+     - strokes: joins and caps as pieces, unioned in the stencil
+     - paint: gradients (objectBoundingBox or user space, focal radials, `hsl()` stops)
+     - layers: clip paths, masks, group opacity and filters (the SVG spec's own `feTurbulence` grain and fuzz,
+       colour matrix, displacement, blur)
+   - ✅ **Checked against Chrome:** `tools/unity/vector-test` draws the compiled frames with a reference rasteriser
+     that fills shapes the way the GPU stencil will, and compares them with Chrome's pictures of the same frames
+     (`tools/unity/rig/dump-frames.mjs`). Over 30 frames of Mittens, Biscuit, Lumi, Zappi, Ember and Bubbly at 475 px:
+     - on average 299 pixels of 225,625 differ visibly (0.13 %), the worst frame 750, all of it anti-aliasing and
+       grain sampling
+     - mean difference 0.5-2.2 levels of 255
+     - compiling a frame takes 4.1 ms on this machine (it was 52 ms when shapes were triangulated)
    - Next:
-     - A Unity renderer for the tree: paths flattened and triangulated, gradients in shaders, clip paths in the
-       stencil, masks, the grain multiply, blur. Checked against Chrome's rasterisation of the same frames.
-     - The JS engine in Unity: PuerTS with V8 on Android. It has a JIT, like the WebView's own engine.
-     - Profile on the phone, then port hot spots to C#.
+     - the GPU side: one RenderTexture per creature with MSAA and a stencil; fan and cover draws in a CommandBuffer;
+       a ramp texture per gradient; layers as temporary targets; the grain and fuzz noise computed once into textures
+     - the JS engine in Unity: PuerTS with V8 on Android (it has a JIT, like the WebView's own engine). Its package
+       comes from openupm, which CI can reach but this session can't
+     - Hand the tree to C# without re-parsing text, then profile on the phone and port hot spots to C#.
 3. **App shell + Firebase**: sign-in, profile, roster and config, so coins, gems, level, name and creature are real.
    The backend doesn't change.
 4. **The menu's pages** (`webgame/app/menu.js`): PLAY → Game Park carousel with the game clips, CHARACTERS, the Level Pass.

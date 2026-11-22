@@ -47,6 +47,9 @@ shapes it produces each frame. (Drawing them in Unity and running a JS engine in
   hop, squish, wave and happy, and compares the whole SVG tree every few frames. Text differences are drawn both ways
   and compared by pixels. `--log-bbox` lists every measurement the rig takes on both sides.
 - `node tools/unity/rig/bbox-fuzz.mjs` checks the stand-in's `getBBox` against Chrome's, to the bit, on random paths.
+- `node tools/unity/rig/dump-frames.mjs <dir> mittens lumi ...` writes creature frames (SVG) with Chrome's picture of
+  each; `dotnet run -c Release --project tools/unity/vector-test -- <dir>` compiles them with the Unity app's vector
+  core (`Assets/Scripts/Vector`), draws them with a reference rasteriser and reports the pixels that differ from Chrome.
 
 ## CI: screenshots and an APK on every push (`.github/workflows/unity.yml`)
 
