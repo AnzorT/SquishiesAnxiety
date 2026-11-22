@@ -1,0 +1,27 @@
+{
+    "name": "PlushCrush.Editor.Urp",
+    "rootNamespace": "PlushCrush.EditorTools",
+    "references": [
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "PLUSHCRUSH_URP"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.render-pipelines.universal",
+            "expression": "1.0.0",
+            "define": "PLUSHCRUSH_URP"
+        }
+    ],
+    "noEngineReferences": false
+}

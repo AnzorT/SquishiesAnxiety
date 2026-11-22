@@ -1,0 +1,36 @@
+# Unity: generated on open, never committed
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+*.csproj
+*.sln
+*.suo
+*.user
+*.pidb
+*.booproj
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.apk
+*.aab
+*.unitypackage
+crashlytics-buildid.txt
+.vs/
+.idea/
+.vscode/
+# Vendored SDKs: imported by hand, regenerable (Firebase alone is ~280MB, one file over GitHub's 100MB limit)
+/Assets/Firebase/
+/Assets/ExternalDependencyManager/
+/Assets/Plugins/iOS/Firebase/
+/Assets/Plugins/Android/Firebase/
+/Assets/GoogleMobileAds/
+# Art exported from the game by tools/unity-port/export-art.mjs: big, and rebuilt exactly by re-running it
+/Assets/_Project/Art/Generated/
+/Assets/_Project/Art/Generated.meta
