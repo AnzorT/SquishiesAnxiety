@@ -10,7 +10,7 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="../../../unity/Assets/Scripts/Vector/**/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Vector/**/*.cs" Exclude="../../../unity/Assets/Scripts/Vector/Gpu/**" />
     <Compile Include="*.cs" />
   </ItemGroup>
 </Project>

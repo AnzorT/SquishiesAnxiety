@@ -33,6 +33,7 @@ namespace SquishSquad.Menu
             public float[] originUnits;  // the viewBox point at the picture's top-left pixel corner
             public float unitsPerPx;     // viewBox units per picture pixel
             public SceneState[] states;
+            public SceneState[] parks;   // the Game Park's SVG (gzip) per state: drawn once by the vector renderer
         }
 
         [Serializable]
@@ -130,16 +131,21 @@ namespace SquishSquad.Menu
             return null;
         }
 
+        public SceneState ParkFor(string season, int level) => Nearest(scene.parks, season, level);
+
         // the house picture for a level and season; the nearest exported level when that one wasn't exported
-        public SceneState SceneFor(string season, int level)
+        public SceneState SceneFor(string season, int level) => Nearest(scene.states, season, level);
+
+        static SceneState Nearest(SceneState[] all, string season, int level)
         {
+            if (all == null || all.Length == 0) return null;
             SceneState best = null;
-            foreach (var s in scene.states)
+            foreach (var s in all)
             {
                 if (s.season != season) continue;
                 if (best == null || Math.Abs(s.level - level) < Math.Abs(best.level - level)) best = s;
             }
-            return best ?? (scene.states.Length > 0 ? scene.states[0] : null);
+            return best ?? all[0];
         }
     }
 }

@@ -17,9 +17,9 @@ static class ReferenceRaster
 
     public static Func<string, (int w, int h, float[] rgba)> LoadImage;   // straight RGBA 0..1, for feImage
 
-    public static Buffer Render(SvgScene scene, int size, int ss)
+    public static Buffer Render(SvgScene scene, int w, int h, int ss)
     {
-        var buf = new Buffer(size * ss, size * ss);
+        var buf = new Buffer(w * ss, h * ss);
         DrawChildren(scene, scene.Root.Children, buf, ss);
         return buf;
     }
@@ -154,9 +154,31 @@ static class ReferenceRaster
 
     public static readonly HashSet<string> Unsupported = new HashSet<string>();
 
+    // the filter region in samples (filters only work there; outside it the result is transparent)
+    static int RX0, RY0, RX1, RY1;
+
+    static void SetRegion(LayerNode l, SvgNode f, int ss, int w, int h)
+    {
+        RX0 = 0; RY0 = 0; RX1 = w - 1; RY1 = h - 1;
+        var b = l.UserBox;
+        if (b.IsEmpty) return;
+        Box r;
+        if (f["filterUnits"] == "userSpaceOnUse") r = new Box { X0 = f.Num("x", -1e6f), Y0 = f.Num("y", -1e6f), X1 = f.Num("x", -1e6f) + f.Num("width", 2e6f), Y1 = f.Num("y", -1e6f) + f.Num("height", 2e6f) };
+        else
+        {
+            double fx = Colors.Fraction(f["x"], -0.1), fy = Colors.Fraction(f["y"], -0.1), fw = Colors.Fraction(f["width"], 1.2), fh = Colors.Fraction(f["height"], 1.2);
+            r = new Box { X0 = b.X0 + fx * b.W, Y0 = b.Y0 + fy * b.H, X1 = b.X0 + (fx + fw) * b.W, Y1 = b.Y0 + (fy + fh) * b.H };
+        }
+        var px = Box.Empty;
+        foreach (var v in new[] { new Vec2(r.X0, r.Y0), new Vec2(r.X1, r.Y0), new Vec2(r.X0, r.Y1), new Vec2(r.X1, r.Y1) }) px.Add(l.UserToPx.Apply(v));
+        RX0 = Math.Max(0, (int)Math.Floor(px.X0 * ss) - 1); RY0 = Math.Max(0, (int)Math.Floor(px.Y0 * ss) - 1);
+        RX1 = Math.Min(w - 1, (int)Math.Ceiling(px.X1 * ss) + 1); RY1 = Math.Min(h - 1, (int)Math.Ceiling(px.Y1 * ss) + 1);
+    }
+
     static Buffer Filter(LayerNode l, Buffer src, int ss)
     {
         var f = l.Filter;
+        SetRegion(l, f, ss, src.W, src.H);
         bool linear = (f["color-interpolation-filters"] ?? "linearRGB") != "sRGB";
         int n = src.W * src.H;
         // SourceGraphic into the filter's colour space (premultiplied)
@@ -181,8 +203,8 @@ static class ReferenceRaster
                     var img = href != null && LoadImage != null ? LoadImage(href) : (0, 0, null);
                     if (img.rgba == null) break;
                     double x = p.Num("x"), y = p.Num("y"), w = p.Num("width", 1), h = p.Num("height", 1);
-                    for (int py = 0; py < src.H; py++)
-                        for (int px = 0; px < src.W; px++)
+                    for (int py = RY0; py <= RY1; py++)
+                        for (int px = RX0; px <= RX1; px++)
                         {
                             var u = inv.Apply(new Vec2((px + 0.5) / ss, (py + 0.5) / ss));
                             double fx = (u.X - x) / w * img.w - 0.5, fy = (u.Y - y) / h * img.h - 0.5;
@@ -234,8 +256,8 @@ static class ReferenceRaster
                     bool fractal = p["type"] == "fractalNoise";
                     var T = Turbulence.For(seed);
                     var pt = new double[2];
-                    for (int py = 0; py < src.H; py++)
-                        for (int px = 0; px < src.W; px++)
+                    for (int py = RY0; py <= RY1; py++)
+                        for (int px = RX0; px <= RX1; px++)
                         {
                             var u = inv.Apply(new Vec2((px + 0.5) / ss, (py + 0.5) / ss));
                             pt[0] = u.X; pt[1] = u.Y;
@@ -291,8 +313,8 @@ static class ReferenceRaster
                     double scale = p.Num("scale") * l.UserToPx.Scale * ss;
                     int xc = "RGBA".IndexOf((p["xChannelSelector"] ?? "A")[0]), yc = "RGBA".IndexOf((p["yChannelSelector"] ?? "A")[0]);
                     if (xc < 0) xc = 3; if (yc < 0) yc = 3;
-                    for (int py = 0; py < src.H; py++)
-                        for (int px = 0; px < src.W; px++)
+                    for (int py = RY0; py <= RY1; py++)
+                        for (int px = RX0; px <= RX1; px++)
                         {
                             int j = (py * src.W + px) * 4; float ba = B[j + 3];
                             double dx = ((xc == 3 ? ba : ba > 0 ? B[j + xc] / ba : 0) - 0.5) * scale, dy = ((yc == 3 ? ba : ba > 0 ? B[j + yc] / ba : 0) - 0.5) * scale;
@@ -318,8 +340,8 @@ static class ReferenceRaster
                     var A = In(p["in"]);
                     var d = l.UserToPx.ApplyVector(new Vec2(p.Num("dx"), p.Num("dy")));
                     int ox = (int)Math.Round(d.X * ss), oy = (int)Math.Round(d.Y * ss);
-                    for (int py = 0; py < src.H; py++)
-                        for (int px = 0; px < src.W; px++)
+                    for (int py = RY0; py <= RY1; py++)
+                        for (int px = RX0; px <= RX1; px++)
                         {
                             int sx = px - ox, sy = py - oy;
                             if (sx < 0 || sy < 0 || sx >= src.W || sy >= src.H) continue;
@@ -394,8 +416,8 @@ static class ReferenceRaster
         var k = new double[rad * 2 + 1]; double sum = 0;
         for (int i = -rad; i <= rad; i++) { k[i + rad] = Math.Exp(-i * i / (2 * sigma * sigma)); sum += k[i + rad]; }
         for (int i = 0; i < k.Length; i++) k[i] /= sum;
-        for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
+        for (int y = RY0; y <= RY1; y++)
+            for (int x = RX0; x <= RX1; x++)
             {
                 double r = 0, g = 0, b = 0, al = 0;
                 for (int t = -rad; t <= rad; t++)
@@ -411,12 +433,12 @@ static class ReferenceRaster
     }
 
     // SS x SS box filter down to the output, over white, 8-bit
-    public static byte[] Resolve(Buffer b, int ss, int size)
+    public static byte[] Resolve(Buffer b, int ss, int W, int H)
     {
-        var o = new byte[size * size * 4];
+        var o = new byte[W * H * 4];
         float k = 1f / (ss * ss);
-        for (int y = 0; y < size; y++)
-            for (int x = 0; x < size; x++)
+        for (int y = 0; y < H; y++)
+            for (int x = 0; x < W; x++)
             {
                 float r = 0, g = 0, bl = 0, a = 0;
                 for (int sy = 0; sy < ss; sy++)
@@ -426,7 +448,7 @@ static class ReferenceRaster
                         r += b.P[i]; g += b.P[i + 1]; bl += b.P[i + 2]; a += b.P[i + 3];
                     }
                 r *= k; g *= k; bl *= k; a *= k;
-                int j = (y * size + x) * 4;
+                int j = (y * W + x) * 4;
                 o[j] = (byte)Math.Round(Math.Min(1, r + (1 - a)) * 255); o[j + 1] = (byte)Math.Round(Math.Min(1, g + (1 - a)) * 255); o[j + 2] = (byte)Math.Round(Math.Min(1, bl + (1 - a)) * 255); o[j + 3] = 255;
             }
         return o;

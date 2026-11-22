@@ -8,7 +8,11 @@
 // move with it, and the HUD keeps its size in dp and holds to the nearest screen edge.
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using SquishSquad.Creatures;
+using SquishSquad.Vector;
+using SquishSquad.Vector.Gpu;
 using UnityEngine;
 
 namespace SquishSquad.Menu
@@ -19,6 +23,7 @@ namespace SquishSquad.Menu
 
         readonly MenuLayout _layout;
         readonly Transform _root;
+        Transform _world;   // what the camera slides (webgame/app/menu.js .mm-world): the house, the park, the creature, its name
         readonly List<Texture2D> _textures = new List<Texture2D>();   // loaded from Resources (unloaded)
         readonly List<UnityEngine.Object> _made = new List<UnityEngine.Object>(); // made here (destroyed)
         readonly List<PieceView> _pieces = new List<PieceView>();
@@ -46,6 +51,8 @@ namespace SquishSquad.Menu
             _layout = layout;
             _root = new GameObject("Menu").transform;
             _root.SetParent(parent, false);
+            _world = new GameObject("world").transform;
+            _world.SetParent(_root, false);
             Level = level;
             Season = season;
             Build(width, height);
@@ -72,7 +79,7 @@ namespace SquishSquad.Menu
                 var tex = LoadJpeg(st.res);
                 float s = _k * _layout.scene.unitsPerPx;
                 var pos = new Vector2(_ox + _layout.scene.originUnits[0] * _k, _oy + _layout.scene.originUnits[1] * _k);
-                Picture("scene", _root, tex, Snap(pos, s), s, SceneOrder);
+                Picture("scene", _world, tex, Snap(pos, s), s, SceneOrder);
             }
 
             // 2. the creature and its name plate (they stand in the scene), 3. the weather, 4. the HUD
@@ -89,7 +96,9 @@ namespace SquishSquad.Menu
                 var rig = piece != null ? RecordedRig.Load(_creatureKey) : null;
                 if (rig != null)
                 {
-                    Creature = CreatureView.Create(_root, rig, piece.Hit, piece.Order);
+                    Creature = CreatureView.Create(_world, rig, piece.Hit, piece.Order);
+                    _creatureHome = Creature.transform.localPosition;
+                    _idle = rig;
                     piece.UseLive();
                 }
             }
@@ -149,6 +158,122 @@ namespace SquishSquad.Menu
                 bird.T.localPosition = World(new Vector2(_ox + x * _k, _oy + y * _k));
             }
             foreach (var p in _pieces) p.Tick(ms);
+            TickTrip(ms);
+            TickClip();
+        }
+
+        // ---- PLAY: the walk to the Game Park and back (webgame/app/menu.js enterPark / leavePark) ---------------------
+        public enum Place { Home, ToPark, Park, ToHome }
+        public Place Where { get; private set; } = Place.Home;
+        float _tripStart = -1, _fadeFrom = 1, _fadeTo = 1, _fadeStart;
+        Vector3 _creatureHome;
+        RecordedRig _idle, _clip;
+        RenderTexture _parkTex;
+        const float ParkPad = 160;   // menu.js PAD: where the creature stands in the park (the house's pad is at 500)
+        const float FadeMs = 300;
+
+        static float EIO(float t) => t < 0.5f ? 2 * t * t : 1 - Mathf.Pow(-2 * t + 2, 2) / 2;
+        static float EIOC(float t) => t < 0.5f ? 4 * t * t * t : 1 - Mathf.Pow(-2 * t + 2, 3) / 2;
+        static float EOUT(float t) => 1 - (1 - t) * (1 - t);
+
+        public bool EnterPark(float nowMs)
+        {
+            if (Where != Place.Home) return false;
+            EnsurePark();
+            Where = Place.ToPark;
+            _tripStart = nowMs;
+            Fade(0, nowMs);
+            Clip("park-enter");
+            return true;
+        }
+
+        public bool LeavePark(float nowMs)
+        {
+            if (Where != Place.Park) return false;
+            Where = Place.ToHome;
+            _tripStart = nowMs;
+            Clip("park-leave");
+            return true;
+        }
+
+        void Clip(string name)
+        {
+            if (Creature == null || _creatureKey == null) return;
+            _clip = RecordedRig.Load(_creatureKey + "-" + name);
+            if (_clip == null) return;
+            _clip.Loop = false;
+            Creature.SetFrames(_clip);
+        }
+
+        void Fade(float to, float nowMs) { _fadeFrom = CurrentFade(nowMs); _fadeTo = to; _fadeStart = nowMs; }
+        float CurrentFade(float ms) => Mathf.Lerp(_fadeFrom, _fadeTo, Mathf.Clamp01((ms - _fadeStart) / FadeMs));
+
+        void TickTrip(float ms)
+        {
+            float a = CurrentFade(ms);
+            foreach (var p in _pieces) if (p.Data.id != "creature") p.SetAlpha(a);
+            if (Where == Place.Home || Where == Place.Park) return;
+            bool enter = Where == Place.ToPark;
+            float turn = enter ? 380 : 340, walk = enter ? 2300 : 2100, t = ms - _tripStart;
+            float X0 = _ox + 500 * _k, X1 = _ox + ParkPad * _k;
+            float wt = Mathf.Clamp01((t - turn) / walk), cam, scr;
+            if (enter) { scr = X0 + (X1 - X0) * EOUT(wt); cam = _w * EIOC(Mathf.Clamp01((wt - 0.06f) / 0.94f)); }
+            else { scr = X1 + (X0 - X1) * EIO(wt); cam = _w * (1 - EIOC(Mathf.Clamp01(wt / 0.94f))); }
+            _world.localPosition = new Vector3(cam, 0, 0);
+            if (Creature != null) Creature.transform.localPosition = _creatureHome + new Vector3(scr - X0 - cam, 0, 0);
+            if (t < 2 * turn + walk) return;
+            // arrived
+            if (enter) Where = Place.Park;
+            else { Where = Place.Home; _world.localPosition = Vector3.zero; if (Creature != null) Creature.transform.localPosition = _creatureHome; Fade(1, ms); }
+            // the clip ends in 'happy'; back to the idle loop once it has played
+        }
+
+        void TickClip()
+        {
+            if (Creature == null || _clip == null || _idle == null) return;
+            if (Creature.Seconds < _clip.Duration + 1.2f) return;
+            _clip = null;
+            Creature.SetFrames(_idle);
+        }
+
+        // the park's SVG, drawn once by the vector renderer into a texture placed one screen to the left of the house
+        void EnsurePark()
+        {
+            if (_parkTex != null) return;
+            var st = _layout.ParkFor(Season, Level);
+            if (st == null) return;
+            var asset = Resources.Load<TextAsset>(MenuLayout.Root + st.res);
+            if (asset == null) return;
+            string svg;
+            using (var gz = new GZipStream(new MemoryStream(asset.bytes), CompressionMode.Decompress))
+            using (var r = new StreamReader(gz)) svg = r.ReadToEnd();
+            Resources.UnloadAsset(asset);
+            // the drawing reaches past its viewBox (-60..1060, -20..480): room around the screen-sized box for that
+            int padX = Mathf.CeilToInt(Mathf.Max(0, -(_ox - 60 * _k))), padY = Mathf.CeilToInt(20 * _k);
+            int tw = Mathf.CeilToInt(_w) + 2 * padX, th = Mathf.CeilToInt(_h) + 2 * padY;
+            var msaa = new RenderTexture(tw, th, 24, RenderTextureFormat.ARGB32) { antiAliasing = 8 };
+            msaa.Create();
+            using (var vr = new VectorRenderer())
+                vr.Render(SvgScene.Compile(SvgMarkup.Parse(svg), _w, _h, Affine.Translate(padX, padY)), msaa);
+            _parkTex = new RenderTexture(tw, th, 0, RenderTextureFormat.ARGB32) { name = "park" };
+            _parkTex.Create();
+            Graphics.Blit(msaa, _parkTex);
+            msaa.Release(); Kill(msaa);
+            _made.Add(_parkTex);
+            var go = new GameObject("park");
+            go.transform.SetParent(_world, false);
+            go.transform.localPosition = World(new Vector2(-_w - padX, -padY));
+            var mesh = new Mesh { name = "park quad" };
+            mesh.SetVertices(new[] { new Vector3(0, 0, 0), new Vector3(tw, 0, 0), new Vector3(tw, -th, 0), new Vector3(0, -th, 0) });
+            mesh.SetUVs(0, new[] { new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0) });
+            mesh.SetTriangles(new[] { 0, 1, 2, 0, 2, 3 }, 0);
+            _made.Add(mesh);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = go.AddComponent<MeshRenderer>();
+            var mat = new Material(Resources.Load<Shader>("VectorShaders/VectorShow")) { mainTexture = _parkTex };
+            _made.Add(mat);
+            mr.sharedMaterial = mat;
+            mr.sortingOrder = SceneOrder + 1;   // menu.js puts the park layer just after the house picture
         }
 
         public PieceView HitTest(Vector2 pagePx)
@@ -254,6 +379,14 @@ namespace SquishSquad.Menu
             // a live creature draws itself (CreatureView): no still, no placeholder breath
             public void UseLive() { _live = true; _art.enabled = false; }
 
+            // the HUD's fade (menu.js x.fade): every picture of the piece at this opacity
+            public void SetAlpha(float a)
+            {
+                var c = new Color(1, 1, 1, a);
+                if (_art != null) _art.color = c;
+                if (_fl != null) _fl.color = c;
+            }
+
             public PieceView(MenuView v, MenuLayout.Piece p, int order)
             {
                 Data = p;
@@ -266,7 +399,7 @@ namespace SquishSquad.Menu
                 var pivotPx = new Vector2(Hit.x + Hit.width * pv[0], Hit.y + Hit.height * pv[1]);
 
                 _pivot = new GameObject(p.id).transform;
-                _pivot.SetParent(v._root, false);
+                _pivot.SetParent(p.world ? v._world : v._root, false);
                 _pivotPos = World(pivotPx);
                 _pivot.localPosition = _pivotPos;
 

@@ -32,16 +32,20 @@ static class Program
             var name = Path.GetFileNameWithoutExtension(svgPath);
             var refPath = Path.Combine(dir, name + ".png");
             if (!File.Exists(refPath)) continue;
-            var (size, refH, reference) = Png.Read(refPath);
+            var (W, H, reference) = Png.Read(refPath);
+            // <name>.box: "w h x y" = the <svg> is a w x h box at (x, y) of the picture (default: the whole picture)
+            double bw = W, bh = H, bx = 0, by = 0;
+            var boxPath = Path.Combine(dir, name + ".box");
+            if (File.Exists(boxPath)) { var v = File.ReadAllText(boxPath).Split(new[] { ' ', '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(double.Parse).ToArray(); bw = v[0]; bh = v[1]; bx = v[2]; by = v[3]; }
             var markup = File.ReadAllText(svgPath);
             var sw = Stopwatch.StartNew();
-            var scene = SvgScene.Compile(SvgMarkup.Parse(markup), size, size);
+            var scene = SvgScene.Compile(SvgMarkup.Parse(markup), bw, bh, Affine.Translate(bx, by));
             sw.Stop(); compileTicks += sw.ElapsedTicks; frames++;
-            var buf = ReferenceRaster.Render(scene, size, ss);
-            var ours = ReferenceRaster.Resolve(buf, ss, size);
+            var buf = ReferenceRaster.Render(scene, W, H, ss);
+            var ours = ReferenceRaster.Resolve(buf, ss, W, H);
             int visible = 0, slight = 0; double sum = 0;
-            var diff = new byte[size * size * 4];
-            for (int i = 0; i < size * size * 4; i += 4)
+            var diff = new byte[W * H * 4];
+            for (int i = 0; i < W * H * 4; i += 4)
             {
                 int d = Math.Max(Math.Abs(reference[i] - ours[i]), Math.Max(Math.Abs(reference[i + 1] - ours[i + 1]), Math.Abs(reference[i + 2] - ours[i + 2])));
                 sum += d;
@@ -51,10 +55,10 @@ static class Program
                 if (d > 24) { diff[i] = 255; diff[i + 1] = 0; diff[i + 2] = 60; } else if (d > 8) { diff[i] = 255; diff[i + 1] = 170; diff[i + 2] = 0; } else { diff[i] = diff[i + 1] = diff[i + 2] = gray; }
                 diff[i + 3] = 255;
             }
-            Png.Write(Path.Combine(outDir, name + "-ours.png"), size, size, ours);
-            Png.Write(Path.Combine(outDir, name + "-diff.png"), size, size, diff);
+            Png.Write(Path.Combine(outDir, name + "-ours.png"), W, H, ours);
+            Png.Write(Path.Combine(outDir, name + "-diff.png"), W, H, diff);
             worst = Math.Max(worst, visible);
-            Console.WriteLine($"{name}: {visible} px differ visibly (>24), {slight} slightly (>8), mean {sum / (size * size):0.00}; {CountNodes(scene.Root)} meshes");
+            Console.WriteLine($"{name}: {visible} px differ visibly (>24), {slight} slightly (>8), of {W * H}, mean {sum / (W * H):0.00}; {CountNodes(scene.Root)} meshes");
         }
         Console.WriteLine($"compile (parse + flatten + stroke outlines): {compileTicks * 1000.0 / Stopwatch.Frequency / Math.Max(1, frames):0.0} ms per frame on average");
         if (ReferenceRaster.Unsupported.Count > 0) Console.WriteLine("filter primitives not drawn yet: " + string.Join(", ", ReferenceRaster.Unsupported));

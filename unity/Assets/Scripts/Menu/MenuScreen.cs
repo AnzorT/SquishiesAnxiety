@@ -105,6 +105,13 @@ namespace SquishSquad.Menu
             var page = new Vector2(pos.x, _h - pos.y);   // the page's pixels: y down
             float dpPx = _h / _layout.reference.dp[1];
 
+            // in the Game Park (its games carousel isn't ported yet): back or a tap walks home
+            if (_view.Where == MenuView.Place.Park && ((down && !InPanel(page)) || Input.GetKeyDown(KeyCode.Escape)))
+            {
+                _view.LeavePark(NowMs);
+                return;
+            }
+            if (_view.Where != MenuView.Place.Home) return;
             if (down && !InPanel(page))
             {
                 _down = _view.HitTest(page);
@@ -120,8 +127,11 @@ namespace SquishSquad.Menu
             }
         }
 
+        float NowMs => (Time.unscaledTime - _t0) * 1000f;
+
         void OnTap(string tap)
         {
+            if (tap == "play" && _view.EnterPark(NowMs)) return;
             Tapped?.Invoke(tap);
             if (Tapped == null) ShowToast(tap.ToUpperInvariant() + " isn't in the Unity version yet");
         }

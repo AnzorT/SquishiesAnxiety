@@ -60,6 +60,10 @@ namespace SquishSquad.Creatures
 
         public void Play(string move) => _rig?.Play(move);
 
+        /// <summary>Switches to other frames (a recorded clip), from their start.</summary>
+        public void SetFrames(IRigFrames rig) { _rig = rig; _last = null; _t0 = Time.realtimeSinceStartup; }
+        public float Seconds => Time.realtimeSinceStartup - _t0;
+
         /// <summary>Draws the frame for time t now (CI screenshots call this outside play mode).</summary>
         public void RenderAt(float t)
         {

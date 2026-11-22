@@ -24,8 +24,11 @@ namespace SquishSquad.Creatures
     {
         readonly string[] _frames;
         readonly float _fps;
+        /// <summary>Loop (an idle) or hold the last frame (a clip such as the walk to the Game Park).</summary>
+        public bool Loop = true;
 
         RecordedRig(string[] frames, float fps) { _frames = frames; _fps = fps; }
+        public float Duration => _frames.Length / _fps;
 
         /// <summary>Resources/Creatures/&lt;key&gt;.bytes, or null when the creature hasn't been recorded.</summary>
         public static RecordedRig Load(string key)
@@ -45,7 +48,11 @@ namespace SquishSquad.Creatures
 
         public int Count => _frames.Length;
         public float Fps => _fps;
-        public string FrameAt(float seconds) => _frames[Mathf.Abs((int)(seconds * _fps)) % _frames.Length];
+        public string FrameAt(float seconds)
+        {
+            int i = Mathf.Max(0, (int)(seconds * _fps));
+            return _frames[Loop ? i % _frames.Length : Mathf.Min(i, _frames.Length - 1)];
+        }
         public void Play(string move) { }
     }
 }

@@ -15,6 +15,7 @@
 //
 // Every cut is aligned to the page's own device-pixel grid, so at 2340 x 1080 Unity draws the same pixels.
 import fs from 'node:fs';
+import zlib from 'node:zlib';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -275,6 +276,20 @@ const browser = await chromium.launch({ args: ['--allow-file-access-from-files']
 const { page, errs } = await openMenu(browser);
 const live = await page.evaluate(() => { const st = window.SquishMenu._x && window.SquishMenu._x.st; return st ? { level: st.L, season: st.season } : null; });
 const scene = await sceneShots(browser, page);
+// the Game Park (left of the house, where PLAY walks to): not a picture but its SVG, which Unity draws once when it's
+// needed (its vector renderer; see UNITY_MIGRATION_PLAN.md). Same viewBox and fit as the house, one screen to the left.
+const parks = [];
+for (const season of SEASONS) for (const level of LEVELS) {
+  const svg = await page.evaluate(({ level, season }) => {
+    const st = window.MainMenuScene.state({ level, season });
+    return window.MainMenuScene.svg(Object.assign({}, st, { park: true })).replace(/<animate(?:Transform|Motion)?\b[^>]*\/>/g, '');
+  }, { level, season });
+  const rel = `park/${season}-${level}.svg`;
+  fs.mkdirSync(path.join(OUT, 'park'), { recursive: true });
+  fs.writeFileSync(path.join(OUT, rel + '.bytes'), zlib.gzipSync(svg, { level: 9 }));
+  parks.push({ season, level, res: rel });
+}
+scene.parks = parks;
 const weather = await weatherShots(browser, page);
 // the reference, at the moment the pieces are cut (the creature's rig doesn't move between the two: the clock is still)
 fs.writeFileSync(path.join(REF_DIR, 'menu-a15.png'), await page.screenshot());
@@ -291,6 +306,7 @@ const layout = {
 write('menu.json', JSON.stringify(layout, null, 1));
 fs.writeFileSync(path.join(REPO, 'unity/Reference/menu-a15.json'), JSON.stringify(live));
 const files = fs.readdirSync(OUT, { recursive: true }).filter(f => /\.(png|jpg|bytes)$/.test(f));
+console.log(`park drawings: ${parks.length}, ${(parks.reduce((n, p) => n + fs.statSync(path.join(OUT, p.res + '.bytes')).size, 0) / 1048576).toFixed(1)} MB`);
 const bytes = files.reduce((n, f) => n + fs.statSync(path.join(OUT, f)).size, 0);
 console.log(`menu: ${files.length} images, ${(bytes / 1048576).toFixed(1)} MB -> ${path.relative(REPO, OUT)}; live state ${JSON.stringify(live)}`);
 for (const e of [...new Set(errs)].slice(0, 8)) console.log('  page error:', e.slice(0, 200));

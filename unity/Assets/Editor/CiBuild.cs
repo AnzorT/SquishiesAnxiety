@@ -35,6 +35,7 @@ namespace SquishSquad.EditorTools
                 // menu-a15-live.png and the others show it drawn live from its recorded rig frames (frame 0)
                 foreach (var (name, w, h) in Screens) Shot(layout, outDir, name, w, h, name != "menu-a15");
                 Shot(layout, outDir, "menu-a15-live", 2340, 1080, true);
+                Shot(layout, outDir, "menu-a15-park", 2340, 1080, true, 3200f);   // after PLAY's walk to the Game Park
                 Exit(0);
             }
             catch (Exception e)
@@ -44,14 +45,19 @@ namespace SquishSquad.EditorTools
             }
         }
 
-        static void Shot(MenuLayout layout, string outDir, string name, int w, int h, bool live)
+        static void Shot(MenuLayout layout, string outDir, string name, int w, int h, bool live, float parkMs = -1)
         {
             var root = new GameObject("Capture").transform;
             var cam = MenuScreen.CreateCamera(root);
             MenuScreen.FitCamera(cam, w, h);
             var view = new MenuView(layout, root, w, h, layout.reference.level, layout.reference.season, "mittens", live);
             view.Tick(0f);
-            if (view.Creature != null) view.Creature.RenderAt(0f);
+            if (parkMs >= 0)
+            {
+                view.EnterPark(0f);
+                view.Tick(parkMs);
+            }
+            if (view.Creature != null) view.Creature.RenderAt(parkMs >= 0 ? parkMs / 1000f : 0f);
             var png = Render(cam, w, h);
             File.WriteAllBytes(Path.Combine(outDir, name + ".png"), png);
             Debug.Log($"[CiBuild] {name}.png {w}x{h}{(view.Creature != null ? " (live creature)" : "")}");

@@ -92,6 +92,18 @@ Feel and speed are checked on the phone.
 3. **App shell + Firebase**: sign-in, profile, roster and config, so coins, gems, level, name and creature are real.
    The backend doesn't change.
 4. **The menu's pages** (`webgame/app/menu.js`): PLAY → Game Park carousel with the game clips, CHARACTERS, the Level Pass.
+   - ✅ **PLAY's walk** (`MenuView` EnterPark / LeavePark):
+     - the same timings and easing curves as `enterPark` / `leavePark`: turn 380 ms, walk 2300 ms (`EOUT` for the
+       creature, `EIOC` for the camera), turn back, then 'happy'
+     - a world layer the camera slides; the HUD fades
+     - the creature plays its walk clip, recorded from the rig with HouseWalk's gait (`record.mjs --clip park-enter`
+       / `park-leave`)
+   - **The Game Park picture is drawn by the vector renderer**, not shipped as a picture: its SVG per level and season
+     (`Resources/Menu/park/`, 90 states, 1.3 MB), drawn once when PLAY is tapped. Checked against Chrome on a full
+     scene (house, 2630 x 1174): 0.42 % of pixels differ visibly, all on thin outline edges (anti-aliasing).
+     Once the GPU renderer has passed CI, the house pictures can go the same way: 51 MB of JPEG becomes ~1.5 MB.
+   - Not yet: the games carousel in the park (a tap or back walks home for now), the house's vignette (baked into
+     its picture; the app hides it in the park).
 5. **The house** (Squad House v6, 94 scripts): each furniture piece and room exported as pictures by the same method,
    with the room and placement logic ported.
 6. **Shop, chests, chest smash.**

@@ -482,7 +482,459 @@
    -60.092592592592624,
    -20.01851851851852
   ],
-  "unitsPerPx": 0.425925925925926
+  "unitsPerPx": 0.425925925925926,
+  "parks": [
+   {
+    "season": "rainy",
+    "level": 1,
+    "res": "park/rainy-1.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 2,
+    "res": "park/rainy-2.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 3,
+    "res": "park/rainy-3.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 4,
+    "res": "park/rainy-4.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 5,
+    "res": "park/rainy-5.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 6,
+    "res": "park/rainy-6.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 7,
+    "res": "park/rainy-7.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 8,
+    "res": "park/rainy-8.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 9,
+    "res": "park/rainy-9.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 10,
+    "res": "park/rainy-10.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 11,
+    "res": "park/rainy-11.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 12,
+    "res": "park/rainy-12.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 13,
+    "res": "park/rainy-13.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 14,
+    "res": "park/rainy-14.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 15,
+    "res": "park/rainy-15.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 16,
+    "res": "park/rainy-16.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 17,
+    "res": "park/rainy-17.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 18,
+    "res": "park/rainy-18.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 19,
+    "res": "park/rainy-19.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 20,
+    "res": "park/rainy-20.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 21,
+    "res": "park/rainy-21.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 22,
+    "res": "park/rainy-22.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 23,
+    "res": "park/rainy-23.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 24,
+    "res": "park/rainy-24.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 25,
+    "res": "park/rainy-25.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 26,
+    "res": "park/rainy-26.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 27,
+    "res": "park/rainy-27.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 28,
+    "res": "park/rainy-28.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 29,
+    "res": "park/rainy-29.svg"
+   },
+   {
+    "season": "rainy",
+    "level": 30,
+    "res": "park/rainy-30.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 1,
+    "res": "park/sunny-1.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 2,
+    "res": "park/sunny-2.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 3,
+    "res": "park/sunny-3.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 4,
+    "res": "park/sunny-4.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 5,
+    "res": "park/sunny-5.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 6,
+    "res": "park/sunny-6.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 7,
+    "res": "park/sunny-7.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 8,
+    "res": "park/sunny-8.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 9,
+    "res": "park/sunny-9.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 10,
+    "res": "park/sunny-10.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 11,
+    "res": "park/sunny-11.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 12,
+    "res": "park/sunny-12.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 13,
+    "res": "park/sunny-13.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 14,
+    "res": "park/sunny-14.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 15,
+    "res": "park/sunny-15.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 16,
+    "res": "park/sunny-16.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 17,
+    "res": "park/sunny-17.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 18,
+    "res": "park/sunny-18.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 19,
+    "res": "park/sunny-19.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 20,
+    "res": "park/sunny-20.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 21,
+    "res": "park/sunny-21.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 22,
+    "res": "park/sunny-22.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 23,
+    "res": "park/sunny-23.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 24,
+    "res": "park/sunny-24.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 25,
+    "res": "park/sunny-25.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 26,
+    "res": "park/sunny-26.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 27,
+    "res": "park/sunny-27.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 28,
+    "res": "park/sunny-28.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 29,
+    "res": "park/sunny-29.svg"
+   },
+   {
+    "season": "sunny",
+    "level": 30,
+    "res": "park/sunny-30.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 1,
+    "res": "park/snowy-1.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 2,
+    "res": "park/snowy-2.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 3,
+    "res": "park/snowy-3.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 4,
+    "res": "park/snowy-4.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 5,
+    "res": "park/snowy-5.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 6,
+    "res": "park/snowy-6.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 7,
+    "res": "park/snowy-7.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 8,
+    "res": "park/snowy-8.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 9,
+    "res": "park/snowy-9.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 10,
+    "res": "park/snowy-10.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 11,
+    "res": "park/snowy-11.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 12,
+    "res": "park/snowy-12.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 13,
+    "res": "park/snowy-13.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 14,
+    "res": "park/snowy-14.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 15,
+    "res": "park/snowy-15.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 16,
+    "res": "park/snowy-16.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 17,
+    "res": "park/snowy-17.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 18,
+    "res": "park/snowy-18.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 19,
+    "res": "park/snowy-19.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 20,
+    "res": "park/snowy-20.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 21,
+    "res": "park/snowy-21.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 22,
+    "res": "park/snowy-22.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 23,
+    "res": "park/snowy-23.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 24,
+    "res": "park/snowy-24.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 25,
+    "res": "park/snowy-25.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 26,
+    "res": "park/snowy-26.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 27,
+    "res": "park/snowy-27.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 28,
+    "res": "park/snowy-28.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 29,
+    "res": "park/snowy-29.svg"
+   },
+   {
+    "season": "snowy",
+    "level": 30,
+    "res": "park/snowy-30.svg"
+   }
+  ]
  },
  "weather": [
   {

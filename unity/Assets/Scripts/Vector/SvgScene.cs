@@ -69,10 +69,13 @@ namespace SquishSquad.Vector
             if (string.IsNullOrEmpty(vb)) return Affine.Identity;
             int i = 0; SvgNum.TryRead(vb, ref i, out var x); SvgNum.TryRead(vb, ref i, out var y); SvgNum.TryRead(vb, ref i, out var vw); SvgNum.TryRead(vb, ref i, out var vh);
             if (vw <= 0 || vh <= 0) return Affine.Identity;
-            double s = Math.Min(w / vw, h / vh);
-            var par = svg["preserveAspectRatio"] ?? "";
+            // preserveAspectRatio: "none", or an alignment (xMin|xMid|xMax + YMin|YMid|YMax) and meet (fit) / slice (fill)
+            var par = (svg["preserveAspectRatio"] ?? "xMidYMid meet").Trim();
             if (par.StartsWith("none")) return Affine.ScaleBy(w / vw, h / vh) * Affine.Translate(-x, -y);
-            double tx = (w - vw * s) / 2, ty = (h - vh * s) / 2;
+            bool slice = par.Contains("slice");
+            double s = slice ? Math.Max(w / vw, h / vh) : Math.Min(w / vw, h / vh);
+            double ax = par.Contains("xMin") ? 0 : par.Contains("xMax") ? 1 : 0.5, ay = par.Contains("YMin") ? 0 : par.Contains("YMax") ? 1 : 0.5;
+            double tx = (w - vw * s) * ax, ty = (h - vh * s) * ay;
             return Affine.Translate(tx, ty) * Affine.ScaleBy(s, s) * Affine.Translate(-x, -y);
         }
 
