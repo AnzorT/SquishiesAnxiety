@@ -14,7 +14,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+#if UNITY_5_3_OR_NEWER
 using UnityEngine;
+#endif
 
 namespace SquishSquad.Backend
 {
@@ -125,6 +127,15 @@ namespace SquishSquad.Backend
 
     public static class Billing
     {
+        static void Warn(string m)
+        {
+#if UNITY_5_3_OR_NEWER
+            Debug.LogWarning(m);
+#else
+            Console.WriteLine(m);
+#endif
+        }
+
         static readonly Dictionary<string, string> Prices = new Dictionary<string, string>();   // product id → "$9.99"
         public static event Action PricesChanged;
         static FirebaseClient _fb;
@@ -167,7 +178,7 @@ namespace SquishSquad.Backend
         {
             if (_plugin != null) return _plugin;
             try { _plugin = new AndroidJavaObject("com.plushcrush.unity.billing.PlayBilling", Activity(), new Listener()); }
-            catch (Exception e) { Debug.LogWarning("[Billing] " + e.Message); }
+            catch (Exception e) { Warn("[Billing] " + e.Message); }
             return _plugin;
         }
 
@@ -212,7 +223,7 @@ namespace SquishSquad.Backend
                 Products.SetPricing(await fb.Data.ReadConfig("pricing"));
                 Products.SetOffers(await fb.Data.ReadConfig("offers"));
             }
-            catch (Exception e) { Debug.LogWarning("[Billing] config: " + e.Message); }
+            catch (Exception e) { Warn("[Billing] config: " + e.Message); }
             await LoadProducts();
             await SyncPurchases();
         }
@@ -229,7 +240,7 @@ namespace SquishSquad.Backend
                     if (p.TryGetValue("id", out var id) && p.TryGetValue("price", out var price) && price is string label && label.Length > 0) Prices[(string)id] = label;
                 PricesChanged?.Invoke();
                 var missing = ids.Where(id => !list.OfType<IDictionary<string, object>>().Any(p => (p.TryGetValue("id", out var x) ? x as string : null) == id)).ToList();
-                if (missing.Count > 0) Debug.LogWarning("[Billing] Not in Google Play (create them, or fix config/pricing): " + string.Join(", ", missing));
+                if (missing.Count > 0) Warn("[Billing] Not in Google Play (create them, or fix config/pricing): " + string.Join(", ", missing));
                 return list.Count > 0;
             }
             catch (Exception) { return false; }
@@ -259,7 +270,7 @@ namespace SquishSquad.Backend
         {
             foreach (var p in (Json.Parse(json) as IList<object> ?? new List<object>()).OfType<IDictionary<string, object>>())
                 if (p.TryGetValue("state", out var s) && (s as string) == "purchased")
-                    _ = Deliver(p).ContinueWith(t => { if (t.IsFaulted) Debug.LogWarning("[Billing] purchase sync failed: " + t.Exception?.GetBaseException().Message); });
+                    _ = Deliver(p).ContinueWith(t => { if (t.IsFaulted) Warn("[Billing] purchase sync failed: " + t.Exception?.GetBaseException().Message); });
         }
 
         /// <summary>Buys `key` (a PRODUCTS key, or 'offer:&lt;id&gt;') for the signed-in player: the server's grant, or
