@@ -1,0 +1,15 @@
+/home/user/SquishiesAnxiety/tools/unity/anim/bin/Release/net8.0/AnimDiff
+/home/user/SquishiesAnxiety/tools/unity/anim/bin/Release/net8.0/AnimDiff.deps.json
+/home/user/SquishiesAnxiety/tools/unity/anim/bin/Release/net8.0/AnimDiff.runtimeconfig.json
+/home/user/SquishiesAnxiety/tools/unity/anim/bin/Release/net8.0/AnimDiff.dll
+/home/user/SquishiesAnxiety/tools/unity/anim/bin/Release/net8.0/AnimDiff.pdb
+/home/user/SquishiesAnxiety/tools/unity/anim/obj/Release/net8.0/AnimDiff.GeneratedMSBuildEditorConfig.editorconfig
+/home/user/SquishiesAnxiety/tools/unity/anim/obj/Release/net8.0/AnimDiff.AssemblyInfoInputs.cache
+/home/user/SquishiesAnxiety/tools/unity/anim/obj/Release/net8.0/AnimDiff.AssemblyInfo.cs
+/home/user/SquishiesAnxiety/tools/unity/anim/obj/Release/net8.0/AnimDiff.csproj.CoreCompileInputs.cache
+/home/user/SquishiesAnxiety/tools/unity/anim/obj/Release/net8.0/AnimDiff.sourcelink.json
+/home/user/SquishiesAnxiety/tools/unity/anim/obj/Release/net8.0/AnimDiff.dll
+/home/user/SquishiesAnxiety/tools/unity/anim/obj/Release/net8.0/refint/AnimDiff.dll
+/home/user/SquishiesAnxiety/tools/unity/anim/obj/Release/net8.0/AnimDiff.pdb
+/home/user/SquishiesAnxiety/tools/unity/anim/obj/Release/net8.0/AnimDiff.genruntimeconfig.cache
+/home/user/SquishiesAnxiety/tools/unity/anim/obj/Release/net8.0/ref/AnimDiff.dll

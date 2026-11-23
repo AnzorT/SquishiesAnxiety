@@ -81,7 +81,7 @@ static class ReferenceRaster
         {
             // bilinear, like a GPU texture lookup
             var img = LoadImage?.Invoke(f.Paint.Image);
-            if (img == null) return;
+            if (img == null || img.Value.rgba == null || img.Value.w <= 0) return;
             var (iw, ih, px) = img.Value;
             var toImg = f.Paint.UserToImage * inv;
             for (int y = 0; y < bh; y++)

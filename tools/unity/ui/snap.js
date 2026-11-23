@@ -149,7 +149,7 @@
       }
       if (!glyphs.length) continue;
       // for checking text layout (tools/unity/ui): the run as Chrome placed it
-      ctx.texts.push({ s: node.data, font: fam, size, ls: parseFloat(cs.letterSpacing) || 0, xs: glyphs.map((g) => g.x), chars: glyphs.map((g) => g.ch).join(''), y: glyphs[0].y, align: cs.textAlign, w: e.getBoundingClientRect().width });
+      ctx.texts.push({ s: node.data, font: fam, size, ls: parseFloat(cs.letterSpacing) || 0, xs: glyphs.map((g) => g.x), chars: glyphs.map((g) => g.ch).join(''), y: glyphs[0].y, align: cs.textAlign, w: e.getBoundingClientRect().width, top: e.getBoundingClientRect().top + parseFloat(cs.paddingTop) + parseFloat(cs.borderTopWidth) - y0, lh: cs.lineHeight, h: e.getBoundingClientRect().height });
       const draw = (dx, dy, color, extra = '') => {
         const uses = glyphs.map((g) => {
           const gid = ctx.glyph(fam, g.ch);
@@ -337,5 +337,32 @@
     const w = n2(rootBox.width), h = n2(rootBox.height);
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" overflow="visible"><defs>${glyphs.join('')}${ctx.defs.join('')}</defs>${out.join('')}</svg>`;
     return { svg, w: rootBox.width, h: rootBox.height, x: rootBox.left, y: rootBox.top, images: ctx.images, rasters: ctx.rasters, texts: ctx.texts };
+  };
+})();
+
+// React's component tree from the page (react-dom's fibers): window.__components(name) lists the components called
+// `name` (function name, memo / forwardRef included) as { el: their first DOM element, props } in tree order.
+(function () {
+  function fiberOf(el) {
+    for (const k in el) if (k.startsWith('__reactFiber$') || k.startsWith('__reactContainer$')) return el[k];
+    return null;
+  }
+  const nameOf = (t) => (t ? t.displayName || t.name || (t.type && nameOf(t.type)) || (t.render && nameOf(t.render)) || null : null);
+  function hostOf(f) {
+    for (let c = f; c; c = c.child) if (c.stateNode instanceof Element) return c.stateNode;
+    return null;
+  }
+  window.__components = function (name, root = document.getElementById('root')) {
+    let f = fiberOf(root);
+    if (f && f.stateNode && f.stateNode.current) f = f.stateNode.current;   // a container: its root fiber
+    const out = [];
+    const walk = (x) => {
+      for (; x; x = x.sibling) {
+        if (typeof x.type !== 'string' && nameOf(x.elementType || x.type) === name) out.push({ el: hostOf(x), props: x.memoizedProps });
+        if (x.child) walk(x.child);
+      }
+    };
+    walk(f);
+    return out;
   };
 })();

@@ -97,7 +97,35 @@ def export(name, rel):
     with open(os.path.join(OUT, name + '.json'), 'w') as fh: json.dump(data, fh, separators=(',', ':'))
     return len(glyphs), len(kern)
 
+# Characters the app's fonts don't have come from a system font in Chrome; on this Linux that's Inter (then DejaVu
+# Sans), as the reference screenshots show (the star's advance matches Inter's to 1/64 px). Fallback.json holds those.
+FALLBACK_FONTS = ['/usr/share/fonts/opentype/inter/Inter-Regular.otf', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf']
+SYMBOLS = '★☆♥←→↑↓✓✔✕✖⏱▶◀⚡✨·•…–—×'
+
+def export_fallback():
+    glyphs, chars = [], ''
+    upm = 1000
+    for ch in SYMBOLS:
+        for path in FALLBACK_FONTS:
+            if not os.path.exists(path): continue
+            f = TTFont(path)
+            g = f.getBestCmap().get(ord(ch))
+            if g is None: continue
+            # every glyph in 1000 units per em
+            k = upm / f['head'].unitsPerEm
+            pen = SVGPathPen(f.getGlyphSet())
+            from fontTools.pens.transformPen import TransformPen
+            f.getGlyphSet()[g].draw(TransformPen(pen, (k, 0, 0, k, 0, 0)))
+            glyphs.append({'adv': round(f['hmtx'][g][0] * k), 'd': pen.getCommands()})
+            chars += ch
+            break
+    data = {'name': 'Fallback', 'unitsPerEm': upm, 'ascender': 969, 'descender': -242, 'lineGap': 0, 'typoAscender': 969, 'typoDescender': -242,
+            'typoLineGap': 0, 'useTypo': False, 'chars': chars, 'glyphs': glyphs, 'pairs': [], 'kern': []}
+    with open(os.path.join(OUT, 'Fallback.json'), 'w') as fh: json.dump(data, fh, separators=(',', ':'))
+    return len(glyphs)
+
 if __name__ == '__main__':
     for n, r in FONTS.items():
         g, k = export(n, r)
         print(f'{n}: {g} glyphs, {k} kerning pairs')
+    print(f'Fallback: {export_fallback()} symbols')

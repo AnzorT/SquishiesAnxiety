@@ -23,7 +23,7 @@ static class Program
                 var font = UiFont.Get(t.GetProperty("font").GetString());
                 var xs = font.Layout(s, (float)t.GetProperty("size").GetDouble(), (float)t.GetProperty("ls").GetDouble(), out _);
                 var cps = UiFont.CodePoints(s);
-                var ours = Enumerable.Range(0, cps.Count).Where(i => !char.IsWhiteSpace(char.ConvertFromUtf32(cps[i]), 0) && font.Has(cps[i])).Select(i => (double)xs[i]).ToArray();
+                var ours = Enumerable.Range(0, cps.Count).Where(i => !char.IsWhiteSpace(char.ConvertFromUtf32(cps[i]), 0) && (font.Has(cps[i]) || UiFont.Get("Fallback").Has(cps[i]))).Select(i => (double)xs[i]).ToArray();
                 var chrome = t.GetProperty("xs").EnumerateArray().Select(v => v.GetDouble()).ToArray();
                 bool wrapped = s.Contains('\n');
                 for (int i = 1; i < chrome.Length; i++) if (chrome[i] < chrome[i - 1]) wrapped = true;

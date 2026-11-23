@@ -64,7 +64,20 @@ namespace SquishSquad.Ui
 
         public bool Has(int cp) => _index.ContainsKey(cp);
         public string PathOf(int cp) => _index.TryGetValue(cp, out var g) ? _glyphs[g].d : null;
-        public int Advance(int cp) => _index.TryGetValue(cp, out var g) ? _glyphs[g].adv : UnitsPerEm / 2;
+        /// <summary>A character's advance in this font's units; one the font lacks comes from the fallback font
+        /// (Fallback.json: the system font Chrome falls back to), scaled to this font's units.</summary>
+        public int Advance(int cp)
+        {
+            if (_index.TryGetValue(cp, out var g)) return _glyphs[g].adv;
+            var fb = FallbackFor(cp);
+            return fb != null ? (int)Math.Round((double)fb.Advance(cp) * UnitsPerEm / fb.UnitsPerEm) : UnitsPerEm / 2;
+        }
+
+        UiFont FallbackFor(int cp)
+        {
+            if (Name == "Fallback") return null;
+            try { var fb = Get("Fallback"); return fb.Has(cp) ? fb : null; } catch (InvalidOperationException) { return null; }
+        }
         public int Kern(int a, int b) => _kern.TryGetValue(Key(a, b), out var k) ? k : 0;
 
         /// <summary>Each character's pen x (px from the line's start) for `text` at `size` px with `letterSpacing`
@@ -126,16 +139,19 @@ namespace SquishSquad.Ui
             for (int i = 0; i < cps.Count; i++)
             {
                 var d = PathOf(cps[i]);
+                var src = this;
+                if (string.IsNullOrEmpty(d)) { src = FallbackFor(cps[i]); d = src?.PathOf(cps[i]); }
                 if (string.IsNullOrEmpty(d)) continue;
-                var key = Name + "\u0000" + cps[i];
+                var key = src.Name + "\u0000" + cps[i];
                 if (!ids.TryGetValue(key, out var id))
                 {
                     id = "gl" + ids.Count;
                     ids[key] = id;
                     defs.Append("<path id=\"").Append(id).Append("\" d=\"").Append(d).Append("\"/>");
                 }
+                string gk = src == this ? k : F(size / src.UnitsPerEm);
                 sb.Append("<use href=\"#").Append(id).Append("\" transform=\"translate(").Append(F(x + xs[i])).Append(' ').Append(F(baseline))
-                  .Append(") scale(").Append(k).Append(" -").Append(k).Append(")\"/>");
+                  .Append(") scale(").Append(gk).Append(" -").Append(gk).Append(")\"/>");
             }
             sb.Append("</g>");
             return sb.ToString();
