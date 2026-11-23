@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The games' hubs, level map and view switches (unity/Assets/Scripts/Games/Shared, StackHub, SortHub,
+       HopScreenModel) drawn from the Unity code and compared with the app's screenshots on the same virtual clock.
+       See Program.cs. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <NoWarn>CS8632;CS0162;CS0414;CS0649;CS0169</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../unity/Assets/Scripts/Ui/UiFont.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/UiSvg.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/Screens/Flex.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/Screens/TextFlow.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/Cards/*.cs" Exclude="../../../unity/Assets/Scripts/Ui/Cards/CardPieces.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/Blitz/**/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Anim/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/ThirdParty/Yoga/**/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Shared/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Shared/GameScreenHost.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Stack/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Stack/StackGame.cs;../../../unity/Assets/Scripts/Games/Stack/StackScreen.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Sort/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Sort/SortGame.cs;../../../unity/Assets/Scripts/Games/Sort/SortDoorPiece.cs;../../../unity/Assets/Scripts/Games/Sort/SortScreen.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Hop/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Hop/HopGame.cs;../../../unity/Assets/Scripts/Games/Hop/HopMesh.cs;../../../unity/Assets/Scripts/Games/Hop/HopScreen.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
+    <Compile Include="../vector-test/ReferenceRaster.cs" />
+    <Compile Include="../vector-test/Png.cs" />
+    <Compile Include="*.cs" />
+  </ItemGroup>
+</Project>

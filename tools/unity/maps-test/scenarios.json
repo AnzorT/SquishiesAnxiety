@@ -1,0 +1,28 @@
+[
+  { "name": "stack-hub", "card": "game-stack", "steps": [{ "at": 300, "shot": 1 }, { "at": 700, "shot": 1 }, { "at": 6000, "shot": 1 }] },
+  { "name": "stack-map", "card": "game-stack", "steps": [
+    { "at": 4000, "tap": [705, 143] },
+    { "at": 4016, "shot": 1 }, { "at": 4048, "shot": 1 }, { "at": 4096, "shot": 1 }, { "at": 4160, "shot": 1 }, { "at": 4240, "shot": 1 },
+    { "at": 4400, "shot": 1 }, { "at": 4700, "shot": 1 }, { "at": 7500, "shot": 1 },
+    { "at": 7600, "scroll": 1500 }, { "at": 7700, "shot": 1 },
+    { "at": 7800, "scroll": 3700 }, { "at": 7900, "shot": 1 } ] },
+  { "name": "stack-back", "card": "game-stack", "steps": [
+    { "at": 4000, "tap": [705, 143] }, { "at": 7500, "tap": [34, 26] },
+    { "at": 7516, "shot": 1 }, { "at": 7548, "shot": 1 }, { "at": 7612, "shot": 1 }, { "at": 7740, "shot": 1 }, { "at": 8000, "shot": 1 }, { "at": 12000, "shot": 1 } ] },
+  { "name": "stack-stars", "card": "game-stack", "profile": { "stack": { "lv": 12, "best": { "1": 3, "2": 2, "3": 1, "4": 3, "5": 3, "6": 2, "7": 3, "8": 1, "9": 2, "10": 3, "11": 3 } } }, "steps": [
+    { "at": 6000, "shot": 1 }, { "at": 6100, "tap": [705, 143] }, { "at": 9500, "shot": 1 } ] },
+  { "name": "stack-first", "card": "game-stack", "profile": { "stack": { "seen": false } }, "steps": [{ "at": 690, "shot": 1 }, { "at": 820, "shot": 1 }, { "at": 3000, "shot": 1 }] },
+  { "name": "stack-rules", "card": "game-stack", "steps": [{ "at": 4000, "tap": [227, 269] }, { "at": 6500, "shot": 1 }] },
+  { "name": "stack-play", "card": "game-stack", "steps": [
+    { "at": 4000, "tap": [705, 143] }, { "at": 7500, "tap": [508, 207] }, { "at": 7545, "shot": 1 }, { "at": 7600, "tap": [416, 189] }, { "at": 7616, "shot": 1 } ] },
+  { "name": "sort-hub", "card": "game-sort", "steps": [{ "at": 1800, "shot": 1 }, { "at": 3000, "shot": 1 }, { "at": 6000, "shot": 1 }] },
+  { "name": "sort-map", "card": "game-sort", "steps": [
+    { "at": 4000, "tap": [589, 162] }, { "at": 4064, "shot": 1 }, { "at": 4200, "shot": 1 }, { "at": 7500, "shot": 1 },
+    { "at": 7600, "scroll": 2000 }, { "at": 7700, "shot": 1 } ] },
+  { "name": "sort-cupboard", "card": "game-sort", "steps": [{ "at": 4000, "tap": [589, 328] }, { "at": 7500, "shot": 1 }, { "at": 7600, "scroll": 900 }, { "at": 7700, "shot": 1 }] },
+  { "name": "sort-rules", "card": "game-sort", "steps": [{ "at": 4000, "tap": [227, 343] }, { "at": 6500, "shot": 1 }] },
+  { "name": "hop-map", "card": "game-hop", "steps": [
+    { "at": 16, "shot": 1 }, { "at": 48, "shot": 1 }, { "at": 112, "shot": 1 }, { "at": 300, "shot": 1 }, { "at": 700, "shot": 1 }, { "at": 3500, "shot": 1 },
+    { "at": 3600, "scroll": 2600 }, { "at": 3700, "shot": 1 } ] },
+  { "name": "hop-rules", "card": "game-hop", "steps": [{ "at": 3000, "tap": [738, 26] }, { "at": 5000, "shot": 1 }] }
+]

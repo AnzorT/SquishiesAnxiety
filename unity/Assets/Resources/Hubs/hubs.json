@@ -1,0 +1,666 @@
+{
+ "pieces": {
+  "back": [
+   40,
+   40
+  ],
+  "blitz-title": [
+   205.391,
+   29
+  ],
+  "go-lip": [
+   95.609,
+   57
+  ],
+  "go-face": [
+   95.609,
+   57
+  ],
+  "help": [
+   40,
+   40
+  ],
+  "room-living": [
+   170,
+   102
+  ],
+  "room-kitchen": [
+   170,
+   102
+  ],
+  "room-bath": [
+   170,
+   102
+  ],
+  "room-bed": [
+   170,
+   102
+  ],
+  "room-yard": [
+   170,
+   102
+  ],
+  "room-dance": [
+   170,
+   102
+  ],
+  "rules-stack-left": [
+   293,
+   285
+  ],
+  "rules-stack-right": [
+   293,
+   282
+  ],
+  "rules-sort-left": [
+   293,
+   344
+  ],
+  "rules-sort-right": [
+   293,
+   313
+  ],
+  "rules-hop-left": [
+   293,
+   226
+  ],
+  "rules-hop-right": [
+   293,
+   325
+  ]
+ },
+ "rules": {
+  "stack": {
+   "title": "HOW TO PLAY",
+   "titleSize": 26,
+   "titleFill": "gold",
+   "titleAt": [
+    47,
+    0,
+    199,
+    47
+   ],
+   "label": "GOT IT!",
+   "kind": "green",
+   "padH": 22,
+   "padV": 12,
+   "fontSize": 18,
+   "marginTop": 8,
+   "at": [
+    88.547,
+    220
+   ],
+   "size": [
+    115.891,
+    62
+   ]
+  },
+  "sort": {
+   "title": "HOW TO PLAY",
+   "titleSize": 26,
+   "titleFill": "gold",
+   "titleAt": [
+    47,
+    0,
+    199,
+    47
+   ],
+   "label": "GOT IT!",
+   "kind": "green",
+   "padH": 22,
+   "padV": 12,
+   "fontSize": 18,
+   "marginTop": 8,
+   "at": [
+    88.547,
+    251
+   ],
+   "size": [
+    115.891,
+    62
+   ]
+  },
+  "hop": {
+   "title": "HOW TO PLAY",
+   "titleSize": 26,
+   "titleFill": "gold",
+   "titleAt": [
+    47,
+    0,
+    199,
+    47
+   ],
+   "label": "GOT IT!",
+   "kind": "green",
+   "padH": 22,
+   "padV": 12,
+   "fontSize": 18,
+   "marginTop": 8,
+   "at": [
+    88.547,
+    263
+   ],
+   "size": [
+    115.891,
+    62
+   ]
+  }
+ },
+ "go": {
+  "button": [
+   664.891,
+   241,
+   95.609,
+   62
+  ],
+  "ring": [
+   664.891,
+   241,
+   95.609,
+   57
+  ]
+ },
+ "stackCast": [
+  "nimbo",
+  "mittens",
+  "mallow",
+  "bao",
+  "dunkie",
+  "frybo",
+  "pip",
+  "bunbun",
+  "jelli",
+  "pina",
+  "finn",
+  "sealy",
+  "biscuit",
+  "hana",
+  "choco",
+  "prickle",
+  "lumi",
+  "kiko",
+  "bubbly",
+  "twinkle",
+  "zappi",
+  "scoop",
+  "teddy",
+  "hoot",
+  "leo",
+  "nibbles",
+  "quill",
+  "panko",
+  "boba",
+  "avo",
+  "berri",
+  "lemmy",
+  "kiwi",
+  "melo",
+  "peachy",
+  "pitaya",
+  "tutti",
+  "puff",
+  "",
+  "octo",
+  "marina",
+  "pearl",
+  "waffles",
+  "poppy",
+  "duchess",
+  "mamapaws",
+  "acorn",
+  "fawn",
+  "moss",
+  "sprout",
+  "plip",
+  "breeze",
+  "dusty",
+  "aurora",
+  "boo",
+  "pixie",
+  "floof",
+  "unibun",
+  "gumdrop",
+  "ember",
+  "drako",
+  "jinni",
+  "cuppy",
+  "chip",
+  "twisty",
+  "crois",
+  "maca",
+  "puddi",
+  "mochi",
+  "cakey",
+  "sugarplum",
+  "chefbun",
+  "gourdy",
+  "batty",
+  "kernel",
+  "hexie",
+  "mumbles",
+  "hocus",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "shelly",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  ""
+ ],
+ "sortPools": {
+  "fridge": [
+   "mallow",
+   "bao",
+   "dunkie",
+   "frybo",
+   "bunbun",
+   "pina",
+   "choco",
+   "scoop",
+   "boba",
+   "avo",
+   "berri",
+   "lemmy",
+   "kiwi",
+   "melo",
+   "peachy",
+   "pitaya",
+   "tutti",
+   "cuppy",
+   "chip",
+   "twisty",
+   "crois",
+   "maca",
+   "puddi",
+   "mochi",
+   "cakey",
+   "sugarplum",
+   "chefbun",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "cupboard": [
+   "nimbo",
+   "mittens",
+   "biscuit",
+   "hana",
+   "prickle",
+   "lumi",
+   "kiko",
+   "bubbly",
+   "twinkle",
+   "zappi",
+   "teddy",
+   "hoot",
+   "leo",
+   "nibbles",
+   "quill",
+   "panko",
+   "waffles",
+   "poppy",
+   "duchess",
+   "mamapaws",
+   "acorn",
+   "fawn",
+   "moss",
+   "sprout",
+   "plip",
+   "breeze",
+   "dusty",
+   "aurora",
+   "boo",
+   "pixie",
+   "floof",
+   "unibun",
+   "gumdrop",
+   "ember",
+   "drako",
+   "jinni",
+   "",
+   "",
+   "shelly",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ },
+ "hopCast": [
+  "nimbo",
+  "mittens",
+  "mallow",
+  "bao",
+  "dunkie",
+  "frybo",
+  "pip",
+  "bunbun",
+  "jelli",
+  "pina",
+  "finn",
+  "sealy",
+  "biscuit",
+  "hana",
+  "choco",
+  "prickle",
+  "lumi",
+  "kiko",
+  "bubbly",
+  "twinkle",
+  "zappi",
+  "scoop",
+  "teddy",
+  "hoot",
+  "leo",
+  "nibbles",
+  "quill",
+  "panko",
+  "boba",
+  "avo",
+  "berri",
+  "lemmy",
+  "kiwi",
+  "melo",
+  "peachy",
+  "pitaya",
+  "tutti",
+  "puff",
+  "",
+  "octo",
+  "marina",
+  "pearl",
+  "waffles",
+  "poppy",
+  "duchess",
+  "mamapaws",
+  "acorn",
+  "fawn",
+  "moss",
+  "sprout",
+  "plip",
+  "breeze",
+  "dusty",
+  "aurora",
+  "boo",
+  "pixie",
+  "floof",
+  "unibun",
+  "gumdrop",
+  "ember",
+  "drako",
+  "jinni",
+  "cuppy",
+  "chip",
+  "twisty",
+  "crois",
+  "maca",
+  "puddi",
+  "mochi",
+  "cakey",
+  "sugarplum",
+  "chefbun",
+  "gourdy",
+  "batty",
+  "kernel",
+  "hexie",
+  "mumbles",
+  "hocus",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "shelly",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  ""
+ ],
+ "rooms": [
+  "living",
+  "kitchen",
+  "bath",
+  "bed",
+  "yard",
+  "dance"
+ ],
+ "pieceList": [
+  {
+   "name": "back",
+   "w": 40,
+   "h": 40
+  },
+  {
+   "name": "blitz-title",
+   "w": 205.391,
+   "h": 29
+  },
+  {
+   "name": "go-lip",
+   "w": 95.609,
+   "h": 57
+  },
+  {
+   "name": "go-face",
+   "w": 95.609,
+   "h": 57
+  },
+  {
+   "name": "help",
+   "w": 40,
+   "h": 40
+  },
+  {
+   "name": "room-living",
+   "w": 170,
+   "h": 102
+  },
+  {
+   "name": "room-kitchen",
+   "w": 170,
+   "h": 102
+  },
+  {
+   "name": "room-bath",
+   "w": 170,
+   "h": 102
+  },
+  {
+   "name": "room-bed",
+   "w": 170,
+   "h": 102
+  },
+  {
+   "name": "room-yard",
+   "w": 170,
+   "h": 102
+  },
+  {
+   "name": "room-dance",
+   "w": 170,
+   "h": 102
+  },
+  {
+   "name": "rules-stack-left",
+   "w": 293,
+   "h": 285
+  },
+  {
+   "name": "rules-stack-right",
+   "w": 293,
+   "h": 282
+  },
+  {
+   "name": "rules-sort-left",
+   "w": 293,
+   "h": 344
+  },
+  {
+   "name": "rules-sort-right",
+   "w": 293,
+   "h": 313
+  },
+  {
+   "name": "rules-hop-left",
+   "w": 293,
+   "h": 226
+  },
+  {
+   "name": "rules-hop-right",
+   "w": 293,
+   "h": 325
+  }
+ ],
+ "rulesList": [
+  {
+   "game": "stack",
+   "title": "HOW TO PLAY",
+   "titleSize": 26,
+   "titleFill": "gold",
+   "titleAt": [
+    47,
+    0,
+    199,
+    47
+   ],
+   "label": "GOT IT!",
+   "kind": "green",
+   "padH": 22,
+   "padV": 12,
+   "fontSize": 18,
+   "marginTop": 8,
+   "at": [
+    88.547,
+    220
+   ],
+   "size": [
+    115.891,
+    62
+   ]
+  },
+  {
+   "game": "sort",
+   "title": "HOW TO PLAY",
+   "titleSize": 26,
+   "titleFill": "gold",
+   "titleAt": [
+    47,
+    0,
+    199,
+    47
+   ],
+   "label": "GOT IT!",
+   "kind": "green",
+   "padH": 22,
+   "padV": 12,
+   "fontSize": 18,
+   "marginTop": 8,
+   "at": [
+    88.547,
+    251
+   ],
+   "size": [
+    115.891,
+    62
+   ]
+  },
+  {
+   "game": "hop",
+   "title": "HOW TO PLAY",
+   "titleSize": 26,
+   "titleFill": "gold",
+   "titleAt": [
+    47,
+    0,
+    199,
+    47
+   ],
+   "label": "GOT IT!",
+   "kind": "green",
+   "padH": 22,
+   "padV": 12,
+   "fontSize": 18,
+   "marginTop": 8,
+   "at": [
+    88.547,
+    263
+   ],
+   "size": [
+    115.891,
+    62
+   ]
+  }
+ ]
+}
