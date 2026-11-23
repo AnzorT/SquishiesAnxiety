@@ -101,6 +101,74 @@
     return `url(#${id})`;
   }
 
+  // CSS gradient stops -> [{ off (0..1, or null: spread evenly), col }]; `len`: the gradient line's length (px stops)
+  function stopsOf(parts, len) {
+    const out = parts.map((s) => {
+      const cm = s.match(/(rgba?\([^)]*\)|#[0-9a-f]+|\w+)\s*(-?[\d.]+)(%|px)?/i) || s.match(/(rgba?\([^)]*\)|#[0-9a-f]+|\w+)/i);
+      const col = parseColor(cm[1]) || { rgb: cm[1], a: 1 };
+      const off = cm[2] != null ? (cm[3] === 'px' ? parseFloat(cm[2]) / len : parseFloat(cm[2]) / 100) : null;
+      return { off, col };
+    });
+    if (out.length && out[0].off == null) out[0].off = 0;
+    if (out.length && out[out.length - 1].off == null) out[out.length - 1].off = 1;
+    for (let i = 1; i < out.length; i++) if (out[i].off == null) {
+      let j = i; while (out[j].off == null) j++;
+      for (let k = i; k < j; k++) out[k].off = out[i - 1].off + ((out[j].off - out[i - 1].off) * (k - i + 1)) / (j - i + 1);
+    }
+    return out;
+  }
+  const stopTags = (st) => st.map((s) => `<stop offset="${n2(s.off)}" stop-color="${s.col.rgb}"${s.col.a < 1 ? ` stop-opacity="${n2(s.col.a)}"` : ''}/>`).join('');
+
+  // CSS radial-gradient([circle|ellipse] [at X% Y%], stops) -> an SVG radial gradient (farthest-corner, as CSS's default)
+  function radial(bg, x, y, w, h, defs, ids) {
+    const m = bg.match(/^radial-gradient\((.*)\)$/);
+    if (!m) return null;
+    const parts = m[1].split(/,(?![^(]*\))/).map((s) => s.trim());
+    let fx = 0.5, fy = 0.5, circle = false;
+    if (/^(circle|ellipse|at )/.test(parts[0])) {
+      const p = parts.shift();
+      circle = /circle/.test(p);
+      const at = p.match(/at\s+(-?[\d.]+)%\s+(-?[\d.]+)%/);
+      if (at) { fx = parseFloat(at[1]) / 100; fy = parseFloat(at[2]) / 100; }
+    }
+    const cx = x + fx * w, cy = y + fy * h;
+    const dx = Math.max(fx, 1 - fx) * w, dy = Math.max(fy, 1 - fy) * h;
+    const id = `rg${ids.n++}`;
+    let tf = '', rr;
+    if (circle) rr = Math.hypot(dx, dy);
+    else { rr = Math.SQRT2 * dx; if (dx > 0) tf = ` gradientTransform="translate(${n2(cx)} ${n2(cy)}) scale(1 ${n2(dy / dx)}) translate(${n2(-cx)} ${n2(-cy)})"`; }
+    defs.push(`<radialGradient id="${id}" gradientUnits="userSpaceOnUse" cx="${n2(cx)}" cy="${n2(cy)}" r="${n2(rr)}"${tf}>${stopTags(stopsOf(parts, rr))}</radialGradient>`);
+    return `url(#${id})`;
+  }
+
+  // CSS repeating-linear-gradient at 90deg / 180deg (the house's wood stripes) -> the stripes as rects over the box
+  function stripes(bg, x, y, w, h) {
+    const m = bg.match(/^repeating-linear-gradient\((.*)\)$/);
+    if (!m) return null;
+    const parts = m[1].split(/,(?![^(]*\))/).map((s) => s.trim());
+    let ang = 180;
+    if (/^-?[\d.]+deg$/.test(parts[0])) ang = parseFloat(parts.shift());
+    else if (/^to /.test(parts[0])) ang = { 'to right': 90, 'to left': 270, 'to top': 0, 'to bottom': 180 }[parts.shift()] ?? 180;
+    const across = ang === 90 || ang === 270, len = across ? w : h;
+    const st = parts.map((s) => { const cm = s.match(/(rgba?\([^)]*\)|#[0-9a-f]+|\w+)\s*(-?[\d.]+)px/i); return cm ? { col: parseColor(cm[1]), at: parseFloat(cm[2]) } : null; });
+    if (st.some((v) => !v) || (ang % 90) !== 0) return null;
+    const period = st[st.length - 1].at;
+    if (!(period > 0)) return null;
+    let out = '';
+    for (let p0 = 0; p0 < len; p0 += period)
+      for (let i = 0; i + 1 < st.length; i++) {
+        const a = st[i], b = st[i + 1];
+        if (!a.col || b.at <= a.at || a.col.a === 0) continue;   // (hard stripes: each band one colour)
+        const s0 = p0 + a.at, s1 = Math.min(len, p0 + b.at);
+        if (s1 <= s0) continue;
+        const pos = ang === 270 || ang === 0 ? [len - s1, len - s0] : [s0, s1];
+        out += across
+          ? `<rect x="${n2(x + pos[0])}" y="${n2(y)}" width="${n2(pos[1] - pos[0])}" height="${n2(h)}" ${fillAttr(a.col)}/>`
+          : `<rect x="${n2(x)}" y="${n2(y + pos[0])}" width="${n2(w)}" height="${n2(pos[1] - pos[0])}" ${fillAttr(a.col)}/>`;
+      }
+    return out;
+  }
+
   function radii(cs) {
     return [cs.borderTopLeftRadius, cs.borderTopRightRadius, cs.borderBottomRightRadius, cs.borderBottomLeftRadius].map((v) => parseFloat(v) || 0);
   }
@@ -221,11 +289,21 @@
       const bgc = parseColor(cs.backgroundColor);
       if (bgc && outer) inner.push(`<path d="${outer}" ${fillAttr(bgc)}/>`);
       if (cs.backgroundImage && cs.backgroundImage !== 'none' && outer) {
-        for (const layer of cs.backgroundImage.split(/,(?=\s*(?:linear|radial|url)\()/).reverse()) {
+        for (const layer of cs.backgroundImage.split(/,(?=\s*(?:(?:repeating-)?(?:linear|radial|conic)-gradient|url)\()/).reverse()) {
           const L = layer.trim();
           if (L.startsWith('linear-gradient')) {
             const g = gradient(L, x, y, w, h, ctx.defs, ctx.ids);
             if (g) inner.push(`<path d="${outer}" fill="${g}"/>`);
+          } else if (L.startsWith('radial-gradient')) {
+            const g = radial(L, x, y, w, h, ctx.defs, ctx.ids);
+            if (g) inner.push(`<path d="${outer}" fill="${g}"/>`);
+          } else if (L.startsWith('repeating-linear-gradient')) {
+            const st = stripes(L, x, y, w, h);
+            if (st) {
+              const clip = `sc${ctx.ids.n++}`;
+              ctx.defs.push(`<clipPath id="${clip}"><path d="${outer}"/></clipPath>`);
+              inner.push(`<g clip-path="url(#${clip})">${st}</g>`);
+            }
           } else if (L.startsWith('url(')) {
             const src = L.slice(4, -1).replace(/^["']|["']$/g, '');
             const id = ctx.image(src);

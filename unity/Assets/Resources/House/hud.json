@@ -1,0 +1,59 @@
+{
+ "note": "Written by tools/unity/house/export-hud.mjs. Rects: frame px (852 x 393), the drawer at translate(-50%, 0).",
+ "pieces": {
+  "tab": [
+   390,
+   299.125,
+   72,
+   22
+  ],
+  "panel": [
+   345.859,
+   318.625,
+   160.281,
+   80.375
+  ],
+  "arrow": [
+   417,
+   305.125,
+   18,
+   12
+  ]
+ },
+ "buttons": {
+  "renovate": [
+   361.859,
+   328.625,
+   63.234,
+   61.375
+  ],
+  "catalog": [
+   435.094,
+   328.625,
+   55.047,
+   61.375
+  ]
+ },
+ "drawer": {
+  "closedTy": 72,
+  "openTy": -16,
+  "ms": 750,
+  "ease": [
+   0.25,
+   1.15,
+   0.4,
+   1
+  ]
+ },
+ "arrow": {
+  "closedDeg": 0,
+  "openDeg": 180,
+  "ms": 250,
+  "ease": [
+   0.25,
+   0.1,
+   0.25,
+   1
+  ]
+ }
+}

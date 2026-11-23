@@ -6,6 +6,7 @@
 //            (tools/unity/backend/start-emulators.sh; demo-squish; requests to 127.0.0.1 only)
 //   pixels   the same rooms drawn from the C# room (RoomSvg, pictures from Resources/House/pics) by the reference
 //            rasteriser vs Chrome's screenshot (creatures and HUD hidden); writes out/<fixture>-<room>-<day|night>-*.png
+//   chrome   the stage-2 pieces (camera, doors, drawer, toast) against the page's numbers
 // The page's answers: node tools/unity/house/fixtures.mjs && node tools/unity/house/export-house.mjs
 using System;
 using System.IO;
@@ -32,6 +33,7 @@ static partial class Program
             case "save": return Save(only);
             case "markup": return Markup(only);
             case "emu": return Emu.Run().GetAwaiter().GetResult();
+            case "chrome": return Chrome.Run();
             case "compose": return ComposeOnly(args[1], args[2]);
             case "rt": return DebugRt(args[1], args[2]);
             case "pixels": PixRoom = args.Length > 2 && !args[2].StartsWith("--") ? args[2] : null; return Pixels(only, args.Contains("--keep"));
