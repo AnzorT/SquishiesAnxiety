@@ -52,11 +52,11 @@ for (const fx of loadFixtures()) {
     return { v: JSON.parse(JSON.stringify(v, (k, x) => (typeof x === 'function' ? undefined : x))), nat: sh._nat, st: { lvl: sh.lvl(), cur: S.cur, open, b0, cs: sh.cs.map((c) => ({ key: c.key, name: c.name, room: c.room, N: c.N, id: c.id })), season: sh.seasonNow(), mapIn: true } };
   });
   // the page's map drawn (for house-test `map`: the C# template's markup against it)
-  const svg = await H.page.evaluate(() => new Promise((r) => { const sh = window.__sh; sh.setState({ map: true, mapIn: true, mapHov: null, mapGo: null }, () => setTimeout(() => { const el = document.querySelector('[data-screen-label="House map"] svg'); r(el ? el.outerHTML : null); }, 0)); }));
+  await H.page.evaluate(() => window.__sh.setState({ map: true, mapIn: true, mapHov: null, mapGo: null }));
   await H.frames(2);
   const svg2 = await H.page.evaluate(() => { const el = document.querySelector('[data-screen-label="House map"] svg'); return el ? el.outerHTML : null; });
   fs.mkdirSync(path.join(REPO, 'tools/unity/house-test/out'), { recursive: true });
-  fs.writeFileSync(path.join(REPO, 'tools/unity/house-test/out', 'map-' + fx.name + '.json'), JSON.stringify({ st: P.st, svg: svg2 || svg }));
+  fs.writeFileSync(path.join(REPO, 'tools/unity/house-test/out', 'map-' + fx.name + '.json'), JSON.stringify({ st: P.st, svg: svg2 }));
   const mine = JSON.parse(vm.runInContext('__house.map(' + JSON.stringify(JSON.stringify(P.st)) + ')', ctx));
   const nat = mine.mx.nat; delete mine.mx.nat;
   const same = JSON.stringify(clean(mine)) === JSON.stringify(P.v) && JSON.stringify(nat) === JSON.stringify(P.nat);
