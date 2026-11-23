@@ -32,15 +32,17 @@ apart from `Haptics.Android.cs`' `Handheld` (missing from that package, not from
 - **Squish Time cards**: a creature without a shipped card downloads its published one (catalog `card.url`, as the app)
   and keeps it on the phone. Mittens' card stands in until it arrives (or offline).
 
+- **The menu's creature and name plate**: the menu shows the player's chosen creature (profile.lobby.sel) with its own
+  plate: every roster creature's plate is exported (`node tools/unity/export-menu.mjs --names`: its rarity's plaque,
+  stars and lettering, 118 plates, 5.6 MB). A creature the menu can't animate (no recording, the live rig off) or
+  without a plate (prickle isn't in the prototype's roster) is shown as Mittens, with Mittens' plate.
+
 ## Left
 
 1. **The house**: stages 2-11 of `HOUSE_PORT_PLAN.md` (camera and doors, creatures walking and acting, item taps, edit
    mode, the catalog, the house map, the Dance Club and the Movie Room, the beach, the yard games). The biggest piece.
 2. **Tutorial**: new players' guided first steps.
-3. **The menu's name plate**: it's a baked picture of "Mittens" (the prototype's HTML plate cut by
-   `export-menu.mjs`). Showing the player's creature needs the plate drawn for any name, or exported per creature.
-   With the live rig on, the menu can then show the chosen creature (`MenuView`'s creatureKey).
-4. **The real AdMob ids** (`App/Ads.cs`, the plugin's manifest, as src/firebase/ads.js) before release.
+3. **The real AdMob ids** (`App/Ads.cs`, the plugin's manifest, as src/firebase/ads.js) before release.
 
 ## Testing and release
 

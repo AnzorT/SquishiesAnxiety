@@ -27,12 +27,36 @@ namespace SquishSquad.Menu
         {
             _player = v;
             int lv = v != null ? Mathf.Clamp(v.Level, 1, 30) : 0;
-            if (_view == null) { _playerLevel = lv; return; }
-            if (lv != _playerLevel && _view.Where == MenuView.Place.Home && _game == null) { _playerLevel = lv; Rebuild(); return; }
+            if (_view == null) { _playerLevel = lv; _creatureKey = MenuKey(ChosenKey()); return; }
+            var key = MenuKey(ChosenKey());
+            if ((lv != _playerLevel || key != _creatureKey) && _view.Where == MenuView.Place.Home && _game == null) { _playerLevel = lv; _creatureKey = key; Rebuild(); return; }
             _view.SetHud(v ?? HudValues.Baked, NowMs);
         }
 
         int ViewLevel => _player != null && _playerLevel > 0 ? _playerLevel : MenuState.Level;
+
+        string _creatureKey = "mittens";   // the creature standing by the house (the player's chosen one)
+        static Dictionary<string, string> _keyOfId;
+
+        // the menu shows a creature with its name plate: one without an exported plate is shown as Mittens
+        string MenuKey(string key) => _layout?.names != null && System.Array.Exists(_layout.names, n => n.key == key) ? key : "mittens";
+
+        /// <summary>The player's chosen creature's key (profile.lobby.sel → the roster's key; Mittens offline).</summary>
+        static string ChosenKey()
+        {
+            var p = CharactersPageLink.Get();
+            if (p?.Profile == null) return "mittens";
+            if (_keyOfId == null)
+            {
+                _keyOfId = new Dictionary<string, string>();
+                var data = SquishSquad.Backend.Json.Parse(Resources.Load<TextAsset>("Squish/squish").text) as IDictionary<string, object>;
+                if (data != null && data["roster"] is IList<object> roster)
+                    foreach (var c in roster)
+                        if (c is IDictionary<string, object> e && e["key"] is string k) _keyOfId[System.Convert.ToString(e["id"])] = k;
+            }
+            var id = CharactersPageLink.SelectedId(p.Profile);
+            return id != null && _keyOfId.TryGetValue(id, out var key) ? key : "mittens";
+        }
 
         Camera _cam;
         MenuLayout _layout;
@@ -92,7 +116,8 @@ namespace SquishSquad.Menu
             _view?.Dispose();
             _w = Screen.width; _h = Screen.height;
             FitCamera(_cam, _w, _h);
-            _view = new MenuView(_layout, transform, _w, _h, ViewLevel, MenuState.Season);
+            _creatureKey = MenuKey(ChosenKey());
+            _view = new MenuView(_layout, transform, _w, _h, ViewLevel, MenuState.Season, _creatureKey);
             _t0 = Time.unscaledTime;
             if (_player != null) _view.SetHud(_player, 0f);
             _view.Tick(0f);
@@ -266,15 +291,7 @@ namespace SquishSquad.Menu
         {
             BeforeGame();
             var p = CharactersPageLink.Get();
-            var key = "mittens";
-            if (p?.Profile != null)
-            {
-                var id = CharactersPageLink.SelectedId(p.Profile);
-                var data = SquishSquad.Backend.Json.Parse(Resources.Load<TextAsset>("Squish/squish").text) as IDictionary<string, object>;
-                if (data != null && data["roster"] is IList<object> roster)
-                    foreach (var c in roster)
-                        if (c is IDictionary<string, object> e && System.Convert.ToString(e["id"]) == id) { key = (string)e["key"]; break; }
-            }
+            var key = ChosenKey();
             var s = SquishSquad.Games.Squish.SquishTime.Create(transform, key, p?.Profile ?? new Dictionary<string, object>(), p?.Fb, p?.Uid);
             s.OnExit = AfterGame;   // (it removes itself)
             _game = s;

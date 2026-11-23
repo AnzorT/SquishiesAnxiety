@@ -1520,5 +1520,1187 @@
    "level": 1,
    "ring": false
   }
- }
+ },
+ "names": [
+  {
+   "key": "nimbo",
+   "res": "hud/names/nimbo",
+   "rect": [
+    986,
+    956,
+    368,
+    124
+   ]
+  },
+  {
+   "key": "mittens",
+   "res": "hud/names/mittens",
+   "rect": [
+    968,
+    956,
+    404,
+    124
+   ]
+  },
+  {
+   "key": "mallow",
+   "res": "hud/names/mallow",
+   "rect": [
+    974,
+    956,
+    392,
+    124
+   ]
+  },
+  {
+   "key": "bao",
+   "res": "hud/names/bao",
+   "rect": [
+    1016,
+    956,
+    308,
+    124
+   ]
+  },
+  {
+   "key": "dunkie",
+   "res": "hud/names/dunkie",
+   "rect": [
+    979,
+    956,
+    382,
+    124
+   ]
+  },
+  {
+   "key": "frybo",
+   "res": "hud/names/frybo",
+   "rect": [
+    990,
+    956,
+    360,
+    124
+   ]
+  },
+  {
+   "key": "pip",
+   "res": "hud/names/pip",
+   "rect": [
+    1025,
+    956,
+    290,
+    124
+   ]
+  },
+  {
+   "key": "bunbun",
+   "res": "hud/names/bunbun",
+   "rect": [
+    970,
+    956,
+    400,
+    124
+   ]
+  },
+  {
+   "key": "jelli",
+   "res": "hud/names/jelli",
+   "rect": [
+    1009,
+    956,
+    322,
+    124
+   ]
+  },
+  {
+   "key": "pina",
+   "res": "hud/names/pina",
+   "rect": [
+    1009,
+    956,
+    322,
+    124
+   ]
+  },
+  {
+   "key": "finn",
+   "res": "hud/names/finn",
+   "rect": [
+    1009,
+    956,
+    322,
+    124
+   ]
+  },
+  {
+   "key": "sealy",
+   "res": "hud/names/sealy",
+   "rect": [
+    996,
+    956,
+    348,
+    124
+   ]
+  },
+  {
+   "key": "biscuit",
+   "res": "hud/names/biscuit",
+   "rect": [
+    979,
+    956,
+    382,
+    124
+   ]
+  },
+  {
+   "key": "hana",
+   "res": "hud/names/hana",
+   "rect": [
+    1000,
+    956,
+    340,
+    124
+   ]
+  },
+  {
+   "key": "choco",
+   "res": "hud/names/choco",
+   "rect": [
+    986,
+    956,
+    368,
+    124
+   ]
+  },
+  {
+   "key": "truffle",
+   "res": "hud/names/truffle",
+   "rect": [
+    975,
+    956,
+    390,
+    124
+   ]
+  },
+  {
+   "key": "lumi",
+   "res": "hud/names/lumi",
+   "rect": [
+    1004,
+    956,
+    332,
+    124
+   ]
+  },
+  {
+   "key": "kiko",
+   "res": "hud/names/kiko",
+   "rect": [
+    1012,
+    956,
+    316,
+    124
+   ]
+  },
+  {
+   "key": "bubbly",
+   "res": "hud/names/bubbly",
+   "rect": [
+    978,
+    956,
+    384,
+    124
+   ]
+  },
+  {
+   "key": "twinkle",
+   "res": "hud/names/twinkle",
+   "rect": [
+    970,
+    956,
+    400,
+    124
+   ]
+  },
+  {
+   "key": "zappi",
+   "res": "hud/names/zappi",
+   "rect": [
+    996,
+    956,
+    348,
+    124
+   ]
+  },
+  {
+   "key": "scoop",
+   "res": "hud/names/scoop",
+   "rect": [
+    989,
+    956,
+    362,
+    124
+   ]
+  },
+  {
+   "key": "teddy",
+   "res": "hud/names/teddy",
+   "rect": [
+    989,
+    956,
+    362,
+    124
+   ]
+  },
+  {
+   "key": "hoot",
+   "res": "hud/names/hoot",
+   "rect": [
+    1004,
+    956,
+    332,
+    124
+   ]
+  },
+  {
+   "key": "leo",
+   "res": "hud/names/leo",
+   "rect": [
+    1018,
+    956,
+    304,
+    124
+   ]
+  },
+  {
+   "key": "nibbles",
+   "res": "hud/names/nibbles",
+   "rect": [
+    972,
+    956,
+    396,
+    124
+   ]
+  },
+  {
+   "key": "quill",
+   "res": "hud/names/quill",
+   "rect": [
+    1003,
+    956,
+    334,
+    124
+   ]
+  },
+  {
+   "key": "panko",
+   "res": "hud/names/panko",
+   "rect": [
+    987,
+    956,
+    365,
+    124
+   ]
+  },
+  {
+   "key": "boba",
+   "res": "hud/names/boba",
+   "rect": [
+    1001,
+    956,
+    338,
+    124
+   ]
+  },
+  {
+   "key": "avo",
+   "res": "hud/names/avo",
+   "rect": [
+    1016,
+    956,
+    308,
+    124
+   ]
+  },
+  {
+   "key": "berri",
+   "res": "hud/names/berri",
+   "rect": [
+    1001,
+    956,
+    338,
+    124
+   ]
+  },
+  {
+   "key": "lemmy",
+   "res": "hud/names/lemmy",
+   "rect": [
+    975,
+    956,
+    390,
+    124
+   ]
+  },
+  {
+   "key": "kiwi",
+   "res": "hud/names/kiwi",
+   "rect": [
+    1014,
+    956,
+    312,
+    124
+   ]
+  },
+  {
+   "key": "melo",
+   "res": "hud/names/melo",
+   "rect": [
+    1003,
+    956,
+    334,
+    124
+   ]
+  },
+  {
+   "key": "peachy",
+   "res": "hud/names/peachy",
+   "rect": [
+    972,
+    956,
+    396,
+    124
+   ]
+  },
+  {
+   "key": "pitaya",
+   "res": "hud/names/pitaya",
+   "rect": [
+    983,
+    956,
+    374,
+    124
+   ]
+  },
+  {
+   "key": "tutti",
+   "res": "hud/names/tutti",
+   "rect": [
+    1003,
+    956,
+    334,
+    124
+   ]
+  },
+  {
+   "key": "puff",
+   "res": "hud/names/puff",
+   "rect": [
+    1008,
+    956,
+    324,
+    124
+   ]
+  },
+  {
+   "key": "seaturtle",
+   "res": "hud/names/seaturtle",
+   "rect": [
+    935,
+    956,
+    470,
+    124
+   ]
+  },
+  {
+   "key": "octo",
+   "res": "hud/names/octo",
+   "rect": [
+    1003,
+    956,
+    334,
+    124
+   ]
+  },
+  {
+   "key": "marina",
+   "res": "hud/names/marina",
+   "rect": [
+    976,
+    956,
+    387,
+    124
+   ]
+  },
+  {
+   "key": "pearl",
+   "res": "hud/names/pearl",
+   "rect": [
+    997,
+    956,
+    346,
+    124
+   ]
+  },
+  {
+   "key": "waffles",
+   "res": "hud/names/waffles",
+   "rect": [
+    966,
+    956,
+    408,
+    124
+   ]
+  },
+  {
+   "key": "poppy",
+   "res": "hud/names/poppy",
+   "rect": [
+    987,
+    956,
+    365,
+    124
+   ]
+  },
+  {
+   "key": "duchess",
+   "res": "hud/names/duchess",
+   "rect": [
+    961,
+    956,
+    418,
+    124
+   ]
+  },
+  {
+   "key": "mamapaws",
+   "res": "hud/names/mamapaws",
+   "rect": [
+    920,
+    956,
+    500,
+    124
+   ]
+  },
+  {
+   "key": "acorn",
+   "res": "hud/names/acorn",
+   "rect": [
+    987,
+    956,
+    365,
+    124
+   ]
+  },
+  {
+   "key": "fawn",
+   "res": "hud/names/fawn",
+   "rect": [
+    998,
+    956,
+    344,
+    124
+   ]
+  },
+  {
+   "key": "moss",
+   "res": "hud/names/moss",
+   "rect": [
+    1001,
+    956,
+    338,
+    124
+   ]
+  },
+  {
+   "key": "sprout",
+   "res": "hud/names/sprout",
+   "rect": [
+    981,
+    956,
+    378,
+    124
+   ]
+  },
+  {
+   "key": "plip",
+   "res": "hud/names/plip",
+   "rect": [
+    1016,
+    956,
+    308,
+    124
+   ]
+  },
+  {
+   "key": "breeze",
+   "res": "hud/names/breeze",
+   "rect": [
+    976,
+    956,
+    387,
+    124
+   ]
+  },
+  {
+   "key": "dusty",
+   "res": "hud/names/dusty",
+   "rect": [
+    990,
+    956,
+    360,
+    124
+   ]
+  },
+  {
+   "key": "aurora",
+   "res": "hud/names/aurora",
+   "rect": [
+    976,
+    956,
+    387,
+    124
+   ]
+  },
+  {
+   "key": "boo",
+   "res": "hud/names/boo",
+   "rect": [
+    1016,
+    956,
+    308,
+    124
+   ]
+  },
+  {
+   "key": "pixie",
+   "res": "hud/names/pixie",
+   "rect": [
+    1004,
+    956,
+    332,
+    124
+   ]
+  },
+  {
+   "key": "floof",
+   "res": "hud/names/floof",
+   "rect": [
+    997,
+    956,
+    346,
+    124
+   ]
+  },
+  {
+   "key": "unibun",
+   "res": "hud/names/unibun",
+   "rect": [
+    976,
+    956,
+    387,
+    124
+   ]
+  },
+  {
+   "key": "gumdrop",
+   "res": "hud/names/gumdrop",
+   "rect": [
+    950,
+    956,
+    440,
+    124
+   ]
+  },
+  {
+   "key": "ember",
+   "res": "hud/names/ember",
+   "rect": [
+    976,
+    956,
+    387,
+    124
+   ]
+  },
+  {
+   "key": "drako",
+   "res": "hud/names/drako",
+   "rect": [
+    990,
+    956,
+    360,
+    124
+   ]
+  },
+  {
+   "key": "jinni",
+   "res": "hud/names/jinni",
+   "rect": [
+    1004,
+    956,
+    332,
+    124
+   ]
+  },
+  {
+   "key": "cuppy",
+   "res": "hud/names/cuppy",
+   "rect": [
+    986,
+    956,
+    368,
+    124
+   ]
+  },
+  {
+   "key": "chip",
+   "res": "hud/names/chip",
+   "rect": [
+    1008,
+    956,
+    324,
+    124
+   ]
+  },
+  {
+   "key": "twisty",
+   "res": "hud/names/twisty",
+   "rect": [
+    983,
+    956,
+    374,
+    124
+   ]
+  },
+  {
+   "key": "crois",
+   "res": "hud/names/crois",
+   "rect": [
+    1000,
+    956,
+    340,
+    124
+   ]
+  },
+  {
+   "key": "maca",
+   "res": "hud/names/maca",
+   "rect": [
+    997,
+    956,
+    346,
+    124
+   ]
+  },
+  {
+   "key": "puddi",
+   "res": "hud/names/puddi",
+   "rect": [
+    994,
+    956,
+    352,
+    124
+   ]
+  },
+  {
+   "key": "mochi",
+   "res": "hud/names/mochi",
+   "rect": [
+    990,
+    956,
+    360,
+    124
+   ]
+  },
+  {
+   "key": "cakey",
+   "res": "hud/names/cakey",
+   "rect": [
+    989,
+    956,
+    362,
+    124
+   ]
+  },
+  {
+   "key": "sugarplum",
+   "res": "hud/names/sugarplum",
+   "rect": [
+    931,
+    956,
+    478,
+    124
+   ]
+  },
+  {
+   "key": "chefbun",
+   "res": "hud/names/chefbun",
+   "rect": [
+    950,
+    956,
+    440,
+    124
+   ]
+  },
+  {
+   "key": "gourdy",
+   "res": "hud/names/gourdy",
+   "rect": [
+    971,
+    956,
+    398,
+    124
+   ]
+  },
+  {
+   "key": "batty",
+   "res": "hud/names/batty",
+   "rect": [
+    993,
+    956,
+    354,
+    124
+   ]
+  },
+  {
+   "key": "kernel",
+   "res": "hud/names/kernel",
+   "rect": [
+    983,
+    956,
+    374,
+    124
+   ]
+  },
+  {
+   "key": "hexie",
+   "res": "hud/names/hexie",
+   "rect": [
+    994,
+    956,
+    352,
+    124
+   ]
+  },
+  {
+   "key": "mumbles",
+   "res": "hud/names/mumbles",
+   "rect": [
+    955,
+    956,
+    430,
+    124
+   ]
+  },
+  {
+   "key": "hocus",
+   "res": "hud/names/hocus",
+   "rect": [
+    989,
+    956,
+    362,
+    124
+   ]
+  },
+  {
+   "key": "countsquishula",
+   "res": "hud/names/countsquishula",
+   "rect": [
+    862,
+    956,
+    616,
+    124
+   ]
+  },
+  {
+   "key": "wisecrack",
+   "res": "hud/names/wisecrack",
+   "rect": [
+    937,
+    956,
+    466,
+    124
+   ]
+  },
+  {
+   "key": "gigagrowth",
+   "res": "hud/names/gigagrowth",
+   "rect": [
+    904,
+    956,
+    532,
+    124
+   ]
+  },
+  {
+   "key": "crystalline",
+   "res": "hud/names/crystalline",
+   "rect": [
+    926,
+    956,
+    488,
+    124
+   ]
+  },
+  {
+   "key": "aeroswift",
+   "res": "hud/names/aeroswift",
+   "rect": [
+    928,
+    956,
+    484,
+    124
+   ]
+  },
+  {
+   "key": "phantasm",
+   "res": "hud/names/phantasm",
+   "rect": [
+    941,
+    956,
+    458,
+    124
+   ]
+  },
+  {
+   "key": "magmara",
+   "res": "hud/names/magmara",
+   "rect": [
+    949,
+    956,
+    442,
+    124
+   ]
+  },
+  {
+   "key": "chronoshade",
+   "res": "hud/names/chronoshade",
+   "rect": [
+    889,
+    956,
+    562,
+    124
+   ]
+  },
+  {
+   "key": "ribbit",
+   "res": "hud/names/ribbit",
+   "rect": [
+    990,
+    956,
+    360,
+    124
+   ]
+  },
+  {
+   "key": "frankie",
+   "res": "hud/names/frankie",
+   "rect": [
+    971,
+    956,
+    398,
+    124
+   ]
+  },
+  {
+   "key": "corny",
+   "res": "hud/names/corny",
+   "rect": [
+    989,
+    956,
+    362,
+    124
+   ]
+  },
+  {
+   "key": "peppi",
+   "res": "hud/names/peppi",
+   "rect": [
+    996,
+    956,
+    348,
+    124
+   ]
+  },
+  {
+   "key": "nori",
+   "res": "hud/names/nori",
+   "rect": [
+    1011,
+    956,
+    318,
+    124
+   ]
+  },
+  {
+   "key": "sunny",
+   "res": "hud/names/sunny",
+   "rect": [
+    987,
+    956,
+    365,
+    124
+   ]
+  },
+  {
+   "key": "toco",
+   "res": "hud/names/toco",
+   "rect": [
+    1005,
+    956,
+    330,
+    124
+   ]
+  },
+  {
+   "key": "churro",
+   "res": "hud/names/churro",
+   "rect": [
+    978,
+    956,
+    384,
+    124
+   ]
+  },
+  {
+   "key": "khinki",
+   "res": "hud/names/khinki",
+   "rect": [
+    987,
+    956,
+    365,
+    124
+   ]
+  },
+  {
+   "key": "maki",
+   "res": "hud/names/maki",
+   "rect": [
+    1005,
+    956,
+    330,
+    124
+   ]
+  },
+  {
+   "key": "noodle",
+   "res": "hud/names/noodle",
+   "rect": [
+    976,
+    956,
+    387,
+    124
+   ]
+  },
+  {
+   "key": "flossie",
+   "res": "hud/names/flossie",
+   "rect": [
+    976,
+    956,
+    387,
+    124
+   ]
+  },
+  {
+   "key": "shelly",
+   "res": "hud/names/shelly",
+   "rect": [
+    986,
+    956,
+    368,
+    124
+   ]
+  },
+  {
+   "key": "tilly",
+   "res": "hud/names/tilly",
+   "rect": [
+    1007,
+    956,
+    326,
+    124
+   ]
+  },
+  {
+   "key": "pico",
+   "res": "hud/names/pico",
+   "rect": [
+    1012,
+    956,
+    316,
+    124
+   ]
+  },
+  {
+   "key": "clover",
+   "res": "hud/names/clover",
+   "rect": [
+    981,
+    956,
+    378,
+    124
+   ]
+  },
+  {
+   "key": "chilla",
+   "res": "hud/names/chilla",
+   "rect": [
+    992,
+    956,
+    356,
+    124
+   ]
+  },
+  {
+   "key": "mimi",
+   "res": "hud/names/mimi",
+   "rect": [
+    1005,
+    956,
+    330,
+    124
+   ]
+  },
+  {
+   "key": "puddles",
+   "res": "hud/names/puddles",
+   "rect": [
+    966,
+    956,
+    408,
+    124
+   ]
+  },
+  {
+   "key": "bean",
+   "res": "hud/names/bean",
+   "rect": [
+    1001,
+    956,
+    338,
+    124
+   ]
+  },
+  {
+   "key": "zippy",
+   "res": "hud/names/zippy",
+   "rect": [
+    996,
+    956,
+    348,
+    124
+   ]
+  },
+  {
+   "key": "nana",
+   "res": "hud/names/nana",
+   "rect": [
+    1000,
+    956,
+    340,
+    124
+   ]
+  },
+  {
+   "key": "bing",
+   "res": "hud/names/bing",
+   "rect": [
+    1009,
+    956,
+    322,
+    124
+   ]
+  },
+  {
+   "key": "plummy",
+   "res": "hud/names/plummy",
+   "rect": [
+    966,
+    956,
+    408,
+    124
+   ]
+  },
+  {
+   "key": "clemmy",
+   "res": "hud/names/clemmy",
+   "rect": [
+    966,
+    956,
+    408,
+    124
+   ]
+  },
+  {
+   "key": "appy",
+   "res": "hud/names/appy",
+   "rect": [
+    1000,
+    956,
+    340,
+    124
+   ]
+  },
+  {
+   "key": "blueby",
+   "res": "hud/names/blueby",
+   "rect": [
+    978,
+    956,
+    384,
+    124
+   ]
+  },
+  {
+   "key": "coco",
+   "res": "hud/names/coco",
+   "rect": [
+    1003,
+    956,
+    334,
+    124
+   ]
+  },
+  {
+   "key": "perry",
+   "res": "hud/names/perry",
+   "rect": [
+    993,
+    956,
+    354,
+    124
+   ]
+  },
+  {
+   "key": "grana",
+   "res": "hud/names/grana",
+   "rect": [
+    987,
+    956,
+    365,
+    124
+   ]
+  },
+  {
+   "key": "mangie",
+   "res": "hud/names/mangie",
+   "rect": [
+    974,
+    956,
+    392,
+    124
+   ]
+  },
+  {
+   "key": "razzy",
+   "res": "hud/names/razzy",
+   "rect": [
+    987,
+    956,
+    365,
+    124
+   ]
+  }
+ ]
 }

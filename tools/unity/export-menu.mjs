@@ -3,6 +3,7 @@
 //   node tools/unity/export-menu.mjs                       all 30 levels x 3 seasons
 //   node tools/unity/export-menu.mjs --levels 1,5 --seasons rainy
 //   node tools/unity/export-menu.mjs --hud-only            only the HUD pieces (and menu.json's hud / hudText)
+//   node tools/unity/export-menu.mjs --names               only every roster creature's name plate (menu.json's names)
 //
 // Nothing is redrawn by hand: the in-app web game is built (webgame/build.mjs), opened in Chromium at the Galaxy
 // A15's size (832 x 384 dp, 2.8125 px per dp = 2340 x 1080 px), frozen like webgame/test/pixel-diff.mjs, and each
@@ -14,6 +15,8 @@
 //                                  coin / gem pills are only their coin / gem picture (the pill and its number are
 //                                  drawn), the crest has no level number (drawn, with the XP ring)
 //   - hud/<id>-f<n>.png            the crest's and PLAY's flourish, frame by frame (Web Animations seeked to each frame)
+//   - hud/names/<key>.png          each roster creature's name plate (its rarity's plaque, stars and lettering), cut as
+//                                  the menu draws it with that creature chosen; Unity shows the chosen creature's (Menu/MenuView.cs)
 //   - menu.json                    where every piece goes, in the reference screen's device pixels, and how it moves
 //   - unity/Reference/menu-a15.png the whole menu at the same frozen moment: what the Unity build is compared with
 //
@@ -39,7 +42,8 @@ const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ?
 const LEVELS = arg('levels', Array.from({ length: 30 }, (_, i) => i + 1).join(',')).split(',').map(Number);
 const SEASONS = arg('seasons', 'rainy,sunny,snowy').split(',');
 const HUD_ONLY = process.argv.includes('--hud-only');
-const SKIP_BUILD = process.argv.includes('--no-build') || HUD_ONLY;
+const NAMES_ONLY = process.argv.includes('--names');
+const SKIP_BUILD = process.argv.includes('--no-build') || HUD_ONLY || NAMES_ONLY;
 
 // the reference phone: Galaxy A15, landscape
 const REF = { w: 832, h: 384, dpr: 2.8125 };
@@ -276,6 +280,25 @@ async function hudShots(page) {
   return out;
 }
 
+// every roster creature's name plate: the menu with that creature chosen (window.SquadLobby.selected, then the
+// 'squadlobby' event the menu redraws on), its .mm-name cut as the 'name' piece is
+async function nameShots(page) {
+  const roster = await page.evaluate(() => window.SquishSquad.ROSTER.map((c, id) => c && c.key ? { id, key: c.key, name: c.name } : null).filter(Boolean));
+  const out = [];   // [{ key, res, rect }] (a list: Unity reads menu.json with JsonUtility)
+  for (const c of roster) {
+    await page.evaluate((id) => { window.SquadLobby.selected = () => id; window.dispatchEvent(new Event('squadlobby')); }, c.id);
+    await page.waitForTimeout(60);
+    const r = await isolate(page, '.mm-name', 0, true);
+    const box = pxBox(r, 24);
+    const png = await shotPx(page, box);
+    const t = trimBox(png);
+    if (!t) { console.log('  (no plate for ' + c.key + ')'); continue; }
+    out.push({ key: c.key, res: write(`hud/names/${c.key}.png`, PNG.sync.write(crop(png, t))), rect: [box.x + t.x, box.y + t.y, t.w, t.h] });
+  }
+  await isolate(page, '', 0, false);
+  return out;
+}
+
 // where Unity draws the HUD's numbers (Menu/HudArt.cs): the pills' boxes (the reference's, and where each coin / gem
 // picture sits from its pill), the crest's <svg> and its .sq-cin (the flourish and press scale about its 50 % 62 %)
 async function hudText(page) {
@@ -295,6 +318,19 @@ async function hudText(page) {
 // ---------------------------------------------------------------------------------------------------------------------
 if (!SKIP_BUILD) await build(WORK);
 fs.writeFileSync(path.join(WORK, '__unity_canvas.html'), '<!doctype html><meta charset="utf-8"><style>html,body{margin:0;background:transparent;overflow:hidden}</style><body></body>');
+if (NAMES_ONLY) {
+  const browser = await chromium.launch({ args: ['--allow-file-access-from-files'] });
+  const { page, errs } = await openMenu(browser);
+  fs.rmSync(path.join(OUT, 'hud/names'), { recursive: true, force: true });
+  const names = await nameShots(page);
+  await browser.close();
+  const layout = JSON.parse(fs.readFileSync(path.join(OUT, 'menu.json'), 'utf8'));
+  layout.names = names;
+  write('menu.json', JSON.stringify(layout, null, 1));
+  console.log('names: ' + names.length + ' plates');
+  for (const e of [...new Set(errs)].slice(0, 8)) console.log('  page error:', e.slice(0, 200));
+  process.exit(0);
+}
 if (HUD_ONLY) {
   // the HUD's pieces again, into the existing menu.json (the house pictures, weather and reference stay)
   const browser = await chromium.launch({ args: ['--allow-file-access-from-files'] });
@@ -338,6 +374,7 @@ const weather = await weatherShots(browser, page);
 fs.writeFileSync(path.join(REF_DIR, 'menu-a15.png'), await page.screenshot());
 const hudTextInfo = await hudText(page);
 const hud = await hudShots(page);
+const names = await nameShots(page);   // (last: it changes the chosen creature)
 await browser.close();
 
 const layout = {
@@ -346,6 +383,7 @@ const layout = {
   scene: { viewBox: [0, 0, VB.w, VB.h], fit: 'xMidYMax slice', ...scene },
   weather,
   hud,
+  names,
   hudText: hudTextInfo,
 };
 write('menu.json', JSON.stringify(layout, null, 1));

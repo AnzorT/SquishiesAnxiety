@@ -14,6 +14,15 @@ namespace SquishSquad.Menu
         public Weather[] weather;
         public Piece[] hud;
         public HudText hudText;     // where the player's numbers are drawn (MenuView.Hud.cs); null in an older export
+        public NamePlate[] names;   // every roster creature's name plate, in place of the 'name' piece's (export --names)
+
+        [Serializable]
+        public class NamePlate
+        {
+            public string key;
+            public string res;
+            public int[] rect;          // reference px, as the 'name' piece's
+        }
 
         [Serializable]
         public class HudText

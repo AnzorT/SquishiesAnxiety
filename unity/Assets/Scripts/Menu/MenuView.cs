@@ -42,6 +42,20 @@ namespace SquishSquad.Menu
         public int Level { get; private set; }
         public IReadOnlyList<PieceView> Pieces => _pieces;
 
+        // the 'name' piece with this creature's plate (export-menu.mjs --names), or as exported (Mittens')
+        MenuLayout.Piece PlateFor(MenuLayout.Piece p, string key)
+        {
+            var plate = _layout.names == null || key == null ? null : System.Array.Find(_layout.names, n => n.key == key);
+            if (plate == null || plate.rect == null || plate.rect.Length != 4) return p;
+            return new MenuLayout.Piece
+            {
+                id = p.id, res = plate.res, rect = plate.rect, world = p.world, tap = p.tap, press = p.press,
+                hasFlourish = p.hasFlourish, flourish = p.flourish,
+                // (where a tap counts: the plate's own box, as the exported one's is)
+                hit = new float[] { plate.rect[0], plate.rect[1], plate.rect[2], plate.rect[3] },
+            };
+        }
+
         /// <summary>The creature drawn live from its rig frames (null: its still picture is shown).</summary>
         public CreatureView Creature { get; private set; }
 
@@ -83,8 +97,11 @@ namespace SquishSquad.Menu
             }
 
             // 2. the creature and its name plate (they stand in the scene), 3. the weather, 4. the HUD
+            // the creature: live or recorded when it can be (else the exported still, Mittens'); its name plate with it
+            var rig = _creatureKey != null ? Rigs.For(_creatureKey) : null;
+            string plateKey = rig != null ? _creatureKey : "mittens";
             int order = WorldOrder;
-            foreach (var p in _layout.hud) if (p.world) _pieces.Add(new PieceView(this, p, order++));
+            foreach (var p in _layout.hud) if (p.world) _pieces.Add(new PieceView(this, p.id == "name" ? PlateFor(p, plateKey) : p, order++));
             BuildWeather();
             order = HudOrder;
             foreach (var p in _layout.hud) if (!p.world) _pieces.Add(new PieceView(this, p, order++));
@@ -94,8 +111,7 @@ namespace SquishSquad.Menu
             if (_creatureKey != null)
             {
                 var piece = _pieces.Find(x => x.Data.id == "creature");
-                var rig = piece != null ? Rigs.For(_creatureKey) : null;
-                if (rig != null)
+                if (piece != null && rig != null)
                 {
                     Creature = CreatureView.Create(_world, rig, piece.Hit, piece.Order);
                     _creatureHome = Creature.transform.localPosition;
