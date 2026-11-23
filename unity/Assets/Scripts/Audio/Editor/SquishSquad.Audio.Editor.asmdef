@@ -1,0 +1,10 @@
+{
+    "name": "SquishSquad.Audio.Editor",
+    "rootNamespace": "SquishSquad.Audio.EditorTools",
+    "references": [],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "autoReferenced": false,
+    "noEngineReferences": false
+}
