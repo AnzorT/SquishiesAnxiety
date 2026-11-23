@@ -74,7 +74,7 @@ namespace SquishSquad.Menu
             _view.Tick(0f);
         }
 
-        // a game open over the menu (only Squish Stack is ported: the park's carousel isn't, so a tap in the park opens it)
+        // a game open over the menu (only Squish Stack is ported), started from its card in the Game Park
         StackGame _game;
 
         void OpenStack()
@@ -82,7 +82,57 @@ namespace SquishSquad.Menu
             UiPiece.PxPerDp = _h / _layout.reference.dp[1];
             _view.Shown = false;
             _game = StackGame.Create(transform, MenuState.StackLevel);
-            _game.OnExit = () => { _game = null; _view.Shown = true; };
+            // back from the game: the app opens the menu straight into the park, the carousel shown at once
+            _game.OnExit = () => { _game = null; _view.Shown = true; if (_view.Where == MenuView.Place.Park) _view.ShowGames(NowMs, true); };
+        }
+
+        // PLAY on a card, 420 ms after the tap (menu.js playAt -> x.playGame)
+        void PlayGame(int i)
+        {
+            var c = _view.Carousel;
+            var g = c.Game(i);
+            c.Remember(i);
+            if (g.id == "stack") { OpenStack(); return; }
+            c.Model.PlayDone(NowMs);
+            ShowToast(g.name + " isn't in the Unity version yet");
+        }
+
+        // the carousel's taps and swipes (menu.js showGames: the back orb, the arrows, the dots, PLAY and the window on
+        // the middle card, a swipe over the carousel of more than 36 pu sideways)
+        Vector2 _parkDown;
+        ParkModel.Hit _parkHit;
+        int _parkDot;
+        bool _parkPress;
+
+        void HandlePark(bool down, bool held, bool up, Vector2 page)
+        {
+            var c = _view.Carousel;
+            if (c == null) return;
+            var m = c.Model;
+            if (down && !InPanel(page))
+            {
+                _parkPress = true;
+                _parkDown = page;
+                _parkHit = m.HitTest(page.x, page.y, out _parkDot);
+                m.PlayPressed = _parkHit == ParkModel.Hit.Play;
+            }
+            if (!_parkPress || !up) return;
+            _parkPress = false;
+            m.PlayPressed = false;
+            if (m.InCarousel(_parkDown.x, _parkDown.y) && m.Swipe(_parkDown.x, _parkDown.y, page.x, page.y, NowMs)) return;
+            var hit = m.HitTest(page.x, page.y, out int dot);
+            if (hit != _parkHit || (hit == ParkModel.Hit.Dot && dot != _parkDot)) return;   // (a click: down and up on it)
+            switch (hit)
+            {
+                case ParkModel.Hit.Back: _view.LeavePark(NowMs); break;
+                case ParkModel.Hit.Prev: m.Go(m.Cur - 1, NowMs); break;
+                case ParkModel.Hit.Next: m.Go(m.Cur + 1, NowMs); break;
+                case ParkModel.Hit.Dot: m.Go(dot, NowMs); break;
+                case ParkModel.Hit.Play:
+                    if (!c.Game(m.Cur).open) ShowToast(c.Game(m.Cur).name + " isn't open yet");
+                    else m.Play(NowMs);
+                    break;
+            }
         }
 
         void Update()
@@ -91,6 +141,11 @@ namespace SquishSquad.Menu
             if (Screen.width != _w || Screen.height != _h) Rebuild();
             _view.Tick((Time.unscaledTime - _t0) * 1000f);
             HandleInput();
+            if (_view.Carousel != null && _game == null)
+            {
+                int g = _view.Carousel.Model.TakePlay(NowMs);
+                if (g >= 0) PlayGame(g);
+            }
 
             _fpsFrames++;
             _fpsTime += Time.unscaledDeltaTime;
@@ -119,15 +174,11 @@ namespace SquishSquad.Menu
             var page = new Vector2(pos.x, _h - pos.y);   // the page's pixels: y down
             float dpPx = _h / _layout.reference.dp[1];
 
-            // in the Game Park (its games carousel isn't ported yet): a tap opens Squish Stack, back walks home
-            if (_view.Where == MenuView.Place.Park && Input.GetKeyDown(KeyCode.Escape))
+            // in the Game Park: the games carousel; back (Android's, Escape) walks home like its back orb
+            if (_view.Where == MenuView.Place.Park)
             {
-                _view.LeavePark(NowMs);
-                return;
-            }
-            if (_view.Where == MenuView.Place.Park && down && !InPanel(page))
-            {
-                OpenStack();
+                if (Input.GetKeyDown(KeyCode.Escape)) { _view.LeavePark(NowMs); return; }
+                HandlePark(down, held, up, page);
                 return;
             }
             if (_view.Where != MenuView.Place.Home) return;

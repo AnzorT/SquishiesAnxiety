@@ -77,7 +77,7 @@ namespace SquishSquad.EditorTools
         }
     }
 
-    // The menu's pictures go in exactly as exported: no resizing, no compression, no mipmaps (pixel for pixel with the
+    // The menu's (and the Game Park carousel's) pictures go in exactly as exported: no resizing, no compression, no mipmaps (pixel for pixel with the
     // app on the reference screen). The house pictures are JPEG bytes (.bytes), decoded at run time, so they aren't
     // textures here at all.
     public sealed class MenuArtImport : AssetPostprocessor
@@ -93,7 +93,8 @@ namespace SquishSquad.EditorTools
                 ti.textureCompression = TextureImporterCompression.Uncompressed;
                 return;
             }
-            if (!assetPath.StartsWith("Assets/Resources/Menu/")) return;
+            // (Resources/Park: the Game Park's carousel, tools/unity/export-park.mjs)
+            if (!assetPath.StartsWith("Assets/Resources/Menu/") && !assetPath.StartsWith("Assets/Resources/Park/")) return;
             ti.textureType = TextureImporterType.Default;
             ti.npotScale = TextureImporterNPOTScale.None;
             ti.mipmapEnabled = false;

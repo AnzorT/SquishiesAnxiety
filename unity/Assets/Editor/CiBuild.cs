@@ -36,6 +36,11 @@ namespace SquishSquad.EditorTools
                 foreach (var (name, w, h) in Screens) Shot(layout, outDir, name, w, h, name != "menu-a15");
                 Shot(layout, outDir, "menu-a15-live", 2340, 1080, true);
                 Shot(layout, outDir, "menu-a15-park", 2340, 1080, true, 3200f);   // after PLAY's walk to the Game Park
+                // the games carousel at rest, 1.5 s after the walk ends (3060 ms), Squish Time in the middle (compare with
+                // unity/Reference/park-a15.png around the creature, which is drawn live here), and on other screen shapes
+                Shot(layout, outDir, "park-a15", 2340, 1080, true, 4560f);
+                Shot(layout, outDir, "park-2400x1080", 2400, 1080, true, 4560f);
+                Shot(layout, outDir, "park-2048x1536", 2048, 1536, true, 4560f);
                 // Squish Stack, level 12: the intro banner, the deal, playing (compare with unity/Reference/stack-level-12.png:
                 // the squishies are picked at random, so only the screen around them matches), and a move
                 StackShots(outDir, 2340, 1080, "stack-a15", new[] { (600.0, "intro"), (2200.0, "deal"), (6500.0, "play"), (8000.0, "moved") });
@@ -56,6 +61,7 @@ namespace SquishSquad.EditorTools
             var cam = MenuScreen.CreateCamera(root);
             MenuScreen.FitCamera(cam, w, h);
             var view = new MenuView(layout, root, w, h, layout.reference.level, layout.reference.season, "mittens", live);
+            view.ParkStartGame = "squish";   // (not the editor's remembered game: the same picture every run)
             view.Tick(0f);
             if (parkMs >= 0)
             {

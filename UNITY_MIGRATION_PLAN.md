@@ -1,7 +1,7 @@
 # Squish Squad → Unity
 
 Status **2026-11-23**: the Main Menu is ported (first pass) in `unity/`, the four games' rules are in C# (checked
-against the JS), and Squish Stack's level screen is the first game screen (PLAY, then a tap in the Game Park). It hasn't run in a real Unity yet: the runtime
+against the JS), and Squish Stack's level screen is the first game screen (PLAY, then PLAY on its card in the Game Park). It hasn't run in a real Unity yet: the runtime
 scripts compile against Unity's libraries, and the rest (editor scripts, rendering) is checked by the first CI run once
 the Unity license secrets are in (`unity/README.md`).
 
@@ -103,8 +103,20 @@ Feel and speed are checked on the phone.
      (`Resources/Menu/park/`, 90 states, 1.3 MB), drawn once when PLAY is tapped. Checked against Chrome on a full
      scene (house, 2630 x 1174): 0.42 % of pixels differ visibly, all on thin outline edges (anti-aliasing).
      Once the GPU renderer has passed CI, the house pictures can go the same way: 51 MB of JPEG becomes ~1.5 MB.
-   - Not yet: the games carousel in the park (a tap or back walks home for now), the house's vignette (baked into
-     its picture; the app hides it in the park).
+   - ✅ **The games carousel** (`Menu/ParkModel.cs`, `ParkCarousel.cs`; art by `tools/unity/export-park.mjs`):
+     - when the walk ends, as `showGames`: the dim, the header with its back orb, the rays and halo, the cards
+       (Squish Time and the app's four games), the arrows and the dots, with the app's CSS transitions (durations,
+       delays, cubic-bezier curves), `place()` for the cards off the middle, the centre card's flash, swipes and
+       arrow / dot taps, PLAY's press and bounce, the last game remembered (`squishsquad.park.v1`)
+     - the middle card plays its game's clip (VideoPlayer, `StreamingAssets/Park`) over its first frame
+     - each card is drawn into its own layer first, as CSS composites it with its opacity and filter
+     - PLAY on Squish Stack opens it; on the other games, a "not in the Unity version yet" note. Back / Escape
+       walks home while the carousel goes out
+     - other screen widths follow showGames' formulas (`carL`, `CW`); the cards are scaled to that width
+     - `tools/unity/park-test` draws the Unity code's draw list over the app's park and diffs it with the app:
+       0.001-0.005 % of pixels visibly differ at rest (each game in the middle), and the cards' transforms,
+       opacities and brightness match Chrome's computed style to 0.0004 at every motion frame checked
+   - Not yet: the house's vignette (baked into its picture; the app hides it in the park).
 5. **The house** (Squad House v6, 94 scripts): each furniture piece and room exported as pictures by the same method,
    with the room and placement logic ported.
 6. **Shop, chests, chest smash.**

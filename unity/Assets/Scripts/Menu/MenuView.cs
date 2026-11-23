@@ -161,6 +161,11 @@ namespace SquishSquad.Menu
             foreach (var p in _pieces) p.Tick(ms);
             TickTrip(ms);
             TickClip();
+            if (Carousel != null)
+            {
+                Carousel.Tick(ms);
+                if (Carousel.Model.Done(ms)) { Carousel.Dispose(); Carousel = null; }
+            }
         }
 
         // ---- PLAY: the walk to the Game Park and back (webgame/app/menu.js enterPark / leavePark) ---------------------
@@ -191,6 +196,7 @@ namespace SquishSquad.Menu
         public bool LeavePark(float nowMs)
         {
             if (Where != Place.Park) return false;
+            Carousel?.Model.Leave(nowMs);   // the carousel goes out while the creature turns (menu.js leavePark)
             Where = Place.ToHome;
             _tripStart = nowMs;
             Clip("park-leave");
@@ -224,7 +230,7 @@ namespace SquishSquad.Menu
             if (Creature != null) Creature.transform.localPosition = _creatureHome + new Vector3(scr - X0 - cam, 0, 0);
             if (t < 2 * turn + walk) return;
             // arrived
-            if (enter) Where = Place.Park;
+            if (enter) { Where = Place.Park; ShowGames(_tripStart + 2 * turn + walk, false); }
             else { Where = Place.Home; _world.localPosition = Vector3.zero; if (Creature != null) Creature.transform.localPosition = _creatureHome; Fade(1, ms); }
             // the clip ends in 'happy'; back to the idle loop once it has played
         }
@@ -235,6 +241,23 @@ namespace SquishSquad.Menu
             if (Creature.Seconds < _clip.Duration + 1.2f) return;
             _clip = null;
             Creature.SetFrames(_idle);
+        }
+
+        // ---- the games carousel in the park (menu.js showGames; ParkCarousel / ParkModel) --------------------------
+        /// <summary>The carousel while it's on screen (in the park, and while it goes out).</summary>
+        public ParkCarousel Carousel { get; private set; }
+        /// <summary>The game in the middle when the carousel opens (null: the one last chosen, as the app).</summary>
+        public string ParkStartGame;
+        ParkLayout _parkLayout;
+        const int CarouselOrder = 100;
+
+        /// <summary>The carousel, made at `nowMs` (instant: at once, as when the app comes back into the park from a game).</summary>
+        public void ShowGames(double nowMs, bool instant)
+        {
+            if (Carousel != null) { Carousel.Dispose(); Carousel = null; }
+            _parkLayout ??= ParkCarousel.LoadLayout();
+            if (_parkLayout == null) return;
+            Carousel = new ParkCarousel(_parkLayout, _root, _w, _h, nowMs, instant, ParkStartGame, CarouselOrder);
         }
 
         // the park's SVG, drawn once by the vector renderer into a texture placed one screen to the left of the house
@@ -375,6 +398,8 @@ namespace SquishSquad.Menu
 
         public void Dispose()
         {
+            Carousel?.Dispose();
+            Carousel = null;
             if (_root != null) Kill(_root.gameObject);
             foreach (var o in _made) Kill(o);
             _made.Clear();

@@ -37,6 +37,16 @@ design changes. `--levels 1,5 --seasons rainy` exports fewer states; `--no-build
 `node tools/unity/compare.mjs --compose` rebuilds the menu from those pieces with the same placement rules as
 `MenuView.cs` and compares it with the reference (it matches except JPEG noise on edges and sub-pixel rain).
 
+## The Game Park's games carousel: `node tools/unity/export-park.mjs`
+
+Opens the menu straight into the Game Park (as the app does when you come back from a game) with the app's games list,
+and cuts out the carousel's pieces into `Assets/Resources/Park/` (each card, its window's inner shadow and shape,
+PLAY, the dim, the header, the rays, the halo, the arrows, the dots, Squish Time's creature) with `park.json`; copies
+the game clips to `Assets/StreamingAssets/Park/`; writes the app's screenshots to `webgame/test/out/unity-park/`
+(`../Reference/park-a15.png` for CI). Run `export-menu.mjs` first (or pass `--no-build` to reuse its web build).
+`dotnet run -c Release --project tools/unity/park-test` then draws the Unity code's carousel over the app's park and
+reports the pixels that differ from the app (`-- 2048 1536` draws it on another screen shape).
+
 ## The creatures' animations: `tools/unity/rig/`
 
 The creatures move exactly as in the app because Unity will run the app's own animation code (`rive-rig.js` and
