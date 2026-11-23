@@ -219,6 +219,26 @@ namespace SquishSquad.Menu
             _game = s;
         }
 
+        // BLITZ from a hub: the run over the hub (hidden meanwhile); leaving the run comes back to the hub
+        void OpenBlitzOver(MonoBehaviour hub, System.Func<MonoBehaviour> create)
+        {
+            hub.gameObject.SetActive(false);
+            var run = create();
+            switch (run)
+            {
+                case SquishSquad.Games.Stack.StackGame g: g.OnExit = () => Back(hub); break;
+                case SquishSquad.Games.Sort.SortGame g: g.OnExit = () => Back(hub); break;
+            }
+            _game = run;
+        }
+
+        void Back(MonoBehaviour hub)
+        {
+            if (hub == null) { AfterGame(); return; }
+            hub.gameObject.SetActive(true);
+            _game = hub;
+        }
+
         // each game opens on its hub (Hop: its map), as the app's game screens do
         void OpenStack()
         {
@@ -226,6 +246,7 @@ namespace SquishSquad.Menu
             SeedGameProfiles();
             var s = SquishSquad.Games.Stack.StackScreen.Create(transform);
             s.OnExit = AfterGame;
+            s.OpenBlitz = _ => OpenBlitzOver(s, () => SquishSquad.Games.Stack.StackGame.CreateBlitz(transform));
             _game = s;
         }
 
@@ -236,6 +257,7 @@ namespace SquishSquad.Menu
             var s = SquishSquad.Games.Sort.SortScreen.Create(transform);
             s.OnLevel = (theme, lv) => { if (theme == "fridge") MenuState.SortLevel = lv; };
             s.OnExit = AfterGame;
+            s.OpenBlitz = _ => OpenBlitzOver(s, () => SquishSquad.Games.Sort.SortGame.CreateBlitz(transform));
             _game = s;
         }
 
