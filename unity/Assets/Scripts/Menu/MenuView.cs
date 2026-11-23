@@ -100,6 +100,7 @@ namespace SquishSquad.Menu
                     _creatureHome = Creature.transform.localPosition;
                     _idle = rig;
                     piece.UseLive();
+                    Creature.Failed = _ => piece.UseStill();
                 }
             }
         }
@@ -295,12 +296,29 @@ namespace SquishSquad.Menu
             }
             var R = _layout.reference;
             float W = R.px[0], H = R.px[1];
-            float cx = p.hit[0] + p.hit[2] / 2f, cy = p.hit[1] + p.hit[3] / 2f;
-            float x = cx < W / 3f ? refPx.x * _f : cx > W * 2f / 3f ? _w - (W - refPx.x) * _f : _w / 2f + (refPx.x - W / 2f) * _f;
-            float y = cy < H / 3f ? refPx.y * _f : cy > H * 2f / 3f ? _h - (H - refPx.y) * _f : _h / 2f + (refPx.y - H / 2f) * _f;
+            Anchor(p, out int ax, out int ay);
+            float x = ax < 0 ? refPx.x * _f : ax > 0 ? _w - (W - refPx.x) * _f : _w / 2f + (refPx.x - W / 2f) * _f;
+            float y = ay < 0 ? refPx.y * _f : ay > 0 ? _h - (H - refPx.y) * _f : _h / 2f + (refPx.y - H / 2f) * _f;
             return new Vector2(x, y);
         }
         float ScaleOf(MenuLayout.Piece p) => p.world ? _k / _kRef : _f;
+
+        // Which screen edges a HUD piece holds to (-1 left / top, 0 centre, 1 right / bottom). The app lays the HUD out
+        // in rows (main-menu.js / app/menu.js CSS): the tabs are one row from the left, the coin and gem pills, the trophy
+        // and the gear one row from the right, PLAY in the bottom-left corner, the crest in the bottom-right one. A row
+        // moves as one, so its gaps stay as in the app on any screen shape.
+        void Anchor(MenuLayout.Piece p, out int ax, out int ay)
+        {
+            var id = p.id ?? "";
+            if (id.StartsWith("tab-")) { ax = -1; ay = -1; return; }
+            if (id.StartsWith("pill-") || id.StartsWith("orb-")) { ax = 1; ay = -1; return; }
+            if (id == "play") { ax = -1; ay = 1; return; }
+            if (id == "crest") { ax = 1; ay = 1; return; }
+            var R = _layout.reference;
+            float cx = p.hit[0] + p.hit[2] / 2f, cy = p.hit[1] + p.hit[3] / 2f;
+            ax = cx < R.px[0] / 3f ? -1 : cx > R.px[0] * 2f / 3f ? 1 : 0;
+            ay = cy < R.px[1] / 3f ? -1 : cy > R.px[1] * 2f / 3f ? 1 : 0;
+        }
 
         static Vector2 Snap(Vector2 v, float scale) => Mathf.Approximately(scale, 1f) ? new Vector2(Mathf.Round(v.x), Mathf.Round(v.y)) : v;
         public static Vector3 World(Vector2 pagePx) => new Vector3(pagePx.x, -pagePx.y, 0f);
@@ -378,6 +396,7 @@ namespace SquishSquad.Menu
 
             // a live creature draws itself (CreatureView): no still, no placeholder breath
             public void UseLive() { _live = true; _art.enabled = false; }
+            public void UseStill() { _live = false; _art.enabled = true; }
 
             // the HUD's fade (menu.js x.fade): every picture of the piece at this opacity
             public void SetAlpha(float a)

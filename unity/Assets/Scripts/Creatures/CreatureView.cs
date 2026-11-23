@@ -18,6 +18,7 @@ namespace SquishSquad.Creatures
         string _last;
         float _t0;
         int _size, _rtSize;
+        float _scaleK = 1;
         const float Margin = 0.25f;
 
         /// <summary>The time used for the frame; by default seconds since Show.</summary>
@@ -44,6 +45,7 @@ namespace SquishSquad.Creatures
             _rt = new RenderTexture(_rtSize, _rtSize, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4, name = "creature", hideFlags = HideFlags.HideAndDontSave };
             _rt.Create();
             float k = boxPx.width / _size;   // screen px per texture px (1 on the reference screen)
+            _scaleK = k;
             transform.localPosition = new Vector3(boxPx.x - pad * k, -(boxPx.y - pad * k), 0);
             float w = _rtSize * k, h = _rtSize * k;
             var mesh = new Mesh { name = "creature quad", hideFlags = HideFlags.HideAndDontSave };
@@ -64,16 +66,40 @@ namespace SquishSquad.Creatures
         public void SetFrames(IRigFrames rig) { _rig = rig; _last = null; _t0 = Time.realtimeSinceStartup; }
         public float Seconds => Time.realtimeSinceStartup - _t0;
 
+        /// <summary>Called once if drawing fails, so the owner can show the creature's still instead.</summary>
+        public System.Action<System.Exception> Failed;
+        bool _failed, _reported;
+
         /// <summary>Draws the frame for time t now (CI screenshots call this outside play mode).</summary>
         public void RenderAt(float t)
         {
-            var markup = _rig.FrameAt(t);
-            if (markup == _last) return;
-            _last = markup;
-            int pad = (_rtSize - _size) / 2;
-            var scene = SvgScene.Compile(SvgMarkup.Parse(markup), _size, _size, Affine.Translate(pad, pad));
-            _renderer.Render(scene, _rt);
+            if (_failed) return;
+            try
+            {
+                var markup = _rig.FrameAt(t);
+                if (markup == _last) return;
+                _last = markup;
+                int pad = (_rtSize - _size) / 2;
+                var scene = SvgScene.Compile(SvgMarkup.Parse(markup), _size, _size, Affine.Translate(pad, pad));
+                _renderer.Render(scene, _rt);
+                if (!_reported)
+                {
+                    // one line to find this creature by, and to see what it drew
+                    _reported = true;
+                    Debug.Log($"[CreatureView] drawing live: texture {_rtSize}x{_rtSize} (MSAA {_rt.antiAliasing}), quad at {transform.position} size {_rtSize * _scaleK:0}, " +
+                              $"{Count(scene.Root)} shapes/layers in frame 1, shaders ok: {Shader.Find("Hidden/SquishSquad/VectorCover") != null}");
+                }
+            }
+            catch (System.Exception e)
+            {
+                _failed = true;
+                Debug.LogError("[CreatureView] live drawing failed, showing the still instead: " + e);
+                if (_mr != null) _mr.enabled = false;
+                Failed?.Invoke(e);
+            }
         }
+
+        static int Count(LayerNode l) { int n = 0; foreach (var c in l.Children) n += c is LayerNode k ? 1 + Count(k) : 1; return n; }
 
         void LateUpdate()
         {
