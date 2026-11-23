@@ -851,6 +851,57 @@ namespace SquishSquad.Games.Sort
             public bool BarRed, ShowBar;
             public string[] BarColors;
             public int Lv, Tier, Hearts;
+            /// <summary>Blitz (Game.js `blitz`): BLITZ ⚡ · the model, ROUND n/10, the revive chip in the hearts' place
+            /// and the pips' row (Ui/Blitz Pips, drawn by the level) between the top bar and the bar.</summary>
+            public bool Blitz, Revived;
+            public int Round, Rounds = 10;
+        }
+
+        // the revive chip (squishdoku/ui.js Chip: 9 x 3 padding, a 2 dp white border, Fredoka 11.5 letter-spaced 0.5)
+        static readonly TextStyle ChipText = T(Display, 11.5f, "#ffffff", 0.5f);
+        static float ChipH => UiSvg.LineBox(ChipText) + 6 + 4;
+        // the top bar's second line: the hearts' pill (38 tall) or, in Blitz, the revive chip
+        static float Line2H(Hud d) => d.Blitz ? ChipH : 38;
+        /// <summary>Blitz: the pips' row's top (Game.js styles.pips: marginTop 8 under the top bar, the column's gap 4).</summary>
+        public static float PipsY(Hud d) => 6 + (6 + Math.Max(40, TitleBoxH()) + 6 + Line2H(d)) + 4 + 8;
+        /// <summary>Characters Blitz's HUD has that its fonts don't (the title's ⚡, Chrome's colour emoji; the revive chip's
+        /// ♥), by "ch|size": the picture Chrome draws (export-sort.mjs: Resources/Sort/blitz.json, img/blitz-n), its box's
+        /// width (the advance Chrome gave it) and height, and its top below the text's. Without one, the fallback outline.</summary>
+        public static readonly Dictionary<string, (string href, float w, float h, float dy)> Rasters = new Dictionary<string, (string, float, float, float)>();
+
+        static bool RasterOf(char ch, TextStyle t, out (string href, float w, float h, float dy) r) =>
+            Rasters.TryGetValue(ch + "|" + t.Size.ToString(CultureInfo.InvariantCulture), out r);
+
+        /// <summary>A line's width with those characters at Chrome's advance.</summary>
+        static float WidthR(string text, TextStyle t)
+        {
+            float w = 0; int a = 0;
+            for (int i = 0; i <= text.Length; i++)
+            {
+                if (i < text.Length && !RasterOf(text[i], t, out _)) continue;
+                if (i > a) w += UiSvg.BoxWidth(text.Substring(a, i - a), t);
+                if (i < text.Length) { RasterOf(text[i], t, out var r); w += r.w; }
+                a = i + 1;
+            }
+            return w;
+        }
+
+        /// <summary>A line of text with those characters as Chrome's pictures of them, where Chrome put them.</summary>
+        static void TextR(UiSvg s, string text, float x, float y, TextStyle t)
+        {
+            int a = 0;
+            for (int i = 0; i <= text.Length; i++)
+            {
+                if (i < text.Length && !RasterOf(text[i], t, out _)) continue;
+                if (i > a) { var run = text.Substring(a, i - a); if (run.Trim().Length > 0) s.Text(run, x, y, t); x += UiSvg.BoxWidth(run, t); }
+                if (i < text.Length)
+                {
+                    RasterOf(text[i], t, out var r);
+                    s.Raw($"<image href=\"{r.href}\" x=\"{F(x)}\" y=\"{F(y + r.dy)}\" width=\"{F(r.w)}\" height=\"{F(r.h)}\" preserveAspectRatio=\"none\"/>");
+                    x += r.w;
+                }
+                a = i + 1;
+            }
         }
 
         static readonly TextStyle LevelText = new TextStyle { Font = Display, Size = 18, Color = "#ffffff", Shadows = new[] { new Shadow(INK, 0, 2.5f, 1) } };
@@ -864,14 +915,21 @@ namespace SquishSquad.Games.Sort
             return "…";
         }
 
+        static string EllipsisR(string text, TextStyle t, float w)
+        {
+            if (WidthR(text, t) <= w + 0.01f) return text;
+            for (int n = text.Length - 1; n > 0; n--) { var c = text.Substring(0, n) + "…"; if (WidthR(c, t) <= w + 0.01f) return c; }
+            return "…";
+        }
+
         /// <summary>The top bar's lines (not the back orb, a piece of its own) as laid out at 236 x 384: returns where
         /// the hearts and the bar row are, for the pieces that move (the hearts pop, the bar's fill slides).</summary>
         public static (float heartsX, float heartsY, float barY, float trackX, float trackW) HudLayout(Hud d)
         {
             float line1 = Math.Max(40, TitleBoxH());
             float heartsY = 6 + 6 + line1 + 6;
-            float hudH = 6 + line1 + 6 + 38;
-            float barY = 6 + hudH + 4 + 6;
+            float hudH = 6 + line1 + 6 + Line2H(d);
+            float barY = d.Blitz ? PipsY(d) + 17 + 4 + 6 : 6 + hudH + 4 + 6;
             var bl = T(Display, 13, INK, 0.6f);
             float lw = Math.Max(64, UiSvg.BoxWidth(d.BarLabel ?? " ", bl));
             float trackX = 16 + lw + 8;
@@ -888,20 +946,32 @@ namespace SquishSquad.Games.Sort
             float tx = 12 + 40 + 10, tw = LeftW - 12 - tx;
             float ty = 12 + (line1 - TitleBoxH()) / 2;
             var tn = T(Display, 13, SortModels.THEMES[d.Theme].Ring, 1);
-            s.Text(Ellipsis(d.ModelName.ToUpperInvariant(), tn, tw), tx, ty, tn);
+            var title = d.Blitz ? "BLITZ ⚡ · " + d.ModelName.ToUpperInvariant() : d.ModelName.ToUpperInvariant();
+            if (d.Blitz) TextR(s, EllipsisR(title, tn, tw), tx, ty, tn);
+            else s.Text(Ellipsis(title, tn, tw), tx, ty, tn);
             float ry = ty + UiSvg.LineBox(tn);
             float rowH = Math.Max(UiSvg.LineBox(LevelText), UiSvg.LineBox(ChallengeText) + 6);
-            var lvl = "LEVEL " + d.Lv;
-            s.Text(lvl, tx, ry + (rowH - UiSvg.LineBox(LevelText)) / 2, LevelText);
-            float chipX = tx + UiSvg.BoxWidth(lvl, LevelText) + 6;
+            var lvl = d.Blitz ? $"ROUND {d.Round}/{d.Rounds}" : "LEVEL " + d.Lv;
             var tier = Levels.TIER_NAMES[d.Tier];
             float chipW = UiSvg.BoxWidth(tier, ChallengeText) + 14 + 4, chipH = UiSvg.LineBox(ChallengeText) + 2 + 4;
+            // (numberOfLines 1: a line too long for the row beside its chip shrinks and ends in "…", as ROUND 10/10 does)
+            float lvlW = Math.Min(UiSvg.BoxWidth(lvl, LevelText), tw - 6 - chipW);
+            s.Text(Ellipsis(lvl, LevelText, lvlW), tx, ry + (rowH - UiSvg.LineBox(LevelText)) / 2, LevelText);
+            float chipX = tx + lvlW + 6;
             float cy = ry + (rowH - chipH) / 2;
             s.Box(chipX, cy, chipW, chipH, new BoxStyle { Background = Levels.TIER_COLORS[d.Tier], Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
             s.Text(tier, chipX + 2 + 7, cy + 2 + 1, ChallengeText);
             // the hearts' pill on the wrapped line (the hearts are pieces of their own)
             var L = HudLayout(d);
-            s.Box(12, L.heartsY, 3 * 24 + 2 * 3 + 16 + 4, 38, new BoxStyle { Background = "rgba(255,255,255,0.8)", Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
+            if (d.Blitz)
+            {
+                // Game.js: <Chip bg={revived ? '#b9a6cc' : '#ffb02e'} color="#ffffff">
+                var label = d.Revived ? "REVIVE USED" : "♥ 1 REVIVE";
+                float cw = WidthR(label, ChipText) + 18 + 4;
+                s.Box(12, L.heartsY, cw, ChipH, new BoxStyle { Background = d.Revived ? "#b9a6cc" : "#ffb02e", Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
+                TextR(s, label, 12 + 2 + 9, L.heartsY + 2 + 3, ChipText);
+            }
+            else s.Box(12, L.heartsY, 3 * 24 + 2 * 3 + 16 + 4, 38, new BoxStyle { Background = "rgba(255,255,255,0.8)", Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
             // the bar row: 30 tall, centred
             var bl = T(Display, 13, d.BarRed ? "#e01e4a" : INK, 0.6f);
             if (!string.IsNullOrEmpty(d.BarLabel)) s.Text(d.BarLabel, 16, L.barY + (30 - UiSvg.LineBox(bl)) / 2, bl);

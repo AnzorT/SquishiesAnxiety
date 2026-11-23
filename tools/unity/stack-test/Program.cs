@@ -1,5 +1,6 @@
 // dotnet run -c Release --project tools/unity/stack-test -- <capture dir>   (capture.mjs writes state.json + app.png)
 // dotnet run -c Release --project tools/unity/stack-test -- cards <capture dir>   (cards.mjs: the cards, Cards.cs)
+// dotnet run -c Release --project tools/unity/stack-test -- blitz <capture dir>   (blitz.mjs: a Blitz run, Blitz.cs)
 // Draws the Squish Stack level's screen around the board from the Unity code (the exported background, back orb and
 // buttons, and StackArt's left column for the captured state) with the reference rasteriser, and compares it with
 // the app's screenshot outside the board (where the squishies move).
@@ -23,6 +24,12 @@ static class Program
             UiFont.ReadJson = n => File.ReadAllText(Res("Fonts/" + n + ".json"));
             UiFont.ParseJson = j => JsonSerializer.Deserialize<UiFontData>(j, new JsonSerializerOptions { IncludeFields = true });
             return CardsTest.Run(args[1], Res);
+        }
+        if (args[0] == "blitz")
+        {
+            UiFont.ReadJson = n => File.ReadAllText(Res("Fonts/" + n + ".json"));
+            UiFont.ParseJson = j => JsonSerializer.Deserialize<UiFontData>(j, new JsonSerializerOptions { IncludeFields = true });
+            return BlitzTest.Run(args[1], Res);
         }
         var dir = args[0];
         var opts = new JsonSerializerOptions { IncludeFields = true };

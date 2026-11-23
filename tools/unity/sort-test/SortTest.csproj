@@ -9,8 +9,9 @@
     <Compile Include="../../../unity/Assets/Scripts/Ui/UiFont.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Ui/UiSvg.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Ui/Cards/*.cs" Exclude="../../../unity/Assets/Scripts/Ui/Cards/CardPieces.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/Blitz/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Anim/*.cs" />
-    <Compile Include="../../../unity/Assets/Scripts/Games/Sort/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Sort/SortGame.cs;../../../unity/Assets/Scripts/Games/Sort/SortDoorPiece.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Sort/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Sort/SortGame.cs;../../../unity/Assets/Scripts/Games/Sort/SortDoorPiece.cs;../../../unity/Assets/Scripts/Games/Sort/SortHub*.cs;../../../unity/Assets/Scripts/Games/Sort/SortScreen.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
     <Compile Include="../vector-test/ReferenceRaster.cs" />
     <Compile Include="../vector-test/Png.cs" />

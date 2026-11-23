@@ -1,5 +1,5 @@
-// One level of Squish Stack and the ones after it, as src/stack/Game.js plays it (regular levels; Blitz isn't ported
-// yet), in landscape (REDESIGN_V8: the HUD in a 250 dp column on the left, the cushions in the middle, UNDO / RESTART /
+// One level of Squish Stack and the ones after it, as src/stack/Game.js plays it (Blitz, ten puzzles on one clock:
+// StackBlitz.cs, the same class), in landscape (REDESIGN_V8: the HUD in a 250 dp column on the left, the cushions in the middle, UNDO / RESTART /
 // HINT down a 150 dp column on the right).
 //   intro  the level's number and what's in it          deal  the squishies drop onto their cushions
 //   play   tap a cushion to lift its top squishy, tap another to put it there; or drag it. A big one dropped on a
@@ -23,7 +23,7 @@ using UnityEngine;
 
 namespace SquishSquad.Games.Stack
 {
-    public sealed class StackGame : MonoBehaviour
+    public sealed partial class StackGame : MonoBehaviour
     {
         // ---- setup --------------------------------------------------------------------------------------------------
         public Action OnExit;
@@ -91,17 +91,19 @@ namespace SquishSquad.Games.Stack
             _back = Piece("back", 11);
             _back.SetSvg(Xml("back"), 40, 40);
             _back.Transform = Affine.Translate(_layout.back[0], _layout.back[1]);
-            // the buttons, centred down the right column as on the reference screen
-            float bx = W - RightW + 14, by0 = H / 2 + (_layout.buttonsTop - 192);
+            // the buttons, centred down the right column as on the reference screen (Blitz has no HINT: the two others
+            // centre 32.5 dp lower)
+            float bx = W - RightW + 14, by0 = H / 2 + (_layout.buttonsTop - 192) + (_blitz ? 32.5f : 0);
             _btns.Add(new Btn(this, "undo", bx, by0, 20, () => Undo()));
             _btns.Add(new Btn(this, "restart", bx, by0 + 65, 22, () => Restart()));
-            _btns.Add(new Btn(this, "hint", bx, by0 + 130, 24, () => AskHint()));
+            if (!_blitz) _btns.Add(new Btn(this, "hint", bx, by0 + 130, 24, () => AskHint()));
             _rug = Piece("rug", 30);
             _colGlow = Piece("column glow", 31);
             _bannerPiece = Piece("banner", 200);
             _cardPieces = new CardPieces(transform, 300);
             _bumps = new AnimatedValue[4];
             for (int i = 0; i < 4; i++) _bumps[i] = new AnimatedValue(0);
+            if (_blitz) BlitzInit();
             NewPuzzle();
         }
 
@@ -349,6 +351,7 @@ namespace SquishSquad.Games.Stack
                 T.Sq.SetValue(0);
                 Animated.Sequence(Animated.Timing(T.Sq, Timing(1.7, 80)), Animated.Timing(T.Sq, Timing(1.55, 180)), Animated.Spring(T.Sq, Spring(0, 3, 140))).Start();
                 Say("TOO BIG!", small: true, ink: "#8e1030", hold: 380, sub: _spec.Lv <= 3 ? "Big ones never sit on smaller ones" : null);
+                if (_blitz) BlitzMistake();
                 int tok = _anims[r].Tok;
                 Later(260, () =>
                 {
@@ -366,7 +369,7 @@ namespace SquishSquad.Games.Stack
 
         void Undo()
         {
-            if (_phase != "play") return;
+            if (_phase != "play" || _paused) return;
             if (_held.HasValue) Drop(_held.Value.from);
             if (_hist.Count == 0) return;
             var m = _hist[_hist.Count - 1];
@@ -392,7 +395,7 @@ namespace SquishSquad.Games.Stack
         // everyone back where this puzzle started (the clock keeps going)
         void Restart()
         {
-            if (_phase != "play") return;
+            if (_phase != "play" || _paused) return;
             if (_held.HasValue) { Wiggle(_held.Value.r, false); _held = null; }
             _pos = (int[])_puzzle.Start.Clone();
             _hist.Clear();
@@ -479,6 +482,8 @@ namespace SquishSquad.Games.Stack
                         Animated.Timing(_anims[r].Hop, Timing(0, 220, Easing.Bounce))).Start());
                 }
             }
+            // Blitz: a pip fills, then the next puzzle or the run is won (BlitzRun)
+            if (_blitz) { _clk.Pause(); StopInterval(); RunCall(_run.Cleared); Hud(); return; }
             var outc = Levels.AfterLevel(Profile, _spec, _puzzle.Par, true, _moves, _hinted);
             Apply(outc.Update);
             var res = new StackCards.Result
@@ -512,6 +517,7 @@ namespace SquishSquad.Games.Stack
         {
             if (_phase != "play" || _paused) return;
             if (_held.HasValue) Drop(_held.Value.from);
+            if (_blitz) { BlitzPause(); return; }
             PauseClock();
             _paused = true;
             _pause = Open(StackCards.PauseCard(W, H, _spec.Clock, Resume, Replay, Leave), PAUSE);
@@ -521,6 +527,7 @@ namespace SquishSquad.Games.Stack
         void Resume()
         {
             if (!_paused) return;
+            if (_blitz) { PressCard("RESUME"); return; }   // (the run's pause card resumes: BlitzResumed)
             _paused = false;
             Close(ref _pause);
             if (_spec.Clock && _clockPaused >= 0) { _clockStart += _anim.Now - _clockPaused; _clockPaused = -1; }
@@ -555,6 +562,7 @@ namespace SquishSquad.Games.Stack
         void Lose()
         {
             if (_phase != "play") return;
+            if (_blitz) { Effect(() => RunCall(_run.TimeUp)); return; }   // BlitzRun: the fail card (on the render), then BlitzLost
             _phase = "lost";
             PauseClock();
             _glow = null;
@@ -570,6 +578,7 @@ namespace SquishSquad.Games.Stack
         void StartPlay()
         {
             _phase = "play";
+            if (_blitz) { BlitzStartPlay(); return; }
             if (_spec.Clock) { _clockStart = _anim.Now; _clockPaused = -1; }
             Hud();
         }
@@ -619,16 +628,16 @@ namespace SquishSquad.Games.Stack
         void NewPuzzle()
         {
             ClearTimers();
-            // the cards close (a result card empties at once: its `res` is gone)
+            // the cards close (a result card empties at once: its `res` is gone); Blitz's are the run's
             Close(ref _result, true);
             Close(ref _fail);
             Close(ref _pause);
             Close(ref _hintAsk);
             _paused = false;
             var rec = Levels.Record(Profile);
-            _spec = Levels.LevelSpec(_lv, rec.Skill);
-            _puzzle = Engine.MakePuzzle(_spec);
-            _who = PickCast(_spec.N);
+            _spec = _blitz ? Levels.BlitzSpec(_run.Idx, rec.BSkill) : Levels.LevelSpec(_lv, rec.Skill);
+            _puzzle = PuzzleSource != null ? PuzzleSource(_spec) : Engine.MakePuzzle(_spec);
+            _who = CastSource != null ? CastSource(_spec.N) : PickCast(_spec.N);
             _limit = Levels.LimitFor(_spec, _puzzle.Par);
             _g = Geom(W - LeftW - RightW, H, _spec.N, _spec.K, _who);
             BuildBoard();
@@ -649,11 +658,12 @@ namespace SquishSquad.Games.Stack
                 A.Tgt = (m[r].X, m[r].Y);
             }
             _phase = "intro";
+            if (_blitz) { StopInterval(); if (BlitzIntro()) { Hud(); return; } }
             var chips = new List<string> { Levels.TIER_NAMES[_spec.Tier] };
             if (_spec.Goal == "picture") chips.Add("GOAL CARD");
             if (_spec.K == 4) chips.Add("4 CUSHIONS");
             if (_spec.Clock) chips.Add("⏱ " + Levels.Clock(_limit));
-            Say("LEVEL " + _spec.Lv, chips: chips.ToArray(), hold: 900);
+            Say(_blitz ? "PUZZLE " + _spec.Round : "LEVEL " + _spec.Lv, chips: chips.ToArray(), hold: 900);
             Hud();
             // (the app waits for any picture still downloading; Unity's are all here)
             Later(1250, Deal);
@@ -759,6 +769,7 @@ namespace SquishSquad.Games.Stack
         void Hud()
         {
             if (_g == null || _puzzle == null) return;
+            if (_blitz) { BlitzHud(); return; }
             int can = Levels.StarsFor(_puzzle.Par, _moves + Engine.Left(_puzzle.Sol, _pos), _hinted);
             var d = new StackArt.Hud
             {
@@ -785,12 +796,13 @@ namespace SquishSquad.Games.Stack
         }
 
         // ---- every frame ----------------------------------------------------------------------------------------------
-        double _pulse0;
+        readonly KeyLoop[] _haloLoop = { new KeyLoop(960, KeyLoop.PHASE, KeyLoop.UP_DOWN), new KeyLoop(960, KeyLoop.PHASE, KeyLoop.UP_DOWN), new KeyLoop(960, KeyLoop.PHASE, KeyLoop.UP_DOWN), new KeyLoop(960, KeyLoop.PHASE, KeyLoop.UP_DOWN) };
+        readonly bool[] _haloOn = new bool[4];
 
         /// <summary>Runs the clock to `nowMs` and places everything (CI screenshots step the game with it).</summary>
         public void Advance(double nowMs)
         {
-            _anim.Tick(nowMs);
+            TickAll(nowMs);
             Draw();
             foreach (var p in GetComponentsInChildren<UiPiece>(true)) p.Apply();
         }
@@ -835,9 +847,9 @@ namespace SquishSquad.Games.Stack
         void Update()
         {
             if (!_started) return;
-            _anim.Tick(Time.unscaledTimeAsDouble * 1000);
+            TickAll(Time.unscaledTimeAsDouble * 1000);
             HandleInput();
-            if (_spec != null && _spec.Clock && _phase == "play" && !_paused)
+            if (_spec != null && !_blitz && _spec.Clock && _phase == "play" && !_paused)
             {
                 double ms = _limit - Elapsed;
                 int s = Math.Max(0, (int)Math.Ceiling(ms / 1000));
@@ -872,9 +884,8 @@ namespace SquishSquad.Games.Stack
                 _pieces[r].Opacity = (float)A.O.GetValue();
                 _pieces[r].Order = 40 + (r == _top ? 99 : zOf.TryGetValue(r, out var z) ? z : 10);
             }
-            // the cushions bump when something lands; the hint's and the first level's glow pulses
-            double phase = ((_anim.Now - _pulse0) % 960) / 960;
-            double pulse = (1 - Math.Cos(2 * Math.PI * phase)) / 2;
+            // the cushions bump when something lands; the hint's and the first level's glow pulses (each cushion's own loop,
+            // from when its glow comes on: idleLoop.js usePingPong(960, { on }))
             int nudge = _spec.Lv == 1 && _moves == 0 && _phase == "play" ? (_held.HasValue ? _puzzle.Star : 0) : -1;
             for (int p = 0; p < _spec.K; p++)
             {
@@ -887,6 +898,8 @@ namespace SquishSquad.Games.Stack
                 _badges[p].Visible = _puzzle.Star == p;
                 _badges[p].Transform = Affine.Translate(x + w / 2 - 14, top + h - 9);
                 string glow = _glow.HasValue ? (p == _glow.Value.to ? "gold" : p == _glow.Value.from ? "white" : null) : p == nudge ? "white" : null;
+                if ((glow != null) != _haloOn[p]) { _haloOn[p] = glow != null; if (_haloOn[p]) _haloLoop[p].Mount(); else _haloLoop[p].Unmount(); }
+                double pulse = _haloLoop[p].Value;
                 _halos[p].Visible = glow != null;
                 if (glow != null)
                 {
@@ -898,6 +911,7 @@ namespace SquishSquad.Games.Stack
                     _halos[p].Opacity = (float)(0.3 + 0.65 * pulse);
                 }
             }
+            for (int p = _spec.K; p < 4; p++) if (_haloOn[p]) { _haloOn[p] = false; _haloLoop[p].Unmount(); }
             _colGlow.Visible = _dragCol >= 0;
             if (_dragCol >= 0) _colGlow.Transform = Affine.Translate(ax + _g.ColW * _dragCol + 4, 0);
             // the banner: over the area's top, scaled and turned about its centre
@@ -907,8 +921,9 @@ namespace SquishSquad.Games.Stack
             var bc = Affine.Translate(_bannerW / 2.0, _bannerH / 2.0); var bci = Affine.Translate(-_bannerW / 2.0, -_bannerH / 2.0);
             _bannerPiece.Transform = Affine.Translate(ax, 4) * bc * Affine.ScaleBy(bs, bs) * Affine.Rotate(br) * bci;
             foreach (var b in _btns) b.Draw();
+            if (_blitz) BlitzDraw();
             // the cards: placed, and gone once closed
-            _cardPieces.Sync(Cards);
+            _cardPieces.Sync(_blitz ? _run.Cards() : Cards);
             _cards.RemoveAll(c => !c.card.Shown);
         }
 
@@ -944,23 +959,23 @@ namespace SquishSquad.Games.Stack
             // an open card takes every tap (its buttons); one closing lets them through
             if (_cardDown)
             {
-                if (up) { _cardDown = false; for (int i = _cards.Count - 1; i >= 0; i--) if (_cards[i].card.Up(x, y)) break; }
+                if (up) { _cardDown = false; CardsUp(x, y); }
                 return;
             }
-            if (down && CardOpen)
+            if (down && AnyCardOpen)
             {
-                for (int i = _cards.Count - 1; i >= 0; i--) if (_cards[i].card.Down(x, y)) break;
+                CardsDown(x, y);
                 _cardDown = true;
                 _touch = null;
                 return;
             }
-            if (CardOpen) return;
+            if (AnyCardOpen) return;
 
             // the back orb and the buttons
             if (down)
             {
                 var b = _layout.back;
-                if (x >= b[0] - 6 && x <= b[0] + 46 && y >= b[1] - 6 && y <= b[1] + 46) { _backDown = true; return; }
+                if (x >= b[0] - 6 && x <= b[0] + 46 && y >= b[1] + _backDy - 6 && y <= b[1] + _backDy + 46) { _backDown = true; return; }
                 foreach (var btn in _btns) if (btn.Hit(x, y) && btn.On) { _pressed = btn; btn.Press(true); return; }
             }
             if (_backDown) { if (up) { _backDown = false; if (_phase == "play") Pause(); else Leave(); } return; }
@@ -1017,6 +1032,7 @@ namespace SquishSquad.Games.Stack
         void Leave()
         {
             ClearTimers();
+            if (_blitz) { StopInterval(); _run.ClearTimers(); _clk.Reset(); }
             OnExit?.Invoke();
             Destroy(gameObject);
         }

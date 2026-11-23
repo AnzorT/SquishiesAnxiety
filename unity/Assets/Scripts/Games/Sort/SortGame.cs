@@ -3,9 +3,11 @@
 // SortDoorPiece (their perspective), its cards with CardPieces, and the player's touches handed to it in dp.
 //   SortGame.Create(parent, startLv[, screenW, screenH, theme]) then Init(nowMs) (Unity's Start does it) and, outside
 //   play mode (CI screenshots), Advance(nowMs) to run the clock to a moment and place everything.
+//   SortGame.CreateBlitz(parent[, screenW, screenH]): BLITZ (SortBlitz.cs, ten rounds, fridge and cupboard taking turns);
+//   the same Init / Advance / OnExit (QUIT, DONE, the back orb outside sorting); `Run` hooks ads and sounds.
 // The art: Resources/Sort (tools/unity/export-sort.mjs): the page, the back orb, the clutter, the squishies each
 // container draws from (their cut-outs are Resources/Stack/art); the rest is SortArt's.
-// Regular levels only (Blitz isn't ported). Not ported: the effects' bursts, sounds, haptics, saving to Firestore
+// Not ported: the effects' bursts, sounds, haptics, saving to Firestore
 // (Profile is kept in memory).
 using System;
 using System.Collections.Generic;
@@ -25,6 +27,7 @@ namespace SquishSquad.Games.Sort
         public static IDictionary<string, object> Profile = new Dictionary<string, object>();   // until Firebase (step 3)
 
         int _startLv;
+        bool _blitz;
         string _theme = "fridge";
         float _screenW, _screenH;   // px (default: Screen)
         bool _started;
@@ -52,6 +55,22 @@ namespace SquishSquad.Games.Sort
             return g;
         }
 
+        /// <summary>BLITZ: a run from round 1 (no ads in Unity yet: its revive is free unless Run.AdsFree is turned off and
+        /// Run.AdReady / ShowAd hooked).</summary>
+        public static SortGame CreateBlitz(Transform parent, float screenW = 0, float screenH = 0)
+        {
+            var g = Create(parent, 1, screenW, screenH);
+            g.gameObject.name = "Squish Sort Blitz";
+            g._blitz = true;
+            return g;
+        }
+
+        /// <summary>Blitz: the run (set before Init: AdsFree, AdReady, ShowAd, Sound); null on a Regular level.</summary>
+        public Ui.Blitz.BlitzRun Run => _level?.Run;
+        public SortLevel Level => _level;
+        /// <summary>Blitz: called with the level made, before it starts (to set Run's hooks).</summary>
+        public Action<SortLevel> OnBlitzMade;
+
         void Start() => Init(Time.unscaledTimeAsDouble * 1000);
 
         /// <summary>Builds the screen with the clock at `nowMs` (Unity calls it; CI screenshots call it outside play mode).</summary>
@@ -68,7 +87,8 @@ namespace SquishSquad.Games.Sort
             _bg.SetSvg(Text("Sort/bg"), 832, 384, 0);
             _bg.Transform = Affine.ScaleBy(W / 832, H / 384);   // the page stretched over the screen (a gradient and rays)
             _cardPieces = new CardPieces(transform, 1000);
-            _level = new SortLevel(_theme, _startLv, W, H, _data, Profile);
+            if (_blitz) { _level = SortLevel.Blitz(W, H, _data, Profile); OnBlitzMade?.Invoke(_level); }
+            else _level = new SortLevel(_theme, _startLv, W, H, _data, Profile);
             _level.OnExit = Leave;
             _level.OnLevel = lv => OnLevel?.Invoke(lv);
             _level.Start();
@@ -80,6 +100,8 @@ namespace SquishSquad.Games.Sort
         [Serializable] sealed class PropsJson { public string[] fridge, cupboard; }
         [Serializable] sealed class PoolJson { public PoolItem[] fridge, cupboard; }
         [Serializable] sealed class PoolItem { public string id, file; }
+        [Serializable] sealed class BlitzJson { public RasterItem[] rasters; }
+        [Serializable] sealed class RasterItem { public string ch, file; public float size, w, h, dy; }
 
         static SortData LoadData()
         {
@@ -94,6 +116,11 @@ namespace SquishSquad.Games.Sort
                 foreach (var p in list) l.Add(new PoolEntry(p.id, "Stack/art/" + p.file));
                 d.Pools[k] = l;
             }
+            // Blitz's HUD: the characters Chrome draws from a fallback font (SortArt.Rasters)
+            var bj = Resources.Load<TextAsset>("Sort/blitz");
+            if (bj != null)
+                foreach (var r in JsonUtility.FromJson<BlitzJson>(bj.text).rasters)
+                    SortArt.Rasters[r.ch + "|" + r.size.ToString(System.Globalization.CultureInfo.InvariantCulture)] = (r.file, r.w, r.h, r.dy);
             return d;
         }
 

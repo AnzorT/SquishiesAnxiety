@@ -7,7 +7,10 @@
 //   img/<hash>.png         pictures the pieces show (the rays behind the page, ...)
 //   art/<key>.png          every squishy's cut-out (assets/stack/*.webp), and stack.json: their height / width
 //   stack.json             where things are on the reference screen (dp), for checking the Unity layout
-// node tools/unity/export-stack.mjs
+//   blitz-bolt.png         Blitz's title's ⚡ (Chrome draws it from Noto Color Emoji) and blitz-heart.png the revive
+//   blitz.json             chip's ♥ (from a system font, not the Fallback one), each cut on the page's own pixel grid,
+//                          and where each sits from its text's origin (dp), for StackArt.BlitzLeftColumn
+// node tools/unity/export-stack.mjs [--blitz-only]
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -16,6 +19,77 @@ import { openApp, snap, ROOT } from './ui/snap-page.mjs';
 
 const OUT = path.join(ROOT, 'unity', 'Assets', 'Resources', 'Stack');
 fs.mkdirSync(path.join(OUT, 'art'), { recursive: true });
+
+// ---- Blitz's two glyphs that aren't in the app's fonts: the hub's BLITZ GO, then each one cut alone, where it was ---
+async function exportBlitz() {
+  const { browser, page } = await openApp('http://localhost:8081/?phone=1&preview=1&card=game-stack');
+  await page.waitForTimeout(5000);
+  await page.mouse.click(712, 270); // BLITZ GO
+  await page.waitForTimeout(6000);
+  const out = {};
+  for (const [name, text, ch] of [['bolt', 'SQUISH STACK · BLITZ ⚡', '⚡'], ['heart', '♥ 1 REVIVE', '♥']]) {
+    const m = await page.evaluate(([text, ch]) => {
+      const el = [...document.querySelectorAll('div')].find((d) => d.childNodes.length === 1 && d.firstChild.nodeType === 3 && d.textContent === text);
+      const t = el.firstChild, i = text.indexOf(ch);
+      const r = document.createRange();
+      r.setStart(t, i); r.setEnd(t, i + ch.length);
+      const g = r.getBoundingClientRect();
+      let after = { width: 0 };
+      if (i + ch.length < text.length) { r.setStart(t, i + ch.length); r.setEnd(t, i + ch.length + 1); after = r.getBoundingClientRect(); }
+      const e = el.getBoundingClientRect();
+      // the same text over a hidden page, everything but the glyph hidden, at the same spot
+      const cs = getComputedStyle(el);
+      const o = document.createElement('div');
+      o.id = '__glyph';
+      Object.assign(o.style, { position: 'fixed', left: e.left + 'px', top: e.top + 'px', width: e.width + 'px', font: cs.font, letterSpacing: cs.letterSpacing, color: cs.color, whiteSpace: 'pre', visibility: 'visible', margin: 0, padding: 0 });
+      o.innerHTML = [...text].map((c) => `<span style="visibility:${c === ch ? 'visible' : 'hidden'}">${c}</span>`).join('');
+      document.getElementById('root').style.visibility = 'hidden';
+      document.documentElement.style.background = 'transparent';
+      document.body.style.background = 'transparent';
+      document.body.appendChild(o);
+      return { g: [g.x, g.y, g.width, g.height], e: [e.x, e.y], next: after.width ? after.x : g.right };
+    }, [text, ch]);
+    // the glyph's box rounded out to whole device pixels, with a pixel to spare
+    const D = 2.8125;
+    const x0 = Math.floor(m.g[0] * D) - 1, y0 = Math.floor(m.g[1] * D) - 1, x1 = Math.ceil((m.g[0] + m.g[2]) * D) + 1, y1 = Math.ceil((m.g[1] + m.g[3]) * D) + 1;
+    await page.screenshot({ path: path.join(OUT, `blitz-${name}.png`), omitBackground: true, clip: { x: x0 / D, y: y0 / D, width: (x1 - x0) / D, height: (y1 - y0) / D } });
+    out[name] = { box: [x0 / D - m.e[0], y0 / D - m.e[1], (x1 - x0) / D, (y1 - y0) / D].map((v) => +v.toFixed(4)), advance: +(m.next - m.g[0]).toFixed(4) };
+    await page.evaluate(() => { document.getElementById('__glyph').remove(); document.getElementById('root').style.visibility = ''; });
+  }
+  // UNDO and RESTART on (after a move: Blitz's first puzzle, a legal move from its start); the level's export above
+  // catches them before they've come on
+  await page.waitForTimeout(3000);
+  const mv = await page.evaluate(() => {
+    const root = document.getElementById('root');
+    let f;
+    for (const k in root) if (k.startsWith('__reactContainer$')) f = root[k];
+    if (f.stateNode && f.stateNode.current) f = f.stateNode.current;
+    let game = null;
+    const walk = (x) => { for (; x && !game; x = x.sibling) { if (typeof x.type === 'function' && x.type.name === 'StackGame') { game = x; return; } if (x.child) walk(x.child); } };
+    walk(f);
+    let pz = null;
+    for (let h = game.memoizedState; h; h = h.next) if (Array.isArray(h.memoizedState) && h.memoizedState[0] && h.memoizedState[0].sol) pz = h.memoizedState[0];
+    const top = (c) => pz.start.indexOf(c);
+    const k = pz.sol.k;
+    for (let a = 0; a < k; a++) for (let b = 0; b < k; b++) if (a !== b && top(a) >= 0 && (top(b) < 0 || top(b) > top(a))) return [a, b, k];
+    return null;
+  });
+  const col = (c) => 250 + ((c + 0.5) * 432) / mv[2];
+  await page.mouse.click(col(mv[0]), 300);
+  await page.mouse.click(col(mv[1]), 300);
+  await page.waitForTimeout(1500);
+  const lay = { buttons: {} };
+  await button(0, 'on', page, lay);
+  await button(1, 'on', page, lay);
+  out.buttons = lay.buttons;
+  fs.writeFileSync(path.join(OUT, 'blitz.json'), JSON.stringify(out, null, 1));
+  console.log('blitz glyphs:', JSON.stringify(out));
+  await browser.close();
+}
+if (process.argv.includes('--blitz-only')) {
+  await exportBlitz();
+  process.exit(0);
+}
 
 // ---- the squishies' cut-outs (Unity doesn't read WebP) ----------------------------------------------------------
 const artJs = fs.readFileSync(path.join(ROOT, 'src', 'stack', 'art.js'), 'utf8');
@@ -60,8 +134,8 @@ const box = (r) => [r.x, r.y, r.width, r.height].map((v) => +v.toFixed(3));
 const layout = { screen: [832, 384], buttons: {} };
 
 // a button: its lip and its ring (the face moves inside the ring) as two pieces, both in the button's box
-async function button(i, state) {
-  const parts = await page.evaluateHandle((i) => {
+async function button(i, state, pg = page, lay = layout) {
+  const parts = await pg.evaluateHandle((i) => {
     const b = window.__components('SdButton')[i].el;
     const inner = b.firstElementChild;   // the Animated.View that scales
     // (a label with an outline is drawn 4 times: the copies under it and itself)
@@ -75,9 +149,9 @@ async function button(i, state) {
     const r = p.b.getBoundingClientRect(), l = p.lip.getBoundingClientRect(), g = p.ring.getBoundingClientRect();
     return { b: [r.x, r.y, r.width, r.height], lip: [l.x - r.x, l.y - r.y, l.width, l.height], ring: [g.x - r.x, g.y - r.y, g.width, g.height] };
   });
-  save(name + '-lip', await snap(page, await parts.evaluateHandle((p) => p.lip)));
-  save(name + '-face', await snap(page, await parts.evaluateHandle((p) => p.ring)));
-  layout.buttons[name] = { label, kind, ...b };
+  save(name + '-lip', await snap(pg, await parts.evaluateHandle((p) => p.lip)));
+  save(name + '-face', await snap(pg, await parts.evaluateHandle((p) => p.ring)));
+  lay.buttons[name] = { label, kind, ...b };
 }
 
 for (let i = 0; i < 3; i++) await button(i, 'grey');
@@ -115,3 +189,4 @@ await page.screenshot({ path: path.join(ROOT, 'unity', 'Reference', 'stack-level
 console.log('buttons:', Object.keys(layout.buttons).join(' '));
 if (errors.length) console.log('page errors:', errors.slice(0, 3).join(' | '));
 await browser.close();
+await exportBlitz();

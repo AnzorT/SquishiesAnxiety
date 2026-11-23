@@ -123,6 +123,101 @@ namespace SquishSquad.Games.Stack
             return s.Markup;
         }
 
+        // ---- Blitz's left column (Game.js topEl with `blitz`) -----------------------------------------------------------
+        static readonly TextStyle ChipText = new TextStyle { Font = "Fredoka_700Bold", Size = 11.5f, LetterSpacing = 0.5f, Color = "#ffffff" };
+        static readonly TextStyle BlitzRule = new TextStyle { Font = "Fredoka_700Bold", Size = 12.5f, Color = "#e01e4a" };
+        /// <summary>Where Blitz's pips row sits (Pips small: 17 dp pips 2.5 apart, centred in the column, 8 dp under the chip).</summary>
+        public const float PipsY = 95;
+        public const float BlitzGoalY = 124;
+        // Resources/Stack/blitz.json (tools/unity/export-stack.mjs): each glyph picture's box from its text's origin, and
+        // the ♥'s advance (with the letter spacing)
+        static readonly float[] Bolt = { 151.6889f, -0.6222f, 18.4889f, 17.0667f }, Heart = { -0.6f, -0.3556f, 8.5333f, 14.9333f };
+        const float HeartAdvance = 7.3281f;
+
+        public sealed class BlitzHud
+        {
+            public int Round, Rounds = 10, Tier, K, Star;
+            public bool Revived;
+            public string ClockText;    // "4:00"
+            public bool ClockRed;
+            public Squishy[] Who;
+            public int[] Goal;
+        }
+
+        /// <summary>Blitz's left column without the pips and the clock's bar (their own pieces: they move), 250 x `h` dp: the
+        /// title with ⚡, PUZZLE n/10 and the tier, the revive chip (wrapped under the orb), the goal, the run's clock and the
+        /// rule. `bar` is where the bar goes (x, y, w; 14 tall); `down` how much lower than PipsY the pips sit (and the orb
+        /// half that), when PUZZLE n/10 wraps.</summary>
+        public static string BlitzLeftColumn(BlitzHud d, float h, out (float x, float y, float w) bar, out float down)
+        {
+            var s = new UiSvg(LeftW, h);
+            // (the ⚡ is Chrome's colour emoji, the ♥ a system font's: both pictures cut from the app, Resources/Stack/blitz.json)
+            s.Text("SQUISH STACK · BLITZ ", 62, 12, GameName);
+            s.Image("Stack/blitz-bolt", 62 + Bolt[0], 12 + Bolt[1], Bolt[2], Bolt[3]);
+            // PUZZLE n/10 and the tier in the title box (176 wide): when they don't fit, the words wrap in what the chip
+            // leaves, the chip centred on the two lines, and everything under the title box 25 dp lower (the orb half that)
+            var lvl = $"PUZZLE {d.Round}/{d.Rounds}";
+            var tier = Levels.TIER_NAMES[d.Tier];
+            float chipW = UiSvg.Width(tier, ChallengeText) + 2 * 7 + 2 * 2, room = 176 - 6 - chipW, chipX, chipY = 31.5f;
+            float line = UiSvg.LineBox(LevelText);
+            down = 0;
+            if (UiSvg.Width(lvl, LevelText) <= room)
+            {
+                s.Text(lvl, 62, 28, LevelText);
+                chipX = 62 + UiSvg.Width(lvl, LevelText) + 6;
+            }
+            else
+            {
+                s.Text("PUZZLE", 62, 28, LevelText);
+                s.Text($"{d.Round}/{d.Rounds}", 62, 28 + line, LevelText);
+                chipX = 62 + room + 6;
+                chipY = 28 + line - 9;
+                down = line;
+            }
+            s.Box(chipX, chipY, chipW, 18, new BoxStyle { Background = Levels.TIER_COLORS[d.Tier], Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
+            s.Text(tier, chipX + 2 + 7, chipY + 2 + 1, ChallengeText);
+            // squishdoku/ui.js Chip: the revive, wrapped under the orb at 12, 59
+            var rv = d.Revived ? "REVIVE USED" : " 1 REVIVE";
+            float heart = d.Revived ? 0 : HeartAdvance;
+            float rw = heart + UiSvg.Width(rv, ChipText) + 2 * 9 + 2 * 2, rh = UiSvg.LineBox(ChipText) + 2 * 3 + 2 * 2;
+            float ry = 59 + down;
+            s.Box(12, ry, rw, rh, new BoxStyle { Background = d.Revived ? "#b9a6cc" : "#ffb02e", Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
+            if (!d.Revived) s.Image("Stack/blitz-heart", 12 + 2 + 9 + Heart[0], ry + 2 + 3 + Heart[1], Heart[2], Heart[3]);
+            s.Text(rv, 12 + 2 + 9 + heart, ry + 2 + 3, ChipText);
+            // (the pips: 59 + 24, gap 4, margin 8 = 95, 17 tall; gap 4, margin 8) the goal at 12, 124, then the clock row
+            float gh = GoalCard(s, 12, BlitzGoalY + down, 118, d.Who, d.Goal, d.K, d.Star);
+            float iy = BlitzGoalY + down + gh + 10;
+            var ct = d.ClockRed ? new TextStyle { Font = ClockText.Font, Size = ClockText.Size, Color = "#e01e4a" } : ClockText;
+            float rowH = UiSvg.LineBox(ct);
+            s.Text(d.ClockText ?? "", 12, iy, ct);
+            float bx = 12 + Math.Max(40, UiSvg.Width(d.ClockText ?? "", ct)) + 8;
+            bar = (bx, iy + (rowH - 14) / 2, 238 - bx);
+            s.Text("Big on small = back to puzzle 1!", 12, iy + rowH + 6, BlitzRule);
+            return s.Markup;
+        }
+
+        /// <summary>sort/Game.js Bar as Blitz shows it, w x 14: a lilac track with a white rim, the fill (its gradient and its
+        /// shine) slid left by (1 - frac) of the track's width, clipped to the inside.</summary>
+        public static string BlitzBar(float w, double frac, string c1 = "#b0fbff", string c2 = "#3fd7f6")
+        {
+            const float h = 14, b = 2;
+            var s = new UiSvg(w, h);
+            s.Box(0, 0, w, h, new BoxStyle { Background = "rgba(69,16,122,0.18)", Radius = 7, BorderWidth = b, BorderColor = "#ffffff" });
+            float iw = w - 2 * b, ih = h - 2 * b;
+            double shift = -w * (1 - Math.Max(0, Math.Min(1, frac)));
+            if (iw + shift > 0)
+            {
+                var id = s.NewId("stackBar");
+                s.Def($"<clipPath id=\"{id}\"><path d=\"{UiSvg.RRect(b, b, iw, ih, new float[] { 5, 5, 5, 5 })}\"/></clipPath>");
+                s.Open($"clip-path=\"url(#{id})\"");
+                s.Open($"transform=\"translate({F(shift)} 0)\"");
+                s.Box(b, b, iw, ih, new BoxStyle { Gradient = new[] { c1, c2 }, GradientAngle = 90 });
+                s.Box(b + 4, b + 1.5f, iw - 8, 3, new BoxStyle { Background = "rgba(255,255,255,0.6)", Radius = 2 });
+                s.Close().Close();
+            }
+            return s.Markup;
+        }
+
         // sort/Game.js Bar: a rounded track with the fill's gradient
         static void Bar(UiSvg s, float x, float y, float w, float h, float frac, string c1, string c2)
         {

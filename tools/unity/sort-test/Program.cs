@@ -1,5 +1,6 @@
 // dotnet run -c Release --project tools/unity/sort-test -- <capture dir> ["ms:x,y ..." taps]   (capture.mjs's output)
 // dotnet run -c Release --project tools/unity/sort-test -- cards <capture dir>                   (cards.mjs: Cards.cs)
+// dotnet run -c Release --project tools/unity/sort-test -- blitz <capture dir>                   (blitz.mjs: Blitz.cs)
 // Plays the captured Squish Sort level with the Unity code (Games/Sort/SortLevel on the app's board, the clock stepped
 // 16 ms a frame as capture.mjs stepped the page's, the same taps at the same moments), draws each moment's layers as
 // Unity shows them (the exported page, every SVG / picture layer transformed and faded, each door projected with its
@@ -28,6 +29,7 @@ static class Program
         Card.LoadXml = n => File.ReadAllText(Res("Cards/" + n + ".xml"));
         Fx.LikeWeb = true;
         if (args[0] == "cards") return CardsTest.Run(args[1]);
+        if (args[0] == "blitz") return BlitzTest.Run(args[1]);
         return Level(args[0], args.Length > 1 ? args[1] : "");
     }
 
@@ -38,18 +40,23 @@ static class Program
         foreach (var t in new[] { "fridge", "cupboard" }) d.Props[t] = props.GetProperty(t).EnumerateArray().Select(e => e.GetString()).ToList();
         var pools = JsonDocument.Parse(File.ReadAllText(Res("Sort/sort.json"))).RootElement;
         foreach (var t in new[] { "fridge", "cupboard" }) d.Pools[t] = pools.GetProperty(t).EnumerateArray().Select(e => new PoolEntry(e.GetProperty("id").GetString(), "Stack/art/" + e.GetProperty("file").GetString())).ToList();
+        var bf = Res("Sort/blitz.json");
+        if (File.Exists(bf))
+            foreach (var r in JsonDocument.Parse(File.ReadAllText(bf)).RootElement.GetProperty("rasters").EnumerateArray())
+                SortArt.Rasters[r.GetProperty("ch").GetString() + "|" + r.GetProperty("size").GetDouble().ToString(System.Globalization.CultureInfo.InvariantCulture)] =
+                    (r.GetProperty("file").GetString(), (float)r.GetProperty("w").GetDouble(), (float)r.GetProperty("h").GetDouble(), (float)r.GetProperty("dy").GetDouble());
         return d;
     }
 
     // the app's picture of a squishy: its bundled Stack cut-out (Preview.js), or none (about:blank)
-    static string Uri(string u)
+    public static string Uri(string u)
     {
         var m = System.Text.RegularExpressions.Regex.Match(Uri2(u), @"assets/stack/(\w+)\.webp");
         return m.Success ? "Stack/art/" + m.Groups[1].Value : null;
     }
     static string Uri2(string u) => System.Net.WebUtility.UrlDecode(u ?? "");
 
-    static BoardData BoardOf(JsonElement b)
+    public static BoardData BoardOf(JsonElement b)
     {
         var d = new BoardData { Rows = b.GetProperty("rows").GetInt32(), Cols = b.GetProperty("cols").GetInt32(), Slots = b.GetProperty("slots").GetInt32(), TrayCap = b.GetProperty("trayCap").GetInt32() };
         foreach (var p in b.GetProperty("pieces").EnumerateArray())

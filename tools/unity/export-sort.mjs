@@ -7,9 +7,12 @@
 //   bg.xml       the page behind the game (PageBg) and back.xml, the back orb, cut out of the app's level screen
 //                (Expo web on http://localhost:8081, src/web/Preview.js's "game-sort") as SVG (tools/unity/ui/snap.js)
 //   img/<hash>.png  pictures those pieces show
+//   blitz.json   the characters Blitz's HUD has that its fonts don't (the title's ⚡, Chrome's colour emoji, and the
+//                revive chip's ♥), each as Chrome draws it (img/blitz-<n>.png) with the box Chrome gave it: SortArt draws
+//                the text around them and puts the pictures there
 // Everything else on the level screen (the fridges and cupboards, the tray, the HUD, the squishies' marks) changes
 // with the level and is drawn by the Unity code (Games/Sort/SortArt.cs) the way the exporter writes what Chrome paints.
-// node tools/unity/export-sort.mjs [--no-page]
+// node tools/unity/export-sort.mjs [--no-page] [--no-blitz]
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -93,6 +96,41 @@ if (!process.argv.includes('--no-page')) {
   save('back', await snap(page, await page.evaluateHandle(() => window.__components('Orb')[0].el)));
   const back = await page.evaluate(() => window.__components('Orb')[0].el.getBoundingClientRect().toJSON());
   console.log('back orb at', back.x, back.y, back.width, back.height);
+  if (errors.length) console.log('page errors:', errors.slice(0, 3).join(' | '));
+  await browser.close();
+}
+
+// ---- Blitz's HUD: the characters from a fallback font, from the app's Blitz (the hub's GO) ---------------------------
+if (!process.argv.includes('--no-blitz')) {
+  const { openApp, snap } = await import('./ui/snap-page.mjs');
+  const { browser, page, errors } = await openApp('http://localhost:8081/?phone=1&preview=1&card=game-sort');
+  await page.waitForTimeout(6000);
+  await page.mouse.click(334, 237);   // the hub's BLITZ GO
+  await page.waitForTimeout(4000);
+  fs.mkdirSync(path.join(OUT, 'img'), { recursive: true });
+  const rasters = [];
+  for (const [find, size] of [['BLITZ ⚡', 13], ['♥ 1 REVIVE', 11.5]]) {
+    const el = await page.evaluateHandle((find) => [...document.querySelectorAll('div')].find((d) => d.childElementCount === 0 && d.textContent.startsWith(find)), find);
+    const s = await snap(page, el);
+    // each character's box as Chrome laid it out, from the text's top-left
+    const boxes = await page.evaluate((el) => {
+      const node = el.firstChild, r0 = el.getBoundingClientRect(), range = document.createRange(), out = [];
+      for (let i = 0; i < node.data.length; i++) {
+        range.setStart(node, i); range.setEnd(node, i + 1);
+        const r = range.getBoundingClientRect();
+        out.push({ ch: node.data[i], x: r.left - r0.left, y: r.top - r0.top, w: r.width, h: r.height });
+      }
+      return out;
+    }, el);
+    for (const r of s.rasters) {
+      const b = boxes.find((q) => q.ch === r.ch);
+      const file = `blitz-${rasters.length}`;
+      fs.writeFileSync(path.join(OUT, 'img', file + '.png'), Buffer.from(s.images[r.id].split(',')[1], 'base64'));
+      rasters.push({ ch: r.ch, size, file: 'Sort/img/' + file, w: b.w, h: b.h, dy: b.y, x: b.x });
+      console.log(`blitz: ${r.ch} at ${b.x.toFixed(3)} (in "${find}…"), ${b.w.toFixed(3)} x ${b.h.toFixed(3)}, top ${b.y.toFixed(3)}`);
+    }
+  }
+  fs.writeFileSync(path.join(OUT, 'blitz.json'), JSON.stringify({ rasters }, null, 1));
   if (errors.length) console.log('page errors:', errors.slice(0, 3).join(' | '));
   await browser.close();
 }

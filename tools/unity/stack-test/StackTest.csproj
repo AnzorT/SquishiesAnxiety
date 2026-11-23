@@ -8,9 +8,11 @@
   <ItemGroup>
     <Compile Include="../../../unity/Assets/Scripts/Ui/UiFont.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Ui/UiSvg.cs" />
-    <Compile Include="../../../unity/Assets/Scripts/Ui/Cards/*.cs" Exclude="../../../unity/Assets/Scripts/Ui/Cards/CardPieces.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/Cards/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/Blitz/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Anim/*.cs" />
-    <Compile Include="../../../unity/Assets/Scripts/Games/Stack/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Stack/StackGame.cs" />
+    <!-- StackGame (and its Blitz) runs on UnityStubs.cs; the screen and hub hosts are left out -->
+    <Compile Include="../../../unity/Assets/Scripts/Games/Stack/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Stack/StackScreen.cs;../../../unity/Assets/Scripts/Games/Stack/StackHub*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
     <Compile Include="../vector-test/ReferenceRaster.cs" />
     <Compile Include="../vector-test/Png.cs" />
