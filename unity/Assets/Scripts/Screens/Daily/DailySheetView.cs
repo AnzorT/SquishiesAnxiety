@@ -38,6 +38,7 @@ namespace SquishSquad.Screens
         public DailySheetView(IDictionary<string, object> profile, float w, float h, Ticker ticker, Func<DateTime> now, bool crib = true)
         {
             _profile = profile; W = w; H = h; _t = ticker; _now = now; _crib = crib;
+            Audio.Snd.Play("popOpen");
             Read();
             Motion.PingPong(_pulse, 800).Start();
         }
@@ -159,6 +160,7 @@ namespace SquishSquad.Screens
             var p = _pressed;
             _pressed = null;
             if (h == null || h != p) return;
+            Audio.Snd.Play("tap");
             if (h == "close" || h == "scrim") OnClose?.Invoke();
             else if (h == "crib") OnOpenCrib?.Invoke();
             else if (h == "open") OnClaimChest?.Invoke();

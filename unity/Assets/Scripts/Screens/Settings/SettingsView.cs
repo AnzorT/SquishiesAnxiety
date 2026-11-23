@@ -5,7 +5,7 @@
 // wallet (TestWalletView) over it all. In the design's 393-tall units (royal Stage).
 // The switches are candy/ToggleSwitch: the knob springs across (friction 6, tension 140), the colours cross-fade, the
 // knob squashes while held. Text goes in through the host (Focused / SetText: App/TextEntry on the phone's keyboard).
-// Not ported: the sounds themselves (Music / Sound effects are kept as settings: OnSound).
+// Music / Sound effects: OnSound (the host sets Sfx's switches).
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -51,6 +51,7 @@ namespace SquishSquad.Screens
         public SettingsView(string nickname, bool tester, float screenW, float screenH, Ticker ticker, bool music = true, bool effects = true, bool fps = false)
         {
             _t = ticker; Tester = tester; Nickname = nickname; Music = music; Effects = effects; Fps = fps;
+            Audio.Snd.Play("popOpen");
             ScreenW = screenW; ScreenH = screenH; K = StageK(screenW, screenH); SW = Math.Max(screenW, screenH) / K;
             Nick = Cut(nickname);
             foreach (var k in new[] { "music", "effects", "fps" }) _toggles[k] = new Toggle { Pos = new AnimatedValue(On(k) ? 1 : 0), Press = new AnimatedValue(0) };
@@ -216,6 +217,7 @@ namespace SquishSquad.Screens
             _pressed = null;
             if (p != null && p.StartsWith("toggle-")) Motion.Timing(_toggles[p.Substring(7)].Press, 0, 90, Motion.OutQuad).Start();
             if (h == null || h != p) { if (h == null && Focused == "nick") Focused = null; return; }
+            Audio.Snd.Play("tap");
             switch (h)
             {
                 case "back": OnBack?.Invoke(); break;

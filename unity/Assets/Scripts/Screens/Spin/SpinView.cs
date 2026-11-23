@@ -97,6 +97,7 @@ namespace SquishSquad.Screens
             if (_busy) return;
             _busy = true;
             Phase = "spinning";
+            _whirl = Audio.Snd.Loop("whirlLoop");
             // whirl straight away (ramping up) while the server decides
             _rot.StopAnimation(v => Animated.Sequence(Motion.Timing(_rot, v + 360, 450, Easing.In(Easing.Quad)), Motion.Timing(_rot, v + 360 + 36000, 15000, Motion.Linear)).Start());
             SpinResult res;
@@ -107,17 +108,23 @@ namespace SquishSquad.Screens
             _t.RequestAnimationFrame(() => Answer(res, bonus));
         }
 
+        Audio.ISndLoop _whirl;
+
         void Answer(SpinResult res, bool bonus)
         {
+            _whirl?.Stop();
+            _whirl = null;
             _busy = false;
             if (bonus && !res.Error) _usedHere++;
             if (res.Error || res.Already)
             {
+                Audio.Snd.Play("fail");
                 _rot.StopAnimation(v => Motion.Timing(_rot, v + 180, 900, Motion.OutQuad).Start());
                 Result = res;
                 Phase = "error";
                 return;
             }
+            Audio.Snd.Play("wheelSpin");
             _rot.StopAnimation(v =>
             {
                 double stop = (360 - (res.Index * SLICE + SLICE / 2)) % 360;
@@ -126,6 +133,7 @@ namespace SquishSquad.Screens
                 {
                     Result = res;
                     Phase = "prize";
+                    Audio.Snd.Play(res.Jackpot ? "jackpot" : "win");
                     _pop.SetValue(0);
                     Motion.Timing(_pop, 1, 450, Motion.OutQuad).Start();
                 });
@@ -229,6 +237,7 @@ namespace SquishSquad.Screens
             var p = _pressed;
             _pressed = null;
             if (h == null || h != p) return;
+            Audio.Snd.Play("tap");
             if (h == "hub") Hub();
             else if (h == "collect") Collect();
             else if (h == "green") WatchAd();

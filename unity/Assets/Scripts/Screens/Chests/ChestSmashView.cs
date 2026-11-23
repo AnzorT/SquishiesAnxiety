@@ -9,7 +9,8 @@
 // The server has rolled the chest: Start(group, size, null) puts it up while the answer is on its way (a first tap
 // meanwhile is held), Fill(result) brings the roll; the first tap of a Common or Rare plays its upgrade when the server
 // rolled one. The reveal's picture is the creature's still (the Stack cut-out, Roster.Picture), where the app shows its
-// front art (export/tripo/<key>-front.svg). No sounds.
+// front art (export/tripo/<key>-front.svg). Sounds: the reveal's sparkle and the collect's coin shower (the box's own hit
+// sounds, synthesized in the app's page, aren't ported).
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -172,7 +173,7 @@ namespace SquishSquad.Screens
 
         // ---- the reveal ------------------------------------------------------------------------------------------------
         double _reveal = -1;
-        void ShowReveal() => _reveal = _t.Now;
+        void ShowReveal() { _reveal = _t.Now; Audio.Snd.Play("sparkle"); }
 
         // ---- the pointer -----------------------------------------------------------------------------------------------
         public void Down(float x, float y)

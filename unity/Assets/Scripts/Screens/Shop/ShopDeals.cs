@@ -1014,6 +1014,7 @@ namespace SquishSquad.Screens
         {
             var r = await Run(move, args);
             if (r == null) return;
+            if (Prof.Str(Prof.Get(r, "kind")) != "chest") Audio.Snd.Play("coinShower");
             if (Prof.Str(Prof.Get(r, "kind")) == "chest")
             {
                 var c = Prof.Map(Prof.Get(r, "chest"));

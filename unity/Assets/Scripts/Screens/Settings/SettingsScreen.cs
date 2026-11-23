@@ -1,8 +1,8 @@
 // Settings in Unity (SettingsView on screen): the menu's gear opens it. Nickname → UserData.UpdateNickname, Send
 // feedback → UserData.SubmitFeedback, Replay tutorial → the tutorial step 'start', Stats → StatsScreen over it (its
 // back returns here, as App.js openFromSettings), a tester's Test wallet → testWallet. LOG OUT calls OnLogout (the
-// app's sign-out: the host's). Music / Sound effects are kept in PlayerPrefs (squishsquad.sound.*) until Unity has
-// sound; the FPS counter calls OnToggleFps. Typing goes through App/TextEntry (the phone's keyboard).
+// app's sign-out: the host's). Music / Sound effects are Sfx's switches (soundSettings.json, as the app); the
+// FPS counter calls OnToggleFps. Typing goes through App/TextEntry (the phone's keyboard).
 using System;
 using System.Collections.Generic;
 using SquishSquad.App;
@@ -36,12 +36,13 @@ namespace SquishSquad.Screens
         protected override IScreenView Build(float w, float h)
         {
             string nick = Prof.Str(Prof.Get(_profile, "nickname")) ?? "Squisher";
-            var v = new SettingsView(nick, _tester, w, h, Clock, PlayerPrefs.GetInt("squishsquad.sound.music", 1) == 1, PlayerPrefs.GetInt("squishsquad.sound.effects", 1) == 1, FpsOn)
+            var v = new SettingsView(nick, _tester, w, h, Clock, SquishSquad.Audio.Sfx.MusicOn, SquishSquad.Audio.Sfx.EffectsOn, FpsOn)
             {
                 OnBack = Exit,
                 OnLogout = () => OnLogout?.Invoke(),
                 OnToggleFps = () => { FpsOn = !FpsOn; OnToggleFps?.Invoke(); },
-                OnSound = (m, e) => { PlayerPrefs.SetInt("squishsquad.sound.music", m ? 1 : 0); PlayerPrefs.SetInt("squishsquad.sound.effects", e ? 1 : 0); },
+                // (Sfx keeps them in soundSettings.json and mirrors them to PlayerPrefs squishsquad.sound.*)
+                OnSound = (m, e) => { SquishSquad.Audio.Sfx.SetMusicOn(m); SquishSquad.Audio.Sfx.SetEffectsOn(e); },
                 OnSaveNickname = n => { if (_fb != null && _uid != null) _ = _fb.Data.UpdateNickname(_uid, n); },
                 OnSubmitFeedback = t => _fb != null && _uid != null ? _fb.Data.SubmitFeedback(_uid, t) : System.Threading.Tasks.Task.CompletedTask,
                 OnReplayTutorial = () => { if (_fb != null && _uid != null) _ = _fb.Data.SetTutorialStep(_uid, "start"); },

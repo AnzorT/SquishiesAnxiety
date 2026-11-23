@@ -119,6 +119,7 @@ namespace SquishSquad.App
         {
             var was = _stage;
             _stage = stage;
+            SquishSquad.Audio.Music.Follow(SquishSquad.Audio.Music.AppStageOf(stage), false);   // App.js's music effect
             if (was == "splash" && _splash != null) { Destroy(_splash.gameObject); _splash = null; }
             if (_auth != null) { Destroy(_auth.gameObject); _auth = null; }
             if (_verify != null) { Destroy(_verify.gameObject); _verify = null; }

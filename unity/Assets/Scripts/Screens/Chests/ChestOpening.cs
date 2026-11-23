@@ -63,6 +63,7 @@ namespace SquishSquad.Screens
 
         void Collect()
         {
+            Audio.Snd.Play("coinShower");
             if (_current != null) OnCollected?.Invoke(_current);
             if (_queue.Count > 0) { Next(); return; }
             Finish();

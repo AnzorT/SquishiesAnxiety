@@ -116,20 +116,21 @@ namespace SquishSquad.Screens
             float dx = x - _dx0;
             if (_captured)
             {
-                if (Math.Abs(dx) > 36) { _swipedAt = _t.Now; Go(Index + (dx < 0 ? 1 : -1)); }
+                if (Math.Abs(dx) > 36) { _swipedAt = _t.Now; Audio.Snd.Play("swoosh"); Go(Index + (dx < 0 ? 1 : -1)); }
                 return;
             }
             var hit = HitButton(x, y);
             _pressed = null;
             if (hit != null && hit == HitButton(_dx0, _dy0))
             {
+                Audio.Snd.Play(hit == "back" ? "tap" : "swoosh");
                 if (hit == "back") OnBack?.Invoke();
                 else if (hit == "left") Go(Index - 1);
                 else if (hit == "right") Go(Index + 1);
                 return;
             }
             int b = HitBadge(x, y);
-            if (b >= 0 && b == HitBadge(_dx0, _dy0) && _t.Now - _swipedAt >= 250) Go(b);
+            if (b >= 0 && b == HitBadge(_dx0, _dy0) && _t.Now - _swipedAt >= 250) { Audio.Snd.Play("swoosh"); Go(b); }
         }
 
         /// <summary>A tap at (x, y) screen dp.</summary>

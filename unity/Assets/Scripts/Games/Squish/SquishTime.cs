@@ -12,8 +12,8 @@
 // (recordPress: presses, longest hold, play time, the creature's growth XP) and counts toward the 'squish' daily
 // challenge and its XP; 60 releases in a minute earn Speed Tapper; five jabs in a second (or seven in two) bring up
 // the punishment card. The gesture hints and the settings hint show until the first touch; the gear opens the
-// settings (poke strength 1-5, push in / pop out; the sound, vibration and FPS switches are kept but do nothing: no
-// sound or haptics in the Unity app yet). Not ported: the ×2/×3/×4 boosts (they're rewarded ads: the panel is shown,
+// settings (poke strength 1-5, push in / pop out; the sound, vibration and FPS switches: the creature's squish loop,
+// the coin ding, the release pop and the squish haptics, as SquishScreen.js). Not ported: the ×2/×3/×4 boosts (they're rewarded ads: the panel is shown,
 // a tap says so), the ad behind ACCEPT PUNISHMENT (it closes the card, as with Remove Ads), the tutorial's coach marks.
 using System;
 using System.Collections.Generic;
@@ -23,6 +23,7 @@ using SquishSquad.Anim;
 using SquishSquad.Backend;
 using SquishSquad.Ui;
 using SquishSquad.Vector;
+using SquishSquad.Audio;
 using UnityEngine;
 
 namespace SquishSquad.Games.Squish
@@ -49,6 +50,8 @@ namespace SquishSquad.Games.Squish
         SquishStage _stage;
         SquishLayout _L;
         string _creatureId;
+        SquishSounds _snd;      // the creature's squish loop, the coin ding, the release pop (SquishScreen.js)
+        SquishHaptics _hap;
         double _coinMultiplier = 1;
 
         // the HUD
@@ -113,6 +116,8 @@ namespace SquishSquad.Games.Squish
             var roster = ((IList<object>)data["roster"]).Cast<IDictionary<string, object>>().ToList();
             var me = roster.FirstOrDefault(c => (string)c["key"] == _key);
             _creatureId = me != null ? (string)me["id"] : "1";
+            _snd = SquishSounds.Open(_creatureId, me != null && me.TryGetValue("audio", out var au) ? au as string : null);
+            if (UnityAudio.Instance != null) _hap = new SquishHaptics(UnityAudio.Instance.Timers);
             var moves = SquishCard.ParseMoves((IDictionary<string, object>)data["moves"]);
             int stage = SquishRules.StageOf(_profile, _creatureId);
             var atlas = LoadAtlas(_key) ?? LoadAtlas("mittens");
@@ -399,6 +404,7 @@ namespace SquishSquad.Games.Squish
             {
                 // a second finger: the poke becomes a turn (onPanResponderStart / Move)
                 _hadTwo = true;
+                _snd?.Squish.Stop();
                 _toy.CancelPoke();
                 StopEarning();
                 _mode = Gesture.Orbit;
@@ -431,6 +437,8 @@ namespace SquishSquad.Games.Squish
                 return;
             }
             _mode = Gesture.Poke;
+            if (SquishSoundOn) _snd?.Squish.Start();
+            if (VibrationOn) _hap?.Press(PokeStrength);
             var l = Local(pts[0]);
             _lastTouch = l;
             _soundAnchor = l;
@@ -463,9 +471,12 @@ namespace SquishSquad.Games.Squish
             if (a.x * a.x + a.y * a.y >= SquishRules.SoundMotionDp * SquishRules.SoundMotionDp)
             {
                 _soundAnchor = l;
+                if (SquishSoundOn) _snd?.Squish.NoteMotion();
+                if (VibrationOn) _hap?.Move(PokeStrength);
                 foreach (int gain in _earner.NoteMotion(now, false, 1, _coinMultiplier))
                 {
                     _earned += gain;
+                    if (CoinSoundOn) _snd?.Coin();
                     SetPill(_earned);
                     var c = _nextCoin++ % 3;
                     _coinAt[c] = _lastTouch;
@@ -489,6 +500,7 @@ namespace SquishSquad.Games.Squish
             _gestureOn = false;
             _mode = Gesture.None;
             _hadTwo = false;
+            _snd?.Squish.Stop();
             if (mode == Gesture.Orbit || hadTwo)
             {
                 _toy.EndOrbit();
@@ -502,6 +514,8 @@ namespace SquishSquad.Games.Squish
             if (_speed.Note(now) >= SquishRules.SpeedTapThreshold && !Achieved("speedTap")) MarkAchievement("speedTap");
             RecordPress(holdMs);
             StopEarning();
+            if (ReleaseSoundOn) _snd?.Pop();
+            if (VibrationOn) _hap?.Release(PokeStrength);
             if (holdMs < SquishRules.HoldAbuseMs && _abuse.Register(now)) OpenPunishment();
         }
 
@@ -528,7 +542,7 @@ namespace SquishSquad.Games.Squish
                 for (int i = 0; i < 5; i++)
                     if (_L.InSettings($"toggle-{i}-on").Contains(p.x, p.y))
                     {
-                        if (i == 0) SquishSoundOn = !SquishSoundOn;
+                        if (i == 0) { SquishSoundOn = !SquishSoundOn; if (!SquishSoundOn) _snd?.Squish.Stop(); }
                         else if (i == 1) CoinSoundOn = !CoinSoundOn;
                         else if (i == 2) ReleaseSoundOn = !ReleaseSoundOn;
                         else if (i == 3) ShowFps = !ShowFps;
@@ -585,7 +599,7 @@ namespace SquishSquad.Games.Squish
             if (Application.isPlaying) Destroy(gameObject); else DestroyImmediate(gameObject);
         }
 
-        void OnDestroy() => _stage?.Dispose();
+        void OnDestroy() { _stage?.Dispose(); _snd?.Close(); _snd = null; }
 
         // ---- the profile (App.js's handlers) --------------------------------------------------------------------------------
         bool Online => _fb != null && !string.IsNullOrEmpty(_uid);

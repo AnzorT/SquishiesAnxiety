@@ -36,6 +36,7 @@ namespace SquishSquad.Screens
         public StreakView(IDictionary<string, object> profile, string mascotName, bool intro, float w, float h, Ticker ticker, Func<DateTime> now)
         {
             _t = ticker; _now = now; _profile = profile; _mascotName = mascotName; Intro = intro;
+            Audio.Snd.Play(intro ? "sparkle" : "popOpen");
             W = w; H = h;
             Refresh();
             Motion.Timing(_enter, 1, 1400, Motion.OutQuad).Start();
@@ -58,6 +59,7 @@ namespace SquishSquad.Screens
             var p = _pressed;
             _pressed = null;
             if (h == null || h != p) return;
+            Audio.Snd.Play("tap");
             if (h == "back") OnClose?.Invoke();
             else if (h == "main") { if (!V.ChestDone) OnOpenDaily?.Invoke(); else OnClose?.Invoke(); }
             else if (h == "later") OnClose?.Invoke();

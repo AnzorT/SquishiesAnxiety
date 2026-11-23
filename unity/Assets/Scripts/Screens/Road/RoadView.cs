@@ -117,6 +117,7 @@ namespace SquishSquad.Screens
             var p = _pressed;
             _pressed = null;
             if (h == null || h != p) return;
+            Audio.Snd.Play("tap");
             if (h == "back") OnBack?.Invoke();
             else if (h == "all") Claim(Nodes().Where(n => n.Claimable).Select(n => n.Lv).ToList());
             else if (h.StartsWith("claim:")) Claim(new List<int> { int.Parse(h.Substring(6)) });
@@ -133,6 +134,7 @@ namespace SquishSquad.Screens
         {
             if (_busy || levels.Count == 0) return;
             _busy = true;
+            Audio.Snd.Play("coinShower");
             var got = new List<IDictionary<string, object>>();
             try
             {

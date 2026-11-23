@@ -164,6 +164,7 @@ namespace SquishSquad.Screens
             var p = _pressed;
             _pressed = null;
             if (h == null || h != p) return;
+            Audio.Snd.Play("tap");
             Tap(h);
         }
 
@@ -240,6 +241,7 @@ namespace SquishSquad.Screens
             var w = Wallet;
             double have = T.Cur == "gems" ? w.gems : w.coins;
             if (have < T.Price) { OpenSheet(new Sheet { Type = "broke", Cur = T.Cur, Need = T.Price - have }); return; }
+            Audio.Snd.Play("coin");
             OpenGroup("groupChest", new Dictionary<string, object> { ["group"] = gk, ["size"] = size }, _ => T.Price - have, gk, size);
         }
 
@@ -249,6 +251,7 @@ namespace SquishSquad.Screens
             if (r.reward == null || !_artIds.Contains(r.reward)) { Flash($"{ShopData.GroupName(gk)} has no Rainbow chest"); return; }
             if (Prof.Owns(_profile, r.reward)) { Flash($"{ShopData.ById[r.reward].Name} is already in your squad"); return; }
             if (!ShopData.RainbowReady(_profile, gk, _artIds)) { Flash($"Unlock every {ShopData.GroupName(gk)} pal to earn it: {r.have} / {r.need}"); return; }
+            Audio.Snd.Play("coin");
             OpenGroup("rainbowChest", new Dictionary<string, object> { ["group"] = gk }, null, gk, "set");
         }
 
