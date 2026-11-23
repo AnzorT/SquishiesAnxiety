@@ -142,7 +142,7 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    **Done (logic, video, sound) except the screen looks.** `tools/unity/house/export-movies.mjs`: the five Squad
    Movies drawn frame by frame by the page's own movie code and screenshotted, their scores (SquadMovies.record) played
    through movie-night.js's own tone / noise / bus code into an OfflineAudioContext, muxed by ffmpeg ->
-   `StreamingAssets/Movies/<id>.mp4` (480 x 270, H.264 + AAC, about 18 MB for all 15 minutes) and `movies.json` (cues,
+   `StreamingAssets/Movies/<id>.mp4` (480 x 270, H.264 + AAC, 21 MB for all 15 minutes) and `movies.json` (cues,
    the screen's light 10 a second); the speakers' groove and the TV's three channels rendered offline from the page's
    own code (tv-sound.js's scheduler stepped by hand) -> `Resources/House/audio/*.ogg`, one seamless period each; the
    Dance Club's track (`club.mp3`). `House/HouseMovie.cs`: rnTheater, the show (play the screen tier's movie or the
