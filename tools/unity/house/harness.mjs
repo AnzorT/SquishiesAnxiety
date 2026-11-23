@@ -48,7 +48,10 @@ const RNG = `(() => {
   Math.random = function () {
     if (!split) return one();
     const k = who(); let g = streams.get(k); if (!g) { g = mk(hash(k)); streams.set(k, g); log[k] = 0; }
-    log[k]++; return g();
+    log[k]++; const v = g();
+    // window.__rngTrace = []: each draw with its stream and the function that asked (the creature trace replays them)
+    if (window.__rngTrace) { const f = /at (?:[\\w$]+\\.)?([\\w$]+) /.exec(new Error().stack.split('\\n')[2] || ''); window.__rngTrace.push([k, f ? f[1] : '?', v]); }
+    return v;
   };
 })();`;
 

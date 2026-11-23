@@ -91,3 +91,67 @@ static class WalkCheck
         return bad == 0 ? 0 : 1;
     }
 }
+
+static class CreatureCheck
+{
+    // `creatures`: House/HouseCreatures.cs replaying tools/unity/house/creature-trace.mjs's page run frame by frame
+    public static int Run()
+    {
+        var T = (JObj)HouseJson.Parse(File.ReadAllText(Path.Combine(Program.Repo, "tools/unity/house-test/out/creature-trace.json")));
+        var d = Program.Data(); var hs = Program.LoadFixture(d, T.Str("fixture"));
+        hs.EnterRoomSaveOnly(T.Str("room"));
+        var walk = new HouseWalk(File.ReadAllText(Path.Combine(Program.Res, "walk.json")));
+        var sim = new HouseCreatures(hs, walk);
+        // the page's draws: the creature functions' share of its own stream, and house-walk.js's
+        var page = new Queue<double>(); var hw = new Queue<double>(); var other = new Dictionary<string, int>();
+        foreach (List<object> e in T.Arr("rng"))
+        {
+            string k = (string)e[0], fn = (string)e[1]; double v = (double)e[2];
+            if (k == "house-page") page.Enqueue(v); else if (k == "house-walk.js") hw.Enqueue(v); else other[k] = other.TryGetValue(k, out var n) ? n + 1 : 1;
+        }
+        sim.Rand = () => page.Count > 0 ? page.Dequeue() : throw new Exception("out of page draws");
+        walk.Rand = () => hw.Count > 0 ? hw.Dequeue() : throw new Exception("out of walk draws");
+        var fq = new Queue<bool>(); foreach (var o in T.Arr("fidg")) fq.Enqueue(HouseJson.Truthy(o));
+        sim.Fidg = c => fq.Count > 0 && fq.Dequeue();
+        var st = T.Obj("start");
+        HouseCreature Load(JObj o)
+        {
+            var c = new HouseCreature { Key = o.Str("key"), Room = o.Str("room"), Home = o.Str("home"), PosRoom = o.Str("posRoom"), Mode = o.Str("mode"), N = new Dictionary<string, double>() };
+            c.X = o.Num("x"); c.Y = o.Num("y"); c.Tx = o.Num("tx"); c.Ty = o.Num("ty"); c.Moving = o.Truthy("moving"); c.Spin = o.Num("spin"); c.Face = o.Num("face"); c.Wk = o.Num("wk"); c.Ph = o.Num("ph");
+            c.Lift = o.Num("lift"); c.LiftTo = o.Num("liftTo"); c.WanderAt = o.Num("wanderAt"); c.Hold = o.Num("hold"); c.Run = o.Truthy("run"); c.Gv = o.Num("gv", 1); c.NeedAt = o.Num("needAt");
+            c.StandUntil = o.Num("standUntil"); c.TurnAt = o.Num("turnAt"); c.Z = o["z"] is double z ? z : (double?)null;
+            foreach (var k in o.Obj("N").Keys) c.N[k] = o.Obj("N").Num(k);
+            var g = o.Obj("gs"); c.Gs.Ph = g.Num("ph"); c.Gs.T = g.Num("t"); c.Gs.Rk = g.Num("rk"); c.Gs.FxAt = g.Num("fxAt"); c.Gs.RuAt = g.Num("ruAt"); c.Gs.Ld = g.Truthy("ld"); c.Gs.Ra = g.Num("ra"); c.Gs.Rv = g.Num("rv");
+            foreach (var k in o.Obj("ext").Keys) c.Ext[k] = o.Obj("ext").Num(k);
+            if (o.Truthy("arrive")) Console.WriteLine("  (" + c.Key + " has an arrive callback at the start: not replayable)");
+            return c;
+        }
+        foreach (JObj o in st.Arr("cs")) sim.Cs.Add(Load(o));
+        var vis = st.Arr("vis").ConvertAll(k => (string)k);
+        sim.Vis = sim.Cs.FindAll(c => vis.Contains(c.Key));
+        sim.Vis.Sort((a, b) => vis.IndexOf(a.Key) - vis.IndexOf(b.Key));
+        sim.Sel = st["sel"] is double sd ? (int)sd : (int?)null;
+        sim.Last = st.Num("last");
+        int bad = 0; double worst = 0; string first = null;
+        var frames = T.Arr("frames");
+        for (int f = 0; f < frames.Count; f++)
+        {
+            var fr = (JObj)frames[f];
+            sim.Tick(fr.Num("last"));
+            foreach (JObj o in fr.Arr("cs"))
+            {
+                var c = sim.Cs.Find(x => x.Key == o.Str("key"));
+                double e = Math.Max(Math.Abs(c.X - o.Num("x")), Math.Abs(c.Y - o.Num("y")));
+                e = Math.Max(e, Math.Max(Math.Abs(c.Spin - o.Num("spin")), Math.Abs(c.Wk - o.Num("wk"))));
+                foreach (var k in new[] { "h", "c", "e", "f" }) e = Math.Max(e, Math.Abs(c.N[k] - o.Obj("N").Num(k)));
+                if (vis.Contains(c.Key)) foreach (var k in o.Obj("ext").Keys) e = Math.Max(e, Math.Abs((c.Ext.TryGetValue(k, out var v) ? v : 0) - o.Obj("ext").Num(k)));
+                if (c.Moving != o.Truthy("moving")) e = Math.Max(e, 1);
+                worst = Math.Max(worst, e);
+                if (e > 1e-6) { bad++; first ??= $"frame {f} {c.Key}: x {c.X} vs {o.Num("x")}, y {c.Y} vs {o.Num("y")}, spin {c.Spin} vs {o.Num("spin")}, moving {c.Moving} vs {o.Truthy("moving")}"; }
+            }
+        }
+        Console.WriteLine($"creatures: {frames.Count} frames; draws left: page {page.Count}, walk {hw.Count}, fidg {fq.Count}; others not replayed {string.Join(", ", other)}");
+        Console.WriteLine(bad == 0 ? $"creatures: every creature every frame equal (worst {worst:g3})" : $"creatures: {bad} creature-frames differ (worst {worst:g3}); first: {first}");
+        return bad == 0 ? 0 : 1;
+    }
+}

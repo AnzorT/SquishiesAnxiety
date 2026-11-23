@@ -251,6 +251,18 @@ namespace SquishSquad.House
 
         public void EnterRoom(string room)
         {
+            var prevR = Cur;
+            EnterRoomSaveOnly(room);
+            room = Cur; Cur = prevR;
+            if (room != "beach") { foreach (var c in Cs) if (c.Room == "beach") c.Room = c.Home != null && c.Home != "beach" && IsOpen(c.Home) ? c.Home : HomeFor(c.I); }
+            else if (prevR != "beach" && !Cs.Exists(c => c.Room == "beach")) foreach (var c in Cs) if (c.Room == prevR) { c.Home = c.Room; c.Room = "beach"; }
+            Cur = room;
+        }
+
+        /// <summary>enterRoom's save part (HouseCreatures does the squad's): the pieces that belong elsewhere dropped, floor
+        /// pieces clamped to y 342, the living room when this one isn't open. Sets Cur.</summary>
+        public void EnterRoomSaveOnly(string room)
+        {
             Geo.SetRoom(room);
             var rooms = H.Obj("rooms");
             foreach (var rk in new List<string>(rooms.Keys))
@@ -266,9 +278,6 @@ namespace SquishSquad.House
             }
             foreach (var it in Items(room)) { var A = D.CatOf(it.Str("t")); if (it.Num("y") > 342 && !(A != null && A.Truthy("mount"))) it["y"] = 342.0; }
             if (!IsOpen(room)) room = "living";
-            var prevR = Cur;
-            if (room != "beach") { foreach (var c in Cs) if (c.Room == "beach") c.Room = c.Home != null && c.Home != "beach" && IsOpen(c.Home) ? c.Home : HomeFor(c.I); }
-            else if (prevR != "beach" && !Cs.Exists(c => c.Room == "beach")) foreach (var c in Cs) if (c.Room == prevR) { c.Home = c.Room; c.Room = "beach"; }
             Cur = room;
         }
 
