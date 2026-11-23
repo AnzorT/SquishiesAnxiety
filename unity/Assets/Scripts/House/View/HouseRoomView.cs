@@ -48,9 +48,11 @@ namespace SquishSquad.House.View
         HouseData Data() => _data ??= HouseData.Load(Res);
 
         /// <summary>Loads a save (json: the house6 document's data, or null for a new house) for a player.</summary>
-        public void Load(string json, int level, IList<int> ownedRosterIds, string room = "living")
+        public void Load(string json, int level, IList<int> ownedRosterIds, string room = "living", IList<string> ownedKeys = null)
         {
             Save = new HouseSave(Data());
+            // the app's creature keys -> the house's roster ids
+            if (ownedKeys != null) { var ids = new List<int>(ownedRosterIds ?? new List<int>()); foreach (var k in ownedKeys) { int i = Save.D.Roster.FindIndex(c => c.Str("key") == k); if (i >= 0 && !ids.Contains(i)) ids.Add(i); } ownedRosterIds = ids; }
             Save.Load(json, level, ownedRosterIds, room);
         }
 

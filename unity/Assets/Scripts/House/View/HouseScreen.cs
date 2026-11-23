@@ -54,6 +54,15 @@ namespace SquishSquad.House.View
             return s;
         }
 
+        /// <summary>The house for the app's player: their creatures by key (the menu's squad).</summary>
+        public static HouseScreen Create(Transform parent, string houseJson, int level, IEnumerable<string> ownedKeys, string room = "living")
+        {
+            var s = Create(parent, houseJson, level, (IList<int>)null, room);
+            s._ownedKeys = ownedKeys != null ? new List<string>(ownedKeys) : null;
+            return s;
+        }
+        List<string> _ownedKeys;
+
         double Now => Time.unscaledTimeAsDouble * 1000;
 
         void Start()
@@ -69,7 +78,7 @@ namespace SquishSquad.House.View
             var world = new GameObject("world").transform;
             world.SetParent(transform.parent, false);
             _room = world.gameObject.AddComponent<HouseRoomView>();
-            _room.Load(_json, _level, _owned, _start);
+            _room.Load(_json, _level, _owned, _start, _ownedKeys);
             _hit = new List<HouseRoomView.Piece>();
             var walkJson = HouseRoomView.Res("walk");
             _sim = new HouseCreatures(_room.Save, new HouseWalk(walkJson));
@@ -117,7 +126,13 @@ namespace SquishSquad.House.View
         {
             if (_room == null) return;
             double now = Now;
-            if (Input.GetKeyDown(KeyCode.Escape)) { OnExit?.Invoke(); Destroy(gameObject); return; }
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                // Android's back: the Catalog's detail, the Catalog, Renovate, then out of the house (saved)
+                if (_sim.Shop) { if (_sim.Det != null) _sim.CloseDet(); else _sim.CloseShop(); return; }
+                if (_sim.Edit) { _sim.DoneEdit(now); return; }
+                Save(); OnExit?.Invoke(); Destroy(gameObject); return;
+            }
             HandleInput(now);
             _sim.Tick(now);
             if (_dirty) { _dirty = false; _room.Draw(_w, _h); }

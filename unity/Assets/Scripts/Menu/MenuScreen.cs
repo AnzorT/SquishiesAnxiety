@@ -218,6 +218,47 @@ namespace SquishSquad.Menu
 
         static bool _billingStarted;
 
+        // MY HOUSE: the Squad House (House/View/HouseScreen.cs) with the player's save (users/{uid}/crib/house6, the
+        // same document the app's WebView house uses; offline: kept on the device), their level, their creatures and their
+        // coins (what the Catalog spends goes to the account as the app's bridge sends it: cribCoins with the difference)
+        bool _houseOpening;
+        async void OpenHouse()
+        {
+            if (_houseOpening || _game != null) return;
+            _houseOpening = true;
+            var p = CharactersPageLink.Get();
+            string json = null;
+            try { json = p?.Fb != null && p.Uid != null ? await p.Fb.Data.LoadHouse(p.Uid) : PlayerPrefs.GetString(HouseKey, null); }
+            catch (System.Exception) { json = null; }
+            _houseOpening = false;
+            if (_game != null || this == null) return;
+            var prof = ProfileOrEmpty(p);
+            int lv = prof.TryGetValue("level", out var lvO) ? System.Convert.ToInt32(lvO) : System.Math.Max(1, _playerLevel);
+            double coins = prof.TryGetValue("coins", out var cO) ? System.Convert.ToDouble(cO) : 0;
+            var roster = LevelPassPage.Roster;
+            var owned = roster != null ? CharactersPageLink.Squad(roster.roster, roster.demo, p).Item1 : null;
+            BeforeGame();
+            var s = SquishSquad.House.View.HouseScreen.Create(transform, json, lv, owned);
+            s.Coins = () => coins;
+            s.Spend = n =>
+            {
+                if (coins < n) return false;
+                coins -= n;
+                if (p?.Fb != null && p.Uid != null) _ = p.Fb.Data.CribCoins(p.Uid, -n);   // (gameData.js gameCoins: the difference, as the bridge sends it)
+                if (p?.Profile != null) p.Profile["coins"] = coins;
+                return true;
+            };
+            string last = json;
+            s.OnSave = data =>
+            {
+                if (data == last) return; last = data;
+                if (p?.Fb != null && p.Uid != null) _ = p.Fb.Data.SaveHouse(p.Uid, data); else PlayerPrefs.SetString(HouseKey, data);
+            };
+            s.OnExit = () => AfterGame();
+            _game = s;
+        }
+        const string HouseKey = "squish.house6";
+
         void OpenSettings()
         {
             BeforeGame();
@@ -468,6 +509,7 @@ namespace SquishSquad.Menu
             if (tap == "trophies") { OpenAchievements(); return; }
             if (tap == "settings") { OpenSettings(); return; }
             if (tap == "shop") { OpenShop("daily"); return; }
+            if (tap == "home") { OpenHouse(); return; }
             Tapped?.Invoke(tap);
             if (Tapped == null) ShowToast(tap.ToUpperInvariant() + " isn't in the Unity version yet");
         }
