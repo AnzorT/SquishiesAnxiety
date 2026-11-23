@@ -4,7 +4,7 @@
 // port's comparisons (tools/unity/auth-test), and the menu's screens for a made-up player ("scr-…": SCREENS below,
 // tools/unity/screens-test).
 // window.__preview('sd-result') shows one card; the names are the keys of CARDS below. Nothing here touches the account.
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { Baloo2_500Medium, Baloo2_700Bold, Baloo2_800ExtraBold } from '@expo-google-fonts/baloo-2';
@@ -37,6 +37,12 @@ import DailySpinScreen from '../screens/DailySpinScreen';
 import { PageBg } from '../royal';
 import { todayKey } from '../dailySpin';
 import { challengesFor } from '../progression';
+import ShopScreen from '../screens/ShopScreen';
+import LevelRoadScreen from '../screens/LevelRoadScreen';
+import { DEFAULT_OFFERS, lineup, BY_ID as SQUAD_BY_ID } from '../squad/data';
+import { setOfferProducts } from '../economy';
+import { priceLabel } from '../billing/common';
+import auth from '@react-native-firebase/auth';
 
 const noop = () => {};
 const before = { level: 6, into: 560, need: 700 };
@@ -170,8 +176,106 @@ const SCREENS = {
   'scr-spin': screen(() => <SpinPreview />),
 };
 
+// The Unity port's Shop, chests and level road (tools/unity/shop-test, tools/unity/export-shop.mjs): the royal Shop on
+// each tab and the landscape Level Road for made-up players, with the app's default offers (config/offers missing)
+// and the prices' fallback labels (config/pricing missing). Nothing reaches Firebase: while one of these is up, a
+// made-up "server" answers the `squad` moves (callFunction's fetch, signed in as nobody) after 600 ms with a fixed
+// roll (window.__squadAnswer(move, args) can say otherwise); the profile doesn't change.
+setOfferProducts(DEFAULT_OFFERS);
+const shopDay = (back) => dayKey(back);
+function shopPlayer(kind) {
+  const base = {
+    nickname: 'Mia',
+    coins: 5200,
+    gems: 640,
+    ownedIds: ['0', '1', '3', '4', '5', '6', '7', '12', '22', '24'],
+    copies: { 2: 3, 8: 1, 9: 6, 10: 2, 13: 4 },
+    chestOpens: 6,
+    epic: 6,
+    freeAt: 0,
+    totalEarned: 20000,
+    jarBase: 0,
+    gemFirst: { gems_80: true },
+    shopStreak: { count: 2, last: shopDay(1) },
+    passXp: 300,
+    pxp: 1600,
+    levelGot: { 1: true, 2: true },
+    lobby: { sel: '1' },
+  };
+  if (kind === 'poor')
+    return { ...base, coins: 120, gems: 40, freeAt: Date.now() + 2 * 3600e3 + 754000, adChests: { day: shopDay(0), n: 3 }, dealDay: shopDay(0), shopStreak: { count: 3, last: shopDay(0) }, epic: 9, adsFree: true, gemFirst: {} };
+  if (kind === 'road-new') return { ...base, pxp: 120, levelGot: {} };
+  return base;
+}
+function fakeSquad(move, args) {
+  const day = shopDay(0);
+  const hot = lineup(day);
+  const pick = (group, size) => {
+    const c = Object.values(SQUAD_BY_ID).find((x) => x.set === group && !x.reward && !x.pass) || SQUAD_BY_ID['1'];
+    return { group, size, final: size, upgraded: false, id: c.id, rar: c.rar, isNew: false, copies: 3, need: 5, coins: 0, dupeCoins: 0, setBonus: 0, luck: false };
+  };
+  if (move === 'groupChest') return pick(args.group, args.size);
+  if (move === 'freeChest') return pick(hot[0], 'common');
+  if (move === 'adChest') return pick(hot[1], 'rare');
+  if (move === 'dealChest') return pick(hot[0], 'legendary');
+  if (move === 'rainbowChest') return pick(args.group, 'set');
+  if (move === 'streakClaim') return { kind: 'coins', n: 500, day: 3 };
+  if (move === 'passClaim') return { kind: 'gems', n: 80, i: args.i };
+  if (move === 'swap') return { coins: [2000, 9000, 25000][args.i] || 0 };
+  if (move === 'levelClaim') return { kind: 'coins', n: 500, lv: args.i };
+  if (move === 'levelClaimAll') return { results: [] };
+  return { error: 'unknown_move' };
+}
+function useFakeServer() {
+  useEffect(() => {
+    const a = auth();
+    const had = Object.getOwnPropertyDescriptor(a, 'currentUser');
+    Object.defineProperty(a, 'currentUser', { configurable: true, get: () => ({ uid: 'preview', getIdToken: async () => 'preview' }) });
+    const realFetch = window.fetch;
+    window.fetch = (url, init) => {
+      const m = /cloudfunctions\.net\/(\w+)$/.exec(String(url));
+      if (!m) return realFetch(url, init);
+      const { data } = JSON.parse((init && init.body) || '{}');
+      const { move, ...args } = data || {};
+      const answer = (window.__squadAnswer && window.__squadAnswer(move, args)) || fakeSquad(move, args);
+      (window.__squadCalls = window.__squadCalls || []).push({ move, args });
+      return new Promise((resolve) =>
+        setTimeout(() => resolve({ ok: true, status: 200, json: async () => (answer.error ? { error: { message: answer.error } } : { result: answer }) }), 600),
+      );
+    };
+    return () => {
+      window.fetch = realFetch;
+      if (had) Object.defineProperty(a, 'currentUser', had);
+      else delete a.currentUser;
+    };
+  }, []);
+}
+function ShopPreview({ kind, tab }) {
+  useFakeServer();
+  const profile = useMemo(() => shopPlayer(kind), [kind]);
+  return <ShopScreen royal profile={profile} creatures={NAMED} offers={null} onSeenOffer={noop} onBuyProduct={() => Promise.resolve(null)} priceOf={(k) => priceLabel(k)} onBack={noop} startTab={tab} />;
+}
+function RoadPreview({ kind }) {
+  useFakeServer();
+  const profile = useMemo(() => shopPlayer(kind), [kind]);
+  return <LevelRoadScreen profile={profile} creatures={NAMED} onBack={noop} />;
+}
+const SHOP = {
+  'shop-daily': screen(() => <ShopPreview kind="shop" tab="daily" />),
+  'shop-chests': screen(() => <ShopPreview kind="shop" tab="chests" />),
+  'shop-deals': screen(() => <ShopPreview kind="shop" tab="deals" />),
+  'shop-gems': screen(() => <ShopPreview kind="shop" tab="gems" />),
+  'shop-daily-poor': screen(() => <ShopPreview kind="poor" tab="daily" />),
+  'shop-chests-poor': screen(() => <ShopPreview kind="poor" tab="chests" />),
+  'shop-deals-poor': screen(() => <ShopPreview kind="poor" tab="deals" />),
+  'shop-gems-poor': screen(() => <ShopPreview kind="poor" tab="gems" />),
+  road: screen(() => <RoadPreview kind="shop" />),
+  'road-new': screen(() => <RoadPreview kind="road-new" />),
+};
+
 const CARDS = {
   ...SCREENS,
+  ...SHOP,
   'sd-result': (v) => <SD.ResultCard visible={v} res={res} spec={{ lv: 12, n: 6 }} uris={uris} onNext={noop} onReplay={noop} onMap={noop} />,
   'sd-perfect': (v) => <SD.ResultCard visible={v} res={best} spec={{ lv: 12, n: 6, head: true }} uris={uris} onNext={noop} onReplay={noop} onMap={noop} />,
   'sd-timeup': (v) => <SD.TimeUpCard visible={v} onRetry={noop} onMap={noop} />,
@@ -228,6 +332,7 @@ export default function Preview() {
     window.__preview = setName;
     window.__previewNames = Object.keys(CARDS);
     window.__screenPlayer = screenPlayer;
+    window.__shopPlayer = shopPlayer;
   }, []);
   if (!fonts) return null;
   const card = CARDS[name];

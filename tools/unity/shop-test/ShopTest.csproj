@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The Unity port's Shop, chest opening (the treasure vault, Chest Smash v2) and Level Road
+       (unity/Assets/Scripts/Screens/Shop, Chests, Road) drawn from the Unity code and compared with the app's
+       screenshots on the same virtual clock; and their `squad` moves against the Firebase emulators. See Program.cs. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <NoWarn>CS8632;CS0162;CS0414</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../unity/Assets/Scripts/Screens/**/*.cs" Exclude="../../../unity/Assets/Scripts/Screens/**/*Screen.cs;../../../unity/Assets/Scripts/Screens/**/*Host.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/UiFont.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/UiSvg.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/Screens/**/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/Cards/CardArt.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Sort/PlayerXp.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Sort/JsMath.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Anim/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/ThirdParty/Yoga/**/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Backend/**/*.cs" Exclude="../../../unity/Assets/Scripts/Backend/Unity/**" />
+    <Compile Include="../vector-test/ReferenceRaster.cs" />
+    <Compile Include="../vector-test/Png.cs" />
+    <Compile Include="*.cs" />
+  </ItemGroup>
+</Project>
