@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SquishSquad.Anim;
+using SquishSquad.Audio;
 using SquishSquad.Ui;
 using SquishSquad.Ui.Cards;
 using SquishSquad.Vector;
@@ -207,8 +208,9 @@ namespace SquishSquad.Games.Hop
                     {
                         Timing(bub, 0, 220, Easing.Out(Easing.Quad)).Start();
                         Spray("poof", q.X, q.Y - q.S * 0.45, q.S / 60);
+                        Snd.Play("tap");
                     }
-                    else Spray("pop", q.X, q.Y - q.S * 0.1, q.S / 60);
+                    else { Spray("pop", q.X, q.Y - q.S * 0.1, q.S / 60); Snd.Play("fs_pop"); }
                 }
             }
             else
@@ -261,6 +263,8 @@ namespace SquishSquad.Games.Hop
 
         void Bump(int d, MoveResult m)
         {
+            Snd.Play("bonk");
+            Snd.Tap();
             G.Busy = true;
             Nudge(d, 0.14, done: () => { G.Busy = false; Drain(); });
             if (m.Why == "locked")
@@ -287,6 +291,8 @@ namespace SquishSquad.Games.Hop
             G.St = nxt;
             G.Busy = true;
             SetGlow(-1);
+            Snd.Play("st_lift");
+            Snd.Tap();
             SetCell(prev.Cur, nxt.Life[prev.Cur]);
             // onto each cell in turn; a bubble pops as it bounces you on
             void Step(int k)
@@ -353,6 +359,7 @@ namespace SquishSquad.Games.Hop
             if (k < 0 || k >= _friends.Count) return;
             var a = _friendA[k];
             var c = _friends[k];
+            Snd.Play("sd_squeak");
             double fh = c.BodyH(_fw);
             var to = SlotMid(k);
             a.Shadow.SetValue(0);
@@ -376,6 +383,7 @@ namespace SquishSquad.Games.Hop
                     Timing(_starPop, 1, 520, Easing.Out(Easing.Quad)).Start();
                     var q = BoardGeometry.StandOn(B, _board.Goal);
                     Spray("spark", q.X, q.Y - B.T * 0.4, q.S / 60);
+                    Snd.Play("sd_unlock");
                 }
             });
         }
@@ -426,6 +434,7 @@ namespace SquishSquad.Games.Hop
                 _player.Rot.StopAnimation();
                 _player.Rot.SetValue(0);
             }
+            Snd.Play("st_undo");
             G.Busy = true;
             RestoreTo(prev, 190, () => { G.Busy = false; Drain(); });
             Check();
@@ -513,6 +522,7 @@ namespace SquishSquad.Games.Hop
             if (d < 0) return;
             var m = Engine.TryMove(_board, G.St, d);
             if (!m.Ok) return;
+            Snd.Play("st_hint");
             SetGlow(m.Cells[0]);
             int key = _glowKey;
             Later(3200, () => { if (_glowKey == key) SetGlow(-1); });
@@ -529,10 +539,14 @@ namespace SquishSquad.Games.Hop
             _phase = "won";
             Sync();
             var q = BoardGeometry.StandOn(B, _board.Goal);
+            Snd.Play("st_land");
             Timing(_starGone, 1, 420, Easing.Out(Easing.Quad)).Start();
             Spray("spark", q.X, q.Y - B.T * 0.5, q.S / 60);
             Later(160, () =>
             {
+                Snd.Play("sd_solve");
+                Snd.Play("sd_confetti");
+                Snd.Win();
                 Spray("confetti", q.X, q.Y - B.T * 0.6, 1);
                 // two happy hops on the ★
                 _player.Hp.SetValue(0);
@@ -558,6 +572,8 @@ namespace SquishSquad.Games.Hop
             G.Over = true;
             G.Busy = false;
             _phase = "stuck";
+            Snd.Play("sd_wrong");
+            Snd.Wrong();
             Wobble(new[] { -0.8, 0.8, -0.5, 0 }, 800);
             Later(1000, () => { if (G.Over && !G.Won) SetStuck(true); });
         }
@@ -655,6 +671,7 @@ namespace SquishSquad.Games.Hop
                 Animated.Parallel(Timing(a.K, q.k, 320, Easing.Out(Easing.Back(1.6)), dl), Timing(a.Y, q.y, 320, Easing.Out(Easing.Back(1.6)), dl), Timing(a.O, 1, 160, Easing.Linear, dl)).Start();
                 _slotPop[k].SetValue(1);
             }
+            Snd.Play("sd_boardIn");
             _phase = "play";
             if (forget)
             {
@@ -662,7 +679,7 @@ namespace SquishSquad.Games.Hop
                 var rec = Levels.Record(Profile);
                 bool seen = rec.Best != null && rec.Best.ContainsKey(Js.KeyOf(_spec.Lv)) && Js.Truthy(rec.Best[Js.KeyOf(_spec.Lv)]);
                 var news = _spec.News != null && !seen && Levels.TWISTS.TryGetValue(_spec.News, out var tw) ? tw : null;
-                if (news != null) Later(1500, () => Say(news.Text, small: true, sub: news.Sub, hold: 1700, ink: "#0c5a9c"));
+                if (news != null) Later(1500, () => { Snd.Play("st_news"); Say(news.Text, small: true, sub: news.Sub, hold: 1700, ink: "#0c5a9c"); });
             }
             _hudKey = null;
         }
@@ -679,6 +696,7 @@ namespace SquishSquad.Games.Hop
                 return;
             }
             // a new room (or time of day): the Crib's room-switch flash
+            Snd.Play("swoosh");
             Timing(_flash, 1, 200, Easing.Linear).Start(_ =>
             {
                 SetLevel(to);
@@ -1368,6 +1386,7 @@ namespace SquishSquad.Games.Hop
             int j = BoardGeometry.CellAt(B, T.X0, T.Y0);
             if (j == cur)
             {
+                Snd.Play("sd_squeak");
                 Wobble(new[] { -0.6, 0.6, 0 }, 360);
                 return;
             }

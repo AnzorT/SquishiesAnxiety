@@ -9,6 +9,7 @@
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
+using SquishSquad.Audio;
 using SquishSquad.Ui;
 using SquishSquad.Ui.Cards;
 using SquishSquad.Vector;
@@ -54,6 +55,7 @@ namespace SquishSquad.Games.Squishdoku
             _built = "hub";
             _ready = true;
             _hub.Mount();
+            Snd.Budget(30);
             // first visit: the rules
             if (rec.Plays == 0) _tk.SetTimeout(() => SetRules(true), 700);
         }
@@ -134,6 +136,7 @@ namespace SquishSquad.Games.Squishdoku
                 case "map":
                     _map = new SdMap(W, H, rec, _cast, _justUnlocked, _xml, _tk) { OnPlay = lv => AsInput(() => StartLevel(lv)) };
                     _map.Mount();
+                    SdMap.NodePops();
                     break;
                 case "play":
                     _level = new SdLevel(W, H, _playLv, _head, _cast, _buddy, _xml, _tk);
@@ -142,7 +145,7 @@ namespace SquishSquad.Games.Squishdoku
                 case "blitz":
                     _blitz = new SdBlitz(W, H, _cast, _buddy, _xml, _tk) { AdsFree = AdsFree, AdReady = AdReady, ShowAd = ShowAd, Save = Save };
                     if (PuzzleSource != null) _blitz.PuzzleSource = PuzzleSource;
-                    _blitz.OnExit = () => AsInput(() => { Go("hub"); });
+                    _blitz.OnExit = () => AsInput(() => { Snd.Play("sd_boardOut"); Go("hub"); });
                     break;
             }
             _built = View;
@@ -160,7 +163,7 @@ namespace SquishSquad.Games.Squishdoku
         };
 
         void StartLevel(int lv) { _playLv = lv; _justUnlocked = null; Go("play"); }
-        void LeaveLevel(int? unlocked) { _justUnlocked = unlocked; Go("map"); }
+        void LeaveLevel(int? unlocked) { _justUnlocked = unlocked; Snd.Play("sd_boardOut"); Go("map"); }
 
         // ---- HOW TO PLAY ---------------------------------------------------------------------------------------------------
         Card _rules;
@@ -187,7 +190,8 @@ namespace SquishSquad.Games.Squishdoku
             if (View == "blitz") { _blitz?.Back(); return; }
             if (RulesOpen) SetRules(false);
             else if (View == "map") Go("hub");
-            else OnExit?.Invoke();
+            else { Snd.Budget(0); OnExit?.Invoke(); }
+            Snd.Play("sd_boardOut");
         });
 
         // ---- placeholders (Skeleton.js ViewBones, tone "sky") ----------------------------------------------------------------
@@ -396,7 +400,7 @@ namespace SquishSquad.Games.Squishdoku
             if (was == 2)
             {
                 _orbDown = false;
-                if (OnOrb(x, y)) { if (View == "map") Go("hub"); else OnExit?.Invoke(); }
+                if (OnOrb(x, y)) { Snd.Play("sd_boardOut"); if (View == "map") Go("hub"); else { Snd.Budget(0); OnExit?.Invoke(); } }
                 return;
             }
             if (was != 3) return;

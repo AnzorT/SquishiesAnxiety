@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using Facebook.Yoga;
 using SquishSquad.Anim;
+using SquishSquad.Audio;
 using SquishSquad.Ui;
 using SquishSquad.Ui.Cards;
 using SquishSquad.Ui.Screens;
@@ -127,9 +128,19 @@ namespace SquishSquad.Games.Shared
         public float ViewTop => Playing ? 0 : LayoutHeader();
 
         // ---- the flow -----------------------------------------------------------------------------------------------------
+        // sounds kept loaded while the game is open (the screens' SOUND_BUDGET)
+        int Budget => Def.Id == "sort" ? 26 : Def.Id == "squishdoku" ? 30 : 28;
+
+        void Exit()
+        {
+            Snd.Budget(0);
+            OnExit?.Invoke();
+        }
+
         public void Start()
         {
             _tk = Ticker.Default;
+            Snd.Budget(Budget);
             if (Def.HasHub) { _hubReveal = new Reveal(true); MountHub(); }
             else { _mapReveal = new Reveal(true); MountMap(); _mapKept = true; }
             // first visit: how to play
@@ -192,6 +203,7 @@ namespace SquishSquad.Games.Shared
             Ticker.Default = _tk;
             if (_map != null) Def.Refresh(_map);
             _headerFor = null;
+            Snd.Play("sd_boardOut");
             Go("map");
         }
 
@@ -201,7 +213,8 @@ namespace SquishSquad.Games.Shared
             if (Playing) return;
             if (_rulesOpen) ShowRules(false);
             else if (Sw.View == "map" && Def.HasHub) Go("hub");
-            else OnExit?.Invoke();
+            else Exit();
+            Snd.Play("sd_boardOut");
         }
 
         public void OpenHub(string view) => Go(view);
@@ -357,7 +370,7 @@ namespace SquishSquad.Games.Shared
             if (_backDown)
             {
                 _backDown = false;
-                if (In(_back, x, y, 8)) { if (Sw.View == "map" && Def.HasHub) Go("hub"); else OnExit?.Invoke(); }
+                if (In(_back, x, y, 8)) { Snd.Play("sd_boardOut"); if (Sw.View == "map" && Def.HasHub) Go("hub"); else Exit(); }
                 return;
             }
             if (_helpDown)

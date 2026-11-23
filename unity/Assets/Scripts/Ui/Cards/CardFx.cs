@@ -9,6 +9,7 @@
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
+using SquishSquad.Audio;
 using SquishSquad.Vector;
 
 namespace SquishSquad.Ui.Cards
@@ -277,7 +278,7 @@ namespace SquishSquad.Ui.Cards
     {
         readonly double _value, _ms, _delay;
         readonly int _ticks;
-        public Action<int> OnTick;
+        public Action<int> OnTick = _ => Snd.Play("sd_coinTick");
         public int Shown { get; private set; }
         Ticker _tk;
         int _timer, _raf;
@@ -332,7 +333,7 @@ namespace SquishSquad.Ui.Cards
         CompositeAnimation _a;
         Ticker _tk;
         public double Level { get; private set; }
-        public Action OnStart;   // sd_xpFill
+        public Action OnStart = () => Snd.Play("sd_xpFill");
 
         public XpFill(double beforeLevel, double beforeInto, double beforeNeed, double afterLevel, double afterInto, double afterNeed, double delay)
         {
@@ -384,7 +385,8 @@ namespace SquishSquad.Ui.Cards
     public sealed class Press
     {
         readonly AnimatedValue _t = new AnimatedValue(0);
-        public void Down() => Animated.Timing(_t, Fx.Timing(1, 70)).Start();
+        /// <summary>Pressed: it sinks, with the app's button "tap" (CandyButton / SdButton onPressIn).</summary>
+        public void Down() { Audio.Snd.Play("tap"); Animated.Timing(_t, Fx.Timing(1, 70)).Start(); }
         public void Up() => Animated.Spring(_t, Fx.Spring(0, 3.5, 260)).Start();
         public double T => _t.GetValue();
     }

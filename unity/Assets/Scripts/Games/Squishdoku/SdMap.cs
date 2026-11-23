@@ -9,6 +9,7 @@
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
+using SquishSquad.Audio;
 using SquishSquad.Ui;
 using SquishSquad.Ui.Cards;
 using SquishSquad.Vector;
@@ -105,7 +106,7 @@ namespace SquishSquad.Games.Squishdoku
                 foreach (var k in new[] { 1, -1, 1, -1, 0.5, 0 }) seq.Add(Animated.Timing(n.Shake, Fx.Timing(k, 55)));
                 seq.Add(Animated.Timing(n.Lock, Fx.Timing(0, 1)));
                 Animated.Sequence(seq).Start();
-                Later(330, () => { var b = new Burst("gold", NODE / 2, NODE / 2, 1); n.Bursts.Add(b); b.Start(() => n.Bursts.Remove(b)); });
+                Later(330, () => { Snd.Play("sd_unlock"); var b = new Burst("gold", NODE / 2, NODE / 2, 1); n.Bursts.Add(b); b.Start(() => n.Bursts.Remove(b)); });
             });
 
         /// <summary>The map's content mounts (built behind its placeholders).</summary>
@@ -413,11 +414,16 @@ namespace SquishSquad.Games.Squishdoku
             ScrollX = next;
         }
 
+        // the nodes round the current one pop in with rising bubbles (on open and on each chapter)
+        public static void NodePops() { for (int k = 0; k < 6; k++) Snd.Play("sd_nodePop", delay: 120 + k * 70, rate: 0.9 + k * 0.07); }
+
         void Turn(int c)
         {
             if (c < 1 || c > Levels.Chapters) return;
+            Snd.Play("sd_select");
             _chapter = c;
             Build();
+            NodePops();
         }
 
         void Press(int lv)
@@ -427,12 +433,14 @@ namespace SquishSquad.Games.Squishdoku
             if (n == null) return;
             if (n.State == "locked")
             {
+                Snd.Play("sd_locked");
                 n.Shake.SetValue(0);
                 var seq = new List<CompositeAnimation>();
                 foreach (var k in new[] { 1, -1, 0.7, -0.7, 0.3, 0 }) seq.Add(Animated.Timing(n.Shake, Fx.Timing(k, 45)));
                 Animated.Sequence(seq).Start();
                 return;
             }
+            Snd.Play("sd_select");
             OnPlay?.Invoke(lv);
         }
 

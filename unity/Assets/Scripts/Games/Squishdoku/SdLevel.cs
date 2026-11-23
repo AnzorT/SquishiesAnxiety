@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
+using SquishSquad.Audio;
 using SquishSquad.Ui;
 using SquishSquad.Ui.Cards;
 using SquishSquad.Vector;
@@ -116,8 +117,8 @@ namespace SquishSquad.Games.Squishdoku
             Hud();
             // the board cascades in, the level banner pops, HEAD START's creature drops in, then the clock starts
             double settled = 60 + (2 * Spec.N - 1) * 34 + 450;
-            Later(60, () => { Intro(); Effect(ShowBanner); });
-            if (_given >= 0) Later(settled, () => { Place(_given); _placedCount = 1; });
+            Later(60, () => { Intro(); Snd.Play("sd_boardIn"); Effect(ShowBanner); });
+            if (_given >= 0) Later(settled, () => { Place(_given); Snd.Play("sd_place"); _placedCount = 1; });
             Later(settled + (_given >= 0 ? 450 : 0), () =>
             {
                 Phase = "play";
@@ -163,10 +164,11 @@ namespace SquishSquad.Games.Squishdoku
                 {
                     if (_lastSecond < 0) BuddyReact("hurry");
                     _lastSecond = sec;
+                    Snd.Play("sd_tick", rate: sec <= 3 ? 1.3 : 1);
                     _warn = true;
                 }
                 int now = !_usedX && _mistakes == 0 ? 3 : Levels.StarsLeft(Spec, ms, _mistakes);
-                if (now != _gLeft) { _gLeft = now; _left = now; }
+                if (now != _gLeft) { if (now < _gLeft) { Snd.Play("sd_starLost"); Snd.Tick(); } _gLeft = now; _left = now; }
                 Hud();
                 if (rest <= 0) TimeUp();
             };
@@ -180,6 +182,8 @@ namespace SquishSquad.Games.Squishdoku
             ClockPause();
             Phase = "timeup";
             _warn = false;
+            Snd.Play("sd_timeUp");
+            Snd.Wrong();
             BuddyReact("timeup");
             Shake();
             var r = Levels.AfterLevel(Profile, Spec, false);
@@ -196,6 +200,8 @@ namespace SquishSquad.Games.Squishdoku
             ClockPause();
             Phase = "out";
             _warn = false;
+            Snd.Play("sd_blitzFail");
+            Snd.Wrong();
             StopInterval();
             var r = Levels.AfterLevel(Profile, Spec, false);
             SdSave.Record(r.Update);   // (signed in: saveSquishdoku)
@@ -213,10 +219,15 @@ namespace SquishSquad.Games.Squishdoku
         {
             if (Phase != "play") return;
             SetMark(cell, on);
+            double t = _tk.Now;
+            if (t - _lastMarkSound > 45) { _lastMarkSound = t; Snd.Play(on ? "sd_x" : "sd_xOff"); }
+            Snd.Tap();
             if (on && !_usedX) { _usedX = true; LosePerfect(); }
             Hud();
         }
 
+        double _lastMarkSound = -1e9;
+        static readonly System.Random SndRandom = new System.Random();   // (the sounds' own, so the game's Random stays as the app's)
         readonly HashSet<int> _marks = new HashSet<int>();   // RegularGame's marks ref
         void OnMark(int cell, bool on)
         {
@@ -233,6 +244,8 @@ namespace SquishSquad.Games.Squishdoku
             if (Spec.Puzzle.Solution[r] == c)
             {
                 Place(cell);
+                Snd.Play("sd_place", rate: 1 + Math.Min(8, _combo) * 0.06);
+                Snd.Place();
                 BuddyReact("right", _combo + 1);
                 _combo++;
                 _placedCount++;
@@ -241,6 +254,8 @@ namespace SquishSquad.Games.Squishdoku
             else
             {
                 Wrong(cell);
+                Snd.Play("sd_wrong");
+                Later(200, Snd.Wrong);
                 BuddyReact("wrong");
                 _combo = 0;
                 _mistakes++;
@@ -250,6 +265,7 @@ namespace SquishSquad.Games.Squishdoku
                 {
                     _heartsLost = _mistakes;
                     HeartsChanged();
+                    Later(160, () => Snd.Play("fs_heart"));
                     if (_mistakes >= Spec.Hearts) { OutOfHearts(); return; }
                 }
                 // the cell it can't be gets its ✕ (this one doesn't count as using ✕)
@@ -261,7 +277,7 @@ namespace SquishSquad.Games.Squishdoku
             Hud();
         }
 
-        void OnTapPiece(int cell) => Rock(cell, new[] { -0.7, 0.7, -0.4, 0 }, 380);
+        void OnTapPiece(int cell) { Snd.Play("sd_squeak", rate: 0.85 + SndRandom.NextDouble() * 0.35); Snd.Tap(); Rock(cell, new[] { -0.7, 0.7, -0.4, 0 }, 380); }
 
         // ---- solved ------------------------------------------------------------------------------------------------------
         void Solved()
@@ -283,9 +299,17 @@ namespace SquishSquad.Games.Squishdoku
                 Before = outc.Before != null ? new XpLevel(outc.Before.Level, outc.Before.Into, outc.Before.Need) : (XpLevel?)null,
                 After = outc.After != null ? new XpLevel(outc.After.Level, outc.After.Into, outc.After.Need) : default,
             };
-            Later(420, () => { BuddyReact("solve"); HopAll(); });
+            Later(420, () =>
+            {
+                Snd.Play("sd_solve");
+                Snd.Win();
+                BuddyReact("solve");
+                HopAll();
+                for (int r = 0; r < Spec.N; r++) Snd.Play("sd_hop", delay: r * 75, rate: 0.9 + r * 0.06);
+            });
             Later(650, () =>
             {
+                Snd.Play("sd_confetti");
                 RootBurst("confetti", W / 2, H * 0.35, 1.1);
                 RootBurst("confetti", W * 0.25, H * 0.4, 0.8);
                 RootBurst("confetti", W * 0.75, H * 0.4, 0.8);
@@ -301,6 +325,7 @@ namespace SquishSquad.Games.Squishdoku
             if (Phase != "play") return;
             ClockPause();
             Phase = "paused";
+            Snd.Play("sd_pause");
             _pauseCard = OpenCard(SdCards.PauseCard(W, H, Resume, Restart, Exit), 0);
             Hud();
         }
@@ -327,7 +352,7 @@ namespace SquishSquad.Games.Squishdoku
         /// <summary>BackHandler: playing pauses; anything else leaves.</summary>
         public void Back() => AsInput(() => { if (Phase == "play") PauseNow(); else Exit(); });
 
-        void ToggleX() { _xTool = !_xTool; Hud(); }
+        void ToggleX() { _xTool = !_xTool; Snd.Play(_xTool ? "sd_mode" : "sd_modeOff"); Snd.Tap(); Hud(); }
 
         // the profile update as Firestore takes it: dotted field paths into nested maps
         static void Apply(Dictionary<string, object> update)

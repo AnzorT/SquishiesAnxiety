@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
+using SquishSquad.Audio;
 using SquishSquad.Ui.Cards;
 using SquishSquad.Vector;
 
@@ -151,6 +152,8 @@ namespace SquishSquad.Games.Shared
             for (int k = 0; k < _built; k++) MountNode(_order[k], true);
             var p = _points[_cur - 1];
             _scrollTimer = _tk.SetTimeout(() => Scroll.ScrollTo(Math.Max(0, p.X - _width / 2)), 0);
+            // the nodes round the current one pop in with rising bubbles
+            for (int k = 0; k < 6; k++) Snd.Play("sd_nodePop", delay: 120 + k * 70, rate: 0.9 + k * 0.07);
             Grow();
         }
 
@@ -316,6 +319,7 @@ namespace SquishSquad.Games.Shared
             int lv = i + 1;
             if (StateOf(lv) == "locked")
             {
+                Snd.Play("sd_locked");
                 var A = _anims[i];
                 A.Shake.SetValue(0);
                 var steps = new List<CompositeAnimation>();
@@ -323,6 +327,7 @@ namespace SquishSquad.Games.Shared
                 Animated.Sequence(steps).Start();
                 return;
             }
+            Snd.Play("sd_select");
             OnPlay?.Invoke(lv);
         }
 

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 // numbers and the dev panel's level.
 using SquishSquad.Games.Stack;
 using SquishSquad.Ui;
+using SquishSquad.Audio;
 using UnityEngine;
 
 namespace SquishSquad.Menu
@@ -354,13 +355,13 @@ namespace SquishSquad.Menu
             if (hit != _parkHit || (hit == ParkModel.Hit.Dot && dot != _parkDot)) return;   // (a click: down and up on it)
             switch (hit)
             {
-                case ParkModel.Hit.Back: _view.LeavePark(NowMs); break;
-                case ParkModel.Hit.Prev: m.Go(m.Cur - 1, NowMs); break;
-                case ParkModel.Hit.Next: m.Go(m.Cur + 1, NowMs); break;
-                case ParkModel.Hit.Dot: m.Go(dot, NowMs); break;
+                case ParkModel.Hit.Back: Snd.Play("tap"); _view.LeavePark(NowMs); break;
+                case ParkModel.Hit.Prev: Snd.Play("swoosh"); m.Go(m.Cur - 1, NowMs); break;
+                case ParkModel.Hit.Next: Snd.Play("swoosh"); m.Go(m.Cur + 1, NowMs); break;
+                case ParkModel.Hit.Dot: Snd.Play("swoosh"); m.Go(dot, NowMs); break;
                 case ParkModel.Hit.Play:
-                    if (!c.Game(m.Cur).open) ShowToast(c.Game(m.Cur).name + " isn't open yet");
-                    else m.Play(NowMs);
+                    if (!c.Game(m.Cur).open) { Snd.Play("sd_locked"); ShowToast(c.Game(m.Cur).name + " isn't open yet"); }
+                    else { Snd.Play("sd_select"); m.Play(NowMs); }
                     break;
             }
         }
@@ -435,7 +436,8 @@ namespace SquishSquad.Menu
 
         void OnTap(string tap)
         {
-            if (tap == "play" && _view.EnterPark(NowMs)) return;
+            Snd.Play("tap");
+            if (tap == "play" && _view.EnterPark(NowMs)) { Snd.Play("whoosh"); return; }
             if ((tap == "characters" || tap == "level") && OpenPage(tap)) return;
             if (tap == "trophies") { OpenAchievements(); return; }
             if (tap == "settings") { OpenSettings(); return; }

@@ -10,6 +10,7 @@
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
+using SquishSquad.Audio;
 using SquishSquad.Vector;
 
 namespace SquishSquad.Ui.Cards
@@ -351,11 +352,16 @@ namespace SquishSquad.Ui.Cards
         readonly OneStar[] _stars = new OneStar[3];
         static readonly Interpolator Op = Fx.Lerp(new[] { 0, 0.2, 1 }, new[] { 0.0, 1, 1 });
         Ticker _tk;
+        readonly int _earned;
+        readonly double _perfectAt;
+        int _perfectTimer = -1;
 
         /// <summary>`stars` earned of three, the first popping at `first` ms, then every `step`.</summary>
         public StarsItem(int stars, double first = 380, double step = 480)
         {
             MarginTop = 4; MarginBottom = 8;
+            _earned = stars;
+            _perfectAt = first + 3 * step;
             for (int i = 0; i < 3; i++)
             {
                 var s = new OneStar { Earned = i < stars, Big = i == 1, Delay = first + i * step };
@@ -409,8 +415,10 @@ namespace SquishSquad.Ui.Cards
                 s.A = Animated.Spring(s.T, Fx.Spring(1, s.Earned ? 3.6 : 7, s.Earned ? 170 : 120, s.Delay));
                 s.A.Start();
                 if (s.Earned) s.Spin.Mount();
+                int n = Array.IndexOf(_stars, s) + 1;
                 s.Timer = _tk.SetTimeout(() =>
                 {
+                    Snd.Play(star.Earned ? "sd_star" + n : "sd_starEmpty");
                     if (!star.Earned) return;
                     var b = new Burst("gold", star.S / 2 + 10, star.S / 2 + 10, 1);
                     star.Bursts.Add(b);
@@ -418,10 +426,12 @@ namespace SquishSquad.Ui.Cards
                     Rebuild();
                 }, s.Delay + 60);
             }
+            if (_earned == 3) _perfectTimer = _tk.SetTimeout(() => Snd.Play("sd_perfect"), _perfectAt);
         }
 
         public override void Unmount()
         {
+            if (_perfectTimer >= 0) { _tk?.ClearTimeout(_perfectTimer); _perfectTimer = -1; }
             foreach (var s in _stars)
             {
                 s.A?.Stop();
@@ -578,8 +588,20 @@ namespace SquishSquad.Ui.Cards
             s.Text(_sub, 0, lh, CardArt.LevelUpSub, _rw, 0.5f);
             _text.Set(s.Markup, _rw, lh + lh2, 4);
         }
-        public override void Mount() => _rock.Mount();
-        public override void Unmount() { base.Unmount(); _rock.Unmount(); }
+        /// <summary>When "LEVEL n!" pops (sd_levelUp), ms after the card opens; negative: no sound.</summary>
+        public double SoundAt = -1;
+        int _soundTimer = -1;
+        public override void Mount()
+        {
+            _rock.Mount();
+            if (SoundAt >= 0) _soundTimer = Ticker.Default.SetTimeout(() => Snd.Play("sd_levelUp"), SoundAt);
+        }
+        public override void Unmount()
+        {
+            base.Unmount();
+            _rock.Unmount();
+            if (_soundTimer >= 0) { Ticker.Default.ClearTimeout(_soundTimer); _soundTimer = -1; }
+        }
         public override void Place(Affine card, float opacity)
         {
             var (m, o) = Box(card, opacity);
@@ -687,7 +709,7 @@ namespace SquishSquad.Ui.Cards
         {
             if (xp == 0 || before == null) return;
             col.Add(new XpBarItem(before.Value, after, delay) { Slide = new SlideIn(delay - 200, 16) });
-            if (levelUps > 0) col.Add(new LevelUpItem(after.Level) { Pop = new PopIn(delay + 600) });
+            if (levelUps > 0) col.Add(new LevelUpItem(after.Level) { Pop = new PopIn(delay + 600), SoundAt = delay + 600 });
         }
     }
 }

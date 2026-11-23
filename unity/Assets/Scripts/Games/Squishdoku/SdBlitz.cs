@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
+using SquishSquad.Audio;
 using SquishSquad.Ui;
 using SquishSquad.Ui.Blitz;
 using SquishSquad.Ui.Cards;
@@ -53,6 +54,7 @@ namespace SquishSquad.Games.Squishdoku
 
     public sealed class SdBlitz
     {
+        static readonly System.Random SndRandom = new System.Random();   // (the sounds' own)
         const string ROOM = "dance";
         const double GIVEN_MS = 350, HURRY_MS = 5000;
 
@@ -201,11 +203,11 @@ namespace SquishSquad.Games.Squishdoku
             Board = new SdBoard(B, n, Puzzle.Regions, Puzzle.Solution, null, _pieces, _tk, () => Phase != "play", false, Effect)
             {
                 OnTap = OnTap,
-                OnTapPiece = cell => Board.Wiggle(cell),
+                OnTapPiece = cell => { Snd.Play("sd_squeak", rate: 0.85 + SndRandom.NextDouble() * 0.35); Board.Wiggle(cell); },
             };
         }
 
-        void DropGiven() { Board.Place(_given); _placed = 1; }
+        void DropGiven() { Board.Place(_given); Snd.Play("sd_place"); _placed = 1; }
         static double LandMs(int n) => (2 * n - 1) * 34 + 250;
 
         // 3, 2, 1, GO!
@@ -220,7 +222,9 @@ namespace SquishSquad.Games.Squishdoku
                 PhaseLater(200 + i * 700, () =>
                 {
                     SetCount(s);
-                    if (s == "GO!") { _buddy.React("start"); Board.Intro(); }
+                    Snd.Play(s == "GO!" ? "sd_go" : "sd_count");
+                    Snd.Tick();
+                    if (s == "GO!") { _buddy.React("start"); Board.Intro(); Snd.Play("sd_boardIn", delay: 120); }
                 });
             }
             double settled = GO + LandMs(Spec.N);
@@ -239,7 +243,7 @@ namespace SquishSquad.Games.Squishdoku
         void StartIntro()
         {
             double settled = 40 + LandMs(Spec.N);
-            PhaseLater(40, () => Board.Intro());
+            PhaseLater(40, () => { Board.Intro(); Snd.Play("sd_boardIn"); });
             PhaseLater(settled, DropGiven);
             PhaseLater(settled + GIVEN_MS, () => { SetPhase("play"); _clk.Start(Spec.Ms); });
         }
@@ -260,6 +264,7 @@ namespace SquishSquad.Games.Squishdoku
                 {
                     if (_lastSecond < 0) _buddy.React("hurry");
                     _lastSecond = sec;
+                    Snd.Play("sd_tick", rate: sec <= 3 ? 1.3 : 1);
                     _warn = true;
                 }
                 _dirty = true;
@@ -280,6 +285,7 @@ namespace SquishSquad.Games.Squishdoku
             {
                 SetPhase("between");
                 _buddy.React("timeup");
+                Snd.Play("sd_timeUp");
                 Board.Shake();
                 Later(900, () => SetPhase("save"));
             }
@@ -290,6 +296,7 @@ namespace SquishSquad.Games.Squishdoku
         {
             _saving = false;
             _lastSecond = -1;
+            Snd.Play("sd_revive");
             SetPhase("play");
             if (_failReason == "time") _clk.Start(Spec.Ms);
             else _clk.Resume();
@@ -372,6 +379,8 @@ namespace SquishSquad.Games.Squishdoku
             };
             SetPhase("over");
             _buddy.React("timeup");
+            if (_over.NewTop) { Snd.Play("sd_blitzWin"); Snd.Win(); }
+            else { Snd.Play("sd_blitzFail"); Snd.Play("sd_drain", delay: 600); }
             if (_over.NewTop)
                 for (int i = 0; i < 3; i++) { int k = i; Later(k * 300, () => TopBurst(W * (0.25 + 0.25 * k), H * 0.3)); }
         }
@@ -384,8 +393,9 @@ namespace SquishSquad.Games.Squishdoku
             _cleared = idx + 1;
             _buddy.React("solve");
             Board.HopAll();
-            Later(300, () => { ClearedShown = idx + 1; _dirty = true; });
-            Later(650, () => Board.Outro());
+            for (int r = 0; r < Puzzle.N; r++) Snd.Play("sd_hop", delay: r * 70, rate: 0.95 + r * 0.06);
+            Later(300, () => { ClearedShown = idx + 1; _dirty = true; Snd.Play("sd_pip", rate: 0.9 + Math.Min(12, idx) * 0.05); });
+            Later(650, () => { Snd.Play("sd_blitzNext"); Board.Outro(); });
             Later(1000, () => { Idx = idx + 1; _dirty = true; Effect(NewBoard); });
         }
 
@@ -397,6 +407,8 @@ namespace SquishSquad.Games.Squishdoku
             if (Puzzle.Solution[cell / n] == cell % n)
             {
                 Board.Place(cell);
+                Snd.Play("sd_place", rate: 1 + Math.Min(8, _combo) * 0.06);
+                Snd.Place();
                 _combo++;
                 if (_placed + 1 < n) _buddy.React("right", _combo);
                 _placed++;
@@ -406,6 +418,8 @@ namespace SquishSquad.Games.Squishdoku
             _clk.Pause();
             SetPhase("between");
             Board.Wrong(cell);
+            Snd.Play("sd_wrong");
+            Later(200, Snd.Wrong);
             _buddy.React("wrong");
             _combo = 0;
             Later(1000, () => Lose("mistake"));
@@ -417,6 +431,7 @@ namespace SquishSquad.Games.Squishdoku
         {
             if (Phase != "play") return;
             _clk.Pause();
+            Snd.Play("sd_pause");
             SetPhase("paused");
         }
         void Resume() { SetPhase("play"); _clk.Resume(); }
