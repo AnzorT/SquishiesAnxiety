@@ -112,10 +112,10 @@ namespace SquishSquad.House.View
             _map = new HouseMapView(world, _sim, _k, HouseRoomView.Res("map"), HouseRoomView.Res("map-bits"), HouseRoomView.Res("map-template")) { Toast = Toast };
             _sim.GoRoomWith = (room, c) => Enter(room, c, null, Now);
             // the Movie Room's movies, and where each was left (the page keeps them in localStorage: on the device here)
-            var mvj = HouseRoomView.Res("movies"); if (mvj != null) _sim.Movies = ((JObj)HouseJson.Parse(mvj)).Arr("list").ConvertAll(o => (JObj)o);
+            var mvj = HouseRoomView.Res("movies"); JObj mvo = mvj != null ? (JObj)HouseJson.Parse(mvj) : null; if (mvo != null) _sim.Movies = mvo.Arr("list").ConvertAll(o => (JObj)o);
             try { var mp = (JObj)HouseJson.Parse(PlayerPrefs.GetString(MoviesKey, "{}")); _sim.MoviePick = mp.Str("pick"); if (mp.Obj("pos") is JObj pos) foreach (var k2 in pos.Keys) _sim.MoviePos[k2] = pos.Num(k2); } catch (Exception) { }
             _sim.MoviesChanged = () => { var pos = new JObj(); foreach (var kv in _sim.MoviePos) pos[kv.Key] = kv.Value; PlayerPrefs.SetString(MoviesKey, HouseJson.Stringify(new JObj { ["pick"] = _sim.MoviePick, ["pos"] = pos })); };
-            _movie = new HouseMovieView(_room, _sim, _k);
+            _movie = new HouseMovieView(_room, _sim, _k, mvo?.Obj("icons"));
             _club = new HouseClubView(_room, _sim);
             _toast = UiPiece.Create(world, "toast", 31100);
             _toast.Opacity = 0;
@@ -142,6 +142,8 @@ namespace SquishSquad.House.View
             {
                 // Android's back: the Catalog's detail, the Catalog, Renovate, then out of the house (saved)
                 if (_sim.Map) { _sim.CloseMap(); return; }
+                if (_sim.FzOn) { _sim.Focus(false, now); return; }
+                if (_sim.MenuOn) { _sim.MenuOn = false; return; }
                 if (_sim.Shop) { if (_sim.Det != null) _sim.CloseDet(); else _sim.CloseShop(); return; }
                 if (_sim.Edit) { _sim.DoneEdit(now); return; }
                 Save(); OnExit?.Invoke(); Destroy(gameObject); return;
@@ -225,6 +227,7 @@ namespace SquishSquad.House.View
             {
                 _down = true; _downAt = pos; _moved = false; _pressX = fx; _pressY = fy; _press = null;
                 if (_sim.Map) { _press = "map"; return; }     // (the map covers everything: its taps on release)
+                if (_sim.Show != null && (_sim.FzP > 0 || _movie.Hits(fx, fy))) { _press = "theater"; return; }   // (the player bar, the picker, full screen)
                 if (_sim.Shop) { _press = "shop"; return; }   // (the Catalog covers everything: its taps on release)
                 if (_map.OnRoomButton(fx, fy)) { _press = "mapbtn"; return; }
                 if (_sim.Edit) EditPress(fx, fy, b.x, b.y, now);
@@ -256,6 +259,7 @@ namespace SquishSquad.House.View
                 case "none": return;
                 case "shop": if (!_moved) _shop.Tap(fx, fy, now); return;
                 case "map": if (!_moved) _map.Tap(fx, fy, now); return;
+                case "theater": if (!_moved) _movie.Tap(fx, fy, now); return;
                 case "mapbtn": if (!_moved) _sim.OpenMap(now); return;
             }
             if (_moved) return;   // (a drag, not a tap)

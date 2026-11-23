@@ -104,11 +104,47 @@ namespace SquishSquad.House
         }
         static string Fmt(double s) { int t = (int)Math.Floor(s); return (t / 60) + ":" + (t % 60).ToString("00"); }
 
+        // the player bar's picker (menu), skip and full screen (focus: FzP eases 0..1 over 0.75 s)
+        public bool MenuOn, FzOn; public double FzP, FzCtl; double _fzLast, _jamP0 = -1;
+        public void PickMovie(string id) { MenuOn = false; PlayMovie(id); }
+        public void Focus(bool on, double now) { if (on && (Show == null || Th?.ScM == null)) return; if (on == FzOn) return; FzOn = on; FzCtl = now; if (on) MenuOn = false; Bump(); }
+        public void FzStep(double now) { double dt = Math.Min(0.1, Math.Max(0, (now - (_fzLast == 0 ? now : _fzLast)) / 1000)); _fzLast = now; FzP = Math.Max(0, Math.Min(1, FzP + (FzOn ? dt : -dt) / 0.75)); }
+        /// <summary>The movies the picker lists: each with whether the screen plays it, whether it's on, its line.</summary>
+        public List<(JObj mv, bool ok, bool cur, string sub)> MovieMenu()
+        {
+            double tr = Th != null && Th.Tier > 0 ? Th.Tier : 1; var o = new List<(JObj, bool, bool, string)>();
+            foreach (var m in Movies)
+            {
+                bool ok = m.Num("tier") <= tr, cur = Show != null && Show.Mv.Str("id") == m.Str("id"), rs = MoviePos.TryGetValue(m.Str("id"), out var p) && p > 2;
+                string sub = m.Num("tier") > tr ? "Needs a tier " + HouseJson.JsString(m["tier"]) + " screen" : cur ? "Now showing" : Math.Round(m.Num("dur") / 60) + " min" + (rs ? " \u00b7 resumes where you left off" : "");
+                o.Add((m, ok, cur, sub));
+            }
+            return o;
+        }
+
+        /// <summary>The beat the speakers hop to now: the show's movie's (its beat runs), else the jam's (120 bpm).</summary>
+        public (int n, double ph, double amp)? Beat(double now)
+        {
+            var SH = Show;
+            if (SH != null)
+            {
+                if (SH.Pause || SH.Done || SH.Mt < 0) return null;
+                foreach (List<object> r in SH.Mv.Arr("beats") ?? new List<object>())
+                {
+                    double a = (double)r[0], b = (double)r[1], B = (double)r[2];
+                    if (SH.Mt >= a && SH.Mt < b) { double x = (SH.Mt - a) / B; return ((int)Math.Floor(x), x - Math.Floor(x), (double)r[3]); }
+                }
+                return null;
+            }
+            if (_jamP0 >= 0) { double b = Math.Max(0, (now - _jamP0) / 500); return ((int)Math.Floor(b), b - Math.Floor(b), 1); }
+            return null;
+        }
+
         public void TogglePause() { if (Show == null || Show.Done) return; Show.Pause = !Show.Pause; if (Show.Pause) SavePos(Show); Bump(); }
 
         public void StopShow(bool keep = false)
         {
-            if (Show == null) return; var s = Show; SavePos(s); Show = null;
+            if (Show == null) return; var s = Show; SavePos(s); Show = null; if (!keep) { FzOn = false; MenuOn = false; }
             foreach (var c in Vis) { c.MvR = null; c.MvDz = false; }
             Bump();
         }
@@ -125,7 +161,15 @@ namespace SquishSquad.House
         public void MovieTick(double now, double dt)
         {
             Th = S.Cur == "movie" || S.Cur == "living" ? TheaterNow() : null;
-            if (Th == null || !Th.Synced) { if (Show != null) { Show.Done = true; StopShow(); } _prevReady = false; if (Th == null) return; }
+            // the speakers' jam clock (startJam: the beat starts 60 ms in; not while a show is on)
+            if (Jams.Count > 0 && Show == null) { if (_jamP0 < 0) _jamP0 = now + 60; } else _jamP0 = -1;
+            if (Th == null || !Th.Synced)
+            {
+                // theater(null): the show stops, where each movie was left is forgotten, the full screen closes
+                if (Show != null) { Show.Done = true; StopShow(); }
+                if (MoviePos.Count > 0) { MoviePos.Clear(); MoviesChanged?.Invoke(); }
+                _prevReady = false; FzOn = false; MenuOn = false; if (Th == null) return;
+            }
             else
             {
                 if (Show != null && !Th.Ready) StopShow();

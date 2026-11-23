@@ -16,7 +16,7 @@ import { launch, openHouse, REPO } from './harness.mjs';
 import { loadFixtures } from './fixtures.mjs';
 
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
-const ONLY = arg('--only', null), FPS = +arg('--fps', 30), LOOPS_ONLY = process.argv.includes('--loops-only');
+const ONLY = arg('--only', null), FPS = +arg('--fps', 30), LOOPS_ONLY = process.argv.includes('--loops-only'), META_ONLY = process.argv.includes('--meta-only');
 const SR = 44100;
 const MOV = path.join(REPO, 'unity/Assets/StreamingAssets/Movies'), AUD = path.join(REPO, 'unity/Assets/Resources/House/audio');
 fs.mkdirSync(MOV, { recursive: true }); fs.mkdirSync(AUD, { recursive: true });
@@ -51,6 +51,39 @@ function wav(pcmBuf, file) {
 }
 const run = (args) => new Promise((res, rej) => { const p = spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', ...args], { stdio: ['pipe', 'inherit', 'inherit'] }); p.on('exit', (c) => (c ? rej(new Error('ffmpeg ' + c)) : res())); });
 const tmp = path.join(REPO, 'tools/unity/house-test/out'); fs.mkdirSync(tmp, { recursive: true });
+
+// each movie's beat (mv.beat(t): the speakers hop to it during the show) as its runs [from, to, period], read by
+// sampling it finely: the period is the time between two beat numbers
+async function beats(id) {
+  return H.page.evaluate((id) => {
+    const mv = window.SquadMovies.list.find((m) => m.id === id); if (!mv || !mv.beat) return [];
+    const runs = []; let cur = null; const dt = 1 / 240;
+    for (let t = 0; t <= mv.dur; t += dt) {
+      const b = mv.beat(t);
+      if (!b) { if (cur) { cur.b = t; runs.push(cur); cur = null; } continue; }
+      if (!cur || b.amp !== cur.amp || b.n < cur.n) { if (cur) { cur.b = t; runs.push(cur); } cur = { a: t - b.ph * 0, n0: b.n, n: b.n, amp: b.amp, t0: t, ph0: b.ph, per: 0 }; }
+      else if (b.n !== cur.n) { if (!cur.per && cur.n1 == null) { cur.n1 = b.n; cur.t1 = t - b.ph * 0; } cur.n = b.n; }
+      cur.last = [t, b.n, b.ph];
+    }
+    if (cur) { cur.b = mv.dur; runs.push(cur); }
+    // the period from the phase's slope, the start where the phase was 0 at beat 0
+    return runs.map((r) => { const [t, n, ph] = r.last, per = (t - r.t0) / ((n + ph) - (r.n0 + r.ph0) || 1), a = r.t0 - (r.n0 + r.ph0) * per; return [Math.round(a * 1000) / 1000, Math.round(r.b * 1000) / 1000, Math.round(per * 10000) / 10000, r.amp]; });
+  }, id);
+}
+if (META_ONLY) {
+  const f = path.join(REPO, 'unity/Assets/Resources/House/movies.json'), J = JSON.parse(fs.readFileSync(f, 'utf8'));
+  for (const m of J.list) {
+    m.beats = await beats(m.id);
+    m.cues = await H.page.evaluate((id) => (window.SquadMovies.list.find((x) => x.id === id) || {}).cues || [], m.id);
+    console.log(`${m.id}: ${m.beats.length} beat runs, ${m.cues.length} cues`);
+  }
+  // the player bar's icons (movie-night.js ICON: play, pause, list, skip, full, shrink), as the page has them
+  const i0 = MN.findIndex((l) => /const ICON = \{/.test(l)); let src = '', d = 0;
+  for (let i = i0; i < MN.length; i++) { src += MN[i] + '\n'; d += (MN[i].match(/\{/g) || []).length - (MN[i].match(/\}/g) || []).length; if (d <= 0) break; }
+  J.icons = new Function(src.replace(/^\s*const ICON = /, 'return ').replace(/;\s*$/, ''))();
+  console.log('icons:', Object.keys(J.icons).join(' '));
+  fs.writeFileSync(f, JSON.stringify(J)); await browser.close(); process.exit(0);
+}
 
 // ---- the loops: the groove (8 s) and the TV's channels, one steady period after a warm-up period ----
 {

@@ -58,7 +58,7 @@ namespace SquishSquad.House.View
 
         /// <summary>A piece of the room drawn on its own (a piece, its front part, a toy): its texture, where it is (frame
         /// px at camK 1) and its CSS z-index among the pieces and the creatures (House/View/HouseScreen sorts by it).</summary>
-        public sealed class Piece { public Mesh Quad; public double[] Region, Box; public double Z; public int Index, Toy; public string Kind, Id; public MeshRenderer Renderer; public double Dx, Dy; }
+        public sealed class Piece { public Mesh Quad; public double[] Region, Box; public double Z; public int Index, Toy; public string Kind, Id; public MeshRenderer Renderer; public double Bx, By, Rot, Sx = 1, Sy = 1; public double Dx, Dy; }
         /// <summary>The squad (stage 4-5): the pieces' states its pictures show (rStOf, vars), front parts, drawing data.</summary>
         public HouseCreatures Sim;
         public readonly List<Piece> Pieces = new List<Piece>();
@@ -154,6 +154,8 @@ namespace SquishSquad.House.View
             return mesh;
         }
 
+        /// <summary>A frame point (px, 852 x 393) in this view's local space (the frame isn't zoomed: UI over the room).</summary>
+        public Vector3 WorldFrame(double fx, double fy) => new Vector3((float)(fx * _k), (float)(-fy * _k), 0);
         /// <summary>A room box point (px) where it is drawn now (the camera's zoom), in this view's local space.</summary>
         public Vector3 World(double bx, double by) { double k = CamK, fx = 426 + k * (bx - 426), fy = 393 + k * (by + HouseFrame.BoxTop - 393); return new Vector3((float)(fx * _k), (float)(-fy * _k), 0); }
 
@@ -176,6 +178,14 @@ namespace SquishSquad.House.View
             {
                 if (p.Quad == null) continue;
                 double x = p.Region[0] + p.Dx, y = p.Region[1] + p.Dy, w = p.Region[2], h = p.Region[3];
+                if (p.Rot != 0 || p.Sx != 1 || p.Sy != 1 || p.Bx != 0 || p.By != 0)
+                {
+                    // a bounce (the speakers on the beat): translate, rotate, scale about the piece's bottom centre
+                    var B = p.Box ?? p.Region; double ox = B[0] + B[2] / 2 + p.Dx, oy = B[1] + B[3] + p.Dy, a = p.Rot * Math.PI / 180, ca = Math.Cos(a), sa = Math.Sin(a);
+                    Vector3 T(double gx, double gy) { double u = (gx - ox) * p.Sx, v = (gy - oy) * p.Sy; return V(ox + p.Bx + u * ca - v * sa, oy + p.By + u * sa + v * ca); }
+                    p.Quad.SetVertices(new[] { T(x, y), T(x + w, y), T(x + w, y + h), T(x, y + h) });
+                    p.Quad.RecalculateBounds(); continue;
+                }
                 p.Quad.SetVertices(new[] { V(x, y), V(x + w, y), V(x + w, y + h), V(x, y + h) });
                 p.Quad.RecalculateBounds();
             }

@@ -139,7 +139,7 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    it). Not yet: the walk to the door and the "Heading home" loading scene (the house opens at once), the creatures'
    faces in the map's labels (cream circles), the map's SMIL (clouds, waves, rain and snow stand still).
 9. Dance Club, Movie Room (movies as exported video + audio), TV sound.
-   **Done (logic, video, sound) except the screen looks.** `tools/unity/house/export-movies.mjs`: the five Squad
+   **Done.** `tools/unity/house/export-movies.mjs`: the five Squad
    Movies drawn frame by frame by the page's own movie code and screenshotted, their scores (SquadMovies.record) played
    through movie-night.js's own tone / noise / bus code into an OfflineAudioContext, muxed by ffmpeg ->
    `StreamingAssets/Movies/<id>.mp4` (480 x 270, H.264 + AAC, 21 MB for all 15 minutes) and `movies.json` (cues,
@@ -151,9 +151,16 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    and the screen's light, the groove and TV loops. `House/View/HouseClubView.cs`: ClubFog ported (puffs by tier and
    style, bubbles, confetti, the bank and the dim, the linger), the party's disco spots, the club track (musicSync).
    Verified: `creature-trace.mjs decorated movie 260 "buy, placer (player, speakers), done, tap screen / player"` +
-   `house-test acts`: the theater (synced, tier) and the show (movie, time, pause) equal on every frame. Not yet: the
-   screens' film looks by tier (grain, fuzz, widescreen), the projector's beam, the speakers' bounce and notes, the
-   movie picker and full-screen view, the 10 s app ad, the holo pop-outs and confetti cues.
+   `house-test acts`: the theater (synced, tier) and the show (movie, time, pause) equal on every frame. The movie screen
+   finished: each screen tier's film look (movies.js look: 1 bedsheet + old projector: folds, grain, flicker, scratches,
+   gate weave, vignette; 2 plasma: scanlines, the rolling band, dark rounded edges, a jitter now and then; 4 cinema
+   bars; 5 holo: the rainbow edge glow, the sheen), the projector's beam, the speakers hopping on the movie's beat (its
+   beat runs exported: `export-movies.mjs --meta-only`) or the jam's, the player bar (play / pause, title or "Resuming
+   at", time and progress, the picker, full screen, end; the page's own icons), the picker (the five movies, which the
+   screen plays, where each was left), full screen (the film eased to a 16:9 frame over the darkened view, controls
+   fading after 2.6 s, its close button; Android's back leaves it), positions forgotten when the theater goes (as the
+   page). Not yet: the film's CSS filters (blur, saturation), the hair on the old film, the speakers' rings and notes,
+   the holo pop-outs and confetti cues, the 10 s app ad (a screen always has a movie to show).
 10. Beach.
 11. Yard games (with the menu).
 
