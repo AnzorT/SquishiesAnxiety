@@ -11,7 +11,7 @@
 // Every motion is the app's: the same Animated timings, springs and easings (SquishSquad.Anim is React Native's Animated
 // in C#), the same geometry (SortGeometry), the same drawings (SortArt). Pure C#: no UnityEngine, so the tests run it
 // frame by frame next to the app (tools/unity/sort-test); SortGame shows its layers in Unity.
-// Not ported: the dust / spark / confetti / poof / angry bursts (FxLayer), sounds, haptics, saving to Firestore.
+// Not ported: saving to Firestore.
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
@@ -307,11 +307,15 @@ namespace SquishSquad.Games.Sort
             {
                 if (Board.Pieces[k].Home != null || _play.Gone.Contains(k)) continue;
                 var A = _anims[k];
+                var pc = TrayCenter(_tg, _play.At[k].I);
+                Spray("poof", pc.x, pc.y, 1);
                 Animated.Parallel(Animated.Timing(A.O, Timing(0, 260)), Animated.Timing(A.S, Timing(0.1, 260))).Start();
             }
             Snd.Play("sd_solve");
             Snd.Win();
-            Later(250, () => Snd.Play("sd_confetti"));
+            Later(250, () => { Snd.Play("sd_confetti"); Spray("confetti", _g.Ix + _g.W / 2, _g.Iy + _g.H * 0.3, 1.2); });
+            Later(650, () => Spray("confetti", _g.Ix + _g.W * 0.25, _g.Iy + _g.H * 0.5, 1));
+            Later(800, () => Spray("confetti", _g.Ix + _g.W * 0.75, _g.Iy + _g.H * 0.5, 1));
             // a hop wave along the shelves, the lamp flashing
             for (int k = 0; k < Board.Pieces.Count; k++)
             {
@@ -363,6 +367,7 @@ namespace SquishSquad.Games.Sort
                 Snd.Play("fs_snap");
                 Snd.Place();
                 Fly(k, r.State.At[k], bounce: 5);
+                if (target.IsSlot) { var sc = SlotCenter(_g, target.I); Spray("spark", sc.x, sc.y, 1.1); }
                 A.Tick.SetValue(0);
                 Animated.Sequence(Animated.Spring(A.Tick, Spring(1, 4, 160))).Start();
                 if (r.Bumped.HasValue) { int b = r.Bumped.Value; var st = r.State; Later(120, () => { Snd.Play("fs_drop"); Fly(b, st.At[b], hop: 26); }); }
@@ -371,6 +376,8 @@ namespace SquishSquad.Games.Sort
             else if (r.Outcome == Sort.Board.Wrong)
             {
                 Snd.Play("fs_wrong");
+                var at = CenterOf(k);
+                Spray("angry", at.x, at.y, 1);
                 Fly(k, from, hop: 22);
                 A.Shake.SetValue(0);
                 Animated.Sequence(Array.ConvertAll(new double[] { 10, -9, 7, -5, 3, 0 }, v => Animated.Timing(A.Shake, Timing(v, 50)))).Start();
@@ -379,6 +386,8 @@ namespace SquishSquad.Games.Sort
             else if (r.Outcome == Sort.Board.Impostor)
             {
                 Snd.Play("fs_impostor");
+                var ic = CenterOf(k);
+                Later(380, () => Spray("poof", ic.x, ic.y, 1.2));
                 Say("IMPOSTOR!", ink: "#8e1030", small: true, hold: 500, sub: "It was never inside!");
                 Animated.Sequence(
                     Animated.Timing(A.S, Timing(1.3, 160)),
@@ -516,7 +525,13 @@ namespace SquishSquad.Games.Sort
             });
         }
 
-        static void Land() { Snd.Play("fs_land"); Snd.Place(); }
+        void Land()
+        {
+            Snd.Play("fs_land");
+            Snd.Place();
+            Spray("dust", _g.Bx + 26, _g.By + _g.BodyH + 8, 1.4);
+            Spray("dust", _g.Bx + _g.BodyW - 26, _g.By + _g.BodyH + 8, 1.4);
+        }
 
         bool Alive => _started && !_exited;
         bool _exited;
@@ -956,6 +971,7 @@ namespace SquishSquad.Games.Sort
                 double bs = Lerp(t, new[] { 0.0, 1, 2 }, new[] { 0.3, 1, 1.25 }), br = Lerp(t, new[] { 0.0, 1, 2 }, new[] { -12.0, -3, 0 });
                 bn.Transform = area * Affine.Translate(0, Math.Max(0, _g.By - 34)) * About(AreaW, _bannerH, Affine.ScaleBy(bs, bs) * Affine.Rotate(br));
             }
+            DrawFx(area);
             if (_blitz) foreach (var c in _run.Cards()) c.Update();
             else
             {
@@ -963,6 +979,33 @@ namespace SquishSquad.Games.Sort
                 _cards.RemoveAll(c => !c.Shown);
             }
         }
+
+        // ---- the effects (squishdoku/fx.js FxLayer over the game: the dust, sparks, poofs, angry puffs and confetti) -----
+        readonly List<(int id, Burst b)> _fx = new List<(int, Burst)>();
+        int _fxId;
+        void Spray(string kind, double x, double y, double scale = 1)
+        {
+            var b = new Burst(kind, x, y, scale);
+            _fx.Add((_fxId++, b));
+            b.Start();
+        }
+        void DrawFx(Affine area)
+        {
+            for (int i = _fx.Count - 1; i >= 0; i--)
+            {
+                var (id, b) = _fx[i];
+                if (b.Done) { for (int j = 0; j < b.Layers.Count; j++) _byName.Remove($"fx {id} {j}"); _fx.RemoveAt(i); continue; }
+                b.Place(area, 1);
+                for (int j = 0; j < b.Layers.Count; j++)
+                {
+                    var c = b.Layers[j];
+                    var l = L($"fx {id} {j}");
+                    l.Set(c.Markup, c.W, c.H, c.Margin);
+                    l.Transform = c.Transform; l.Opacity = c.Opacity; l.Visible = c.Visible;
+                }
+            }
+        }
+        (float x, float y) CenterOf(int k) => ((float)_anims[k].X.GetValue() + _P / 2, (float)_anims[k].Y.GetValue() + _P / 2);
 
         void DrawPiece(int k, Affine area)
         {

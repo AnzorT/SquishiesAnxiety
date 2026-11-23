@@ -11,7 +11,7 @@
 // Every motion is the app's: the same Animated timings, springs and easings (SquishSquad.Anim is React Native's
 // Animated in C#), the same geometry. The pieces: Resources/Stack (tools/unity/export-stack.mjs) and StackArt; the
 // cards: StackCards on Ui/Cards.
-// Not ported yet: the dust / spark / confetti effects, sounds, haptics, ads. Profile is the game's copy of the player's
+// Not ported yet: ads. Profile is the game's copy of the player's
 // (MenuScreen.SeedGameProfiles); signed in, each outcome is also saved to the account where the app saves it (StackSave).
 using System;
 using System.Collections.Generic;
@@ -311,6 +311,8 @@ namespace SquishSquad.Games.Stack
             else Snd.Play("st_land", rate: RateOf(r));
             if (soft) return;
             Snd.Place();
+            var ls = SpotsOf(_pos)[r];
+            Spray("dust", Cx(p), ls.Y + _g.Bh[r] * 0.98, 0.8);
             if (_phase == "play" && Engine.Same(_pos, _puzzle.Goal)) Win();
         }
 
@@ -358,6 +360,7 @@ namespace SquishSquad.Games.Stack
                 Animated.Sequence(Animated.Timing(T.Sq, Timing(1.7, 80)), Animated.Timing(T.Sq, Timing(1.55, 180)), Animated.Spring(T.Sq, Spring(0, 3, 140))).Start();
                 Snd.Play("st_ouch");
                 Snd.Wrong();
+                Spray("angry", Cx(p), ts.Y + _g.Bh[t] * 0.5, 1);
                 Say("TOO BIG!", small: true, ink: "#8e1030", hold: 380, sub: _spec.Lv <= 3 ? "Big ones never sit on smaller ones" : null);
                 if (_blitz) BlitzMistake();
                 int tok = _anims[r].Tok;
@@ -463,6 +466,7 @@ namespace SquishSquad.Games.Stack
             int r = m[0], from = m[1], to = m[2];
             _hinted = true;
             Snd.Play("st_hint");
+            Spray("spark", Cx(to), _g.Surface - 4, 1);
             _glow = (from, to);
             var A = _anims[r];
             var hops = new List<CompositeAnimation>();
@@ -484,7 +488,12 @@ namespace SquishSquad.Games.Stack
             Snd.Play("sd_solve");
             Snd.Win();
             // (Blitz keeps its confetti for the end of the run)
-            if (!_blitz || _run.Idx == Levels.BLITZ_ROUNDS - 1) Later(250, () => Snd.Play("sd_confetti"));
+            if (!_blitz || _run.Idx == Levels.BLITZ_ROUNDS - 1)
+            {
+                Later(250, () => { Snd.Play("sd_confetti"); Spray("confetti", _g.W / 2, _g.H * 0.35, 1.2); });
+                Later(650, () => Spray("confetti", _g.W * 0.25, _g.H * 0.5, 1));
+                Later(800, () => Spray("confetti", _g.W * 0.75, _g.H * 0.5, 1));
+            }
             int i = 0;
             for (int p = 0; p < _spec.K; p++)
             {
@@ -881,10 +890,41 @@ namespace SquishSquad.Games.Stack
             Draw();
         }
 
+        // ---- the effects (squishdoku/fx.js FxLayer over the board: dust, sparks, angry puffs, confetti) -------------------
+        readonly List<Burst> _fx = new List<Burst>();
+        readonly List<UiPiece> _fxPool = new List<UiPiece>();
+        void Spray(string kind, double x, double y, double scale = 1)
+        {
+            var b = new Burst(kind, x, y, scale);
+            _fx.Add(b);
+            b.Start();
+        }
+        void DrawFx(float ax)
+        {
+            _fx.RemoveAll(b => b.Done);
+            int n = 0;
+            var at = Affine.Translate(ax, 0);
+            foreach (var b in _fx)
+            {
+                b.Place(at, 1);
+                foreach (var c in b.Layers)
+                {
+                    if (n == _fxPool.Count) _fxPool.Add(Piece("fx " + n, 190));   // (over the squishies, under the banner)
+                    var p = _fxPool[n++];
+                    p.Visible = c.Visible;
+                    p.SetSvg(c.Markup, c.W, c.H, c.Margin);
+                    p.Transform = c.Transform;
+                    p.Opacity = c.Opacity;
+                }
+            }
+            for (int i = n; i < _fxPool.Count; i++) _fxPool[i].Visible = false;
+        }
+
         void Draw()
         {
             if (_g == null) return;
             float ax = LeftW;
+            DrawFx(ax);
             // the squishies (Game.js Piece): placed (x, y), squished by the ones on them from their feet, their own squash /
             // hop / wiggle on top; each view's transform about its centre
             var zOf = new Dictionary<int, int>();
