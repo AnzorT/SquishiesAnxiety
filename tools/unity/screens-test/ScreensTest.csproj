@@ -22,6 +22,7 @@
     <Compile Include="../../../unity/Assets/Scripts/Games/Sort/JsMath.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Anim/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Audio/Snd.cs" />
     <Compile Include="../../../unity/Assets/Scripts/ThirdParty/Yoga/**/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Backend/**/*.cs" Exclude="../../../unity/Assets/Scripts/Backend/Unity/**" />
     <Compile Include="../vector-test/ReferenceRaster.cs" />

@@ -11,6 +11,7 @@
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
+using SquishSquad.Audio;
 using SquishSquad.Ui.Cards;
 
 namespace SquishSquad.Ui.Blitz
@@ -73,7 +74,9 @@ namespace SquishSquad.Ui.Blitz
         public Action<int> OnDone;
         /// <summary>Sounds the run's moments make (sd_pip, sd_blitzNext, sd_blitzFail, sd_drain, sd_timeUp, sd_blitzWin,
         /// sd_revive), with when ("ms after").</summary>
-        public Action<string> Sound;
+        public Action<string> Sound = n => Snd.Play(n);
+        /// <summary>The pip's rate for round i (Sort and Stack: 0.9 + i * 0.06; Squishdoku sets its own).</summary>
+        public Func<int, double> PipRate = i => 0.9 + i * 0.06;
 
         Card _revive, _fail, _win, _pause;
         readonly List<Card> _cards = new List<Card>();
@@ -97,7 +100,7 @@ namespace SquishSquad.Ui.Blitz
         public void Cleared()
         {
             int i = Idx;
-            Later(_tm.PipMs, () => { SetDone(i + 1); Sound?.Invoke("sd_pip"); });
+            Later(_tm.PipMs, () => { SetDone(i + 1); Snd.Play("sd_pip", rate: PipRate(i)); });
             if (i < Rounds - 1)
             {
                 Later(_tm.NextMs, () => { Sound?.Invoke("sd_blitzNext"); Idx = i + 1; OnNext?.Invoke(Idx); });
@@ -109,6 +112,7 @@ namespace SquishSquad.Ui.Blitz
                 CardName = "win";
                 Open(ref _win, BlitzCards.Win(_w, _h, res, Unit, Again, Quit, Rounds));
                 Sound?.Invoke("sd_blitzWin");
+                Snd.Win();
             });
         }
 
@@ -133,6 +137,7 @@ namespace SquishSquad.Ui.Blitz
             CardName = "fail";
             Open(ref _fail, BlitzCards.Fail(_w, _h, reason, Idx + 1, Best(), Unit, Again, Quit));
             if (reason == "time") Sound?.Invoke("sd_timeUp");
+            Snd.Wrong();
             Later(reason == "time" ? 900 : 0, () => Sound?.Invoke("sd_blitzFail"));
             Later(reason == "time" ? 1500 : 600, () => { Sound?.Invoke("sd_drain"); SetDone(0); });
             OnLost?.Invoke(reason, Idx + 1);

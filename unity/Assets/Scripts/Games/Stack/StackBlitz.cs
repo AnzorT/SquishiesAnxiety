@@ -16,6 +16,7 @@
 // Not ported: sounds, haptics, the dust / spark / confetti on the board, the rewarded ad (Unity has none: AdsFree).
 using System;
 using System.Collections.Generic;
+using SquishSquad.Audio;
 using SquishSquad.Anim;
 using SquishSquad.Ui;
 using SquishSquad.Ui.Blitz;
@@ -128,6 +129,8 @@ namespace SquishSquad.Games.Stack
                 Later(200 + i * 700, () =>
                 {
                     Effect(() => _countdown.Set(v));
+                    Snd.Play(v == "GO!" ? "sd_go" : "sd_count");
+                    Snd.Tick();
                     if (v == "GO!") Deal();
                 });
             }
@@ -159,7 +162,7 @@ namespace SquishSquad.Games.Stack
                 _interval = _anim.SetTimeout(Tick, 250);
                 double ms = _clk.Limit - _clk.Elapsed;
                 int s = Math.Max(0, (int)Math.Ceiling(ms / 1000));
-                if (s != _bSecs) { _bSecs = s; Hud(); }
+                if (s != _bSecs) { _bSecs = s; Hud(); if (s > 0 && s <= 15) { Snd.Play("sd_tick", rate: s <= 5 ? 1.3 : 1); Snd.Tick(); } }
                 if (ms <= 0) Lose();
             }
             _interval = _anim.SetTimeout(Tick, 250);

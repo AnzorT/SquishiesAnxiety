@@ -15,6 +15,7 @@
 // (MenuScreen.SeedGameProfiles); signed in, each outcome is also saved to the account where the app saves it (StackSave).
 using System;
 using System.Collections.Generic;
+using SquishSquad.Audio;
 using SquishSquad.Anim;
 using SquishSquad.Ui;
 using SquishSquad.Ui.Cards;
@@ -78,6 +79,7 @@ namespace SquishSquad.Games.Stack
         {
             if (_started) return;
             _started = true;
+            Snd.Preload(new[] { "st_lift", "st_land", "st_cushion", "st_ouch", "st_bounce", "st_undo", "st_hint", "st_empty", "st_news", "sd_tick", "sd_solve", "sd_confetti", "sd_boardIn", "sd_timeUp" });
             _layout ??= StackLayout.Load();
             _anim = new Ticker(nowMs);
             Ticker.Default = _anim;
@@ -206,7 +208,7 @@ namespace SquishSquad.Games.Stack
         void Later(double ms, Action fn) => _timers.Add(_anim.SetTimeout(() => { if (this != null) fn(); }, ms));
         void ClearTimers() { foreach (var t in _timers) _anim.ClearTimeout(t); _timers.Clear(); }
 
-        double RateOf(int r) => 1.25 - 0.45 * r / Math.Max(1, _spec.N - 1);   // (for sounds, when they're ported)
+        double RateOf(int r) => 1.25 - 0.45 * r / Math.Max(1, _spec.N - 1);
         float HoverY(int r) => _g.Hover - _g.Bh[r];
         float XOf(int r, int p) => Cx(p) - _g.Bw[r] / 2;
 
@@ -277,6 +279,8 @@ namespace SquishSquad.Games.Stack
         {
             var A = _anims[r];
             _held = (r, p);
+            Snd.Play("st_lift", rate: RateOf(r));
+            Snd.Tap();
             _top = r;
             _glow = null;
             if (A.Wgt != 1)
@@ -303,8 +307,10 @@ namespace SquishSquad.Games.Stack
             Animated.Sequence(Animated.Timing(A.Sq, Timing(soft ? 0.6 : 1, 70)), Animated.Spring(A.Sq, Spring(0, 3.5, 170))).Start();
             int p = _pos[r];
             var st = Engine.StackOf(_pos, p);
-            if (st.Length > 0 && st[0] == r) Bump(p, soft ? 0.6 : 1);
+            if (st.Length > 0 && st[0] == r) { Bump(p, soft ? 0.6 : 1); Snd.Play("st_cushion", rate: RateOf(r)); }
+            else Snd.Play("st_land", rate: RateOf(r));
             if (soft) return;
+            Snd.Place();
             if (_phase == "play" && Engine.Same(_pos, _puzzle.Goal)) Win();
         }
 
@@ -350,12 +356,15 @@ namespace SquishSquad.Games.Stack
                 var T = _anims[t];
                 T.Sq.SetValue(0);
                 Animated.Sequence(Animated.Timing(T.Sq, Timing(1.7, 80)), Animated.Timing(T.Sq, Timing(1.55, 180)), Animated.Spring(T.Sq, Spring(0, 3, 140))).Start();
+                Snd.Play("st_ouch");
+                Snd.Wrong();
                 Say("TOO BIG!", small: true, ink: "#8e1030", hold: 380, sub: _spec.Lv <= 3 ? "Big ones never sit on smaller ones" : null);
                 if (_blitz) BlitzMistake();
                 int tok = _anims[r].Tok;
                 Later(260, () =>
                 {
                     if (_anims[r].Tok != tok || (_held.HasValue && _held.Value.r == r)) return;
+                    Snd.Play("st_bounce");
                     var s = SpotsOf(_pos)[r];
                     Fly(r, new[]
                     {
@@ -375,6 +384,7 @@ namespace SquishSquad.Games.Stack
             var m = _hist[_hist.Count - 1];
             _hist.RemoveAt(_hist.Count - 1);
             _canUndo = _hist.Count > 0;
+            Snd.Play("st_undo");
             int r = m[0], from = m[1], to = m[2];
             var next = (int[])_pos.Clone();
             next[r] = from;
@@ -402,6 +412,7 @@ namespace SquishSquad.Games.Stack
             _canUndo = false;
             _moves = 0;
             _glow = null;
+            Snd.Play("st_undo", rate: 0.8);
             Settle();
             Hud();
         }
@@ -451,6 +462,7 @@ namespace SquishSquad.Games.Stack
             if (m == null) return;
             int r = m[0], from = m[1], to = m[2];
             _hinted = true;
+            Snd.Play("st_hint");
             _glow = (from, to);
             var A = _anims[r];
             var hops = new List<CompositeAnimation>();
@@ -469,6 +481,10 @@ namespace SquishSquad.Games.Stack
             _phase = "won";
             PauseClock();
             _glow = null;
+            Snd.Play("sd_solve");
+            Snd.Win();
+            // (Blitz keeps its confetti for the end of the run)
+            if (!_blitz || _run.Idx == Levels.BLITZ_ROUNDS - 1) Later(250, () => Snd.Play("sd_confetti"));
             int i = 0;
             for (int p = 0; p < _spec.K; p++)
             {
@@ -567,6 +583,8 @@ namespace SquishSquad.Games.Stack
             _phase = "lost";
             PauseClock();
             _glow = null;
+            Snd.Play("sd_timeUp");
+            Snd.Wrong();
             if (_held.HasValue) Drop(_held.Value.from);
             var outc = Levels.AfterLevel(Profile, _spec, _puzzle.Par, false, 0, false);
             StackSave.Record(outc.Update);
@@ -614,6 +632,7 @@ namespace SquishSquad.Games.Stack
                 bool seen = rec.Best != null && rec.Best.ContainsKey(_spec.Lv.ToString());
                 var news = _spec.News != null && !seen ? NEWS(_spec.News) : (null, null);
                 if (news.Item1 == null) { StartPlay(); return; }
+                Snd.Play("st_news");
                 Say(news.Item1, small: true, sub: news.Item2, hold: 1300, ink: "#0c5a9c");
                 Later(1750, StartPlay);
             });
@@ -666,6 +685,7 @@ namespace SquishSquad.Games.Stack
             if (_spec.K == 4) chips.Add("4 CUSHIONS");
             if (_spec.Clock) chips.Add("⏱ " + Levels.Clock(_limit));
             Say(_blitz ? "PUZZLE " + _spec.Round : "LEVEL " + _spec.Lv, chips: chips.ToArray(), hold: 900);
+            Snd.Play("sd_boardIn");
             Hud();
             // (the app waits for any picture still downloading; Unity's are all here)
             Later(1250, Deal);
@@ -855,7 +875,7 @@ namespace SquishSquad.Games.Stack
             {
                 double ms = _limit - Elapsed;
                 int s = Math.Max(0, (int)Math.Ceiling(ms / 1000));
-                if (s != _secs) { _secs = s; Hud(); }
+                if (s != _secs) { _secs = s; Hud(); if (s > 0 && s <= 5) { Snd.Play("sd_tick", rate: 1.3); Snd.Tick(); } }
                 if (ms <= 0) Lose();
             }
             Draw();
@@ -997,7 +1017,7 @@ namespace SquishSquad.Games.Stack
                 if (_held.HasValue) return;
                 int col = Col(ax);
                 int r = Engine.TopOf(_pos, col);
-                if (r < 0) { _touch.Dead = true; Bump(col, -1); return; }
+                if (r < 0) { _touch.Dead = true; Snd.Play("st_empty"); Bump(col, -1); return; }
                 PickUp(r, col);
                 _touch.Picked = true;
                 return;

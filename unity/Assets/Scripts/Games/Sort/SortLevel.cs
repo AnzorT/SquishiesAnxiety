@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
+using SquishSquad.Audio;
 using SquishSquad.Ui;
 using SquishSquad.Ui.Cards;
 using SquishSquad.Vector;
@@ -186,11 +187,14 @@ namespace SquishSquad.Games.Sort
         static TimingConfig Timing(double to, double ms, Func<double, double> easing = null) => new TimingConfig { ToValue = to, Duration = ms, Easing = easing, UseNativeDriver = true };
 
         /// <summary>Starts the first level with the clock (Ticker.Default) where it is.</summary>
+        static readonly string[] LoadSounds = { "fs_pop", "fs_peek", "fs_doorClose", "fs_doorOpen", "fs_rattle", "fs_jump", "fs_land", "fs_tumble", "fs_pick", "fs_drop", "fs_snap", "fs_wrong", "fs_impostor", "fs_swap", "fs_heart", "fs_mixed", "sd_tick", "sd_solve", "sd_confetti", "sd_boardIn" };
+
         public void Start()
         {
             if (_started) return;
             _started = true;
             _clk = new Clock(_tk);
+            Snd.Preload(LoadSounds);
             _pips?.Mount();
             NewRound();
         }
@@ -245,6 +249,7 @@ namespace SquishSquad.Games.Sort
             if (ha) next[b] = pa;
             if (hb) next[a] = pb;
             _insideNow = next;
+            Snd.Play("fs_swap");
         }
 
         // ---- the end of a level -----------------------------------------------------------------------------------
@@ -272,6 +277,8 @@ namespace SquishSquad.Games.Sort
             _clk.Pause();
             _selected = null;
             _hoverO.SetValue(0);
+            Snd.Play(reason == "time" ? "sd_timeUp" : "sd_blitzFail");
+            Snd.Wrong();
             // show where they all belonged
             for (int k = 0; k < Board.Pieces.Count; k++)
             {
@@ -302,6 +309,9 @@ namespace SquishSquad.Games.Sort
                 var A = _anims[k];
                 Animated.Parallel(Animated.Timing(A.O, Timing(0, 260)), Animated.Timing(A.S, Timing(0.1, 260))).Start();
             }
+            Snd.Play("sd_solve");
+            Snd.Win();
+            Later(250, () => Snd.Play("sd_confetti"));
             // a hop wave along the shelves, the lamp flashing
             for (int k = 0; k < Board.Pieces.Count; k++)
             {
@@ -332,7 +342,9 @@ namespace SquishSquad.Games.Sort
         void Mistake()
         {
             _mistakes += 1;
+            Snd.Wrong();
             if (_blitz) { BlitzMistake(); return; }
+            Later(160, () => Snd.Play("fs_heart"));
             if (_mistakes >= Levels.HEARTS) Later(500, () => Lose("hearts"));
         }
 
@@ -348,14 +360,17 @@ namespace SquishSquad.Games.Sort
             var A = _anims[k];
             if (r.Outcome == Sort.Board.Lock)
             {
+                Snd.Play("fs_snap");
+                Snd.Place();
                 Fly(k, r.State.At[k], bounce: 5);
                 A.Tick.SetValue(0);
                 Animated.Sequence(Animated.Spring(A.Tick, Spring(1, 4, 160))).Start();
-                if (r.Bumped.HasValue) { int b = r.Bumped.Value; var st = r.State; Later(120, () => Fly(b, st.At[b], hop: 26)); }
+                if (r.Bumped.HasValue) { int b = r.Bumped.Value; var st = r.State; Later(120, () => { Snd.Play("fs_drop"); Fly(b, st.At[b], hop: 26); }); }
                 if (Sort.Board.Solved(Board, r.State)) Later(450, Win);
             }
             else if (r.Outcome == Sort.Board.Wrong)
             {
+                Snd.Play("fs_wrong");
                 Fly(k, from, hop: 22);
                 A.Shake.SetValue(0);
                 Animated.Sequence(Array.ConvertAll(new double[] { 10, -9, 7, -5, 3, 0 }, v => Animated.Timing(A.Shake, Timing(v, 50)))).Start();
@@ -363,13 +378,14 @@ namespace SquishSquad.Games.Sort
             }
             else if (r.Outcome == Sort.Board.Impostor)
             {
+                Snd.Play("fs_impostor");
                 Say("IMPOSTOR!", ink: "#8e1030", small: true, hold: 500, sub: "It was never inside!");
                 Animated.Sequence(
                     Animated.Timing(A.S, Timing(1.3, 160)),
                     Animated.Parallel(Animated.Timing(A.S, Timing(0, 260, Easing.In(Easing.Back(2)))), Animated.Timing(A.O, Timing(0, 260)))).Start();
                 Mistake();
             }
-            else Fly(k, r.State.At[k]);
+            else { Fly(k, r.State.At[k]); Snd.Play("fs_drop"); }
         }
 
         // ---- the timeline -----------------------------------------------------------------------------------------
@@ -379,6 +395,7 @@ namespace SquishSquad.Games.Sort
             var notes = new List<string>();
             if (Spec.Decoys > 0) notes.Add($"{Spec.Decoys} impostor{(Spec.Decoys > 1 ? "s" : "")} snuck in!");
             if (Spec.Mixed > 0) notes.Add("Some got mixed up inside!");
+            if (Spec.Mixed > 0) Later(300, () => Snd.Play("fs_mixed"));
             Say("PUT THEM BACK!", small: true, sub: notes.Count > 0 ? string.Join("  ", notes) : "Drag or tap them home", hold: 900);
             // Blitz: the run's one clock goes on from where the last round left it
             if (!_blitz) _clk.Start(Spec.LimitMs);
@@ -405,6 +422,7 @@ namespace SquishSquad.Games.Sort
         void Tumble()
         {
             Phase = "tumble";
+            Snd.Play("fs_tumble");
             int n = 0;
             for (int k = 0; k < Board.Pieces.Count; k++)
             {
@@ -443,6 +461,8 @@ namespace SquishSquad.Games.Sort
         void OpenUp()
         {
             Phase = "open";
+            Snd.Play("fs_doorOpen");
+            Snd.Place();
             Animated.Timing(_door, Timing(1, 440, Easing.Out(Easing.Back(1.5)))).Start();
             var vs = new[] { 0.9, 0.2, 1, 0.5, 1 }; var ms = new double[] { 90, 60, 90, 50, 120 };
             var seq = new CompositeAnimation[5];
@@ -459,6 +479,7 @@ namespace SquishSquad.Games.Sort
             _showInside = false;
             _foodMoved = true;
             Say("SHAKE SHAKE!", hold: 900);
+            Snd.Play("fs_rattle");
             var steps = new List<CompositeAnimation>();
             for (int i = 0; i < 9; i++)
             {
@@ -474,15 +495,19 @@ namespace SquishSquad.Games.Sort
             rattle.Start(r0 =>
             {
                 if (!r0.Finished || !Alive) return;
+                Snd.Play("fs_jump");
                 Jump(34, -5).Start(r1 =>
                 {
                     if (!r1.Finished || !Alive) return;
+                    Land();
                     Animated.Sequence(T(_sq, 1, 70), Animated.Spring(_sq, Spring(0, 4, 160))).Start(r2 =>
                     {
                         if (!r2.Finished || !Alive) return;
+                        Snd.Play("fs_jump", rate: 1.12);
                         Jump(52, 7).Start(r3 =>
                         {
                             if (!r3.Finished || !Alive) return;
+                            Land();
                             Animated.Sequence(T(_sq, 1, 70), Animated.Spring(_sq, Spring(0, 3.5, 160))).Start();
                             Later(380, OpenUp);
                         });
@@ -490,6 +515,8 @@ namespace SquishSquad.Games.Sort
                 });
             });
         }
+
+        static void Land() { Snd.Play("fs_land"); Snd.Place(); }
 
         bool Alive => _started && !_exited;
         bool _exited;
@@ -500,6 +527,8 @@ namespace SquishSquad.Games.Sort
             Animated.Parallel(Animated.Timing(_door, Timing(0, 400, Easing.In(Easing.Quad))), Animated.Timing(_light, Timing(0, 380))).Start(r =>
             {
                 if (!r.Finished || !Alive) return;
+                Snd.Play("fs_doorClose");
+                Snd.Place();
                 Animated.Sequence(Animated.Timing(_sq, Timing(0.45, 60)), Animated.Spring(_sq, Spring(0, 4, 180))).Start();
                 Later(320, Shake);
             });
@@ -508,12 +537,13 @@ namespace SquishSquad.Games.Sort
         void Peek()
         {
             Phase = "peek";
+            Snd.Play("fs_peek");
             Say("REMEMBER!", hold: 700, sub: Board.Swaps.Count > 0 ? "Keep watching until the doors shut!" : null);
             _peekBar.SetValue(1);
             Animated.Timing(_peekBar, Timing(0, Spec.PeekMs, Easing.Linear)).Start();
             int secsN = (int)Math.Ceiling(Spec.PeekMs / 1000.0);
             _peekLeft = secsN;
-            for (int s = 1; s < secsN; s++) { int left = secsN - s; Later(Spec.PeekMs - (secsN - s) * 1000, () => _peekLeft = left); }
+            for (int s = 1; s < secsN; s++) { int left = secsN - s; Later(Spec.PeekMs - (secsN - s) * 1000, () => { _peekLeft = left; if (left <= 3) { Snd.Play("sd_tick"); Snd.Tick(); } }); }
             for (int i = 0; i < Board.Swaps.Count; i++)
             {
                 var pair = Board.Swaps[i];
@@ -530,7 +560,8 @@ namespace SquishSquad.Games.Sort
             foreach (var kv in Board.Start)
             {
                 int k = kv.Value;
-                Later(n * 110, () => Animated.Spring(_ins[k].S, Spring(1, 4, 170)).Start());
+                int nn = n;
+                Later(n * 110, () => { Animated.Spring(_ins[k].S, Spring(1, 4, 170)).Start(); Snd.Play("fs_pop", rate: 0.9 + nn * 0.07); });
                 n++;
             }
             Later(n * 110 + 380, Peek);
@@ -590,6 +621,7 @@ namespace SquishSquad.Games.Sort
             var sub = $"{_m.Size} · {_m.Name.ToUpperInvariant()}";
             if (bigger) Say(_theme == "fridge" ? "BIGGER FRIDGE!" : "BIGGER CUPBOARD!", chips: chips.ToArray(), sub: sub, small: true, hold: 1400);
             else Say(_blitz ? $"ROUND {Spec.Round}" : $"LEVEL {Spec.Lv}", chips: chips.ToArray(), sub: sub, hold: 900);
+            Snd.Play("sd_boardIn");
             Animated.Spring(_pop, Spring(1, 6, 70)).Start();
             // (the app waits for any picture still downloading; Unity's are all here)
             Later(bigger ? 1800 : 1300, Deal);
@@ -732,6 +764,8 @@ namespace SquishSquad.Games.Sort
             {
                 if (Math.Sqrt((x - T.X0) * (x - T.X0) + (y - T.Y0) * (y - T.Y0)) < 9) return;
                 T.Moved = true;
+                Snd.Play("fs_pick");
+                Snd.Tap();
                 _dragK = k;
                 _selected = null;
                 Animated.Parallel(Animated.Spring(_anims[k].S, Spring(1.06, 6, 160)), Animated.Timing(_anims[k].Lift, Timing(1, 120))).Start();
@@ -770,8 +804,8 @@ namespace SquishSquad.Games.Sort
             }
             // a tap: pick one up, put the picked one down there, or let go of it
             var sel = _selected;
-            if (T.K != null && (sel == null || (_play.At[T.K.Value].IsTray && T.K != sel))) { _selected = T.K; return; }
-            if (sel != null && T.K == sel) { _selected = null; return; }
+            if (T.K != null && (sel == null || (_play.At[T.K.Value].IsTray && T.K != sel))) { _selected = T.K; Snd.Play("fs_pick"); Snd.Tap(); return; }
+            if (sel != null && T.K == sel) { _selected = null; Snd.Play("fs_drop"); return; }
             if (sel != null)
             {
                 var target = TargetAt(x, y);

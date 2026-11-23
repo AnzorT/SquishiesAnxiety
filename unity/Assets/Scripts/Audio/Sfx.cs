@@ -100,6 +100,38 @@ namespace SquishSquad.Audio
         /// <summary>fn(effects, music) now and on every change; returns the unsubscribe.</summary>
         public static Action Subscribe(Action<bool, bool> fn) => Core?.Subscribe(fn) ?? (() => { });
 
+        sealed class LoopWrap : ISndLoop
+        {
+            readonly SfxCore.LoopHandle _h;
+            public LoopWrap(SfxCore.LoopHandle h) { _h = h; }
+            public void SetRate(double r) => _h?.SetRate(r);
+            public void SetVolume(double v) => _h?.SetVolume(v);
+            public void Stop() => _h?.Stop();
+        }
+
+        static readonly Dictionary<string, HapticPattern> HapticKinds = new Dictionary<string, HapticPattern>
+        {
+            { "tap", HapticPattern.Selection }, { "place", HapticPattern.Medium }, { "wrong", HapticPattern.Error },
+            { "win", HapticPattern.Success }, { "tick", HapticPattern.Light }, { "light", HapticPattern.Light },
+            { "soft", HapticPattern.Soft }, { "medium", HapticPattern.Medium }, { "rigid", HapticPattern.Rigid },
+            { "heavy", HapticPattern.Heavy }, { "success", HapticPattern.Success }, { "warning", HapticPattern.Warning },
+            { "error", HapticPattern.Error }, { "selection", HapticPattern.Selection },
+        };
+
+        /// <summary>Snd (the game code's door) to here, before the first scene loads.</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        public static void Wire()
+        {
+            Snd.PlayFn = (n, d, r) => Play(n, d, r);
+            Snd.LoopFn = (n, v, r) => new LoopWrap(Loop(n, v, r));
+            Snd.PreloadFn = Preload;
+            Snd.BudgetFn = SetBudget;
+            Snd.HapticFn = k =>
+            {
+                if (HapticKinds.TryGetValue(k, out var p)) AndroidVibrator.Shared.Vibrate(p);
+            };
+        }
+
         public static bool Knows(string name) => name != null && SoundFiles.Effects.ContainsKey(name);
     }
 }
