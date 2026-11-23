@@ -94,7 +94,7 @@ namespace SquishSquad.Menu
             _view.Tick(0f);
         }
 
-        // a game open over the menu, started from its card in the Game Park (Squish Stack and Squish Sort so far)
+        // a game open over the menu, started from its card in the Game Park (Squish Stack, Squish Sort and Squishdoku so far)
         MonoBehaviour _game;
 
         void BeforeGame()
@@ -129,6 +129,15 @@ namespace SquishSquad.Menu
             _game = g;
         }
 
+        // Squishdoku: the level it's on and HEAD START are kept by SquishdokuGame (PlayerPrefs) until the profile has them
+        void OpenSquishdoku()
+        {
+            BeforeGame();
+            var g = SquishSquad.Games.Squishdoku.SquishdokuGame.Create(transform, SquishSquad.Games.Squishdoku.SquishdokuGame.Level);
+            g.OnExit = AfterGame;
+            _game = g;
+        }
+
         // PLAY on a card, 420 ms after the tap (menu.js playAt -> x.playGame)
         void PlayGame(int i)
         {
@@ -137,6 +146,7 @@ namespace SquishSquad.Menu
             c.Remember(i);
             if (g.id == "stack") { OpenStack(); return; }
             if (g.id == "sort") { OpenSort(); return; }
+            if (g.id == "squishdoku") { OpenSquishdoku(); return; }
             c.Model.PlayDone(NowMs);
             ShowToast(g.name + " isn't in the Unity version yet");
         }

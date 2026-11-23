@@ -93,8 +93,21 @@ namespace SquishSquad.EditorTools
                 ti.textureCompression = TextureImporterCompression.Uncompressed;
                 return;
             }
-            // (Resources/Park: the Game Park's carousel, tools/unity/export-park.mjs)
-            if (!assetPath.StartsWith("Assets/Resources/Menu/") && !assetPath.StartsWith("Assets/Resources/Park/")) return;
+            if (assetPath.StartsWith("Assets/Resources/Stack/art/"))
+            {
+                // the squishies' cut-outs (every game uses them): drawn at many sizes, often well below their own, so
+                // mipmapped (trilinear) like Chrome's smooth downscaling; kept exact, never resized to a power of two
+                ti.textureType = TextureImporterType.Default; ti.npotScale = TextureImporterNPOTScale.None;
+                ti.mipmapEnabled = true; ti.filterMode = FilterMode.Trilinear; ti.wrapMode = TextureWrapMode.Clamp;
+                ti.alphaIsTransparency = true; ti.alphaSource = TextureImporterAlphaSource.FromInput; ti.sRGBTexture = true;
+                ti.textureCompression = TextureImporterCompression.Uncompressed;
+                return;
+            }
+            // (Resources/Park: the Game Park's carousel, tools/unity/export-park.mjs; the games' pieces and rooms)
+            string[] exact = { "Assets/Resources/Menu/", "Assets/Resources/Park/", "Assets/Resources/Stack/", "Assets/Resources/Sort/", "Assets/Resources/Hop/", "Assets/Resources/Squishdoku/", "Assets/Resources/Cards/" };
+            bool ours = false;
+            foreach (var e in exact) if (assetPath.StartsWith(e)) { ours = true; break; }
+            if (!ours) return;
             ti.textureType = TextureImporterType.Default;
             ti.npotScale = TextureImporterNPOTScale.None;
             ti.mipmapEnabled = false;
