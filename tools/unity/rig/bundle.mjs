@@ -30,10 +30,26 @@ const PAGE = fs.readFileSync(fs.readdirSync(path.join(REPO, 'webgame/.cache')).m
 const order = [...PAGE.matchAll(/<script src="([^"?]*)/g)].map((m) => m[1].replace(/^\.\//, ''));
 for (const f of order.slice(order.indexOf('house4.js'))) scripts.push([f, fs.readFileSync(path.join(WORK, f), 'utf8')]);
 const method = (n) => { const m = new RegExp('\\n  ' + n + '\\([^)]*\\) \\{').exec(PAGE); const nx = /\n  [a-zA-Z_]\w*(?:\([^)]*\) \{| = )/g; nx.lastIndex = m.index + m[0].length; const e = nx.exec(PAGE); return PAGE.slice(m.index + 1, e.index).trim().replace(/(\n\s*\/\/[^\n]*)+$/, ''); };
-// a top-level const / function of the page, whole (to the line ending its statement: ';' at the end of a line)
-const constant = (n) => { const m = new RegExp('\\n(const|function) ' + n + '\\b').exec(PAGE); const e = /;[ \t]*(\/\/[^\n]*)?\n/g; e.lastIndex = m.index + 1; const x = e.exec(PAGE); return PAGE.slice(m.index + 1, x.index + 1).trim(); };
+// a top-level const / function of the page, whole: from its keyword to the ';' that ends the statement at depth 0
+// (a function: its body's closing brace), skipping strings, template literals and comments
+const constant = (n) => {
+  const m = new RegExp('\\n(const|function) ' + n + '\\b').exec(PAGE); if (!m) throw new Error('page constant not found: ' + n);
+  let i = m.index + 1, d = 0, fn = m[1] === 'function', seenBody = false;
+  for (; i < PAGE.length; i++) {
+    const c = PAGE[i];
+    if (c === '"' || c === "'" || c === '`') { const q = c; for (i++; i < PAGE.length && PAGE[i] !== q; i++) if (PAGE[i] === '\\') i++; continue; }
+    if (c === '/' && PAGE[i + 1] === '/') { while (PAGE[i] !== '\n') i++; continue; }
+    if (c === '/' && PAGE[i + 1] === '*') { i = PAGE.indexOf('*/', i + 2) + 1; continue; }
+    if (c === '(' || c === '[' || c === '{') { d++; if (c === '{' && fn) seenBody = true; }
+    else if (c === ')' || c === ']' || c === '}') { d--; if (fn && seenBody && d === 0 && c === '}') { i++; break; } }
+    else if (c === ';' && d === 0 && !fn) { i++; break; }
+  }
+  return PAGE.slice(m.index + 1, i).trim();
+};
 let host = fs.readFileSync(path.join(REPO, 'tools/unity/house/draw-host.js'), 'utf8');
 host = host.replace('/* PAGE */', ['RCSV', 'RMAP', 'SLOTCAT', 'roleOf', 'CEILS', 'catOf', 'BIGR', 'edgeR'].map(constant).join('\n  '));
+host = host.replace('/* PAGE-MAP */', ['mapVals', 'lockVals', 'lowest'].map((n) => method(n) + ',').join('\n    '));
+host = host.replace('  var mp = {', '  ' + ['IC', 'FIX', 'MAPB', 'MAPDEAD', 'MAPGRASS', 'MAPROAD', 'MTB', 'NEED', 'RAIN', 'RDOT', 'RLAB', 'SEASON', 'SNOW', 'SPK', 'WIC', 'natMap', 'rnd', 'r1', 'n1', 'natBush', 'natE', 'natSS', 'natSkel', 'natTree'].sort((a, b) => PAGE.search(new RegExp('\\n(const|function) ' + a + '\\b')) - PAGE.search(new RegExp('\\n(const|function) ' + b + '\\b'))).map(constant).join('\n  ') + '\n  var mp = {');   // (in the page's order: they use each other)
 host = host.replace('/* PAGE-METHODS */', ['rnReg', 'rnDraw', 'rnOpt', 'rnLayer', 'tightBB', 'rnTex'].map((n) => method(n) + ',').join('\n    '));
 scripts.push(['house-draw.js', host]);
 const files = {};

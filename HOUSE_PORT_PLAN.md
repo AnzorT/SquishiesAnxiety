@@ -125,6 +125,19 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    closeshop ..."` + `house-test acts`: the Catalog's state, coins, owned / rOwn, every card, the categories, the
    paging and the detail equal on every frame the page had drawn its cards. Not yet: the dev level popup (House level).
 8. House map, and the walk home from the Unity menu.
+   **Done except the walk.** MY HOUSE (the menu's `home` tap, `Menu/MenuScreen.cs` OpenHouse): the player's save
+   (`users/{uid}/crib/house6` as the app's WebView house; offline on the device), level, creatures (keys -> the house
+   roster), coins (the Catalog's spends written as the bridge sends them: gameCoins with the difference); saved when it
+   changes; Android's back closes the detail, the Catalog, Renovate, the map, then the house. The map
+   (`House/HouseMap.cs`, `House/View/HouseMapView.cs`): the page's own `mapVals` / `natMap` / `lockVals` run by the
+   draw host (`__house.map`; `tools/unity/rig/bundle.mjs` now copies whole top-level functions by matching brackets),
+   the page's map `<svg>` template (`tools/unity/house/export-map.mjs` -> `map-template.html`) filled in C#, the trees
+   and bushes into the groups the page fills by ref; openMap / mapPick (the 2.6x zoom into the room, the cream fade) /
+   pickRoom (the selected friend comes along) / closeMap; the room labels drawn from the page's styles; the room's
+   House map button, Back and the weather chips cut from the page. `export-map.mjs` checks the host's values against
+   the page's (all five fixtures equal) and saves the page's drawn map for `house-test map` (the C# markup against
+   it). Not yet: the walk to the door and the "Heading home" loading scene (the house opens at once), the creatures'
+   faces in the map's labels (cream circles), the map's SMIL (clouds, waves, rain and snow stand still).
 9. Dance Club, Movie Room (movies as exported video + audio), TV sound.
 10. Beach.
 11. Yard games (with the menu).

@@ -12,6 +12,9 @@
 //                                           surfaces sf ({ slot: id, lx, lz }) and its doors' lock levels ({ to: lv })
 //   __house.tex(id)                         a renovated surface's textures, as the export's tex.json entry (pictures as
 //                                           SVG text; stage 6)
+//   __house.map(st)                         the house map's values (the page's mapVals, natMap, lockVals; stage 8) for
+//                                           st = { lvl, cur, open: [rooms], b0: { room: shell colour }, cs: [{ key,
+//                                           name, room, N }], season, mapHov, mapGo, mapIn }: JSON
 (function (G) {
   'use strict';
   /* PAGE */
@@ -49,6 +52,10 @@
     if (geo0) { X.RM.s = geo0.s; X.RM.e = geo0.e; X.BIG = geo0.b; }
     try { return sh.rnReg(id); } finally { X.RM.s = s; X.RM.e = e; X.BIG = b; }
   }
+  // the house map's methods (stage 8), called on a stand-in for the page's component (__house.map)
+  var mp = {
+    /* PAGE-MAP */
+  };
   function plain(o) { return JSON.parse(JSON.stringify(o, function (k, v) { return typeof v === 'function' ? undefined : v; })); }
   G.__house = {
     init: function () {
@@ -92,6 +99,14 @@
         fW: D0.fW || 0, fWR: D0.fWR || 0, ceilRoom: !!D0.ceilRoom, ceilBase: D0.ceilBase || '', ceilTrim: D0.ceilTrim || '', wallOne: uri(D0.wallOne || ''), wallOneR: uri(D0.wallOneR || ''), wallOneFull: !!D0.wallOneFull, wallRnd: uri(D0.wallRnd || ''),
         floorRoom: D0.floorRoom ? { bg: D0.floorRoom.bg, layers: D0.floorRoom.layers.map(function (l) { return Object.assign({}, l, { url: uri(l.url) }); }) } : null, ylRoom: uri(D0.ylRoom || ''), win19: !!D0.win19, src: uri(D0.src || ''),
         wallL: D0.wallL || '', wallR: D0.wallR || '', wallRoom: D0.wallRoom || '', fH: D0.fH || 0 });
+    },
+    map: function (stJson) {
+      var st = JSON.parse(stJson), open = {}; (st.open || []).forEach(function (r) { open[r] = 1; });
+      var me = { X: X, props: {}, state: { cur: st.cur, mapHov: st.mapHov || null, mapGo: st.mapGo || null, mapIn: !!st.mapIn }, cs: st.cs || [], _nat: mp._nat,
+        lvl: function () { return st.lvl; }, isOpen: function (r) { return !!open[r]; }, seasonNow: function () { return st.season; },
+        shellOf: function (r) { return { P: { b0: (st.b0 || {})[r] } }; }, lowest: mp.lowest, lockVals: mp.lockVals };
+      var v = mp.mapVals.call(me, {}); mp._nat = me._nat;
+      v.mx.nat = me._nat; return JSON.stringify(plain(v));
     },
     // a renovation piece's registered table entry (the C# piece table's row, for pieces the export didn't have)
     piece: function (id) { var A = reg(id); return A ? JSON.stringify(plain(A)) : 'null'; },

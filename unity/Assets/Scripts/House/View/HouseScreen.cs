@@ -3,8 +3,8 @@
 // HouseSquadView: walking about, sorted between the pieces, tapped to select, sent by a floor tap, carried through a
 // door), the bottom drawer (its tab opens and closes it; RENOVATE opens Renovate: HouseEditView, stage 6; CATALOG the
 // Catalog: HouseShopView, stage 7, its coins through Coins / Spend) and the toasts,
-// as Squad House v6.dc.html; the save every 5 s and on each room change (OnSave). Not yet: actions (4), item taps (5),
-// the house map (8: until then the rooms change by their doors and GoTo).
+// as Squad House v6.dc.html; the save every 5 s and on each room change (OnSave); the house map (HouseMapView, stage 8:
+// its button top-left in each room).
 //
 //   var s = HouseScreen.Create(parent, houseJson, level, ownedRosterIds);   s.OnExit = ...;   (Android's back leaves)
 using System;
@@ -30,6 +30,7 @@ namespace SquishSquad.House.View
         HouseWheel _wheel;
         HouseEditView _edit;
         HouseShopView _shop;
+        HouseMapView _map;
         bool _dirty;
         string _press; double _pressX, _pressY; bool _moved;
         double _saveAt;
@@ -105,6 +106,8 @@ namespace SquishSquad.House.View
             _shop = new HouseShopView(world, _sim, _k, HouseRoomView.Res("shop")) { Pic = n => HouseDraw.Pics.TryGetValue(n, out var rt) ? rt : HouseRoomView.Res("pics/" + n) };
             _sim.Coins = () => Coins(); _sim.Spend = n => Spend(n);
             _sim.GoRoom = room => Enter(room, null, null, Now);
+            _map = new HouseMapView(world, _sim, _k, HouseRoomView.Res("map"), HouseRoomView.Res("map-bits"), HouseRoomView.Res("map-template")) { Toast = Toast };
+            _sim.GoRoomWith = (room, c) => Enter(room, c, null, Now);
             _toast = UiPiece.Create(world, "toast", 31100);
             _toast.Opacity = 0;
         }
@@ -129,6 +132,7 @@ namespace SquishSquad.House.View
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 // Android's back: the Catalog's detail, the Catalog, Renovate, then out of the house (saved)
+                if (_sim.Map) { _sim.CloseMap(); return; }
                 if (_sim.Shop) { if (_sim.Det != null) _sim.CloseDet(); else _sim.CloseShop(); return; }
                 if (_sim.Edit) { _sim.DoneEdit(now); return; }
                 Save(); OnExit?.Invoke(); Destroy(gameObject); return;
@@ -140,6 +144,7 @@ namespace SquishSquad.House.View
             _room.SetCamera(k);
             _edit.SetCamera(k); _edit.Update(now);
             _shop.Update(now);
+            _map.Update(now, !_sim.Shop);
             _squad.Update(k, now);
             MoveToy(now);
             _wheel.Update(k, now);
@@ -208,7 +213,9 @@ namespace SquishSquad.House.View
             if (down)
             {
                 _down = true; _downAt = pos; _moved = false; _pressX = fx; _pressY = fy; _press = null;
+                if (_sim.Map) { _press = "map"; return; }     // (the map covers everything: its taps on release)
                 if (_sim.Shop) { _press = "shop"; return; }   // (the Catalog covers everything: its taps on release)
+                if (_map.OnRoomButton(fx, fy)) { _press = "mapbtn"; return; }
                 if (_sim.Edit) EditPress(fx, fy, b.x, b.y, now);
                 return;
             }
@@ -237,6 +244,8 @@ namespace SquishSquad.House.View
                 case "drag": _sim.DragEnd(); return;
                 case "none": return;
                 case "shop": if (!_moved) _shop.Tap(fx, fy, now); return;
+                case "map": if (!_moved) _map.Tap(fx, fy, now); return;
+                case "mapbtn": if (!_moved) _sim.OpenMap(now); return;
             }
             if (_moved) return;   // (a drag, not a tap)
             Tap(fx, fy, now);
@@ -351,6 +360,7 @@ namespace SquishSquad.House.View
             _wheel?.Destroy();
             _edit?.Destroy();
             _shop?.Destroy();
+            _map?.Destroy();
             if (_room != null) Destroy(_room.gameObject);
             if (_toast != null) Destroy(_toast.gameObject);
         }
