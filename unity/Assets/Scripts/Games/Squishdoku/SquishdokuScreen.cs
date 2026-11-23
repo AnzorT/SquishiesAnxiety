@@ -58,7 +58,12 @@ namespace SquishSquad.Games.Squishdoku
             art.TryGetValue(SquishdokuGame.BuddyKey, out var buddy);
             _screen = new SdScreen(w, h, cast.ToArray(), buddy, Xml, HeadOf, _tk) { AdsFree = AdsFree, Save = true };
             _screen.OnExit = Leave;
-            _screen.OnHeadChanged = on => { SquishdokuGame.HeadStart = on; Sdk()["head"] = on; };
+            _screen.OnHeadChanged = on =>
+            {
+                SquishdokuGame.HeadStart = on;
+                Sdk()["head"] = on;
+                SdSave.Record(new Dictionary<string, object> { { "sdk.head", on } });   // (signed in: SquishdokuScreen.js toggleHead)
+            };
             Sync();
         }
 
@@ -71,6 +76,7 @@ namespace SquishSquad.Games.Squishdoku
         static void SeedProfile()
         {
             var sdk = Sdk();
+            if (SdSave.To != null) return;   // signed in: the account's own record, as the app reads it
             if (!sdk.ContainsKey("lv")) sdk["lv"] = (double)SquishdokuGame.Level;
             if (!sdk.ContainsKey("head")) sdk["head"] = SquishdokuGame.HeadStart;
             if (!sdk.ContainsKey("plays")) sdk["plays"] = (double)PlayerPrefs.GetInt("sdk.plays", 0);

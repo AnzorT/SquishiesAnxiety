@@ -22,6 +22,7 @@ namespace SquishSquad.Games.Hop
         {
             if (!(_profile.TryGetValue("hop", out var v) && v is IDictionary<string, object> d)) _profile["hop"] = d = new Dictionary<string, object>();
             d["seen"] = true;
+            HopSave.Record(new Dictionary<string, object> { { "hop.seen", true } });   // HopScreen.js
         }
 
         // a room's banner: its name and the twist it brings in

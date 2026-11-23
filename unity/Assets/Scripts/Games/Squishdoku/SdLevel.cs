@@ -11,8 +11,9 @@
 //   paused   the top bar's pause (or Android's back): the board is hidden, the clock frozen (RESUME / RESTART / QUIT)
 // Every motion is the app's (SquishSquad.Anim is React Native's Animated; the same timings, springs, easings, delays).
 // No UnityEngine here: SquishdokuGame shows the layers and feeds the touches; tools/unity/squishdoku-test runs it as is.
-// Not ported: sounds, haptics, saving to Firestore (Profile is kept in memory), the buddy's live rig (its still hops
-// and shakes instead). Blitz is SdBlitz; the hub and the map SdHub, SdMap (SdScreen hosts them all).
+// Not ported: sounds, haptics, the buddy's live rig (its still hops and shakes instead). Profile is kept in memory
+// (signed in: a copy of the account's, and each outcome is saved there too: SdSave). Blitz is SdBlitz; the hub and the
+// map SdHub, SdMap (SdScreen hosts them all).
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
@@ -182,6 +183,7 @@ namespace SquishSquad.Games.Squishdoku
             BuddyReact("timeup");
             Shake();
             var r = Levels.AfterLevel(Profile, Spec, false);
+            SdSave.Record(r.Update);   // (signed in: saveSquishdoku)
             Apply(r.Update);
             StopInterval();
             Effect(() => OpenTimeUp(0));
@@ -196,6 +198,7 @@ namespace SquishSquad.Games.Squishdoku
             _warn = false;
             StopInterval();
             var r = Levels.AfterLevel(Profile, Spec, false);
+            SdSave.Record(r.Update);   // (signed in: saveSquishdoku)
             Apply(r.Update);
             Later(450, () => { BuddyReact("timeup"); Shake(); });
             Later(1000, () => { Phase = "nohearts"; Effect(() => OpenTimeUp(Spec.Hearts)); Hud(); });
@@ -270,6 +273,7 @@ namespace SquishSquad.Games.Squishdoku
             StopInterval();
             var score = Levels.StarsFor(Spec, ms, _mistakes, _usedX);
             var outc = Levels.AfterLevel(Profile, Spec, true, score.Stars, score.Perfect);
+            SdSave.Paid(outc, Profile);
             Apply(outc.Update);
             if (outc.Unlocked) _unlocked = Spec.Lv + 1;
             var res = new SdCards.Result

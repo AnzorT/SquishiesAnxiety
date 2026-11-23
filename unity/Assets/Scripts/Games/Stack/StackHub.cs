@@ -23,7 +23,11 @@ namespace SquishSquad.Games.Stack
         public override string Sub => $"{(int)Levels.DoneOf(Rec)} / {Levels.LEVELS} levels";
         public override string Stars => ((int)Levels.StarsOf(Rec)).ToString();
         public override bool Seen => Rec.Seen;
-        public override void MarkSeen() => Section(_profile, "stack")["seen"] = true;
+        public override void MarkSeen()
+        {
+            Section(_profile, "stack")["seen"] = true;
+            StackSave.Record(new Dictionary<string, object> { { "stack.seen", true } });   // StackScreen.js
+        }
         public static List<string> Cast => HubsData.Arts(HubsData.Current.stackCast);
 
         internal static IDictionary<string, object> Section(IDictionary<string, object> profile, string key)

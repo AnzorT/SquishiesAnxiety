@@ -33,6 +33,7 @@ namespace SquishSquad.Games.Sort
         {
             if (!(_profile.TryGetValue("sort", out var v) && v is IDictionary<string, object> d)) _profile["sort"] = d = new Dictionary<string, object>();
             d["seen"] = true;
+            SortSave.Record(new Dictionary<string, object> { { "sort.seen", true } });   // SortScreen.js
         }
 
         public static List<string> Pool(string theme) => HubsData.Arts(theme == "cupboard" ? HubsData.Current.sortPools.cupboard : HubsData.Current.sortPools.fridge);

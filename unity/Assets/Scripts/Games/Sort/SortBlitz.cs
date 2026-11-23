@@ -90,7 +90,7 @@ namespace SquishSquad.Games.Sort
             _selected = null;
             _hoverO.SetValue(0);
             var outc = Levels.AfterBlitz(Profile, false, reached);
-            if (Save) Apply(outc.Update);
+            if (Save) { SortSave.Record(outc.Update); Apply(outc.Update); }
         }
 
         // Game.js win(), blitz, the last round: what the run paid, for BLITZ CHAMPION!
@@ -99,7 +99,7 @@ namespace SquishSquad.Games.Sort
             double ms = _clk.Elapsed();
             var rec = Levels.Record(Profile);
             var outc = Levels.AfterBlitz(Profile, true, Levels.BLITZ_ROUNDS, ms);
-            if (Save) Apply(outc.Update);
+            if (Save) { SortSave.Paid(outc, Profile); Apply(outc.Update); }
             var all = new List<string>();
             foreach (var t in new[] { "fridge", "cupboard" }) if (_data.Pools.TryGetValue(t, out var pool)) foreach (var p in pool) all.Add(p.Uri);
             double best = rec.Blitz.BestMs ?? 0;

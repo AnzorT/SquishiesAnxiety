@@ -114,20 +114,23 @@ namespace SquishSquad.Menu
             if (_view.Where == MenuView.Place.Park) _view.ShowGames(NowMs, true);
         }
 
-        // The games read the player's progress from their own profile (until saving to the account is ported, what they
-        // win stays in memory). Signed in: a copy of the account's profile, so the maps show its real levels and stars.
-        // Offline: the levels kept on the device.
+        // The games read the player's progress from their own profile. Signed in: a copy of the account's profile, so the
+        // maps show its real levels and stars, and what they win is saved to the account where the app saves it
+        // (Games/Shared/AccountSaves.cs; the copy keeps the new values at once, the menu's profile feed after the write).
+        // Offline: the levels kept on the device, and what they win stays in memory.
         void SeedGameProfiles()
         {
             var player = CharactersPageLink.Get();
-            if (player?.Profile != null)
+            if (player?.Profile != null && player.Fb != null && !string.IsNullOrEmpty(player.Uid))
             {
                 SquishSquad.Games.Stack.StackGame.Profile = DeepCopy(player.Profile);
                 SquishSquad.Games.Sort.SortGame.Profile = DeepCopy(player.Profile);
                 SquishSquad.Games.Hop.HopGame.Profile = DeepCopy(player.Profile);
                 SquishSquad.Games.Squishdoku.SdLevel.Profile = DeepCopy(player.Profile);
+                SquishSquad.Games.Shared.AccountSaves.Use(player.Uid, player.Fb.Data);
                 return;
             }
+            SquishSquad.Games.Shared.AccountSaves.Use(null, null);
             SetLv(SquishSquad.Games.Stack.StackGame.Profile, "stack", MenuState.StackLevel);
             SetLv(SquishSquad.Games.Hop.HopGame.Profile, "hop", MenuState.HopLevel);
         }

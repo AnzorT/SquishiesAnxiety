@@ -283,6 +283,7 @@ namespace SquishSquad.Games.Sort
                 else if (!_play.Locked.Contains(k)) { int kk = k; int home = p.Home.Value; Later(200 + k * 70, () => Fly(kk, Place.Slot(home), hop: 30)); }
             }
             var outc = Levels.AfterLevel(Profile, _theme, Spec, false, _mistakes, null);
+            SortSave.Record(outc.Update);   // (signed in: saveSort)
             Apply(outc.Update);
             var uri = Board.Pieces.Count > 0 ? Board.Pieces[0].Uri : null;
             Later(1700, () => _fail = Open(SortCards.FailCard(_sw, _sh, reason, uri, Replay, Leave), 1));
@@ -316,6 +317,7 @@ namespace SquishSquad.Games.Sort
             if (_blitz) { _run.Cleared(); return; }
             double ms = _clk.Elapsed();
             var outc = Levels.AfterLevel(Profile, _theme, Spec, true, _mistakes, ms);
+            SortSave.Paid(outc, Profile);
             Apply(outc.Update);
             var res = new SortCards.Result
             {

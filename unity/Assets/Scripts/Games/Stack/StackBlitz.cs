@@ -192,7 +192,7 @@ namespace SquishSquad.Games.Stack
             _glow = null;
             if (_held.HasValue) Drop(_held.Value.from);
             var outc = Levels.AfterBlitz(Profile, false, reached, 0);
-            if (Save) Apply(outc.Update);
+            if (Save) { StackSave.Record(outc.Update); Apply(outc.Update); }
             Hud();
         }
 
@@ -201,7 +201,7 @@ namespace SquishSquad.Games.Stack
             double ms = _clk.Elapsed;
             var rec = Levels.Record(Profile);
             var outc = Levels.AfterBlitz(Profile, true, Levels.BLITZ_ROUNDS, ms);
-            if (Save) Apply(outc.Update);
+            if (Save) { StackSave.Paid(outc, Profile); Apply(outc.Update); }
             Hud();
             return new BlitzCards.WinResult
             {

@@ -7,8 +7,8 @@
 //   the same Init / Advance / OnExit (QUIT, DONE, the back orb outside sorting); `Run` hooks ads and sounds.
 // The art: Resources/Sort (tools/unity/export-sort.mjs): the page, the back orb, the clutter, the squishies each
 // container draws from (their cut-outs are Resources/Stack/art); the rest is SortArt's.
-// Not ported: the effects' bursts, sounds, haptics, saving to Firestore
-// (Profile is kept in memory).
+// Not ported: the effects' bursts, sounds, haptics. Profile is kept in memory
+// (signed in: a copy of the account's, and each outcome is saved there too: SortSave).
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;

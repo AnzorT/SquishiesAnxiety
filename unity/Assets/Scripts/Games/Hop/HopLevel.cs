@@ -10,8 +10,9 @@
 //   hop: a wobble, STUCK! 1000 ms later. UNDO puffs the cushions back; the first HINT asks first, then glows the next
 //   hop (going back to the last spot a full clear still had, if needed). The back button pauses.
 // No UnityEngine here: HopGame shows its layers (HopLayer) and cards in Unity, tools/unity/hop-test draws them.
-// Not ported: sounds, haptics, ads (Unity has none: a hint is free, as with Remove Ads), saving the profile (Profile is
-// kept in memory), the board moving when the screen's layout changes mid-level.
+// Not ported: sounds, haptics, ads (Unity has none: a hint is free, as with Remove Ads), the board moving when the
+// screen's layout changes mid-level. Profile is kept in memory (signed in: a copy of the account's, and each outcome is
+// saved there too: HopSave).
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -540,6 +541,7 @@ namespace SquishSquad.Games.Hop
             });
             int left = Engine.LeftOf(_board, G.St.Life);
             var outc = Levels.AfterLevel(Profile, _spec, new HopResult { Left = left, Hinted = G.Hinted });
+            HopSave.Paid(outc, Profile);   // (signed in: saveHop)
             Apply(outc.Update);
             var res = new HopCards.Result
             {
@@ -699,7 +701,9 @@ namespace SquishSquad.Games.Hop
 
         void Retry()
         {
-            Apply(Levels.AfterStuck(Profile));
+            var stuck = Levels.AfterStuck(Profile);
+            HopSave.Record(stuck);
+            Apply(stuck);
             SetStuck(false);
             _fresh = false;
             NewRound();

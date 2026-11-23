@@ -13,8 +13,9 @@
 //   over       GAME OVER: the boards cleared pay out (Levels.AfterBlitz), PLAY AGAIN or QUIT
 //   paused     the top bar's pause (or Android's back): the board hidden, the clock frozen (RESUME / START OVER / QUIT)
 // Every motion and delay is the app's. No UnityEngine here: SquishdokuScreen shows the layers and feeds the touches;
-// tools/unity/squishdoku-test runs it as is. Not ported: sounds, haptics, the rewarded ad (ShowAd), the gem save's server
-// call (SpendGems), saving to Firestore (the profile is SdLevel.Profile, in memory), the buddy's live rig.
+// tools/unity/squishdoku-test runs it as is. Not ported: sounds, haptics, the rewarded ad (ShowAd), the buddy's live rig.
+// The profile is SdLevel.Profile, in memory; signed in, the run's pay is saved to the account too and a gem save is the
+// server's (SdSave: saveSquishdoku, squad.blitzSave; offline SpendGems takes the gems off the in-memory profile).
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
@@ -304,9 +305,33 @@ namespace SquishSquad.Games.Squishdoku
         {
             if (_saving) return;
             _saveErr = null;
+            if (SdSave.BlitzSave != null) { SaveByGemsOnServer(); return; }
             var err = SpendGems(Levels.BlitzSaveGems(_gemSaves));
             if (err == null) { _gemSaves++; GoOn(); }
             else { _saveErr = err == "not_enough_gems" ? "Not enough gems" : "Couldn't reach the server. Try again?"; RefreshSave(); }
+        }
+
+        // signed in, BlitzGame.js saveByGems: SAVING… while the `squad` callable takes the gems; then on from the same
+        // board, or the card's error (the await comes back on Unity's main thread)
+        async void SaveByGemsOnServer()
+        {
+            _saving = true;
+            RefreshSave();
+            int price = Levels.BlitzSaveGems(_gemSaves);
+            string err;
+            try { err = await SdSave.BlitzSave(_gemSaves); }
+            catch (Exception e) { err = e.Message ?? "error"; }
+            if (err == null)
+            {
+                // what the server took, on the game's copy of the profile (the menu's feed re-reads the account)
+                SdLevel.Profile["gems"] = (double)Math.Max(0, Gems() - price);
+                _gemSaves++;
+                if (Phase == "save") GoOn(); else _saving = false;
+                return;
+            }
+            _saving = false;
+            _saveErr = err == "not_enough_gems" ? "Not enough gems" : "Couldn't reach the server. Try again?";
+            RefreshSave();
         }
 
         BlitzOutcome Settle()
@@ -314,7 +339,7 @@ namespace SquishSquad.Games.Squishdoku
             if (!_started || _ended) return null;
             _ended = true;
             var outc = Levels.AfterBlitz(SdLevel.Profile, _cleared);
-            if (Save) Apply(outc.Update);
+            if (Save) { SdSave.Paid(outc, SdLevel.Profile); Apply(outc.Update); }
             return outc;
         }
 

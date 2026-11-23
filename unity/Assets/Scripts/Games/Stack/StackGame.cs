@@ -11,8 +11,8 @@
 // Every motion is the app's: the same Animated timings, springs and easings (SquishSquad.Anim is React Native's
 // Animated in C#), the same geometry. The pieces: Resources/Stack (tools/unity/export-stack.mjs) and StackArt; the
 // cards: StackCards on Ui/Cards.
-// Not ported yet: the dust / spark / confetti effects, sounds, haptics, ads, saving to the profile (Profile is kept in
-// memory).
+// Not ported yet: the dust / spark / confetti effects, sounds, haptics, ads. Profile is the game's copy of the player's
+// (MenuScreen.SeedGameProfiles); signed in, each outcome is also saved to the account where the app saves it (StackSave).
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
@@ -485,6 +485,7 @@ namespace SquishSquad.Games.Stack
             // Blitz: a pip fills, then the next puzzle or the run is won (BlitzRun)
             if (_blitz) { _clk.Pause(); StopInterval(); RunCall(_run.Cleared); Hud(); return; }
             var outc = Levels.AfterLevel(Profile, _spec, _puzzle.Par, true, _moves, _hinted);
+            StackSave.Paid(outc, Profile);   // (signed in: saveStack)
             Apply(outc.Update);
             var res = new StackCards.Result
             {
@@ -568,6 +569,7 @@ namespace SquishSquad.Games.Stack
             _glow = null;
             if (_held.HasValue) Drop(_held.Value.from);
             var outc = Levels.AfterLevel(Profile, _spec, _puzzle.Par, false, 0, false);
+            StackSave.Record(outc.Update);
             Apply(outc.Update);
             var picture = _who.Length > 0 ? _who[0].Picture : null;
             Later(1300, () => _fail = Open(StackCards.FailCard(W, H, picture, Replay, Leave), FAIL));
