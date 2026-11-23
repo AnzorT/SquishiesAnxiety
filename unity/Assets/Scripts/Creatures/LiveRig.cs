@@ -32,6 +32,7 @@ namespace SquishSquad.Creatures
         static Func<double, string> _svg;
         static Action<double, string> _ext;
         static Action<double, bool> _fidgets;
+        static Action<double, double> _yaw;
         static Func<double, bool> _fidg;
         static Func<double, string> _events;
         static int _lastFrame = -1;
@@ -100,6 +101,7 @@ namespace SquishSquad.Creatures
                 _mount = _env.Eval<Func<string, double>>("__live.mount", "mount");
                 _play = _env.Eval<Action<double, string>>("__live.play", "play");
                 _frame = _env.Eval<Action<double>>("__live.frame", "frame");
+                try { _yaw = _env.Eval<Action<double, double>>("__live.yaw", "yaw"); } catch (Exception) { _yaw = null; }
                 _svg = _env.Eval<Func<double, string>>("__live.svg", "svg");
                 _unmount = _env.Eval<Action<double>>("__live.unmount", "unmount");
                 _ext = _env.Eval<Action<double, string>>("__live.ext", "ext");
@@ -163,6 +165,8 @@ namespace SquishSquad.Creatures
         }
 
         /// <summary>The rig's idle fidgets on (standing free in the house) or off.</summary>
+        /// <summary>Turns the creature (degrees: 0 faces you, 180 away, 90 right): the rig's spinOff (the yard games' yaw).</summary>
+        public void Yaw(double deg) { if (!_gone && _env != null && _yaw != null) try { _yaw(_id, deg); } catch (Exception) { } }
         public void Fidgets(bool on) { if (!_gone && _env != null) try { _fidgets(_id, on); } catch (Exception) { } }
 
         /// <summary>Whether the rig is in one of its idle fidgets now (the house's fidg).</summary>

@@ -29,6 +29,8 @@ namespace SquishSquad.Creatures
         bool InFidget();
         /// <summary>The states the rig went into since the last call (the house's onRig).</summary>
         string[] Events();
+        /// <summary>The creature turned (degrees; the yard games' yaw).</summary>
+        void Yaw(double deg);
     }
 
     public static class Rigs

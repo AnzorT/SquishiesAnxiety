@@ -18,6 +18,7 @@
     <Compile Include="../../../unity/Assets/Scripts/Backend/**/*.cs" Exclude="../../../unity/Assets/Scripts/Backend/Unity/**" />
     <Compile Include="../vector-test/ReferenceRaster.cs" />
     <Compile Include="../vector-test/Png.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Yard/*.cs" />
     <Compile Include="*.cs" />
   </ItemGroup>
 </Project>

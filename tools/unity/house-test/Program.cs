@@ -39,6 +39,7 @@ static partial class Program
             case "creatures": return CreatureCheck.Run();
             case "acts": return ActCheck.Run();
             case "map": return MapCheck.Run();
+            case "yard": return YardCheck.Run();
             case "layers": return LayerCheck.Run(args[1], args[2]);
             case "compose": return ComposeOnly(args[1], args[2]);
             case "rt": return DebugRt(args[1], args[2]);
