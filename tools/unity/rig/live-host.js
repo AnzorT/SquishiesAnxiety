@@ -11,8 +11,9 @@
     mount: function (key) {
       var el = document.createElement('div');
       document.body.appendChild(el);
-      var id = ++seq;
-      hosts[id] = { el: el, ctl: RiveRig.mount(el, key, {}) };
+      var id = ++seq, h = hosts[id] = { el: el, ev: [] };
+      // (the house's onRig: each state the rig goes into, read with __live.events)
+      h.ctl = RiveRig.mount(el, key, { onState: function (n) { h.ev.push(n); } });
       return id;
     },
     play: function (id, move) { var h = hosts[id]; if (h && h.ctl && h.ctl.play) h.ctl.play(move); },
@@ -23,6 +24,7 @@
       if (!h.ext) { h.ext = {}; if (h.ctl.ext) h.ctl.ext(h.ext); }
       var o = JSON.parse(json); for (var k in h.ext) h.ext[k] = 0; for (var k2 in o) h.ext[k2] = o[k2];
     },
+    events: function (id) { var h = hosts[id]; if (!h || !h.ev.length) return '[]'; var e = JSON.stringify(h.ev); h.ev = []; return e; },
     fidgets: function (id, on) { var h = hosts[id], I = h && h.ctl && h.ctl._I; if (I) { I.fidgets = !!on; I.hfid = 1; } },
     fidg: function (id) { var h = hosts[id], I = h && h.ctl && h.ctl._I; return !!(I && I.cur && /^(hf\d|idle_)/.test(I.cur.name)); },
     frame: function (ms) { G.__clock.frame(ms); },

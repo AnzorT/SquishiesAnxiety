@@ -155,3 +155,83 @@ static class CreatureCheck
         return bad == 0 ? 0 : 1;
     }
 }
+
+static class ActCheck
+{
+    // `acts`: the creature trace with scripted acts (creature-trace.mjs ... "frame:op:arg,..."): House/HouseActions.cs
+    // replays the ops and the rig's events in the page's order; every creature's state each frame and every ctrl.play
+    public static int Run()
+    {
+        var T = (JObj)HouseJson.Parse(File.ReadAllText(Path.Combine(Program.Repo, "tools/unity/house-test/out/creature-trace.json")));
+        var d = Program.Data(); var hs = Program.LoadFixture(d, T.Str("fixture"));
+        hs.EnterRoomSaveOnly(T.Str("room"));
+        var walkJson = File.ReadAllText(Path.Combine(Program.Res, "walk.json"));
+        var walk = new HouseWalk(walkJson);
+        var sim = new HouseCreatures(hs, walk);
+        sim.SetMoves(walkJson);
+        var page = new Queue<double>(); var hw = new Queue<double>();
+        foreach (List<object> e in T.Arr("rng")) { string k = (string)e[0]; double v = (double)e[2]; if (k == "house-page") page.Enqueue(v); else if (k == "house-walk.js") hw.Enqueue(v); }
+        sim.Rand = () => page.Count > 0 ? page.Dequeue() : throw new Exception("out of page draws");
+        walk.Rand = () => hw.Count > 0 ? hw.Dequeue() : throw new Exception("out of walk draws");
+        var fq = new Queue<bool>(); foreach (var o in T.Arr("fidg")) fq.Enqueue(HouseJson.Truthy(o));
+        sim.Fidg = c => fq.Count > 0 && fq.Dequeue();
+        int ticks = 0; var plays = new List<string>(); var toasts = new List<string>();
+        sim.Play = (c, n) => plays.Add($"{ticks} {c.Key} {n}");
+        sim.PlayIdle = c => plays.Add($"{ticks} {c.Key} idle");
+        sim.Toast = t => toasts.Add(t);
+        var st = T.Obj("start");
+        foreach (JObj o in st.Arr("cs"))
+        {
+            var c = new HouseCreature { Key = o.Str("key"), Room = o.Str("room"), Home = o.Str("home"), PosRoom = o.Str("posRoom"), Mode = o.Str("mode"), N = new Dictionary<string, double>() };
+            c.X = o.Num("x"); c.Y = o.Num("y"); c.Tx = o.Num("tx"); c.Ty = o.Num("ty"); c.Moving = o.Truthy("moving"); c.Spin = o.Num("spin"); c.Face = o.Num("face"); c.Wk = o.Num("wk"); c.Ph = o.Num("ph");
+            c.Lift = o.Num("lift"); c.LiftTo = o.Num("liftTo"); c.WanderAt = o.Num("wanderAt"); c.Hold = o.Num("hold"); c.Run = o.Truthy("run"); c.Gv = o.Num("gv", 1); c.NeedAt = o.Num("needAt");
+            c.StandUntil = o.Num("standUntil"); c.TurnAt = o.Num("turnAt"); c.Z = o["z"] is double z ? z : (double?)null;
+            foreach (var k in o.Obj("N").Keys) c.N[k] = o.Obj("N").Num(k);
+            var g = o.Obj("gs"); c.Gs.Ph = g.Num("ph"); c.Gs.T = g.Num("t"); c.Gs.Rk = g.Num("rk"); c.Gs.FxAt = g.Num("fxAt"); c.Gs.RuAt = g.Num("ruAt"); c.Gs.Ld = g.Truthy("ld"); c.Gs.Ra = g.Num("ra"); c.Gs.Rv = g.Num("rv");
+            foreach (var k in o.Obj("ext").Keys) c.Ext[k] = o.Obj("ext").Num(k);
+            sim.Cs.Add(c);
+        }
+        var vis = st.Arr("vis").ConvertAll(k => (string)k);
+        sim.Vis = sim.Cs.FindAll(c => vis.Contains(c.Key)); sim.Vis.Sort((a, b) => vis.IndexOf(a.Key) - vis.IndexOf(b.Key));
+        sim.Sel = st["sel"] is double sd ? (int)sd : (int?)null;
+        sim.Last = st.Num("last");
+        var ev = T.Arr("rig"); int ei = 0;
+        int bad = 0; string first = null; var frames = T.Arr("frames");
+        for (int f = 0; f < frames.Count; f++)
+        {
+            var fr = (JObj)frames[f];
+            while (ei < ev.Count && (int)(double)((List<object>)ev[ei])[0] <= ticks)
+            {
+                var e = (List<object>)ev[ei++];
+                if ((string)e[1] == "op")
+                {
+                    string k = (string)e[2], a = e[3] as string, b = e[4] as string;
+                    if (k == "sel") sim.Sel = int.Parse(a);
+                    else if (k == "act") sim.Act(a, b, sim.Last);
+                    else if (k == "floor") { var c = sim.SelC; if (c != null) sim.GoTo(c, double.Parse(a), double.Parse(b), null, sim.Last); }
+                }
+                else { var c = sim.Cs.Find(x => x.Key == (string)e[2]); sim.OnRig(c, (string)e[3], sim.Last); }
+            }
+            ticks++;
+            sim.Tick(fr.Num("last"));
+            foreach (JObj o in fr.Arr("cs"))
+            {
+                var c = sim.Cs.Find(x => x.Key == o.Str("key"));
+                var why = new List<string>();
+                void Num(string n, double a, double b) { if (Math.Abs(a - b) > 1e-6) why.Add($"{n} {a} vs {b}"); }
+                void Str(string n, string a, string b) { if (a != b) why.Add($"{n} {a} vs {b}"); }
+                Num("x", c.X, o.Num("x")); Num("y", c.Y, o.Num("y")); Num("spin", c.Spin, o.Num("spin")); Num("lift", c.Lift, o.Num("lift")); Num("liftTo", c.LiftTo, o.Num("liftTo"));
+                Str("mode", c.Mode, o.Str("mode")); Str("seat", c.Seat, o.Str("seat")); Str("useItem", c.UseItem, o.Str("useItem")); Str("wSt", c.WSt, o.Str("wSt")); Str("napSt", c.NapSt, o.Str("napSt"));
+                Num("z", c.Z ?? -1, o["z"] is double zz ? zz : -1); Num("useEnd", c.UseEnd, o.Num("useEnd")); Num("eatEnd", c.EatEnd, o.Num("eatEnd"));
+                foreach (var k in new[] { "h", "c", "e", "f" }) Num("N." + k, c.N[k], o.Obj("N").Num(k));
+                if (vis.Contains(c.Key)) foreach (var k in o.Obj("ext").Keys) Num("ext." + k, c.Ext.TryGetValue(k, out var v) ? v : 0, o.Obj("ext").Num(k));
+                if (why.Count > 0) { bad++; first ??= $"frame {f} {c.Key}: {string.Join("; ", why)}"; }
+            }
+        }
+        var pagePlays = T.Arr("plays").ConvertAll(o => { var l = (List<object>)o; return $"{(int)(double)l[0]} {l[1]} {l[2]}"; });
+        bool playsOk = string.Join("|", plays) == string.Join("|", pagePlays);
+        Console.WriteLine($"acts: {frames.Count} frames; plays C# [{string.Join(", ", plays)}]" + (playsOk ? " = page" : $" vs page [{string.Join(", ", pagePlays)}]") + $"; toasts [{string.Join(", ", toasts)}]");
+        Console.WriteLine(bad == 0 && playsOk ? "acts: every creature every frame equal, every play equal" : $"acts: {bad} creature-frames differ; first: {first}");
+        return bad == 0 && playsOk ? 0 : 1;
+    }
+}

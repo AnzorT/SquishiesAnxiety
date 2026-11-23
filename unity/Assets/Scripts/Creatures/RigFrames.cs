@@ -27,6 +27,8 @@ namespace SquishSquad.Creatures
         void Ext(System.Collections.Generic.IDictionary<string, double> e);
         void Fidgets(bool on);
         bool InFidget();
+        /// <summary>The states the rig went into since the last call (the house's onRig).</summary>
+        string[] Events();
     }
 
     public static class Rigs

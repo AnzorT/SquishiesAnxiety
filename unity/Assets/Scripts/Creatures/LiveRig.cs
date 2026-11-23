@@ -33,6 +33,7 @@ namespace SquishSquad.Creatures
         static Action<double, string> _ext;
         static Action<double, bool> _fidgets;
         static Func<double, bool> _fidg;
+        static Func<double, string> _events;
         static int _lastFrame = -1;
         static double _jsMs, _t0 = -1;
 
@@ -100,6 +101,7 @@ namespace SquishSquad.Creatures
                 _ext = _env.Eval<Action<double, string>>("__live.ext", "ext");
                 _fidgets = _env.Eval<Action<double, bool>>("__live.fidgets", "fidgets");
                 _fidg = _env.Eval<Func<double, bool>>("__live.fidg", "fidg");
+                _events = _env.Eval<Func<double, string>>("__live.events", "events");
                 return true;
             }
             catch (Exception e)
@@ -161,6 +163,18 @@ namespace SquishSquad.Creatures
 
         /// <summary>Whether the rig is in one of its idle fidgets now (the house's fidg).</summary>
         public bool InFidget() { try { return !_gone && _env != null && _fidg(_id); } catch (Exception) { return false; } }
+
+        public string[] Events()
+        {
+            try
+            {
+                if (_gone || _env == null) return Array.Empty<string>();
+                var l = Backend.Json.Parse(_events(_id)) as IList<object>;
+                if (l == null || l.Count == 0) return Array.Empty<string>();
+                var o = new string[l.Count]; for (int i = 0; i < l.Count; i++) o[i] = l[i] as string; return o;
+            }
+            catch (Exception) { return Array.Empty<string>(); }
+        }
 
         public void Dispose()
         {

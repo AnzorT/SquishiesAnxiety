@@ -25,11 +25,19 @@ namespace SquishSquad.House
         // speech (say): the text and when it was said; shown 1.6 s
         public string SayText;
         public double SayAt = -1e9;
+        // what he's doing (stage 4: HouseActions)
+        public string Seat, SeatItem, UseItem, SeatRes, UseRes, WSt, NapSt, SnugSt, WatchTv;
+        public HouseAct UseA;
+        public double UseEnd, EatEnd, BowlEnd, RoastAt, FxAt;
+        public HouseCreature SnugW, SnugTo;
+        /// <summary>The pose he holds while getting off something (keep: lift, facing, z, the seat) until a time.</summary>
+        public sealed class KeepPose { public double Lift, Face, Until; public double? Z; public string Seat; }
+        public KeepPose Keep;
     }
 
     public sealed class HouseParticle { public string Type, Glyph, Color; public double X, Y, Born, Sx, Size, Ms; }
 
-    public sealed class HouseCreatures
+    public sealed partial class HouseCreatures
     {
         public static readonly string[] HOME = { "living", "living", "kitchen", "bedroom", "backyard", "dance" };
         static readonly Dictionary<string, double>[] SEEDN =
@@ -94,7 +102,8 @@ namespace SquishSquad.House
         public void Enter(string room, HouseCreature carry, string from, double now)
         {
             string prevR = S.Cur;
-            foreach (var c in Vis) { c.Moving = false; c.Arrive = null; }
+            foreach (var c in Vis) { Leave(c, true, now); c.Moving = false; c.Arrive = null; }
+            Party = false; Vars.Clear(); Tv.Clear(); TvAuto.Clear();
             if (room != "beach") { foreach (var c in Cs) if (c.Room == "beach" && c != carry) { c.Room = c.Home != null && c.Home != "beach" && S.IsOpen(c.Home) ? c.Home : HomeFor(c.I); c.PosRoom = null; } }
             else
             {
@@ -175,6 +184,7 @@ namespace SquishSquad.House
         public void GoTo(HouseCreature c, double x, double y, Action cb, double now, bool run = false)
         {
             if (Fidg(c)) PlayIdle?.Invoke(c);
+            Leave(c, false, now);
             var (tx, ty) = ClampF(x, y);
             c.Tx = tx; c.Ty = ty; c.Moving = true; c.Arrive = cb; c.Mode = cb != null ? "busy" : "free"; c.Hold = now + 12000; c.Run = run;
         }
@@ -216,6 +226,12 @@ namespace SquishSquad.House
         {
             double s = S.Geo.SAt(c.Y), top = c.Y - c.Lift + c.Oy;
             double Rx() => Rand() - 0.5;
+            var it = c.UseItem != null ? FindItem(c.UseItem) : null;
+            // itemTop(it, h): the top of the piece he's using, h px up
+            (double x, double y) Top(double h) => (it.Num("x"), it.Num("y") - h * S.Geo.CA * S.Geo.SAt(it.Num("y")));
+            if (fx == "steam" && it != null) { var p = Top(92); Spawn(fx, p.x - 18 * S.Geo.SAt(it.Num("y")) + Rx() * 10, p.y, now); return; }
+            if (fx == "bubble" && (c.Mode == "wash" || c.Mode == "dishes") && it != null) { var p = Top(62); Spawn(fx, p.x + Rx() * 30, p.y, now); return; }
+            if (fx == "spark" && (c.Mode == "play" || c.Mode == "rplay") && it != null) { var p = Top(64); Spawn(fx, p.x + Rx() * 40, p.y, now); return; }
             if (fx == "bubble") Spawn(fx, c.X + Rx() * 70 * s, top - 30 * s, now);
             else if (fx == "note") Spawn(fx, c.X + Rx() * 70 * s, top - 92 * s, now);
             else if (fx == "drop") Spawn(fx, c.X + Rx() * 60 * s, top - 20 * s, now);
@@ -239,10 +255,13 @@ namespace SquishSquad.House
         {
             double dt = Math.Min(0.1, Math.Max(0, (now - Last) / 1000)); Last = now;
             var G = S.Geo; double spd = Speed;
+            RunLater(now);
             foreach (var c in Vis)
             {
                 double tgt = c.Face;
                 bool standing = now < c.StandUntil;
+                var kp = c.Keep != null && now < c.Keep.Until ? c.Keep : (c.Keep = null);
+                if (kp != null) tgt = kp.Face;
                 if (c.Moving && !standing)
                 {
                     double dx = c.Tx - c.X, dy = c.Ty - c.Y, d = Math.Sqrt(dx * dx + dy * dy), sp = 86 * 1.25 * spd * G.SAt(c.Y) * c.Gv * (c.Run ? 1.7 : 1);
@@ -258,7 +277,7 @@ namespace SquishSquad.House
                 double dd = ((tgt - c.Spin) % 360 + 540) % 360 - 180; c.Spin += dd * Math.Min(1, dt * 7);
                 c.Wk += ((c.Moving && !standing ? 1 : 0) - c.Wk) * Math.Min(1, dt * 8);
                 if (c.Moving && !standing) c.Ph += dt * 11 * spd;
-                c.Lift += (c.LiftTo - c.Lift) * Math.Min(1, dt * 9);
+                c.Lift += ((kp != null ? kp.Lift : c.LiftTo) - c.Lift) * Math.Min(1, dt * 9);
                 double w = c.Wk;
                 foreach (var k in new List<string>(c.Ext.Keys)) c.Ext[k] = 0;
                 c.Gs.Run = c.Run && c.Moving;
@@ -267,6 +286,7 @@ namespace SquishSquad.House
                 if (g.Fx != null) Emit(c, g.Fx, now);
                 c.Ox = 0; c.Oy = 0; c.Rot = 0;
                 if (c.TurnAt != 0 && now >= c.TurnAt) { c.TurnAt = 0; c.Face = 0; }
+                ActTick(c, now, dt, standing);
                 if (c.Mode == "free" && !c.Moving && now > c.NeedAt)
                 {
                     c.NeedAt = now + 14000 + Rand() * 9000;
@@ -274,14 +294,18 @@ namespace SquishSquad.House
                     if (c.N[low] < 30) Say(c, NEEDLOW[low], now);
                 }
             }
+            if (Party && now > PartyEnd) EndParty(now);
             double rate = NeedRate * dt;
             foreach (var c in Cs) foreach (var k in new[] { "h", "c", "e", "f" }) c.N[k] = Math.Max(0, (c.N.TryGetValue(k, out var v) ? v : 0) - DECAY[k] * rate);
             Particles.RemoveAll(p => now - p.Born >= p.Ms);
         }
 
         /// <summary>His box (120 x 120 room px) as the page places it: translate, rotate, scale about (60, 108); z-index.</summary>
-        public (double tx, double ty, double rot, double s, int z) Transform(HouseCreature c) =>
-            (c.X - 60 + c.Ox, c.Y - 108 - c.Lift + c.Oy, c.Rot, S.Geo.SAt(c.Y), (int)JsRound(c.Z ?? c.Y) + 1);
+        public (double tx, double ty, double rot, double s, int z) Transform(HouseCreature c)
+        {
+            double? cz = c.Keep != null && c.Keep.Z != null ? c.Keep.Z : c.Z;
+            return (c.X - 60 + c.Ox, c.Y - 108 - c.Lift + c.Oy, c.Rot, S.Geo.SAt(c.Y), (int)JsRound(cz ?? c.Y) + 1);
+        }
 
         /// <summary>Before saving: each one's room, home and needs into the save's creatures (HouseSave.Snapshot writes
         /// them as the page's save() does).</summary>
