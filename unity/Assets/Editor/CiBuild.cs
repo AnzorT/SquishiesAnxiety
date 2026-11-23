@@ -36,6 +36,11 @@ namespace SquishSquad.EditorTools
                 foreach (var (name, w, h) in Screens) Shot(layout, outDir, name, w, h, name != "menu-a15");
                 Shot(layout, outDir, "menu-a15-live", 2340, 1080, true);
                 Shot(layout, outDir, "menu-a15-park", 2340, 1080, true, 3200f);   // after PLAY's walk to the Game Park
+                // Squish Stack, level 12: the intro banner, the deal, playing (compare with unity/Reference/stack-level-12.png:
+                // the squishies are picked at random, so only the screen around them matches), and a move
+                StackShots(outDir, 2340, 1080, "stack-a15", new[] { (600.0, "intro"), (2200.0, "deal"), (6500.0, "play"), (8000.0, "moved") });
+                StackShots(outDir, 2400, 1080, "stack-2400x1080", new[] { (6500.0, "play") });
+                StackShots(outDir, 2048, 1536, "stack-2048x1536", new[] { (6500.0, "play") });
                 Exit(0);
             }
             catch (Exception e)
@@ -62,6 +67,26 @@ namespace SquishSquad.EditorTools
             File.WriteAllBytes(Path.Combine(outDir, name + ".png"), png);
             Debug.Log($"[CiBuild] {name}.png {w}x{h}{(view.Creature != null ? " (live creature)" : "")}");
             view.Dispose();
+            UnityEngine.Object.DestroyImmediate(root.gameObject);
+        }
+
+        static void StackShots(string outDir, int w, int h, string name, (double ms, string label)[] times)
+        {
+            var root = new GameObject("Capture").transform;
+            var cam = MenuScreen.CreateCamera(root);
+            MenuScreen.FitCamera(cam, w, h);
+            SquishSquad.Ui.UiPiece.PxPerDp = h / 384f;
+            var game = SquishSquad.Games.Stack.StackGame.Create(root, 12, w, h);
+            game.Init(0);
+            double t = 0;
+            foreach (var (ms, label) in times)
+            {
+                // (the move at 7 s: the first cushion's top squishy onto the next cushion)
+                if (label == "moved") { for (; t <= 7000; t += 1000.0 / 60) game.Advance(t); game.TapMove(0, 1); }
+                for (; t <= ms; t += 1000.0 / 60) game.Advance(t);   // every frame, as the springs need
+                File.WriteAllBytes(Path.Combine(outDir, $"{name}-{label}.png"), Render(cam, w, h));
+                Debug.Log($"[CiBuild] {name}-{label}.png {w}x{h}");
+            }
             UnityEngine.Object.DestroyImmediate(root.gameObject);
         }
 

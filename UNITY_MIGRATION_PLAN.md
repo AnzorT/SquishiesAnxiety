@@ -1,6 +1,7 @@
 # Squish Squad → Unity
 
-Status **2026-11-22**: the Main Menu is ported (first pass) in `unity/`. It hasn't run in a real Unity yet: the runtime
+Status **2026-11-23**: the Main Menu is ported (first pass) in `unity/`, the four games' rules are in C# (checked
+against the JS), and Squish Stack's level screen is the first game screen (PLAY, then a tap in the Game Park). It hasn't run in a real Unity yet: the runtime
 scripts compile against Unity's libraries, and the rest (editor scripts, rendering) is checked by the first CI run once
 the Unity license secrets are in (`unity/README.md`).
 
@@ -107,8 +108,28 @@ Feel and speed are checked on the phone.
 5. **The house** (Squad House v6, 94 scripts): each furniture piece and room exported as pictures by the same method,
    with the room and placement logic ported.
 6. **Shop, chests, chest smash.**
-7. **Games**: Squishdoku, Sort, Stack and Hop (their engines are plain JS with tests; port the tests too), and the
-   squish stage (the three.js dent shader becomes a Unity shader).
+7. **Games**: Squishdoku, Sort, Stack and Hop, and the squish stage (the three.js dent shader becomes a Unity shader).
+   - ✅ **The rules** (`Assets/Scripts/Games/<Game>/`): each game's engine and levels (moves, solvers, puzzle makers,
+     stars, coins, XP, Blitz, profile updates) in C#, checked against the JS on the same inputs and the same random
+     draws (`tools/unity/games/<game>`): Stack 41,033 checks, Sort 29,066, Squishdoku 82,252, Hop ~281k, 0 mismatches.
+   - **The screens: copying React Native UI.** The games are React Native views, so the menu's method (pictures cut
+     from the page) is extended to UI that changes:
+     - `tools/unity/ui/snap.js` turns any piece of the app's UI into SVG from what Chrome laid out: boxes, colours,
+       gradients, borders, shadows, transforms, clipping, react-native-svg drawings, pictures, and text as the app's
+       own font outlines at the exact spot Chrome put each character. A whole Stack level as SVG, drawn by the Unity
+       vector code, differs from the app on 1.46 % of pixels, all edge anti-aliasing.
+     - `Ui/UiFont.cs` lays text out as Chrome does (advance, kerning, letter-spacing, the 1/64 px grid, the
+       baseline rule): every character within 0.016 px of Chrome's, so numbers and names can change in Unity.
+     - `Ui/UiSvg.cs` draws boxes and text the way the exporter writes them, so pieces made in Unity (a pill with the
+       move count) look like the exported ones; `Ui/UiPiece.cs` puts a piece on screen with any 2D transform and
+       opacity, as React Native moves a view.
+     - `Anim/`: React Native's `Animated` in C# (timing, spring, decay, easing, sequence / parallel / loop,
+       interpolate), checked against react-native-web's own code frame by frame, so every motion is the app's.
+   - **Squish Stack's level** (`Games/Stack/StackGame.cs`, a port of `src/stack/Game.js`): the board, the squishies
+     lifting, wiggling, flying, landing and squashing, TOO BIG! bounces, UNDO / RESTART / HINT, the goal card, the
+     stars meter, the clock, the banners, the next level. Its HUD drawn from the Unity code matches the app's
+     screenshot to 1.59 % of pixels (`tools/unity/stack-test`). Not yet: the result / fail / pause / hint cards, the
+     dust / spark / confetti effects, sounds, Blitz, the level map and the hub.
 8. **Everything else**: achievements, level road, streak, daily spin, settings, sign-in screens, ads, billing, sounds.
 
 Each step ends with CI screenshots matching the app and you checking it on the phone.

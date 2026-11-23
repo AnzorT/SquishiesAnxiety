@@ -20,6 +20,7 @@ namespace SquishSquad.Games.Stack
     public static class StackArt
     {
         public const float OVER = 0.24f;
+        public const string INK = "#5b3418";   // squishdoku/theme.js
 
         public static readonly (string c1, string c2, string ring)[] CUSHIONS =
         {
@@ -59,14 +60,14 @@ namespace SquishSquad.Games.Stack
 
         // ---- the HUD's left column (Game.js topEl, landscape) ----------------------------------------------------------
         static readonly TextStyle GameName = new TextStyle { Font = "Fredoka_700Bold", Size = 13, LetterSpacing = 1, Color = "#8a3a0e" };
-        static readonly TextStyle LevelText = new TextStyle { Font = "Fredoka_700Bold", Size = 21, Color = "#ffffff", Shadows = new[] { new Shadow("#6b4426", 0, 2.5f, 1) } };
+        static readonly TextStyle LevelText = new TextStyle { Font = "Fredoka_700Bold", Size = 21, Color = "#ffffff", Shadows = new[] { new Shadow(INK, 0, 2.5f, 1) } };
         static readonly TextStyle ChallengeText = new TextStyle { Font = "Fredoka_700Bold", Size = 10, LetterSpacing = 0.6f, Color = "#ffffff" };
         static readonly TextStyle MovesLabel = new TextStyle { Font = "Fredoka_700Bold", Size = 10, LetterSpacing = 1, Color = "#ffffff" };
         static readonly TextStyle MovesNum = new TextStyle { Font = "Fredoka_700Bold", Size = 22, Color = "#ffe045" };
         static readonly TextStyle GoalLabel = new TextStyle { Font = "Fredoka_700Bold", Size = 10.5f, LetterSpacing = 1.2f, Color = "#6b3fa0" };
         static readonly TextStyle ParText = new TextStyle { Font = "Fredoka_700Bold", Size = 13, Color = "#b86200", LetterSpacing = 0.6f };
-        static readonly TextStyle Tip = new TextStyle { Font = "Nunito_800ExtraBold", Size = 12.5f, LineHeight = 16, Color = "#6b4426" };
-        static readonly TextStyle ClockText = new TextStyle { Font = "Fredoka_700Bold", Size = 14, Color = "#6b4426" };
+        static readonly TextStyle Tip = new TextStyle { Font = "Nunito_800ExtraBold", Size = 12.5f, LineHeight = 16, Color = INK };
+        static readonly TextStyle ClockText = new TextStyle { Font = "Fredoka_700Bold", Size = 14, Color = INK };
 
         public const float LeftW = 250;
 

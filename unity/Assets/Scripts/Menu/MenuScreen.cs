@@ -1,5 +1,7 @@
 // The Main Menu screen: a camera that shows the screen in pixels, the menu (MenuView), touches, and a small dev panel
 // (frame rate, level and season) until the real profile and the other screens are ported.
+using SquishSquad.Games.Stack;
+using SquishSquad.Ui;
 using UnityEngine;
 
 namespace SquishSquad.Menu
@@ -72,8 +74,20 @@ namespace SquishSquad.Menu
             _view.Tick(0f);
         }
 
+        // a game open over the menu (only Squish Stack is ported: the park's carousel isn't, so a tap in the park opens it)
+        StackGame _game;
+
+        void OpenStack()
+        {
+            UiPiece.PxPerDp = _h / _layout.reference.dp[1];
+            _view.Shown = false;
+            _game = StackGame.Create(transform, MenuState.StackLevel);
+            _game.OnExit = () => { _game = null; _view.Shown = true; };
+        }
+
         void Update()
         {
+            if (_game != null) return;   // (the game reads its own touches)
             if (Screen.width != _w || Screen.height != _h) Rebuild();
             _view.Tick((Time.unscaledTime - _t0) * 1000f);
             HandleInput();
@@ -105,10 +119,15 @@ namespace SquishSquad.Menu
             var page = new Vector2(pos.x, _h - pos.y);   // the page's pixels: y down
             float dpPx = _h / _layout.reference.dp[1];
 
-            // in the Game Park (its games carousel isn't ported yet): back or a tap walks home
-            if (_view.Where == MenuView.Place.Park && ((down && !InPanel(page)) || Input.GetKeyDown(KeyCode.Escape)))
+            // in the Game Park (its games carousel isn't ported yet): a tap opens Squish Stack, back walks home
+            if (_view.Where == MenuView.Place.Park && Input.GetKeyDown(KeyCode.Escape))
             {
                 _view.LeavePark(NowMs);
+                return;
+            }
+            if (_view.Where == MenuView.Place.Park && down && !InPanel(page))
+            {
+                OpenStack();
                 return;
             }
             if (_view.Where != MenuView.Place.Home) return;

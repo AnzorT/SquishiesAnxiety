@@ -1,5 +1,6 @@
 // Starts the app in any scene: frame rate, then the Main Menu (the only screen ported so far).
 using SquishSquad.Menu;
+using SquishSquad.Ui;
 using UnityEngine;
 
 namespace SquishSquad.App
@@ -13,6 +14,9 @@ namespace SquishSquad.App
             Application.targetFrameRate = 120;
             QualitySettings.vSyncCount = 0;
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
+            // the app's fonts for text drawn in Unity (Resources/Fonts, tools/unity/ui/fonts.py)
+            UiFont.ReadJson = name => Resources.Load<TextAsset>("Fonts/" + name)?.text;
+            UiFont.ParseJson = json => JsonUtility.FromJson<UiFontData>(json);
             if (Object.FindAnyObjectByType<MenuScreen>() == null) new GameObject("MainMenu").AddComponent<MenuScreen>();
         }
     }

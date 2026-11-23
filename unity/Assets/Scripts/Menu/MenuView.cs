@@ -370,6 +370,9 @@ namespace SquishSquad.Menu
             if (Application.isPlaying) UnityEngine.Object.Destroy(o); else UnityEngine.Object.DestroyImmediate(o);
         }
 
+        /// <summary>Hides the whole menu (while a game is open over it) or shows it again.</summary>
+        public bool Shown { get => _root.gameObject.activeSelf; set => _root.gameObject.SetActive(value); }
+
         public void Dispose()
         {
             if (_root != null) Kill(_root.gameObject);

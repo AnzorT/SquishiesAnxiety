@@ -107,6 +107,9 @@ for (const n of ['GoalCard', 'Meter', 'Seat']) {
   layout[n] = await page.evaluate((n) => window.__components(n).map((c) => c.el.getBoundingClientRect().toJSON()), n).then((l) => l.map(box));
 }
 layout.art = art;
+// (the same as lists, for Unity's JsonUtility)
+layout.artList = Object.entries(art).map(([key, a]) => ({ key, file: a.file, ar: a.ar }));
+layout.buttonList = Object.entries(layout.buttons).map(([name, b]) => ({ name, b: b.b }));
 fs.writeFileSync(path.join(OUT, 'stack.json'), JSON.stringify(layout, null, 1));
 await page.screenshot({ path: path.join(ROOT, 'unity', 'Reference', 'stack-level.png') });
 console.log('buttons:', Object.keys(layout.buttons).join(' '));
