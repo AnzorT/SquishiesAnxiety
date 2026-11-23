@@ -113,6 +113,17 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    selection, lx / lz / surf / rtex / lOff / uid, every creature and play equal on every frame. Not yet: writing on
    signs (Aa: the sign editor), the tray's mouse-wheel scroll, the inset light on the toolbar's box (a flat highlight).
 7. Catalog and economy: pages, detail, buy / place, level locks, config.
+   **Done (logic, UI).** `House/HouseShop.cs`: openCat, rcList, rcVals (12 cards a spread, categories with the yard's
+   names, paging on into the next category, the level line), rdVals, buyR (the wallet: Coins / Spend, freeShop),
+   placeR (to its room, then placeNew in Renovate or useRSurf). `tools/unity/house/export-catalog.mjs` ->
+   `Resources/House/shop.json` + `shop/`: every row's tag line, what it does, secret, short note, surface or piece, and
+   the Catalog's fixed pieces cut from the page (snap.js: radial-gradient stops with no position fixed).
+   `House/View/HouseShopView.cs`: the book, room tab and header, House level and coins, the cards (pictures through
+   the draw host, balanced two-line names, BUY / OWNED / IN USE / LV n), categories, paging, the detail card; opened
+   from the drawer's CATALOG and Renovate's House shop. `HouseScreen.Coins` / `Spend` take the app's wallet (stage 8
+   wires them). Verified: `creature-trace.mjs lv12 living 60 "shop, cat, next, prev, card, close, det, buy, placer,
+   closeshop ..."` + `house-test acts`: the Catalog's state, coins, owned / rOwn, every card, the categories, the
+   paging and the detail equal on every frame the page had drawn its cards. Not yet: the dev level popup (House level).
 8. House map, and the walk home from the Unity menu.
 9. Dance Club, Movie Room (movies as exported video + audio), TV sound.
 10. Beach.

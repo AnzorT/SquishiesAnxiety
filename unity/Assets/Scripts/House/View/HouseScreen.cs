@@ -1,8 +1,8 @@
 // The Squad House screen (HOUSE_PORT_PLAN.md stages 2-3): the room (HouseRoomView: the base and each piece in layers)
 // in the 852 x 393 frame scaled to the screen's width, the camera easing between rooms, the squad (HouseCreatures +
 // HouseSquadView: walking about, sorted between the pieces, tapped to select, sent by a floor tap, carried through a
-// door), the bottom drawer (its tab opens and closes it; RENOVATE opens Renovate: HouseEditView, stage 6; CATALOG comes
-// with stage 7) and the toasts,
+// door), the bottom drawer (its tab opens and closes it; RENOVATE opens Renovate: HouseEditView, stage 6; CATALOG the
+// Catalog: HouseShopView, stage 7, its coins through Coins / Spend) and the toasts,
 // as Squad House v6.dc.html; the save every 5 s and on each room change (OnSave). Not yet: actions (4), item taps (5),
 // the house map (8: until then the rooms change by their doors and GoTo).
 //
@@ -20,12 +20,16 @@ namespace SquishSquad.House.View
         public Action OnExit;
         /// <summary>Called with the save's JSON after each change the page saves (the room entered).</summary>
         public Action<string> OnSave;
+        /// <summary>The app's wallet for the Catalog: the coins now, and spending them (false: not enough).</summary>
+        public Func<double> Coins = () => 0;
+        public Func<double, bool> Spend = n => false;
 
         HouseRoomView _room;
         HouseCreatures _sim;
         HouseSquadView _squad;
         HouseWheel _wheel;
         HouseEditView _edit;
+        HouseShopView _shop;
         bool _dirty;
         string _press; double _pressX, _pressY; bool _moved;
         double _saveAt;
@@ -89,6 +93,9 @@ namespace SquishSquad.House.View
             _arrow = Piece("hud arrow", 31002, "arrow");
             _panel = Piece("hud panel", 31000, "panel");
             _edit = new HouseEditView(world, _sim, _k, HouseRoomView.Res("edit")) { Toast = Toast, Pic = n => HouseDraw.Pics.TryGetValue(n, out var rt) ? rt : HouseRoomView.Res("pics/" + n) };
+            _shop = new HouseShopView(world, _sim, _k, HouseRoomView.Res("shop")) { Pic = n => HouseDraw.Pics.TryGetValue(n, out var rt) ? rt : HouseRoomView.Res("pics/" + n) };
+            _sim.Coins = () => Coins(); _sim.Spend = n => Spend(n);
+            _sim.GoRoom = room => Enter(room, null, null, Now);
             _toast = UiPiece.Create(world, "toast", 31100);
             _toast.Opacity = 0;
         }
@@ -117,6 +124,7 @@ namespace SquishSquad.House.View
             double k = _cam.K(now);
             _room.SetCamera(k);
             _edit.SetCamera(k); _edit.Update(now);
+            _shop.Update(now);
             _squad.Update(k, now);
             MoveToy(now);
             _wheel.Update(k, now);
@@ -185,6 +193,7 @@ namespace SquishSquad.House.View
             if (down)
             {
                 _down = true; _downAt = pos; _moved = false; _pressX = fx; _pressY = fy; _press = null;
+                if (_sim.Shop) { _press = "shop"; return; }   // (the Catalog covers everything: its taps on release)
                 if (_sim.Edit) EditPress(fx, fy, b.x, b.y, now);
                 return;
             }
@@ -212,6 +221,7 @@ namespace SquishSquad.House.View
                 case "light": _sim.LightUp(); return;
                 case "drag": _sim.DragEnd(); return;
                 case "none": return;
+                case "shop": if (!_moved) _shop.Tap(fx, fy, now); return;
             }
             if (_moved) return;   // (a drag, not a tap)
             Tap(fx, fy, now);
@@ -251,7 +261,7 @@ namespace SquishSquad.House.View
                 {
                     case "tab": _hud.SetOpen(!_hud.Open, now); break;
                     case "renovate": _hud.SetOpen(false, now); _wheel.SetOpen(false, now); _sim.StartEdit(); break;
-                    case "catalog": Toast("The catalog isn't in the Unity version yet"); break;
+                    case "catalog": _hud.SetOpen(false, now); _sim.OpenCat(); break;
                 }
                 return;
             }
@@ -325,6 +335,7 @@ namespace SquishSquad.House.View
             _squad?.Destroy();
             _wheel?.Destroy();
             _edit?.Destroy();
+            _shop?.Destroy();
             if (_room != null) Destroy(_room.gameObject);
             if (_toast != null) Destroy(_toast.gameObject);
         }

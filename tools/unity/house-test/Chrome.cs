@@ -181,6 +181,9 @@ static class ActCheck
         sim.PlayIdle = c => plays.Add($"{ticks} {c.Key} idle");
         sim.Toast = t => toasts.Add(t);
         sim.Saved = () => { };
+        // the wallet (the page's window.SquishSquad): the trace's coins at the start
+        double coins = T.Obj("start").Obj("shop")?.Num("coins") ?? 0;
+        sim.Coins = () => coins; sim.Spend = n => { if (coins < n) return false; coins -= n; return true; };
         // the room model's answers the screen gives the squad: front parts (hasFr), the pieces' drawing data (rnI)
         var rm = new RoomModel(hs); var rv = rm.Build(T.Str("room"));
         var fronts = new Dictionary<string, bool>(); foreach (var o in rv?.Arr("items") ?? new List<object>()) if (o is JObj f0 && f0.Str("id") != null) fronts[f0.Str("id")] = HouseJson.Truthy(f0["hasFront"]);
@@ -205,7 +208,7 @@ static class ActCheck
         sim.Sel = st["sel"] is double sd ? (int)sd : (int?)null;
         sim.Last = st.Num("last");
         var ev = T.Arr("rig"); int ei = 0;
-        int bad = 0, edN = 0; string first = null; var frames = T.Arr("frames");
+        int bad = 0, edN = 0, shopN = 0; string first = null; var frames = T.Arr("frames");
         for (int f = 0; f < frames.Count; f++)
         {
             var fr = (JObj)frames[f];
@@ -239,6 +242,23 @@ static class ActCheck
                 var theirs = Canon(ed);
                 if (mine != theirs) { bad++; if (first == null) { int i = 0; while (i < mine.Length && i < theirs.Length && mine[i] == theirs[i]) i++; first = $"frame {f} edit: C# …{mine.Substring(Math.Max(0, i - 120), Math.Min(260, mine.Length - Math.Max(0, i - 120)))}\n   page …{theirs.Substring(Math.Max(0, i - 120), Math.Min(260, theirs.Length - Math.Max(0, i - 120)))}"; } }
             }
+            // the Catalog (stage 7): its state, the wallet, what's owned, the spread's cards, the detail (once the page
+            // has drawn the spread's cards: before that it can't tell a surface from a piece)
+            if (fr.Obj("shop") is JObj sp && !sp.Truthy("pending"))
+            {
+                shopN++;
+                var m = new JObj { ["on"] = sim.Shop, ["cRm"] = sim.CRm, ["cCt"] = sim.CCt, ["cPg"] = (double)sim.CPg, ["det"] = sim.Det, ["coins"] = coins, ["owned"] = hs.H["owned"], ["rOwn"] = hs.H["rOwn"] };
+                if (sim.Shop)
+                {
+                    var v = sim.Rc();
+                    m["rc"] = new JObj { ["cards"] = v.cards.ConvertAll(c => (object)new List<object> { c.Id, c.Name, c.Tier, c.Price, c.HasCnt ? c.Cnt : "", c.BTxt }), ["pageTxt"] = "Page " + (v.pi + 1) + " of " + v.np, ["tierTxt"] = v.tierTxt, ["hasLock"] = !v.open,
+                        ["cats"] = v.cats.ConvertAll(c => (object)new List<object> { c.id, c.label, c.on ? 1.0 : 0.0, c.any ? 1.0 : 0.45 }) };
+                    var dt = sim.Rd(); if (dt != null) m["rd"] = new List<object> { dt.Name, dt.LvTxt, dt.Room, dt.Desc, dt.Own, dt.Locked, dt.CanBuy, dt.HasPlace, dt.PlaceTxt, dt.Price, dt.What, dt.Sec, dt.CanAfford };
+                }
+                var t0 = new JObj(); foreach (var k in sp.Keys) if (k != "pending" && k != "err") t0[k] = sp[k];
+                string mine = Canon(m), theirs = Canon(t0);
+                if (mine != theirs) { bad++; if (first == null) { int i = 0; while (i < mine.Length && i < theirs.Length && mine[i] == theirs[i]) i++; first = $"frame {f} shop: C# …{mine.Substring(Math.Max(0, i - 100), Math.Min(240, mine.Length - Math.Max(0, i - 100)))}\n   page …{theirs.Substring(Math.Max(0, i - 100), Math.Min(240, theirs.Length - Math.Max(0, i - 100)))}"; } }
+            }
             foreach (JObj o in fr.Arr("cs"))
             {
                 var c = sim.Cs.Find(x => x.Key == o.Str("key"));
@@ -255,7 +275,7 @@ static class ActCheck
         }
         var pagePlays = T.Arr("plays").ConvertAll(o => { var l = (List<object>)o; return $"{(int)(double)l[0]} {l[1]} {l[2]}"; });
         bool playsOk = string.Join("|", plays) == string.Join("|", pagePlays);
-        Console.WriteLine($"acts: {frames.Count} frames; plays C# [{string.Join(", ", plays)}]" + (playsOk ? " = page" : $" vs page [{string.Join(", ", pagePlays)}]") + $"; toasts [{string.Join(", ", toasts)}]" + (edN > 0 ? $"; Renovate state compared on {edN} frames" : ""));
+        Console.WriteLine($"acts: {frames.Count} frames; plays C# [{string.Join(", ", plays)}]" + (playsOk ? " = page" : $" vs page [{string.Join(", ", pagePlays)}]") + $"; toasts [{string.Join(", ", toasts)}]" + (edN > 0 ? $"; Renovate state compared on {edN} frames" : "") + (shopN > 0 ? $", the Catalog on {shopN}" : ""));
         Console.WriteLine(bad == 0 && playsOk ? "acts: every creature every frame equal, every play equal" : $"acts: {bad} creature-frames differ; first: {first}");
         return bad == 0 && playsOk ? 0 : 1;
     }
@@ -284,6 +304,16 @@ static class ActCheck
             case "lback": sim.LightBack(a); break;
             case "lmid": sim.LightMid(); break;
             case "rsurf": sim.UseRSurf(a); break;
+            case "shop": sim.OpenCat(a != null ? (int)N(a) : 0); break;
+            case "cat": sim.SetCat(a); break;
+            case "prev": sim.PrevPage(); break;
+            case "next": sim.NextPage(); break;
+            case "card": sim.CardAct(sim.Rc().cards[(int)N(a)].Id); break;
+            case "det": sim.OpenDet(a); break;
+            case "close": sim.CloseDet(); break;
+            case "closeshop": sim.CloseShop(); break;
+            case "buy": sim.BuyR(a); break;
+            case "placer": sim.PlaceR(a); break;
             default: throw new Exception("unknown op " + k);
         }
     }

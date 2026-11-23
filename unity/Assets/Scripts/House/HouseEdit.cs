@@ -305,10 +305,8 @@ namespace SquishSquad.House
                 if (hs.Count > 0) { var h = hs[(int)Math.Floor(Rand() * hs.Count)]; double s = G.SAt(h.Num("y")); var hz = Half(Cat(h), h.Num("r")); it["on"] = h.Str("id"); it["x"] = h.Num("x") + (Rand() - 0.5) * hz.hx * s; it["y"] = h["y"]; }
             }
             RoomList().Add(it); SaveNow();
-            Edit = true; ESel = it.Str("id"); ROpen = false; PlacedNew?.Invoke(); Bump();
+            Edit = true; ESel = it.Str("id"); ROpen = false; Shop = false; Det = null; Bump();
         }
-        /// <summary>After placeNew: the catalog's shop and detail close (stage 7).</summary>
-        public Action PlacedNew;
 
         // ---- the ceiling light ----
         public double? LxOf(string rk) { var v = S.H.Obj("lx")?[rk]; if (v is double d) return d; var R = S.D.Room(rk); return R != null && R["lightX"] is double lx ? lx : (double?)null; }

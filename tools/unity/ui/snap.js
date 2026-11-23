@@ -104,7 +104,7 @@
   // CSS gradient stops -> [{ off (0..1, or null: spread evenly), col }]; `len`: the gradient line's length (px stops)
   function stopsOf(parts, len) {
     const out = parts.map((s) => {
-      const cm = s.match(/(rgba?\([^)]*\)|#[0-9a-f]+|\w+)\s*(-?[\d.]+)(%|px)?/i) || s.match(/(rgba?\([^)]*\)|#[0-9a-f]+|\w+)/i);
+      const cm = s.match(/^(rgba?\([^)]*\)|#[0-9a-f]+|\w+)\s*(-?[\d.]+)(%|px)?/i) || s.match(/^(rgba?\([^)]*\)|#[0-9a-f]+|\w+)/i);   // (anchored: a stop with no position isn't read from inside its rgb())
       const col = parseColor(cm[1]) || { rgb: cm[1], a: 1 };
       const off = cm[2] != null ? (cm[3] === 'px' ? parseFloat(cm[2]) / len : parseFloat(cm[2]) / 100) : null;
       return { off, col };

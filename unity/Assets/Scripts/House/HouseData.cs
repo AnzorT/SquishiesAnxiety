@@ -40,6 +40,7 @@ namespace SquishSquad.House
             var s = load("shells"); if (s != null) d.Shells = (JObj)HouseJson.Parse(s);
             var t = load("tex"); if (t != null) d.Tex = (JObj)HouseJson.Parse(t);
             var e = load("edit"); if (e != null) d.Edit = (JObj)HouseJson.Parse(e);
+            var sp = load("shop"); if (sp != null) d.Shop = (JObj)HouseJson.Parse(sp);
             return d;
         }
 
@@ -50,6 +51,8 @@ namespace SquishSquad.House
         // Renovate's tables (stage 6, edit.json): RMAP, the short names, the surfaces' names, the lights SPEC knows, the
         // rows' toolbox tabs (rnSlot), the edit UI's pieces
         public JObj Edit = new JObj();
+        /// <summary>The Catalog's rows as the page shows them (stage 7, shop.json): [tag, what, sec, note, surf, reg].</summary>
+        public JObj Shop = new JObj();
         public string RMap(string code) => Edit.Obj("rmap")?.Str(code);
         /// <summary>SN: a row's short name (RenoShort), else its name.</summary>
         public string ShortName(JObj r) => r == null ? "" : Edit.Obj("short")?.Str(r.Str("id")) ?? r.Str("name") ?? "";

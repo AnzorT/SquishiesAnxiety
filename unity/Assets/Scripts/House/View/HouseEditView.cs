@@ -352,7 +352,7 @@ namespace SquishSquad.House.View
         {
             bool In(double[] r, double dy = 0) => r != null && fx >= r[0] && fx <= r[0] + r[2] && fy >= r[1] + dy && fy <= r[1] + dy + r[3];
             if (In(R("done"))) { _sim.DoneEdit(now); return; }
-            if (In(R("shop"))) { Toast?.Invoke("The catalog isn't in the Unity version yet"); return; }
+            if (In(R("shop"))) { _sim.OpenCat(); return; }
             double ty = _rvTy.At(now); bool open = _sim.ROpen != false;
             var tab = R("rv-tab"); double tx = tab[0] + _rvTab.At(now);
             if (fx >= tx && fx <= tx + tab[2] && fy >= tab[1] + ty && fy <= tab[1] + ty + tab[3]) { _sim.ROpen = !open; _sim.Bumped(); return; }
