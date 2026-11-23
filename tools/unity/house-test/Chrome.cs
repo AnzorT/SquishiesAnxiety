@@ -60,3 +60,34 @@ static class Chrome
         return bad == 0 ? 0 : 1;
     }
 }
+
+static class WalkCheck
+{
+    // `walk`: House/HouseWalk.cs against house-walk.js (tools/unity/house/walk-trace.mjs): every channel, v and fx
+    public static int Run()
+    {
+        var W = new HouseWalk(File.ReadAllText(Path.Combine(Program.Res, "walk.json"))) { Rand = () => 0.5 };
+        var trace = (List<object>)HouseJson.Parse(File.ReadAllText(Path.Combine(Program.Repo, "tools/unity/house-test/out/walk-trace.json")));
+        int bad = 0, n = 0;
+        foreach (JObj c in trace)
+        {
+            var st = new HouseWalk.State { Run = c.Num("run") != 0 };
+            var frames = c.Arr("frames");
+            for (int f = 0; f < frames.Count; f++)
+            {
+                var fr = (JObj)frames[f]; var E = new Dictionary<string, double>();
+                double w = Math.Min(1, f / 20.0), spin = (f * 7) % 360 - 180;
+                var r = W.Step(c.Str("key"), st, E, w, 0.016, f < 70 ? 1 : 0, spin);
+                var je = fr.Obj("E"); string why = null;
+                foreach (var k in je.Keys) if (!E.TryGetValue(k, out var v) || Math.Abs(v - je.Num(k)) > 1e-9) why ??= $"{k} {(E.TryGetValue(k, out var vv) ? vv : double.NaN)} vs {je.Num(k)}";
+                foreach (var k in E.Keys) if (!je.Has(k)) why ??= "extra " + k;
+                if (Math.Abs(r.V - fr.Num("v")) > 1e-9) why ??= $"v {r.V} vs {fr.Num("v")}";
+                if (r.Fx != fr.Str("fx")) why ??= $"fx {r.Fx} vs {fr.Str("fx")}";
+                n++;
+                if (why != null) { if (bad++ < 8) Console.WriteLine($"  {c.Str("key")} frame {f}: {why}"); }
+            }
+        }
+        Console.WriteLine(bad == 0 ? $"walk: {n} frames, all equal" : $"walk: {bad} of {n} frames differ");
+        return bad == 0 ? 0 : 1;
+    }
+}
