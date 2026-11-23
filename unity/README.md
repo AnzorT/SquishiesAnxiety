@@ -4,8 +4,34 @@ The Unity version of the app, built screen by screen next to the current React N
 Unity has caught up. Same Firebase backend, same look: the pictures come out of the current app's own code, so on the
 reference phone (Galaxy A15, 2340 x 1080) Unity draws the same pixels.
 
-**Ported so far: the Main Menu** (house picture for every level and season, rain / snow / birds, every HUD button, the
-crest's and PLAY's flourishes, pressed looks). Taps show a "not in the Unity version yet" note; nothing else is ported.
+**Ported so far** (see `../UNITY_MIGRATION_PLAN.md` for the details and the checks):
+- start-up: splash, log in / register, the email check; the menu with the player's coins, gems and level
+- the Main Menu (house picture for every level and season, weather, the HUD, flourishes, presses), PLAY's walk to the
+  Game Park and its games carousel
+- all five games from their cards: Squish Time; Squishdoku, Sort, Stack and Hop with hubs, level maps, levels, cards
+  and Blitz
+- CHARACTERS, the Level Pass (crest), Achievements (trophy), Settings with Stats (gear), the daily spin, the streak
+  and the daily challenges (once a day, as the app)
+- in progress: the Shop with chest opening and the Level Road, saving the games' progress to the account, the house
+  (`../HOUSE_PORT_PLAN.md`). The SHOP tab and the house's tab still say "not in the Unity version yet".
+
+## The tools, one per screen
+
+Each screen has an exporter (cuts what's fixed out of the running app: `npx expo start --web --port 8081` for the
+React Native screens; the webgame build for the menu's) and a test (drives the app on a virtual clock, plays the same
+input on the Unity code, draws it with the reference rasteriser and diffs the pixels):
+
+| Screen | Export | Test (`dotnet run -c Release --project tools/unity/<test> -- ...`) |
+|---|---|---|
+| Menu, park, pages | `export-menu.mjs`, `export-park.mjs`, `export-pages.mjs` | `park-test`, `pages-test` |
+| Start-up screens | (drawn) | `auth-test` (+ `-- emu` against the Firebase emulators) |
+| Games | `export-<game>.mjs` | `stack-test`, `sort-test`, `hop-test`, `squishdoku-test`, `maps-test`, `squish-test` |
+| Achievements, settings, spin, streak, daily | `export-screens.mjs` | `screens-test` (+ `-- emu`) |
+| Game rules | | `games/<game>` (vs the JS on the same inputs) |
+| Fonts, text | `ui/fonts.py` | `ui/TextTest` |
+| Animations (RN's Animated) | | `anim` |
+| Layout (Yoga) | | `yoga/tests` |
+| Firebase client | | `backend` (start `backend/start-emulators.sh` first; never the live project) |
 
 ## Open it
 

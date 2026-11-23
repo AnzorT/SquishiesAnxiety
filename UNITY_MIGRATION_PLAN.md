@@ -1,9 +1,14 @@
 # Squish Squad → Unity
 
-Status **2026-11-23**: the Main Menu is ported (first pass) in `unity/`, the four games' rules are in C# (checked
-against the JS), and Squish Stack's level screen is the first game screen (PLAY, then PLAY on its card in the Game Park). It hasn't run in a real Unity yet: the runtime
-scripts compile against Unity's libraries, and the rest (editor scripts, rendering) is checked by the first CI run once
-the Unity license secrets are in (`unity/README.md`).
+Status **2026-11-23** (evening): in `unity/`, the app starts as it does (splash, sign-in, the email check, the menu
+with the player's coins, gems and level); the Main Menu, PLAY's walk and the Game Park carousel; all five games from
+their cards (Squish Time, and Squishdoku, Sort, Stack and Hop with their hubs, level maps, levels, cards and Blitz);
+Characters, the Level Pass, Achievements, Settings with Stats, the daily spin, the streak and the daily challenges.
+Every screen is checked against the app by pixel diffs (edges only, about 0.5-3 %) and every rule against its JS. In
+progress: the Shop with chest opening and the Level Road, saving the games' progress to the account, and the Squad
+House (`HOUSE_PORT_PLAN.md`). Nothing has run in a real Unity yet: the scripts compile against Unity's libraries, and
+the rest (rendering, editor scripts) is checked by the first CI run once the Unity license secrets are in
+(`unity/README.md`), or by opening the project in the editor.
 
 This replaces the plan of 2026-09-20 (PlushCrush, phases 0-6). That work was for the app as it was then. Its Unity
 project was never committed here, and the app has been redesigned four times since (v6 → v9, the Nov 13 design). If
@@ -106,6 +111,8 @@ Feel and speed are checked on the phone.
    - ✅ **The menu shows the player**: coins, gems, the crest's level and XP ring come from the profile (Menu/HudArt.cs
      draws the pills and the number; export-menu.mjs now cuts the pills' coin / gem pictures and the crest without
      its number). The house picture is the player's level's. Offline, the exported numbers.
+   - ✅ **The game screens read the account**: each game gets a copy of the signed-in profile (levels, stars).
+     Saving what's won back to the account is in progress (the app's saveStack / saveSort / saveHop / saveSquishdoku).
    - Not yet: the roster and config (the chosen creature: the menu has only Mittens' rig, so the name plate stays
      "Mittens"; config/levels' XP curve: the default 100 per level), the social sign-ins, a password reset screen (the
      app has none).
@@ -127,16 +134,20 @@ Feel and speed are checked on the phone.
        arrow / dot taps, PLAY's press and bounce, the last game remembered (`squishsquad.park.v1`)
      - the middle card plays its game's clip (VideoPlayer, `StreamingAssets/Park`) over its first frame
      - each card is drawn into its own layer first, as CSS composites it with its opacity and filter
-     - PLAY on Squish Stack opens it; on the other games, a "not in the Unity version yet" note. Back / Escape
-       walks home while the carousel goes out
+     - PLAY opens the game: Squish Time, or the game's hub (Hop: its map). Back / Escape walks home while the
+       carousel goes out
      - other screen widths follow showGames' formulas (`carL`, `CW`); the cards are scaled to that width
      - `tools/unity/park-test` draws the Unity code's draw list over the app's park and diffs it with the app:
        0.001-0.005 % of pixels visibly differ at rest (each game in the middle), and the cards' transforms,
        opacities and brightness match Chrome's computed style to 0.0004 at every motion frame checked
+   - ✅ **CHARACTERS and the Level Pass** (`Menu/Characters*.cs`, `LevelPass*.cs`; art by `export-pages.mjs`): the
+     pages as menu.js draws them, CHOOSE and CLAIM / CLAIM ALL through the account (`pages-test`: 0.3-1 % of pixels).
+     Creatures show their stills. A chest prize waits for the chest opening.
    - Not yet: the house's vignette (baked into its picture; the app hides it in the park).
-5. **The house** (Squad House v6, 94 scripts): each furniture piece and room exported as pictures by the same method,
-   with the room and placement logic ported.
-6. **Shop, chests, chest smash.**
+5. **The house** (Squad House v6, 94 scripts): rewritten in C#, identical to the app, with the same save
+   (`users/{uid}/crib/house6`): see `HOUSE_PORT_PLAN.md` (stages 0-11). In progress: stages 0-1 (a test harness and a
+   room drawn from a save).
+6. **Shop, chests, chest smash, the Level Road**: in progress (`Screens/Shop`, `Screens/Chests`, `Screens/Road`).
 7. **Games**: Squishdoku, Sort, Stack and Hop, and the squish stage (the three.js dent shader becomes a Unity shader).
    - ✅ **The rules** (`Assets/Scripts/Games/<Game>/`): each game's engine and levels (moves, solvers, puzzle makers,
      stars, coins, XP, Blitz, profile updates) in C#, checked against the JS on the same inputs and the same random
@@ -167,7 +178,21 @@ Feel and speed are checked on the phone.
      their motion (`stack-test cards`: the page's clock is replaced, so both run the same frames): settled, 0.6-1.3 %
      of pixels differ visibly, all edges. Not yet: the dust / spark / confetti effects on the board, sounds, Blitz,
      the level map and the hub.
-8. **Everything else**: achievements, level road, streak, daily spin, settings, sign-in screens, ads, billing, sounds.
+   - ✅ **All four games** (`Games/<Game>/`, tests in `tools/unity/<game>-test`): the level screens of Sort, Hop and
+     Squishdoku ported like Stack's, each played frame by frame against the app on the same virtual clock (0.5-2.5 %
+     of pixels differ, edges); the hubs and the level map Stack, Sort and Hop share (`Games/Shared`, `maps-test`),
+     Squishdoku's own hub and map; BLITZ for Stack, Sort and Squishdoku on the shared `Ui/Blitz` pieces (countdown,
+     pips, the revive / fail / win cards). No ads in Unity: the revive is free.
+   - ✅ **Squish Time** (`Games/Squish/`): the domed card and its dent shader (a line-by-line translation of the app's
+     GLSL), the press physics, three.js's camera, lights and tone mapping, the coins and their rules, the HUD.
+     Checked against the app's own code in Chrome: the dent maths to float rounding, the physics bit-exact frame by
+     frame, the pictures within 0.01 % (`squish-test`). The Unity shader runs for the first time in CI / the editor.
+   - Not yet: the board effects (dust, sparks, confetti), sounds, haptics, ads.
+8. **Everything else**:
+   - ✅ Achievements, Settings (SettingsRoyal) with Stats and the tester's Test wallet, the daily spin, the streak and
+     the daily challenges (`Screens/`, `screens-test`: 1-4 % of pixels; their writes against the Firebase emulators:
+     33 checks). The trophy and the gear open them; the spin and the streak come once a day as in the app.
+   - Not yet: ads, billing (real-money purchases), sounds, the tutorial.
 
 Each step ends with CI screenshots matching the app and you checking it on the phone.
 
