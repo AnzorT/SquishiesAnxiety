@@ -32,12 +32,18 @@ namespace SquishSquad.House
             return o;
         }
 
-        /// <summary>The whole house box (852 x 393): the room and the night overlay, from the template's output.</summary>
-        public string Compose(List<Dom> top, string fenceHtml)
+        /// <summary>The whole house box (852 x 393): the room and the night overlay, from the template's output.
+        /// `view` (x, y, w, h in frame px): the part of the frame drawn, 852 x 393 from 0, 0 by default; the house screen
+        /// draws more around it (what the camera's 0.85 zoom shows; HouseRoomView). `background` false: no frame colour
+        /// under it (a layer drawn over another: the night overlay).</summary>
+        public string Compose(List<Dom> top, string fenceHtml, double[] view = null, bool background = true)
         {
             var sb = new StringBuilder();
-            sb.Append("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 852 393\">");
-            sb.Append("<rect x=\"0\" y=\"0\" width=\"852\" height=\"393\" fill=\"#f6ead8\"/>");
+            var v = view ?? new double[] { 0, 0, 852, 393 };
+            string vb = string.Join(" ", Array.ConvertAll(v, d => d.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+            sb.Append("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"").Append(vb).Append("\">");
+            if (background) sb.Append("<rect x=\"").Append(v[0].ToString(System.Globalization.CultureInfo.InvariantCulture)).Append("\" y=\"").Append(v[1].ToString(System.Globalization.CultureInfo.InvariantCulture))
+              .Append("\" width=\"").Append(v[2].ToString(System.Globalization.CultureInfo.InvariantCulture)).Append("\" height=\"").Append(v[3].ToString(System.Globalization.CultureInfo.InvariantCulture)).Append("\" fill=\"#f6ead8\"/>");
             foreach (var n in top) if (n.Tag == "div") Box(n, sb, 852, 393, fenceHtml);
             sb.Append("</svg>");
             return sb.ToString();

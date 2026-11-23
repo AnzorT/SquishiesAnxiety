@@ -4,12 +4,17 @@
 // text or PNG textures), <pattern> fills expanded (PatternExpand, until the vector renderer draws them), and drawn once
 // by the GPU vector renderer into a texture shown on a quad.
 //
-// Framing: the menu's (Main Menu.dc.html .mm-house-in): the 852 x 393 house box scaled to the screen's width, from the
-// top-left. Placement follows MenuView's convention: page px, y down, World(p) = (x, -y).
+// Framing: the 852 x 393 frame scaled to the screen's width, from the top-left (as the menu's .mm-house-in). The room
+// is drawn once at camK 1 over everything the camera can show (View: the frame at the narrowest zoom, 0.85, plus the
+// frame itself), and the camera (SetCamera: camK about (426, 343) of the box, House/HouseChrome.cs) only moves the
+// quad's texture coordinates: the page scales the whole box, so it's the same picture. Placement follows MenuView's
+// convention: page px, y down, World(p) = (x, -y).
+using System;
 using System.Collections.Generic;
 using SquishSquad.Vector;
 using SquishSquad.Vector.Gpu;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace SquishSquad.House.View
 {
@@ -18,9 +23,21 @@ namespace SquishSquad.House.View
         public int SortingOrder = 10;
         public int Msaa = 8;
 
+        /// <summary>The part of the frame (x, y, w, h frame px) the room texture covers: the frame at camK 0.85.</summary>
+        public static readonly double[] View = Region(0.85);
+        static double[] Region(double k)
+        {
+            var a = HouseCamera.ToBox(0, 0, k); var b = HouseCamera.ToBox(852, 393, k);
+            double x0 = Math.Floor(a.x), y0 = Math.Floor(a.y + HouseFrame.BoxTop), x1 = Math.Ceiling(b.x), y1 = Math.Ceiling(b.y + HouseFrame.BoxTop);
+            return new[] { x0, y0, x1 - x0, y1 - y0 };
+        }
+
+        Mesh _quad;
+        float _k = 1;
+        public double CamK { get; private set; } = 1;
+
         HouseData _data;
         HouseTemplate _tpl;
-        RenderTexture _tex;
         readonly List<Object> _made = new List<Object>();
         public HouseSave Save { get; private set; }
         public List<string> Notes { get; } = new List<string>();
@@ -36,7 +53,9 @@ namespace SquishSquad.House.View
             Save.Load(json, level, ownedRosterIds, room);
         }
 
-        /// <summary>Draws the current room (Save.Cur) at the menu's framing on a screen of width x height px.</summary>
+        /// <summary>Draws the current room (Save.Cur) at the menu's framing on a screen of width x height px: the room box
+        /// unzoomed over View (the camera is SetCamera's), and over it, unzoomed and frame-sized as in the page, the night
+        /// overlay (a sibling of the box, not inside it).</summary>
         public void Draw(float width, float height)
         {
             Clear();
@@ -45,20 +64,39 @@ namespace SquishSquad.House.View
             var vals = model.Build(Save.Cur);
             Notes.Clear(); Notes.AddRange(model.Missing);
             if (vals == null) return;
+            vals["camK"] = 1.0;   // (the camera is the quad's: SetCamera)
+            var dom = _tpl.Render(vals);
+            var night = dom.FindAll(n => n.Tag == "div" && (n["style"] ?? "").Contains("z-index:860"));
+            var room = dom.FindAll(n => !night.Contains(n));
+            float k = width / 852f;
+            _k = k;
+            var tex = Layer(room, View, k, Notes);
+            _quad = Quad("room", tex, 852 * k, 393 * k, SortingOrder);
+            SetCamera(CamK);
+            if (night.Count > 0)
+            {
+                var ntex = Layer(night, new double[] { 0, 0, 852, 393 }, k, Notes, false);
+                Quad("night", ntex, 852 * k, 393 * k, SortingOrder + 1);
+            }
+        }
+
+        // a part of the template's output composed (RoomCompose) and drawn once by the GPU vector renderer
+        RenderTexture Layer(List<Dom> dom, double[] view, float k, List<string> notes, bool background = true)
+        {
             var compose = new RoomCompose { PicSvg = n => Res("pics/" + n), PicPng = n => Resources.Load<Texture2D>("House/pics/" + n) != null ? n : null };
-            var svg = compose.Compose(_tpl.Render(vals), null);
-            Notes.AddRange(compose.Notes);
+            var svg = compose.Compose(dom, null, view, background);
+            notes.AddRange(compose.Notes);
             var root = SvgMarkup.Parse(svg);
             PatternExpand.Expand(root);
-            float k = width / 852f;
-            int tw = Mathf.CeilToInt(852 * k), th = Mathf.CeilToInt(393 * k);
+            float vw = (float)view[2], vh = (float)view[3];
+            int tw = Mathf.CeilToInt(vw * k), th = Mathf.CeilToInt(vh * k);
             var images = new Dictionary<string, Texture2D>();
             (int, int)? Size(string href)
             {
                 if (!images.TryGetValue(href, out var t)) images[href] = t = Resources.Load<Texture2D>("House/pics/" + href);
                 return t == null ? ((int, int)?)null : (t.width, t.height);
             }
-            var scene = SvgScene.Compile(root, 852 * k, 393 * k, Affine.Identity, Size);
+            var scene = SvgScene.Compile(root, vw * k, vh * k, Affine.Identity, Size);
             var msaa = new RenderTexture(tw, th, 24, RenderTextureFormat.ARGB32) { antiAliasing = Msaa };
             msaa.Create();
             using (var vr = new VectorRenderer())
@@ -66,26 +104,48 @@ namespace SquishSquad.House.View
                 foreach (var kv in images) if (kv.Value != null) vr.Images[kv.Key] = (kv.Value, Vector2.one);
                 vr.Render(scene, msaa);
             }
-            _tex = new RenderTexture(tw, th, 0, RenderTextureFormat.ARGB32) { name = "house room" };
-            _tex.Create();
-            Graphics.Blit(msaa, _tex);
+            var tex = new RenderTexture(tw, th, 0, RenderTextureFormat.ARGB32) { name = "house layer" };
+            tex.Create();
+            Graphics.Blit(msaa, tex);
             msaa.Release(); Destroy(msaa);
-            _made.Add(_tex);
-            var go = new GameObject("room");
+            _made.Add(tex);
+            foreach (var t in images.Values) if (t != null) Resources.UnloadAsset(t);
+            return tex;
+        }
+
+        // a quad covering the frame on screen (fw x fh px from the top-left, y down), showing `tex`
+        Mesh Quad(string name, Texture tex, float fw, float fh, int order)
+        {
+            var go = new GameObject(name);
             go.transform.SetParent(transform, false);
             go.transform.localPosition = Vector3.zero;
-            var mesh = new Mesh { name = "room quad" };
-            mesh.SetVertices(new[] { new Vector3(0, 0, 0), new Vector3(tw, 0, 0), new Vector3(tw, -th, 0), new Vector3(0, -th, 0) });
+            var mesh = new Mesh { name = name + " quad" };
+            mesh.SetVertices(new[] { new Vector3(0, 0, 0), new Vector3(fw, 0, 0), new Vector3(fw, -fh, 0), new Vector3(0, -fh, 0) });
             mesh.SetUVs(0, new[] { new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0) });
             mesh.SetTriangles(new[] { 0, 1, 2, 0, 2, 3 }, 0);
             _made.Add(mesh); _made.Add(go);
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var mr = go.AddComponent<MeshRenderer>();
-            var mat = new Material(Resources.Load<Shader>("VectorShaders/VectorShow")) { mainTexture = _tex };
+            var mat = new Material(Resources.Load<Shader>("VectorShaders/VectorShow")) { mainTexture = tex };
             _made.Add(mat);
             mr.sharedMaterial = mat;
-            mr.sortingOrder = SortingOrder;
-            foreach (var t in images.Values) if (t != null) Resources.UnloadAsset(t);
+            mr.sortingOrder = order;
+            return mesh;
+        }
+
+        /// <summary>The camera's scale (camK): the frame shows the room box scaled by k about (426, 343) of the box.</summary>
+        public void SetCamera(double k)
+        {
+            CamK = k;
+            if (_quad == null) return;
+            // a frame corner -> the box at k -> the same point of the unzoomed frame (the texture's) -> its uv
+            Vector2 Uv(double fx, double fy)
+            {
+                var b = HouseCamera.ToBox(fx, fy, k);
+                double gx = b.x, gy = b.y + HouseFrame.BoxTop;
+                return new Vector2((float)((gx - View[0]) / View[2]), (float)(1 - (gy - View[1]) / View[3]));
+            }
+            _quad.SetUVs(0, new[] { Uv(0, 0), Uv(852, 0), Uv(852, 393), Uv(0, 393) });
         }
 
         void Clear()
