@@ -75,6 +75,13 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    meters (dead in the current design).
 5. Item interactions and room effects: rnTap kinds, TV, toys, lights / night, party / disco, vacuum, fog, animated
    pieces (SMIL as flipbooks).
+   Found (2026-11-23): a piece's picture depends on its runtime state (on / open, TV channel, toaster, dishwasher,
+   growth stage, paint mode, a game being played) and, from stage 6, on any rotation, size, colour and sign text the
+   player picks. Stage 1 exported only the variants the fixtures' rooms show (house-pieces.json), so neither stage
+   can rely on exported pictures alone. Plan: draw pieces at runtime with the page's own drawing code (RenoDraw
+   reno-*.js, House3D house4*.js: pure functions returning SVG) in the JS engine that already runs the creatures
+   (PuerTS, LiveRig's bundle), the exported variants as the fallback when the engine is off. The rnTap logic itself
+   (~33 KB with its helpers) is then a C# port like stage 4.
 6. Edit mode: drag, wall snap, rotate, resize, store, signs, ceiling lights. Verify: H JSON after each step.
 7. Catalog and economy: pages, detail, buy / place, level locks, config.
 8. House map, and the walk home from the Unity menu.
