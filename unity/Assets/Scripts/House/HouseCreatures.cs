@@ -37,6 +37,9 @@ namespace SquishSquad.House
         public sealed class KeepPose { public double Lift, Face, Until; public double? Z; public string Seat; }
         public KeepPose Keep;
         public EditHold ReHold;   // (stage 6: held off a piece being edited)
+        // watching a movie (stage 9: mvStep): a reaction under way, dozing off, the next munch
+        public sealed class MvReact { public string K; public double T0, D; }
+        public MvReact MvR; public bool MvDz; public double MvMn;
     }
 
     public sealed class HouseParticle { public string Type, Glyph, Color; public double X, Y, Born, Sx, Size, Ms; }
@@ -255,11 +258,14 @@ namespace SquishSquad.House
         }
 
         /// <summary>The walking part of tick (ms). Returns nothing; read the creatures (Transform) and Particles.</summary>
+        double _mvLast;
         public void Tick(double now)
         {
             double dt = Math.Min(0.1, Math.Max(0, (now - Last) / 1000)); Last = now;
             var G = S.Geo; double spd = Speed;
             RunLater(now);
+            _mvNow = now;
+            MovieTick(now, (now - _mvLast) / 1000); _mvLast = now;   // (the show's own clock: movie-night.js frame())
             foreach (var c in Vis)
             {
                 double tgt = c.Face;

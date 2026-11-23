@@ -183,6 +183,7 @@ static class ActCheck
         sim.Saved = () => { };
         // the wallet (the page's window.SquishSquad): the trace's coins at the start
         double coins = T.Obj("start").Obj("shop")?.Num("coins") ?? 0;
+        sim.Movies = ((JObj)HouseJson.Parse(File.ReadAllText(Path.Combine(Program.Res, "movies.json")))).Arr("list").ConvertAll(o => (JObj)o);
         sim.Coins = () => coins; sim.Spend = n => { if (coins < n) return false; coins -= n; return true; };
         // the room model's answers the screen gives the squad: front parts (hasFr), the pieces' drawing data (rnI)
         var rm = new RoomModel(hs); var rv = rm.Build(T.Str("room"));
@@ -208,7 +209,7 @@ static class ActCheck
         sim.Sel = st["sel"] is double sd ? (int)sd : (int?)null;
         sim.Last = st.Num("last");
         var ev = T.Arr("rig"); int ei = 0;
-        int bad = 0, edN = 0, shopN = 0; string first = null; var frames = T.Arr("frames");
+        int bad = 0, edN = 0, shopN = 0, mvN = 0; string first = null; var frames = T.Arr("frames");
         for (int f = 0; f < frames.Count; f++)
         {
             var fr = (JObj)frames[f];
@@ -241,6 +242,17 @@ static class ActCheck
                 var mine = Canon(new JObj { ["eSel"] = sim.ESel, ["items"] = hs.H.Obj("rooms")?[T.Str("room")] ?? new List<object>(), ["lx"] = hs.H["lx"] ?? new JObj(), ["lz"] = hs.H["lz"] ?? new JObj(), ["surf"] = hs.H["surf"] ?? new JObj(), ["rtex"] = hs.H["rtex"] ?? new JObj(), ["lOff"] = hs.H["lOff"] ?? new JObj(), ["uid"] = hs.H["uid"] });
                 var theirs = Canon(ed);
                 if (mine != theirs) { bad++; if (first == null) { int i = 0; while (i < mine.Length && i < theirs.Length && mine[i] == theirs[i]) i++; first = $"frame {f} edit: C# …{mine.Substring(Math.Max(0, i - 120), Math.Min(260, mine.Length - Math.Max(0, i - 120)))}\n   page …{theirs.Substring(Math.Max(0, i - 120), Math.Min(260, theirs.Length - Math.Max(0, i - 120)))}"; } }
+            }
+            // the home theater and the show (stage 9)
+            if (fr.Obj("mv") is JObj mvp && !mvp.Has("err"))
+            {
+                mvN++; var th = sim.TheaterNow(); var why = new List<string>();
+                if (th.Synced != mvp.Truthy("synced")) why.Add($"synced {th.Synced} vs {mvp.Truthy("synced")}");
+                if (th.Synced && th.Tier != mvp.Num("tier")) why.Add($"tier {th.Tier} vs {mvp.Num("tier")}");
+                var ps = mvp.Obj("show");
+                if ((sim.Show != null) != (ps != null)) why.Add($"show {sim.Show?.Mv.Str("id")} vs {ps?.Str("id")}");
+                else if (ps != null) { if (sim.Show.Mv.Str("id") != ps.Str("id")) why.Add($"movie {sim.Show.Mv.Str("id")} vs {ps.Str("id")}"); if (Math.Abs(sim.Show.Mt - ps.Num("t")) > 0.06) why.Add($"t {sim.Show.Mt:F3} vs {ps.Num("t"):F3}"); if (sim.Show.Pause != ps.Truthy("paused")) why.Add($"paused {sim.Show.Pause} vs {ps.Truthy("paused")}"); }
+                if (why.Count > 0) { bad++; first ??= $"frame {f} theater: {string.Join("; ", why)}"; }
             }
             // the Catalog (stage 7): its state, the wallet, what's owned, the spread's cards, the detail (once the page
             // has drawn the spread's cards: before that it can't tell a surface from a piece)
@@ -275,7 +287,7 @@ static class ActCheck
         }
         var pagePlays = T.Arr("plays").ConvertAll(o => { var l = (List<object>)o; return $"{(int)(double)l[0]} {l[1]} {l[2]}"; });
         bool playsOk = string.Join("|", plays) == string.Join("|", pagePlays);
-        Console.WriteLine($"acts: {frames.Count} frames; plays C# [{string.Join(", ", plays)}]" + (playsOk ? " = page" : $" vs page [{string.Join(", ", pagePlays)}]") + $"; toasts [{string.Join(", ", toasts)}]" + (edN > 0 ? $"; Renovate state compared on {edN} frames" : "") + (shopN > 0 ? $", the Catalog on {shopN}" : ""));
+        Console.WriteLine($"acts: {frames.Count} frames; plays C# [{string.Join(", ", plays)}]" + (playsOk ? " = page" : $" vs page [{string.Join(", ", pagePlays)}]") + $"; toasts [{string.Join(", ", toasts)}]" + (edN > 0 ? $"; Renovate state compared on {edN} frames" : "") + (shopN > 0 ? $", the Catalog on {shopN}" : "") + (mvN > 0 ? $", the theater on {mvN}" : ""));
         Console.WriteLine(bad == 0 && playsOk ? "acts: every creature every frame equal, every play equal" : $"acts: {bad} creature-frames differ; first: {first}");
         return bad == 0 && playsOk ? 0 : 1;
     }

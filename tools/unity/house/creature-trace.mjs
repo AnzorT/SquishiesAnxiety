@@ -36,7 +36,9 @@ const snap = () => H.page.evaluate(() => {
     }
   } catch (e) { shop = { err: String(e) }; }
   const H = sh.H, ed = { eSel: sh.state.eSel || null, items: JSON.parse(JSON.stringify(sh.roomItems())), lx: H.lx || {}, lz: H.lz || {}, surf: H.surf || {}, rtex: H.rtex || {}, lOff: H.lOff || {}, uid: H.uid };
-  return { ed, shop, now: window.__clock.now, last: sh.last, sel: sh.state.sel, vis: sh.vis.map((c) => c.key), cs: sh.cs.map(C), rst: JSON.parse(JSON.stringify(sh.rst || {})), vars: Object.assign({}, sh.vars), tv: Object.assign({}, sh.tv) };
+  // the home theater (stage 9): synced / ready / tier, and the show (movie, its time, paused)
+  let mv = null; try { const MN = window.MovieNight, th = sh.rnTheater(), n = MN && MN.now && MN.now(); mv = { synced: !!th.synced, ready: !!th.ready, tier: th.tier || 0, show: n ? { id: n.id, t: n.t, paused: !!n.paused } : null }; } catch (e) { mv = { err: String(e) }; }
+  return { ed, shop, mv, now: window.__clock.now, last: sh.last, sel: sh.state.sel, vis: sh.vis.map((c) => c.key), cs: sh.cs.map(C), rst: JSON.parse(JSON.stringify(sh.rst || {})), vars: Object.assign({}, sh.vars), tv: Object.assign({}, sh.tv) };
 });
 const start = await snap();
 await H.page.evaluate(() => {

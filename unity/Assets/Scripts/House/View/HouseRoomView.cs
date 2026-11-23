@@ -154,6 +154,9 @@ namespace SquishSquad.House.View
             return mesh;
         }
 
+        /// <summary>A room box point (px) where it is drawn now (the camera's zoom), in this view's local space.</summary>
+        public Vector3 World(double bx, double by) { double k = CamK, fx = 426 + k * (bx - 426), fy = 393 + k * (by + HouseFrame.BoxTop - 393); return new Vector3((float)(fx * _k), (float)(-fy * _k), 0); }
+
         /// <summary>The camera's scale (camK): the frame shows the room box scaled by k about (426, 343) of the box.</summary>
         public void SetCamera(double k)
         {

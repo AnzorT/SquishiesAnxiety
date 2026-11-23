@@ -31,6 +31,8 @@ namespace SquishSquad.House.View
         HouseEditView _edit;
         HouseShopView _shop;
         HouseMapView _map;
+        HouseMovieView _movie;
+        HouseClubView _club;
         bool _dirty;
         string _press; double _pressX, _pressY; bool _moved;
         double _saveAt;
@@ -63,6 +65,7 @@ namespace SquishSquad.House.View
             return s;
         }
         List<string> _ownedKeys;
+        const string MoviesKey = "squish.house.movies";
 
         double Now => Time.unscaledTimeAsDouble * 1000;
 
@@ -108,6 +111,12 @@ namespace SquishSquad.House.View
             _sim.GoRoom = room => Enter(room, null, null, Now);
             _map = new HouseMapView(world, _sim, _k, HouseRoomView.Res("map"), HouseRoomView.Res("map-bits"), HouseRoomView.Res("map-template")) { Toast = Toast };
             _sim.GoRoomWith = (room, c) => Enter(room, c, null, Now);
+            // the Movie Room's movies, and where each was left (the page keeps them in localStorage: on the device here)
+            var mvj = HouseRoomView.Res("movies"); if (mvj != null) _sim.Movies = ((JObj)HouseJson.Parse(mvj)).Arr("list").ConvertAll(o => (JObj)o);
+            try { var mp = (JObj)HouseJson.Parse(PlayerPrefs.GetString(MoviesKey, "{}")); _sim.MoviePick = mp.Str("pick"); if (mp.Obj("pos") is JObj pos) foreach (var k2 in pos.Keys) _sim.MoviePos[k2] = pos.Num(k2); } catch (Exception) { }
+            _sim.MoviesChanged = () => { var pos = new JObj(); foreach (var kv in _sim.MoviePos) pos[kv.Key] = kv.Value; PlayerPrefs.SetString(MoviesKey, HouseJson.Stringify(new JObj { ["pick"] = _sim.MoviePick, ["pos"] = pos })); };
+            _movie = new HouseMovieView(_room, _sim, _k);
+            _club = new HouseClubView(_room, _sim);
             _toast = UiPiece.Create(world, "toast", 31100);
             _toast.Opacity = 0;
         }
@@ -145,6 +154,8 @@ namespace SquishSquad.House.View
             _edit.SetCamera(k); _edit.Update(now);
             _shop.Update(now);
             _map.Update(now, !_sim.Shop);
+            _movie.Update(now);
+            _club.Update(now);
             _squad.Update(k, now);
             MoveToy(now);
             _wheel.Update(k, now);
@@ -361,6 +372,8 @@ namespace SquishSquad.House.View
             _edit?.Destroy();
             _shop?.Destroy();
             _map?.Destroy();
+            _movie?.Destroy();
+            _club?.Destroy();
             if (_room != null) Destroy(_room.gameObject);
             if (_toast != null) Destroy(_toast.gameObject);
         }

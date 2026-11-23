@@ -237,7 +237,18 @@ namespace SquishSquad.House
                 if (R.Ch != 0 && c != null && !c.Moving) Say(c, sp ? (R.Ch == 2 ? "Goooal!" : R.Ch == 3 ? "Whoa, space!" : "Cartoons!") : "Huh? Only fuzz...", now);
                 Bump(); return true;
             }
-            if (role == "screen" || role == "player") { Toast(TheaterText()); return true; }   // (the movie: stage 9)
+            if (role == "screen" || role == "player")
+            {
+                // the show: paused / resumed, or started (the theater synced); else what's missing for one
+                var th = Th ?? TheaterNow();
+                if (th.Synced)
+                {
+                    if (Showing) { TogglePause(); Toast(Paused ? "Movie paused" : "Movie playing"); }
+                    else { Th = th; PlayMovie(); Toast(Show != null ? "Now showing: " + Show.Mv.Str("title") : "Now showing!"); }
+                    Bump(); return true;
+                }
+                Toast(TheaterText()); return true;
+            }
             if (r.Truthy("play"))
             {
                 string play = r["play"] is string ps ? ps : HouseJson.JsString(r["play"]);
@@ -315,7 +326,7 @@ namespace SquishSquad.House
 
         void RnFog(string ky, bool on) { if (on) Fogs.Add(ky); else Fogs.Remove(ky); }
 
-        /// <summary>The theater's message until the movie is ported (stage 9): what's missing for a show.</summary>
+        /// <summary>The theater's message: what's missing for a show.</summary>
         string TheaterText()
         {
             bool scr = false, pl = false, spk = false;

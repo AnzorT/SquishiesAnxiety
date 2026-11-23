@@ -139,6 +139,21 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    it). Not yet: the walk to the door and the "Heading home" loading scene (the house opens at once), the creatures'
    faces in the map's labels (cream circles), the map's SMIL (clouds, waves, rain and snow stand still).
 9. Dance Club, Movie Room (movies as exported video + audio), TV sound.
+   **Done (logic, video, sound) except the screen looks.** `tools/unity/house/export-movies.mjs`: the five Squad
+   Movies drawn frame by frame by the page's own movie code and screenshotted, their scores (SquadMovies.record) played
+   through movie-night.js's own tone / noise / bus code into an OfflineAudioContext, muxed by ffmpeg ->
+   `StreamingAssets/Movies/<id>.mp4` (480 x 270, H.264 + AAC, about 18 MB for all 15 minutes) and `movies.json` (cues,
+   the screen's light 10 a second); the speakers' groove and the TV's three channels rendered offline from the page's
+   own code (tv-sound.js's scheduler stepped by hand) -> `Resources/House/audio/*.ogg`, one seamless period each; the
+   Dance Club's track (`club.mp3`). `House/HouseMovie.cs`: rnTheater, the show (play the screen tier's movie or the
+   last picked, resume where it was left, dim, pause / resume on the screen or player, the end), cues -> mvCue, mvStep's
+   rig values. `House/View/HouseMovieView.cs`: the movie on the screen's quad (VideoPlayer, cover fit, fade), the dim
+   and the screen's light, the groove and TV loops. `House/View/HouseClubView.cs`: ClubFog ported (puffs by tier and
+   style, bubbles, confetti, the bank and the dim, the linger), the party's disco spots, the club track (musicSync).
+   Verified: `creature-trace.mjs decorated movie 260 "buy, placer (player, speakers), done, tap screen / player"` +
+   `house-test acts`: the theater (synced, tier) and the show (movie, time, pause) equal on every frame. Not yet: the
+   screens' film looks by tier (grain, fuzz, widescreen), the projector's beam, the speakers' bounce and notes, the
+   movie picker and full-screen view, the 10 s app ad, the holo pop-outs and confetti cues.
 10. Beach.
 11. Yard games (with the menu).
 

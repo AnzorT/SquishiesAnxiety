@@ -80,7 +80,9 @@
       var sF = Dr.srcF && Dr.srcB ? 1 : 0, A = reg(id);
       return JSON.stringify({ src: uri(sF ? Dr.srcB : Dr.src || ''), srcF: sF ? uri(Dr.srcF) : '', whole: uri(Dr.src || ''), bb: Dr.bb || null, tb: A && A.mount ? sh.tightBB(Dr, 1) : null, top: Dr.top || null,
         // what the piece's taps use (stage 5): the players' spots, the fog, the robot vacuum's home
-        players: Dr.players ? plain(Dr.players) : null, fog: Dr.fog ? plain(Dr.fog) : null, vac: Dr.vac ? { home: plain(Dr.vac.home), bb: Dr.vac.bb } : null });
+        players: Dr.players ? plain(Dr.players) : null, fog: Dr.fog ? plain(Dr.fog) : null, vac: Dr.vac ? { home: plain(Dr.vac.home), bb: Dr.vac.bb } : null,
+        // the screen's picture box (stage 9: the movie's quad): { w, h, m: [a, b, c, d, e, f] }
+        screen: Dr.screen ? plain(Dr.screen) : null });
     },
     render: function (t, r, c, v) {
       if (String(t).indexOf('R:') === 0) reg(t.slice(2));

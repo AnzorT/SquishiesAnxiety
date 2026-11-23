@@ -460,6 +460,7 @@ namespace SquishSquad.House
                 if ((c.Mode == "splash" || c.Mode == "bath") && c.WSt == null) c.Oy = Math.Sin(now * 0.004 + c.I) * 1.6;
                 else if (c.Mode == "bounce" && c.WSt == null) c.Oy = -Math.Abs(Math.Sin(now * 0.006)) * 26;
             }
+            MvStep(c, now);
             if (c.UseEnd != 0 && now >= c.UseEnd) FinishUse(c, now);
             if (c.BowlEnd != 0 && now >= c.BowlEnd) BowlDone(c, now);
             string fx = c.Mode == "rplay" ? (c.PRig ? null : c.PAnim == "dance" ? "note" : "spark") : c.WSt != null ? null : FXM.TryGetValue(c.Mode, out var m) ? m : null;
