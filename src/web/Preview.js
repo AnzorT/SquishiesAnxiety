@@ -1,7 +1,8 @@
 // Web, development only: the games' popups on their own, to check their layout without playing a level
 // (http://localhost:8081/?phone=1&preview=1 in a window the phone's size, e.g. 832 x 384 for the A15 sideways), and
 // the screens a test account can't reach (verify), and the start-up screens signed out (splash, auth) for the Unity
-// port's comparisons (tools/unity/auth-test).
+// port's comparisons (tools/unity/auth-test), and the menu's screens for a made-up player ("scr-…": SCREENS below,
+// tools/unity/screens-test).
 // window.__preview('sd-result') shows one card; the names are the keys of CARDS below. Nothing here touches the account.
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -27,6 +28,15 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Asset } from 'expo-asset';
 import { BY_ID } from '../squad/data';
 import STACK_ART from '../stack/art';
+import AchievementsScreen from '../screens/AchievementsScreen';
+import StreakScreen from '../screens/StreakScreen';
+import DailyChallengesSheet from '../screens/DailyChallengesSheet';
+import SettingsRoyal from '../screens/royal/SettingsRoyal';
+import StatsScreen from '../screens/StatsScreen';
+import DailySpinScreen from '../screens/DailySpinScreen';
+import { PageBg } from '../royal';
+import { todayKey } from '../dailySpin';
+import { challengesFor } from '../progression';
 
 const noop = () => {};
 const before = { level: 6, into: 560, need: 700 };
@@ -70,7 +80,98 @@ const game = (Screen) => () => (
   </SafeAreaProvider>
 );
 
+// The Unity port's other screens (tools/unity/screens-test, tools/unity/export-screens.mjs): Achievements, the streak,
+// the daily challenges sheet, Settings, Stats and the Daily Spin, for a made-up player whose days are counted from
+// today (the page's own clock), so the streak is alive and today's challenges are half done. Creatures' pictures are
+// the bundled Stack cut-outs (the real plush art comes from Storage), with no rig (no mood faces). Nothing is saved:
+// the handlers do nothing, the spin's "server" answers after 800 ms (window.__spinAnswer sets what it answers).
+const fitFrame = (ar) => (ar >= 1 ? [(1 - 1 / ar) / 2, 0, 1 / ar, 1] : [0, (1 - ar) / 2, 1, ar]);
+const NAMED = Object.values(BY_ID).map((d) => {
+  const a = STACK_ART[d.key];
+  const url = srcUri(a && a.src);
+  const art = url ? { url, frame: fitFrame(a.ar) } : null;
+  return { id: d.id, name: d.name, key: d.key, thumb: { url: url || 'about:blank' }, plush: art ? { md: art, mdLocked: art, lg: art, lgLocked: art, sm: art } : undefined };
+});
+const dayKey = (back) => {
+  const d = new Date();
+  d.setDate(d.getDate() - back);
+  return todayKey(d);
+};
+// today's challenges: the first `claimed` claimed, `full` more done but not claimed, the rest part-way
+function dailyOf(claimed, full, chest = false) {
+  const date = todayKey();
+  const prog = {}, cl = {};
+  challengesFor(date).forEach((c, i) => {
+    prog[c.ev] = i < claimed + full ? c.goal : Math.floor(c.goal / 2);
+    if (i < claimed) cl[c.id] = true;
+  });
+  return { date, prog, claimed: cl, chest };
+}
+function screenPlayer(kind) {
+  if (kind === 'new') return { nickname: 'Mia', coins: 100, gems: 30, ownedIds: ['0', '1'], pxp: 0 };
+  const p = {
+    nickname: 'Mia',
+    coins: 2450,
+    gems: 85,
+    ownedIds: ['0', '1', '3', '4', '5', '6', '7', '12', '22', '24'],
+    totalEarned: 12500,
+    stats: { presses: 342, longestHoldMs: 12400, playTime: { 1: 754000, 12: 302000, 3: 95000, 22: 41000 } },
+    adsWatched: 2,
+    chestOpens: 6,
+    tierPulls: { Epic: 1 },
+    spins: 4,
+    pxp: 1600,
+    bestStreak: 4,
+    streak: 3,
+    lastFull: dayKey(1),
+    chests: 5,
+    maxMult: 2,
+    cribCare: 12,
+    daily: dailyOf(2, 1),
+  };
+  if (kind === 'done') return { ...p, streak: 4, lastFull: dayKey(0), daily: dailyOf(6, 0, true) };
+  if (kind === 'ready') return { ...p, daily: dailyOf(6, 0) };
+  if (kind === 'zero') return { ...p, streak: 0, lastFull: dayKey(5), daily: dailyOf(0, 1) };
+  if (kind === 'long') return { ...p, streak: 8, bestStreak: 8, daily: dailyOf(4, 2) };
+  return p;
+}
+const screen = (render) => () => (
+  <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 0, height: 0 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>{render()}</SafeAreaProvider>
+);
+function SpinPreview() {
+  const onSpin = () =>
+    new Promise((resolve) => setTimeout(() => resolve(window.__spinAnswer || { index: 6, kind: 'coins', amount: 500, jackpot: false }), 800));
+  return <DailySpinScreen onSpin={onSpin} onDone={noop} bonusLeft={1} adsFree name="Mia" creatures={NAMED} />;
+}
+const sheet = (kind) => screen(() => (
+  <View style={StyleSheet.absoluteFill}>
+    <PageBg />
+    <DailyChallengesSheet visible profile={screenPlayer(kind)} onClose={noop} onClaim={noop} onClaimChest={noop} onOpenCrib={noop} />
+  </View>
+));
+const settings = (tester) => screen(() => (
+  <SettingsRoyal onBack={noop} nickname="Mia" onSaveNickname={noop} onSubmitFeedback={() => Promise.resolve()} onLogout={noop} onReplayTutorial={noop} onOpenStats={noop} onOpenAchievements={noop} onOpenRoad={noop} tester={tester} wallet={{ coins: 2450, gems: 85, level: 4 }} fpsOn={false} onToggleFps={noop} />
+));
+const SCREENS = {
+  'scr-achievements': screen(() => <AchievementsScreen creatures={NAMED} profile={screenPlayer('mid')} customCount={0} onBack={noop} />),
+  'scr-achievements-new': screen(() => <AchievementsScreen creatures={NAMED} profile={screenPlayer('new')} customCount={0} onBack={noop} />),
+  'scr-streak': screen(() => <StreakScreen profile={screenPlayer('mid')} mascot={NAMED[1]} onClose={noop} onOpenDaily={noop} />),
+  'scr-streak-intro': screen(() => <StreakScreen profile={screenPlayer('mid')} mascot={NAMED[1]} intro onClose={noop} onOpenDaily={noop} />),
+  'scr-streak-done': screen(() => <StreakScreen profile={screenPlayer('done')} mascot={NAMED[1]} intro onClose={noop} onOpenDaily={noop} />),
+  'scr-streak-zero': screen(() => <StreakScreen profile={screenPlayer('zero')} mascot={NAMED[1]} onClose={noop} onOpenDaily={noop} />),
+  'scr-streak-long': screen(() => <StreakScreen profile={screenPlayer('long')} mascot={NAMED[1]} onClose={noop} onOpenDaily={noop} />),
+  'scr-daily': sheet('mid'),
+  'scr-daily-ready': sheet('ready'),
+  'scr-daily-done': sheet('done'),
+  'scr-settings': settings(false),
+  'scr-settings-tester': settings(true),
+  'scr-stats': screen(() => <StatsScreen creatures={NAMED} customCreatures={[]} profile={screenPlayer('mid')} onBack={noop} />),
+  'scr-stats-new': screen(() => <StatsScreen creatures={NAMED} customCreatures={[]} profile={screenPlayer('new')} onBack={noop} />),
+  'scr-spin': screen(() => <SpinPreview />),
+};
+
 const CARDS = {
+  ...SCREENS,
   'sd-result': (v) => <SD.ResultCard visible={v} res={res} spec={{ lv: 12, n: 6 }} uris={uris} onNext={noop} onReplay={noop} onMap={noop} />,
   'sd-perfect': (v) => <SD.ResultCard visible={v} res={best} spec={{ lv: 12, n: 6, head: true }} uris={uris} onNext={noop} onReplay={noop} onMap={noop} />,
   'sd-timeup': (v) => <SD.TimeUpCard visible={v} onRetry={noop} onMap={noop} />,
@@ -126,6 +227,7 @@ export default function Preview() {
   useEffect(() => {
     window.__preview = setName;
     window.__previewNames = Object.keys(CARDS);
+    window.__screenPlayer = screenPlayer;
   }, []);
   if (!fonts) return null;
   const card = CARDS[name];
