@@ -8,8 +8,8 @@
 //          ends); a thank-you line once ads are off
 //   Gems   the 2X first-buy ribbon, every pack side by side (its gem pile, 2X on its first buy, its price), the gem →
 //          coin swaps in a row under them
-// Buying with real money isn't possible in Unity yet: OnBuyProduct is the hook (the host shows a note until billing is
-// in). The streak's and the pass's claims are squad moves (streakClaim / passClaim); a chest prize opens in the smash.
+// Buying with real money: OnBuyProduct is the hook (the menu sets it to Backend/Billing, Google Play; without it, a note).
+// The streak's and the pass's claims are squad moves (streakClaim / passClaim); a chest prize opens in the smash.
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -989,8 +989,17 @@ namespace SquishSquad.Screens
         {
             if (key == "removeAds" && Prof.Truthy(Prof.Get(_profile, "adsFree"))) { Flash("Ads are already off"); return; }
             if (OnBuyProduct == null) { Flash("Purchases aren't in the Unity version yet"); return; }
-            var r = await OnBuyProduct(key);
+            IDictionary<string, object> r;
+            try { r = await OnBuyProduct(key); }
+            catch (Exception e)
+            {
+                // (Backend.BillingException: its words for the player; a cancel says nothing)
+                if (e.GetType().Name != "BillingException" || (string)e.GetType().GetField("Code")?.GetValue(e) != "cancelled") Flash(e.Message);
+                return;
+            }
             if (r == null) return;
+            if (Prof.Truthy(Prof.Get(r, "pending"))) { Flash("Payment pending: it'll be added once Google Play clears it"); return; }
+            if (Prof.Str(Prof.Get(r, "granted")) == "restored") { Flash("Restored your earlier purchase"); return; }
             string g = Prof.Str(Prof.Get(r, "granted"));
             if (g == "bundle")
             {

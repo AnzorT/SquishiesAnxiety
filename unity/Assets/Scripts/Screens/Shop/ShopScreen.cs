@@ -3,9 +3,9 @@
 //   var s = ShopScreen.Create(parent, profile, fb, uid, "daily"); s.OnExit = ...;
 // Its moves are the `squad` Cloud Function's (ShopWrites); a chest opens over it (ChestOpening: the treasure vault and
 // the smash) and its COLLECT shows the app's toast. The profile feed brings each move's result in.
-// Real money: Unity can't take payments yet. OnBuyProduct is the hook (a PRODUCTS key: 'removeAds', 'gems450',
-// 'offer:starter' → the grant { granted: 'bundle' | 'pass' | 'gems', chests, gems, offer }, or null); until billing is
-// in, the buttons say so. PriceOf gives the store's price labels (default: the set prices, economy.js).
+// Real money: OnBuyProduct is the hook (a PRODUCTS key: 'removeAds', 'gems450',
+// 'offer:starter' → the grant { granted: 'bundle' | 'pass' | 'gems', chests, gems, offer }, or null; it may throw: its message is shown);
+// the menu sets it to Backend/Billing (Google Play). PriceOf gives the store's price labels (default: the set prices, economy.js).
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

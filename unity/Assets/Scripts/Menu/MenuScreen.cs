@@ -181,8 +181,17 @@ namespace SquishSquad.Menu
             var p = CharactersPageLink.Get();
             var s = SquishSquad.Screens.ShopScreen.Create(transform, ProfileOrEmpty(p), p?.Fb, p?.Uid, tab);
             s.OnExit = () => CloseScreen(s);
+            // real money: Google Play (Backend/Billing), granted by the verifyPurchase Cloud Function
+            if (p?.Fb != null && p.Uid != null)
+            {
+                if (!_billingStarted) { _billingStarted = true; _ = SquishSquad.Backend.Billing.Init(p.Fb); }
+                s.PriceOf = SquishSquad.Backend.Billing.PriceLabel;
+                s.OnBuyProduct = key => SquishSquad.Backend.Billing.Buy(p.Fb, p.Uid, key);
+            }
             _game = s;
         }
+
+        static bool _billingStarted;
 
         void OpenSettings()
         {
