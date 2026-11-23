@@ -141,6 +141,9 @@ namespace SquishSquad.Ui
             return w;
         }
 
+        /// <summary>The width of the box Chrome gives a line of text (what centres it, what a row of them adds up to).</summary>
+        public static float BoxWidth(string text, TextStyle t) => UiFont.Get(t.Font).BoxWidth(text, t.Size, t.LetterSpacing);
+
         /// <summary>A line of text with its box's top-left at (x, top); `align` 0 left, 0.5 centre, 1 right of `boxW`.</summary>
         public UiSvg Text(string text, float x, float top, TextStyle t, float boxW = 0, float align = 0)
         {
@@ -168,6 +171,16 @@ namespace SquishSquad.Ui
                 }
             _body.Append(f.Svg(text, x0, y, t.Size, t.LetterSpacing, t.Color, _defs, _glyphs));
             if (t.Opacity < 1) Close();
+            return this;
+        }
+
+        /// <summary>A run of glyphs with its first pen at (x, baseline) (SVG text's layout: no box, no alignment), filled
+        /// with `fill`; `attrs` (a stroke, say) go on a group round it, in the glyphs' own units (1/unitsPerEm of the size).</summary>
+        public UiSvg Glyphs(string text, float x, float baseline, string font, float size, float letterSpacing, string fill, string attrs = null)
+        {
+            var g = UiFont.Get(font).Svg(text, x, baseline, size, letterSpacing, fill, _defs, _glyphs);
+            if (attrs != null) _body.Append("<g ").Append(attrs).Append('>').Append(g).Append("</g>");
+            else _body.Append(g);
             return this;
         }
 

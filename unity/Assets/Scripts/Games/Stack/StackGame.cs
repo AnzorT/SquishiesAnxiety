@@ -4,15 +4,20 @@
 //   intro  the level's number and what's in it          deal  the squishies drop onto their cushions
 //   play   tap a cushion to lift its top squishy, tap another to put it there; or drag it. A big one dropped on a
 //          smaller one squashes it flat and boings home (no move counted). The clock runs from level 15.
-//   won / lost
+//   won    the result card 1500 ms later: NEXT / REPLAY / MENU          lost   the clock ran out: the fail card 1300 ms
+//          later: RETRY / MENU
+//   The back orb (or Escape, Android's back) while playing pauses: the clock stops, the pause card (RESUME / NEW PUZZLE /
+//   QUIT). The first HINT of a level asks first (the hint card: it costs a star, and an ad without Remove Ads).
 // Every motion is the app's: the same Animated timings, springs and easings (SquishSquad.Anim is React Native's
-// Animated in C#), the same geometry. The pieces: Resources/Stack (tools/unity/export-stack.mjs) and StackArt.
-// Not ported yet: the result / fail / pause / hint cards (a win shows the stars and goes on to the next level), the
-// dust / spark / confetti effects, sounds, haptics, saving to the profile.
+// Animated in C#), the same geometry. The pieces: Resources/Stack (tools/unity/export-stack.mjs) and StackArt; the
+// cards: StackCards on Ui/Cards.
+// Not ported yet: the dust / spark / confetti effects, sounds, haptics, ads, saving to the profile (Profile is kept in
+// memory).
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
 using SquishSquad.Ui;
+using SquishSquad.Ui.Cards;
 using SquishSquad.Vector;
 using UnityEngine;
 
@@ -23,6 +28,13 @@ namespace SquishSquad.Games.Stack
         // ---- setup --------------------------------------------------------------------------------------------------
         public Action OnExit;
         public static IDictionary<string, object> Profile = new Dictionary<string, object>();   // until Firebase (step 3)
+        /// <summary>Remove Ads: Unity has no ads yet, so the game behaves as for a player who bought it (a hint is free).</summary>
+        public const bool AdsFree = true;
+        /// <summary>Whether a rewarded ad is loaded (there's no ad SDK yet: never). Only read without AdsFree.</summary>
+        const bool AdReady = false;
+        /// <summary>The app asks before the first hint of a level even with Remove Ads ("We'll show you the next best move.",
+        /// SHOW ME): the hint costs a star either way (Game.js askHint). false: hints come at once, without the card.</summary>
+        public const bool AskBeforeHint = true;
 
         float W, H;                      // the screen, dp
         Ticker _anim;
@@ -83,10 +95,11 @@ namespace SquishSquad.Games.Stack
             float bx = W - RightW + 14, by0 = H / 2 + (_layout.buttonsTop - 192);
             _btns.Add(new Btn(this, "undo", bx, by0, 20, () => Undo()));
             _btns.Add(new Btn(this, "restart", bx, by0 + 65, 22, () => Restart()));
-            _btns.Add(new Btn(this, "hint", bx, by0 + 130, 24, () => ShowHint()));
+            _btns.Add(new Btn(this, "hint", bx, by0 + 130, 24, () => AskHint()));
             _rug = Piece("rug", 30);
             _colGlow = Piece("column glow", 31);
             _bannerPiece = Piece("banner", 200);
+            _cardPieces = new CardPieces(transform, 300);
             _bumps = new AnimatedValue[4];
             for (int i = 0; i < 4; i++) _bumps[i] = new AnimatedValue(0);
             NewPuzzle();
@@ -390,7 +403,43 @@ namespace SquishSquad.Games.Stack
             Hud();
         }
 
-        // the hint (the app asks for an ad first; Unity shows it straight away, as with Remove Ads)
+        // ---- the cards over the game ----------------------------------------------------------------------------------
+        Card _result, _fail, _pause, _hintAsk;
+        readonly List<(Card card, int rank)> _cards = new List<(Card, int)>();   // on screen (closing ones too), bottom first
+        CardPieces _cardPieces;
+        bool _paused;
+        const int RESULT = 0, FAIL = 1, PAUSE = 2, HINT = 3;   // Game.js's order: a later one shows over an earlier one
+
+        Card Open(Card c, int rank)
+        {
+            int at = _cards.Count;
+            while (at > 0 && _cards[at - 1].rank > rank) at--;
+            _cards.Insert(at, (c, rank));
+            c.Show();
+            return c;
+        }
+
+        IEnumerable<Card> Cards { get { foreach (var c in _cards) yield return c.card; } }
+
+        static void Close(ref Card c, bool emptied = false) { c?.Hide(emptied); c = null; }
+
+        bool CardOpen { get { foreach (var c in _cards) if (c.card.Visible) return true; return false; } }
+
+        // the first hint of a level asks first (Game.js askHint / watchHint); after that, straight away
+        void AskHint()
+        {
+            if (_phase != "play" || _paused) return;
+            if (_hinted || !AskBeforeHint) WatchHint();
+            else if (_hintAsk == null) _hintAsk = Open(StackCards.HintCard(W, H, AdReady, AdsFree, WatchHint, () => Close(ref _hintAsk)), HINT);
+        }
+
+        void WatchHint()
+        {
+            Close(ref _hintAsk);
+            // (without Remove Ads the app shows a rewarded ad first; Unity has none yet, and its card waits on LOADING AD…)
+            ShowHint();
+        }
+
         void ShowHint()
         {
             if (_phase != "play") return;
@@ -432,11 +481,59 @@ namespace SquishSquad.Games.Stack
             }
             var outc = Levels.AfterLevel(Profile, _spec, _puzzle.Par, true, _moves, _hinted);
             Apply(outc.Update);
-            int stars = outc.Stars;
-            // (the result card isn't ported yet: the stars, then the next level)
-            Later(1500, () => Say(new string('★', stars) + new string('☆', 3 - stars), sub: stars == 3 ? "PERFECT!" : null, hold: 1200));
-            Later(3300, () => { _lv = Math.Min(Levels.LEVELS, _lv + 1); _round++; Menu.MenuState.StackLevel = _lv; NewPuzzle(); });
+            var res = new StackCards.Result
+            {
+                Stars = outc.Stars, Coins = outc.Coins, Xp = outc.Xp, LevelUps = outc.LevelUps?.Count ?? 0, Unlocked = outc.Unlocked,
+                Before = outc.Before != null ? new XpLevel(outc.Before.Level, outc.Before.Into, outc.Before.Need) : (XpLevel?)null,
+                After = outc.After != null ? new XpLevel(outc.After.Level, outc.After.Into, outc.After.Need) : default,
+                Moves = _moves, Par = _puzzle.Par, Hinted = _hinted,
+            };
+            int lv = _spec.Lv, tier = _spec.Tier;
+            Later(1500, () => _result = Open(StackCards.ResultCard(W, H, res, lv, tier, _lv >= Levels.LEVELS, Next, Replay, Leave), RESULT));
             Hud();
+        }
+
+        // the result's NEXT and REPLAY, the fail's RETRY, the pause's NEW PUZZLE: a new round
+        void Next()
+        {
+            _lv = Math.Min(Levels.LEVELS, _lv + 1);
+            Menu.MenuState.StackLevel = _lv;
+            Replay();
+        }
+
+        void Replay()
+        {
+            _round++;
+            NewPuzzle();
+        }
+
+        // ---- pause (the back orb, Android's back) ----------------------------------------------------------------------
+        void Pause()
+        {
+            if (_phase != "play" || _paused) return;
+            if (_held.HasValue) Drop(_held.Value.from);
+            PauseClock();
+            _paused = true;
+            _pause = Open(StackCards.PauseCard(W, H, _spec.Clock, Resume, Replay, Leave), PAUSE);
+            Hud();
+        }
+
+        void Resume()
+        {
+            if (!_paused) return;
+            _paused = false;
+            Close(ref _pause);
+            if (_spec.Clock && _clockPaused >= 0) { _clockStart += _anim.Now - _clockPaused; _clockPaused = -1; }
+            Hud();
+        }
+
+        // BackHandler: the hint card closes, a pause resumes, play pauses, anything else leaves
+        void Back()
+        {
+            if (_hintAsk != null) Close(ref _hintAsk);
+            else if (_paused) Resume();
+            else if (_phase == "play") Pause();
+            else Leave();
         }
 
         // the profile update as Firestore takes it: dotted field paths ("stack.best.12") into nested maps
@@ -464,8 +561,8 @@ namespace SquishSquad.Games.Stack
             if (_held.HasValue) Drop(_held.Value.from);
             var outc = Levels.AfterLevel(Profile, _spec, _puzzle.Par, false, 0, false);
             Apply(outc.Update);
-            Later(1300, () => Say("TIME'S UP!", small: true, sub: "Tap RESTART to try again", hold: 1600));
-            Later(3300, () => { _round++; NewPuzzle(); });
+            var picture = _who.Length > 0 ? _who[0].Picture : null;
+            Later(1300, () => _fail = Open(StackCards.FailCard(W, H, picture, Replay, Leave), FAIL));
             Hud();
         }
 
@@ -522,6 +619,12 @@ namespace SquishSquad.Games.Stack
         void NewPuzzle()
         {
             ClearTimers();
+            // the cards close (a result card empties at once: its `res` is gone)
+            Close(ref _result, true);
+            Close(ref _fail);
+            Close(ref _pause);
+            Close(ref _hintAsk);
+            _paused = false;
             var rec = Levels.Record(Profile);
             _spec = Levels.LevelSpec(_lv, rec.Skill);
             _puzzle = Engine.MakePuzzle(_spec);
@@ -667,7 +770,7 @@ namespace SquishSquad.Games.Stack
                 ClockRed = _phase == "play" && _secs <= 10,
             };
             _left.SetSvg(StackArt.LeftColumn(d, H), LeftW, H, 4);
-            bool playing = _phase == "play";
+            bool playing = _phase == "play" && !_paused;
             _btns[0].SetOn(playing && _canUndo);
             _btns[1].SetOn(playing && _moves > 0);
             _btns[2].SetOn(playing);
@@ -702,12 +805,39 @@ namespace SquishSquad.Games.Stack
             Drop(to);
         }
 
+        /// <summary>Opens a card as the game would, with src/web/Preview.js's sample data for the result (CI screenshots):
+        /// "result", "fail", "pause" (while playing) or "hint".</summary>
+        public void ShowCard(string which)
+        {
+            switch (which)
+            {
+                case "pause": Pause(); break;
+                case "hint": AskHint(); break;
+                case "fail":
+                    _phase = "lost";
+                    PauseClock();
+                    _fail = Open(StackCards.FailCard(W, H, _who.Length > 0 ? _who[0].Picture : null, Replay, Leave), FAIL);
+                    break;
+                case "result":
+                    _phase = "won";
+                    PauseClock();
+                    var res = new StackCards.Result
+                    {
+                        Stars = 2, Coins = 90, Xp = 40, Moves = 9, Par = 7, LevelUps = 1, Unlocked = true,
+                        Before = new XpLevel(6, 560, 700), After = new XpLevel(7, 40, 800),
+                    };
+                    _result = Open(StackCards.ResultCard(W, H, res, 9, 1, false, Next, Replay, Leave), RESULT);
+                    break;
+            }
+            Hud();
+        }
+
         void Update()
         {
             if (!_started) return;
             _anim.Tick(Time.unscaledTimeAsDouble * 1000);
             HandleInput();
-            if (_spec != null && _spec.Clock && _phase == "play")
+            if (_spec != null && _spec.Clock && _phase == "play" && !_paused)
             {
                 double ms = _limit - Elapsed;
                 int s = Math.Max(0, (int)Math.Ceiling(ms / 1000));
@@ -777,6 +907,9 @@ namespace SquishSquad.Games.Stack
             var bc = Affine.Translate(_bannerW / 2.0, _bannerH / 2.0); var bci = Affine.Translate(-_bannerW / 2.0, -_bannerH / 2.0);
             _bannerPiece.Transform = Affine.Translate(ax, 4) * bc * Affine.ScaleBy(bs, bs) * Affine.Rotate(br) * bci;
             foreach (var b in _btns) b.Draw();
+            // the cards: placed, and gone once closed
+            _cardPieces.Sync(Cards);
+            _cards.RemoveAll(c => !c.card.Shown);
         }
 
         static double Lerp3(double v, double i0, double i1, double o0, double o1) => o0 + (v - i0) / (i1 - i0) * (o1 - o0);
@@ -793,7 +926,7 @@ namespace SquishSquad.Games.Stack
         sealed class Touch { public float X0, Y0; public bool Moved, Picked, Dead; public int Col = -1; }
         Touch _touch;
         Btn _pressed;
-        bool _backDown;
+        bool _backDown, _cardDown;
 
         void HandleInput()
         {
@@ -806,7 +939,22 @@ namespace SquishSquad.Games.Stack
             }
             else { px = Input.mousePosition; down = Input.GetMouseButtonDown(0); up = Input.GetMouseButtonUp(0); held = Input.GetMouseButton(0); }
             float x = px.x / UiPiece.PxPerDp, y = (Screen.height - px.y) / UiPiece.PxPerDp;
-            if (Input.GetKeyDown(KeyCode.Escape)) { Leave(); return; }
+            if (Input.GetKeyDown(KeyCode.Escape)) { Back(); return; }
+
+            // an open card takes every tap (its buttons); one closing lets them through
+            if (_cardDown)
+            {
+                if (up) { _cardDown = false; for (int i = _cards.Count - 1; i >= 0; i--) if (_cards[i].card.Up(x, y)) break; }
+                return;
+            }
+            if (down && CardOpen)
+            {
+                for (int i = _cards.Count - 1; i >= 0; i--) if (_cards[i].card.Down(x, y)) break;
+                _cardDown = true;
+                _touch = null;
+                return;
+            }
+            if (CardOpen) return;
 
             // the back orb and the buttons
             if (down)
@@ -815,7 +963,7 @@ namespace SquishSquad.Games.Stack
                 if (x >= b[0] - 6 && x <= b[0] + 46 && y >= b[1] - 6 && y <= b[1] + 46) { _backDown = true; return; }
                 foreach (var btn in _btns) if (btn.Hit(x, y) && btn.On) { _pressed = btn; btn.Press(true); return; }
             }
-            if (_backDown) { if (up) { _backDown = false; Leave(); } return; }
+            if (_backDown) { if (up) { _backDown = false; if (_phase == "play") Pause(); else Leave(); } return; }
             if (_pressed != null)
             {
                 if (up) { var b = _pressed; _pressed = null; b.Press(false); if (b.Hit(x, y)) b.Action(); }

@@ -46,6 +46,9 @@ namespace SquishSquad.EditorTools
                 StackShots(outDir, 2340, 1080, "stack-a15", new[] { (600.0, "intro"), (2200.0, "deal"), (6500.0, "play"), (8000.0, "moved") });
                 StackShots(outDir, 2400, 1080, "stack-2400x1080", new[] { (6500.0, "play") });
                 StackShots(outDir, 2048, 1536, "stack-2048x1536", new[] { (6500.0, "play") });
+                // its cards, opened at 6.5 s and settled 7.2 s later (compare with tools/unity/stack-test cards.mjs's pictures,
+                // stack-result-7200.png and so on: the same sample result; the page behind is the level here)
+                foreach (var card in new[] { "result", "fail", "pause", "hint" }) StackShots(outDir, 2340, 1080, "stack-a15", new[] { (6500.0, "card-" + card) });
                 Exit(0);
             }
             catch (Exception e)
@@ -89,7 +92,9 @@ namespace SquishSquad.EditorTools
             {
                 // (the move at 7 s: the first cushion's top squishy onto the next cushion)
                 if (label == "moved") { for (; t <= 7000; t += 1000.0 / 60) game.Advance(t); game.TapMove(0, 1); }
-                for (; t <= ms; t += 1000.0 / 60) game.Advance(t);   // every frame, as the springs need
+                var at = ms;
+                if (label.StartsWith("card-")) { for (; t <= ms; t += 1000.0 / 60) game.Advance(t); game.ShowCard(label.Substring(5)); at = ms + 7200; }
+                for (; t <= at; t += 1000.0 / 60) game.Advance(t);   // every frame, as the springs need
                 File.WriteAllBytes(Path.Combine(outDir, $"{name}-{label}.png"), Render(cam, w, h));
                 Debug.Log($"[CiBuild] {name}-{label}.png {w}x{h}");
             }

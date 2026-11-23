@@ -99,6 +99,20 @@ namespace SquishSquad.Ui
 
         static float Snap(double v) => (float)(Math.Round(v * 64) / 64);
 
+        /// <summary>The run's width as Chrome sizes a text box for it: the exact sum of advances, kerning and spacing, up to
+        /// the next 1/64 px above it (an exact 1/64 too: Chrome's float sum lands a hair over).</summary>
+        public float BoxWidth(string text, float size, float letterSpacing)
+        {
+            var cps = CodePoints(text);
+            double k = (double)size / UnitsPerEm, x = 0;
+            for (int i = 0; i < cps.Count; i++)
+            {
+                x += Advance(cps[i]) * k + letterSpacing;
+                if (i + 1 < cps.Count) x += Kern(cps[i], cps[i + 1]) * k;
+            }
+            return (float)((Math.Floor(x * 64 + 1e-6) + 1) / 64);
+        }
+
         public static List<int> CodePoints(string s)
         {
             var l = new List<int>(s.Length);

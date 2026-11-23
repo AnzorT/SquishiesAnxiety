@@ -140,8 +140,16 @@ Feel and speed are checked on the phone.
    - **Squish Stack's level** (`Games/Stack/StackGame.cs`, a port of `src/stack/Game.js`): the board, the squishies
      lifting, wiggling, flying, landing and squashing, TOO BIG! bounces, UNDO / RESTART / HINT, the goal card, the
      stars meter, the clock, the banners, the next level. Its HUD drawn from the Unity code matches the app's
-     screenshot to 1.59 % of pixels (`tools/unity/stack-test`). Not yet: the result / fail / pause / hint cards, the
-     dust / spark / confetti effects, sounds, Blitz, the level map and the hub.
+     screenshot to 1.59 % of pixels (`tools/unity/stack-test`).
+   - **The cards over the games** (`Ui/Cards/`, shared by the four games; Stack's in `Games/Stack/StackCards.cs`, a
+     port of `src/stack/Cards.js`): the result (title, stars popping in with their rays and gold sparks, the coins
+     counting up, the XP bar, LEVEL n!, buttons sliding in), time's up, pause and the hint offer, wired into the level
+     as Game.js does (result 1500 ms after the win, fail 1300 ms after the clock runs out, pause from the back orb).
+     The coin is cut from the app (`tools/unity/export-cards.mjs`); the rest is drawn by the Unity code as the
+     exporter writes it, since numbers, labels and sizes change. Checked against the app's cards at set moments of
+     their motion (`stack-test cards`: the page's clock is replaced, so both run the same frames): settled, 0.6-1.3 %
+     of pixels differ visibly, all edges. Not yet: the dust / spark / confetti effects on the board, sounds, Blitz,
+     the level map and the hub.
 8. **Everything else**: achievements, level road, streak, daily spin, settings, sign-in screens, ads, billing, sounds.
 
 Each step ends with CI screenshots matching the app and you checking it on the phone.
