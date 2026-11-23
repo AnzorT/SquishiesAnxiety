@@ -29,6 +29,13 @@ namespace SquishSquad.Menu
             set { PlayerPrefs.SetInt("stack.level", Mathf.Clamp(value, 1, 50)); PlayerPrefs.Save(); }
         }
 
+        /// <summary>The Squish Sort fridge level the player is on (sort.fridge in the profile once it's wired).</summary>
+        public static int SortLevel
+        {
+            get => Mathf.Clamp(PlayerPrefs.GetInt("sort.level", 1), 1, 50);
+            set { PlayerPrefs.SetInt("sort.level", Mathf.Clamp(value, 1, 50)); PlayerPrefs.Save(); }
+        }
+
         public static string Season => SeasonSetting == "auto" ? AutoSeason(DateTime.Now) : SeasonSetting;
 
         // main-menu-scene.js: Dec-Feb snowy, May-Sep sunny, otherwise rainy

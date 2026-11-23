@@ -94,16 +94,39 @@ namespace SquishSquad.Menu
             _view.Tick(0f);
         }
 
-        // a game open over the menu (only Squish Stack is ported), started from its card in the Game Park
-        StackGame _game;
+        // a game open over the menu, started from its card in the Game Park (Squish Stack and Squish Sort so far)
+        MonoBehaviour _game;
 
-        void OpenStack()
+        void BeforeGame()
         {
             UiPiece.PxPerDp = _h / _layout.reference.dp[1];
             _view.Shown = false;
-            _game = StackGame.Create(transform, MenuState.StackLevel);
-            // back from the game: the app opens the menu straight into the park, the carousel shown at once
-            _game.OnExit = () => { _game = null; _view.Shown = true; if (_view.Where == MenuView.Place.Park) _view.ShowGames(NowMs, true); };
+        }
+
+        // back from a game: the app opens the menu straight into the park, the carousel shown at once
+        void AfterGame()
+        {
+            _game = null;
+            _view.Shown = true;
+            if (_view.Where == MenuView.Place.Park) _view.ShowGames(NowMs, true);
+        }
+
+        void OpenStack()
+        {
+            BeforeGame();
+            var g = StackGame.Create(transform, MenuState.StackLevel);
+            g.OnExit = AfterGame;
+            _game = g;
+        }
+
+        // (the app's Sort hub picks the fridge or the cupboard; until the hub is ported, the fridge)
+        void OpenSort()
+        {
+            BeforeGame();
+            var g = SquishSquad.Games.Sort.SortGame.Create(transform, MenuState.SortLevel, 0, 0, "fridge");
+            g.OnLevel = lv => MenuState.SortLevel = lv;
+            g.OnExit = AfterGame;
+            _game = g;
         }
 
         // PLAY on a card, 420 ms after the tap (menu.js playAt -> x.playGame)
@@ -113,6 +136,7 @@ namespace SquishSquad.Menu
             var g = c.Game(i);
             c.Remember(i);
             if (g.id == "stack") { OpenStack(); return; }
+            if (g.id == "sort") { OpenSort(); return; }
             c.Model.PlayDone(NowMs);
             ShowToast(g.name + " isn't in the Unity version yet");
         }
