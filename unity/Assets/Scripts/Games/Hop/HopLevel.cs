@@ -30,8 +30,8 @@ namespace SquishSquad.Games.Hop
         public Action OnExit;
         public IDictionary<string, object> Profile;
         /// <summary>Remove Ads: Unity has no ads yet, so the game behaves as for a player who bought it (a hint is free).</summary>
-        public bool AdsFree = true;
-        public bool AdReady = false;
+        public bool AdsFree => AdHook.AdsFree(Profile);   // (Remove Ads, or no ads in this build)
+        public bool AdReady => AdHook.Ready();
         /// <summary>Resources/Hop/&lt;name&gt;.xml's text (the exported buttons).</summary>
         public static Func<string, string> LoadXml;
 
@@ -474,8 +474,9 @@ namespace SquishSquad.Games.Hop
         void WatchHint()
         {
             SetHintAsk(false);
-            // (without Remove Ads the app shows a rewarded ad first; Unity has none yet, and its card waits on LOADING AD…)
+            // (without Remove Ads, a rewarded ad first; the hint once its reward is earned)
             if (AdsFree) Later(200, GiveHint);
+            else AdHook.Show(() => Later(200, GiveHint));
         }
         // back to the last spot on a full clear (k moves in)
         int RewindTo(int k)

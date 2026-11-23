@@ -24,8 +24,8 @@ namespace SquishSquad.Games.Squishdoku
         public static Func<DateTime> Today = () => DateTime.Now;
         /// <summary>Blitz's: Remove Ads, the ad, whether the record and pay are saved (the app's uid).</summary>
         public bool AdsFree, Save = true;
-        public Func<bool> AdReady = () => false;
-        public Action<Action> ShowAd = back => back();
+        public Func<bool> AdReady = () => AdHook.Ready();
+        public Action<Action> ShowAd = back => AdHook.Show(back);
         /// <summary>A Blitz board's puzzle (tests hand in the app's); null: the engine's.</summary>
         public Func<int, int, Puzzle> PuzzleSource;
         /// <summary>HEAD START flipped (saved by the host: the profile's sdk.head).</summary>

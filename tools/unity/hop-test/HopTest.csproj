@@ -11,6 +11,7 @@
     <Compile Include="../../../unity/Assets/Scripts/Ui/Cards/*.cs" Exclude="../../../unity/Assets/Scripts/Ui/Cards/CardPieces.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Anim/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Audio/Snd.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/AdHook.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Games/Hop/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Hop/HopGame.cs;../../../unity/Assets/Scripts/Games/Hop/HopMesh.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
     <Compile Include="../vector-test/ReferenceRaster.cs" />

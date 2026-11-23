@@ -12,6 +12,7 @@
     <Compile Include="../../../unity/Assets/Scripts/Ui/Blitz/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Anim/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Audio/Snd.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/AdHook.cs" />
     <!-- StackGame (and its Blitz) runs on UnityStubs.cs; the screen and hub hosts are left out -->
     <Compile Include="../../../unity/Assets/Scripts/Games/Stack/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Stack/StackScreen.cs;../../../unity/Assets/Scripts/Games/Stack/StackHub*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />

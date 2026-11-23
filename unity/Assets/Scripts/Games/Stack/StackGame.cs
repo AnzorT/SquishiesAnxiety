@@ -11,7 +11,7 @@
 // Every motion is the app's: the same Animated timings, springs and easings (SquishSquad.Anim is React Native's
 // Animated in C#), the same geometry. The pieces: Resources/Stack (tools/unity/export-stack.mjs) and StackArt; the
 // cards: StackCards on Ui/Cards.
-// Not ported yet: ads. Profile is the game's copy of the player's
+// Profile is the game's copy of the player's
 // (MenuScreen.SeedGameProfiles); signed in, each outcome is also saved to the account where the app saves it (StackSave).
 using System;
 using System.Collections.Generic;
@@ -29,10 +29,10 @@ namespace SquishSquad.Games.Stack
         // ---- setup --------------------------------------------------------------------------------------------------
         public Action OnExit;
         public static IDictionary<string, object> Profile = new Dictionary<string, object>();   // until Firebase (step 3)
-        /// <summary>Remove Ads: Unity has no ads yet, so the game behaves as for a player who bought it (a hint is free).</summary>
-        public const bool AdsFree = true;
-        /// <summary>Whether a rewarded ad is loaded (there's no ad SDK yet: never). Only read without AdsFree.</summary>
-        const bool AdReady = false;
+        /// <summary>Remove Ads (or no ads in this build: Ui/AdHook): a hint is free.</summary>
+        public static bool AdsFree => AdHook.AdsFree(Profile);
+        /// <summary>Whether a rewarded ad is loaded. Only read without AdsFree.</summary>
+        static bool AdReady => AdHook.Ready();
         /// <summary>The app asks before the first hint of a level even with Remove Ads ("We'll show you the next best move.",
         /// SHOW ME): the hint costs a star either way (Game.js askHint). false: hints come at once, without the card.</summary>
         public const bool AskBeforeHint = true;
@@ -453,8 +453,9 @@ namespace SquishSquad.Games.Stack
         void WatchHint()
         {
             Close(ref _hintAsk);
-            // (without Remove Ads the app shows a rewarded ad first; Unity has none yet, and its card waits on LOADING AD…)
-            ShowHint();
+            // (without Remove Ads, a rewarded ad first; the hint once its reward is earned)
+            if (AdsFree) ShowHint();
+            else AdHook.Show(ShowHint);
         }
 
         void ShowHint()

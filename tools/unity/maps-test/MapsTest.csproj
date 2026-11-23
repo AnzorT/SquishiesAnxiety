@@ -20,6 +20,7 @@
     <Compile Include="../../../unity/Assets/Scripts/Ui/Blitz/**/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Anim/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Audio/Snd.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/AdHook.cs" />
     <Compile Include="../../../unity/Assets/Scripts/ThirdParty/Yoga/**/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Games/Shared/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Shared/GameScreenHost.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Games/Stack/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Stack/StackGame.cs;../../../unity/Assets/Scripts/Games/Stack/StackScreen.cs" />

@@ -307,7 +307,7 @@ namespace SquishSquad.Menu
             BeforeGame();
             SeedGameProfiles();
             var s = SquishSquad.Games.Squishdoku.SquishdokuScreen.Create(transform);
-            s.AdsFree = false;   // (no ads in Unity yet; the save card offers its gem save)
+            s.AdsFree = SquishSquad.Ui.AdHook.AdsFree(CharactersPageLink.Get()?.Profile);   // (Remove Ads; the save card's ad)
             s.OnExit = AfterGame;
             _game = s;
         }

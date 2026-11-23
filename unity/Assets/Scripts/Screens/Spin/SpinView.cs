@@ -141,7 +141,7 @@ namespace SquishSquad.Screens
         }
 
         void Collect() => Phase = "done";
-        void WatchAd() { if (AdsFree) Phase = "adReady"; }
+        void WatchAd() { if (AdsFree) Phase = "adReady"; else Ui.AdHook.Show(() => Phase = "adReady"); }
 
         // ---- layout ------------------------------------------------------------------------------------------------------
         float K => Math.Min(1, (H - 40) / (S + 14));
@@ -179,7 +179,7 @@ namespace SquishSquad.Screens
             if (Phase == "done" || Phase == "error")
             {
                 float h = 2;
-                if (Phase == "done" && SpinsLeft > 0 && AdsFree) h += GreenH + 9;
+                if (Phase == "done" && SpinsLeft > 0 && (AdsFree || Ui.AdHook.Available)) h += GreenH + 9;
                 else if (Phase == "done" && SpinsLeft == 0) h += NoteH("That’s all the spins for today. Come back tomorrow!") + 9;
                 if (Phase == "error") h += NoteH(ErrorNote) + 9;
                 h += PinkH;
@@ -210,7 +210,7 @@ namespace SquishSquad.Screens
             if (f.TryGetValue("after", out var af))
             {
                 float ay = af.Y + 2;
-                if (Phase == "done" && SpinsLeft > 0 && AdsFree) { f["green"] = new Frame(SideX + (360 - GreenW) / 2, ay, GreenW, GreenH); ay += GreenH + 9; }
+                if (Phase == "done" && SpinsLeft > 0 && (AdsFree || Ui.AdHook.Available)) { f["green"] = new Frame(SideX + (360 - GreenW) / 2, ay, GreenW, GreenH); ay += GreenH + 9; }
                 else if (Phase == "done" && SpinsLeft == 0) { var nh = NoteH("That’s all the spins for today. Come back tomorrow!"); f["note"] = new Frame(SideX + 20, ay, 320, nh); ay += nh + 9; }
                 if (Phase == "error") { var nh = NoteH(ErrorNote); f["note"] = new Frame(SideX + 20, ay, 320, nh); ay += nh + 9; }
                 f["pink"] = new Frame(SideX + (360 - PinkW) / 2, ay, PinkW, PinkH);

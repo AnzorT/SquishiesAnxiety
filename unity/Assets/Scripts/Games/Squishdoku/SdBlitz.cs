@@ -65,9 +65,9 @@ namespace SquishSquad.Games.Squishdoku
         public Func<int, int, Puzzle> PuzzleSource = (n, tier) => Engine.MakePuzzle(n, tier, (long)Math.Floor(SdLevel.Random() * 2147483648.0));
         /// <summary>Remove Ads: the save is free.</summary>
         public bool AdsFree;
-        public Func<bool> AdReady = () => false;
+        public Func<bool> AdReady = () => AdHook.Ready();
         /// <summary>A rewarded ad: show it, then call back (useRewardedAd's show).</summary>
-        public Action<Action> ShowAd = back => back();
+        public Action<Action> ShowAd = back => AdHook.Show(back);
         /// <summary>The player's gems.</summary>
         public Func<int> Gems = () => (int)Js.OrNumber(SdLevel.Profile.TryGetValue("gems", out var g) ? g : null, 0);
         /// <summary>A gem save (functions/squad.js blitzSave): the price paid, or an error ("not_enough_gems", ...).

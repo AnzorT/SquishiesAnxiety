@@ -50,12 +50,12 @@ namespace SquishSquad.Ui.Blitz
         public int CurrentPip => CardName == "fail" || CardName == "win" ? -1 : Idx;
 
         // the game's side
-        public Func<bool> AdReady = () => false;
+        public Func<bool> AdReady = () => AdHook.Ready();
         public bool AdsFree;
         /// <summary>The record: the furthest round reached (the fail card's "best").</summary>
         public Func<int> Best = () => 0;
         /// <summary>A rewarded ad: show it, then call back (not called with Remove Ads).</summary>
-        public Action<Action> ShowAd = back => back();
+        public Action<Action> ShowAd = back => AdHook.Show(back);
         /// <summary>The next round starts (Idx went up): deal it.</summary>
         public Action<int> OnNext;
         /// <summary>The run's over, lost: (reason, reached) to save (afterBlitz won: false).</summary>

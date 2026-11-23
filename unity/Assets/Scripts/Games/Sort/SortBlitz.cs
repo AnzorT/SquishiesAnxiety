@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
+using SquishSquad.Ui;
 using SquishSquad.Ui.Blitz;
 using SquishSquad.Ui.Cards;
 using SquishSquad.Vector;
@@ -44,7 +45,7 @@ namespace SquishSquad.Games.Sort
             l.PickCreatures = l.Pick;
             var run = new BlitzRun(screenW, screenH, "round", new BlitzRun.Timings { MistakeMs = 800, NextMs = 1500, WinMs = 1100 }, Levels.BLITZ_ROUNDS)
             {
-                AdsFree = true,
+                AdsFree = AdHook.AdsFree(profile),
                 Best = () => (int)(Levels.Record(l.Profile).Blitz.Reached ?? 0),
             };
             l._run = run;
