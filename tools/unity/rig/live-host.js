@@ -7,7 +7,7 @@
   // a C# delegate arrives as a function, or as an object with Invoke (the JS engine's binding decides)
   function call(f, a) { return typeof f === 'function' ? f(a) : f.Invoke(a); }
   G.__live = {
-    install: function (readFile) { RigDomShim.install(G, { readFile: function (p) { return call(readFile, p); } }); },
+    install: function (readFile) { G.__readFile = function (p) { return call(readFile, p); }; RigDomShim.install(G, { readFile: G.__readFile }); },
     mount: function (key) {
       var el = document.createElement('div');
       document.body.appendChild(el);

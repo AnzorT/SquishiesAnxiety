@@ -31,6 +31,18 @@ for (int f = 1; f <= 240; f++)
 }
 bool same = Tags(at1) == Tags(RecordedRig.Load("mittens").FrameAt(1f));
 Console.WriteLine($"240 frames of 2 creatures in {sw.ElapsedMilliseconds} ms; Mittens {a?.Length} chars, Lumi {b?.Length} chars; Mittens at 1 s has the recording's elements: {same}");
+// the house's runtime drawings through the same engine (House/HouseDraw.cs): a piece drawn again, named as the export
+var wire = typeof(LiveRig).GetMethod("WireHouseDraw", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+wire.Invoke(null, null);
+var pieces = (SquishSquad.House.JObj)SquishSquad.House.HouseJson.Parse(System.IO.File.ReadAllText(System.IO.Path.Combine(Resources.Root, "House/house-pieces.json")));
+int dOk = 0, dAll = 0;
+foreach (var key in new[] { "LIV-012|||0", "KIT-012|||0", "BED-012|||0" })
+{
+    var p = key.Split('|'); var want = pieces.Obj("variants").Obj(key);
+    var got = SquishSquad.House.HouseDraw.Variant(p[0], p[1] == "" ? null : p[1], p[2], double.Parse(p[3]), p[0].StartsWith("KIT") ? "kitchen" : p[0].StartsWith("BED") ? "bedroom" : "living");
+    dAll++; if (got != null && got.Str("src") == want.Str("src")) dOk++;
+}
+Console.WriteLine($"house drawings through HouseDraw: {dOk} of {dAll} named as the export");
 m.Dispose();
 l.Dispose();
-return a != null && b != null && same ? 0 : 1;
+return a != null && b != null && same && dOk == dAll ? 0 : 1;

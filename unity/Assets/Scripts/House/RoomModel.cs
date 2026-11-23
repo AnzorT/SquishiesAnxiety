@@ -109,7 +109,9 @@ namespace SquishSquad.House
             string st = r != null ? RStOf(it, r) : null;
             double ra = rot == null ? -30 : ((rot.Value % 360) + 360) % 360; if (ra == 330) ra = -30;
             var key = A.Str("reno") + "|" + (st ?? "") + "|" + (it["txt"] is string tx ? tx : "") + "|" + HouseJson.JsString(ra);
-            var v = D.Variants.Obj(key); if (v == null) Missing.Add("variant " + key);
+            var v = D.Variants.Obj(key);
+            if (v == null) { v = HouseDraw.Variant(A.Str("reno"), st, it["txt"] as string, rot, S.Cur); if (v != null) D.Variants[key] = v; }
+            if (v == null) Missing.Add("variant " + key);
             return v;
         }
 

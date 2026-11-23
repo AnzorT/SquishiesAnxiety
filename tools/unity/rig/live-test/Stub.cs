@@ -11,5 +11,7 @@ namespace UnityEngine
     }
     public static class Debug { public static void LogWarning(object m) => System.Console.WriteLine("WARN " + m); public static void Log(object m) => System.Console.WriteLine(m); }
     public static class Time { public static int frameCount; public static double unscaledTimeAsDouble; }
+    public enum RuntimeInitializeLoadType { BeforeSceneLoad, AfterSceneLoad }
+    public sealed class RuntimeInitializeOnLoadMethodAttribute : System.Attribute { public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType t) { } }
     public static class Mathf { public static int Max(int a, int b) => System.Math.Max(a, b); public static int Min(int a, int b) => System.Math.Min(a, b); }
 }

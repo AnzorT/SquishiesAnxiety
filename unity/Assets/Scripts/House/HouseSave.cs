@@ -355,7 +355,13 @@ namespace SquishSquad.House
             var R = Render(it.Str("t"), it.Num("r"), it.Num("c"), "");
             var bb = R?.Obj("bb"); return bb == null ? new double[] { 0, 0, 1, 1 } : new[] { bb.Num("x"), bb.Num("y"), bb.Num("w"), bb.Num("h") };
         }
-        public JObj Render(string t, double r, double c, string v) => D.Renders.Obj(t + "|" + HouseJson.JsString(r) + "|" + HouseJson.JsString(c) + "|" + v);
+        public JObj Render(string t, double r, double c, string v)
+        {
+            var key = t + "|" + HouseJson.JsString(r) + "|" + HouseJson.JsString(c) + "|" + v;
+            var R = D.Renders.Obj(key);
+            if (R == null) { R = HouseDraw.Render(t, r, c, v, Cur, D.Grads); if (R != null) D.Renders[key] = R; }   // (the runtime drawer: stage 5)
+            return R;
+        }
         double RsMx(JObj it) { var A = D.CatOf(it.Str("t")); var r = RowOf(A); return r != null && r.Str("room") == "YRD" && (r.Str("slotName") == "Pergola / Canopy" || r.Str("slotName") == "Aquatic Centerpiece" || r.Str("catO") == "Games") ? 2 : 1.5; }
         public double[] SzLim(JObj it)
         {

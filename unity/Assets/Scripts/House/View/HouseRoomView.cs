@@ -77,7 +77,7 @@ namespace SquishSquad.House.View
             Fronts.Clear();
             foreach (var o in vals.Arr("items") ?? new List<object>()) if (o is JObj f && f.Str("id") != null) Fronts[f.Str("id")] = HouseJson.Truthy(f["hasFront"]);
             vals["camK"] = 1.0;   // (the camera is the quad's: SetCamera)
-            var L = RoomLayers.Split(_tpl.Render(vals), View, () => new RoomCompose { PicSvg = n => Res("pics/" + n), PicPng = n => Resources.Load<Texture2D>("House/pics/" + n) != null ? n : null });
+            var L = RoomLayers.Split(_tpl.Render(vals), View, () => new RoomCompose { PicSvg = n => HouseDraw.Pics.TryGetValue(n, out var rt) ? rt : Res("pics/" + n), PicPng = n => Resources.Load<Texture2D>("House/pics/" + n) != null ? n : null });
             float k = width / 852f;
             _k = k;
             Notes.AddRange(L.Notes);

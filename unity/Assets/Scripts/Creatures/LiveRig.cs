@@ -45,6 +45,10 @@ namespace SquishSquad.Creatures
 
         /// <summary>The creature mounted in the engine, or null when the engine or the creature failed (the caller falls
         /// back to its recording).</summary>
+        /// <summary>The engine for the house's runtime drawings (House/HouseDraw.Eval): started on first use.</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void WireHouseDraw() => SquishSquad.House.HouseDraw.Eval = js => Boot() ? _env.Eval<string>(js, "house") : null;
+
         public static LiveRig Create(string key)
         {
             if (!Boot()) return null;
