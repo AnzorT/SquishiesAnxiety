@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 // The Main Menu screen: a camera that shows the screen in pixels, the menu (MenuView), touches, and a small dev panel
 // (frame rate, level and season, sign out). Signed in (App/AppFlow.cs), the HUD shows the player's coins, gems, level
 // and XP (SetPlayer) and the house is the player's level's; offline / signed out (the dev menu) it keeps the exported
@@ -113,39 +114,82 @@ namespace SquishSquad.Menu
             if (_view.Where == MenuView.Place.Park) _view.ShowGames(NowMs, true);
         }
 
+        // The games read the player's progress from their own profile (until saving to the account is ported, what they
+        // win stays in memory). Signed in: a copy of the account's profile, so the maps show its real levels and stars.
+        // Offline: the levels kept on the device.
+        void SeedGameProfiles()
+        {
+            var player = CharactersPageLink.Get();
+            if (player?.Profile != null)
+            {
+                SquishSquad.Games.Stack.StackGame.Profile = DeepCopy(player.Profile);
+                SquishSquad.Games.Sort.SortGame.Profile = DeepCopy(player.Profile);
+                SquishSquad.Games.Hop.HopGame.Profile = DeepCopy(player.Profile);
+                SquishSquad.Games.Squishdoku.SdLevel.Profile = DeepCopy(player.Profile);
+                return;
+            }
+            SetLv(SquishSquad.Games.Stack.StackGame.Profile, "stack", MenuState.StackLevel);
+            SetLv(SquishSquad.Games.Hop.HopGame.Profile, "hop", MenuState.HopLevel);
+        }
+
+        static void SetLv(IDictionary<string, object> p, string game, int lv)
+        {
+            if (!(p.TryGetValue(game, out var r) && r is IDictionary<string, object> rec)) { rec = new Dictionary<string, object>(); p[game] = rec; }
+            if (!rec.TryGetValue("lv", out var have) || System.Convert.ToDouble(have) < lv) rec["lv"] = (double)lv;
+        }
+
+        static IDictionary<string, object> DeepCopy(IDictionary<string, object> m)
+        {
+            var c = new Dictionary<string, object>();
+            foreach (var kv in m) c[kv.Key] = Copy(kv.Value);
+            return c;
+        }
+
+        static object Copy(object v)
+        {
+            if (v is IDictionary<string, object> d) return DeepCopy(d);
+            if (v is IList<object> l) { var c = new List<object>(l.Count); foreach (var x in l) c.Add(Copy(x)); return c; }
+            return v;
+        }
+
+        // each game opens on its hub (Hop: its map), as the app's game screens do
         void OpenStack()
         {
             BeforeGame();
-            var g = StackGame.Create(transform, MenuState.StackLevel);
-            g.OnExit = AfterGame;
-            _game = g;
+            SeedGameProfiles();
+            var s = SquishSquad.Games.Stack.StackScreen.Create(transform);
+            s.OnExit = AfterGame;
+            _game = s;
         }
 
-        // (the app's Sort hub picks the fridge or the cupboard; until the hub is ported, the fridge)
         void OpenSort()
         {
             BeforeGame();
-            var g = SquishSquad.Games.Sort.SortGame.Create(transform, MenuState.SortLevel, 0, 0, "fridge");
-            g.OnLevel = lv => MenuState.SortLevel = lv;
-            g.OnExit = AfterGame;
-            _game = g;
+            SeedGameProfiles();
+            var s = SquishSquad.Games.Sort.SortScreen.Create(transform);
+            s.OnLevel = (theme, lv) => { if (theme == "fridge") MenuState.SortLevel = lv; };
+            s.OnExit = AfterGame;
+            _game = s;
         }
 
-        // Squishdoku: the level it's on and HEAD START are kept by SquishdokuGame (PlayerPrefs) until the profile has them
         void OpenSquishdoku()
         {
             BeforeGame();
-            var g = SquishSquad.Games.Squishdoku.SquishdokuGame.Create(transform, SquishSquad.Games.Squishdoku.SquishdokuGame.Level);
-            g.OnExit = AfterGame;
-            _game = g;
+            SeedGameProfiles();
+            var s = SquishSquad.Games.Squishdoku.SquishdokuScreen.Create(transform);
+            s.AdsFree = false;   // (no ads in Unity yet; the save card offers its gem save)
+            s.OnExit = AfterGame;
+            _game = s;
         }
 
         void OpenHop()
         {
             BeforeGame();
-            var g = SquishSquad.Games.Hop.HopGame.Create(transform, MenuState.HopLevel);
-            g.OnExit = () => { if (g.Level != null) MenuState.HopLevel = g.Level.Lv; AfterGame(); };
-            _game = g;
+            SeedGameProfiles();
+            var s = SquishSquad.Games.Hop.HopScreen.Create(transform);
+            s.OnLevel = lv => MenuState.HopLevel = lv;
+            s.OnExit = AfterGame;
+            _game = s;
         }
 
         // PLAY on a card, 420 ms after the tap (menu.js playAt -> x.playGame)
