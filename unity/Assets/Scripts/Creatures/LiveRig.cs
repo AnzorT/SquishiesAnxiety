@@ -22,7 +22,7 @@ using UnityEngine;
 
 namespace SquishSquad.Creatures
 {
-    public sealed class LiveRig : IRigFrames, IDisposable
+    public sealed class LiveRig : IRigFrames, IHouseRig, IDisposable
     {
         static ScriptEnv _env;
         static bool _failed;
@@ -30,6 +30,9 @@ namespace SquishSquad.Creatures
         static Action<double, string> _play;
         static Action<double> _frame, _unmount;
         static Func<double, string> _svg;
+        static Action<double, string> _ext;
+        static Action<double, bool> _fidgets;
+        static Func<double, bool> _fidg;
         static int _lastFrame = -1;
         static double _jsMs, _t0 = -1;
 
@@ -94,6 +97,9 @@ namespace SquishSquad.Creatures
                 _frame = _env.Eval<Action<double>>("__live.frame", "frame");
                 _svg = _env.Eval<Func<double, string>>("__live.svg", "svg");
                 _unmount = _env.Eval<Action<double>>("__live.unmount", "unmount");
+                _ext = _env.Eval<Action<double, string>>("__live.ext", "ext");
+                _fidgets = _env.Eval<Action<double, bool>>("__live.fidgets", "fidgets");
+                _fidg = _env.Eval<Func<double, bool>>("__live.fidg", "fidg");
                 return true;
             }
             catch (Exception e)
@@ -139,6 +145,22 @@ namespace SquishSquad.Creatures
             try { _play(_id, move); }
             catch (Exception e) { Debug.LogWarning("[LiveRig] play " + move + ": " + e.Message); }
         }
+
+        /// <summary>The house walk's channels for this frame (House/HouseWalk: ext, replacing the last ones).</summary>
+        public void Ext(IDictionary<string, double> e)
+        {
+            if (_gone || _env == null) return;
+            var sb = new StringBuilder("{");
+            foreach (var kv in e) { if (sb.Length > 1) sb.Append(','); sb.Append('"').Append(kv.Key).Append("\":").Append(double.IsNaN(kv.Value) || double.IsInfinity(kv.Value) ? "0" : kv.Value.ToString("R", System.Globalization.CultureInfo.InvariantCulture)); }
+            sb.Append('}');
+            try { _ext(_id, sb.ToString()); } catch (Exception ex) { Debug.LogWarning("[LiveRig] ext: " + ex.Message); }
+        }
+
+        /// <summary>The rig's idle fidgets on (standing free in the house) or off.</summary>
+        public void Fidgets(bool on) { if (!_gone && _env != null) try { _fidgets(_id, on); } catch (Exception) { } }
+
+        /// <summary>Whether the rig is in one of its idle fidgets now (the house's fidg).</summary>
+        public bool InFidget() { try { return !_gone && _env != null && _fidg(_id); } catch (Exception) { return false; } }
 
         public void Dispose()
         {

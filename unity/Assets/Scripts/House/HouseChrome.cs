@@ -104,6 +104,12 @@ namespace SquishSquad.House
 
         /// <summary>tapDoor without creatures (stage 3 walks the selected one to the door first): a locked door's toast,
         /// else the next room. Returns the toast, or null when the room changed.</summary>
+        public static string LockedText(JObj door)
+        {
+            string to = door.Str("to");
+            return "Boarded up! The " + (HouseFrame.RLAB.TryGetValue(to ?? "", out var n) ? n : to) + " opens at level " + HouseJson.JsString(door["lock"]);
+        }
+
         public static string Tap(HouseSave s, JObj door)
         {
             double lk = door.Num("lock");

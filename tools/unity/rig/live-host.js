@@ -16,6 +16,15 @@
       return id;
     },
     play: function (id, move) { var h = hosts[id]; if (h && h.ctl && h.ctl.play) h.ctl.play(move); },
+    // the house: the walk's channels on the rig (ctl.ext: one object it reads every frame), its idle fidgets on or off
+    // (the house turns them on while he stands free), and whether he's in one now (Squad House's fidg)
+    ext: function (id, json) {
+      var h = hosts[id]; if (!h || !h.ctl) return;
+      if (!h.ext) { h.ext = {}; if (h.ctl.ext) h.ctl.ext(h.ext); }
+      var o = JSON.parse(json); for (var k in h.ext) h.ext[k] = 0; for (var k2 in o) h.ext[k2] = o[k2];
+    },
+    fidgets: function (id, on) { var h = hosts[id], I = h && h.ctl && h.ctl._I; if (I) { I.fidgets = !!on; I.hfid = 1; } },
+    fidg: function (id) { var h = hosts[id], I = h && h.ctl && h.ctl._I; return !!(I && I.cur && /^(hf\d|idle_)/.test(I.cur.name)); },
     frame: function (ms) { G.__clock.frame(ms); },
     now: function () { return G.__clock.now; },
     svg: function (id) {

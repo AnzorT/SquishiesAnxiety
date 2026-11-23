@@ -1,7 +1,9 @@
-// The Squad House screen (HOUSE_PORT_PLAN.md stage 2): the room (HouseRoomView) in the 852 x 393 frame scaled to the
-// screen's width, the camera easing between rooms, the doors, the bottom drawer (its tab opens and closes it; RENOVATE
-// and CATALOG come with stages 6 and 7) and the toasts, as Squad House v6.dc.html. Not yet: creatures (stage 3 on),
-// the house map (stage 8: until then the rooms change by their doors and EnterRoom).
+// The Squad House screen (HOUSE_PORT_PLAN.md stages 2-3): the room (HouseRoomView: the base and each piece in layers)
+// in the 852 x 393 frame scaled to the screen's width, the camera easing between rooms, the squad (HouseCreatures +
+// HouseSquadView: walking about, sorted between the pieces, tapped to select, sent by a floor tap, carried through a
+// door), the bottom drawer (its tab opens and closes it; RENOVATE and CATALOG come with stages 6 and 7) and the toasts,
+// as Squad House v6.dc.html; the save every 5 s and on each room change (OnSave). Not yet: actions (4), item taps (5),
+// the house map (8: until then the rooms change by their doors and GoTo).
 //
 //   var s = HouseScreen.Create(parent, houseJson, level, ownedRosterIds);   s.OnExit = ...;   (Android's back leaves)
 using System;
@@ -19,6 +21,9 @@ namespace SquishSquad.House.View
         public Action<string> OnSave;
 
         HouseRoomView _room;
+        HouseCreatures _sim;
+        HouseSquadView _squad;
+        double _saveAt;
         readonly HouseCamera _cam = new HouseCamera();
         HouseHud _hud;
         UiPiece _tab, _arrow, _panel, _toast;
@@ -56,15 +61,20 @@ namespace SquishSquad.House.View
             world.SetParent(transform.parent, false);
             _room = world.gameObject.AddComponent<HouseRoomView>();
             _room.Load(_json, _level, _owned, _start);
+            _sim = new HouseCreatures(_room.Save, new HouseWalk(HouseRoomView.Res("walk")));
+            _sim.Init(Now, _start);
             _room.Draw(_w, _h);
-            _cam.Set(RoomK(), Now, false);
+            _cam.Set(_room.RoomK, Now, false);
             _room.SetCamera(_cam.K(Now));
+            _squad = new HouseSquadView(world, _sim, _k);
+            _squad.Rebuild();
+            _saveAt = Now + 5000;
 
             _hud = new HouseHud(HouseRoomView.Res("hud"));
-            _tab = Piece("hud tab", 900, "tab");
-            _arrow = Piece("hud arrow", 901, "arrow");
-            _panel = Piece("hud panel", 899, "panel");
-            _toast = UiPiece.Create(world, "toast", 1100);
+            _tab = Piece("hud tab", 31001, "tab");
+            _arrow = Piece("hud arrow", 31002, "arrow");
+            _panel = Piece("hud panel", 31000, "panel");
+            _toast = UiPiece.Create(world, "toast", 31100);
             _toast.Opacity = 0;
         }
 
@@ -74,13 +84,6 @@ namespace SquishSquad.House.View
             var r = _hud.Pieces[id];
             p.SetSvg(HouseRoomView.Res("hud/" + id), (float)r.W, (float)r.H, 12);
             return p;
-        }
-
-        // the room's camK (renderVals: 0.85 indoors, 1 in the dance room, outdoors and on the beach)
-        double RoomK()
-        {
-            var sh = Shell();
-            return HouseCamera.KFor(_room.Save.Cur, sh != null && sh.Truthy("out"), sh != null && sh.Truthy("beach"));
         }
 
         JObj Shell() => _room.Save.D.Shells.Obj(new RoomModel(_room.Save).ShellKey(_room.Save.Cur));
@@ -94,7 +97,11 @@ namespace SquishSquad.House.View
             double now = Now;
             if (Input.GetKeyDown(KeyCode.Escape)) { OnExit?.Invoke(); Destroy(gameObject); return; }
             HandleInput(now);
-            _room.SetCamera(_cam.K(now));
+            _sim.Tick(now);
+            double k = _cam.K(now);
+            _room.SetCamera(k);
+            _squad.Update(k, now);
+            if (now >= _saveAt) { _saveAt = now + 5000; Save(); }
             // the drawer (translate(-50%, ty): its pieces' rects are at ty 0), the arrow turning about its centre
             double ty = _hud.DrawerTy(now);
             var tab = _hud.Pieces["tab"]; var panel = _hud.Pieces["panel"]; var arrow = _hud.Pieces["arrow"];
@@ -157,37 +164,55 @@ namespace SquishSquad.House.View
                 }
                 return;
             }
-            var b = HouseCamera.ToBox(fx, fy, _cam.K(now));
+            double k = _cam.K(now);
+            int hit = _squad.HitCreature(fx, fy, k);
+            if (hit >= 0) { _sim.TapCreature(hit, now); return; }
+            var b = HouseCamera.ToBox(fx, fy, k);
             var door = HouseDoors.At(Shell(), b.x, b.y);
-            if (door != null)
+            if (door != null) { TapDoor(door, now); return; }
+            if (!_sim.FloorDown(b.x, b.y, now)) Toast("Tap a squad friend first, then tap the floor");
+        }
+
+        // tapDoor: a locked one's toast (and "Locked..." from the selected friend); else the selected friend says
+        // "Coming!", walks to the door and the room changes with him, or the room changes at once
+        void TapDoor(JObj d, double now)
+        {
+            if (_sim.Edit) return;
+            var c = _sim.SelC;
+            if (d.Num("lock") != 0)
             {
-                string from = _room.Save.Cur;
-                var msg = HouseDoors.Tap(_room.Save, door);
-                if (msg != null) { Toast(msg); return; }
-                if (_room.Save.Cur != from) EnterRoom(now);
+                Toast(HouseDoors.LockedText(d));
+                if (c != null) _sim.Say(c, "Locked...", now);
                 return;
             }
-            // floorDown with no squad friend selected (stage 3 brings them)
-            Toast("Tap a squad friend first, then tap the floor");
+            string to = d.Str("to"), from = _room.Save.Cur;
+            void Go() => Enter(to, c, from, Now);
+            if (c != null) { _sim.Say(c, "Coming!", now); var sp = d.Arr("spawn"); _sim.GoTo(c, (double)sp[0], (double)sp[1], Go, now); }
+            else Go();
         }
 
         /// <summary>Goes to a room (the house map's pick, a door): drawn, the camera easing to its zoom, saved.</summary>
-        public void GoTo(string room)
+        public void GoTo(string room) => Enter(room, null, null, Now);
+
+        void Enter(string room, HouseCreature carry, string from, double now)
         {
-            _room.Save.EnterRoom(room);
-            EnterRoom(Now);
+            _sim.Enter(room, carry, from, now);
+            _room.Draw(_w, _h);
+            _cam.Set(_room.RoomK, now);
+            _room.SetCamera(_cam.K(now));
+            _squad.Rebuild();
+            Save();   // (the page: setTimeout(save, 0))
         }
 
-        void EnterRoom(double now)
+        void Save()
         {
-            _room.Draw(_w, _h);
-            _cam.Set(RoomK(), now);
-            _room.SetCamera(_cam.K(now));
+            _sim.SyncSave();
             OnSave?.Invoke(_room.Save.ToJsonKeepingUnknown());
         }
 
         void OnDestroy()
         {
+            _squad?.Destroy();
             if (_room != null) Destroy(_room.gameObject);
             if (_toast != null) Destroy(_toast.gameObject);
         }

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LiveTest")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3d94311e64951747a697e0eca5c98314fe4da04f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3cd1b099fe6e9f7bcb7533eb0fbe663349ba71f0")]
 [assembly: System.Reflection.AssemblyProductAttribute("LiveTest")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LiveTest")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

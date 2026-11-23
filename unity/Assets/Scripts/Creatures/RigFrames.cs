@@ -21,6 +21,14 @@ namespace SquishSquad.Creatures
         void Play(string move);
     }
 
+    /// <summary>What the house drives on a live rig (LiveRig): the walk's ext channels, the idle fidgets.</summary>
+    public interface IHouseRig
+    {
+        void Ext(System.Collections.Generic.IDictionary<string, double> e);
+        void Fidgets(bool on);
+        bool InFidget();
+    }
+
     public static class Rigs
     {
         /// <summary>The creature's frames: live (SQUISH_PUERTS) when the engine starts, else its recording (null when

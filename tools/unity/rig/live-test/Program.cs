@@ -25,6 +25,9 @@ for (int f = 1; f <= 240; f++)
     b = l.FrameAt(0);
     if (f == 30) at1 = a;
     if (f == 120) l.Play("dance");
+    if (f > 30) m.Ext(new System.Collections.Generic.Dictionary<string, double> { { "spin", f * 3.0 }, { "footL", 2 * Math.Sin(f / 3.0) } });
+    m.Fidgets(true);
+    _ = m.InFidget();
 }
 bool same = Tags(at1) == Tags(RecordedRig.Load("mittens").FrameAt(1f));
 Console.WriteLine($"240 frames of 2 creatures in {sw.ElapsedMilliseconds} ms; Mittens {a?.Length} chars, Lumi {b?.Length} chars; Mittens at 1 s has the recording's elements: {same}");

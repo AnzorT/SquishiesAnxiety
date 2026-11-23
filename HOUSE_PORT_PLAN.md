@@ -53,6 +53,16 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    The drawer's inset highlights aren't drawn (snap.js skips inset shadows).
 3. Creatures placed and walking (logic exact; recorded clips as visuals): pick, homeFor, freeSpot, wander, goTo, the
    movement / turn tick, HouseWalk, z-order, particles. Verify: traces over scripted sessions.
+   ✅ (2026-11-23, untested in Unity) `House/HouseWalk.cs` (house-walk.js and the egg rolls; `house-test walk`: 3,690
+   frames of 41 creatures equal to the page), `House/HouseCreatures.cs` (init, enterRoom's placing and carrying,
+   wander / goTo / freeSpot / blocked / clampF, the walk tick, needs decay and lines, say, particles;
+   `tools/unity/house/creature-trace.mjs` + `house-test creatures`: the page's runs replayed with its own random draws
+   and rig fidgets, every creature every frame equal: lv12 living 900 frames, kitchen 1,800), `House/RoomLayers.cs` (the
+   room cut into a base and one layer per piece / front / toy by z-index so creatures sort between them; `house-test
+   layers` + `layers-check.mjs`: stacked, equal to stage 1's picture in every lv12 room), `House/View/HouseSquadView.cs`
+   (the creatures drawn: live rig with the walk's ext channels and fidgets, else the recording, else the cut-out; shadows,
+   selection ring, name tag, speech bubble, particles; taps). Not checked by a trace yet: taps (select, floor, a door with
+   a friend), the dance room's round floor (no creature was in it).
 4. Live rigs and actions: act, finishUse, needs, quick actions, seats / snuggles, speech. Needs the creature engine.
 5. Item interactions and room effects: rnTap kinds, TV, toys, lights / night, party / disco, vacuum, fog, animated
    pieces (SMIL as flipbooks).
