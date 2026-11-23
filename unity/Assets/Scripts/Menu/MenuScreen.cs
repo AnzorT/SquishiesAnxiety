@@ -152,6 +152,73 @@ namespace SquishSquad.Menu
             return v;
         }
 
+        // ---- the app's screens over the menu (Screens/): the trophy, the gear, and once a day the spin then the streak ----
+        static IDictionary<string, object> ProfileOrEmpty(CharactersPageLink.Player p) => p?.Profile ?? new Dictionary<string, object>();
+
+        // (these screens don't remove themselves when they close, as the games do)
+        void CloseScreen(MonoBehaviour s)
+        {
+            if (s != null) Destroy(s.gameObject);
+            if (_game == s) AfterGame();
+        }
+
+        void OpenAchievements()
+        {
+            BeforeGame();
+            var p = CharactersPageLink.Get();
+            var s = SquishSquad.Screens.AchievementsScreen.Create(transform, ProfileOrEmpty(p));
+            s.OnExit = () => CloseScreen(s);
+            _game = s;
+        }
+
+        void OpenSettings()
+        {
+            BeforeGame();
+            var p = CharactersPageLink.Get();
+            var s = SquishSquad.Screens.SettingsScreen.Create(transform, ProfileOrEmpty(p), p?.Fb, p?.Uid);
+            s.OnLogout = () => { CloseScreen(s); SignOutRequested?.Invoke(); };
+            s.OnExit = () => CloseScreen(s);
+            _game = s;
+        }
+
+        // App.js: the daily spin (stage 'wheel') when it's due, then the streak's intro (stage 'streak'), then the menu;
+        // the streak's DAILY CHALLENGES opens the daily sheet. Checked once, when the signed-in player's profile is in.
+        bool _dailyChecked;
+
+        void CheckDaily()
+        {
+            if (_dailyChecked || _game != null || _page != null || _view == null || _view.Where != MenuView.Place.Home) return;
+            var p = CharactersPageLink.Get();
+            if (p?.Profile == null) return;
+            _dailyChecked = true;
+            var now = System.DateTime.Now;
+            if (SquishSquad.Screens.ScreenWrites.SpinDue(p.Profile, now))
+            {
+                BeforeGame();
+                var s = SquishSquad.Screens.SpinScreen.Create(transform, p.Profile, p.Fb);
+                s.OnExit = () => { CloseScreen(s); StreakIntro(p); };
+                _game = s;
+            }
+            else StreakIntro(p);
+        }
+
+        void StreakIntro(CharactersPageLink.Player p)
+        {
+            if (p?.Profile == null || !SquishSquad.Screens.ScreenWrites.StreakIntroDue(p.Profile, System.DateTime.Now)) return;
+            BeforeGame();
+            var s = SquishSquad.Screens.StreakScreen.Create(transform, p.Profile, true, p.Fb, p.Uid);
+            s.OnExit = () => CloseScreen(s);
+            s.OnOpenDaily = () =>
+            {
+                CloseScreen(s);
+                BeforeGame();
+                var d = SquishSquad.Screens.DailySheetScreen.Create(transform, p.Profile, p.Fb, p.Uid);
+                d.OnExit = () => CloseScreen(d);
+                _game = d;
+            };
+            _game = s;
+        }
+
         // each game opens on its hub (Hop: its map), as the app's game screens do
         void OpenStack()
         {
@@ -246,6 +313,7 @@ namespace SquishSquad.Menu
 
         void Update()
         {
+            CheckDaily();
             if (_game != null) return;   // (the game reads its own touches)
             if (Screen.width != _w || Screen.height != _h) Rebuild();
             _view.Tick((Time.unscaledTime - _t0) * 1000f);
@@ -315,6 +383,8 @@ namespace SquishSquad.Menu
         {
             if (tap == "play" && _view.EnterPark(NowMs)) return;
             if ((tap == "characters" || tap == "level") && OpenPage(tap)) return;
+            if (tap == "trophies") { OpenAchievements(); return; }
+            if (tap == "settings") { OpenSettings(); return; }
             Tapped?.Invoke(tap);
             if (Tapped == null) ShowToast(tap.ToUpperInvariant() + " isn't in the Unity version yet");
         }
