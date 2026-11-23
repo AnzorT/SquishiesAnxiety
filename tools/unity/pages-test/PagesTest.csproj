@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The Characters page and the Level Pass (unity/Assets/Scripts/Menu/Characters*.cs, LevelPass*.cs) drawn from the
+       Unity code outside Unity and compared with the app's screenshots. See Program.cs. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <NoWarn>CS8632;CS0162;CS0414;CS0649</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../unity/Assets/Scripts/Ui/UiFont.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/UiSvg.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Menu/HudArt.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Menu/ParkModel.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Menu/ParkLayout.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Menu/CharactersPageKit.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Menu/CharactersModel.cs" Condition="Exists('../../../unity/Assets/Scripts/Menu/CharactersModel.cs')" />
+    <Compile Include="../../../unity/Assets/Scripts/Menu/CharactersLayout.cs" Condition="Exists('../../../unity/Assets/Scripts/Menu/CharactersLayout.cs')" />
+    <Compile Include="../../../unity/Assets/Scripts/Menu/LevelPassLayout.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Menu/LevelPassModel.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Anim/*.cs" />
+    <Compile Include="../vector-test/ReferenceRaster.cs" />
+    <Compile Include="../vector-test/Png.cs" />
+    <Compile Include="*.cs" />
+  </ItemGroup>
+</Project>

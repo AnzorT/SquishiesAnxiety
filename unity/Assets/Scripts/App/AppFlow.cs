@@ -39,6 +39,11 @@ namespace SquishSquad.App
 
         void Awake()
         {
+            // the menu's pages (Characters, the Level Pass) read the signed-in player from here
+            SquishSquad.Menu.CharactersPageLink.Source = () =>
+                _offline || _fb == null || _user == null || _profile == null || string.IsNullOrEmpty(_user.Uid)
+                    ? null
+                    : new SquishSquad.Menu.CharactersPageLink.Player { Profile = _profile, Uid = _user.Uid, Fb = _fb };
             Instance = this;
             _cam = MenuScreen.CreateCamera(transform);
         }

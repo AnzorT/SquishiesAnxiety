@@ -56,6 +56,7 @@ namespace SquishSquad.Menu
 
         void OnDestroy()
         {
+            ClosePage();   // (the Characters page / Level Pass, if open)
             _view?.Dispose();
             if (Instance == this) Instance = null;
         }
@@ -85,6 +86,7 @@ namespace SquishSquad.Menu
 
         void Rebuild()
         {
+            ClosePage();   // (the Characters page / Level Pass, if open)
             _view?.Dispose();
             _w = Screen.width; _h = Screen.height;
             FitCamera(_cam, _w, _h);
@@ -203,6 +205,7 @@ namespace SquishSquad.Menu
             if (_game != null) return;   // (the game reads its own touches)
             if (Screen.width != _w || Screen.height != _h) Rebuild();
             _view.Tick((Time.unscaledTime - _t0) * 1000f);
+            TickPage();   // (the Characters page / Level Pass over the menu, if open)
             HandleInput();
             if (_view.Carousel != null && _game == null)
             {
@@ -236,6 +239,8 @@ namespace SquishSquad.Menu
             }
             var page = new Vector2(pos.x, _h - pos.y);   // the page's pixels: y down
             float dpPx = _h / _layout.reference.dp[1];
+            // a page open over the menu (the Characters page, the Level Pass) takes the touches and Android's back
+            if (_page != null) { _page.Input(down, held, up, page, NowMs, Input.GetKeyDown(KeyCode.Escape), Input.mouseScrollDelta.y); return; }
 
             // in the Game Park: the games carousel; back (Android's, Escape) walks home like its back orb
             if (_view.Where == MenuView.Place.Park)
@@ -265,8 +270,36 @@ namespace SquishSquad.Menu
         void OnTap(string tap)
         {
             if (tap == "play" && _view.EnterPark(NowMs)) return;
+            if ((tap == "characters" || tap == "level") && OpenPage(tap)) return;
             Tapped?.Invoke(tap);
             if (Tapped == null) ShowToast(tap.ToUpperInvariant() + " isn't in the Unity version yet");
+        }
+
+        // ---- the Characters page and the Level Pass (CHARACTERS and the level crest; CharactersPage.cs, LevelPassPage.cs) ----
+        IMenuPage _page;
+        const int PageOrder = 1000;
+
+        bool OpenPage(string tap)
+        {
+            if (_page != null) return true;
+            _page = tap == "level" ? (IMenuPage)LevelPassPage.Open(transform, _w, _h, NowMs, PageOrder) : CharactersPage.Open(transform, _w, _h, NowMs, PageOrder);
+            return _page != null;
+        }
+
+        void TickPage()
+        {
+            if (_page == null) return;
+            if (!_page.Closed) _page.Tick(NowMs);
+            if (_page.Closed) ClosePage();
+            else _view.Shown = !_page.Covers;   // (the menu needn't draw under a page that covers it)
+        }
+
+        void ClosePage()
+        {
+            if (_page == null) return;
+            _page.Dispose();
+            _page = null;
+            if (_view != null) _view.Shown = _game == null;
         }
 
         public void ShowToast(string text, float seconds = 1.6f)

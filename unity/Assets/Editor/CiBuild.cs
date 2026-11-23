@@ -53,6 +53,7 @@ namespace SquishSquad.EditorTools
                 // the start-up screens (compare with tools/unity/auth-test capture.mjs's pictures of the same states)
                 StartupShots(outDir, 2340, 1080, "a15");
                 StartupShots(outDir, 2048, 1536, "2048x1536");
+                PageShots(outDir);   // (the Characters page and the Level Pass)
                 Exit(0);
             }
             catch (Exception e)
@@ -193,6 +194,33 @@ namespace SquishSquad.EditorTools
             });
             Debug.Log($"[CiBuild] Android build: {report.summary.result}, {report.summary.totalSize / 1048576f:0.0} MB, {report.summary.totalErrors} errors -> {path}");
             Exit(report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded ? 0 : 1);
+        }
+
+        // The Characters page and the Level Pass at rest, offline (the exported demo save: Mittens in use, level and coins
+        // the exported menu's), on the reference screen and a tablet. Compare with tools/unity/pages-test's pictures
+        // (webgame/test/out/unity-pages/unity/ch-top.png; the Level Pass there is the test player's, level 7).
+        static void PageShots(string outDir)
+        {
+            SquishSquad.Ui.UiFont.ReadJson = n => Resources.Load<TextAsset>("Fonts/" + n)?.text;
+            SquishSquad.Ui.UiFont.ParseJson = j => JsonUtility.FromJson<SquishSquad.Ui.UiFontData>(j);
+            foreach (var (size, w, h) in new[] { ("a15", 2340, 1080), ("2048x1536", 2048, 1536) })
+                foreach (var lp in new[] { true, false })
+                {
+                    var root = new GameObject("Capture").transform;
+                    var cam = MenuScreen.CreateCamera(root);
+                    MenuScreen.FitCamera(cam, w, h);
+                    IMenuPage page = lp ? (IMenuPage)LevelPassPage.Open(root, w, h, 0, 1000) : CharactersPage.Open(root, w, h, 0, 1000);
+                    var name = (lp ? "levelpass-" : "characters-") + size;
+                    if (page != null)
+                    {
+                        for (float t = 0; t <= 4000; t += 1000f / 30) page.Tick(t);   // (the Characters page's loading screen over by then)
+                        File.WriteAllBytes(Path.Combine(outDir, name + ".png"), Render(cam, w, h));
+                        Debug.Log($"[CiBuild] {name}.png {w}x{h}");
+                        page.Dispose();
+                    }
+                    else Debug.LogWarning($"[CiBuild] {name}: the page isn't exported (tools/unity/export-pages.mjs)");
+                    UnityEngine.Object.DestroyImmediate(root.gameObject);
+                }
         }
 
         static string Arg(string name)
