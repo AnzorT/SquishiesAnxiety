@@ -1,0 +1,10 @@
+{
+    "name": "SquishSquad.Runtime",
+    "rootNamespace": "SquishSquad",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "autoReferenced": true,
+    "noEngineReferences": false
+}
