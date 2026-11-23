@@ -67,7 +67,38 @@ const hud = {
   drawer: { closedTy: 72, openTy: -16, ms: 750, ease: [0.25, 1.15, 0.4, 1] },
   arrow: { closedDeg: 0, openDeg: 180, ms: 250, ease: [0.25, 0.1, 0.25, 1] },
 };
+// the quick-action wheel round a selected friend (stage 4): its closed button, the close button and the seven room
+// buttons, each its own piece; unlocked from a level-30 house, locked (the padlock, dimmed) from a level-1 one
+async function wheel(fx, locked) {
+  const W = await openHouse(browser, fx, { room: 'living' });
+  await W.ready(); await W.frames(30); await W.still();
+  await W.page.evaluate((fd) => { window.__snapFonts = fd.names; window.__snapGlyphs = Object.fromEntries(Object.entries(fd.glyphs).map(([k, v]) => [k, new Set(v)])); window.__snapUpm = fd.upm; window.__snapPaths = fd.paths; }, fd);
+  await W.page.addScriptTag({ path: path.join(UI, 'snap.js') });
+  const cut = async (label, id) => {
+    await W.page.evaluate((label) => { const b = document.querySelector(`button[aria-label="${label}"]`); b.dataset.hud = 'q'; [b, ...b.querySelectorAll('*')].forEach((e) => { e.style.animation = 'none'; }); b.style.opacity = '1'; }, label);
+    const s = await snap(W.page, '[data-hud="q"]');
+    await W.page.evaluate(() => { document.querySelector('[data-hud="q"]').removeAttribute('data-hud'); });
+    fs.writeFileSync(path.join(OUT, 'hud', id + '.xml'), s.svg);
+    return [s.w * frame.k, s.h * frame.k].map((v) => Math.round(v * 1000) / 1000);
+  };
+  const sizes = {};
+  await W.page.evaluate(() => { const sh = window.__sh; sh.setState({ sel: 0, qa: false }); });
+  await W.frames(2);
+  if (!locked) sizes['qa-open'] = await cut('Actions', 'qa-open');
+  await W.page.evaluate(() => window.__sh.setState({ qa: true }));
+  await W.frames(2);
+  if (!locked) sizes['qa-close'] = await cut('Close actions', 'qa-close');
+  for (const q of ['Dance', 'Bath', 'Kitchen', 'Club', 'Sleep', 'Movies', 'Yard']) {
+    const has = await W.page.evaluate((q) => !!document.querySelector(`button[aria-label="${q}"]`), q);
+    if (has && (!locked || q !== 'Dance')) sizes['qa-' + q.toLowerCase() + (locked ? '-locked' : '')] = await cut(q, 'qa-' + q.toLowerCase() + (locked ? '-locked' : ''));
+  }
+  await W.ctx.close();
+  return sizes;
+}
+const fixtures = loadFixtures();
+hud.wheel = { ...(await wheel(fixtures.find((f) => f.name === 'lv30-beach'), false)), ...(await wheel(fixtures.find((f) => f.name === 'fresh-lv1'), true)) };
 fs.writeFileSync(path.join(OUT, 'hud.json'), JSON.stringify(hud, null, 1));
+console.log('wheel:', JSON.stringify(hud.wheel));
 console.log('hud:', JSON.stringify(pieces));
 for (const e of [...new Set(H.errs || [])].slice(0, 5)) console.log('  page error:', String(e).slice(0, 160));
 await browser.close();

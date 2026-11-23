@@ -37,6 +37,7 @@ namespace SquishSquad.House.View
             _parent = parent; _sim = sim; _k = screenK;
             sim.Fidg = c => _all.TryGetValue(c, out var o) && o.Live != null && o.Live.InFidget();
             sim.PlayIdle = c => { if (_all.TryGetValue(c, out var o)) o.Rig?.Play("idle"); };
+            sim.Play = (c, n) => { if (_all.TryGetValue(c, out var o)) o.Rig?.Play(n); };
         }
 
         static readonly TextStyle TagStyle = new TextStyle { Font = "Fredoka_700Bold", Size = 16, Color = "#5b3418" };
@@ -137,6 +138,7 @@ namespace SquishSquad.House.View
                     t.localScale = new Vector3(sc, sc, 1);
                     o.Rig.GetComponent<MeshRenderer>().sortingOrder = order + 2;
                     o.Live?.Ext(c.Ext);
+                    if (o.Live != null) foreach (var n in o.Live.Events()) _sim.OnRig(c, n, now);
                     o.Live?.Fidgets(!c.Moving && c.Mode == "free");
                 }
                 else if (o.Still != null)

@@ -23,6 +23,7 @@ namespace SquishSquad.House.View
         HouseRoomView _room;
         HouseCreatures _sim;
         HouseSquadView _squad;
+        HouseWheel _wheel;
         double _saveAt;
         readonly HouseCamera _cam = new HouseCamera();
         HouseHud _hud;
@@ -61,7 +62,13 @@ namespace SquishSquad.House.View
             world.SetParent(transform.parent, false);
             _room = world.gameObject.AddComponent<HouseRoomView>();
             _room.Load(_json, _level, _owned, _start);
-            _sim = new HouseCreatures(_room.Save, new HouseWalk(HouseRoomView.Res("walk")));
+            var walkJson = HouseRoomView.Res("walk");
+            _sim = new HouseCreatures(_room.Save, new HouseWalk(walkJson));
+            _sim.SetMoves(walkJson);
+            _sim.Toast = Toast;
+            _sim.HasFront = id => _room.Fronts.TryGetValue(id, out var f) && f;
+            _sim.Saved = Save;
+            _sim.RoomChanged = () => { _room.Draw(_w, _h); _room.SetCamera(_cam.K(Now)); };
             _sim.Init(Now, _start);
             _room.Draw(_w, _h);
             _cam.Set(_room.RoomK, Now, false);
@@ -71,6 +78,7 @@ namespace SquishSquad.House.View
             _saveAt = Now + 5000;
 
             _hud = new HouseHud(HouseRoomView.Res("hud"));
+            _wheel = new HouseWheel(world, _sim, _k, (JObj)HouseJson.Parse(HouseRoomView.Res("hud")));
             _tab = Piece("hud tab", 31001, "tab");
             _arrow = Piece("hud arrow", 31002, "arrow");
             _panel = Piece("hud panel", 31000, "panel");
@@ -101,6 +109,7 @@ namespace SquishSquad.House.View
             double k = _cam.K(now);
             _room.SetCamera(k);
             _squad.Update(k, now);
+            _wheel.Update(k, now);
             if (now >= _saveAt) { _saveAt = now + 5000; Save(); }
             // the drawer (translate(-50%, ty): its pieces' rects are at ty 0), the arrow turning about its centre
             double ty = _hud.DrawerTy(now);
@@ -165,8 +174,18 @@ namespace SquishSquad.House.View
                 return;
             }
             double k = _cam.K(now);
+            // the wheel (z-index 875: over the creatures), then a creature, a door, the floor
+            var w = _wheel.Tap(fx, fy, k);
+            if (w == "open") { _wheel.SetOpen(true, now); return; }
+            if (w == "close") { _wheel.SetOpen(false, now); return; }
+            if (w != null)
+            {
+                _wheel.SetOpen(false, now);
+                foreach (var q in HouseCreatures.QA) if (q.Id == w) _sim.QaGo(q, now, (room, c) => Enter(room, c, null, Now));
+                return;
+            }
             int hit = _squad.HitCreature(fx, fy, k);
-            if (hit >= 0) { _sim.TapCreature(hit, now); return; }
+            if (hit >= 0) { _sim.TapCreature(hit, now); _wheel.SetOpen(false, now); return; }
             var b = HouseCamera.ToBox(fx, fy, k);
             var door = HouseDoors.At(Shell(), b.x, b.y);
             if (door != null) { TapDoor(door, now); return; }
@@ -213,6 +232,7 @@ namespace SquishSquad.House.View
         void OnDestroy()
         {
             _squad?.Destroy();
+            _wheel?.Destroy();
             if (_room != null) Destroy(_room.gameObject);
             if (_toast != null) Destroy(_toast.gameObject);
         }

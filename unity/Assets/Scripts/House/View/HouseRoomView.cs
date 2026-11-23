@@ -74,6 +74,8 @@ namespace SquishSquad.House.View
             Notes.Clear(); Notes.AddRange(model.Missing);
             if (vals == null) return;
             RoomK = vals["camK"] is double ck ? ck : 1;
+            Fronts.Clear();
+            foreach (var o in vals.Arr("items") ?? new List<object>()) if (o is JObj f && f.Str("id") != null) Fronts[f.Str("id")] = HouseJson.Truthy(f["hasFront"]);
             vals["camK"] = 1.0;   // (the camera is the quad's: SetCamera)
             var L = RoomLayers.Split(_tpl.Render(vals), View, () => new RoomCompose { PicSvg = n => Res("pics/" + n), PicPng = n => Resources.Load<Texture2D>("House/pics/" + n) != null ? n : null });
             float k = width / 852f;
@@ -92,6 +94,8 @@ namespace SquishSquad.House.View
 
         /// <summary>The room's camK (renderVals: 0.85 indoors, 1 in the dance room, outdoors and on the beach).</summary>
         public double RoomK { get; private set; } = 1;
+        /// <summary>Each piece's id: whether it has a front part drawn over its sitters (hasFr).</summary>
+        public readonly Dictionary<string, bool> Fronts = new Dictionary<string, bool>();
 
         // an SVG layer (RoomLayers) drawn once by the GPU vector renderer, `view` (frame px) at k screen px per px
         RenderTexture Render(string svg, double[] view, float k)

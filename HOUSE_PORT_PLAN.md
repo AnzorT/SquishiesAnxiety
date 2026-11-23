@@ -64,6 +64,15 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    selection ring, name tag, speech bubble, particles; taps). Not checked by a trace yet: taps (select, floor, a door with
    a friend), the dance room's round floor (no creature was in it).
 4. Live rigs and actions: act, finishUse, needs, quick actions, seats / snuggles, speech. Needs the creature engine.
+   ✅ (2026-11-23, untested in Unity) `House/HouseActions.cs` (ACT, act's seat / use / snuggle / dance / watch / dine
+   branches, Seated / Used (the arrive callbacks), finishUse, bowlDone, leave with the rig's out / wake moves and the kept
+   pose, onRig, the lights / party toggles, qaGo / firstAct, needs recovery, mode particles); the rig: its state events
+   (`__live.events`), the house moves' metadata (walk.json `hs`), ext channels and fidgets; `House/View/HouseWheel.cs`
+   (the quick-action wheel, pieces from export-hud.mjs). `creature-trace.mjs <fx> <room> <frames> "<script>"` +
+   `house-test acts`: kitchen (snack, cook, dance, 1,500 frames) and bedroom (nap, floor tap: wake and climb out, nap
+   again) replayed exactly: every creature's state every frame and every ctrl.play. Not yet: setVar's pictures (5),
+   the swing / ride seat motion (5: item angles), the movie cues (9), the beach acts (10), the old action bar's
+   meters (dead in the current design).
 5. Item interactions and room effects: rnTap kinds, TV, toys, lights / night, party / disco, vacuum, fog, animated
    pieces (SMIL as flipbooks).
 6. Edit mode: drag, wall snap, rotate, resize, store, signs, ceiling lights. Verify: H JSON after each step.
