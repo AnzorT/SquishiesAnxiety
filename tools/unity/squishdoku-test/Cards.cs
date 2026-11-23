@@ -7,6 +7,7 @@ using System.IO;
 using System.Text.Json;
 using SquishSquad.Anim;
 using SquishSquad.Games.Squishdoku;
+using SquishSquad.Ui.Blitz;
 using SquishSquad.Ui.Cards;
 
 static class CardsTest
@@ -28,6 +29,11 @@ static class CardsTest
             case "sd-timeup": return SdCards.TimeUpCard(W, H, 0, null, Noop, Noop);
             case "sd-hearts": return SdCards.TimeUpCard(W, H, 3, null, Noop, Noop);
             case "sd-pause": return SdCards.PauseCard(W, H, Noop, Noop, Noop);
+            // Preview.js: the shared Blitz cards (unit "board")
+            case "sd-revive": return BlitzCards.Revive(W, H, 4, "board", true, false, Noop, Noop);
+            case "sd-blitzfail": return BlitzCards.Fail(W, H, "mistake", 4, 6, "board", Noop, Noop);
+            case "sd-blitzwin":
+                return BlitzCards.Win(W, H, new BlitzCards.WinResult { Ms = 412000, Coins = 600, Xp = 120, NewBest = true, LevelUps = 0, Before = before, After = new XpLevel(6, 680, 700) }, "board", Noop, Noop);
         }
         throw new ArgumentException(name);
     }

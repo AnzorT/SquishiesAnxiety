@@ -12,7 +12,7 @@
 // Every motion is the app's (SquishSquad.Anim is React Native's Animated; the same timings, springs, easings, delays).
 // No UnityEngine here: SquishdokuGame shows the layers and feeds the touches; tools/unity/squishdoku-test runs it as is.
 // Not ported: sounds, haptics, saving to Firestore (Profile is kept in memory), the buddy's live rig (its still hops
-// and shakes instead), Blitz.
+// and shakes instead). Blitz is SdBlitz; the hub and the map SdHub, SdMap (SdScreen hosts them all).
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
@@ -430,7 +430,7 @@ namespace SquishSquad.Games.Squishdoku
             if (_poses != null) foreach (var p in _poses) { p.Breathe?.Unmount(); p.Peek?.Unmount(); }
             _redPulse?.Unmount();
             if (_trick >= 0) _tk.ClearTimeout(_trick);
-            foreach (var (b, _) in _bursts) b.Stop();
+            foreach (var (b, _) in _bursts.ToArray()) b.Stop();   // (a stopped burst takes itself off the list)
             _bursts.Clear();
             _N = Spec.N * Spec.N;
             _cellA = new CellA[_N]; _poses = new Pose[_N];
@@ -588,7 +588,7 @@ namespace SquishSquad.Games.Squishdoku
             int count = 0;
             foreach (var e in _bursts) if (e.root == root) count++;
             for (int i = 0; count > 11 && i < _bursts.Count; i++)
-                if (_bursts[i].root == root) { _bursts[i].b.Stop(); _bursts.RemoveAt(i); i--; count--; }
+                if (_bursts[i].root == root) { var dead = _bursts[i].b; dead.Stop(); _bursts.RemoveAll(e => e.b == dead); i--; count--; }
             _bursts.Add((b, root));
             b.Start(() => _bursts.RemoveAll(e => e.b == b));
         }

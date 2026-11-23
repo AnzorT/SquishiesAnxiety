@@ -1,6 +1,11 @@
 // dotnet run -c Release --project tools/unity/squishdoku-test -- play <capture dir>    (capture.mjs: the level, Play.cs)
 // dotnet run -c Release --project tools/unity/squishdoku-test -- cards <capture dir>   (cards.mjs: the cards, Cards.cs)
 // dotnet run -c Release --project tools/unity/squishdoku-test -- flow                  (touches and the level's flow, Flow.cs)
+// dotnet run -c Release --project tools/unity/squishdoku-test -- blitz <capture dir>   (blitz.mjs: a Blitz run, Blitz.cs)
+// dotnet run -c Release --project tools/unity/squishdoku-test -- screen <capture dir>  (screen.mjs: hub, map, slides, Screen.cs)
+// dotnet run -c Release --project tools/unity/squishdoku-test -- blitzflow             (Blitz's, the shared run's and the
+//                                                                                        screen's flows, BlitzFlow.cs)
+// (cards.mjs also shoots the shared Blitz cards, Ui/Blitz: sd-revive, sd-blitzfail, sd-blitzwin)
 // Plays Squishdoku from the Unity code (Games/Squishdoku: SdLevel, SdCards) on the same clock as the app's page, draws
 // every layer where it is with the reference rasteriser, and compares the screen with the app's picture of the same
 // moment: the % of pixels that differ visibly (any channel by more than 24 of 255).
@@ -31,7 +36,10 @@ static class Program
         if (args[0] == "cards") return CardsTest.Run(args[1]);
         if (args[0] == "play") return PlayTest.Run(args[1]);
         if (args[0] == "flow") return FlowTest.Run();
-        Console.WriteLine("play <dir> | cards <dir>");
+        if (args[0] == "blitz") return BlitzTest.Run(args[1]);
+        if (args[0] == "screen") return ScreenTest.Run(args[1]);
+        if (args[0] == "blitzflow") return BlitzFlowTest.Run();
+        Console.WriteLine("play <dir> | cards <dir> | flow | blitz <dir> | screen <dir> | blitzflow");
         return 1;
     }
 

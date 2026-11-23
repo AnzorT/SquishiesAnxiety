@@ -10,7 +10,18 @@
 //   squishdoku.json           where the pieces are on the reference screen (dp, for checking SquishdokuGame's layout),
 //                             and the squishies' cut-outs the board stands up (Squish Stack's, Resources/Stack/art:
 //                             src/stack/art.js), with their height / width
-// node tools/unity/export-squishdoku.mjs
+// The hub, the level map and Blitz (SquishdokuScreen):
+//   wood-bg.png, levels-<season>.png   the hub's wood page (royal WoodBg) and the map's world (royal/WorldBg.js)
+//   mode-regular.png, mode-blitz.png   the mode panels' pictures;  gem.png  the gem (Blitz's save card)
+//   cushions/<name>.png, heads/<key>.png   the patches' cushions and the creatures' heads (HOW TO PLAY's little board)
+//   orb-<icon>.xml            the wood look's round buttons (royal Orb: back 40, left / right 36), whole (they sink 2 dp)
+//   panel-regular.xml, panel-blitz.xml   the hub's mode panels without what changes (the progress bar, 12/600, BEST: n)
+//                             and their names (royal Lettering: SVG text, drawn by Unity)
+//   headstart.xml             HEAD START's plaque without its switch;  toggle-off.xml, toggle-on.xml, toggle-knob.xml
+//                             the switch (ToggleSwitch) in each state without its knob, and the knob
+//   rules-lip.xml, rules-face.xml   HOW TO PLAY (SdButton)
+//   hub.json                  where they are on the reference screen (dp)
+// node tools/unity/export-squishdoku.mjs [--hub-only]
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -18,6 +29,8 @@ import { openApp, snap, ROOT } from './ui/snap-page.mjs';
 
 const OUT = path.join(ROOT, 'unity', 'Assets', 'Resources', 'Squishdoku');
 fs.mkdirSync(path.join(OUT, 'rooms'), { recursive: true });
+const HUB_ONLY = process.argv.includes('--hub-only');
+if (!HUB_ONLY) {
 
 // ---- the rooms' layers (only the rooms and layers src/hop/Room.js draws: base, under, over) -------------------------
 const roomArt = fs.readFileSync(path.join(ROOT, 'src', 'crib', 'roomArt.js'), 'utf8');
@@ -101,3 +114,116 @@ fs.writeFileSync(path.join(OUT, 'squishdoku.json'), JSON.stringify(layout, null,
 console.log('pieces:', fs.readdirSync(OUT).filter((f) => f.endsWith('.xml')).join(' '));
 if (errors.length) console.log('page errors:', errors.slice(0, 3).join(' | '));
 await browser.close();
+}
+
+// ---- the hub, the map, Blitz ------------------------------------------------------------------------------------------
+{
+  // pictures (WebP and JPEG to PNG: Unity's tests read PNG; Unity reads either)
+  const pics = [
+    ['assets/royal/wood-bg.jpg', 'wood-bg'], ['assets/royal/levels-sunny.jpg', 'levels-sunny'], ['assets/royal/levels-rainy.jpg', 'levels-rainy'],
+    ['assets/royal/levels-snowy.jpg', 'levels-snowy'], ['assets/squishdoku/mode-regular.jpg', 'mode-regular'], ['assets/squishdoku/mode-blitz.jpg', 'mode-blitz'],
+    ['assets/squad/currency/gem-mittens.png', 'gem'],
+  ];
+  fs.mkdirSync(path.join(OUT, 'cushions'), { recursive: true });
+  fs.mkdirSync(path.join(OUT, 'heads'), { recursive: true });
+  for (const f of fs.readdirSync(path.join(ROOT, 'assets', 'squishdoku', 'cushions'))) pics.push([`assets/squishdoku/cushions/${f}`, `cushions/${f.replace('.webp', '')}`]);
+  for (const f of fs.readdirSync(path.join(ROOT, 'assets', 'squishdoku', 'heads')).filter((f) => f.endsWith('-idle.webp'))) pics.push([`assets/squishdoku/heads/${f}`, `heads/${f.replace('-idle.webp', '')}`]);
+  execFileSync('python3', ['-c', `
+import sys
+from PIL import Image
+root, out = sys.argv[1], sys.argv[2]
+args = sys.argv[3:]
+for i in range(0, len(args), 2):
+    im = Image.open(root + '/' + args[i])
+    im = im.convert('RGBA' if im.mode in ('RGBA', 'LA', 'P') else 'RGB')
+    if args[i + 1].startswith('heads/') and im.width > 160: im = im.resize((160, round(im.height * 160 / im.width)), Image.LANCZOS)
+    im.save(out + '/' + args[i + 1] + '.png', optimize=True)
+`, ROOT, OUT, ...pics.flat()]);
+  console.log(`pictures: ${pics.length}`);
+
+  const { browser, page, errors } = await openApp('http://localhost:8081/?phone=1&preview=1&card=game-squishdoku');
+  await page.waitForTimeout(6000);
+  const hub = {};
+  const save = (name, s) => fs.writeFileSync(path.join(OUT, name + '.xml'), s.svg);
+  // a snapped piece's images: their Resources paths
+  const PIC = { 'mode-regular': 'Squishdoku/mode-regular', 'mode-blitz': 'Squishdoku/mode-blitz' };
+  const local = (s) => {
+    for (const [id, src] of Object.entries(s.images)) {
+      const k = Object.keys(PIC).find((k) => String(src).includes(k));
+      if (k) s.svg = s.svg.split(`href="${id}"`).join(`href="${PIC[k]}"`);
+    }
+    return s;
+  };
+  const rect = (h) => h.evaluate((e) => { const r = e.getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map((v) => +v.toFixed(3)); });
+  const comp = (name, i = 0) => page.evaluateHandle(([n, i]) => window.__components(n).filter((c) => c.el)[i].el, [name, i]);
+  const hide = (h, on) => h.evaluate((e, on) => (e.style.visibility = on ? 'hidden' : ''), on);
+
+  // the back orb
+  const orb = await comp('Orb');
+  save('orb-back', await snap(page, orb));
+  hub.orbBack = await rect(orb);
+  // the mode panels: their info rows hidden (the plaque is the SlideIn's child)
+  for (const [i, kind] of [[0, 'regular'], [1, 'blitz']]) {
+    const panel = await page.evaluateHandle((i) => window.__components('ModePanel')[i].el.firstElementChild || window.__components('ModePanel')[i].el, i);
+    const info = await page.evaluateHandle((i) => {
+      const el = window.__components('ModePanel')[i].el;
+      const divs = [...el.querySelectorAll('div')];
+      // the info row: the row holding the bar / the text, under the window
+      return divs.filter((d) => /\d/.test(d.textContent) && d.children.length >= 1 && getComputedStyle(d).flexDirection === 'row').pop();
+    }, i);
+    hub[`info-${kind}`] = await rect(info);
+    hub[`panel-${kind}`] = await rect(panel);
+    if (kind === 'regular') hub.track = await page.evaluate((el) => { const t = [...el.querySelectorAll('div')].find((d) => getComputedStyle(d).backgroundColor === 'rgba(60, 30, 10, 0.38)'); const r = t.getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; }, info);
+    // (and its name: SVG text, which Unity draws itself, SdArt.Lettering)
+    const lettering = await page.evaluateHandle((i) => window.__components('Lettering').filter((c) => c.el)[i].el, i);
+    await hide(info, true);
+    await hide(lettering, true);
+    save(`panel-${kind}`, local(await snap(page, panel, { inline: false })));
+    await hide(info, false);
+    await hide(lettering, false);
+  }
+  // HEAD START's plaque without its switch, the switch in each state without its knob, and the knob
+  const head = await page.evaluateHandle(() => window.__components('HeadStart')[0].el.firstElementChild || window.__components('HeadStart')[0].el);
+  const sw = await comp('ToggleSwitch');
+  hub.headstart = await rect(head);
+  hub.toggle = await rect(sw);
+  await hide(sw, true);
+  save('headstart', await snap(page, head));
+  await hide(sw, false);
+  const knob = await sw.evaluateHandle((e) => [...e.querySelectorAll('div')].find((d) => getComputedStyle(d).position === 'absolute' && getComputedStyle(d).width === '17px' && getComputedStyle(d).top === '2px'));
+  hub.knob = await rect(knob);
+  save('toggle-knob', await snap(page, knob));
+  await hide(knob, true);
+  save('toggle-off', await snap(page, sw));
+  await hide(knob, false);
+  const sr = hub.toggle;
+  await page.mouse.click(sr[0] + sr[2] / 2, sr[1] + sr[3] / 2);
+  await page.waitForTimeout(1500);
+  await hide(knob, true);
+  save('toggle-on', await snap(page, sw));
+  await hide(knob, false);
+  hub.knobOn = await rect(knob);
+  await page.mouse.click(sr[0] + sr[2] / 2, sr[1] + sr[3] / 2);
+  await page.waitForTimeout(1500);
+  // HOW TO PLAY: its lip and its ring
+  const parts = await page.evaluateHandle(() => {
+    const b = window.__components('SdButton').map((c) => c.el).find((e) => e.innerText.includes('HOW TO PLAY'));
+    const inner = b.firstElementChild;
+    return { b, lip: inner.children[0], ring: inner.children[1] };
+  });
+  hub.rules = await parts.evaluate((p) => { const r = p.b.getBoundingClientRect(), g = p.ring.getBoundingClientRect(); return { b: [r.x, r.y, r.width, r.height], ring: [g.x - r.x, g.y - r.y, g.width, g.height] }; });
+  save('rules-lip', await snap(page, await parts.evaluateHandle((p) => p.lip)));
+  save('rules-face', await snap(page, await parts.evaluateHandle((p) => p.ring)));
+  // the map's chapter arrows
+  await page.mouse.click(220, 200);
+  await page.waitForTimeout(3000);
+  for (const [i, icon] of [[1, 'left'], [2, 'right']]) {
+    const o = await comp('Orb', i);
+    save(`orb-${icon}`, await snap(page, o));
+    hub[`orb-${icon}`] = await rect(o);
+  }
+  fs.writeFileSync(path.join(OUT, 'hub.json'), JSON.stringify(hub, null, 1));
+  console.log('hub pieces:', Object.keys(hub).join(' '));
+  if (errors.length) console.log('page errors:', errors.slice(0, 3).join(' | '));
+  await browser.close();
+}

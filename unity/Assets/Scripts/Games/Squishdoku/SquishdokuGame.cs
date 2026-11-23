@@ -4,7 +4,7 @@
 //   Init(nowMs) and Advance(nowMs) themselves)
 // HEAD START (the hub's switch, the profile's sdk.head) is SquishdokuGame.HeadStart, kept in PlayerPrefs until Firebase.
 // The pieces: Resources/Squishdoku (tools/unity/export-squishdoku.mjs), the creatures' cut-outs Resources/Stack/art.
-// Blitz isn't ported.
+// Blitz and the hub / map: SquishdokuScreen (the whole screen); this opens a Regular level alone.
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
