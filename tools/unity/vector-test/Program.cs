@@ -39,7 +39,13 @@ static class Program
             if (File.Exists(boxPath)) { var v = File.ReadAllText(boxPath).Split(new[] { ' ', '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(double.Parse).ToArray(); bw = v[0]; bh = v[1]; bx = v[2]; by = v[3]; }
             var markup = File.ReadAllText(svgPath);
             var sw = Stopwatch.StartNew();
-            var scene = SvgScene.Compile(SvgMarkup.Parse(markup), bw, bh, Affine.Translate(bx, by));
+            var scene = SvgScene.Compile(SvgMarkup.Parse(markup), bw, bh, Affine.Translate(bx, by), href =>
+            {
+                var f = Path.Combine(dir, href);
+                if (!File.Exists(f)) return null;
+                var (iw, ih, _) = Png.Read(f);
+                return (iw, ih);
+            });
             sw.Stop(); compileTicks += sw.ElapsedTicks; frames++;
             var buf = ReferenceRaster.Render(scene, W, H, ss);
             var ours = ReferenceRaster.Resolve(buf, ss, W, H);

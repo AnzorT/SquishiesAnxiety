@@ -77,6 +77,35 @@ static class ReferenceRaster
         var cov = Coverage(f.Shape, b.W, b.H, ss, out int bx0, out int by0, out int bw, out int bh);
         var inv = f.UserToPx.Inverse();
         bool solid = f.Paint.Kind == PaintKind.Solid;
+        if (f.Paint.Kind == PaintKind.Image)
+        {
+            // bilinear, like a GPU texture lookup
+            var img = LoadImage?.Invoke(f.Paint.Image);
+            if (img == null) return;
+            var (iw, ih, px) = img.Value;
+            var toImg = f.Paint.UserToImage * inv;
+            for (int y = 0; y < bh; y++)
+                for (int x = 0; x < bw; x++)
+                {
+                    if (!cov[y * bw + x]) continue;
+                    int X = bx0 + x, Y = by0 + y;
+                    var uv = toImg.Apply(new Vec2((X + 0.5) / ss, (Y + 0.5) / ss));
+                    double fx = uv.X * iw - 0.5, fy = uv.Y * ih - 0.5;
+                    int ix = (int)Math.Floor(fx), iy = (int)Math.Floor(fy);
+                    float tx = (float)(fx - ix), ty = (float)(fy - iy);
+                    float r = 0, g = 0, bl = 0, a = 0;
+                    for (int j = 0; j < 4; j++)
+                    {
+                        int sx = Math.Clamp(ix + (j & 1), 0, iw - 1), sy = Math.Clamp(iy + (j >> 1), 0, ih - 1);
+                        float w = ((j & 1) == 1 ? tx : 1 - tx) * ((j >> 1) == 1 ? ty : 1 - ty);
+                        int o = (sy * iw + sx) * 4;
+                        float pa = px[o + 3] * w;
+                        r += px[o] * pa; g += px[o + 1] * pa; bl += px[o + 2] * pa; a += pa;
+                    }
+                    if (a > 0) Over(b, X, Y, r / a, g / a, bl / a, a * f.Opacity);
+                }
+            return;
+        }
         for (int y = 0; y < bh; y++)
             for (int x = 0; x < bw; x++)
             {

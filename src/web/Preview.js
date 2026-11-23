@@ -16,6 +16,14 @@ import * as STACK from '../stack/Cards';
 import * as HOP from '../hop/Cards';
 import VerifyEmailScreen from '../screens/VerifyEmailScreen';
 import VaultLoader from '../components/VaultLoader';
+import SquishdokuScreen from '../screens/SquishdokuScreen';
+import SortScreen from '../screens/SortScreen';
+import StackScreen from '../screens/StackScreen';
+import HopScreen from '../screens/HopScreen';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Asset } from 'expo-asset';
+import { BY_ID } from '../squad/data';
+import STACK_ART from '../stack/art';
 
 const noop = () => {};
 const before = { level: 6, into: 560, need: 700 };
@@ -39,6 +47,25 @@ function VaultPreview() {
   }, [run, ms]);
   return <VaultLoader key={run} ready={ready} uri={null} onDone={() => setTimeout(() => setRun((n) => n + 1), 900)} />;
 }
+
+// the games' whole screens (hub, map, levels) for a made-up player: no uid, so nothing is saved. Creatures' stills
+// are the bundled Stack cut-outs (the real ones come from Storage).
+const srcUri = (s) => (s == null ? null : typeof s === 'string' ? s : typeof s === 'number' ? Asset.fromModule(s).uri : s.uri || s.default || null);
+const CREATURES = Object.values(BY_ID).map((d) => ({ id: d.id, thumb: { url: srcUri(STACK_ART[d.key] && STACK_ART[d.key].src) || 'about:blank' } }));
+const PLAYER = {
+  coins: 100,
+  gems: 600,
+  ownedIds: ['1'],
+  sdk: { plays: 3, lv: 12 },
+  sort: { seen: true, lv: 12 },
+  stack: { seen: true, lv: 12 },
+  hop: { seen: true, lv: 12 },
+};
+const game = (Screen) => () => (
+  <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 0, height: 0 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
+    <Screen profile={PLAYER} creatures={CREATURES} uid={null} adsFree haptics={false} onBack={noop} />
+  </SafeAreaProvider>
+);
 
 const CARDS = {
   'sd-result': (v) => <SD.ResultCard visible={v} res={res} spec={{ lv: 12, n: 6 }} uris={uris} onNext={noop} onReplay={noop} onMap={noop} />,
@@ -66,6 +93,10 @@ const CARDS = {
   'hop-rules': (v) => <HOP.RulesCard visible={v} onClose={noop} />,
   // a whole screen: a new account's email check (its buttons only call Firebase when tapped)
   vault: () => <VaultPreview />,
+  'game-squishdoku': game(SquishdokuScreen),
+  'game-sort': game(SortScreen),
+  'game-stack': game(StackScreen),
+  'game-hop': game(HopScreen),
   verify: () => <VerifyEmailScreen email="new.player@example.com" onVerified={noop} onLogout={noop} />,
 };
 
