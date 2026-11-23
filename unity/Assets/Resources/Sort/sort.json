@@ -1,0 +1,262 @@
+{
+ "fridge": [
+  {
+   "id": "2",
+   "file": "mallow"
+  },
+  {
+   "id": "3",
+   "file": "bao"
+  },
+  {
+   "id": "4",
+   "file": "dunkie"
+  },
+  {
+   "id": "5",
+   "file": "frybo"
+  },
+  {
+   "id": "7",
+   "file": "bunbun"
+  },
+  {
+   "id": "9",
+   "file": "pina"
+  },
+  {
+   "id": "14",
+   "file": "choco"
+  },
+  {
+   "id": "21",
+   "file": "scoop"
+  },
+  {
+   "id": "28",
+   "file": "boba"
+  },
+  {
+   "id": "29",
+   "file": "avo"
+  },
+  {
+   "id": "30",
+   "file": "berri"
+  },
+  {
+   "id": "31",
+   "file": "lemmy"
+  },
+  {
+   "id": "32",
+   "file": "kiwi"
+  },
+  {
+   "id": "33",
+   "file": "melo"
+  },
+  {
+   "id": "34",
+   "file": "peachy"
+  },
+  {
+   "id": "35",
+   "file": "pitaya"
+  },
+  {
+   "id": "36",
+   "file": "tutti"
+  },
+  {
+   "id": "62",
+   "file": "cuppy"
+  },
+  {
+   "id": "63",
+   "file": "chip"
+  },
+  {
+   "id": "64",
+   "file": "twisty"
+  },
+  {
+   "id": "65",
+   "file": "crois"
+  },
+  {
+   "id": "66",
+   "file": "maca"
+  },
+  {
+   "id": "67",
+   "file": "puddi"
+  },
+  {
+   "id": "68",
+   "file": "mochi"
+  },
+  {
+   "id": "69",
+   "file": "cakey"
+  },
+  {
+   "id": "70",
+   "file": "sugarplum"
+  },
+  {
+   "id": "71",
+   "file": "chefbun"
+  }
+ ],
+ "cupboard": [
+  {
+   "id": "0",
+   "file": "nimbo"
+  },
+  {
+   "id": "1",
+   "file": "mittens"
+  },
+  {
+   "id": "12",
+   "file": "biscuit"
+  },
+  {
+   "id": "13",
+   "file": "hana"
+  },
+  {
+   "id": "15",
+   "file": "prickle"
+  },
+  {
+   "id": "16",
+   "file": "lumi"
+  },
+  {
+   "id": "17",
+   "file": "kiko"
+  },
+  {
+   "id": "18",
+   "file": "bubbly"
+  },
+  {
+   "id": "19",
+   "file": "twinkle"
+  },
+  {
+   "id": "20",
+   "file": "zappi"
+  },
+  {
+   "id": "22",
+   "file": "teddy"
+  },
+  {
+   "id": "23",
+   "file": "hoot"
+  },
+  {
+   "id": "24",
+   "file": "leo"
+  },
+  {
+   "id": "25",
+   "file": "nibbles"
+  },
+  {
+   "id": "26",
+   "file": "quill"
+  },
+  {
+   "id": "27",
+   "file": "panko"
+  },
+  {
+   "id": "42",
+   "file": "waffles"
+  },
+  {
+   "id": "43",
+   "file": "poppy"
+  },
+  {
+   "id": "44",
+   "file": "duchess"
+  },
+  {
+   "id": "45",
+   "file": "mamapaws"
+  },
+  {
+   "id": "46",
+   "file": "acorn"
+  },
+  {
+   "id": "47",
+   "file": "fawn"
+  },
+  {
+   "id": "48",
+   "file": "moss"
+  },
+  {
+   "id": "49",
+   "file": "sprout"
+  },
+  {
+   "id": "50",
+   "file": "plip"
+  },
+  {
+   "id": "51",
+   "file": "breeze"
+  },
+  {
+   "id": "52",
+   "file": "dusty"
+  },
+  {
+   "id": "53",
+   "file": "aurora"
+  },
+  {
+   "id": "54",
+   "file": "boo"
+  },
+  {
+   "id": "55",
+   "file": "pixie"
+  },
+  {
+   "id": "56",
+   "file": "floof"
+  },
+  {
+   "id": "57",
+   "file": "unibun"
+  },
+  {
+   "id": "58",
+   "file": "gumdrop"
+  },
+  {
+   "id": "59",
+   "file": "ember"
+  },
+  {
+   "id": "60",
+   "file": "drako"
+  },
+  {
+   "id": "61",
+   "file": "jinni"
+  },
+  {
+   "id": "99",
+   "file": "shelly"
+  }
+ ]
+}
