@@ -24,12 +24,19 @@ def pair_kerning(font, gids):
     if 'GPOS' not in font: return out
     gpos = font['GPOS'].table
     if not gpos.FeatureList: return out
+    # the 'kern' lookups of the Latin script's default language (else DFLT's), as HarfBuzz picks them for Latin text
+    scripts = {sr.ScriptTag: sr.Script for sr in gpos.ScriptList.ScriptRecord}
+    script = scripts.get('latn') or scripts.get('DFLT') or next(iter(scripts.values()), None)
+    feats = script.DefaultLangSys.FeatureIndex if script and script.DefaultLangSys else range(len(gpos.FeatureList.FeatureRecord))
     lookups = set()
-    for fr in gpos.FeatureList.FeatureRecord:
+    for fi in feats:
+        fr = gpos.FeatureList.FeatureRecord[fi]
         if fr.FeatureTag == 'kern': lookups.update(fr.Feature.LookupListIndex)
-    order = font.getGlyphOrder()
     want = set(gids)
+    total = {}
+    # each lookup applies on its own and their adjustments add up; within a lookup the first subtable that matches wins
     for li in sorted(lookups):
+        out = {}
         lk = gpos.LookupList.Lookup[li]
         for st in lk.SubTable:
             if lk.LookupType == 9: st = st.ExtSubTable
@@ -41,7 +48,8 @@ def pair_kerning(font, gids):
                     for pvr in st.PairSet[i].PairValueRecord:
                         if pvr.SecondGlyph not in want: continue
                         v = pvr.Value1.XAdvance if pvr.Value1 is not None and hasattr(pvr.Value1, 'XAdvance') else 0
-                        if v and (g1, pvr.SecondGlyph) not in out: out[(g1, pvr.SecondGlyph)] = v
+                        # the first subtable that has the pair decides it, even when its value is 0
+                        if (g1, pvr.SecondGlyph) not in out: out[(g1, pvr.SecondGlyph)] = v or 0
             elif st.Format == 2:
                 c1 = st.ClassDef1.classDefs if st.ClassDef1 else {}
                 c2 = st.ClassDef2.classDefs if st.ClassDef2 else {}
@@ -51,8 +59,10 @@ def pair_kerning(font, gids):
                     for g2 in want:
                         v1 = rec.Class2Record[c2.get(g2, 0)].Value1
                         v = getattr(v1, 'XAdvance', 0) if v1 is not None else 0
-                        if v and (g1, g2) not in out: out[(g1, g2)] = v
-    return out
+                        # a class pair subtable matches every second glyph once the first is covered (class 0 too)
+                        if (g1, g2) not in out: out[(g1, g2)] = v or 0
+        for k, v in out.items(): total[k] = total.get(k, 0) + v
+    return total
 
 def export(name, rel):
     path = os.path.join(ROOT, 'node_modules', '@expo-google-fonts', rel, name + '.ttf')
@@ -68,7 +78,7 @@ def export(name, rel):
         gs[g].draw(pen)
         glyphs[ch] = {'adv': hmtx[g][0], 'd': pen.getCommands()}
         by_name[g] = ch
-    kern = pair_kerning(f, list(by_name))
+    kern = {k: v for k, v in pair_kerning(f, list(by_name)).items() if v}
     hhea, os2 = f['hhea'], f['OS/2']
     data = {
         'name': name,

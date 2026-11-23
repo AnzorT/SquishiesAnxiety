@@ -148,6 +148,8 @@
         }
       }
       if (!glyphs.length) continue;
+      // for checking text layout (tools/unity/ui): the run as Chrome placed it
+      ctx.texts.push({ s: node.data, font: fam, size, ls: parseFloat(cs.letterSpacing) || 0, xs: glyphs.map((g) => g.x), chars: glyphs.map((g) => g.ch).join(''), y: glyphs[0].y, align: cs.textAlign, w: e.getBoundingClientRect().width });
       const draw = (dx, dy, color, extra = '') => {
         const uses = glyphs.map((g) => {
           const gid = ctx.glyph(fam, g.ch);
@@ -309,6 +311,7 @@
       defs: [],
       ids: { n: 0 },
       rasters: [],
+      texts: [],
       images: {},
       glyphDefs: new Map(),
       upm: (fam) => (window.__snapUpm || {})[fam] || 1000,
@@ -333,6 +336,6 @@
     const glyphs = [...ctx.glyphDefs.values()].map((g) => `<path id="${g.id}" data-font="${esc(g.fam)}" data-char="${esc(g.ch)}" d="${esc((window.__snapPaths || {})[g.fam]?.[g.ch] || '')}"/>`);
     const w = n2(rootBox.width), h = n2(rootBox.height);
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" overflow="visible"><defs>${glyphs.join('')}${ctx.defs.join('')}</defs>${out.join('')}</svg>`;
-    return { svg, w: rootBox.width, h: rootBox.height, x: rootBox.left, y: rootBox.top, images: ctx.images, rasters: ctx.rasters };
+    return { svg, w: rootBox.width, h: rootBox.height, x: rootBox.left, y: rootBox.top, images: ctx.images, rasters: ctx.rasters, texts: ctx.texts };
   };
 })();

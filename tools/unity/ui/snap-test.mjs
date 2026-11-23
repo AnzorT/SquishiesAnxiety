@@ -26,6 +26,7 @@ for (const [id, data] of Object.entries(s.images)) {
   svgFiles = svgFiles.split(`href="${data}"`).join(`href="${id}.png"`);
 }
 fs.writeFileSync(path.join(vt, 'screen.svg'), svgFiles);
+fs.writeFileSync(path.join(out, 'texts.json'), JSON.stringify(s.texts));
 console.log(`svg ${(s.svg.length / 1024).toFixed(0)} KB, ${Object.keys(s.images).length} images, rasters: ${s.rasters.map((r) => r.ch + '(' + r.font + ')').join(' ') || 'none'}`);
 const p2 = await browser.newPage({ viewport: DP, deviceScaleFactor: DPR });
 await p2.setContent(`<html><body style="margin:0;background:#000">${s.svg}</body></html>`);
