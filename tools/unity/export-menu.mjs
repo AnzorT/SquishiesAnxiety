@@ -2,13 +2,17 @@
 //
 //   node tools/unity/export-menu.mjs                       all 30 levels x 3 seasons
 //   node tools/unity/export-menu.mjs --levels 1,5 --seasons rainy
+//   node tools/unity/export-menu.mjs --hud-only            only the HUD pieces (and menu.json's hud / hudText)
 //
 // Nothing is redrawn by hand: the in-app web game is built (webgame/build.mjs), opened in Chromium at the Galaxy
 // A15's size (832 x 384 dp, 2.8125 px per dp = 2340 x 1080 px), frozen like webgame/test/pixel-diff.mjs, and each
 // piece is cut out of the page it draws:
 //   - scene/<season>-<level>.jpg.bytes  the house picture (main-menu-scene.js, minus its animations, as the app shows it)
 //   - weather/<season>.png         one band of rain / snow and the birds (app/menu.js weather()), animated in Unity
-//   - hud/<id>.png                 each button, pill, badge, the crest, the name plate and the creature's still
+//   - hud/<id>.png                 each button, badge, the crest, the name plate and the creature's still. The numbers
+//                                  the player's profile changes are left out and drawn by Unity (Menu/HudArt.cs): the
+//                                  coin / gem pills are only their coin / gem picture (the pill and its number are
+//                                  drawn), the crest has no level number (drawn, with the XP ring)
 //   - hud/<id>-f<n>.png            the crest's and PLAY's flourish, frame by frame (Web Animations seeked to each frame)
 //   - menu.json                    where every piece goes, in the reference screen's device pixels, and how it moves
 //   - unity/Reference/menu-a15.png the whole menu at the same frozen moment: what the Unity build is compared with
@@ -34,7 +38,8 @@ const WORK = path.join(REPO, 'webgame/test/out/unity-webgame');
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const LEVELS = arg('levels', Array.from({ length: 30 }, (_, i) => i + 1).join(',')).split(',').map(Number);
 const SEASONS = arg('seasons', 'rainy,sunny,snowy').split(',');
-const SKIP_BUILD = process.argv.includes('--no-build');
+const HUD_ONLY = process.argv.includes('--hud-only');
+const SKIP_BUILD = process.argv.includes('--no-build') || HUD_ONLY;
 
 // the reference phone: Galaxy A15, landscape
 const REF = { w: 832, h: 384, dpr: 2.8125 };
@@ -57,13 +62,15 @@ const PIECES = [
   { id: 'tab-home', q: '.mm-tabs .mm-tab', i: 0, tap: 'home' },
   { id: 'tab-characters', q: '.mm-tabs .mm-tab', i: 1, tap: 'characters' },
   { id: 'tab-shop', q: '.mm-tabs .mm-tab', i: 2, tap: 'shop' },
-  { id: 'pill-coins', q: '.mm-pill', i: 0, tap: 'shop' },
-  { id: 'pill-gems', q: '.mm-pill', i: 1, tap: 'shop' },
+  // the coin / gem pictures only (`icon`: the <img>; the tap box is the pill's); the pill and number are drawn by Unity
+  { id: 'pill-coins', q: '.mm-top > .mm-pill', i: 0, tap: 'shop', icon: true },
+  { id: 'pill-gems', q: '.mm-top > .mm-pill', i: 1, tap: 'shop', icon: true },
   { id: 'orb-trophy', q: '.mm-orb.sq-troph', tap: 'trophies' },
   { id: 'orb-settings', q: '.mm-orb:not(.sq-troph)', tap: 'settings' },
   // press: the piece's CSS :active look. PLAY: translateY(3px) (main-menu.js); the crest: .sq-cin scale(.92), origin 50% 62%
   { id: 'play', q: '.mm-card.sq-solo', tap: 'play', flourish: { delay: 1300 }, press: { dy: 3, scale: 1, pivot: [0.5, 0.5] } },
-  { id: 'crest', q: '.sq-crest', tap: 'level', flourish: { delay: 0 }, press: { dy: 0, scale: 0.92, pivot: [0.5, 0.62] } },
+  // (without its level number: `noNumber`, Unity draws it and the XP ring, Menu/HudArt.cs)
+  { id: 'crest', q: '.sq-crest', tap: 'level', flourish: { delay: 0 }, press: { dy: 0, scale: 0.92, pivot: [0.5, 0.62] }, noNumber: true },
 ];
 const FLOURISH_EVERY = 5200;   // app/menu.js: the crest's flourish every 5.2 s, PLAY's glint 1.3 s after it
 
@@ -203,18 +210,22 @@ async function weatherShots(browser, page) {
 }
 
 // one HUD piece on its own: everything else hidden, transparent background, cut on the device-pixel grid
-async function isolate(page, q, i, on) {
-  return page.evaluate(({ q, i, on }) => {
+async function isolate(page, q, i, on, opt = {}) {
+  return page.evaluate(({ q, i, on, opt }) => {
     const root = document.documentElement;
     if (!window.__iso) { window.__iso = { html: root.style.cssText, body: document.body.style.cssText }; }
     document.querySelectorAll('[data-iso]').forEach(e => { e.style.visibility = e.dataset.iso; delete e.dataset.iso; });
-    const el = on ? document.querySelectorAll(q)[i || 0] : null;
+    document.querySelectorAll('[data-isohide]').forEach(e => { e.style.visibility = ''; delete e.dataset.isohide; });
+    const box = on ? document.querySelectorAll(q)[i || 0] : null;
+    const el = box && opt.icon ? box.querySelector('img') : box;
     if (!on) { root.style.cssText = window.__iso.html; document.body.style.cssText = window.__iso.body; root.style.visibility = ''; return null; }
     root.style.visibility = 'hidden'; root.style.background = 'transparent'; document.body.style.background = 'transparent';
     el.dataset.iso = el.style.visibility; el.style.visibility = 'visible';
-    const r = el.getBoundingClientRect();
-    return { x: r.left, y: r.top, w: r.width, h: r.height };
-  }, { q, i, on });
+    // the crest's level number: its two <text>s after LEVEL
+    if (opt.noNumber) [...el.querySelectorAll('svg.mm-crest > text')].slice(-2).forEach(t => { t.dataset.isohide = '1'; t.style.visibility = 'hidden'; });
+    const r = box.getBoundingClientRect(), p = el.getBoundingClientRect();
+    return { x: r.left, y: r.top, w: r.width, h: r.height, pic: { x: p.left, y: p.top, w: p.width, h: p.height } };
+  }, { q, i, on, opt });
 }
 async function shotPx(page, box) {   // box in device px (integers): the whole screen, then cut (a CSS clip rounds)
   const png = PNG.sync.read(await page.screenshot({ omitBackground: true }));
@@ -227,9 +238,9 @@ const pxBox = (r, m) => { const x = Math.max(0, Math.floor((r.x - m) * REF.dpr))
 async function hudShots(page) {
   const out = [];
   for (const P of PIECES) {
-    const r = await isolate(page, P.q, P.i, true);
+    const r = await isolate(page, P.q, P.i, true, { icon: P.icon, noNumber: P.noNumber });
     if (!r) throw new Error('no element for ' + P.id + ' (' + P.q + ')');
-    const box = pxBox(r, 24);
+    const box = pxBox(P.icon ? r.pic : r, 24);
     const png = await shotPx(page, box);
     const t = trimBox(png);
     if (!t) throw new Error(P.id + ' drew nothing');
@@ -265,9 +276,41 @@ async function hudShots(page) {
   return out;
 }
 
+// where Unity draws the HUD's numbers (Menu/HudArt.cs): the pills' boxes (the reference's, and where each coin / gem
+// picture sits from its pill), the crest's <svg> and its .sq-cin (the flourish and press scale about its 50 % 62 %)
+async function hudText(page) {
+  return page.evaluate((dpr) => {
+    const px = (r) => [r.left, r.top, r.width, r.height].map((v) => Math.round(v * dpr * 1000) / 1000);
+    const pills = [...document.querySelectorAll('.mm-top > .mm-pill')].slice(0, 2).map((p, i) => {
+      const b = p.getBoundingClientRect(), im = p.querySelector('img').getBoundingClientRect(), sp = p.querySelector('span');
+      return { id: i ? 'pill-gems' : 'pill-coins', pill: px(b), text: sp.textContent, iconOffset: [(im.left - b.left) * dpr, (im.top - b.top) * dpr] };
+    });
+    const hud = document.querySelector('.mm-hud'), k = new DOMMatrix(getComputedStyle(hud).transform).a;
+    const svg = document.querySelector('.sq-crest svg.mm-crest'), cin = document.querySelector('.sq-crest .sq-cin');
+    const level = +((svg.getAttribute('aria-label') || '').replace(/\D+/g, '') || 1);
+    return { k, hudWidth: parseFloat(hud.style.width), pills, crest: { svg: px(svg.getBoundingClientRect()), cin: px(cin.getBoundingClientRect()), level, ring: !!svg.querySelector('circle[r="27.2"]') } };
+  }, REF.dpr);
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 if (!SKIP_BUILD) await build(WORK);
 fs.writeFileSync(path.join(WORK, '__unity_canvas.html'), '<!doctype html><meta charset="utf-8"><style>html,body{margin:0;background:transparent;overflow:hidden}</style><body></body>');
+if (HUD_ONLY) {
+  // the HUD's pieces again, into the existing menu.json (the house pictures, weather and reference stay)
+  const browser = await chromium.launch({ args: ['--allow-file-access-from-files'] });
+  const { page, errs } = await openMenu(browser);
+  const text = await hudText(page);
+  const hud = await hudShots(page);
+  await browser.close();
+  const layout = JSON.parse(fs.readFileSync(path.join(OUT, 'menu.json'), 'utf8'));
+  for (const f of fs.readdirSync(path.join(OUT, 'hud'))) if (!hud.some((h) => f.startsWith(h.id + '.') || f.startsWith(h.id + '-f'))) console.log('  (left as is: hud/' + f + ')');
+  layout.hud = hud;
+  layout.hudText = text;
+  write('menu.json', JSON.stringify(layout, null, 1));
+  console.log('hud: ' + hud.length + ' pieces; hudText ' + JSON.stringify(text));
+  for (const e of [...new Set(errs)].slice(0, 8)) console.log('  page error:', e.slice(0, 200));
+  process.exit(0);
+}
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
 fs.mkdirSync(REF_DIR, { recursive: true });
@@ -293,6 +336,7 @@ scene.parks = parks;
 const weather = await weatherShots(browser, page);
 // the reference, at the moment the pieces are cut (the creature's rig doesn't move between the two: the clock is still)
 fs.writeFileSync(path.join(REF_DIR, 'menu-a15.png'), await page.screenshot());
+const hudTextInfo = await hudText(page);
 const hud = await hudShots(page);
 await browser.close();
 
@@ -302,6 +346,7 @@ const layout = {
   scene: { viewBox: [0, 0, VB.w, VB.h], fit: 'xMidYMax slice', ...scene },
   weather,
   hud,
+  hudText: hudTextInfo,
 };
 write('menu.json', JSON.stringify(layout, null, 1));
 fs.writeFileSync(path.join(REPO, 'unity/Reference/menu-a15.json'), JSON.stringify(live));

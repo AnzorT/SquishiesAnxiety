@@ -92,6 +92,23 @@ Feel and speed are checked on the phone.
      - Hand the tree to C# without re-parsing text, then profile on the phone and port hot spots to C#.
 3. **App shell + Firebase**: sign-in, profile, roster and config, so coins, gems, level, name and creature are real.
    The backend doesn't change.
+   - ✅ **The start-up flow** (`App/AppFlow.cs`, as App.js decides its stage): splash → (the saved session, "Keep me
+     signed in" applied) → log in / register while signed out → verify while an email account isn't confirmed → the
+     menu. Sign out is in the menu's dev panel (the app's settings screen isn't ported); development builds have a
+     "Dev: menu offline" button on the start-up screens.
+   - ✅ **Splash, log in / register, verify** (`Ui/Screens/`: the models, laid out by Yoga from the StyleSheets and
+     drawn with UiSvg / UiFont; `App/*View.cs` runs them): the app's validation and error texts word for word, the
+     switch's pill, the label fade-up, the hopping dots, the register row's layout animation, Show / Hide, the
+     caret. Text entry: TouchScreenKeyboard on the phone (its own line hidden), the keyboard in the editor; the caret
+     stays at the end (no selection, no IME preview on desktop). Checked: `tools/unity/auth-test` (Chrome's screenshot
+     of each state vs the Unity code's: 1.8-3.0 % of pixels differ visibly, edges about a device pixel apart; the
+     splash 0.4 %) and the logic against the Firebase emulators (36 checks).
+   - ✅ **The menu shows the player**: coins, gems, the crest's level and XP ring come from the profile (Menu/HudArt.cs
+     draws the pills and the number; export-menu.mjs now cuts the pills' coin / gem pictures and the crest without
+     its number). The house picture is the player's level's. Offline, the exported numbers.
+   - Not yet: the roster and config (the chosen creature: the menu has only Mittens' rig, so the name plate stays
+     "Mittens"; config/levels' XP curve: the default 100 per level), the social sign-ins, a password reset screen (the
+     app has none).
 4. **The menu's pages** (`webgame/app/menu.js`): PLAY → Game Park carousel with the game clips, CHARACTERS, the Level Pass.
    - ✅ **PLAY's walk** (`MenuView` EnterPark / LeavePark):
      - the same timings and easing curves as `enterPark` / `leavePark`: turn 380 ms, walk 2300 ms (`EOUT` for the
@@ -174,8 +191,8 @@ Each step ends with CI screenshots matching the app and you checking it on the p
 
 Known gaps:
 - The creature is its still picture with a placeholder breath (step 2).
-- Coins, gems, name and level are the exported ones (100, 600, Mittens, level 1) until Firebase (step 3). The dev panel
-  switches level and season.
+- Signed in, coins, gems, level and XP are the player's (step 3); the name plate is the exported "Mittens" (the chosen
+  creature isn't switchable yet). The dev panel switches level (offline) and season.
 - Taps only show a note.
 - The flourish frames are whole pictures (~34 MB of texture memory). Split them into moving parts.
 

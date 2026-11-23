@@ -1,5 +1,7 @@
 // The Main Menu screen: a camera that shows the screen in pixels, the menu (MenuView), touches, and a small dev panel
-// (frame rate, level and season) until the real profile and the other screens are ported.
+// (frame rate, level and season, sign out). Signed in (App/AppFlow.cs), the HUD shows the player's coins, gems, level
+// and XP (SetPlayer) and the house is the player's level's; offline / signed out (the dev menu) it keeps the exported
+// numbers and the dev panel's level.
 using SquishSquad.Games.Stack;
 using SquishSquad.Ui;
 using UnityEngine;
@@ -12,6 +14,23 @@ namespace SquishSquad.Menu
 
         /// <summary>Fired with the piece's tap name ("play", "shop", "characters", "level", ...).</summary>
         public static event System.Action<string> Tapped;
+        /// <summary>The dev panel's "Sign out" (the settings screen that has it in the app isn't ported).</summary>
+        public static event System.Action SignOutRequested;
+
+        HudValues _player;   // the signed-in player's numbers (null: the exported ones)
+        int _playerLevel;    // their level: the house picture's (1-30)
+
+        /// <summary>The signed-in player's numbers (null: offline, the exported ones). A new level rebuilds the house.</summary>
+        public void SetPlayer(HudValues v)
+        {
+            _player = v;
+            int lv = v != null ? Mathf.Clamp(v.Level, 1, 30) : 0;
+            if (_view == null) { _playerLevel = lv; return; }
+            if (lv != _playerLevel && _view.Where == MenuView.Place.Home && _game == null) { _playerLevel = lv; Rebuild(); return; }
+            _view.SetHud(v ?? HudValues.Baked, NowMs);
+        }
+
+        int ViewLevel => _player != null && _playerLevel > 0 ? _playerLevel : MenuState.Level;
 
         Camera _cam;
         MenuLayout _layout;
@@ -69,8 +88,9 @@ namespace SquishSquad.Menu
             _view?.Dispose();
             _w = Screen.width; _h = Screen.height;
             FitCamera(_cam, _w, _h);
-            _view = new MenuView(_layout, transform, _w, _h, MenuState.Level, MenuState.Season);
+            _view = new MenuView(_layout, transform, _w, _h, ViewLevel, MenuState.Season);
             _t0 = Time.unscaledTime;
+            if (_player != null) _view.SetHud(_player, 0f);
             _view.Tick(0f);
         }
 
@@ -221,7 +241,7 @@ namespace SquishSquad.Menu
 
         // ---- dev panel (IMGUI): frame rate; tap it for level / season ----------------------------------------------
         Rect FpsRect => new Rect(_w * 0.42f, 4f, _w * 0.16f, _h * 0.05f);
-        Rect PanelRect => new Rect(_w * 0.3f, _h * 0.12f, _w * 0.4f, _h * 0.42f);
+        Rect PanelRect => new Rect(_w * 0.3f, _h * 0.12f, _w * 0.4f, _h * 0.52f);
         bool InPanel(Vector2 page) => FpsRect.Contains(page) || (_panel && PanelRect.Contains(page));
 
         void OnGUI()
@@ -235,7 +255,7 @@ namespace SquishSquad.Menu
             {
                 var btn = new GUIStyle(GUI.skin.button) { fontSize = Mathf.RoundToInt(12 * u) };
                 GUILayout.BeginArea(PanelRect, GUI.skin.box);
-                GUILayout.Label($"Level {MenuState.Level} · {MenuState.Season} ({MenuState.SeasonSetting})", label);
+                GUILayout.Label(_player != null ? $"Level {_playerLevel} (the player's) · {MenuState.Season} ({MenuState.SeasonSetting})" : $"Level {MenuState.Level} · {MenuState.Season} ({MenuState.SeasonSetting})", label);
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Level -", btn)) SetState(MenuState.Level - 1, MenuState.SeasonSetting);
                 if (GUILayout.Button("Level +", btn)) SetState(MenuState.Level + 1, MenuState.SeasonSetting);
@@ -244,6 +264,7 @@ namespace SquishSquad.Menu
                 foreach (var s in new[] { "auto", "sunny", "rainy", "snowy" })
                     if (GUILayout.Button(s, btn)) SetState(MenuState.Level, s);
                 GUILayout.EndHorizontal();
+                if (SignOutRequested != null && GUILayout.Button("Sign out", btn)) { _panel = false; SignOutRequested(); }
                 if (GUILayout.Button("Close", btn)) _panel = false;
                 GUILayout.EndArea();
             }

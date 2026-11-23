@@ -1,6 +1,7 @@
 // Web, development only: the games' popups on their own, to check their layout without playing a level
 // (http://localhost:8081/?phone=1&preview=1 in a window the phone's size, e.g. 832 x 384 for the A15 sideways), and
-// the screens a test account can't reach (verify).
+// the screens a test account can't reach (verify), and the start-up screens signed out (splash, auth) for the Unity
+// port's comparisons (tools/unity/auth-test).
 // window.__preview('sd-result') shows one card; the names are the keys of CARDS below. Nothing here touches the account.
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -15,6 +16,8 @@ import * as SORT from '../sort/Cards';
 import * as STACK from '../stack/Cards';
 import * as HOP from '../hop/Cards';
 import VerifyEmailScreen from '../screens/VerifyEmailScreen';
+import SplashScreen from '../screens/SplashScreen';
+import AuthScreen from '../screens/AuthScreen';
 import VaultLoader from '../components/VaultLoader';
 import SquishdokuScreen from '../screens/SquishdokuScreen';
 import SortScreen from '../screens/SortScreen';
@@ -98,6 +101,11 @@ const CARDS = {
   'game-stack': game(StackScreen),
   'game-hop': game(HopScreen),
   verify: () => <VerifyEmailScreen email="new.player@example.com" onVerified={noop} onLogout={noop} />,
+  // the launch screen as on a brand-new install (no creature cache yet, so no Mittens) while the app starts: the bar
+  // runs to 90 % and waits (?ready=1: the app is ready, so it fills and says READY!)
+  splash: () => <SplashScreen onFinish={noop} ready={/[?&]ready=1/.test(window.location.search)} creatures={[]} />,
+  // Log in / Register signed out (Firebase is only called when its buttons are tapped)
+  auth: () => <AuthScreen />,
 };
 
 export default function Preview() {

@@ -17,7 +17,7 @@ using UnityEngine;
 
 namespace SquishSquad.Menu
 {
-    public sealed class MenuView : IDisposable
+    public sealed partial class MenuView : IDisposable
     {
         const int SceneOrder = 0, WorldOrder = 10, WeatherOrder = 20, HudOrder = 30;
 
@@ -88,6 +88,7 @@ namespace SquishSquad.Menu
             BuildWeather();
             order = HudOrder;
             foreach (var p in _layout.hud) if (!p.world) _pieces.Add(new PieceView(this, p, order++));
+            BuildHud();   // the player's numbers (MenuView.Hud.cs)
 
             // the creature, animated by the app's own rig code (recorded frames for now), in place of its still
             if (_creatureKey != null)
@@ -160,6 +161,7 @@ namespace SquishSquad.Menu
             }
             foreach (var p in _pieces) p.Tick(ms);
             TickTrip(ms);
+            TickHud(ms);
             TickClip();
             if (Carousel != null)
             {
@@ -219,6 +221,7 @@ namespace SquishSquad.Menu
         {
             float a = CurrentFade(ms);
             foreach (var p in _pieces) if (p.Data.id != "creature") p.SetAlpha(a);
+            _hudAlpha = a;
             if (Where == Place.Home || Where == Place.Park) return;
             bool enter = Where == Place.ToPark;
             float turn = enter ? 380 : 340, walk = enter ? 2300 : 2100, t = ms - _tripStart;
@@ -398,6 +401,7 @@ namespace SquishSquad.Menu
 
         public void Dispose()
         {
+            DisposeHud();
             Carousel?.Dispose();
             Carousel = null;
             if (_root != null) Kill(_root.gameObject);
@@ -413,9 +417,15 @@ namespace SquishSquad.Menu
         public sealed class PieceView
         {
             public readonly MenuLayout.Piece Data;
-            public readonly Rect Hit;              // page px on this screen (y down)
+            public Rect Hit { get; internal set; }  // page px on this screen (y down)
             readonly Transform _pivot;             // presses scale / move around this point
             readonly Vector3 _pivotPos;
+            Vector3 _offset;                       // moved from its exported place (a pill's picture as the row reflows)
+            internal Transform Pivot => _pivot;
+            internal Vector2 PivotPx => new Vector2(_pivotPos.x, -_pivotPos.y);
+            internal bool Pressed => _pressed;
+            /// <summary>Moves the piece `px` (page px, y down) from where it was exported.</summary>
+            internal void Offset(Vector2 px) { _offset = new Vector3(px.x, -px.y, 0); _pivot.localPosition = _pivotPos + _offset; }
             readonly SpriteRenderer _art, _fl;
             readonly Sprite[] _frames;
             readonly float _scale;
@@ -470,7 +480,7 @@ namespace SquishSquad.Menu
                 if (press == null) return;
                 float s = on ? press.scale : 1f;
                 _pivot.localScale = new Vector3(s, s, 1f);
-                _pivot.localPosition = _pivotPos + (on ? new Vector3(0f, -press.dy * dpPx, 0f) : Vector3.zero);
+                _pivot.localPosition = _pivotPos + _offset + (on ? new Vector3(0f, -press.dy * dpPx, 0f) : Vector3.zero);
             }
 
             public void Tick(float ms)

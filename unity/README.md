@@ -14,19 +14,32 @@ crest's and PLAY's flourishes, pressed looks). Taps show a "not in the Unity ver
 2. The first open writes the project settings (`Assets/Editor/ProjectSetup.cs`: Gamma colour, landscape, IL2CPP ARM64,
    app id `com.plushcrush.unity`, the Input Manager) and an empty `Assets/Scenes/Main.unity`. **Restart the editor once**
    so the input setting takes effect, then commit the new `ProjectSettings/` and `.meta` files.
-3. Press Play in any scene: `Assets/Scripts/App/Boot.cs` builds the menu. Set the Game view to 2340 x 1080 to see it at
-   the reference size.
+3. Press Play in any scene: `Assets/Scripts/App/Boot.cs` starts the app's flow (`App/AppFlow.cs`): the splash, then log
+   in / register (the live Firebase project, as the app), the email check for a new account, then the menu with your
+   coins, gems and level. "Dev: menu offline" (top middle, editor and development builds) skips to the menu with the
+   exported numbers. Set the Game view to 2340 x 1080 to see it at the reference size.
 4. On the phone: **Squish Squad → Build Android APK** (or File → Build Settings). It has its own app id, so it installs
    next to the current app for side-by-side testing.
 
-The number at the top middle is the frame rate. Tap it for the dev panel: level 1-30 and season (auto follows the
-month, like the app).
+The number at the top middle is the frame rate. Tap it for the dev panel: level 1-30 (offline) and season (auto follows
+the month, like the app), and Sign out.
+
+## The start-up screens: `tools/unity/auth-test`
+
+Splash, log in / register and verify are drawn by the Unity code (`Assets/Scripts/Ui/Screens`), so there's nothing to
+export: `node tools/unity/auth-test/capture.mjs <dir>` screenshots the app's states (Expo web, `src/web/Preview.js`
+"splash", "auth", "verify"), `dotnet run -c Release --project tools/unity/auth-test -- shots <dir>` draws the same
+states from the Unity code and reports the pixels that differ. `node tools/unity/auth-test/menu.mjs <dir>` and
+`-- menu <dir>` do the same for the menu's pills and crest with several players, and `-- emu` runs the screens' logic
+against the Firebase emulators (`tools/unity/backend/start-emulators.sh`).
 
 ## The art: `node tools/unity/export-menu.mjs`
 
 Builds the in-app web game, opens the menu in Chromium at the A15's size with the clock frozen, and cuts out every piece
 into `Assets/Resources/Menu/` (needs `python3 -m pip install pillow` for the JPEGs). Run it again whenever the menu's
-design changes. `--levels 1,5 --seasons rainy` exports fewer states; `--no-build` reuses the last web build.
+design changes. `--levels 1,5 --seasons rainy` exports fewer states; `--no-build` reuses the last web build;
+`--hud-only` redoes just the HUD pieces. The numbers the player's profile changes aren't in the pictures: the coin and
+gem pills are cut as their pictures only, the crest without its level number, and `Menu/HudArt.cs` draws the rest.
 
 - `scene/<season>-<level>.jpg.bytes`: the house picture for each of the 90 states (JPEG, decoded by `MenuView`)
 - `weather/`: one band of rain or snow and a bird, animated in Unity like `webgame/app/menu.js` does

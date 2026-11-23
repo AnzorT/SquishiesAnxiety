@@ -1,4 +1,4 @@
-// Starts the app in any scene: frame rate, then the Main Menu (the only screen ported so far).
+// Starts the app in any scene: frame rate, the fonts, then the app's start-up flow (AppFlow: splash, sign-in, the menu).
 using SquishSquad.Menu;
 using SquishSquad.Ui;
 using UnityEngine;
@@ -17,7 +17,7 @@ namespace SquishSquad.App
             // the app's fonts for text drawn in Unity (Resources/Fonts, tools/unity/ui/fonts.py)
             UiFont.ReadJson = name => Resources.Load<TextAsset>("Fonts/" + name)?.text;
             UiFont.ParseJson = json => JsonUtility.FromJson<UiFontData>(json);
-            if (Object.FindAnyObjectByType<MenuScreen>() == null) new GameObject("MainMenu").AddComponent<MenuScreen>();
+            if (Object.FindAnyObjectByType<MenuScreen>() == null && Object.FindAnyObjectByType<AppFlow>() == null) new GameObject("App").AddComponent<AppFlow>();
         }
     }
 }
