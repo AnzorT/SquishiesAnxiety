@@ -32,6 +32,9 @@ namespace SquishSquad.Games.Squish
         readonly SquishShade.LightSet _lights;
         readonly Vector4[] _press = new Vector4[SquishToy.MaxPresses];
 
+        /// <summary>The card's atlas changed (it downloaded): the same card, its own art.</summary>
+        public void SetAtlas(Texture2D atlas) { if (atlas != null) _card.SetTexture("_MainTex", atlas); }
+
         public SquishStage(Transform parent, Texture2D atlas, Texture2D crown, int sortingOrder)
         {
             _root = parent;

@@ -120,8 +120,9 @@ namespace SquishSquad.Games.Squish
             if (UnityAudio.Instance != null) _hap = new SquishHaptics(UnityAudio.Instance.Timers);
             var moves = SquishCard.ParseMoves((IDictionary<string, object>)data["moves"]);
             int stage = SquishRules.StageOf(_profile, _creatureId);
-            var atlas = LoadAtlas(_key) ?? LoadAtlas("mittens");
-            if (LoadAtlasExists(_key) == false) Debug.LogWarning($"[SquishTime] no card for '{_key}' in Resources/Squish/cards (export it with tools/unity/export-squish.mjs --keys {_key}): showing Mittens'");
+            var atlas = LoadAtlas(_key) ?? LoadCached(_creatureId);
+            bool fetch = atlas == null;   // not shipped (the app's six are): its card from Storage, as the app's card.url
+            atlas ??= LoadAtlas("mittens");
             var crownBytes = Resources.Load<TextAsset>("Squish/crown.png");
             Texture2D crown = null;
             if (crownBytes != null) { crown = new Texture2D(2, 2, TextureFormat.RGBA32, true, true); crown.LoadImage(crownBytes.bytes); crown.wrapMode = TextureWrapMode.Clamp; }
@@ -134,6 +135,7 @@ namespace SquishSquad.Games.Squish
             _setHintGone = tutorial;
 
             BuildHud(atlas, crown);
+            if (fetch) FetchCard(_creatureId);
             Advance(nowMs);
         }
 
@@ -149,7 +151,49 @@ namespace SquishSquad.Games.Squish
             t.anisoLevel = 16;
             return t;
         }
-        static bool LoadAtlasExists(string key) => Resources.Load<TextAsset>("Squish/cards/" + key + ".png") != null;
+        static Texture2D Atlas(byte[] png, string name)
+        {
+            // as three uploads it: the PNG's raw values (the shader decodes sRGB), mipmapped, clamped
+            var t = new Texture2D(2, 2, TextureFormat.RGBA32, true, true) { name = name };
+            if (!t.LoadImage(png)) { Destroy(t); return null; }
+            t.wrapMode = TextureWrapMode.Clamp;
+            t.filterMode = FilterMode.Trilinear;
+            t.anisoLevel = 16;
+            return t;
+        }
+
+        static string CachePath(string id) => System.IO.Path.Combine(Application.persistentDataPath, "cards", id + ".png");
+
+        static Texture2D LoadCached(string id)
+        {
+            try { var f = CachePath(id); return System.IO.File.Exists(f) ? Atlas(System.IO.File.ReadAllBytes(f), "card " + id) : null; }
+            catch (Exception) { return null; }
+        }
+
+        // the creature's published card (Storage, its catalog entry's card.url), kept on the phone for next time; until
+        // it's here (or offline) Mittens' card stands in
+        async void FetchCard(string id)
+        {
+            if (!Online) { Debug.LogWarning($"[SquishTime] no card for '{_key}' offline: showing Mittens'"); return; }
+            try
+            {
+                var list = await _fb.Data.ListCreatures();
+                var me = list.FirstOrDefault(c => c.TryGetValue("id", out var x) && (x as string) == id);
+                var url = me != null && me.TryGetValue("card", out var card) && card is IDictionary<string, object> cm && cm.TryGetValue("url", out var u) ? u as string : null;
+                if (string.IsNullOrEmpty(url)) { Debug.LogWarning($"[SquishTime] '{_key}' has no published card: showing Mittens'"); return; }
+                using var req = UnityEngine.Networking.UnityWebRequest.Get(url);
+                var op = req.SendWebRequest();
+                while (!op.isDone) await System.Threading.Tasks.Task.Yield();
+                if (req.result != UnityEngine.Networking.UnityWebRequest.Result.Success || this == null) return;
+                var png = req.downloadHandler.data;
+                var tex = Atlas(png, "card " + id);
+                if (tex == null) return;
+                try { System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(CachePath(id))); System.IO.File.WriteAllBytes(CachePath(id), png); }
+                catch (Exception) { /* next time it downloads again */ }
+                _stage?.SetAtlas(tex);
+            }
+            catch (Exception e) { Debug.LogWarning("[SquishTime] card: " + e.Message); }
+        }
 
         // ---- the HUD -----------------------------------------------------------------------------------------------------
         UiPiece Piece(string name, int order, string svg, HudBox b, float margin = 6)

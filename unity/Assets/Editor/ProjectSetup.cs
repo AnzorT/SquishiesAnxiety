@@ -82,6 +82,22 @@ namespace SquishSquad.EditorTools
     // textures here at all.
     public sealed class MenuArtImport : AssetPostprocessor
     {
+        // The phone build's art: ASTC 4x4 on Android (8 bits a pixel instead of RGBA32's 32: a quarter of the APK's and
+        // the GPU's memory, hardly visible at the A15's density). Standalone and the editor stay exact (RGBA32), so the
+        // screenshot comparisons with Chrome are unchanged. false: Android exact too.
+        public const bool CompressOnAndroid = true;
+
+        static void PhoneArt(TextureImporter ti)
+        {
+            if (!CompressOnAndroid) return;
+            var s = ti.GetPlatformTextureSettings("Android");
+            s.overridden = true;
+            s.maxTextureSize = 4096;
+            s.format = TextureImporterFormat.ASTC_4x4;
+            s.compressionQuality = 100;
+            ti.SetPlatformTextureSettings(s);
+        }
+
         void OnPreprocessTexture()
         {
             var ti = (TextureImporter)assetImporter;
@@ -101,6 +117,7 @@ namespace SquishSquad.EditorTools
                 ti.mipmapEnabled = true; ti.filterMode = FilterMode.Trilinear; ti.wrapMode = TextureWrapMode.Clamp;
                 ti.alphaIsTransparency = true; ti.alphaSource = TextureImporterAlphaSource.FromInput; ti.sRGBTexture = true;
                 ti.textureCompression = TextureImporterCompression.Uncompressed;
+                PhoneArt(ti);
                 return;
             }
             // (Resources/Park: the Game Park's carousel, tools/unity/export-park.mjs; the games' pieces and rooms)
@@ -128,6 +145,7 @@ namespace SquishSquad.EditorTools
                 s.textureCompression = TextureImporterCompression.Uncompressed;
                 ti.SetPlatformTextureSettings(s);
             }
+            PhoneArt(ti);
         }
     }
 }

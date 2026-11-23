@@ -26,7 +26,7 @@ namespace SquishSquad.Menu
         /// <summary>What the exported menu shows (the prototype's demo save, no XP): the offline / signed-out dev menu.</summary>
         public static HudValues Baked => new HudValues();
 
-        public const double XpPerLevel = 100;   // config/levels' default (functions/squad.js DEFAULT_LEVELS)
+        public static double XpPerLevel = 100;   // config/levels' xpPerLevel (App/LevelsConfig; default: functions/squad.js DEFAULT_LEVELS)
         public const double StartGems = 600;    // functions/squad.js START.gems: a profile without `gems` yet
 
         static double Num(object v) => v is double d && !double.IsNaN(d) && !double.IsInfinity(d) ? d : v is long l ? l : v is int i ? i : 0;

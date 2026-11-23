@@ -140,6 +140,7 @@ namespace SquishSquad.App
                         MenuScreen.SignOutRequested += SignOut;
                     }
                     _menuFresh = true;
+                    if (_fb != null && _user != null) _ = LevelsConfig.Load(_fb);   // the XP curve (config/levels)
                     break;
             }
         }
