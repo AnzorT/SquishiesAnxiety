@@ -134,9 +134,36 @@ namespace SquishSquad.House.View
         // frame px -> UiPiece's dp (the frame is scaled to the screen's width)
         Affine Frame => Affine.ScaleBy(_k / UiPiece.PxPerDp, _k / UiPiece.PxPerDp);
 
+        // the backyard's Yard Games button (top centre): the yard games' page over the house (Games/Yard/View)
+        SquishSquad.Games.Yard.View.YardScreen _yard; UiPiece _yardBtn;
+        const double YbW = 132, YbH = 34, YbX = 426 - YbW / 2, YbY = 10;
+        bool YardBtnOn => _sim.S.Cur == "backyard" && !_sim.Map && !_sim.Shop && !_sim.Edit && !_sim.Party;
+        bool OnYardBtn(double fx, double fy) => YardBtnOn && fx >= YbX && fx <= YbX + YbW && fy >= YbY && fy <= YbY + YbH;
+        void DrawYardBtn()
+        {
+            if (_yardBtn == null)
+            {
+                _yardBtn = UiPiece.Create(_room.transform, "yard games button", 30990);
+                var u = new UiSvg((float)YbW, (float)YbH).Box(0, 0, (float)YbW, (float)YbH, new BoxStyle { Gradient = new[] { "#ff8fd2", "#e0479f" }, Radius = 999, BorderWidth = 2, BorderColor = "#ffffff", Shadows = new[] { new Shadow("#a8287a", 0, 3, 0) } });
+                u.Text("Yard Games", 0, 7, new TextStyle { Font = "Fredoka_700Bold", Size = 16, Color = "#ffffff", LineHeight = 20 }, (float)YbW, 0.5f);
+                _yardBtn.SetSvg(u.Markup, (float)YbW, (float)YbH, 8);
+            }
+            _yardBtn.Visible = YardBtnOn;
+            _yardBtn.Transform = Frame * Affine.Translate(YbX, YbY);
+        }
+        void OpenYard()
+        {
+            if (_yard != null) return;
+            Save();
+            _camera.enabled = false; if (_yardBtn != null) _yardBtn.Visible = false;
+            _yard = SquishSquad.Games.Yard.View.YardScreen.Create(transform.parent, _ownedKeys, null);
+            _yard.OnExit = () => { _yard = null; if (_camera != null) _camera.enabled = true; };
+        }
+
         void Update()
         {
             if (_room == null) return;
+            if (_yard != null) return;   // (the yard games are up: its own Escape leaves them)
             double now = Now;
             if (Input.GetKeyDown(KeyCode.Escape))
             {
@@ -169,6 +196,7 @@ namespace SquishSquad.House.View
             _tab.Transform = Frame * Affine.Translate(tab.X, tab.Y + ty);
             _panel.Transform = Frame * Affine.Translate(panel.X, panel.Y + ty);
             _arrow.Transform = Frame * Affine.Translate(arrow.X + arrow.W / 2, arrow.Y + ty + arrow.H / 2) * Affine.Rotate(_hud.ArrowDeg(now)) * Affine.Translate(-arrow.W / 2, -arrow.H / 2);
+            DrawYardBtn();
             DrawToast(now);
         }
 
@@ -230,6 +258,7 @@ namespace SquishSquad.House.View
                 if (_sim.Show != null && (_sim.FzP > 0 || _movie.Hits(fx, fy))) { _press = "theater"; return; }   // (the player bar, the picker, full screen)
                 if (_sim.Shop) { _press = "shop"; return; }   // (the Catalog covers everything: its taps on release)
                 if (_map.OnRoomButton(fx, fy)) { _press = "mapbtn"; return; }
+                if (OnYardBtn(fx, fy)) { _press = "yardbtn"; return; }
                 if (_sim.Edit) EditPress(fx, fy, b.x, b.y, now);
                 return;
             }
@@ -261,6 +290,7 @@ namespace SquishSquad.House.View
                 case "map": if (!_moved) _map.Tap(fx, fy, now); return;
                 case "theater": if (!_moved) _movie.Tap(fx, fy, now); return;
                 case "mapbtn": if (!_moved) _sim.OpenMap(now); return;
+                case "yardbtn": if (!_moved) OpenYard(); return;
             }
             if (_moved) return;   // (a drag, not a tap)
             Tap(fx, fy, now);
@@ -371,6 +401,7 @@ namespace SquishSquad.House.View
 
         void OnDestroy()
         {
+            if (_yard != null) Destroy(_yard.gameObject);
             _squad?.Destroy();
             _wheel?.Destroy();
             _edit?.Destroy();

@@ -162,7 +162,15 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    page). Not yet: the film's CSS filters (blur, saturation), the hair on the old film, the speakers' rings and notes,
    the holo pop-outs and confetti cues, the 10 s app ad (a screen always has a movie to show).
 10. Beach.
-11. Yard games (with the menu).
+11. Yard games: done in a first cut. Games/Yard: the page's yard-games.js as YardKit (a retained SVG DOM the games
+   write, the context: creatures, score, clock, hint, toasts, particles, timers, finish; the saved bests) and the seven
+   games (Hoop Shot, Penalty Kick, Hopscotch, Bounce Up, Slide & Splash, Cornhole, Ping-Pong) line for line; their
+   12 sounds rendered by tools/unity/house/export-yard.mjs. house-test `yard` plays each to its end; yard-check.mjs
+   compares the opening scenes with the page (they match). Games/Yard/View/YardScreen: the phone frame with the hub
+   (your player live, the strip, the cards, the sound button) or a game (layers redrawn when they change, live rigs
+   with yaw and poses, the top bar, pills, the games' own marks / badge / buttons, toasts, the intro and results
+   cards); opened by the backyard's Yard Games button (HouseScreen). Not yet checked on a device: the look against
+   the page, the cost of redrawing a layer every frame while particles fly; the hub's star glyph and emoji.
 
 About 75-100 helper-days. Live creatures: run the rig code (the creature engine) at 30 Hz round-robin within a
 frame budget, hot functions ported to C#; a loop cache only if the A15 can't keep up.
