@@ -174,6 +174,15 @@ namespace SquishSquad.Menu
             _game = s;
         }
 
+        void OpenShop(string tab)
+        {
+            BeforeGame();
+            var p = CharactersPageLink.Get();
+            var s = SquishSquad.Screens.ShopScreen.Create(transform, ProfileOrEmpty(p), p?.Fb, p?.Uid, tab);
+            s.OnExit = () => CloseScreen(s);
+            _game = s;
+        }
+
         void OpenSettings()
         {
             BeforeGame();
@@ -430,6 +439,7 @@ namespace SquishSquad.Menu
             if ((tap == "characters" || tap == "level") && OpenPage(tap)) return;
             if (tap == "trophies") { OpenAchievements(); return; }
             if (tap == "settings") { OpenSettings(); return; }
+            if (tap == "shop") { OpenShop("daily"); return; }
             Tapped?.Invoke(tap);
             if (Tapped == null) ShowToast(tap.ToUpperInvariant() + " isn't in the Unity version yet");
         }
