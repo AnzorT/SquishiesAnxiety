@@ -263,6 +263,32 @@ namespace SquishSquad.Backend
 
         public Task SaveCrib(string uid, IDictionary<string, object> state) => Quiet("saveCrib", fs.Set(UserPath(uid) + "/crib/state", state));
 
+        // --- the Squad House (users/{uid}/crib/house6 = { data: '<the house's save, JSON>', t }) -------------------
+        // src/game/gameData.js loadHouse / saveHouse: the same document the app's WebView house reads and writes, so a
+        // player's house is the same in both apps (House/HouseSave.cs reads and writes `data`).
+
+        // loadHouse: the save's JSON, or null (no house yet, or the read failed: the house starts a new one)
+        public async Task<string> LoadHouse(string uid)
+        {
+            try
+            {
+                var d = (await fs.Get(UserPath(uid) + "/crib/house6").ConfigureAwait(false))?.Data;
+                return d != null && d.TryGetValue("data", out var v) && v is string s && s.Length > 0 ? s : null;
+            }
+            catch (Exception e)
+            {
+                Log("loadHouse failed: " + e.Message);
+                return null;
+            }
+        }
+
+        // saveHouse: { data, t: serverTimestamp() } (fire and forget, like the app's); nothing for an empty save
+        public Task SaveHouse(string uid, string data)
+        {
+            if (string.IsNullOrEmpty(data)) return Task.CompletedTask;
+            return Quiet("saveHouse", fs.Set(UserPath(uid) + "/crib/house6", new Dictionary<string, object> { { "data", data }, { "t", FieldValue.ServerTimestamp } }));
+        }
+
         // --- player-made creatures (users/{uid}/customCreatures) ------------------------------------------------
 
         // subscribeToCustomCreatures' list, read once (ordered by createdAt): each with its `id`.

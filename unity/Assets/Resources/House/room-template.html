@@ -1,0 +1,249 @@
+<!-- Squad House v6.dc.html lines 121-368 (tools/unity/house/export-house.mjs) -->
+  <div style="position:absolute; left:0; top:50px; width:852px; height:393px; transform:scale({{ camK }}); transform-origin:426px 343px; transition:transform 0.45s ease;">
+  <svg viewBox="-220 -230 1292 643" style="position:absolute; left:-220px; top:-230px; width:1292px; height:643px; display:block;">
+    <defs>
+      <linearGradient id="hsBack" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{{ P.b0 }}"></stop><stop offset="1" stop-color="{{ P.b1 }}"></stop></linearGradient>
+      <linearGradient id="hsLeft" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="{{ P.l0 }}"></stop><stop offset="1" stop-color="{{ P.l1 }}"></stop></linearGradient>
+      <linearGradient id="hsRight" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="{{ P.r0 }}"></stop><stop offset="1" stop-color="{{ P.r1 }}"></stop></linearGradient>
+      <linearGradient id="hsFloor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{{ P.f0 }}"></stop><stop offset="0.45" stop-color="{{ P.f1 }}"></stop><stop offset="1" stop-color="{{ P.f2 }}"></stop></linearGradient>
+      <linearGradient id="hsWain" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{{ P.w0 }}"></stop><stop offset="1" stop-color="{{ P.w1 }}"></stop></linearGradient>
+      <linearGradient id="hsWainR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{{ P.wr0 }}"></stop><stop offset="1" stop-color="{{ P.wr1 }}"></stop></linearGradient>
+      <pattern id="p-stripe" width="30" height="30" patternUnits="userSpaceOnUse"><rect width="15" height="30" fill="{{ P.pat }}" opacity="0.55"></rect></pattern>
+      <pattern id="p-tile" width="16" height="16" patternUnits="userSpaceOnUse"><path d="M0 0H16V16" fill="none" stroke="{{ P.pat }}" stroke-width="1.6"></path></pattern>
+      <pattern id="p-siding" width="40" height="12" patternUnits="userSpaceOnUse"><path d="M0 11.5H40" stroke="{{ P.pat }}" stroke-width="2"></path></pattern>
+      <pattern id="p-peel" width="74" height="58" patternUnits="userSpaceOnUse"><ellipse cx="18" cy="16" rx="12" ry="7" fill="{{ P.pat }}" opacity="0.35"></ellipse><path d="M50 30 L54 38 L50 44 L56 52" fill="none" stroke="{{ P.pat }}" stroke-width="1.2" opacity="0.8"></path><circle cx="62" cy="10" r="2" fill="{{ P.pat }}" opacity="0.5"></circle></pattern>
+      <pattern id="p-plaster" width="90" height="60" patternUnits="userSpaceOnUse"><rect x="8" y="8" width="26" height="18" rx="3" fill="{{ P.pat }}" opacity="0.6"></rect><rect x="52" y="34" width="30" height="20" rx="3" fill="{{ P.pat }}" opacity="0.5"></rect></pattern>
+      <pattern id="p-daisy" width="40" height="36" patternUnits="userSpaceOnUse"><g transform="translate(10 10)"><circle cx="0" cy="-4" r="2.8" fill="#ffffff"></circle><circle cx="3.8" cy="-1.2" r="2.8" fill="#ffffff"></circle><circle cx="2.4" cy="3.2" r="2.8" fill="#ffffff"></circle><circle cx="-2.4" cy="3.2" r="2.8" fill="#ffffff"></circle><circle cx="-3.8" cy="-1.2" r="2.8" fill="#ffffff"></circle><circle r="2.2" fill="{{ P.pat }}"></circle></g><circle cx="30" cy="27" r="2.4" fill="{{ P.pat }}" opacity="0.7"></circle></pattern>
+      <pattern id="p-burst" width="48" height="40" patternUnits="userSpaceOnUse"><path d="M12 4 L13.6 10.4 L20 12 L13.6 13.6 L12 20 L10.4 13.6 L4 12 L10.4 10.4 Z" fill="{{ P.pat }}"></path><circle cx="36" cy="30" r="2.6" fill="{{ P.pat }}" opacity="0.8"></circle></pattern>
+      <pattern id="p-linen" width="12" height="8" patternUnits="userSpaceOnUse"><path d="M0 7.5H12" stroke="{{ P.pat }}" stroke-width="1"></path></pattern>
+      <pattern id="p-candy" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="12" height="28" fill="{{ P.pat }}" opacity="0.85"></rect></pattern>
+      <pattern id="p-damask" width="44" height="44" patternUnits="userSpaceOnUse"><path d="M22 4 Q31 22 22 40 Q13 22 22 4 Z" fill="{{ P.pat }}"></path><circle cx="2" cy="22" r="3" fill="{{ P.pat }}"></circle><circle cx="42" cy="22" r="3" fill="{{ P.pat }}"></circle></pattern>
+      <clipPath id="hsFloorClip"><path d="{{ rs.floor }}"></path></clipPath>
+      <clipPath id="hsCeilClip"><path d="M-174 270 A600 300 0 0 1 1026 270 V-240 H-174 Z"></path></clipPath>
+      <linearGradient id="hsCl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.1"></stop><stop offset="0.8" stop-color="#2a1608" stop-opacity="0.04"></stop><stop offset="1" stop-color="#2a1608" stop-opacity="0.2"></stop></linearGradient>
+      <linearGradient id="hsRnd" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2a1608" stop-opacity="0.3"></stop><stop offset="0.3" stop-color="#2a1608" stop-opacity="0"></stop><stop offset="0.7" stop-color="#2a1608" stop-opacity="0"></stop><stop offset="1" stop-color="#2a1608" stop-opacity="0.24"></stop></linearGradient>
+      <pattern id="rnWall" patternUnits="userSpaceOnUse" x="100" y="-50" width="214" height="150"><image href="{{ rt.wall }}" width="214" height="150" preserveAspectRatio="none"></image></pattern>
+      <pattern id="rnWin" patternContentUnits="objectBoundingBox" width="1" height="1"><image href="{{ rt.win }}" width="1" height="1" preserveAspectRatio="none"></image></pattern>
+      <pattern id="rnWallS" patternUnits="userSpaceOnUse" x="{{ rt.ws.x }}" y="{{ rt.ws.y }}" width="214" height="{{ rt.ws.h }}" patternTransform="{{ rt.ws.t }}"><image href="{{ rt.wallS }}" width="214" height="{{ rt.ws.h }}" preserveAspectRatio="none"></image></pattern>
+      <pattern id="rnFenceL" patternUnits="userSpaceOnUse" width="{{ rt.fW }}" height="56" patternTransform="matrix(-0.3125 0.50625 0 1 100 44)"><image href="{{ rt.fence }}" width="{{ rt.fW }}" height="56" preserveAspectRatio="none"></image></pattern>
+      <pattern id="rnFenceR" patternUnits="userSpaceOnUse" width="{{ rt.fWR }}" height="56" patternTransform="matrix(0.3125 0.50625 0 1 752 44)"><image href="{{ rt.fenceR }}" width="{{ rt.fWR }}" height="56" preserveAspectRatio="none"></image></pattern>
+      <filter id="hsAO" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="6"></feGaussianBlur></filter>
+      <filter id="hsBlur" x="-20%" y="-40%" width="140%" height="180%"><feGaussianBlur stdDeviation="3"></feGaussianBlur></filter>
+      <radialGradient id="hsVig" cx="50%" cy="55%" r="65%"><stop offset="0.6" stop-color="#5a3418" stop-opacity="0"></stop><stop offset="1" stop-color="#5a3418" stop-opacity="{{ vigOp }}"></stop></radialGradient>
+      <radialGradient id="hsLight" cx="18%" cy="0%" r="90%"><stop offset="0" stop-color="#fff6dc" stop-opacity="0.45"></stop><stop offset="0.6" stop-color="#fff6dc" stop-opacity="0"></stop></radialGradient>
+      <radialGradient id="hiW" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffffff" stop-opacity="0.85"></stop><stop offset="1" stop-color="#ffffff" stop-opacity="0"></stop></radialGradient>
+      <pattern id="mtWood" width="64" height="14" patternUnits="userSpaceOnUse"><path d="M0 3Q16 1.6 32 3.2T64 3M0 9.5Q20 11 40 9T64 9.8" fill="none" stroke="#3b1d08" stroke-opacity="0.2" stroke-width="0.8"></path><path d="M6 6.2q10-1.4 22 0M38 12.2q8 1 18-0.4" fill="none" stroke="#3b1d08" stroke-opacity="0.13" stroke-width="0.6"></path><path d="M0 5.6Q24 4.4 64 6" fill="none" stroke="#ffffff" stroke-opacity="0.13" stroke-width="0.7"></path><ellipse cx="50" cy="6.4" rx="2.6" ry="1.2" fill="none" stroke="#3b1d08" stroke-opacity="0.2" stroke-width="0.6"></ellipse></pattern>
+      <pattern id="mtFab" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M0 1.2H5M0 3.7H5" stroke="#000000" stroke-opacity="0.06" stroke-width="1"></path><path d="M1.2 0V5M3.7 0V5" stroke="#ffffff" stroke-opacity="0.08" stroke-width="0.9"></path></pattern>
+      <pattern id="mtMetal" width="46" height="5" patternUnits="userSpaceOnUse"><path d="M0 1H30M8 3.4H46" stroke="#ffffff" stroke-opacity="0.24" stroke-width="0.6"></path><path d="M14 2.2H40M0 4.4H12" stroke="#000000" stroke-opacity="0.08" stroke-width="0.5"></path></pattern>
+      <pattern id="mtPaint" width="14" height="14" patternUnits="userSpaceOnUse"><circle cx="3" cy="4" r="0.7" fill="#000000" fill-opacity="0.08"></circle><circle cx="10" cy="2" r="0.5" fill="#ffffff" fill-opacity="0.14"></circle><circle cx="8" cy="10" r="0.8" fill="#000000" fill-opacity="0.06"></circle><circle cx="12.5" cy="12" r="0.5" fill="#ffffff" fill-opacity="0.12"></circle><circle cx="1.5" cy="11" r="0.6" fill="#000000" fill-opacity="0.07"></circle></pattern>
+      <pattern id="mtPlaster" width="70" height="56" patternUnits="userSpaceOnUse"><circle cx="12" cy="10" r="9" fill="#ffffff" fill-opacity="0.06"></circle><circle cx="48" cy="34" r="12" fill="#000000" fill-opacity="0.03"></circle><circle cx="30" cy="48" r="0.8" fill="#000000" fill-opacity="0.12"></circle><circle cx="60" cy="8" r="0.6" fill="#000000" fill-opacity="0.12"></circle><circle cx="6" cy="40" r="0.7" fill="#ffffff" fill-opacity="0.22"></circle><circle cx="40" cy="20" r="0.5" fill="#000000" fill-opacity="0.1"></circle></pattern>
+      <radialGradient id="mVol" cx="34%" cy="26%" r="82%"><stop offset="0" stop-color="#ffffff" stop-opacity="0.26"></stop><stop offset="0.38" stop-color="#ffffff" stop-opacity="0"></stop><stop offset="0.7" stop-color="#1a0c04" stop-opacity="0"></stop><stop offset="1" stop-color="#1a0c04" stop-opacity="0.3"></stop></radialGradient>
+      <linearGradient id="hsCeil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1608" stop-opacity="0.24"></stop><stop offset="0.36" stop-color="#2a1608" stop-opacity="0"></stop></linearGradient>
+      <filter id="hsBlur2" x="-20%" y="-40%" width="140%" height="180%"><feGaussianBlur stdDeviation="1.6"></feGaussianBlur></filter>
+      <sc-for list="{{ glin }}" as="g" hint-placeholder-count="0"><linearGradient id="{{ g.id }}" x1="0" y1="0" x2="{{ g.x2 }}" y2="{{ g.y2 }}"><stop offset="0" stop-color="{{ g.c0 }}"></stop><stop offset="1" stop-color="{{ g.c1 }}"></stop></linearGradient></sc-for>
+      <sc-for list="{{ grad }}" as="g" hint-placeholder-count="0"><radialGradient id="{{ g.id }}" cx="36%" cy="30%" r="78%"><stop offset="0" stop-color="{{ g.c0 }}"></stop><stop offset="1" stop-color="{{ g.c1 }}"></stop></radialGradient></sc-for>
+      <radialGradient id="gWarm" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff2b0" stop-opacity="0.6"></stop><stop offset="1" stop-color="#fff2b0" stop-opacity="0"></stop></radialGradient>
+      <radialGradient id="gNeon" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffe9a0" stop-opacity="0.75"></stop><stop offset="1" stop-color="#ffe9a0" stop-opacity="0"></stop></radialGradient>
+      <linearGradient id="hsSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd2f2"></stop><stop offset="1" stop-color="#e6f4fb"></stop></linearGradient>
+      <linearGradient id="hsWood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e2ad74"></stop><stop offset="1" stop-color="#b97a42"></stop></linearGradient>
+      <radialGradient id="bMirror" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#f4fbfd"></stop><stop offset="1" stop-color="#a9d3e3"></stop></radialGradient>
+      <radialGradient id="dBall" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#ffffff"></stop><stop offset="0.5" stop-color="#c9cde8"></stop><stop offset="1" stop-color="#6c72a8"></stop></radialGradient>
+      <radialGradient id="hsGold" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#fff6c8"></stop><stop offset="0.5" stop-color="#ffd66b"></stop><stop offset="1" stop-color="#d99a20"></stop></radialGradient>
+      <radialGradient id="hsClock" cx="38%" cy="32%" r="70%"><stop offset="0" stop-color="#fffdf7"></stop><stop offset="1" stop-color="#efe2cc"></stop></radialGradient>
+    </defs>
+    <sc-if value="{{ flatRoom }}" hint-placeholder-val="{{ true }}">
+      <path d="M100 -50 H752 V100 H100 Z" fill="url(#hsBack)"></path>
+      <path d="M100 -50 H752 V100 H100 Z" fill="{{ wallFill }}"></path>
+      <path d="M-200 -119.1 L100 -50 V100 L-200 586 Z" fill="url(#hsLeft)"></path>
+      <path d="M1052 -119.1 L752 -50 V100 L1052 586 Z" fill="url(#hsRight)"></path>
+      <sc-if value="{{ indoor }}" hint-placeholder-val="{{ true }}">
+        <g transform="matrix(-0.42 0.65 0 1.25 100 -50)"><path d="M0 0 L714.3 -426.7 L714.3 86.2 L0 92.8 Z" fill="{{ wallFill }}" opacity="0.7"></path></g>
+        <g transform="matrix(0.42 0.65 0 1.25 752 -50)"><path d="M0 0 L714.3 -426.7 L714.3 86.2 L0 92.8 Z" fill="{{ wallFill }}" opacity="0.5"></path></g>
+        <path d="M100 66 V100 L-200 586 V522 Z" fill="url(#hsWain)"></path>
+        <path d="M752 66 V100 L1052 586 V522 Z" fill="url(#hsWainR)"></path>
+        <path d="M-200 522 L100 66 M752 66 L1052 522" stroke="{{ P.trim }}" stroke-width="4"></path>
+      </sc-if>
+      <path d="M100 66 H752 V100 H100 Z" fill="url(#hsWain)"></path>
+      <path d="M100 66 H752" stroke="{{ P.trim }}" stroke-width="4"></path>
+      <path d="M100 -50 V100" stroke="{{ P.r0 }}" stroke-width="2"></path><path d="M752 -50 V100" stroke="{{ P.r0 }}" stroke-width="2"></path>
+      <sc-if value="{{ rt.hasWall }}" hint-placeholder-val="{{ false }}">
+        <path d="M100 -50 H752 V100 H100 Z" fill="url(#rnWall)"></path><sc-if value="{{ rt.hasOne }}" hint-placeholder-val="{{ false }}"><image href="{{ rt.wallOne }}" x="{{ rt.oneX }}" y="-50" width="{{ rt.oneW }}" height="150" preserveAspectRatio="none"></image></sc-if>
+        <g transform="matrix(-0.42 0.65 0 1.25 100 -50)"><path d="M0 0 L714.3 -426.7 L714.3 137.4 L0 120 Z" fill="url(#rnWallS)"></path></g>
+        <path d="M-200 -119.1 L100 -50 V100 L-200 586 Z" fill="url(#hsLeft)" opacity="0.35"></path>
+        <g transform="matrix(0.42 0.65 0 1.25 752 -50)"><path d="M0 0 L714.3 -426.7 L714.3 137.4 L0 120 Z" fill="url(#rnWallS)"></path></g>
+        <path d="M1052 -119.1 L752 -50 V100 L1052 586 Z" fill="url(#hsRight)" opacity="0.45"></path>
+        <path d="M100 -50 V100 M752 -50 V100" stroke="#2a1608" stroke-opacity="0.22" stroke-width="2"></path>
+      </sc-if>
+      </sc-if>
+    <sc-if value="{{ cl.on }}" hint-placeholder-val="{{ true }}">
+      <path d="M100 -50 H752 L1052 -119.1 V-240 H-200 V-119.1 Z" fill="{{ cl.c }}"></path>
+      <path d="M100 -50 H752 L1052 -119.1 V-240 H-200 V-119.1 Z" fill="url(#hsCl)"></path>
+      <sc-if value="{{ rt.ceilF }}" hint-placeholder-val="{{ false }}"><image href="{{ rt.ceil }}" x="{{ rt.cx }}" y="{{ rt.cy }}" width="{{ rt.cw }}" height="{{ rt.ch }}" preserveAspectRatio="none"></image></sc-if>
+      <path d="M-200 -119.1 L100 -50 H752 L1052 -119.1" fill="none" stroke="#2a1608" stroke-opacity="0.2" stroke-width="9" filter="url(#hsBlur2)"></path>
+      <path d="M-200 -119.1 L100 -50 H752 L1052 -119.1" fill="none" stroke="{{ cl.trim }}" stroke-width="4" stroke-linejoin="round"></path>
+    </sc-if>
+    <sc-if value="{{ roundRoom }}" hint-placeholder-val="{{ false }}">
+      <path d="M-220 -240 H1072 V400 H-220 Z" fill="{{ P.r0 }}"></path>
+      <path d="M-220 -240 H1072 V400 H-220 Z" fill="#2a1608" opacity="0.14"></path>
+      <g clip-path="url(#hsCeilClip)"><image href="{{ gls }}" x="-220" y="-230" width="1292" height="500" preserveAspectRatio="none"></image></g>
+      <path d="M-174 270 A600 300 0 0 1 1026 270 V400 A600 300 0 0 0 -174 400 Z" fill="url(#hsBack)"></path>
+      <path d="M-174 270 A600 300 0 0 1 1026 270 V400 A600 300 0 0 0 -174 400 Z" fill="{{ wallFill }}" opacity="0.85"></path>
+      <path d="M850.3 57.9V187.9M759.3 20.6V150.6M655.6 -7.2V122.8M543.1 -24.2V105.8M426.0 -30.0V100.0M308.9 -24.2V105.8M196.4 -7.2V122.8M92.7 20.6V150.6M1.7 57.9V187.9" stroke="{{ P.r0 }}" stroke-width="2" opacity="0.5"></path>
+      <path d="M-174 366 A600 300 0 0 1 1026 366 V400 A600 300 0 0 0 -174 400 Z" fill="url(#hsWain)"></path>
+      <path d="M-174 366 A600 300 0 0 1 1026 366" fill="none" stroke="{{ P.trim }}" stroke-width="4"></path>
+      <sc-if value="{{ rt.hasWall }}" hint-placeholder-val="{{ false }}">
+        <path d="M-174 270 A600 300 0 0 1 1026 270 V400 A600 300 0 0 0 -174 400 Z" fill="url(#rnWall)"></path>
+        <sc-if value="{{ rt.hasWR }}" hint-placeholder-val="{{ false }}"><clipPath id="rnBandW"><path d="M-174 270 A600 300 0 0 1 1026 270 V400 A600 300 0 0 0 -174 400 Z"></path></clipPath><image href="{{ rt.wallRnd }}" x="-20" y="-40" width="892" height="240" preserveAspectRatio="none" clip-path="url(#rnBandW)"></image></sc-if><sc-if value="{{ rt.hasOneP }}" hint-placeholder-val="{{ false }}"><image href="{{ rt.wallOne }}" width="80" height="56" preserveAspectRatio="none" transform="matrix(1.1375 -0.4662 0 2.3214 1.7 57.9)"></image><image href="{{ rt.wallOne }}" width="80" height="56" preserveAspectRatio="none" transform="matrix(1.2963 -0.3475 0 2.3214 92.7 20.6)"></image><image href="{{ rt.wallOne }}" width="80" height="56" preserveAspectRatio="none" transform="matrix(1.4062 -0.2125 0 2.3214 196.4 -7.2)"></image><image href="{{ rt.wallOne }}" width="80" height="56" preserveAspectRatio="none" transform="matrix(1.4638 -0.0725 0 2.3214 308.9 -24.2)"></image><image href="{{ rt.wallOne }}" width="80" height="56" preserveAspectRatio="none" transform="matrix(1.4638 0.0725 0 2.3214 426.0 -30.0)"></image><image href="{{ rt.wallOne }}" width="80" height="56" preserveAspectRatio="none" transform="matrix(1.4062 0.2125 0 2.3214 543.1 -24.2)"></image><image href="{{ rt.wallOne }}" width="80" height="56" preserveAspectRatio="none" transform="matrix(1.2962 0.3475 0 2.3214 655.6 -7.2)"></image><image href="{{ rt.wallOne }}" width="80" height="56" preserveAspectRatio="none" transform="matrix(1.1375 0.4662 0 2.3214 759.3 20.6)"></image></sc-if><sc-if value="{{ rt.hasOneF }}" hint-placeholder-val="{{ false }}"><clipPath id="rnBandC"><path d="M-174 270 A600 300 0 0 1 1026 270 V400 A600 300 0 0 0 -174 400 Z"></path></clipPath><image href="{{ rt.wallOneR }}" x="-174" y="-30" width="1200" height="230" preserveAspectRatio="none" clip-path="url(#rnBandC)"></image></sc-if>
+        <path d="M850.3 57.9V187.9M759.3 20.6V150.6M655.6 -7.2V122.8M543.1 -24.2V105.8M426.0 -30.0V100.0M308.9 -24.2V105.8M196.4 -7.2V122.8M92.7 20.6V150.6M1.7 57.9V187.9" stroke="#2a1608" stroke-opacity="{{ rt.divOp }}" stroke-width="2"></path>
+      </sc-if>
+      <path d="M-174 270 A600 300 0 0 1 1026 270 V400 A600 300 0 0 0 -174 400 Z" fill="url(#hsRnd)"></path>
+      <path d="M-174 270 A600 300 0 0 1 1026 270" fill="none" stroke="{{ P.trim }}" stroke-width="5"></path>
+    </sc-if>
+        <sc-if value="{{ rt.ceilR }}" hint-placeholder-val="{{ false }}">
+      <g clip-path="url(#hsCeilClip)"><image href="{{ rt.ceilC }}" x="-60" y="-50" width="324" height="112" preserveAspectRatio="none"></image><image href="{{ rt.ceilC }}" x="264" y="-50" width="324" height="112" preserveAspectRatio="none" transform="matrix(-1 0 0 1 852 0)"></image><image href="{{ rt.ceilC }}" x="588" y="-50" width="324" height="112" preserveAspectRatio="none"></image><image href="{{ rt.ceilC }}" x="-220" y="-50" width="160" height="112" preserveAspectRatio="none" transform="matrix(-1 0 0 1 -280 0)"></image><image href="{{ rt.ceilC }}" x="912" y="-50" width="160" height="112" preserveAspectRatio="none" transform="matrix(-1 0 0 1 1824 0)"></image></g>
+      <path d="M-174 270 A600 300 0 0 1 1026 270" fill="none" stroke="#2a1608" stroke-opacity="0.25" stroke-width="12" filter="url(#hsBlur2)"></path>
+      <path d="M-174 270 A600 300 0 0 1 1026 270" fill="none" stroke="{{ P.trim }}" stroke-width="5"></path>
+    </sc-if>
+    <path d="{{ rs.wall }}" fill="url(#mtPlaster)"></path>
+    <path d="{{ rs.wall }}" fill="url(#hsCeil)"></path>
+    <path d="{{ rs.floor }}" fill="url(#hsFloor)"></path>
+    <g clip-path="url(#hsFloorClip)">
+      <path d="{{ fl.dark }}" fill="{{ P.fd }}" opacity="{{ fl.dop }}"></path>
+      <path d="{{ fl.light }}" fill="{{ P.fli }}" opacity="{{ fl.lop }}"></path>
+      <g ref="{{ tilesRef }}"></g>
+      <path d="{{ fl.lines }}" stroke="{{ P.fl }}" stroke-width="1.3" fill="none" opacity="{{ fl.nop }}"></path>
+      <sc-if value="{{ rt.floorF }}" hint-placeholder-val="{{ false }}"><image href="{{ rt.floor }}" x="-76" y="100" width="1004" height="294" preserveAspectRatio="none"></image></sc-if>
+      <sc-if value="{{ rt.floorR }}" hint-placeholder-val="{{ false }}"><image href="{{ rt.floorC }}" x="-151.3" y="100" width="1154.6" height="338.1" preserveAspectRatio="none"></image></sc-if>
+      <path d="{{ rs.edge }}" stroke="{{ P.edge }}" stroke-width="22" fill="none" opacity="0.13" filter="url(#hsAO)"></path>
+    </g>
+    <path d="{{ rs.floor }}" fill="url(#mtPaint)"></path>
+    <path d="{{ rs.floor }}" fill="url(#hsLight)"></path>
+    <path d="{{ rs.floor }}" fill="url(#hsVig)"></path>
+    <path d="{{ rs.edge }}" fill="none" stroke="{{ rt.trim }}" stroke-width="5" stroke-linejoin="round"></path>
+    <sc-if value="{{ roundRoom }}" hint-placeholder-val="{{ false }}"><!-- Dance Club: curved trim lines where the wall meets the ceiling and the floor --><path d="M-174 270 A600 300 0 0 1 1026 270" fill="none" stroke="#000000" stroke-opacity="0.45" stroke-width="8" filter="url(#hsBlur2)" transform="translate(0 3)"></path><path d="M-174 270 A600 300 0 0 1 1026 270" fill="none" stroke="#1a1218" stroke-width="5"></path><path d="M-174 270 A600 300 0 0 1 1026 270" fill="none" stroke="#e8dcc8" stroke-width="2.6"></path><path d="M-174 270 A600 300 0 0 1 1026 270" fill="none" stroke="#fff6e4" stroke-width="0.8" stroke-opacity="0.8" transform="translate(0 -0.6)"></path><path d="M-174 400 A600 300 0 0 1 1026 400" fill="none" stroke="#000000" stroke-opacity="0.45" stroke-width="8" filter="url(#hsBlur2)" transform="translate(0 -2)"></path><path d="M-174 400 A600 300 0 0 1 1026 400" fill="none" stroke="#1a1218" stroke-width="5"></path><path d="M-174 400 A600 300 0 0 1 1026 400" fill="none" stroke="#e8dcc8" stroke-width="2.6"></path><path d="M-174 400 A600 300 0 0 1 1026 400" fill="none" stroke="#fff6e4" stroke-width="0.8" stroke-opacity="0.8" transform="translate(0 -0.6)"></path></sc-if>
+    <sc-for list="{{ decor }}" as="p" hint-placeholder-count="0"><path transform="{{ p.tf }}" d="{{ p.d }}" fill="{{ p.f }}" stroke="{{ p.s }}" stroke-width="{{ p.w }}" opacity="{{ p.o }}" stroke-linecap="round" stroke-linejoin="round"></path></sc-for>
+    <sc-if value="{{ rt.fPat }}" hint-placeholder-val="{{ false }}"><path d="M100 100 L0 262 L0 206 L100 44 Z" fill="url(#rnFenceL)"></path><path d="M752 100 L852 262 L852 206 L752 44 Z" fill="url(#rnFenceR)"></path></sc-if>
+    <!-- walls that supply vector markup (plus32 res.wallL / wallR, e.g. the limestone wall) are drawn inline here, crisp at any zoom and taller than the fence strip -->
+    <g ref="{{ fenceRef }}" style="pointer-events:none"></g>
+    <sc-if value="{{ rt.ylOn }}" hint-placeholder-val="{{ false }}"><!-- renovated yard lights with their own overlay picture (plus32 res.ylRoom) --><image href="{{ rt.yl }}" x="-100" y="-60" width="1052" height="420" preserveAspectRatio="none" style="pointer-events:none"></image></sc-if>
+    <g ref="{{ beachRef }}"></g>
+  </svg>
+  <sc-if value="{{ rt.flatOn }}" hint-placeholder-val="{{ false }}"><!-- Dance Club renovated floor: repeating perspective surface --><div style="position:absolute; left:-220px; top:-230px; width:1292px; height:643px; pointer-events:none; overflow:hidden; clip-path:path('M46 630 A600 300 0 0 1 1246 630 Z');"><div style="position:absolute; inset:0; perspective:450px; perspective-origin:646px 230px;"><div style="position:absolute; left:-854px; top:-550px; width:3000px; height:1200px; transform-origin:50% 100%; transform:rotateX(60deg); background:{{ rt.flatBg }};"></div></div><div style="position:absolute; inset:0; background:linear-gradient(to bottom, rgba(12,8,16,0.55) 330px, rgba(12,8,16,0.12) 420px, rgba(12,8,16,0) 520px, rgba(0,0,0,0.12) 643px);"></div></div><svg viewBox="-220 -230 1292 643" style="position:absolute; left:-220px; top:-230px; width:1292px; height:643px; pointer-events:none;"><path d="M-174 400 A600 300 0 0 1 1026 400" fill="none" stroke="#000000" stroke-opacity="0.45" stroke-width="8" transform="translate(0 -2)"></path><path d="M-174 400 A600 300 0 0 1 1026 400" fill="none" stroke="#1a1218" stroke-width="5"></path><path d="M-174 400 A600 300 0 0 1 1026 400" fill="none" stroke="#e8dcc8" stroke-width="2.6"></path><path d="M-174 400 A600 300 0 0 1 1026 400" fill="none" stroke="#fff6e4" stroke-width="0.8" stroke-opacity="0.8" transform="translate(0 -0.6)"></path></svg></sc-if>
+  <sc-if value="{{ rusty }}" hint-placeholder-val="{{ false }}"><div style="position:absolute; left:-220px; right:-220px; top:-240px; bottom:-60px; pointer-events:none; background:radial-gradient(ellipse at 50% 60%, rgba(120,95,60,0) 40%, rgba(80,60,35,0.22) 100%), rgba(140,115,80,0.08);"></div></sc-if>
+
+  <div style="position:absolute; inset:0; pointer-events:none;">
+    <sc-for list="{{ texts }}" as="t" hint-placeholder-count="0"><div style="position:absolute; left:{{ t.x }}px; top:{{ t.y }}px; transform:translate(-50%,-78%); font-family:'Fredoka',sans-serif; font-weight:700; font-size:{{ t.sz }}px; line-height:1; color:{{ t.f }}; text-shadow:{{ t.sh }}; white-space:nowrap; letter-spacing:0.02em;">{{ t.t }}</div></sc-for>
+  </div>
+  <div onPointerDown="{{ floorDown }}" style="position:absolute; inset:0; z-index:1;"></div>
+  <svg viewBox="0 0 852 393" style="position:absolute; left:0; top:0; width:852px; height:393px; z-index:2; pointer-events:none;">
+    <sc-for list="{{ doors }}" as="d" hint-placeholder-count="0"><path data-door="1" d="{{ d.hit }}" fill="#ffffff" fill-opacity="0.001" onPointerDown="{{ d.go }}" style="pointer-events:visiblePainted; cursor:pointer;"></path></sc-for>
+  </svg>
+  <sc-if value="{{ lh.on }}" hint-placeholder-val="{{ false }}"><div onPointerDown="{{ lh.down }}" title="Drag to slide the light along the ceiling" style="position:absolute; left:{{ lh.x }}px; top:-6px; width:{{ lh.w }}px; height:{{ lh.h }}px; margin-left:{{ lh.ml }}px; z-index:880; cursor:grab; box-sizing:border-box; border-radius:24px; border:2.5px dashed {{ lh.bd }}; touch-action:none;"></div></sc-if>
+  <div ref="{{ pingRef }}" style="position:absolute; left:0; top:0; width:56px; height:22px; margin:-11px 0 0 -28px; z-index:2; pointer-events:none; border-radius:50%; border:3px solid #fffaf1; box-sizing:border-box; opacity:0;"></div>
+
+  <div style="position:absolute; inset:0; z-index:3; pointer-events:none;">
+    <sc-for list="{{ items }}" as="f" hint-placeholder-count="0">
+      <div onPointerDown="{{ f.down }}" data-u="{{ f.id }}" data-kind="{{ f.kind }}" style="position:absolute; left:{{ f.x }}px; top:{{ f.y }}px; width:0; height:0; z-index:{{ f.z }}; transform:scale({{ f.s }}); transform-origin:0 0; cursor:{{ f.cur }};">
+        <svg viewBox="{{ f.vb }}" style="position:absolute; left:{{ f.bx }}px; top:{{ f.by }}px; width:{{ f.bw }}px; height:{{ f.bh }}px; overflow:visible; pointer-events:none;">
+          <sc-if value="{{ f.hasGlow }}" hint-placeholder-val="{{ false }}"><path d="{{ f.gd }}" fill="{{ f.gf }}"></path></sc-if>
+          <path d="{{ f.shadow }}" fill="#3a2210" opacity="0.22" filter="url(#hsBlur)"></path>
+          <path d="{{ f.contact }}" fill="#24130a" opacity="0.3" filter="url(#hsBlur2)"></path>
+          <sc-if value="{{ f.hl }}" hint-placeholder-val="{{ false }}"><path d="{{ f.foot }}" fill="#ffd66b" fill-opacity="{{ f.hfo }}" stroke="#ffd66b" stroke-width="3.5" stroke-dasharray="9 6"></path></sc-if>
+          <sc-for list="{{ f.back }}" as="p" hint-placeholder-count="0"><path d="{{ p.d }}" fill="{{ p.f }}" stroke="{{ p.s }}" stroke-width="{{ p.w }}" opacity="{{ p.o }}" stroke-linejoin="round" style="pointer-events:visiblePainted;"></path></sc-for>
+          <g ref="{{ f.partRef }}"><sc-for list="{{ f.part }}" as="p" hint-placeholder-count="0"><path d="{{ p.d }}" fill="{{ p.f }}" stroke="{{ p.s }}" stroke-width="{{ p.w }}" opacity="{{ p.o }}" stroke-linejoin="round" style="pointer-events:visiblePainted;"></path></sc-for></g>
+          <sc-if value="{{ f.hasSrc }}" hint-placeholder-val="{{ false }}"><image href="{{ f.src }}" x="{{ f.ix }}" y="{{ f.iy }}" width="{{ f.iw }}" height="{{ f.ih }}" transform="{{ f.flip }}" preserveAspectRatio="none" style="pointer-events:visiblePainted;"></image></sc-if>
+          <sc-for list="{{ f.snk }}" as="k" hint-placeholder-count="0"><image href="{{ k.src }}" x="{{ k.x }}" y="{{ k.y }}" width="{{ k.w }}" height="{{ k.h }}" preserveAspectRatio="none" style="pointer-events:none;"></image></sc-for>
+          <sc-if value="{{ f.tvOn }}" hint-placeholder-val="{{ false }}"><g transform="{{ f.tvM }}"><clipPath id="{{ f.tvId }}"><rect width="{{ f.tvW }}" height="{{ f.tvH }}" rx="{{ f.tvR }}"></rect></clipPath><g clip-path="url(#{{ f.tvId }})"><rect width="{{ f.tvW }}" height="{{ f.tvH }}" fill="#10162a"></rect><svg x="0" y="0" width="{{ f.tvW }}" height="{{ f.tvH }}" viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice"><g ref="{{ f.tvRef }}"></g></svg></g></g></sc-if>
+        </svg>
+        <sc-if value="{{ f.sg.on }}" hint-placeholder-val="{{ false }}"><div style="position:absolute; left:{{ f.sg.l }}px; top:{{ f.sg.tp }}px; width:{{ f.sg.w }}px; height:{{ f.sg.h }}px; transform:{{ f.sg.tf }}; transform-origin:50% 50%; display:flex; align-items:center; justify-content:center; pointer-events:none;"><span style="font-family:{{ f.sg.ff }}; font-size:{{ f.sg.fs }}px; line-height:1; color:{{ f.sg.col }}; text-shadow:{{ f.sg.sh }}; transform:rotate({{ f.sg.rot }}deg); letter-spacing:{{ f.sg.ls }}; white-space:nowrap;">{{ f.sg.t }}</span></div></sc-if>
+      </div>
+      <sc-if value="{{ f.hasFront }}" hint-placeholder-val="{{ false }}">
+        <div onPointerDown="{{ f.down }}" data-uf="{{ f.id }}" style="position:absolute; left:{{ f.x }}px; top:{{ f.y }}px; width:0; height:0; z-index:{{ f.fz }}; transform:scale({{ f.s }}); transform-origin:0 0; pointer-events:none; cursor:{{ f.cur }};">
+          <svg viewBox="{{ f.vb }}" style="position:absolute; left:{{ f.bx }}px; top:{{ f.by }}px; width:{{ f.bw }}px; height:{{ f.bh }}px; overflow:visible; pointer-events:none;">
+            <sc-for list="{{ f.front }}" as="p" hint-placeholder-count="0"><path d="{{ p.d }}" fill="{{ p.f }}" stroke="{{ p.s }}" stroke-width="{{ p.w }}" opacity="{{ p.o }}" stroke-linejoin="round" style="pointer-events:visiblePainted;"></path></sc-for>
+            <sc-if value="{{ f.hasSrcF }}" hint-placeholder-val="{{ false }}"><image href="{{ f.srcF }}" x="{{ f.ix }}" y="{{ f.iy }}" width="{{ f.iw }}" height="{{ f.ih }}" transform="{{ f.flip }}" preserveAspectRatio="none" style="pointer-events:visiblePainted;"></image></sc-if>
+          </svg>
+        </div>
+      </sc-if>
+    </sc-for>
+
+    <sc-for list="{{ bprops }}" as="b" hint-placeholder-count="0">
+      <div onPointerDown="{{ b.down }}" style="position:absolute; left:{{ b.l }}px; top:{{ b.t }}px; width:{{ b.w }}px; height:{{ b.h }}px; z-index:{{ b.z }}; pointer-events:auto; cursor:pointer;"><sc-if value="{{ b.has }}" hint-placeholder-val="{{ false }}"><div style="position:absolute; inset:0; background-image:{{ b.bg }}; background-size:100% 100%; background-repeat:no-repeat; pointer-events:none;"></div></sc-if></div>
+    </sc-for>
+
+    <sc-for list="{{ toys }}" as="y" hint-placeholder-count="0">
+      <div ref="{{ y.ref }}" onPointerDown="{{ y.down }}" style="position:absolute; left:{{ y.l }}px; top:{{ y.t }}px; width:40px; height:40px; z-index:{{ y.z }}; transform:scale({{ y.s }}); transform-origin:50% 100%; pointer-events:auto; cursor:pointer;">
+        <div style="position:absolute; left:4px; right:4px; bottom:-3px; height:9px; border-radius:50%; background:radial-gradient(closest-side, rgba(58,34,16,0.35), rgba(58,34,16,0));"></div>
+        <div ref="{{ y.spin }}" style="position:absolute; inset:1px; transform-origin:50% 60%;">
+          <sc-if value="{{ y.isBall }}" hint-placeholder-val="{{ false }}">
+            <svg viewBox="0 0 42 42" style="width:100%; height:100%; display:block;">
+              <defs><radialGradient id="tyB" cx="34%" cy="28%" r="75%"><stop offset="0" stop-color="#ffffff"></stop><stop offset="1" stop-color="#e9dcc8"></stop></radialGradient><clipPath id="tyC"><circle cx="21" cy="21" r="19"></circle></clipPath></defs>
+              <circle cx="21" cy="21" r="20.5" fill="#5a3418"></circle><circle cx="21" cy="21" r="19" fill="url(#tyB)"></circle>
+              <g clip-path="url(#tyC)"><path d="M-2 14 Q21 6 44 14 V22 Q21 14 -2 22 Z" fill="#e3946a"></path><path d="M-2 26 Q21 18 44 26 V33 Q21 25 -2 33 Z" fill="#84b6c9"></path></g>
+              <ellipse cx="14" cy="12" rx="6" ry="3.5" fill="#ffffff" opacity="0.75"></ellipse>
+            </svg>
+          </sc-if>
+          <sc-if value="{{ y.isDuck }}" hint-placeholder-val="{{ false }}">
+            <svg viewBox="0 0 40 38" style="width:100%; height:100%; display:block; overflow:visible;">
+              <defs><radialGradient id="tyD" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff6c8"></stop><stop offset="0.55" stop-color="#ffd23f"></stop><stop offset="1" stop-color="#e09a00"></stop></radialGradient></defs>
+              <path d="M4 22 Q4 34 20 34 Q36 34 36 24 Q36 18 30 18 L28 20 Q20 16 12 20 Q6 16 4 22 Z" fill="url(#tyD)" stroke="#8a5d00" stroke-width="1.6"></path>
+              <circle cx="14" cy="13" r="9" fill="url(#tyD)" stroke="#8a5d00" stroke-width="1.6"></circle>
+              <path d="M4 13 Q0 15 4 17 L8 15 Z" fill="#ff8a2a"></path><circle cx="11" cy="11" r="1.6" fill="#3a2414"></circle>
+              <ellipse cx="12" cy="8" rx="3.5" ry="2" fill="#ffffff" opacity="0.7"></ellipse>
+            </svg>
+          </sc-if>
+        </div>
+      </div>
+    </sc-for>
+
+    <div style="position:absolute; inset:0; pointer-events:none; visibility:{{ crVis }};">
+    <sc-for list="{{ crs }}" as="c" hint-placeholder-count="0">
+      <div ref="{{ c.wrap }}" onPointerUp="{{ c.up }}" style="position:absolute; left:0; top:0; width:120px; height:120px; transform-origin:60px 108px; pointer-events:none; opacity:0; will-change:transform;">
+        <div style="position:absolute; inset:0; transform:scale({{ c.cs }}); transform-origin:60px 108px; pointer-events:auto;">
+          <div style="position:absolute; left:22px; right:22px; top:98px; height:20px; border-radius:50%; background:radial-gradient(closest-side, rgba(48,26,10,0.3), rgba(48,26,10,0));"></div>
+          <div style="position:absolute; left:38px; right:38px; top:103px; height:9px; border-radius:50%; background:radial-gradient(closest-side, rgba(36,18,6,0.5), rgba(36,18,6,0));"></div>
+          <sc-if value="{{ c.sel }}" hint-placeholder-val="{{ false }}"><div style="position:absolute; left:24px; right:24px; top:97px; height:22px; border-radius:50%; border:3px solid #ffd66b; box-sizing:border-box; box-shadow:0 0 10px rgba(255,214,107,0.9);"></div></sc-if>
+          <div ref="{{ c.host }}" style="position:absolute; inset:0; filter:drop-shadow(1.5px 2px 1.5px rgba(50,25,8,0.22)) saturate(1.06) contrast(1.03);"></div>
+        </div>
+        <sc-if value="{{ c.sel }}" hint-placeholder-val="{{ false }}"><div style="position:absolute; left:50%; top:{{ c.tagT }}px; transform:translateX(-50%); padding:1px 10px; border-radius:6px; background:#fff6e2; box-shadow:0 0 0 2.5px #6b4426, 0 3px 0 2.5px rgba(107,68,38,0.35); font-family:'Fredoka',sans-serif; font-weight:700; font-size:16px; color:#5b3418; white-space:nowrap; pointer-events:none;">{{ c.name }}</div></sc-if>
+        <div ref="{{ c.sayRef }}" style="position:absolute; left:50%; top:{{ c.sayT }}px; transform:translate(-50%,0); padding:3px 12px; border-radius:12px; background:#fff6e2; box-shadow:0 0 0 2.5px #6b4426, 0 3px 0 2.5px rgba(107,68,38,0.3), 0 6px 10px rgba(60,35,15,0.2); font-family:'Fredoka',sans-serif; font-weight:700; font-size:17px; color:#5b3418; white-space:nowrap; pointer-events:none; opacity:0; transition:opacity 0.25s, transform 0.25s;"></div>
+      </div>
+    </sc-for>
+    </div>
+  </div>
+
+  <div ref="{{ fxRef }}" style="position:absolute; inset:0; z-index:820; pointer-events:none; overflow:visible;"></div>
+  <sc-if value="{{ qa.vis }}" hint-placeholder-val="{{ false }}">
+    <div ref="{{ qaRef }}" style="position:absolute; left:0; top:0; width:0; height:0; z-index:875; pointer-events:none; opacity:0; transition:opacity 0.18s ease;">
+      <sc-if value="{{ qa.closed }}" hint-placeholder-val="{{ true }}">
+        <button onPointerDown="{{ qa.stop }}" onClick="{{ qa.open }}" aria-label="Actions" title="Actions" style-active="transform:translateY(2px);" style="position:absolute; left:-15px; top:-15px; width:30px; height:30px; padding:0; box-sizing:border-box; border-radius:50%; border:3px solid #ffffff; background:radial-gradient(circle at 35% 25%, #f3d2ff 0%, #b65cff 45%, #6a22d6 100%); box-shadow:0 0 0 1.5px #45189a, 0 3px 0 1.5px #45189a, 0 6px 8px rgba(60,30,10,0.3); cursor:pointer; pointer-events:auto; display:flex; align-items:center; justify-content:center; gap:3px; animation:hsPop 0.22s ease-out both;">
+          <span style="position:absolute; left:5px; top:2px; width:14px; height:7px; border-radius:50%; background:linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0)); pointer-events:none;"></span>
+          <span style="width:4px; height:4px; border-radius:50%; background:#ffffff;"></span>
+          <span style="width:4px; height:4px; border-radius:50%; background:#ffffff;"></span>
+          <span style="width:4px; height:4px; border-radius:50%; background:#ffffff;"></span>
+        </button>
+      </sc-if>
+      <sc-if value="{{ qa.on }}" hint-placeholder-val="{{ false }}">
+      <button onPointerDown="{{ qa.stop }}" onClick="{{ qa.close }}" aria-label="Close actions" title="Close" style-active="transform:translateY(2px);" style="position:absolute; left:-13px; top:-13px; width:26px; height:26px; padding:0; box-sizing:border-box; border-radius:50%; border:2.5px solid #ffffff; background:#6b5a4a; box-shadow:0 0 0 1.5px #3e3024, 0 2px 0 1.5px #3e3024, 0 5px 7px rgba(60,30,10,0.3); cursor:pointer; pointer-events:auto; display:flex; align-items:center; justify-content:center; animation:hsPop 0.18s ease-out both;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" style="display:block;"><path d="M6 6 L18 18 M18 6 L6 18"></path></svg>
+      </button>
+      <sc-for list="{{ qa.btns }}" as="b" hint-placeholder-count="7">
+        <button onPointerDown="{{ b.stop }}" onClick="{{ b.go }}" aria-label="{{ b.label }}" title="{{ b.label }}" style="position:absolute; left:{{ b.l }}px; top:{{ b.t }}px; width:32px; padding:0; border:none; background:none; cursor:pointer; pointer-events:auto; display:flex; flex-direction:column; align-items:center; gap:2px; opacity:{{ b.op }}; animation:hsPop 0.22s ease-out both; animation-delay:{{ b.dl }}ms;">
+          <span style="position:relative; width:32px; height:32px; box-sizing:border-box; border-radius:50%; border:2.5px solid #ffffff; background:{{ b.bg }}; box-shadow:0 0 0 1.5px {{ b.rim }}, 0 2.5px 0 1.5px {{ b.rim }}, 0 6px 8px rgba(60,30,10,0.3); display:flex; align-items:center; justify-content:center;">
+            <span style="position:absolute; left:6px; top:2px; width:16px; height:7px; border-radius:50%; background:linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0)); pointer-events:none;"></span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="position:relative; display:block; filter:drop-shadow(0 1.4px 0 {{ b.rim }});"><path d="{{ b.ic }}"></path></svg>
+            <sc-if value="{{ b.lock }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; right:-6px; bottom:-5px; width:17px; height:17px; box-sizing:border-box; border-radius:50%; border:2px solid #ffffff; background:#5a4a3a; display:flex; align-items:center; justify-content:center;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></span></sc-if>
+          </span>
+          <span style="font-family:'Fredoka',sans-serif; font-weight:700; font-size:9px; line-height:1; color:#fff6e2; white-space:nowrap; text-shadow:0 1.3px 0 #45107a, 1.2px 0 0 #45107a, -1.2px 0 0 #45107a, 0 -1.2px 0 #45107a;">{{ b.label }}</span>
+        </button>
+      </sc-for>
+      </sc-if>
+    </div>
+  </sc-if>
+  <sc-if value="{{ party }}" hint-placeholder-val="{{ false }}">
+    <div ref="{{ discoRef }}" style="position:absolute; left:0; right:0; top:-50px; bottom:0; z-index:830; pointer-events:none; overflow:hidden; mix-blend-mode:screen;">
+      <sc-for list="{{ disco }}" as="d" hint-placeholder-count="0"><div style="position:absolute; left:{{ d.l }}px; top:{{ d.t }}px; width:{{ d.z }}px; height:{{ d.z }}px; border-radius:50%; background:{{ d.c }}; opacity:0.5; filter:blur(1.5px);"></div></sc-for>
+    </div>
+  </sc-if>
+  </div>
+  <sc-if value="{{ night.on }}" hint-placeholder-val="{{ false }}"><div style="position:absolute; inset:0; z-index:860; pointer-events:none; background:{{ night.bg }};"></div></sc-if>
