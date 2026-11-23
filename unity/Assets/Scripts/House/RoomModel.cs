@@ -13,6 +13,13 @@ namespace SquishSquad.House
     {
         readonly HouseSave S; readonly HouseData D; readonly HouseGeo G;
         public readonly List<string> Missing = new List<string>();   // drawings the export doesn't have yet
+        /// <summary>Each renovation piece's drawing scale and flip as the page keeps them (rnI: k, kx, ky, fl) and its
+        /// drawing (Dr): where its players stand (a2r), its fog, its vacuum.</summary>
+        public readonly Dictionary<string, (double k, double kx, double ky, bool fl, JObj dr)> RnI = new Dictionary<string, (double, double, double, bool, JObj)>();
+        /// <summary>A piece's state now (rStOf with the room's runtime state: HouseCreatures); null: at rest.</summary>
+        public Func<JObj, JObj, string> StateOf;
+        /// <summary>A house4 piece's state picture now (vars: 'on' / 'open'); null: none.</summary>
+        public Func<JObj, string> VarOf;
         public string Season = "rainy";
 
         public RoomModel(HouseSave s) { S = s; D = s.D; G = s.Geo; }
@@ -106,7 +113,7 @@ namespace SquishSquad.House
         {
             var r = S.RowOf(A); bool sp = S.CanSpin(it);
             double? rot = sp ? it.Num("r") : A.Truthy("mount") ? (it.Truthy("w") ? it.Num("r") : 0) : (double?)null;
-            string st = r != null ? RStOf(it, r) : null;
+            string st = r != null ? (StateOf != null ? StateOf(it, r) : RStOf(it, r)) : null;
             double ra = rot == null ? -30 : ((rot.Value % 360) + 360) % 360; if (ra == 330) ra = -30;
             var key = A.Str("reno") + "|" + (st ?? "") + "|" + (it["txt"] is string tx ? tx : "") + "|" + HouseJson.JsString(ra);
             var v = D.Variants.Obj(key);
@@ -145,7 +152,7 @@ namespace SquishSquad.House
             {
                 var it = o as JObj; var A = D.CatOf(it?.Str("t")); if (A == null) continue;
                 if (A.Has("reno") && A.Str("rL") == "ceil" && !it.Truthy("cl")) { it["cl"] = 1.0; it["on"] = null; it["w"] = null; it["r"] = 0.0; it["y"] = S.BackY(A); it["e"] = S.CeilE(it, A); }
-                string v = ""; if (A.Str("arch") == "nightstand" && night) v = "on";
+                string v = VarOf?.Invoke(it) ?? ""; if (A.Str("arch") == "nightstand" && night) v = "on";
                 var R = S.Render(it.Str("t"), it.Num("r"), it.Num("c"), v); if (R == null) { Missing.Add("render " + it.Str("t") + "|" + it.Num("r") + "|" + it.Num("c") + "|" + v); continue; }
                 foreach (var g in R.Arr("gids")) if (!GS.Contains((string)g)) GS.Add((string)g);
                 var zxy = S.SzXY(it); double s0 = G.SAt(it.Num("y"));
@@ -210,6 +217,7 @@ namespace SquishSquad.House
             double f = (A.Num("zs", 1) != 0 ? A.Num("zs", 1) : 1) / (A.Num("_z0", 1) != 0 ? A.Num("_z0", 1) : 1);
             var b = V?.Arr("bb"); double b0 = b != null ? (double)b[0] : 0, b1 = b != null ? (double)b[1] : 0, b2 = b != null ? (double)b[2] : 1, b3 = b != null ? (double)b[3] : 1;
             bool fl = !sp && !A.Truthy("mount") && Mod(it.Num("r"), 360) == 30;
+            { var zq = S.SzXY(it); if (it.Str("id") != null) RnI[it.Str("id")] = (f * Math.Sqrt(zq[0] * zq[1]), f * zq[0], f * zq[1], fl, V); }
             double ix = b0 * f, iy = b1 * f, iw = b2 * f, ih = b3 * f, x0 = fl ? -(ix + iw) : ix;
             double Rx = rbb.Num("x"), Ry = rbb.Num("y"), Rw = rbb.Num("w"), Rh = rbb.Num("h");
             double bx = Math.Min(Rx, x0), by = Math.Min(Ry, iy), bw = Math.Max(Rx + Rw, x0 + iw) - bx, bh = Math.Max(Ry + Rh, iy + ih) - by;

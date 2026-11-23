@@ -82,6 +82,18 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    reno-*.js, House3D house4*.js: pure functions returning SVG) in the JS engine that already runs the creatures
    (PuerTS, LiveRig's bundle), the exported variants as the fallback when the engine is off. The rnTap logic itself
    (~33 KB with its helpers) is then a C# port like stage 4.
+   ✅ (2026-11-23, untested in Unity) The drawings: `tools/unity/house/draw-host.js` (the page's scripts from house4.js
+   on and its own rnReg / rnDraw / rnOpt / rnLayer / tightBB, copied in by `tools/unity/rig/bundle.mjs`; Resources/Rig
+   now 2.3 MB gzip), `House/HouseDraw.cs` (the model's fallback when the export lacks a drawing; pictures named as the
+   export names them). `tools/unity/house/draw-check.mjs`: all 53 exported variants and 54 renders made again equal;
+   through C# and PuerTS (QuickJS) in `tools/unity/rig/live-test`. The pieces: `House/HousePieces.cs` (itemDown, rnTap's
+   kinds, piece states and rStOf, rnUse / rnPlayer / rnStop, toaster, dishwasher, grow, paint, TV channels and
+   speakers, the house4 TV, jams and fog as states, rnTick, the yard ball's kicks and rallies); the room's pictures
+   follow the states (RoomModel.StateOf / VarOf); taps on pieces and toys (their boxes, topmost by z); the rolling toy's
+   layer moves. `creature-trace.mjs decorated living ... "tap:i27 ... tap:i23 ..."` + `house-test acts`: TV channels
+   with speakers, tap-to-sit and the sit / lounge cycle replayed exactly (states, plays, toasts). Not yet: the swing /
+   ride seat sway and other animated house4 parts (clock, fish, pulse), SMIL pieces as flipbooks, the robot vacuum's run
+   (VacBot), the disco lights, a piece's own redraw instead of the whole room's, the toy's spin.
 6. Edit mode: drag, wall snap, rotate, resize, store, signs, ceiling lights. Verify: H JSON after each step.
 7. Catalog and economy: pages, detail, buy / place, level locks, config.
 8. House map, and the walk home from the Unity menu.

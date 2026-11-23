@@ -10,7 +10,10 @@ namespace SquishSquad.House
 {
     public sealed class RoomLayers
     {
-        public sealed class Layer { public string Svg; public double[] Region; public double Z; }
+        /// <summary>A layer: its SVG, the region it's drawn over (frame px at camK 1), its z-index; what it is (Kind:
+        /// "item", "front" (an item's front part), "toy" (Index: the room's toys in order), "prop"), the piece's id, and
+        /// the piece's own box without the margin (Box: where a tap on it counts).</summary>
+        public sealed class Layer { public string Svg, Kind, Id; public double[] Region, Box; public double Z; public int Index; }
         public string Base, Night;
         public readonly List<Layer> Pieces = new List<Layer>();
         public readonly List<string> Notes = new List<string>();
@@ -29,14 +32,16 @@ namespace SquishSquad.House
             if (path != null)
             {
                 var box = path[path.Count - 1];
+                int toys = 0;
                 foreach (var kid in kids)
                 {
                     if (kid.Tag != "div") continue;
                     var region = RegionOf(kid) ?? view;
+                    string st = kid["style"] ?? "", kind = kid["data-u"] != null ? "item" : kid["data-uf"] != null ? "front" : st.Contains("width:40px") ? "toy" : "prop";
                     box.Children.Clear(); box.Children.Add(kid);
                     var saved = new List<List<Dom>>();
                     for (int i = 0; i < path.Count - 1; i++) { saved.Add(new List<Dom>(path[i].Children)); path[i].Children.Clear(); path[i].Children.Add(path[i + 1]); }
-                    L.Pieces.Add(new Layer { Svg = Compose(new List<Dom> { path[0] }, region, false), Region = region, Z = ZOf(kid) });
+                    L.Pieces.Add(new Layer { Svg = Compose(new List<Dom> { path[0] }, region, false), Region = region, Z = ZOf(kid), Kind = kind, Id = kid["data-u"] ?? kid["data-uf"], Index = kind == "toy" ? toys++ : -1, Box = RegionOf(kid, 0) ?? region });
                     for (int i = 0; i < path.Count - 1; i++) { path[i].Children.Clear(); path[i].Children.AddRange(saved[i]); }
                 }
                 box.Children.Clear(); box.Children.AddRange(kids);
@@ -66,7 +71,7 @@ namespace SquishSquad.House
 
         // a piece's box in the frame at camK 1 (the box sits 50 px down): its div's left / top / scale and its <svg>'s box,
         // with room around it for shadows, glows and parts drawn outside (overflow visible)
-        static double[] RegionOf(Dom d)
+        static double[] RegionOf(Dom d, double? margin = null)
         {
             string st = d["style"] ?? "";
             double L = Css(st, "left", 0), T = Css(st, "top", 0), S = 1;
@@ -81,8 +86,17 @@ namespace SquishSquad.House
                 if (double.IsNaN(bw) || double.IsNaN(bh)) continue;
                 x0 = Math.Min(x0, bx); y0 = Math.Min(y0, by); x1 = Math.Max(x1, bx + bw); y1 = Math.Max(y1, by + bh);
             }
-            if (x0 == double.MaxValue) return null;   // (nothing sized: the whole region)
-            double w = (x1 - x0) * Math.Abs(S), h = (y1 - y0) * Math.Abs(S), m = 0.5 * Math.Max(w, h) + 24;
+            if (x0 == double.MaxValue)
+            {
+                // a box sized itself (a toy: 40 x 40, scaled about its bottom centre)
+                double W = Css(st, "width", double.NaN), Hh = Css(st, "height", double.NaN);
+                if (double.IsNaN(W) || double.IsNaN(Hh) || W == 0 || Hh == 0) return null;   // (nothing sized: the whole region)
+                bool bottom = st.Contains("transform-origin:50% 100%");
+                double ox = bottom ? W / 2 : 0, oy = bottom ? Hh : 0, ww = W * S, hh = Hh * S, m0 = margin ?? 0.5 * Math.Max(ww, hh) + 12;
+                double tx = L + ox - ox * S, ty = T + oy - oy * S + HouseFrame.BoxTop;
+                return new[] { Math.Floor(tx - m0), Math.Floor(ty - m0), Math.Ceiling(ww + 2 * m0), Math.Ceiling(hh + 2 * m0) };
+            }
+            double w = (x1 - x0) * Math.Abs(S), h = (y1 - y0) * Math.Abs(S), m = margin ?? 0.5 * Math.Max(w, h) + 24;
             double ax = L + Math.Min(x0, x1) * S, ay = T + Math.Min(y0, y1) * S + HouseFrame.BoxTop;
             return new[] { Math.Floor(ax - m), Math.Floor(ay - m), Math.Ceiling(w + 2 * m), Math.Ceiling(h + 2 * m) };
         }

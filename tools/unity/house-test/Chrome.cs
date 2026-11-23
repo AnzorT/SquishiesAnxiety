@@ -179,6 +179,12 @@ static class ActCheck
         sim.Play = (c, n) => plays.Add($"{ticks} {c.Key} {n}");
         sim.PlayIdle = c => plays.Add($"{ticks} {c.Key} idle");
         sim.Toast = t => toasts.Add(t);
+        sim.RoomChanged = () => { }; sim.Saved = () => { };
+        // the room model's answers the screen gives the squad: front parts (hasFr), the pieces' drawing data (rnI)
+        var rm = new RoomModel(hs); var rv = rm.Build(T.Str("room"));
+        var fronts = new Dictionary<string, bool>(); foreach (var o in rv?.Arr("items") ?? new List<object>()) if (o is JObj f0 && f0.Str("id") != null) fronts[f0.Str("id")] = HouseJson.Truthy(f0["hasFront"]);
+        sim.HasFront = id => fronts.TryGetValue(id, out var fr0) && fr0;
+        sim.RnI = id => rm.RnI.TryGetValue(id, out var ri) ? ri : null;
         var st = T.Obj("start");
         foreach (JObj o in st.Arr("cs"))
         {
@@ -209,11 +215,18 @@ static class ActCheck
                     if (k == "sel") sim.Sel = int.Parse(a);
                     else if (k == "act") sim.Act(a, b, sim.Last);
                     else if (k == "floor") { var c = sim.SelC; if (c != null) sim.GoTo(c, double.Parse(a), double.Parse(b), null, sim.Last); }
+                    else if (k == "tap") sim.ItemDown(a, sim.Last);
                 }
                 else { var c = sim.Cs.Find(x => x.Key == (string)e[2]); sim.OnRig(c, (string)e[3], sim.Last); }
             }
             ticks++;
             sim.Tick(fr.Num("last"));
+            // the pieces' runtime states (rst: TV channel, playing, toaster...)
+            foreach (var id in (fr.Obj("rst") ?? new JObj()).Keys)
+            {
+                var pr = fr.Obj("rst").Obj(id); sim.Rst.TryGetValue(id, out var R); R ??= new PieceState();
+                if (R.Ch != pr.Num("ch") || R.Play != pr.Truthy("play") || (R.K ?? "") != (pr.Str("k") ?? "")) { bad++; first ??= $"frame {f} rst {id}: ch {R.Ch} vs {pr.Num("ch")}, play {R.Play} vs {pr.Truthy("play")}, k {R.K} vs {pr.Str("k")}"; }
+            }
             foreach (JObj o in fr.Arr("cs"))
             {
                 var c = sim.Cs.Find(x => x.Key == o.Str("key"));

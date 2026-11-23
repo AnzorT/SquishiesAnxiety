@@ -28,6 +28,9 @@ namespace SquishSquad.House
         // what he's doing (stage 4: HouseActions)
         public string Seat, SeatItem, UseItem, SeatRes, UseRes, WSt, NapSt, SnugSt, WatchTv;
         public HouseAct UseA;
+        public string RnGo, Pa, PAnim;   // (stage 5: walking to a piece; playing at it: his spot's move, his animation)
+        public double Pd, JamAt;
+        public bool PRig;
         public double UseEnd, EatEnd, BowlEnd, RoastAt, FxAt;
         public HouseCreature SnugW, SnugTo;
         /// <summary>The pose he holds while getting off something (keep: lift, facing, z, the seat) until a time.</summary>
@@ -294,6 +297,7 @@ namespace SquishSquad.House
                     if (c.N[low] < 30) Say(c, NEEDLOW[low], now);
                 }
             }
+            PieceTick(now);   // (the page: rnTick every 0.5 s and the rolling toy, after the squad)
             if (Party && now > PartyEnd) EndParty(now);
             double rate = NeedRate * dt;
             foreach (var c in Cs) foreach (var k in new[] { "h", "c", "e", "f" }) c.N[k] = Math.Max(0, (c.N.TryGetValue(k, out var v) ? v : 0) - DECAY[k] * rate);

@@ -19,7 +19,7 @@ await H.ready();
 await H.frames(60);
 const snap = () => H.page.evaluate(() => {
   const sh = window.__sh, C = (c) => ({ seat: c.seat || null, seatItem: c.seatItem || null, useItem: c.useItem || null, wSt: c.wSt || null, napSt: c.napSt || null, useEnd: c.useEnd || 0, eatEnd: c.eatEnd || 0, sayText: c.say && c.say.current ? c.say.current.textContent : null, key: c.key, room: c.room, home: c.home, posRoom: c.posRoom, x: c.x, y: c.y, tx: c.tx, ty: c.ty, moving: c.moving, spin: c.spin, face: c.face, wk: c.wk, ph: c.ph, lift: c.lift, liftTo: c.liftTo, wanderAt: c.wanderAt, hold: c.hold, mode: c.mode, run: !!c.run, gv: c.gv || 1, needAt: c.needAt, N: c.N, gs: c.gs || {}, z: c.z, standUntil: c.standUntil || 0, turnAt: c.turnAt || 0, arrive: !!c.arrive, ext: Object.assign({}, c.ext) });
-  return { now: window.__clock.now, last: sh.last, sel: sh.state.sel, vis: sh.vis.map((c) => c.key), cs: sh.cs.map(C) };
+  return { now: window.__clock.now, last: sh.last, sel: sh.state.sel, vis: sh.vis.map((c) => c.key), cs: sh.cs.map(C), rst: JSON.parse(JSON.stringify(sh.rst || {})), vars: Object.assign({}, sh.vars), tv: Object.assign({}, sh.tv) };
 });
 const start = await snap();
 await H.page.evaluate(() => {
@@ -40,6 +40,7 @@ for (let f = 0; f < +N; f++) {
       if (k === 'sel') sh.setState({ sel: +a });
       else if (k === 'act') { const t0 = sh.toast.bind(sh); let said = null; sh.toast = (t) => { said = t; return t0(t); }; sh.act(a, b || undefined); sh.toast = t0; return said; }
       else if (k === 'floor') { const c = sh.selC(); if (c) sh.goTo(c, +a, +b); }
+      else if (k === 'tap') { const t0 = sh.toast.bind(sh); let said = null; sh.toast = (t) => { said = t; return t0(t); }; sh.itemDown(a, { stopPropagation() {}, clientX: 0, clientY: 0 }); sh.toast = t0; return said; }
       return null;
     }, op);
     toasts.push([f, op.join(':'), res]);

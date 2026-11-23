@@ -147,7 +147,7 @@ namespace SquishSquad.House
             c.TurnAt = 0; c.NapSt = null; c.WSt = null; c.Keep = null;
             if (c.UseItem != null && Vars.ContainsKey(c.UseItem) && c.UseA?.V != null) SetVar(c.UseItem, null);
             c.Seat = null; c.SeatRes = null; c.UseRes = null; c.SeatItem = null; c.UseItem = null; c.LiftTo = 0; c.Z = null; c.UseEnd = 0; c.UseA = null; c.Face = 0; c.Mode = "free";
-            c.RoastAt = 0; c.BowlEnd = 0;
+            c.RoastAt = 0; c.BowlEnd = 0; c.RnGo = null; c.Pa = null; c.PRig = false;
             if (was == "snuggle") Unsnug(c); if (was == "watch") Unwatch(c); c.SnugSt = null; c.WatchTv = null;
             var wk = nap != null ? HsGet(c, nap + "wake") : null; var ou = nap != null ? HsGet(c, nap + "out") : null;
             var wo = nap == null && wst != null ? HsGet(c, wst + "out") : null;
@@ -437,7 +437,8 @@ namespace SquishSquad.House
             else if (c.Mode == "nap" || c.Mode == "sun") Again("sleep");
             else if (SEATED.Contains(c.Mode)) Again(c.Mode == "snuggle" ? c.SnugSt ?? "sit" : c.Mode);
             else if (c.Mode == "eat") { if (now < c.EatEnd) Again(EatS()); else { c.Mode = c.Seat != null ? "sit" : "free"; c.Face = 0; Say(c, "Yum!", now); Play(c, "happy"); } }
-            else if (c.Mode == "perform" || (c.Mode == "dance" && Party)) Again(c.Mode == "perform" && c.WSt != null ? c.WSt : "dance");
+            else if (c.Mode == "perform" || (c.Mode == "dance" && (Party || Jams.Count > 0))) Again(c.Mode == "perform" && c.WSt != null ? c.WSt : "dance");
+            else if (c.Mode == "rplay") Again(c.PAnim ?? "happy");
             else if (c.Mode == "dance") c.Mode = "free";
             else if (c.UseA?.Anim != null && now < c.UseEnd) Again(c.UseA.Anim);
         }
@@ -461,7 +462,7 @@ namespace SquishSquad.House
             }
             if (c.UseEnd != 0 && now >= c.UseEnd) FinishUse(c, now);
             if (c.BowlEnd != 0 && now >= c.BowlEnd) BowlDone(c, now);
-            string fx = c.WSt != null ? null : FXM.TryGetValue(c.Mode, out var m) ? m : null;
+            string fx = c.Mode == "rplay" ? (c.PRig ? null : c.PAnim == "dance" ? "note" : "spark") : c.WSt != null ? null : FXM.TryGetValue(c.Mode, out var m) ? m : null;
             if (fx != null && !c.Moving && now > c.FxAt) { c.FxAt = now + FXR[fx] * (0.7 + Rand() * 0.6); Emit(c, fx, now); }
             if (REC.TryGetValue(c.Mode, out var rec) && !c.Moving)
                 c.N[rec.k] = Math.Min(100, c.N[rec.k] + rec.v * dt * (S.H.Obj("night").Truthy(S.Cur) && c.Mode == "nap" ? 2 : 1));

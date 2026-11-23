@@ -62,6 +62,7 @@ namespace SquishSquad.House.View
             world.SetParent(transform.parent, false);
             _room = world.gameObject.AddComponent<HouseRoomView>();
             _room.Load(_json, _level, _owned, _start);
+            _hit = new List<HouseRoomView.Piece>();
             var walkJson = HouseRoomView.Res("walk");
             _sim = new HouseCreatures(_room.Save, new HouseWalk(walkJson));
             _sim.SetMoves(walkJson);
@@ -69,6 +70,7 @@ namespace SquishSquad.House.View
             _sim.HasFront = id => _room.Fronts.TryGetValue(id, out var f) && f;
             _sim.Saved = Save;
             _sim.RoomChanged = () => { _room.Draw(_w, _h); _room.SetCamera(_cam.K(Now)); };
+            _room.Sim = _sim;
             _sim.Init(Now, _start);
             _room.Draw(_w, _h);
             _cam.Set(_room.RoomK, Now, false);
@@ -109,6 +111,7 @@ namespace SquishSquad.House.View
             double k = _cam.K(now);
             _room.SetCamera(k);
             _squad.Update(k, now);
+            MoveToy(now);
             _wheel.Update(k, now);
             if (now >= _saveAt) { _saveAt = now + 5000; Save(); }
             // the drawer (translate(-50%, ty): its pieces' rects are at ty 0), the arrow turning about its centre
@@ -146,6 +149,22 @@ namespace SquishSquad.House.View
         }
 
         void Toast(string text) => _hud.ShowToast(text, Now);
+
+        List<HouseRoomView.Piece> _hit;
+
+        // the rolling toy (rollStep): its layer follows the roll and its depth (the spin of its inner part isn't drawn)
+        void MoveToy(double now)
+        {
+            if (_sim.Rolling == null) { foreach (var p in _room.Pieces) if (p.Kind == "toy") { p.Dx = 0; p.Dy = 0; } return; }
+            int ix = _sim.Toys().IndexOf(_sim.Rolling.Y);
+            foreach (var p in _room.Pieces)
+            {
+                if (p.Kind != "toy" || p.Toy != ix) continue;
+                var (x, y, hop, _) = _sim.RollAt(now);
+                p.Dx = x - _sim.Rolling.X0; p.Dy = y - _sim.Rolling.Y0 - hop;
+                if (p.Renderer != null) p.Renderer.sortingOrder = HouseRoomView.OrderOf(Math.Round(y));
+            }
+        }
 
         void HandleInput(double now)
         {
@@ -186,6 +205,21 @@ namespace SquishSquad.House.View
             }
             int hit = _squad.HitCreature(fx, fy, k);
             if (hit >= 0) { _sim.TapCreature(hit, now); _wheel.SetOpen(false, now); return; }
+            // a piece or a toy (its box; the topmost by z-index): itemDown, kick
+            var pb = HouseCamera.ToBox(fx, fy, k); double gx = pb.x, gy = pb.y + HouseFrame.BoxTop;
+            HouseRoomView.Piece top = null;
+            foreach (var p in _room.Pieces)
+            {
+                if (p.Kind == "prop" || p.Box == null) continue;
+                if (gx >= p.Box[0] + p.Dx && gx <= p.Box[0] + p.Dx + p.Box[2] && gy >= p.Box[1] + p.Dy && gy <= p.Box[1] + p.Dy + p.Box[3] && (top == null || p.Z >= top.Z)) top = p;
+            }
+            if (top != null)
+            {
+                _wheel.SetOpen(false, now);
+                if (top.Kind == "toy") { var toys = _sim.Toys(); if (top.Toy >= 0 && top.Toy < toys.Count) _sim.Kick(toys[top.Toy], now); }
+                else if (top.Id != null) _sim.ItemDown(top.Id, now);
+                return;
+            }
             var b = HouseCamera.ToBox(fx, fy, k);
             var door = HouseDoors.At(Shell(), b.x, b.y);
             if (door != null) { TapDoor(door, now); return; }

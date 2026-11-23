@@ -56,7 +56,9 @@ namespace SquishSquad.House.View
 
         /// <summary>A piece of the room drawn on its own (a piece, its front part, a toy): its texture, where it is (frame
         /// px at camK 1) and its CSS z-index among the pieces and the creatures (House/View/HouseScreen sorts by it).</summary>
-        public sealed class Piece { public Mesh Quad; public double[] Region; public double Z; public int Index; public MeshRenderer Renderer; }
+        public sealed class Piece { public Mesh Quad; public double[] Region, Box; public double Z; public int Index, Toy; public string Kind, Id; public MeshRenderer Renderer; public double Dx, Dy; }
+        /// <summary>The squad (stage 4-5): the pieces' states its pictures show (rStOf, vars), front parts, drawing data.</summary>
+        public HouseCreatures Sim;
         public readonly List<Piece> Pieces = new List<Piece>();
         /// <summary>The sorting order of a z-index among the pieces and creatures (the base room is below, the night over).</summary>
         public static int OrderOf(double z, int sub = 0) => 2000 + (int)Math.Round(z) * 4 + sub;
@@ -70,10 +72,12 @@ namespace SquishSquad.House.View
             Clear();
             _tpl ??= new HouseTemplate(Res("room-template"));
             var model = new RoomModel(Save);
+            if (Sim != null) { model.StateOf = Sim.RStOf; model.VarOf = Sim.VarOf; }
             var vals = model.Build(Save.Cur);
             Notes.Clear(); Notes.AddRange(model.Missing);
             if (vals == null) return;
             RoomK = vals["camK"] is double ck ? ck : 1;
+            if (Sim != null) { Sim.RnI = id => model.RnI.TryGetValue(id, out var ri) ? ri : null; }
             Fronts.Clear();
             foreach (var o in vals.Arr("items") ?? new List<object>()) if (o is JObj f && f.Str("id") != null) Fronts[f.Str("id")] = HouseJson.Truthy(f["hasFront"]);
             vals["camK"] = 1.0;   // (the camera is the quad's: SetCamera)
@@ -86,7 +90,7 @@ namespace SquishSquad.House.View
             {
                 var lp = L.Pieces[idx];
                 var q = Quad("piece " + idx, Render(lp.Svg, lp.Region, k), (float)(lp.Region[2] * k), (float)(lp.Region[3] * k), OrderOf(lp.Z, idx % 2));
-                Pieces.Add(new Piece { Quad = q, Region = lp.Region, Z = lp.Z, Index = idx, Renderer = _lastRenderer });
+                Pieces.Add(new Piece { Quad = q, Region = lp.Region, Box = lp.Box, Z = lp.Z, Index = idx, Toy = lp.Index, Kind = lp.Kind, Id = lp.Id, Renderer = _lastRenderer });
             }
             SetCamera(CamK);
             if (L.Night != null) Quad("night", Render(L.Night, new double[] { 0, 0, 852, 393 }, k), 852 * k, 393 * k, 30000);
@@ -166,7 +170,7 @@ namespace SquishSquad.House.View
             foreach (var p in Pieces)
             {
                 if (p.Quad == null) continue;
-                double x = p.Region[0], y = p.Region[1], w = p.Region[2], h = p.Region[3];
+                double x = p.Region[0] + p.Dx, y = p.Region[1] + p.Dy, w = p.Region[2], h = p.Region[3];
                 p.Quad.SetVertices(new[] { V(x, y), V(x + w, y), V(x + w, y + h), V(x, y + h) });
                 p.Quad.RecalculateBounds();
             }
