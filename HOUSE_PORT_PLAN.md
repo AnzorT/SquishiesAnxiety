@@ -44,6 +44,13 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    piece table exported to JSON, geometry, the room template; exported piece pictures. Verify: H JSON after load,
    room markup, pixels per fixture × room × day / night.
 2. Framing, camera (0.85 indoors, 0.45 s ease), doors, HUD chrome, toasts.
+   ✅ (2026-11-23, untested in Unity) `House/HouseChrome.cs` (camera, doors, drawer, toast logic: `house-test chrome`,
+   19 checks), `House/View/HouseScreen.cs` (the screen: room, camera easing in the quad's texture coordinates, the night
+   overlay drawn unzoomed as the page does, the drawer from `tools/unity/house/export-hud.mjs`, toasts, taps), the
+   room drawn at camK 1 over the zoom's region (`house-test camera` + `tools/unity/house/camera-check.mjs`: the zoomed
+   layers equal stage 1's picture to 0.00 % of pixels in living, kitchen, dance and backyard, day and night).
+   Left for later stages: RENOVATE / CATALOG (6, 7), the house map (8), the selected friend walking to a door (3).
+   The drawer's inset highlights aren't drawn (snap.js skips inset shadows).
 3. Creatures placed and walking (logic exact; recorded clips as visuals): pick, homeFor, freeSpot, wander, goTo, the
    movement / turn tick, HouseWalk, z-order, particles. Verify: traces over scripted sessions.
 4. Live rigs and actions: act, finishUse, needs, quick actions, seats / snuggles, speech. Needs the creature engine.
