@@ -33,6 +33,7 @@ namespace SquishSquad.House.View
         }
 
         Mesh _quad;
+        MeshRenderer _lastRenderer;
         float _k = 1;
         public double CamK { get; private set; } = 1;
 
@@ -53,9 +54,17 @@ namespace SquishSquad.House.View
             Save.Load(json, level, ownedRosterIds, room);
         }
 
+        /// <summary>A piece of the room drawn on its own (a piece, its front part, a toy): its texture, where it is (frame
+        /// px at camK 1) and its CSS z-index among the pieces and the creatures (House/View/HouseScreen sorts by it).</summary>
+        public sealed class Piece { public Mesh Quad; public double[] Region; public double Z; public int Index; public MeshRenderer Renderer; }
+        public readonly List<Piece> Pieces = new List<Piece>();
+        /// <summary>The sorting order of a z-index among the pieces and creatures (the base room is below, the night over).</summary>
+        public static int OrderOf(double z, int sub = 0) => 2000 + (int)Math.Round(z) * 4 + sub;
+
         /// <summary>Draws the current room (Save.Cur) at the menu's framing on a screen of width x height px: the room box
-        /// unzoomed over View (the camera is SetCamera's), and over it, unzoomed and frame-sized as in the page, the night
-        /// overlay (a sibling of the box, not inside it).</summary>
+        /// unzoomed over View (the camera is SetCamera's), without its pieces; each piece, front part and toy as its own
+        /// layer sorted by its z-index (the creatures go between them, as in the page's stacking box); over it all,
+        /// unzoomed and frame-sized as in the page, the night overlay (a sibling of the box, not inside it).</summary>
         public void Draw(float width, float height)
         {
             Clear();
@@ -64,28 +73,29 @@ namespace SquishSquad.House.View
             var vals = model.Build(Save.Cur);
             Notes.Clear(); Notes.AddRange(model.Missing);
             if (vals == null) return;
+            RoomK = vals["camK"] is double ck ? ck : 1;
             vals["camK"] = 1.0;   // (the camera is the quad's: SetCamera)
-            var dom = _tpl.Render(vals);
-            var night = dom.FindAll(n => n.Tag == "div" && (n["style"] ?? "").Contains("z-index:860"));
-            var room = dom.FindAll(n => !night.Contains(n));
+            var L = RoomLayers.Split(_tpl.Render(vals), View, () => new RoomCompose { PicSvg = n => Res("pics/" + n), PicPng = n => Resources.Load<Texture2D>("House/pics/" + n) != null ? n : null });
             float k = width / 852f;
             _k = k;
-            var tex = Layer(room, View, k, Notes);
-            _quad = Quad("room", tex, 852 * k, 393 * k, SortingOrder);
-            SetCamera(CamK);
-            if (night.Count > 0)
+            Notes.AddRange(L.Notes);
+            _quad = Quad("room", Render(L.Base, View, k), 852 * k, 393 * k, SortingOrder);
+            for (int idx = 0; idx < L.Pieces.Count; idx++)
             {
-                var ntex = Layer(night, new double[] { 0, 0, 852, 393 }, k, Notes, false);
-                Quad("night", ntex, 852 * k, 393 * k, SortingOrder + 1);
+                var lp = L.Pieces[idx];
+                var q = Quad("piece " + idx, Render(lp.Svg, lp.Region, k), (float)(lp.Region[2] * k), (float)(lp.Region[3] * k), OrderOf(lp.Z, idx % 2));
+                Pieces.Add(new Piece { Quad = q, Region = lp.Region, Z = lp.Z, Index = idx, Renderer = _lastRenderer });
             }
+            SetCamera(CamK);
+            if (L.Night != null) Quad("night", Render(L.Night, new double[] { 0, 0, 852, 393 }, k), 852 * k, 393 * k, 30000);
         }
 
-        // a part of the template's output composed (RoomCompose) and drawn once by the GPU vector renderer
-        RenderTexture Layer(List<Dom> dom, double[] view, float k, List<string> notes, bool background = true)
+        /// <summary>The room's camK (renderVals: 0.85 indoors, 1 in the dance room, outdoors and on the beach).</summary>
+        public double RoomK { get; private set; } = 1;
+
+        // an SVG layer (RoomLayers) drawn once by the GPU vector renderer, `view` (frame px) at k screen px per px
+        RenderTexture Render(string svg, double[] view, float k)
         {
-            var compose = new RoomCompose { PicSvg = n => Res("pics/" + n), PicPng = n => Resources.Load<Texture2D>("House/pics/" + n) != null ? n : null };
-            var svg = compose.Compose(dom, null, view, background);
-            notes.AddRange(compose.Notes);
             var root = SvgMarkup.Parse(svg);
             PatternExpand.Expand(root);
             float vw = (float)view[2], vh = (float)view[3];
@@ -130,6 +140,7 @@ namespace SquishSquad.House.View
             _made.Add(mat);
             mr.sharedMaterial = mat;
             mr.sortingOrder = order;
+            _lastRenderer = mr;
             return mesh;
         }
 
@@ -146,10 +157,20 @@ namespace SquishSquad.House.View
                 return new Vector2((float)((gx - View[0]) / View[2]), (float)(1 - (gy - View[1]) / View[3]));
             }
             _quad.SetUVs(0, new[] { Uv(0, 0), Uv(852, 0), Uv(852, 393), Uv(0, 393) });
+            // a piece's quad: its corners (frame px at camK 1) scaled by k about (426, 393), the box's (426, 343)
+            Vector3 V(double gx, double gy) { double fx = 426 + k * (gx - 426), fy = 393 + k * (gy - 393); return new Vector3((float)(fx * _k), (float)(-fy * _k), 0); }
+            foreach (var p in Pieces)
+            {
+                if (p.Quad == null) continue;
+                double x = p.Region[0], y = p.Region[1], w = p.Region[2], h = p.Region[3];
+                p.Quad.SetVertices(new[] { V(x, y), V(x + w, y), V(x + w, y + h), V(x, y + h) });
+                p.Quad.RecalculateBounds();
+            }
         }
 
         void Clear()
         {
+            Pieces.Clear();
             foreach (var o in _made) if (o != null) { if (o is RenderTexture rt) rt.Release(); Destroy(o); }
             _made.Clear();
         }

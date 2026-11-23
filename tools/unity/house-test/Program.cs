@@ -37,6 +37,7 @@ static partial class Program
             case "camera": return CameraLayers.Run(args[1], args[2]);
             case "walk": return WalkCheck.Run();
             case "creatures": return CreatureCheck.Run();
+            case "layers": return LayerCheck.Run(args[1], args[2]);
             case "compose": return ComposeOnly(args[1], args[2]);
             case "rt": return DebugRt(args[1], args[2]);
             case "pixels": PixRoom = args.Length > 2 && !args[2].StartsWith("--") ? args[2] : null; return Pixels(only, args.Contains("--keep"));

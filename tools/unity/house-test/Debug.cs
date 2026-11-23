@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System;
 using System.Linq;
@@ -58,6 +59,34 @@ static class CameraLayers
             File.WriteAllText(Out("night"), Program.Composer(d).Compose(night, null, null, false));
             File.WriteAllText(Out("meta").Replace(".svg", ".json"), $"{{\"k\":{k.ToString(System.Globalization.CultureInfo.InvariantCulture)},\"view\":[{string.Join(",", view)}],\"nightOn\":{(night.Count > 0 ? "true" : "false")}}}");
             Console.WriteLine($"{name}: camK {k}, view [{string.Join(", ", view)}], night layer {night.Count}");
+        }
+        return 0;
+    }
+}
+
+static class LayerCheck
+{
+    // `layers <fixture> <room>`: RoomLayers' layers (base, each piece with its region and z, night) and stage 1's single
+    // composition, for tools/unity/house/layers-check.mjs (out/<fx>-<room>-<day|night>-layers.json)
+    public static int Run(string fx, string rk)
+    {
+        var d = Program.Data(); var tpl = Program.Template();
+        var a = HouseCamera.ToBox(0, 0, 0.85); var b = HouseCamera.ToBox(852, 393, 0.85);
+        double x0 = Math.Floor(a.x), y0 = Math.Floor(a.y + HouseFrame.BoxTop), x1 = Math.Ceiling(b.x), y1 = Math.Ceiling(b.y + HouseFrame.BoxTop);
+        var view = new[] { x0, y0, x1 - x0, y1 - y0 };
+        foreach (var r in Program.Rooms(d, fx))
+        {
+            if (r.rk != rk) continue;
+            string name = r.fx + "-" + r.rk + (r.night ? "-night" : "-day");
+            r.vals["camK"] = 1.0;
+            var plain = Program.Composer(d).Compose(tpl.Render(r.vals), null);
+            var L = RoomLayers.Split(tpl.Render(r.vals), view, () => Program.Composer(d));
+            var o = new JObj(); o["base"] = L.Base; o["night"] = L.Night; o["view"] = new List<object>(Array.ConvertAll(view, v => (object)v)); o["plain"] = plain;
+            var ps = new List<object>();
+            foreach (var p in L.Pieces) { var j = new JObj(); j["svg"] = p.Svg; j["z"] = p.Z; j["region"] = new List<object>(Array.ConvertAll(p.Region, v => (object)v)); ps.Add(j); }
+            o["pieces"] = ps;
+            File.WriteAllText(Path.Combine(Program.Repo, "tools/unity/house-test/out", name + "-layers.json"), HouseJson.Stringify(o));
+            Console.WriteLine($"{name}: {L.Pieces.Count} piece layers");
         }
         return 0;
     }
