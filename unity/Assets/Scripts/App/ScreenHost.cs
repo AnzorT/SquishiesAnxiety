@@ -60,7 +60,7 @@ namespace SquishSquad.App
                 _creature = null;
             }
             if (_creature != null) return;
-            var rig = RecordedRig.Load("mittens");
+            var rig = Rigs.For("mittens");
             if (rig == null) { _creatureFailed = true; return; }
             _creature = CreatureView.Create(_root, rig, box, order);
             _creature.Failed = _ => { _creatureFailed = true; if (_creature != null) _creature.gameObject.SetActive(false); };

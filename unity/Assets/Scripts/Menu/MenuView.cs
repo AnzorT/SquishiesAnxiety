@@ -94,7 +94,7 @@ namespace SquishSquad.Menu
             if (_creatureKey != null)
             {
                 var piece = _pieces.Find(x => x.Data.id == "creature");
-                var rig = piece != null ? RecordedRig.Load(_creatureKey) : null;
+                var rig = piece != null ? Rigs.For(_creatureKey) : null;
                 if (rig != null)
                 {
                     Creature = CreatureView.Create(_world, rig, piece.Hit, piece.Order);
@@ -175,7 +175,8 @@ namespace SquishSquad.Menu
         public Place Where { get; private set; } = Place.Home;
         float _tripStart = -1, _fadeFrom = 1, _fadeTo = 1, _fadeStart;
         Vector3 _creatureHome;
-        RecordedRig _idle, _clip;
+        IRigFrames _idle;
+        RecordedRig _clip;
         RenderTexture _parkTex;
         const float ParkPad = 160;   // menu.js PAD: where the creature stands in the park (the house's pad is at 500)
         const float FadeMs = 300;

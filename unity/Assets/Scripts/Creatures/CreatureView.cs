@@ -109,6 +109,7 @@ namespace SquishSquad.Creatures
 
         void OnDestroy()
         {
+            (_rig as System.IDisposable)?.Dispose();   // (a live creature leaves the engine)
             _renderer?.Dispose();
             if (_rt != null) { _rt.Release(); Kill(_rt); }
             Kill(_show);
