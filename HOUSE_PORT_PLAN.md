@@ -161,7 +161,18 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    fading after 2.6 s, its close button; Android's back leaves it), positions forgotten when the theater goes (as the
    page). Not yet: the film's CSS filters (blur, saturation), the hair on the old film, the speakers' rings and notes,
    the holo pop-outs and confetti cues, the 10 s app ad (a screen always has a movie to show).
-10. Beach.
+10. Beach: done in a first cut. House/HouseBeach.cs: beach.js's geometry (the shore, the pier, the sea; clamp,
+   randSand, randSea, itemX, with Renovate's placement hooked) and the page's beach methods: wading and swimming
+   (bStep: depth, swimin / swimout, splashes, needs), surfing (bSurf and the 9 s ride), fishing (the two spots, the
+   catch), roasting, the sea pieces bobbing and the shells washing up (bTick), picking shells (bPick), the Swim /
+   Shells / Fish acts (bAct); walking and wandering on the sand and into the sea. house-test `acts` with beach
+   traces (lv30-beach: swim, shells, fish) matches the page every frame (beach.js's random stream replayed apart).
+   View/HouseBeachView: the live scene (__house.beach: the page's own Beach.scene) over the room's base, cut into
+   runs of its top-level parts, the still ones drawn once and the moving ones (SMIL sampled in C#: animate,
+   animateTransform, animateMotion, splines) redrawn 12 times a second at 0.6 resolution; the shells, snowmen and
+   fishing sign as props among the creatures with their taps. HouseSquadView: wading cuts the creature off at the
+   water line (CreatureView.ClipBottom) with the water ring and no shadow; the board and the rod. Not yet checked on
+   a device: the scene's look against the page and the redraw cost; the pier sign's text (SVG text isn't drawn).
 11. Yard games: done in a first cut. Games/Yard: the page's yard-games.js as YardKit (a retained SVG DOM the games
    write, the context: creatures, score, clock, hint, toasts, particles, timers, finish; the saved bests) and the seven
    games (Hoop Shot, Penalty Kick, Hopscotch, Bounce Up, Slide & Splash, Cornhole, Ping-Pong) line for line; their

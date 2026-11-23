@@ -16,10 +16,10 @@ for (const [name, code] of scripts) {
   try { vm.runInContext(code, ctx, { filename: name }); } catch (e) { /* as the app */ }
   if (name === 'live-host.js') vm.runInContext('__live.install(function () { return null; })', ctx);
 }
-// the house moves the house logic asks about (RiveRig.HS: hsGet): only what it reads (dur, loop, hop, turn, sync),
+// the house moves the house logic asks about (RiveRig.HS: hsGet): only what it reads (dur, loop, hop, turn, sync, catchEnd),
 // not the keyframes; and whether the rigs have 'eat_cookie' (eatS)
 const out = vm.runInContext(`JSON.stringify({ prof: HouseWalk.PROF, run: window.HouseWalkRUN || {}, alias: window.SQ_ALIAS || {}, gaits: Object.keys(HouseWalk.G),
-  hs: Object.fromEntries(Object.entries(RiveRig.HS || {}).map(([k, v]) => [k, Object.fromEntries(['dur', 'loop', 'hop', 'turn', 'sync'].filter((f) => v[f] != null).map((f) => [f, v[f]]))])),
+  hs: Object.fromEntries(Object.entries(RiveRig.HS || {}).map(([k, v]) => [k, Object.fromEntries(['dur', 'loop', 'hop', 'turn', 'sync', 'catchEnd'].filter((f) => v[f] != null).map((f) => [f, v[f]]))])),
   eatCookie: !!(RiveRig.STATES && RiveRig.STATES.eat_cookie) })`, ctx);
 const d = JSON.parse(out);
 fs.writeFileSync(path.join(REPO, 'unity/Assets/Resources/House/walk.json'), JSON.stringify(d));

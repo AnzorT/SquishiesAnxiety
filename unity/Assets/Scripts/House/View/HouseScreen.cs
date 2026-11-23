@@ -33,6 +33,7 @@ namespace SquishSquad.House.View
         HouseMapView _map;
         HouseMovieView _movie;
         HouseClubView _club;
+        HouseBeachView _beach;
         bool _dirty;
         string _press; double _pressX, _pressY; bool _moved;
         double _saveAt;
@@ -117,6 +118,7 @@ namespace SquishSquad.House.View
             _sim.MoviesChanged = () => { var pos = new JObj(); foreach (var kv in _sim.MoviePos) pos[kv.Key] = kv.Value; PlayerPrefs.SetString(MoviesKey, HouseJson.Stringify(new JObj { ["pick"] = _sim.MoviePick, ["pos"] = pos })); };
             _movie = new HouseMovieView(_room, _sim, _k, mvo?.Obj("icons"));
             _club = new HouseClubView(_room, _sim);
+            _beach = new HouseBeachView(_room, _sim, _k); _sim.BeachHooks();
             _toast = UiPiece.Create(world, "toast", 31100);
             _toast.Opacity = 0;
         }
@@ -178,6 +180,8 @@ namespace SquishSquad.House.View
             HandleInput(now);
             _sim.Tick(now);
             if (_dirty) { _dirty = false; _room.Draw(_w, _h); }
+            // the beach's sea pieces bob (bTick's translate)
+            if (_sim.S.Cur == "beach" && !_sim.Edit) foreach (var p in _room.Pieces) if ((p.Kind == "item" || p.Kind == "front") && p.Id != null) p.Dy = _sim.BBob.TryGetValue(p.Id, out var bob) ? bob : 0;
             double k = _cam.K(now);
             _room.SetCamera(k);
             _edit.SetCamera(k); _edit.Update(now);
@@ -185,6 +189,7 @@ namespace SquishSquad.House.View
             _map.Update(now, !_sim.Shop);
             _movie.Update(now);
             _club.Update(now);
+            _beach.Update(now);
             _squad.Update(k, now);
             MoveToy(now);
             _wheel.Update(k, now);
@@ -347,7 +352,9 @@ namespace SquishSquad.House.View
             }
             int hit = _squad.HitCreature(fx, fy, k);
             if (hit >= 0) { _sim.TapCreature(hit, now); _wheel.SetOpen(false, now); return; }
-            // a piece or a toy (its box; the topmost by z-index): itemDown, kick
+            // the beach's props (shells, the fishing sign, snowmen), then a piece or a toy (its box; the topmost by
+            // z-index): itemDown, kick
+            if (_sim.S.Cur == "beach") { var bb = HouseCamera.ToBox(fx, fy, k); if (_beach.Tap(bb.x, bb.y, now)) return; }
             var top = PieceAt(fx, fy, k);
             if (top != null)
             {
@@ -405,6 +412,7 @@ namespace SquishSquad.House.View
             _squad?.Destroy();
             _wheel?.Destroy();
             _edit?.Destroy();
+            _beach?.Clear();
             _shop?.Destroy();
             _map?.Destroy();
             _movie?.Destroy();

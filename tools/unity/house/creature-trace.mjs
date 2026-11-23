@@ -41,6 +41,8 @@ const snap = () => H.page.evaluate(() => {
   return { ed, shop, mv, now: window.__clock.now, last: sh.last, sel: sh.state.sel, vis: sh.vis.map((c) => c.key), cs: sh.cs.map(C), rst: JSON.parse(JSON.stringify(sh.rst || {})), vars: Object.assign({}, sh.vars), tv: Object.assign({}, sh.tv) };
 });
 const start = await snap();
+// the beach's shells and when the next washes up (made before the trace starts)
+Object.assign(start, await H.page.evaluate(() => ({ bsh: window.__sh.H.bsh || null, bshAt: window.__sh.bshAt || 0 })));
 await H.page.evaluate(() => {
   const sh = window.__sh; window.__rngTrace = []; window.__fidg = []; window.__ticks = 0; window.__rig = []; window.__plays = [];
   const f0 = sh.fidg.bind(sh); sh.fidg = (c) => { const r = f0(c); window.__fidg.push(r); return r; };
@@ -80,7 +82,7 @@ for (let f = 0; f < +N; f++) {
     toasts.push([f, op.join(':'), res]);
   }
   await H.frames(1);
-  frames.push(await snap());
+  frames.push(Object.assign(await snap(), { nr: await H.page.evaluate(() => window.__rngTrace.length) }));
 }
 const rng = await H.page.evaluate(() => window.__rngTrace), fidg = await H.page.evaluate(() => window.__fidg);
 const rig = await H.page.evaluate(() => window.__rig), plays = await H.page.evaluate(() => window.__plays);

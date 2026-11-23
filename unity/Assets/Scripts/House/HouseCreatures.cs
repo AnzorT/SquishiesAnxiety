@@ -11,7 +11,7 @@ using System.Collections.Generic;
 
 namespace SquishSquad.House
 {
-    public sealed class HouseCreature
+    public sealed partial class HouseCreature
     {
         public string Key, Name, Room, Home, PosRoom, Mode = "free";
         public int I, Id;
@@ -108,6 +108,7 @@ namespace SquishSquad.House
         /// <summary>enterRoom: the save's part (HouseSave.EnterRoom) and the squad's: who's in the room and where.</summary>
         public void Enter(string room, HouseCreature carry, string from, double now)
         {
+            foreach (var c0 in Vis) BReset(c0);
             string prevR = S.Cur;
             foreach (var c in Vis) { Leave(c, true, now); c.Moving = false; c.Arrive = null; }
             Party = false; Vars.Clear(); Tv.Clear(); TvAuto.Clear();
@@ -172,6 +173,7 @@ namespace SquishSquad.House
         public (double x, double y) FreeSpot(string rk)
         {
             var G = S.Geo;
+            if (rk == "beach") { for (int t = 0; t < 30; t++) { var p = RandSand(); if (!Blocked(p[0], p[1], rk)) return (p[0], p[1]); } return (200, 300); }
             for (int t = 0; t < 40; t++)
             {
                 double y = 190 + Rand() * (G.FY1 - 190), a = G.Edge(y) + 60, b = G.VW - G.Edge(y) - 60, x = a + Rand() * (b - a);
@@ -180,25 +182,32 @@ namespace SquishSquad.House
             return (426, 300);
         }
 
-        public (double x, double y) ClampF(double x, double y, double? m = null)
+        public (double x, double y) ClampF(double x, double y, double? m = null, bool sea = false)
         {
             var G = S.Geo;
+            if (OnBeach) return Beach.Clamp(G, x, y, m, sea);
             y = Math.Max(G.FY0, Math.Min(G.FY1, y));
             double e = G.Edge(y) + (m ?? 34);
             return (Math.Max(e, Math.Min(G.VW - e, x)), y);
         }
 
-        public void GoTo(HouseCreature c, double x, double y, Action cb, double now, bool run = false)
+        public void GoTo(HouseCreature c, double x, double y, Action cb, double now, bool run = false, bool sea = false)
         {
             if (Fidg(c)) PlayIdle?.Invoke(c);
             Leave(c, false, now);
-            var (tx, ty) = ClampF(x, y);
+            var (tx, ty) = ClampF(x, y, null, sea);
             c.Tx = tx; c.Ty = ty; c.Moving = true; c.Arrive = cb; c.Mode = cb != null ? "busy" : "free"; c.Hold = now + 12000; c.Run = run;
         }
 
         public void Wander(HouseCreature c, double now)
         {
             var G = S.Geo;
+            if (OnBeach)
+            {
+                bool inS = Beach.WetAt(c.X, c.Y);
+                for (int t = 0; t < 10; t++) { bool sw = Rand() < (inS ? 0.45 : 0.14); var p = sw ? RandSea() : RandSand(); if (!Blocked(p[0], p[1]) && Math.Sqrt((p[0] - c.X) * (p[0] - c.X) + (p[1] - c.Y) * (p[1] - c.Y)) > 50) { GoTo(c, p[0], p[1], null, now, false, sw); c.Hold = 0; return; } }
+                c.WanderAt = now + 3000; return;
+            }
             for (int t = 0; t < 12; t++)
             {
                 double y = G.FY0 + 20 + Rand() * (G.FY1 - G.FY0 - 20), a = G.Edge(y) + 44, b = G.VW - G.Edge(y) - 44, x = a + Rand() * (b - a);
@@ -304,6 +313,7 @@ namespace SquishSquad.House
                     if (c.N[low] < 30) Say(c, NEEDLOW[low], now);
                 }
             }
+            if (OnBeach) BTick(now);
             PieceTick(now);   // (the page: rnTick every 0.5 s and the rolling toy, after the squad)
             if (Party && now > PartyEnd) EndParty(now);
             double rate = NeedRate * dt;

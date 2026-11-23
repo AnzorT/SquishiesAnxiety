@@ -49,7 +49,7 @@ const constant = (n) => {
 let host = fs.readFileSync(path.join(REPO, 'tools/unity/house/draw-host.js'), 'utf8');
 host = host.replace('/* PAGE */', ['RCSV', 'RMAP', 'SLOTCAT', 'roleOf', 'CEILS', 'catOf', 'BIGR', 'edgeR'].map(constant).join('\n  '));
 host = host.replace('/* PAGE-MAP */', ['mapVals', 'lockVals', 'lowest'].map((n) => method(n) + ',').join('\n    '));
-host = host.replace('  var mp = {', '  ' + ['IC', 'FIX', 'MAPB', 'MAPDEAD', 'MAPGRASS', 'MAPROAD', 'MTB', 'NEED', 'RAIN', 'RDOT', 'RLAB', 'SEASON', 'SNOW', 'SPK', 'WIC', 'natMap', 'rnd', 'r1', 'n1', 'natBush', 'natE', 'natSS', 'natSkel', 'natTree'].sort((a, b) => PAGE.search(new RegExp('\\n(const|function) ' + a + '\\b')) - PAGE.search(new RegExp('\\n(const|function) ' + b + '\\b'))).map(constant).join('\n  ') + '\n  var mp = {');   // (in the page's order: they use each other)
+host = host.replace('  var mp = {', '  ' + ['BOARDH', 'FISHB', 'RODH', 'IC', 'FIX', 'MAPB', 'MAPDEAD', 'MAPGRASS', 'MAPROAD', 'MTB', 'NEED', 'RAIN', 'RDOT', 'RLAB', 'SEASON', 'SNOW', 'SPK', 'WIC', 'natMap', 'rnd', 'r1', 'n1', 'natBush', 'natE', 'natSS', 'natSkel', 'natTree'].sort((a, b) => PAGE.search(new RegExp('\\n(const|function) ' + a + '\\b')) - PAGE.search(new RegExp('\\n(const|function) ' + b + '\\b'))).map(constant).join('\n  ') + '\n  var mp = {');   // (in the page's order: they use each other)
 host = host.replace('/* PAGE-METHODS */', ['rnReg', 'rnDraw', 'rnOpt', 'rnLayer', 'tightBB', 'rnTex'].map((n) => method(n) + ',').join('\n    '));
 scripts.push(['house-draw.js', host]);
 const files = {};

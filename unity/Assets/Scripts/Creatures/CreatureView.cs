@@ -52,7 +52,7 @@ namespace SquishSquad.Creatures
             mesh.SetVertices(new[] { new Vector3(0, 0, 0), new Vector3(w, 0, 0), new Vector3(w, -h, 0), new Vector3(0, -h, 0) });
             mesh.SetUVs(0, new[] { new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0) });
             mesh.SetTriangles(new[] { 0, 1, 2, 0, 2, 3 }, 0);
-            gameObject.AddComponent<MeshFilter>().sharedMesh = mesh;
+            gameObject.AddComponent<MeshFilter>().sharedMesh = mesh; _mesh = mesh; _qk = k; _pad = pad;
             _mr = gameObject.AddComponent<MeshRenderer>();
             _show = new Material(Resources.Load<Shader>("VectorShaders/VectorShow")) { hideFlags = HideFlags.HideAndDontSave, mainTexture = _rt };
             _mr.sharedMaterial = _show;
@@ -61,6 +61,18 @@ namespace SquishSquad.Creatures
         }
 
         public void Play(string move) => _rig?.Play(move);
+
+        Mesh _mesh; float _qk, _clip = -1; int _pad;
+        /// <summary>Cuts the picture off below a line `frac` of the box down from its top (the beach's wading: the
+        /// page's clip-path inset(0 0 ins px 0)); a negative frac shows it all.</summary>
+        public void ClipBottom(float frac)
+        {
+            if (_mesh == null || frac == _clip) return; _clip = frac;
+            float w = _rtSize * _qk, cut = frac < 0 ? _rtSize : Mathf.Clamp(_pad + frac * _size, 0, _rtSize), h = cut * _qk, v = 1 - cut / _rtSize;
+            _mesh.SetVertices(new[] { new Vector3(0, 0, 0), new Vector3(w, 0, 0), new Vector3(w, -h, 0), new Vector3(0, -h, 0) });
+            _mesh.SetUVs(0, new[] { new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, v), new Vector2(0, v) });
+            _mesh.RecalculateBounds();
+        }
 
         /// <summary>Switches to other frames (a recorded clip), from their start.</summary>
         public void SetFrames(IRigFrames rig) { _rig = rig; _last = null; _t0 = Time.realtimeSinceStartup; }

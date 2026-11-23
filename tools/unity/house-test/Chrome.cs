@@ -170,9 +170,12 @@ static class ActCheck
         var walk = new HouseWalk(walkJson);
         var sim = new HouseCreatures(hs, walk);
         sim.SetMoves(walkJson);
-        var page = new Queue<double>(); var hw = new Queue<double>();
-        foreach (List<object> e in T.Arr("rng")) { string k = (string)e[0]; double v = (double)e[2]; if (k == "house-page") page.Enqueue(v); else if (k == "house-walk.js") hw.Enqueue(v); }
-        sim.Rand = () => page.Count > 0 ? page.Dequeue() : throw new Exception("out of page draws");
+        var page = new Queue<double>(); var hw = new Queue<double>(); var bq = new Queue<double>();
+        foreach (List<object> e in T.Arr("rng")) { string k = (string)e[0]; double v = (double)e[2]; if (k == "house-page") page.Enqueue(v); else if (k == "house-walk.js") hw.Enqueue(v); else if (k == "beach.js") bq.Enqueue(v); }
+        var used = new List<string>();
+        sim.Rand = () => { used.Add(new System.Diagnostics.StackTrace().GetFrame(1)?.GetMethod()?.Name); return page.Count > 0 ? page.Dequeue() : throw new Exception("out of page draws: " + string.Join(" ", used.GetRange(Math.Max(0, used.Count - 8), Math.Min(8, used.Count)))); };
+        if (T.Obj("start")["bsh"] is List<object> bsh0) { hs.H["bsh"] = bsh0; hs.H["uid"] = hs.H.Num("uid") + bsh0.Count; sim.BshAt = T.Obj("start").Num("bshAt"); }
+        sim.RandB = () => bq.Count > 0 ? bq.Dequeue() : throw new Exception("out of beach draws");
         walk.Rand = () => hw.Count > 0 ? hw.Dequeue() : throw new Exception("out of walk draws");
         var fq = new Queue<bool>(); foreach (var o in T.Arr("fidg")) fq.Enqueue(HouseJson.Truthy(o));
         sim.Fidg = c => fq.Count > 0 && fq.Dequeue();
@@ -228,7 +231,7 @@ static class ActCheck
                 else { var c = sim.Cs.Find(x => x.Key == (string)e[2]); sim.OnRig(c, (string)e[3], sim.Last); }
             }
             ticks++;
-            sim.Tick(fr.Num("last"));
+            try { sim.Tick(fr.Num("last")); } catch (Exception ex) { Console.WriteLine($"acts: frame {f} threw {ex.Message}; the first difference before: {first ?? "none"}; C# draws: {string.Join(" ", used.GetRange(0, Math.Min(12, used.Count)))}"); return 1; }
             // the pieces' runtime states (rst: TV channel, playing, toaster...)
             foreach (var id in (fr.Obj("rst") ?? new JObj()).Keys)
             {
@@ -277,7 +280,7 @@ static class ActCheck
                 var why = new List<string>();
                 void Num(string n, double a, double b) { if (Math.Abs(a - b) > 1e-6) why.Add($"{n} {a} vs {b}"); }
                 void Str(string n, string a, string b) { if (a != b) why.Add($"{n} {a} vs {b}"); }
-                Num("x", c.X, o.Num("x")); Num("y", c.Y, o.Num("y")); Num("spin", c.Spin, o.Num("spin")); Num("lift", c.Lift, o.Num("lift")); Num("liftTo", c.LiftTo, o.Num("liftTo"));
+                Num("x", c.X, o.Num("x")); Num("tx", c.Tx, o.Num("tx")); Num("ty", c.Ty, o.Num("ty")); Num("wk", c.Wk, o.Num("wk")); Num("ph", c.Ph, o.Num("ph")); Num("y", c.Y, o.Num("y")); Num("spin", c.Spin, o.Num("spin")); Num("lift", c.Lift, o.Num("lift")); Num("liftTo", c.LiftTo, o.Num("liftTo"));
                 Str("mode", c.Mode, o.Str("mode")); Str("seat", c.Seat, o.Str("seat")); Str("useItem", c.UseItem, o.Str("useItem")); Str("wSt", c.WSt, o.Str("wSt")); Str("napSt", c.NapSt, o.Str("napSt"));
                 Num("z", c.Z ?? -1, o["z"] is double zz ? zz : -1); Num("useEnd", c.UseEnd, o.Num("useEnd")); Num("eatEnd", c.EatEnd, o.Num("eatEnd"));
                 foreach (var k in new[] { "h", "c", "e", "f" }) Num("N." + k, c.N[k], o.Obj("N").Num(k));

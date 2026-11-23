@@ -12,6 +12,9 @@
 //                                           surfaces sf ({ slot: id, lx, lz }) and its doors' lock levels ({ to: lv })
 //   __house.tex(id)                         a renovated surface's textures, as the export's tex.json entry (pictures as
 //                                           SVG text; stage 6)
+//   __house.beach(o)                        the Beach's scene for o = { season, night, sand, pier, light } (defs, body:
+//                                           SVG with SMIL), its props, the shells, the fishing sign, the board and the rod
+//                                           (stage 10): JSON
 //   __house.map(st)                         the house map's values (the page's mapVals, natMap, lockVals; stage 8) for
 //                                           st = { lvl, cur, open: [rooms], b0: { room: shell colour }, cs: [{ key,
 //                                           name, room, N }], season, mapHov, mapGo, mapIn }: JSON
@@ -101,6 +104,12 @@
         fW: D0.fW || 0, fWR: D0.fWR || 0, ceilRoom: !!D0.ceilRoom, ceilBase: D0.ceilBase || '', ceilTrim: D0.ceilTrim || '', wallOne: uri(D0.wallOne || ''), wallOneR: uri(D0.wallOneR || ''), wallOneFull: !!D0.wallOneFull, wallRnd: uri(D0.wallRnd || ''),
         floorRoom: D0.floorRoom ? { bg: D0.floorRoom.bg, layers: D0.floorRoom.layers.map(function (l) { return Object.assign({}, l, { url: uri(l.url) }); }) } : null, ylRoom: uri(D0.ylRoom || ''), win19: !!D0.win19, src: uri(D0.src || ''),
         wallL: D0.wallL || '', wallR: D0.wallR || '', wallRoom: D0.wallRoom || '', fH: D0.fH || 0 });
+    },
+    beach: function (oJson) {
+      var BE = G.Beach; if (!BE) return 'null'; var o = JSON.parse(oJson || '{}'); BE.setSeason(o.season);
+      var dec = function (u) { u = String(u || ''); return u.indexOf('data:image/svg+xml,') === 0 ? decodeURIComponent(u.slice(19)) : u; };
+      var sc = BE.scene(o), props = BE.props({ season: o.season }).map(function (q) { return { id: q.id, x: q.x, y: q.y, w: q.w, h: q.h, ax: q.ax, ay: q.ay, src: dec(q.src) }; });
+      return JSON.stringify({ defs: sc.defs, body: sc.body, props: props, shells: [0, 1, 2, 3, 4].map(function (k) { return dec(BE.shellSvg(k)); }), fish: dec(FISHB), board: BOARDH, rod: RODH });
     },
     map: function (stJson) {
       var st = JSON.parse(stJson), open = {}; (st.open || []).forEach(function (r) { open[r] = 1; });

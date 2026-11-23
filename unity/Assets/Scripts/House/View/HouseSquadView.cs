@@ -21,11 +21,19 @@ namespace SquishSquad.House.View
             public GameObject Root;
             public CreatureView Rig;
             public IHouseRig Live;
-            public UiPiece Still, Floor, Tag, Say;
+            public UiPiece Still, Floor, Tag, Say, Board, Rod, Ring;
             public string TagFor, SayFor;
             public float K0, StillW, StillH;
         }
 
+        const string RingSvg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"76\" height=\"16\" viewBox=\"0 0 76 16\"><defs><radialGradient id=\"bw\"><stop offset=\"0\" stop-color=\"rgb(150,225,245)\" stop-opacity=\"0.6\"/><stop offset=\"1\" stop-color=\"rgb(150,225,245)\" stop-opacity=\"0.12\"/></radialGradient></defs><ellipse cx=\"38\" cy=\"8\" rx=\"36.75\" ry=\"6.75\" fill=\"url(#bw)\" stroke=\"rgba(255,255,255,0.9)\" stroke-width=\"2.5\"/></svg>";
+        static UiPiece Gear(One o, UiPiece p, string what, bool on, int order, Affine box)
+        {
+            if (!on) { if (p != null) p.Visible = false; return p; }
+            var svg = HouseBeachView.Data?.Str(what); if (svg == null) return p;
+            if (p == null) { p = UiPiece.Create(o.Root.transform, what, order); p.SetSvg(svg.Replace("<svg ", "<svg xmlns=\"http://www.w3.org/2000/svg\" "), 120, 120, 30); }
+            p.Visible = true; p.Order = order; p.Transform = box; return p;
+        }
         readonly Transform _parent;
         readonly HouseCreatures _sim;
         readonly Dictionary<HouseCreature, One> _all = new Dictionary<HouseCreature, One>();
@@ -129,6 +137,21 @@ namespace SquishSquad.House.View
                 bool sel = _sim.SelC == c;
                 o.Floor.SetSvg(FloorSvg(sel), 120, 120, 30);
                 o.Floor.Transform = Box(); o.Floor.Order = order + 1;
+                // the beach (bWet, bGear): wading cuts him off at the water line (20 + 18 x depth px of his box) with a
+                // ring of water there and no shadow; the board under him, the rod in front
+                bool wet = c.Wet && !c.Rsw; double ins = wet ? Math.Round(20 + 18 * c.Wd) : 0;
+                o.Rig?.ClipBottom(wet ? (float)((120 - ins) / 120) : -1);
+                o.Floor.Opacity = wet ? 0 : 1;
+                if (wet)
+                {
+                    if (o.Ring == null) { o.Ring = UiPiece.Create(o.Root.transform, "ring", 0); o.Ring.SetSvg(RingSvg, 76, 16, 4); }
+                    double ru = now % 2200 / 1100, re = ru > 1 ? 2 - ru : ru; re = re * re * (3 - 2 * re);
+                    o.Ring.Visible = true; o.Ring.Order = order + 3;
+                    o.Ring.Transform = Box() * Affine.Translate(60, 120 - ins) * Affine.ScaleBy(0.94 + 0.12 * re, 0.88 + 0.22 * re) * Affine.Translate(-38, -8);
+                }
+                else if (o.Ring != null) o.Ring.Visible = false;
+                o.Board = Gear(o, o.Board, "board", c.Gear == "board", order + 1, Box());
+                o.Rod = Gear(o, o.Rod, "rod", c.Gear == "rod", order + 3, Box());
                 if (o.Rig != null)
                 {
                     var t = o.Root.transform;

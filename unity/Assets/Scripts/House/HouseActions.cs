@@ -245,7 +245,7 @@ namespace SquishSquad.House
             var G = S.Geo;
             if (Ac.Kind == "toggle") { Toggle(id, now); return; }
             var c = SelC; if (c == null) { Toast("Tap a friend first"); return; }
-            if (Ac.Kind == "beach") return;   // (stage 10)
+            if (Ac.Kind == "beach") { BAct(id, c, now); return; }
             if (Ac.Kind == "dance") { Leave(c, false, now); c.Moving = false; c.Mode = "dance"; Play(c, "dance"); Say(c, "Party!", now); return; }
             var items = RoomItems();
             if (Ac.Kind == "snug") { SnugAct(c, now); return; }
@@ -344,7 +344,7 @@ namespace SquishSquad.House
         void Used(HouseCreature c, string id, HouseAct Ac, JObj it, bool inside, double uh, double s0, double tx, double ty)
         {
             double now = Last; var G = S.Geo;
-            if (Ac.Fn != null) { c.X = tx; c.Y = ty; return; }   // (bSurf: the beach, stage 10)
+            if (Ac.Fn != null) { c.X = tx; c.Y = ty; if (Ac.Fn == "bSurf") BSurf(c, it, now); return; }
             c.X = tx; c.Y = ty; c.Face = inside ? 0 : FaceTo(c, it); c.Mode = Ac.Mode; c.UseItem = it.Str("id"); c.UseA = Ac;
             if (inside) c.Z = Math.Round(it.Num("y"), MidpointRounding.AwayFromZero) + 1;
             if (uh != 0) c.LiftTo = uh * G.FS * G.CA * s0;
@@ -460,6 +460,7 @@ namespace SquishSquad.House
                 if ((c.Mode == "splash" || c.Mode == "bath") && c.WSt == null) c.Oy = Math.Sin(now * 0.004 + c.I) * 1.6;
                 else if (c.Mode == "bounce" && c.WSt == null) c.Oy = -Math.Abs(Math.Sin(now * 0.006)) * 26;
             }
+            if (OnBeach) BStep(c, now, dt);
             MvStep(c, now);
             if (c.UseEnd != 0 && now >= c.UseEnd) FinishUse(c, now);
             if (c.BowlEnd != 0 && now >= c.BowlEnd) BowlDone(c, now);
