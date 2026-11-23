@@ -92,6 +92,33 @@ namespace SquishSquad.House
             catch (Exception) { return null; }
         }
 
+        /// <summary>The room's shell (House3D.shell: walls, floor, ceiling light) for its surfaces `sf` ({ slot: id, lx,
+        /// lz }) and its doors' lock levels, or null (stage 6: a moved or resized light, a new surface).</summary>
+        public static JObj Shell(string room, JObj sf, JObj locks)
+        {
+            if (!Ready()) return null;
+            try { Geo(room); return HouseJson.Parse(Eval("__house.shell(" + Q(room) + ", " + Q(HouseJson.Stringify(sf)) + ", " + Q(HouseJson.Stringify(locks)) + ")")) as JObj; }
+            catch (Exception) { return null; }
+        }
+
+        static readonly string[] TexPics = { "wall", "wallS", "board", "floor", "ceil", "fence", "fenceR", "wallOne", "wallOneR", "wallRnd", "ylRoom", "src" };
+
+        /// <summary>A renovated surface's textures in the export's tex.json form (pictures by name in Pics), or null.</summary>
+        public static JObj Tex(string id, string room)
+        {
+            if (!Ready()) return null;
+            try
+            {
+                Geo(room);
+                var o = HouseJson.Parse(Eval("__house.tex(" + Q(id) + ")")) as JObj; if (o == null) return null;
+                string P(string v) => v != null && v.StartsWith("<") ? Pic(v) : v ?? "";   // (colours stay as they are)
+                foreach (var k in TexPics) o[k] = P(o.Str(k));
+                if (o.Obj("floorRoom")?.Arr("layers") is List<object> L) foreach (var l in L) if (l is JObj lj) lj["url"] = P(lj.Str("url"));
+                return o;
+            }
+            catch (Exception) { return null; }
+        }
+
         /// <summary>House3D.render's box, paths and gradients for a piece (its gradients go into `grads`), or null.</summary>
         public static JObj Render(string t, double r, double c, string v, string room, JObj grads)
         {

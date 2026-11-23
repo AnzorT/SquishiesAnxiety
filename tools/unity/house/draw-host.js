@@ -8,12 +8,16 @@
 //   __house.variant(id, st, txt, rot)       a renovation piece's drawing: JSON { src, srcF, whole (SVG text or ''),
 //                                           bb, tb, top } (rot null: the page's default angle)
 //   __house.render(t, r, c, v)              House3D.render's box, paths and gradients: JSON (registers 'R:' pieces)
+//   __house.shell(rk, sf, locks)            House3D.shell: the room's shell (walls, floor, ceiling light) for the room's
+//                                           surfaces sf ({ slot: id, lx, lz }) and its doors' lock levels ({ to: lv })
+//   __house.tex(id)                         a renovated surface's textures, as the export's tex.json entry (pictures as
+//                                           SVG text; stage 6)
 (function (G) {
   'use strict';
   /* PAGE */
   var X = G.House3D, RD = G.RenoDraw;
   var sh = {
-    X: X, SZ: { a: {} }, rows: [], byId: new Map(),
+    X: X, SZ: { a: {} }, rows: [], byId: new Map(), texC: {},
     /* PAGE-METHODS */
   };
   function uri(u) {
@@ -52,6 +56,8 @@
       geo0 = X.RM ? { s: X.RM.s, e: X.RM.e, b: X.BIG } : null;
       Object.keys(X.SZDEF || {}).forEach(function (a) { X.setSize(a, X.SZDEF[a]); });
       sh.SZ.a = Object.assign({}, X.SZDEF || {});
+      // the page's initH: windows and art on the walls are renovation pieces now, not part of the shell
+      (X.RKEYS || []).forEach(function (rk) { var R = X.ROOMS[rk]; if (!R || R.out || R._w31) return; R._w31 = 1; R.winX0 = R.winX; R.winX = null; R.artX0 = R.artX; R.artX = null; R.fixed = (R.fixed || []).filter(function (a) { return a[0] === 'hwin'; }); });
       for (var i = 0; i < RCSV.length; i++) {
         var t = G.__readFile ? G.__readFile(RCSV[i]) : null; if (!t) continue;
         var rows = RD.edit(RD.parseCSV(t)).filter(function (x) { return RMAP[x.room] && !/Doorway|Club Entrance|Entry & Divider/.test(x.slotName); });
@@ -75,6 +81,17 @@
       var grads = {}; (R.gids || []).forEach(function (g) { var q = X._GR && X._GR.get(g); if (q) grads[g] = plain(q); });
       var D = X.CAT[t] || {};
       return JSON.stringify({ bb: R.bb, vb: R.vb, gids: R.gids, back: D.reno ? [] : plain(R.back), part: D.reno ? [] : plain(R.part), front: D.reno ? [] : plain(R.front), glow: R.glow || null, face: R.face, shadow: R.shadow, contact: R.contact, foot: R.foot, grads: grads });
+    },
+    shell: function (rk, sf, locks) {
+      var L = JSON.parse(locks || '{}'), Sh = X.shell(rk, JSON.parse(sf || '{}'), function (to) { return L[to] || 0; });
+      return Sh ? JSON.stringify(plain(Sh)) : 'null';
+    },
+    tex: function (id) {
+      var r = sh.byId.get(id); if (!r) return 'null'; var D0 = sh.rnDraw(r, 0) || {}, T = function (k) { return uri(sh.rnTex(id, k)); };
+      return JSON.stringify({ wall: T('wall'), wallS: T('wallS'), board: T('board'), floor: T('floor'), ceil: T('ceil'), fence: T('fence'), fenceR: T('fenceR'),
+        fW: D0.fW || 0, fWR: D0.fWR || 0, ceilRoom: !!D0.ceilRoom, ceilBase: D0.ceilBase || '', ceilTrim: D0.ceilTrim || '', wallOne: uri(D0.wallOne || ''), wallOneR: uri(D0.wallOneR || ''), wallOneFull: !!D0.wallOneFull, wallRnd: uri(D0.wallRnd || ''),
+        floorRoom: D0.floorRoom ? { bg: D0.floorRoom.bg, layers: D0.floorRoom.layers.map(function (l) { return Object.assign({}, l, { url: uri(l.url) }); }) } : null, ylRoom: uri(D0.ylRoom || ''), win19: !!D0.win19, src: uri(D0.src || ''),
+        wallL: D0.wallL || '', wallR: D0.wallR || '', wallRoom: D0.wallRoom || '', fH: D0.fH || 0 });
     },
     // a renovation piece's registered table entry (the C# piece table's row, for pieces the export didn't have)
     piece: function (id) { var A = reg(id); return A ? JSON.stringify(plain(A)) : 'null'; },

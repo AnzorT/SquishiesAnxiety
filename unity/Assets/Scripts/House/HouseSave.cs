@@ -373,7 +373,7 @@ namespace SquishSquad.House
         static double Plus(object v) => v is double d ? d : v is string s && double.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var x) ? x : v is bool b ? (b ? 1 : 0) : v == null ? 0 : double.NaN;
         static double OrOne(double v) => v != 0 && !double.IsNaN(v) ? v : 1;
         public double SzOf(JObj it) { if (!CanSize(it)) return 1; var L = SzLim(it); return Math.Max(SzMin(it), Math.Min(Math.Min(L[0], L[1]), OrOne(it.Has("sz") ? Plus(it["sz"]) : double.NaN))); }
-        double SzAx(JObj it, string a, double L) { object v = it[a] ?? it["sz"]; var n = v == null || v == HouseJson.Undefined ? 1 : OrOne(Plus(v)); return Math.Max(SzMin(it), Math.Min(L, n)); }
+        public double SzAx(JObj it, string a, double L) { object v = it[a] ?? it["sz"]; var n = v == null || v == HouseJson.Undefined ? 1 : OrOne(Plus(v)); return Math.Max(SzMin(it), Math.Min(L, n)); }
         public double[] SzXY(JObj it)
         {
             if (!CanSize(it)) return new double[] { 1, 1 };

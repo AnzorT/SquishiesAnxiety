@@ -39,6 +39,7 @@ namespace SquishSquad.House
             if (p != null) { var o = (JObj)HouseJson.Parse(p); d.Variants = o.Obj("variants"); d.Renders = o.Obj("renders"); d.Grads = o.Obj("grads"); d.Pics = o.Obj("pics"); d.Gls = o.Obj("gls") ?? new JObj(); d.Foods = o.Arr("foods") ?? new List<object>(); }
             var s = load("shells"); if (s != null) d.Shells = (JObj)HouseJson.Parse(s);
             var t = load("tex"); if (t != null) d.Tex = (JObj)HouseJson.Parse(t);
+            var e = load("edit"); if (e != null) d.Edit = (JObj)HouseJson.Parse(e);
             return d;
         }
 
@@ -46,6 +47,16 @@ namespace SquishSquad.House
         public JObj Row(string id) => id != null && ById.TryGetValue(id, out var r) ? r : null;
         /// <summary>X.CAT[t]: a renovation piece ('R:&lt;id&gt;') as rnReg registered it, or a legacy house4 piece.</summary>
         public JObj CatOf(string t) => t == null ? null : Pieces.Obj(t) ?? Legacy.Obj(t);
+        // Renovate's tables (stage 6, edit.json): RMAP, the short names, the surfaces' names, the lights SPEC knows, the
+        // rows' toolbox tabs (rnSlot), the edit UI's pieces
+        public JObj Edit = new JObj();
+        public string RMap(string code) => Edit.Obj("rmap")?.Str(code);
+        /// <summary>SN: a row's short name (RenoShort), else its name.</summary>
+        public string ShortName(JObj r) => r == null ? "" : Edit.Obj("short")?.Str(r.Str("id")) ?? r.Str("name") ?? "";
+        public string SurfName(string id) => Edit.Obj("surfN")?.Str(id);
+        public bool Spec(string id) => Edit.Arr("spec")?.Contains(id) == true;
+        public string SlotOf(JObj r) => r == null ? null : Edit.Obj("slot")?.Str(r.Str("id"));
+
         public List<string> SlotsOf(string rk) => Room(rk).Truthy("out") ? SlotsOut : SlotsIn;
     }
 }

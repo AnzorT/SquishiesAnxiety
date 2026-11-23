@@ -36,6 +36,7 @@ namespace SquishSquad.House
         /// <summary>The pose he holds while getting off something (keep: lift, facing, z, the seat) until a time.</summary>
         public sealed class KeepPose { public double Lift, Face, Until; public double? Z; public string Seat; }
         public KeepPose Keep;
+        public EditHold ReHold;   // (stage 6: held off a piece being edited)
     }
 
     public sealed class HouseParticle { public string Type, Glyph, Color; public double X, Y, Born, Sx, Size, Ms; }
@@ -142,7 +143,7 @@ namespace SquishSquad.House
 
         static (double, double) Pt(List<object> a) => ((double)a[0], (double)a[1]);
 
-        JObj Shell(string rk) => S.D.Shells.Obj(new RoomModel(S).ShellKey(rk));
+        JObj Shell(string rk) => new RoomModel(S).ShellOf(rk);
 
         List<JObj> RoomItems(string rk = null)
         {

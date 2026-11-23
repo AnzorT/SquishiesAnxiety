@@ -23,6 +23,8 @@ namespace SquishSquad.House
         public string Season = "rainy";
 
         public RoomModel(HouseSave s) { S = s; D = s.D; G = s.Geo; }
+        /// <summary>Renovate (stage 6): every piece's footprint shown dashed, the selected one stronger (hl, sel, hfo).</summary>
+        public bool EditOn; public string ESel;
 
         const string GIF = "gif:empty";   // the page's transparent 1 x 1 gif: no picture
         static double R1(double v) => HouseGeo.JsRound(v * 10) / 10;
@@ -37,24 +39,40 @@ namespace SquishSquad.House
         public static string Shade(string h, double k) { var c = Hx(h); var o = new double[3]; for (int i = 0; i < 3; i++) o[i] = k <= 1 ? c[i] * k : c[i] + (255 - c[i]) * (k - 1); return Th(o); }
 
         // ---- the shell ----
-        public string ShellKey(string rk)
+        public string ShellKey(string rk) => ShellKey(rk, out _, out _);
+
+        /// <summary>The shell's key (as the export keys shells.json), with the surfaces and door locks it's drawn from.</summary>
+        public string ShellKey(string rk, out JObj sf, out JObj lockOf)
         {
             var H = S.H; var RT = H.Obj("rtex")?.Obj(rk) ?? new JObj();
-            var sf = new JObj(); if (H.Obj("surf")?[rk] is JObj s0) foreach (var k in s0.Keys) sf[k] = s0[k];
+            sf = new JObj(); if (H.Obj("surf")?[rk] is JObj s0) foreach (var k in s0.Keys) sf[k] = s0[k];
             if (RT.Truthy("wall")) sf["wall"] = "w_plaster"; if (RT.Truthy("floor")) sf["floor"] = "f_oak"; if (RT.Truthy("fence") && rk == "backyard") sf["fence"] = "y_hedge";
             var lx = H.Obj("lx")?[rk]; if (lx != null) sf["lx"] = lx;
             var lz = H.Obj("lz")?[rk]; if (HouseJson.Truthy(lz) && !(lz is double z && z == 1)) sf["lz"] = lz;
-            var R = D.Room(rk); var locks = new List<string>();
-            foreach (var d in R.Arr("doors")) { var to = ((JObj)d).Str("to"); var R2 = D.Room(to); locks.Add(R2 != null && S.Level < R2.Num("unlock") ? HouseJson.JsString(R2["unlock"]) : "0"); }
+            var R = D.Room(rk); var locks = new List<string>(); lockOf = new JObj();
+            foreach (var d in R.Arr("doors")) { var to = ((JObj)d).Str("to"); var R2 = D.Room(to); double lv = R2 != null && S.Level < R2.Num("unlock") ? R2.Num("unlock") : 0; lockOf[to] = lv; locks.Add(lv != 0 ? HouseJson.JsString(R2["unlock"]) : "0"); }
             var vals = new List<string>(); foreach (var sl in D.SlotsOf(rk)) vals.Add(HouseJson.JsString(HouseJson.Or(sf[sl], D.Def[sl])));
             double kf = HouseGeo.BIGR.TryGetValue(rk, out var k0) ? k0 : 1;
             var win = sf["win"] as string;
             return rk + "|" + string.Join(",", vals) + "|" + string.Join(",", locks) + "|" + HouseJson.JsString(kf) + "|" + (sf["lx"] != null ? HouseJson.JsString(sf["lx"]) : "") + "|" + HouseJson.JsString(HouseJson.Or(sf["lz"], 1.0)) + "|" + (win != null && D.WinIr.Contains(win) ? "ir" : "");
         }
 
+        /// <summary>The room's shell: the export's, else drawn at runtime (HouseDraw.Shell) and kept under its key.</summary>
+        public JObj ShellOf(string rk)
+        {
+            var key = ShellKey(rk, out var sf, out var locks); var sh = D.Shells.Obj(key);
+            if (sh == null && (sh = HouseDraw.Shell(rk, sf, locks)) != null) D.Shells[key] = sh;
+            return sh;
+        }
+
         bool RnFixed(string rk) { var RT = S.H.Obj("rtex")?.Obj(rk); return RT != null && (RT.Truthy("wall") || RT.Truthy("floor")); }
 
-        JObj TexOf(string id) => id == null ? null : D.Tex.Obj(id);
+        JObj TexOf(string id)
+        {
+            if (id == null) return null; var t = D.Tex.Obj(id);
+            if (t == null && (t = HouseDraw.Tex(id, S.Cur)) != null) D.Tex[id] = t;
+            return t;
+        }
         string T(string id, string k) { var t = TexOf(id); var v = t?.Str(k); if (id != null && t == null) Missing.Add("tex " + id); return string.IsNullOrEmpty(v) ? GIF : v; }
 
         // rtVals: the renovated wall / floor / ceiling / fence / ground / yard lights
@@ -97,7 +115,7 @@ namespace SquishSquad.House
         static string FenceHtml(JObj t) { var H = t.Num("fH") != 0 ? t.Num("fH") : 56; return "<g transform=\"matrix(-0.3125 0.50625 0 1 100 " + HouseJson.JsString(100 - H) + ")\">" + t.Str("wallL") + "</g><g transform=\"matrix(0.3125 0.50625 0 1 752 " + HouseJson.JsString(100 - H) + ")\">" + t.Str("wallR") + "</g>"; }
 
         // ---- pieces ----
-        double Elev(JObj it)
+        public double Elev(JObj it)
         {
             var A = D.CatOf(it.Str("t")); if (A == null) return 0;
             if (A.Truthy("mount")) return it["e"] is double e ? e : A["elev"] is double e2 ? e2 : 60;
@@ -107,7 +125,7 @@ namespace SquishSquad.House
         double ZkY(JObj it) { var A = D.CatOf(it.Str("t")); return A != null && !A.Truthy("mount") && S.CanSize(it) ? S.SzXY(it)[1] : 1; }
         public double LiftPx(JObj it) => Elev(it) * G.FS * G.CA * G.SAt(it.Num("y"));
         List<object> items;
-        JObj Find(string id) { foreach (var o in items) if (o is JObj j && j.Str("id") == id) return j; return null; }
+        JObj Find(string id) { foreach (var o in items ?? S.H.Obj("rooms")?[S.Cur] as List<object> ?? new List<object>()) if (o is JObj j && j.Str("id") == id) return j; return null; }
 
         JObj Variant(JObj A, JObj it)
         {
@@ -141,8 +159,8 @@ namespace SquishSquad.House
         {
             G.SetRoom(cur);
             var H = S.H; items = H.Obj("rooms")?[cur] as List<object> ?? new List<object>();
-            var key = ShellKey(cur); var sh = D.Shells.Obj(key);
-            if (sh == null) { Missing.Add("shell " + key); return null; }
+            var sh = ShellOf(cur);
+            if (sh == null) { Missing.Add("shell " + ShellKey(cur)); return null; }
             bool night = cur == "beach" ? H.Obj("night").Truthy("bedroom") : H.Obj("night").Truthy(cur);
             var fo = sh.Arr("fop") ?? L(0.0, 0.0, 0.4);
             var GS = new List<string>(); var outItems = new List<object>();
@@ -170,6 +188,8 @@ namespace SquishSquad.House
                 f["shadow"] = lf > 0.5 || A.Truthy("noShad") ? "" : shP; f["contact"] = lf > 0.5 || A.Truthy("flat") || A.Truthy("noShad") ? "" : ctP;
                 f["sg"] = O("on", false); f["foot"] = R["foot"]; f["sel"] = false; f["hl"] = false; f["hfo"] = 0.16; f["cur"] = A.Truthy("act") ? "pointer" : "default";
                 if (A.Has("reno")) RnItem(f, A, it, bb); else { f["isImg"] = false; f["src"] = ""; f["srcF"] = ""; f["hasSrcF"] = false; f["kind"] = ""; f["snk"] = L(); }
+                WallSel(f, A);
+                bool sel = EditOn && ESel != null && ESel == it.Str("id"); f["sel"] = sel; f["hl"] = EditOn; f["hfo"] = sel ? 0.34 : 0.16;
                 outItems.Add(f);
             }
             // toys
@@ -211,6 +231,28 @@ namespace SquishSquad.House
         static string JsFixed0(double v) => HouseJson.JsString(Math.Abs(v) < 1e21 ? double.Parse(v.ToString("F0", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture) : v);
 
         double food;
+        // wallSel: a wall piece's dashed edit box goes round what it draws on the wall (not a strip under it)
+        static void WallSel(JObj o, JObj A)
+        {
+            if (!A.Truthy("mount") || A.Str("rL") == "ceil") return;
+            double P = 4; double[] T = o.Arr("tb") is List<object> tl ? new[] { (double)tl[0], (double)tl[1], (double)tl[2], (double)tl[3] }
+                : o.Truthy("isImg") && o.Num("iw") > 1 ? new[] { o.Num("ix"), o.Num("iy"), o.Num("iw"), o.Num("ih") } : new[] { o.Num("bx"), o.Num("by"), o.Num("bw"), o.Num("bh") };
+            double x = T[0] - P, y = T[1] - P, w = T[2] + 2 * P, h = T[3] + 2 * P, R = Math.Min(10, Math.Min(w / 6, h / 6));
+            string F(double v) => HouseJson.JsString(R1(v));
+            o["foot"] = "M" + F(x + R) + " " + F(y) + "H" + F(x + w - R) + "Q" + F(x + w) + " " + F(y) + " " + F(x + w) + " " + F(y + R) + "V" + F(y + h - R) + "Q" + F(x + w) + " " + F(y + h) + " " + F(x + w - R) + " " + F(y + h)
+                + "H" + F(x + R) + "Q" + F(x) + " " + F(y + h) + " " + F(x) + " " + F(y + h - R) + "V" + F(y + R) + "Q" + F(x) + " " + F(y) + " " + F(x + R) + " " + F(y) + "Z";
+        }
+
+        /// <summary>lhVals: the ceiling light's drag handle in Renovate (room px; on false: none).</summary>
+        public (bool on, double x, double w, double h) LightHandle(string rk, bool ed)
+        {
+            var R = D.Room(rk); var sh = ShellOf(rk);
+            if (!ed || R == null || sh == null || sh.Truthy("out") || sh.Truthy("beach") || !(R["lightX"] is double) || !sh.Truthy("light") || sh.Str("light") == "none") return (false, 0, 0, 0);
+            double lz = S.H.Obj("lz")?[rk] is double z && z != 0 ? z : 1, w = (sh.Str("light") == "truss" ? 236 : sh.Str("light") == "laser" ? 200 : 76) * lz;
+            double lx = S.H.Obj("lx")?[rk] is double v ? v : R.Num("lightX");
+            return (true, lx, w, 6 + 66 * lz);
+        }
+
         void RnItem(JObj o, JObj A, JObj it, JObj rbb)
         {
             var V = Variant(A, it); bool sp = S.CanSpin(it);
@@ -223,6 +265,7 @@ namespace SquishSquad.House
             double bx = Math.Min(Rx, x0), by = Math.Min(Ry, iy), bw = Math.Max(Rx + Rw, x0 + iw) - bx, bh = Math.Max(Ry + Rh, iy + ih) - by;
             double[] tb = null; var tbA = V?.Arr("tb"); if (A.Truthy("mount") && tbA != null) tb = new[] { (double)tbA[0] * f, (double)tbA[1] * f, (double)tbA[2] * f, (double)tbA[3] * f };
             S.SzBx[it.Str("id")] = A.Truthy("mount") && A.Str("rL") != "ceil" && tb != null ? tb : new[] { bx, by, bw, bh };
+            if (tb != null) o["tb"] = L(tb[0], tb[1], tb[2], tb[3]);
             string src = V?.Str("src") ?? "", srcF = V?.Str("srcF") ?? "";
             o["isImg"] = true; o["hasSrc"] = (V?.Str("whole") ?? "") != ""; o["src"] = src; o["srcF"] = srcF; o["hasSrcF"] = srcF != "";
             o["ix"] = ix; o["iy"] = iy; o["iw"] = iw; o["ih"] = ih; o["flip"] = fl ? "scale(-1 1)" : "";

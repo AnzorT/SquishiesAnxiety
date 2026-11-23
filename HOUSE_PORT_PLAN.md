@@ -95,6 +95,23 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    ride seat sway and other animated house4 parts (clock, fish, pulse), SMIL pieces as flipbooks, the robot vacuum's run
    (VacBot), the disco lights, a piece's own redraw instead of the whole room's, the toy's spin.
 6. Edit mode: drag, wall snap, rotate, resize, store, signs, ceiling lights. Verify: H JSON after each step.
+   **Done (logic, UI) except signs.** `House/HouseEdit.cs`: itemDown in Renovate, dragMove / dragFloor / wallPose /
+   dragWall / dragSmall (onto hosts' tops) / dragEnd, szFit / minE / szWall, rotSet (the 0..360 slider), editRot,
+   editSize (one size, width x height), editStore, freeCount, placeNew, edHold / edBack (friends held off a piece being
+   edited and put back), the ceiling light (lightDown / move / up, lightSize, lightStore, lightBack, back to the middle),
+   the toolbox's tray and tabs (trayVals, rnSlot, useRSurf). Runtime drawing grew the room's shell (House3D.shell: a moved
+   or resized light, new surfaces) and the renovated surfaces' textures (`__house.shell`, `__house.tex`; draw-check:
+   all 17 shells and 10 textures equal). `tools/unity/house/export-edit.mjs` -> `Resources/House/edit.json` + `edit/`:
+   RMAP, short names, surface names, SPEC lights, every row's tab, and the edit UI's fixed pieces cut from the page
+   (snap.js now draws inset box shadows). `House/View/HouseEditView.cs`: Done, House shop (until stage 7: a toast), the
+   toolbox (sliding, its tab, label card, tray cards drawn from the page's styles, tabs), the toolbar (its box, labels,
+   slider, the page's buttons), the light's dashed handle; HouseScreen's input presses, holds and releases (drags);
+   the room's dashed footprints and wall boxes (RoomModel EditOn / ESel, wallSel). Verified with
+   `creature-trace.mjs decorated living 340 "...edit, down, move, up, size, rot, turn, store, place, ldown, lmove,
+   lsize, lstore, lback, rsurf, done"` and `decorated movie` (side and back wall, width x height) + `house-test acts`
+   (the .NET check now draws through `tools/unity/house/draw-server.mjs`, the same host PuerTS runs): the room's items,
+   selection, lx / lz / surf / rtex / lOff / uid, every creature and play equal on every frame. Not yet: writing on
+   signs (Aa: the sign editor), the tray's mouse-wheel scroll, the inset light on the toolbar's box (a flat highlight).
 7. Catalog and economy: pages, detail, buy / place, level locks, config.
 8. House map, and the walk home from the Unity menu.
 9. Dance Club, Movie Room (movies as exported video + audio), TV sound.

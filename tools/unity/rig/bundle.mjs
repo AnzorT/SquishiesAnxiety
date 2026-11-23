@@ -34,7 +34,7 @@ const method = (n) => { const m = new RegExp('\\n  ' + n + '\\([^)]*\\) \\{').ex
 const constant = (n) => { const m = new RegExp('\\n(const|function) ' + n + '\\b').exec(PAGE); const e = /;[ \t]*(\/\/[^\n]*)?\n/g; e.lastIndex = m.index + 1; const x = e.exec(PAGE); return PAGE.slice(m.index + 1, x.index + 1).trim(); };
 let host = fs.readFileSync(path.join(REPO, 'tools/unity/house/draw-host.js'), 'utf8');
 host = host.replace('/* PAGE */', ['RCSV', 'RMAP', 'SLOTCAT', 'roleOf', 'CEILS', 'catOf', 'BIGR', 'edgeR'].map(constant).join('\n  '));
-host = host.replace('/* PAGE-METHODS */', ['rnReg', 'rnDraw', 'rnOpt', 'rnLayer', 'tightBB'].map((n) => method(n) + ',').join('\n    '));
+host = host.replace('/* PAGE-METHODS */', ['rnReg', 'rnDraw', 'rnOpt', 'rnLayer', 'tightBB', 'rnTex'].map((n) => method(n) + ',').join('\n    '));
 scripts.push(['house-draw.js', host]);
 const files = {};
 for (const f of fs.readdirSync(path.join(WORK, 'uploads')).filter((f) => f.endsWith('.csv'))) files['uploads/' + f] = fs.readFileSync(path.join(WORK, 'uploads', f), 'utf8');

@@ -285,6 +285,24 @@
           inner.push(`<path d="${sp}" ${fillAttr(col)}${f}/>`);
         }
       }
+      // inset box shadows (drawn over the background below): a frame round the shadow's inner edge, blurred, clipped
+      // to the box
+      const insets = [];
+      if (cs.boxShadow && cs.boxShadow !== 'none') {
+        for (const s of cs.boxShadow.split(/,(?![^(]*\))/).reverse()) {
+          const m = s.trim().match(/(rgba?\([^)]*\))\s+(-?[\d.]+)px\s+(-?[\d.]+)px\s+([\d.]+)px(?:\s+(-?[\d.]+)px)?/);
+          if (!m || !/inset/.test(s)) continue;
+          const col = parseColor(m[1]);
+          if (!col || !outer) continue;
+          const [ox, oy, blur, spread] = [m[2], m[3], m[4], m[5] || 0].map(parseFloat), pad = blur * 2 + Math.abs(ox) + Math.abs(oy) + 4;
+          const hole = rrect(x + ox + spread, y + oy + spread, w - 2 * spread, h - 2 * spread, r.map((v) => Math.max(0, v - spread)));
+          const big = `M${n2(x - pad)} ${n2(y - pad)}H${n2(x + w + pad)}V${n2(y + h + pad)}H${n2(x - pad)}Z`;
+          const cid = `ic${ctx.ids.n++}`; ctx.defs.push(`<clipPath id="${cid}"><path d="${outer}"/></clipPath>`);
+          let f = '';
+          if (blur > 0) { const id = `bs${ctx.ids.n++}`; ctx.defs.push(`<filter id="${id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${n2(blur / 2)}"/></filter>`); f = ` filter="url(#${id})"`; }
+          insets.push(`<g clip-path="url(#${cid})"><path d="${big}${hole || ''}" fill-rule="evenodd" ${fillAttr(col)}${f}/></g>`);
+        }
+      }
       // background colour, then images (gradients)
       const bgc = parseColor(cs.backgroundColor);
       if (bgc && outer) inner.push(`<path d="${outer}" ${fillAttr(bgc)}/>`);
@@ -315,6 +333,7 @@
           }
         }
       }
+      inner.push(...insets);
       // borders: the ring between the outer box and the padding box; one colour, or each side's own
       if (bw.some((v) => v > 0)) {
         const inR = [Math.max(0, r[0] - Math.max(bw[3], bw[0])), Math.max(0, r[1] - Math.max(bw[0], bw[1])), Math.max(0, r[2] - Math.max(bw[1], bw[2])), Math.max(0, r[3] - Math.max(bw[2], bw[3]))];

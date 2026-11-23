@@ -163,6 +163,7 @@ static class ActCheck
     public static int Run()
     {
         var T = (JObj)HouseJson.Parse(File.ReadAllText(Path.Combine(Program.Repo, "tools/unity/house-test/out/creature-trace.json")));
+        DrawServer.Start();   // (pieces in angles and states the export doesn't have: drawn at runtime)
         var d = Program.Data(); var hs = Program.LoadFixture(d, T.Str("fixture"));
         hs.EnterRoomSaveOnly(T.Str("room"));
         var walkJson = File.ReadAllText(Path.Combine(Program.Res, "walk.json"));
@@ -179,12 +180,14 @@ static class ActCheck
         sim.Play = (c, n) => plays.Add($"{ticks} {c.Key} {n}");
         sim.PlayIdle = c => plays.Add($"{ticks} {c.Key} idle");
         sim.Toast = t => toasts.Add(t);
-        sim.RoomChanged = () => { }; sim.Saved = () => { };
+        sim.Saved = () => { };
         // the room model's answers the screen gives the squad: front parts (hasFr), the pieces' drawing data (rnI)
         var rm = new RoomModel(hs); var rv = rm.Build(T.Str("room"));
         var fronts = new Dictionary<string, bool>(); foreach (var o in rv?.Arr("items") ?? new List<object>()) if (o is JObj f0 && f0.Str("id") != null) fronts[f0.Str("id")] = HouseJson.Truthy(f0["hasFront"]);
         sim.HasFront = id => fronts.TryGetValue(id, out var fr0) && fr0;
         sim.RnI = id => rm.RnI.TryGetValue(id, out var ri) ? ri : null;
+        // a change redraws the room (the page renders on setState): its boxes (szBx) and drawing data follow
+        sim.RoomChanged = () => { var v2 = rm.Build(T.Str("room")); fronts.Clear(); foreach (var o in v2?.Arr("items") ?? new List<object>()) if (o is JObj f0 && f0.Str("id") != null) fronts[f0.Str("id")] = HouseJson.Truthy(f0["hasFront"]); };
         var st = T.Obj("start");
         foreach (JObj o in st.Arr("cs"))
         {
@@ -202,7 +205,7 @@ static class ActCheck
         sim.Sel = st["sel"] is double sd ? (int)sd : (int?)null;
         sim.Last = st.Num("last");
         var ev = T.Arr("rig"); int ei = 0;
-        int bad = 0; string first = null; var frames = T.Arr("frames");
+        int bad = 0, edN = 0; string first = null; var frames = T.Arr("frames");
         for (int f = 0; f < frames.Count; f++)
         {
             var fr = (JObj)frames[f];
@@ -216,6 +219,7 @@ static class ActCheck
                     else if (k == "act") sim.Act(a, b, sim.Last);
                     else if (k == "floor") { var c = sim.SelC; if (c != null) sim.GoTo(c, double.Parse(a), double.Parse(b), null, sim.Last); }
                     else if (k == "tap") sim.ItemDown(a, sim.Last);
+                    else EditOp(sim, k, a, b, e.Count > 5 ? e[5] as string : null);
                 }
                 else { var c = sim.Cs.Find(x => x.Key == (string)e[2]); sim.OnRig(c, (string)e[3], sim.Last); }
             }
@@ -226,6 +230,14 @@ static class ActCheck
             {
                 var pr = fr.Obj("rst").Obj(id); sim.Rst.TryGetValue(id, out var R); R ??= new PieceState();
                 if (R.Ch != pr.Num("ch") || R.Play != pr.Truthy("play") || (R.K ?? "") != (pr.Str("k") ?? "")) { bad++; first ??= $"frame {f} rst {id}: ch {R.Ch} vs {pr.Num("ch")}, play {R.Play} vs {pr.Truthy("play")}, k {R.K} vs {pr.Str("k")}"; }
+            }
+            // Renovate (stage 6): the room's pieces, the selection, the light and surfaces, the next id
+            if (fr.Obj("ed") is JObj ed)
+            {
+                edN++;
+                var mine = Canon(new JObj { ["eSel"] = sim.ESel, ["items"] = hs.H.Obj("rooms")?[T.Str("room")] ?? new List<object>(), ["lx"] = hs.H["lx"] ?? new JObj(), ["lz"] = hs.H["lz"] ?? new JObj(), ["surf"] = hs.H["surf"] ?? new JObj(), ["rtex"] = hs.H["rtex"] ?? new JObj(), ["lOff"] = hs.H["lOff"] ?? new JObj(), ["uid"] = hs.H["uid"] });
+                var theirs = Canon(ed);
+                if (mine != theirs) { bad++; if (first == null) { int i = 0; while (i < mine.Length && i < theirs.Length && mine[i] == theirs[i]) i++; first = $"frame {f} edit: C# …{mine.Substring(Math.Max(0, i - 120), Math.Min(260, mine.Length - Math.Max(0, i - 120)))}\n   page …{theirs.Substring(Math.Max(0, i - 120), Math.Min(260, theirs.Length - Math.Max(0, i - 120)))}"; } }
             }
             foreach (JObj o in fr.Arr("cs"))
             {
@@ -243,8 +255,47 @@ static class ActCheck
         }
         var pagePlays = T.Arr("plays").ConvertAll(o => { var l = (List<object>)o; return $"{(int)(double)l[0]} {l[1]} {l[2]}"; });
         bool playsOk = string.Join("|", plays) == string.Join("|", pagePlays);
-        Console.WriteLine($"acts: {frames.Count} frames; plays C# [{string.Join(", ", plays)}]" + (playsOk ? " = page" : $" vs page [{string.Join(", ", pagePlays)}]") + $"; toasts [{string.Join(", ", toasts)}]");
+        Console.WriteLine($"acts: {frames.Count} frames; plays C# [{string.Join(", ", plays)}]" + (playsOk ? " = page" : $" vs page [{string.Join(", ", pagePlays)}]") + $"; toasts [{string.Join(", ", toasts)}]" + (edN > 0 ? $"; Renovate state compared on {edN} frames" : ""));
         Console.WriteLine(bad == 0 && playsOk ? "acts: every creature every frame equal, every play equal" : $"acts: {bad} creature-frames differ; first: {first}");
         return bad == 0 && playsOk ? 0 : 1;
+    }
+
+    static void EditOp(HouseCreatures sim, string k, string a, string b, string c)
+    {
+        double N(string v) => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture);
+        double now = sim.Last;
+        switch (k)
+        {
+            case "edit": sim.StartEdit(); break;
+            case "done": sim.DoneEdit(now); break;
+            case "down": sim.EditDown(a, N(b), N(c), now); break;
+            case "move": sim.DragMove(N(a), N(b)); break;
+            case "up": sim.DragEnd(); break;
+            case "rot": sim.RotStart(); sim.RotSet(sim.ESelItem, N(a), now); sim.RotEnd(); break;
+            case "turn": sim.EditRot(now); break;
+            case "size": sim.EditSize((int)N(a), b); break;
+            case "store": sim.EditStore(now); break;
+            case "place": sim.PlaceNew(a); break;
+            case "ldown": sim.LightDown(N(a)); break;
+            case "lmove": sim.LightMove(N(a)); break;
+            case "lup": sim.LightUp(); break;
+            case "lsize": sim.LightSize((int)N(a)); break;
+            case "lstore": sim.LightStore(); break;
+            case "lback": sim.LightBack(a); break;
+            case "lmid": sim.LightMid(); break;
+            case "rsurf": sim.UseRSurf(a); break;
+            default: throw new Exception("unknown op " + k);
+        }
+    }
+
+    // JSON with sorted keys and numbers to 6 places (the page's and the port's objects compared as data)
+    static string Canon(object o)
+    {
+        if (o is JObj j) { var ks = new List<string>(j.Keys); ks.Sort(string.CompareOrdinal); var parts = new List<string>(); foreach (var key in ks) { var v = j[key]; if (v == HouseJson.Undefined) continue; parts.Add(HouseJson.Stringify(key) + ":" + Canon(v)); } return "{" + string.Join(",", parts) + "}"; }
+        if (o is List<object> l) return "[" + string.Join(",", l.ConvertAll(Canon)) + "]";
+        if (o is double d) return Math.Round(d, 6).ToString("R", System.Globalization.CultureInfo.InvariantCulture);
+        if (o is string str) return HouseJson.Stringify(str);
+        if (o is bool bo) return bo ? "true" : "false";
+        return "null";
     }
 }

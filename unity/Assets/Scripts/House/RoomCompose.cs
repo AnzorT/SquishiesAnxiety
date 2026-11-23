@@ -186,7 +186,7 @@ namespace SquishSquad.House
         // pictures inside a picture (<image href="data:image/svg+xml,...">, e.g. a window's view): inlined the same way
         static readonly Regex ImgRx = new Regex("<image\\b([^>]*?)(/>|>\\s*</image>)");
         static readonly Regex SmilRx = new Regex("<(animate|animateTransform|animateMotion|set|animateColor)\\b[^>]*/>");
-        string InlineImages(string svg, int depth)
+        public string InlineImages(string svg, int depth)
         {
             if (depth > 4 || svg.IndexOf("data:image/svg+xml", StringComparison.Ordinal) < 0) return svg;
             return ImgRx.Replace(svg, m =>

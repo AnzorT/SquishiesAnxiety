@@ -27,6 +27,7 @@ static partial class Program
                 if (hs.Cur != rk) hs.EnterRoom(rk);
                 var nk = rk == "beach" ? "bedroom" : rk; if (night) hs.H.Obj("night")[nk] = 1.0; else hs.H.Obj("night").Remove(nk);
                 var m = new RoomModel(hs);
+                var es = Environment.GetEnvironmentVariable("EDIT_SEL"); if (es != null) { m.EditOn = true; m.ESel = es; }   // (Renovate's footprints: a visual check)
                 var vals = m.Build(rk);
                 yield return (fx, rk, night, cap, hs, vals, m);
             }

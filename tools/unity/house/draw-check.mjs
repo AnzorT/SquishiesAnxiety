@@ -44,3 +44,37 @@ if (process.argv[2]) {
   const R1 = call(`__house.render(${JSON.stringify(t)}, ${+r}, ${+c}, ${JSON.stringify(v)})`), R0 = P.renders[key];
   for (const k of ['bb', 'vb', 'shadow', 'contact', 'foot', 'back', 'part', 'front']) if (JSON.stringify(R1[k]) !== JSON.stringify(R0[k])) console.log(k, JSON.stringify(R1[k]).slice(0, 200), ' VS ', JSON.stringify(R0[k]).slice(0, 200));
 }
+// stage 6: the room shells (by their key: room | slot surfaces | door locks | scale | lx | lz | ir) and the renovated
+// surfaces' textures
+const SH = JSON.parse(fs.readFileSync(path.join(REPO, 'unity/Assets/Resources/House/shells.json'), 'utf8'));
+let ss = 0, sd = [];
+for (const [key, S0] of Object.entries(SH)) {
+  const [rk, vals, locks, , lx, lz] = key.split('|');
+  const slots = JSON.parse(vm.runInContext(`JSON.stringify(House3D.slotsOf(${JSON.stringify(rk)}))`, ctx)), doors = JSON.parse(vm.runInContext(`JSON.stringify(House3D.ROOMS[${JSON.stringify(rk)}].doors.map(function (d) { return d.to; }))`, ctx));
+  const sf = {}; vals.split(',').forEach((v, i) => { sf[slots[i]] = v; }); if (lx !== '') sf.lx = +lx; if (+lz !== 1) sf.lz = +lz;
+  const L = {}; locks.split(',').forEach((v, i) => { L[doors[i]] = +v; });
+  vm.runInContext(`__house.geo(${JSON.stringify(rk)})`, ctx);
+  const S1 = call(`__house.shell(${JSON.stringify(rk)}, ${JSON.stringify(JSON.stringify(sf))}, ${JSON.stringify(JSON.stringify(L))})`);
+  if (JSON.stringify(S1) === JSON.stringify(S0)) ss++; else sd.push(key);
+}
+console.log(`shells: ${ss} of ${Object.keys(SH).length} equal` + (sd.length ? '; differ: ' + sd.slice(0, 4).join(', ') : ''));
+const TX = JSON.parse(fs.readFileSync(path.join(REPO, 'unity/Assets/Resources/House/tex.json'), 'utf8'));
+const PICS = ['wall', 'wallS', 'board', 'floor', 'ceil', 'fence', 'fenceR', 'wallOne', 'wallOneR', 'wallRnd', 'ylRoom', 'src'];
+let ts = 0, td = [];
+for (const [id, T0] of Object.entries(TX)) {
+  vm.runInContext(`__house.geo(${JSON.stringify(ROOM[id.slice(0, 3)] || 'living')})`, ctx);
+  const T1 = call(`__house.tex(${JSON.stringify(id)})`);
+  PICS.forEach((k) => { if (String(T1[k]).startsWith('<')) T1[k] = name(T1[k]); }); if (T1.floorRoom) T1.floorRoom.layers.forEach((l) => { l.url = name(l.url); });
+  const bad = Object.keys(T0).filter((k) => JSON.stringify(T0[k] ?? '') !== JSON.stringify(T1[k] ?? ''));
+  if (!bad.length) ts++; else td.push(id + ' (' + bad.join(' ') + ')');
+}
+console.log(`tex: ${ts} of ${Object.keys(TX).length} equal` + (td.length ? '; differ: ' + td.slice(0, 4).join(', ') : ''));
+if (process.env.DIFF && sd.length && td.length) {
+  const key = sd[0]; const [rk, vals, locks, , lx, lz] = key.split('|');
+  const slots = JSON.parse(vm.runInContext(`JSON.stringify(House3D.slotsOf(${JSON.stringify(rk)}))`, ctx)), doors = JSON.parse(vm.runInContext(`JSON.stringify(House3D.ROOMS[${JSON.stringify(rk)}].doors.map(function (d) { return d.to; }))`, ctx));
+  const sf = {}; vals.split(',').forEach((v, i) => { sf[slots[i]] = v; }); if (lx !== '') sf.lx = +lx; if (+lz !== 1) sf.lz = +lz; const L = {}; locks.split(',').forEach((v, i) => { L[doors[i]] = +v; });
+  vm.runInContext(`__house.geo(${JSON.stringify(rk)})`, ctx);
+  const S1 = call(`__house.shell(${JSON.stringify(rk)}, ${JSON.stringify(JSON.stringify(sf))}, ${JSON.stringify(JSON.stringify(L))})`), S0 = SH[key];
+  for (const k of new Set([...Object.keys(S0), ...Object.keys(S1)])) if (JSON.stringify(S0[k]) !== JSON.stringify(S1[k])) console.log(k, JSON.stringify(S1[k] ?? null).slice(0, 300), '\n  VS', JSON.stringify(S0[k] ?? null).slice(0, 300));
+  const id = td[0].split(' ')[0], T1 = call(`__house.tex(${JSON.stringify(id)})`); console.log('board', String(T1.board).slice(0, 120), TX[id].board);
+}

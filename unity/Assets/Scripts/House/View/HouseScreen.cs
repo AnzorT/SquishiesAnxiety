@@ -1,7 +1,8 @@
 // The Squad House screen (HOUSE_PORT_PLAN.md stages 2-3): the room (HouseRoomView: the base and each piece in layers)
 // in the 852 x 393 frame scaled to the screen's width, the camera easing between rooms, the squad (HouseCreatures +
 // HouseSquadView: walking about, sorted between the pieces, tapped to select, sent by a floor tap, carried through a
-// door), the bottom drawer (its tab opens and closes it; RENOVATE and CATALOG come with stages 6 and 7) and the toasts,
+// door), the bottom drawer (its tab opens and closes it; RENOVATE opens Renovate: HouseEditView, stage 6; CATALOG comes
+// with stage 7) and the toasts,
 // as Squad House v6.dc.html; the save every 5 s and on each room change (OnSave). Not yet: actions (4), item taps (5),
 // the house map (8: until then the rooms change by their doors and GoTo).
 //
@@ -24,6 +25,9 @@ namespace SquishSquad.House.View
         HouseCreatures _sim;
         HouseSquadView _squad;
         HouseWheel _wheel;
+        HouseEditView _edit;
+        bool _dirty;
+        string _press; double _pressX, _pressY; bool _moved;
         double _saveAt;
         readonly HouseCamera _cam = new HouseCamera();
         HouseHud _hud;
@@ -69,7 +73,7 @@ namespace SquishSquad.House.View
             _sim.Toast = Toast;
             _sim.HasFront = id => _room.Fronts.TryGetValue(id, out var f) && f;
             _sim.Saved = Save;
-            _sim.RoomChanged = () => { _room.Draw(_w, _h); _room.SetCamera(_cam.K(Now)); };
+            _sim.RoomChanged = () => _dirty = true;   // (drawn once a frame, in Update)
             _room.Sim = _sim;
             _sim.Init(Now, _start);
             _room.Draw(_w, _h);
@@ -84,6 +88,7 @@ namespace SquishSquad.House.View
             _tab = Piece("hud tab", 31001, "tab");
             _arrow = Piece("hud arrow", 31002, "arrow");
             _panel = Piece("hud panel", 31000, "panel");
+            _edit = new HouseEditView(world, _sim, _k, HouseRoomView.Res("edit")) { Toast = Toast, Pic = n => HouseDraw.Pics.TryGetValue(n, out var rt) ? rt : HouseRoomView.Res("pics/" + n) };
             _toast = UiPiece.Create(world, "toast", 31100);
             _toast.Opacity = 0;
         }
@@ -96,7 +101,7 @@ namespace SquishSquad.House.View
             return p;
         }
 
-        JObj Shell() => _room.Save.D.Shells.Obj(new RoomModel(_room.Save).ShellKey(_room.Save.Cur));
+        JObj Shell() => new RoomModel(_room.Save).ShellOf(_room.Save.Cur);
 
         // frame px -> UiPiece's dp (the frame is scaled to the screen's width)
         Affine Frame => Affine.ScaleBy(_k / UiPiece.PxPerDp, _k / UiPiece.PxPerDp);
@@ -108,8 +113,10 @@ namespace SquishSquad.House.View
             if (Input.GetKeyDown(KeyCode.Escape)) { OnExit?.Invoke(); Destroy(gameObject); return; }
             HandleInput(now);
             _sim.Tick(now);
+            if (_dirty) { _dirty = false; _room.Draw(_w, _h); }
             double k = _cam.K(now);
             _room.SetCamera(k);
+            _edit.SetCamera(k); _edit.Update(now);
             _squad.Update(k, now);
             MoveToy(now);
             _wheel.Update(k, now);
@@ -117,6 +124,7 @@ namespace SquishSquad.House.View
             // the drawer (translate(-50%, ty): its pieces' rects are at ty 0), the arrow turning about its centre
             double ty = _hud.DrawerTy(now);
             var tab = _hud.Pieces["tab"]; var panel = _hud.Pieces["panel"]; var arrow = _hud.Pieces["arrow"];
+            _tab.Visible = _arrow.Visible = _panel.Visible = !_sim.Edit;   // (notEdit)
             _tab.Transform = Frame * Affine.Translate(tab.X, tab.Y + ty);
             _panel.Transform = Frame * Affine.Translate(panel.X, panel.Y + ty);
             _arrow.Transform = Frame * Affine.Translate(arrow.X + arrow.W / 2, arrow.Y + ty + arrow.H / 2) * Affine.Rotate(_hud.ArrowDeg(now)) * Affine.Translate(-arrow.W / 2, -arrow.H / 2);
@@ -166,28 +174,83 @@ namespace SquishSquad.House.View
             }
         }
 
+        // a press, a hold (Renovate's drags: a piece, the light, the rotation slider, the tray's scroll) and a release
         void HandleInput(double now)
         {
-            bool down = Input.GetMouseButtonDown(0), up = Input.GetMouseButtonUp(0);
+            bool down = Input.GetMouseButtonDown(0), up = Input.GetMouseButtonUp(0), held = Input.GetMouseButton(0);
             Vector2 pos = Input.mousePosition;
-            if (Input.touchCount > 0) { var t = Input.GetTouch(0); pos = t.position; down = t.phase == TouchPhase.Began; up = t.phase == TouchPhase.Ended; }
-            if (down) { _down = true; _downAt = pos; }
-            if (!up || !_down) return;
+            if (Input.touchCount > 0) { var t = Input.GetTouch(0); pos = t.position; down = t.phase == TouchPhase.Began; up = t.phase == TouchPhase.Ended || t.phase == TouchPhase.Canceled; held = !up; }
+            double fx = pos.x / _k, fy = (_h - pos.y) / _k, k = _cam.K(now);
+            var b = HouseCamera.ToBox(fx, fy, k);
+            if (down)
+            {
+                _down = true; _downAt = pos; _moved = false; _pressX = fx; _pressY = fy; _press = null;
+                if (_sim.Edit) EditPress(fx, fy, b.x, b.y, now);
+                return;
+            }
+            if (!_down) return;
+            if ((pos - _downAt).magnitude > 12 * _k) _moved = true;
+            if (held && !up)
+            {
+                switch (_press)
+                {
+                    case "slider": _edit.SliderAt(fx, now); break;
+                    case "tray": if (_moved) { _edit.TrayScroll(fx - _pressX); _pressX = fx; } break;
+                    case "light": _sim.LightMove(b.x); break;
+                    case "drag": _sim.DragMove(b.x, b.y); break;
+                }
+                return;
+            }
+            if (!up) return;
             _down = false;
-            if ((pos - _downAt).magnitude > 12 * _k) return;   // (a drag, not a tap)
-            double fx = pos.x / _k, fy = (_h - pos.y) / _k;
+            var pr = _press; _press = null;
+            switch (pr)
+            {
+                case "slider": _sim.RotEnd(); return;
+                case "tray": if (!_moved) _edit.TrayTap(fx); return;
+                case "ui": if (!_moved) _edit.Tap(fx, fy, now); return;
+                case "light": _sim.LightUp(); return;
+                case "drag": _sim.DragEnd(); return;
+                case "none": return;
+            }
+            if (_moved) return;   // (a drag, not a tap)
             Tap(fx, fy, now);
+        }
+
+        // Renovate: the edit UI first, then the light's handle, a piece (picked up: itemDown), the floor (the selection goes)
+        void EditPress(double fx, double fy, double bx, double by, double now)
+        {
+            var e = _edit.Press(fx, fy, now);
+            if (e == "slider") { _press = "slider"; _sim.RotStart(); _edit.SliderAt(fx, now); return; }
+            if (e != null) { _press = e; return; }
+            if (_edit.OnLight(bx, by)) { _press = "light"; _sim.LightDown(bx); return; }
+            var top = PieceAt(fx, fy, _cam.K(now));
+            if (top != null && top.Kind != "toy" && top.Id != null) { _press = "drag"; _sim.EditDown(top.Id, bx, by, now); return; }
+            _press = "none"; _sim.EditFloorTap();
+        }
+
+        HouseRoomView.Piece PieceAt(double fx, double fy, double k)
+        {
+            var pb = HouseCamera.ToBox(fx, fy, k); double gx = pb.x, gy = pb.y + HouseFrame.BoxTop;
+            HouseRoomView.Piece top = null;
+            foreach (var p in _room.Pieces)
+            {
+                if (p.Kind == "prop" || p.Box == null) continue;
+                if (gx >= p.Box[0] + p.Dx && gx <= p.Box[0] + p.Dx + p.Box[2] && gy >= p.Box[1] + p.Dy && gy <= p.Box[1] + p.Dy + p.Box[3] && (top == null || p.Z >= top.Z)) top = p;
+            }
+            return top;
         }
 
         /// <summary>A tap at a frame point (852 x 393 px): the drawer, a door, or the floor.</summary>
         public void Tap(double fx, double fy, double now)
         {
+            if (_sim.Edit) return;   // (Renovate's presses are handled as they happen)
             if (_hud.Covers(fx, fy, now))
             {
                 switch (_hud.Tap(fx, fy, now))
                 {
                     case "tab": _hud.SetOpen(!_hud.Open, now); break;
-                    case "renovate": Toast("Renovating isn't in the Unity version yet"); break;
+                    case "renovate": _hud.SetOpen(false, now); _wheel.SetOpen(false, now); _sim.StartEdit(); break;
                     case "catalog": Toast("The catalog isn't in the Unity version yet"); break;
                 }
                 return;
@@ -206,13 +269,7 @@ namespace SquishSquad.House.View
             int hit = _squad.HitCreature(fx, fy, k);
             if (hit >= 0) { _sim.TapCreature(hit, now); _wheel.SetOpen(false, now); return; }
             // a piece or a toy (its box; the topmost by z-index): itemDown, kick
-            var pb = HouseCamera.ToBox(fx, fy, k); double gx = pb.x, gy = pb.y + HouseFrame.BoxTop;
-            HouseRoomView.Piece top = null;
-            foreach (var p in _room.Pieces)
-            {
-                if (p.Kind == "prop" || p.Box == null) continue;
-                if (gx >= p.Box[0] + p.Dx && gx <= p.Box[0] + p.Dx + p.Box[2] && gy >= p.Box[1] + p.Dy && gy <= p.Box[1] + p.Dy + p.Box[3] && (top == null || p.Z >= top.Z)) top = p;
-            }
+            var top = PieceAt(fx, fy, k);
             if (top != null)
             {
                 _wheel.SetOpen(false, now);
@@ -267,6 +324,7 @@ namespace SquishSquad.House.View
         {
             _squad?.Destroy();
             _wheel?.Destroy();
+            _edit?.Destroy();
             if (_room != null) Destroy(_room.gameObject);
             if (_toast != null) Destroy(_toast.gameObject);
         }
