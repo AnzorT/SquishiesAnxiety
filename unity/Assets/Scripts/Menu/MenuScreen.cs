@@ -239,6 +239,25 @@ namespace SquishSquad.Menu
             _game = hub;
         }
 
+        // Squish Time (the park's first card): the player's creature in use (Mittens offline)
+        void OpenSquish()
+        {
+            BeforeGame();
+            var p = CharactersPageLink.Get();
+            var key = "mittens";
+            if (p?.Profile != null)
+            {
+                var id = CharactersPageLink.SelectedId(p.Profile);
+                var data = SquishSquad.Backend.Json.Parse(Resources.Load<TextAsset>("Squish/squish").text) as IDictionary<string, object>;
+                if (data != null && data["roster"] is IList<object> roster)
+                    foreach (var c in roster)
+                        if (c is IDictionary<string, object> e && System.Convert.ToString(e["id"]) == id) { key = (string)e["key"]; break; }
+            }
+            var s = SquishSquad.Games.Squish.SquishTime.Create(transform, key, p?.Profile ?? new Dictionary<string, object>(), p?.Fb, p?.Uid);
+            s.OnExit = AfterGame;   // (it removes itself)
+            _game = s;
+        }
+
         // each game opens on its hub (Hop: its map), as the app's game screens do
         void OpenStack()
         {
@@ -291,6 +310,7 @@ namespace SquishSquad.Menu
             if (g.id == "sort") { OpenSort(); return; }
             if (g.id == "squishdoku") { OpenSquishdoku(); return; }
             if (g.id == "hop") { OpenHop(); return; }
+            if (g.id == "squish") { OpenSquish(); return; }
             c.Model.PlayDone(NowMs);
             ShowToast(g.name + " isn't in the Unity version yet");
         }

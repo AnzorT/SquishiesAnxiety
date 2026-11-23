@@ -104,7 +104,7 @@ namespace SquishSquad.EditorTools
                 return;
             }
             // (Resources/Park: the Game Park's carousel, tools/unity/export-park.mjs; the games' pieces and rooms)
-            string[] exact = { "Assets/Resources/Menu/", "Assets/Resources/Park/", "Assets/Resources/Stack/", "Assets/Resources/Sort/", "Assets/Resources/Hop/", "Assets/Resources/Squishdoku/", "Assets/Resources/Cards/" };
+            string[] exact = { "Assets/Resources/Menu/", "Assets/Resources/Park/", "Assets/Resources/Stack/", "Assets/Resources/Sort/", "Assets/Resources/Hop/", "Assets/Resources/Squishdoku/", "Assets/Resources/Cards/", "Assets/Resources/Squish/" };
             bool ours = false;
             foreach (var e in exact) if (assetPath.StartsWith(e)) { ours = true; break; }
             if (!ours) return;
