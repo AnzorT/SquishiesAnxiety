@@ -36,6 +36,13 @@ namespace SquishSquad.Menu
             set { PlayerPrefs.SetInt("sort.level", Mathf.Clamp(value, 1, 50)); PlayerPrefs.Save(); }
         }
 
+        /// <summary>The Squish Hop level the player was last on (hop.lv in the profile once it's wired).</summary>
+        public static int HopLevel
+        {
+            get => Mathf.Clamp(PlayerPrefs.GetInt("hop.level", 1), 1, 100);
+            set { PlayerPrefs.SetInt("hop.level", Mathf.Clamp(value, 1, 100)); PlayerPrefs.Save(); }
+        }
+
         public static string Season => SeasonSetting == "auto" ? AutoSeason(DateTime.Now) : SeasonSetting;
 
         // main-menu-scene.js: Dec-Feb snowy, May-Sep sunny, otherwise rainy
