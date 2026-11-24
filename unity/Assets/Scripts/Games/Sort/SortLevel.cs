@@ -633,12 +633,35 @@ namespace SquishSquad.Games.Sort
             if (Spec.Swaps > 0) chips.Add("SNEAKY SWAP");
             if (Spec.Mixed > 0) chips.Add("MIXED UP");
             var sub = $"{_m.Size} · {_m.Name.ToUpperInvariant()}";
-            if (bigger) Say(_theme == "fridge" ? "BIGGER FRIDGE!" : "BIGGER CUPBOARD!", chips: chips.ToArray(), sub: sub, small: true, hold: 1400);
-            else Say(_blitz ? $"ROUND {Spec.Round}" : $"LEVEL {Spec.Lv}", chips: chips.ToArray(), sub: sub, hold: 900);
-            Snd.Play("sd_boardIn");
+            // a Blitz run opens with 3, 2, 1, GO! (the first round's squishies pop in on GO), as the other games' do
+            bool countdown = _blitz && !_runStarted;
+            if (countdown) _countdown.Set(null);
+            else
+            {
+                if (bigger) Say(_theme == "fridge" ? "BIGGER FRIDGE!" : "BIGGER CUPBOARD!", chips: chips.ToArray(), sub: sub, small: true, hold: 1400);
+                else Say(_blitz ? $"ROUND {Spec.Round}" : $"LEVEL {Spec.Lv}", chips: chips.ToArray(), sub: sub, hold: 900);
+                Snd.Play("sd_boardIn");
+            }
             Animated.Spring(_pop, Spring(1, 6, 70)).Start();
             // (the app waits for any picture still downloading; Unity's are all here)
-            Later(bigger ? 1800 : 1300, Deal);
+            if (!countdown) Later(bigger ? 1800 : 1300, Deal);
+            else
+            {
+                CountdownAt = _tk.Now;
+                var steps = new[] { "3", "2", "1", "GO!" };
+                for (int i = 0; i < steps.Length; i++)
+                {
+                    var v = steps[i];
+                    Later(200 + i * 700, () =>
+                    {
+                        _countdown.Set(v);
+                        Snd.Play(v == "GO!" ? "sd_go" : "sd_count");
+                        Snd.Tick();
+                        if (v == "GO!") Deal();
+                    });
+                }
+                Later(200 + 4 * 700, () => _countdown.Set(null));
+            }
             if (!_blitz) OnLevel?.Invoke(_lv);
         }
 
@@ -879,6 +902,8 @@ namespace SquishSquad.Games.Sort
             SyncLoops();
             _layers.Clear();
             var area = Affine.Translate(AreaX, 0);
+            // develop: the fridge stands in the Crib's kitchen by day (as Squish Hop's levels stand in its rooms; hop/Room.js)
+            SetM(L("room"), "kitchen", () => SquishSquad.Games.Squishdoku.Rooms.Svg("kitchen", "day", _sw, _sh), _sw, _sh, 0);
 
             // ---- the HUD's left column
             string barLabel; bool showBar = true, red = false; string[] barColors; double frac;
@@ -988,7 +1013,7 @@ namespace SquishSquad.Games.Sort
                 bn.Transform = area * Affine.Translate(0, Math.Max(0, _g.By - 34)) * About(AreaW, _bannerH, Affine.ScaleBy(bs, bs) * Affine.Rotate(br));
             }
             DrawFx(area);
-            if (_blitz) RefreshSave();
+            if (_blitz) { DrawCountdown(); RefreshSave(); }
             foreach (var c in _cards) c.Update();
             _cards.RemoveAll(c => !c.Shown);
             foreach (var c in _bcards) c.Update();

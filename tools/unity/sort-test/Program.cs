@@ -30,7 +30,29 @@ static class Program
         Fx.LikeWeb = true;
         if (args[0] == "cards") return CardsTest.Run(args[1]);
         if (args[0] == "blitz") return BlitzTest.Run(args[1]);
+        if (args[0] == "shots") return Shots(args[1]);
         return Level(args[0], args.Length > 1 ? args[1] : "");
+    }
+
+    // dotnet run ... -- shots <dir>: the Unity side alone at a few moments (a level, a Blitz run's countdown and first
+    // round), to look at while the captures still follow the old page
+    static int Shots(string dir)
+    {
+        Directory.CreateDirectory(dir);
+        string bg = File.ReadAllText(Res("Sort/bg.xml"));
+        var profile = new Dictionary<string, object> { ["coins"] = 100.0, ["gems"] = 600.0, ["sort"] = new Dictionary<string, object> { ["seen"] = true, ["lv"] = 12.0 } };
+        foreach (var (name, blitz, at) in new[] { ("level", false, 2500.0), ("blitz-count", true, 1000.0), ("blitz-deal", true, 3200.0) })
+        {
+            var tk = new Ticker(0);
+            Ticker.Default = tk;
+            var level = blitz ? SortLevel.Blitz(832, 384, Data(), profile) : new SortLevel("fridge", 12, 832, 384, Data(), profile);
+            level.Start();
+            level.Update();
+            while (tk.Now < at) { tk.Tick(Math.Min(tk.Now + 16, at)); level.Update(); }
+            var px = Render.Draw(bg, level.Layers, new SquishSquad.Ui.Blitz.ICardView[0], 2340, 1080);
+            Png.Write(Path.Combine(dir, $"sort-{name}.png"), 2340, 1080, px);
+        }
+        return 0;
     }
 
     public static SortData Data()

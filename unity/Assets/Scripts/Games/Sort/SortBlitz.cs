@@ -223,7 +223,25 @@ namespace SquishSquad.Games.Sort
             _cleared = 0; _idx = 0;
             _left = 0;
             _paused = false;
+            _countdown.Set(null);
             NewRound();
+        }
+
+        // ---- the countdown (Ui/Blitz Countdown over the play area) -----------------------------------------------------------
+        readonly Countdown _countdown = new Countdown();
+        /// <summary>When the countdown's timers were set (tests line the app's up with it); -1 before.</summary>
+        public double CountdownAt { get; private set; } = -1;
+
+        void DrawCountdown()
+        {
+            _countdown.Place(AreaX, 0, AreaW, _sh);
+            int i = 0;
+            foreach (var c in _countdown.Layers)
+            {
+                var l = L("countdown " + i++);
+                l.Set(c.Markup, c.W, c.H, c.Margin);
+                l.Transform = c.Transform; l.Opacity = c.Opacity; l.Visible = c.Visible;
+            }
         }
 
         // the level's cards (the pause card in Blitz too), then the run's
