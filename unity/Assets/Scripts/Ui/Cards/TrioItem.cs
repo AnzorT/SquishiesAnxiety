@@ -35,6 +35,12 @@ namespace SquishSquad.Ui.Cards
     public sealed class CardCreature
     {
         public string Key;
+        /// <summary>"result" (the result card's, its rig with result.html's states) or "walk" (Squish Stack's forest
+        /// walker: the plain rig, turned by `Yaw`, walking its own gait while `Walk` is on).</summary>
+        public string Kind = "result";
+        /// <summary>The walker: its turn (degrees; 0 faces you, ±90 side-on: rive-rig's spinOff), its gait's weight
+        /// (0 standing … 1 walking: HouseWalk.step's) and the way it walks (±90).</summary>
+        public double Yaw, Walk, WalkSpin;
         /// <summary>The rig's state now (result.html's play(): resWait, resWow, resHappy, resMiss) and, for a rig played
         /// from recordings, the clip that stands for this stretch ("wait", "fill", "happy", "miss") and when it began
         /// (the card's clock, ms).</summary>
@@ -45,7 +51,7 @@ namespace SquishSquad.Ui.Cards
         /// <summary>Grey above this line (a fraction of the 0-100 box from its top): 2 all grey, -1 none.</summary>
         public float GreyAbove = 2;
         /// <summary>Its pixel size: dp per rig unit at rest.</summary>
-        public float Unit = 1;
+        public float Unit;
         /// <summary>Set by the host: the body box once the rig has drawn (null until then); Failed when it can't.</summary>
         public RigBody Body;
         public bool Failed;

@@ -53,7 +53,7 @@ far sits 36 pu off; the Level Pass's track and panel don't fade in over its firs
 
 | | develop | Unity before |
 |---|---|---|
-| 🔧 | **Squish Stack's map is a forest road** (`src/stack/ForestMap.js`, `road.js`, `forest-<season>-0..3.jpg`): the levels stand on the road like stepping stones, wooden signs per band, your creature walks to the next level | the shared map: nodes on a wave with three dots between them (**"the rocks are not connected"**) over the season's world picture — done but the walker (the selected creature walking the road: live rig) |
+| ✅ | **Squish Stack's map is a forest road** (`src/stack/ForestMap.js`, `road.js`, `forest-<season>-0..3.jpg`): the levels stand on the road like stepping stones, wooden signs per band, your creature walks to the next level | the shared map: nodes on a wave with three dots between them (**"the rocks are not connected"**) over the season's world picture — done, the walker too (`LevelMap` DrawWalker: the selected creature stands on the next level and walks the road there after a win, turned side-on with its own gait when live (`Creatures/ResultRig.cs` ForWalk, walk.html's moves), else its idle recording slides along, else its cut-out stands; `maps-test stack-map` 1.5-2.4 % settled, the scenarios tap develop's new hub (`tapUnity` while Unity's hub is the old one)) |
 | ⬜ | Stack hub: GameHub with picture wood cards (REGULAR / BLITZ), HOW TO PLAY "?" | old heads, tagline, mode cards, progress bar |
 | ⬜ | Stack: no clock, no UNDO; MOVES n / par in the middle; goal bottom left; RESTART and HINT bottom right | clock, UNDO, old HUD |
 | ⬜ | Stack Blitz endless (ramp then 7-on-4 / 8-on-4), coins per puzzle, save by ad or gems | 10 puzzles on a 4:00 clock |

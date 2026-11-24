@@ -20,7 +20,7 @@ namespace SquishSquad.Ui.Cards
         public static bool LiveCharacters = true;
 
         /// <summary>A live character on screen (Creatures/ResultRig.cs): made for a layer, then synced every frame.</summary>
-        public interface ILive { void Sync(CardLayer layer, int order); void Destroy(); }
+        public interface ILive { void Sync(SquishSquad.Vector.Affine transform, float opacity, int order); void Destroy(); }
         /// <summary>Set by the creature code: makes a layer's live character under `parent`; whether a creature can be
         /// drawn live.</summary>
         public static System.Func<Transform, CardCreature, ILive> MakeLive;
@@ -51,7 +51,7 @@ namespace SquishSquad.Ui.Cards
                     if (l.Creature != null)
                     {
                         if (!_live.TryGetValue(l, out var live)) _live[l] = live = MakeLive?.Invoke(_parent, l.Creature);
-                        if (live == null) l.Creature.Failed = true; else live.Sync(l, _order + i);
+                        if (live == null) l.Creature.Failed = true; else live.Sync(l.Transform, l.Visible ? l.Opacity : 0, _order + i);
                         i++;
                         continue;
                     }

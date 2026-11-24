@@ -48,6 +48,8 @@ namespace SquishSquad.Games.Shared
         public virtual bool FullMap => false;
         /// <summary>Today's season (the screen's, for the map's pictures).</summary>
         public string Season = "sunny";
+        /// <summary>The player's selected character's key (the Menu's pick: Squish Stack's forest walker), or null.</summary>
+        public string Walker;
         /// <summary>The map's record again (after a level).</summary>
         public abstract void Refresh(LevelMap map);
         public virtual Hub NewHub(GameScreen screen) => null;

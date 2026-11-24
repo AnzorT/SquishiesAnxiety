@@ -50,6 +50,11 @@ namespace SquishSquad.Games.Shared
         public IReadOnlyList<double> Nodes;
         public IReadOnlyList<(double x, int i)> Signs;
         public Func<double, double> RoadY;
+        /// <summary>The walker: the player's selected character's key (null: none) and its cut-out's height / width.</summary>
+        public string Walker;
+        public float WalkerAr;
+        /// <summary>Set by Unity's creature code: whether a creature can walk the road live (else its cut-out stands).</summary>
+        public static Func<string, bool> LiveWalker;
     }
 
     public sealed class LevelMap
@@ -304,6 +309,112 @@ namespace SquishSquad.Games.Shared
                     hl.Opacity = op;
                 }
             }
+            if (_forest != null && _forest.Walker != null) DrawWalker(f, content, opacity, OnScreen);
+        }
+
+        // ---- the walker (ForestMap.js) ----------------------------------------------------------------------------------
+        // The player's selected character stands on the next level to play and, back on the map after beating it, walks
+        // the road to the new one while the map follows (too far, back down, or never drawn: just there). Live: the
+        // rig turned side-on, its own gait, turned back, a happy bounce (rig/walk.html); without the live creatures (the
+        // tests, a creature not recorded) its cut-out stands there.
+        const float W_BODY = 52, ON_ROAD = 6, ON_NODE = NODE / 2 - 8;
+        const double TURN = 300;
+        static readonly Func<double, double> WalkEase = Easing.Bezier(0.3, 0, 0.7, 1);
+        int _stand = -1, _walkTo;
+        double _seenAt = -1, _walkT0 = -1, _walkMs;
+        List<(float x, float y)> _walkPts;
+        CardCreature _walker;
+        bool _walkerLive;
+
+        static float Smooth(float u) => u * u * (3 - 2 * u);
+        // its feet at road place x (picture units): stepping down off a level onto the road and up onto the next
+        (float x, float y) Feet(double x)
+        {
+            double d = double.MaxValue;
+            foreach (var nx in _forest.Nodes) d = Math.Min(d, Math.Abs(nx - x));
+            float u = (float)Math.Max(0, 1 - d * _k / (NODE * 0.75));
+            return ((float)(x * _k), (float)(_forest.RoadY(x) * _k - (ON_ROAD + (ON_NODE - ON_ROAD) * Smooth(u))));
+        }
+
+        void DrawWalker(LayerFrame f, Affine content, float opacity, Func<float, float, bool> onScreen)
+        {
+            var F = _forest;
+            double now = _tk != null ? _tk.Now : 0;
+            int target = _cur - 1;
+            if (_walker == null || _walker.Key != F.Walker)
+            {
+                _walkerLive = MapForest.LiveWalker != null && MapForest.LiveWalker(F.Walker);
+                _walker = new CardCreature { Key = F.Walker, Kind = "walk", State = "idle" };
+                _stand = target; _walkT0 = -1;
+            }
+            if (_stand < 0) _stand = target;
+            // back with the next level further on: walk there 650 ms after the map shows
+            if (_walkT0 < 0 && _stand != target)
+            {
+                bool far = target < _stand || target - _stand > 6 || !_walkerLive;
+                if (_seenAt < 0) _seenAt = now;
+                if (far) _stand = target;
+                else if (now - _seenAt >= 650)
+                {
+                    double x0 = F.Nodes[_stand], x1 = F.Nodes[target];
+                    _walkMs = Math.Round(Math.Min(4200, Math.Max(1100, Math.Abs(x1 - x0) * _k / 0.11)));
+                    int n = Math.Max(2, (int)Math.Ceiling(Math.Abs(x1 - x0) / 10) + 1);
+                    _walkPts = new List<(float, float)>();
+                    for (int i = 0; i < n; i++) _walkPts.Add(Feet(x0 + (x1 - x0) * i / (n - 1)));
+                    _walkTo = target; _walkT0 = now;
+                    _walker.WalkSpin = x1 > x0 ? 90 : -90;
+                    // the camera: both ends on screen when they fit, else from where it starts
+                    double X0 = x0 * _k, X1 = x1 * _k;
+                    Scroll.ScrollTo(Math.Abs(X1 - X0) < _width - 160 ? (X0 + X1) / 2 - _width / 2 : X1 > X0 ? X0 - 100 : X0 - _width + 100);
+                }
+            }
+            if (_walkT0 < 0) _seenAt = _stand == target ? -1 : _seenAt;
+            // where it is: on its level, or along the road (the steps start once it has turned)
+            (float x, float y) at = Feet(F.Nodes[Math.Min(_stand, _n - 1)]);
+            if (_walkT0 >= 0)
+            {
+                double t = now - _walkT0, u = Math.Max(0, Math.Min(1, (t - TURN) / _walkMs)), e = WalkEase(u);
+                double pos = e * (_walkPts.Count - 1);
+                int i0 = Math.Min(_walkPts.Count - 2, (int)Math.Floor(pos));
+                double fr = pos - i0;
+                at = ((float)(_walkPts[i0].x + (_walkPts[i0 + 1].x - _walkPts[i0].x) * fr), (float)(_walkPts[i0].y + (_walkPts[i0 + 1].y - _walkPts[i0].y) * fr));
+                // walk.html: turn side-on (TURN), walk its gait, turn back (TURN + 40), then a happy bounce
+                double turnIn = Math.Min(1, t / TURN), walkT = (t - TURN) / _walkMs, back = Math.Max(0, Math.Min(1, (t - TURN - _walkMs) / (TURN + 40)));
+                _walker.Yaw = _walker.WalkSpin * (back > 0 ? 1 - back : turnIn);
+                _walker.Walk = walkT < 0 || walkT >= 1 ? 0 : Math.Max(0, Math.Min(1, Math.Min(walkT / 0.08, (1 - walkT) / 0.1)));
+                // the camera follows a long walk on toward where it's going
+                if (t >= TURN + _walkMs * 0.45 && Math.Abs(_walkPts[_walkPts.Count - 1].x - _walkPts[0].x) >= _width - 160)
+                {
+                    float X1 = _walkPts[_walkPts.Count - 1].x;
+                    Scroll.ScrollTo(_walker.WalkSpin > 0 ? X1 - _width + 120 : X1 - 120);
+                }
+                if (t >= TURN + _walkMs)
+                {
+                    _stand = _walkTo;
+                    if (back >= 1) { _walkT0 = -1; _walker.Yaw = 0; _walker.Walk = 0; _walker.State = "happy"; }
+                }
+            }
+            if (!onScreen(at.x - 70, at.x + 70)) return;
+            if (_walkerLive)
+            {
+                // its body W_BODY dp wide (a tall one by its height), its feet on the road
+                var b = _walker.Body;
+                var l = f.L("map walker");
+                l.Creature = _walker;
+                l.Opacity = opacity;
+                if (b == null) { l.Opacity = 0; return; }
+                double k = W_BODY / Math.Max(b.Bw, b.Bh * 0.8);
+                _walker.Unit = (float)k;
+                l.Transform = content * Affine.Translate(at.x - b.Cx * k, at.y - b.Gy * k) * Affine.ScaleBy(k, k);
+                if (_walker.Failed) _walkerLive = false;
+                return;
+            }
+            // (its cut-out, the body W_BODY wide)
+            float ar = F.WalkerAr > 0 ? F.WalkerAr : 1, w = (float)Math.Min(W_BODY, W_BODY * 1.25 / ar), h = w * ar;
+            var still = f.L("map walker still");
+            still.SetPicture("Stack/art/" + F.Walker, w, h);
+            still.Transform = content * Affine.Translate(at.x - w / 2, at.y - h);
+            still.Opacity = opacity;
         }
 
         // ---- the forest (ForestMap.js) --------------------------------------------------------------------------------

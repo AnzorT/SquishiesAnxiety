@@ -37,6 +37,7 @@ namespace SquishSquad.Games.Shared
         int _frame;
         readonly Dictionary<ScreenLayer, Entry> _pieces = new Dictionary<ScreenLayer, Entry>();
         sealed class Entry { public Component Piece; public int Version = -1; public int Seen; }
+        readonly Dictionary<ScreenLayer, (Ui.Cards.CardPieces.ILive live, int seen)> _live = new Dictionary<ScreenLayer, (Ui.Cards.CardPieces.ILive, int)>();
         string _toast;
         float _toastUntil;
 
@@ -158,6 +159,15 @@ namespace SquishSquad.Games.Shared
             foreach (var l in Screen.Frame.List)
             {
                 order++;
+                if (l.Creature != null)
+                {
+                    // a live character (Squish Stack's walker): drawn by the creature code (Creatures/ResultRig.cs)
+                    if (!_live.TryGetValue(l, out var lv)) _live[l] = lv = (Ui.Cards.CardPieces.MakeLive?.Invoke(transform, l.Creature), 0);
+                    if (lv.live == null) { l.Creature.Failed = true; continue; }
+                    lv.live.Sync(l.Transform, l.Visible ? l.Opacity : 0, order);
+                    _live[l] = (lv.live, _frame);
+                    continue;
+                }
                 if (!_pieces.TryGetValue(l, out var e)) _pieces[l] = e = new Entry();
                 e.Seen = _frame;
                 bool door = l.Door != null;
@@ -191,6 +201,13 @@ namespace SquishSquad.Games.Shared
                 p.Opacity = l.Opacity;
                 p.Visible = l.Visible;
                 p.Order = order;
+            }
+            // live characters not drawn this frame hide; long gone ones go
+            foreach (var kv in new List<KeyValuePair<ScreenLayer, (Ui.Cards.CardPieces.ILive live, int seen)>>(_live))
+            {
+                if (kv.Value.seen == _frame || kv.Value.live == null) continue;
+                kv.Value.live.Sync(kv.Key.Transform, 0, 0);
+                if (_frame - kv.Value.seen > 300) { kv.Value.live.Destroy(); _live.Remove(kv.Key); }
             }
             // pieces whose layers aren't drawn this frame hide; long gone ones are destroyed
             var gone = new List<ScreenLayer>();

@@ -37,6 +37,15 @@ for (const s of SCEN) {
       await page.waitForTimeout(25);
     }
   }
+  // the map's scrolling element: LevelMap's own, or (develop: Squish Stack's ForestMap) the horizontal ScrollView in it
+  await page.evaluate(() => {
+    window.__mapScroller = () => {
+      const m = window.__components('LevelMap')[0] || window.__components('ForestMap')[0];
+      if (!m || !m.el) return null;
+      if (m.el.scrollWidth > m.el.clientWidth) return m.el;
+      return [...m.el.querySelectorAll('*')].find((d) => d.scrollWidth > d.clientWidth + 1 && getComputedStyle(d).overflowX !== 'visible') || m.el;
+    };
+  });
   const log = [];
   for (const e of [...s.steps].sort((a, b) => a.at - b.at)) {
     await stepTo(e.at);
@@ -44,13 +53,13 @@ for (const s of SCEN) {
       await page.mouse.move(...e.tap); await page.mouse.down(); await page.mouse.up();
       await page.waitForTimeout(60);
     } else if (e.scroll != null) {
-      const got = await page.evaluate((x) => { const el = window.__components('LevelMap')[0].el; el.scrollLeft = x; return el.scrollLeft; }, e.scroll);
+      const got = await page.evaluate((x) => { const el = window.__mapScroller(); el.scrollLeft = x; return el.scrollLeft; }, e.scroll);
       await page.waitForTimeout(100);
       log.push({ at: e.at, scroll: got });
     } else if (e.shot) {
       await page.waitForTimeout(700);
       await page.screenshot({ path: path.join(dir, `app-${e.at}.png`) });
-      const sl = await page.evaluate(() => { const m = window.__components('LevelMap')[0]; return m && m.el ? m.el.scrollLeft : null; });
+      const sl = await page.evaluate(() => { const el = window.__mapScroller(); return el ? el.scrollLeft : null; });
       log.push({ at: e.at, shot: true, scrollLeft: sl });
     }
   }

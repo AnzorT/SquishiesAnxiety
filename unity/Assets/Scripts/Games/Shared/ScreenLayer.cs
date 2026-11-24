@@ -26,6 +26,9 @@ namespace SquishSquad.Games.Shared
         public bool Visible = true;
         /// <summary>A Sort container's door: projected with its perspective (Sort's DoorView) instead of Transform.</summary>
         public DoorView Door;
+        /// <summary>A live character this layer stands for (Squish Stack's walker): Unity draws the creature (Transform maps
+        /// its rig's 0-100 box to the screen) instead of a markup.</summary>
+        public SquishSquad.Ui.Cards.CardCreature Creature;
         /// <summary>The markup's key: Set with the same key keeps the markup without building it again.</summary>
         public string Key { get; private set; }
 

@@ -62,6 +62,11 @@ static class Program
     static int Main(string[] args)
     {
         UiFont.ReadJson = n => File.ReadAllText(Res("Fonts/" + n + ".json"));
+        // the cut-outs' proportions (stack/art.js): the forest walker's still
+        var ars = new Dictionary<string, float>();
+        foreach (var a in JsonDocument.Parse(File.ReadAllText(Res("Stack/stack.json"))).RootElement.GetProperty("artList").EnumerateArray())
+            ars[a.GetProperty("key").GetString()] = a.GetProperty("ar").GetSingle();
+        SquishSquad.Ui.Cards.TrioItem.ArOf = k => ars.TryGetValue(k, out var v) ? v : 1;
         UiFont.ParseJson = j => JsonSerializer.Deserialize<UiFontData>(j, new JsonSerializerOptions { IncludeFields = true });
         Card.LoadXml = n => File.ReadAllText(Res("Cards/" + n + ".xml"));
         HubsData.LoadXml = n => File.ReadAllText(Res(n + ".xml"));
@@ -89,7 +94,8 @@ static class Program
                     foreach (var kv in (Dictionary<string, object>)FromJson(sec.Value)) d[kv.Key] = kv.Value;
                 }
             string card = s.GetProperty("card").GetString();
-            GameDef def = card == "game-stack" ? new SquishSquad.Games.Stack.StackDef(profile)
+            // (the forest's walker: Preview.js's player has selected creature "1", Mittens)
+            GameDef def = card == "game-stack" ? new SquishSquad.Games.Stack.StackDef(profile) { Walker = "mittens" }
                 : card == "game-sort" ? new SquishSquad.Games.Sort.SortDef(profile)
                 : (GameDef)new SquishSquad.Games.Hop.HopDef(profile);
             var screen = new GameScreen(def, 832, 384) { Season = Environment.GetEnvironmentVariable("SEASON") ?? "rainy" };
@@ -100,8 +106,9 @@ static class Program
             {
                 double at = e.GetProperty("at").GetDouble();
                 while (tk.Now < at) { tk.Tick(Math.Min(tk.Now + 16, at)); screen.Update(); }
-                if (e.TryGetProperty("tap", out var tap))
+                if (e.TryGetProperty("tapUnity", out var tap) || e.TryGetProperty("tap", out tap))
                 {
+                    // (tapUnity: where Unity's screen has what the app's has at `tap`, while the two hubs differ)
                     float x = tap[0].GetSingle(), y = tap[1].GetSingle();
                     screen.Down(x, y); screen.Up(x, y); screen.Update();
                 }

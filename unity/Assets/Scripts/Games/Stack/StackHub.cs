@@ -50,6 +50,8 @@ namespace SquishSquad.Games.Stack
             var tiles = new string[Road.TILES];
             for (int i = 0; i < tiles.Length; i++) tiles[i] = $"Stack/forest/{season}-{i}.jpg";
             var forest = new MapForest { Tiles = tiles, TileW = Road.TILE_W, TileH = Road.TILE_H, RoadW = Road.ROAD_W, Width = width, Nodes = nodes, Signs = signs, RoadY = Road.Y };
+            // the walker: the player's selected character (StackScreen.js walker)
+            forest.Walker = Walker; forest.WalkerAr = Walker != null ? TrioItem.ArOf(Walker) : 0;
             var map = new LevelMap(list, w, top, h, Cast, i => $"{Levels.LEVEL_LIST[i].N} SQUISHIES · {Levels.LEVEL_LIST[i].K} CUSHIONS", null, forest);
             Refresh(map);
             return map;

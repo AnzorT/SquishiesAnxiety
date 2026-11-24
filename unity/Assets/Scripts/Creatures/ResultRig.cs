@@ -34,6 +34,15 @@ namespace SquishSquad.Creatures
 
         ResultRig(IRigFrames live, Dictionary<string, RecordedRig> rec) { _live = live; _rec = rec; }
 
+        internal static bool LiveReady()
+        {
+#if SQUISH_PUERTS
+            return LiveRig.Ready();
+#else
+            return false;
+#endif
+        }
+
         /// <summary>Whether `key` can be drawn as a result character (live, or its four clips recorded).</summary>
         public static bool Can(string key)
         {
@@ -42,6 +51,48 @@ namespace SquishSquad.Creatures
 #endif
             foreach (var c in Clips) if (Resources.Load<TextAsset>("Creatures/" + key + "-res-" + c) == null) return false;
             return true;
+        }
+
+        /// <summary>Squish Stack's forest walker (src/stack/ForestMap.js, rig/walk.html): the plain rig, live (turned,
+        /// walking its gait: Yaw, Gait) or its idle recording (standing; it slides along the road).</summary>
+        public static ResultRig ForWalk(string key)
+        {
+#if SQUISH_PUERTS
+            if (DefineStates() && LiveRig.Eval(WalkJs))
+            {
+                var live = LiveRig.Create(key);
+                if (live != null)
+                {
+                    LiveRig.Eval("window.__resCtl=window.__resCtl||{};__resCtl[" + live.Id.ToString(CultureInfo.InvariantCulture) + "]=window.__resLast;");
+                    live.Fidgets(false);
+                    return new ResultRig(live, null) { _key = key };
+                }
+            }
+#endif
+            var r = RecordedRig.Load(key);
+            if (r == null) return null;
+            var rr = new ResultRig(null, new Dictionary<string, RecordedRig> { ["idle"] = r }) { _key = key };
+            rr.Clip("idle");
+            return rr;
+        }
+        string _key;
+
+        // walk.html step(): its own gait from the Squad House (HouseWalk.step) on the rig's ext, `w` its weight
+        const string WalkJs = "window.__walkStep=window.__walkStep||function(id,key,w,dt,spin){var c=window.__resCtl&&__resCtl[id],I=c&&c._I;if(!I)return;"
+            + "var S=(window.__walkS=window.__walkS||{}),s=S[id]||(S[id]={E:{},ws:{}});if(I.ext!==s.E)I.ext=s.E;for(var k in s.E)s.E[k]=0;"
+            + "if(w>0&&window.HouseWalk)try{HouseWalk.step(key,s.ws,s.E,w,dt,1,spin);}catch(e){}};";
+
+        /// <summary>The walker's turn (live: the rig's spinOff).</summary>
+        public void Yaw(double deg) { (_live as IHouseRig)?.Yaw(deg); }
+
+        /// <summary>The walker's gait this frame (live): weight 0..1, `dt` seconds, the way it walks (±90).</summary>
+        public void Gait(double w, double dt, double spin)
+        {
+#if SQUISH_PUERTS
+            if (_live is LiveRig l)
+                LiveRig.Eval("__walkStep(" + l.Id.ToString(CultureInfo.InvariantCulture) + "," + Q(_key) + "," + w.ToString("R", CultureInfo.InvariantCulture) + ","
+                    + dt.ToString("R", CultureInfo.InvariantCulture) + "," + spin.ToString("R", CultureInfo.InvariantCulture) + ")");
+#endif
         }
 
         public static ResultRig For(string key)
@@ -155,6 +206,8 @@ namespace SquishSquad.Creatures
         {
             CardPieces.CanLive = ResultRig.Can;
             CardPieces.MakeLive = (parent, c) => new CardCreatureView(parent, c);
+            // Squish Stack's walker: live, or Mittens' idle recording
+            SquishSquad.Games.Shared.MapForest.LiveWalker = key => CardPieces.LiveCharacters && (ResultRig.LiveReady() || Resources.Load<TextAsset>("Creatures/" + key) != null);
         }
 
         readonly Transform _parent;
@@ -169,18 +222,22 @@ namespace SquishSquad.Creatures
         CardCreatureView(Transform parent, CardCreature c)
         {
             _parent = parent; _c = c;
-            _rig = ResultRig.For(c.Key);
+            _walk = c.Kind == "walk";
+            _rig = _walk ? ResultRig.ForWalk(c.Key) : ResultRig.For(c.Key);
             if (_rig == null) c.Failed = true;
         }
+        readonly bool _walk;
+        float _lastT = -1;
 
-        public void Sync(CardLayer l, int order)
+        public void Sync(Affine transform, float opacity, int order)
         {
             var cc = _c;
             if (_rig == null) return;
             if (cc.Body == null) { cc.Body = ResultRig.BodyOf(_rig.FrameAt(0)); return; }
             if (_view == null)
             {
-                // (its texture as big as the box shows on screen at rest)
+                // (its texture as big as the box shows on screen at rest: the owner sets Unit once the body is known)
+                if (cc.Unit <= 0) return;
                 _size = Mathf.Clamp(Mathf.RoundToInt(100 * cc.Unit * UiPiece.PxPerDp), 32, 1024);
                 _holder = new GameObject("card creature " + cc.Key);
                 _holder.transform.SetParent(_parent, false);
@@ -188,14 +245,24 @@ namespace SquishSquad.Creatures
                 _view.Failed = _ => cc.Failed = true;
             }
             if (cc.State != _state) { _state = cc.State; _rig.State(cc.State); }
-            if (cc.Clip != _clip || cc.ClipAt != _clipAt) { _clip = cc.Clip; _clipAt = cc.ClipAt; _rig.Clip(cc.Clip); }
-            _rig.Ext(cc.Ext);
+            if (_walk)
+            {
+                float now = Time.realtimeSinceStartup, dt = _lastT < 0 ? 0.016f : Mathf.Min(0.05f, now - _lastT);
+                _lastT = now;
+                _rig.Yaw(cc.Yaw);
+                _rig.Gait(cc.Walk, dt, cc.WalkSpin);
+            }
+            else
+            {
+                if (cc.Clip != _clip || cc.ClipAt != _clipAt) { _clip = cc.Clip; _clipAt = cc.ClipAt; _rig.Clip(cc.Clip); }
+                _rig.Ext(cc.Ext);
+            }
             foreach (var b in cc.Bursts) _rig.Emit(b.kind, b.at, b.x, b.y, b.n);
             cc.Bursts.Clear();
             _view.Order = order;
-            _view.SetOpacity(l.Visible ? l.Opacity : 0);
-            _view.GreyAbove(cc.GreyAbove);
-            Place(_holder.transform, l.Transform, _size);
+            _view.SetOpacity(opacity);
+            _view.GreyAbove(_walk ? -1 : cc.GreyAbove);
+            Place(_holder.transform, transform, _size);
         }
 
         // the layer's transform (rig units → screen dp, y down) as the holder's position, turn and scale (world units are
