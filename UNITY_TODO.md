@@ -48,14 +48,18 @@ apart from `Haptics.Android.cs`' `Handheld` (missing from that package, not from
 ## Testing and release
 
 - Add the Unity license secrets in GitHub, so CI builds and sends screenshots.
-- Test on the PC and on the Galaxy A15: fix what breaks and measure the FPS (the native rig's cost first: on this PC
-  (.NET 8, x64) a frame with its markup is ~1.1 ms for Mittens, ~2.1 ms for Kiko, 3.4-4.9 ms for a result card's
-  three, ~1-2 MB allocated per creature frame: about half of what the same rig costs in V8 (Node) here, which is what
-  the app's own WebView runs on the A15; `NativeRig.LastFrameMs` reports it in the app; the scripts' start-up, ~2.5 s
-  under .NET's JIT, runs on a worker thread at launch). If the A15 is short, the next steps are direct calls of known
-  functions in `jsc.mjs`, fewer string allocations, and stepping a card's three at 30 fps.
+- Test on the PC and on the Galaxy A15: fix what breaks and measure the FPS (the native rig's cost first). On this PC
+  (.NET 8, x64; `rig-test` `bench [alloc]`, the whole path from the rig's clock to the compiled scene, the GPU draw
+  left out), per frame: Mittens 1.37 ms and 586 KB allocated (was 1.90 ms and 1,974 KB with the markup written and
+  parsed), a result card's three (Mittens, Lumi, Biscuit) 4.03 ms and 2,006 KB (was 6.10 ms and 5,932 KB). The
+  frame reaches the drawing code as a node tree (`Creatures/RigTree.cs`), no SVG text. What's left of the garbage is
+  the rig's own: about half its arrays (`[x, y]` points from its mapping functions, ~1,300 a frame for Mittens), the
+  rest the path strings it sets, the string buffers and the scene's shapes. Under ~50 KB would take the compiler
+  keeping those point pairs out of the heap (escape analysis in `jsc.mjs`), the next step if the A15 shows GC
+  pauses. `NativeRig.LastFrameMs` reports the rig's time in the app; its scripts start on a worker thread at launch.
 - The native rig against the JS (`tools/unity/rig-test/run.mjs --all`, 118 creatures x 13 scenarios): 62,516 of
-  62,540 snapshots the same markup, the rest at most 0.006 % of their pixels apart (last-bit differences: V8's
+  62,540 snapshots the same markup, the rest at most 0.006 % of their pixels apart, and every frame's direct node tree
+  the same as its parsed markup (last-bit differences: V8's
   Math.pow isn't quite fdlibm's, the port matches it 96 % of the time; Math.tanh / cbrt / log2 are the platform's).
 - Still on stills, not live rigs: Squish Sort's and Squish Hop's play screens (tools/rig/sort.html / hop.html stages:
   their page scripts could be compiled with `jsc.mjs` the same way), the chest unlock's creature after BAM
