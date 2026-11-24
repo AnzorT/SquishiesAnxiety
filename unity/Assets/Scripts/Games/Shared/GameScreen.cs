@@ -362,7 +362,7 @@ namespace SquishSquad.Games.Shared
             {
                 HubButton hit = null;
                 foreach (var b in _hub.Buttons) if (b.Hit(x, y)) hit = b;
-                if (hit != null) { _pressed = hit; hit.Press.Down(); return; }
+                if (hit != null) { _pressed = hit; hit.Down(); return; }
             }
             if (Sw.View == "map" && _map != null && y >= ViewTop) { _onMap = true; _map.Down(x, y); }
         }
@@ -396,7 +396,7 @@ namespace SquishSquad.Games.Shared
             {
                 var b = _pressed;
                 _pressed = null;
-                b.Press.Up();
+                b.Up();
                 if (b.Hit(x, y)) b.OnPress?.Invoke();
                 return;
             }

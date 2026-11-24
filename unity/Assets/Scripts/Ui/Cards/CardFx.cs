@@ -102,8 +102,8 @@ namespace SquishSquad.Ui.Cards
     }
 
     /// <summary>src/components/idleLoop.js useKeyLoop: a linear phase 0 → 1 every `ms`, read through keyframes, started
-    /// `delay` ms after it's mounted (a setTimeout), forever. (Expo web plays a native-driver loop once only; the phone,
-    /// which Unity copies, loops.)</summary>
+    /// `delay` ms after it's mounted (a setTimeout), forever. (develop's idleLoop.js phaseLoop runs it on JS on the web,
+    /// 2026-11-20, so Expo web loops too now; it used to play a native-driver loop once only.)</summary>
     public sealed class KeyLoop
     {
         public static readonly double[] PHASE = MakePhase();
@@ -128,7 +128,7 @@ namespace SquishSquad.Ui.Cards
         {
             Unmount();
             _tk = Ticker.Default;
-            _loop = Animated.Loop(Animated.Timing(_phase, Fx.Timing(1, _ms, Easing.Linear)), Fx.LikeWeb ? 1 : -1);
+            _loop = Animated.Loop(Animated.Timing(_phase, Fx.Timing(1, _ms, Easing.Linear)), -1);
             var loop = _loop;
             _timer = _tk.SetTimeout(() => loop.Start(), _delay);
         }

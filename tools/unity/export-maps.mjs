@@ -14,7 +14,9 @@
 //   Hubs/img/<hash>.png             those emoji, as Chrome draws them
 //   Hubs/hubs.json                  the pieces' sizes, the rules cards' buttons, and the squishies each screen shows
 //                                   (the cast's / the containers' pictures, in the app's order: Resources/Stack/art)
-// node tools/unity/export-maps.mjs
+// node tools/unity/export-maps.mjs [stack] [sort] [hop] [rules]   (only those parts; what's not re-exported stays as
+//   hubs.json had it. develop's Squish Stack hub is the GameHub (Games/Shared/ModeHub, Squishdoku's pieces): it has no
+//   BLITZ ⚡ or GO ⚡ any more, so the ones cut from the old hub stay for the hubs still drawn the old way)
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -25,7 +27,8 @@ const HUBS = path.join(ROOT, 'unity', 'Assets', 'Resources', 'Hubs');
 fs.mkdirSync(MAPS, { recursive: true });
 fs.mkdirSync(HUBS, { recursive: true });
 
-for (const s of ['sunny', 'rainy', 'snowy']) fs.copyFileSync(path.join(ROOT, 'assets', 'royal', `levels-${s}.jpg`), path.join(MAPS, `world-${s}.jpg.bytes`));
+// (develop removed assets/royal/levels-*.jpg: what was copied stays)
+for (const s of ['sunny', 'rainy', 'snowy']) if (fs.existsSync(path.join(ROOT, 'assets', 'royal', `levels-${s}.jpg`))) fs.copyFileSync(path.join(ROOT, 'assets', 'royal', `levels-${s}.jpg`), path.join(MAPS, `world-${s}.jpg.bytes`));
 
 // a picture the app loads, as a Resources path: the squishies' cut-outs (assets/stack/<key>.webp -> Stack/art/<key>)
 // and the Crib's rooms (assets/crib/rooms/<name>.webp -> Hop/rooms/<name>)
@@ -39,7 +42,11 @@ function resOf(src) {
 }
 const fileOf = (uri) => { const r = resOf(uri); return r && r.startsWith('Stack/art/') ? r.slice(10) : ''; };
 
-const pieces = {};
+const ONLY = new Set(process.argv.slice(2));
+const want = (part) => !ONLY.size || ONLY.has(part);
+// what's already exported (kept for the parts not run, and for pieces develop's pages no longer have)
+const OLD = fs.existsSync(path.join(HUBS, 'hubs.json')) ? JSON.parse(fs.readFileSync(path.join(HUBS, 'hubs.json'), 'utf8')) : {};
+const pieces = { ...(OLD.pieces || {}) };
 // a piece's SVG: its pictures by Resources path; colour-emoji characters (rasters) inlined as PNG data
 async function save(dir, name, handle) {
   const s = await snap(page, handle, { inline: false });
@@ -65,28 +72,37 @@ const box = (h) => h.evaluate((e) => { const r = e.getBoundingClientRect(); retu
 
 const { browser, page, errors } = await openApp('http://localhost:8081/?phone=1&preview=1&card=game-stack');
 await page.waitForTimeout(7000);
-const out = { pieces, rules: {} };
+const out = { ...OLD, pieces, rules: Object.fromEntries((OLD.rulesList || []).map((r) => [r.game, r])) };
 
-// ---- Squish Stack's hub: the orb, BLITZ ⚡, GO ⚡ ------------------------------------------------------------------
+// ---- Squish Stack's hub: the orb (and, while the page still had them, BLITZ ⚡ and GO ⚡) --------------------------------
+if (want('stack')) {
 await save(HUBS, 'back', await page.evaluateHandle(() => window.__components('Orb')[0].el));
-await save(HUBS, 'blitz-title', await page.evaluateHandle(() => [...document.querySelectorAll('div')].find((d) => d.childNodes.length === 1 && d.textContent === 'BLITZ ⚡')));
-const go = await page.evaluateHandle(() => {
-  const b = window.__components('SdButton').find((c) => /GO/.test(c.el.textContent)).el;
-  const inner = b.firstElementChild;
-  return { b, lip: inner.children[0], ring: inner.children[1] };
-});
-await save(HUBS, 'go-lip', await go.evaluateHandle((g) => g.lip));
-await save(HUBS, 'go-face', await go.evaluateHandle((g) => g.ring));
-out.go = { button: await box(await go.evaluateHandle((g) => g.b)), ring: await box(await go.evaluateHandle((g) => g.ring)) };
-out.stackCast = await page.evaluate(() => window.__components('Hub')[0].props.uris).then((l) => l.map(fileOf));
+const blitzTitle = await page.evaluateHandle(() => [...document.querySelectorAll('div')].find((d) => d.childNodes.length === 1 && d.textContent === 'BLITZ ⚡') || null);
+if (await blitzTitle.evaluate((e) => !!e)) {
+  await save(HUBS, 'blitz-title', blitzTitle);
+  const go = await page.evaluateHandle(() => {
+    const b = window.__components('SdButton').find((c) => /GO/.test(c.el.textContent)).el;
+    const inner = b.firstElementChild;
+    return { b, lip: inner.children[0], ring: inner.children[1] };
+  });
+  await save(HUBS, 'go-lip', await go.evaluateHandle((g) => g.lip));
+  await save(HUBS, 'go-face', await go.evaluateHandle((g) => g.ring));
+  out.go = { button: await box(await go.evaluateHandle((g) => g.b)), ring: await box(await go.evaluateHandle((g) => g.ring)) };
+}
+const uris = await page.evaluate(() => (window.__components('Hub')[0] || {}).props?.uris || null);
+if (uris) out.stackCast = uris.map(fileOf);
+}
 
 // ---- Squish Sort: the containers' squishies -----------------------------------------------------------------------
+if (want('sort')) {
 await page.evaluate(() => window.__preview('game-sort'));
 await page.waitForTimeout(5000);
-const pools = await page.evaluate(() => { const p = window.__components('Hub')[0].props.pools; return { fridge: p.fridge.map((c) => c.uri), cupboard: p.cupboard.map((c) => c.uri) }; });
-out.sortPools = { fridge: pools.fridge.map(fileOf), cupboard: pools.cupboard.map(fileOf) };
+const pools = await page.evaluate(() => { const p = window.__components('Hub')[0].props.pools; return p ? { fridge: p.fridge.map((c) => c.uri), cupboard: (p.cupboard || []).map((c) => c.uri) } : null; });
+if (pools) out.sortPools = { fridge: pools.fridge.map(fileOf), cupboard: pools.cupboard.map(fileOf) };
+}
 
 // ---- Squish Hop: the "?" orb, the cast, every room's card (the map builds them all, a few a frame) -------------------
+if (want('hop')) {
 await page.evaluate(() => window.__preview('game-hop'));
 await page.waitForTimeout(6000);
 await save(HUBS, 'help', await page.evaluateHandle(() => window.__components('Orb')[1].el));
@@ -96,9 +112,10 @@ for (const room of rooms) {
   await save(MAPS, 'room-' + room, await page.evaluateHandle((room) => window.__components('RoomCard').find((c) => c.props.room === room).el, room));
 }
 out.rooms = rooms;
+}
 
 // ---- the rules cards: each column without its button ----------------------------------------------------------------
-for (const game of ['stack', 'sort', 'hop']) {
+for (const game of want('rules') ? ['stack', 'sort', 'hop'] : []) {
   await page.evaluate((c) => window.__preview(c), `${game}-rules`);
   await page.waitForTimeout(2500);
   const parts = await page.evaluateHandle(() => {
@@ -130,6 +147,6 @@ out.pieceList = Object.entries(pieces).map(([name, [w, h]]) => ({ name, w, h }))
 out.rulesList = Object.entries(out.rules).map(([game, r]) => ({ game, ...r }));
 fs.writeFileSync(path.join(HUBS, 'hubs.json'), JSON.stringify(out, null, 1));
 console.log('pieces:', Object.keys(pieces).join(' '));
-console.log('rooms:', rooms.join(' '), '| casts:', out.stackCast.length, out.hopCast.length, out.sortPools.fridge.length, out.sortPools.cupboard.length);
+console.log('rooms:', (out.rooms || []).join(' '), '| casts:', out.stackCast?.length, out.hopCast?.length, out.sortPools?.fridge.length, out.sortPools?.cupboard.length);
 if (errors.length) console.log('page errors:', errors.slice(0, 3).join(' | '));
 await browser.close();

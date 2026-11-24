@@ -50,7 +50,7 @@
   ],
   "rules-stack-right": [
    293,
-   282
+   260.5
   ],
   "rules-sort-left": [
    293,
@@ -62,11 +62,11 @@
   ],
   "rules-hop-left": [
    293,
-   226
+   285
   ],
   "rules-hop-right": [
    293,
-   325
+   346.5
   ]
  },
  "rules": {
@@ -81,14 +81,14 @@
     47
    ],
    "label": "GOT IT!",
-   "kind": "green",
+   "kind": "gold",
    "padH": 22,
    "padV": 12,
    "fontSize": 18,
    "marginTop": 8,
    "at": [
     88.547,
-    220
+    198.5
    ],
    "size": [
     115.891,
@@ -106,7 +106,7 @@
     47
    ],
    "label": "GOT IT!",
-   "kind": "green",
+   "kind": "gold",
    "padH": 22,
    "padV": 12,
    "fontSize": 18,
@@ -131,14 +131,14 @@
     47
    ],
    "label": "GOT IT!",
-   "kind": "green",
+   "kind": "gold",
    "padH": 22,
    "padV": 12,
    "fontSize": 18,
    "marginTop": 8,
    "at": [
     88.547,
-    263
+    284.5
    ],
    "size": [
     115.891,
@@ -560,7 +560,7 @@
   {
    "name": "rules-stack-right",
    "w": 293,
-   "h": 282
+   "h": 260.5
   },
   {
    "name": "rules-sort-left",
@@ -575,12 +575,12 @@
   {
    "name": "rules-hop-left",
    "w": 293,
-   "h": 226
+   "h": 285
   },
   {
    "name": "rules-hop-right",
    "w": 293,
-   "h": 325
+   "h": 346.5
   }
  ],
  "rulesList": [
@@ -596,14 +596,14 @@
     47
    ],
    "label": "GOT IT!",
-   "kind": "green",
+   "kind": "gold",
    "padH": 22,
    "padV": 12,
    "fontSize": 18,
    "marginTop": 8,
    "at": [
     88.547,
-    220
+    198.5
    ],
    "size": [
     115.891,
@@ -622,7 +622,7 @@
     47
    ],
    "label": "GOT IT!",
-   "kind": "green",
+   "kind": "gold",
    "padH": 22,
    "padV": 12,
    "fontSize": 18,
@@ -648,14 +648,14 @@
     47
    ],
    "label": "GOT IT!",
-   "kind": "green",
+   "kind": "gold",
    "padH": 22,
    "padV": 12,
    "fontSize": 18,
    "marginTop": 8,
    "at": [
     88.547,
-    263
+    284.5
    ],
    "size": [
     115.891,

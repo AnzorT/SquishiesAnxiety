@@ -3,6 +3,7 @@
 //   HubButton   an SdButton: the lip stays, the ring and face move down 4 dp while pressed and the whole button shrinks
 //               to 0.93 (70 ms in, a spring out); in a Pulse (a forever scale up and down, one loop) or not. Drawn from
 //               CardArt.ButtonLook, or exported (GO ⚡: its emoji is Chrome's)
+//               An Area is a box tapped as a whole and drawn by its hub (royal Plaque with onPress: it sinks 2 dp while held)
 //   ModeCard    squishdoku/Hub.js ModeCard: a card sliding in (SlideIn, dy 50): its title, its lines, a progress bar,
 //               the pulsing button
 //   Para        a Text with lines of its own (\n), each wrapped and centred
@@ -34,6 +35,21 @@ namespace SquishSquad.Games.Shared
         {
             Name = name; _ringW = ringW; _ringH = ringH; W = ringW; H = ringH + Lip; _lip = lip; _face = face; OnPress = onPress;
         }
+
+        /// <summary>An exported SdButton from anywhere in Resources (its lip and its ring, both ringW x ringH).</summary>
+        public static HubButton FromXml(string name, string lipPath, string facePath, float ringW, float ringH, Action onPress) =>
+            new HubButton(name, ringW, ringH, () => HubsData.LoadXml(lipPath), () => HubsData.LoadXml(facePath), onPress);
+
+        /// <summary>A box tapped as a whole (a Plaque with onPress), drawn by its hub: Held while the finger's on it, no
+        /// sound of its own; Place puts it on the screen.</summary>
+        public static HubButton Area(string name, float w, float h, Action onPress) => new HubButton(name, w, h - Lip, null, null, onPress) { _area = true };
+
+        bool _area;
+        /// <summary>An Area under the finger.</summary>
+        public bool Held { get; private set; }
+        public void Place(Affine at) => _at = at;
+        public void Down() { if (_area) Held = true; else Press.Down(); }
+        public void Up() { if (_area) Held = false; else Press.Up(); }
 
         public static HubButton Drawn(string name, CardArt.ButtonLook look, Action onPress) => new HubButton(name, look.RingW, look.RingH, look.LipMarkup, look.FaceMarkup, onPress);
 

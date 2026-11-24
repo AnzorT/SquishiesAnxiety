@@ -47,14 +47,14 @@ far sits 36 pu off; the Level Pass's track and panel don't fade in over its firs
 | ✅ | One pause card: PAUSED (gold), RESUME gold, QUIT white, nothing else | three buttons (green / purple / white) and a body text, per game |
 | ✅ | Time's up / fail: one column, MENU (MAP) white + RETRY gold, 150 wide | small white + big pink |
 | ⬜ | Blitz cards say the game's unit (board / round / puzzle) | "board" everywhere |
-| 🔧 | HOW TO PLAY: GOT IT! in gold; Sort's and Hop's shorter texts | green — Squishdoku's done; the other three come with their hubs' re-export (export-maps.mjs) |
+| ✅ | HOW TO PLAY: GOT IT! in gold; Sort's and Hop's shorter texts | green — done: all four re-exported (`export-maps.mjs rules`, which now runs by parts and keeps what develop's pages no longer have) |
 
 ## The games
 
 | | develop | Unity before |
 |---|---|---|
 | ✅ | **Squish Stack's map is a forest road** (`src/stack/ForestMap.js`, `road.js`, `forest-<season>-0..3.jpg`): the levels stand on the road like stepping stones, wooden signs per band, your creature walks to the next level | the shared map: nodes on a wave with three dots between them (**"the rocks are not connected"**) over the season's world picture — done, the walker too (`LevelMap` DrawWalker: the selected creature stands on the next level and walks the road there after a win, turned side-on with its own gait when live (`Creatures/ResultRig.cs` ForWalk, walk.html's moves), else its idle recording slides along, else its cut-out stands; `maps-test stack-map` 1.5-2.4 % settled, the scenarios tap develop's new hub (`tapUnity` while Unity's hub is the old one)) |
-| ⬜ | Stack hub: GameHub with picture wood cards (REGULAR / BLITZ), HOW TO PLAY "?" | old heads, tagline, mode cards, progress bar |
+| ✅ | Stack hub: GameHub with picture wood cards (REGULAR / BLITZ), HOW TO PLAY "?" | old heads, tagline, mode cards, progress bar — done: `Games/Shared/ModeHub` (Hub.js GameHub, Squishdoku's plaques and HOW TO PLAY with the game's pictures, `Resources/Stack/mode-*.png`; royal Lettering moved to `Ui/Cards/RoyalLettering`), the rules card re-exported (`export-maps.mjs stack rules`: GOT IT! gold, develop's texts). `maps-test` stack-hub 1.1-2.0 %, stack-first / stack-rules 1.9-2.8 % (the card's text edges a fraction of a pixel off), stack-stars 2.0 % (was 58 % with the old hub); the idle loops (KeyLoop) loop on the web now too, as develop's idleLoop.js |
 | 🔧 | Stack: no clock, no UNDO; MOVES n / par in the middle; goal bottom left; RESTART and HINT bottom right | clock, UNDO, old HUD — the clock is gone (Levels.cs as develop: LATE_FROM keeps its +4 coins); left: no UNDO and the new HUD layout (re-export) |
 | 🔧 | Stack Blitz endless (ramp then 7-on-4 / 8-on-4), coins per puzzle, save by ad or gems | 10 puzzles on a 4:00 clock — the rules are develop's (`Levels.cs` BlitzSpec / BlitzPrize / AfterBlitz(cleared), record `top` / `runs`; `games/stack` 47541 cases match); left: the run screen (StackBlitz still plays ten on a clock, paid the new way) and its save / game-over cards |
 | ⬜ | Squish Sort: fridge only (no Toy Cupboard), the fridges redrawn realistic, kitchen room behind the map and the play, GameHub, live rigs in play | fridge + cupboard, old fridge art, stills |

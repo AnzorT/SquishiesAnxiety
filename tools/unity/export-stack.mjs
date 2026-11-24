@@ -7,6 +7,8 @@
 //   img/<hash>.png         pictures the pieces show (the rays behind the page, ...)
 //   art/<key>.png          every squishy's cut-out (assets/stack/*.webp), and stack.json: their height / width
 //   stack.json             where things are on the reference screen (dp), for checking the Unity layout
+//   mode-regular.png, mode-blitz.png   the hub's mode panels' pictures (assets/stack/mode-*.jpg; the panels are
+//                          Squishdoku's, Games/Shared/ModeHub)
 //   blitz-bolt.png         Blitz's title's ⚡ (Chrome draws it from Noto Color Emoji) and blitz-heart.png the revive
 //   blitz.json             chip's ♥ (from a system font, not the Fallback one), each cut on the page's own pixel grid,
 //                          and where each sits from its text's origin (dp), for StackArt.BlitzLeftColumn
@@ -104,6 +106,13 @@ for f in sorted(os.listdir(src)):
         Image.open(os.path.join(src, f)).convert('RGBA').save(os.path.join(dst, f[:-5] + '.png'), optimize=True)
 `, path.join(ROOT, 'assets', 'stack'), path.join(OUT, 'art')]);
 console.log(`art: ${Object.keys(art).length} squishies`);
+// the hub's mode pictures (JPEG to PNG: the tests read PNG)
+execFileSync('python3', ['-c', `
+import sys
+from PIL import Image
+for k in ('regular', 'blitz'):
+    Image.open(sys.argv[1] + '/mode-' + k + '.jpg').convert('RGB').save(sys.argv[2] + '/mode-' + k + '.png', optimize=True)
+`, path.join(ROOT, 'assets', 'stack'), OUT]);
 
 // ---- the level screen ------------------------------------------------------------------------------------------
 const { browser, page, errors } = await openApp('http://localhost:8081/?phone=1&preview=1&card=game-stack');
