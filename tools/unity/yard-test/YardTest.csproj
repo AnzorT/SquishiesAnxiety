@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The yard games off Unity: the compiled realm (the rig, tools/unity/rig/yard-host.js and the yard scripts:
+       Creatures/Js, its Gen), Games/Yard/YardJs.cs reading it, Games/Yard/View/YardGameArt.cs drawing the app's top bar
+       and cards, all drawn with the reference rasteriser and compared with the app's screenshots (capture.mjs).
+       GEN: where jsc.mjs wrote the compiled scripts (default: the Unity project's). -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <Optimize>true</Optimize>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>CS0162;CS0164;CS0168;CS0219;CS8321;CS1998;CS0649;CS0414</NoWarn>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <GEN Condition="'$(GEN)' == ''">../../../unity/Assets/Scripts/Creatures/Js/Gen</GEN>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../unity/Assets/Scripts/Creatures/Js/*.cs" />
+    <Compile Include="$(GEN)/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Creatures/RigTree.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Anim/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/UiFont.cs;../../../unity/Assets/Scripts/Ui/UiSvg.cs;../../../unity/Assets/Scripts/Ui/SvgText.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Yard/YardJs.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Yard/View/YardGameArt.cs" Condition="Exists('../../../unity/Assets/Scripts/Games/Yard/View/YardGameArt.cs')" />
+    <Compile Include="../vector-test/ReferenceRaster.cs;../vector-test/Png.cs" />
+    <Compile Include="*.cs" />
+  </ItemGroup>
+</Project>

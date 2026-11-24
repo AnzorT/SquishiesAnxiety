@@ -141,7 +141,7 @@ x_109 = Invoke(cv_108, "getContext", ((V)("2d")));
 im_110 = Invoke(x_109, "createImageData", ((V)(S_107)), ((V)(S_107)));
 sd_111 = 7D;
 rnd_112 = Fn((V _self100, int _argc119, V _a121, V _a122, V _a123, V _a124, V[] _rest120) => {
-return ((V)((sd_111 = ((sd_111 * 16807D) % 2147483647D) / 2147483647D)));
+return ((V)(((sd_111 = ((sd_111 * 16807D) % 2147483647D)) / 2147483647D)));
 }, 0, "", true);
 oct_113 = Fn((V _self100, int _argc125, V n_131, V _a128, V _a129, V _a130, V[] _rest126) => {
 V g_132 = default;

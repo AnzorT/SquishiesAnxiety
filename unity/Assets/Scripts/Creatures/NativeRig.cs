@@ -49,6 +49,9 @@ namespace SquishSquad.Creatures
         {
             if (_boot != null || RigHost.Booted) return;
             LoadFiles();
+            // the yard games' saved bests, for the realm's localStorage (tools/unity/rig/yard-host.js reads them as a file
+            // before yard-games.js does); PlayerPrefs only answers on this thread
+            try { _yardSave = PlayerPrefs.GetString("yardgames.v1", null); } catch (Exception) { _yardSave = null; }
             _boot = new System.Threading.Thread(() =>
             {
                 var t = System.Diagnostics.Stopwatch.StartNew();
@@ -83,9 +86,12 @@ namespace SquishSquad.Creatures
             if (asset != null) Resources.UnloadAsset(asset);
         }
 
+        static string _yardSave;
+
         // the files the rig fetch()es, from the bundle (no network: the app's fetch of its own files)
         static string ReadFile(string path)
         {
+            if (path == "local/yardgames.v1") return _yardSave;
             if (_files == null)
             {
                 string json = "{}";
@@ -107,6 +113,15 @@ namespace SquishSquad.Creatures
             LoadFiles();
             try { return new NativeRig(RigHost.Mount(key), key); }
             catch (Exception e) { Debug.LogWarning("[NativeRig] mount " + key + ": " + e.Message); return null; }
+        }
+
+        /// <summary>Moves the one clock to now (at most once a Unity frame): what runs on it without a creature on screen
+        /// asking for its frame (the yard games' loop: Games/Yard/YardJs). False when the rig can't run.</summary>
+        public static bool Tick()
+        {
+            if (!Boot()) return false;
+            Advance();
+            return true;
         }
 
         // the one clock: up to now, in 16 ms steps, once per Unity frame

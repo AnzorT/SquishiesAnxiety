@@ -49,6 +49,16 @@ namespace SquishSquad.Creatures.Js.Gen
             ("app/rig-look.js", S_app_rig_look_js.Run),
             ("result-states.js", S_result_states_js.Run),
             ("native-host.js", S_native_host_js.Run),
+            ("yard-host.js", S_yard_host_js.Run),
+            ("yard-games.js", S_yard_games_js.Run),
+            ("yg-intros.js", S_yg_intros_js.Run),
+            ("yg-hoop.js", S_yg_hoop_js.Run),
+            ("yg-soccer.js", S_yg_soccer_js.Run),
+            ("yg-hop.js", S_yg_hop_js.Run),
+            ("yg-tramp.js", S_yg_tramp_js.Run),
+            ("yg-slide.js", S_yg_slide_js.Run),
+            ("yg-corn.js", S_yg_corn_js.Run),
+            ("yg-pong.js", S_yg_pong_js.Run),
         };
     }
 }

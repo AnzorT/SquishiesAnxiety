@@ -27,6 +27,7 @@ input on the Unity code, draws it with the reference rasteriser and diffs the pi
 | Start-up screens | (drawn) | `auth-test` (+ `-- emu` against the Firebase emulators) |
 | Games | `export-<game>.mjs` | `stack-test`, `sort-test`, `hop-test`, `squishdoku-test`, `maps-test`, `squish-test` |
 | Achievements, settings, spin, streak, daily | `export-screens.mjs` | `screens-test` (+ `-- emu`) |
+| Yard games (the app's own, compiled with the rig) | `yard-test/capture.mjs` (also the coin) | `yard-test` (`smoke`, `shots`) |
 | Game rules | | `games/<game>` (vs the JS on the same inputs) |
 | Fonts, text | `ui/fonts.py` | `ui/TextTest` |
 | Animations (RN's Animated) | | `anim` |
@@ -114,6 +115,12 @@ hands each frame to `CreatureView` as a node tree read straight from the rig's e
 - `node tools/unity/rig/dump-frames.mjs <dir> mittens lumi ...` writes creature frames (SVG) with Chrome's picture of
   each; `dotnet run -c Release --project tools/unity/vector-test -- <dir>` compiles them with the Unity app's vector
   core (`Assets/Scripts/Vector`), draws them with a reference rasteriser and reports the pixels that differ from Chrome.
+- The yard games are compiled into the same realm (`YARD_SCRIPTS` in `jsc.mjs`: yard-games.js, yg-intros.js and the
+  seven yg-*.js from the web build, after `tools/unity/rig/yard-host.js`, the page's side Unity talks to): they run as
+  the app's page runs them, on the same clock, and `Games/Yard/YardJs.cs` reads their stage back for
+  `Games/Yard/View/YardScreen.cs`. `dotnet run -c Release --project tools/unity/yard-test -- smoke hoop` plays one off
+  Unity; `-- shots <dir> hoop` draws its intro, game and results and compares them with
+  `node tools/unity/yard-test/capture.mjs <dir>`'s (the app's, which also exports the results card's coin).
 - `node tools/unity/rig/record.mjs <key> [--clip ...]` still records frames (the fallback `RecordedRig` plays them if
   the native rig can't start; none ship now).
 

@@ -656,7 +656,7 @@ V m_514 = default;
 if (_self505.IsNullish) _self505 = GlobalV;
 mid_459 = Call(G("requestAnimationFrame"), V.Undef, meter_460);
 if (!(Truthy(mt_455))) {
-mt_455 = mlast_456 = now_512;
+mt_455 = (mlast_456 = now_512);
 mn_457 = ((V)(0D));
 mworst_458 = ((V)(0D));
 return default;

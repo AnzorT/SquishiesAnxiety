@@ -176,7 +176,7 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
 11. Yard games: done in a first cut. Games/Yard: the page's yard-games.js as YardKit (a retained SVG DOM the games
    write, the context: creatures, score, clock, hint, toasts, particles, timers, finish; the saved bests) and the seven
    games (Hoop Shot, Penalty Kick, Hopscotch, Bounce Up, Slide & Splash, Cornhole, Ping-Pong) line for line; their
-   12 sounds rendered by tools/unity/house/export-yard.mjs. house-test `yard` plays each to its end; yard-check.mjs
+   12 sounds rendered by tools/unity/house/export-yard.mjs. (2026-11-24: replaced by develop's own landscape games compiled with the rig, Games/Yard/YardJs.cs and tools/unity/yard-test; house-test `yard` and yard-check.mjs went with the old port.) house-test `yard` played each to its end; yard-check.mjs
    compares the opening scenes with the page (they match). Games/Yard/View/YardScreen: the phone frame with the hub
    (your player live, the strip, the cards, the sound button) or a game (layers redrawn when they change, live rigs
    with yaw and poses, the top bar, pills, the games' own marks / badge / buttons, toasts, the intro and results

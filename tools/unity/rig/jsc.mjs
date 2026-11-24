@@ -34,6 +34,8 @@ const WORK = path.join(REPO, 'webgame/test/out/unity-webgame');
 const OUT = path.join(REPO, 'unity/Assets/Scripts/Creatures/Js/Gen');
 const RIG = eval(fs.readFileSync(path.join(HERE, 'parity.mjs'), 'utf8').match(/export const RIG_SCRIPTS = (\[[\s\S]*?\]);/)[1]);
 
+export const YARD_SCRIPTS = ['yard-games.js', 'yg-intros.js', 'yg-hoop.js', 'yg-soccer.js', 'yg-hop.js', 'yg-tramp.js', 'yg-slide.js', 'yg-corn.js', 'yg-pong.js'];
+
 // ---------------------------------------------------------------------------------------------------------------
 // the scripts, in the order the host runs them
 export function scriptList(test) {
@@ -47,6 +49,11 @@ export function scriptList(test) {
     ['app/rig-look.js', path.join(WORK, 'app/rig-look.js')],
     ['result-states.js', null],   // tools/rig/result.html addStates (below)
     ['native-host.js', path.join(HERE, 'native-host.js')],
+    // the yard games (Games/Yard/YardJs.cs): the bridge first (it hands the saved bests over before yard-games.js
+    // reads them), then the page's scripts in the menu page's order (Main Menu.dc.html: yard-games.js, yg-intros.js,
+    // the games)
+    ['yard-host.js', path.join(HERE, 'yard-host.js')],
+    ...YARD_SCRIPTS.map((s) => [s, path.join(WORK, s)]),
   ];
   if (test) list.push(['scenarios.js', path.join(REPO, 'tools/unity/rig-test/scenarios.js')]);
   return list;
@@ -823,10 +830,12 @@ ${body.join('\n')}
     if (n.operator === '=') {
       if (left.isIdentifier()) {
         const r = this.ref(left, left.node.name);
-        if (r && r.num) return { code: `${r.code} = ${this.n(p.get('right'))}`, t: 'n', stmt: true };
+        // (as a value, in parentheses: C#'s = binds looser than JS's parenthesised assignment, `(s = x) / k`; as a
+        // statement, bare: C# takes no parenthesised assignment there)
+        if (r && r.num) { const c = `${r.code} = ${this.n(p.get('right'))}`; return { code: `(${c})`, stmtCode: c, t: 'n', stmt: true }; }
         if (r && r.sb) { const c = `${r.code}.Set(${this.s(p.get('right'))})`; return { code: `${c}.Str`, t: 's', stmtCode: c }; }
         const val = this.v(p.get('right'));
-        if (r) return { code: `${r.code} = ${val}`, t: 'v', stmt: true };
+        if (r) { const c = `${r.code} = ${val}`; return { code: `(${c})`, stmtCode: c, t: 'v', stmt: true }; }
         return { code: `GSet(${csStr(left.node.name)}, ${val})`, t: 'v', stmt: true };
       }
       if (left.isMemberExpression()) return { code: this.setMember(left, this.v(p.get('right'))), t: 'v', stmt: true };
@@ -840,8 +849,8 @@ ${body.join('\n')}
       if (r && r.sb && op === '+') { const c = r.code + this.appendParts(this.expr(p.get('right'))); return { code: `${c}.Str`, t: 's', stmtCode: c }; }
       const cur = r ? { code: r.code, t: r.num ? 'n' : 'v' } : { code: `G(${csStr(left.node.name)})`, t: 'v' };
       const res = this.binaryOp(op, cur, this.expr(p.get('right')));
-      if (r && r.num) return { code: `${r.code} = ${this.toN(res)}`, t: 'n', stmt: true };
-      if (r) return { code: `${r.code} = ${this.toV(res)}`, t: 'v', stmt: true };
+      if (r && r.num) { const c = `${r.code} = ${this.toN(res)}`; return { code: `(${c})`, stmtCode: c, t: 'n', stmt: true }; }
+      if (r) { const c = `${r.code} = ${this.toV(res)}`; return { code: `(${c})`, stmtCode: c, t: 'v', stmt: true }; }
       return { code: `GSet(${csStr(left.node.name)}, ${this.toV(res)})`, t: 'v', stmt: true };
     }
     // a member: the object and key evaluated once

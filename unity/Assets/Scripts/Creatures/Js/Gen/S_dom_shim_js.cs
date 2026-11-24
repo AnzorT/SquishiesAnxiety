@@ -151,7 +151,7 @@ steps_139 = Arr();
 comb_140 = ((V)(" "));
 re_141 = NewRegExp(RX0, "\\s*(>)\\s*|\\s+|([^\\s>]+)", "g");
 one_138 = Invoke(one_138, "trim");
-while (Truthy(m_142 = Invoke(re_141, "exec", one_138))) {
+while (Truthy((m_142 = Invoke(re_141, "exec", one_138)))) {
 if (Truthy(GetIdx(m_142, 1D))) {
 comb_140 = ((V)(">"));
 continue;
@@ -225,7 +225,7 @@ V re_168 = default;
 V m_169 = default;
 p_167 = NewObj(4).Put("tag", V.Null).Put("id", V.Null).Put("cls", Arr()).Put("attrs", Arr()).V;
 re_168 = NewRegExp(RX1, "([a-zA-Z][\\w-]*)|#([\\w-]+)|\\.([\\w-]+)|\\[\\s*([\\w:-]+)\\s*(?:([\\^$*~|]?=)\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\]\\s]*)))?\\s*\\]|(\\*)", "g");
-while (Truthy(m_169 = Invoke(re_168, "exec", s_166))) {
+while (Truthy((m_169 = Invoke(re_168, "exec", s_166)))) {
 if (Truthy(GetIdx(m_169, 1D))) {
 Set(p_167, "tag", Invoke(GetIdx(m_169, 1D), "toLowerCase"));
 } else {
@@ -416,7 +416,7 @@ el_238 = New(Element_18, tag_236, (SEqS(tag_236, "svg") ? SVG_NS_9 : (Get(GetIdx
 are_239 = NewRegExp(RX4, "\\s*([^\\s\"'>\\/=]+)(?:\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s\"'=<>`]+)))?|\\s*(\\/?)>", "g");
 Set(are_239, "lastIndex", j_237);
 selfClose_240 = (false ? V.True : V.False);
-while (Truthy(am_241 = Invoke(are_239, "exec", html_223))) {
+while (Truthy((am_241 = Invoke(are_239, "exec", html_223)))) {
 if (!SEqN(Get(am_241, "index"), (ToNum(Get(are_239, "lastIndex")) - ToNum(Get(GetIdx(am_241, 0D), "length"))))) {
 break;
 }
@@ -908,7 +908,7 @@ rel_549 = (!SEq(cmd_540, C_548) ? V.True : V.False);
 if (SEqS(C_548, "Z")) {
 Invoke(segs_545, "push", NewObj(1).Put("v", ((V)("Z"))).V);
 cur_541 = start_542;
-lastC_543 = lastQ_544 = V.Null;
+lastC_543 = (lastQ_544 = V.Null);
 if ((Lt(i_539, Get(tk_538, "length")) && !(Truthy(Invoke(NewRegExp(RX6, "[a-zA-Z]", ""), "test", GetK(tk_538, i_539)))))) {
 PostInc(ref i_539, 1D);
 }
@@ -920,16 +920,16 @@ break;
 if (SEqS(C_548, "M")) {
 p_550 = Call(abs_547, V.Undef, rel_549, Call(n_546, V.Undef), Call(n_546, V.Undef));
 Invoke(segs_545, "push", NewObj(2).Put("v", ((V)("M"))).Put("p", Arr(p_550)).V);
-cur_541 = start_542 = p_550;
+cur_541 = (start_542 = p_550);
 cmd_540 = ((V)((Truthy(rel_549) ? "l" : "L")));
-lastC_543 = lastQ_544 = V.Null;
+lastC_543 = (lastQ_544 = V.Null);
 continue;
 }
 if (SEqS(C_548, "L")) {
 p_550 = Call(abs_547, V.Undef, rel_549, Call(n_546, V.Undef), Call(n_546, V.Undef));
 Invoke(segs_545, "push", NewObj(2).Put("v", ((V)("L"))).Put("p", Arr(cur_541, p_550)).V);
 cur_541 = p_550;
-lastC_543 = lastQ_544 = V.Null;
+lastC_543 = (lastQ_544 = V.Null);
 continue;
 }
 if (SEqS(C_548, "H")) {
@@ -937,7 +937,7 @@ hx_551 = Call(n_546, V.Undef);
 p_550 = Arr((Truthy(rel_549) ? Call(F_34, V.Undef, Add(GetIdx(cur_541, 0D), hx_551)) : hx_551), GetIdx(cur_541, 1D));
 Invoke(segs_545, "push", NewObj(2).Put("v", ((V)("L"))).Put("p", Arr(cur_541, p_550)).V);
 cur_541 = p_550;
-lastC_543 = lastQ_544 = V.Null;
+lastC_543 = (lastQ_544 = V.Null);
 continue;
 }
 if (SEqS(C_548, "V")) {
@@ -945,7 +945,7 @@ vy_552 = Call(n_546, V.Undef);
 p_550 = Arr(GetIdx(cur_541, 0D), (Truthy(rel_549) ? Call(F_34, V.Undef, Add(GetIdx(cur_541, 1D), vy_552)) : vy_552));
 Invoke(segs_545, "push", NewObj(2).Put("v", ((V)("L"))).Put("p", Arr(cur_541, p_550)).V);
 cur_541 = p_550;
-lastC_543 = lastQ_544 = V.Null;
+lastC_543 = (lastQ_544 = V.Null);
 continue;
 }
 if ((SEqS(C_548, "C") || SEqS(C_548, "S"))) {
@@ -995,7 +995,7 @@ PostInc(ref k_566, 1D);
 }
 }
 cur_541 = to_563;
-lastC_543 = lastQ_544 = V.Null;
+lastC_543 = (lastQ_544 = V.Null);
 continue;
 }
 PostInc(ref i_539, 1D);
@@ -1207,7 +1207,7 @@ return V.Null;
 }
 m_686 = V.Null;
 re_687 = NewRegExp(RX9, "(matrix|translate|scale|rotate|skewX|skewY)\\s*\\(([^)]*)\\)", "g");
-while (Truthy(t_688 = Invoke(re_687, "exec", s_685))) {
+while (Truthy((t_688 = Invoke(re_687, "exec", s_685)))) {
 v_689 = Invoke(Invoke(Invoke(GetIdx(t_688, 2D), "split", NewRegExp(RX7, "[\\s,]+", "")), "filter", G("Boolean")), "map", Fn((V _self694, int _argc695, V x_701, V _a698, V _a699, V _a700, V[] _rest696) => {
 return Call(F_34, V.Undef, ((V)(ToNum(x_701))));
 return default;
@@ -2060,161 +2060,182 @@ return default;
 }, 0, "get", false)).V);
 Object_defineProperty(Get(Element_18, "prototype"), ((V)("dataset")), NewObj(1).Put("get", Fn((V _self1666, int _argc1667, V _a1669, V _a1670, V _a1671, V _a1672, V[] _rest1668) => {
 V el_1673 = default;
+V o_1674 = default;
+V a_1675 = default;
+V i_1676 = default;
 el_1673 = _self1666;
-return New(G("Proxy"), NewObj(0).V, NewObj(3).Put("get", Fn((V _self1674, int _argc1675, V t_1681, V k_1682, V _a1679, V _a1680, V[] _rest1676) => {
-V v_1683 = default;
-v_1683 = Invoke(el_1673, "getAttribute", ((V)(JsStrBuf.Begin().S("data-").V(Call(kebab_14, V.Undef, ((V)(ToStrS(k_1682))))).End())));
-return (SEq(v_1683, V.Null) ? V.Undef : v_1683);
+if (string.Equals(GTypeof("Proxy"), "undefined")) {
+o_1674 = NewObj(0).V;
+a_1675 = (Get(el_1673, "_attrs") is var _t1677 && Truthy(_t1677) ? _t1677 : Arr());
+{
+i_1676 = ((V)(0D));
+while (true) {
+if (!(Lt(i_1676, Get(a_1675, "length")))) break;
+if (SEqN(Invoke(GetIdx(GetK(a_1675, i_1676), 0D), "indexOf", ((V)("data-"))), 0D)) {
+SetK(o_1674, Invoke(Invoke(GetIdx(GetK(a_1675, i_1676), 0D), "slice", ((V)(5D))), "replace", NewRegExp(RX11, "-([a-z])", "g"), Fn((V _self1679, int _argc1680, V m_1686, V c_1687, V _a1684, V _a1685, V[] _rest1681) => {
+return Invoke(c_1687, "toUpperCase");
 return default;
-}, 2, "get", false)).Put("set", Fn((V _self1684, int _argc1685, V t_1691, V k_1692, V v_1693, V _a1690, V[] _rest1686) => {
-Invoke(el_1673, "setAttribute", ((V)(JsStrBuf.Begin().S("data-").V(Call(kebab_14, V.Undef, ((V)(ToStrS(k_1692))))).End())), v_1693);
+}, 2, "", false)), GetIdx(GetK(a_1675, i_1676), 1D));
+}
+PostInc(ref i_1676, 1D);
+}
+}
+return o_1674;
+}
+return New(G("Proxy"), NewObj(0).V, NewObj(3).Put("get", Fn((V _self1688, int _argc1689, V t_1695, V k_1696, V _a1693, V _a1694, V[] _rest1690) => {
+V v_1697 = default;
+v_1697 = Invoke(el_1673, "getAttribute", ((V)(JsStrBuf.Begin().S("data-").V(Call(kebab_14, V.Undef, ((V)(ToStrS(k_1696))))).End())));
+return (SEq(v_1697, V.Null) ? V.Undef : v_1697);
+return default;
+}, 2, "get", false)).Put("set", Fn((V _self1698, int _argc1699, V t_1705, V k_1706, V v_1707, V _a1704, V[] _rest1700) => {
+Invoke(el_1673, "setAttribute", ((V)(JsStrBuf.Begin().S("data-").V(Call(kebab_14, V.Undef, ((V)(ToStrS(k_1706))))).End())), v_1707);
 return (true ? V.True : V.False);
 return default;
-}, 3, "set", false)).Put("deleteProperty", Fn((V _self1694, int _argc1695, V t_1701, V k_1702, V _a1699, V _a1700, V[] _rest1696) => {
-Invoke(el_1673, "removeAttribute", ((V)(JsStrBuf.Begin().S("data-").V(Call(kebab_14, V.Undef, ((V)(ToStrS(k_1702))))).End())));
+}, 3, "set", false)).Put("deleteProperty", Fn((V _self1708, int _argc1709, V t_1715, V k_1716, V _a1713, V _a1714, V[] _rest1710) => {
+Invoke(el_1673, "removeAttribute", ((V)(JsStrBuf.Begin().S("data-").V(Call(kebab_14, V.Undef, ((V)(ToStrS(k_1716))))).End())));
 return (true ? V.True : V.False);
 return default;
 }, 2, "deleteProperty", false)).V);
 return default;
 }, 0, "get", false)).V);
-Set(Get(Element_18, "prototype"), "setPointerCapture", Fn((V _self1703, int _argc1704, V _a1706, V _a1707, V _a1708, V _a1709, V[] _rest1705) => {
+Set(Get(Element_18, "prototype"), "setPointerCapture", Fn((V _self1717, int _argc1718, V _a1720, V _a1721, V _a1722, V _a1723, V[] _rest1719) => {
 
 return default;
 }, 0, "", false));
-Set(Get(Element_18, "prototype"), "releasePointerCapture", Fn((V _self1710, int _argc1711, V _a1713, V _a1714, V _a1715, V _a1716, V[] _rest1712) => {
+Set(Get(Element_18, "prototype"), "releasePointerCapture", Fn((V _self1724, int _argc1725, V _a1727, V _a1728, V _a1729, V _a1730, V[] _rest1726) => {
 
 return default;
 }, 0, "", false));
-Set(Get(Element_18, "prototype"), "hasPointerCapture", Fn((V _self1717, int _argc1718, V _a1720, V _a1721, V _a1722, V _a1723, V[] _rest1719) => {
+Set(Get(Element_18, "prototype"), "hasPointerCapture", Fn((V _self1731, int _argc1732, V _a1734, V _a1735, V _a1736, V _a1737, V[] _rest1733) => {
 return (false ? V.True : V.False);
 return default;
 }, 0, "", false));
-Set(Get(Element_18, "prototype"), "focus", Fn((V _self1724, int _argc1725, V _a1727, V _a1728, V _a1729, V _a1730, V[] _rest1726) => {
+Set(Get(Element_18, "prototype"), "focus", Fn((V _self1738, int _argc1739, V _a1741, V _a1742, V _a1743, V _a1744, V[] _rest1740) => {
 
 return default;
 }, 0, "", false));
-Set(Get(Element_18, "prototype"), "blur", Fn((V _self1731, int _argc1732, V _a1734, V _a1735, V _a1736, V _a1737, V[] _rest1733) => {
+Set(Get(Element_18, "prototype"), "blur", Fn((V _self1745, int _argc1746, V _a1748, V _a1749, V _a1750, V _a1751, V[] _rest1747) => {
 
 return default;
 }, 0, "", false));
-Set(Get(Element_18, "prototype"), "getBoundingClientRect", Fn((V _self1738, int _argc1739, V _a1741, V _a1742, V _a1743, V _a1744, V[] _rest1740) => {
-V e_1745 = default;
-V r_1746 = default;
-e_1745 = _self1738;
-while (Truthy((e_1745 is var _t1747 && !Truthy(_t1747) ? _t1747 : (!(Truthy(Get(e_1745, "__rect"))) ? V.True : V.False)))) {
-e_1745 = Get(e_1745, "parentNode");
+Set(Get(Element_18, "prototype"), "getBoundingClientRect", Fn((V _self1752, int _argc1753, V _a1755, V _a1756, V _a1757, V _a1758, V[] _rest1754) => {
+V e_1759 = default;
+V r_1760 = default;
+e_1759 = _self1752;
+while (Truthy((e_1759 is var _t1761 && !Truthy(_t1761) ? _t1761 : (!(Truthy(Get(e_1759, "__rect"))) ? V.True : V.False)))) {
+e_1759 = Get(e_1759, "parentNode");
 }
-r_1746 = ((e_1745 is var _t1748 && !Truthy(_t1748) ? _t1748 : Get(e_1745, "__rect")) is var _t1749 && Truthy(_t1749) ? _t1749 : NewObj(4).Put("left", ((V)(0D))).Put("top", ((V)(0D))).Put("width", ((V)(100D))).Put("height", ((V)(100D))).V);
-return NewObj(8).Put("left", Get(r_1746, "left")).Put("top", Get(r_1746, "top")).Put("x", Get(r_1746, "left")).Put("y", Get(r_1746, "top")).Put("width", Get(r_1746, "width")).Put("height", Get(r_1746, "height")).Put("right", Add(Get(r_1746, "left"), Get(r_1746, "width"))).Put("bottom", Add(Get(r_1746, "top"), Get(r_1746, "height"))).V;
+r_1760 = ((e_1759 is var _t1762 && !Truthy(_t1762) ? _t1762 : Get(e_1759, "__rect")) is var _t1763 && Truthy(_t1763) ? _t1763 : NewObj(4).Put("left", ((V)(0D))).Put("top", ((V)(0D))).Put("width", ((V)(100D))).Put("height", ((V)(100D))).V);
+return NewObj(8).Put("left", Get(r_1760, "left")).Put("top", Get(r_1760, "top")).Put("x", Get(r_1760, "left")).Put("y", Get(r_1760, "top")).Put("width", Get(r_1760, "width")).Put("height", Get(r_1760, "height")).Put("right", Add(Get(r_1760, "left"), Get(r_1760, "width"))).Put("bottom", Add(Get(r_1760, "top"), Get(r_1760, "height"))).V;
 return default;
 }, 0, "", false));
-Set(Get(Element_18, "prototype"), "getBBox", Fn((V _self1750, int _argc1751, V _a1753, V _a1754, V _a1755, V _a1756, V[] _rest1752) => {
-return Call(bbox_36, V.Undef, _self1750);
+Set(Get(Element_18, "prototype"), "getBBox", Fn((V _self1764, int _argc1765, V _a1767, V _a1768, V _a1769, V _a1770, V[] _rest1766) => {
+return Call(bbox_36, V.Undef, _self1764);
 return default;
 }, 0, "", false));
-Set(Get(Element_18, "prototype"), "matches", Fn((V _self1757, int _argc1758, V sel_1764, V _a1761, V _a1762, V _a1763, V[] _rest1759) => {
-return Call(matchesList_26, V.Undef, _self1757, Call(parseSelectors_21, V.Undef, sel_1764));
+Set(Get(Element_18, "prototype"), "matches", Fn((V _self1771, int _argc1772, V sel_1778, V _a1775, V _a1776, V _a1777, V[] _rest1773) => {
+return Call(matchesList_26, V.Undef, _self1771, Call(parseSelectors_21, V.Undef, sel_1778));
 return default;
 }, 1, "", false));
-Set(Get(Element_18, "prototype"), "closest", Fn((V _self1765, int _argc1766, V sel_1772, V _a1769, V _a1770, V _a1771, V[] _rest1767) => {
-V s_1773 = default;
-V e_1774 = default;
-s_1773 = Call(parseSelectors_21, V.Undef, sel_1772);
-e_1774 = _self1765;
-while (Truthy((e_1774 is var _t1775 && !Truthy(_t1775) ? _t1775 : (SEqN(Get(e_1774, "nodeType"), 1D) ? V.True : V.False)))) {
-if (Truthy(Call(matchesList_26, V.Undef, e_1774, s_1773))) {
-return e_1774;
+Set(Get(Element_18, "prototype"), "closest", Fn((V _self1779, int _argc1780, V sel_1786, V _a1783, V _a1784, V _a1785, V[] _rest1781) => {
+V s_1787 = default;
+V e_1788 = default;
+s_1787 = Call(parseSelectors_21, V.Undef, sel_1786);
+e_1788 = _self1779;
+while (Truthy((e_1788 is var _t1789 && !Truthy(_t1789) ? _t1789 : (SEqN(Get(e_1788, "nodeType"), 1D) ? V.True : V.False)))) {
+if (Truthy(Call(matchesList_26, V.Undef, e_1788, s_1787))) {
+return e_1788;
 }
-e_1774 = Get(e_1774, "parentNode");
+e_1788 = Get(e_1788, "parentNode");
 }
 return V.Null;
 return default;
 }, 1, "", false));
-Set(Get(Element_18, "prototype"), "querySelectorAll", Fn((V _self1776, int _argc1777, V sel_1783, V _a1780, V _a1781, V _a1782, V[] _rest1778) => {
-V s_1784 = default;
-V @out_1785 = default;
-s_1784 = Call(parseSelectors_21, V.Undef, sel_1783);
-@out_1785 = Arr();
-Call(walk_19, V.Undef, _self1776, Fn((V _self1786, int _argc1787, V e_1793, V _a1790, V _a1791, V _a1792, V[] _rest1788) => {
-if (Truthy(Call(matchesList_26, V.Undef, e_1793, s_1784))) {
-Invoke(@out_1785, "push", e_1793);
+Set(Get(Element_18, "prototype"), "querySelectorAll", Fn((V _self1790, int _argc1791, V sel_1797, V _a1794, V _a1795, V _a1796, V[] _rest1792) => {
+V s_1798 = default;
+V @out_1799 = default;
+s_1798 = Call(parseSelectors_21, V.Undef, sel_1797);
+@out_1799 = Arr();
+Call(walk_19, V.Undef, _self1790, Fn((V _self1800, int _argc1801, V e_1807, V _a1804, V _a1805, V _a1806, V[] _rest1802) => {
+if (Truthy(Call(matchesList_26, V.Undef, e_1807, s_1798))) {
+Invoke(@out_1799, "push", e_1807);
 }
 return default;
 }, 1, "", false));
-return @out_1785;
+return @out_1799;
 return default;
 }, 1, "", false));
-Set(Get(Element_18, "prototype"), "querySelector", Fn((V _self1794, int _argc1795, V sel_1801, V _a1798, V _a1799, V _a1800, V[] _rest1796) => {
-V s_1802 = default;
-V hit_1803 = default;
-s_1802 = Call(parseSelectors_21, V.Undef, sel_1801);
-hit_1803 = V.Null;
-Call(walk_19, V.Undef, _self1794, Fn((V _self1804, int _argc1805, V e_1811, V _a1808, V _a1809, V _a1810, V[] _rest1806) => {
-if (Truthy(((!(Truthy(hit_1803)) ? V.True : V.False) is var _t1812 && !Truthy(_t1812) ? _t1812 : Call(matchesList_26, V.Undef, e_1811, s_1802)))) {
-hit_1803 = e_1811;
+Set(Get(Element_18, "prototype"), "querySelector", Fn((V _self1808, int _argc1809, V sel_1815, V _a1812, V _a1813, V _a1814, V[] _rest1810) => {
+V s_1816 = default;
+V hit_1817 = default;
+s_1816 = Call(parseSelectors_21, V.Undef, sel_1815);
+hit_1817 = V.Null;
+Call(walk_19, V.Undef, _self1808, Fn((V _self1818, int _argc1819, V e_1825, V _a1822, V _a1823, V _a1824, V[] _rest1820) => {
+if (Truthy(((!(Truthy(hit_1817)) ? V.True : V.False) is var _t1826 && !Truthy(_t1826) ? _t1826 : Call(matchesList_26, V.Undef, e_1825, s_1816)))) {
+hit_1817 = e_1825;
 }
 return default;
 }, 1, "", false));
-return hit_1803;
+return hit_1817;
 return default;
 }, 1, "", false));
-Set(Get(Element_18, "prototype"), "getElementsByTagName", Fn((V _self1813, int _argc1814, V t_1820, V _a1817, V _a1818, V _a1819, V[] _rest1815) => {
-return Invoke(_self1813, "querySelectorAll", t_1820);
+Set(Get(Element_18, "prototype"), "getElementsByTagName", Fn((V _self1827, int _argc1828, V t_1834, V _a1831, V _a1832, V _a1833, V[] _rest1829) => {
+return Invoke(_self1827, "querySelectorAll", t_1834);
 return default;
 }, 1, "", false));
-Set(Get(Element_18, "prototype"), "getContext", Fn((V _self1821, int _argc1822, V kind_1828, V _a1825, V _a1826, V _a1827, V[] _rest1823) => {
-return ((SEqS(kind_1828, "2d") && SEqS(Get(_self1821, "localName"), "canvas")) ? Set(_self1821, "_ctx", (Get(_self1821, "_ctx") is var _t1829 && Truthy(_t1829) ? _t1829 : New(Ctx2D_61, _self1821))) : V.Null);
+Set(Get(Element_18, "prototype"), "getContext", Fn((V _self1835, int _argc1836, V kind_1842, V _a1839, V _a1840, V _a1841, V[] _rest1837) => {
+return ((SEqS(kind_1842, "2d") && SEqS(Get(_self1835, "localName"), "canvas")) ? Set(_self1835, "_ctx", (Get(_self1835, "_ctx") is var _t1843 && Truthy(_t1843) ? _t1843 : New(Ctx2D_61, _self1835))) : V.Null);
 return default;
 }, 1, "", false));
-Set(Get(Element_18, "prototype"), "toDataURL", Fn((V _self1830, int _argc1831, V _a1833, V _a1834, V _a1835, V _a1836, V[] _rest1832) => {
-V id_1837 = default;
-id_1837 = ((V)(JsStrBuf.Begin().S("shim-canvas:").V(Get(_self1830, "__id")).End()));
-SetK(CANVASES_60, id_1837, _self1830);
-return id_1837;
+Set(Get(Element_18, "prototype"), "toDataURL", Fn((V _self1844, int _argc1845, V _a1847, V _a1848, V _a1849, V _a1850, V[] _rest1846) => {
+V id_1851 = default;
+id_1851 = ((V)(JsStrBuf.Begin().S("shim-canvas:").V(Get(_self1844, "__id")).End()));
+SetK(CANVASES_60, id_1851, _self1844);
+return id_1851;
 return default;
 }, 0, "", false));
-Object_defineProperty(Get(Element_18, "prototype"), ((V)("width")), NewObj(2).Put("get", Fn((V _self1838, int _argc1839, V _a1841, V _a1842, V _a1843, V _a1844, V[] _rest1840) => {
-return ((V)(ToNum((Invoke(_self1838, "getAttribute", ((V)("width"))) is var _t1845 && Truthy(_t1845) ? _t1845 : ((V)((SEqS(Get(_self1838, "localName"), "canvas") ? 300D : 0D)))))));
+Object_defineProperty(Get(Element_18, "prototype"), ((V)("width")), NewObj(2).Put("get", Fn((V _self1852, int _argc1853, V _a1855, V _a1856, V _a1857, V _a1858, V[] _rest1854) => {
+return ((V)(ToNum((Invoke(_self1852, "getAttribute", ((V)("width"))) is var _t1859 && Truthy(_t1859) ? _t1859 : ((V)((SEqS(Get(_self1852, "localName"), "canvas") ? 300D : 0D)))))));
 return default;
-}, 0, "get", false)).Put("set", Fn((V _self1846, int _argc1847, V v_1853, V _a1850, V _a1851, V _a1852, V[] _rest1848) => {
-Invoke(_self1846, "setAttribute", ((V)("width")), v_1853);
+}, 0, "get", false)).Put("set", Fn((V _self1860, int _argc1861, V v_1867, V _a1864, V _a1865, V _a1866, V[] _rest1862) => {
+Invoke(_self1860, "setAttribute", ((V)("width")), v_1867);
 return default;
 }, 1, "set", false)).V);
-Object_defineProperty(Get(Element_18, "prototype"), ((V)("height")), NewObj(2).Put("get", Fn((V _self1854, int _argc1855, V _a1857, V _a1858, V _a1859, V _a1860, V[] _rest1856) => {
-return ((V)(ToNum((Invoke(_self1854, "getAttribute", ((V)("height"))) is var _t1861 && Truthy(_t1861) ? _t1861 : ((V)((SEqS(Get(_self1854, "localName"), "canvas") ? 150D : 0D)))))));
+Object_defineProperty(Get(Element_18, "prototype"), ((V)("height")), NewObj(2).Put("get", Fn((V _self1868, int _argc1869, V _a1871, V _a1872, V _a1873, V _a1874, V[] _rest1870) => {
+return ((V)(ToNum((Invoke(_self1868, "getAttribute", ((V)("height"))) is var _t1875 && Truthy(_t1875) ? _t1875 : ((V)((SEqS(Get(_self1868, "localName"), "canvas") ? 150D : 0D)))))));
 return default;
-}, 0, "get", false)).Put("set", Fn((V _self1862, int _argc1863, V v_1869, V _a1866, V _a1867, V _a1868, V[] _rest1864) => {
-Invoke(_self1862, "setAttribute", ((V)("height")), v_1869);
+}, 0, "get", false)).Put("set", Fn((V _self1876, int _argc1877, V v_1883, V _a1880, V _a1881, V _a1882, V[] _rest1878) => {
+Invoke(_self1876, "setAttribute", ((V)("height")), v_1883);
 return default;
 }, 1, "set", false)).V);
 SEL_CACHE_20 = NewObj(0).V;
 VOID_HTML_27 = NewObj(6).Put("br", ((V)(1D))).Put("img", ((V)(1D))).Put("input", ((V)(1D))).Put("hr", ((V)(1D))).Put("meta", ((V)(1D))).Put("link", ((V)(1D))).V;
 ENT_28 = NewObj(6).Put("amp", ((V)("&"))).Put("lt", ((V)("<"))).Put("gt", ((V)(">"))).Put("quot", ((V)("\""))).Put("apos", ((V)("'"))).Put("nbsp", ((V)("\u00a0"))).V;
-unescape_29 = Fn((V _self1870, int _argc1871, V s_1877, V _a1874, V _a1875, V _a1876, V[] _rest1872) => {
-return Invoke(s_1877, "replace", NewRegExp(RX15, "&(#x[0-9a-f]+|#\\d+|[a-z]+);", "gi"), Fn((V _self1878, int _argc1879, V m_1885, V e_1886, V _a1883, V _a1884, V[] _rest1880) => {
-if (SEqS(GetIdx(e_1886, 0D), "#")) {
-return ((V)(String_fromCharCode(((V)(((SEqS(GetIdx(e_1886, 1D), "x") || SEqS(GetIdx(e_1886, 1D), "X")) ? ParseInt(Invoke(e_1886, "slice", ((V)(2D))), ((V)(16D))) : ToNum(Invoke(e_1886, "slice", ((V)(1D))))))))));
+unescape_29 = Fn((V _self1884, int _argc1885, V s_1891, V _a1888, V _a1889, V _a1890, V[] _rest1886) => {
+return Invoke(s_1891, "replace", NewRegExp(RX15, "&(#x[0-9a-f]+|#\\d+|[a-z]+);", "gi"), Fn((V _self1892, int _argc1893, V m_1899, V e_1900, V _a1897, V _a1898, V[] _rest1894) => {
+if (SEqS(GetIdx(e_1900, 0D), "#")) {
+return ((V)(String_fromCharCode(((V)(((SEqS(GetIdx(e_1900, 1D), "x") || SEqS(GetIdx(e_1900, 1D), "X")) ? ParseInt(Invoke(e_1900, "slice", ((V)(2D))), ((V)(16D))) : ToNum(Invoke(e_1900, "slice", ((V)(1D))))))))));
 }
-return (!GetK(ENT_28, e_1886).IsNullish ? GetK(ENT_28, e_1886) : m_1885);
+return (!GetK(ENT_28, e_1900).IsNullish ? GetK(ENT_28, e_1900) : m_1899);
 return default;
 }, 2, "", false));
 return default;
 }, 1, "", false);
-escAttr_31 = Fn((V _self1887, int _argc1888, V s_1894, V _a1891, V _a1892, V _a1893, V[] _rest1889) => {
-return Invoke(Invoke(Invoke(Invoke(Invoke(s_1894, "replace", NewRegExp(RX20, "&", "g"), ((V)("&amp;"))), "replace", NewRegExp(RX19, "\"", "g"), ((V)("&quot;"))), "replace", NewRegExp(RX18, "\u00a0", "g"), ((V)("&nbsp;"))), "replace", NewRegExp(RX17, "<", "g"), ((V)("&lt;"))), "replace", NewRegExp(RX16, ">", "g"), ((V)("&gt;")));
+escAttr_31 = Fn((V _self1901, int _argc1902, V s_1908, V _a1905, V _a1906, V _a1907, V[] _rest1903) => {
+return Invoke(Invoke(Invoke(Invoke(Invoke(s_1908, "replace", NewRegExp(RX20, "&", "g"), ((V)("&amp;"))), "replace", NewRegExp(RX19, "\"", "g"), ((V)("&quot;"))), "replace", NewRegExp(RX18, "\u00a0", "g"), ((V)("&nbsp;"))), "replace", NewRegExp(RX17, "<", "g"), ((V)("&lt;"))), "replace", NewRegExp(RX16, ">", "g"), ((V)("&gt;")));
 return default;
 }, 1, "", false);
-escText_32 = Fn((V _self1895, int _argc1896, V s_1902, V _a1899, V _a1900, V _a1901, V[] _rest1897) => {
-return Invoke(Invoke(Invoke(Invoke(s_1902, "replace", NewRegExp(RX20, "&", "g"), ((V)("&amp;"))), "replace", NewRegExp(RX17, "<", "g"), ((V)("&lt;"))), "replace", NewRegExp(RX16, ">", "g"), ((V)("&gt;"))), "replace", NewRegExp(RX18, "\u00a0", "g"), ((V)("&nbsp;")));
+escText_32 = Fn((V _self1909, int _argc1910, V s_1916, V _a1913, V _a1914, V _a1915, V[] _rest1911) => {
+return Invoke(Invoke(Invoke(Invoke(s_1916, "replace", NewRegExp(RX20, "&", "g"), ((V)("&amp;"))), "replace", NewRegExp(RX17, "<", "g"), ((V)("&lt;"))), "replace", NewRegExp(RX16, ">", "g"), ((V)("&gt;"))), "replace", NewRegExp(RX18, "\u00a0", "g"), ((V)("&nbsp;")));
 return default;
 }, 1, "", false);
 F_34 = Get(G("Math"), "fround");
-Invoke(Arr(((V)("x")), ((V)("y")), ((V)("width")), ((V)("height"))), "forEach", Fn((V _self1903, int _argc1904, V k_1910, V i_1911, V _a1908, V _a1909, V[] _rest1905) => {
-Object_defineProperty(Get(SVGRect_35, "prototype"), k_1910, NewObj(3).Put("get", Fn((V _self1912, int _argc1913, V _a1915, V _a1916, V _a1917, V _a1918, V[] _rest1914) => {
-return GetK(Get(_self1912, "_r"), i_1911);
+Invoke(Arr(((V)("x")), ((V)("y")), ((V)("width")), ((V)("height"))), "forEach", Fn((V _self1917, int _argc1918, V k_1924, V i_1925, V _a1922, V _a1923, V[] _rest1919) => {
+Object_defineProperty(Get(SVGRect_35, "prototype"), k_1924, NewObj(3).Put("get", Fn((V _self1926, int _argc1927, V _a1929, V _a1930, V _a1931, V _a1932, V[] _rest1928) => {
+return GetK(Get(_self1926, "_r"), i_1925);
 return default;
-}, 0, "get", false)).Put("set", Fn((V _self1919, int _argc1920, V v_1926, V _a1923, V _a1924, V _a1925, V[] _rest1921) => {
-SetK(Get(_self1919, "_r"), i_1911, ((V)(ToNum(v_1926))));
+}, 0, "get", false)).Put("set", Fn((V _self1933, int _argc1934, V v_1940, V _a1937, V _a1938, V _a1939, V[] _rest1935) => {
+SetK(Get(_self1933, "_r"), i_1925, ((V)(ToNum(v_1940))));
 return default;
 }, 1, "set", false)).Put("enumerable", (true ? V.True : V.False)).V);
 return default;
@@ -2222,47 +2243,47 @@ return default;
 Object_defineProperty(Get(SVGRect_35, "prototype"), ((V)("_r")), NewObj(3).Put("writable", (true ? V.True : V.False)).Put("enumerable", (false ? V.True : V.False)).Put("value", V.Null).V);
 F32_38 = New(G("Float32Array"), ((V)(1D)));
 U32_39 = New(G("Uint32Array"), Get(F32_38, "buffer"));
-SINZ_48 = Fn((V _self1927, int _argc1928, V r_1934, V _a1931, V _a1932, V _a1933, V[] _rest1929) => {
-V v_1935 = default;
-v_1935 = Call(F_34, V.Undef, ((V)(FdLibm.Sin(ToNum(r_1934)))));
-return (Le(((V)(System.Math.Abs(ToNum(v_1935)))), Call(F_34, V.Undef, ((V)((1D / 4096D))))) ? ((V)(0D)) : v_1935);
+SINZ_48 = Fn((V _self1941, int _argc1942, V r_1948, V _a1945, V _a1946, V _a1947, V[] _rest1943) => {
+V v_1949 = default;
+v_1949 = Call(F_34, V.Undef, ((V)(FdLibm.Sin(ToNum(r_1948)))));
+return (Le(((V)(System.Math.Abs(ToNum(v_1949)))), Call(F_34, V.Undef, ((V)((1D / 4096D))))) ? ((V)(0D)) : v_1949);
 return default;
 }, 1, "", false);
-COSZ_49 = Fn((V _self1936, int _argc1937, V r_1943, V _a1940, V _a1941, V _a1942, V[] _rest1938) => {
-V v_1944 = default;
-v_1944 = Call(F_34, V.Undef, ((V)(FdLibm.Cos(ToNum(r_1943)))));
-return (Le(((V)(System.Math.Abs(ToNum(v_1944)))), Call(F_34, V.Undef, ((V)((1D / 4096D))))) ? ((V)(0D)) : v_1944);
+COSZ_49 = Fn((V _self1950, int _argc1951, V r_1957, V _a1954, V _a1955, V _a1956, V[] _rest1952) => {
+V v_1958 = default;
+v_1958 = Call(F_34, V.Undef, ((V)(FdLibm.Cos(ToNum(r_1957)))));
+return (Le(((V)(System.Math.Abs(ToNum(v_1958)))), Call(F_34, V.Undef, ((V)((1D / 4096D))))) ? ((V)(0D)) : v_1958);
 return default;
 }, 1, "", false);
 PIF_50 = Call(F_34, V.Undef, ((V)(System.Math.PI)));
 DEG_51 = Call(F_34, V.Undef, ((V)((ToNum(PIF_50) / 180D))));
 CANVASES_60 = NewObj(0).V;
-Set(Get(Ctx2D_61, "prototype"), "createImageData", Fn((V _self1945, int _argc1946, V w_1952, V h_1953, V _a1950, V _a1951, V[] _rest1947) => {
-return NewObj(3).Put("width", w_1952).Put("height", h_1953).Put("data", New(G("Uint8ClampedArray"), ((V)(((ToNum(w_1952) * ToNum(h_1953)) * 4D))))).V;
+Set(Get(Ctx2D_61, "prototype"), "createImageData", Fn((V _self1959, int _argc1960, V w_1966, V h_1967, V _a1964, V _a1965, V[] _rest1961) => {
+return NewObj(3).Put("width", w_1966).Put("height", h_1967).Put("data", New(G("Uint8ClampedArray"), ((V)(((ToNum(w_1966) * ToNum(h_1967)) * 4D))))).V;
 return default;
 }, 2, "", false));
-Set(Get(Ctx2D_61, "prototype"), "putImageData", Fn((V _self1954, int _argc1955, V im_1961, V _a1958, V _a1959, V _a1960, V[] _rest1956) => {
-Set(Get(_self1954, "canvas"), "_pixels", NewObj(3).Put("width", Get(im_1961, "width")).Put("height", Get(im_1961, "height")).Put("data", Get(im_1961, "data")).V);
+Set(Get(Ctx2D_61, "prototype"), "putImageData", Fn((V _self1968, int _argc1969, V im_1975, V _a1972, V _a1973, V _a1974, V[] _rest1970) => {
+Set(Get(_self1968, "canvas"), "_pixels", NewObj(3).Put("width", Get(im_1975, "width")).Put("height", Get(im_1975, "height")).Put("data", Get(im_1975, "data")).V);
 return default;
 }, 1, "", false));
-Set(Get(Ctx2D_61, "prototype"), "getImageData", Fn((V _self1962, int _argc1963, V x_1969, V y_1970, V w_1971, V h_1972, V[] _rest1964) => {
-V p_1973 = default;
-p_1973 = Get(Get(_self1962, "canvas"), "_pixels");
-return (Truthy(p_1973) ? NewObj(3).Put("width", Get(p_1973, "width")).Put("height", Get(p_1973, "height")).Put("data", Get(p_1973, "data")).V : Invoke(_self1962, "createImageData", w_1971, h_1972));
+Set(Get(Ctx2D_61, "prototype"), "getImageData", Fn((V _self1976, int _argc1977, V x_1983, V y_1984, V w_1985, V h_1986, V[] _rest1978) => {
+V p_1987 = default;
+p_1987 = Get(Get(_self1976, "canvas"), "_pixels");
+return (Truthy(p_1987) ? NewObj(3).Put("width", Get(p_1987, "width")).Put("height", Get(p_1987, "height")).Put("data", Get(p_1987, "data")).V : Invoke(_self1976, "createImageData", w_1985, h_1986));
 return default;
 }, 4, "", false));
-Set(Get(Ctx2D_61, "prototype"), "createPattern", Fn((V _self1974, int _argc1975, V src_1981, V rep_1982, V _a1979, V _a1980, V[] _rest1976) => {
-return NewObj(2).Put("pattern", src_1981).Put("repeat", rep_1982).V;
+Set(Get(Ctx2D_61, "prototype"), "createPattern", Fn((V _self1988, int _argc1989, V src_1995, V rep_1996, V _a1993, V _a1994, V[] _rest1990) => {
+return NewObj(2).Put("pattern", src_1995).Put("repeat", rep_1996).V;
 return default;
 }, 2, "", false));
-Set(Get(Ctx2D_61, "prototype"), "fillRect", Fn((V _self1983, int _argc1984, V x_1990, V y_1991, V w_1992, V h_1993, V[] _rest1985) => {
-if (Truthy((Get(_self1983, "fillStyle") is var _t1994 && !Truthy(_t1994) ? _t1994 : Get(Get(_self1983, "fillStyle"), "pattern")))) {
-Set(Get(_self1983, "canvas"), "_tiled", NewObj(3).Put("src", Get(Get(_self1983, "fillStyle"), "pattern")).Put("w", w_1992).Put("h", h_1993).V);
+Set(Get(Ctx2D_61, "prototype"), "fillRect", Fn((V _self1997, int _argc1998, V x_2004, V y_2005, V w_2006, V h_2007, V[] _rest1999) => {
+if (Truthy((Get(_self1997, "fillStyle") is var _t2008 && !Truthy(_t2008) ? _t2008 : Get(Get(_self1997, "fillStyle"), "pattern")))) {
+Set(Get(_self1997, "canvas"), "_tiled", NewObj(3).Put("src", Get(Get(_self1997, "fillStyle"), "pattern")).Put("w", w_2006).Put("h", h_2007).V);
 }
 return default;
 }, 4, "", false));
-Invoke(Arr(((V)("clearRect")), ((V)("save")), ((V)("restore")), ((V)("translate")), ((V)("scale")), ((V)("rotate")), ((V)("beginPath")), ((V)("closePath")), ((V)("moveTo")), ((V)("lineTo")), ((V)("arc")), ((V)("fill")), ((V)("stroke")), ((V)("drawImage")), ((V)("setTransform"))), "forEach", Fn((V _self1995, int _argc1996, V k_2002, V _a1999, V _a2000, V _a2001, V[] _rest1997) => {
-SetK(Get(Ctx2D_61, "prototype"), k_2002, Fn((V _self2003, int _argc2004, V _a2006, V _a2007, V _a2008, V _a2009, V[] _rest2005) => {
+Invoke(Arr(((V)("clearRect")), ((V)("save")), ((V)("restore")), ((V)("translate")), ((V)("scale")), ((V)("rotate")), ((V)("beginPath")), ((V)("closePath")), ((V)("moveTo")), ((V)("lineTo")), ((V)("arc")), ((V)("fill")), ((V)("stroke")), ((V)("drawImage")), ((V)("setTransform"))), "forEach", Fn((V _self2009, int _argc2010, V k_2016, V _a2013, V _a2014, V _a2015, V[] _rest2011) => {
+SetK(Get(Ctx2D_61, "prototype"), k_2016, Fn((V _self2017, int _argc2018, V _a2020, V _a2021, V _a2022, V _a2023, V[] _rest2019) => {
 
 return default;
 }, 0, "", false));

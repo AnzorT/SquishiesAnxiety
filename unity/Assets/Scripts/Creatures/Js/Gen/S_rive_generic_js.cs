@@ -20300,7 +20300,7 @@ rho_15082 = Hypot(X_15080, Y_15081);
 psi_15083 = FdLibm.Atan2(Y_15081, X_15080);
 if (((((rho_15082 <= rMax_15068) && (rho_15082 > 0.5)) && (psi_15083 >= 0D)) && (psi_15083 <= TH_15057))) {
 if (!(Truthy(cur_15074))) {
-Invoke(W_15066, "push", cur_15074 = Arr());
+Invoke(W_15066, "push", (cur_15074 = Arr()));
 }
 Invoke(cur_15074, "push", Arr(((V)((((psi_15083 - (TH_15057 / 2D)) * ToNum(TAU_14389)) / TH_15057))), ((V)((YA_15052 - ((rho_15082 / CL_15056) * CH_15055))))));
 } else {

@@ -148,7 +148,15 @@
   Object.defineProperty(Element.prototype, 'ownerSVGElement', { get: function () { var p = this.parentNode; while (p && p.nodeType === 1) { if (p.localName === 'svg') return p; p = p.parentNode; } return null; } });
   Object.defineProperty(Element.prototype, 'isConnected', { get: function () { var p = this; while (p.parentNode) p = p.parentNode; return !!p.__isRoot; } });
   Object.defineProperty(Element.prototype, 'dataset', { get: function () {
-    var el = this; return new Proxy({}, { get: function (t, k) { var v = el.getAttribute('data-' + kebab(String(k))); return v === null ? undefined : v; },
+    var el = this;
+    // (the compiled realm has no Proxy: there, a copy of the data-* attributes to read, which is all its scripts do —
+    // the yard games' posters, yg-intros.js)
+    if (typeof Proxy === 'undefined') {
+      var o = {}, a = el._attrs || [];
+      for (var i = 0; i < a.length; i++) if (a[i][0].indexOf('data-') === 0) o[a[i][0].slice(5).replace(/-([a-z])/g, function (m, c) { return c.toUpperCase(); })] = a[i][1];
+      return o;
+    }
+    return new Proxy({}, { get: function (t, k) { var v = el.getAttribute('data-' + kebab(String(k))); return v === null ? undefined : v; },
       set: function (t, k, v) { el.setAttribute('data-' + kebab(String(k)), v); return true; }, deleteProperty: function (t, k) { el.removeAttribute('data-' + kebab(String(k))); return true; } }); } });
   Element.prototype.setPointerCapture = function () {};
   Element.prototype.releasePointerCapture = function () {};

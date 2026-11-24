@@ -37,16 +37,19 @@ lists what isn't, so it can be picked up item by item with Claude Code.
 - **Also done:** the win as develop: the doors swing shut over the bounce wave, the impostors spin away, and the
   stills' other moves (happy hop, head shake with a sweat drop, droop and sway on a loss, the GAME OVER droop).
 
-## 2. Yard games (big)
+## 2. Yard games (big) ✅ done 2026-11-24
 
 - **App:** the seven yard games are landscape (yard-games.js v4–v6 in `yard-mini-games.zip`, laid over the prototype
   by `webgame/build.mjs`; hoop, soccer, slide and pong were rewritten). Each opens with a poster intro and a how-to
   sheet (`yg-intros.js`) and ends with the app-look result cards. `webgame/app/games.js` wires the Yard Games page.
-- **Unity now:** the Yard Games page itself is done (`Games/Yard/View/YardPageModel.cs`). The games
-  (`Games/Yard/Yard*.cs`) are still the old portrait Nov 13 ones with the old intro and result cards.
-- **To do:** port the landscape games, the poster intro with the how-to sheet, and the result cards (reuse the shared
-  result card in `Ui/Cards`).
-- **Tests:** `tools/unity/house/export-yardpage.mjs`, `tools/unity/pages-test` (Yard.cs).
+- **Unity now:** the app's own game code runs: `yard-games.js`, `yg-intros.js` and the seven `yg-*.js` are compiled
+  with the rig by `tools/unity/rig/jsc.mjs` (bridge: `tools/unity/rig/yard-host.js`) and run on the rig's clock
+  (`Games/Yard/YardJs.cs`); `Games/Yard/View/YardScreen.cs` draws the stage's layers and creatures, and
+  `YardGameArt.cs` the top bar, pills, toasts, intro sheet and result card from the page's CSS. The old portrait
+  `Yard*.cs` games are gone; the saved bests live in PlayerPrefs (`YardSave.cs`).
+- **Test:** `tools/unity/yard-test` (`capture.mjs` shoots the app's intro / play / result per game, `YardTest shots`
+  draws Unity's): mostly 2–5 %; what's left is the intro poster's creature (look 3's ink line, the fabric grain on
+  the still), the games' random parts (opponents, obstacles), and the ★'s fallback font on the result card.
 
 ## 3. House: "Heading home" and Renovate
 
