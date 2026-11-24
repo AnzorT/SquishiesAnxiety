@@ -51,6 +51,14 @@ for src, dst, size in json.load(open(sys.argv[1])):
 fs.unlinkSync(path.join(OUT, 'pics.tmp.json'));
 console.log(`pictures: ${pics.length} (${heads.length} heads)`);
 
+// ---- the hub's mode pictures (JPEG to PNG: the tests read PNG; the panels are Squishdoku's, Games/Shared/ModeHub) ----
+execFileSync('python3', ['-c', `
+import sys
+from PIL import Image
+for k in ('regular', 'blitz'):
+    Image.open(sys.argv[1] + '/mode-' + k + '.jpg').convert('RGB').save(sys.argv[2] + '/mode-' + k + '.png', optimize=True)
+`, path.join(ROOT, 'assets', 'hop'), OUT]);
+
 // ---- the level screen ------------------------------------------------------------------------------------------
 const { browser, page, errors } = await openApp('http://localhost:8081/?phone=1&preview=1&card=game-hop');
 await page.waitForTimeout(6000);

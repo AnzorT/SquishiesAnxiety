@@ -20,8 +20,9 @@
     { "at": 4000, "tap": [218, 180] }, { "at": 4064, "shot": 1 }, { "at": 4200, "shot": 1 }, { "at": 7500, "shot": 1 },
     { "at": 7600, "scroll": 2000 }, { "at": 7700, "shot": 1 } ] },
   { "name": "sort-rules", "card": "game-sort", "steps": [{ "at": 4000, "tap": [416, 345] }, { "at": 6500, "shot": 1 }] },
+  { "name": "hop-hub", "card": "game-hop", "steps": [{ "at": 300, "shot": 1 }, { "at": 700, "shot": 1 }, { "at": 6000, "shot": 1 }] },
   { "name": "hop-map", "card": "game-hop", "steps": [
-    { "at": 16, "shot": 1 }, { "at": 48, "shot": 1 }, { "at": 112, "shot": 1 }, { "at": 300, "shot": 1 }, { "at": 700, "shot": 1 }, { "at": 3500, "shot": 1 },
-    { "at": 3600, "scroll": 2600 }, { "at": 3700, "shot": 1 } ] },
-  { "name": "hop-rules", "card": "game-hop", "steps": [{ "at": 3000, "tap": [738, 26] }, { "at": 5000, "shot": 1 }] }
+    { "at": 4000, "tap": [218, 180] }, { "at": 4064, "shot": 1 }, { "at": 4200, "shot": 1 }, { "at": 7500, "shot": 1 },
+    { "at": 7600, "scroll": 2600 }, { "at": 7700, "shot": 1 } ] },
+  { "name": "hop-rules", "card": "game-hop", "steps": [{ "at": 4000, "tap": [416, 345] }, { "at": 6500, "shot": 1 }] }
 ]

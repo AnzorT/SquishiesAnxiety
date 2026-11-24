@@ -72,7 +72,7 @@ const box = (h) => h.evaluate((e) => { const r = e.getBoundingClientRect(); retu
 
 const { browser, page, errors } = await openApp('http://localhost:8081/?phone=1&preview=1&card=game-stack');
 await page.waitForTimeout(7000);
-const out = { ...OLD, pieces, rules: Object.fromEntries((OLD.rulesList || []).map((r) => [r.game, r])) };
+const out = { ...OLD, pieces, rules: Object.fromEntries((OLD.rulesList || []).map(({ game, ...r }) => [game, r])) };
 
 // ---- Squish Stack's hub: the orb (and, while the page still had them, BLITZ ⚡ and GO ⚡) --------------------------------
 if (want('stack')) {
@@ -105,7 +105,11 @@ if (pools) out.sortPools = { fridge: pools.fridge.map(fileOf), cupboard: pools.c
 if (want('hop')) {
 await page.evaluate(() => window.__preview('game-hop'));
 await page.waitForTimeout(6000);
-await save(HUBS, 'help', await page.evaluateHandle(() => window.__components('Orb')[1].el));
+// (develop opens on the hub, with no "?" orb: REGULAR MODE to the map; the old orb stays as it was cut)
+if (await page.evaluate(() => !window.__components('LevelMap')[0])) {
+  await page.mouse.click(218, 180);
+  await page.waitForTimeout(5000);
+} else await save(HUBS, 'help', await page.evaluateHandle(() => window.__components('Orb')[1].el));
 out.hopCast = await page.evaluate(() => window.__components('LevelMap')[0].props.uris).then((l) => l.map(fileOf));
 const rooms = await page.evaluate(() => [...new Set(window.__components('RoomCard').map((c) => c.props.room))]);
 for (const room of rooms) {

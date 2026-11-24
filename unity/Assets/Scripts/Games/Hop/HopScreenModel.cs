@@ -1,6 +1,8 @@
-// Squish Hop's screen for GameScreen (src/screens/HopScreen.js): no hub, the level map first (a band per Crib room, the
-// room's picture over its banner: "KITCHEN · ARROWS", the room's name and the twist it brings in), the "?" orb in the
-// header (HOW TO PLAY), the star pill. The record is the profile's `hop` (Levels.Record).
+// Squish Hop's screen for GameScreen (src/screens/HopScreen.js on develop): the hub (src/hop/Hub.js: the games' GameHub,
+// Games/Shared/ModeHub, with Squish Hop's pictures; HOW TO PLAY there), then the level map (a band per Crib room, the
+// room's picture over its banner: "KITCHEN · ARROWS", the room's name and the twist it brings in) through the rooms its
+// levels are played in (royal/WorldBg.js RoomBackdrop: LevelMap DrawRooms), the title on a plaque, the star pill. The
+// record is the profile's `hop` (Levels.Record).
 using System.Collections.Generic;
 using SquishSquad.Games.Shared;
 
@@ -12,9 +14,9 @@ namespace SquishSquad.Games.Hop
         public HopDef(IDictionary<string, object> profile) { _profile = profile; }
         HopRecord Rec => Levels.Record(_profile);
         public override string Id => "hop";
-        public override bool HasHub => false;
-        public override bool HelpOrb => true;
         public override string Title => "SQUISH HOP";
+        // (the title on a plaque over the room behind the map)
+        public override bool Plaque => true;
         public override string Sub => $"{Levels.DoneOf(Rec)} / {Levels.LEVELS} levels";
         public override string Stars => ((int)Levels.StarsOf(Rec)).ToString();
         public override bool Seen => Rec.Seen;
@@ -51,9 +53,17 @@ namespace SquishSquad.Games.Hop
         {
             var list = new List<MapLevel>();
             foreach (var l in Levels.LEVEL_LIST) list.Add(new MapLevel(l.Band, l.Tier));
-            var map = new LevelMap(list, w, top, h, HubsData.Arts(HubsData.Current.hopCast), BannerOf, RoomOf);
+            // the rooms behind the map (HopScreen.js roomOf), the row on their floor (ROW_ON_FLOOR)
+            var map = new LevelMap(list, w, top, h, HubsData.Arts(HubsData.Current.hopCast), BannerOf, RoomOf, roomOf: i => Levels.LEVEL_LIST[i].Room, rowAt: 0.75f);
             Refresh(map);
             return map;
+        }
+
+        public override Hub NewHub(GameScreen screen)
+        {
+            var rec = Levels.Record(_profile);
+            return new ModeHub("SQUISH HOP", "Hop", rec.Lv, Levels.DoneOf(rec), Levels.LEVELS, (int)Js.ToNumber(rec.BlitzTop),
+                () => screen.Go("map"), () => screen.OnBlitz?.Invoke(null), () => screen.ShowRules(true));
         }
 
         public override void Refresh(LevelMap map)
