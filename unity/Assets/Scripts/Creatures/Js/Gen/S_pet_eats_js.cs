@@ -662,8 +662,8 @@ D_840 = SetK(DESC_22, key_838, (GetK(DESC_22, key_838) is var _t841 && Truthy(_t
 Invoke(Object_keys(FOODS_23), "forEach", Fn((V _self1, int _argc842, V food_848, V _a845, V _a846, V _a847, V[] _rest843) => {
 V f_849 = default;
 f_849 = GetK(FOODS_23, food_848);
-SetK(ST_836, ((V)(string.Concat("eat_", ToStr(food_848), "@", ToStr(key_838)))), Call(meal_43, V.Undef, key_838, food_848, f_849, P_839));
-SetK(D_840, ((V)(string.Concat("eat_", ToStr(food_848)))), Arr(Get(f_849, "label"), ((V)(string.Concat(ToStr(Get(P_839, "txt")), " ", ToStr(Get(f_849, "d")))))));
+SetK(ST_836, ((V)(JsStrBuf.Begin().S("eat_").V(food_848).S("@").V(key_838).End())), Call(meal_43, V.Undef, key_838, food_848, f_849, P_839));
+SetK(D_840, ((V)(JsStrBuf.Begin().S("eat_").V(food_848).End())), Arr(Get(f_849, "label"), ((V)(JsStrBuf.Begin().V(Get(P_839, "txt")).S(" ").V(Get(f_849, "d")).End()))));
 return default;
 }, 1, "", true));
 }

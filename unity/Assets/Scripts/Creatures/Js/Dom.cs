@@ -75,7 +75,7 @@ namespace SquishSquad.Creatures.Js
         }
 
         // kebab(): camelCase to kebab-case, webkit- to -webkit-
-        static void Kebab(StringBuilder sb, string k)
+        public static void Kebab(StringBuilder sb, string k)
         {
             int start = sb.Length;
             foreach (char c in k) { if (c >= 'A' && c <= 'Z') sb.Append('-').Append((char)(c + 32)); else sb.Append(c); }

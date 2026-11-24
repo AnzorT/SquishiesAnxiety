@@ -20,7 +20,7 @@ using UnityEngine;
 
 namespace SquishSquad.Creatures
 {
-    public sealed class ResultRig : IRigFrames, IDisposable
+    public sealed class ResultRig : IRigFrames, IRigTree, IDisposable
     {
         static readonly string[] Clips = { "wait", "fill", "happy", "miss" };
         // the rig's own floor shadow (result.html hides it: .ch ellipse[fill="#6a1b9a"])
@@ -103,6 +103,28 @@ namespace SquishSquad.Creatures
         public void Emit(string kind, string at, double x, double y, int n) { (_live as NativeRig)?.Emit(kind, at, x, y, n); }
 
         public void Play(string move) => State(move);
+
+        /// <summary>The native rig's frame as a node tree, its floor shadow taken out (as Shadow does to the markup:
+        /// an ellipse filled #6a1b9a with nothing in it); null for a recording (CreatureView reads its markup).</summary>
+        public SquishSquad.Vector.SvgNode TreeAt(float seconds)
+        {
+            if (!(_live is IRigTree rt)) return null;
+            var t = rt.TreeAt(seconds);
+            if (t != null) DropShadow(t);
+            return t;
+        }
+        static void DropShadow(SquishSquad.Vector.SvgNode n)
+        {
+            var k = n.Children;
+            for (int i = k.Count - 1; i >= 0; i--)
+            {
+                var c = k[i];
+                if (c.Tag == "ellipse" && c.Children.Count == 0 && c["fill"] == "#6a1b9a") k.RemoveAt(i);
+                else if (c.Children.Count > 0) DropShadow(c);
+            }
+        }
+        /// <summary>Whether frames come as trees (the native rig) rather than markup (a recording).</summary>
+        public bool Trees => _live is IRigTree;
 
         public string FrameAt(float seconds)
         {

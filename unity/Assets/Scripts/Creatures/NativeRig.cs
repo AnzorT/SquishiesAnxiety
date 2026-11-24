@@ -6,7 +6,8 @@
 // One clock for every creature on screen (the page's virtual clock: performance.now, timers, requestAnimationFrame),
 // moved once per Unity frame in 16 ms steps (as the recordings were made), at most 250 ms after a pause. The creature
 // art the rig fetches (the Tripo creatures' outlines) comes from Resources/Rig/files.bytes (tools/unity/rig/bundle.mjs).
-// Each frame is the creature's <svg> markup, as CreatureView draws it.
+// Each frame is the creature's node tree, read straight from the rig's elements (RigTree: no SVG text), which
+// CreatureView compiles and draws; FrameAt still gives the markup (the result card's first measure, the tests).
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,7 +18,7 @@ using UnityEngine;
 
 namespace SquishSquad.Creatures
 {
-    public sealed class NativeRig : IRigFrames, IHouseRig, IDisposable
+    public sealed class NativeRig : IRigFrames, IRigTree, IHouseRig, IDisposable
     {
         static bool _failed;
         static JsObject _files;
@@ -141,6 +142,22 @@ namespace SquishSquad.Creatures
             catch (Exception e) { Debug.LogWarning("[NativeRig] frame: " + e.Message); }
             return _last;
         }
+
+        /// <summary>The frame as the vector code's node tree, straight from the rig (no markup): what CreatureView draws.</summary>
+        public SquishSquad.Vector.SvgNode TreeAt(float seconds)
+        {
+            if (_gone) return null;
+            try
+            {
+                Advance();
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                var t = (_tree ??= new RigTree()).Build(RigHost.SvgElement(_id));
+                _spent += sw.Elapsed.TotalMilliseconds;
+                return t;
+            }
+            catch (Exception e) { Debug.LogWarning("[NativeRig] frame: " + e.Message); return null; }
+        }
+        RigTree _tree;
 
         public void Play(string move)
         {

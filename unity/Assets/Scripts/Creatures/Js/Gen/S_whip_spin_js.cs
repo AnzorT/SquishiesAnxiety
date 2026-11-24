@@ -347,7 +347,7 @@ Invoke(Object_keys(PLAN_12), "forEach", Fn((V _self1, int _argc295, V key_301, V
 V nm_302 = default;
 V val_303 = default;
 V D_304 = default;
-nm_302 = ((V)(string.Concat("dance@", ToStr(key_301))));
+nm_302 = ((V)(JsStrBuf.Begin().S("dance@").V(key_301).End()));
 val_303 = (Call(convert_24, V.Undef, (GetK(STATES_9, nm_302) is var _t305 && Truthy(_t305) ? _t305 : (SEqS(key_301, "mittens") ? Get(STATES_9, "dance") : V.Null)), key_301) is var _t306 && Truthy(_t306) ? _t306 : V.Undef);
 D_304 = NewObj(3).Put("configurable", (true ? V.True : V.False)).Put("get", Fn((V _self307, int _argc308, V _a310, V _a311, V _a312, V _a313, V[] _rest309) => {
 if (_self307.IsNullish) _self307 = GlobalV;

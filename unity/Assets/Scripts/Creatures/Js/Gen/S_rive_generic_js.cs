@@ -2693,7 +2693,7 @@ V at_1588 = default;
 V em_1589 = default;
 if (_self1574.IsNullish) _self1574 = GlobalV;
 RR_1584 = Get(G("window"), "RiveRig");
-if (Truthy(((!(Truthy(RR_1584)) ? V.True : V.False) is var _t1590 && Truthy(_t1590) ? _t1590 : GetK(Get(RR_1584, "STATES"), ((V)(string.Concat("dance@", ToStr(key_1581)))))))) {
+if (Truthy(((!(Truthy(RR_1584)) ? V.True : V.False) is var _t1590 && Truthy(_t1590) ? _t1590 : GetK(Get(RR_1584, "STATES"), ((V)(JsStrBuf.Begin().S("dance@").V(key_1581).End())))))) {
 return default;
 }
 DF_1585 = NewObj(4).Put("hap", ((V)(0.85))).Put("smile", ((V)(1D))).Put("open", ((V)(0.5))).Put("mw", ((V)(1D))).V;
@@ -2763,7 +2763,7 @@ SetK(K_1586, p_1617, O_1619);
 Invoke(ev_1587, "sort", Fn((V _self1574, int _argc1632, V a_1638, V b_1639, V _a1636, V _a1637, V[] _rest1633) => {
 return ((V)((ToNum(GetIdx(a_1638, 0D)) - ToNum(GetIdx(b_1639, 0D)))));
 }, 2, "", true));
-Invoke(RR_1584, "add", NewObj(1).PutK(((V)(string.Concat("dance@", ToStr(key_1581)))), NewObj(3).Put("loop", LP_1582).Put("k", K_1586).Put("ev", ev_1587).V).V);
+Invoke(RR_1584, "add", NewObj(1).PutK(((V)(JsStrBuf.Begin().S("dance@").V(key_1581).End())), NewObj(3).Put("loop", LP_1582).Put("k", K_1586).Put("ev", ev_1587).V).V);
 return default;
 }, 3, "ffDance", false);
 wcDance_36 = Fn((V _self1640, int _argc1641, V _a1643, V _a1644, V _a1645, V _a1646, V[] _rest1642) => {
@@ -7513,7 +7513,7 @@ Set(I_3938, "ash", NewObj(1).Put("bodyG", Get(Get(aq_3955, "e"), "parentNode")).
 }
 if (Truthy(Get(RC_3946, "eye"))) {
 V gr_3963 = default;
-gr_3963 = Invoke(Get(I_3938, "faceG"), "querySelector", ((V)(string.Concat("[id=\"gey", ToStr(u_3945), "\"]"))));
+gr_3963 = Invoke(Get(I_3938, "faceG"), "querySelector", ((V)(JsStrBuf.Begin().S("[id=\"gey").V(u_3945).S("\"]").End())));
 if (Truthy(gr_3963)) {
 V st_3964 = default;
 st_3964 = Invoke(gr_3963, "querySelectorAll", ((V)("stop")));
@@ -7525,20 +7525,20 @@ pth_3951 = Fn((V _self3931, int _argc3965, V par_3971, V a_3972, V _a3969, V _a3
 return Call(mk_3944, V.Undef, ((V)("path")), a_3972, par_3971);
 }, 2, "", true);
 if (Truthy(Get(RC_3946, "glow"))) {
-OpSet(df_3949, "innerHTML", 0, ((V)(string.Concat(new string[] { "<radialGradient id=\"hxe", ToStr(u_3945), "\"><stop offset=\"0.3\" stop-color=\"", ToStr(Get(RC_3946, "glow")), "\" stop-opacity=\"0\"/><stop offset=\"0.55\" stop-color=\"", ToStr(Get(RC_3946, "glow")), "\" stop-opacity=\"0.6\"/><stop offset=\"1\" stop-color=\"", ToStr(Get(RC_3946, "glow")), "\" stop-opacity=\"0\"/></radialGradient>" }))));
+OpSet(df_3949, "innerHTML", 0, ((V)(JsStrBuf.Begin().S("<radialGradient id=\"hxe").V(u_3945).S("\"><stop offset=\"0.3\" stop-color=\"").V(Get(RC_3946, "glow")).S("\" stop-opacity=\"0\"/><stop offset=\"0.55\" stop-color=\"").V(Get(RC_3946, "glow")).S("\" stop-opacity=\"0.6\"/><stop offset=\"1\" stop-color=\"").V(Get(RC_3946, "glow")).S("\" stop-opacity=\"0\"/></radialGradient>").End())));
 Set(X_3950, "eg", Invoke(Arr(((V)(0D)), ((V)(1D))), "map", Fn((V _self3931, int _argc3973, V _a3975, V _a3976, V _a3977, V _a3978, V[] _rest3974) => {
-return Call(mk_3944, V.Undef, ((V)("circle")), NewObj(2).Put("fill", ((V)(string.Concat("url(#hxe", ToStr(u_3945), ")")))).Put("opacity", ((V)(0D))).V, fr_3948);
+return Call(mk_3944, V.Undef, ((V)("circle")), NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#hxe").V(u_3945).S(")").End()))).Put("opacity", ((V)(0D))).V, fr_3948);
 }, 0, "", true)));
 }
 if (SEqS(key_3941, "magmara")) {
-OpSet(df_3949, "innerHTML", 0, ((V)(string.Concat(new string[] { "<radialGradient id=\"hxf", ToStr(u_3945), "\"><stop offset=\"0\" stop-color=\"#fffbe0\"/><stop offset=\"0.35\" stop-color=\"#ffd23a\"/><stop offset=\"0.7\" stop-color=\"#ff6a1a\" stop-opacity=\"0.85\"/><stop offset=\"1\" stop-color=\"#ff3a0a\" stop-opacity=\"0\"/></radialGradient><linearGradient id=\"hxv", ToStr(u_3945), "\" x1=\"0\" y1=\"1\" x2=\"0\" y2=\"0\"><stop offset=\"0\" stop-color=\"#ff3a0a\"/><stop offset=\"0.5\" stop-color=\"#ff8a1e\"/><stop offset=\"1\" stop-color=\"#ffe45a\"/></linearGradient>" }))));
+OpSet(df_3949, "innerHTML", 0, ((V)(JsStrBuf.Begin().S("<radialGradient id=\"hxf").V(u_3945).S("\"><stop offset=\"0\" stop-color=\"#fffbe0\"/><stop offset=\"0.35\" stop-color=\"#ffd23a\"/><stop offset=\"0.7\" stop-color=\"#ff6a1a\" stop-opacity=\"0.85\"/><stop offset=\"1\" stop-color=\"#ff3a0a\" stop-opacity=\"0\"/></radialGradient><linearGradient id=\"hxv").V(u_3945).S("\" x1=\"0\" y1=\"1\" x2=\"0\" y2=\"0\"><stop offset=\"0\" stop-color=\"#ff3a0a\"/><stop offset=\"0.5\" stop-color=\"#ff8a1e\"/><stop offset=\"1\" stop-color=\"#ffe45a\"/></linearGradient>").End())));
 Set(X_3950, "lava", Invoke(items_3943, "filter", Fn((V _self3931, int _argc3979, V q_3985, V _a3982, V _a3983, V _a3984, V[] _rest3980) => {
 return (SEqS(Invoke(Get(q_3985, "e"), "getAttribute", ((V)("stroke"))), "#ff8a1e") ? V.True : V.False);
 }, 1, "", true)));
 Set(X_3950, "smk", Invoke(Arr(((V)(0D)), ((V)(1D))), "map", Fn((V _self3931, int _argc3986, V _a3988, V _a3989, V _a3990, V _a3991, V[] _rest3987) => {
 return Call(pth_3951, V.Undef, bk_3947, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#b8aeb6"))).Put("stroke-width", ((V)(1.6))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V);
 }, 0, "", true)));
-Set(X_3950, "gy", Call(pth_3951, V.Undef, bk_3947, NewObj(1).Put("fill", ((V)(string.Concat("url(#hxv", ToStr(u_3945), ")")))).V));
+Set(X_3950, "gy", Call(pth_3951, V.Undef, bk_3947, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#hxv").V(u_3945).S(")").End()))).V));
 Set(X_3950, "ckG", Call(pth_3951, V.Undef, fr_3948, NewObj(6).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ff5a1a"))).Put("stroke-width", ((V)(2.6))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).Put("opacity", ((V)(0D))).V));
 Set(X_3950, "ckL", Call(pth_3951, V.Undef, fr_3948, NewObj(6).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffd23a"))).Put("stroke-width", ((V)(1D))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).Put("opacity", ((V)(0D))).V));
 Set(X_3950, "dr", Call(pth_3951, V.Undef, fr_3948, NewObj(1).Put("fill", ((V)("#ff8a1e"))).V));
@@ -7546,19 +7546,19 @@ Set(X_3950, "flO", Call(pth_3951, V.Undef, fr_3948, NewObj(2).Put("fill", ((V)("
 Set(X_3950, "flI", Call(pth_3951, V.Undef, fr_3948, NewObj(1).Put("fill", ((V)("#ffd23a"))).V));
 Set(X_3950, "em", Call(pth_3951, V.Undef, fr_3948, NewObj(1).Put("fill", ((V)("#ffb03a"))).V));
 Set(X_3950, "fb", Invoke(Arr(((V)(0D)), ((V)(1D))), "map", Fn((V _self3931, int _argc3992, V _a3994, V _a3995, V _a3996, V _a3997, V[] _rest3993) => {
-return NewObj(2).Put("t", Call(pth_3951, V.Undef, fr_3948, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ff8a1e"))).Put("stroke-width", ((V)(2.4))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0D))).V)).Put("b", Call(mk_3944, V.Undef, ((V)("circle")), NewObj(2).Put("fill", ((V)(string.Concat("url(#hxf", ToStr(u_3945), ")")))).Put("opacity", ((V)(0D))).V, fr_3948)).V;
+return NewObj(2).Put("t", Call(pth_3951, V.Undef, fr_3948, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ff8a1e"))).Put("stroke-width", ((V)(2.4))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0D))).V)).Put("b", Call(mk_3944, V.Undef, ((V)("circle")), NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#hxf").V(u_3945).S(")").End()))).Put("opacity", ((V)(0D))).V, fr_3948)).V;
 }, 0, "", true)));
 Set(X_3950, "cracks", Arr());
 Set(X_3950, "drops", Arr());
 }
 if (SEqS(key_3941, "chronoshade")) {
-Invoke(art_3940, "setAttribute", ((V)("id")), ((V)(string.Concat("hxa", ToStr(u_3945)))));
-OpSet(df_3949, "innerHTML", 0, ((V)(string.Concat(new string[] { "<radialGradient id=\"hxk", ToStr(u_3945), "\" cx=\"45%\" cy=\"30%\" r=\"85%\"><stop offset=\"0\" stop-color=\"#4e4470\"/><stop offset=\"0.6\" stop-color=\"#2a2442\"/><stop offset=\"1\" stop-color=\"#15111f\"/></radialGradient><radialGradient id=\"hxd", ToStr(u_3945), "\"><stop offset=\"0\" stop-color=\"#c49aff\" stop-opacity=\"0.32\"/><stop offset=\"0.8\" stop-color=\"#7a3aff\" stop-opacity=\"0.12\"/><stop offset=\"1\" stop-color=\"#7a3aff\" stop-opacity=\"0\"/></radialGradient><filter id=\"hxt", ToStr(u_3945), "\" x=\"-20%\" y=\"-20%\" width=\"140%\" height=\"140%\"><feColorMatrix type=\"matrix\" values=\"0.25 0.1 0.1 0 0.25  0.1 0.15 0.1 0 0.1  0.2 0.2 0.4 0 0.45  0 0 0 1 0\"/></filter>" }))));
+Invoke(art_3940, "setAttribute", ((V)("id")), ((V)(JsStrBuf.Begin().S("hxa").V(u_3945).End())));
+OpSet(df_3949, "innerHTML", 0, ((V)(JsStrBuf.Begin().S("<radialGradient id=\"hxk").V(u_3945).S("\" cx=\"45%\" cy=\"30%\" r=\"85%\"><stop offset=\"0\" stop-color=\"#4e4470\"/><stop offset=\"0.6\" stop-color=\"#2a2442\"/><stop offset=\"1\" stop-color=\"#15111f\"/></radialGradient><radialGradient id=\"hxd").V(u_3945).S("\"><stop offset=\"0\" stop-color=\"#c49aff\" stop-opacity=\"0.32\"/><stop offset=\"0.8\" stop-color=\"#7a3aff\" stop-opacity=\"0.12\"/><stop offset=\"1\" stop-color=\"#7a3aff\" stop-opacity=\"0\"/></radialGradient><filter id=\"hxt").V(u_3945).S("\" x=\"-20%\" y=\"-20%\" width=\"140%\" height=\"140%\"><feColorMatrix type=\"matrix\" values=\"0.25 0.1 0.1 0 0.25  0.1 0.15 0.1 0 0.1  0.2 0.2 0.4 0 0.45  0 0 0 1 0\"/></filter>").End())));
 Set(X_3950, "gh", Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D))), "map", Fn((V _self3931, int _argc3998, V _a4000, V _a4001, V _a4002, V _a4003, V[] _rest3999) => {
 V e_4004 = default;
 e_4004 = Invoke(G("document"), "createElementNS", ((V)("http://www.w3.org/2000/svg")), ((V)("use")));
-Invoke(e_4004, "setAttribute", ((V)("href")), ((V)(string.Concat("#hxa", ToStr(u_3945)))));
-Invoke(e_4004, "setAttribute", ((V)("filter")), ((V)(string.Concat("url(#hxt", ToStr(u_3945), ")"))));
+Invoke(e_4004, "setAttribute", ((V)("href")), ((V)(JsStrBuf.Begin().S("#hxa").V(u_3945).End())));
+Invoke(e_4004, "setAttribute", ((V)("filter")), ((V)(JsStrBuf.Begin().S("url(#hxt").V(u_3945).S(")").End())));
 Invoke(e_4004, "setAttribute", ((V)("opacity")), ((V)(0D)));
 Invoke(bk_3947, "appendChild", e_4004);
 return e_4004;
@@ -7566,9 +7566,9 @@ return default;
 }, 0, "", true)));
 Set(X_3950, "hist", Arr());
 Set(X_3950, "cg", Call(mk_3944, V.Undef, ((V)("g")), NewObj(0).V, bk_3947));
-Set(X_3950, "cl", Call(pth_3951, V.Undef, Get(X_3950, "cg"), NewObj(4).Put("fill", ((V)(string.Concat("url(#hxk", ToStr(u_3945), ")")))).Put("stroke", ((V)("#6a50a0"))).Put("stroke-width", ((V)(0.6))).Put("stroke-linejoin", ((V)("round"))).V));
+Set(X_3950, "cl", Call(pth_3951, V.Undef, Get(X_3950, "cg"), NewObj(4).Put("fill", ((V)(JsStrBuf.Begin().S("url(#hxk").V(u_3945).S(")").End()))).Put("stroke", ((V)("#6a50a0"))).Put("stroke-width", ((V)(0.6))).Put("stroke-linejoin", ((V)("round"))).V));
 Set(X_3950, "dial", Call(mk_3944, V.Undef, ((V)("g")), NewObj(0).V, bk_3947));
-Set(X_3950, "dF", Call(mk_3944, V.Undef, ((V)("circle")), NewObj(3).Put("fill", ((V)(string.Concat("url(#hxd", ToStr(u_3945), ")")))).Put("stroke", ((V)("#b98aff"))).Put("stroke-width", ((V)(0.8))).V, Get(X_3950, "dial")));
+Set(X_3950, "dF", Call(mk_3944, V.Undef, ((V)("circle")), NewObj(3).Put("fill", ((V)(JsStrBuf.Begin().S("url(#hxd").V(u_3945).S(")").End()))).Put("stroke", ((V)("#b98aff"))).Put("stroke-width", ((V)(0.8))).V, Get(X_3950, "dial")));
 Set(X_3950, "dR", Call(mk_3944, V.Undef, ((V)("circle")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#9a6ae0"))).Put("stroke-width", ((V)(0.4))).Put("opacity", ((V)(0.8))).V, Get(X_3950, "dial")));
 Set(X_3950, "dT", Call(pth_3951, V.Undef, Get(X_3950, "dial"), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#d8bcff"))).Put("stroke-width", ((V)(0.7))).Put("stroke-linecap", ((V)("round"))).V));
 Set(X_3950, "dH", Call(pth_3951, V.Undef, Get(X_3950, "dial"), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#f0e0ff"))).Put("stroke-width", ((V)(1.1))).Put("stroke-linecap", ((V)("round"))).V));
@@ -7581,16 +7581,16 @@ Set(X_3950, "fz", Call(mk_3944, V.Undef, ((V)("circle")), NewObj(3).Put("fill", 
 Set(X_3950, "mA", ((V)(0D)));
 }
 if (SEqS(key_3941, "gigagrowth")) {
-OpSet(df_3949, "innerHTML", 0, ((V)(string.Concat("<radialGradient id=\"hxl", ToStr(u_3945), "\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#d2f7a0\"/><stop offset=\"0.6\" stop-color=\"#74c44c\"/><stop offset=\"1\" stop-color=\"#3a8a34\"/></radialGradient>"))));
+OpSet(df_3949, "innerHTML", 0, ((V)(JsStrBuf.Begin().S("<radialGradient id=\"hxl").V(u_3945).S("\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#d2f7a0\"/><stop offset=\"0.6\" stop-color=\"#74c44c\"/><stop offset=\"1\" stop-color=\"#3a8a34\"/></radialGradient>").End())));
 Set(X_3950, "lv", Array_from(NewObj(1).Put("length", ((V)(7D))).V, Fn((V _self3931, int _argc4011, V __4017, V i_4018, V _a4015, V _a4016, V[] _rest4012) => {
-return NewObj(2).Put("e", Call(pth_3951, V.Undef, bk_3947, NewObj(3).Put("fill", ((V)(string.Concat("url(#hxl", ToStr(u_3945), ")")))).Put("stroke", ((V)("#3a8a34"))).Put("stroke-width", ((V)(0.3))).V)).Put("ph", ((V)((ToNum(i_4018) / 7D)))).V;
+return NewObj(2).Put("e", Call(pth_3951, V.Undef, bk_3947, NewObj(3).Put("fill", ((V)(JsStrBuf.Begin().S("url(#hxl").V(u_3945).S(")").End()))).Put("stroke", ((V)("#3a8a34"))).Put("stroke-width", ((V)(0.3))).V)).Put("ph", ((V)((ToNum(i_4018) / 7D)))).V;
 }, 2, "", true)));
 Set(X_3950, "sh", Call(mk_3944, V.Undef, ((V)("ellipse")), NewObj(3).Put("fill", ((V)("none"))).Put("stroke", ((V)("#b9a27a"))).Put("opacity", ((V)(0D))).V, bk_3947));
 Set(X_3950, "sh2", Call(mk_3944, V.Undef, ((V)("ellipse")), NewObj(3).Put("fill", ((V)("none"))).Put("stroke", ((V)("#e6d8b0"))).Put("opacity", ((V)(0D))).V, fr_3948));
 Set(X_3950, "rk", Call(pth_3951, V.Undef, fr_3948, NewObj(3).Put("fill", ((V)("#8a7a5a"))).Put("stroke", ((V)("#5a4a32"))).Put("stroke-width", ((V)(0.3))).V));
-Set(X_3950, "sp", Call(pth_3951, V.Undef, fr_3948, NewObj(1).Put("fill", ((V)(string.Concat("url(#hxl", ToStr(u_3945), ")")))).V));
+Set(X_3950, "sp", Call(pth_3951, V.Undef, fr_3948, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#hxl").V(u_3945).S(")").End()))).V));
 Set(X_3950, "vn", Call(pth_3951, V.Undef, fr_3948, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#4e8a3a"))).Put("stroke-width", ((V)(2.4))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V));
-Set(X_3950, "vl", Call(pth_3951, V.Undef, fr_3948, NewObj(1).Put("fill", ((V)(string.Concat("url(#hxl", ToStr(u_3945), ")")))).V));
+Set(X_3950, "vl", Call(pth_3951, V.Undef, fr_3948, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#hxl").V(u_3945).S(")").End()))).V));
 Set(X_3950, "fp", Call(pth_3951, V.Undef, fr_3948, NewObj(3).Put("fill", ((V)("#ff9ad6"))).Put("stroke", ((V)("#ffffff"))).Put("stroke-width", ((V)(0.25))).V));
 Set(X_3950, "fp2", Call(pth_3951, V.Undef, fr_3948, NewObj(3).Put("fill", ((V)("#9ad8ff"))).Put("stroke", ((V)("#ffffff"))).Put("stroke-width", ((V)(0.25))).V));
 Set(X_3950, "fc", Call(pth_3951, V.Undef, fr_3948, NewObj(1).Put("fill", ((V)("#ffe45a"))).V));
@@ -7604,7 +7604,7 @@ Set(X_3950, "spk", Call(pth_3951, V.Undef, fr_3948, NewObj(1).Put("fill", ((V)("
 Set(X_3950, "bm", Invoke(Arr(((V)("#ff8ad8")), ((V)("#ffe27a")), ((V)("#8af0ff")), ((V)("#b48cff"))), "map", Fn((V _self3931, int _argc4026, V c_4032, V _a4029, V _a4030, V _a4031, V[] _rest4027) => {
 return Call(pth_3951, V.Undef, fr_3948, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", c_4032).Put("stroke-width", ((V)(2.2))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0D))).V);
 }, 1, "", true)));
-mg_4019 = Invoke(art_3940, "querySelector", ((V)(string.Concat("[id=\"g_g", ToStr(u_3945), "\"]"))));
+mg_4019 = Invoke(art_3940, "querySelector", ((V)(JsStrBuf.Begin().S("[id=\"g_g").V(u_3945).S("\"]").End())));
 Set(X_3950, "gs", (Truthy(mg_4019) ? Invoke(mg_4019, "querySelectorAll", ((V)("stop"))) : Arr()));
 }
 if (SEqS(key_3941, "aeroswift")) {
@@ -7661,15 +7661,15 @@ Invoke(Get(Get(GetIdx(Get(X_3950, "blade"), 0D), "mk"), "parentNode"), "insertBe
 }
 }
 if (SEqS(key_3941, "phantasm")) {
-Set(df_3949, "innerHTML", ((V)(string.Concat(new string[] { "<radialGradient id=\"hxc", ToStr(u_3945), "\" cx=\"45%\" cy=\"35%\" r=\"80%\"><stop offset=\"0\" stop-color=\"#6a3ab8\"/><stop offset=\"0.45\" stop-color=\"#3a1a7a\"/><stop offset=\"0.8\" stop-color=\"#1e0c48\"/><stop offset=\"1\" stop-color=\"#7a3ac8\"/></radialGradient><radialGradient id=\"hxn", ToStr(u_3945), "\" cx=\"30%\" cy=\"60%\" r=\"45%\"><stop offset=\"0\" stop-color=\"#ff7ad8\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#ff7ad8\" stop-opacity=\"0\"/></radialGradient><radialGradient id=\"hxo", ToStr(u_3945), "\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.3\" stop-color=\"#e6b8ff\"/><stop offset=\"0.65\" stop-color=\"#a65cff\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#a65cff\" stop-opacity=\"0\"/></radialGradient>" }))));
+Set(df_3949, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"hxc").V(u_3945).S("\" cx=\"45%\" cy=\"35%\" r=\"80%\"><stop offset=\"0\" stop-color=\"#6a3ab8\"/><stop offset=\"0.45\" stop-color=\"#3a1a7a\"/><stop offset=\"0.8\" stop-color=\"#1e0c48\"/><stop offset=\"1\" stop-color=\"#7a3ac8\"/></radialGradient><radialGradient id=\"hxn").V(u_3945).S("\" cx=\"30%\" cy=\"60%\" r=\"45%\"><stop offset=\"0\" stop-color=\"#ff7ad8\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#ff7ad8\" stop-opacity=\"0\"/></radialGradient><radialGradient id=\"hxo").V(u_3945).S("\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.3\" stop-color=\"#e6b8ff\"/><stop offset=\"0.65\" stop-color=\"#a65cff\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#a65cff\" stop-opacity=\"0\"/></radialGradient>").End())));
 Set(X_3950, "cg", Call(mk_3944, V.Undef, ((V)("g")), NewObj(0).V, bk_3947));
-Set(X_3950, "cl", Call(pth_3951, V.Undef, Get(X_3950, "cg"), NewObj(4).Put("fill", ((V)(string.Concat("url(#hxc", ToStr(u_3945), ")")))).Put("stroke", ((V)("#9a64e6"))).Put("stroke-width", ((V)(0.6))).Put("stroke-linejoin", ((V)("round"))).V));
-Set(X_3950, "cn", Call(pth_3951, V.Undef, Get(X_3950, "cg"), NewObj(1).Put("fill", ((V)(string.Concat("url(#hxn", ToStr(u_3945), ")")))).V));
+Set(X_3950, "cl", Call(pth_3951, V.Undef, Get(X_3950, "cg"), NewObj(4).Put("fill", ((V)(JsStrBuf.Begin().S("url(#hxc").V(u_3945).S(")").End()))).Put("stroke", ((V)("#9a64e6"))).Put("stroke-width", ((V)(0.6))).Put("stroke-linejoin", ((V)("round"))).V));
+Set(X_3950, "cn", Call(pth_3951, V.Undef, Get(X_3950, "cg"), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#hxn").V(u_3945).S(")").End()))).V));
 Set(X_3950, "cs", Call(pth_3951, V.Undef, Get(X_3950, "cg"), NewObj(1).Put("fill", ((V)("#ffffff"))).V));
 Set(X_3950, "chB", Call(pth_3951, V.Undef, bk_3947, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#c890ff"))).Put("stroke-width", ((V)(1.6))).Put("stroke-dasharray", ((V)("2.6 1.6"))).Put("stroke-linecap", ((V)("round"))).V));
 Set(X_3950, "chF", Call(pth_3951, V.Undef, fr_3948, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#d8a8ff"))).Put("stroke-width", ((V)(1.6))).Put("stroke-dasharray", ((V)("2.6 1.6"))).Put("stroke-linecap", ((V)("round"))).V));
 Set(X_3950, "ob", Invoke(Arr(((V)(0D)), ((V)(1D))), "map", Fn((V _self3931, int _argc4100, V _a4102, V _a4103, V _a4104, V _a4105, V[] _rest4101) => {
-return NewObj(2).Put("g", Call(mk_3944, V.Undef, ((V)("circle")), NewObj(1).Put("fill", ((V)(string.Concat("url(#hxo", ToStr(u_3945), ")")))).V, fr_3948)).Put("r", Call(mk_3944, V.Undef, ((V)("circle")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#e6c4ff"))).Put("stroke-width", ((V)(0.6))).Put("stroke-dasharray", ((V)("1.5 1.2"))).V, fr_3948)).V;
+return NewObj(2).Put("g", Call(mk_3944, V.Undef, ((V)("circle")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#hxo").V(u_3945).S(")").End()))).V, fr_3948)).Put("r", Call(mk_3944, V.Undef, ((V)("circle")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#e6c4ff"))).Put("stroke-width", ((V)(0.6))).Put("stroke-dasharray", ((V)("1.5 1.2"))).V, fr_3948)).V;
 }, 0, "", true)));
 Set(X_3950, "mt", Call(pth_3951, V.Undef, fr_3948, NewObj(1).Put("fill", ((V)("#f4e2ff"))).V));
 Set(X_3950, "sw", Invoke(items_3943, "find", Fn((V _self3931, int _argc4106, V q_4112, V _a4109, V _a4110, V _a4111, V[] _rest4107) => {
@@ -7780,7 +7780,7 @@ ax_4199 = ((c_4197 * ToNum(l_4195)) / 2D);
 ay_4200 = ((s_4198 * ToNum(l_4195)) / 2D);
 px_4201 = ((-s_4198) * ToNum(w_4196));
 py_4202 = (c_4197 * ToNum(w_4196));
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(x_4192) - ax_4199))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(y_4193) - ay_4200))))), "Q", ToStr(Call(r2_4137, V.Undef, Add(x_4192, ((V)(px_4201))))), " ", ToStr(Call(r2_4137, V.Undef, Add(y_4193, ((V)(py_4202))))), " ", ToStr(Call(r2_4137, V.Undef, Add(x_4192, ((V)(ax_4199))))), " ", ToStr(Call(r2_4137, V.Undef, Add(y_4193, ((V)(ay_4200))))), "Q", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(x_4192) - px_4201))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(y_4193) - py_4202))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(x_4192) - ax_4199))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(y_4193) - ay_4200))))), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_4137, V.Undef, ((V)((ToNum(x_4192) - ax_4199))))).S(" ").V(Call(r2_4137, V.Undef, ((V)((ToNum(y_4193) - ay_4200))))).S("Q").V(Call(r2_4137, V.Undef, Add(x_4192, ((V)(px_4201))))).S(" ").V(Call(r2_4137, V.Undef, Add(y_4193, ((V)(py_4202))))).S(" ").V(Call(r2_4137, V.Undef, Add(x_4192, ((V)(ax_4199))))).S(" ").V(Call(r2_4137, V.Undef, Add(y_4193, ((V)(ay_4200))))).S("Q").V(Call(r2_4137, V.Undef, ((V)((ToNum(x_4192) - px_4201))))).S(" ").V(Call(r2_4137, V.Undef, ((V)((ToNum(y_4193) - py_4202))))).S(" ").V(Call(r2_4137, V.Undef, ((V)((ToNum(x_4192) - ax_4199))))).S(" ").V(Call(r2_4137, V.Undef, ((V)((ToNum(y_4193) - ay_4200))))).S("Z").End()));
 return default;
 }, 5, "", true);
 dia_4150 = Fn((V _self4113, int _argc4203, V x_4209, V y_4210, V a_4211, V h_4212, V[] _rest4204) => {
@@ -7792,20 +7792,20 @@ w_4213 = (_argc4203 > 4 ? _rest4204[0] : V.Undef);
 c_4214 = FdLibm.Cos(ToNum(a_4211));
 s_4215 = FdLibm.Sin(ToNum(a_4211));
 q_4216 = Fn((V _self4113, int _argc4217, V dx_4223, V dy_4224, V _a4221, V _a4222, V[] _rest4218) => {
-return ((V)(string.Concat(ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(Add(x_4209, ((V)((ToNum(dx_4223) * c_4214))))) - (ToNum(dy_4224) * s_4215)))))), " ", ToStr(Call(r2_4137, V.Undef, Add(Add(y_4210, ((V)((ToNum(dx_4223) * s_4215)))), ((V)((ToNum(dy_4224) * c_4214)))))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_4137, V.Undef, ((V)((ToNum(Add(x_4209, ((V)((ToNum(dx_4223) * c_4214))))) - (ToNum(dy_4224) * s_4215)))))).S(" ").V(Call(r2_4137, V.Undef, Add(Add(y_4210, ((V)((ToNum(dx_4223) * s_4215)))), ((V)((ToNum(dy_4224) * c_4214)))))).End()));
 }, 2, "", true);
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(q_4216, V.Undef, ((V)(0D)), ((V)((-ToNum(h_4212)))))), "L", ToStr(Call(q_4216, V.Undef, w_4213, ((V)(((-ToNum(h_4212)) * 0.15))))), "L", ToStr(Call(q_4216, V.Undef, ((V)(0D)), ((V)((ToNum(h_4212) * 0.75))))), "L", ToStr(Call(q_4216, V.Undef, ((V)((-ToNum(w_4213)))), ((V)(((-ToNum(h_4212)) * 0.15))))), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(q_4216, V.Undef, ((V)(0D)), ((V)((-ToNum(h_4212)))))).S("L").V(Call(q_4216, V.Undef, w_4213, ((V)(((-ToNum(h_4212)) * 0.15))))).S("L").V(Call(q_4216, V.Undef, ((V)(0D)), ((V)((ToNum(h_4212) * 0.75))))).S("L").V(Call(q_4216, V.Undef, ((V)((-ToNum(w_4213)))), ((V)(((-ToNum(h_4212)) * 0.15))))).S("Z").End()));
 return default;
 }, 5, "", true);
 st4_4151 = Fn((V _self4113, int _argc4225, V x_4231, V y_4232, V r_4233, V _a4230, V[] _rest4226) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_4137, V.Undef, x_4231)), " ", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(y_4232) - ToNum(r_4233)))))), "Q", ToStr(Call(r2_4137, V.Undef, x_4231)), " ", ToStr(Call(r2_4137, V.Undef, y_4232)), " ", ToStr(Call(r2_4137, V.Undef, Add(x_4231, r_4233))), " ", ToStr(Call(r2_4137, V.Undef, y_4232)), "Q", ToStr(Call(r2_4137, V.Undef, x_4231)), " ", ToStr(Call(r2_4137, V.Undef, y_4232)), " ", ToStr(Call(r2_4137, V.Undef, x_4231)), " ", ToStr(Call(r2_4137, V.Undef, Add(y_4232, r_4233))), "Q", ToStr(Call(r2_4137, V.Undef, x_4231)), " ", ToStr(Call(r2_4137, V.Undef, y_4232)), " ", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(x_4231) - ToNum(r_4233)))))), " ", ToStr(Call(r2_4137, V.Undef, y_4232)), "Q", ToStr(Call(r2_4137, V.Undef, x_4231)), " ", ToStr(Call(r2_4137, V.Undef, y_4232)), " ", ToStr(Call(r2_4137, V.Undef, x_4231)), " ", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(y_4232) - ToNum(r_4233)))))), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_4137, V.Undef, x_4231)).S(" ").V(Call(r2_4137, V.Undef, ((V)((ToNum(y_4232) - ToNum(r_4233)))))).S("Q").V(Call(r2_4137, V.Undef, x_4231)).S(" ").V(Call(r2_4137, V.Undef, y_4232)).S(" ").V(Call(r2_4137, V.Undef, Add(x_4231, r_4233))).S(" ").V(Call(r2_4137, V.Undef, y_4232)).S("Q").V(Call(r2_4137, V.Undef, x_4231)).S(" ").V(Call(r2_4137, V.Undef, y_4232)).S(" ").V(Call(r2_4137, V.Undef, x_4231)).S(" ").V(Call(r2_4137, V.Undef, Add(y_4232, r_4233))).S("Q").V(Call(r2_4137, V.Undef, x_4231)).S(" ").V(Call(r2_4137, V.Undef, y_4232)).S(" ").V(Call(r2_4137, V.Undef, ((V)((ToNum(x_4231) - ToNum(r_4233)))))).S(" ").V(Call(r2_4137, V.Undef, y_4232)).S("Q").V(Call(r2_4137, V.Undef, x_4231)).S(" ").V(Call(r2_4137, V.Undef, y_4232)).S(" ").V(Call(r2_4137, V.Undef, x_4231)).S(" ").V(Call(r2_4137, V.Undef, ((V)((ToNum(y_4232) - ToNum(r_4233)))))).S("Z").End()));
 }, 3, "", true);
 circ_4152 = Fn((V _self4113, int _argc4234, V x_4240, V y_4241, V r_4242, V _a4239, V[] _rest4235) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(x_4240) - ToNum(r_4242)))))), " ", ToStr(Call(r2_4137, V.Undef, y_4241)), "a", ToStr(Call(r2_4137, V.Undef, r_4242)), " ", ToStr(Call(r2_4137, V.Undef, r_4242)), " 0 1 0 ", ToStr(Call(r2_4137, V.Undef, ((V)((2D * ToNum(r_4242)))))), " 0a", ToStr(Call(r2_4137, V.Undef, r_4242)), " ", ToStr(Call(r2_4137, V.Undef, r_4242)), " 0 1 0 ", ToStr(Call(r2_4137, V.Undef, ((V)(((-2D) * ToNum(r_4242)))))), " 0" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_4137, V.Undef, ((V)((ToNum(x_4240) - ToNum(r_4242)))))).S(" ").V(Call(r2_4137, V.Undef, y_4241)).S("a").V(Call(r2_4137, V.Undef, r_4242)).S(" ").V(Call(r2_4137, V.Undef, r_4242)).S(" 0 1 0 ").V(Call(r2_4137, V.Undef, ((V)((2D * ToNum(r_4242)))))).S(" 0a").V(Call(r2_4137, V.Undef, r_4242)).S(" ").V(Call(r2_4137, V.Undef, r_4242)).S(" 0 1 0 ").V(Call(r2_4137, V.Undef, ((V)(((-2D) * ToNum(r_4242)))))).S(" 0").End()));
 }, 3, "", true);
 arc_4153 = Fn((V _self4113, int _argc4243, V cx_4249, V cy_4250, V rx_4251, V ry_4252, V[] _rest4244) => {
-V f_4257 = default;
-V b_4258 = default;
+JsStrBuf f_4257 = null;
+JsStrBuf b_4258 = null;
 V prev_4259 = default;
 V pf_4260 = default;
 double ct_4261 = 0;
@@ -7818,8 +7818,8 @@ a0_4253 = (_argc4243 > 4 ? _rest4244[0] : V.Undef);
 span_4254 = (_argc4243 > 5 ? _rest4244[1] : V.Undef);
 tl_4255 = (_argc4243 > 6 ? _rest4244[2] : V.Undef);
 n_4256 = (_argc4243 > 7 ? _rest4244[3] : V.Undef);
-f_4257 = ((V)(""));
-b_4258 = ((V)(""));
+f_4257 = new JsStrBuf("");
+b_4258 = new JsStrBuf("");
 prev_4259 = V.Null;
 pf_4260 = V.Null;
 ct_4261 = FdLibm.Cos(ToNum(tl_4255));
@@ -7837,26 +7837,26 @@ V fr_4269 = default;
 a_4265 = Add(a0_4253, ((V)(((ToNum(span_4254) * i_4263) / ToNum(n_4256)))));
 x_4266 = (FdLibm.Cos(ToNum(a_4265)) * ToNum(rx_4251));
 y_4267 = (FdLibm.Sin(ToNum(a_4265)) * ToNum(ry_4252));
-p_4268 = ((V)(string.Concat(ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(Add(cx_4249, ((V)((x_4266 * ct_4261))))) - (y_4267 * sn_4262)))))), " ", ToStr(Call(r2_4137, V.Undef, Add(Add(cy_4250, ((V)((x_4266 * sn_4262)))), ((V)((y_4267 * ct_4261)))))))));
+p_4268 = ((V)(JsStrBuf.Begin().V(Call(r2_4137, V.Undef, ((V)((ToNum(Add(cx_4249, ((V)((x_4266 * ct_4261))))) - (y_4267 * sn_4262)))))).S(" ").V(Call(r2_4137, V.Undef, Add(Add(cy_4250, ((V)((x_4266 * sn_4262)))), ((V)((y_4267 * ct_4261)))))).End()));
 fr_4269 = ((FdLibm.Sin(ToNum(a_4265)) > 0D) ? V.True : V.False);
 if (SEq(prev_4259, V.Null)) {
 if (Truthy(fr_4269)) {
-f_4257 = ((V)(string.Concat(ToStr(f_4257), "M", ToStr(p_4268))));
+f_4257.S("M").V(p_4268);
 } else {
-b_4258 = ((V)(string.Concat(ToStr(b_4258), "M", ToStr(p_4268))));
+b_4258.S("M").V(p_4268);
 }
 } else {
 if (!SEq(fr_4269, pf_4260)) {
 if (Truthy(fr_4269)) {
-f_4257 = ((V)(string.Concat(new string[] { ToStr(f_4257), "M", ToStr(prev_4259), "L", ToStr(p_4268) })));
+f_4257.S("M").V(prev_4259).S("L").V(p_4268);
 } else {
-b_4258 = ((V)(string.Concat(new string[] { ToStr(b_4258), "M", ToStr(prev_4259), "L", ToStr(p_4268) })));
+b_4258.S("M").V(prev_4259).S("L").V(p_4268);
 }
 } else {
 if (Truthy(fr_4269)) {
-f_4257 = ((V)(string.Concat(ToStr(f_4257), "L", ToStr(p_4268))));
+f_4257.S("L").V(p_4268);
 } else {
-b_4258 = ((V)(string.Concat(ToStr(b_4258), "L", ToStr(p_4268))));
+b_4258.S("L").V(p_4268);
 }
 }
 }
@@ -7865,7 +7865,7 @@ pf_4260 = fr_4269;
 i_4263++;
 }
 }
-return Arr(f_4257, b_4258);
+return Arr(((V)(f_4257.Str)), ((V)(b_4258.Str)));
 return default;
 }, 8, "", true);
 lay_4154 = Fn((V _self4113, int _argc4270, V e_4276, V front_4277, V _a4274, V _a4275, V[] _rest4271) => {
@@ -7877,7 +7877,7 @@ Invoke(tgt_4278, "appendChild", e_4276);
 return default;
 }, 2, "", true);
 grow_4155 = Call(clamp_4138, V.Undef, (((V)(ToNum(Get(P_4121, "grow")))) is var _t4279 && Truthy(_t4279) ? _t4279 : ((V)(0D))), ((V)(0D)), ((V)(0.6)));
-tf_4156 = ((V)((GtN(grow_4155, 0.002) ? string.Concat(new string[] { "translate(", ToStr(Call(r2_4137, V.Undef, Add(((V)(50D)), Get(P_4121, "x")))), " ", ToStr(Call(r2_4137, V.Undef, G_4134)), ") scale(", ToStr(Call(r2_4137, V.Undef, Add(((V)(1D)), grow_4155))), ") translate(", ToStr(Call(r2_4137, V.Undef, ((V)(((-50D) - ToNum(Get(P_4121, "x"))))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((-ToNum(G_4134)))))), ")" }) : "")));
+tf_4156 = ((V)((GtN(grow_4155, 0.002) ? JsStrBuf.Begin().S("translate(").V(Call(r2_4137, V.Undef, Add(((V)(50D)), Get(P_4121, "x")))).S(" ").V(Call(r2_4137, V.Undef, G_4134)).S(") scale(").V(Call(r2_4137, V.Undef, Add(((V)(1D)), grow_4155))).S(") translate(").V(Call(r2_4137, V.Undef, ((V)(((-50D) - ToNum(Get(P_4121, "x"))))))).S(" ").V(Call(r2_4137, V.Undef, ((V)((-ToNum(G_4134)))))).S(")").End() : "")));
 Invoke(Arr(Get(X_4124, "art"), Get(X_4124, "bk"), Get(X_4124, "fr")), "forEach", Fn((V _self4113, int _argc4280, V e_4286, V _a4283, V _a4284, V _a4285, V[] _rest4281) => {
 if (Truthy(tf_4156)) {
 Call(set_4136, V.Undef, e_4286, ((V)("transform")), tf_4156);
@@ -7909,15 +7909,15 @@ return default;
 if (SEqS(Get(X_4124, "key"), "gigagrowth")) {
 V top_4299 = default;
 V air_4300 = default;
-V rd_4301 = default;
-V sd2_4302 = default;
+JsStrBuf rd_4301 = null;
+JsStrBuf sd2_4302 = null;
 V vine_4303 = default;
-V vd_4304 = default;
-V vl_4305 = default;
+JsStrBuf vd_4304 = null;
+JsStrBuf vl_4305 = null;
 V bl_4306 = default;
-V f1_4307 = default;
-V f2_4308 = default;
-V fc_4309 = default;
+JsStrBuf f1_4307 = null;
+JsStrBuf f2_4308 = null;
+JsStrBuf fc_4309 = null;
 top_4299 = GetIdx(Call(glob_4126, V.Undef, ((V)(50D)), TOP_4135), 1D);
 Invoke(Get(X_4124, "lv"), "forEach", Fn((V _self4113, int _argc4310, V L_4316, V i_4317, V _a4314, V _a4315, V[] _rest4311) => {
 double per_4318 = 0;
@@ -7990,7 +7990,7 @@ return default;
 }, 2, "", true));
 }
 }
-rd_4301 = ((V)(""));
+rd_4301 = new JsStrBuf("");
 Set(X_4124, "rocks", Invoke(Get(X_4124, "rocks"), "filter", Fn((V _self4113, int _argc4356, V q_4362, V _a4359, V _a4360, V _a4361, V[] _rest4357) => {
 return (((ToNum(now_4122) - ToNum(Get(q_4362, "t"))) < 1400D) ? V.True : V.False);
 }, 1, "", true)));
@@ -8003,12 +8003,12 @@ OpSet(q_4369, "a", 0, ((V)((ToNum(dt_4143) * 8D))));
 } else {
 OpSet(q_4369, "vx", 2, ((V)(0.8)));
 }
-rd_4301 = Add(rd_4301, Call(dia_4150, V.Undef, Get(q_4369, "x"), Get(q_4369, "y"), Get(q_4369, "a"), ((V)((ToNum(Get(q_4369, "r")) * 1.3))), Get(q_4369, "r")));
+rd_4301.V(Call(dia_4150, V.Undef, Get(q_4369, "x"), Get(q_4369, "y"), Get(q_4369, "a"), ((V)((ToNum(Get(q_4369, "r")) * 1.3))), Get(q_4369, "r")));
 return default;
 }, 1, "", true));
-Call(set_4136, V.Undef, Get(X_4124, "rk"), ((V)("d")), rd_4301);
+Call(set_4136, V.Undef, Get(X_4124, "rk"), ((V)("d")), ((V)(rd_4301.Str)));
 Call(set_4136, V.Undef, Get(X_4124, "rk"), ((V)("opacity")), ((V)((Truthy(Get(Get(X_4124, "rocks"), "length")) ? 1D : 0D))));
-sd2_4302 = ((V)(""));
+sd2_4302 = new JsStrBuf("");
 Set(X_4124, "sprouts", Invoke(Get(X_4124, "sprouts"), "filter", Fn((V _self4113, int _argc4370, V q_4376, V _a4373, V _a4374, V _a4375, V[] _rest4371) => {
 return (((ToNum(now_4122) - ToNum(Get(q_4376, "t"))) < 1700D) ? V.True : V.False);
 }, 1, "", true)));
@@ -8023,13 +8023,13 @@ h_4385 = ((ToNum(Get(q_4383, "h")) * FdLibm.Sin((System.Math.PI * Min(1D, (ToNum
 if ((h_4385 < 0.3)) {
 return default;
 }
-sd2_4302 = Add(sd2_4302, Add(Add(Call(lens_4149, V.Undef, Get(q_4383, "x"), ((V)((ToNum(G_4134) - (h_4385 * 0.5)))), ((V)((System.Math.PI / 2D))), ((V)(h_4385)), ((V)(0.45))), Call(lens_4149, V.Undef, ((V)((ToNum(Get(q_4383, "x")) - (h_4385 * 0.32)))), ((V)((ToNum(G_4134) - (h_4385 * 0.78)))), ((V)((-0.6))), ((V)((h_4385 * 0.62))), ((V)((h_4385 * 0.17))))), Call(lens_4149, V.Undef, Add(Get(q_4383, "x"), ((V)((h_4385 * 0.32)))), ((V)((ToNum(G_4134) - (h_4385 * 0.78)))), ((V)(0.6)), ((V)((h_4385 * 0.62))), ((V)((h_4385 * 0.17))))));
+sd2_4302.V(Add(Add(Call(lens_4149, V.Undef, Get(q_4383, "x"), ((V)((ToNum(G_4134) - (h_4385 * 0.5)))), ((V)((System.Math.PI / 2D))), ((V)(h_4385)), ((V)(0.45))), Call(lens_4149, V.Undef, ((V)((ToNum(Get(q_4383, "x")) - (h_4385 * 0.32)))), ((V)((ToNum(G_4134) - (h_4385 * 0.78)))), ((V)((-0.6))), ((V)((h_4385 * 0.62))), ((V)((h_4385 * 0.17))))), Call(lens_4149, V.Undef, Add(Get(q_4383, "x"), ((V)((h_4385 * 0.32)))), ((V)((ToNum(G_4134) - (h_4385 * 0.78)))), ((V)(0.6)), ((V)((h_4385 * 0.62))), ((V)((h_4385 * 0.17))))));
 return default;
 }, 1, "", true));
-Call(set_4136, V.Undef, Get(X_4124, "sp"), ((V)("d")), sd2_4302);
+Call(set_4136, V.Undef, Get(X_4124, "sp"), ((V)("d")), ((V)(sd2_4302.Str)));
 vine_4303 = Call(clamp_4138, V.Undef, (((V)(ToNum(Get(P_4121, "vine")))) is var _t4386 && Truthy(_t4386) ? _t4386 : ((V)(0D))), ((V)(0D)), ((V)(1.4)));
-vd_4304 = ((V)(""));
-vl_4305 = ((V)(""));
+vd_4304 = new JsStrBuf("");
+vl_4305 = new JsStrBuf("");
 if (GtN(vine_4303, 0.02)) {
 Invoke(Arr(((V)((-1D))), ((V)(1D))), "forEach", Fn((V _self4113, int _argc4387, V sd_4393, V _a4390, V _a4391, V _a4392, V[] _rest4388) => {
 V bx_4394 = default;
@@ -8056,9 +8056,9 @@ Invoke(pts_4397, "push", Arr(x_4403, ((V)(y_4402))));
 i_4399++;
 }
 }
-vd_4304 = ((V)(string.Concat(ToStr(vd_4304), "M", ToStr(Invoke(Invoke(pts_4397, "map", Fn((V _self4113, int _argc4404, V p_4410, V _a4407, V _a4408, V _a4409, V[] _rest4405) => {
-return ((V)(string.Concat(ToStr(Call(r2_4137, V.Undef, GetIdx(p_4410, 0D))), " ", ToStr(Call(r2_4137, V.Undef, GetIdx(p_4410, 1D))))));
-}, 1, "", true)), "join", ((V)("L")))))));
+vd_4304.S("M").V(Invoke(Invoke(pts_4397, "map", Fn((V _self4113, int _argc4404, V p_4410, V _a4407, V _a4408, V _a4409, V[] _rest4405) => {
+return ((V)(JsStrBuf.Begin().V(Call(r2_4137, V.Undef, GetIdx(p_4410, 0D))).S(" ").V(Call(r2_4137, V.Undef, GetIdx(p_4410, 1D))).End()));
+}, 1, "", true)), "join", ((V)("L"))));
 Invoke(Arr(((V)(0.28)), ((V)(0.5)), ((V)(0.72)), ((V)(0.92))), "forEach", Fn((V _self4113, int _argc4411, V f_4417, V j_4418, V _a4415, V _a4416, V[] _rest4412) => {
 double k_4419 = 0;
 V p_4420 = default;
@@ -8069,27 +8069,27 @@ return default;
 }
 p_4420 = GetIdx(pts_4397, Min(k_4419, n_4395));
 sz_4421 = (3.6 * ToNum(Call(SM_4139, V.Undef, ((V)(((L_4396 - ToNum(f_4417)) / 0.12))))));
-vl_4305 = Add(vl_4305, Call(lens_4149, V.Undef, Add(GetIdx(p_4420, 0D), ((V)((ToNum(sd_4393) * (NumTruthy((ToNum(j_4418) % 2D)) ? 2D : (-2D)))))), GetIdx(p_4420, 1D), ((V)((((NumTruthy((ToNum(j_4418) % 2D)) ? 0.5 : (-0.5)) * ToNum(sd_4393)) + (FdLibm.Sin(ToNum(Add(((V)((ts_4142 * 3D))), j_4418))) * 0.3)))), ((V)(sz_4421)), ((V)((sz_4421 * 0.32)))));
+vl_4305.V(Call(lens_4149, V.Undef, Add(GetIdx(p_4420, 0D), ((V)((ToNum(sd_4393) * (NumTruthy((ToNum(j_4418) % 2D)) ? 2D : (-2D)))))), GetIdx(p_4420, 1D), ((V)((((NumTruthy((ToNum(j_4418) % 2D)) ? 0.5 : (-0.5)) * ToNum(sd_4393)) + (FdLibm.Sin(ToNum(Add(((V)((ts_4142 * 3D))), j_4418))) * 0.3)))), ((V)(sz_4421)), ((V)((sz_4421 * 0.32)))));
 return default;
 }, 2, "", true));
 tp_4398 = GetIdx(pts_4397, n_4395);
-vl_4305 = Add(vl_4305, Call(circ_4152, V.Undef, GetIdx(tp_4398, 0D), GetIdx(tp_4398, 1D), ((V)((1.4 * ToNum(Call(SM_4139, V.Undef, ((V)((L_4396 * 3D))))))))));
+vl_4305.V(Call(circ_4152, V.Undef, GetIdx(tp_4398, 0D), GetIdx(tp_4398, 1D), ((V)((1.4 * ToNum(Call(SM_4139, V.Undef, ((V)((L_4396 * 3D))))))))));
 return default;
 }, 1, "", true));
 }
-Call(set_4136, V.Undef, Get(X_4124, "vn"), ((V)("d")), vd_4304);
-Call(set_4136, V.Undef, Get(X_4124, "vl"), ((V)("d")), vl_4305);
+Call(set_4136, V.Undef, Get(X_4124, "vn"), ((V)("d")), ((V)(vd_4304.Str)));
+Call(set_4136, V.Undef, Get(X_4124, "vl"), ((V)("d")), ((V)(vl_4305.Str)));
 bl_4306 = Call(clamp_4138, V.Undef, (((V)(ToNum(Get(P_4121, "bloom")))) is var _t4422 && Truthy(_t4422) ? _t4422 : ((V)(0D))), ((V)(0D)), ((V)(1.3)));
-f1_4307 = ((V)(""));
-f2_4308 = ((V)(""));
-fc_4309 = ((V)(""));
+f1_4307 = new JsStrBuf("");
+f2_4308 = new JsStrBuf("");
+fc_4309 = new JsStrBuf("");
 if (GtN(bl_4306, 0.02)) {
 Invoke(Arr(Arr(((V)(30D)), ((V)(64D))), Arr(((V)(70D)), ((V)(60D))), Arr(((V)(40D)), ((V)(80D))), Arr(((V)(61D)), ((V)(79D))), Arr(((V)(25D)), ((V)(48D))), Arr(((V)(75D)), ((V)(46D))), Arr(((V)(50D)), ((V)(86D))), Arr(((V)(36D)), ((V)(56D))), Arr(((V)(64D)), ((V)(70D)))), "forEach", Fn((V _self4113, int _argc4423, V _a4425, V i_4429, V _a4427, V _a4428, V[] _rest4424) => {
 V z_4435 = default;
 double k_4436 = 0;
 V p_4437 = default;
 double r_4438 = 0;
-V d_4439 = default;
+JsStrBuf d_4439 = null;
 V x_4432 = default;
 V y_4434 = default;
 { V _t4430 = ListOf(_a4425);
@@ -8105,7 +8105,7 @@ return default;
 }
 p_4437 = Call(sph_4127, V.Undef, x_4432, y_4434);
 r_4438 = ((1.5 * k_4436) * (1D + (0.1 * FdLibm.Sin(ToNum(Add(((V)((ts_4142 * 4D))), i_4429))))));
-d_4439 = ((V)(""));
+d_4439 = new JsStrBuf("");
 {
 double j_4440 = 0;
 j_4440 = 0D;
@@ -8113,28 +8113,28 @@ while (true) {
 if (!((j_4440 < 5D))) break;
 V a_4442 = default;
 a_4442 = Add(((V)(((j_4440 / 5D) * ToNum(TAU_4140)))), i_4429);
-d_4439 = Add(d_4439, Call(circ_4152, V.Undef, Add(GetIdx(p_4437, 0D), ((V)((FdLibm.Cos(ToNum(a_4442)) * r_4438)))), Add(GetIdx(p_4437, 1D), ((V)((FdLibm.Sin(ToNum(a_4442)) * r_4438)))), ((V)((r_4438 * 0.75)))));
+d_4439.V(Call(circ_4152, V.Undef, Add(GetIdx(p_4437, 0D), ((V)((FdLibm.Cos(ToNum(a_4442)) * r_4438)))), Add(GetIdx(p_4437, 1D), ((V)((FdLibm.Sin(ToNum(a_4442)) * r_4438)))), ((V)((r_4438 * 0.75)))));
 j_4440++;
 }
 }
 if (NumTruthy((ToNum(i_4429) % 2D))) {
-f2_4308 = Add(f2_4308, d_4439);
+f2_4308.S(d_4439.Str);
 } else {
-f1_4307 = Add(f1_4307, d_4439);
+f1_4307.S(d_4439.Str);
 }
-fc_4309 = Add(fc_4309, Call(circ_4152, V.Undef, GetIdx(p_4437, 0D), GetIdx(p_4437, 1D), ((V)((r_4438 * 0.6)))));
+fc_4309.V(Call(circ_4152, V.Undef, GetIdx(p_4437, 0D), GetIdx(p_4437, 1D), ((V)((r_4438 * 0.6)))));
 return default;
 }, 2, "", true));
 }
-Call(set_4136, V.Undef, Get(X_4124, "fp"), ((V)("d")), f1_4307);
-Call(set_4136, V.Undef, Get(X_4124, "fp2"), ((V)("d")), f2_4308);
-Call(set_4136, V.Undef, Get(X_4124, "fc"), ((V)("d")), fc_4309);
+Call(set_4136, V.Undef, Get(X_4124, "fp"), ((V)("d")), ((V)(f1_4307.Str)));
+Call(set_4136, V.Undef, Get(X_4124, "fp2"), ((V)("d")), ((V)(f2_4308.Str)));
+Call(set_4136, V.Undef, Get(X_4124, "fc"), ((V)("d")), ((V)(fc_4309.Str)));
 }
 if (SEqS(Get(X_4124, "key"), "crystalline")) {
 V bu_4443 = default;
 double Rr_4444 = 0;
 double h0_4445 = 0;
-V sk_4446 = default;
+JsStrBuf sk_4446 = null;
 V be_4447 = default;
 V ds_4448 = default;
 OpSet(X_4124, "ang", 0, ((V)((ToNum(dt_4143) * ((0.5 + (1.4 * ToNum(pw_4146))) + (ToNum(Call(clamp_4138, V.Undef, (((V)(ToNum(Get(P_4121, "whirl")))) is var _t4449 && Truthy(_t4449) ? _t4449 : ((V)(0D))), ((V)(0D)), ((V)(4D)))) * 2.6))))));
@@ -8158,14 +8158,14 @@ rt_4464 = (FdLibm.Sin(ToNum(Add(((V)((ts_4142 * 1.8))), i_4458))) * 0.45);
 Call(lay_4154, V.Undef, Get(S_4457, "e"), ((z_4460 > 0D) ? V.True : V.False));
 Call(lay_4154, V.Undef, Get(S_4457, "h"), ((z_4460 > 0D) ? V.True : V.False));
 Call(set_4136, V.Undef, Get(S_4457, "e"), ((V)("d")), Call(dia_4150, V.Undef, x_4461, ((V)(y_4462)), ((V)(rt_4464)), ((V)((5D * s_4463))), ((V)((2.4 * s_4463)))));
-Call(set_4136, V.Undef, Get(S_4457, "e"), ((V)("fill")), ((V)(string.Concat(new string[] { "hsl(", ToStr(Call(r2_4137, V.Undef, ((V)(((h0_4445 + (ToNum(i_4458) * 60D)) % 360D))))), ",95%,", NumStr(((z_4460 > 0D) ? 82D : 70D)), "%)" }))));
+Call(set_4136, V.Undef, Get(S_4457, "e"), ((V)("fill")), ((V)(JsStrBuf.Begin().S("hsl(").V(Call(r2_4137, V.Undef, ((V)(((h0_4445 + (ToNum(i_4458) * 60D)) % 360D))))).S(",95%,").N(((z_4460 > 0D) ? 82D : 70D)).S("%)").End())));
 Call(set_4136, V.Undef, Get(S_4457, "h"), ((V)("d")), Call(dia_4150, V.Undef, ((V)((ToNum(x_4461) - (0.7 * s_4463)))), ((V)((y_4462 - (1.6 * s_4463)))), ((V)(rt_4464)), ((V)((2D * s_4463))), ((V)((0.7 * s_4463)))));
 o_4465 = Call(r2_4137, V.Undef, Call(clamp_4138, V.Undef, ((V)((0.5 + (ToNum(pw_4146) * 0.5)))), ((V)(0D)), ((V)(1D))));
 Call(set_4136, V.Undef, Get(S_4457, "e"), ((V)("opacity")), o_4465);
 Call(set_4136, V.Undef, Get(S_4457, "h"), ((V)("opacity")), Call(r2_4137, V.Undef, ((V)((ToNum(o_4465) * 0.8)))));
 return default;
 }, 2, "", true));
-sk_4446 = ((V)(""));
+sk_4446 = new JsStrBuf("");
 {
 double j_4466 = 0;
 j_4466 = 0D;
@@ -8184,12 +8184,12 @@ rr_4472 = (16D + (ToNum(Call(hrnd_77, V.Undef, ((V)(((cyc_4469 * 7D) + j_4466)))
 if (GtN(Call(hrnd_77, V.Undef, ((V)(((cyc_4469 * 3D) + (j_4466 * 5D))))), (0.35 + (ToNum(pw_4146) * 0.5)))) {
 goto _cont4467;
 }
-sk_4446 = Add(sk_4446, Call(st4_4151, V.Undef, Add(GetIdx(C0_4147, 0D), ((V)((FdLibm.Cos(a_4471) * rr_4472)))), ((V)(((ToNum(GetIdx(C0_4147, 1D)) - 6D) + ((FdLibm.Sin(a_4471) * rr_4472) * 0.85)))), ((V)(((1.2 + (ToNum(pw_4146) * 1.6)) * FdLibm.Sin((System.Math.PI * uu_4470)))))));
+sk_4446.V(Call(st4_4151, V.Undef, Add(GetIdx(C0_4147, 0D), ((V)((FdLibm.Cos(a_4471) * rr_4472)))), ((V)(((ToNum(GetIdx(C0_4147, 1D)) - 6D) + ((FdLibm.Sin(a_4471) * rr_4472) * 0.85)))), ((V)(((1.2 + (ToNum(pw_4146) * 1.6)) * FdLibm.Sin((System.Math.PI * uu_4470)))))));
 _cont4467: ;
 j_4466++;
 }
 }
-Call(set_4136, V.Undef, Get(X_4124, "spk"), ((V)("d")), sk_4446);
+Call(set_4136, V.Undef, Get(X_4124, "spk"), ((V)("d")), ((V)(sk_4446.Str)));
 Call(set_4136, V.Undef, Get(X_4124, "spk"), ((V)("opacity")), Call(r2_4137, V.Undef, Call(clamp_4138, V.Undef, ((V)((0.4 + (ToNum(pw_4146) * 0.6)))), ((V)(0D)), ((V)(1D)))));
 be_4447 = Call(clamp_4138, V.Undef, (((V)(ToNum(Get(P_4121, "beam")))) is var _t4473 && Truthy(_t4473) ? _t4473 : ((V)(0D))), ((V)(0D)), ((V)(1.3)));
 ds_4448 = Arr(((V)("")), ((V)("")), ((V)("")), ((V)("")));
@@ -8221,7 +8221,7 @@ while (true) {
 if (!((j_4490 < 4D))) break;
 double o_4492 = 0;
 o_4492 = ((j_4490 - 1.5) * 1.7);
-OpSetK(ds_4448, ((V)(j_4490)), 0, ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_4137, V.Undef, Add(GetIdx(p_4482, 0D), ((V)(((nx_4488 * o_4492) * 0.3)))))), " ", ToStr(Call(r2_4137, V.Undef, Add(GetIdx(p_4482, 1D), ((V)(((ny_4489 * o_4492) * 0.3)))))), "L", ToStr(Call(r2_4137, V.Undef, Add(Add(GetIdx(p_4482, 0D), ((V)((dx_4486 * L_4485)))), ((V)(((nx_4488 * o_4492) * ToNum(Add(((V)(1D)), be_4447)))))))), " ", ToStr(Call(r2_4137, V.Undef, Add(Add(GetIdx(p_4482, 1D), ((V)((dy_4487 * L_4485)))), ((V)(((ny_4489 * o_4492) * ToNum(Add(((V)(1D)), be_4447)))))))) }))));
+OpSetK(ds_4448, ((V)(j_4490)), 0, ((V)(JsStrBuf.Begin().S("M").V(Call(r2_4137, V.Undef, Add(GetIdx(p_4482, 0D), ((V)(((nx_4488 * o_4492) * 0.3)))))).S(" ").V(Call(r2_4137, V.Undef, Add(GetIdx(p_4482, 1D), ((V)(((ny_4489 * o_4492) * 0.3)))))).S("L").V(Call(r2_4137, V.Undef, Add(Add(GetIdx(p_4482, 0D), ((V)((dx_4486 * L_4485)))), ((V)(((nx_4488 * o_4492) * ToNum(Add(((V)(1D)), be_4447)))))))).S(" ").V(Call(r2_4137, V.Undef, Add(Add(GetIdx(p_4482, 1D), ((V)((dy_4487 * L_4485)))), ((V)(((ny_4489 * o_4492) * ToNum(Add(((V)(1D)), be_4447)))))))).End())));
 j_4490++;
 }
 }
@@ -8235,16 +8235,16 @@ Call(set_4136, V.Undef, e_4499, ((V)("stroke-width")), Call(r2_4137, V.Undef, ((
 return default;
 }, 2, "", true));
 if (GtN(Get(Get(X_4124, "gs"), "length"), 2D)) {
-Call(set_4136, V.Undef, GetIdx(Get(X_4124, "gs"), 1D), ((V)("stop-color")), ((V)(string.Concat("hsl(", ToStr(Call(r2_4137, V.Undef, ((V)(((268D + (FdLibm.Sin((ts_4142 * 0.9)) * 40D)) + (ToNum(bu_4443) * 30D)))))), ",88%,90%)"))));
-Call(set_4136, V.Undef, GetIdx(Get(X_4124, "gs"), 2D), ((V)("stop-color")), ((V)(string.Concat("hsl(", ToStr(Call(r2_4137, V.Undef, ((V)((258D + (FdLibm.Sin(((ts_4142 * 0.9) + 1.4)) * 34D)))))), ",62%,74%)"))));
+Call(set_4136, V.Undef, GetIdx(Get(X_4124, "gs"), 1D), ((V)("stop-color")), ((V)(JsStrBuf.Begin().S("hsl(").V(Call(r2_4137, V.Undef, ((V)(((268D + (FdLibm.Sin((ts_4142 * 0.9)) * 40D)) + (ToNum(bu_4443) * 30D)))))).S(",88%,90%)").End())));
+Call(set_4136, V.Undef, GetIdx(Get(X_4124, "gs"), 2D), ((V)("stop-color")), ((V)(JsStrBuf.Begin().S("hsl(").V(Call(r2_4137, V.Undef, ((V)((258D + (FdLibm.Sin(((ts_4142 * 0.9) + 1.4)) * 34D)))))).S(",62%,74%)").End())));
 }
 }
 if (SEqS(Get(X_4124, "key"), "aeroswift")) {
 V gu_4501 = default;
 double v_4502 = 0;
 V so_4503 = default;
-V tr_4504 = default;
-V tr2_4505 = default;
+JsStrBuf tr_4504 = null;
+JsStrBuf tr2_4505 = null;
 V pj_4506 = default;
 gu_4501 = Call(clamp_4138, V.Undef, (((V)(ToNum(Get(P_4121, "gust")))) is var _t4507 && Truthy(_t4507) ? _t4507 : ((V)(0D))), ((V)(0D)), ((V)(2.2)));
 OpSet(X_4124, "ang", 0, ((V)((ToNum(dt_4143) * ((2D + (3D * ToNum(pw_4146))) + (ToNum(gu_4501) * 8D))))));
@@ -8290,8 +8290,8 @@ return default;
 }, 2, "", true));
 v_4502 = System.Math.Abs(ToNum(Get(X_4124, "vx")));
 so_4503 = Call(clamp_4138, V.Undef, ((V)(((v_4502 - 10D) / 40D))), ((V)(0D)), ((V)(0.85)));
-tr_4504 = ((V)(""));
-tr2_4505 = ((V)(""));
+tr_4504 = new JsStrBuf("");
+tr2_4505 = new JsStrBuf("");
 if (GtN(so_4503, 0.01)) {
 double sd_4541 = 0;
 V L_4542 = default;
@@ -8307,24 +8307,24 @@ double x0_4546 = 0;
 V sg_4547 = default;
 y_4545 = (((ToNum(GetIdx(C0_4147, 1D)) - 18D) + (j_4543 * 10D)) + (FdLibm.Sin(((ts_4142 * 9D) + j_4543)) * 1.2));
 x0_4546 = (ToNum(GetIdx(C0_4147, 0D)) - (sd_4541 * (24D + ((j_4543 % 2D) * 5D))));
-sg_4547 = ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_4137, V.Undef, ((V)(x0_4546)))), " ", ToStr(Call(r2_4137, V.Undef, ((V)(y_4545)))), "L", ToStr(Call(r2_4137, V.Undef, ((V)((x0_4546 - ((sd_4541 * ToNum(L_4542)) * (0.7 + (0.3 * ToNum(Call(hrnd_77, V.Undef, ((V)(j_4543)))))))))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)(y_4545)))) })));
+sg_4547 = ((V)(JsStrBuf.Begin().S("M").V(Call(r2_4137, V.Undef, ((V)(x0_4546)))).S(" ").V(Call(r2_4137, V.Undef, ((V)(y_4545)))).S("L").V(Call(r2_4137, V.Undef, ((V)((x0_4546 - ((sd_4541 * ToNum(L_4542)) * (0.7 + (0.3 * ToNum(Call(hrnd_77, V.Undef, ((V)(j_4543)))))))))))).S(" ").V(Call(r2_4137, V.Undef, ((V)(y_4545)))).End()));
 if (NumTruthy((j_4543 % 2D))) {
-tr2_4505 = Add(tr2_4505, sg_4547);
+tr2_4505.V(sg_4547);
 } else {
-tr_4504 = Add(tr_4504, sg_4547);
+tr_4504.V(sg_4547);
 }
 j_4543++;
 }
 }
 }
-Call(set_4136, V.Undef, Get(X_4124, "tr"), ((V)("d")), tr_4504);
-Call(set_4136, V.Undef, Get(X_4124, "tr2"), ((V)("d")), tr2_4505);
+Call(set_4136, V.Undef, Get(X_4124, "tr"), ((V)("d")), ((V)(tr_4504.Str)));
+Call(set_4136, V.Undef, Get(X_4124, "tr2"), ((V)("d")), ((V)(tr2_4505.Str)));
 Call(set_4136, V.Undef, Get(X_4124, "tr"), ((V)("opacity")), Call(r2_4137, V.Undef, so_4503));
 Call(set_4136, V.Undef, Get(X_4124, "tr2"), ((V)("opacity")), Call(r2_4137, V.Undef, so_4503));
 pj_4506 = Fn((V _self4113, int _argc4548, V f_4554, V m_4555, V _a4552, V _a4553, V[] _rest4549) => {
 V r_4556 = default;
 r_4556 = Call(f_4554, V.Undef, GetIdx(m_4555, 0D), GetIdx(m_4555, 1D), GetIdx(m_4555, 2D));
-return ((V)(string.Concat(ToStr(Call(r2_4137, V.Undef, GetIdx(r_4556, 0D))), " ", ToStr(Call(r2_4137, V.Undef, GetIdx(r_4556, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_4137, V.Undef, GetIdx(r_4556, 0D))).S(" ").V(Call(r2_4137, V.Undef, GetIdx(r_4556, 1D))).End()));
 return default;
 }, 2, "", true);
 if (Truthy(Get(X_4124, "wing"))) {
@@ -8361,9 +8361,9 @@ d_4588 = (Max(0D, ((ToNum(x_4586) - hx_4570) * sd_4568)) * k_4574);
 return Arr(((V)((hx_4570 + ((sd_4568 * d_4588) * cb_4575)))), ((V)((ToNum(y_4587) - ((d_4588 * 0.05) * ph_4572)))), ((V)(((-6D) - (d_4588 * sb_4576)))));
 return default;
 }, 2, "", true);
-Call(set_4136, V.Undef, Get(q_4567, "e"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Get(q_4567, "pts"), "map", Fn((V _self4113, int _argc4589, V p_4595, V _a4592, V _a4593, V _a4594, V[] _rest4590) => {
+Call(set_4136, V.Undef, Get(q_4567, "e"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Get(q_4567, "pts"), "map", Fn((V _self4113, int _argc4589, V p_4595, V _a4592, V _a4593, V _a4594, V[] _rest4590) => {
 return Call(pj_4506, V.Undef, byw_4129, Call(M_4577, V.Undef, GetIdx(p_4595, 0D), GetIdx(p_4595, 1D)));
-}, 1, "", true)), "join", ((V)("L")))), "Z"))));
+}, 1, "", true)), "join", ((V)("L")))).S("Z").End())));
 mz_4578 = Call(M_4577, V.Undef, Get(q_4567, "cx"), Get(q_4567, "cy"));
 fr_4579 = (GtN(Call(bywZ_4130, V.Undef, GetIdx(mz_4578, 0D), GetIdx(mz_4578, 2D)), 0D) ? V.True : V.False);
 if (!SEq(Get(q_4567, "fr"), fr_4579)) {
@@ -8389,9 +8389,9 @@ rx_4604 = (50D + (sd_4603 * 11D));
 M_4605 = Fn((V _self4113, int _argc4608, V x_4614, V y_4615, V _a4612, V _a4613, V[] _rest4609) => {
 return Arr(x_4614, y_4615, ((V)((((-0.5) - (System.Math.Abs((ToNum(x_4614) - rx_4604)) * 0.45)) - (Max(0D, (22D - ToNum(y_4615))) * 0.2)))));
 }, 2, "", true);
-Call(set_4136, V.Undef, Get(q_4602, "e"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Get(q_4602, "pts"), "map", Fn((V _self4113, int _argc4616, V p_4622, V _a4619, V _a4620, V _a4621, V[] _rest4617) => {
+Call(set_4136, V.Undef, Get(q_4602, "e"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Get(q_4602, "pts"), "map", Fn((V _self4113, int _argc4616, V p_4622, V _a4619, V _a4620, V _a4621, V[] _rest4617) => {
 return Call(pj_4506, V.Undef, sph_4127, Call(M_4605, V.Undef, GetIdx(p_4622, 0D), GetIdx(p_4622, 1D)));
-}, 1, "", true)), "join", ((V)("L")))), "Z"))));
+}, 1, "", true)), "join", ((V)("L")))).S("Z").End())));
 m_4606 = Call(M_4605, V.Undef, Get(q_4602, "cx"), Get(q_4602, "cy"));
 fr_4607 = (GtN(Call(sphZ_4128, V.Undef, GetIdx(m_4606, 0D), GetIdx(m_4606, 1D), GetIdx(m_4606, 2D)), 0D) ? V.True : V.False);
 if (!SEq(Get(q_4602, "fr"), fr_4607)) {
@@ -8476,14 +8476,14 @@ double Y0_4660 = 0;
 V hem_4661 = default;
 V M_4662 = default;
 V pts_4663 = default;
-V cs_4664 = default;
+JsStrBuf cs_4664 = null;
 V front_4665 = default;
 V orb_4666 = default;
 V ch_4667 = default;
 V cf_4668 = default;
 V cb_4669 = default;
 V co_4670 = default;
-V mt_4671 = default;
+JsStrBuf mt_4671 = null;
 Invoke(Get(E_4141, "eyes"), "forEach", Fn((V _self4113, int _argc4672, V o_4678, V _a4675, V _a4676, V _a4677, V[] _rest4673) => {
 return Call(set_4136, V.Undef, Get(o_4678, "g"), ((V)("opacity")), ((V)(0D)));
 }, 1, "", true));
@@ -8538,14 +8538,14 @@ i_4713++;
 }
 }
 Invoke(pts_4663, "push", Arr(((V)(79D)), ((V)((ToNum(hem_4661) - 2D)))), Arr(((V)(73D)), ((V)(66D))), Arr(((V)(66D)), ((V)(Y0_4660))), Arr(((V)(50D)), ((V)((Y0_4660 - 3D)))));
-Call(set_4136, V.Undef, Get(X_4124, "cl"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(pts_4663, "map", Fn((V _self4113, int _argc4716, V p_4722, V _a4719, V _a4720, V _a4721, V[] _rest4717) => {
+Call(set_4136, V.Undef, Get(X_4124, "cl"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(pts_4663, "map", Fn((V _self4113, int _argc4716, V p_4722, V _a4719, V _a4720, V _a4721, V[] _rest4717) => {
 V q_4723 = default;
 q_4723 = Call(M_4662, V.Undef, GetIdx(p_4722, 0D), GetIdx(p_4722, 1D));
-return ((V)(string.Concat(ToStr(Call(r2_4137, V.Undef, GetIdx(q_4723, 0D))), " ", ToStr(Call(r2_4137, V.Undef, GetIdx(q_4723, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_4137, V.Undef, GetIdx(q_4723, 0D))).S(" ").V(Call(r2_4137, V.Undef, GetIdx(q_4723, 1D))).End()));
 return default;
-}, 1, "", true)), "join", ((V)("L")))), "Z"))));
+}, 1, "", true)), "join", ((V)("L")))).S("Z").End())));
 Call(set_4136, V.Undef, Get(X_4124, "cn"), ((V)("d")), Invoke(Get(X_4124, "cl"), "getAttribute", ((V)("d"))));
-cs_4664 = ((V)(""));
+cs_4664 = new JsStrBuf("");
 {
 double j_4724 = 0;
 j_4724 = 0D;
@@ -8561,11 +8561,11 @@ x_4727 = (50D + ((ToNum(Call(hrnd_77, V.Undef, ((V)((j_4724 + 20D))))) - 0.5) * 
 y_4728 = (Y0_4660 + (uu_4726 * (ToNum(hem_4661) - Y0_4660)));
 q_4729 = Call(M_4662, V.Undef, ((V)(x_4727)), ((V)(y_4728)));
 r_4730 = ((0.35 + (ToNum(Call(hrnd_77, V.Undef, ((V)((j_4724 + 40D))))) * 0.5)) * (0.6 + (0.4 * FdLibm.Sin(((ts_4142 * 3D) + (j_4724 * 1.7))))));
-cs_4664 = Add(cs_4664, Call(circ_4152, V.Undef, GetIdx(q_4729, 0D), GetIdx(q_4729, 1D), ((V)(r_4730))));
+cs_4664.V(Call(circ_4152, V.Undef, GetIdx(q_4729, 0D), GetIdx(q_4729, 1D), ((V)(r_4730))));
 j_4724++;
 }
 }
-Call(set_4136, V.Undef, Get(X_4124, "cs"), ((V)("d")), cs_4664);
+Call(set_4136, V.Undef, Get(X_4124, "cs"), ((V)("d")), ((V)(cs_4664.Str)));
 front_4665 = (GtN(Call(bywZ_4130, V.Undef, ((V)(50D)), ((V)((-9D)))), 0D) ? V.True : V.False);
 if (!SEq(front_4665, Get(X_4124, "cfr"))) {
 Set(X_4124, "cfr", front_4665);
@@ -8612,7 +8612,7 @@ Call(set_4136, V.Undef, e_4755, ((V)("stroke-dashoffset")), Call(r2_4137, V.Unde
 Call(set_4136, V.Undef, e_4755, ((V)("opacity")), co_4670);
 return default;
 }, 1, "", true));
-mt_4671 = ((V)(""));
+mt_4671 = new JsStrBuf("");
 {
 double j_4756 = 0;
 j_4756 = 0D;
@@ -8628,32 +8628,32 @@ uu_4759 = (((ts_4142 / per_4758) + (j_4756 * 0.29)) % 1D);
 cyc_4760 = System.Math.Floor(((ts_4142 / per_4758) + (j_4756 * 0.29)));
 x_4761 = Add(GetIdx(C0_4147, 0D), ((V)(((ToNum(Call(hrnd_77, V.Undef, ((V)(((cyc_4760 * 11D) + j_4756))))) - 0.5) * 70D))));
 y_4762 = (ToNum(G_4134) - (uu_4759 * 74D));
-mt_4671 = Add(mt_4671, Call(st4_4151, V.Undef, x_4761, ((V)(y_4762)), ((V)(((0.7 + (ToNum(pw_4146) * 0.8)) * FdLibm.Sin((System.Math.PI * uu_4759)))))));
+mt_4671.V(Call(st4_4151, V.Undef, x_4761, ((V)(y_4762)), ((V)(((0.7 + (ToNum(pw_4146) * 0.8)) * FdLibm.Sin((System.Math.PI * uu_4759)))))));
 j_4756++;
 }
 }
-Call(set_4136, V.Undef, Get(X_4124, "mt"), ((V)("d")), mt_4671);
+Call(set_4136, V.Undef, Get(X_4124, "mt"), ((V)("d")), ((V)(mt_4671.Str)));
 Call(set_4136, V.Undef, Get(X_4124, "mt"), ((V)("opacity")), Call(r2_4137, V.Undef, Call(clamp_4138, V.Undef, ((V)((0.3 + (ToNum(pw_4146) * 0.6)))), ((V)(0D)), ((V)(1D)))));
 }
 if (SEqS(Get(X_4124, "key"), "magmara")) {
 double pl_4763 = 0;
 V fire_4764 = default;
-V fo_4765 = default;
-V fi_4766 = default;
-V em_4767 = default;
+JsStrBuf fo_4765 = null;
+JsStrBuf fi_4766 = null;
+JsStrBuf em_4767 = null;
 V air_4768 = default;
-V cg_4769 = default;
+JsStrBuf cg_4769 = null;
 double co_4770 = 0;
-V dd_4771 = default;
+JsStrBuf dd_4771 = null;
 V er_4772 = default;
-V gd_4773 = default;
+JsStrBuf gd_4773 = null;
 pl_4763 = (0.5 + (0.5 * FdLibm.Sin((ts_4142 * 3.2))));
 Invoke(Get(X_4124, "lava"), "forEach", Fn((V _self4113, int _argc4774, V q_4780, V i_4781, V _a4778, V _a4779, V[] _rest4775) => {
-return Call(set_4136, V.Undef, Get(q_4780, "e"), ((V)("stroke")), ((V)(string.Concat(new string[] { "hsl(", ToStr(Call(r2_4137, V.Undef, ((V)((26D + (8D * FdLibm.Sin(ToNum(Add(((V)((ts_4142 * 2D))), i_4781))))))))), ",100%,", ToStr(Call(r2_4137, V.Undef, ((V)((48D + ((14D + (10D * ToNum(pw_4146))) * pl_4763)))))), "%)" }))));
+return Call(set_4136, V.Undef, Get(q_4780, "e"), ((V)("stroke")), ((V)(JsStrBuf.Begin().S("hsl(").V(Call(r2_4137, V.Undef, ((V)((26D + (8D * FdLibm.Sin(ToNum(Add(((V)((ts_4142 * 2D))), i_4781))))))))).S(",100%,").V(Call(r2_4137, V.Undef, ((V)((48D + ((14D + (10D * ToNum(pw_4146))) * pl_4763)))))).S("%)").End())));
 }, 2, "", true));
 fire_4764 = Call(clamp_4138, V.Undef, (((V)(ToNum(Get(P_4121, "fire")))) is var _t4782 && Truthy(_t4782) ? _t4782 : ((V)(0D))), ((V)(0D)), ((V)(1.8)));
-fo_4765 = ((V)(""));
-fi_4766 = ((V)(""));
+fo_4765 = new JsStrBuf("");
+fi_4766 = new JsStrBuf("");
 Invoke(Arr(((V)("pawL")), ((V)("pawR"))), "forEach", Fn((V _self4113, int _argc4783, V k_4789, V i_4790, V _a4787, V _a4788, V[] _rest4784) => {
 V p_4791 = default;
 p_4791 = GetK(W_4125, k_4789);
@@ -8677,18 +8677,18 @@ sw_4803 = (((FdLibm.Sin(ToNum(Add(Add(((V)((ts_4142 * 9D))), i_4790), j_4798))) 
 x_4804 = Add(GetIdx(p_4791, 0D), ((V)(ox_4800)));
 y_4805 = (ToNum(GetIdx(p_4791, 1D)) - 1D);
 fl_4806 = Fn((V _self4113, int _argc4807, V hh_4813, V ww_4814, V _a4811, V _a4812, V[] _rest4808) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(x_4804) - ToNum(ww_4814)))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)(y_4805)))), "Q", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(x_4804) - ToNum(ww_4814)))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((y_4805 - (ToNum(hh_4813) * 0.55)))))), " ", ToStr(Call(r2_4137, V.Undef, Add(x_4804, ((V)(sw_4803))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((y_4805 - ToNum(hh_4813)))))), "Q", ToStr(Call(r2_4137, V.Undef, Add(x_4804, ww_4814))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((y_4805 - (ToNum(hh_4813) * 0.55)))))), " ", ToStr(Call(r2_4137, V.Undef, Add(x_4804, ww_4814))), " ", ToStr(Call(r2_4137, V.Undef, ((V)(y_4805)))), "Q", ToStr(Call(r2_4137, V.Undef, Add(x_4804, ww_4814))), " ", ToStr(Call(r2_4137, V.Undef, Add(((V)(y_4805)), ww_4814))), " ", ToStr(Call(r2_4137, V.Undef, x_4804)), " ", ToStr(Call(r2_4137, V.Undef, Add(((V)(y_4805)), ww_4814))), "Q", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(x_4804) - ToNum(ww_4814)))))), " ", ToStr(Call(r2_4137, V.Undef, Add(((V)(y_4805)), ww_4814))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(x_4804) - ToNum(ww_4814)))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)(y_4805)))), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_4137, V.Undef, ((V)((ToNum(x_4804) - ToNum(ww_4814)))))).S(" ").V(Call(r2_4137, V.Undef, ((V)(y_4805)))).S("Q").V(Call(r2_4137, V.Undef, ((V)((ToNum(x_4804) - ToNum(ww_4814)))))).S(" ").V(Call(r2_4137, V.Undef, ((V)((y_4805 - (ToNum(hh_4813) * 0.55)))))).S(" ").V(Call(r2_4137, V.Undef, Add(x_4804, ((V)(sw_4803))))).S(" ").V(Call(r2_4137, V.Undef, ((V)((y_4805 - ToNum(hh_4813)))))).S("Q").V(Call(r2_4137, V.Undef, Add(x_4804, ww_4814))).S(" ").V(Call(r2_4137, V.Undef, ((V)((y_4805 - (ToNum(hh_4813) * 0.55)))))).S(" ").V(Call(r2_4137, V.Undef, Add(x_4804, ww_4814))).S(" ").V(Call(r2_4137, V.Undef, ((V)(y_4805)))).S("Q").V(Call(r2_4137, V.Undef, Add(x_4804, ww_4814))).S(" ").V(Call(r2_4137, V.Undef, Add(((V)(y_4805)), ww_4814))).S(" ").V(Call(r2_4137, V.Undef, x_4804)).S(" ").V(Call(r2_4137, V.Undef, Add(((V)(y_4805)), ww_4814))).S("Q").V(Call(r2_4137, V.Undef, ((V)((ToNum(x_4804) - ToNum(ww_4814)))))).S(" ").V(Call(r2_4137, V.Undef, Add(((V)(y_4805)), ww_4814))).S(" ").V(Call(r2_4137, V.Undef, ((V)((ToNum(x_4804) - ToNum(ww_4814)))))).S(" ").V(Call(r2_4137, V.Undef, ((V)(y_4805)))).S("Z").End()));
 }, 2, "", true);
-fo_4765 = Add(fo_4765, Call(fl_4806, V.Undef, ((V)(h_4801)), ((V)(w_4802))));
-fi_4766 = Add(fi_4766, Call(fl_4806, V.Undef, ((V)((h_4801 * 0.6))), ((V)((w_4802 * 0.55)))));
+fo_4765.V(Call(fl_4806, V.Undef, ((V)(h_4801)), ((V)(w_4802))));
+fi_4766.V(Call(fl_4806, V.Undef, ((V)((h_4801 * 0.6))), ((V)((w_4802 * 0.55)))));
 return default;
 }, 1, "", true));
 return default;
 }, 2, "", true));
-Call(set_4136, V.Undef, Get(X_4124, "flO"), ((V)("d")), fo_4765);
-Call(set_4136, V.Undef, Get(X_4124, "flI"), ((V)("d")), fi_4766);
+Call(set_4136, V.Undef, Get(X_4124, "flO"), ((V)("d")), ((V)(fo_4765.Str)));
+Call(set_4136, V.Undef, Get(X_4124, "flI"), ((V)("d")), ((V)(fi_4766.Str)));
 Call(set_4136, V.Undef, Get(X_4124, "flO"), ((V)("opacity")), Call(r2_4137, V.Undef, Call(clamp_4138, V.Undef, ((V)((0.45 + (ToNum(pw_4146) * 0.5)))), ((V)(0D)), ((V)(0.95)))));
-em_4767 = ((V)(""));
+em_4767 = new JsStrBuf("");
 {
 double j_4815 = 0;
 j_4815 = 0D;
@@ -8707,20 +8707,20 @@ y_4821 = ((ToNum(G_4134) - 6D) - (uu_4818 * 70D));
 if (GtN(Call(hrnd_77, V.Undef, ((V)(((cyc_4819 * 5D) + (j_4815 * 3D))))), (0.3 + (ToNum(pw_4146) * 0.7)))) {
 goto _cont4816;
 }
-em_4767 = Add(em_4767, Call(circ_4152, V.Undef, x_4820, ((V)(y_4821)), ((V)(((0.4 + (ToNum(Call(hrnd_77, V.Undef, ((V)(j_4815)))) * 0.5)) * (1D - (uu_4818 * 0.6)))))));
+em_4767.V(Call(circ_4152, V.Undef, x_4820, ((V)(y_4821)), ((V)(((0.4 + (ToNum(Call(hrnd_77, V.Undef, ((V)(j_4815)))) * 0.5)) * (1D - (uu_4818 * 0.6)))))));
 _cont4816: ;
 j_4815++;
 }
 }
-Call(set_4136, V.Undef, Get(X_4124, "em"), ((V)("d")), em_4767);
+Call(set_4136, V.Undef, Get(X_4124, "em"), ((V)("d")), ((V)(em_4767.Str)));
 Call(set_4136, V.Undef, Get(X_4124, "em"), ((V)("opacity")), Call(r2_4137, V.Undef, Call(clamp_4138, V.Undef, ((V)((0.5 + (ToNum(pw_4146) * 0.5)))), ((V)(0D)), ((V)(1D)))));
 Invoke(Get(X_4124, "smk"), "forEach", Fn((V _self4113, int _argc4822, V e_4828, V i_4829, V _a4826, V _a4827, V[] _rest4823) => {
 double sd_4830 = 0;
 V b_4831 = default;
-V d_4832 = default;
+JsStrBuf d_4832 = null;
 sd_4830 = (Truthy(i_4829) ? 1D : (-1D));
 b_4831 = Call(glob_4126, V.Undef, ((V)((50D + (sd_4830 * 15D)))), ((V)(49D)));
-d_4832 = ((V)(string.Concat("M", ToStr(Call(r2_4137, V.Undef, GetIdx(b_4831, 0D))), " ", ToStr(Call(r2_4137, V.Undef, GetIdx(b_4831, 1D))))));
+d_4832 = new JsStrBuf(JsStrBuf.Begin().S("M").V(Call(r2_4137, V.Undef, GetIdx(b_4831, 0D))).S(" ").V(Call(r2_4137, V.Undef, GetIdx(b_4831, 1D))).End());
 {
 double k_4833 = 0;
 k_4833 = 1D;
@@ -8730,11 +8730,11 @@ double y_4835 = 0;
 V x_4836 = default;
 y_4835 = (ToNum(GetIdx(b_4831, 1D)) - (k_4833 * 4D));
 x_4836 = Add(Add(GetIdx(b_4831, 0D), ((V)(((sd_4830 * k_4833) * 0.8)))), ((V)((FdLibm.Sin((((ts_4142 * 2.4) + (k_4833 * 0.9)) + (ToNum(i_4829) * 2D))) * (1D + (k_4833 * 0.5))))));
-d_4832 = ((V)(string.Concat(new string[] { ToStr(d_4832), "L", ToStr(Call(r2_4137, V.Undef, x_4836)), " ", ToStr(Call(r2_4137, V.Undef, ((V)(y_4835)))) })));
+d_4832.S("L").V(Call(r2_4137, V.Undef, x_4836)).S(" ").V(Call(r2_4137, V.Undef, ((V)(y_4835))));
 k_4833++;
 }
 }
-Call(set_4136, V.Undef, e_4828, ((V)("d")), d_4832);
+Call(set_4136, V.Undef, e_4828, ((V)("d")), ((V)(d_4832.Str)));
 Call(set_4136, V.Undef, e_4828, ((V)("opacity")), Call(r2_4137, V.Undef, ((V)((0.12 + (ToNum(pw_4146) * 0.2))))));
 Call(set_4136, V.Undef, e_4828, ((V)("stroke-width")), Call(r2_4137, V.Undef, Add(((V)(1.2)), pw_4146)));
 return default;
@@ -8764,7 +8764,7 @@ k_4839++;
 }
 }
 }
-cg_4769 = ((V)(""));
+cg_4769 = new JsStrBuf("");
 co_4770 = 0D;
 Set(X_4124, "cracks", Invoke(Get(X_4124, "cracks"), "filter", Fn((V _self4113, int _argc4843, V c_4849, V _a4846, V _a4847, V _a4848, V[] _rest4844) => {
 return (((ToNum(now_4122) - ToNum(Get(c_4849, "t"))) < 1100D) ? V.True : V.False);
@@ -8788,7 +8788,7 @@ sd_4861 = (NumTruthy((j_4859 % 2D)) ? 1D : (-1D));
 a_4862 = ((((double)(ToInt32(j_4859) >> (int)(ToUint32(1D) & 31))) * 0.5) + (ToNum(Call(hrnd_77, V.Undef, ((V)(((ToNum(Get(c_4856, "seed")) * 9D) + j_4859))))) * 0.3));
 x_4863 = Add(Get(c_4856, "x"), ((V)((sd_4861 * 4D))));
 y_4864 = Add(G_4134, ((V)(0.8)));
-cg_4769 = ((V)(string.Concat(new string[] { ToStr(cg_4769), "M", ToStr(Call(r2_4137, V.Undef, x_4863)), " ", ToStr(Call(r2_4137, V.Undef, y_4864)) })));
+cg_4769.S("M").V(Call(r2_4137, V.Undef, x_4863)).S(" ").V(Call(r2_4137, V.Undef, y_4864));
 {
 double m_4865 = 0;
 m_4865 = 1D;
@@ -8796,7 +8796,7 @@ while (true) {
 if (!((m_4865 <= 4D))) break;
 x_4863 = Add(x_4863, ((V)(((sd_4861 * L_4858) / 4D))));
 y_4864 = Add(Add(Add(G_4134, ((V)(0.8))), ((V)(((ToNum(Call(hrnd_77, V.Undef, Add(Add(Get(c_4856, "seed"), ((V)((j_4859 * 7D)))), ((V)(m_4865))))) - 0.5) * 2.2)))), ((V)(((a_4862 * m_4865) * 0.5))));
-cg_4769 = ((V)(string.Concat(new string[] { ToStr(cg_4769), "L", ToStr(Call(r2_4137, V.Undef, x_4863)), " ", ToStr(Call(r2_4137, V.Undef, y_4864)) })));
+cg_4769.S("L").V(Call(r2_4137, V.Undef, x_4863)).S(" ").V(Call(r2_4137, V.Undef, y_4864));
 m_4865++;
 }
 }
@@ -8805,11 +8805,11 @@ j_4859++;
 }
 return default;
 }, 1, "", true));
-Call(set_4136, V.Undef, Get(X_4124, "ckG"), ((V)("d")), cg_4769);
-Call(set_4136, V.Undef, Get(X_4124, "ckL"), ((V)("d")), cg_4769);
+Call(set_4136, V.Undef, Get(X_4124, "ckG"), ((V)("d")), ((V)(cg_4769.Str)));
+Call(set_4136, V.Undef, Get(X_4124, "ckL"), ((V)("d")), ((V)(cg_4769.Str)));
 Call(set_4136, V.Undef, Get(X_4124, "ckG"), ((V)("opacity")), Call(r2_4137, V.Undef, ((V)((co_4770 * 0.6)))));
 Call(set_4136, V.Undef, Get(X_4124, "ckL"), ((V)("opacity")), Call(r2_4137, V.Undef, ((V)(co_4770))));
-dd_4771 = ((V)(""));
+dd_4771 = new JsStrBuf("");
 Set(X_4124, "drops", Invoke(Get(X_4124, "drops"), "filter", Fn((V _self4113, int _argc4867, V q_4873, V _a4870, V _a4871, V _a4872, V[] _rest4868) => {
 return (((ToNum(now_4122) - ToNum(Get(q_4873, "t"))) < 1200D) ? V.True : V.False);
 }, 1, "", true)));
@@ -8819,12 +8819,12 @@ OpSet(q_4880, "vy", 0, ((V)((150D * ToNum(dt_4143)))));
 OpSet(q_4880, "x", 0, ((V)((ToNum(Get(q_4880, "vx")) * ToNum(dt_4143)))));
 Set(q_4880, "y", ((V)(Min(ToNum(Add(G_4134, ((V)(0.5)))), ToNum(Add(Get(q_4880, "y"), ((V)((ToNum(Get(q_4880, "vy")) * ToNum(dt_4143))))))))));
 }
-dd_4771 = Add(dd_4771, Call(circ_4152, V.Undef, Get(q_4880, "x"), Get(q_4880, "y"), ((V)((ToNum(Get(q_4880, "r")) * (1D - ((ToNum(now_4122) - ToNum(Get(q_4880, "t"))) / 1500D)))))));
+dd_4771.V(Call(circ_4152, V.Undef, Get(q_4880, "x"), Get(q_4880, "y"), ((V)((ToNum(Get(q_4880, "r")) * (1D - ((ToNum(now_4122) - ToNum(Get(q_4880, "t"))) / 1500D)))))));
 return default;
 }, 1, "", true));
-Call(set_4136, V.Undef, Get(X_4124, "dr"), ((V)("d")), dd_4771);
+Call(set_4136, V.Undef, Get(X_4124, "dr"), ((V)("d")), ((V)(dd_4771.Str)));
 er_4772 = Call(clamp_4138, V.Undef, (((V)(ToNum(Get(P_4121, "erupt")))) is var _t4881 && Truthy(_t4881) ? _t4881 : ((V)(0D))), ((V)(0D)), ((V)(1.5)));
-gd_4773 = ((V)(""));
+gd_4773 = new JsStrBuf("");
 if (GtN(er_4772, 0.02)) {
 Invoke(Arr(((V)((-1D))), ((V)(1D))), "forEach", Fn((V _self4113, int _argc4882, V sd_4888, V _a4885, V _a4886, V _a4887, V[] _rest4883) => {
 V bx_4889 = default;
@@ -8839,7 +8839,7 @@ w0_4891 = 4.2;
 w1_4892 = 2.6;
 top_4893 = (ToNum(G_4134) - h_4890);
 wb_4894 = (FdLibm.Sin(ToNum(Add(((V)((ts_4142 * 7D))), sd_4888))) * 1.2);
-gd_4773 = ((V)(string.Concat(new string[] { ToStr(gd_4773), "M", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(bx_4889) - w0_4891))))), " ", ToStr(Call(r2_4137, V.Undef, G_4134)), "Q", ToStr(Call(r2_4137, V.Undef, ((V)(((ToNum(bx_4889) - w1_4892) + wb_4894))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(G_4134) - (h_4890 * 0.5)))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(bx_4889) - w1_4892))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)(top_4893)))), "L", ToStr(Call(r2_4137, V.Undef, Add(bx_4889, ((V)(w1_4892))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)(top_4893)))), "Q", ToStr(Call(r2_4137, V.Undef, Add(Add(bx_4889, ((V)(w1_4892))), ((V)(wb_4894))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(G_4134) - (h_4890 * 0.5)))))), " ", ToStr(Call(r2_4137, V.Undef, Add(bx_4889, ((V)(w0_4891))))), " ", ToStr(Call(r2_4137, V.Undef, G_4134)), "Z" })));
+gd_4773.S("M").V(Call(r2_4137, V.Undef, ((V)((ToNum(bx_4889) - w0_4891))))).S(" ").V(Call(r2_4137, V.Undef, G_4134)).S("Q").V(Call(r2_4137, V.Undef, ((V)(((ToNum(bx_4889) - w1_4892) + wb_4894))))).S(" ").V(Call(r2_4137, V.Undef, ((V)((ToNum(G_4134) - (h_4890 * 0.5)))))).S(" ").V(Call(r2_4137, V.Undef, ((V)((ToNum(bx_4889) - w1_4892))))).S(" ").V(Call(r2_4137, V.Undef, ((V)(top_4893)))).S("L").V(Call(r2_4137, V.Undef, Add(bx_4889, ((V)(w1_4892))))).S(" ").V(Call(r2_4137, V.Undef, ((V)(top_4893)))).S("Q").V(Call(r2_4137, V.Undef, Add(Add(bx_4889, ((V)(w1_4892))), ((V)(wb_4894))))).S(" ").V(Call(r2_4137, V.Undef, ((V)((ToNum(G_4134) - (h_4890 * 0.5)))))).S(" ").V(Call(r2_4137, V.Undef, Add(bx_4889, ((V)(w0_4891))))).S(" ").V(Call(r2_4137, V.Undef, G_4134)).S("Z");
 {
 double j_4895 = 0;
 j_4895 = 0D;
@@ -8847,14 +8847,14 @@ while (true) {
 if (!((j_4895 < 4D))) break;
 V a_4897 = default;
 a_4897 = Add(((V)(((ts_4142 * 5D) + (j_4895 * 1.6)))), sd_4888);
-gd_4773 = Add(gd_4773, Call(circ_4152, V.Undef, Add(bx_4889, ((V)((FdLibm.Cos(ToNum(a_4897)) * 3D)))), ((V)((((top_4893 - 1D) - (System.Math.Abs(FdLibm.Sin(ToNum(a_4897))) * 4D)) - j_4895))), ((V)(((2.4 + (j_4895 % 2D)) * Min(1D, (ToNum(er_4772) * 2D)))))));
+gd_4773.V(Call(circ_4152, V.Undef, Add(bx_4889, ((V)((FdLibm.Cos(ToNum(a_4897)) * 3D)))), ((V)((((top_4893 - 1D) - (System.Math.Abs(FdLibm.Sin(ToNum(a_4897))) * 4D)) - j_4895))), ((V)(((2.4 + (j_4895 % 2D)) * Min(1D, (ToNum(er_4772) * 2D)))))));
 j_4895++;
 }
 }
 return default;
 }, 1, "", true));
 }
-Call(set_4136, V.Undef, Get(X_4124, "gy"), ((V)("d")), gd_4773);
+Call(set_4136, V.Undef, Get(X_4124, "gy"), ((V)("d")), ((V)(gd_4773.Str)));
 Invoke(Arr(((V)("fbL")), ((V)("fbR"))), "forEach", Fn((V _self4113, int _argc4898, V k_4904, V i_4905, V _a4902, V _a4903, V[] _rest4899) => {
 V F_4906 = default;
 V u2_4907 = default;
@@ -8879,7 +8879,7 @@ Call(set_4136, V.Undef, Get(F_4906, "b"), ((V)("cx")), Call(r2_4137, V.Undef, x_
 Call(set_4136, V.Undef, Get(F_4906, "b"), ((V)("cy")), Call(r2_4137, V.Undef, ((V)(y_4911))));
 Call(set_4136, V.Undef, Get(F_4906, "b"), ((V)("r")), Call(r2_4137, V.Undef, ((V)((3.6 + (FdLibm.Sin((ts_4142 * 20D)) * 0.4))))));
 Call(set_4136, V.Undef, Get(F_4906, "b"), ((V)("opacity")), o_4912);
-Call(set_4136, V.Undef, Get(F_4906, "t"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(x_4910) - (sd_4909 * 2D)))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)(y_4911)))), "L", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(x_4910) - (sd_4909 * (6D + (ToNum(u2_4907) * 14D)))))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((y_4911 + 0.8))))) }))));
+Call(set_4136, V.Undef, Get(F_4906, "t"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(r2_4137, V.Undef, ((V)((ToNum(x_4910) - (sd_4909 * 2D)))))).S(" ").V(Call(r2_4137, V.Undef, ((V)(y_4911)))).S("L").V(Call(r2_4137, V.Undef, ((V)((ToNum(x_4910) - (sd_4909 * (6D + (ToNum(u2_4907) * 14D)))))))).S(" ").V(Call(r2_4137, V.Undef, ((V)((y_4911 + 0.8))))).End())));
 Call(set_4136, V.Undef, Get(F_4906, "t"), ((V)("opacity")), Call(r2_4137, V.Undef, ((V)((ToNum(o_4912) * 0.6)))));
 return default;
 }, 2, "", true));
@@ -8901,8 +8901,8 @@ V kk_4926 = default;
 V cx_4927 = default;
 double cy_4928 = 0;
 double Rd_4929 = 0;
-V td_4930 = default;
-V fk_4931 = default;
+JsStrBuf td_4930 = null;
+JsStrBuf fk_4931 = null;
 double lag_4932 = 0;
 double Y0_4933 = 0;
 V hem_4934 = default;
@@ -8929,7 +8929,7 @@ if ((!(Truthy(h_4956)) || (gw_4918 < 0.02))) {
 Call(set_4136, V.Undef, e_4954, ((V)("opacity")), ((V)(0D)));
 return default;
 }
-Call(set_4136, V.Undef, e_4954, ((V)("transform")), ((V)(string.Concat(new string[] { "translate(", ToStr(Call(r2_4137, V.Undef, ((V)(((ToNum(GetIdx(h_4956, 0D)) - ToNum(Get(P_4121, "x"))) + (((gsd_4919 * ToNum(Add(i_4955, ((V)(1D))))) * ToNum(rw_4914)) * 3.5)))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(Get(P_4121, "lift")) - ToNum(GetIdx(h_4956, 1D))))))), ")" }))));
+Call(set_4136, V.Undef, e_4954, ((V)("transform")), ((V)(JsStrBuf.Begin().S("translate(").V(Call(r2_4137, V.Undef, ((V)(((ToNum(GetIdx(h_4956, 0D)) - ToNum(Get(P_4121, "x"))) + (((gsd_4919 * ToNum(Add(i_4955, ((V)(1D))))) * ToNum(rw_4914)) * 3.5)))))).S(" ").V(Call(r2_4137, V.Undef, ((V)((ToNum(Get(P_4121, "lift")) - ToNum(GetIdx(h_4956, 1D))))))).S(")").End())));
 Call(set_4136, V.Undef, e_4954, ((V)("opacity")), Call(r2_4137, V.Undef, ((V)((gw_4918 * (0.42 - (ToNum(i_4955) * 0.12)))))));
 return default;
 }, 2, "", true));
@@ -8950,7 +8950,7 @@ Call(set_4136, V.Undef, Get(X_4124, "dF"), ((V)("r")), Call(r2_4137, V.Undef, ((
 Call(set_4136, V.Undef, Get(X_4124, "dR"), ((V)("cx")), Call(r2_4137, V.Undef, cx_4927));
 Call(set_4136, V.Undef, Get(X_4124, "dR"), ((V)("cy")), Call(r2_4137, V.Undef, ((V)(cy_4928))));
 Call(set_4136, V.Undef, Get(X_4124, "dR"), ((V)("r")), Call(r2_4137, V.Undef, ((V)((Rd_4929 * 0.82)))));
-td_4930 = ((V)(""));
+td_4930 = new JsStrBuf("");
 {
 double j_4958 = 0;
 j_4958 = 0D;
@@ -8960,12 +8960,12 @@ double a_4960 = 0;
 double l_4961 = 0;
 a_4960 = ((j_4958 / 12D) * ToNum(TAU_4140));
 l_4961 = (NumTruthy((j_4958 % 3D)) ? 0.12 : 0.22);
-td_4930 = ((V)(string.Concat(new string[] { ToStr(td_4930), "M", ToStr(Call(r2_4137, V.Undef, Add(cx_4927, ((V)(((FdLibm.Cos(a_4960) * Rd_4929) * 0.92)))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((cy_4928 + ((FdLibm.Sin(a_4960) * Rd_4929) * 0.92)))))), "L", ToStr(Call(r2_4137, V.Undef, Add(cx_4927, ((V)(((FdLibm.Cos(a_4960) * Rd_4929) * (0.92 - l_4961))))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((cy_4928 + ((FdLibm.Sin(a_4960) * Rd_4929) * (0.92 - l_4961))))))) })));
+td_4930.S("M").V(Call(r2_4137, V.Undef, Add(cx_4927, ((V)(((FdLibm.Cos(a_4960) * Rd_4929) * 0.92)))))).S(" ").V(Call(r2_4137, V.Undef, ((V)((cy_4928 + ((FdLibm.Sin(a_4960) * Rd_4929) * 0.92)))))).S("L").V(Call(r2_4137, V.Undef, Add(cx_4927, ((V)(((FdLibm.Cos(a_4960) * Rd_4929) * (0.92 - l_4961))))))).S(" ").V(Call(r2_4137, V.Undef, ((V)((cy_4928 + ((FdLibm.Sin(a_4960) * Rd_4929) * (0.92 - l_4961)))))));
 j_4958++;
 }
 }
-Call(set_4136, V.Undef, Get(X_4124, "dT"), ((V)("d")), td_4930);
-Call(set_4136, V.Undef, Get(X_4124, "dH"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_4137, V.Undef, cx_4927)), " ", ToStr(Call(r2_4137, V.Undef, ((V)(cy_4928)))), "L", ToStr(Call(r2_4137, V.Undef, Add(cx_4927, ((V)(((FdLibm.Sin(ToNum(mA_4921)) * Rd_4929) * 0.72)))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((cy_4928 - ((FdLibm.Cos(ToNum(mA_4921)) * Rd_4929) * 0.72)))))), "M", ToStr(Call(r2_4137, V.Undef, cx_4927)), " ", ToStr(Call(r2_4137, V.Undef, ((V)(cy_4928)))), "L", ToStr(Call(r2_4137, V.Undef, Add(cx_4927, ((V)(((FdLibm.Sin(hA_4922) * Rd_4929) * 0.45)))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)((cy_4928 - ((FdLibm.Cos(hA_4922) * Rd_4929) * 0.45)))))) }))));
+Call(set_4136, V.Undef, Get(X_4124, "dT"), ((V)("d")), ((V)(td_4930.Str)));
+Call(set_4136, V.Undef, Get(X_4124, "dH"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(r2_4137, V.Undef, cx_4927)).S(" ").V(Call(r2_4137, V.Undef, ((V)(cy_4928)))).S("L").V(Call(r2_4137, V.Undef, Add(cx_4927, ((V)(((FdLibm.Sin(ToNum(mA_4921)) * Rd_4929) * 0.72)))))).S(" ").V(Call(r2_4137, V.Undef, ((V)((cy_4928 - ((FdLibm.Cos(ToNum(mA_4921)) * Rd_4929) * 0.72)))))).S("M").V(Call(r2_4137, V.Undef, cx_4927)).S(" ").V(Call(r2_4137, V.Undef, ((V)(cy_4928)))).S("L").V(Call(r2_4137, V.Undef, Add(cx_4927, ((V)(((FdLibm.Sin(hA_4922) * Rd_4929) * 0.45)))))).S(" ").V(Call(r2_4137, V.Undef, ((V)((cy_4928 - ((FdLibm.Cos(hA_4922) * Rd_4929) * 0.45)))))).End())));
 Call(set_4136, V.Undef, Get(X_4124, "dC"), ((V)("cx")), Call(r2_4137, V.Undef, cx_4927));
 Call(set_4136, V.Undef, Get(X_4124, "dC"), ((V)("cy")), Call(r2_4137, V.Undef, ((V)(cy_4928))));
 Call(set_4136, V.Undef, Get(X_4124, "dC"), ((V)("r")), Call(r2_4137, V.Undef, ((V)((0.9 + (Rd_4929 * 0.03))))));
@@ -9013,7 +9013,7 @@ return Call(set_4136, V.Undef, e_5000, ((V)("opacity")), Call(r2_4137, V.Undef, 
 }, 1, "", true));
 return default;
 }, 2, "", true));
-fk_4931 = ((V)(""));
+fk_4931 = new JsStrBuf("");
 {
 double j_5001 = 0;
 j_5001 = 0D;
@@ -9029,11 +9029,11 @@ rr_5004 = (22D + (ToNum(Call(hrnd_77, V.Undef, ((V)((j_5001 + 9D))))) * 18D));
 y_5005 = (((ToNum(GetIdx(C0_4147, 1D)) - 10D) + ((ToNum(Call(hrnd_77, V.Undef, ((V)((j_5001 + 3D))))) - 0.5) * 50D)) + (FdLibm.Sin(a_5003) * 4D));
 x_5006 = Add(GetIdx(C0_4147, 0D), ((V)((FdLibm.Cos(a_5003) * rr_5004))));
 s_5007 = (0.5 + (ToNum(Call(hrnd_77, V.Undef, ((V)((j_5001 + 5D))))) * 0.8));
-fk_4931 = ((V)(string.Concat(new string[] { ToStr(fk_4931), "M", ToStr(Call(r2_4137, V.Undef, ((V)((ToNum(x_5006) - s_5007))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)(y_5005)))), "L", ToStr(Call(r2_4137, V.Undef, x_5006)), " ", ToStr(Call(r2_4137, V.Undef, ((V)((y_5005 - s_5007))))), "L", ToStr(Call(r2_4137, V.Undef, Add(x_5006, ((V)(s_5007))))), " ", ToStr(Call(r2_4137, V.Undef, ((V)(y_5005)))), "L", ToStr(Call(r2_4137, V.Undef, x_5006)), " ", ToStr(Call(r2_4137, V.Undef, ((V)((y_5005 + s_5007))))), "Z" })));
+fk_4931.S("M").V(Call(r2_4137, V.Undef, ((V)((ToNum(x_5006) - s_5007))))).S(" ").V(Call(r2_4137, V.Undef, ((V)(y_5005)))).S("L").V(Call(r2_4137, V.Undef, x_5006)).S(" ").V(Call(r2_4137, V.Undef, ((V)((y_5005 - s_5007))))).S("L").V(Call(r2_4137, V.Undef, Add(x_5006, ((V)(s_5007))))).S(" ").V(Call(r2_4137, V.Undef, ((V)(y_5005)))).S("L").V(Call(r2_4137, V.Undef, x_5006)).S(" ").V(Call(r2_4137, V.Undef, ((V)((y_5005 + s_5007))))).S("Z");
 j_5001++;
 }
 }
-Call(set_4136, V.Undef, Get(X_4124, "fk"), ((V)("d")), fk_4931);
+Call(set_4136, V.Undef, Get(X_4124, "fk"), ((V)("d")), ((V)(fk_4931.Str)));
 Call(set_4136, V.Undef, Get(X_4124, "fk"), ((V)("opacity")), Call(r2_4137, V.Undef, Call(clamp_4138, V.Undef, ((V)((0.3 + (ToNum(pw_4146) * 0.5)))), ((V)(0D)), ((V)(0.9)))));
 if (GtN(fz_4915, 0.02)) {
 double k2_5008 = 0;
@@ -9068,12 +9068,12 @@ i_5019++;
 }
 }
 Invoke(pts_4936, "push", Arr(((V)(78D)), ((V)((ToNum(hem_4934) - 3D)))), Arr(((V)(72D)), ((V)(66D))), Arr(((V)(64D)), ((V)(Y0_4933))), Arr(((V)(50D)), ((V)((Y0_4933 - 2D)))));
-Call(set_4136, V.Undef, Get(X_4124, "cl"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(pts_4936, "map", Fn((V _self4113, int _argc5021, V p_5027, V _a5024, V _a5025, V _a5026, V[] _rest5022) => {
+Call(set_4136, V.Undef, Get(X_4124, "cl"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(pts_4936, "map", Fn((V _self4113, int _argc5021, V p_5027, V _a5024, V _a5025, V _a5026, V[] _rest5022) => {
 V q_5028 = default;
 q_5028 = Call(M_4935, V.Undef, GetIdx(p_5027, 0D), GetIdx(p_5027, 1D));
-return ((V)(string.Concat(ToStr(Call(r2_4137, V.Undef, GetIdx(q_5028, 0D))), " ", ToStr(Call(r2_4137, V.Undef, GetIdx(q_5028, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_4137, V.Undef, GetIdx(q_5028, 0D))).S(" ").V(Call(r2_4137, V.Undef, GetIdx(q_5028, 1D))).End()));
 return default;
-}, 1, "", true)), "join", ((V)("L")))), "Z"))));
+}, 1, "", true)), "join", ((V)("L")))).S("Z").End())));
 front_4937 = (GtN(Call(bywZ_4130, V.Undef, ((V)(50D)), ((V)((-9D)))), 0D) ? V.True : V.False);
 if (!SEq(front_4937, Get(X_4124, "cfr"))) {
 Set(X_4124, "cfr", front_4937);
@@ -9091,7 +9091,7 @@ V at_5041 = default;
 V em_5042 = default;
 if (_self5029.IsNullish) _self5029 = GlobalV;
 RR_5037 = Get(G("window"), "RiveRig");
-if (Truthy((((!(Truthy(RR_5037)) || !(Truthy(GetK(HDANCE_80, key_5036)))) ? V.True : V.False) is var _t5043 && Truthy(_t5043) ? _t5043 : GetK(Get(RR_5037, "STATES"), ((V)(string.Concat("dance@", ToStr(key_5036)))))))) {
+if (Truthy((((!(Truthy(RR_5037)) || !(Truthy(GetK(HDANCE_80, key_5036)))) ? V.True : V.False) is var _t5043 && Truthy(_t5043) ? _t5043 : GetK(Get(RR_5037, "STATES"), ((V)(JsStrBuf.Begin().S("dance@").V(key_5036).End())))))) {
 return default;
 }
 K_5038 = NewObj(3).Put("hap", Arr(Arr(((V)(0D)), ((V)(0.85))))).Put("smile", Arr(Arr(((V)(0D)), ((V)(1D))))).Put("open", Arr(Arr(((V)(0D)), ((V)(0.45))))).V;
@@ -9123,7 +9123,7 @@ Invoke(GetK(K_5038, p_5068), "push", Arr(((V)(LP_5039)), GetIdx(GetIdx(GetK(K_50
 }
 }
 }
-Invoke(RR_5037, "add", NewObj(1).PutK(((V)(string.Concat("dance@", ToStr(key_5036)))), NewObj(3).Put("loop", ((V)(LP_5039))).Put("k", K_5038).Put("ev", ev_5040).V).V);
+Invoke(RR_5037, "add", NewObj(1).PutK(((V)(JsStrBuf.Begin().S("dance@").V(key_5036).End())), NewObj(3).Put("loop", ((V)(LP_5039))).Put("k", K_5038).Put("ev", ev_5040).V).V);
 return default;
 }, 1, "heroDance", false);
 nwDance_82 = Fn((V _self5077, int _argc5078, V _a5080, V _a5081, V _a5082, V _a5083, V[] _rest5079) => {
@@ -9772,11 +9772,11 @@ V tmp_5330 = default;
 if ((!(Truthy(Get(Get(I_5287, "fxG"), "isConnected"))) && !(Truthy(Get(root_5288, "isConnected"))))) {
 return default;
 }
-p_5329 = ((V)(string.Concat("_g", ToStr(Get(I_5287, "u")))));
+p_5329 = ((V)(JsStrBuf.Begin().S("_g").V(Get(I_5287, "u")).End()));
 txt_5328 = Invoke(Invoke(txt_5328, "replace", NewRegExp(RX7, "id=\"([^\"]+)\"", "g"), Fn((V _self5280, int _argc5339, V m_5345, V id_5346, V _a5343, V _a5344, V[] _rest5340) => {
-return ((V)(string.Concat("id=\"", ToStr(id_5346), ToStr(p_5329), "\"")));
+return ((V)(JsStrBuf.Begin().S("id=\"").V(id_5346).V(p_5329).S("\"").End()));
 }, 2, "", true)), "replace", NewRegExp(RX6, "url\\(#([^)]+)\\)", "g"), Fn((V _self5280, int _argc5331, V m_5337, V id_5338, V _a5335, V _a5336, V[] _rest5332) => {
-return ((V)(string.Concat("url(#", ToStr(id_5338), ToStr(p_5329), ")")));
+return ((V)(JsStrBuf.Begin().S("url(#").V(id_5338).V(p_5329).S(")").End()));
 }, 2, "", true));
 tmp_5330 = Invoke(G("document"), "createElementNS", ((V)("http://www.w3.org/2000/svg")), ((V)("svg")));
 Set(tmp_5330, "innerHTML", Invoke(Invoke(txt_5328, "replace", NewRegExp(RX9, "^[\\s\\S]*?<svg[^>]*>", ""), ((V)(""))), "replace", NewRegExp(RX8, "<\\/svg>\\s*$", ""), ((V)(""))));
@@ -9839,7 +9839,7 @@ df_5393 = Invoke(art_5302, "querySelector", ((V)("defs")));
 if (Truthy(df_5393)) {
 V lg_5394 = default;
 lg_5394 = Invoke(G("document"), "createElementNS", ((V)("http://www.w3.org/2000/svg")), ((V)("linearGradient")));
-Invoke(lg_5394, "setAttribute", ((V)("id")), ((V)(string.Concat("scn", ToStr(Get(I_5287, "u"))))));
+Invoke(lg_5394, "setAttribute", ((V)("id")), ((V)(JsStrBuf.Begin().S("scn").V(Get(I_5287, "u")).End())));
 Invoke(lg_5394, "setAttribute", ((V)("gradientUnits")), ((V)("userSpaceOnUse")));
 Invoke(lg_5394, "setAttribute", ((V)("x1")), ((V)("31")));
 Invoke(lg_5394, "setAttribute", ((V)("x2")), ((V)("69")));
@@ -9862,7 +9862,7 @@ Invoke(lg_5394, "appendChild", st_5406);
 return default;
 }, 1, "", true));
 Invoke(df_5393, "appendChild", lg_5394);
-Invoke(cn_5375, "setAttribute", ((V)("fill")), ((V)(string.Concat("url(#scn", ToStr(Get(I_5287, "u")), ")"))));
+Invoke(cn_5375, "setAttribute", ((V)("fill")), ((V)(JsStrBuf.Begin().S("url(#scn").V(Get(I_5287, "u")).S(")").End())));
 }
 }
 }
@@ -10010,7 +10010,7 @@ Invoke(el_5541, "setAttribute", ((V)("cx")), x_5536);
 Invoke(el_5541, "setAttribute", ((V)("cy")), y_5538);
 Invoke(el_5541, "setAttribute", ((V)("rx")), ((V)(5.5)));
 Invoke(el_5541, "setAttribute", ((V)("ry")), ((V)(7.5)));
-Invoke(el_5541, "setAttribute", ((V)("transform")), ((V)(string.Concat(new string[] { "rotate(", ToStr(rt_5540), " ", ToStr(x_5536), " ", ToStr(y_5538), ")" }))));
+Invoke(el_5541, "setAttribute", ((V)("transform")), ((V)(JsStrBuf.Begin().S("rotate(").V(rt_5540).S(" ").V(x_5536).S(" ").V(y_5538).S(")").End())));
 Invoke(el_5541, "setAttribute", ((V)("fill")), f_5526);
 Invoke(bg_5524, "appendChild", el_5541);
 Invoke(Get(I_5287, "petRoles"), "set", el_5541, ((V)("arm")));
@@ -10276,7 +10276,7 @@ x_5725 = Call(num_10, V.Undef, e_5688, ((V)("x")));
 y_5726 = Call(num_10, V.Undef, e_5688, ((V)("y")));
 w_5727 = Call(num_10, V.Undef, e_5688, ((V)("width")));
 h_5728 = Call(num_10, V.Undef, e_5688, ((V)("height")));
-Set(it_5696, "segs", Call(parsePath_5558, V.Undef, ((V)(string.Concat(new string[] { "M", ToStr(x_5725), " ", ToStr(y_5726), " L", ToStr(Add(x_5725, w_5727)), " ", ToStr(y_5726), " L", ToStr(Add(x_5725, w_5727)), " ", ToStr(Add(y_5726, h_5728)), " L", ToStr(x_5725), " ", ToStr(Add(y_5726, h_5728)), " Z" })))));
+Set(it_5696, "segs", Call(parsePath_5558, V.Undef, ((V)(JsStrBuf.Begin().S("M").V(x_5725).S(" ").V(y_5726).S(" L").V(Add(x_5725, w_5727)).S(" ").V(y_5726).S(" L").V(Add(x_5725, w_5727)).S(" ").V(Add(y_5726, h_5728)).S(" L").V(x_5725).S(" ").V(Add(y_5726, h_5728)).S(" Z").End()))));
 } else {
 Set(it_5696, "segs", Call(ellS_5556, V.Undef, Get(it_5696, "ox"), Get(it_5696, "oy"), Get(it_5696, "rx"), Get(it_5696, "ry"), (Get(it_5696, "rot") is var _t5729 && Truthy(_t5729) ? _t5729 : ((V)(0D))), ((V)((GtN(Get(it_5696, "a"), (area_5568 * 0.12)) ? 16D : 8D)))));
 }
@@ -10285,7 +10285,7 @@ if ((!SEqS(tag_5690, "path") && !(Truthy(inClip_5689)))) {
 V pth_5730 = default;
 pth_5730 = Invoke(G("document"), "createElementNS", ((V)("http://www.w3.org/2000/svg")), ((V)("path")));
 {
-foreach (V _k5731 in Iterate(Get(e_5688, "attributes"))) {
+foreach (V _k5731 in new JsIter(Get(e_5688, "attributes"))) {
 V at_5732 = default;
 at_5732 = _k5731;
 if (!(Truthy(Invoke(NewRegExp(RX25, "^(cx|cy|r|rx|ry|x|y|width|height|transform)$", ""), "test", Get(at_5732, "name"))))) {
@@ -10499,7 +10499,7 @@ Invoke(rim_5830, "setAttribute", ((V)("fill")), ((V)("#ecb871")));
 Set(cn_5809, "role", ((V)("scone")));
 wf_5831 = Call(mkL_5829, V.Undef, ((V)("#9a5829")), ((V)(0.5)), ((V)(0.95)));
 wh_5832 = Call(mkL_5829, V.Undef, ((V)("#ffebcc")), ((V)(0.36)), ((V)(0.8)));
-Set(I_5549, "sc", NewObj(4).Put("wf", wf_5831).Put("wh", wh_5832).Put("rim", rim_5830).Put("gr", Invoke(art_5551, "querySelector", ((V)(string.Concat("#scn", ToStr(Get(I_5549, "u"))))))).V);
+Set(I_5549, "sc", NewObj(4).Put("wf", wf_5831).Put("wh", wh_5832).Put("rim", rim_5830).Put("gr", Invoke(art_5551, "querySelector", ((V)(JsStrBuf.Begin().S("#scn").V(Get(I_5549, "u")).End())))).V);
 }
 }
 if (Truthy(((SEqS(key_5552, "boba") ? V.True : V.False) is var _t5843 && !Truthy(_t5843) ? _t5843 : bodyG_5561))) {
@@ -10581,10 +10581,10 @@ lid_5850 = Invoke(items_5572, "find", Fn((V _self5542, int _argc5929, V q_5935, 
 return ((Get(q_5935, "inBody") is var _t5936 && !Truthy(_t5936) ? _t5936 : (SEqS(Get(q_5935, "tag"), "path") ? V.True : V.False)) is var _t5937 && !Truthy(_t5937) ? _t5937 : Invoke(NewRegExp(RX45, "^url\\(#c", ""), "test", Get(q_5935, "fill")));
 }, 1, "", true));
 cd_5851 = Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551);
-Set(cd_5851, "innerHTML", ((V)(string.Concat("<linearGradient id=\"bbs", ToStr(Get(I_5549, "u")), "\" gradientUnits=\"userSpaceOnUse\" x1=\"24\" y1=\"0\" x2=\"76\" y2=\"0\"><stop offset=\"0\" stop-color=\"#7a4a26\" stop-opacity=\"0.4\"/><stop offset=\"0.13\" stop-color=\"#b98455\" stop-opacity=\"0.14\"/><stop offset=\"0.28\" stop-color=\"#ffffff\" stop-opacity=\"0.36\"/><stop offset=\"0.42\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.72\" stop-color=\"#7a4a26\" stop-opacity=\"0.06\"/><stop offset=\"1\" stop-color=\"#6a3e1e\" stop-opacity=\"0.46\"/></linearGradient>"))));
+Set(cd_5851, "innerHTML", ((V)(JsStrBuf.Begin().S("<linearGradient id=\"bbs").V(Get(I_5549, "u")).S("\" gradientUnits=\"userSpaceOnUse\" x1=\"24\" y1=\"0\" x2=\"76\" y2=\"0\"><stop offset=\"0\" stop-color=\"#7a4a26\" stop-opacity=\"0.4\"/><stop offset=\"0.13\" stop-color=\"#b98455\" stop-opacity=\"0.14\"/><stop offset=\"0.28\" stop-color=\"#ffffff\" stop-opacity=\"0.36\"/><stop offset=\"0.42\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.72\" stop-color=\"#7a4a26\" stop-opacity=\"0.06\"/><stop offset=\"1\" stop-color=\"#6a3e1e\" stop-opacity=\"0.46\"/></linearGradient>").End())));
 Set(B_5845, "gr", Get(cd_5851, "firstChild"));
 Set(B_5845, "sh", Invoke(G("document"), "createElementNS", SVN_5844, ((V)("path"))));
-Invoke(Get(B_5845, "sh"), "setAttribute", ((V)("fill")), ((V)(string.Concat("url(#bbs", ToStr(Get(I_5549, "u")), ")"))));
+Invoke(Get(B_5845, "sh"), "setAttribute", ((V)("fill")), ((V)(JsStrBuf.Begin().S("url(#bbs").V(Get(I_5549, "u")).S(")").End())));
 if (Truthy(lid_5850)) {
 Invoke(Get(Get(lid_5850, "e"), "parentNode"), "insertBefore", Get(B_5845, "sh"), Get(lid_5850, "e"));
 }
@@ -10629,9 +10629,9 @@ Set(Get(Get(q_5979, "e"), "style"), "display", ((V)("none")));
 return default;
 }, 1, "", true));
 cd_5967 = Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551);
-Set(cd_5967, "innerHTML", ((V)(string.Concat("<linearGradient id=\"chb", ToStr(u_5965), "\" gradientUnits=\"userSpaceOnUse\" x1=\"30\" y1=\"0\" x2=\"70\" y2=\"0\"><stop offset=\"0\" stop-color=\"#a8a8c8\" stop-opacity=\"0.3\"/><stop offset=\"0.2\" stop-color=\"#d8d8e8\" stop-opacity=\"0.06\"/><stop offset=\"0.33\" stop-color=\"#ffffff\" stop-opacity=\"0.6\"/><stop offset=\"0.5\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.82\" stop-color=\"#b8b8d0\" stop-opacity=\"0.08\"/><stop offset=\"1\" stop-color=\"#9090b4\" stop-opacity=\"0.34\"/></linearGradient>"))));
+Set(cd_5967, "innerHTML", ((V)(JsStrBuf.Begin().S("<linearGradient id=\"chb").V(u_5965).S("\" gradientUnits=\"userSpaceOnUse\" x1=\"30\" y1=\"0\" x2=\"70\" y2=\"0\"><stop offset=\"0\" stop-color=\"#a8a8c8\" stop-opacity=\"0.3\"/><stop offset=\"0.2\" stop-color=\"#d8d8e8\" stop-opacity=\"0.06\"/><stop offset=\"0.33\" stop-color=\"#ffffff\" stop-opacity=\"0.6\"/><stop offset=\"0.5\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.82\" stop-color=\"#b8b8d0\" stop-opacity=\"0.08\"/><stop offset=\"1\" stop-color=\"#9090b4\" stop-opacity=\"0.34\"/></linearGradient>").End())));
 band_5968 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(3).Put("fill", hf_5964).Put("stroke", ((V)("#e0e0ee"))).Put("stroke-width", ((V)(0.6))).V, g_5966);
-bsh_5969 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#chb", ToStr(u_5965), ")")))).V, g_5966);
+bsh_5969 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#chb").V(u_5965).S(")").End()))).V, g_5966);
 pl_5970 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#d4d4e6"))).Put("stroke-width", ((V)(0.8))).Put("stroke-linecap", ((V)("round"))).V, g_5966);
 lg_5971 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(0).V, g_5966);
 LB_5972 = Arr(Arr(((V)(50D)), ((V)(13D)), ((V)((-1D))), ((V)(13D))), Arr(((V)(33D)), ((V)(21D)), ((V)((-1D))), ((V)(10.5))), Arr(((V)(67D)), ((V)(21D)), ((V)((-1D))), ((V)(10.5))), Arr(((V)(42D)), ((V)(15D)), ((V)((-8D))), ((V)(11D))), Arr(((V)(58D)), ((V)(15D)), ((V)((-8D))), ((V)(11D))), Arr(((V)(42D)), ((V)(21D)), ((V)(8D)), ((V)(10D))), Arr(((V)(58D)), ((V)(21D)), ((V)(8D)), ((V)(10D))));
@@ -11017,16 +11017,16 @@ return default;
 }, 1, "", true));
 xb_6422 = Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551);
 ub_6423 = Get(I_5549, "u");
-Set(xb_6422, "innerHTML", ((V)(string.Concat("<radialGradient id=\"bkn", ToStr(ub_6423), "\" gradientUnits=\"userSpaceOnUse\" cx=\"47\" cy=\"23\" r=\"9\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.55\" stop-color=\"#fff4e6\"/><stop offset=\"1\" stop-color=\"#dcc29f\"/></radialGradient>"))));
+Set(xb_6422, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"bkn").V(ub_6423).S("\" gradientUnits=\"userSpaceOnUse\" cx=\"47\" cy=\"23\" r=\"9\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.55\" stop-color=\"#fff4e6\"/><stop offset=\"1\" stop-color=\"#dcc29f\"/></radialGradient>").End())));
 pl_6424 = Array_from(NewObj(1).Put("length", ((V)(16D))).V, Fn((V _self5542, int _argc6442, V __6448, V k_6449, V _a6446, V _a6447, V[] _rest6443) => {
 return NewObj(2).Put("a", ((V)((((ToNum(k_6449) / 16D) * System.Math.PI) * 2D)))).Put("el", Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("stroke", ((V)("#e2cfb6"))).Put("stroke-width", ((V)(1.4))).Put("fill", ((V)("none"))).Put("stroke-linecap", ((V)("round"))).V, bodyG_5561)).V;
 }, 2, "", true));
 kSh_6425 = Call(mk_5555, V.Undef, ((V)("ellipse")), NewObj(2).Put("fill", ((V)("#cdb393"))).Put("opacity", ((V)(0.45))).V, bodyG_5561);
-kn_6426 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#bkn", ToStr(ub_6423), ")")))).V, bodyG_5561);
+kn_6426 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#bkn").V(ub_6423).S(")").End()))).V, bodyG_5561);
 cr_6427 = Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D))), "map", Fn((V _self5542, int _argc6450, V k_6456, V _a6453, V _a6454, V _a6455, V[] _rest6451) => {
 return NewObj(2).Put("a", ((V)((((ToNum(k_6456) / 3D) * System.Math.PI) * 2D)))).Put("el", Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("stroke", ((V)("#d8c2a6"))).Put("stroke-width", ((V)(1D))).Put("fill", ((V)("none"))).Put("stroke-linecap", ((V)("round"))).V, bodyG_5561)).V;
 }, 1, "", true));
-Set(I_5549, "bun", NewObj(8).Put("pl", pl_6424).Put("kSh", kSh_6425).Put("kn", kn_6426).Put("cr", cr_6427).Put("gr", Invoke(xb_6422, "querySelector", ((V)(string.Concat("#bkn", ToStr(ub_6423)))))).Put("C", Arr(((V)(50D)), ((V)(26D)), ((V)(0D)))).Put("rx", ((V)(7D))).Put("ry", ((V)(5.6))).V);
+Set(I_5549, "bun", NewObj(8).Put("pl", pl_6424).Put("kSh", kSh_6425).Put("kn", kn_6426).Put("cr", cr_6427).Put("gr", Invoke(xb_6422, "querySelector", ((V)(JsStrBuf.Begin().S("#bkn").V(ub_6423).End())))).Put("C", Arr(((V)(50D)), ((V)(26D)), ((V)(0D)))).Put("rx", ((V)(7D))).Put("ry", ((V)(5.6))).V);
 }
 if (Truthy((((GetK(ROUND_15, key_5552) is var _t6457 && !Truthy(_t6457) ? _t6457 : Get(GetK(ROUND_15, key_5552), "burger")) is var _t6458 && !Truthy(_t6458) ? _t6458 : headA_5576) is var _t6459 && !Truthy(_t6459) ? _t6459 : bodyG_5561))) {
 V hq_6460 = default;
@@ -11061,7 +11061,7 @@ Set(q_6482, "role", ((V)("face")));
 return default;
 }, 1, "", true));
 lg_6464 = Fn((V _self5542, int _argc6484, V id_6490, V st_6491, V _a6488, V _a6489, V[] _rest6485) => {
-return ((V)(string.Concat(new string[] { "<linearGradient id=\"", ToStr(id_6490), ToStr(ub_6462), "\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\">", ToStr(Invoke(Invoke(st_6491, "map", Fn((V _self5542, int _argc6492, V _a6494, V _a6495, V _a6496, V _a6497, V[] _rest6493) => {
+return ((V)(JsStrBuf.Begin().S("<linearGradient id=\"").V(id_6490).V(ub_6462).S("\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\">").V(Invoke(Invoke(st_6491, "map", Fn((V _self5542, int _argc6492, V _a6494, V _a6495, V _a6496, V _a6497, V[] _rest6493) => {
 V o_6500 = default;
 V c_6502 = default;
 { V _t6498 = ListOf(_a6494);
@@ -11070,8 +11070,8 @@ o_6500 = _t6499; }
 { V _t6501 = GetIdx(_t6498, 1D);
 c_6502 = _t6501; }
 }
-return ((V)(string.Concat(new string[] { "<stop offset=\"", ToStr(o_6500), "\" stop-color=\"", ToStr(c_6502), "\"/>" })));
-}, 1, "", true)), "join", ((V)("")))), "</linearGradient>" })));
+return ((V)(JsStrBuf.Begin().S("<stop offset=\"").V(o_6500).S("\" stop-color=\"").V(c_6502).S("\"/>").End()));
+}, 1, "", true)), "join", ((V)("")))).S("</linearGradient>").End()));
 }, 2, "", true);
 Set(Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551), "innerHTML", Add(Add(Add(Add(Call(lg_6464, V.Undef, ((V)("bbb")), Arr(Arr(((V)(0D)), ((V)("#a9641f"))), Arr(((V)(0.2)), ((V)("#e8984a"))), Arr(((V)(0.4)), ((V)("#ffd49a"))), Arr(((V)(0.72)), ((V)("#e8984a"))), Arr(((V)(1D)), ((V)("#a05c1c"))))), Call(lg_6464, V.Undef, ((V)("bpt")), Arr(Arr(((V)(0D)), ((V)("#3f1d0e"))), Arr(((V)(0.22)), ((V)("#7e4428"))), Arr(((V)(0.4)), ((V)("#a8673f"))), Arr(((V)(0.72)), ((V)("#6e381f"))), Arr(((V)(1D)), ((V)("#381a0c")))))), Call(lg_6464, V.Undef, ((V)("bch")), Arr(Arr(((V)(0D)), ((V)("#d99a10"))), Arr(((V)(0.38)), ((V)("#ffe476"))), Arr(((V)(0.75)), ((V)("#ffcc2e"))), Arr(((V)(1D)), ((V)("#cf900c")))))), Call(lg_6464, V.Undef, ((V)("btm")), Arr(Arr(((V)(0D)), ((V)("#a81e14"))), Arr(((V)(0.38)), ((V)("#ff7a64"))), Arr(((V)(0.72)), ((V)("#e8402e"))), Arr(((V)(1D)), ((V)("#9c1a12")))))), Call(lg_6464, V.Undef, ((V)("blt")), Arr(Arr(((V)(0D)), ((V)("#3f8f38"))), Arr(((V)(0.38)), ((V)("#a6ea94"))), Arr(((V)(0.72)), ((V)("#7fd06f"))), Arr(((V)(1D)), ((V)("#3d8a36")))))));
 P0_6465 = Fn((V _self5542, int _argc6503, V a_6509, V _a6506, V _a6507, V _a6508, V[] _rest6504) => {
@@ -11088,15 +11088,15 @@ Invoke(par_6461, "insertBefore", e_6510, Get(hq_6460, "e"));
 return e_6510;
 return default;
 }, 1, "", true);
-bot_6466 = Call(P0_6465, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#bbb", ToStr(ub_6462), ")")))).V);
-pat_6467 = Call(P0_6465, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#bpt", ToStr(ub_6462), ")")))).V);
-tom_6468 = Call(P0_6465, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#btm", ToStr(ub_6462), ")")))).V);
+bot_6466 = Call(P0_6465, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#bbb").V(ub_6462).S(")").End()))).V);
+pat_6467 = Call(P0_6465, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#bpt").V(ub_6462).S(")").End()))).V);
+tom_6468 = Call(P0_6465, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#btm").V(ub_6462).S(")").End()))).V);
 tomL_6469 = Call(P0_6465, V.Undef, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffa392"))).Put("stroke-width", ((V)(0.5))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.55))).V);
-che_6470 = Call(P0_6465, V.Undef, NewObj(4).Put("fill", ((V)(string.Concat("url(#bch", ToStr(ub_6462), ")")))).Put("stroke", ((V)("#e0a414"))).Put("stroke-width", ((V)(0.5))).Put("stroke-linejoin", ((V)("round"))).V);
+che_6470 = Call(P0_6465, V.Undef, NewObj(4).Put("fill", ((V)(JsStrBuf.Begin().S("url(#bch").V(ub_6462).S(")").End()))).Put("stroke", ((V)("#e0a414"))).Put("stroke-width", ((V)(0.5))).Put("stroke-linejoin", ((V)("round"))).V);
 pk_6471 = Invoke(Arr(((V)(0.4)), ((V)((-1D))), ((V)(1.55)), ((V)(2.6)), ((V)((-2.2)))), "map", Fn((V _self5542, int _argc6513, V a_6519, V _a6516, V _a6517, V _a6518, V[] _rest6514) => {
 return NewObj(3).Put("a", a_6519).Put("el", Call(P0_6465, V.Undef, NewObj(3).Put("fill", ((V)("#93c652"))).Put("stroke", ((V)("#557f26"))).Put("stroke-width", ((V)(0.6))).V)).Put("rg", Call(P0_6465, V.Undef, NewObj(3).Put("fill", ((V)("none"))).Put("stroke", ((V)("#c9e98f"))).Put("stroke-width", ((V)(0.7))).V)).V;
 }, 1, "", true));
-let__6472 = Call(P0_6465, V.Undef, NewObj(4).Put("fill", ((V)(string.Concat("url(#blt", ToStr(ub_6462), ")")))).Put("stroke", ((V)("#4f9e48"))).Put("stroke-width", ((V)(0.8))).Put("stroke-linejoin", ((V)("round"))).V);
+let__6472 = Call(P0_6465, V.Undef, NewObj(4).Put("fill", ((V)(JsStrBuf.Begin().S("url(#blt").V(ub_6462).S(")").End()))).Put("stroke", ((V)("#4f9e48"))).Put("stroke-width", ((V)(0.8))).Put("stroke-linejoin", ((V)("round"))).V);
 letV_6473 = Call(P0_6465, V.Undef, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#c4f2b4"))).Put("stroke-width", ((V)(0.55))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.85))).V);
 rT_6474 = Fn((V _self5542, int _argc6520, V y_6526, V _a6523, V _a6524, V _a6525, V[] _rest6521) => {
 return ((V)((GeN(y_6526, 48.8) ? 36D : (36D * Pow(Max(0D, (1D - Pow((Max(0D, (50D - ToNum(y_6526))) / 36D), 2.4))), (1D / 2.4))))));
@@ -11152,7 +11152,7 @@ Set(q_6576, "role", ((V)("face")));
 return default;
 }, 1, "", true));
 rg_6542 = Fn((V _self5542, int _argc6577, V id_6583, V st_6584, V _a6581, V _a6582, V[] _rest6578) => {
-return ((V)(string.Concat(new string[] { "<radialGradient id=\"", ToStr(id_6583), ToStr(ub_6538), "\" cx=\"35%\" cy=\"25%\" r=\"85%\">", ToStr(Invoke(Invoke(st_6584, "map", Fn((V _self5542, int _argc6585, V _a6587, V _a6588, V _a6589, V _a6590, V[] _rest6586) => {
+return ((V)(JsStrBuf.Begin().S("<radialGradient id=\"").V(id_6583).V(ub_6538).S("\" cx=\"35%\" cy=\"25%\" r=\"85%\">").V(Invoke(Invoke(st_6584, "map", Fn((V _self5542, int _argc6585, V _a6587, V _a6588, V _a6589, V _a6590, V[] _rest6586) => {
 V o_6593 = default;
 V c_6595 = default;
 { V _t6591 = ListOf(_a6587);
@@ -11161,23 +11161,23 @@ o_6593 = _t6592; }
 { V _t6594 = GetIdx(_t6591, 1D);
 c_6595 = _t6594; }
 }
-return ((V)(string.Concat(new string[] { "<stop offset=\"", ToStr(o_6593), "\" stop-color=\"", ToStr(c_6595), "\"/>" })));
-}, 1, "", true)), "join", ((V)("")))), "</radialGradient>" })));
+return ((V)(JsStrBuf.Begin().S("<stop offset=\"").V(o_6593).S("\" stop-color=\"").V(c_6595).S("\"/>").End()));
+}, 1, "", true)), "join", ((V)("")))).S("</radialGradient>").End()));
 }, 2, "", true);
-Set(Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551), "innerHTML", ((V)(string.Concat(new string[] { ToStr(Add(Call(rg_6542, V.Undef, ((V)("cks")), Arr(Arr(((V)(0D)), ((V)("#7e4328"))), Arr(((V)(0.6)), ((V)("#552a16"))), Arr(((V)(1D)), ((V)("#3a1b0c"))))), Call(rg_6542, V.Undef, ((V)("ckm")), Arr(Arr(((V)(0D)), ((V)("#a5623e"))), Arr(((V)(0.6)), ((V)("#7a4127"))), Arr(((V)(1D)), ((V)("#5a2c18"))))))), "<linearGradient id=\"ckt", ToStr(ub_6538), "\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#c88a64\"/><stop offset=\"0.45\" stop-color=\"#9c5c3b\"/><stop offset=\"1\" stop-color=\"#743d23\"/></linearGradient>", ToStr(Call(rg_6542, V.Undef, ((V)("ckw")), Arr(Arr(((V)(0D)), ((V)("#ff9a8c"))), Arr(((V)(0.55)), ((V)("#f2665a"))), Arr(((V)(1D)), ((V)("#c8463a")))))), ToStr(Call(rg_6542, V.Undef, ((V)("ckx")), Arr(Arr(((V)(0D)), ((V)("#d65448"))), Arr(((V)(0.6)), ((V)("#a8352b"))), Arr(((V)(1D)), ((V)("#7c2219")))))), ToStr(Call(rg_6542, V.Undef, ((V)("ckb")), Arr(Arr(((V)(0D)), ((V)("#fff3b8"))), Arr(((V)(0.55)), ((V)("#ffd66b"))), Arr(((V)(1D)), ((V)("#e0a83a")))))), ToStr(Call(rg_6542, V.Undef, ((V)("cky")), Arr(Arr(((V)(0D)), ((V)("#e8b444"))), Arr(((V)(1D)), ((V)("#a8781a")))))), ToStr(Call(rg_6542, V.Undef, ((V)("ckp")), Arr(Arr(((V)(0D)), ((V)("#e0a47a"))), Arr(((V)(0.3)), ((V)("#ad6a43"))), Arr(((V)(0.7)), ((V)("#76401f"))), Arr(((V)(1D)), ((V)("#4a2412")))))), ToStr(Call(rg_6542, V.Undef, ((V)("ckd")), Arr(Arr(((V)(0D)), ((V)("#b06c46"))), Arr(((V)(0.6)), ((V)("#7e4328"))), Arr(((V)(1D)), ((V)("#5a2c18")))))) }))));
+Set(Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551), "innerHTML", ((V)(JsStrBuf.Begin().V(Add(Call(rg_6542, V.Undef, ((V)("cks")), Arr(Arr(((V)(0D)), ((V)("#7e4328"))), Arr(((V)(0.6)), ((V)("#552a16"))), Arr(((V)(1D)), ((V)("#3a1b0c"))))), Call(rg_6542, V.Undef, ((V)("ckm")), Arr(Arr(((V)(0D)), ((V)("#a5623e"))), Arr(((V)(0.6)), ((V)("#7a4127"))), Arr(((V)(1D)), ((V)("#5a2c18"))))))).S("<linearGradient id=\"ckt").V(ub_6538).S("\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#c88a64\"/><stop offset=\"0.45\" stop-color=\"#9c5c3b\"/><stop offset=\"1\" stop-color=\"#743d23\"/></linearGradient>").V(Call(rg_6542, V.Undef, ((V)("ckw")), Arr(Arr(((V)(0D)), ((V)("#ff9a8c"))), Arr(((V)(0.55)), ((V)("#f2665a"))), Arr(((V)(1D)), ((V)("#c8463a")))))).V(Call(rg_6542, V.Undef, ((V)("ckx")), Arr(Arr(((V)(0D)), ((V)("#d65448"))), Arr(((V)(0.6)), ((V)("#a8352b"))), Arr(((V)(1D)), ((V)("#7c2219")))))).V(Call(rg_6542, V.Undef, ((V)("ckb")), Arr(Arr(((V)(0D)), ((V)("#fff3b8"))), Arr(((V)(0.55)), ((V)("#ffd66b"))), Arr(((V)(1D)), ((V)("#e0a83a")))))).V(Call(rg_6542, V.Undef, ((V)("cky")), Arr(Arr(((V)(0D)), ((V)("#e8b444"))), Arr(((V)(1D)), ((V)("#a8781a")))))).V(Call(rg_6542, V.Undef, ((V)("ckp")), Arr(Arr(((V)(0D)), ((V)("#e0a47a"))), Arr(((V)(0.3)), ((V)("#ad6a43"))), Arr(((V)(0.7)), ((V)("#76401f"))), Arr(((V)(1D)), ((V)("#4a2412")))))).V(Call(rg_6542, V.Undef, ((V)("ckd")), Arr(Arr(((V)(0D)), ((V)("#b06c46"))), Arr(((V)(0.6)), ((V)("#7e4328"))), Arr(((V)(1D)), ((V)("#5a2c18")))))).End())));
 F0_6543 = Invoke(Get(hq_6537, "e"), "getAttribute", ((V)("fill")));
-Invoke(Get(hq_6537, "e"), "setAttribute", ((V)("fill")), ((V)(string.Concat("url(#cks", ToStr(ub_6538), ")"))));
+Invoke(Get(hq_6537, "e"), "setAttribute", ((V)("fill")), ((V)(JsStrBuf.Begin().S("url(#cks").V(ub_6538).S(")").End())));
 last_6544 = Get(hq_6537, "e");
 Invoke(items_5572, "forEach", Fn((V _self5542, int _argc6596, V q_6602, V _a6599, V _a6600, V _a6601, V[] _rest6597) => {
 if (SEqS(Get(q_6602, "role"), "arm")) {
-Invoke(Get(q_6602, "e"), "setAttribute", ((V)("fill")), ((V)(string.Concat("url(#ckp", ToStr(ub_6538), ")"))));
+Invoke(Get(q_6602, "e"), "setAttribute", ((V)("fill")), ((V)(JsStrBuf.Begin().S("url(#ckp").V(ub_6538).S(")").End())));
 Set(q_6602, "gl", Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)("#fff"))).Put("opacity", ((V)(0D))).V, bodyG_5561));
 Set(q_6602, "rim", Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#3a1b0c"))).Put("stroke-width", ((V)(0.6))).Put("opacity", ((V)(0D))).V, bodyG_5561));
 }
 if (SEqS(Get(q_6602, "role"), "foot")) {
 V pr_6603 = default;
 V nx_6604 = default;
-Invoke(Get(q_6602, "e"), "setAttribute", ((V)("fill")), ((V)(string.Concat("url(#ckp", ToStr(ub_6538), ")"))));
+Invoke(Get(q_6602, "e"), "setAttribute", ((V)("fill")), ((V)(JsStrBuf.Begin().S("url(#ckp").V(ub_6538).S(")").End())));
 pr_6603 = Get(Get(q_6602, "e"), "parentNode");
 nx_6604 = Get(Get(q_6602, "e"), "nextSibling");
 Set(q_6602, "rim", Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#3a1b0c"))).Put("stroke-width", ((V)(0.6))).Put("opacity", ((V)(0D))).V, pr_6603));
@@ -11206,7 +11206,7 @@ last_6544 = e_6614;
 return e_6614;
 return default;
 }, 3, "", true);
-bev_6546 = Call(add_6545, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#ckm", ToStr(ub_6538), ")")))).V);
+bev_6546 = Call(add_6545, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#ckm").V(ub_6538).S(")").End()))).V);
 fp_6547 = Call(add_6545, V.Undef, NewObj(1).Put("fill", F0_6543).V);
 tiles_6548 = Arr();
 Invoke(Arr(Arr(((V)(24D)), ((V)(40D))), Arr(((V)(40D)), ((V)(60D))), Arr(((V)(60D)), ((V)(76D)))), "forEach", Fn((V _self5542, int _argc6617, V cx_6623, V ci_6624, V _a6621, V _a6622, V[] _rest6618) => {
@@ -11219,7 +11219,7 @@ Set(t_6639, "sh", Call(add_6545, V.Undef, NewObj(2).Put("fill", ((V)("#3a1b0c"))
 return default;
 }, 1, "", true));
 Invoke(tiles_6548, "forEach", Fn((V _self5542, int _argc6640, V t_6646, V _a6643, V _a6644, V _a6645, V[] _rest6641) => {
-Set(t_6646, "tp", Call(add_6545, V.Undef, NewObj(2).Put("fill", ((V)(string.Concat("url(#ckt", ToStr(ub_6538), ")")))).Put("opacity", ((V)(0D))).V));
+Set(t_6646, "tp", Call(add_6545, V.Undef, NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#ckt").V(ub_6538).S(")").End()))).Put("opacity", ((V)(0D))).V));
 Set(t_6646, "hl", Call(add_6545, V.Undef, NewObj(2).Put("fill", ((V)("#ffffff"))).Put("opacity", ((V)(0D))).V));
 return default;
 }, 1, "", true));
@@ -11231,11 +11231,11 @@ par_6551 = (Truthy(wb_6550) ? Get(wb_6550, "parentNode") : bodyG_5561);
 A_6552 = Fn((V _self5542, int _argc6654, V a_6660, V _a6657, V _a6658, V _a6659, V[] _rest6655) => {
 return Call(add_6545, V.Undef, a_6660, par_6551, wb_6550);
 }, 1, "", true);
-ws_6553 = Call(A_6552, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#ckx", ToStr(ub_6538), ")")))).V);
-wm_6554 = Call(A_6552, V.Undef, NewObj(2).Put("fill", ((V)(string.Concat("url(#ckw", ToStr(ub_6538), ")")))).Put("opacity", ((V)(0.6))).V);
-wf_6555 = Call(A_6552, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#ckw", ToStr(ub_6538), ")")))).V);
-bs_6556 = Call(A_6552, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#cky", ToStr(ub_6538), ")")))).V);
-bf_6557 = Call(A_6552, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#ckb", ToStr(ub_6538), ")")))).V);
+ws_6553 = Call(A_6552, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#ckx").V(ub_6538).S(")").End()))).V);
+wm_6554 = Call(A_6552, V.Undef, NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#ckw").V(ub_6538).S(")").End()))).Put("opacity", ((V)(0.6))).V);
+wf_6555 = Call(A_6552, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#ckw").V(ub_6538).S(")").End()))).V);
+bs_6556 = Call(A_6552, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#cky").V(ub_6538).S(")").End()))).V);
+bf_6557 = Call(A_6552, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#ckb").V(ub_6538).S(")").End()))).V);
 bl_6558 = Call(A_6552, V.Undef, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#fffbe0"))).Put("stroke-width", ((V)(0.7))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.75))).V);
 dr_6559 = Invoke(Arr(Arr(((V)(28D)), ((V)(8D))), Arr(((V)(38.5)), ((V)(4.5))), Arr(((V)(50D)), ((V)(11D))), Arr(((V)(62D)), ((V)(5.5))), Arr(((V)(72D)), ((V)(8.5)))), "map", Fn((V _self5542, int _argc6661, V _a6663, V k_6667, V _a6665, V _a6666, V[] _rest6662) => {
 V x_6670 = default;
@@ -11246,9 +11246,9 @@ x_6670 = _t6669; }
 { V _t6671 = GetIdx(_t6668, 1D);
 L_6672 = _t6671; }
 }
-return NewObj(4).Put("x", x_6670).Put("L", L_6672).Put("k", k_6667).Put("el", Call(A_6552, V.Undef, NewObj(2).Put("fill", ((V)(string.Concat("url(#ckd", ToStr(ub_6538), ")")))).Put("opacity", ((V)(0D))).V)).V;
+return NewObj(4).Put("x", x_6670).Put("L", L_6672).Put("k", k_6667).Put("el", Call(A_6552, V.Undef, NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#ckd").V(ub_6538).S(")").End()))).Put("opacity", ((V)(0D))).V)).V;
 }, 2, "", true));
-mt_6560 = Call(A_6552, V.Undef, NewObj(2).Put("fill", ((V)(string.Concat("url(#ckd", ToStr(ub_6538), ")")))).Put("opacity", ((V)(0D))).V);
+mt_6560 = Call(A_6552, V.Undef, NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#ckd").V(ub_6538).S(")").End()))).Put("opacity", ((V)(0D))).V);
 pud_6561 = Call(mk_5555, V.Undef, ((V)("ellipse")), NewObj(2).Put("fill", ((V)("#6b351d"))).Put("opacity", ((V)(0D))).V, root_5550);
 Invoke(root_5550, "insertBefore", pud_6561, art_5551);
 bites_6562 = Arr();
@@ -11366,8 +11366,8 @@ z_6737 = ((-Dh_6539) + (((2D * Dh_6539) * ToNum(k_6736)) / (NSL_6565 - 1D)));
 t_6738 = Call(clamp_5559, V.Undef, ((V)(((System.Math.Abs(z_6737) - (Dh_6539 - bvl_6566)) / bvl_6566))), ((V)(0D)), ((V)(1D)));
 ins_6739 = (bvl_6566 * (1D - System.Math.Sqrt((1D - (ToNum(t_6738) * ToNum(t_6738))))));
 el_6740 = Invoke(G("document"), "createElementNS", NS0_6541, ((V)("path")));
-Invoke(el_6740, "setAttribute", ((V)("fill")), ((V)(string.Concat("url(#cks", ToStr(ub_6538), ")"))));
-Invoke(el_6740, "setAttribute", ((V)("stroke")), ((V)(string.Concat("url(#cks", ToStr(ub_6538), ")"))));
+Invoke(el_6740, "setAttribute", ((V)("fill")), ((V)(JsStrBuf.Begin().S("url(#cks").V(ub_6538).S(")").End())));
+Invoke(el_6740, "setAttribute", ((V)("stroke")), ((V)(JsStrBuf.Begin().S("url(#cks").V(ub_6538).S(")").End())));
 Invoke(el_6740, "setAttribute", ((V)("stroke-width")), ((V)(1.5)));
 Invoke(el_6740, "setAttribute", ((V)("stroke-linejoin")), ((V)("round")));
 Invoke(sG_6564, "appendChild", el_6740);
@@ -11461,9 +11461,9 @@ Set(c_6825, "el", p_6826);
 return default;
 }, 1, "", true));
 Set(hole_6789, "r", ((V)(Max(ToNum(Get(hole_6789, "r")), 18D))));
-Set(dd_6750, "innerHTML", ((V)(string.Concat(new string[] { "<radialGradient id=\"dwg", ToStr(ud_6751), "\" cx=\"50%\" cy=\"18%\" r=\"85%\"><stop offset=\"0\" stop-color=\"#8a4f22\"/><stop offset=\"0.55\" stop-color=\"#c47d3c\"/><stop offset=\"1\" stop-color=\"#eab06a\"/></radialGradient><mask id=\"dwm", ToStr(ud_6751), "\" maskUnits=\"userSpaceOnUse\" x=\"-100\" y=\"-100\" width=\"300\" height=\"300\"><rect x=\"-100\" y=\"-100\" width=\"300\" height=\"300\" fill=\"#fff\"/><path fill=\"#000\"/></mask>" }))));
+Set(dd_6750, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"dwg").V(ud_6751).S("\" cx=\"50%\" cy=\"18%\" r=\"85%\"><stop offset=\"0\" stop-color=\"#8a4f22\"/><stop offset=\"0.55\" stop-color=\"#c47d3c\"/><stop offset=\"1\" stop-color=\"#eab06a\"/></radialGradient><mask id=\"dwm").V(ud_6751).S("\" maskUnits=\"userSpaceOnUse\" x=\"-100\" y=\"-100\" width=\"300\" height=\"300\"><rect x=\"-100\" y=\"-100\" width=\"300\" height=\"300\" fill=\"#fff\"/><path fill=\"#000\"/></mask>").End())));
 mg_6791 = Invoke(bodyG_5561, "querySelector", ((V)("g[mask]")));
-wall_6792 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)(string.Concat("url(#dwg", ToStr(ud_6751), ")")))).Put("mask", ((V)(string.Concat("url(#dwm", ToStr(ud_6751), ")")))).V, bodyG_5561);
+wall_6792 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#dwg").V(ud_6751).S(")").End()))).Put("mask", ((V)(JsStrBuf.Begin().S("url(#dwm").V(ud_6751).S(")").End()))).V, bodyG_5561);
 if (Truthy(mg_6791)) {
 Invoke(Get(mg_6791, "parentNode"), "insertBefore", wall_6792, Get(mg_6791, "nextSibling"));
 }
@@ -11471,7 +11471,7 @@ T_6793 = 11D;
 Ro_6794 = Get(headA_5576, "hx");
 HX0_6795 = Get(headA_5576, "cx");
 HY0_6796 = Get(headA_5576, "cy");
-Set(I_5549, "dn", NewObj(6).Put("hole", hole_6789).Put("bites", bites_6790).Put("wall", wall_6792).Put("wm", Invoke(dd_6750, "querySelector", ((V)(string.Concat("#dwm", ToStr(ud_6751), " path"))))).Put("T", ((V)(T_6793))).Put("Ro", Ro_6794).V);
+Set(I_5549, "dn", NewObj(6).Put("hole", hole_6789).Put("bites", bites_6790).Put("wall", wall_6792).Put("wm", Invoke(dd_6750, "querySelector", ((V)(JsStrBuf.Begin().S("#dwm").V(ud_6751).S(" path").End())))).Put("T", ((V)(T_6793))).Put("Ro", Ro_6794).V);
 Set(I_5549, "zE", Fn((V _self5542, int _argc6827, V dx_6833, V dy_6834, V _a6831, V _a6832, V[] _rest6828) => {
 double rho_6835 = 0;
 double zo_6836 = 0;
@@ -11500,15 +11500,15 @@ fd_6840 = Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551);
 uf_6841 = Get(I_5549, "u");
 LAY_6842 = Arr(Arr(((V)(29D)), ((V)((-11D))), ((V)((-3D)))), Arr(((V)(39.5)), ((V)((-5D))), ((V)(1D))), Arr(((V)(50D)), ((V)(0D)), ((V)(2D))), Arr(((V)(60.5)), ((V)(5D)), ((V)(1D))), Arr(((V)(71D)), ((V)(11D)), ((V)((-3D)))));
 Set(fd_6840, "innerHTML", Invoke(Invoke(fr_6839, "map", Fn((V _self5542, int _argc6860, V q_6866, V i_6867, V _a6864, V _a6865, V[] _rest6861) => {
-return ((V)(string.Concat(new string[] { "<linearGradient id=\"fry", ToStr(uf_6841), "_", ToStr(i_6867), "\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\" stop-color=\"#c8871a\"/><stop offset=\"0.18\" stop-color=\"#f2bf3e\"/><stop offset=\"0.36\" stop-color=\"#fff5c6\"/><stop offset=\"0.56\" stop-color=\"#ffd65e\"/><stop offset=\"0.84\" stop-color=\"#e6a62a\"/><stop offset=\"1\" stop-color=\"#b8771a\"/></linearGradient>" })));
+return ((V)(JsStrBuf.Begin().S("<linearGradient id=\"fry").V(uf_6841).S("_").V(i_6867).S("\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\" stop-color=\"#c8871a\"/><stop offset=\"0.18\" stop-color=\"#f2bf3e\"/><stop offset=\"0.36\" stop-color=\"#fff5c6\"/><stop offset=\"0.56\" stop-color=\"#ffd65e\"/><stop offset=\"0.84\" stop-color=\"#e6a62a\"/><stop offset=\"1\" stop-color=\"#b8771a\"/></linearGradient>").End()));
 }, 2, "", true)), "join", ((V)(""))));
 Invoke(fr_6839, "forEach", Fn((V _self5542, int _argc6868, V q_6874, V i_6875, V _a6872, V _a6873, V[] _rest6869) => {
 V L_6876 = default;
 L_6876 = (GetK(LAY_6842, i_6875) is var _t6877 && Truthy(_t6877) ? _t6877 : Arr(Get(q_6874, "cx"), ((V)(0D)), ((V)(0D))));
 Set(q_6874, "role", ((V)("fry")));
 Set(q_6874, "fry", NewObj(8).Put("i", i_6875).Put("cx", GetIdx(L_6876, 0D)).Put("a", ((V)((ToNum(GetIdx(L_6876, 1D)) * ToNum(D2R_5560))))).Put("z", GetIdx(L_6876, 2D)).Put("y0", Get(Get(q_6874, "b"), "y")).Put("y1", Add(Get(Get(q_6874, "b"), "y"), Get(Get(q_6874, "b"), "height"))).Put("py", Add(Get(Get(q_6874, "b"), "y"), ((V)(22D)))).Put("r", ((V)((ToNum(Get(Get(q_6874, "b"), "width")) / 2D)))).V);
-Set(q_6874, "gr", Invoke(fd_6840, "querySelector", ((V)(string.Concat("#fry", ToStr(uf_6841), "_", ToStr(i_6875))))));
-Invoke(Get(q_6874, "e"), "setAttribute", ((V)("fill")), ((V)(string.Concat(new string[] { "url(#fry", ToStr(uf_6841), "_", ToStr(i_6875), ")" }))));
+Set(q_6874, "gr", Invoke(fd_6840, "querySelector", ((V)(JsStrBuf.Begin().S("#fry").V(uf_6841).S("_").V(i_6875).End()))));
+Invoke(Get(q_6874, "e"), "setAttribute", ((V)("fill")), ((V)(JsStrBuf.Begin().S("url(#fry").V(uf_6841).S("_").V(i_6875).S(")").End())));
 return default;
 }, 2, "", true));
 }
@@ -11662,7 +11662,7 @@ Set(q_7005, "side", ((V)((LtN(Get(q_7005, "cx"), 50D) ? (-1D) : 1D))));
 Delete(q_7005, "S");
 return default;
 }
-cid_7015 = ((V)(string.Concat("gek", ToStr(Get(I_5549, "u")), "_", ToStr(Invoke(items_5572, "indexOf", q_7005)))));
+cid_7015 = ((V)(JsStrBuf.Begin().S("gek").V(Get(I_5549, "u")).S("_").V(Invoke(items_5572, "indexOf", q_7005)).End()));
 Set(q_7005, "clipId", cid_7015);
 return default;
 }, 1, "", true));
@@ -11805,7 +11805,7 @@ m_7307 = Invoke(f_7306, "match", NewRegExp(RX68, "url\\(#([^)]+)\\)", ""));
 if (!(Truthy(m_7307))) {
 return (f_7306 is var _t7311 && Truthy(_t7311) ? _t7311 : ((V)("#e0b080")));
 }
-gEl_7308 = Invoke(art_5551, "querySelector", ((V)(string.Concat("[id=\"", ToStr(GetIdx(m_7307, 1D)), "\"]"))));
+gEl_7308 = Invoke(art_5551, "querySelector", ((V)(JsStrBuf.Begin().S("[id=\"").V(GetIdx(m_7307, 1D)).S("\"]").End())));
 st_7309 = (Truthy(gEl_7308) ? new ArrBuilder().Spread(Invoke(gEl_7308, "querySelectorAll", ((V)("stop")))).V : Arr());
 return (Truthy(Get(st_7309, "length")) ? Invoke(GetIdx(st_7309, Min((ToNum(Get(st_7309, "length")) - 1D), System.Math.Floor((ToNum(Get(st_7309, "length")) * 0.6)))), "getAttribute", ((V)("stop-color"))) : ((V)("#e0b080")));
 return default;
@@ -11917,17 +11917,17 @@ Set(q_7437, "role", ((V)("mcapS")));
 }
 return default;
 }, 1, "", true));
-Set(cd_7424, "innerHTML", ((V)(string.Concat(new string[] { "<linearGradient id=\"mcs", ToStr(uc_7425), "\" gradientUnits=\"userSpaceOnUse\" x1=\"14\" y1=\"0\" x2=\"86\" y2=\"0\"><stop offset=\"0\" stop-color=\"#b8608a\" stop-opacity=\"0.34\"/><stop offset=\"0.16\" stop-color=\"#d98ab0\" stop-opacity=\"0.06\"/><stop offset=\"0.3\" stop-color=\"#ffffff\" stop-opacity=\"0.3\"/><stop offset=\"0.47\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.78\" stop-color=\"#c26a95\" stop-opacity=\"0.1\"/><stop offset=\"1\" stop-color=\"#a8507a\" stop-opacity=\"0.42\"/></linearGradient>", "<linearGradient id=\"mcv", ToStr(uc_7425), "\" gradientUnits=\"userSpaceOnUse\" x1=\"0\" y1=\"44\" x2=\"0\" y2=\"88\"><stop offset=\"0\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.55\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#b8608a\" stop-opacity=\"0.32\"/></linearGradient>", "<radialGradient id=\"mct", ToStr(uc_7425), "\" gradientUnits=\"userSpaceOnUse\" cx=\"40\" cy=\"38\" r=\"40\"><stop offset=\"0\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.75\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#d98ab0\" stop-opacity=\"0.35\"/></radialGradient>" }))));
+Set(cd_7424, "innerHTML", ((V)(JsStrBuf.Begin().S("<linearGradient id=\"mcs").V(uc_7425).S("\" gradientUnits=\"userSpaceOnUse\" x1=\"14\" y1=\"0\" x2=\"86\" y2=\"0\"><stop offset=\"0\" stop-color=\"#b8608a\" stop-opacity=\"0.34\"/><stop offset=\"0.16\" stop-color=\"#d98ab0\" stop-opacity=\"0.06\"/><stop offset=\"0.3\" stop-color=\"#ffffff\" stop-opacity=\"0.3\"/><stop offset=\"0.47\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.78\" stop-color=\"#c26a95\" stop-opacity=\"0.1\"/><stop offset=\"1\" stop-color=\"#a8507a\" stop-opacity=\"0.42\"/></linearGradient>").S("<linearGradient id=\"mcv").V(uc_7425).S("\" gradientUnits=\"userSpaceOnUse\" x1=\"0\" y1=\"44\" x2=\"0\" y2=\"88\"><stop offset=\"0\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.55\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#b8608a\" stop-opacity=\"0.32\"/></linearGradient>").S("<radialGradient id=\"mct").V(uc_7425).S("\" gradientUnits=\"userSpaceOnUse\" cx=\"40\" cy=\"38\" r=\"40\"><stop offset=\"0\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.75\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#d98ab0\" stop-opacity=\"0.35\"/></radialGradient>").End())));
 par_7427 = Get(Get(Get(headA_5576, "q"), "e"), "parentNode");
-sh1_7428 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#mcs", ToStr(uc_7425), ")")))).V, par_7427);
-sh2_7429 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#mcv", ToStr(uc_7425), ")")))).V, par_7427);
-sh3_7430 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#mct", ToStr(uc_7425), ")")))).V, par_7427);
+sh1_7428 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#mcs").V(uc_7425).S(")").End()))).V, par_7427);
+sh2_7429 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#mcv").V(uc_7425).S(")").End()))).V, par_7427);
+sh3_7430 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#mct").V(uc_7425).S(")").End()))).V, par_7427);
 if (Truthy(capQ_7426)) {
 Invoke(par_7427, "insertBefore", sh1_7428, Get(capQ_7426, "e"));
 Invoke(par_7427, "insertBefore", sh2_7429, Get(capQ_7426, "e"));
 Invoke(par_7427, "insertBefore", sh3_7430, Get(Get(capQ_7426, "e"), "nextSibling"));
 }
-Set(I_5549, "cyl", NewObj(7).Put("e0", ((V)(FdLibm.Asin((9.5 / 36D))))).Put("Yc", ((V)(40.5))).Put("PR", Arr(Arr(((V)((-2.6))), ((V)(31D))), Arr(((V)((-1.3))), ((V)(34.6))), Arr(((V)(0.4)), ((V)(36.4))), Arr(((V)(7D)), ((V)(37D))), Arr(((V)(16.2)), ((V)(37.4))), Arr(((V)(25.5)), ((V)(37D))), Arr(((V)(32.5)), ((V)(35.8))), Arr(((V)(37.5)), ((V)(33.2))), Arr(((V)(40.6)), ((V)(29D))), Arr(((V)(42.4)), ((V)(23D))))).Put("sh", Arr(sh1_7428, sh2_7429, sh3_7430)).Put("gs", Invoke(cd_7424, "querySelector", ((V)(string.Concat("#mcs", ToStr(uc_7425)))))).Put("gv", Invoke(cd_7424, "querySelector", ((V)(string.Concat("#mcv", ToStr(uc_7425)))))).Put("gt", Invoke(cd_7424, "querySelector", ((V)(string.Concat("#mct", ToStr(uc_7425)))))).V);
+Set(I_5549, "cyl", NewObj(7).Put("e0", ((V)(FdLibm.Asin((9.5 / 36D))))).Put("Yc", ((V)(40.5))).Put("PR", Arr(Arr(((V)((-2.6))), ((V)(31D))), Arr(((V)((-1.3))), ((V)(34.6))), Arr(((V)(0.4)), ((V)(36.4))), Arr(((V)(7D)), ((V)(37D))), Arr(((V)(16.2)), ((V)(37.4))), Arr(((V)(25.5)), ((V)(37D))), Arr(((V)(32.5)), ((V)(35.8))), Arr(((V)(37.5)), ((V)(33.2))), Arr(((V)(40.6)), ((V)(29D))), Arr(((V)(42.4)), ((V)(23D))))).Put("sh", Arr(sh1_7428, sh2_7429, sh3_7430)).Put("gs", Invoke(cd_7424, "querySelector", ((V)(JsStrBuf.Begin().S("#mcs").V(uc_7425).End())))).Put("gv", Invoke(cd_7424, "querySelector", ((V)(JsStrBuf.Begin().S("#mcv").V(uc_7425).End())))).Put("gt", Invoke(cd_7424, "querySelector", ((V)(JsStrBuf.Begin().S("#mct").V(uc_7425).End())))).V);
 }
 Set(I_5549, "mReach", (!(!(Truthy(Get(RC_5604, "mReach")))) ? V.True : V.False));
 Set(I_5549, "armStr", (!(!(Truthy(Get(RC_5604, "armIn")))) ? V.True : V.False));
@@ -11990,22 +11990,22 @@ return Invoke(st_7462, "push", r_7482);
 lobes_7464 = (Truthy((Get(RC_5604, "seal") is var _t7483 && Truthy(_t7483) ? _t7483 : Get(RC_5604, "narw"))) ? Arr() : (Truthy(Get(RC_5604, "dolph")) ? Arr(Arr(Arr(((V)(50D)), ((V)(76D)), ((V)((-49D))), ((V)(4.6))), Arr(((V)(45D)), ((V)(75D)), ((V)((-53D))), ((V)(3.9))), Arr(((V)(40.5)), ((V)(73.5)), ((V)((-56D))), ((V)(3D))), Arr(((V)(36.5)), ((V)(71.5)), ((V)((-57.5))), ((V)(2D)))), Arr(Arr(((V)(50D)), ((V)(76D)), ((V)((-49D))), ((V)(4.6))), Arr(((V)(55D)), ((V)(75D)), ((V)((-53D))), ((V)(3.9))), Arr(((V)(59.5)), ((V)(73.5)), ((V)((-56D))), ((V)(3D))), Arr(((V)(63.5)), ((V)(71.5)), ((V)((-57.5))), ((V)(2D))))) : Arr(Arr(Arr(((V)(62D)), ((V)(82D)), ((V)((-42D))), ((V)(5.2))), Arr(((V)(56D)), ((V)(84D)), ((V)((-46D))), ((V)(4.2))), Arr(((V)(50.5)), ((V)(85.3)), ((V)((-49D))), ((V)(3.2))), Arr(((V)(45.5)), ((V)(86D)), ((V)((-50.5))), ((V)(2.2)))), Arr(Arr(((V)(62D)), ((V)(82D)), ((V)((-42D))), ((V)(5.2))), Arr(((V)(68D)), ((V)(84D)), ((V)((-46D))), ((V)(4.2))), Arr(((V)(73.5)), ((V)(85.3)), ((V)((-49D))), ((V)(3.2))), Arr(((V)(78.5)), ((V)(86D)), ((V)((-50.5))), ((V)(2.2)))))));
 wd_7465 = Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551);
 u1_7466 = Get(I_5549, "u");
-Set(wd_7465, "innerHTML", ((V)(string.Concat(new string[] { "<linearGradient id=\"wbg", ToStr(u1_7466), "\" gradientUnits=\"userSpaceOnUse\" x1=\"14\" y1=\"18\" x2=\"90\" y2=\"90\"><stop offset=\"0\" stop-color=\"#a6f6e8\"/><stop offset=\"0.5\" stop-color=\"#a2acff\"/><stop offset=\"1\" stop-color=\"#ffaee8\"/></linearGradient>", "<radialGradient id=\"wsh", ToStr(u1_7466), "\" gradientUnits=\"userSpaceOnUse\" cx=\"34\" cy=\"40\" r=\"60\"><stop offset=\"0\" stop-color=\"#ffffff\" stop-opacity=\"0.45\"/><stop offset=\"0.32\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.68\" stop-color=\"#3a2a8a\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#3a2a8a\" stop-opacity=\"0.36\"/></radialGradient>", "<radialGradient id=\"wfl", ToStr(u1_7466), "\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#d4f4ff\"/><stop offset=\"0.6\" stop-color=\"#a2acff\"/><stop offset=\"1\" stop-color=\"#8a7ae6\"/></radialGradient>" }))));
+Set(wd_7465, "innerHTML", ((V)(JsStrBuf.Begin().S("<linearGradient id=\"wbg").V(u1_7466).S("\" gradientUnits=\"userSpaceOnUse\" x1=\"14\" y1=\"18\" x2=\"90\" y2=\"90\"><stop offset=\"0\" stop-color=\"#a6f6e8\"/><stop offset=\"0.5\" stop-color=\"#a2acff\"/><stop offset=\"1\" stop-color=\"#ffaee8\"/></linearGradient>").S("<radialGradient id=\"wsh").V(u1_7466).S("\" gradientUnits=\"userSpaceOnUse\" cx=\"34\" cy=\"40\" r=\"60\"><stop offset=\"0\" stop-color=\"#ffffff\" stop-opacity=\"0.45\"/><stop offset=\"0.32\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.68\" stop-color=\"#3a2a8a\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#3a2a8a\" stop-opacity=\"0.36\"/></radialGradient>").S("<radialGradient id=\"wfl").V(u1_7466).S("\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#d4f4ff\"/><stop offset=\"0.6\" stop-color=\"#a2acff\"/><stop offset=\"1\" stop-color=\"#8a7ae6\"/></radialGradient>").End())));
 if (Truthy(Get(RC_5604, "dolph"))) {
-Set(wd_7465, "innerHTML", ((V)(string.Concat(new string[] { "<radialGradient id=\"wsh", ToStr(u1_7466), "\" gradientUnits=\"userSpaceOnUse\" cx=\"34\" cy=\"40\" r=\"60\"><stop offset=\"0\" stop-color=\"#ffffff\" stop-opacity=\"0.4\"/><stop offset=\"0.34\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.66\" stop-color=\"#1d4f8f\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#1d4f8f\" stop-opacity=\"0.34\"/></radialGradient>", "<radialGradient id=\"wfl", ToStr(u1_7466), "\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#bfe4ff\"/><stop offset=\"0.6\" stop-color=\"#6ab8f2\"/><stop offset=\"1\" stop-color=\"#3f8ad0\"/></radialGradient>", "<radialGradient id=\"wfd", ToStr(u1_7466), "\" cx=\"40%\" cy=\"25%\" r=\"80%\"><stop offset=\"0\" stop-color=\"#a6d8fb\"/><stop offset=\"0.55\" stop-color=\"#6ab8f2\"/><stop offset=\"1\" stop-color=\"#3a86cc\"/></radialGradient>" }))));
+Set(wd_7465, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"wsh").V(u1_7466).S("\" gradientUnits=\"userSpaceOnUse\" cx=\"34\" cy=\"40\" r=\"60\"><stop offset=\"0\" stop-color=\"#ffffff\" stop-opacity=\"0.4\"/><stop offset=\"0.34\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.66\" stop-color=\"#1d4f8f\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#1d4f8f\" stop-opacity=\"0.34\"/></radialGradient>").S("<radialGradient id=\"wfl").V(u1_7466).S("\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#bfe4ff\"/><stop offset=\"0.6\" stop-color=\"#6ab8f2\"/><stop offset=\"1\" stop-color=\"#3f8ad0\"/></radialGradient>").S("<radialGradient id=\"wfd").V(u1_7466).S("\" cx=\"40%\" cy=\"25%\" r=\"80%\"><stop offset=\"0\" stop-color=\"#a6d8fb\"/><stop offset=\"0.55\" stop-color=\"#6ab8f2\"/><stop offset=\"1\" stop-color=\"#3a86cc\"/></radialGradient>").End())));
 }
 if (Truthy(Get(RC_5604, "seal"))) {
-Set(wd_7465, "innerHTML", ((V)(string.Concat(new string[] { "<radialGradient id=\"wsh", ToStr(u1_7466), "\" gradientUnits=\"userSpaceOnUse\" cx=\"34\" cy=\"40\" r=\"60\"><stop offset=\"0\" stop-color=\"#ffffff\" stop-opacity=\"0.45\"/><stop offset=\"0.34\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.66\" stop-color=\"#5a6a86\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#5a6a86\" stop-opacity=\"0.3\"/></radialGradient>", "<radialGradient id=\"wfl", ToStr(u1_7466), "\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.6\" stop-color=\"#eef2f7\"/><stop offset=\"1\" stop-color=\"#c3cedb\"/></radialGradient>", "<radialGradient id=\"wfd", ToStr(u1_7466), "\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.6\" stop-color=\"#eef2f7\"/><stop offset=\"1\" stop-color=\"#c3cedb\"/></radialGradient>" }))));
+Set(wd_7465, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"wsh").V(u1_7466).S("\" gradientUnits=\"userSpaceOnUse\" cx=\"34\" cy=\"40\" r=\"60\"><stop offset=\"0\" stop-color=\"#ffffff\" stop-opacity=\"0.45\"/><stop offset=\"0.34\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.66\" stop-color=\"#5a6a86\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#5a6a86\" stop-opacity=\"0.3\"/></radialGradient>").S("<radialGradient id=\"wfl").V(u1_7466).S("\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.6\" stop-color=\"#eef2f7\"/><stop offset=\"1\" stop-color=\"#c3cedb\"/></radialGradient>").S("<radialGradient id=\"wfd").V(u1_7466).S("\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.6\" stop-color=\"#eef2f7\"/><stop offset=\"1\" stop-color=\"#c3cedb\"/></radialGradient>").End())));
 }
 if (Truthy(Get(RC_5604, "narw"))) {
-Set(wd_7465, "innerHTML", ((V)(string.Concat(new string[] { "<radialGradient id=\"wsh", ToStr(u1_7466), "\" gradientUnits=\"userSpaceOnUse\" cx=\"34\" cy=\"40\" r=\"60\"><stop offset=\"0\" stop-color=\"#ffffff\" stop-opacity=\"0.45\"/><stop offset=\"0.34\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.66\" stop-color=\"#2c4f9c\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#2c4f9c\" stop-opacity=\"0.32\"/></radialGradient>", "<radialGradient id=\"wfl", ToStr(u1_7466), "\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#f2f9ff\"/><stop offset=\"0.6\" stop-color=\"#b4d8ff\"/><stop offset=\"1\" stop-color=\"#7aa4e8\"/></radialGradient><radialGradient id=\"wfd", ToStr(u1_7466), "\"><stop offset=\"0\" stop-color=\"#b4d8ff\"/></radialGradient>", "<linearGradient id=\"nwh", ToStr(u1_7466), "\" gradientUnits=\"userSpaceOnUse\" x1=\"46\" y1=\"20\" x2=\"56\" y2=\"20\"><stop offset=\"0\" stop-color=\"#efb75a\"/><stop offset=\"0.24\" stop-color=\"#fff8dc\"/><stop offset=\"0.52\" stop-color=\"#ffe6a0\"/><stop offset=\"0.8\" stop-color=\"#f0bb5a\"/><stop offset=\"1\" stop-color=\"#c4852e\"/></linearGradient>", "<radialGradient id=\"nwg", ToStr(u1_7466), "\"><stop offset=\"0\" stop-color=\"#fffbe0\" stop-opacity=\"0.95\"/><stop offset=\"0.42\" stop-color=\"#fff1b0\" stop-opacity=\"0.5\"/><stop offset=\"1\" stop-color=\"#ffe9a0\" stop-opacity=\"0\"/></radialGradient>", "<radialGradient id=\"nwt", ToStr(u1_7466), "\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.45\" stop-color=\"#fffbe0\" stop-opacity=\"0.75\"/><stop offset=\"1\" stop-color=\"#fff2b8\" stop-opacity=\"0\"/></radialGradient>", "<radialGradient id=\"nwb", ToStr(u1_7466), "\" gradientUnits=\"userSpaceOnUse\" cx=\"42\" cy=\"72\" r=\"34\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.6\" stop-color=\"#f4faff\"/><stop offset=\"1\" stop-color=\"#d8e6f7\"/></radialGradient>" }))));
+Set(wd_7465, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"wsh").V(u1_7466).S("\" gradientUnits=\"userSpaceOnUse\" cx=\"34\" cy=\"40\" r=\"60\"><stop offset=\"0\" stop-color=\"#ffffff\" stop-opacity=\"0.45\"/><stop offset=\"0.34\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.66\" stop-color=\"#2c4f9c\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#2c4f9c\" stop-opacity=\"0.32\"/></radialGradient>").S("<radialGradient id=\"wfl").V(u1_7466).S("\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#f2f9ff\"/><stop offset=\"0.6\" stop-color=\"#b4d8ff\"/><stop offset=\"1\" stop-color=\"#7aa4e8\"/></radialGradient><radialGradient id=\"wfd").V(u1_7466).S("\"><stop offset=\"0\" stop-color=\"#b4d8ff\"/></radialGradient>").S("<linearGradient id=\"nwh").V(u1_7466).S("\" gradientUnits=\"userSpaceOnUse\" x1=\"46\" y1=\"20\" x2=\"56\" y2=\"20\"><stop offset=\"0\" stop-color=\"#efb75a\"/><stop offset=\"0.24\" stop-color=\"#fff8dc\"/><stop offset=\"0.52\" stop-color=\"#ffe6a0\"/><stop offset=\"0.8\" stop-color=\"#f0bb5a\"/><stop offset=\"1\" stop-color=\"#c4852e\"/></linearGradient>").S("<radialGradient id=\"nwg").V(u1_7466).S("\"><stop offset=\"0\" stop-color=\"#fffbe0\" stop-opacity=\"0.95\"/><stop offset=\"0.42\" stop-color=\"#fff1b0\" stop-opacity=\"0.5\"/><stop offset=\"1\" stop-color=\"#ffe9a0\" stop-opacity=\"0\"/></radialGradient>").S("<radialGradient id=\"nwt").V(u1_7466).S("\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.45\" stop-color=\"#fffbe0\" stop-opacity=\"0.75\"/><stop offset=\"1\" stop-color=\"#fff2b8\" stop-opacity=\"0\"/></radialGradient>").S("<radialGradient id=\"nwb").V(u1_7466).S("\" gradientUnits=\"userSpaceOnUse\" cx=\"42\" cy=\"72\" r=\"34\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.6\" stop-color=\"#f4faff\"/><stop offset=\"1\" stop-color=\"#d8e6f7\"/></radialGradient>").End())));
 }
-F_7467 = (Truthy(Get(RC_5604, "dolph")) ? Get(q_7456, "fill") : ((V)(string.Concat("url(#wbg", ToStr(u1_7466), ")"))));
+F_7467 = (Truthy(Get(RC_5604, "dolph")) ? Get(q_7456, "fill") : ((V)(JsStrBuf.Begin().S("url(#wbg").V(u1_7466).S(")").End())));
 Invoke(Get(q_7456, "e"), "setAttribute", ((V)("fill")), F_7467);
 Set(q_7456, "fill", F_7467);
 Invoke(items_5572, "forEach", Fn((V _self5542, int _argc7484, V z_7490, V _a7487, V _a7488, V _a7489, V[] _rest7485) => {
 if (SEqS(Get(z_7490, "role"), "arm")) {
-Invoke(Get(z_7490, "e"), "setAttribute", ((V)("fill")), ((V)(string.Concat("url(#wfl", ToStr(u1_7466), ")"))));
+Invoke(Get(z_7490, "e"), "setAttribute", ((V)("fill")), ((V)(JsStrBuf.Begin().S("url(#wfl").V(u1_7466).S(")").End())));
 if (!(Truthy(Get(RC_5604, "dolph")))) {
 Set(z_7490, "fill", F_7467);
 }
@@ -12015,8 +12015,8 @@ return default;
 Invoke(Get(I_5549, "tubes"), "forEach", Fn((V _self5542, int _argc7491, V t_7497, V _a7494, V _a7495, V _a7496, V[] _rest7492) => {
 return (t_7497 is var _t7498 && !Truthy(_t7498) ? _t7498 : Invoke(t_7497, "setAttribute", ((V)("stroke")), (Truthy(Get(RC_5604, "seal")) ? ((V)("#e2e8ef")) : (Truthy(Get(RC_5604, "narw")) ? ((V)("#a2c8f6")) : (Truthy(Get(RC_5604, "dolph")) ? ((V)("#5aaeea")) : F_7467)))));
 }, 1, "", true));
-sh_7468 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#wsh", ToStr(u1_7466), ")")))).V, Get(Get(q_7456, "e"), "parentNode"));
-Set(I_5549, "wh", NewObj(9).Put("st", st_7462).Put("lobes", lobes_7464).Put("sh", sh_7468).Put("lg", Invoke(wd_7465, "querySelector", ((V)(string.Concat("#wbg", ToStr(u1_7466)))))).Put("rg", Invoke(wd_7465, "querySelector", ((V)(string.Concat("#wsh", ToStr(u1_7466)))))).Put("stops", Invoke(new ArrBuilder().Spread(Invoke(wd_7465, "querySelectorAll", ((V)("stop")))).V, "filter", Fn((V _self5542, int _argc7499, V x_7505, V i_7506, V _a7503, V _a7504, V[] _rest7500) => {
+sh_7468 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#wsh").V(u1_7466).S(")").End()))).V, Get(Get(q_7456, "e"), "parentNode"));
+Set(I_5549, "wh", NewObj(9).Put("st", st_7462).Put("lobes", lobes_7464).Put("sh", sh_7468).Put("lg", Invoke(wd_7465, "querySelector", ((V)(JsStrBuf.Begin().S("#wbg").V(u1_7466).End())))).Put("rg", Invoke(wd_7465, "querySelector", ((V)(JsStrBuf.Begin().S("#wsh").V(u1_7466).End())))).Put("stops", Invoke(new ArrBuilder().Spread(Invoke(wd_7465, "querySelectorAll", ((V)("stop")))).V, "filter", Fn((V _self5542, int _argc7499, V x_7505, V i_7506, V _a7503, V _a7504, V[] _rest7500) => {
 return ((LtN(i_7506, 3D) || GtN(i_7506, 6D)) ? V.True : V.False);
 }, 2, "", true))).Put("hue", Arr(Arr(((V)(170D)), ((V)(82D)), ((V)(81D))), Arr(((V)(234D)), ((V)(100D)), ((V)(82D))), Arr(((V)(317D)), ((V)(100D)), ((V)(84D))), Arr(((V)(195D)), ((V)(100D)), ((V)(92D))), Arr(((V)(234D)), ((V)(100D)), ((V)(82D))), Arr(((V)(255D)), ((V)(68D)), ((V)(69D))))).Put("bb0", Arr(((V)((ToNum(CX_7460) - ToNum(AX_7458)))), ((V)((ToNum(CY_7461) - ToNum(BY_7459)))), Add(CX_7460, AX_7458), Add(CY_7461, BY_7459))).Put("nf", Get(FTH_7463, "length")).V);
 if (Truthy(Get(RC_5604, "dolph"))) {
@@ -12094,7 +12094,7 @@ return Invoke(bs_7509, "push", Arr(cx_7563, cy_7565, z_7567, a_7569, b_7571, ((V
 }, 1, "", true));
 R_7511 = (Get(I_5549, "fnR") is var _t7572 && Truthy(_t7572) ? _t7572 : NewObj(0).V);
 par_7512 = Get(Get(q_7456, "e"), "parentNode");
-fin_7513 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)(string.Concat("url(#wfd", ToStr(u1_7466), ")")))).Put("stroke", ((V)(string.Concat("url(#wfd", ToStr(u1_7466), ")")))).Put("stroke-width", ((V)(0.3))).Put("stroke-linejoin", ((V)("round"))).V, par_7512);
+fin_7513 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)(JsStrBuf.Begin().S("url(#wfd").V(u1_7466).S(")").End()))).Put("stroke", ((V)(JsStrBuf.Begin().S("url(#wfd").V(u1_7466).S(")").End()))).Put("stroke-width", ((V)(0.3))).Put("stroke-linejoin", ((V)("round"))).V, par_7512);
 Invoke(par_7512, "insertBefore", fin_7513, Get(q_7456, "e"));
 if (Truthy(Get(R_7511, "bel"))) {
 Invoke(Get(Get(R_7511, "bel"), "e"), "setAttribute", ((V)("stroke")), Get(Get(R_7511, "bel"), "fill"));
@@ -12116,7 +12116,7 @@ Set(Get(fin_7513, "style"), "display", ((V)("none")));
 mz_7573 = (Get(R_7511, "mz") is var _t7575 && Truthy(_t7575) ? _t7575 : Arr());
 fl_7574 = Invoke(Arr(((V)((-1D))), ((V)(1D))), "map", Fn((V _self5542, int _argc7576, V sd_7582, V _a7579, V _a7580, V _a7581, V[] _rest7577) => {
 V e_7583 = default;
-e_7583 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#wfl", ToStr(u1_7466), ")")))).V, par_7512);
+e_7583 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#wfl").V(u1_7466).S(")").End()))).V, par_7512);
 Invoke(par_7512, "insertBefore", e_7583, Get(q_7456, "e"));
 return NewObj(3).Put("e", e_7583).Put("sd", sd_7582).Put("fr", (false ? V.True : V.False)).V;
 return default;
@@ -12144,17 +12144,17 @@ Set(Get(fin_7513, "style"), "display", ((V)("none")));
 hg_7585 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(0).V, par_7512);
 Invoke(par_7512, "insertBefore", hg_7585, Get(q_7456, "e"));
 sB_7586 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)("#fff6c8"))).V, hg_7585);
-glow_7587 = Call(mk_5555, V.Undef, ((V)("circle")), NewObj(1).Put("fill", ((V)(string.Concat("url(#nwg", ToStr(u1_7466), ")")))).V, hg_7585);
-horn_7588 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)(string.Concat("url(#nwh", ToStr(u1_7466), ")")))).Put("stroke", ((V)("#e0a248"))).Put("stroke-width", ((V)(0.25))).Put("stroke-linejoin", ((V)("round"))).V, hg_7585);
+glow_7587 = Call(mk_5555, V.Undef, ((V)("circle")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#nwg").V(u1_7466).S(")").End()))).V, hg_7585);
+horn_7588 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)(JsStrBuf.Begin().S("url(#nwh").V(u1_7466).S(")").End()))).Put("stroke", ((V)("#e0a248"))).Put("stroke-width", ((V)(0.25))).Put("stroke-linejoin", ((V)("round"))).V, hg_7585);
 grv_7589 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#cf8a32"))).Put("stroke-width", ((V)(0.8))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V, hg_7585);
 grvH_7590 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(6).Put("fill", ((V)("none"))).Put("stroke", ((V)("#fffbea"))).Put("stroke-width", ((V)(0.45))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).Put("opacity", ((V)(0.85))).V, hg_7585);
-tip_7591 = Call(mk_5555, V.Undef, ((V)("circle")), NewObj(1).Put("fill", ((V)(string.Concat("url(#nwt", ToStr(u1_7466), ")")))).V, hg_7585);
+tip_7591 = Call(mk_5555, V.Undef, ((V)("circle")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#nwt").V(u1_7466).S(")").End()))).V, hg_7585);
 sF_7592 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)("#fffbe0"))).V, hg_7585);
 spots_7593 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)("#86aeea"))).V, par_7512);
 Invoke(par_7512, "insertBefore", spots_7593, Get(Get(q_7456, "e"), "nextSibling"));
 if (Truthy(Get(R_7511, "bel"))) {
-Invoke(Get(Get(R_7511, "bel"), "e"), "setAttribute", ((V)("fill")), ((V)(string.Concat("url(#nwb", ToStr(u1_7466), ")"))));
-Invoke(Get(Get(R_7511, "bel"), "e"), "setAttribute", ((V)("stroke")), ((V)(string.Concat("url(#nwb", ToStr(u1_7466), ")"))));
+Invoke(Get(Get(R_7511, "bel"), "e"), "setAttribute", ((V)("fill")), ((V)(JsStrBuf.Begin().S("url(#nwb").V(u1_7466).S(")").End())));
+Invoke(Get(Get(R_7511, "bel"), "e"), "setAttribute", ((V)("stroke")), ((V)(JsStrBuf.Begin().S("url(#nwb").V(u1_7466).S(")").End())));
 }
 TH_7594 = FTH_7463;
 nL_7595 = (ToNum(Get(TH_7594, "length")) - 1D);
@@ -12207,7 +12207,7 @@ return Arr(Add(((V)(nL_7595)), i_7615), f_7617, r_7619);
 }, 1, "", true)));
 Set(I_5549, "nwF", ((V)(1D)));
 Set(I_5549, "mReach", ((V)(1D)));
-Set(Get(Get(I_5549, "wh"), "fin"), "nw", NewObj(12).Put("hg", hg_7585).Put("glow", glow_7587).Put("horn", horn_7588).Put("grv", grv_7589).Put("grvH", grvH_7590).Put("tip", tip_7591).Put("sB", sB_7586).Put("sF", sF_7592).Put("spots", spots_7593).Put("SPT", SPT_7597).Put("lg", Invoke(wd_7465, "querySelector", ((V)(string.Concat("#nwh", ToStr(u1_7466)))))).Put("sw", NewObj(4).Put("x", ((V)(0D))).Put("v", ((V)(0D))).Put("px", V.Null).Put("pv", ((V)(0D))).V).V);
+Set(Get(Get(I_5549, "wh"), "fin"), "nw", NewObj(12).Put("hg", hg_7585).Put("glow", glow_7587).Put("horn", horn_7588).Put("grv", grv_7589).Put("grvH", grvH_7590).Put("tip", tip_7591).Put("sB", sB_7586).Put("sF", sF_7592).Put("spots", spots_7593).Put("SPT", SPT_7597).Put("lg", Invoke(wd_7465, "querySelector", ((V)(JsStrBuf.Begin().S("#nwh").V(u1_7466).End())))).Put("sw", NewObj(4).Put("x", ((V)(0D))).Put("v", ((V)(0D))).Put("px", V.Null).Put("pv", ((V)(0D))).V).V);
 }
 }
 Set(I_5549, "zc0", ((V)((Truthy(Get(RC_5604, "narw")) ? (-21D) : (-10D)))));
@@ -12319,10 +12319,10 @@ Invoke(art_5551, "insertBefore", Get(Get(I_5549, "orb"), "back"), bodyG_5561);
 xd_5607 = Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551);
 u0_5608 = Get(I_5549, "u");
 if (Truthy(Get(RC_5604, "footShade"))) {
-OpSet(xd_5607, "innerHTML", 0, ((V)(string.Concat("<radialGradient id=\"dft", ToStr(u0_5608), "\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#fbf1dc\"/><stop offset=\"0.55\" stop-color=\"#d8c09a\"/><stop offset=\"1\" stop-color=\"#a88a5e\"/></radialGradient>"))));
+OpSet(xd_5607, "innerHTML", 0, ((V)(JsStrBuf.Begin().S("<radialGradient id=\"dft").V(u0_5608).S("\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#fbf1dc\"/><stop offset=\"0.55\" stop-color=\"#d8c09a\"/><stop offset=\"1\" stop-color=\"#a88a5e\"/></radialGradient>").End())));
 Invoke(items_5572, "forEach", Fn((V _self5542, int _argc7755, V q_7761, V _a7758, V _a7759, V _a7760, V[] _rest7756) => {
 if (SEqS(Get(q_7761, "role"), "foot")) {
-Invoke(Get(q_7761, "e"), "setAttribute", ((V)("fill")), ((V)(string.Concat("url(#dft", ToStr(u0_5608), ")"))));
+Invoke(Get(q_7761, "e"), "setAttribute", ((V)("fill")), ((V)(JsStrBuf.Begin().S("url(#dft").V(u0_5608).S(")").End())));
 }
 return default;
 }, 1, "", true));
@@ -12369,11 +12369,11 @@ return ((System.Math.Abs(FdLibm.Sin((ToNum(f_7818) * ToNum(D2R_5560)))) < 0.95) 
 bb_7770 = Get(q_7763, "b");
 gx_7771 = Add(Get(bb_7770, "x"), ((V)((ToNum(Get(bb_7770, "width")) * 0.38))));
 gy_7772 = Add(Get(bb_7770, "y"), ((V)((ToNum(Get(bb_7770, "height")) * 0.3))));
-OpSet(xd_5607, "innerHTML", 0, ((V)(string.Concat(new string[] { "<radialGradient id=\"zbg", ToStr(u0_5608), "\" gradientUnits=\"userSpaceOnUse\" cx=\"", ToStr(gx_7771), "\" cy=\"", ToStr(gy_7772), "\" r=\"", NumStr((ToNum(Get(bb_7770, "width")) * 0.75)), "\"><stop offset=\"0\" stop-color=\"#fff9c4\"/><stop offset=\"0.6\" stop-color=\"#ffe14a\"/><stop offset=\"1\" stop-color=\"#eebb12\"/></radialGradient>" }))));
-el_7773 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#zbg", ToStr(u0_5608), ")")))).V, par_7768);
+OpSet(xd_5607, "innerHTML", 0, ((V)(JsStrBuf.Begin().S("<radialGradient id=\"zbg").V(u0_5608).S("\" gradientUnits=\"userSpaceOnUse\" cx=\"").V(gx_7771).S("\" cy=\"").V(gy_7772).S("\" r=\"").N((ToNum(Get(bb_7770, "width")) * 0.75)).S("\"><stop offset=\"0\" stop-color=\"#fff9c4\"/><stop offset=\"0.6\" stop-color=\"#ffe14a\"/><stop offset=\"1\" stop-color=\"#eebb12\"/></radialGradient>").End())));
+el_7773 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#zbg").V(u0_5608).S(")").End()))).V, par_7768);
 Invoke(par_7768, "insertBefore", el_7773, Get(q_7763, "e"));
-Invoke(Get(q_7763, "e"), "setAttribute", ((V)("fill")), ((V)(string.Concat("url(#zbg", ToStr(u0_5608), ")"))));
-Set(I_5549, "spk", NewObj(8).Put("el", el_7773).Put("dirs", D_7767).Put("r0", r0_7765).Put("r1", r1_7766).Put("rb", ((V)((ToNum(r0_7765) - 1.5)))).Put("w", ((V)(4.1))).Put("gr", Invoke(xd_5607, "querySelector", ((V)(string.Concat("#zbg", ToStr(u0_5608)))))).Put("g0", Arr(gx_7771, gy_7772)).V);
+Invoke(Get(q_7763, "e"), "setAttribute", ((V)("fill")), ((V)(JsStrBuf.Begin().S("url(#zbg").V(u0_5608).S(")").End())));
+Set(I_5549, "spk", NewObj(8).Put("el", el_7773).Put("dirs", D_7767).Put("r0", r0_7765).Put("r1", r1_7766).Put("rb", ((V)((ToNum(r0_7765) - 1.5)))).Put("w", ((V)(4.1))).Put("gr", Invoke(xd_5607, "querySelector", ((V)(JsStrBuf.Begin().S("#zbg").V(u0_5608).End())))).Put("g0", Arr(gx_7771, gy_7772)).V);
 }
 if (Truthy((Get(RC_5604, "pfish") is var _t7827 && !Truthy(_t7827) ? _t7827 : headA_5576))) {
 V q_7828 = default;
@@ -12428,10 +12428,10 @@ Call(ring_7832, V.Undef, ((V)(90D)), Arr(((V)((-50D))), ((V)(70D))));
 bb_7833 = Get(q_7828, "b");
 gx_7834 = Add(Get(bb_7833, "x"), ((V)((ToNum(Get(bb_7833, "width")) * 0.38))));
 gy_7835 = Add(Get(bb_7833, "y"), ((V)((ToNum(Get(bb_7833, "height")) * 0.3))));
-OpSet(xd_5607, "innerHTML", 0, ((V)(string.Concat(new string[] { "<radialGradient id=\"pfs", ToStr(u0_5608), "\" gradientUnits=\"userSpaceOnUse\" cx=\"", ToStr(gx_7834), "\" cy=\"", ToStr(gy_7835), "\" r=\"", NumStr((ToNum(Get(bb_7833, "width")) * 0.8)), "\"><stop offset=\"0\" stop-color=\"#ffe08a\"/><stop offset=\"0.55\" stop-color=\"#f2b030\"/><stop offset=\"1\" stop-color=\"#d0861a\"/></radialGradient>" }))));
-el_7836 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)(string.Concat("url(#pfs", ToStr(u0_5608), ")")))).Put("stroke", ((V)("#e09a28"))).Put("stroke-width", ((V)(0.4))).Put("stroke-linejoin", ((V)("round"))).V, par_7829);
+OpSet(xd_5607, "innerHTML", 0, ((V)(JsStrBuf.Begin().S("<radialGradient id=\"pfs").V(u0_5608).S("\" gradientUnits=\"userSpaceOnUse\" cx=\"").V(gx_7834).S("\" cy=\"").V(gy_7835).S("\" r=\"").N((ToNum(Get(bb_7833, "width")) * 0.8)).S("\"><stop offset=\"0\" stop-color=\"#ffe08a\"/><stop offset=\"0.55\" stop-color=\"#f2b030\"/><stop offset=\"1\" stop-color=\"#d0861a\"/></radialGradient>").End())));
+el_7836 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)(JsStrBuf.Begin().S("url(#pfs").V(u0_5608).S(")").End()))).Put("stroke", ((V)("#e09a28"))).Put("stroke-width", ((V)(0.4))).Put("stroke-linejoin", ((V)("round"))).V, par_7829);
 Invoke(par_7829, "insertBefore", el_7836, Get(q_7828, "e"));
-elF_7837 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)(string.Concat("url(#pfs", ToStr(u0_5608), ")")))).Put("stroke", ((V)("#d48a1e"))).Put("stroke-width", ((V)(0.45))).Put("stroke-linejoin", ((V)("round"))).V, par_7829);
+elF_7837 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)(JsStrBuf.Begin().S("url(#pfs").V(u0_5608).S(")").End()))).Put("stroke", ((V)("#d48a1e"))).Put("stroke-width", ((V)(0.45))).Put("stroke-linejoin", ((V)("round"))).V, par_7829);
 Invoke(par_7829, "insertBefore", elF_7837, Get(Get(q_7828, "e"), "nextSibling"));
 bel_7838 = Invoke(items_5572, "find", Fn((V _self5542, int _argc7891, V z_7897, V _a7894, V _a7895, V _a7896, V[] _rest7892) => {
 return (SEqS(Get(z_7897, "role"), "pfBel") ? V.True : V.False);
@@ -12440,7 +12440,7 @@ if (Truthy((bel_7838 is var _t7898 && !Truthy(_t7898) ? _t7898 : (SEq(Get(Get(be
 Invoke(par_7829, "insertBefore", elF_7837, Get(Get(bel_7838, "e"), "nextSibling"));
 }
 Set(I_5549, "pfArt", art_5551);
-Set(I_5549, "spk", NewObj(10).Put("el", el_7836).Put("elF", elF_7837).Put("dirs", D_7830).Put("r0", ((V)(r0_7831))).Put("r1", ((V)((r0_7831 + 8D)))).Put("rb", ((V)((r0_7831 - 1.5)))).Put("w", ((V)(3.1))).Put("gr", Invoke(xd_5607, "querySelector", ((V)(string.Concat("#pfs", ToStr(u0_5608)))))).Put("g0", Arr(gx_7834, gy_7835)).Put("pu", ((V)(1D))).V);
+Set(I_5549, "spk", NewObj(10).Put("el", el_7836).Put("elF", elF_7837).Put("dirs", D_7830).Put("r0", ((V)(r0_7831))).Put("r1", ((V)((r0_7831 + 8D)))).Put("rb", ((V)((r0_7831 - 1.5)))).Put("w", ((V)(3.1))).Put("gr", Invoke(xd_5607, "querySelector", ((V)(JsStrBuf.Begin().S("#pfs").V(u0_5608).End())))).Put("g0", Arr(gx_7834, gy_7835)).Put("pu", ((V)(1D))).V);
 Set(I_5549, "pfm", NewObj(4).Put("in", Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)("#7a2a40"))).Put("opacity", ((V)(0D))).V, Get(I_5549, "faceG"))).Put("lo", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)("#e0882a"))).V, Get(I_5549, "faceG"))).Put("up", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)("#f4a640"))).V, Get(I_5549, "faceG"))).Put("hl", Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)("#fff6e0"))).Put("opacity", ((V)(0.55))).V, Get(I_5549, "faceG"))).V);
 }
 if (Truthy((Get(RC_5604, "pina") is var _t7899 && !Truthy(_t7899) ? _t7899 : headA_5576))) {
@@ -12517,7 +12517,7 @@ Invoke(LV_7914, "forEach", Fn((V _self5542, int _argc7955, V o_7961, V i_7962, V
 V gr_7963 = default;
 V id_7964 = default;
 gr_7963 = Invoke(G("document"), "createElementNS", NSv_7904, ((V)("linearGradient")));
-id_7964 = ((V)(string.Concat("pnl", ToStr(Get(I_5549, "u")), "_", ToStr(i_7962))));
+id_7964 = ((V)(JsStrBuf.Begin().S("pnl").V(Get(I_5549, "u")).S("_").V(i_7962).End()));
 Invoke(gr_7963, "setAttribute", ((V)("id")), id_7964);
 Invoke(gr_7963, "setAttribute", ((V)("gradientUnits")), ((V)("userSpaceOnUse")));
 Set(o_7961, "st", Invoke(Arr(((V)(0D)), ((V)(0.5)), ((V)(1D))), "map", Fn((V _self5542, int _argc7965, V f_7971, V _a7968, V _a7969, V _a7970, V[] _rest7966) => {
@@ -12532,7 +12532,7 @@ Invoke(pd_7903, "appendChild", gr_7963);
 Set(o_7961, "gr", gr_7963);
 Set(o_7961, "ph", ((V)((ToNum(i_7962) * 1.37))));
 Set(o_7961, "g", Call(mk_5555, V.Undef, ((V)("g")), NewObj(0).V, crF_7913));
-Set(o_7961, "bl", Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)(string.Concat("url(#", ToStr(id_7964), ")")))).Put("stroke", ((V)("#3a8a3a"))).Put("stroke-width", ((V)(0.35))).Put("stroke-linejoin", ((V)("round"))).V, Get(o_7961, "g")));
+Set(o_7961, "bl", Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)(JsStrBuf.Begin().S("url(#").V(id_7964).S(")").End()))).Put("stroke", ((V)("#3a8a3a"))).Put("stroke-width", ((V)(0.35))).Put("stroke-linejoin", ((V)("round"))).V, Get(o_7961, "g")));
 Set(o_7961, "rb", Call(mk_5555, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#e0fac8"))).Put("stroke-width", ((V)(0.45))).Put("opacity", ((V)(0.5))).Put("stroke-linecap", ((V)("round"))).V, Get(o_7961, "g")));
 return default;
 }, 2, "", true));
@@ -12704,13 +12704,13 @@ Invoke((pp_8108 is var _t8113 && Truthy(_t8113) ? _t8113 : par_7987), "insertBef
 return e_8109;
 return default;
 }, 3, "", true);
-Set(Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551), "innerHTML", ((V)(string.Concat("<radialGradient id=\"avs", ToStr(ud_7988), "\" cx=\"62%\" cy=\"66%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#f4fbd8\"/><stop offset=\"0.55\" stop-color=\"#d4ec9c\"/><stop offset=\"1\" stop-color=\"#93bf5c\"/></radialGradient>"))));
+Set(Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551), "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"avs").V(ud_7988).S("\" cx=\"62%\" cy=\"66%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#f4fbd8\"/><stop offset=\"0.55\" stop-color=\"#d4ec9c\"/><stop offset=\"1\" stop-color=\"#93bf5c\"/></radialGradient>").End())));
 lfB_7991 = Invoke(G("document"), "createElementNS", NSv_7989, ((V)("g")));
 lfF_7992 = Invoke(G("document"), "createElementNS", NSv_7989, ((V)("g")));
 Invoke(par_7987, "insertBefore", lfB_7991, Get(sk_7982, "e"));
 Invoke(par_7987, "insertBefore", lfF_7992, Get(Get(fl_7983, "e"), "nextSibling"));
 pe_7993 = (Truthy(pit_7984) ? Get(pit_7984, "e") : V.Null);
-sock_7994 = Call(P0_7990, V.Undef, NewObj(2).Put("fill", ((V)(string.Concat("url(#avs", ToStr(ud_7988), ")")))).Put("opacity", ((V)(0D))).V, pe_7993);
+sock_7994 = Call(P0_7990, V.Undef, NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#avs").V(ud_7988).S(")").End()))).Put("opacity", ((V)(0D))).V, pe_7993);
 ring_7995 = Call(P0_7990, V.Undef, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#6f9e3e"))).Put("stroke-width", ((V)(1.1))).Put("opacity", ((V)(0.35))).Put("stroke-linejoin", ((V)("round"))).V, pe_7993);
 sref_7996 = (Truthy(shn_7985) ? Get(shn_7985, "e") : (Truthy(pe_7993) ? Get(pe_7993, "nextSibling") : V.Null));
 seam_7997 = Call(P0_7990, V.Undef, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#6e3e1a"))).Put("stroke-width", ((V)(0.75))).Put("opacity", ((V)(0.45))).Put("stroke-linecap", ((V)("round"))).V, sref_7996);
@@ -13083,7 +13083,7 @@ Set(I_5549, "zE", Fn((V _self5542, int _argc8435, V dx_8441, V dy_8442, V _a8439
 return Add(Call(ZF_8409, V.Undef, Add(HX0_8275, dx_8441), Add(HY0_8276, dy_8442)), ((V)(0.3)));
 }, 2, "", true));
 gr_8410 = Invoke(G("document"), "createElementNS", NSv_8266, ((V)("radialGradient")));
-Invoke(gr_8410, "setAttribute", ((V)("id")), ((V)(string.Concat("bkc", ToStr(Get(I_5549, "u"))))));
+Invoke(gr_8410, "setAttribute", ((V)("id")), ((V)(JsStrBuf.Begin().S("bkc").V(Get(I_5549, "u")).End())));
 Invoke(gr_8410, "setAttribute", ((V)("cx")), ((V)("38%")));
 Invoke(gr_8410, "setAttribute", ((V)("cy")), ((V)("30%")));
 Invoke(gr_8410, "setAttribute", ((V)("r")), ((V)("75%")));
@@ -13105,7 +13105,7 @@ return default;
 }, 1, "", true));
 Invoke(df_8274, "appendChild", gr_8410);
 Set(B_8277, "plF", Invoke(Get(sk_8267, "e"), "getAttribute", ((V)("fill"))));
-Invoke(Get(sk_8267, "e"), "setAttribute", ((V)("fill")), ((V)(string.Concat("url(#bkc", ToStr(Get(I_5549, "u")), ")"))));
+Invoke(Get(sk_8267, "e"), "setAttribute", ((V)("fill")), ((V)(JsStrBuf.Begin().S("url(#bkc").V(Get(I_5549, "u")).S(")").End())));
 Set(B_8277, "pl", Call(P0_8272, V.Undef, NewObj(1).Put("fill", Get(B_8277, "plF")).V));
 Set(B_8277, "cr", Call(P0_8272, V.Undef, NewObj(2).Put("fill", ((V)("#b8742e"))).Put("opacity", ((V)(0.8))).V));
 Set(B_8277, "ce", Call(P0_8272, V.Undef, NewObj(1).Put("fill", ((V)("#5e321c"))).V));
@@ -13373,7 +13373,7 @@ return Add(Call(zB_8509, V.Undef, Add(HX0_8275, dx_8795), Add(HY0_8276, dy_8796)
 {
 V gr_8797 = default;
 gr_8797 = Invoke(G("document"), "createElementNS", NSv_8266, ((V)("radialGradient")));
-Invoke(gr_8797, "setAttribute", ((V)("id")), ((V)(string.Concat("bkt", ToStr(Get(I_5549, "u"))))));
+Invoke(gr_8797, "setAttribute", ((V)("id")), ((V)(JsStrBuf.Begin().S("bkt").V(Get(I_5549, "u")).End())));
 Invoke(gr_8797, "setAttribute", ((V)("gradientUnits")), ((V)("userSpaceOnUse")));
 Invoke(Arr(Arr(((V)(0D)), ((V)("#fbcf92"))), Arr(((V)(0.5)), ((V)("#cf8a44"))), Arr(((V)(1D)), ((V)("#93501e")))), "forEach", Fn((V _self5542, int _argc8798, V _a8800, V _a8801, V _a8802, V _a8803, V[] _rest8799) => {
 V s_8809 = default;
@@ -13394,7 +13394,7 @@ return default;
 Invoke(df_8274, "appendChild", gr_8797);
 Set(B_8277, "gr", gr_8797);
 }
-TF_8510 = ((V)(string.Concat("url(#bkt", ToStr(Get(I_5549, "u")), ")")));
+TF_8510 = ((V)(JsStrBuf.Begin().S("url(#bkt").V(Get(I_5549, "u")).S(")").End()));
 RIM_8511 = ((V)("#8e4c1c"));
 HL_8512 = ((V)("#ffe0b0"));
 Invoke(Get(sk_8267, "e"), "setAttribute", ((V)("fill")), RIM_8511);
@@ -13405,12 +13405,12 @@ V cp_8817 = default;
 V ce_8818 = default;
 V g_8819 = default;
 cp_8817 = Invoke(G("document"), "createElementNS", NSv_8266, ((V)("clipPath")));
-Invoke(cp_8817, "setAttribute", ((V)("id")), ((V)(string.Concat("bkx", ToStr(Get(I_5549, "u")), "_", ToStr(k_8816)))));
+Invoke(cp_8817, "setAttribute", ((V)("id")), ((V)(JsStrBuf.Begin().S("bkx").V(Get(I_5549, "u")).S("_").V(k_8816).End())));
 ce_8818 = Invoke(G("document"), "createElementNS", NSv_8266, ((V)("path")));
 Invoke(cp_8817, "appendChild", ce_8818);
 Invoke(df_8274, "appendChild", cp_8817);
 g_8819 = Call(G0_8273, V.Undef);
-Invoke(g_8819, "setAttribute", ((V)("clip-path")), ((V)(string.Concat(new string[] { "url(#bkx", ToStr(Get(I_5549, "u")), "_", ToStr(k_8816), ")" }))));
+Invoke(g_8819, "setAttribute", ((V)("clip-path")), ((V)(JsStrBuf.Begin().S("url(#bkx").V(Get(I_5549, "u")).S("_").V(k_8816).S(")").End())));
 return NewObj(4).Put("cp", ce_8818).Put("b", Call(P0_8272, V.Undef, NewObj(1).Put("fill", RIM_8511).V, g_8819)).Put("m", Call(P0_8272, V.Undef, NewObj(1).Put("fill", TF_8510).V, g_8819)).Put("h", Call(P0_8272, V.Undef, NewObj(2).Put("fill", HL_8512).Put("opacity", ((V)(0.3))).V, g_8819)).V;
 return default;
 }, 1, "", true)));
@@ -13552,7 +13552,7 @@ return default;
 Set(B_8277, "rg", Call(P0_8272, V.Undef, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#c8782a"))).Put("stroke-width", ((V)(1D))).Put("opacity", ((V)(0.55))).Put("stroke-linecap", ((V)("round"))).V));
 Set(B_8277, "rgL", Call(P0_8272, V.Undef, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#fff0c8"))).Put("stroke-width", ((V)(0.6))).Put("opacity", ((V)(0.5))).Put("stroke-linecap", ((V)("round"))).V));
 Set(B_8277, "gr", Call(ugr_8279, V.Undef, ((V)("bkr")), Arr(Arr(((V)(0D)), ((V)("#ffe2a2"))), Arr(((V)(0.45)), ((V)("#f0a24c"))), Arr(((V)(1D)), ((V)("#c06e24"))))));
-TF_8904 = ((V)(string.Concat("url(#bkr", ToStr(Get(I_5549, "u")), ")")));
+TF_8904 = ((V)(JsStrBuf.Begin().S("url(#bkr").V(Get(I_5549, "u")).S(")").End()));
 Invoke(Get(sk_8267, "e"), "setAttribute", ((V)("fill")), TF_8904);
 Invoke(Get(sk_8267, "e"), "setAttribute", ((V)("stroke")), ((V)("#c27630")));
 Invoke(Get(sk_8267, "e"), "setAttribute", ((V)("stroke-width")), ((V)("1.1")));
@@ -13997,7 +13997,7 @@ if (Truthy(Get(B_8277, "ht"))) {
 Set(B_8277, "col", Call(mkp_9220, V.Undef, NewObj(1).Put("fill", (Truthy(cq_9221) ? Get(cq_9221, "fill") : ((V)("#a060e0")))).V, Get(Get(Get(B_8277, "ht"), "e"), "parentNode"), Get(Get(Get(B_8277, "ht"), "e"), "nextSibling")));
 }
 Set(B_8277, "hg", Call(ugr_8279, V.Undef, ((V)("bkh")), Arr(Arr(((V)(0D)), ((V)("#f4e6ff"))), Arr(((V)(0.55)), ((V)("#b47ae6"))), Arr(((V)(1D)), ((V)("#7a40b0"))))));
-HU_9222 = ((V)(string.Concat("url(#bkh", ToStr(Get(I_5549, "u")), ")")));
+HU_9222 = ((V)(JsStrBuf.Begin().S("url(#bkh").V(Get(I_5549, "u")).S(")").End()));
 bq_9223 = GetIdx((Get(BH_8269, "bun") is var _t9304 && Truthy(_t9304) ? _t9304 : Arr()), 0D);
 crq_9224 = GetIdx((Get(BH_8269, "crown") is var _t9305 && Truthy(_t9305) ? _t9305 : Arr()), 0D);
 Set(B_8277, "bunB", Invoke(G("document"), "createElementNS", NSv_8266, ((V)("g"))));
@@ -14680,7 +14680,7 @@ V id_9825 = default;
 V gr_9826 = default;
 V st_9827 = default;
 V g0_9828 = default;
-id_9825 = ((V)(string.Concat("ptb", ToStr(Get(I_5549, "u")), "_", NumStr(gi_9719++))));
+id_9825 = ((V)(JsStrBuf.Begin().S("ptb").V(Get(I_5549, "u")).S("_").N(gi_9719++).End()));
 gr_9826 = Invoke(G("document"), "createElementNS", NSv_9711, ((V)("linearGradient")));
 Invoke(gr_9826, "setAttribute", ((V)("id")), id_9825);
 Invoke(gr_9826, "setAttribute", ((V)("gradientUnits")), ((V)("userSpaceOnUse")));
@@ -14695,7 +14695,7 @@ return default;
 Invoke(df_9718, "appendChild", gr_9826);
 g0_9828 = Invoke(G("document"), "createElementNS", NSv_9711, ((V)("g")));
 Invoke(pg_9824, "appendChild", g0_9828);
-return NewObj(5).Put("gr", gr_9826).Put("st", st_9827).Put("g", g0_9828).Put("e", Call(P0_9712, V.Undef, NewObj(5).Put("fill", ((V)(string.Concat("url(#", ToStr(id_9825), ")")))).Put("stroke", ((V)("#8a1a66"))).Put("stroke-width", ((V)(0.22))).Put("stroke-opacity", ((V)(0.6))).Put("stroke-linejoin", ((V)("round"))).V, V.Null, g0_9828)).Put("sh", Call(P0_9712, V.Undef, NewObj(2).Put("fill", ((V)("#2a4a1a"))).Put("opacity", ((V)(0.13))).V, V.Null, g0_9828)).V;
+return NewObj(5).Put("gr", gr_9826).Put("st", st_9827).Put("g", g0_9828).Put("e", Call(P0_9712, V.Undef, NewObj(5).Put("fill", ((V)(JsStrBuf.Begin().S("url(#").V(id_9825).S(")").End()))).Put("stroke", ((V)("#8a1a66"))).Put("stroke-width", ((V)(0.22))).Put("stroke-opacity", ((V)(0.6))).Put("stroke-linejoin", ((V)("round"))).V, V.Null, g0_9828)).Put("sh", Call(P0_9712, V.Undef, NewObj(2).Put("fill", ((V)("#2a4a1a"))).Put("opacity", ((V)(0.13))).V, V.Null, g0_9828)).V;
 return default;
 }, 1, "", true);
 BR_9721 = Arr();
@@ -14944,8 +14944,8 @@ tB_9916 = Call(G0_9905, V.Undef, (Truthy(bodyQ_9909) ? Get(bodyQ_9909, "e") : Ge
 tF_9917 = Call(G0_9905, V.Undef, (Truthy(bodyQ_9909) ? Get(Get(bodyQ_9909, "e"), "nextSibling") : Get(sk_9894, "e")));
 tdf_9918 = Invoke(G("document"), "createElementNS", NSv_9893, ((V)("defs")));
 Invoke(par_9895, "insertBefore", tdf_9918, Get(par_9895, "firstChild"));
-Set(tdf_9918, "innerHTML", ((V)(string.Concat("<radialGradient id=\"hnt", ToStr(Get(I_5549, "u")), "\" cx=\"38%\" cy=\"32%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.65\" stop-color=\"#fbfaff\"/><stop offset=\"1\" stop-color=\"#ddd5f0\"/></radialGradient>"))));
-tl_9919 = Call(P0_9904, V.Undef, NewObj(3).Put("fill", ((V)(string.Concat("url(#hnt", ToStr(Get(I_5549, "u")), ")")))).Put("stroke", ((V)("#d4cbea"))).Put("stroke-width", ((V)(0.5))).V, V.Null, tB_9916);
+Set(tdf_9918, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"hnt").V(Get(I_5549, "u")).S("\" cx=\"38%\" cy=\"32%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.65\" stop-color=\"#fbfaff\"/><stop offset=\"1\" stop-color=\"#ddd5f0\"/></radialGradient>").End())));
+tl_9919 = Call(P0_9904, V.Undef, NewObj(3).Put("fill", ((V)(JsStrBuf.Begin().S("url(#hnt").V(Get(I_5549, "u")).S(")").End()))).Put("stroke", ((V)("#d4cbea"))).Put("stroke-width", ((V)(0.5))).V, V.Null, tB_9916);
 hp2_9920 = (Truthy(hair_9910) ? Get(Get(hair_9910, "e"), "parentNode") : par_9895);
 rf2_9921 = (Truthy(hair_9910) ? Get(Get(hair_9910, "e"), "nextSibling") : V.Null);
 rim_9922 = Call(P0_9904, V.Undef, NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#fbf9ff"))).Put("stroke-width", ((V)(2.6))).Put("stroke-linecap", ((V)("round"))).V, rf2_9921, hp2_9920);
@@ -15122,7 +15122,7 @@ return default;
 }, 1, "", true));
 df_10125 = Invoke(G("document"), "createElementNS", NSv_10110, ((V)("defs")));
 Invoke(par_10112, "insertBefore", df_10125, Get(par_10112, "firstChild"));
-Set(df_10125, "innerHTML", ((V)(string.Concat("<radialGradient id=\"pxh", ToStr(Get(I_5549, "u")), "\" gradientUnits=\"userSpaceOnUse\" cx=\"40\" cy=\"30\" r=\"30\"><stop offset=\"0\" stop-color=\"#ffe2f6\"/><stop offset=\"0.6\" stop-color=\"#ff92d4\"/><stop offset=\"1\" stop-color=\"#d4549e\"/></radialGradient>"))));
+Set(df_10125, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"pxh").V(Get(I_5549, "u")).S("\" gradientUnits=\"userSpaceOnUse\" cx=\"40\" cy=\"30\" r=\"30\"><stop offset=\"0\" stop-color=\"#ffe2f6\"/><stop offset=\"0.6\" stop-color=\"#ff92d4\"/><stop offset=\"1\" stop-color=\"#d4549e\"/></radialGradient>").End())));
 wgB_10126 = Call(G0_10114, V.Undef, Get(par_10112, "firstChild"));
 hairB_10127 = Call(G0_10114, V.Undef, Get(sk_10111, "e"));
 earB_10128 = Call(G0_10114, V.Undef, Get(sk_10111, "e"));
@@ -15131,7 +15131,7 @@ hairF_10130 = Call(G0_10114, V.Undef, @ref_10129);
 earF_10131 = Call(G0_10114, V.Undef, @ref_10129);
 bunG_10132 = Call(G0_10114, V.Undef, @ref_10129);
 wgF_10133 = Call(G0_10114, V.Undef, V.Null, bodyG_5561);
-HU_10134 = ((V)(string.Concat("url(#pxh", ToStr(Get(I_5549, "u")), ")")));
+HU_10134 = ((V)(JsStrBuf.Begin().S("url(#pxh").V(Get(I_5549, "u")).S(")").End()));
 hB_10135 = Call(P0_10113, V.Undef, NewObj(1).Put("fill", HU_10134).V, V.Null, hairB_10127);
 hF_10136 = Call(P0_10113, V.Undef, NewObj(1).Put("fill", HU_10134).V, V.Null, hairF_10130);
 hS_10137 = Call(P0_10113, V.Undef, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#e468b0"))).Put("stroke-width", ((V)(0.6))).Put("opacity", ((V)(0.7))).Put("stroke-linecap", ((V)("round"))).V, V.Null, hairF_10130);
@@ -15543,7 +15543,7 @@ return default;
 }, 2, "", true);
 kd_10532 = Invoke(G("document"), "createElementNS", NSv_10300, ((V)("defs")));
 Invoke(par_10302, "insertBefore", kd_10532, Get(par_10302, "firstChild"));
-Set(kd_10532, "innerHTML", ((V)(string.Concat("<radialGradient id=\"wcg", ToStr(Get(I_5549, "u")), "\" cx=\"36%\" cy=\"32%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#fff2a8\"/><stop offset=\"0.6\" stop-color=\"#ffc83a\"/><stop offset=\"1\" stop-color=\"#d08a10\"/></radialGradient>"))));
+Set(kd_10532, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"wcg").V(Get(I_5549, "u")).S("\" cx=\"36%\" cy=\"32%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#fff2a8\"/><stop offset=\"0.6\" stop-color=\"#ffc83a\"/><stop offset=\"1\" stop-color=\"#d08a10\"/></radialGradient>").End())));
 gb_10533 = Call(G0_10306, V.Undef, par_10302, Get(Get(sk_10301, "e"), "nextSibling"));
 mkB_10534 = Fn((V _self5542, int _argc10668, V fn_10674, V nu_10675, V nv_10676, V C_10677, V[] _rest10669) => {
 return NewObj(5).Put("fn", fn_10674).Put("nu", nu_10675).Put("nv", nv_10676).Put("C", C_10677).Put("F", Array_from(NewObj(1).Put("length", nu_10675).V, Fn((V _self5542, int _argc10678, V _a10680, V _a10681, V _a10682, V _a10683, V[] _rest10679) => {
@@ -15553,7 +15553,7 @@ return Call(P0_10305, V.Undef, NewObj(2).Put("stroke-width", ((V)(0.45))).Put("s
 DK_10535 = Arr(Arr(((V)(20D)), ((V)(12D)), ((V)(22D))), Arr(((V)(46D)), ((V)(34D)), ((V)(47D))), Arr(((V)(112D)), ((V)(96D)), ((V)(112D))));
 BT_10536 = Arr(Arr(((V)(24D)), ((V)(10D)), ((V)(17D))), Arr(((V)(44D)), ((V)(22D)), ((V)(32D))), Arr(((V)(104D)), ((V)(76D)), ((V)(90D))));
 gk_10537 = Call(G0_10306, V.Undef, par_10302, Get(gb_10533, "nextSibling"));
-Set(D_10307, "wc", NewObj(4).Put("B", Arr(Call(mkB_10534, V.Undef, Call(panel_10530, V.Undef, ((V)((-1D)))), ((V)(10D)), ((V)(8D)), DK_10535), Call(mkB_10534, V.Undef, Call(panel_10530, V.Undef, ((V)(1D))), ((V)(10D)), ((V)(8D)), DK_10535), Call(mkB_10534, V.Undef, belt_10531, ((V)(60D)), ((V)(3D)), BT_10536))).Put("SP", SP_10529).Put("bk", NewObj(4).Put("rim", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)("#b07800"))).V, gk_10537)).Put("fc", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#wcg", ToStr(Get(I_5549, "u")), ")")))).V, gk_10537)).Put("st", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)("#e2263a"))).V, gk_10537)).Put("hl", Call(P0_10305, V.Undef, NewObj(2).Put("fill", ((V)("#fffbe0"))).Put("opacity", ((V)(0.55))).V, gk_10537)).V).Put("STAR", Arr(Arr(((V)(50D)), ((V)(71.7))), Arr(((V)(50.76)), ((V)(73.65))), Arr(((V)(52.85)), ((V)(73.77))), Arr(((V)(51.24)), ((V)(75.1))), Arr(((V)(51.76)), ((V)(77.13))), Arr(((V)(50D)), ((V)(76D))), Arr(((V)(48.24)), ((V)(77.13))), Arr(((V)(48.76)), ((V)(75.1))), Arr(((V)(47.15)), ((V)(73.77))), Arr(((V)(49.24)), ((V)(73.65))))).V);
+Set(D_10307, "wc", NewObj(4).Put("B", Arr(Call(mkB_10534, V.Undef, Call(panel_10530, V.Undef, ((V)((-1D)))), ((V)(10D)), ((V)(8D)), DK_10535), Call(mkB_10534, V.Undef, Call(panel_10530, V.Undef, ((V)(1D))), ((V)(10D)), ((V)(8D)), DK_10535), Call(mkB_10534, V.Undef, belt_10531, ((V)(60D)), ((V)(3D)), BT_10536))).Put("SP", SP_10529).Put("bk", NewObj(4).Put("rim", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)("#b07800"))).V, gk_10537)).Put("fc", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#wcg").V(Get(I_5549, "u")).S(")").End()))).V, gk_10537)).Put("st", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)("#e2263a"))).V, gk_10537)).Put("hl", Call(P0_10305, V.Undef, NewObj(2).Put("fill", ((V)("#fffbe0"))).Put("opacity", ((V)(0.55))).V, gk_10537)).V).Put("STAR", Arr(Arr(((V)(50D)), ((V)(71.7))), Arr(((V)(50.76)), ((V)(73.65))), Arr(((V)(52.85)), ((V)(73.77))), Arr(((V)(51.24)), ((V)(75.1))), Arr(((V)(51.76)), ((V)(77.13))), Arr(((V)(50D)), ((V)(76D))), Arr(((V)(48.24)), ((V)(77.13))), Arr(((V)(48.76)), ((V)(75.1))), Arr(((V)(47.15)), ((V)(73.77))), Arr(((V)(49.24)), ((V)(73.65))))).V);
 Invoke(Arr(((V)((-1D))), ((V)(1D))), "forEach", Fn((V _self5542, int _argc10684, V sd_10690, V _a10687, V _a10688, V _a10689, V[] _rest10685) => {
 V P_10691 = default;
 V E_10692 = default;
@@ -15819,7 +15819,7 @@ return default;
 }, 1, "", true));
 df2_10965 = Invoke(G("document"), "createElementNS", NSv_10300, ((V)("defs")));
 Invoke(par_10302, "insertBefore", df2_10965, Get(par_10302, "firstChild"));
-Set(df2_10965, "innerHTML", ((V)(string.Concat("<radialGradient id=\"ltf", ToStr(Get(I_5549, "u")), "\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#e8923e\"/><stop offset=\"0.6\" stop-color=\"#b25a1a\"/><stop offset=\"1\" stop-color=\"#7e3c10\"/></radialGradient>"))));
+Set(df2_10965, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"ltf").V(Get(I_5549, "u")).S("\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#e8923e\"/><stop offset=\"0.6\" stop-color=\"#b25a1a\"/><stop offset=\"1\" stop-color=\"#7e3c10\"/></radialGradient>").End())));
 TP_10966 = Arr(Arr(((V)(0D)), ((V)(85D)), ((V)((-15.5)))), Arr(((V)(14D)), ((V)(94D)), ((V)((-17D)))), Arr(((V)(38D)), ((V)(81D)), ((V)((-8D)))), Arr(((V)(34D)), ((V)(63D)), ((V)((-3D)))));
 tl_10967 = Call(tube_10308, V.Undef, NewObj(7).Put("h", ((V)(0D))).Put("bb", ((V)(1D))).Put("fill", Get(D_10307, "HF")).Put("n", ((V)(12D))).Put("wk", ((V)("tail"))).Put("w", Fn((V _self5542, int _argc11001, V s_11007, V _a11004, V _a11005, V _a11006, V[] _rest11002) => {
 return ((V)((2.5 - (0.7 * ToNum(s_11007)))));
@@ -15845,8 +15845,8 @@ wig_11023 = (((FdLibm.Sin(((ToNum(Get(S_11015, "ts")) * 3.1) - (ToNum(s_11014) *
 return Arr(((V)(((ToNum(Add(GetIdx(GetIdx(TP_10966, 0D), 0D), ((V)((dx_11019 * ca_11021))))) - (dz_11020 * sa_11022)) + wig_11023))), ((V)((ToNum(GetIdx(b_11017, 1D)) - (((ToNum(Get(S_11015, "oy")) * 0.5) * ToNum(s_11014)) * ToNum(s_11014))))), Add(Add(GetIdx(GetIdx(TP_10966, 0D), 2D), ((V)((dx_11019 * sa_11022)))), ((V)((dz_11020 * ca_11021)))));
 return default;
 }, 2, "sp", true)).V);
-Set(D_10307, "lt", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#ltf", ToStr(Get(I_5549, "u")), ")")))).V, Get(tl_10967, "g")));
-Set(D_10307, "lt2", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#ltf", ToStr(Get(I_5549, "u")), ")")))).V, Get(tl_10967, "g")));
+Set(D_10307, "lt", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#ltf").V(Get(I_5549, "u")).S(")").End()))).V, Get(tl_10967, "g")));
+Set(D_10307, "lt2", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#ltf").V(Get(I_5549, "u")).S(")").End()))).V, Get(tl_10967, "g")));
 }
 if (SEqS(key_5552, "teddy")) {
 V bw_11032 = default;
@@ -16194,10 +16194,10 @@ return ((Get(q_11389, "inBody") is var _t11390 && !Truthy(_t11390) ? _t11390 : (
 Invoke(pq_11374, "forEach", hideQ_10304);
 kd_11375 = Invoke(G("document"), "createElementNS", NSv_10300, ((V)("defs")));
 Invoke(par_10302, "insertBefore", kd_11375, Get(par_10302, "firstChild"));
-Set(kd_11375, "innerHTML", ((V)(string.Concat(new string[] { "<radialGradient id=\"kpt", ToStr(Get(I_5549, "u")), "\" cx=\"36%\" cy=\"30%\" r=\"78%\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.5\" stop-color=\"#fff2f8\"/><stop offset=\"1\" stop-color=\"#e3c8de\"/></radialGradient><radialGradient id=\"kcn", ToStr(Get(I_5549, "u")), "\" cx=\"36%\" cy=\"32%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#fff8c8\"/><stop offset=\"0.55\" stop-color=\"#ffd23a\"/><stop offset=\"1\" stop-color=\"#d8930a\"/></radialGradient>" }))));
+Set(kd_11375, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"kpt").V(Get(I_5549, "u")).S("\" cx=\"36%\" cy=\"30%\" r=\"78%\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.5\" stop-color=\"#fff2f8\"/><stop offset=\"1\" stop-color=\"#e3c8de\"/></radialGradient><radialGradient id=\"kcn").V(Get(I_5549, "u")).S("\" cx=\"36%\" cy=\"32%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#fff8c8\"/><stop offset=\"0.55\" stop-color=\"#ffd23a\"/><stop offset=\"1\" stop-color=\"#d8930a\"/></radialGradient>").End())));
 pg_11376 = Call(G0_10306, V.Undef, Get(D_10307, "gB"), Get(Get(D_10307, "gB"), "firstChild"));
 Set(D_10307, "kp", NewObj(4).Put("cx", Get(D_10307, "HX")).Put("cy", Get(D_10307, "HY")).Put("z", ((V)((-8D)))).Put("L", Invoke(pq_11374, "map", Fn((V _self5542, int _argc11392, V q_11398, V _a11395, V _a11396, V _a11397, V[] _rest11393) => {
-return NewObj(4).Put("a", ((V)(FdLibm.Atan2((ToNum(Get(q_11398, "oy")) - ToNum(Get(D_10307, "HY"))), (ToNum(Get(q_11398, "ox")) - ToNum(Get(D_10307, "HX"))))))).Put("d", ((V)(Hypot((ToNum(Get(q_11398, "ox")) - ToNum(Get(D_10307, "HX"))), (ToNum(Get(q_11398, "oy")) - ToNum(Get(D_10307, "HY"))))))).Put("r", Get(q_11398, "rx")).Put("e", Call(P0_10305, V.Undef, NewObj(3).Put("fill", ((V)(string.Concat("url(#kpt", ToStr(Get(I_5549, "u")), ")")))).Put("stroke", ((V)("#e6cce0"))).Put("stroke-width", ((V)(0.35))).V, pg_11376)).V;
+return NewObj(4).Put("a", ((V)(FdLibm.Atan2((ToNum(Get(q_11398, "oy")) - ToNum(Get(D_10307, "HY"))), (ToNum(Get(q_11398, "ox")) - ToNum(Get(D_10307, "HX"))))))).Put("d", ((V)(Hypot((ToNum(Get(q_11398, "ox")) - ToNum(Get(D_10307, "HX"))), (ToNum(Get(q_11398, "oy")) - ToNum(Get(D_10307, "HY"))))))).Put("r", Get(q_11398, "rx")).Put("e", Call(P0_10305, V.Undef, NewObj(3).Put("fill", ((V)(JsStrBuf.Begin().S("url(#kpt").V(Get(I_5549, "u")).S(")").End()))).Put("stroke", ((V)("#e6cce0"))).Put("stroke-width", ((V)(0.35))).V, pg_11376)).V;
 }, 1, "", true))).V);
 Invoke(Invoke(items_5572, "filter", Fn((V _self5542, int _argc11399, V q_11405, V _a11402, V _a11403, V _a11404, V[] _rest11400) => {
 return ((SEqS(Get(q_11405, "fill"), "#ff7a5c") ? V.True : V.False) is var _t11406 && !Truthy(_t11406) ? _t11406 : Invoke(NewRegExp(RX89, "^M ?34 20", ""), "test", Call(dOf_10303, V.Undef, q_11405)));
@@ -16244,7 +16244,7 @@ V g_11481 = default;
 Call(hideQ_10304, V.Undef, cq_11381);
 Call(hideQ_10304, V.Undef, rq_11382);
 g_11481 = Call(G0_10306, V.Undef, Get(D_10307, "gB"));
-Set(D_10307, "kc", NewObj(6).Put("h", ((V)(0D))).Put("g", g_11481).Put("rim", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)("#c98a00"))).V, g_11481)).Put("fc", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#kcn", ToStr(Get(I_5549, "u")), ")")))).V, g_11481)).Put("hl", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)("#fffbe0"))).V, g_11481)).Put("sq", Call(P0_10305, V.Undef, NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#b07800"))).Put("stroke-width", ((V)(1.2))).Put("stroke-linejoin", ((V)("round"))).V, g_11481)).V);
+Set(D_10307, "kc", NewObj(6).Put("h", ((V)(0D))).Put("g", g_11481).Put("rim", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)("#c98a00"))).V, g_11481)).Put("fc", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#kcn").V(Get(I_5549, "u")).S(")").End()))).V, g_11481)).Put("hl", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)("#fffbe0"))).V, g_11481)).Put("sq", Call(P0_10305, V.Undef, NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#b07800"))).Put("stroke-width", ((V)(1.2))).Put("stroke-linejoin", ((V)("round"))).V, g_11481)).V);
 }
 }
 if (SEqS(key_5552, "acorn")) {
@@ -16654,8 +16654,8 @@ return default;
 }, 1, "", true));
 df_11965 = Invoke(G("document"), "createElementNS", NSv_10300, ((V)("defs")));
 Invoke(par_10302, "insertBefore", df_11965, Get(par_10302, "firstChild"));
-Set(df_11965, "innerHTML", ((V)(string.Concat(new string[] { "<radialGradient id=\"emg", ToStr(Get(I_5549, "u")), "\"><stop offset=\"0.45\" stop-color=\"#ffb347\" stop-opacity=\"0.5\"/><stop offset=\"1\" stop-color=\"#ff7a1a\" stop-opacity=\"0\"/></radialGradient>", "<linearGradient id=\"emp", ToStr(Get(I_5549, "u")), "\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#fff2a0\"/><stop offset=\"0.3\" stop-color=\"#ffc23a\"/><stop offset=\"0.72\" stop-color=\"#ff7a2a\"/><stop offset=\"1\" stop-color=\"#e0402a\"/></linearGradient>" }))));
-Set(D_10307, "glow", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#emg", ToStr(Get(I_5549, "u")), ")")))).V, Get(D_10307, "gB")));
+Set(df_11965, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"emg").V(Get(I_5549, "u")).S("\"><stop offset=\"0.45\" stop-color=\"#ffb347\" stop-opacity=\"0.5\"/><stop offset=\"1\" stop-color=\"#ff7a1a\" stop-opacity=\"0\"/></radialGradient>").S("<linearGradient id=\"emp").V(Get(I_5549, "u")).S("\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#fff2a0\"/><stop offset=\"0.3\" stop-color=\"#ffc23a\"/><stop offset=\"0.72\" stop-color=\"#ff7a2a\"/><stop offset=\"1\" stop-color=\"#e0402a\"/></linearGradient>").End())));
+Set(D_10307, "glow", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#emg").V(Get(I_5549, "u")).S(")").End()))).V, Get(D_10307, "gB")));
 {
 V fxB_11980 = default;
 V fxF_11981 = default;
@@ -16668,15 +16668,15 @@ fxF_11981 = Call(G0_10306, V.Undef, root_5550, V.Null);
 L3_11982 = Fn((V _self5542, int _argc11986, V g_11992, V _a11989, V _a11990, V _a11991, V[] _rest11987) => {
 return Arr(Call(P0_10305, V.Undef, NewObj(2).Put("fill", ((V)("#ff3a12"))).Put("opacity", ((V)(0.8))).V, g_11992), Call(P0_10305, V.Undef, NewObj(2).Put("fill", ((V)("#ff9a22"))).Put("opacity", ((V)(0.92))).V, g_11992), Call(P0_10305, V.Undef, NewObj(2).Put("fill", ((V)("#fff1a0"))).Put("opacity", ((V)(0.95))).V, g_11992));
 }, 1, "", true);
-gB_11983 = Call(P0_10305, V.Undef, NewObj(2).Put("fill", ((V)(string.Concat("url(#emg", ToStr(Get(I_5549, "u")), ")")))).Put("opacity", ((V)(0D))).V, fxB_11980);
+gB_11983 = Call(P0_10305, V.Undef, NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#emg").V(Get(I_5549, "u")).S(")").End()))).Put("opacity", ((V)(0D))).V, fxB_11980);
 ring_11984 = Call(P0_10305, V.Undef, NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffb03a"))).Put("stroke-width", ((V)(1.6))).Put("opacity", ((V)(0D))).V, fxB_11980);
-gF_11985 = Call(P0_10305, V.Undef, NewObj(2).Put("fill", ((V)(string.Concat("url(#emg", ToStr(Get(I_5549, "u")), ")")))).Put("opacity", ((V)(0D))).V, fxF_11981);
+gF_11985 = Call(P0_10305, V.Undef, NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#emg").V(Get(I_5549, "u")).S(")").End()))).Put("opacity", ((V)(0D))).V, fxF_11981);
 Set(D_10307, "ff", NewObj(5).Put("B", Call(L3_11982, V.Undef, fxB_11980)).Put("F", Call(L3_11982, V.Undef, fxF_11981)).Put("gB", gB_11983).Put("gF", gF_11985).Put("ring", ring_11984).V);
 }
 if (Truthy(Get(I_5549, "faceG"))) {
 Set(I_5549, "emk", NewObj(4).Put("in", Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)("#7a2a40"))).Put("opacity", ((V)(0D))).V, Get(I_5549, "faceG"))).Put("lo", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)("#f08a1e"))).V, Get(I_5549, "faceG"))).Put("up", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)("#ffc04a"))).V, Get(I_5549, "faceG"))).Put("hl", Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)("#fff6e0"))).Put("opacity", ((V)(0.55))).V, Get(I_5549, "faceG"))).V);
 }
-PF_11966 = ((V)(string.Concat("url(#emp", ToStr(Get(I_5549, "u")), ")")));
+PF_11966 = ((V)(JsStrBuf.Begin().S("url(#emp").V(Get(I_5549, "u")).S(")").End()));
 bump_11967 = Fn((V _self5542, int _argc11993, V s_11999, V a_12000, V _a11997, V _a11998, V[] _rest11994) => {
 return ((V)((Lt(s_11999, a_12000) ? 0D : Pow(FdLibm.Sin(((System.Math.PI * (ToNum(s_11999) - ToNum(a_12000))) / (1D - ToNum(a_12000)))), 0.7))));
 }, 2, "", true);
@@ -16849,11 +16849,11 @@ return Call(ball_10310, V.Undef, NewObj(5).Put("h", ((V)(1D))).Put("fill", AU_12
 }, 1, "", true));
 gd_12087 = Invoke(G("document"), "createElementNS", NSv_10300, ((V)("defs")));
 Invoke(root_5550, "insertBefore", gd_12087, Get(root_5550, "firstChild"));
-Set(gd_12087, "innerHTML", ((V)(string.Concat("<radialGradient id=\"gng", ToStr(Get(I_5549, "u")), "\"><stop offset=\"0\" stop-color=\"#fff8d0\" stop-opacity=\"0.95\"/><stop offset=\"0.4\" stop-color=\"#ffd84a\" stop-opacity=\"0.4\"/><stop offset=\"1\" stop-color=\"#ffb020\" stop-opacity=\"0\"/></radialGradient>"))));
+Set(gd_12087, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"gng").V(Get(I_5549, "u")).S("\"><stop offset=\"0\" stop-color=\"#fff8d0\" stop-opacity=\"0.95\"/><stop offset=\"0.4\" stop-color=\"#ffd84a\" stop-opacity=\"0.4\"/><stop offset=\"1\" stop-color=\"#ffb020\" stop-opacity=\"0\"/></radialGradient>").End())));
 lG_12088 = Call(G0_10306, V.Undef, root_5550, art_5551);
 tG_12089 = Call(G0_10306, V.Undef, bodyG_5561, Get(bodyG_5561, "firstChild"));
 fG_12090 = Call(G0_10306, V.Undef, root_5550, V.Null);
-GL_12091 = ((V)(string.Concat("url(#gng", ToStr(Get(I_5549, "u")), ")")));
+GL_12091 = ((V)(JsStrBuf.Begin().S("url(#gng").V(Get(I_5549, "u")).S(")").End()));
 N_12092 = Set(I_5549, "gn", NewObj(9).Put("art", art_5551).Put("glow", Call(P0_10305, V.Undef, NewObj(2).Put("fill", GL_12091).Put("opacity", ((V)(0.4))).V, lG_12088)).Put("L", NewObj(0).V).Put("tail", Call(P0_10305, V.Undef, NewObj(1).Put("fill", WP_12081).V, tG_12089)).Put("thl", Call(P0_10305, V.Undef, NewObj(2).Put("fill", ((V)("#ffffff"))).Put("opacity", ((V)(0.2))).V, tG_12089)).Put("tsw", Call(P0_10305, V.Undef, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#f2fffb"))).Put("stroke-width", ((V)(0.6))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.55))).V, tG_12089)).Put("fgl", Call(P0_10305, V.Undef, NewObj(2).Put("fill", GL_12091).Put("opacity", ((V)(0D))).V, fG_12090)).Put("pf", Call(P0_10305, V.Undef, NewObj(2).Put("fill", ((V)("#effffa"))).Put("opacity", ((V)(0D))).V, fG_12090)).Put("spk", Call(P0_10305, V.Undef, NewObj(1).Put("fill", ((V)("#fff6c8"))).V, fG_12090)).V);
 Invoke(Arr(((V)("foot")), ((V)("belly")), ((V)("spout")), ((V)("handle")), ((V)("lid")), ((V)("knob")), ((V)("gem"))), "forEach", Fn((V _self5542, int _argc12244, V k_12250, V _a12247, V _a12248, V _a12249, V[] _rest12245) => {
 SetK(Get(N_12092, "L"), k_12250, Call(P0_10305, V.Undef, NewObj(1).Put("fill", (SEqS(k_12250, "gem") ? RB_12079 : AU_12078)).V, lG_12088));
@@ -17139,7 +17139,7 @@ V FR_12599 = default;
 Qb_12568 = Fn((V _self5542, int _argc12600, V a_12606, V b_12607, V c_12608, V s_12609, V[] _rest12601) => {
 return ((V)((((((1D - ToNum(s_12609)) * (1D - ToNum(s_12609))) * ToNum(a_12606)) + (((2D * (1D - ToNum(s_12609))) * ToNum(s_12609)) * ToNum(b_12607))) + ((ToNum(s_12609) * ToNum(s_12609)) * ToNum(c_12608)))));
 }, 4, "", true);
-U_12569 = ((V)(string.Concat("_g", ToStr(Get(I_5549, "u")))));
+U_12569 = ((V)(JsStrBuf.Begin().S("_g").V(Get(I_5549, "u")).End()));
 HR0_12570 = Get(headA_5576, "hx");
 HY0_12571 = Get(headA_5576, "cy");
 KB_12572 = 0.8;
@@ -17195,8 +17195,8 @@ bkG_12586 = Call(G0_12580, V.Undef, @ref_12577);
 wgF_12587 = Call(G0_12580, V.Undef, @ref_12577);
 df_12588 = Invoke(G("document"), "createElementNS", NSv_12578, ((V)("defs")));
 Invoke(par_12576, "insertBefore", df_12588, wgB_12581);
-Set(df_12588, "innerHTML", ((V)(string.Concat("<linearGradient id=\"tub", ToStr(Get(I_5549, "u")), "\" gradientUnits=\"userSpaceOnUse\" x1=\"17\" y1=\"0\" x2=\"83\" y2=\"0\"><stop offset=\"0\" stop-color=\"#6a3c14\" stop-opacity=\"0.5\"/><stop offset=\"0.16\" stop-color=\"#8a5422\" stop-opacity=\"0.16\"/><stop offset=\"0.32\" stop-color=\"#fff1d0\" stop-opacity=\"0.36\"/><stop offset=\"0.46\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.74\" stop-color=\"#6a3c14\" stop-opacity=\"0.08\"/><stop offset=\"1\" stop-color=\"#5a3210\" stop-opacity=\"0.55\"/></linearGradient>"))));
-bask_12589 = NewObj(7).Put("body", Call(P0_12579, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#b", ToStr(U_12569), ")")))).V, V.Null, bkG_12586)).Put("sh", Call(P0_12579, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#tub", ToStr(Get(I_5549, "u")), ")")))).V, V.Null, bkG_12586)).Put("wv", Call(P0_12579, V.Undef, NewObj(6).Put("fill", ((V)("none"))).Put("stroke", ((V)("#a86a2a"))).Put("stroke-width", ((V)(0.9))).Put("opacity", ((V)(0.6))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V, V.Null, bkG_12586)).Put("rim", Call(P0_12579, V.Undef, NewObj(4).Put("fill", ((V)("#efb470"))).Put("stroke", ((V)("#c88a4a"))).Put("stroke-width", ((V)(0.4))).Put("stroke-linejoin", ((V)("round"))).V, V.Null, bkG_12586)).Put("tw", Call(P0_12579, V.Undef, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#c88a4a"))).Put("stroke-width", ((V)(0.6))).Put("opacity", ((V)(0.75))).Put("stroke-linecap", ((V)("round"))).V, V.Null, bkG_12586)).Put("hl", Call(P0_12579, V.Undef, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffe2b0"))).Put("stroke-width", ((V)(0.8))).Put("opacity", ((V)(0.8))).Put("stroke-linecap", ((V)("round"))).V, V.Null, bkG_12586)).Put("gr", Invoke(df_12588, "querySelector", ((V)(string.Concat("#tub", ToStr(Get(I_5549, "u"))))))).V;
+Set(df_12588, "innerHTML", ((V)(JsStrBuf.Begin().S("<linearGradient id=\"tub").V(Get(I_5549, "u")).S("\" gradientUnits=\"userSpaceOnUse\" x1=\"17\" y1=\"0\" x2=\"83\" y2=\"0\"><stop offset=\"0\" stop-color=\"#6a3c14\" stop-opacity=\"0.5\"/><stop offset=\"0.16\" stop-color=\"#8a5422\" stop-opacity=\"0.16\"/><stop offset=\"0.32\" stop-color=\"#fff1d0\" stop-opacity=\"0.36\"/><stop offset=\"0.46\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.74\" stop-color=\"#6a3c14\" stop-opacity=\"0.08\"/><stop offset=\"1\" stop-color=\"#5a3210\" stop-opacity=\"0.55\"/></linearGradient>").End())));
+bask_12589 = NewObj(7).Put("body", Call(P0_12579, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#b").V(U_12569).S(")").End()))).V, V.Null, bkG_12586)).Put("sh", Call(P0_12579, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#tub").V(Get(I_5549, "u")).S(")").End()))).V, V.Null, bkG_12586)).Put("wv", Call(P0_12579, V.Undef, NewObj(6).Put("fill", ((V)("none"))).Put("stroke", ((V)("#a86a2a"))).Put("stroke-width", ((V)(0.9))).Put("opacity", ((V)(0.6))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V, V.Null, bkG_12586)).Put("rim", Call(P0_12579, V.Undef, NewObj(4).Put("fill", ((V)("#efb470"))).Put("stroke", ((V)("#c88a4a"))).Put("stroke-width", ((V)(0.4))).Put("stroke-linejoin", ((V)("round"))).V, V.Null, bkG_12586)).Put("tw", Call(P0_12579, V.Undef, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#c88a4a"))).Put("stroke-width", ((V)(0.6))).Put("opacity", ((V)(0.75))).Put("stroke-linecap", ((V)("round"))).V, V.Null, bkG_12586)).Put("hl", Call(P0_12579, V.Undef, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffe2b0"))).Put("stroke-width", ((V)(0.8))).Put("opacity", ((V)(0.8))).Put("stroke-linecap", ((V)("round"))).V, V.Null, bkG_12586)).Put("gr", Invoke(df_12588, "querySelector", ((V)(JsStrBuf.Begin().S("#tub").V(Get(I_5549, "u")).End())))).V;
 WO_12590 = Arr(Arr(((V)(34D)), ((V)(42D))));
 Invoke(Arr(Arr(Arr(((V)(34D)), ((V)(42D))), Arr(((V)(12D)), ((V)(18D))), Arr(((V)(6D)), ((V)(34D))), ((V)(10D))), Arr(Arr(((V)(6D)), ((V)(34D))), Arr(((V)(4D)), ((V)(50D))), Arr(((V)(31D)), ((V)(52D))), ((V)(8D)))), "forEach", Fn((V _self5542, int _argc12655, V _a12657, V _a12658, V _a12659, V _a12660, V[] _rest12656) => {
 V a_12663 = default;
@@ -17240,7 +17240,7 @@ return Arr(((V)((32.5 - ToNum(x_12681)))), ((V)((ToNum(y_12683) - 47D))));
 WG_12592 = Invoke(Arr(((V)((-1D))), ((V)(1D))), "map", Fn((V _self5542, int _argc12684, V sd_12690, V _a12687, V _a12688, V _a12689, V[] _rest12685) => {
 V g0_12691 = default;
 g0_12691 = Call(G0_12580, V.Undef, V.Null, wgB_12581);
-return NewObj(4).Put("sd", sd_12690).Put("g", g0_12691).Put("e", Call(P0_12579, V.Undef, NewObj(5).Put("fill", ((V)(string.Concat("url(#w", ToStr(U_12569), ")")))).Put("opacity", ((V)(0.85))).Put("stroke", ((V)("#b8dcf8"))).Put("stroke-width", ((V)(0.8))).Put("stroke-linejoin", ((V)("round"))).V, V.Null, g0_12691)).Put("vn", Call(P0_12579, V.Undef, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffffff"))).Put("stroke-width", ((V)(0.6))).Put("opacity", ((V)(0.75))).Put("stroke-linecap", ((V)("round"))).V, V.Null, g0_12691)).V;
+return NewObj(4).Put("sd", sd_12690).Put("g", g0_12691).Put("e", Call(P0_12579, V.Undef, NewObj(5).Put("fill", ((V)(JsStrBuf.Begin().S("url(#w").V(U_12569).S(")").End()))).Put("opacity", ((V)(0.85))).Put("stroke", ((V)("#b8dcf8"))).Put("stroke-width", ((V)(0.8))).Put("stroke-linejoin", ((V)("round"))).V, V.Null, g0_12691)).Put("vn", Call(P0_12579, V.Undef, NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffffff"))).Put("stroke-width", ((V)(0.6))).Put("opacity", ((V)(0.75))).Put("stroke-linecap", ((V)("round"))).V, V.Null, g0_12691)).V;
 return default;
 }, 1, "", true));
 LV_12593 = Invoke(Arr(((V)((-1D))), ((V)(1D))), "map", Fn((V _self5542, int _argc12692, V sd_12698, V _a12695, V _a12696, V _a12697, V[] _rest12693) => {
@@ -17265,7 +17265,7 @@ y_12711 = _t12710; }
 { V _t12712 = GetIdx(_t12707, 2D);
 z_12713 = _t12712; }
 }
-return NewObj(6).Put("x", x_12709).Put("y", y_12711).Put("z", z_12713).Put("r", ((V)(4D))).Put("e", Call(P0_12579, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#ch", ToStr(U_12569), ")")))).V, V.Null, cg_12594)).Put("gl", Call(P0_12579, V.Undef, NewObj(2).Put("fill", ((V)("#ffffff"))).Put("opacity", ((V)(0.6))).V, V.Null, cg_12594)).V;
+return NewObj(6).Put("x", x_12709).Put("y", y_12711).Put("z", z_12713).Put("r", ((V)(4D))).Put("e", Call(P0_12579, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#ch").V(U_12569).S(")").End()))).V, V.Null, cg_12594)).Put("gl", Call(P0_12579, V.Undef, NewObj(2).Put("fill", ((V)("#ffffff"))).Put("opacity", ((V)(0.6))).V, V.Null, cg_12594)).V;
 }, 1, "", true));
 og_12597 = Call(G0_12580, V.Undef, V.Null, crF_12584);
 OR_12598 = NewObj(9).Put("g", og_12597).Put("c", Arr(((V)(10D)), ((V)(22D)), ((V)(1D)))).Put("r", ((V)(6D))).Put("th", ((V)(2.4))).Put("edge", Call(P0_12579, V.Undef, NewObj(1).Put("fill", ((V)("#e8901e"))).V, V.Null, og_12597)).Put("rind", Call(P0_12579, V.Undef, NewObj(1).Put("fill", ((V)("#ffad3a"))).V, V.Null, og_12597)).Put("fl", Call(P0_12579, V.Undef, NewObj(1).Put("fill", ((V)("#ffd67a"))).V, V.Null, og_12597)).Put("sg", Call(P0_12579, V.Undef, NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffad3a"))).Put("stroke-width", ((V)(0.6))).Put("stroke-linecap", ((V)("round"))).V, V.Null, og_12597)).Put("gl", Call(P0_12579, V.Undef, NewObj(2).Put("fill", ((V)("#ffffff"))).Put("opacity", ((V)(0.45))).V, V.Null, og_12597)).V;
@@ -17289,7 +17289,7 @@ gid_12728 = _t12727; }
 sd_12730 = _t12729; }
 }
 g0_12731 = Call(G0_12580, V.Undef, V.Null, frF_12585);
-return NewObj(8).Put("x", x_12722).Put("y", y_12724).Put("r", r_12726).Put("sd", sd_12730).Put("g", g0_12731).Put("e", Call(P0_12579, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#", ToStr(gid_12728), ToStr(U_12569), ")")))).V, V.Null, g0_12731)).Put("gl", Call(P0_12579, V.Undef, NewObj(2).Put("fill", ((V)("#ffffff"))).Put("opacity", ((V)(0.55))).V, V.Null, g0_12731)).Put("st", Call(P0_12579, V.Undef, NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#6a4a2a"))).Put("stroke-width", ((V)(1D))).Put("stroke-linecap", ((V)("round"))).V, V.Null, g0_12731)).V;
+return NewObj(8).Put("x", x_12722).Put("y", y_12724).Put("r", r_12726).Put("sd", sd_12730).Put("g", g0_12731).Put("e", Call(P0_12579, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#").V(gid_12728).V(U_12569).S(")").End()))).V, V.Null, g0_12731)).Put("gl", Call(P0_12579, V.Undef, NewObj(2).Put("fill", ((V)("#ffffff"))).Put("opacity", ((V)(0.55))).V, V.Null, g0_12731)).Put("st", Call(P0_12579, V.Undef, NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#6a4a2a"))).Put("stroke-width", ((V)(1D))).Put("stroke-linecap", ((V)("round"))).V, V.Null, g0_12731)).V;
 return default;
 }, 1, "", true));
 Set(I_5549, "tu", NewObj(23).Put("bodyG", bodyG_5561).Put("rT", rB_12573).Put("rB", rB_12573).Put("KB", ((V)(KB_12572))).Put("zAt", zAt_12574).Put("ya", ((V)(60D))).Put("yb", ((V)(90D))).Put("rx", ((V)(33D))).Put("WL", WL_12591).Put("WG", WG_12592).Put("LV", LV_12593).Put("cg", cg_12594).Put("stm", stm_12595).Put("CH", CH_12596).Put("OR", OR_12598).Put("FR", FR_12599).Put("bask", bask_12589).Put("wgB", wgB_12581).Put("wgF", wgF_12587).Put("crB", crB_12582).Put("crF", crF_12584).Put("frB", frB_12583).Put("frF", frF_12585).V);
@@ -17429,9 +17429,9 @@ return default;
 fq_12753 = Invoke(items_5572, "find", Fn((V _self5542, int _argc12875, V q0_12881, V _a12878, V _a12879, V _a12880, V[] _rest12876) => {
 return (Get(q0_12881, "inBody") is var _t12882 && !Truthy(_t12882) ? _t12882 : Invoke(NewRegExp(RX51, "^url\\(#g_", ""), "test", Get(q0_12881, "fill")));
 }, 1, "", true));
-Set(Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551), "innerHTML", ((V)(string.Concat(new string[] { "<linearGradient id=\"mlt", ToStr(ud_12750), "\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#e83c5c\"/><stop offset=\"0.35\" stop-color=\"#ff8fa3\"/><stop offset=\"0.7\" stop-color=\"#ff6a82\"/><stop offset=\"1\" stop-color=\"#d8324f\"/></linearGradient><radialGradient id=\"mlr", ToStr(ud_12750), "\" cx=\"35%\" cy=\"25%\" r=\"85%\"><stop offset=\"0\" stop-color=\"#b4f09a\"/><stop offset=\"0.55\" stop-color=\"#62bf52\"/><stop offset=\"1\" stop-color=\"#358a32\"/></radialGradient>" }))));
-rf_12754 = Call(P0_12752, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#mlr", ToStr(ud_12750), ")")))).V, @ref_12749);
-tp_12755 = Call(P0_12752, V.Undef, NewObj(1).Put("fill", ((V)(string.Concat("url(#mlt", ToStr(ud_12750), ")")))).V, rf_12754);
+Set(Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551), "innerHTML", ((V)(JsStrBuf.Begin().S("<linearGradient id=\"mlt").V(ud_12750).S("\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#e83c5c\"/><stop offset=\"0.35\" stop-color=\"#ff8fa3\"/><stop offset=\"0.7\" stop-color=\"#ff6a82\"/><stop offset=\"1\" stop-color=\"#d8324f\"/></linearGradient><radialGradient id=\"mlr").V(ud_12750).S("\" cx=\"35%\" cy=\"25%\" r=\"85%\"><stop offset=\"0\" stop-color=\"#b4f09a\"/><stop offset=\"0.55\" stop-color=\"#62bf52\"/><stop offset=\"1\" stop-color=\"#358a32\"/></radialGradient>").End())));
+rf_12754 = Call(P0_12752, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#mlr").V(ud_12750).S(")").End()))).V, @ref_12749);
+tp_12755 = Call(P0_12752, V.Undef, NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#mlt").V(ud_12750).S(")").End()))).V, rf_12754);
 tsd_12756 = Call(P0_12752, V.Undef, NewObj(2).Put("fill", ((V)("#3a2340"))).Put("opacity", ((V)(0.85))).V, rf_12754);
 str_12757 = Call(P0_12752, V.Undef, NewObj(6).Put("fill", ((V)("none"))).Put("stroke", ((V)("#2f7a2a"))).Put("stroke-width", ((V)(1.5))).Put("opacity", ((V)(0.6))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V, @ref_12749);
 wr_12758 = Call(P0_12752, V.Undef, NewObj(1).Put("fill", ((V)("#f6ffe8"))).V, @ref_12749);
@@ -17454,26 +17454,26 @@ V fl_12900 = default;
 V zg_12901 = default;
 V gl_12902 = default;
 V ln_12903 = default;
-OpSet(xd_5607, "innerHTML", 0, ((V)(string.Concat(new string[] { "<radialGradient id=\"zau", ToStr(u0_5608), "\"><stop offset=\"0\" stop-color=\"#fff6a0\" stop-opacity=\"0.9\"/><stop offset=\"0.6\" stop-color=\"#ffe14a\" stop-opacity=\"0.35\"/><stop offset=\"1\" stop-color=\"#ffe14a\" stop-opacity=\"0\"/></radialGradient><filter id=\"zgl", ToStr(u0_5608), "\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\"><feGaussianBlur stdDeviation=\"1.3\"/></filter>" }))));
+OpSet(xd_5607, "innerHTML", 0, ((V)(JsStrBuf.Begin().S("<radialGradient id=\"zau").V(u0_5608).S("\"><stop offset=\"0\" stop-color=\"#fff6a0\" stop-opacity=\"0.9\"/><stop offset=\"0.6\" stop-color=\"#ffe14a\" stop-opacity=\"0.35\"/><stop offset=\"1\" stop-color=\"#ffe14a\" stop-opacity=\"0\"/></radialGradient><filter id=\"zgl").V(u0_5608).S("\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\"><feGaussianBlur stdDeviation=\"1.3\"/></filter>").End())));
 mr0_12897 = (Truthy(Get(I_5549, "spk")) ? Get(Get(I_5549, "spk"), "r0") : ((V)(30D)));
 mr1_12898 = (Truthy(Get(I_5549, "spk")) ? Get(Get(I_5549, "spk"), "r1") : ((V)(36D)));
-OpSet(xd_5607, "innerHTML", 0, ((V)(string.Concat(new string[] { "<radialGradient id=\"zmg", ToStr(u0_5608), "\" gradientUnits=\"userSpaceOnUse\" cx=\"50\" cy=\"54\" r=\"90\"><stop offset=\"0\" stop-color=\"#000\"/><stop offset=\"", ToStr(Invoke(((V)(((ToNum(mr0_12897) - 6D) / 90D))), "toFixed", ((V)(3D)))), "\" stop-color=\"#000\"/><stop offset=\"", ToStr(Invoke(((V)(((ToNum(mr0_12897) - 1D) / 90D))), "toFixed", ((V)(3D)))), "\" stop-color=\"#555\"/><stop offset=\"", ToStr(Invoke(((V)((ToNum(Add(mr1_12898, ((V)(5D)))) / 90D))), "toFixed", ((V)(3D)))), "\" stop-color=\"#fff\"/><stop offset=\"1\" stop-color=\"#fff\"/></radialGradient><mask id=\"zmk", ToStr(u0_5608), "\" maskUnits=\"userSpaceOnUse\" x=\"-60\" y=\"-60\" width=\"220\" height=\"220\"><rect x=\"-60\" y=\"-60\" width=\"220\" height=\"220\" fill=\"url(#zmg", ToStr(u0_5608), ")\"/></mask>" }))));
-au_12899 = Call(mk_5555, V.Undef, ((V)("circle")), NewObj(2).Put("fill", ((V)(string.Concat("url(#zau", ToStr(u0_5608), ")")))).Put("opacity", ((V)(0D))).V, root_5550);
+OpSet(xd_5607, "innerHTML", 0, ((V)(JsStrBuf.Begin().S("<radialGradient id=\"zmg").V(u0_5608).S("\" gradientUnits=\"userSpaceOnUse\" cx=\"50\" cy=\"54\" r=\"90\"><stop offset=\"0\" stop-color=\"#000\"/><stop offset=\"").V(Invoke(((V)(((ToNum(mr0_12897) - 6D) / 90D))), "toFixed", ((V)(3D)))).S("\" stop-color=\"#000\"/><stop offset=\"").V(Invoke(((V)(((ToNum(mr0_12897) - 1D) / 90D))), "toFixed", ((V)(3D)))).S("\" stop-color=\"#555\"/><stop offset=\"").V(Invoke(((V)((ToNum(Add(mr1_12898, ((V)(5D)))) / 90D))), "toFixed", ((V)(3D)))).S("\" stop-color=\"#fff\"/><stop offset=\"1\" stop-color=\"#fff\"/></radialGradient><mask id=\"zmk").V(u0_5608).S("\" maskUnits=\"userSpaceOnUse\" x=\"-60\" y=\"-60\" width=\"220\" height=\"220\"><rect x=\"-60\" y=\"-60\" width=\"220\" height=\"220\" fill=\"url(#zmg").V(u0_5608).S(")\"/></mask>").End())));
+au_12899 = Call(mk_5555, V.Undef, ((V)("circle")), NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#zau").V(u0_5608).S(")").End()))).Put("opacity", ((V)(0D))).V, root_5550);
 Invoke(root_5550, "insertBefore", au_12899, art_5551);
 fl_12900 = Call(mk_5555, V.Undef, ((V)("rect")), NewObj(6).Put("x", ((V)((-60D)))).Put("y", ((V)((-60D)))).Put("width", ((V)(220D))).Put("height", ((V)(220D))).Put("fill", ((V)("#fffbe0"))).Put("opacity", ((V)(0D))).V, root_5550);
-zg_12901 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(1).Put("mask", ((V)(string.Concat("url(#zmk", ToStr(u0_5608), ")")))).V, root_5550);
-gl_12902 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(1).Put("filter", ((V)(string.Concat("url(#zgl", ToStr(u0_5608), ")")))).V, zg_12901);
+zg_12901 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(1).Put("mask", ((V)(JsStrBuf.Begin().S("url(#zmk").V(u0_5608).S(")").End()))).V, root_5550);
+gl_12902 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(1).Put("filter", ((V)(JsStrBuf.Begin().S("url(#zgl").V(u0_5608).S(")").End()))).V, zg_12901);
 ln_12903 = Fn((V _self5542, int _argc12904, V par_12910, V w_12911, V c_12912, V _a12909, V[] _rest12905) => {
 return Call(mk_5555, V.Undef, ((V)("path")), NewObj(6).Put("fill", ((V)("none"))).Put("stroke", c_12912).Put("stroke-width", w_12911).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).Put("opacity", ((V)(0D))).V, par_12910);
 }, 3, "", true);
-Set(I_5549, "zfx", NewObj(5).Put("au", au_12899).Put("fl", fl_12900).Put("mg", Invoke(xd_5607, "querySelector", ((V)(string.Concat("#zmg", ToStr(u0_5608)))))).Put("M", Arr(Call(ln_12903, V.Undef, gl_12902, ((V)(6.5)), ((V)("#ffe14a"))), Call(ln_12903, V.Undef, zg_12901, ((V)(3.6)), ((V)("#eebb12"))), Call(ln_12903, V.Undef, zg_12901, ((V)(2.5)), ((V)("#ffd21f"))), Call(ln_12903, V.Undef, zg_12901, ((V)(1D)), ((V)("#fff9c4"))))).Put("S", Arr(Call(ln_12903, V.Undef, gl_12902, ((V)(3.8)), ((V)("#ffe14a"))), Call(ln_12903, V.Undef, zg_12901, ((V)(2.2)), ((V)("#eebb12"))), Call(ln_12903, V.Undef, zg_12901, ((V)(1.4)), ((V)("#ffd21f"))), Call(ln_12903, V.Undef, zg_12901, ((V)(0.6)), ((V)("#fff9c4"))))).V);
+Set(I_5549, "zfx", NewObj(5).Put("au", au_12899).Put("fl", fl_12900).Put("mg", Invoke(xd_5607, "querySelector", ((V)(JsStrBuf.Begin().S("#zmg").V(u0_5608).End())))).Put("M", Arr(Call(ln_12903, V.Undef, gl_12902, ((V)(6.5)), ((V)("#ffe14a"))), Call(ln_12903, V.Undef, zg_12901, ((V)(3.6)), ((V)("#eebb12"))), Call(ln_12903, V.Undef, zg_12901, ((V)(2.5)), ((V)("#ffd21f"))), Call(ln_12903, V.Undef, zg_12901, ((V)(1D)), ((V)("#fff9c4"))))).Put("S", Arr(Call(ln_12903, V.Undef, gl_12902, ((V)(3.8)), ((V)("#ffe14a"))), Call(ln_12903, V.Undef, zg_12901, ((V)(2.2)), ((V)("#eebb12"))), Call(ln_12903, V.Undef, zg_12901, ((V)(1.4)), ((V)("#ffd21f"))), Call(ln_12903, V.Undef, zg_12901, ((V)(0.6)), ((V)("#fff9c4"))))).V);
 }
 if (Truthy(Get(RC_5604, "puff"))) {
 V LF_12913 = default;
 V DF_12914 = default;
-OpSet(xd_5607, "innerHTML", 0, ((V)(string.Concat(new string[] { "<radialGradient id=\"zpl", ToStr(u0_5608), "\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#fffbd6\"/><stop offset=\"0.55\" stop-color=\"#ffe14a\"/><stop offset=\"1\" stop-color=\"#e2a80a\"/></radialGradient><radialGradient id=\"zpd", ToStr(u0_5608), "\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#f3c52a\"/><stop offset=\"1\" stop-color=\"#b87c04\"/></radialGradient>" }))));
-LF_12913 = ((V)(string.Concat("url(#zpl", ToStr(u0_5608), ")")));
-DF_12914 = ((V)(string.Concat("url(#zpd", ToStr(u0_5608), ")")));
+OpSet(xd_5607, "innerHTML", 0, ((V)(JsStrBuf.Begin().S("<radialGradient id=\"zpl").V(u0_5608).S("\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#fffbd6\"/><stop offset=\"0.55\" stop-color=\"#ffe14a\"/><stop offset=\"1\" stop-color=\"#e2a80a\"/></radialGradient><radialGradient id=\"zpd").V(u0_5608).S("\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#f3c52a\"/><stop offset=\"1\" stop-color=\"#b87c04\"/></radialGradient>").End())));
+LF_12913 = ((V)(JsStrBuf.Begin().S("url(#zpl").V(u0_5608).S(")").End()));
+DF_12914 = ((V)(JsStrBuf.Begin().S("url(#zpd").V(u0_5608).S(")").End()));
 Invoke(items_5572, "forEach", Fn((V _self5542, int _argc12915, V q_12921, V _a12918, V _a12919, V _a12920, V[] _rest12916) => {
 V par_12922 = default;
 V P0_12923 = default;
@@ -17576,11 +17576,11 @@ return Add(s_13017, ((V)((ToNum(GetIdx(p_13018, 0D)) / 5D))));
 }, 2, "", true), ((V)(0D))), Invoke(inn_12966, "reduce", Fn((V _self5542, int _argc13019, V s_13025, V p_13026, V _a13023, V _a13024, V[] _rest13020) => {
 return Add(s_13025, ((V)((ToNum(GetIdx(p_13026, 1D)) / 5D))));
 }, 2, "", true), ((V)(0D))));
-OpSet(xd_5607, "innerHTML", 0, ((V)(string.Concat(new string[] { "<radialGradient id=\"tsl", ToStr(u0_5608), "\" gradientUnits=\"userSpaceOnUse\" cx=\"41\" cy=\"36\" r=\"56\"><stop offset=\"0\" stop-color=\"#fff8cc\"/><stop offset=\"0.55\" stop-color=\"#ffd84a\"/><stop offset=\"1\" stop-color=\"#e09e10\"/></radialGradient><radialGradient id=\"tsd", ToStr(u0_5608), "\" gradientUnits=\"userSpaceOnUse\" cx=\"41\" cy=\"36\" r=\"56\"><stop offset=\"0\" stop-color=\"#ffe68a\"/><stop offset=\"0.55\" stop-color=\"#efb326\"/><stop offset=\"1\" stop-color=\"#c2850a\"/></radialGradient>" }))));
+OpSet(xd_5607, "innerHTML", 0, ((V)(JsStrBuf.Begin().S("<radialGradient id=\"tsl").V(u0_5608).S("\" gradientUnits=\"userSpaceOnUse\" cx=\"41\" cy=\"36\" r=\"56\"><stop offset=\"0\" stop-color=\"#fff8cc\"/><stop offset=\"0.55\" stop-color=\"#ffd84a\"/><stop offset=\"1\" stop-color=\"#e09e10\"/></radialGradient><radialGradient id=\"tsd").V(u0_5608).S("\" gradientUnits=\"userSpaceOnUse\" cx=\"41\" cy=\"36\" r=\"56\"><stop offset=\"0\" stop-color=\"#ffe68a\"/><stop offset=\"0.55\" stop-color=\"#efb326\"/><stop offset=\"1\" stop-color=\"#c2850a\"/></radialGradient>").End())));
 T_12968 = 9D;
 N_12969 = 9D;
-LF_12970 = ((V)(string.Concat("url(#tsl", ToStr(u0_5608), ")")));
-DF_12971 = ((V)(string.Concat("url(#tsd", ToStr(u0_5608), ")")));
+LF_12970 = ((V)(JsStrBuf.Begin().S("url(#tsl").V(u0_5608).S(")").End()));
+DF_12971 = ((V)(JsStrBuf.Begin().S("url(#tsd").V(u0_5608).S(")").End()));
 par_12972 = Get(Get(q_12960, "e"), "parentNode");
 sl_12973 = Array_from(NewObj(1).Put("length", ((V)(N_12969))).V, Fn((V _self5542, int _argc13027, V __13033, V k_13034, V _a13031, V _a13032, V[] _rest13028) => {
 double z_13035 = 0;
@@ -17617,34 +17617,34 @@ Set(z_13068, "role", ((V)("capHidden")));
 }
 return default;
 }, 1, "", true));
-OpSet(xd_5607, "innerHTML", 0, ((V)(string.Concat(new string[] { "<radialGradient id=\"tcb", ToStr(u0_5608), "\" gradientUnits=\"userSpaceOnUse\" cx=\"45\" cy=\"7\" r=\"20\"><stop offset=\"0\" stop-color=\"#d6ebff\"/><stop offset=\"0.5\" stop-color=\"#8cc4ff\"/><stop offset=\"1\" stop-color=\"#4f86cc\"/></radialGradient><radialGradient id=\"tcw", ToStr(u0_5608), "\" gradientUnits=\"userSpaceOnUse\" cx=\"44\" cy=\"18\" r=\"17\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.6\" stop-color=\"#f1f2fb\"/><stop offset=\"1\" stop-color=\"#bfc4e0\"/></radialGradient><radialGradient id=\"tcp", ToStr(u0_5608), "\" cx=\"35%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.65\" stop-color=\"#eef0fa\"/><stop offset=\"1\" stop-color=\"#c3c8e2\"/></radialGradient>" }))));
-capE_12977 = NewObj(4).Put("rb", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#tcw", ToStr(u0_5608), ")")))).V, par_12972)).Put("cone", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#tcb", ToStr(u0_5608), ")")))).V, par_12972)).Put("rf", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#tcw", ToStr(u0_5608), ")")))).V, par_12972)).Put("pom", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#tcp", ToStr(u0_5608), ")")))).V, par_12972)).V;
-Set(I_5549, "star", NewObj(17).Put("capE", capE_12977).Put("V", V_12963).Put("CQ", CQ_12964).Put("SW", ((V)(SW_12965))).Put("C", C_12967).Put("T", ((V)(T_12968))).Put("sl", sl_12973).Put("L", L_12975).Put("ov", ov_12976).Put("LF", LF_12970).Put("DF", DF_12971).Put("anchor", Get(q_12960, "e")).Put("grads", Arr(Invoke(xd_5607, "querySelector", ((V)(string.Concat("#tsl", ToStr(u0_5608))))), Invoke(xd_5607, "querySelector", ((V)(string.Concat("#tsd", ToStr(u0_5608))))))).Put("cgr", Arr(Invoke(xd_5607, "querySelector", ((V)(string.Concat("#tcb", ToStr(u0_5608))))), Invoke(xd_5607, "querySelector", ((V)(string.Concat("#tcw", ToStr(u0_5608))))))).Put("dir", ((V)(1D))).Put("md", ((V)(""))).Put("hd", ((V)(""))).V);
+OpSet(xd_5607, "innerHTML", 0, ((V)(JsStrBuf.Begin().S("<radialGradient id=\"tcb").V(u0_5608).S("\" gradientUnits=\"userSpaceOnUse\" cx=\"45\" cy=\"7\" r=\"20\"><stop offset=\"0\" stop-color=\"#d6ebff\"/><stop offset=\"0.5\" stop-color=\"#8cc4ff\"/><stop offset=\"1\" stop-color=\"#4f86cc\"/></radialGradient><radialGradient id=\"tcw").V(u0_5608).S("\" gradientUnits=\"userSpaceOnUse\" cx=\"44\" cy=\"18\" r=\"17\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.6\" stop-color=\"#f1f2fb\"/><stop offset=\"1\" stop-color=\"#bfc4e0\"/></radialGradient><radialGradient id=\"tcp").V(u0_5608).S("\" cx=\"35%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.65\" stop-color=\"#eef0fa\"/><stop offset=\"1\" stop-color=\"#c3c8e2\"/></radialGradient>").End())));
+capE_12977 = NewObj(4).Put("rb", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#tcw").V(u0_5608).S(")").End()))).V, par_12972)).Put("cone", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#tcb").V(u0_5608).S(")").End()))).V, par_12972)).Put("rf", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#tcw").V(u0_5608).S(")").End()))).V, par_12972)).Put("pom", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#tcp").V(u0_5608).S(")").End()))).V, par_12972)).V;
+Set(I_5549, "star", NewObj(17).Put("capE", capE_12977).Put("V", V_12963).Put("CQ", CQ_12964).Put("SW", ((V)(SW_12965))).Put("C", C_12967).Put("T", ((V)(T_12968))).Put("sl", sl_12973).Put("L", L_12975).Put("ov", ov_12976).Put("LF", LF_12970).Put("DF", DF_12971).Put("anchor", Get(q_12960, "e")).Put("grads", Arr(Invoke(xd_5607, "querySelector", ((V)(JsStrBuf.Begin().S("#tsl").V(u0_5608).End()))), Invoke(xd_5607, "querySelector", ((V)(JsStrBuf.Begin().S("#tsd").V(u0_5608).End()))))).Put("cgr", Arr(Invoke(xd_5607, "querySelector", ((V)(JsStrBuf.Begin().S("#tcb").V(u0_5608).End()))), Invoke(xd_5607, "querySelector", ((V)(JsStrBuf.Begin().S("#tcw").V(u0_5608).End()))))).Put("dir", ((V)(1D))).Put("md", ((V)(""))).Put("hd", ((V)(""))).V);
 Set(I_5549, "foodK", ((V)(0.35)));
 }
 if (Truthy(Get(RC_5604, "lantern"))) {
 V lg_13069 = default;
 V L_13070 = default;
-OpSet(xd_5607, "innerHTML", 0, ((V)(string.Concat(new string[] { "<radialGradient id=\"lgb", ToStr(u0_5608), "\" cx=\"40%\" cy=\"38%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#fffdf0\"/><stop offset=\"0.55\" stop-color=\"#ffe58a\"/><stop offset=\"1\" stop-color=\"#f2b53a\"/></radialGradient><linearGradient id=\"lgc", ToStr(u0_5608), "\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ffe7a0\"/><stop offset=\"1\" stop-color=\"#b9822a\"/></linearGradient><radialGradient id=\"lgl", ToStr(u0_5608), "\"><stop offset=\"0\" stop-color=\"#fff3b0\" stop-opacity=\"0.85\"/><stop offset=\"0.45\" stop-color=\"#ffe27a\" stop-opacity=\"0.35\"/><stop offset=\"1\" stop-color=\"#ffe27a\" stop-opacity=\"0\"/></radialGradient>" }))));
+OpSet(xd_5607, "innerHTML", 0, ((V)(JsStrBuf.Begin().S("<radialGradient id=\"lgb").V(u0_5608).S("\" cx=\"40%\" cy=\"38%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#fffdf0\"/><stop offset=\"0.55\" stop-color=\"#ffe58a\"/><stop offset=\"1\" stop-color=\"#f2b53a\"/></radialGradient><linearGradient id=\"lgc").V(u0_5608).S("\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ffe7a0\"/><stop offset=\"1\" stop-color=\"#b9822a\"/></linearGradient><radialGradient id=\"lgl").V(u0_5608).S("\"><stop offset=\"0\" stop-color=\"#fff3b0\" stop-opacity=\"0.85\"/><stop offset=\"0.45\" stop-color=\"#ffe27a\" stop-opacity=\"0.35\"/><stop offset=\"1\" stop-color=\"#ffe27a\" stop-opacity=\"0\"/></radialGradient>").End())));
 lg_13069 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(0).V, art_5551);
 Invoke(art_5551, "insertBefore", lg_13069, armG_5590);
 L_13070 = Set(I_5549, "lan", NewObj(3).Put("g", lg_13069).Put("th", ((V)(0D))).Put("w", ((V)(0D))).V);
-Set(L_13070, "glow", Call(mk_5555, V.Undef, ((V)("circle")), NewObj(4).Put("cx", ((V)(0D))).Put("cy", ((V)(9D))).Put("r", ((V)(10D))).Put("fill", ((V)(string.Concat("url(#lgl", ToStr(u0_5608), ")")))).V, lg_13069));
+Set(L_13070, "glow", Call(mk_5555, V.Undef, ((V)("circle")), NewObj(4).Put("cx", ((V)(0D))).Put("cy", ((V)(9D))).Put("r", ((V)(10D))).Put("fill", ((V)(JsStrBuf.Begin().S("url(#lgl").V(u0_5608).S(")").End()))).V, lg_13069));
 Call(mk_5555, V.Undef, ((V)("path")), NewObj(5).Put("d", ((V)("M-2 3.6 Q0 -1.4 2 3.6"))).Put("fill", ((V)("none"))).Put("stroke", ((V)("#c9902e"))).Put("stroke-width", ((V)(0.8))).Put("stroke-linecap", ((V)("round"))).V, lg_13069);
-Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("d", ((V)("M-3.4 5.2 Q-3.2 3.2 0 3.2 Q3.2 3.2 3.4 5.2 Z"))).Put("fill", ((V)(string.Concat("url(#lgc", ToStr(u0_5608), ")")))).V, lg_13069);
-Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("d", ((V)("M-3.5 7.4 Q-3.5 4.6 -0.7 4.6 L0.7 4.6 Q3.5 4.6 3.5 7.4 L3.5 9.8 Q3.5 12.6 0.7 12.6 L-0.7 12.6 Q-3.5 12.6 -3.5 9.8 Z"))).Put("fill", ((V)(string.Concat("url(#lgb", ToStr(u0_5608), ")")))).V, lg_13069);
+Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("d", ((V)("M-3.4 5.2 Q-3.2 3.2 0 3.2 Q3.2 3.2 3.4 5.2 Z"))).Put("fill", ((V)(JsStrBuf.Begin().S("url(#lgc").V(u0_5608).S(")").End()))).V, lg_13069);
+Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("d", ((V)("M-3.5 7.4 Q-3.5 4.6 -0.7 4.6 L0.7 4.6 Q3.5 4.6 3.5 7.4 L3.5 9.8 Q3.5 12.6 0.7 12.6 L-0.7 12.6 Q-3.5 12.6 -3.5 9.8 Z"))).Put("fill", ((V)(JsStrBuf.Begin().S("url(#lgb").V(u0_5608).S(")").End()))).V, lg_13069);
 Call(mk_5555, V.Undef, ((V)("path")), NewObj(5).Put("d", ((V)("M-1.3 5.2 L-1.3 12 M1.3 5.2 L1.3 12"))).Put("stroke", ((V)("#e3a238"))).Put("stroke-width", ((V)(0.45))).Put("opacity", ((V)(0.55))).Put("fill", ((V)("none"))).V, lg_13069);
 Set(L_13070, "flame", Call(mk_5555, V.Undef, ((V)("ellipse")), NewObj(5).Put("cx", ((V)(0D))).Put("cy", ((V)(8.8))).Put("rx", ((V)(1.2))).Put("ry", ((V)(1.9))).Put("fill", ((V)("#fffbe6"))).V, lg_13069));
-Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("d", ((V)("M-3.1 12.2 L3.1 12.2 Q2.9 14.2 0 14.2 Q-2.9 14.2 -3.1 12.2 Z"))).Put("fill", ((V)(string.Concat("url(#lgc", ToStr(u0_5608), ")")))).V, lg_13069);
+Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("d", ((V)("M-3.1 12.2 L3.1 12.2 Q2.9 14.2 0 14.2 Q-2.9 14.2 -3.1 12.2 Z"))).Put("fill", ((V)(JsStrBuf.Begin().S("url(#lgc").V(u0_5608).S(")").End()))).V, lg_13069);
 Call(mk_5555, V.Undef, ((V)("ellipse")), NewObj(6).Put("cx", ((V)((-2D)))).Put("cy", ((V)(7.2))).Put("rx", ((V)(0.6))).Put("ry", ((V)(1.7))).Put("fill", ((V)("#ffffff"))).Put("opacity", ((V)(0.85))).V, lg_13069);
 }
 if (Truthy(Get(RC_5604, "rain"))) {
 V rg_13071 = default;
-OpSet(xd_5607, "innerHTML", 0, ((V)(string.Concat("<radialGradient id=\"rdg", ToStr(u0_5608), "\" cx=\"38%\" cy=\"35%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#e6f6ff\"/><stop offset=\"0.6\" stop-color=\"#8fd3ff\"/><stop offset=\"1\" stop-color=\"#4fa6dc\"/></radialGradient>"))));
+OpSet(xd_5607, "innerHTML", 0, ((V)(JsStrBuf.Begin().S("<radialGradient id=\"rdg").V(u0_5608).S("\" cx=\"38%\" cy=\"35%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#e6f6ff\"/><stop offset=\"0.6\" stop-color=\"#8fd3ff\"/><stop offset=\"1\" stop-color=\"#4fa6dc\"/></radialGradient>").End())));
 rg_13071 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(0).V, root_5550);
 Invoke(root_5550, "insertBefore", rg_13071, art_5551);
 Set(I_5549, "rain", NewObj(2).Put("next", ((V)(0D))).Put("drops", Array_from(NewObj(1).Put("length", ((V)(16D))).V, Fn((V _self5542, int _argc13072, V _a13074, V _a13075, V _a13076, V _a13077, V[] _rest13073) => {
-return NewObj(3).Put("st", ((V)(0D))).Put("el", Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)(string.Concat("url(#rdg", ToStr(u0_5608), ")")))).Put("opacity", ((V)(0D))).V, rg_13071)).Put("sp", Call(mk_5555, V.Undef, ((V)("ellipse")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#8fd3ff"))).Put("stroke-width", ((V)(0.4))).Put("opacity", ((V)(0D))).V, rg_13071)).V;
+return NewObj(3).Put("st", ((V)(0D))).Put("el", Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#rdg").V(u0_5608).S(")").End()))).Put("opacity", ((V)(0D))).V, rg_13071)).Put("sp", Call(mk_5555, V.Undef, ((V)("ellipse")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#8fd3ff"))).Put("stroke-width", ((V)(0.4))).Put("opacity", ((V)(0D))).V, rg_13071)).V;
 }, 0, "", true))).V);
 }
 if (Truthy(Get(RC_5604, "ripple"))) {
@@ -17659,18 +17659,18 @@ if (Truthy(Get(RC_5604, "shimmer"))) {
 V ir_13085 = default;
 V mg_13086 = default;
 V st_13087 = default;
-ir_13085 = Invoke(art_5551, "querySelector", ((V)(string.Concat("[id=\"r_g", ToStr(u0_5608), "\"]"))));
-mg_13086 = Invoke(art_5551, "querySelector", ((V)(string.Concat("[id=\"g_g", ToStr(u0_5608), "\"]"))));
+ir_13085 = Invoke(art_5551, "querySelector", ((V)(JsStrBuf.Begin().S("[id=\"r_g").V(u0_5608).S("\"]").End())));
+mg_13086 = Invoke(art_5551, "querySelector", ((V)(JsStrBuf.Begin().S("[id=\"g_g").V(u0_5608).S("\"]").End())));
 st_13087 = (Truthy(mg_13086) ? Invoke(mg_13086, "querySelectorAll", ((V)("stop"))) : Arr());
 Set(I_5549, "shim", NewObj(3).Put("ir", ir_13085).Put("s2", GetIdx(st_13087, 2D)).Put("s3", GetIdx(st_13087, 3D)).V);
 }
 defs_5609 = Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, Get(I_5549, "faceG"));
 u_5610 = Get(I_5549, "u");
-Set(defs_5609, "innerHTML", ((V)(string.Concat(new string[] { "<radialGradient id=\"gey", ToStr(u_5610), "\" cx=\"35%\" cy=\"30%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#6b5470\"/><stop offset=\"1\" stop-color=\"#2a1a30\"/></radialGradient><clipPath id=\"ghc", ToStr(u_5610), "\" clipPathUnits=\"userSpaceOnUse\"><path/></clipPath>", ToStr(Invoke(Invoke(EY_5565, "map", Fn((V _self5542, int _argc13088, V e_13094, V i_13095, V _a13092, V _a13093, V[] _rest13089) => {
-return ((V)(string.Concat("<clipPath id=\"gec", ToStr(i_13095), ToStr(u_5610), "\" clipPathUnits=\"userSpaceOnUse\"><path/></clipPath>")));
-}, 2, "", true)), "join", ((V)("")))) }))));
-Set(I_5549, "headClip", Invoke(defs_5609, "querySelector", ((V)(string.Concat("#ghc", ToStr(u_5610), " path")))));
-fg_5611 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(1).Put("clip-path", ((V)(string.Concat("url(#ghc", ToStr(u_5610), ")")))).V, Get(I_5549, "faceG"));
+Set(defs_5609, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"gey").V(u_5610).S("\" cx=\"35%\" cy=\"30%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#6b5470\"/><stop offset=\"1\" stop-color=\"#2a1a30\"/></radialGradient><clipPath id=\"ghc").V(u_5610).S("\" clipPathUnits=\"userSpaceOnUse\"><path/></clipPath>").V(Invoke(Invoke(EY_5565, "map", Fn((V _self5542, int _argc13088, V e_13094, V i_13095, V _a13092, V _a13093, V[] _rest13089) => {
+return ((V)(JsStrBuf.Begin().S("<clipPath id=\"gec").V(i_13095).V(u_5610).S("\" clipPathUnits=\"userSpaceOnUse\"><path/></clipPath>").End()));
+}, 2, "", true)), "join", ((V)("")))).End())));
+Set(I_5549, "headClip", Invoke(defs_5609, "querySelector", ((V)(JsStrBuf.Begin().S("#ghc").V(u_5610).S(" path").End()))));
+fg_5611 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(1).Put("clip-path", ((V)(JsStrBuf.Begin().S("url(#ghc").V(u_5610).S(")").End()))).V, Get(I_5549, "faceG"));
 E_5612 = Get(I_5549, "E");
 Set(E_5612, "tintR", Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)("#ff4040"))).Put("opacity", ((V)(0D))).V, fg_5611));
 Set(E_5612, "tintG", Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)("#93b84a"))).Put("opacity", ((V)(0D))).V, fg_5611));
@@ -17679,9 +17679,9 @@ V gg_13104 = default;
 V el_13105 = default;
 V hg_13106 = default;
 gg_13104 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(0).V, fg_5611);
-el_13105 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)(string.Concat("url(#gey", ToStr(u_5610), ")")))).Put("stroke", ((V)("#2a1a30"))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V, gg_13104);
-hg_13106 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(1).Put("clip-path", ((V)(string.Concat("url(#gec", ToStr(i_13103), ToStr(u_5610), ")")))).V, gg_13104);
-return NewObj(6).Put("g", gg_13104).Put("e", el_13105).Put("tp", Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)("#a8dcff"))).Put("opacity", ((V)(0D))).V, hg_13106)).Put("h1", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)("#fff"))).V, hg_13106)).Put("h2", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)("#fff"))).V, hg_13106)).Put("clip", Invoke(defs_5609, "querySelector", ((V)(string.Concat("#gec", ToStr(i_13103), ToStr(u_5610), " path"))))).V;
+el_13105 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)(JsStrBuf.Begin().S("url(#gey").V(u_5610).S(")").End()))).Put("stroke", ((V)("#2a1a30"))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V, gg_13104);
+hg_13106 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(1).Put("clip-path", ((V)(JsStrBuf.Begin().S("url(#gec").V(i_13103).V(u_5610).S(")").End()))).V, gg_13104);
+return NewObj(6).Put("g", gg_13104).Put("e", el_13105).Put("tp", Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)("#a8dcff"))).Put("opacity", ((V)(0D))).V, hg_13106)).Put("h1", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)("#fff"))).V, hg_13106)).Put("h2", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)("#fff"))).V, hg_13106)).Put("clip", Invoke(defs_5609, "querySelector", ((V)(JsStrBuf.Begin().S("#gec").V(i_13103).V(u_5610).S(" path").End())))).V;
 return default;
 }, 2, "", true)));
 Set(E_5612, "mopen", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)("#7a2a40"))).V, fg_5611));
@@ -17694,23 +17694,23 @@ Invoke(Get(Get(Get(main_5577, "q"), "e"), "parentNode"), "insertBefore", Get(E_5
 }
 Invoke(items_5572, "forEach", Fn((V _self5542, int _argc13108, V q_13114, V _a13111, V _a13112, V _a13113, V[] _rest13109) => {
 if ((((SEqS(Get(q_13114, "role"), "patch") || SEqS(Get(q_13114, "role"), "face")) || SEqS(Get(q_13114, "role"), "cheek")) || SEqS(Get(q_13114, "role"), "wsurf"))) {
-Invoke(Get(q_13114, "e"), "setAttribute", ((V)("clip-path")), ((V)(string.Concat("url(#ghc", ToStr(u_5610), ")"))));
+Invoke(Get(q_13114, "e"), "setAttribute", ((V)("clip-path")), ((V)(JsStrBuf.Begin().S("url(#ghc").V(u_5610).S(")").End())));
 }
 return default;
 }, 1, "", true));
 cdefs_5613 = Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551);
 Invoke(items_5572, "forEach", Fn((V _self5542, int _argc13115, V q_13121, V _a13118, V _a13119, V _a13120, V[] _rest13116) => {
 if (Truthy(Get(q_13121, "clipId"))) {
-OpSet(cdefs_5613, "innerHTML", 0, ((V)(string.Concat("<clipPath id=\"", ToStr(Get(q_13121, "clipId")), "\" clipPathUnits=\"userSpaceOnUse\"><path/></clipPath>"))));
+OpSet(cdefs_5613, "innerHTML", 0, ((V)(JsStrBuf.Begin().S("<clipPath id=\"").V(Get(q_13121, "clipId")).S("\" clipPathUnits=\"userSpaceOnUse\"><path/></clipPath>").End())));
 }
 return default;
 }, 1, "", true));
 Invoke(items_5572, "forEach", Fn((V _self5542, int _argc13122, V q_13128, V _a13125, V _a13126, V _a13127, V[] _rest13123) => {
 if (Truthy(Get(q_13128, "clipId"))) {
-Set(q_13128, "clipEl", Invoke(cdefs_5613, "querySelector", ((V)(string.Concat("#", ToStr(Get(q_13128, "clipId")), " path")))));
+Set(q_13128, "clipEl", Invoke(cdefs_5613, "querySelector", ((V)(JsStrBuf.Begin().S("#").V(Get(q_13128, "clipId")).S(" path").End()))));
 }
 if (Truthy((((SEqS(Get(q_13128, "role"), "inner") ? V.True : V.False) is var _t13129 && !Truthy(_t13129) ? _t13129 : Get(q_13128, "owner")) is var _t13130 && !Truthy(_t13130) ? _t13130 : Get(Get(q_13128, "owner"), "clipId")))) {
-Invoke(Get(q_13128, "e"), "setAttribute", ((V)("clip-path")), ((V)(string.Concat("url(#", ToStr(Get(Get(q_13128, "owner"), "clipId")), ")"))));
+Invoke(Get(q_13128, "e"), "setAttribute", ((V)("clip-path")), ((V)(JsStrBuf.Begin().S("url(#").V(Get(Get(q_13128, "owner"), "clipId")).S(")").End())));
 }
 return default;
 }, 1, "", true));
@@ -17780,7 +17780,7 @@ return default;
 xd2_13138 = Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551);
 u_13139 = Get(I_5549, "u");
 rg_13140 = Fn((V _self5542, int _argc13183, V id_13189, V st_13190, V _a13187, V _a13188, V[] _rest13184) => {
-return ((V)(string.Concat(new string[] { "<radialGradient id=\"", ToStr(id_13189), ToStr(u_13139), "\" cx=\"38%\" cy=\"30%\" r=\"75%\">", ToStr(Invoke(Invoke(st_13190, "map", Fn((V _self5542, int _argc13191, V _a13193, V _a13194, V _a13195, V _a13196, V[] _rest13192) => {
+return ((V)(JsStrBuf.Begin().S("<radialGradient id=\"").V(id_13189).V(u_13139).S("\" cx=\"38%\" cy=\"30%\" r=\"75%\">").V(Invoke(Invoke(st_13190, "map", Fn((V _self5542, int _argc13191, V _a13193, V _a13194, V _a13195, V _a13196, V[] _rest13192) => {
 V o_13199 = default;
 V c_13201 = default;
 { V _t13197 = ListOf(_a13193);
@@ -17789,12 +17789,12 @@ o_13199 = _t13198; }
 { V _t13200 = GetIdx(_t13197, 1D);
 c_13201 = _t13200; }
 }
-return ((V)(string.Concat(new string[] { "<stop offset=\"", ToStr(o_13199), "\" stop-color=\"", ToStr(c_13201), "\"/>" })));
-}, 1, "", true)), "join", ((V)("")))), "</radialGradient>" })));
+return ((V)(JsStrBuf.Begin().S("<stop offset=\"").V(o_13199).S("\" stop-color=\"").V(c_13201).S("\"/>").End()));
+}, 1, "", true)), "join", ((V)("")))).S("</radialGradient>").End()));
 }, 2, "", true);
 Set(xd2_13138, "innerHTML", Add(Add(Add(Call(rg_13140, V.Undef, ((V)("pfl")), Arr(Arr(((V)(0D)), ((V)("#8595c0"))), Arr(((V)(0.55)), ((V)("#46557f"))), Arr(((V)(1D)), ((V)("#262f4c"))))), Call(rg_13140, V.Undef, ((V)("pfd")), Arr(Arr(((V)(0D)), ((V)("#4a5884"))), Arr(((V)(1D)), ((V)("#1c2338")))))), Call(rg_13140, V.Undef, ((V)("pft")), Arr(Arr(((V)(0D)), ((V)("#ffd590"))), Arr(((V)(0.55)), ((V)("#ffa53a"))), Arr(((V)(1D)), ((V)("#d9741a")))))), Call(rg_13140, V.Undef, ((V)("pbk")), Arr(Arr(((V)(0D)), ((V)("#ffd590"))), Arr(((V)(0.6)), ((V)("#ffa53a"))), Arr(((V)(1D)), ((V)("#e0801a")))))));
-LF_13141 = ((V)(string.Concat("url(#pfl", ToStr(u_13139), ")")));
-DF_13142 = ((V)(string.Concat("url(#pfd", ToStr(u_13139), ")")));
+LF_13141 = ((V)(JsStrBuf.Begin().S("url(#pfl").V(u_13139).S(")").End()));
+DF_13142 = ((V)(JsStrBuf.Begin().S("url(#pfd").V(u_13139).S(")").End()));
 bel_13143 = Invoke(items_5572, "find", Fn((V _self5542, int _argc13202, V q_13208, V _a13205, V _a13206, V _a13207, V[] _rest13203) => {
 return (Get(q_13208, "inBody") is var _t13209 && !Truthy(_t13209) ? _t13209 : Invoke(NewRegExp(RX53, "^url\\(#w_g", ""), "test", Get(q_13208, "fill")));
 }, 1, "", true));
@@ -17820,9 +17820,9 @@ g_13237 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(0).V, bodyG_5561);
 return NewObj(8).Put("q", q_13235).Put("sd", ((V)(sd_13236))).Put("g", g_13237).Put("pv", Arr(((V)((50D + (sd_13236 * 29D)))), ((V)(55D)))).Put("c", Arr(Get(q_13235, "cx"), Get(q_13235, "cy"))).Put("tip", Arr(((V)((50D + (sd_13236 * 40D)))), ((V)(76D)))).Put("S", Call(slices_13144, V.Undef, g_13237, ((V)(7D)), ((V)(1.3)))).Put("fr", V.Null).V;
 return default;
 }, 1, "", true));
-OpSet(xd2_13138, "innerHTML", 0, ((V)(string.Concat("<linearGradient id=\"ptl", ToStr(u_13139), "\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#6c7cab\"/><stop offset=\"0.5\" stop-color=\"#3a4874\"/><stop offset=\"1\" stop-color=\"#1e2640\"/></linearGradient>"))));
+OpSet(xd2_13138, "innerHTML", 0, ((V)(JsStrBuf.Begin().S("<linearGradient id=\"ptl").V(u_13139).S("\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#6c7cab\"/><stop offset=\"0.5\" stop-color=\"#3a4874\"/><stop offset=\"1\" stop-color=\"#1e2640\"/></linearGradient>").End())));
 tg_13146 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(0).V, bodyG_5561);
-tq_13147 = NewObj(4).Put("g", tg_13146).Put("fr", V.Null).Put("el", Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)(string.Concat("url(#ptl", ToStr(u_13139), ")")))).Put("stroke", ((V)("#1a2034"))).Put("stroke-width", ((V)(0.5))).Put("stroke-linejoin", ((V)("round"))).V, tg_13146)).Put("hl", Call(mk_5555, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#a2b0d8"))).Put("stroke-width", ((V)(0.7))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.75))).V, tg_13146)).V;
+tq_13147 = NewObj(4).Put("g", tg_13146).Put("fr", V.Null).Put("el", Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)(JsStrBuf.Begin().S("url(#ptl").V(u_13139).S(")").End()))).Put("stroke", ((V)("#1a2034"))).Put("stroke-width", ((V)(0.5))).Put("stroke-linejoin", ((V)("round"))).V, tg_13146)).Put("hl", Call(mk_5555, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#a2b0d8"))).Put("stroke-width", ((V)(0.7))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.75))).V, tg_13146)).V;
 if (Truthy(bel_13143)) {
 Set(bel_13143, "role", ((V)("pgBelly")));
 }
@@ -17838,7 +17838,7 @@ Set(q_13255, "role", ((V)("pgShine")));
 if (SEqS(Get(q_13255, "role"), "foot")) {
 V pr_13256 = default;
 V nx_13257 = default;
-Invoke(Get(q_13255, "e"), "setAttribute", ((V)("fill")), ((V)(string.Concat("url(#pft", ToStr(u_13139), ")"))));
+Invoke(Get(q_13255, "e"), "setAttribute", ((V)("fill")), ((V)(JsStrBuf.Begin().S("url(#pft").V(u_13139).S(")").End())));
 pr_13256 = Get(Get(q_13255, "e"), "parentNode");
 nx_13257 = Get(Get(q_13255, "e"), "nextSibling");
 Set(q_13255, "rim", Call(mk_5555, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#b85e12"))).Put("stroke-width", ((V)(0.6))).Put("opacity", ((V)(0D))).V, pr_13256));
@@ -17848,7 +17848,7 @@ Invoke(pr_13256, "insertBefore", Get(q_13255, "gl"), nx_13257);
 }
 return default;
 }, 1, "", true));
-bk_13148 = NewObj(4).Put("in", Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)("#7a2a40"))).Put("opacity", ((V)(0D))).V, Get(I_5549, "faceG"))).Put("lo", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)("#ec8a22"))).V, Get(I_5549, "faceG"))).Put("up", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#pbk", ToStr(u_13139), ")")))).V, Get(I_5549, "faceG"))).Put("hl", Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)("#fff6e0"))).Put("opacity", ((V)(0.6))).V, Get(I_5549, "faceG"))).V;
+bk_13148 = NewObj(4).Put("in", Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)("#7a2a40"))).Put("opacity", ((V)(0D))).V, Get(I_5549, "faceG"))).Put("lo", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)("#ec8a22"))).V, Get(I_5549, "faceG"))).Put("up", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#pbk").V(u_13139).S(")").End()))).V, Get(I_5549, "faceG"))).Put("hl", Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)("#fff6e0"))).Put("opacity", ((V)(0.6))).V, Get(I_5549, "faceG"))).V;
 Set(I_5549, "pq", NewObj(8).Put("rY", rY_13137).Put("bq", bq_13133).Put("bel", bel_13143).Put("fl", fl_13145).Put("tq", tq_13147).Put("bk", bk_13148).Put("LF", LF_13141).Put("DF", DF_13142).V);
 }
 if (Truthy(((Get(RC_5604, "turtle") is var _t13258 && !Truthy(_t13258) ? _t13258 : headA_5576) is var _t13259 && !Truthy(_t13259) ? _t13259 : bodyG_5561))) {
@@ -17950,7 +17950,7 @@ return default;
 }, 1, "", true);
 gBack_13271 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(0).V, bodyG_5561);
 Invoke(bodyG_5561, "insertBefore", gBack_13271, Get(bodyG_5561, "firstChild"));
-gShell_13272 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(1).Put("id", ((V)(string.Concat("tts", ToStr(u_13262))))).V, par_13261);
+gShell_13272 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(1).Put("id", ((V)(JsStrBuf.Begin().S("tts").V(u_13262).End()))).V, par_13261);
 Invoke(par_13261, "insertBefore", gShell_13272, Get(hq_13260, "e"));
 dome_13273 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", shF_13266).V, gShell_13272);
 band_13274 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)("#2fa39c"))).Put("opacity", ((V)(0.5))).V, gShell_13272);
@@ -17966,11 +17966,11 @@ Invoke(art_5551, "insertBefore", gLate_13281, Get(Get(I_5549, "faceG"), "nextSib
 gFront_13282 = Call(mk_5555, V.Undef, ((V)("g")), (Truthy(filt_13263) ? NewObj(1).Put("filter", filt_13263).V : NewObj(0).V), art_5551);
 Invoke(art_5551, "insertBefore", gFront_13282, Get(gLate_13281, "nextSibling"));
 xdT_13283 = Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551);
-Set(xdT_13283, "innerHTML", ((V)(string.Concat("<clipPath id=\"ttc", ToStr(u_13262), "\" clipPathUnits=\"userSpaceOnUse\"><path d=\"M0 0Z\"/></clipPath>"))));
-lid_13284 = Call(mk_5555, V.Undef, ((V)("g")), Object_assign(NewObj(1).Put("clip-path", ((V)(string.Concat("url(#ttc", ToStr(u_13262), ")")))).V, (Truthy(filt_13263) ? NewObj(1).Put("filter", filt_13263).V : NewObj(0).V)), art_5551);
+Set(xdT_13283, "innerHTML", ((V)(JsStrBuf.Begin().S("<clipPath id=\"ttc").V(u_13262).S("\" clipPathUnits=\"userSpaceOnUse\"><path d=\"M0 0Z\"/></clipPath>").End())));
+lid_13284 = Call(mk_5555, V.Undef, ((V)("g")), Object_assign(NewObj(1).Put("clip-path", ((V)(JsStrBuf.Begin().S("url(#ttc").V(u_13262).S(")").End()))).V, (Truthy(filt_13263) ? NewObj(1).Put("filter", filt_13263).V : NewObj(0).V)), art_5551);
 Invoke(art_5551, "insertBefore", lid_13284, Get(gFront_13282, "nextSibling"));
 us_13285 = Invoke(G("document"), "createElementNS", SVN_13264, ((V)("use")));
-Invoke(us_13285, "setAttribute", ((V)("href")), ((V)(string.Concat("#tts", ToStr(u_13262)))));
+Invoke(us_13285, "setAttribute", ((V)("href")), ((V)(JsStrBuf.Begin().S("#tts").V(u_13262).End())));
 Invoke(lid_13284, "appendChild", us_13285);
 Set(Get(lid_13284, "style"), "display", ((V)("none")));
 legs_13286 = Invoke(Arr(Arr(((V)((-1D))), ((V)(1D))), Arr(((V)(1D)), ((V)(1D))), Arr(((V)((-1D))), ((V)(0D))), Arr(((V)(1D)), ((V)(0D)))), "map", Fn((V _self5542, int _argc13355, V _a13357, V _a13358, V _a13359, V _a13360, V[] _rest13356) => {
@@ -18079,9 +18079,9 @@ T_13402 = Get(I_5549, "tt");
 xd_13403 = Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551);
 TAU_13404 = (System.Math.PI * 2D);
 V_13405 = (Truthy(SEA_13290) ? NewObj(25).Put("shell", Arr(((V)("#f6cf8c")), ((V)("#cf9150")), ((V)("#8f5a2c")))).Put("puff", Arr(((V)("#ffe4ad")), ((V)("#f2bd70")))).Put("rim", Arr(((V)("#f0c27c")), ((V)("#c08043")))).Put("rimP", ((V)("#ffe9bf"))).Put("plast", Arr(((V)("#fff5d6")), ((V)("#efd59a")))).Put("skin", Arr(((V)("#dcf7ea")), ((V)("#94d8b9")), ((V)("#4f9f84")))).Put("seam", ((V)("#6b3d1d"))).Put("mseam", ((V)("#8c5527"))).Put("stitch", ((V)("#fff3d8"))).Put("pseam", ((V)("#d6b46c"))).Put("hole", ((V)("#3a2a1a"))).Put("nos", ((V)("#2f7a64"))).Put("fold", ((V)("#5aa58a"))).Put("RR", ((V)(37D))).Put("YT", ((V)(42D))).Put("YW", ((V)(71D))).Put("yR", ((V)(68.6))).Put("YB", ((V)(74D))).Put("flare", ((V)(1D))).Put("tuck", ((V)(4.5))).Put("K", ((V)(1.3))).Put("tap", ((V)(0.3))).Put("NM", ((V)(26D))).Put("sc", ((V)(0.8))).Put("ex", ((V)(2D))).V : NewObj(25).Put("shell", Arr(((V)("#b6e38a")), ((V)("#78bf5c")), ((V)("#3f8a48")))).Put("puff", Arr(((V)("#d6f5a6")), ((V)("#a9dc7e")))).Put("rim", Arr(((V)("#cdeb98")), ((V)("#93c464")))).Put("rimP", ((V)("#eefbc8"))).Put("plast", Arr(((V)("#fff6cf")), ((V)("#f0d68e")))).Put("skin", Arr(((V)("#ecfccf")), ((V)("#b4e894")), ((V)("#7cc462")))).Put("seam", ((V)("#2f6b3a"))).Put("mseam", ((V)("#5f9142"))).Put("stitch", ((V)("#f4ffdc"))).Put("pseam", ((V)("#d9b862"))).Put("hole", ((V)("#24452a"))).Put("nos", ((V)("#5a9a44"))).Put("fold", ((V)("#7cb85c"))).Put("RR", ((V)(35D))).Put("YT", ((V)(31.5))).Put("YW", ((V)(67D))).Put("yR", ((V)(62D))).Put("YB", ((V)(71D))).Put("flare", ((V)(2.2))).Put("tuck", ((V)(4D))).Put("K", ((V)(1.08))).Put("tap", ((V)(0D))).Put("NM", ((V)(24D))).Put("sc", ((V)(1.3))).Put("ex", ((V)(2.3))).V);
-Set(xd_13403, "innerHTML", ((V)(string.Concat(new string[] { "<radialGradient id=\"tvs", ToStr(u_13262), "\" cx=\"36%\" cy=\"22%\" r=\"80%\"><stop offset=\"0\" stop-color=\"", ToStr(GetIdx(Get(V_13405, "shell"), 0D)), "\"/><stop offset=\"0.45\" stop-color=\"", ToStr(GetIdx(Get(V_13405, "shell"), 1D)), "\"/><stop offset=\"1\" stop-color=\"", ToStr(GetIdx(Get(V_13405, "shell"), 2D)), "\"/></radialGradient>", "<radialGradient id=\"tvp", ToStr(u_13262), "\" cx=\"42%\" cy=\"38%\" r=\"62%\"><stop offset=\"0\" stop-color=\"", ToStr(GetIdx(Get(V_13405, "puff"), 0D)), "\" stop-opacity=\"0.95\"/><stop offset=\"0.55\" stop-color=\"", ToStr(GetIdx(Get(V_13405, "puff"), 1D)), "\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"", ToStr(GetIdx(Get(V_13405, "puff"), 1D)), "\" stop-opacity=\"0\"/></radialGradient>", "<linearGradient id=\"tvm", ToStr(u_13262), "\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"", ToStr(GetIdx(Get(V_13405, "rim"), 0D)), "\"/><stop offset=\"1\" stop-color=\"", ToStr(GetIdx(Get(V_13405, "rim"), 1D)), "\"/></linearGradient>", "<radialGradient id=\"tvq", ToStr(u_13262), "\" cx=\"45%\" cy=\"30%\" r=\"70%\"><stop offset=\"0\" stop-color=\"", ToStr(Get(V_13405, "rimP")), "\" stop-opacity=\"0.9\"/><stop offset=\"1\" stop-color=\"", ToStr(Get(V_13405, "rimP")), "\" stop-opacity=\"0\"/></radialGradient>", "<linearGradient id=\"tvl", ToStr(u_13262), "\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"", ToStr(GetIdx(Get(V_13405, "plast"), 0D)), "\"/><stop offset=\"1\" stop-color=\"", ToStr(GetIdx(Get(V_13405, "plast"), 1D)), "\"/></linearGradient>", "<radialGradient id=\"tvk", ToStr(u_13262), "\" cx=\"38%\" cy=\"28%\" r=\"78%\"><stop offset=\"0\" stop-color=\"", ToStr(GetIdx(Get(V_13405, "skin"), 0D)), "\"/><stop offset=\"0.55\" stop-color=\"", ToStr(GetIdx(Get(V_13405, "skin"), 1D)), "\"/><stop offset=\"1\" stop-color=\"", ToStr(GetIdx(Get(V_13405, "skin"), 2D)), "\"/></radialGradient>", "<filter id=\"tfz", ToStr(u_13262), "\" x=\"-8%\" y=\"-8%\" width=\"116%\" height=\"116%\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"2.2\" numOctaves=\"2\" seed=\"3\" result=\"n\"/><feDisplacementMap in=\"SourceGraphic\" in2=\"n\" scale=\"0.95\" xChannelSelector=\"R\" yChannelSelector=\"G\"/></filter>", "<filter id=\"tfs", ToStr(u_13262), "\" x=\"-6%\" y=\"-6%\" width=\"112%\" height=\"112%\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"2.4\" numOctaves=\"2\" seed=\"5\" result=\"n\"/><feDisplacementMap in=\"SourceGraphic\" in2=\"n\" scale=\"0.55\" xChannelSelector=\"R\" yChannelSelector=\"G\"/></filter>" }))));
-SK_13406 = ((V)(string.Concat("url(#tvk", ToStr(u_13262), ")")));
-FZ_13407 = ((V)(string.Concat("url(#tfz", ToStr(u_13262), ")")));
+Set(xd_13403, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"tvs").V(u_13262).S("\" cx=\"36%\" cy=\"22%\" r=\"80%\"><stop offset=\"0\" stop-color=\"").V(GetIdx(Get(V_13405, "shell"), 0D)).S("\"/><stop offset=\"0.45\" stop-color=\"").V(GetIdx(Get(V_13405, "shell"), 1D)).S("\"/><stop offset=\"1\" stop-color=\"").V(GetIdx(Get(V_13405, "shell"), 2D)).S("\"/></radialGradient>").S("<radialGradient id=\"tvp").V(u_13262).S("\" cx=\"42%\" cy=\"38%\" r=\"62%\"><stop offset=\"0\" stop-color=\"").V(GetIdx(Get(V_13405, "puff"), 0D)).S("\" stop-opacity=\"0.95\"/><stop offset=\"0.55\" stop-color=\"").V(GetIdx(Get(V_13405, "puff"), 1D)).S("\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"").V(GetIdx(Get(V_13405, "puff"), 1D)).S("\" stop-opacity=\"0\"/></radialGradient>").S("<linearGradient id=\"tvm").V(u_13262).S("\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"").V(GetIdx(Get(V_13405, "rim"), 0D)).S("\"/><stop offset=\"1\" stop-color=\"").V(GetIdx(Get(V_13405, "rim"), 1D)).S("\"/></linearGradient>").S("<radialGradient id=\"tvq").V(u_13262).S("\" cx=\"45%\" cy=\"30%\" r=\"70%\"><stop offset=\"0\" stop-color=\"").V(Get(V_13405, "rimP")).S("\" stop-opacity=\"0.9\"/><stop offset=\"1\" stop-color=\"").V(Get(V_13405, "rimP")).S("\" stop-opacity=\"0\"/></radialGradient>").S("<linearGradient id=\"tvl").V(u_13262).S("\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"").V(GetIdx(Get(V_13405, "plast"), 0D)).S("\"/><stop offset=\"1\" stop-color=\"").V(GetIdx(Get(V_13405, "plast"), 1D)).S("\"/></linearGradient>").S("<radialGradient id=\"tvk").V(u_13262).S("\" cx=\"38%\" cy=\"28%\" r=\"78%\"><stop offset=\"0\" stop-color=\"").V(GetIdx(Get(V_13405, "skin"), 0D)).S("\"/><stop offset=\"0.55\" stop-color=\"").V(GetIdx(Get(V_13405, "skin"), 1D)).S("\"/><stop offset=\"1\" stop-color=\"").V(GetIdx(Get(V_13405, "skin"), 2D)).S("\"/></radialGradient>").S("<filter id=\"tfz").V(u_13262).S("\" x=\"-8%\" y=\"-8%\" width=\"116%\" height=\"116%\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"2.2\" numOctaves=\"2\" seed=\"3\" result=\"n\"/><feDisplacementMap in=\"SourceGraphic\" in2=\"n\" scale=\"0.95\" xChannelSelector=\"R\" yChannelSelector=\"G\"/></filter>").S("<filter id=\"tfs").V(u_13262).S("\" x=\"-6%\" y=\"-6%\" width=\"112%\" height=\"112%\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"2.4\" numOctaves=\"2\" seed=\"5\" result=\"n\"/><feDisplacementMap in=\"SourceGraphic\" in2=\"n\" scale=\"0.55\" xChannelSelector=\"R\" yChannelSelector=\"G\"/></filter>").End())));
+SK_13406 = ((V)(JsStrBuf.Begin().S("url(#tvk").V(u_13262).S(")").End()));
+FZ_13407 = ((V)(JsStrBuf.Begin().S("url(#tfz").V(u_13262).S(")").End()));
 { V _t13449 = V_13405;
 if (_t13449.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t13449));
 { V _t13450 = Get(_t13449, "RR");
@@ -18424,24 +18424,24 @@ return Call(pt_13426, V.Undef, Call(PB_13424, V.Undef, ((V)((a0_13697 + (((a1_13
 k_13695++;
 }
 }
-gIn_13435 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(1).Put("filter", ((V)(string.Concat("url(#tfs", ToStr(u_13262), ")")))).V, Get(T_13402, "gShell"));
+gIn_13435 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(1).Put("filter", ((V)(JsStrBuf.Begin().S("url(#tfs").V(u_13262).S(")").End()))).V, Get(T_13402, "gShell"));
 Invoke(Arr(Get(T_13402, "dome"), Get(T_13402, "band"), Get(T_13402, "hex"), Get(T_13402, "hole"), Get(T_13402, "shine")), "forEach", Fn((V _self5542, int _argc13750, V e_13756, V _a13753, V _a13754, V _a13755, V[] _rest13751) => {
 return Invoke(gIn_13435, "appendChild", e_13756);
 }, 1, "", true));
-Invoke(Get(T_13402, "dome"), "setAttribute", ((V)("fill")), ((V)(string.Concat("url(#tvs", ToStr(u_13262), ")"))));
-plast_13436 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#tvl", ToStr(u_13262), ")")))).V, gIn_13435);
+Invoke(Get(T_13402, "dome"), "setAttribute", ((V)("fill")), ((V)(JsStrBuf.Begin().S("url(#tvs").V(u_13262).S(")").End())));
+plast_13436 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#tvl").V(u_13262).S(")").End()))).V, gIn_13435);
 pseam_13437 = Call(mk_5555, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", Get(V_13405, "pseam")).Put("stroke-width", ((V)(0.8))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.85))).V, gIn_13435);
 Invoke(gIn_13435, "insertBefore", plast_13436, Get(T_13402, "band"));
 Invoke(gIn_13435, "insertBefore", pseam_13437, Get(T_13402, "band"));
 gDet_13438 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(0).V, gIn_13435);
 Invoke(gIn_13435, "insertBefore", gDet_13438, Get(T_13402, "hole"));
 puffs_13439 = Invoke(plates_13432, "map", Fn((V _self5542, int _argc13757, V _a13759, V _a13760, V _a13761, V _a13762, V[] _rest13758) => {
-return Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#tvp", ToStr(u_13262), ")")))).V, gDet_13438);
+return Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#tvp").V(u_13262).S(")").End()))).V, gDet_13438);
 }, 0, "", true));
 mpuffs_13440 = Invoke(marg_13434, "map", Fn((V _self5542, int _argc13763, V _a13765, V _a13766, V _a13767, V _a13768, V[] _rest13764) => {
-return Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#tvq", ToStr(u_13262), ")")))).V, gDet_13438);
+return Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#tvq").V(u_13262).S(")").End()))).V, gDet_13438);
 }, 0, "", true));
-Invoke(Get(T_13402, "band"), "setAttribute", ((V)("fill")), ((V)(string.Concat("url(#tvm", ToStr(u_13262), ")"))));
+Invoke(Get(T_13402, "band"), "setAttribute", ((V)("fill")), ((V)(JsStrBuf.Begin().S("url(#tvm").V(u_13262).S(")").End())));
 Invoke(Get(T_13402, "band"), "setAttribute", ((V)("opacity")), ((V)(1D)));
 Invoke(gIn_13435, "insertBefore", Get(T_13402, "band"), gDet_13438);
 Invoke(gDet_13438, "insertBefore", Get(T_13402, "band"), Get(gDet_13438, "firstChild"));
@@ -18524,7 +18524,7 @@ V tm_13827 = default;
 sk_13823 = 0.86;
 G0_13824 = 89.5;
 sv_13825 = (Get(art_5551, "ownerSVGElement") is var _t13828 && Truthy(_t13828) ? _t13828 : Get(art_5551, "parentNode"));
-sg_13826 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(1).Put("transform", ((V)(string.Concat(new string[] { "translate(", ToStr(Invoke(((V)((50D * (1D - sk_13823)))), "toFixed", ((V)(2D)))), " ", ToStr(Invoke(((V)((G0_13824 * (1D - sk_13823)))), "toFixed", ((V)(2D)))), ") scale(", NumStr(sk_13823), ")" })))).V, sv_13825);
+sg_13826 = Call(mk_5555, V.Undef, ((V)("g")), NewObj(1).Put("transform", ((V)(JsStrBuf.Begin().S("translate(").V(Invoke(((V)((50D * (1D - sk_13823)))), "toFixed", ((V)(2D)))).S(" ").V(Invoke(((V)((G0_13824 * (1D - sk_13823)))), "toFixed", ((V)(2D)))).S(") scale(").N(sk_13823).S(")").End()))).V, sv_13825);
 Invoke(Arr(Get(I_5549, "shadow"), art_5551, Get(I_5549, "fxG")), "forEach", Fn((V _self5542, int _argc13829, V e_13835, V _a13832, V _a13833, V _a13834, V[] _rest13830) => {
 if (Truthy((e_13835 is var _t13836 && !Truthy(_t13836) ? _t13836 : (SEq(Get(e_13835, "parentNode"), sv_13825) ? V.True : V.False)))) {
 Invoke(sg_13826, "appendChild", e_13835);
@@ -18556,8 +18556,8 @@ return ((V)((ToNum(Get(a_13860, "cx")) - ToNum(Get(b_13861, "cx")))));
 }, 2, "", true));
 u_13848 = Get(I_5549, "u");
 jd_13849 = Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551);
-Set(jd_13849, "innerHTML", ((V)(string.Concat("<radialGradient id=\"jgl", ToStr(u_13848), "\"><stop offset=\"0\" stop-color=\"#eadcff\" stop-opacity=\"0.9\"/><stop offset=\"0.5\" stop-color=\"#c9a8ff\" stop-opacity=\"0.35\"/><stop offset=\"1\" stop-color=\"#c9a8ff\" stop-opacity=\"0\"/></radialGradient>"))));
-glow_13850 = Call(mk_5555, V.Undef, ((V)("ellipse")), NewObj(2).Put("fill", ((V)(string.Concat("url(#jgl", ToStr(u_13848), ")")))).Put("opacity", ((V)(0D))).V, root_5550);
+Set(jd_13849, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"jgl").V(u_13848).S("\"><stop offset=\"0\" stop-color=\"#eadcff\" stop-opacity=\"0.9\"/><stop offset=\"0.5\" stop-color=\"#c9a8ff\" stop-opacity=\"0.35\"/><stop offset=\"1\" stop-color=\"#c9a8ff\" stop-opacity=\"0\"/></radialGradient>").End())));
+glow_13850 = Call(mk_5555, V.Undef, ((V)("ellipse")), NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#jgl").V(u_13848).S(")").End()))).Put("opacity", ((V)(0D))).V, root_5550);
 Invoke(root_5550, "insertBefore", glow_13850, art_5551);
 par_13851 = (Truthy(Get(tq_13847, "length")) ? Get(Get(GetIdx(tq_13847, 0D), "e"), "parentNode") : bodyG_5561);
 fg_13852 = Call(mk_5555, V.Undef, ((V)("g")), (Truthy(Invoke(bodyG_5561, "getAttribute", ((V)("filter")))) ? NewObj(1).Put("filter", Invoke(bodyG_5561, "getAttribute", ((V)("filter")))).V : NewObj(0).V), art_5551);
@@ -18701,10 +18701,10 @@ Set(Get(Get(q_14011, "e"), "style"), "display", ((V)("none")));
 return default;
 }, 1, "", true));
 df_13993 = Call(mk_5555, V.Undef, ((V)("defs")), NewObj(0).V, art_5551);
-Set(df_13993, "innerHTML", ((V)(string.Concat(new string[] { "<radialGradient id=\"mmh", ToStr(u_13987), "\" gradientUnits=\"userSpaceOnUse\" cx=\"38\" cy=\"28\" r=\"34\"><stop offset=\"0\" stop-color=\"#c8fff4\"/><stop offset=\"0.6\" stop-color=\"#5ed8d0\"/><stop offset=\"1\" stop-color=\"#2a9aa6\"/></radialGradient>", "<linearGradient id=\"mmc", ToStr(u_13987), "\" gradientUnits=\"userSpaceOnUse\" x1=\"37\" y1=\"0\" x2=\"63\" y2=\"0\"><stop offset=\"0\" stop-color=\"#2a1a70\" stop-opacity=\"0.42\"/><stop offset=\"0.16\" stop-color=\"#4a4ab0\" stop-opacity=\"0.12\"/><stop offset=\"0.3\" stop-color=\"#ffffff\" stop-opacity=\"0.3\"/><stop offset=\"0.46\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.74\" stop-color=\"#2a1a70\" stop-opacity=\"0.08\"/><stop offset=\"1\" stop-color=\"#2a1a70\" stop-opacity=\"0.48\"/></linearGradient>", "<radialGradient id=\"mmk", ToStr(u_13987), "\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#ffe2ee\"/><stop offset=\"0.6\" stop-color=\"#ffb6d0\"/><stop offset=\"1\" stop-color=\"#e888b0\"/></radialGradient>" }))));
-Set(M_13992, "hgr", Invoke(df_13993, "querySelector", ((V)(string.Concat("#mmh", ToStr(u_13987))))));
-Set(M_13992, "cgr", Invoke(df_13993, "querySelector", ((V)(string.Concat("#mmc", ToStr(u_13987))))));
-HF_13994 = ((V)(string.Concat("url(#mmh", ToStr(u_13987), ")")));
+Set(df_13993, "innerHTML", ((V)(JsStrBuf.Begin().S("<radialGradient id=\"mmh").V(u_13987).S("\" gradientUnits=\"userSpaceOnUse\" cx=\"38\" cy=\"28\" r=\"34\"><stop offset=\"0\" stop-color=\"#c8fff4\"/><stop offset=\"0.6\" stop-color=\"#5ed8d0\"/><stop offset=\"1\" stop-color=\"#2a9aa6\"/></radialGradient>").S("<linearGradient id=\"mmc").V(u_13987).S("\" gradientUnits=\"userSpaceOnUse\" x1=\"37\" y1=\"0\" x2=\"63\" y2=\"0\"><stop offset=\"0\" stop-color=\"#2a1a70\" stop-opacity=\"0.42\"/><stop offset=\"0.16\" stop-color=\"#4a4ab0\" stop-opacity=\"0.12\"/><stop offset=\"0.3\" stop-color=\"#ffffff\" stop-opacity=\"0.3\"/><stop offset=\"0.46\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.74\" stop-color=\"#2a1a70\" stop-opacity=\"0.08\"/><stop offset=\"1\" stop-color=\"#2a1a70\" stop-opacity=\"0.48\"/></linearGradient>").S("<radialGradient id=\"mmk").V(u_13987).S("\" cx=\"38%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#ffe2ee\"/><stop offset=\"0.6\" stop-color=\"#ffb6d0\"/><stop offset=\"1\" stop-color=\"#e888b0\"/></radialGradient>").End())));
+Set(M_13992, "hgr", Invoke(df_13993, "querySelector", ((V)(JsStrBuf.Begin().S("#mmh").V(u_13987).End()))));
+Set(M_13992, "cgr", Invoke(df_13993, "querySelector", ((V)(JsStrBuf.Begin().S("#mmc").V(u_13987).End()))));
+HF_13994 = ((V)(JsStrBuf.Begin().S("url(#mmh").V(u_13987).S(")").End()));
 ins_13995 = Fn((V _self5542, int _argc14015, V el_14021, V _a14018, V _a14019, V _a14020, V[] _rest14016) => {
 Invoke(par_13989, "insertBefore", el_14021, Get(hq_13988, "e"));
 return el_14021;
@@ -18714,18 +18714,18 @@ TF_13996 = (tFill_13990 is var _t14022 && Truthy(_t14022) ? _t14022 : ((V)("#5a9
 Set(M_13992, "hB", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", HF_13994).V, par_13989));
 Invoke(par_13989, "insertBefore", Get(M_13992, "hB"), Get(par_13989, "firstChild"));
 Set(M_13992, "tail", Call(ins_13995, V.Undef, Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", TF_13996).V, par_13989)));
-Set(M_13992, "tsh", Call(ins_13995, V.Undef, Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#mmc", ToStr(u_13987), ")")))).V, par_13989)));
+Set(M_13992, "tsh", Call(ins_13995, V.Undef, Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#mmc").V(u_13987).S(")").End()))).V, par_13989)));
 Set(M_13992, "scl", Call(ins_13995, V.Undef, Call(mk_5555, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffffff"))).Put("stroke-width", ((V)(0.8))).Put("opacity", ((V)(0.45))).Put("stroke-linecap", ((V)("round"))).V, par_13989)));
 Set(M_13992, "flG", Call(ins_13995, V.Undef, Call(mk_5555, V.Undef, ((V)("g")), NewObj(0).V, par_13989)));
 Set(M_13992, "fl", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", TF_13996).V, Get(M_13992, "flG")));
 Set(M_13992, "frib", Call(mk_5555, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#e8f2ff"))).Put("stroke-width", ((V)(0.55))).Put("opacity", ((V)(0.5))).Put("stroke-linecap", ((V)("round"))).V, Get(M_13992, "flG")));
 Set(M_13992, "torso", Call(ins_13995, V.Undef, Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", (gFill_13991 is var _t14023 && Truthy(_t14023) ? _t14023 : ((V)("#ffd6c0")))).V, par_13989)));
 Invoke(Arr(((V)(44.5)), ((V)(55.5))), "forEach", Fn((V _self5542, int _argc14024, V x_14030, V _a14027, V _a14028, V _a14029, V[] _rest14025) => {
-return Invoke(Get(M_13992, "cups"), "push", NewObj(2).Put("x", x_14030).Put("e", Call(ins_13995, V.Undef, Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(string.Concat("url(#mmk", ToStr(u_13987), ")")))).V, par_13989))).V);
+return Invoke(Get(M_13992, "cups"), "push", NewObj(2).Put("x", x_14030).Put("e", Call(ins_13995, V.Undef, Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#mmk").V(u_13987).S(")").End()))).V, par_13989))).V);
 }, 1, "", true));
 if (Truthy(Get(M_13992, "bang"))) {
 Invoke(Get(Get(M_13992, "bang"), "e"), "setAttribute", ((V)("fill")), HF_13994);
-Invoke(Get(Get(M_13992, "bang"), "e"), "setAttribute", ((V)("clip-path")), ((V)(string.Concat("url(#ghc", ToStr(u_13987), ")"))));
+Invoke(Get(Get(M_13992, "bang"), "e"), "setAttribute", ((V)("clip-path")), ((V)(JsStrBuf.Begin().S("url(#ghc").V(u_13987).S(")").End())));
 Invoke(par_13989, "appendChild", Get(Get(M_13992, "bang"), "e"));
 }
 Set(M_13992, "hF", Call(mk_5555, V.Undef, ((V)("path")), NewObj(1).Put("fill", HF_13994).V, par_13989));
@@ -18783,9 +18783,9 @@ return default;
 }
 cache_8 = NewObj(0).V;
 load_9 = Fn((V _self1, int _argc14052, V k_14058, V _a14055, V _a14056, V _a14057, V[] _rest14053) => {
-return (GetK(cache_8, k_14058) is var _t14094 && Truthy(_t14094) ? _t14094 : SetK(cache_8, k_14058, Invoke(Invoke(Call(G("fetch"), V.Undef, ((V)(string.Concat(new string[] { "export/tripo/", ToStr(k_14058), "/", ToStr(k_14058), "-front.svg", ToStr(Invoke((Get((Invoke((Get(G("window"), "CREATURES_V2") is var _t14091 && Truthy(_t14091) ? _t14091 : Arr()), "find", Fn((V _self1, int _argc14084, V c_14079, V _a14087, V _a14088, V _a14089, V[] _rest14085) => {
-return (Get(c_14079, "src") is var _t14090 && !Truthy(_t14090) ? _t14090 : (GeN(Invoke(Get(c_14079, "src"), "indexOf", ((V)(string.Concat(new string[] { "/", ToStr(k_14058), "/", ToStr(k_14058), "-front.svg?" })))), 0D) ? V.True : V.False));
-}, 1, "", true)) is var _t14092 && Truthy(_t14092) ? _t14092 : NewObj(0).V), "src") is var _t14093 && Truthy(_t14093) ? _t14093 : ((V)(""))), "replace", NewRegExp(RX115, "^[^?]*", ""), ((V)("")))) })))), "then", Fn((V _self1, int _argc14066, V r_14072, V _a14069, V _a14070, V _a14071, V[] _rest14067) => {
+return (GetK(cache_8, k_14058) is var _t14094 && Truthy(_t14094) ? _t14094 : SetK(cache_8, k_14058, Invoke(Invoke(Call(G("fetch"), V.Undef, ((V)(JsStrBuf.Begin().S("export/tripo/").V(k_14058).S("/").V(k_14058).S("-front.svg").V(Invoke((Get((Invoke((Get(G("window"), "CREATURES_V2") is var _t14091 && Truthy(_t14091) ? _t14091 : Arr()), "find", Fn((V _self1, int _argc14084, V c_14079, V _a14087, V _a14088, V _a14089, V[] _rest14085) => {
+return (Get(c_14079, "src") is var _t14090 && !Truthy(_t14090) ? _t14090 : (GeN(Invoke(Get(c_14079, "src"), "indexOf", ((V)(JsStrBuf.Begin().S("/").V(k_14058).S("/").V(k_14058).S("-front.svg?").End()))), 0D) ? V.True : V.False));
+}, 1, "", true)) is var _t14092 && Truthy(_t14092) ? _t14092 : NewObj(0).V), "src") is var _t14093 && Truthy(_t14093) ? _t14093 : ((V)(""))), "replace", NewRegExp(RX115, "^[^?]*", ""), ((V)("")))).End()))), "then", Fn((V _self1, int _argc14066, V r_14072, V _a14069, V _a14070, V _a14071, V[] _rest14067) => {
 return Invoke(r_14072, "text");
 }, 1, "", true)), "then", Fn((V _self1, int _argc14059, V t_14065, V _a14062, V _a14063, V _a14064, V[] _rest14060) => {
 return Invoke(t_14065, "replace", NewRegExp(RX114, "<metadata>[\\s\\S]*?<\\/metadata>", ""), ((V)("")));
@@ -19446,7 +19446,7 @@ if (Truthy((Invoke(NewRegExp(RX117, "^poke", ""), "test", nm_14531) is var _t145
 V RRs_14542 = default;
 Set(T_14528, "pk0", Get(Get(I_14377, "cur"), "t0"));
 RRs_14542 = (Get(G("window"), "RiveRig") is var _t14543 && !Truthy(_t14543) ? _t14543 : Get(Get(G("window"), "RiveRig"), "STATES"));
-if ((!(Truthy(Get(T_14528, "noHide"))) && !(Truthy((RRs_14542 is var _t14544 && !Truthy(_t14544) ? _t14544 : GetK(RRs_14542, ((V)(string.Concat(ToStr(GetIdx(Invoke(nm_14531, "split", ((V)("@"))), 0D)), "@", ToStr(Get(I_14377, "key"))))))))))) {
+if ((!(Truthy(Get(T_14528, "noHide"))) && !(Truthy((RRs_14542 is var _t14544 && !Truthy(_t14544) ? _t14544 : GetK(RRs_14542, ((V)(JsStrBuf.Begin().V(GetIdx(Invoke(nm_14531, "split", ((V)("@"))), 0D)).S("@").V(Get(I_14377, "key")).End())))))))) {
 Set(T_14528, "pk", now_14379);
 }
 }
@@ -19619,7 +19619,7 @@ if (Truthy(Get(I_14377, "pfArt"))) {
 V b_14636 = default;
 V tf_14637 = default;
 b_14636 = (Get(I_14377, "pfB") is var _t14638 && Truthy(_t14638) ? _t14638 : ((V)(0D)));
-tf_14637 = ((V)((GtN(b_14636, 0.003) ? string.Concat(new string[] { "translate(", ToStr(Call(r2_14387, V.Undef, Add(((V)(50D)), Get(P_14378, "x")))), " ", ToStr(Call(r2_14387, V.Undef, Get(g_14390, "G"))), ") scale(", ToStr(Call(r2_14387, V.Undef, ((V)((1D + (ToNum(b_14636) * 0.12)))))), ") translate(", ToStr(Call(r2_14387, V.Undef, ((V)(((-50D) - ToNum(Get(P_14378, "x"))))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((-ToNum(Get(g_14390, "G"))))))), ")" }) : "")));
+tf_14637 = ((V)((GtN(b_14636, 0.003) ? JsStrBuf.Begin().S("translate(").V(Call(r2_14387, V.Undef, Add(((V)(50D)), Get(P_14378, "x")))).S(" ").V(Call(r2_14387, V.Undef, Get(g_14390, "G"))).S(") scale(").V(Call(r2_14387, V.Undef, ((V)((1D + (ToNum(b_14636) * 0.12)))))).S(") translate(").V(Call(r2_14387, V.Undef, ((V)(((-50D) - ToNum(Get(P_14378, "x"))))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((-ToNum(Get(g_14390, "G"))))))).S(")").End() : "")));
 if (Truthy(tf_14637)) {
 Call(set_14391, V.Undef, Get(I_14377, "pfArt"), ((V)("transform")), tf_14637);
 } else {
@@ -20225,10 +20225,10 @@ double CL_15056 = 0;
 double TH_15057 = 0;
 double YG_15058 = 0;
 double EL_15059 = 0;
-V d_15060 = default;
-V dh_15061 = default;
+JsStrBuf d_15060 = null;
+JsStrBuf dh_15061 = null;
 V cP_15062 = default;
-V rm_15063 = default;
+JsStrBuf rm_15063 = null;
 double rB_15064 = 0;
 S_15048 = Get(I_14377, "sc");
 tg_15049 = ((((ToNum(Get(P_14378, "x")) * 1.4) + (ToNum(Get(P_14378, "tilt")) * 0.5)) + (ToNum(Get(P_14378, "lean")) * 1.5)) + (ToNum(Get(P_14378, "turn")) * 14D));
@@ -20269,7 +20269,7 @@ sp_15067 = 3.4;
 rMax_15068 = (((YA_15052 - YG_15058) / CH_15055) * CL_15056);
 M_15069 = System.Math.Ceiling(((1.5 * CL_15056) / sp_15067));
 {
-foreach (V _k15070 in Iterate(Arr(((V)(0D)), ((V)(1D))))) {
+foreach (V _k15070 in new JsIter(Arr(((V)(0D)), ((V)(1D))))) {
 V fam_15071 = default;
 fam_15071 = _k15070;
 {
@@ -20315,8 +20315,8 @@ i_15072++;
 }
 }
 }
-d_15060 = ((V)(""));
-dh_15061 = ((V)(""));
+d_15060 = new JsStrBuf("");
+dh_15061 = new JsStrBuf("");
 Set(S_15048, "cone", ((V)(1D)));
 cP_15062 = Fn((V _self1, int _argc15084, V ph_15090, V y_15091, V _a15088, V _a15089, V[] _rest15085) => {
 double r_15092 = 0;
@@ -20330,7 +20330,7 @@ Invoke(Get(S_15048, "W"), "forEach", Fn((V _self1, int _argc15094, V L_15100, V 
 V pen_15101 = default;
 pen_15101 = (false ? V.True : V.False);
 {
-foreach (V _k15102 in Iterate(L_15100)) {
+foreach (V _k15102 in new JsIter(L_15100)) {
 V ph0_15103 = default;
 V y_15104 = default;
 { V _t15105 = ListOf(_k15102);
@@ -20344,8 +20344,8 @@ p_15108 = Call(cP_15062, V.Undef, Add(ph0_15103, ((V)(yb_14400))), y_15104);
 if (Truthy(p_15108)) {
 V c_15109 = default;
 c_15109 = ((V)((Truthy(pen_15101) ? "L" : "M")));
-d_15060 = ((V)(string.Concat(ToStr(d_15060), ToStr(Add(c_15109, Call(r2_14387, V.Undef, GetIdx(p_15108, 0D)))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_15108, 1D))))));
-dh_15061 = ((V)(string.Concat(ToStr(dh_15061), ToStr(Add(c_15109, Call(r2_14387, V.Undef, Add(GetIdx(p_15108, 0D), ((V)(0.34)))))), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_15108, 1D), ((V)(0.34))))))));
+d_15060.V(Add(c_15109, Call(r2_14387, V.Undef, GetIdx(p_15108, 0D)))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_15108, 1D)));
+dh_15061.V(Add(c_15109, Call(r2_14387, V.Undef, Add(GetIdx(p_15108, 0D), ((V)(0.34)))))).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(p_15108, 1D), ((V)(0.34)))));
 pen_15101 = (true ? V.True : V.False);
 } else {
 pen_15101 = (false ? V.True : V.False);
@@ -20354,7 +20354,7 @@ pen_15101 = (false ? V.True : V.False);
 }
 return default;
 }, 1, "", true));
-rm_15063 = ((V)(""));
+rm_15063 = new JsStrBuf("");
 rB_15064 = (((RT_15053 * (YA_15052 - YG_15058)) / CH_15055) + 0.4);
 {
 double k_15110 = 0;
@@ -20365,7 +20365,7 @@ double ph_15112 = 0;
 V p_15113 = default;
 ph_15112 = (((-System.Math.PI) / 2D) + ((System.Math.PI * k_15110) / 24D));
 p_15113 = Call(glob_14432, V.Undef, ((V)((50D + (19D * FdLibm.Sin(ph_15112))))), ((V)((YT_15054 + ((EL_15059 * 19D) * FdLibm.Cos(ph_15112))))));
-rm_15063 = ((V)(string.Concat(new string[] { ToStr(rm_15063), (NumTruthy(k_15110) ? "L" : "M"), ToStr(Call(r2_14387, V.Undef, GetIdx(p_15113, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_15113, 1D))) })));
+rm_15063.S((NumTruthy(k_15110) ? "L" : "M")).V(Call(r2_14387, V.Undef, GetIdx(p_15113, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_15113, 1D)));
 k_15110++;
 }
 }
@@ -20378,14 +20378,14 @@ double ph_15116 = 0;
 V p_15117 = default;
 ph_15116 = (((-System.Math.PI) / 2D) + ((System.Math.PI * k_15114) / 24D));
 p_15117 = Call(glob_14432, V.Undef, ((V)((50D + (rB_15064 * FdLibm.Sin(ph_15116))))), ((V)((YG_15058 + ((EL_15059 * rB_15064) * FdLibm.Cos(ph_15116))))));
-rm_15063 = ((V)(string.Concat(new string[] { ToStr(rm_15063), "L", ToStr(Call(r2_14387, V.Undef, GetIdx(p_15117, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_15117, 1D))) })));
+rm_15063.S("L").V(Call(r2_14387, V.Undef, GetIdx(p_15117, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_15117, 1D)));
 k_15114--;
 }
 }
-Call(set_14391, V.Undef, Get(S_15048, "rim"), ((V)("d")), ((V)(string.Concat(ToStr(rm_15063), "Z"))));
+Call(set_14391, V.Undef, Get(S_15048, "rim"), ((V)("d")), ((V)(string.Concat(rm_15063.Str, "Z"))));
 Set(S_15048, "cone", ((V)(0D)));
-Call(set_14391, V.Undef, Get(S_15048, "wf"), ((V)("d")), d_15060);
-Call(set_14391, V.Undef, Get(S_15048, "wh"), ((V)("d")), dh_15061);
+Call(set_14391, V.Undef, Get(S_15048, "wf"), ((V)("d")), ((V)(d_15060.Str)));
+Call(set_14391, V.Undef, Get(S_15048, "wh"), ((V)("d")), ((V)(dh_15061.Str)));
 if (Truthy(Get(S_15048, "gr"))) {
 V ga_15118 = default;
 V gb_15119 = default;
@@ -20419,7 +20419,7 @@ V pts_15145 = default;
 V bd_15146 = default;
 V ga_15147 = default;
 V gb_15148 = default;
-V pd_15149 = default;
+JsStrBuf pd_15149 = null;
 V od_15150 = default;
 V key2_15151 = default;
 V bp_15152 = default;
@@ -20470,7 +20470,7 @@ Call(set_14391, V.Undef, Get(T_15135, "gr"), ((V)("x1")), Call(r2_14387, V.Undef
 Call(set_14391, V.Undef, Get(T_15135, "gr"), ((V)("y1")), Call(r2_14387, V.Undef, GetIdx(ga_15147, 1D)));
 Call(set_14391, V.Undef, Get(T_15135, "gr"), ((V)("x2")), Call(r2_14387, V.Undef, GetIdx(gb_15148, 0D)));
 Call(set_14391, V.Undef, Get(T_15135, "gr"), ((V)("y2")), Call(r2_14387, V.Undef, GetIdx(gb_15148, 1D)));
-pd_15149 = ((V)(""));
+pd_15149 = new JsStrBuf("");
 {
 double i_15192 = 0;
 i_15192 = 0D;
@@ -20489,12 +20489,12 @@ goto _cont15193;
 }
 a_15197 = Call(HP_15141, V.Undef, ((V)(x_15195)), ((V)((33.5 - (z_15196 * KB_15143)))), ((V)(z_15196)));
 b_15198 = Call(HP_15141, V.Undef, ((V)(x_15195)), ((V)((40.5 - (z_15196 * KB_15143)))), ((V)(z_15196)));
-pd_15149 = ((V)(string.Concat(new string[] { ToStr(pd_15149), "M", ToStr(Call(r2_14387, V.Undef, GetIdx(a_15197, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(a_15197, 1D))), "L", ToStr(Call(r2_14387, V.Undef, GetIdx(b_15198, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(b_15198, 1D))) })));
+pd_15149.S("M").V(Call(r2_14387, V.Undef, GetIdx(a_15197, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(a_15197, 1D))).S("L").V(Call(r2_14387, V.Undef, GetIdx(b_15198, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(b_15198, 1D)));
 _cont15193: ;
 i_15192++;
 }
 }
-Call(set_14391, V.Undef, Get(T_15135, "pl"), ((V)("d")), pd_15149);
+Call(set_14391, V.Undef, Get(T_15135, "pl"), ((V)("d")), ((V)(pd_15149.Str)));
 Invoke(Get(T_15135, "L"), "forEach", Fn((V _self1, int _argc15199, V o_15205, V _a15202, V _a15203, V _a15204, V[] _rest15200) => {
 V x_15206 = default;
 V y_15207 = default;
@@ -20580,11 +20580,11 @@ V hp_15276 = default;
 double KK_15277 = 0;
 double DL_15278 = 0;
 double Y0_15279 = 0;
-V dG_15280 = default;
-V dH_15281 = default;
-V dB_15282 = default;
-V dL_15283 = default;
-V dD_15284 = default;
+JsStrBuf dG_15280 = null;
+JsStrBuf dH_15281 = null;
+JsStrBuf dB_15282 = null;
+JsStrBuf dL_15283 = null;
+JsStrBuf dD_15284 = null;
 V tri_15285 = default;
 double sw_15286 = 0;
 double cw_15287 = 0;
@@ -20610,7 +20610,7 @@ Z3_15270 = Fn((V _self1, int _argc15310, V x_15316, V y_15317, V z_15318, V _a15
 return Call(sphZ_14456, V.Undef, Add(((V)(50D)), x_15316), y_15317, z_15318);
 }, 3, "", true);
 pt_15271 = Fn((V _self1, int _argc15319, V p_15325, V _a15322, V _a15323, V _a15324, V[] _rest15320) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_15325, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_15325, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_15325, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_15325, 1D))).End()));
 }, 1, "", true);
 tg_15272 = ((((ToNum(Get(P_14378, "x")) * 1.4) + (ToNum(Get(P_14378, "tilt")) * 0.5)) + (ToNum(Get(P_14378, "lean")) * 1.5)) + (ToNum(Get(P_14378, "turn")) * 12D));
 ly_15273 = (ToNum(Get(P_14378, "lift")) - (ToNum(sq_14416) * 8D));
@@ -20659,10 +20659,10 @@ Set(N_15267, "d", Invoke(H_14370, "closedD", Invoke(H_14370, "hull", hp_15276)))
 KK_15277 = (1D / 22D);
 DL_15278 = (ToNum(TAU_14389) / 16D);
 Y0_15279 = 63.5;
-dG_15280 = ((V)(""));
-dH_15281 = ((V)(""));
+dG_15280 = new JsStrBuf("");
+dH_15281 = new JsStrBuf("");
 {
-foreach (V _k15333 in Iterate(Arr(((V)((-1D))), ((V)(1D))))) {
+foreach (V _k15333 in new JsIter(Arr(((V)((-1D))), ((V)(1D))))) {
 V s_15334 = default;
 s_15334 = _k15333;
 {
@@ -20692,8 +20692,8 @@ V p_15345 = default;
 V c_15346 = default;
 p_15345 = Call(P3_15269, V.Undef, ((V)(X_15343)), ((V)(y_15340)), ((V)(Z_15344)));
 c_15346 = ((V)((Truthy(pen_15337) ? "L" : "M")));
-dG_15280 = Add(dG_15280, Add(c_15346, Call(pt_15271, V.Undef, p_15345)));
-dH_15281 = ((V)(string.Concat(ToStr(dH_15281), ToStr(Add(c_15346, Call(r2_14387, V.Undef, Add(GetIdx(p_15345, 0D), ((V)(0.35)))))), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_15345, 1D), ((V)(0.45))))))));
+dG_15280.V(Add(c_15346, Call(pt_15271, V.Undef, p_15345)));
+dH_15281.V(Add(c_15346, Call(r2_14387, V.Undef, Add(GetIdx(p_15345, 0D), ((V)(0.35)))))).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(p_15345, 1D), ((V)(0.45)))));
 pen_15337 = (true ? V.True : V.False);
 } else {
 pen_15337 = (false ? V.True : V.False);
@@ -20706,13 +20706,13 @@ i_15335++;
 }
 }
 }
-Call(set_14391, V.Undef, Get(N_15267, "lat"), ((V)("d")), dG_15280);
-Call(set_14391, V.Undef, Get(N_15267, "latH"), ((V)("d")), dH_15281);
-dB_15282 = ((V)(""));
-dL_15283 = ((V)(""));
-dD_15284 = ((V)(""));
+Call(set_14391, V.Undef, Get(N_15267, "lat"), ((V)("d")), ((V)(dG_15280.Str)));
+Call(set_14391, V.Undef, Get(N_15267, "latH"), ((V)("d")), ((V)(dH_15281.Str)));
+dB_15282 = new JsStrBuf("");
+dL_15283 = new JsStrBuf("");
+dD_15284 = new JsStrBuf("");
 tri_15285 = Fn((V _self1, int _argc15347, V a_15353, V b_15354, V c_15355, V _a15352, V[] _rest15348) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(pt_15271, V.Undef, a_15353)), "L", ToStr(Call(pt_15271, V.Undef, b_15354)), "L", ToStr(Call(pt_15271, V.Undef, c_15355)), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(pt_15271, V.Undef, a_15353)).S("L").V(Call(pt_15271, V.Undef, b_15354)).S("L").V(Call(pt_15271, V.Undef, c_15355)).S("Z").End()));
 }, 3, "", true);
 {
 double m_15356 = 0;
@@ -20781,15 +20781,15 @@ V b_15393 = default;
 a_15392 = Call(tri_15285, V.Undef, pl_15379, pm_15381, ptp_15382);
 b_15393 = Call(tri_15285, V.Undef, pm_15381, pr_15380, ptp_15382);
 if (Le(GetIdx(pl_15379, 0D), GetIdx(pr_15380, 0D))) {
-dL_15283 = Add(dL_15283, a_15392);
-dD_15284 = Add(dD_15284, b_15393);
+dL_15283.V(a_15392);
+dD_15284.V(b_15393);
 } else {
-dL_15283 = Add(dL_15283, b_15393);
-dD_15284 = Add(dD_15284, a_15392);
+dL_15283.V(b_15393);
+dD_15284.V(a_15392);
 }
 } else {
 if ((zz_15378 > (-0.3))) {
-dB_15282 = Add(dB_15282, Add(Call(tri_15285, V.Undef, pl_15379, pm_15381, ptp_15382), Call(tri_15285, V.Undef, pm_15381, pr_15380, ptp_15382)));
+dB_15282.V(Add(Call(tri_15285, V.Undef, pl_15379, pm_15381, ptp_15382), Call(tri_15285, V.Undef, pm_15381, pr_15380, ptp_15382)));
 }
 }
 i_15364++;
@@ -20799,9 +20799,9 @@ _cont15357: ;
 m_15356++;
 }
 }
-Call(set_14391, V.Undef, Get(N_15267, "spB"), ((V)("d")), dB_15282);
-Call(set_14391, V.Undef, Get(N_15267, "spL"), ((V)("d")), dL_15283);
-Call(set_14391, V.Undef, Get(N_15267, "spD"), ((V)("d")), dD_15284);
+Call(set_14391, V.Undef, Get(N_15267, "spB"), ((V)("d")), ((V)(dB_15282.Str)));
+Call(set_14391, V.Undef, Get(N_15267, "spL"), ((V)("d")), ((V)(dL_15283.Str)));
+Call(set_14391, V.Undef, Get(N_15267, "spD"), ((V)("d")), ((V)(dD_15284.Str)));
 sw_15286 = (((((ToNum(ox_15274) * 1.3) + (FdLibm.Sin((ts_15268 * 0.9)) * 2.2)) + (ToNum(Call(clamp_14385, V.Undef, ((V)((ToNum(Get(P_14378, "earR")) - ToNum(Get(P_14378, "earL"))))), ((V)((-30D))), ((V)(30D)))) * 0.25)) + (ToNum(Call(clamp_14385, V.Undef, Get(P_14378, "htilt"), ((V)((-10D))), ((V)(10D)))) * 0.3)) * ToNum(D2R_14388));
 cw_15287 = FdLibm.Cos(sw_15286);
 swn_15288 = FdLibm.Sin(sw_15286);
@@ -20833,9 +20833,9 @@ return default;
 col_15296 = Fn((V _self1, int _argc15427, V b_15433, V _a15430, V _a15431, V _a15432, V[] _rest15428) => {
 V A_15434 = default;
 A_15434 = (LtN(b_15433, 0.55) ? Arr(Arr(((V)(46D)), ((V)(122D)), ((V)(48D))), Arr(((V)(95D)), ((V)(184D)), ((V)(79D))), ((V)((ToNum(b_15433) / 0.55)))) : Arr(Arr(((V)(95D)), ((V)(184D)), ((V)(79D))), Arr(((V)(184D)), ((V)(240D)), ((V)(158D))), ((V)(((ToNum(b_15433) - 0.55) / 0.45)))));
-return ((V)(string.Concat("rgb(", ToStr(Invoke(Invoke(GetIdx(A_15434, 0D), "map", Fn((V _self1, int _argc15435, V c_15441, V j_15442, V _a15439, V _a15440, V[] _rest15436) => {
+return ((V)(JsStrBuf.Begin().S("rgb(").V(Invoke(Invoke(GetIdx(A_15434, 0D), "map", Fn((V _self1, int _argc15435, V c_15441, V j_15442, V _a15439, V _a15440, V[] _rest15436) => {
 return ((V)(Round(ToNum(Add(c_15441, ((V)(((ToNum(GetK(GetIdx(A_15434, 1D), j_15442)) - ToNum(c_15441)) * ToNum(GetIdx(A_15434, 2D))))))))));
-}, 2, "", true)), "join", ((V)(",")))), ")")));
+}, 2, "", true)), "join", ((V)(",")))).S(")").End()));
 return default;
 }, 1, "", true);
 crw_15297 = Call(clamp_14385, V.Undef, (((V)(ToNum(Get(P_14378, "crw")))) is var _t15443 && Truthy(_t15443) ? _t15443 : ((V)(0D))), ((V)((-0.5))), ((V)(1.2)));
@@ -20990,8 +20990,8 @@ _cont15486: ;
 k_15485++;
 }
 }
-Call(set_14391, V.Undef, Get(o_15451, "bl"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Lp_15464, "concat", Invoke(Invoke(Rp_15465, "slice"), "reverse")), "map", pt_15271), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(o_15451, "rb"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(PC_15463, "slice", ((V)(1D)), ((V)(8D))), "map", pt_15271), "join", ((V)("L"))))))));
+Call(set_14391, V.Undef, Get(o_15451, "bl"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Lp_15464, "concat", Invoke(Invoke(Rp_15465, "slice"), "reverse")), "map", pt_15271), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_15451, "rb"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(PC_15463, "slice", ((V)(1D)), ((V)(8D))), "map", pt_15271), "join", ((V)("L")))).End())));
 Call(set_14391, V.Undef, Get(o_15451, "gr"), ((V)("x1")), Call(r2_14387, V.Undef, GetIdx(GetIdx(gL_15466, 0D), 0D)));
 Call(set_14391, V.Undef, Get(o_15451, "gr"), ((V)("y1")), Call(r2_14387, V.Undef, GetIdx(GetIdx(gL_15466, 0D), 1D)));
 Call(set_14391, V.Undef, Get(o_15451, "gr"), ((V)("x2")), Call(r2_14387, V.Undef, GetIdx(GetIdx(gR_15467, 0D), 0D)));
@@ -21011,7 +21011,7 @@ od_15299 = Invoke(Invoke(Get(N_15267, "LV"), "slice"), "sort", Fn((V _self1, int
 return ((V)((ToNum(Get(p_15534, "dz")) - ToNum(Get(q_15535, "dz")))));
 }, 2, "", true));
 ok_15300 = Invoke(Invoke(od_15299, "map", Fn((V _self1, int _argc15536, V o_15542, V _a15539, V _a15540, V _a15541, V[] _rest15537) => {
-return ((V)(string.Concat(ToStr(Invoke(Get(N_15267, "LV"), "indexOf", o_15542)), (LtN(Get(o_15542, "dz"), (-1.5)) ? "b" : "f"))));
+return ((V)(JsStrBuf.Begin().V(Invoke(Get(N_15267, "LV"), "indexOf", o_15542)).S((LtN(Get(o_15542, "dz"), (-1.5)) ? "b" : "f")).End()));
 }, 1, "", true)), "join", ((V)(",")));
 if (!SEq(ok_15300, Get(N_15267, "ok"))) {
 Set(N_15267, "ok", ok_15300);
@@ -21080,7 +21080,7 @@ NZ_15553 = Fn((V _self1, int _argc15609, V x_15615, V y_15616, V z_15617, V _a15
 return Call(sphZ_14456, V.Undef, Add(((V)(50D)), x_15615), Add(HY_14395, y_15616), z_15617);
 }, 3, "", true);
 pt_15554 = Fn((V _self1, int _argc15618, V p_15624, V _a15621, V _a15622, V _a15623, V[] _rest15619) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_15624, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_15624, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_15624, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_15624, 1D))).End()));
 }, 1, "", true);
 cv_15555 = Fn((V _self1, int _argc15625, V k_15631, V _a15628, V _a15629, V _a15630, V[] _rest15626) => {
 double v_15632 = 0;
@@ -21210,7 +21210,7 @@ Invoke(Lp_15562, "push", Call(P3_15552, V.Undef, ((V)((ToNum(Get(o_15654, "r")) 
 Invoke(Rp_15563, "push", Call(P3_15552, V.Undef, ((V)((ToNum(Get(o_15654, "r")) * FdLibm.Sin(ToNum(fh_15661))))), Get(o_15654, "y"), ((V)((ToNum(Get(o_15654, "r")) * FdLibm.Cos(ToNum(fh_15661)))))));
 return default;
 }, 1, "", true));
-Set(A_15550, "dF", ((V)((GtN(Get(Lp_15562, "length"), 1D) ? string.Concat("M", ToStr(Invoke(Invoke(Invoke(Lp_15562, "concat", Invoke(Rp_15563, "reverse")), "map", pt_15554), "join", ((V)("L")))), "Z") : "M0 0Z"))));
+Set(A_15550, "dF", ((V)((GtN(Get(Lp_15562, "length"), 1D) ? JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Lp_15562, "concat", Invoke(Rp_15563, "reverse")), "map", pt_15554), "join", ((V)("L")))).S("Z").End() : "M0 0Z"))));
 S_15564 = Get(A_15550, "S");
 nn_15565 = Hypot(1D, ToNum(Get(S_15564, "dr")));
 n_15566 = Arr(((V)(0D)), ((V)(((-ToNum(Get(S_15564, "dr"))) / nn_15565))), ((V)((1D / nn_15565))));
@@ -21292,7 +21292,7 @@ Invoke(q_15726, "push", Call(P3_15552, V.Undef, x_15732, y_15730, ((V)(System.Ma
 k_15727++;
 }
 }
-return ((V)(string.Concat("M", ToStr(Invoke(Invoke(q_15726, "map", pt_15554), "join", ((V)("L")))), "Z")));
+return ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(q_15726, "map", pt_15554), "join", ((V)("L")))).S("Z").End()));
 return default;
 }, 1, "", true);
 Call(set_14391, V.Undef, Get(A_15550, "sock"), ((V)("d")), Call(rimD_15583, V.Undef, ((V)(10.8))));
@@ -21315,10 +21315,10 @@ Invoke(smP_15584, "push", CallSpread(P3_15552, V.Undef, new ArrBuilder().Spread(
 k_15733++;
 }
 }
-Call(set_14391, V.Undef, Get(A_15550, "seam"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(smP_15584, "map", pt_15554), "join", ((V)("L"))))))));
-Call(set_14391, V.Undef, Get(A_15550, "seamH"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(smP_15584, "map", Fn((V _self1, int _argc15737, V p_15743, V _a15740, V _a15741, V _a15742, V[] _rest15738) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_15743, 0D), ((V)(0.4))))), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_15743, 1D), ((V)(0.4))))))));
-}, 1, "", true)), "join", ((V)("L"))))))));
+Call(set_14391, V.Undef, Get(A_15550, "seam"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(smP_15584, "map", pt_15554), "join", ((V)("L")))).End())));
+Call(set_14391, V.Undef, Get(A_15550, "seamH"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(smP_15584, "map", Fn((V _self1, int _argc15737, V p_15743, V _a15740, V _a15741, V _a15742, V[] _rest15738) => {
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, Add(GetIdx(p_15743, 0D), ((V)(0.4))))).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(p_15743, 1D), ((V)(0.4))))).End()));
+}, 1, "", true)), "join", ((V)("L")))).End())));
 Call(set_14391, V.Undef, Get(A_15550, "seam"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.3 * pv_15581)))));
 Call(set_14391, V.Undef, Get(A_15550, "seamH"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.3 * pv_15581)))));
 if (Truthy(Get(A_15550, "shn"))) {
@@ -21337,7 +21337,7 @@ Invoke(sh_15745, "push", Call(P3_15552, V.Undef, Add(GetIdx(Cs_15744, 0D), ((V)(
 k_15746++;
 }
 }
-Call(set_14391, V.Undef, Get(A_15550, "shn"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(sh_15745, "map", pt_15554), "join", ((V)("L")))), "Z"))));
+Call(set_14391, V.Undef, Get(A_15550, "shn"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(sh_15745, "map", pt_15554), "join", ((V)("L")))).S("Z").End())));
 Call(set_14391, V.Undef, Get(A_15550, "shn"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.3 * pv_15581)))));
 }
 Set(A_15550, "pc", CallSpread(P3_15552, V.Undef, new ArrBuilder().Spread(Call(L3_15578, V.Undef, ((V)(0D)), ((V)(0D)), ((V)(hz_15576)))).V));
@@ -21358,9 +21358,9 @@ return default;
 col_15594 = Fn((V _self1, int _argc15759, V b_15765, V _a15762, V _a15763, V _a15764, V[] _rest15760) => {
 V Aa_15766 = default;
 Aa_15766 = (LtN(b_15765, 0.55) ? Arr(Arr(((V)(36D)), ((V)(106D)), ((V)(44D))), Arr(((V)(95D)), ((V)(184D)), ((V)(90D))), ((V)((ToNum(b_15765) / 0.55)))) : Arr(Arr(((V)(95D)), ((V)(184D)), ((V)(90D))), Arr(((V)(188D)), ((V)(240D)), ((V)(160D))), ((V)(((ToNum(b_15765) - 0.55) / 0.45)))));
-return ((V)(string.Concat("rgb(", ToStr(Invoke(Invoke(GetIdx(Aa_15766, 0D), "map", Fn((V _self1, int _argc15767, V c_15773, V j_15774, V _a15771, V _a15772, V[] _rest15768) => {
+return ((V)(JsStrBuf.Begin().S("rgb(").V(Invoke(Invoke(GetIdx(Aa_15766, 0D), "map", Fn((V _self1, int _argc15767, V c_15773, V j_15774, V _a15771, V _a15772, V[] _rest15768) => {
 return ((V)(Round(ToNum(Add(c_15773, ((V)(((ToNum(GetK(GetIdx(Aa_15766, 1D), j_15774)) - ToNum(c_15773)) * ToNum(GetIdx(Aa_15766, 2D))))))))));
-}, 2, "", true)), "join", ((V)(",")))), ")")));
+}, 2, "", true)), "join", ((V)(",")))).S(")").End()));
 return default;
 }, 1, "", true);
 cz_15595 = FdLibm.Cos(swz_15589);
@@ -21445,9 +21445,9 @@ return CallSpread(P3_15552, V.Undef, new ArrBuilder().Spread(v_15861).V);
 Dp_15807 = Invoke(Dn_15804, "map", Fn((V _self1, int _argc15862, V v_15868, V _a15865, V _a15866, V _a15867, V[] _rest15863) => {
 return CallSpread(P3_15552, V.Undef, new ArrBuilder().Spread(v_15868).V);
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(o_15793, "hU"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_15805, "concat", Invoke(Invoke(Up_15806, "slice"), "reverse")), "map", pt_15554), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(o_15793, "hD"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_15805, "concat", Invoke(Invoke(Dp_15807, "slice"), "reverse")), "map", pt_15554), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(o_15793, "rib"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_15805, "slice", ((V)(0D)), ((V)(8D))), "map", pt_15554), "join", ((V)("L"))))))));
+Call(set_14391, V.Undef, Get(o_15793, "hU"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_15805, "concat", Invoke(Invoke(Up_15806, "slice"), "reverse")), "map", pt_15554), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_15793, "hD"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_15805, "concat", Invoke(Invoke(Dp_15807, "slice"), "reverse")), "map", pt_15554), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_15793, "rib"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_15805, "slice", ((V)(0D)), ((V)(8D))), "map", pt_15554), "join", ((V)("L")))).End())));
 lit_15808 = Fn((V _self1, int _argc15869, V E_15875, V _a15872, V _a15873, V _a15874, V[] _rest15870) => {
 V a_15876 = default;
 V b_15877 = default;
@@ -21485,8 +21485,8 @@ double ly_15889 = 0;
 V ox_15890 = default;
 V oy_15891 = default;
 V hp_15892 = default;
-V dS_15893 = default;
-V dP_15894 = default;
+JsStrBuf dS_15893 = null;
+JsStrBuf dP_15894 = null;
 double lsp_15895 = 0;
 V lfl_15896 = default;
 double swz_15897 = 0;
@@ -21516,7 +21516,7 @@ P3_15885 = Fn((V _self1, int _argc15918, V x_15924, V y_15925, V z_15926, V _a15
 return Call(sph_14455, V.Undef, Add(((V)(50D)), x_15924), y_15925, z_15926);
 }, 3, "", true);
 pt_15886 = Fn((V _self1, int _argc15927, V p_15933, V _a15930, V _a15931, V _a15932, V[] _rest15928) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_15933, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_15933, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_15933, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_15933, 1D))).End()));
 }, 1, "", true);
 cv_15887 = Fn((V _self1, int _argc15934, V k_15940, V _a15937, V _a15938, V _a15939, V[] _rest15935) => {
 double v_15941 = 0;
@@ -21568,8 +21568,8 @@ i_15942++;
 }
 }
 Set(A_15883, "d", Invoke(H_14370, "closedD", Invoke(H_14370, "hull", hp_15892)));
-dS_15893 = ((V)(""));
-dP_15894 = ((V)(""));
+dS_15893 = new JsStrBuf("");
+dP_15894 = new JsStrBuf("");
 Invoke(Get(A_15883, "PO"), "forEach", Fn((V _self1, int _argc15949, V o_15955, V _a15952, V _a15953, V _a15954, V[] _rest15950) => {
 V r_15956 = default;
 double cf_15957 = 0;
@@ -21616,17 +21616,17 @@ a_15979 = ((k_15977 / 8D) * ToNum(TAU_14389));
 c_15980 = (FdLibm.Cos(a_15979) * ToNum(Get(o_15955, "s")));
 s_15981 = (FdLibm.Sin(a_15979) * ToNum(Get(o_15955, "s")));
 m_15982 = ((V)((NumTruthy(k_15977) ? "L" : "M")));
-dP_15894 = Add(dP_15894, Add(m_15982, Call(E_15967, V.Undef, ((V)(((c_15980 * 1.1) + 0.25))), ((V)(((s_15981 * 1.1) + 0.25))), ((V)(0D)))));
-dS_15893 = Add(dS_15893, Add(m_15982, Call(E_15967, V.Undef, ((V)((c_15980 * 0.8))), ((V)((s_15981 * 0.8))), ((V)(0.15)))));
+dP_15894.V(Add(m_15982, Call(E_15967, V.Undef, ((V)(((c_15980 * 1.1) + 0.25))), ((V)(((s_15981 * 1.1) + 0.25))), ((V)(0D)))));
+dS_15893.V(Add(m_15982, Call(E_15967, V.Undef, ((V)((c_15980 * 0.8))), ((V)((s_15981 * 0.8))), ((V)(0.15)))));
 k_15977++;
 }
 }
-dP_15894 = ((V)(string.Concat(ToStr(dP_15894), "Z")));
-dS_15893 = ((V)(string.Concat(ToStr(dS_15893), "Z")));
+dP_15894.S("Z");
+dS_15893.S("Z");
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(A_15883, "dim"), ((V)("d")), (dP_15894 is var _t15983 && Truthy(_t15983) ? _t15983 : ((V)("M0 0Z"))));
-Call(set_14391, V.Undef, Get(A_15883, "poE"), ((V)("d")), (dS_15893 is var _t15984 && Truthy(_t15984) ? _t15984 : ((V)("M0 0Z"))));
+Call(set_14391, V.Undef, Get(A_15883, "dim"), ((V)("d")), (((V)(dP_15894.Str)) is var _t15983 && Truthy(_t15983) ? _t15983 : ((V)("M0 0Z"))));
+Call(set_14391, V.Undef, Get(A_15883, "poE"), ((V)("d")), (((V)(dS_15893.Str)) is var _t15984 && Truthy(_t15984) ? _t15984 : ((V)("M0 0Z"))));
 lsp_15895 = (ToNum(Call(cv_15887, V.Undef, ((V)("lsp")))) * ToNum(TAU_14389));
 lfl_15896 = Call(clamp_14385, V.Undef, Call(cv_15887, V.Undef, ((V)("lfl"))), ((V)((-0.6))), ((V)(1.3)));
 swz_15897 = ((((ToNum(ox_15890) * 1.6) + (FdLibm.Sin((ts_15884 * 0.9)) * 2.5)) + (ToNum(Call(clamp_14385, V.Undef, (Get(P_14378, "htilt") is var _t15985 && Truthy(_t15985) ? _t15985 : ((V)(0D))), ((V)((-10D))), ((V)(10D)))) * 0.3)) * ToNum(D2R_14388));
@@ -21644,9 +21644,9 @@ return default;
 col_15902 = Fn((V _self1, int _argc15995, V b_16001, V _a15998, V _a15999, V _a16000, V[] _rest15996) => {
 V Aa_16002 = default;
 Aa_16002 = (LtN(b_16001, 0.55) ? Arr(Arr(((V)(44D)), ((V)(120D)), ((V)(46D))), Arr(((V)(118D)), ((V)(200D)), ((V)(88D))), ((V)((ToNum(b_16001) / 0.55)))) : Arr(Arr(((V)(118D)), ((V)(200D)), ((V)(88D))), Arr(((V)(204D)), ((V)(246D)), ((V)(158D))), ((V)(((ToNum(b_16001) - 0.55) / 0.45)))));
-return ((V)(string.Concat("rgb(", ToStr(Invoke(Invoke(GetIdx(Aa_16002, 0D), "map", Fn((V _self1, int _argc16003, V c_16009, V j_16010, V _a16007, V _a16008, V[] _rest16004) => {
+return ((V)(JsStrBuf.Begin().S("rgb(").V(Invoke(Invoke(GetIdx(Aa_16002, 0D), "map", Fn((V _self1, int _argc16003, V c_16009, V j_16010, V _a16007, V _a16008, V[] _rest16004) => {
 return ((V)(Round(ToNum(Add(c_16009, ((V)(((ToNum(GetK(GetIdx(Aa_16002, 1D), j_16010)) - ToNum(c_16009)) * ToNum(GetIdx(Aa_16002, 2D))))))))));
-}, 2, "", true)), "join", ((V)(",")))), ")")));
+}, 2, "", true)), "join", ((V)(",")))).S(")").End()));
 return default;
 }, 1, "", true);
 cz_15903 = FdLibm.Cos(swz_15897);
@@ -21729,9 +21729,9 @@ return CallSpread(P3_15885, V.Undef, new ArrBuilder().Spread(v_16095).V);
 Dp_16041 = Invoke(Dn_16038, "map", Fn((V _self1, int _argc16096, V v_16102, V _a16099, V _a16100, V _a16101, V[] _rest16097) => {
 return CallSpread(P3_15885, V.Undef, new ArrBuilder().Spread(v_16102).V);
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(o_16029, "hU"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_16039, "concat", Invoke(Invoke(Up_16040, "slice"), "reverse")), "map", pt_15886), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(o_16029, "hD"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_16039, "concat", Invoke(Invoke(Dp_16041, "slice"), "reverse")), "map", pt_15886), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(o_16029, "rib"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_16039, "slice", ((V)(1D)), ((V)(8D))), "map", pt_15886), "join", ((V)("L"))))))));
+Call(set_14391, V.Undef, Get(o_16029, "hU"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_16039, "concat", Invoke(Invoke(Up_16040, "slice"), "reverse")), "map", pt_15886), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_16029, "hD"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_16039, "concat", Invoke(Invoke(Dp_16041, "slice"), "reverse")), "map", pt_15886), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_16029, "rib"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_16039, "slice", ((V)(1D)), ((V)(8D))), "map", pt_15886), "join", ((V)("L")))).End())));
 lit_16042 = Fn((V _self1, int _argc16103, V E_16109, V _a16106, V _a16107, V _a16108, V[] _rest16104) => {
 V a_16110 = default;
 V b_16111 = default;
@@ -21784,12 +21784,12 @@ Invoke(SP_15915, "push", Call(P3_15885, V.Undef, ((V)(x1_16122)), ((V)((31D + (y
 k_16117++;
 }
 }
-sdP_15916 = ((V)(string.Concat("M", ToStr(Invoke(Invoke(SP_15915, "map", pt_15886), "join", ((V)("L")))))));
+sdP_15916 = ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(SP_15915, "map", pt_15886), "join", ((V)("L")))).End()));
 Call(set_14391, V.Undef, GetIdx(Get(A_15883, "st"), 0D), ((V)("d")), sdP_15916);
 Call(set_14391, V.Undef, GetIdx(Get(A_15883, "st"), 1D), ((V)("d")), sdP_15916);
-Call(set_14391, V.Undef, GetIdx(Get(A_15883, "st"), 2D), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(SP_15915, "slice", ((V)(1D)), ((V)(6D))), "map", Fn((V _self1, int _argc16124, V p_16130, V _a16127, V _a16128, V _a16129, V[] _rest16125) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_16130, 0D)) - 0.6))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_16130, 1D))))));
-}, 1, "", true)), "join", ((V)("L"))))))));
+Call(set_14391, V.Undef, GetIdx(Get(A_15883, "st"), 2D), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(SP_15915, "slice", ((V)(1D)), ((V)(6D))), "map", Fn((V _self1, int _argc16124, V p_16130, V _a16127, V _a16128, V _a16129, V[] _rest16125) => {
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_16130, 0D)) - 0.6))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_16130, 1D))).End()));
+}, 1, "", true)), "join", ((V)("L")))).End())));
 sv_15917 = Call(SM_14384, V.Undef, ((V)((ToNum(Add(Call(sphZ_14456, V.Undef, ((V)(50D)), ((V)(31D)), ((V)(0D))), ((V)(6D)))) / 6D))));
 Invoke(Get(A_15883, "st"), "forEach", Fn((V _self1, int _argc16131, V e_16137, V _a16134, V _a16135, V _a16136, V[] _rest16132) => {
 return Call(set_14391, V.Undef, e_16137, ((V)("opacity")), Call(r2_14387, V.Undef, sv_15917));
@@ -21809,8 +21809,8 @@ V ox_16146 = default;
 V oy_16147 = default;
 V hp_16148 = default;
 double br_16149 = 0;
-V dD_16150 = default;
-V dL_16151 = default;
+JsStrBuf dD_16150 = null;
+JsStrBuf dL_16151 = null;
 double SY_16152 = 0;
 V zS_16153 = default;
 V nAt_16154 = default;
@@ -21832,7 +21832,7 @@ P3_16140 = Fn((V _self1, int _argc16167, V x_16173, V y_16174, V z_16175, V _a16
 return Call(sph_14455, V.Undef, Add(((V)(50D)), x_16173), y_16174, z_16175);
 }, 3, "", true);
 pt_16141 = Fn((V _self1, int _argc16176, V p_16182, V _a16179, V _a16180, V _a16181, V[] _rest16177) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_16182, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_16182, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_16182, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_16182, 1D))).End()));
 }, 1, "", true);
 cv_16142 = Fn((V _self1, int _argc16183, V k_16189, V _a16186, V _a16187, V _a16188, V[] _rest16184) => {
 double v_16190 = 0;
@@ -21888,8 +21888,8 @@ i_16198++;
 }
 Set(A_16138, "d", Invoke(H_14370, "closedD", Invoke(H_14370, "hull", hp_16148)));
 br_16149 = Max(0D, ToNum(Call(clamp_14385, V.Undef, Call(cv_16142, V.Undef, ((V)("fzz"))), ((V)((-0.5))), ((V)(1.6)))));
-dD_16150 = ((V)(""));
-dL_16151 = ((V)(""));
+dD_16150 = new JsStrBuf("");
+dL_16151 = new JsStrBuf("");
 Invoke(Get(A_16138, "FZ"), "forEach", Fn((V _self1, int _argc16205, V o_16211, V i_16212, V _a16209, V _a16210, V[] _rest16206) => {
 V r_16213 = default;
 double sf_16214 = 0;
@@ -21931,14 +21931,14 @@ OpSetK(Tp_16225, ((V)(1D)), 0, ((V)((ToNum(oy_16147) * 0.08))));
 Mp_16226 = Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D))), "map", Fn((V _self1, int _argc16234, V j_16240, V _a16237, V _a16238, V _a16239, V[] _rest16235) => {
 return ((V)((ToNum(Add(GetK(S0_16221, j_16240), GetK(Tp_16225, j_16240))) / 2D)));
 }, 1, "", true));
-dD_16150 = ((V)(string.Concat(new string[] { ToStr(dD_16150), "M", ToStr(Call(pt_16141, V.Undef, CallSpread(P3_16140, V.Undef, new ArrBuilder().Spread(S0_16221).V))), "L", ToStr(Call(pt_16141, V.Undef, CallSpread(P3_16140, V.Undef, new ArrBuilder().Spread(Tp_16225).V))) })));
+dD_16150.S("M").V(Call(pt_16141, V.Undef, CallSpread(P3_16140, V.Undef, new ArrBuilder().Spread(S0_16221).V))).S("L").V(Call(pt_16141, V.Undef, CallSpread(P3_16140, V.Undef, new ArrBuilder().Spread(Tp_16225).V)));
 if (((ToNum(i_16212) % 3D) == 0D)) {
-dL_16151 = ((V)(string.Concat(new string[] { ToStr(dL_16151), "M", ToStr(Call(pt_16141, V.Undef, CallSpread(P3_16140, V.Undef, new ArrBuilder().Spread(Mp_16226).V))), "L", ToStr(Call(pt_16141, V.Undef, CallSpread(P3_16140, V.Undef, new ArrBuilder().Spread(Tp_16225).V))) })));
+dL_16151.S("M").V(Call(pt_16141, V.Undef, CallSpread(P3_16140, V.Undef, new ArrBuilder().Spread(Mp_16226).V))).S("L").V(Call(pt_16141, V.Undef, CallSpread(P3_16140, V.Undef, new ArrBuilder().Spread(Tp_16225).V)));
 }
 return default;
 }, 2, "", true));
-Call(set_14391, V.Undef, Get(A_16138, "fzD"), ((V)("d")), (dD_16150 is var _t16241 && Truthy(_t16241) ? _t16241 : ((V)("M0 0"))));
-Call(set_14391, V.Undef, Get(A_16138, "fzL"), ((V)("d")), (dL_16151 is var _t16242 && Truthy(_t16242) ? _t16242 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(A_16138, "fzD"), ((V)("d")), (((V)(dD_16150.Str)) is var _t16241 && Truthy(_t16241) ? _t16241 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(A_16138, "fzL"), ((V)("d")), (((V)(dL_16151.Str)) is var _t16242 && Truthy(_t16242) ? _t16242 : ((V)("M0 0"))));
 SY_16152 = 75D;
 zS_16153 = Fn((V _self1, int _argc16243, V x_16249, V y_16250, V _a16247, V _a16248, V[] _rest16244) => {
 V r_16251 = default;
@@ -21963,9 +21963,9 @@ V cut_16265 = default;
 V KP_16266 = default;
 V ring_16267 = default;
 V ok_16268 = default;
-V dr_16269 = default;
-V ds_16270 = default;
-V dh_16271 = default;
+JsStrBuf dr_16269 = null;
+JsStrBuf ds_16270 = null;
+JsStrBuf dh_16271 = null;
 double gl_16272 = 0;
 cut_16265 = Fn((V _self1, int _argc16273, V dx_16279, V dy_16280, V _a16277, V _a16278, V[] _rest16274) => {
 double lo_16281 = 0;
@@ -22013,7 +22013,7 @@ Invoke(qq_16305, "push", Call(KP_16266, V.Undef, ((V)((ToNum(R_16302) * FdLibm.C
 k_16306++;
 }
 }
-return ((V)(string.Concat("M", ToStr(Invoke(Invoke(qq_16305, "map", pt_16141), "join", ((V)("L")))), "Z")));
+return ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(qq_16305, "map", pt_16141), "join", ((V)("L")))).S("Z").End()));
 return default;
 }, 3, "", true);
 ok_16268 = Fn((V _self1, int _argc16310, V dx_16316, V dy_16317, V _a16314, V _a16315, V[] _rest16311) => {
@@ -22023,9 +22023,9 @@ Call(set_14391, V.Undef, Get(Get(A_16138, "S"), "sh"), ((V)("d")), Call(ring_162
 Call(set_14391, V.Undef, Get(Get(A_16138, "S"), "rim"), ((V)("d")), Call(ring_16267, V.Undef, ((V)(13.5)), ((V)(0.35))));
 Call(set_14391, V.Undef, Get(Get(A_16138, "S"), "fl"), ((V)("d")), Call(ring_16267, V.Undef, ((V)(12D)), ((V)(0.5))));
 Call(set_14391, V.Undef, Get(Get(A_16138, "S"), "core"), ((V)("d")), Call(ring_16267, V.Undef, ((V)(3.6)), ((V)(0.7)), ((V)(2.6))));
-dr_16269 = ((V)(""));
-ds_16270 = ((V)(""));
-dh_16271 = ((V)(""));
+dr_16269 = new JsStrBuf("");
+ds_16270 = new JsStrBuf("");
+dh_16271 = new JsStrBuf("");
 gl_16272 = (0.5 + (0.5 * FdLibm.Sin((ts_16139 * 1.3))));
 {
 double k_16318 = 0;
@@ -22041,7 +22041,7 @@ s_16322 = FdLibm.Sin(a_16320);
 if (!(Truthy(Call(ok_16268, V.Undef, ((V)((10D * c_16321))), ((V)((10D * s_16322))))))) {
 goto _cont16319;
 }
-dr_16269 = ((V)(string.Concat(new string[] { ToStr(dr_16269), "M", ToStr(Call(pt_16141, V.Undef, Call(KP_16266, V.Undef, ((V)((3.4 * c_16321))), ((V)((2.6 * s_16322))), ((V)(0.6))))), "L", ToStr(Call(pt_16141, V.Undef, Call(KP_16266, V.Undef, ((V)((10.2 * c_16321))), ((V)((10.2 * s_16322))), ((V)(0.6))))) })));
+dr_16269.S("M").V(Call(pt_16141, V.Undef, Call(KP_16266, V.Undef, ((V)((3.4 * c_16321))), ((V)((2.6 * s_16322))), ((V)(0.6))))).S("L").V(Call(pt_16141, V.Undef, Call(KP_16266, V.Undef, ((V)((10.2 * c_16321))), ((V)((10.2 * s_16322))), ((V)(0.6)))));
 _cont16319: ;
 k_16318++;
 }
@@ -22084,22 +22084,22 @@ ra_16337 = (rc_16335 * ((rc_16335 < 0D) ? 1.5 : 1D));
 ta_16338 = ((rs_16336 * 0.62) * ((rc_16335 < 0D) ? (1D + (0.35 * rc_16335)) : 1D));
 x_16339 = (((R0_16328 + ra_16337) * c_16326) - (ta_16338 * s_16327));
 y_16340 = (((R0_16328 + ra_16337) * s_16327) + (ta_16338 * c_16326));
-ds_16270 = ((V)(string.Concat(ToStr(ds_16270), (NumTruthy(m_16332) ? "L" : "M"), ToStr(Call(pt_16141, V.Undef, Call(KP_16266, V.Undef, ((V)(x_16339)), ((V)(y_16340)), ((V)(0.75))))))));
+ds_16270.S((NumTruthy(m_16332) ? "L" : "M")).V(Call(pt_16141, V.Undef, Call(KP_16266, V.Undef, ((V)(x_16339)), ((V)(y_16340)), ((V)(0.75)))));
 m_16332++;
 }
 }
-ds_16270 = ((V)(string.Concat(ToStr(ds_16270), "Z")));
+ds_16270.S("Z");
 hx_16329 = ((((R0_16328 + 0.3) * c_16326) - (0.25 * s_16327)) - 0.2);
 hy_16330 = ((((R0_16328 + 0.3) * s_16327) + (0.25 * c_16326)) - 0.2);
 hr_16331 = (0.22 + (0.12 * gl_16272));
-dh_16271 = ((V)(string.Concat(new string[] { ToStr(dh_16271), "M", ToStr(Call(pt_16141, V.Undef, Call(KP_16266, V.Undef, ((V)((hx_16329 - hr_16331))), ((V)(hy_16330)), ((V)(0.8))))), "L", ToStr(Call(pt_16141, V.Undef, Call(KP_16266, V.Undef, ((V)(hx_16329)), ((V)((hy_16330 - hr_16331))), ((V)(0.8))))), "L", ToStr(Call(pt_16141, V.Undef, Call(KP_16266, V.Undef, ((V)((hx_16329 + hr_16331))), ((V)(hy_16330)), ((V)(0.8))))), "L", ToStr(Call(pt_16141, V.Undef, Call(KP_16266, V.Undef, ((V)(hx_16329)), ((V)((hy_16330 + hr_16331))), ((V)(0.8))))), "Z" })));
+dh_16271.S("M").V(Call(pt_16141, V.Undef, Call(KP_16266, V.Undef, ((V)((hx_16329 - hr_16331))), ((V)(hy_16330)), ((V)(0.8))))).S("L").V(Call(pt_16141, V.Undef, Call(KP_16266, V.Undef, ((V)(hx_16329)), ((V)((hy_16330 - hr_16331))), ((V)(0.8))))).S("L").V(Call(pt_16141, V.Undef, Call(KP_16266, V.Undef, ((V)((hx_16329 + hr_16331))), ((V)(hy_16330)), ((V)(0.8))))).S("L").V(Call(pt_16141, V.Undef, Call(KP_16266, V.Undef, ((V)(hx_16329)), ((V)((hy_16330 + hr_16331))), ((V)(0.8))))).S("Z");
 _cont16324: ;
 k_16323++;
 }
 }
-Call(set_14391, V.Undef, Get(Get(A_16138, "S"), "ray"), ((V)("d")), (dr_16269 is var _t16341 && Truthy(_t16341) ? _t16341 : ((V)("M0 0"))));
-Call(set_14391, V.Undef, Get(Get(A_16138, "S"), "sd"), ((V)("d")), (ds_16270 is var _t16342 && Truthy(_t16342) ? _t16342 : ((V)("M0 0Z"))));
-Call(set_14391, V.Undef, Get(Get(A_16138, "S"), "sdh"), ((V)("d")), (dh_16271 is var _t16343 && Truthy(_t16343) ? _t16343 : ((V)("M0 0Z"))));
+Call(set_14391, V.Undef, Get(Get(A_16138, "S"), "ray"), ((V)("d")), (((V)(dr_16269.Str)) is var _t16341 && Truthy(_t16341) ? _t16341 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(Get(A_16138, "S"), "sd"), ((V)("d")), (((V)(ds_16270.Str)) is var _t16342 && Truthy(_t16342) ? _t16342 : ((V)("M0 0Z"))));
+Call(set_14391, V.Undef, Get(Get(A_16138, "S"), "sdh"), ((V)("d")), (((V)(dh_16271.Str)) is var _t16343 && Truthy(_t16343) ? _t16343 : ((V)("M0 0Z"))));
 }
 swz_16156 = ((((ToNum(ox_16146) * 1.6) + (FdLibm.Sin((ts_16139 * 0.9)) * 2.5)) + (ToNum(Call(clamp_14385, V.Undef, (Get(P_14378, "htilt") is var _t16344 && Truthy(_t16344) ? _t16344 : ((V)(0D))), ((V)((-10D))), ((V)(10D)))) * 0.3)) * ToNum(D2R_14388));
 swx_16157 = (((ToNum(oy_16147) * 2.2) + (FdLibm.Sin(((ts_16139 * 0.7) + 1D)) * 1.5)) * ToNum(D2R_14388));
@@ -22130,12 +22130,12 @@ Invoke(SP_16165, "push", Call(P3_16140, V.Undef, ((V)(x1_16350)), ((V)((25D + (y
 k_16345++;
 }
 }
-sdP_16166 = ((V)(string.Concat("M", ToStr(Invoke(Invoke(SP_16165, "map", pt_16141), "join", ((V)("L")))))));
+sdP_16166 = ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(SP_16165, "map", pt_16141), "join", ((V)("L")))).End()));
 Call(set_14391, V.Undef, GetIdx(Get(A_16138, "st"), 0D), ((V)("d")), sdP_16166);
 Call(set_14391, V.Undef, GetIdx(Get(A_16138, "st"), 1D), ((V)("d")), sdP_16166);
-Call(set_14391, V.Undef, GetIdx(Get(A_16138, "st"), 2D), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(SP_16165, "slice", ((V)(1D)), ((V)(6D))), "map", Fn((V _self1, int _argc16352, V p_16358, V _a16355, V _a16356, V _a16357, V[] _rest16353) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_16358, 0D)) - 0.6))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_16358, 1D))))));
-}, 1, "", true)), "join", ((V)("L"))))))));
+Call(set_14391, V.Undef, GetIdx(Get(A_16138, "st"), 2D), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(SP_16165, "slice", ((V)(1D)), ((V)(6D))), "map", Fn((V _self1, int _argc16352, V p_16358, V _a16355, V _a16356, V _a16357, V[] _rest16353) => {
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_16358, 0D)) - 0.6))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_16358, 1D))).End()));
+}, 1, "", true)), "join", ((V)("L")))).End())));
 Set(W_14465, "stem", GetIdx(SP_16165, 6D));
 }
 if (Truthy(Get(I_14377, "pe"))) {
@@ -22151,8 +22151,8 @@ V ox_16367 = default;
 V oy_16368 = default;
 V L1_16369 = default;
 V R1_16370 = default;
-V cD_16371 = default;
-V cH_16372 = default;
+JsStrBuf cD_16371 = null;
+JsStrBuf cH_16372 = null;
 V pen_16373 = default;
 V cr_16374 = default;
 double lsp_16375 = 0;
@@ -22183,7 +22183,7 @@ P3_16361 = Fn((V _self1, int _argc16397, V x_16403, V y_16404, V z_16405, V _a16
 return Call(sph_14455, V.Undef, Add(((V)(50D)), x_16403), y_16404, z_16405);
 }, 3, "", true);
 pt_16362 = Fn((V _self1, int _argc16406, V p_16412, V _a16409, V _a16410, V _a16411, V[] _rest16407) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_16412, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_16412, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_16412, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_16412, 1D))).End()));
 }, 1, "", true);
 cv_16363 = Fn((V _self1, int _argc16413, V k_16419, V _a16416, V _a16417, V _a16418, V[] _rest16414) => {
 double v_16420 = 0;
@@ -22230,9 +22230,9 @@ k_16431++;
 i_16428++;
 }
 }
-Set(A_16359, "d", ((V)(string.Concat(ToStr(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", L1_16369))), " ", ToStr(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", R1_16370)))))));
-cD_16371 = ((V)(""));
-cH_16372 = ((V)(""));
+Set(A_16359, "d", ((V)(JsStrBuf.Begin().V(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", L1_16369))).S(" ").V(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", R1_16370))).End())));
+cD_16371 = new JsStrBuf("");
+cH_16372 = new JsStrBuf("");
 pen_16373 = (false ? V.True : V.False);
 cr_16374 = Fn((V _self1, int _argc16433, V y_16439, V f_16440, V _a16437, V _a16438, V[] _rest16434) => {
 V dr_16441 = default;
@@ -22249,8 +22249,8 @@ return default;
 }
 p_16444 = Invoke(A_16359, "SP3", y_16439, f_16440);
 h_16445 = Invoke(A_16359, "SP3", y_16439, Add(f_16440, ((V)((((cf_16443 > 0D) ? 0.035 : (-0.035)) * (1D + (3D * ToNum(Call(SM_14384, V.Undef, ((V)(((30D - ToNum(y_16439)) / 6D))))))))))));
-cD_16371 = ((V)(string.Concat(ToStr(cD_16371), (Truthy(pen_16373) ? "L" : "M"), ToStr(Call(pt_16362, V.Undef, Call(P3_16361, V.Undef, GetIdx(p_16444, 0D), GetIdx(p_16444, 1D), Add(GetIdx(p_16444, 2D), ((V)((0.15 * cf_16443))))))))));
-cH_16372 = ((V)(string.Concat(ToStr(cH_16372), (Truthy(pen_16373) ? "L" : "M"), ToStr(Call(pt_16362, V.Undef, Call(P3_16361, V.Undef, Add(GetIdx(h_16445, 0D), ((V)(1.1))), GetIdx(h_16445, 1D), Add(GetIdx(h_16445, 2D), ((V)((0.15 * cf_16443))))))))));
+cD_16371.S((Truthy(pen_16373) ? "L" : "M")).V(Call(pt_16362, V.Undef, Call(P3_16361, V.Undef, GetIdx(p_16444, 0D), GetIdx(p_16444, 1D), Add(GetIdx(p_16444, 2D), ((V)((0.15 * cf_16443)))))));
+cH_16372.S((Truthy(pen_16373) ? "L" : "M")).V(Call(pt_16362, V.Undef, Call(P3_16361, V.Undef, Add(GetIdx(h_16445, 0D), ((V)(1.1))), GetIdx(h_16445, 1D), Add(GetIdx(h_16445, 2D), ((V)((0.15 * cf_16443)))))));
 pen_16373 = (true ? V.True : V.False);
 return default;
 }, 2, "", true);
@@ -22273,8 +22273,8 @@ Call(cr_16374, V.Undef, ((V)((23.7 + ((k_16448 / 16D) * 22.3)))), ((V)(System.Ma
 k_16448++;
 }
 }
-Call(set_14391, V.Undef, Get(A_16359, "crD"), ((V)("d")), (cD_16371 is var _t16450 && Truthy(_t16450) ? _t16450 : ((V)("M0 0"))));
-Call(set_14391, V.Undef, Get(A_16359, "crH"), ((V)("d")), (cH_16372 is var _t16451 && Truthy(_t16451) ? _t16451 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(A_16359, "crD"), ((V)("d")), (((V)(cD_16371.Str)) is var _t16450 && Truthy(_t16450) ? _t16450 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(A_16359, "crH"), ((V)("d")), (((V)(cH_16372.Str)) is var _t16451 && Truthy(_t16451) ? _t16451 : ((V)("M0 0"))));
 lsp_16375 = (ToNum(Call(cv_16363, V.Undef, ((V)("lsp")))) * ToNum(TAU_14389));
 lfl_16376 = Call(clamp_14385, V.Undef, Call(cv_16363, V.Undef, ((V)("lfl"))), ((V)((-0.6))), ((V)(1.3)));
 swz_16377 = ((((ToNum(ox_16367) * 1.6) + (FdLibm.Sin((ts_16360 * 0.9)) * 2.5)) + (ToNum(Call(clamp_14385, V.Undef, (Get(P_14378, "htilt") is var _t16452 && Truthy(_t16452) ? _t16452 : ((V)(0D))), ((V)((-10D))), ((V)(10D)))) * 0.3)) * ToNum(D2R_14388));
@@ -22292,9 +22292,9 @@ return default;
 col_16382 = Fn((V _self1, int _argc16462, V b_16468, V _a16465, V _a16466, V _a16467, V[] _rest16463) => {
 V Aa_16469 = default;
 Aa_16469 = (LtN(b_16468, 0.55) ? Arr(Arr(((V)(44D)), ((V)(120D)), ((V)(46D))), Arr(((V)(118D)), ((V)(200D)), ((V)(88D))), ((V)((ToNum(b_16468) / 0.55)))) : Arr(Arr(((V)(118D)), ((V)(200D)), ((V)(88D))), Arr(((V)(204D)), ((V)(246D)), ((V)(158D))), ((V)(((ToNum(b_16468) - 0.55) / 0.45)))));
-return ((V)(string.Concat("rgb(", ToStr(Invoke(Invoke(GetIdx(Aa_16469, 0D), "map", Fn((V _self1, int _argc16470, V c_16476, V j_16477, V _a16474, V _a16475, V[] _rest16471) => {
+return ((V)(JsStrBuf.Begin().S("rgb(").V(Invoke(Invoke(GetIdx(Aa_16469, 0D), "map", Fn((V _self1, int _argc16470, V c_16476, V j_16477, V _a16474, V _a16475, V[] _rest16471) => {
 return ((V)(Round(ToNum(Add(c_16476, ((V)(((ToNum(GetK(GetIdx(Aa_16469, 1D), j_16477)) - ToNum(c_16476)) * ToNum(GetIdx(Aa_16469, 2D))))))))));
-}, 2, "", true)), "join", ((V)(",")))), ")")));
+}, 2, "", true)), "join", ((V)(",")))).S(")").End()));
 return default;
 }, 1, "", true);
 cz_16383 = FdLibm.Cos(swz_16377);
@@ -22377,9 +22377,9 @@ return CallSpread(P3_16361, V.Undef, new ArrBuilder().Spread(v_16562).V);
 Dp_16508 = Invoke(Dn_16505, "map", Fn((V _self1, int _argc16563, V v_16569, V _a16566, V _a16567, V _a16568, V[] _rest16564) => {
 return CallSpread(P3_16361, V.Undef, new ArrBuilder().Spread(v_16569).V);
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(o_16496, "hU"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_16506, "concat", Invoke(Invoke(Up_16507, "slice"), "reverse")), "map", pt_16362), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(o_16496, "hD"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_16506, "concat", Invoke(Invoke(Dp_16508, "slice"), "reverse")), "map", pt_16362), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(o_16496, "rib"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_16506, "slice", ((V)(1D)), ((V)(8D))), "map", pt_16362), "join", ((V)("L"))))))));
+Call(set_14391, V.Undef, Get(o_16496, "hU"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_16506, "concat", Invoke(Invoke(Up_16507, "slice"), "reverse")), "map", pt_16362), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_16496, "hD"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_16506, "concat", Invoke(Invoke(Dp_16508, "slice"), "reverse")), "map", pt_16362), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_16496, "rib"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_16506, "slice", ((V)(1D)), ((V)(8D))), "map", pt_16362), "join", ((V)("L")))).End())));
 lit_16509 = Fn((V _self1, int _argc16570, V E_16576, V _a16573, V _a16574, V _a16575, V[] _rest16571) => {
 V a_16577 = default;
 V b_16578 = default;
@@ -22432,12 +22432,12 @@ Invoke(SP_16395, "push", Call(P3_16361, V.Undef, ((V)(x1_16589)), ((V)((27.6 + (
 k_16584++;
 }
 }
-sdP_16396 = ((V)(string.Concat("M", ToStr(Invoke(Invoke(SP_16395, "map", pt_16362), "join", ((V)("L")))))));
+sdP_16396 = ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(SP_16395, "map", pt_16362), "join", ((V)("L")))).End()));
 Call(set_14391, V.Undef, GetIdx(Get(A_16359, "st"), 0D), ((V)("d")), sdP_16396);
 Call(set_14391, V.Undef, GetIdx(Get(A_16359, "st"), 1D), ((V)("d")), sdP_16396);
-Call(set_14391, V.Undef, GetIdx(Get(A_16359, "st"), 2D), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(SP_16395, "slice", ((V)(1D)), ((V)(6D))), "map", Fn((V _self1, int _argc16591, V p_16597, V _a16594, V _a16595, V _a16596, V[] _rest16592) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_16597, 0D)) - 0.6))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_16597, 1D))))));
-}, 1, "", true)), "join", ((V)("L"))))))));
+Call(set_14391, V.Undef, GetIdx(Get(A_16359, "st"), 2D), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(SP_16395, "slice", ((V)(1D)), ((V)(6D))), "map", Fn((V _self1, int _argc16591, V p_16597, V _a16594, V _a16595, V _a16596, V[] _rest16592) => {
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_16597, 0D)) - 0.6))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_16597, 1D))).End()));
+}, 1, "", true)), "join", ((V)("L")))).End())));
 Set(W_14465, "stem", GetIdx(SP_16395, 6D));
 }
 if (Truthy(Get(I_14377, "pt"))) {
@@ -22487,7 +22487,7 @@ Z3_16601 = Fn((V _self1, int _argc16644, V x_16650, V y_16651, V z_16652, V _a16
 return Call(sphZ_14456, V.Undef, Add(((V)(50D)), x_16650), y_16651, z_16652);
 }, 3, "", true);
 pt_16602 = Fn((V _self1, int _argc16653, V p_16659, V _a16656, V _a16657, V _a16658, V[] _rest16654) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_16659, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_16659, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_16659, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_16659, 1D))).End()));
 }, 1, "", true);
 cv_16603 = Fn((V _self1, int _argc16660, V k_16666, V _a16663, V _a16664, V _a16665, V[] _rest16661) => {
 double v_16667 = 0;
@@ -22532,7 +22532,7 @@ return Add(c_16702, ((V)(((ToNum(GetK(b_16694, j_16703)) - ToNum(c_16702)) * ToN
 }, 2, "", true));
 }, 3, "", true);
 rgb_16612 = Fn((V _self1, int _argc16704, V a_16710, V _a16707, V _a16708, V _a16709, V[] _rest16705) => {
-return ((V)(string.Concat("rgb(", ToStr(Invoke(Invoke(a_16710, "map", Get(G("Math"), "round")), "join", ((V)(",")))), ")")));
+return ((V)(JsStrBuf.Begin().S("rgb(").V(Invoke(Invoke(a_16710, "map", Get(G("Math"), "round")), "join", ((V)(",")))).S(")").End()));
 }, 1, "", true);
 C3_16613 = Fn((V _self1, int _argc16711, V Pl_16717, V b_16718, V _a16715, V _a16716, V[] _rest16712) => {
 return (LtN(b_16718, 0.55) ? Call(mx_16611, V.Undef, GetIdx(Pl_16717, 0D), GetIdx(Pl_16717, 1D), ((V)((ToNum(b_16718) / 0.55)))) : Call(mx_16611, V.Undef, GetIdx(Pl_16717, 1D), GetIdx(Pl_16717, 2D), ((V)(((ToNum(b_16718) - 0.55) / 0.45)))));
@@ -22666,8 +22666,8 @@ return Invoke(a_16806, "push", CallSpread(P3_16600, V.Undef, new ArrBuilder().Sp
 k_16793++;
 }
 }
-Call(set_14391, V.Undef, Get(o_16769, "e"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Invoke(Invoke(Lw_16779, "map", pt_16602), "join", ((V)("L")))), "L", ToStr(Invoke(Invoke(Invoke(Invoke(Rw_16780, "slice", ((V)(0D)), ((V)(6D))), "reverse"), "map", pt_16602), "join", ((V)("L")))), "Z" }))));
-Call(set_14391, V.Undef, Get(o_16769, "sh"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Invoke(Invoke(Cn_16781, "map", pt_16602), "join", ((V)("L")))), "L", ToStr(Invoke(Invoke(Invoke(Invoke((GtN(Call(lt_16610, V.Undef, t_16773), 0D) ? Lw_16779 : Rw_16780), "slice", ((V)(0D)), ((V)(6D))), "reverse"), "map", pt_16602), "join", ((V)("L")))), "Z" }))));
+Call(set_14391, V.Undef, Get(o_16769, "e"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Lw_16779, "map", pt_16602), "join", ((V)("L")))).S("L").V(Invoke(Invoke(Invoke(Invoke(Rw_16780, "slice", ((V)(0D)), ((V)(6D))), "reverse"), "map", pt_16602), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_16769, "sh"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Cn_16781, "map", pt_16602), "join", ((V)("L")))).S("L").V(Invoke(Invoke(Invoke(Invoke((GtN(Call(lt_16610, V.Undef, t_16773), 0D) ? Lw_16779 : Rw_16780), "slice", ((V)(0D)), ((V)(6D))), "reverse"), "map", pt_16602), "join", ((V)("L")))).S("Z").End())));
 b_16783 = Call(clamp_14385, V.Undef, ((V)((0.45 + (0.55 * Max(0D, ((ToNum(Call(lt_16610, V.Undef, @out_16772)) * 0.7) + (ToNum(Call(lt_16610, V.Undef, up_16771)) * 0.3))))))), ((V)(0D)), ((V)(1D)));
 m_16784 = (LtN(Get(o_16769, "gk"), 0D) ? ((V)(0.18)) : Call(clamp_14385, V.Undef, ((V)((0.62 - (0.34 * (1D - ToNum(Get(o_16769, "gk"))))))), ((V)(0.25)), ((V)(0.62))));
 Call(set_14391, V.Undef, Get(o_16769, "gr"), ((V)("x1")), Call(r2_14387, V.Undef, GetIdx(GetIdx(Cn_16781, 0D), 0D)));
@@ -22824,11 +22824,11 @@ return CallSpread(P3_16600, V.Undef, new ArrBuilder().Spread(Invoke(a_16933, "ma
 return ((V)((ToNum(Add(v_16941, GetK(b_16934, j_16942))) / 2D)));
 }, 2, "", true))).V);
 }, 2, "", true);
-Call(set_14391, V.Undef, Get(o_16847, "hU"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_16863, "concat", Invoke(Invoke(Up_16864, "slice"), "reverse")), "map", pt_16602), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(o_16847, "hD"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_16863, "concat", Invoke(Invoke(Dp_16865, "slice"), "reverse")), "map", pt_16602), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(o_16847, "rib"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_16863, "slice", ((V)(0D)), ((V)(8D))), "map", pt_16602), "join", ((V)("L"))))))));
+Call(set_14391, V.Undef, Get(o_16847, "hU"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_16863, "concat", Invoke(Invoke(Up_16864, "slice"), "reverse")), "map", pt_16602), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_16847, "hD"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_16863, "concat", Invoke(Invoke(Dp_16865, "slice"), "reverse")), "map", pt_16602), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_16847, "rib"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_16863, "slice", ((V)(0D)), ((V)(8D))), "map", pt_16602), "join", ((V)("L")))).End())));
 Call(set_14391, V.Undef, Get(o_16847, "vn"), ((V)("d")), Invoke(Invoke(Arr(((V)(2D)), ((V)(4D)), ((V)(6D))), "map", Fn((V _self1, int _argc16943, V k_16949, V _a16946, V _a16947, V _a16948, V[] _rest16944) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(pt_16602, V.Undef, GetK(Mp_16863, k_16949))), "L", ToStr(Call(pt_16602, V.Undef, Call(hf_16866, V.Undef, GetK(M_16860, Add(k_16949, ((V)(1D)))), GetK(U_16861, Add(k_16949, ((V)(1D))))))), "M", ToStr(Call(pt_16602, V.Undef, GetK(Mp_16863, k_16949))), "L", ToStr(Call(pt_16602, V.Undef, Call(hf_16866, V.Undef, GetK(M_16860, Add(k_16949, ((V)(1D)))), GetK(Dn_16862, Add(k_16949, ((V)(1D))))))) })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(pt_16602, V.Undef, GetK(Mp_16863, k_16949))).S("L").V(Call(pt_16602, V.Undef, Call(hf_16866, V.Undef, GetK(M_16860, Add(k_16949, ((V)(1D)))), GetK(U_16861, Add(k_16949, ((V)(1D))))))).S("M").V(Call(pt_16602, V.Undef, GetK(Mp_16863, k_16949))).S("L").V(Call(pt_16602, V.Undef, Call(hf_16866, V.Undef, GetK(M_16860, Add(k_16949, ((V)(1D)))), GetK(Dn_16862, Add(k_16949, ((V)(1D))))))).End()));
 }, 1, "", true)), "join", ((V)(""))));
 Call(set_14391, V.Undef, Get(o_16847, "hU"), ((V)("fill")), Call(rgb_16612, V.Undef, Call(C3_16613, V.Undef, GR_16614, Call(lit_16615, V.Undef, M_16860, U_16861))));
 Call(set_14391, V.Undef, Get(o_16847, "hD"), ((V)("fill")), Call(rgb_16612, V.Undef, Call(C3_16613, V.Undef, GR_16614, ((V)((ToNum(Call(lit_16615, V.Undef, M_16860, Dn_16862)) * 0.85))))));
@@ -22852,8 +22852,8 @@ Rr_16958 = ((ToNum(Get(o_16956, "r")) * (0.6 + (0.4 * tw_16957))) * (1D + (ToNum
 c_16959 = Call(glob_14432, V.Undef, Add(Get(o_16956, "x"), ((V)((FdLibm.Sin(ToNum(Add(((V)((ts_16599 * 0.7))), Get(o_16956, "ph")))) * 1.4)))), ((V)((ToNum(Add(Get(o_16956, "y"), ((V)((FdLibm.Cos(ToNum(Add(((V)((ts_16599 * 0.9))), Get(o_16956, "ph")))) * 1.2))))) - (ToNum(spk_16632) * 2D)))));
 x_16960 = Call(r2_14387, V.Undef, GetIdx(c_16959, 0D));
 y_16961 = Call(r2_14387, V.Undef, GetIdx(c_16959, 1D));
-q_16962 = ((V)(string.Concat(ToStr(x_16960), " ", ToStr(y_16961))));
-Call(set_14391, V.Undef, Get(o_16956, "e"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(x_16960), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(c_16959, 1D)) - Rr_16958))))), "Q", ToStr(q_16962), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(c_16959, 0D), ((V)(Rr_16958))))), " ", ToStr(y_16961), "Q", ToStr(q_16962), " ", ToStr(x_16960), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(c_16959, 1D), ((V)(Rr_16958))))), "Q", ToStr(q_16962), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(c_16959, 0D)) - Rr_16958))))), " ", ToStr(y_16961), "Q", ToStr(q_16962), " ", ToStr(x_16960), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(c_16959, 1D)) - Rr_16958))))), "Z" }))));
+q_16962 = ((V)(JsStrBuf.Begin().V(x_16960).S(" ").V(y_16961).End()));
+Call(set_14391, V.Undef, Get(o_16956, "e"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(x_16960).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(c_16959, 1D)) - Rr_16958))))).S("Q").V(q_16962).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(c_16959, 0D), ((V)(Rr_16958))))).S(" ").V(y_16961).S("Q").V(q_16962).S(" ").V(x_16960).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(c_16959, 1D), ((V)(Rr_16958))))).S("Q").V(q_16962).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(c_16959, 0D)) - Rr_16958))))).S(" ").V(y_16961).S("Q").V(q_16962).S(" ").V(x_16960).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(c_16959, 1D)) - Rr_16958))))).S("Z").End())));
 Call(set_14391, V.Undef, Get(o_16956, "e"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.55 + (0.45 * tw_16957))))));
 return default;
 }, 1, "", true));
@@ -22897,13 +22897,13 @@ V x0_16997 = default;
 V x1_16998 = default;
 double f0_16999 = 0;
 V fz_17000 = default;
-V wv_17001 = default;
+JsStrBuf wv_17001 = null;
 double Rr_17002 = 0;
 double Yr_17003 = 0;
 V tp_17004 = default;
 V bt_17005 = default;
 V hl_17006 = default;
-V tw_17007 = default;
+JsStrBuf tw_17007 = null;
 V wfl_17008 = default;
 V cbv_17009 = default;
 double hop_17010 = 0;
@@ -22919,7 +22919,7 @@ Z3_16966 = Fn((V _self1, int _argc17023, V x_17029, V y_17030, V z_17031, V _a17
 return Call(sphZ_14456, V.Undef, Add(((V)(50D)), x_17029), y_17030, z_17031);
 }, 3, "", true);
 pt_16967 = Fn((V _self1, int _argc17032, V p_17038, V _a17035, V _a17036, V _a17037, V[] _rest17033) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_17038, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_17038, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_17038, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_17038, 1D))).End()));
 }, 1, "", true);
 cv_16968 = Fn((V _self1, int _argc17039, V k_17045, V _a17042, V _a17043, V _a17044, V[] _rest17040) => {
 double v_17046 = 0;
@@ -22964,7 +22964,7 @@ return Add(c_17081, ((V)(((ToNum(GetK(b_17073, j_17082)) - ToNum(c_17081)) * ToN
 }, 2, "", true));
 }, 3, "", true);
 rgb_16977 = Fn((V _self1, int _argc17083, V a_17089, V _a17086, V _a17087, V _a17088, V[] _rest17084) => {
-return ((V)(string.Concat("rgb(", ToStr(Invoke(Invoke(a_17089, "map", Get(G("Math"), "round")), "join", ((V)(",")))), ")")));
+return ((V)(JsStrBuf.Begin().S("rgb(").V(Invoke(Invoke(a_17089, "map", Get(G("Math"), "round")), "join", ((V)(",")))).S(")").End()));
 }, 1, "", true);
 C3_16978 = Fn((V _self1, int _argc17090, V Pl_17096, V b_17097, V _a17094, V _a17095, V[] _rest17091) => {
 return (LtN(b_17097, 0.55) ? Call(mx_16976, V.Undef, GetIdx(Pl_17096, 0D), GetIdx(Pl_17096, 1D), ((V)((ToNum(b_17097) / 0.55)))) : Call(mx_16976, V.Undef, GetIdx(Pl_17096, 1D), GetIdx(Pl_17096, 2D), ((V)(((ToNum(b_17097) - 0.55) / 0.45)))));
@@ -23018,10 +23018,10 @@ return Arr(GetIdx(p_17145, 0D), ((V)((ToNum(GetIdx(p_17145, 1D)) - (0.13 * (ToNu
 return default;
 }, 3, "", true);
 cP_16992 = Fn((V _self1, int _argc17146, V x_17152, V y_17153, V r_17154, V _a17151, V[] _rest17147) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_17152) - ToNum(r_17154)))))), " ", ToStr(Call(r2_14387, V.Undef, y_17153)), "A", ToStr(Call(r2_14387, V.Undef, r_17154)), " ", ToStr(Call(r2_14387, V.Undef, r_17154)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, Add(x_17152, r_17154))), " ", ToStr(Call(r2_14387, V.Undef, y_17153)), "A", ToStr(Call(r2_14387, V.Undef, r_17154)), " ", ToStr(Call(r2_14387, V.Undef, r_17154)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_17152) - ToNum(r_17154)))))), " ", ToStr(Call(r2_14387, V.Undef, y_17153)), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_17152) - ToNum(r_17154)))))).S(" ").V(Call(r2_14387, V.Undef, y_17153)).S("A").V(Call(r2_14387, V.Undef, r_17154)).S(" ").V(Call(r2_14387, V.Undef, r_17154)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, Add(x_17152, r_17154))).S(" ").V(Call(r2_14387, V.Undef, y_17153)).S("A").V(Call(r2_14387, V.Undef, r_17154)).S(" ").V(Call(r2_14387, V.Undef, r_17154)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_17152) - ToNum(r_17154)))))).S(" ").V(Call(r2_14387, V.Undef, y_17153)).S("Z").End()));
 }, 3, "", true);
 eP_16993 = Fn((V _self1, int _argc17155, V x_17161, V y_17162, V a_17163, V b_17164, V[] _rest17156) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_17161) - ToNum(a_17163)))))), " ", ToStr(Call(r2_14387, V.Undef, y_17162)), "A", ToStr(Call(r2_14387, V.Undef, a_17163)), " ", ToStr(Call(r2_14387, V.Undef, b_17164)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, Add(x_17161, a_17163))), " ", ToStr(Call(r2_14387, V.Undef, y_17162)), "A", ToStr(Call(r2_14387, V.Undef, a_17163)), " ", ToStr(Call(r2_14387, V.Undef, b_17164)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_17161) - ToNum(a_17163)))))), " ", ToStr(Call(r2_14387, V.Undef, y_17162)), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_17161) - ToNum(a_17163)))))).S(" ").V(Call(r2_14387, V.Undef, y_17162)).S("A").V(Call(r2_14387, V.Undef, a_17163)).S(" ").V(Call(r2_14387, V.Undef, b_17164)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, Add(x_17161, a_17163))).S(" ").V(Call(r2_14387, V.Undef, y_17162)).S("A").V(Call(r2_14387, V.Undef, a_17163)).S(" ").V(Call(r2_14387, V.Undef, b_17164)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_17161) - ToNum(a_17163)))))).S(" ").V(Call(r2_14387, V.Undef, y_17162)).S("Z").End()));
 }, 4, "", true);
 Bk_16994 = Get(A_16963, "bask");
 hp_16995 = Arr();
@@ -23073,7 +23073,7 @@ f0_16999 = FdLibm.Atan2((-syh_14406), (ToNum(KB_16989) * cyh_14405));
 fz_17000 = Fn((V _self1, int _argc17179, V r_17185, V y_17186, V f_17187, V _a17184, V[] _rest17180) => {
 return ((V)((ToNum(Call(Z3_16966, V.Undef, ((V)((ToNum(r_17185) * FdLibm.Sin(ToNum(f_17187))))), y_17186, ((V)(((ToNum(KB_16989) * ToNum(r_17185)) * FdLibm.Cos(ToNum(f_17187))))))) - ToNum(Call(Z3_16966, V.Undef, ((V)(0D)), y_17186, ((V)(0D)))))));
 }, 3, "", true);
-wv_17001 = ((V)(""));
+wv_17001 = new JsStrBuf("");
 Invoke(Arr(((V)(70.5)), ((V)(79D))), "forEach", Fn((V _self1, int _argc17188, V y_17194, V _a17191, V _a17192, V _a17193, V[] _rest17189) => {
 V r_17195 = default;
 r_17195 = Add(Invoke(A_16963, "rB", y_17194), ((V)(0.1)));
@@ -23084,7 +23084,7 @@ while (true) {
 if (!((i_17196 <= 32D))) break;
 double f_17198 = 0;
 f_17198 = ((f0_16999 - (System.Math.PI / 2D)) + ((i_17196 / 32D) * System.Math.PI));
-wv_17001 = ((V)(string.Concat(ToStr(wv_17001), (NumTruthy(i_17196) ? "L" : "M"), ToStr(Call(pt_16967, V.Undef, Call(VP_16991, V.Undef, ((V)((ToNum(r_17195) * FdLibm.Sin(f_17198)))), y_17194, ((V)(((ToNum(KB_16989) * ToNum(r_17195)) * FdLibm.Cos(f_17198))))))))));
+wv_17001.S((NumTruthy(i_17196) ? "L" : "M")).V(Call(pt_16967, V.Undef, Call(VP_16991, V.Undef, ((V)((ToNum(r_17195) * FdLibm.Sin(f_17198)))), y_17194, ((V)(((ToNum(KB_16989) * ToNum(r_17195)) * FdLibm.Cos(f_17198)))))));
 i_17196++;
 }
 }
@@ -23113,7 +23113,7 @@ double y_17206 = 0;
 V r_17207 = default;
 y_17206 = (64.5 + (j_17204 * 5D));
 r_17207 = Add(Invoke(A_16963, "rB", ((V)(y_17206))), ((V)(0.1)));
-wv_17001 = ((V)(string.Concat(ToStr(wv_17001), (NumTruthy(j_17204) ? "L" : "M"), ToStr(Call(pt_16967, V.Undef, Call(VP_16991, V.Undef, ((V)((ToNum(r_17207) * s_17202))), ((V)(y_17206)), ((V)(((ToNum(KB_16989) * ToNum(r_17207)) * c_17203)))))))));
+wv_17001.S((NumTruthy(j_17204) ? "L" : "M")).V(Call(pt_16967, V.Undef, Call(VP_16991, V.Undef, ((V)((ToNum(r_17207) * s_17202))), ((V)(y_17206)), ((V)(((ToNum(KB_16989) * ToNum(r_17207)) * c_17203))))));
 j_17204++;
 }
 }
@@ -23121,7 +23121,7 @@ _cont17200: ;
 k_17199++;
 }
 }
-Call(set_14391, V.Undef, Get(Bk_16994, "wv"), ((V)("d")), wv_17001);
+Call(set_14391, V.Undef, Get(Bk_16994, "wv"), ((V)("d")), ((V)(wv_17001.Str)));
 Rr_17002 = 34.2;
 Yr_17003 = 62.3;
 tp_17004 = Arr();
@@ -23146,9 +23146,9 @@ Invoke(hl_17006, "push", Call(VP_16991, V.Undef, ((V)((Rr_17002 * s_17211))), ((
 i_17208++;
 }
 }
-Call(set_14391, V.Undef, Get(Bk_16994, "rim"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Invoke(Invoke(tp_17004, "map", pt_16967), "join", ((V)("L")))), "L", ToStr(Invoke(Invoke(Invoke(bt_17005, "reverse"), "map", pt_16967), "join", ((V)("L")))), "Z" }))));
-Call(set_14391, V.Undef, Get(Bk_16994, "hl"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(hl_17006, "map", pt_16967), "join", ((V)("L"))))))));
-tw_17007 = ((V)(""));
+Call(set_14391, V.Undef, Get(Bk_16994, "rim"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(tp_17004, "map", pt_16967), "join", ((V)("L")))).S("L").V(Invoke(Invoke(Invoke(bt_17005, "reverse"), "map", pt_16967), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(Bk_16994, "hl"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(hl_17006, "map", pt_16967), "join", ((V)("L")))).End())));
+tw_17007 = new JsStrBuf("");
 {
 double k_17213 = 0;
 k_17213 = 0D;
@@ -23159,12 +23159,12 @@ f_17215 = ((k_17213 / 44D) * ToNum(TAU_14389));
 if (LtN(Call(fz_17000, V.Undef, ((V)(Rr_17002)), ((V)(Yr_17003)), ((V)(f_17215))), 4D)) {
 goto _cont17214;
 }
-tw_17007 = ((V)(string.Concat(new string[] { ToStr(tw_17007), "M", ToStr(Call(pt_16967, V.Undef, Call(VP_16991, V.Undef, ((V)((Rr_17002 * FdLibm.Sin((f_17215 - 0.04))))), ((V)((Yr_17003 - 3D))), ((V)((((ToNum(KB_16989) * Rr_17002) * FdLibm.Cos((f_17215 - 0.04))) + 0.3)))))), "L", ToStr(Call(pt_16967, V.Undef, Call(VP_16991, V.Undef, ((V)((Rr_17002 * FdLibm.Sin((f_17215 + 0.04))))), ((V)((Yr_17003 + 3D))), ((V)((((ToNum(KB_16989) * Rr_17002) * FdLibm.Cos((f_17215 + 0.04))) + 0.3)))))) })));
+tw_17007.S("M").V(Call(pt_16967, V.Undef, Call(VP_16991, V.Undef, ((V)((Rr_17002 * FdLibm.Sin((f_17215 - 0.04))))), ((V)((Yr_17003 - 3D))), ((V)((((ToNum(KB_16989) * Rr_17002) * FdLibm.Cos((f_17215 - 0.04))) + 0.3)))))).S("L").V(Call(pt_16967, V.Undef, Call(VP_16991, V.Undef, ((V)((Rr_17002 * FdLibm.Sin((f_17215 + 0.04))))), ((V)((Yr_17003 + 3D))), ((V)((((ToNum(KB_16989) * Rr_17002) * FdLibm.Cos((f_17215 + 0.04))) + 0.3))))));
 _cont17214: ;
 k_17213++;
 }
 }
-Call(set_14391, V.Undef, Get(Bk_16994, "tw"), ((V)("d")), (tw_17007 is var _t17216 && Truthy(_t17216) ? _t17216 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(Bk_16994, "tw"), ((V)("d")), (((V)(tw_17007.Str)) is var _t17216 && Truthy(_t17216) ? _t17216 : ((V)("M0 0"))));
 wfl_17008 = Call(clamp_14385, V.Undef, Call(cv_16968, V.Undef, ((V)("wfl"))), ((V)(0D)), ((V)(1.5)));
 Invoke(Get(A_16963, "WG"), "forEach", Fn((V _self1, int _argc17217, V o_17223, V _a17220, V _a17221, V _a17222, V[] _rest17218) => {
 V sd_17224 = default;
@@ -23185,7 +23185,7 @@ sf_17229 = FdLibm.Sin(phi_17227);
 WP_17230 = Fn((V _self1, int _argc17234, V u_17240, V v_17241, V _a17238, V _a17239, V[] _rest17235) => {
 return Arr(((V)((ToNum(sd_17224) * (17D + ((ToNum(u_17240) * 1.05) * cf_17228))))), ((V)(((46D + (ToNum(v_17241) * 1.05)) + (((ToNum(u_17240) * ToNum(u_17240)) * 0.004) * FdLibm.Sin(((ts_16964 * 3D) + q0_17226)))))), ((V)(((-10D) - ((ToNum(u_17240) * 1.05) * sf_17229)))));
 }, 2, "", true);
-Call(set_14391, V.Undef, Get(o_17223, "e"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Get(A_16963, "WL"), "map", Fn((V _self1, int _argc17242, V _a17244, V _a17245, V _a17246, V _a17247, V[] _rest17243) => {
+Call(set_14391, V.Undef, Get(o_17223, "e"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Get(A_16963, "WL"), "map", Fn((V _self1, int _argc17242, V _a17244, V _a17245, V _a17246, V _a17247, V[] _rest17243) => {
 V u_17250 = default;
 V v_17252 = default;
 { V _t17248 = ListOf(_a17244);
@@ -23195,8 +23195,8 @@ u_17250 = _t17249; }
 v_17252 = _t17251; }
 }
 return Call(pt_16967, V.Undef, CallSpread(P3_16965, V.Undef, new ArrBuilder().Spread(Call(WP_17230, V.Undef, u_17250, v_17252)).V));
-}, 1, "", true)), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(o_17223, "vn"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Arr(Arr(((V)(1D)), ((V)((-1D)))), Arr(((V)(9D)), ((V)((-7D)))), Arr(((V)(17D)), ((V)((-11D)))), Arr(((V)(24D)), ((V)((-12D))))), "map", Fn((V _self1, int _argc17253, V _a17255, V _a17256, V _a17257, V _a17258, V[] _rest17254) => {
+}, 1, "", true)), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_17223, "vn"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Arr(Arr(((V)(1D)), ((V)((-1D)))), Arr(((V)(9D)), ((V)((-7D)))), Arr(((V)(17D)), ((V)((-11D)))), Arr(((V)(24D)), ((V)((-12D))))), "map", Fn((V _self1, int _argc17253, V _a17255, V _a17256, V _a17257, V _a17258, V[] _rest17254) => {
 V u_17261 = default;
 V v_17263 = default;
 { V _t17259 = ListOf(_a17255);
@@ -23206,7 +23206,7 @@ u_17261 = _t17260; }
 v_17263 = _t17262; }
 }
 return Call(pt_16967, V.Undef, CallSpread(P3_16965, V.Undef, new ArrBuilder().Spread(Call(WP_17230, V.Undef, u_17261, v_17263)).V));
-}, 1, "", true)), "join", ((V)("L")))), "M", ToStr(Invoke(Invoke(Arr(Arr(((V)(1D)), ((V)(2D))), Arr(((V)(10D)), ((V)(3.5))), Arr(((V)(20D)), ((V)(4.2)))), "map", Fn((V _self1, int _argc17264, V _a17266, V _a17267, V _a17268, V _a17269, V[] _rest17265) => {
+}, 1, "", true)), "join", ((V)("L")))).S("M").V(Invoke(Invoke(Arr(Arr(((V)(1D)), ((V)(2D))), Arr(((V)(10D)), ((V)(3.5))), Arr(((V)(20D)), ((V)(4.2)))), "map", Fn((V _self1, int _argc17264, V _a17266, V _a17267, V _a17268, V _a17269, V[] _rest17265) => {
 V u_17272 = default;
 V v_17274 = default;
 { V _t17270 = ListOf(_a17266);
@@ -23216,7 +23216,7 @@ u_17272 = _t17271; }
 v_17274 = _t17273; }
 }
 return Call(pt_16967, V.Undef, CallSpread(P3_16965, V.Undef, new ArrBuilder().Spread(Call(WP_17230, V.Undef, u_17272, v_17274)).V));
-}, 1, "", true)), "join", ((V)("L"))))))));
+}, 1, "", true)), "join", ((V)("L")))).End())));
 nz_17231 = System.Math.Abs(ToNum(GetIdx(Call(DV_16974, V.Undef, Arr(((V)(sf_17229)), ((V)(0D)), ((V)((ToNum(sd_17224) * cf_17228))))), 2D)));
 Call(set_14391, V.Undef, Get(o_17223, "e"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.62 + (0.28 * nz_17231))))));
 Call(set_14391, V.Undef, Get(o_17223, "vn"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.45 + (0.4 * nz_17231))))));
@@ -23294,9 +23294,9 @@ return CallSpread(P3_16965, V.Undef, new ArrBuilder().Spread(v_17347).V);
 Dp_17294 = Invoke(Dn_17291, "map", Fn((V _self1, int _argc17348, V v_17354, V _a17351, V _a17352, V _a17353, V[] _rest17349) => {
 return CallSpread(P3_16965, V.Undef, new ArrBuilder().Spread(v_17354).V);
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(o_17281, "hU"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_17292, "concat", Invoke(Invoke(Up_17293, "slice"), "reverse")), "map", pt_16967), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(o_17281, "hD"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_17292, "concat", Invoke(Invoke(Dp_17294, "slice"), "reverse")), "map", pt_16967), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(o_17281, "rib"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_17292, "slice", ((V)(0D)), ((V)(8D))), "map", pt_16967), "join", ((V)("L"))))))));
+Call(set_14391, V.Undef, Get(o_17281, "hU"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_17292, "concat", Invoke(Invoke(Up_17293, "slice"), "reverse")), "map", pt_16967), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_17281, "hD"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_17292, "concat", Invoke(Invoke(Dp_17294, "slice"), "reverse")), "map", pt_16967), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_17281, "rib"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_17292, "slice", ((V)(0D)), ((V)(8D))), "map", pt_16967), "join", ((V)("L")))).End())));
 Call(set_14391, V.Undef, Get(o_17281, "hU"), ((V)("fill")), Call(rgb_16977, V.Undef, Call(C3_16978, V.Undef, GR_16979, Call(lit_16980, V.Undef, M_17289, U_17290))));
 Call(set_14391, V.Undef, Get(o_17281, "hD"), ((V)("fill")), Call(rgb_16977, V.Undef, Call(C3_16978, V.Undef, GR_16979, ((V)((ToNum(Call(lit_16980, V.Undef, M_17289, Dn_17291)) * 0.85))))));
 bk_17295 = (LtN(CallSpread(Z3_16966, V.Undef, new ArrBuilder().Spread(GetIdx(M_17289, 4D)).V), (-3D)) ? V.True : V.False);
@@ -23318,10 +23318,10 @@ return default;
 }, 2, "", true));
 {
 V J_17365 = default;
-V sd_17366 = default;
+JsStrBuf sd_17366 = null;
 V bk_17367 = default;
 J_17365 = Call(T_16988, V.Undef, Arr(((V)(((FdLibm.Sin((ts_16964 * 1.1)) * 0.5) - (ToNum(ox_16971) * 0.12)))), ((V)((11D - (hop_17010 * 0.6)))), ((V)(1.5))));
-sd_17366 = ((V)(""));
+sd_17366 = new JsStrBuf("");
 Invoke(Get(A_16963, "CH"), "forEach", Fn((V _self1, int _argc17368, V o_17374, V i_17375, V _a17372, V _a17373, V[] _rest17369) => {
 V C_17376 = default;
 V s0_17377 = default;
@@ -23336,15 +23336,15 @@ while (true) {
 if (!((k_17379 <= 6D))) break;
 double s_17381 = 0;
 s_17381 = (k_17379 / 6D);
-sd_17366 = ((V)(string.Concat(ToStr(sd_17366), (NumTruthy(k_17379) ? "L" : "M"), ToStr(Call(pt_16967, V.Undef, CallSpread(P3_16965, V.Undef, new ArrBuilder().Spread(Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D))), "map", Fn((V _self1, int _argc17382, V j_17388, V _a17385, V _a17386, V _a17387, V[] _rest17383) => {
+sd_17366.S((NumTruthy(k_17379) ? "L" : "M")).V(Call(pt_16967, V.Undef, CallSpread(P3_16965, V.Undef, new ArrBuilder().Spread(Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D))), "map", Fn((V _self1, int _argc17382, V j_17388, V _a17385, V _a17386, V _a17387, V[] _rest17383) => {
 return Call(Qb_16990, V.Undef, GetK(s0_17377, j_17388), GetK(Tc_17378, j_17388), GetK(J_17365, j_17388), ((V)(s_17381)));
-}, 1, "", true))).V))))));
+}, 1, "", true))).V)));
 k_17379++;
 }
 }
 return default;
 }, 2, "", true));
-Call(set_14391, V.Undef, Get(A_16963, "stm"), ((V)("d")), sd_17366);
+Call(set_14391, V.Undef, Get(A_16963, "stm"), ((V)("d")), ((V)(sd_17366.Str)));
 bk_17367 = (LtN(Add(CallSpread(Z3_16966, V.Undef, new ArrBuilder().Spread(GetIdx(CC_17012, 0D)).V), CallSpread(Z3_16966, V.Undef, new ArrBuilder().Spread(GetIdx(CC_17012, 1D)).V)), (-6D)) ? V.True : V.False);
 if (!SEq(Get(A_16963, "cbk"), bk_17367)) {
 Set(A_16963, "cbk", bk_17367);
@@ -23362,7 +23362,7 @@ V F_17395 = default;
 double fF_17396 = 0;
 double zf_17397 = 0;
 V ring_17398 = default;
-V sgd_17399 = default;
+JsStrBuf sgd_17399 = null;
 V cc_17400 = default;
 V bk_17401 = default;
 O_17389 = Get(A_16963, "OR");
@@ -23392,9 +23392,9 @@ return o_17419;
 return default;
 }, 2, "", true);
 Call(set_14391, V.Undef, Get(O_17389, "edge"), ((V)("d")), Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(Call(ring_17398, V.Undef, Get(O_17389, "r"), ((V)((ToNum(Get(O_17389, "th")) / 2D)))), "concat", Call(ring_17398, V.Undef, Get(O_17389, "r"), ((V)(((-ToNum(Get(O_17389, "th"))) / 2D))))))));
-Call(set_14391, V.Undef, Get(O_17389, "rind"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Call(ring_17398, V.Undef, Get(O_17389, "r"), ((V)(zf_17397))), "map", pt_16967), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(O_17389, "fl"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Call(ring_17398, V.Undef, ((V)(4.8)), ((V)((zf_17397 * 1.02)))), "map", pt_16967), "join", ((V)("L")))), "Z"))));
-sgd_17399 = ((V)(""));
+Call(set_14391, V.Undef, Get(O_17389, "rind"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Call(ring_17398, V.Undef, Get(O_17389, "r"), ((V)(zf_17397))), "map", pt_16967), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(O_17389, "fl"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Call(ring_17398, V.Undef, ((V)(4.8)), ((V)((zf_17397 * 1.02)))), "map", pt_16967), "join", ((V)("L")))).S("Z").End())));
+sgd_17399 = new JsStrBuf("");
 {
 double k_17422 = 0;
 k_17422 = 0D;
@@ -23402,11 +23402,11 @@ while (true) {
 if (!((k_17422 < 4D))) break;
 double a_17424 = 0;
 a_17424 = ((k_17422 / 4D) * System.Math.PI);
-sgd_17399 = ((V)(string.Concat(new string[] { ToStr(sgd_17399), "M", ToStr(Call(pt_16967, V.Undef, Call(F_17395, V.Undef, ((V)(a_17424)), ((V)(4.4)), ((V)((zf_17397 * 1.04)))))), "L", ToStr(Call(pt_16967, V.Undef, Call(F_17395, V.Undef, ((V)((a_17424 + System.Math.PI))), ((V)(4.4)), ((V)((zf_17397 * 1.04)))))) })));
+sgd_17399.S("M").V(Call(pt_16967, V.Undef, Call(F_17395, V.Undef, ((V)(a_17424)), ((V)(4.4)), ((V)((zf_17397 * 1.04)))))).S("L").V(Call(pt_16967, V.Undef, Call(F_17395, V.Undef, ((V)((a_17424 + System.Math.PI))), ((V)(4.4)), ((V)((zf_17397 * 1.04))))));
 k_17422++;
 }
 }
-Call(set_14391, V.Undef, Get(O_17389, "sg"), ((V)("d")), sgd_17399);
+Call(set_14391, V.Undef, Get(O_17389, "sg"), ((V)("d")), ((V)(sgd_17399.Str)));
 cc_17400 = Call(F_17395, V.Undef, ((V)(0D)), ((V)(0D)), ((V)(zf_17397)));
 Call(set_14391, V.Undef, Get(O_17389, "gl"), ((V)("d")), Call(eP_16993, V.Undef, ((V)((ToNum(GetIdx(cc_17400, 0D)) - 2.2))), ((V)((ToNum(GetIdx(cc_17400, 1D)) - 2.4))), ((V)(1.3)), ((V)(0.8))));
 bk_17401 = (LtN(CallSpread(Z3_16966, V.Undef, new ArrBuilder().Spread(Call(T_16988, V.Undef, Arr(GetIdx(c_17390, 0D), ((V)(cy0_17394)), GetIdx(c_17390, 2D)))).V), (-3D)) ? V.True : V.False);
@@ -23449,7 +23449,7 @@ vy_17454 = ((ToNum(y_17453) - ToNum(r_17439)) + 0.8);
 return Arr(((V)((ToNum(Add(GetIdx(p_17438, 0D), ((V)((ToNum(x_17452) * ca_17441))))) - (vy_17454 * sn_17442)))), Add(Add(GetIdx(p_17438, 1D), ((V)((ToNum(x_17452) * sn_17442)))), ((V)((vy_17454 * ca_17441)))));
 return default;
 }, 2, "", true);
-Call(set_14391, V.Undef, Get(o_17431, "st"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(pt_16967, V.Undef, Call(R2_17444, V.Undef, ((V)(0D)), ((V)(0D))))), "Q", ToStr(Call(pt_16967, V.Undef, Call(R2_17444, V.Undef, ((V)(kx_17443)), ((V)((-3D)))))), " ", ToStr(Call(pt_16967, V.Undef, Call(R2_17444, V.Undef, ((V)((kx_17443 * 3D))), ((V)((-4D)))))) }))));
+Call(set_14391, V.Undef, Get(o_17431, "st"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(pt_16967, V.Undef, Call(R2_17444, V.Undef, ((V)(0D)), ((V)(0D))))).S("Q").V(Call(pt_16967, V.Undef, Call(R2_17444, V.Undef, ((V)(kx_17443)), ((V)((-3D)))))).S(" ").V(Call(pt_16967, V.Undef, Call(R2_17444, V.Undef, ((V)((kx_17443 * 3D))), ((V)((-4D)))))).End())));
 bk_17445 = (LtN(CallSpread(Z3_16966, V.Undef, new ArrBuilder().Spread(C_17437).V), (-1D)) ? V.True : V.False);
 if (!SEq(Get(o_17431, "bk"), bk_17445)) {
 Set(o_17431, "bk", bk_17445);
@@ -23479,16 +23479,16 @@ V pan_17470 = default;
 V panT_17471 = default;
 V prof_17472 = default;
 V PF_17473 = default;
-V dS_17474 = default;
+JsStrBuf dS_17474 = null;
 V jg_17475 = default;
-V dS2_17476 = default;
-V dH2_17477 = default;
+JsStrBuf dS2_17476 = null;
+JsStrBuf dH2_17477 = null;
 C_17455 = Get(I_14377, "mo");
 A_17456 = C_17455;
 Dh_17457 = Get(C_17455, "Dh");
 ts_17458 = (ToNum(now_14379) / 1000D);
 pt_17459 = Fn((V _self1, int _argc17478, V p_17484, V _a17481, V _a17482, V _a17483, V[] _rest17479) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_17484, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_17484, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_17484, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_17484, 1D))).End()));
 }, 1, "", true);
 cv_17460 = Fn((V _self1, int _argc17485, V k_17491, V _a17488, V _a17489, V _a17490, V[] _rest17486) => {
 double v_17492 = 0;
@@ -23501,9 +23501,9 @@ return ((V)(((ToNum(GetIdx(n_17499, 1D)) * sp_14408) + ((((-ToNum(GetIdx(n_17499
 }, 1, "", true);
 fz_17462 = (GeN(Call(NV_17461, V.Undef, Arr(((V)(0D)), ((V)(0D)), ((V)(1D)))), 0D) ? 1D : (-1D));
 PL_17463 = Fn((V _self1, int _argc17500, V a_17506, V _a17503, V _a17504, V _a17505, V[] _rest17501) => {
-return ((V)(string.Concat(ToStr(Invoke(Invoke(a_17506, "map", Fn((V _self1, int _argc17507, V p_17513, V k_17514, V _a17511, V _a17512, V[] _rest17508) => {
-return ((V)(string.Concat((Truthy(k_17514) ? "L" : "M"), ToStr(Call(pt_17459, V.Undef, p_17513)))));
-}, 2, "", true)), "join", ((V)("")))), "Z")));
+return ((V)(JsStrBuf.Begin().V(Invoke(Invoke(a_17506, "map", Fn((V _self1, int _argc17507, V p_17513, V k_17514, V _a17511, V _a17512, V[] _rest17508) => {
+return ((V)(JsStrBuf.Begin().S((Truthy(k_17514) ? "L" : "M")).V(Call(pt_17459, V.Undef, p_17513)).End()));
+}, 2, "", true)), "join", ((V)("")))).S("Z").End()));
 }, 1, "", true);
 tg_17464 = ((((ToNum(Get(P_14378, "x")) * 1.4) + (ToNum(Get(P_14378, "tilt")) * 0.5)) + (ToNum(Get(P_14378, "lean")) * 1.5)) + (ToNum(Get(P_14378, "turn")) * 12D));
 ly_17465 = (ToNum(Get(P_14378, "lift")) - (ToNum(sq_14416) * 8D));
@@ -23572,9 +23572,9 @@ Call(set_14391, V.Undef, Get(C_17455, "wr"), ((V)("d")), Call(panT_17471, V.Unde
 Call(set_14391, V.Undef, Get(C_17455, "fl"), ((V)("d")), Call(panT_17471, V.Undef, ((V)(4.8)), ((V)(0.3)), ((V)(0.15)), ((V)(1D))));
 {
 V tq_17565 = default;
-V ds_17566 = default;
+JsStrBuf ds_17566 = null;
 tq_17565 = Arr();
-ds_17566 = ((V)(""));
+ds_17566 = new JsStrBuf("");
 {
 double i_17567 = 0;
 i_17567 = 1D;
@@ -23626,14 +23626,14 @@ while (true) {
 if (!((m_17589 < 8D))) break;
 double a_17591 = 0;
 a_17591 = ((m_17589 / 8D) * ToNum(TAU_14389));
-ds_17566 = ((V)(string.Concat(ToStr(ds_17566), (NumTruthy(m_17589) ? "L" : "M"), ToStr(Call(pt_17459, V.Undef, Call(sph_14455, V.Undef, Add(x_17584, ((V)((1.6 * FdLibm.Cos(a_17591))))), ((V)((y_17587 - 0.15))), ((V)((z_17588 + (0.9 * FdLibm.Sin(a_17591)))))))))));
+ds_17566.S((NumTruthy(m_17589) ? "L" : "M")).V(Call(pt_17459, V.Undef, Call(sph_14455, V.Undef, Add(x_17584, ((V)((1.6 * FdLibm.Cos(a_17591))))), ((V)((y_17587 - 0.15))), ((V)((z_17588 + (0.9 * FdLibm.Sin(a_17591))))))));
 m_17589++;
 }
 }
-ds_17566 = ((V)(string.Concat(ToStr(ds_17566), "Z")));
+ds_17566.S("Z");
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(C_17455, "tsd"), ((V)("d")), ds_17566);
+Call(set_14391, V.Undef, Get(C_17455, "tsd"), ((V)("d")), ((V)(ds_17566.Str)));
 }
 prof_17472 = Arr();
 {
@@ -23650,7 +23650,7 @@ k_17592--;
 PF_17473 = Invoke(prof_17472, "concat", Arr(Arr(((V)(0D)), ((V)(0D)), ((V)(1D)), ((V)(0D)))), Invoke(Invoke(Invoke(prof_17472, "slice"), "reverse"), "map", Fn((V _self1, int _argc17595, V v_17601, V _a17598, V _a17599, V _a17600, V[] _rest17596) => {
 return Arr(GetIdx(v_17601, 0D), ((V)((-ToNum(GetIdx(v_17601, 1D))))), GetIdx(v_17601, 2D), ((V)((-ToNum(GetIdx(v_17601, 3D))))));
 }, 1, "", true)));
-dS_17474 = ((V)(""));
+dS_17474 = new JsStrBuf("");
 Invoke(Get(C_17455, "SI"), "forEach", Fn((V _self1, int _argc17602, V i_17608, V si_17609, V _a17606, V _a17607, V[] _rest17603) => {
 V p_17610 = default;
 V n2_17611 = default;
@@ -23671,16 +23671,16 @@ return default;
 wg_17621 = (0.7 * FdLibm.Sin(((ToNum(GetIdx(v_17619, 1D)) * 0.45) + (ToNum(si_17609) * 1.7))));
 x_17622 = ((ToNum(GetIdx(p_17610, 0D)) - (ToNum(GetIdx(n2_17611, 0D)) * ToNum(GetIdx(v_17619, 0D)))) - (ToNum(GetIdx(n2_17611, 1D)) * wg_17621));
 y_17623 = ((ToNum(GetIdx(p_17610, 1D)) - (ToNum(GetIdx(n2_17611, 1D)) * ToNum(GetIdx(v_17619, 0D)))) + (ToNum(GetIdx(n2_17611, 0D)) * wg_17621));
-dS_17474 = ((V)(string.Concat(ToStr(dS_17474), (Truthy(on_17612) ? "L" : "M"), ToStr(Call(pt_17459, V.Undef, Call(sph_14455, V.Undef, ((V)(x_17622)), ((V)(y_17623)), GetIdx(v_17619, 1D)))))));
+dS_17474.S((Truthy(on_17612) ? "L" : "M")).V(Call(pt_17459, V.Undef, Call(sph_14455, V.Undef, ((V)(x_17622)), ((V)(y_17623)), GetIdx(v_17619, 1D))));
 on_17612 = (true ? V.True : V.False);
 return default;
 }, 1, "", true));
 return default;
 }, 2, "", true));
-Call(set_14391, V.Undef, Get(C_17455, "str"), ((V)("d")), (dS_17474 is var _t17624 && Truthy(_t17624) ? _t17624 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(C_17455, "str"), ((V)("d")), (((V)(dS_17474.Str)) is var _t17624 && Truthy(_t17624) ? _t17624 : ((V)("M0 0"))));
 jg_17475 = Call(clamp_14385, V.Undef, Call(cv_17460, V.Undef, ((V)("sdj"))), ((V)(0D)), ((V)(1.5)));
-dS2_17476 = ((V)(""));
-dH2_17477 = ((V)(""));
+dS2_17476 = new JsStrBuf("");
+dH2_17477 = new JsStrBuf("");
 Invoke(Get(C_17455, "SD"), "forEach", Fn((V _self1, int _argc17625, V s_17631, V i_17632, V _a17629, V _a17630, V[] _rest17626) => {
 double wj_17633 = 0;
 double hj_17634 = 0;
@@ -23717,18 +23717,18 @@ bb_17648 = ((m_17646 / 10D) * ToNum(TAU_14389));
 rc_17649 = FdLibm.Cos(bb_17648);
 al_17650 = (rc_17649 * ((rc_17649 > 0D) ? 2D : 1.25));
 pe_17651 = ((FdLibm.Sin(bb_17648) * 0.85) * ((rc_17649 > 0D) ? (1D - (0.5 * rc_17649)) : 1D));
-dS2_17476 = ((V)(string.Concat(ToStr(dS2_17476), (NumTruthy(m_17646) ? "L" : "M"), ToStr(Call(pt_17459, V.Undef, Call(sph_14455, V.Undef, Add(Add(x_17635, ((V)((ToNum(GetIdx(u_17640, 0D)) * al_17650)))), ((V)((ToNum(GetIdx(v_17641, 0D)) * pe_17651)))), Add(Add(y_17636, ((V)((ToNum(GetIdx(u_17640, 1D)) * al_17650)))), ((V)((ToNum(GetIdx(v_17641, 1D)) * pe_17651)))), ((V)(z_17642))))))));
+dS2_17476.S((NumTruthy(m_17646) ? "L" : "M")).V(Call(pt_17459, V.Undef, Call(sph_14455, V.Undef, Add(Add(x_17635, ((V)((ToNum(GetIdx(u_17640, 0D)) * al_17650)))), ((V)((ToNum(GetIdx(v_17641, 0D)) * pe_17651)))), Add(Add(y_17636, ((V)((ToNum(GetIdx(u_17640, 1D)) * al_17650)))), ((V)((ToNum(GetIdx(v_17641, 1D)) * pe_17651)))), ((V)(z_17642)))));
 m_17646++;
 }
 }
-dS2_17476 = ((V)(string.Concat(ToStr(dS2_17476), "Z")));
+dS2_17476.S("Z");
 hx_17643 = ((ToNum(x_17635) - (ToNum(GetIdx(u_17640, 0D)) * 0.3)) - 0.35);
 hy_17644 = ((ToNum(y_17636) - (ToNum(GetIdx(u_17640, 1D)) * 0.3)) - 0.35);
-dH2_17477 = ((V)(string.Concat(new string[] { ToStr(dH2_17477), "M", ToStr(Call(pt_17459, V.Undef, Call(sph_14455, V.Undef, ((V)(hx_17643)), ((V)((hy_17644 - 0.35))), ((V)(z_17642))))), "L", ToStr(Call(pt_17459, V.Undef, Call(sph_14455, V.Undef, ((V)((hx_17643 + 0.35))), ((V)(hy_17644)), ((V)(z_17642))))), "L", ToStr(Call(pt_17459, V.Undef, Call(sph_14455, V.Undef, ((V)(hx_17643)), ((V)((hy_17644 + 0.35))), ((V)(z_17642))))), "L", ToStr(Call(pt_17459, V.Undef, Call(sph_14455, V.Undef, ((V)((hx_17643 - 0.35))), ((V)(hy_17644)), ((V)(z_17642))))), "Z" })));
+dH2_17477.S("M").V(Call(pt_17459, V.Undef, Call(sph_14455, V.Undef, ((V)(hx_17643)), ((V)((hy_17644 - 0.35))), ((V)(z_17642))))).S("L").V(Call(pt_17459, V.Undef, Call(sph_14455, V.Undef, ((V)((hx_17643 + 0.35))), ((V)(hy_17644)), ((V)(z_17642))))).S("L").V(Call(pt_17459, V.Undef, Call(sph_14455, V.Undef, ((V)(hx_17643)), ((V)((hy_17644 + 0.35))), ((V)(z_17642))))).S("L").V(Call(pt_17459, V.Undef, Call(sph_14455, V.Undef, ((V)((hx_17643 - 0.35))), ((V)(hy_17644)), ((V)(z_17642))))).S("Z");
 return default;
 }, 2, "", true));
-Call(set_14391, V.Undef, Get(C_17455, "sd"), ((V)("d")), dS2_17476);
-Call(set_14391, V.Undef, Get(C_17455, "sdh"), ((V)("d")), dH2_17477);
+Call(set_14391, V.Undef, Get(C_17455, "sd"), ((V)("d")), ((V)(dS2_17476.Str)));
+Call(set_14391, V.Undef, Get(C_17455, "sdh"), ((V)("d")), ((V)(dH2_17477.Str)));
 }
 if (Truthy(Get(I_14377, "dl"))) {
 V D_17652 = default;
@@ -23758,7 +23758,7 @@ return ((V)(((v_17677 == v_17677) ? v_17677 : 0D)));
 return default;
 }, 1, "", true);
 pt_17655 = Fn((V _self1, int _argc17678, V p_17684, V _a17681, V _a17682, V _a17683, V[] _rest17679) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_17684, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_17684, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_17684, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_17684, 1D))).End()));
 }, 1, "", true);
 tg_17656 = ((((ToNum(Get(P_14378, "x")) * 1.4) + (ToNum(Get(P_14378, "tilt")) * 0.5)) + (ToNum(Get(P_14378, "lean")) * 1.5)) + (ToNum(Get(P_14378, "turn")) * 12D));
 ly_17657 = (ToNum(Get(P_14378, "lift")) - (ToNum(sq_14416) * 8D));
@@ -23839,7 +23839,7 @@ V TH_17773 = default;
 V nf_17774 = default;
 V RG_17775 = default;
 V FR_17776 = default;
-V d_17777 = default;
+JsStrBuf d_17777 = null;
 N_17770 = (Get(o_17769, "n") is var _t17778 && Truthy(_t17778) ? _t17778 : ((V)(8D)));
 C_17771 = Arr();
 WW_17772 = Arr();
@@ -23891,17 +23891,17 @@ Invoke(RG_17775, "push", ring_17789);
 i_17784++;
 }
 }
-d_17777 = ((V)(""));
+d_17777 = new JsStrBuf("");
 {
 double i_17793 = 0;
 i_17793 = 0D;
 while (true) {
 if (!(Lt(((V)(i_17793)), N_17770))) break;
-d_17777 = Add(d_17777, Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(RG_17775, i_17793), "concat", GetIdx(RG_17775, (i_17793 + 1D))))));
+d_17777.V(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(RG_17775, i_17793), "concat", GetIdx(RG_17775, (i_17793 + 1D))))));
 i_17793++;
 }
 }
-Call(set_14391, V.Undef, Get(o_17769, "e"), ((V)("d")), d_17777);
+Call(set_14391, V.Undef, Get(o_17769, "e"), ((V)("d")), ((V)(d_17777.Str)));
 if (Truthy(Get(o_17769, "ie"))) {
 V U_17795 = default;
 V Dn_17796 = default;
@@ -23924,12 +23924,12 @@ vis2_17797 = (vis2_17797 + (ToNum(Call(ZJ_17662, V.Undef, Call(ad_17667, V.Undef
 i_17798++;
 }
 }
-Call(set_14391, V.Undef, Get(o_17769, "ie"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(U_17795, "concat", Invoke(Dn_17796, "reverse")), "map", pt_17655), "join", ((V)("L")))), "Z"))));
+Call(set_14391, V.Undef, Get(o_17769, "ie"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(U_17795, "concat", Invoke(Dn_17796, "reverse")), "map", pt_17655), "join", ((V)("L")))).S("Z").End())));
 Call(set_14391, V.Undef, Get(o_17769, "ie"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((ToNum((Get(o_17769, "io") is var _t17803 && Truthy(_t17803) ? _t17803 : ((V)(0.85)))) * ToNum(Call(SM_14384, V.Undef, ((V)(((vis2_17797 / (ToNum(N_17770) - 1D)) * 3D))))))))));
 }
 if (Truthy(Get(o_17769, "ge"))) {
-V gd_17804 = default;
-gd_17804 = ((V)(""));
+JsStrBuf gd_17804 = null;
+gd_17804 = new JsStrBuf("");
 Invoke(Arr(((V)(0D)), ((V)(System.Math.PI))), "forEach", Fn((V _self1, int _argc17805, V a0_17811, V _a17808, V _a17809, V _a17810, V[] _rest17806) => {
 V pen_17812 = default;
 pen_17812 = (false ? V.True : V.False);
@@ -23955,7 +23955,7 @@ a_17820 = Add(a0_17811, ((V)(((s_17815 * ToNum(TAU_14389)) * 3.2))));
 F2_17821 = GetIdx(FR_17776, i_17816);
 Pp_17822 = Call(ad_17667, V.Undef, Call(ad_17667, V.Undef, Cc_17818, Get(F2_17821, "wv"), ((V)(((ToNum(w_17819) * 1.02) * FdLibm.Cos(ToNum(a_17820)))))), Get(F2_17821, "tv"), ((V)(((ToNum(w_17819) * 1.02) * FdLibm.Sin(ToNum(a_17820))))));
 if (((ToNum(Call(ZJ_17662, V.Undef, Pp_17822, Get(o_17769, "h"))) - ToNum(Call(ZJ_17662, V.Undef, Cc_17818, Get(o_17769, "h")))) > (ToNum(w_17819) * 0.15))) {
-gd_17804 = ((V)(string.Concat(ToStr(gd_17804), (Truthy(pen_17812) ? "L" : "M"), ToStr(Call(pt_17655, V.Undef, Call(PJ_17661, V.Undef, Pp_17822, Get(o_17769, "h")))))));
+gd_17804.S((Truthy(pen_17812) ? "L" : "M")).V(Call(pt_17655, V.Undef, Call(PJ_17661, V.Undef, Pp_17822, Get(o_17769, "h"))));
 pen_17812 = (true ? V.True : V.False);
 } else {
 pen_17812 = (false ? V.True : V.False);
@@ -23965,7 +23965,7 @@ j_17813++;
 }
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(o_17769, "ge"), ((V)("d")), (gd_17804 is var _t17823 && Truthy(_t17823) ? _t17823 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(o_17769, "ge"), ((V)("d")), (((V)(gd_17804.Str)) is var _t17823 && Truthy(_t17823) ? _t17823 : ((V)("M0 0"))));
 }
 if (Truthy(Get(o_17769, "eye"))) {
 double i2_17824 = 0;
@@ -23979,7 +23979,7 @@ Invoke(Get(o_17769, "g"), "appendChild", Get(o_17769, "ee"));
 i2_17824 = Round((ToNum(N_17770) * ToNum(Get(o_17769, "eyeS"))));
 p_17825 = Call(PJ_17661, V.Undef, GetIdx(C_17771, i2_17824), Get(o_17769, "h"));
 r_17826 = (ToNum(GetIdx(WW_17772, i2_17824)) * 0.42);
-Call(set_14391, V.Undef, Get(o_17769, "ee"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_17825, 0D)) - r_17826))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_17825, 1D))), "A", ToStr(Call(r2_14387, V.Undef, ((V)(r_17826)))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(r_17826)))), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_17825, 0D), ((V)(r_17826))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_17825, 1D))), "A", ToStr(Call(r2_14387, V.Undef, ((V)(r_17826)))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(r_17826)))), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_17825, 0D)) - r_17826))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_17825, 1D))), "Z" }))));
+Call(set_14391, V.Undef, Get(o_17769, "ee"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_17825, 0D)) - r_17826))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_17825, 1D))).S("A").V(Call(r2_14387, V.Undef, ((V)(r_17826)))).S(" ").V(Call(r2_14387, V.Undef, ((V)(r_17826)))).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, Add(GetIdx(p_17825, 0D), ((V)(r_17826))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_17825, 1D))).S("A").V(Call(r2_14387, V.Undef, ((V)(r_17826)))).S(" ").V(Call(r2_14387, V.Undef, ((V)(r_17826)))).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_17825, 0D)) - r_17826))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_17825, 1D))).S("Z").End())));
 }
 if (Truthy(Get(o_17769, "flame"))) {
 V p_17827 = default;
@@ -24042,7 +24042,7 @@ if ((qk_17842 < 0.03)) {
 Call(set_14391, V.Undef, e_17853, ((V)("d")), ((V)("M0 0")));
 return default;
 }
-Call(set_14391, V.Undef, e_17853, ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, ((V)(Lx_17858)))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(Ly_17859)))), "Q", ToStr(Call(r2_14387, V.Undef, ((V)((Lx_17858 + ((ux_17835 * h_17855) * 0.55)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((Ly_17859 + ((uy_17836 * h_17855) * 0.55)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(Tx_17862)))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(Ty_17863)))), "Q", ToStr(Call(r2_14387, V.Undef, ((V)((Rx_17860 + ((ux_17835 * h_17855) * 0.55)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((Ry_17861 + ((uy_17836 * h_17855) * 0.55)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(Rx_17860)))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(Ry_17861)))), "Q", ToStr(Call(r2_14387, V.Undef, ((V)((bx_17840 - ((ux_17835 * r_17856) * 1.4)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((by_17841 - ((uy_17836 * r_17856) * 1.4)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(Lx_17858)))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(Ly_17859)))), "Z" }))));
+Call(set_14391, V.Undef, e_17853, ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, ((V)(Lx_17858)))).S(" ").V(Call(r2_14387, V.Undef, ((V)(Ly_17859)))).S("Q").V(Call(r2_14387, V.Undef, ((V)((Lx_17858 + ((ux_17835 * h_17855) * 0.55)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((Ly_17859 + ((uy_17836 * h_17855) * 0.55)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)(Tx_17862)))).S(" ").V(Call(r2_14387, V.Undef, ((V)(Ty_17863)))).S("Q").V(Call(r2_14387, V.Undef, ((V)((Rx_17860 + ((ux_17835 * h_17855) * 0.55)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((Ry_17861 + ((uy_17836 * h_17855) * 0.55)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)(Rx_17860)))).S(" ").V(Call(r2_14387, V.Undef, ((V)(Ry_17861)))).S("Q").V(Call(r2_14387, V.Undef, ((V)((bx_17840 - ((ux_17835 * r_17856) * 1.4)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((by_17841 - ((uy_17836 * r_17856) * 1.4)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)(Lx_17858)))).S(" ").V(Call(r2_14387, V.Undef, ((V)(Ly_17859)))).S("Z").End())));
 return default;
 }, 2, "", true));
 }
@@ -24056,9 +24056,9 @@ Invoke(Get(D_17652, "F"), "forEach", Fn((V _self1, int _argc17864, V o_17870, V 
 V q_17871 = default;
 V m_17872 = default;
 Invoke(Get(o_17870, "qs"), "forEach", Fn((V _self1, int _argc17873, V q_17879, V _a17876, V _a17877, V _a17878, V[] _rest17874) => {
-return Call(set_14391, V.Undef, Get(q_17879, "e"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Get(q_17879, "pts"), "map", Fn((V _self1, int _argc17880, V p_17886, V _a17883, V _a17884, V _a17885, V[] _rest17881) => {
+return Call(set_14391, V.Undef, Get(q_17879, "e"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Get(q_17879, "pts"), "map", Fn((V _self1, int _argc17880, V p_17886, V _a17883, V _a17884, V _a17885, V[] _rest17881) => {
 return Call(pt_17655, V.Undef, Call(PJ_17661, V.Undef, Invoke(o_17870, "xf", GetIdx(p_17886, 0D), GetIdx(p_17886, 1D), S_17660), Get(o_17870, "h")));
-}, 1, "", true)), "join", ((V)("L")))), "Z"))));
+}, 1, "", true)), "join", ((V)("L")))).S("Z").End())));
 }, 1, "", true));
 q_17871 = GetIdx(Get(o_17870, "qs"), 0D);
 m_17872 = Invoke(o_17870, "xf", Get(q_17871, "cx"), Get(q_17871, "cy"), S_17660);
@@ -24112,9 +24112,9 @@ b_17927 = (b0_17906 + (fx_17893 * Pow((ToNum(GetIdx(l_17924, 0D)) / 30D), 2D)));
 return Arr(((V)((hx_17910 + ((ToNum(sd_17904) * u1_17925) * FdLibm.Cos(b_17927))))), ((V)((47D + v1_17926))), ((V)((ToNum(Get(o_17903, "hz")) - (u1_17925 * FdLibm.Sin(b_17927))))));
 return default;
 }, 1, "", true);
-md_17912 = ((V)(string.Concat("M", ToStr(Invoke(Invoke(Get(o_17903, "L"), "map", Fn((V _self1, int _argc17928, V l_17934, V _a17931, V _a17932, V _a17933, V[] _rest17929) => {
+md_17912 = ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Get(o_17903, "L"), "map", Fn((V _self1, int _argc17928, V l_17934, V _a17931, V _a17932, V _a17933, V[] _rest17929) => {
 return Call(pt_17655, V.Undef, Call(PJ_17661, V.Undef, Call(X_17911, V.Undef, l_17934), ((V)(1D))));
-}, 1, "", true)), "join", ((V)("L")))), "Z")));
+}, 1, "", true)), "join", ((V)("L")))).S("Z").End()));
 Call(set_14391, V.Undef, Get(o_17903, "m"), ((V)("d")), md_17912);
 Call(set_14391, V.Undef, Get(o_17903, "sh"), ((V)("d")), md_17912);
 Call(set_14391, V.Undef, Get(o_17903, "hl"), ((V)("d")), md_17912);
@@ -24126,11 +24126,11 @@ f_17915 = ((ToNum(Call(ZJ_17662, V.Undef, Call(ad_17667, V.Undef, H0_17913, n_17
 Call(set_14391, V.Undef, Get(o_17903, "sh"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)(((0.34 * ToNum(Call(SM_14384, V.Undef, ((V)(((-f_17915) * 2.5)))))) + (0.1 * (1D - System.Math.Abs(f_17915))))))));
 Call(set_14391, V.Undef, Get(o_17903, "hl"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.16 * ToNum(Call(SM_14384, V.Undef, ((V)((f_17915 * 2.5))))))))));
 Call(set_14391, V.Undef, Get(o_17903, "bn"), ((V)("d")), Invoke(Invoke(Get(o_17903, "BN"), "map", Fn((V _self1, int _argc17942, V b_17948, V _a17945, V _a17946, V _a17947, V[] _rest17943) => {
-return ((V)(string.Concat("M", ToStr(Call(pt_17655, V.Undef, Call(PJ_17661, V.Undef, Call(X_17911, V.Undef, GetIdx(b_17948, 0D)), ((V)(1D))))), "L", ToStr(Call(pt_17655, V.Undef, Call(PJ_17661, V.Undef, Call(X_17911, V.Undef, GetIdx(b_17948, 1D)), ((V)(1D))))))));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(pt_17655, V.Undef, Call(PJ_17661, V.Undef, Call(X_17911, V.Undef, GetIdx(b_17948, 0D)), ((V)(1D))))).S("L").V(Call(pt_17655, V.Undef, Call(PJ_17661, V.Undef, Call(X_17911, V.Undef, GetIdx(b_17948, 1D)), ((V)(1D))))).End()));
 }, 1, "", true)), "join", ((V)(""))));
-Call(set_14391, V.Undef, Get(o_17903, "ab"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Get(o_17903, "ARM"), "map", Fn((V _self1, int _argc17949, V l_17955, V _a17952, V _a17953, V _a17954, V[] _rest17950) => {
+Call(set_14391, V.Undef, Get(o_17903, "ab"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Get(o_17903, "ARM"), "map", Fn((V _self1, int _argc17949, V l_17955, V _a17952, V _a17953, V _a17954, V[] _rest17950) => {
 return Call(pt_17655, V.Undef, Call(PJ_17661, V.Undef, Call(X_17911, V.Undef, l_17955), ((V)(1D))));
-}, 1, "", true)), "join", ((V)("L"))))))));
+}, 1, "", true)), "join", ((V)("L")))).End())));
 fr_17916 = (GtN(Call(ZJ_17662, V.Undef, Call(X_17911, V.Undef, Arr(((V)(12D)), ((V)(4D)))), ((V)(1D))), 0D) ? V.True : V.False);
 if (!SEq(Get(o_17903, "fr"), fr_17916)) {
 Set(o_17903, "fr", fr_17916);
@@ -24146,7 +24146,7 @@ V cP_17966 = default;
 c_17964 = Arr(((V)(((ToNum(GetIdx(Get(o_17962, "c"), 0D)) - (ToNum(ox_17658) * (Truthy(Get(o_17962, "h")) ? 0.06 : 0.12))) + (!Get(o_17962, "wob").IsNullish ? (FdLibm.Sin(((ts_17653 * 3D) + (ToNum(Get(o_17962, "wob")) * 2D))) * 0.35) : 0D)))), Add(GetIdx(Get(o_17962, "c"), 1D), ((V)((ToNum(oy_17659) * 0.25)))), GetIdx(Get(o_17962, "c"), 2D));
 p_17965 = Call(PJ_17661, V.Undef, c_17964, Get(o_17962, "h"));
 cP_17966 = Fn((V _self1, int _argc17967, V x_17973, V y_17974, V r_17975, V _a17972, V[] _rest17968) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_17973) - ToNum(r_17975)))))), " ", ToStr(Call(r2_14387, V.Undef, y_17974)), "A", ToStr(Call(r2_14387, V.Undef, r_17975)), " ", ToStr(Call(r2_14387, V.Undef, r_17975)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, Add(x_17973, r_17975))), " ", ToStr(Call(r2_14387, V.Undef, y_17974)), "A", ToStr(Call(r2_14387, V.Undef, r_17975)), " ", ToStr(Call(r2_14387, V.Undef, r_17975)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_17973) - ToNum(r_17975)))))), " ", ToStr(Call(r2_14387, V.Undef, y_17974)), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_17973) - ToNum(r_17975)))))).S(" ").V(Call(r2_14387, V.Undef, y_17974)).S("A").V(Call(r2_14387, V.Undef, r_17975)).S(" ").V(Call(r2_14387, V.Undef, r_17975)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, Add(x_17973, r_17975))).S(" ").V(Call(r2_14387, V.Undef, y_17974)).S("A").V(Call(r2_14387, V.Undef, r_17975)).S(" ").V(Call(r2_14387, V.Undef, r_17975)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_17973) - ToNum(r_17975)))))).S(" ").V(Call(r2_14387, V.Undef, y_17974)).S("Z").End()));
 }, 3, "", true);
 Call(set_14391, V.Undef, Get(o_17962, "e"), ((V)("d")), Call(cP_17966, V.Undef, GetIdx(p_17965, 0D), GetIdx(p_17965, 1D), Get(o_17962, "r")));
 if (Truthy(Get(o_17962, "ie"))) {
@@ -24250,7 +24250,7 @@ Invoke(Q_18033, "push", Call(PJ_17661, V.Undef, Call(ad_17667, V.Undef, Call(ad_
 j_18034++;
 }
 }
-Call(set_14391, V.Undef, Get(o_17986, "ie"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Q_18033, "map", pt_17655), "join", ((V)("L")))), "Z"))));
+Call(set_14391, V.Undef, Get(o_17986, "ie"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Q_18033, "map", pt_17655), "join", ((V)("L")))).S("Z").End())));
 Call(set_14391, V.Undef, Get(o_17986, "ie"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((ToNum((Get(o_17986, "iop") is var _t18037 && Truthy(_t18037) ? _t18037 : ((V)(0.9)))) * ToNum(Call(SM_14384, V.Undef, ((V)((f_18032 * 2.5))))))))));
 }
 Call(sortG_17663, V.Undef, o_17986, Call(ZJ_17662, V.Undef, C_18000, Get(o_17986, "h")));
@@ -24269,7 +24269,7 @@ return default;
 }, 1, "", true));
 }
 cir_17669 = Fn((V _self1, int _argc18060, V x_18066, V y_18067, V r_18068, V _a18065, V[] _rest18061) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_18066) - ToNum(r_18068)))))), " ", ToStr(Call(r2_14387, V.Undef, y_18067)), "A", ToStr(Call(r2_14387, V.Undef, r_18068)), " ", ToStr(Call(r2_14387, V.Undef, r_18068)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, Add(x_18066, r_18068))), " ", ToStr(Call(r2_14387, V.Undef, y_18067)), "A", ToStr(Call(r2_14387, V.Undef, r_18068)), " ", ToStr(Call(r2_14387, V.Undef, r_18068)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_18066) - ToNum(r_18068)))))), " ", ToStr(Call(r2_14387, V.Undef, y_18067)), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_18066) - ToNum(r_18068)))))).S(" ").V(Call(r2_14387, V.Undef, y_18067)).S("A").V(Call(r2_14387, V.Undef, r_18068)).S(" ").V(Call(r2_14387, V.Undef, r_18068)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, Add(x_18066, r_18068))).S(" ").V(Call(r2_14387, V.Undef, y_18067)).S("A").V(Call(r2_14387, V.Undef, r_18068)).S(" ").V(Call(r2_14387, V.Undef, r_18068)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_18066) - ToNum(r_18068)))))).S(" ").V(Call(r2_14387, V.Undef, y_18067)).S("Z").End()));
 }, 3, "", true);
 if (Truthy(Get(D_17652, "wc"))) {
 V LT_18069 = default;
@@ -24335,7 +24335,7 @@ return Add(v_18118, ((V)((((ToNum(GetK(GetIdx(C_18101, 1D), j_18119)) - ToNum(v_
 }, 2, "", true)) : Invoke(GetIdx(C_18101, 1D), "map", Fn((V _self1, int _argc18120, V v_18126, V j_18127, V _a18124, V _a18125, V[] _rest18121) => {
 return Add(v_18126, ((V)(((ToNum(GetK(GetIdx(C_18101, 2D), j_18127)) - ToNum(v_18126)) * Pow(((sh_18100 - 0.5) * 2D), 1.6)))));
 }, 2, "", true)));
-col_18103 = ((V)(string.Concat("rgb(", ToStr(Invoke(Invoke(cc_18102, "map", Get(G("Math"), "round")), "join", ((V)(",")))), ")")));
+col_18103 = ((V)(JsStrBuf.Begin().S("rgb(").V(Invoke(Invoke(cc_18102, "map", Get(G("Math"), "round")), "join", ((V)(",")))).S(")").End()));
 Pp_18104 = Arr();
 {
 double j_18128 = 0;
@@ -24355,7 +24355,7 @@ Invoke(Pp_18104, "push", Call(PJ_17661, V.Undef, Invoke(B_18084, "fn", ((V)(Min(
 PostInc(ref j_18130, -1D);
 }
 }
-Call(set_14391, V.Undef, e_18095, ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Pp_18104, "map", pt_17655), "join", ((V)("L")))), "Z"))));
+Call(set_14391, V.Undef, e_18095, ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Pp_18104, "map", pt_17655), "join", ((V)("L")))).S("Z").End())));
 Call(set_14391, V.Undef, e_18095, ((V)("fill")), col_18103);
 Call(set_14391, V.Undef, e_18095, ((V)("stroke")), col_18103);
 _cont18087: ;
@@ -24389,10 +24389,10 @@ return default;
 fz_18076 = (ToNum(Call(ZJ_17662, V.Undef, Call(ad_17667, V.Undef, c_18071, N_18074, ((V)(1D))), ((V)(1D)))) - ToNum(Call(ZJ_17662, V.Undef, c_18071, ((V)(1D)))));
 vo_18077 = Call(r2_14387, V.Undef, Call(SM_14384, V.Undef, ((V)((fz_18076 * 3D)))));
 Call(set_14391, V.Undef, Get(K_18070, "rim"), ((V)("d")), Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(Call(dsk_18075, V.Undef, ((V)(5.4)), ((V)(0D))), "concat", Call(dsk_18075, V.Undef, ((V)(5.4)), ((V)((-1.3))))))));
-Call(set_14391, V.Undef, Get(K_18070, "fc"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Call(dsk_18075, V.Undef, ((V)(5.1)), ((V)(0.05))), "map", pt_17655), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(K_18070, "st"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Get(Get(D_17652, "wc"), "STAR"), "map", Fn((V _self1, int _argc18144, V p_18150, V _a18147, V _a18148, V _a18149, V[] _rest18145) => {
+Call(set_14391, V.Undef, Get(K_18070, "fc"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Call(dsk_18075, V.Undef, ((V)(5.1)), ((V)(0.05))), "map", pt_17655), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(K_18070, "st"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Get(Get(D_17652, "wc"), "STAR"), "map", Fn((V _self1, int _argc18144, V p_18150, V _a18147, V _a18148, V _a18149, V[] _rest18145) => {
 return Call(pt_17655, V.Undef, Call(PJ_17661, V.Undef, Call(ad_17667, V.Undef, Call(ad_17667, V.Undef, Call(ad_17667, V.Undef, c_18071, T_18072, ((V)((ToNum(GetIdx(p_18150, 0D)) - 50D)))), V_18073, ((V)((ToNum(GetIdx(p_18150, 1D)) - 74.5)))), N_18074, ((V)(0.12))), ((V)(1D))));
-}, 1, "", true)), "join", ((V)("L")))), "Z"))));
+}, 1, "", true)), "join", ((V)("L")))).S("Z").End())));
 {
 V hc_18151 = default;
 V Q_18152 = default;
@@ -24409,7 +24409,7 @@ Invoke(Q_18152, "push", Call(PJ_17661, V.Undef, Call(ad_17667, V.Undef, Call(ad_
 j_18153++;
 }
 }
-Call(set_14391, V.Undef, Get(K_18070, "hl"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Q_18152, "map", pt_17655), "join", ((V)("L")))), "Z"))));
+Call(set_14391, V.Undef, Get(K_18070, "hl"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Q_18152, "map", pt_17655), "join", ((V)("L")))).S("Z").End())));
 }
 Invoke(Arr(Get(K_18070, "rim"), Get(K_18070, "fc"), Get(K_18070, "st")), "forEach", Fn((V _self1, int _argc18156, V e_18162, V _a18159, V _a18160, V _a18161, V[] _rest18157) => {
 return Call(set_14391, V.Undef, e_18162, ((V)("opacity")), vo_18077);
@@ -24481,7 +24481,7 @@ return Add(v_18216, ((V)((((ToNum(GetK(C1_18170, j_18217)) - ToNum(v_18216)) * s
 }, 2, "", true)) : Invoke(C1_18170, "map", Fn((V _self1, int _argc18218, V v_18224, V j_18225, V _a18222, V _a18223, V[] _rest18219) => {
 return Add(v_18224, ((V)(((ToNum(GetK(C2_18171, j_18225)) - ToNum(v_18224)) * Pow(((sh_18206 - 0.5) * 2D), 1.6)))));
 }, 2, "", true)));
-col_18208 = ((V)(string.Concat("rgb(", ToStr(Invoke(Invoke(cc_18207, "map", Get(G("Math"), "round")), "join", ((V)(",")))), ")")));
+col_18208 = ((V)(JsStrBuf.Begin().S("rgb(").V(Invoke(Invoke(cc_18207, "map", Get(G("Math"), "round")), "join", ((V)(",")))).S(")").End()));
 Pp_18209 = Arr();
 Invoke(Arr(((V)(0D)), ((V)(0.5)), ((V)(1D))), "forEach", Fn((V _self1, int _argc18226, V t_18232, V _a18229, V _a18230, V _a18231, V[] _rest18227) => {
 V y_18233 = default;
@@ -24495,7 +24495,7 @@ y_18241 = Add(Call(top_18166, V.Undef, ((V)(f1_18198))), ((V)(((ToNum(Call(bot_1
 Invoke(Pp_18209, "push", Call(PJ_17661, V.Undef, Call(S3_18168, V.Undef, ((V)(f1_18198)), y_18241), ((V)(0D))));
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, e_18205, ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Pp_18209, "map", pt_17655), "join", ((V)("L")))), "Z"))));
+Call(set_14391, V.Undef, e_18205, ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Pp_18209, "map", pt_17655), "join", ((V)("L")))).S("Z").End())));
 Call(set_14391, V.Undef, e_18205, ((V)("fill")), col_18208);
 Call(set_14391, V.Undef, e_18205, ((V)("stroke")), col_18208);
 _cont18196: ;
@@ -24693,11 +24693,11 @@ Call(set_14391, V.Undef, Get(C_18329, "rim"), ((V)("d")), Invoke(H_14370, "close
 nz_18341 = (ToNum(Call(ZJ_17662, V.Undef, Call(X_18339, V.Undef, ((V)(0D)), ((V)(0D)), ((V)(1D))), ((V)(0D)))) - ToNum(Call(ZJ_17662, V.Undef, Call(X_18339, V.Undef, ((V)(0D)), ((V)(0D)), ((V)(0D))), ((V)(0D)))));
 fw_18342 = ((nz_18341 >= 0D) ? 0.9 : (-0.9));
 vis_18343 = System.Math.Abs(nz_18341);
-Call(set_14391, V.Undef, Get(C_18329, "fc"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Call(ring_18340, V.Undef, ((V)(6.3)), ((V)(fw_18342))), "map", pt_17655), "join", ((V)("L")))), "Z"))));
+Call(set_14391, V.Undef, Get(C_18329, "fc"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Call(ring_18340, V.Undef, ((V)(6.3)), ((V)(fw_18342))), "map", pt_17655), "join", ((V)("L")))).S("Z").End())));
 Call(set_14391, V.Undef, Get(C_18329, "fc"), ((V)("opacity")), Call(r2_14387, V.Undef, Call(clamp_14385, V.Undef, ((V)((vis_18343 * 3D))), ((V)(0D)), ((V)(1D)))));
-Call(set_14391, V.Undef, Get(C_18329, "hl"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Call(ring_18340, V.Undef, ((V)(1.4)), ((V)((fw_18342 * 1.05))), ((V)((-2.6))), ((V)((-2.8)))), "map", pt_17655), "join", ((V)("L")))), "Z"))));
+Call(set_14391, V.Undef, Get(C_18329, "hl"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Call(ring_18340, V.Undef, ((V)(1.4)), ((V)((fw_18342 * 1.05))), ((V)((-2.6))), ((V)((-2.8)))), "map", pt_17655), "join", ((V)("L")))).S("Z").End())));
 Call(set_14391, V.Undef, Get(C_18329, "hl"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.55 * ToNum(Call(clamp_14385, V.Undef, ((V)(((vis_18343 * 2D) - 0.3))), ((V)(0D)), ((V)(1D)))))))));
-Call(set_14391, V.Undef, Get(C_18329, "sq"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Arr(Arr(((V)((-2.5))), ((V)((-2.5)))), Arr(((V)(2.5)), ((V)((-2.5)))), Arr(((V)(2.5)), ((V)(2.5))), Arr(((V)((-2.5))), ((V)(2.5)))), "map", Fn((V _self1, int _argc18374, V _a18376, V _a18377, V _a18378, V _a18379, V[] _rest18375) => {
+Call(set_14391, V.Undef, Get(C_18329, "sq"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Arr(Arr(((V)((-2.5))), ((V)((-2.5)))), Arr(((V)(2.5)), ((V)((-2.5)))), Arr(((V)(2.5)), ((V)(2.5))), Arr(((V)((-2.5))), ((V)(2.5)))), "map", Fn((V _self1, int _argc18374, V _a18376, V _a18377, V _a18378, V _a18379, V[] _rest18375) => {
 V u_18382 = default;
 V v_18384 = default;
 { V _t18380 = ListOf(_a18376);
@@ -24707,7 +24707,7 @@ u_18382 = _t18381; }
 v_18384 = _t18383; }
 }
 return Call(pt_17655, V.Undef, Call(PJ_17661, V.Undef, Call(X_18339, V.Undef, u_18382, v_18384, ((V)((fw_18342 * 1.05)))), ((V)(0D))));
-}, 1, "", true)), "join", ((V)("L")))), "Z"))));
+}, 1, "", true)), "join", ((V)("L")))).S("Z").End())));
 Call(set_14391, V.Undef, Get(C_18329, "sq"), ((V)("opacity")), Call(r2_14387, V.Undef, Call(clamp_14385, V.Undef, ((V)(((vis_18343 * 3D) - 0.4))), ((V)(0D)), ((V)(1D)))));
 Call(sortG_17663, V.Undef, C_18329, Call(ZJ_17662, V.Undef, Call(X_18339, V.Undef, ((V)(0D)), ((V)(0D)), ((V)(0D))), ((V)(0D))));
 }
@@ -24890,10 +24890,10 @@ InvokeSpread(@out_18420, "push", new ArrBuilder().Spread(Call(LM_18490, V.Undef,
 Invoke(@out_18420, "push", Call(PV_18409, V.Undef, Call(SPt_18408, V.Undef, Get(o_18395, "yT"), f1_18418)));
 InvokeSpread(@out_18420, "push", new ArrBuilder().Spread(Call(LM_18490, V.Undef, ((V)(f0_18417)), ((V)(0D)))).V);
 }
-Call(set_14391, V.Undef, Get(o_18395, "e"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(@out_18420, "map", pt_17655), "join", ((V)("L")))), "Z"))));
+Call(set_14391, V.Undef, Get(o_18395, "e"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(@out_18420, "map", pt_17655), "join", ((V)("L")))).S("Z").End())));
 if (Truthy(Get(o_18395, "le"))) {
-V ld_18531 = default;
-ld_18531 = ((V)(""));
+JsStrBuf ld_18531 = null;
+ld_18531 = new JsStrBuf("");
 Invoke(Get(o_18395, "curves"), "forEach", Fn((V _self1, int _argc18532, V c_18538, V _a18535, V _a18536, V _a18537, V[] _rest18533) => {
 V pen_18539 = default;
 pen_18539 = (false ? V.True : V.False);
@@ -24907,7 +24907,7 @@ V f_18543 = default;
 yf_18542 = Call(c_18538, V.Undef, ((V)((i_18540 / 10D))));
 f_18543 = Add(GetIdx(yf_18542, 1D), spn_18402);
 if (GtN(Call(fa_18410, V.Undef, GetIdx(yf_18542, 0D), f_18543), 0.1)) {
-ld_18531 = ((V)(string.Concat(ToStr(ld_18531), (Truthy(pen_18539) ? "L" : "M"), ToStr(Call(pt_17655, V.Undef, Call(PV_18409, V.Undef, Call(SPt_18408, V.Undef, GetIdx(yf_18542, 0D), f_18543, ((V)(0.15)))))))));
+ld_18531.S((Truthy(pen_18539) ? "L" : "M")).V(Call(pt_17655, V.Undef, Call(PV_18409, V.Undef, Call(SPt_18408, V.Undef, GetIdx(yf_18542, 0D), f_18543, ((V)(0.15))))));
 pen_18539 = (true ? V.True : V.False);
 } else {
 pen_18539 = (false ? V.True : V.False);
@@ -24917,7 +24917,7 @@ i_18540++;
 }
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(o_18395, "le"), ((V)("d")), (ld_18531 is var _t18544 && Truthy(_t18544) ? _t18544 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(o_18395, "le"), ((V)("d")), (((V)(ld_18531.Str)) is var _t18544 && Truthy(_t18544) ? _t18544 : ((V)("M0 0"))));
 }
 Invoke(Get(o_18395, "se"), "forEach", Fn((V _self1, int _argc18545, V e_18551, V i_18552, V _a18549, V _a18550, V[] _rest18546) => {
 V sp_18553 = default;
@@ -24947,7 +24947,7 @@ Invoke(Q_18558, "push", Call(PV_18409, V.Undef, Call(SPt_18408, V.Undef, Invoke(
 k_18559++;
 }
 }
-Call(set_14391, V.Undef, e_18551, ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Q_18558, "map", pt_17655), "join", ((V)("L")))), "Z"))));
+Call(set_14391, V.Undef, e_18551, ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Q_18558, "map", pt_17655), "join", ((V)("L")))).S("Z").End())));
 Call(set_14391, V.Undef, e_18551, ((V)("opacity")), Call(r2_14387, V.Undef, Call(SM_14384, V.Undef, ((V)((ToNum(Add(v_18555, ((V)(0.08)))) * 5D))))));
 return default;
 }, 2, "", true));
@@ -24996,9 +24996,9 @@ Invoke(HL_18578, "push", Call(PV_18409, V.Undef, Call(L3_18407, V.Undef, ((V)((5
 i_18579++;
 }
 }
-Call(set_14391, V.Undef, Get(o_18395, "be"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Invoke(Invoke(T_18576, "map", pt_17655), "join", ((V)("L")))), "L", ToStr(Invoke(Invoke(Invoke(Bt_18577, "reverse"), "map", pt_17655), "join", ((V)("L")))), "Z" }))));
+Call(set_14391, V.Undef, Get(o_18395, "be"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(T_18576, "map", pt_17655), "join", ((V)("L")))).S("L").V(Invoke(Invoke(Invoke(Bt_18577, "reverse"), "map", pt_17655), "join", ((V)("L")))).S("Z").End())));
 if (Truthy(Get(o_18395, "bh"))) {
-Call(set_14391, V.Undef, Get(o_18395, "bh"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(HL_18578, "slice", ((V)(Round((ToNum(EN_18419) * 0.08)))), ((V)(Round((ToNum(EN_18419) * 0.6))))), "map", pt_17655), "join", ((V)("L"))))))));
+Call(set_14391, V.Undef, Get(o_18395, "bh"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(HL_18578, "slice", ((V)(Round((ToNum(EN_18419) * 0.08)))), ((V)(Round((ToNum(EN_18419) * 0.6))))), "map", pt_17655), "join", ((V)("L")))).End())));
 }
 }
 if (Truthy(Get(o_18395, "ste"))) {
@@ -25010,8 +25010,8 @@ wb_18587 = ((FdLibm.Sin((ts_17653 * 2.1)) * 0.5) - (ToNum(ox_17658) * 0.06));
 a_18588 = Call(PV_18409, V.Undef, Call(L3_18407, V.Undef, ((V)(50D)), Add(Get(o_18395, "yT"), ((V)(1.2))), ((V)(0D))));
 b_18589 = Call(PV_18409, V.Undef, Call(L3_18407, V.Undef, ((V)((49.5 + (wb_18587 * 0.4)))), ((V)((ToNum(Get(o_18395, "yT")) - 3.8))), ((V)((-0.2)))));
 c_18590 = Call(PV_18409, V.Undef, Call(L3_18407, V.Undef, ((V)((51.2 + wb_18587))), ((V)((ToNum(Get(o_18395, "yT")) - 7.2))), ((V)((-0.4)))));
-Call(set_14391, V.Undef, Get(o_18395, "ste"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(pt_17655, V.Undef, a_18588)), "Q", ToStr(Call(pt_17655, V.Undef, b_18589)), " ", ToStr(Call(pt_17655, V.Undef, c_18590)) }))));
-Call(set_14391, V.Undef, Get(o_18395, "sth"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(pt_17655, V.Undef, Arr(((V)((ToNum(GetIdx(a_18588, 0D)) - 0.55))), ((V)((ToNum(GetIdx(a_18588, 1D)) - 0.6)))))), "Q", ToStr(Call(pt_17655, V.Undef, Arr(((V)((ToNum(GetIdx(b_18589, 0D)) - 0.55))), GetIdx(b_18589, 1D)))), " ", ToStr(Call(pt_17655, V.Undef, Arr(((V)((ToNum(GetIdx(c_18590, 0D)) - 0.35))), Add(GetIdx(c_18590, 1D), ((V)(0.5)))))) }))));
+Call(set_14391, V.Undef, Get(o_18395, "ste"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(pt_17655, V.Undef, a_18588)).S("Q").V(Call(pt_17655, V.Undef, b_18589)).S(" ").V(Call(pt_17655, V.Undef, c_18590)).End())));
+Call(set_14391, V.Undef, Get(o_18395, "sth"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(pt_17655, V.Undef, Arr(((V)((ToNum(GetIdx(a_18588, 0D)) - 0.55))), ((V)((ToNum(GetIdx(a_18588, 1D)) - 0.6)))))).S("Q").V(Call(pt_17655, V.Undef, Arr(((V)((ToNum(GetIdx(b_18589, 0D)) - 0.55))), GetIdx(b_18589, 1D)))).S(" ").V(Call(pt_17655, V.Undef, Arr(((V)((ToNum(GetIdx(c_18590, 0D)) - 0.35))), Add(GetIdx(c_18590, 1D), ((V)(0.5)))))).End())));
 }
 return default;
 }, 1, "", true));
@@ -25022,9 +25022,9 @@ if ((v_18598 < (-0.05))) {
 Call(set_14391, V.Undef, Get(o_18597, "e"), ((V)("d")), ((V)("M0 0")));
 return default;
 }
-Call(set_14391, V.Undef, Get(o_18597, "e"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Get(o_18597, "pts"), "map", Fn((V _self1, int _argc18599, V p_18605, V _a18602, V _a18603, V _a18604, V[] _rest18600) => {
+Call(set_14391, V.Undef, Get(o_18597, "e"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Get(o_18597, "pts"), "map", Fn((V _self1, int _argc18599, V p_18605, V _a18602, V _a18603, V _a18604, V[] _rest18600) => {
 return Call(pt_17655, V.Undef, Call(PJ_17661, V.Undef, p_18605, Get(o_18597, "h")));
-}, 1, "", true)), "join", ((V)("L")))), "Z"))));
+}, 1, "", true)), "join", ((V)("L")))).S("Z").End())));
 Call(set_14391, V.Undef, Get(o_18597, "e"), ((V)("opacity")), Call(r2_14387, V.Undef, Call(SM_14384, V.Undef, ((V)(((v_18598 + 0.05) * 4D))))));
 return default;
 }, 1, "", true));
@@ -25067,14 +25067,14 @@ V U_18641 = default;
 V fz_18642 = default;
 double rx_18643 = 0;
 double ry_18644 = 0;
-V d_18645 = default;
-V ds_18646 = default;
+JsStrBuf d_18645 = null;
+JsStrBuf ds_18646 = null;
 U_18641 = Get(D_17652, "fur");
 fz_18642 = Call(clamp_14385, V.Undef, Call(cv_17654, V.Undef, ((V)("fzz"))), ((V)(0D)), ((V)(1.5)));
 rx_18643 = (31.5 * (1D + (ToNum(fz_18642) * 0.06)));
 ry_18644 = (28.5 * (1D + (ToNum(fz_18642) * 0.06)));
-d_18645 = ((V)(""));
-ds_18646 = ((V)(""));
+d_18645 = new JsStrBuf("");
+ds_18646 = new JsStrBuf("");
 Invoke(Get(U_18641, "L"), "forEach", Fn((V _self1, int _argc18647, V u_18653, V i_18654, V _a18651, V _a18652, V[] _rest18648) => {
 double sw_18655 = 0;
 V c_18656 = default;
@@ -25089,14 +25089,14 @@ return default;
 }
 p_18658 = Call(sph_14455, V.Undef, GetIdx(c_18656, 0D), GetIdx(c_18656, 1D), GetIdx(c_18656, 2D));
 r_18659 = (4.7 * ((1D + (ToNum(fz_18642) * 0.25)) + (0.06 * FdLibm.Sin(ToNum(Add(((V)((ts_17653 * 3D))), i_18654))))));
-d_18645 = ((V)(string.Concat(new string[] { ToStr(d_18645), "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_18658, 0D)) - r_18659))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_18658, 1D))), "A", ToStr(Call(r2_14387, V.Undef, ((V)(r_18659)))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(r_18659)))), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_18658, 0D), ((V)(r_18659))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_18658, 1D))), "A", ToStr(Call(r2_14387, V.Undef, ((V)(r_18659)))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(r_18659)))), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_18658, 0D)) - r_18659))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_18658, 1D))), "Z" })));
+d_18645.S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_18658, 0D)) - r_18659))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_18658, 1D))).S("A").V(Call(r2_14387, V.Undef, ((V)(r_18659)))).S(" ").V(Call(r2_14387, V.Undef, ((V)(r_18659)))).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, Add(GetIdx(p_18658, 0D), ((V)(r_18659))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_18658, 1D))).S("A").V(Call(r2_14387, V.Undef, ((V)(r_18659)))).S(" ").V(Call(r2_14387, V.Undef, ((V)(r_18659)))).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_18658, 0D)) - r_18659))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_18658, 1D))).S("Z");
 if ((GtN(z_18657, 4D) && GtN(GetIdx(u_18653, 1D), (-0.75)))) {
-ds_18646 = ((V)(string.Concat(new string[] { ToStr(ds_18646), "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_18658, 0D)) - (r_18659 * 0.7)))))), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_18658, 1D), ((V)((r_18659 * 0.55)))))), "Q", ToStr(Call(r2_14387, V.Undef, GetIdx(p_18658, 0D))), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_18658, 1D), ((V)((r_18659 * 1.05)))))), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_18658, 0D), ((V)((r_18659 * 0.7)))))), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_18658, 1D), ((V)((r_18659 * 0.55)))))), "Q", ToStr(Call(r2_14387, V.Undef, GetIdx(p_18658, 0D))), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_18658, 1D), ((V)((r_18659 * 0.75)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_18658, 0D)) - (r_18659 * 0.7)))))), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_18658, 1D), ((V)((r_18659 * 0.55)))))), "Z" })));
+ds_18646.S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_18658, 0D)) - (r_18659 * 0.7)))))).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(p_18658, 1D), ((V)((r_18659 * 0.55)))))).S("Q").V(Call(r2_14387, V.Undef, GetIdx(p_18658, 0D))).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(p_18658, 1D), ((V)((r_18659 * 1.05)))))).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(p_18658, 0D), ((V)((r_18659 * 0.7)))))).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(p_18658, 1D), ((V)((r_18659 * 0.55)))))).S("Q").V(Call(r2_14387, V.Undef, GetIdx(p_18658, 0D))).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(p_18658, 1D), ((V)((r_18659 * 0.75)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_18658, 0D)) - (r_18659 * 0.7)))))).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(p_18658, 1D), ((V)((r_18659 * 0.55)))))).S("Z");
 }
 return default;
 }, 2, "", true));
-Call(set_14391, V.Undef, Get(U_18641, "e"), ((V)("d")), (d_18645 is var _t18660 && Truthy(_t18660) ? _t18660 : ((V)("M0 0Z"))));
-Call(set_14391, V.Undef, Get(U_18641, "sh"), ((V)("d")), (ds_18646 is var _t18661 && Truthy(_t18661) ? _t18661 : ((V)("M0 0Z"))));
+Call(set_14391, V.Undef, Get(U_18641, "e"), ((V)("d")), (((V)(d_18645.Str)) is var _t18660 && Truthy(_t18660) ? _t18660 : ((V)("M0 0Z"))));
+Call(set_14391, V.Undef, Get(U_18641, "sh"), ((V)("d")), (((V)(ds_18646.Str)) is var _t18661 && Truthy(_t18661) ? _t18661 : ((V)("M0 0Z"))));
 }
 if (SEqS(Get(D_17652, "key"), "ember")) {
 V fi_18662 = default;
@@ -25109,7 +25109,7 @@ return NewObj(7).Put("h", Call(mkP_17668, V.Undef, NewObj(2).Put("fill", ((V)("#
 }
 fi_18662 = (Get(D_17652, "fire") is var _t18672 && Truthy(_t18672) ? _t18672 : ((V)(1D)));
 cP_18663 = Fn((V _self1, int _argc18673, V x_18679, V y_18680, V r_18681, V _a18678, V[] _rest18674) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_18679) - ToNum(r_18681)))))), " ", ToStr(Call(r2_14387, V.Undef, y_18680)), "A", ToStr(Call(r2_14387, V.Undef, r_18681)), " ", ToStr(Call(r2_14387, V.Undef, r_18681)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, Add(x_18679, r_18681))), " ", ToStr(Call(r2_14387, V.Undef, y_18680)), "A", ToStr(Call(r2_14387, V.Undef, r_18681)), " ", ToStr(Call(r2_14387, V.Undef, r_18681)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_18679) - ToNum(r_18681)))))), " ", ToStr(Call(r2_14387, V.Undef, y_18680)), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_18679) - ToNum(r_18681)))))).S(" ").V(Call(r2_14387, V.Undef, y_18680)).S("A").V(Call(r2_14387, V.Undef, r_18681)).S(" ").V(Call(r2_14387, V.Undef, r_18681)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, Add(x_18679, r_18681))).S(" ").V(Call(r2_14387, V.Undef, y_18680)).S("A").V(Call(r2_14387, V.Undef, r_18681)).S(" ").V(Call(r2_14387, V.Undef, r_18681)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_18679) - ToNum(r_18681)))))).S(" ").V(Call(r2_14387, V.Undef, y_18680)).S("Z").End()));
 }, 3, "", true);
 Invoke(Get(D_17652, "emb"), "forEach", Fn((V _self1, int _argc18682, V m_18688, V i_18689, V _a18686, V _a18687, V[] _rest18683) => {
 double f_18690 = 0;
@@ -25134,7 +25134,7 @@ V p_18696 = default;
 double r_18697 = 0;
 p_18696 = Call(sph_14455, V.Undef, Get(D_17652, "HX"), Get(D_17652, "HY"), ((V)(0D)));
 r_18697 = (((38D + (3D * FdLibm.Sin((ts_17653 * 3.1)))) + (2D * FdLibm.Sin((ts_17653 * 7.3)))) + (ToNum(Call(clamp_14385, V.Undef, Call(cv_17654, V.Undef, ((V)("cfl"))), ((V)(0D)), ((V)(1.5)))) * 8D));
-Call(set_14391, V.Undef, Get(D_17652, "glow"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_18696, 0D)) - r_18697))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_18696, 1D))), "A", ToStr(Call(r2_14387, V.Undef, ((V)(r_18697)))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(r_18697)))), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_18696, 0D), ((V)(r_18697))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_18696, 1D))), "A", ToStr(Call(r2_14387, V.Undef, ((V)(r_18697)))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(r_18697)))), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_18696, 0D)) - r_18697))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_18696, 1D))), "Z" }))));
+Call(set_14391, V.Undef, Get(D_17652, "glow"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_18696, 0D)) - r_18697))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_18696, 1D))).S("A").V(Call(r2_14387, V.Undef, ((V)(r_18697)))).S(" ").V(Call(r2_14387, V.Undef, ((V)(r_18697)))).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, Add(GetIdx(p_18696, 0D), ((V)(r_18697))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_18696, 1D))).S("A").V(Call(r2_14387, V.Undef, ((V)(r_18697)))).S(" ").V(Call(r2_14387, V.Undef, ((V)(r_18697)))).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_18696, 0D)) - r_18697))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_18696, 1D))).S("Z").End())));
 }
 if (Truthy(Get(D_17652, "smoke"))) {
 V n0_18698 = default;
@@ -25161,7 +25161,7 @@ f_18713 = Call(clamp_14385, V.Undef, ((V)(((ph_18701 - (ToNum(i_18712) * 0.2)) /
 x_18714 = Add(Add(GetIdx(n0_18698, 0D), ((V)((((NumTruthy((ToNum(i_18712) % 2D)) ? 1.5 : (-0.8)) * ToNum(f_18713)) * 3D)))), ((V)(((FdLibm.Sin(ToNum(Add(((V)((ts_17653 * 3D))), i_18712))) * 0.6) * ToNum(f_18713)))));
 y_18715 = ((ToNum(GetIdx(n0_18698, 1D)) - 2.5) - (ToNum(f_18713) * 20D));
 r_18716 = (0.7 + (ToNum(f_18713) * 2.8));
-Call(set_14391, V.Undef, Get(q_18711, "e"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_18714) - r_18716))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(y_18715)))), "A", ToStr(Call(r2_14387, V.Undef, ((V)(r_18716)))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(r_18716)))), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, Add(x_18714, ((V)(r_18716))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(y_18715)))), "A", ToStr(Call(r2_14387, V.Undef, ((V)(r_18716)))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(r_18716)))), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_18714) - r_18716))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(y_18715)))), "Z" }))));
+Call(set_14391, V.Undef, Get(q_18711, "e"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_18714) - r_18716))))).S(" ").V(Call(r2_14387, V.Undef, ((V)(y_18715)))).S("A").V(Call(r2_14387, V.Undef, ((V)(r_18716)))).S(" ").V(Call(r2_14387, V.Undef, ((V)(r_18716)))).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, Add(x_18714, ((V)(r_18716))))).S(" ").V(Call(r2_14387, V.Undef, ((V)(y_18715)))).S("A").V(Call(r2_14387, V.Undef, ((V)(r_18716)))).S(" ").V(Call(r2_14387, V.Undef, ((V)(r_18716)))).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_18714) - r_18716))))).S(" ").V(Call(r2_14387, V.Undef, ((V)(y_18715)))).S("Z").End())));
 Call(set_14391, V.Undef, Get(q_18711, "e"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)(((GtN(f_18713, 0D) && LtN(f_18713, 1D)) ? ((0.9 * Pow(FdLibm.Sin((System.Math.PI * ToNum(f_18713))), 0.6)) * (0.4 + (0.6 * ToNum(Call(SM_14384, V.Undef, ((V)((cyh_14405 * 2D)))))))) : 0D)))));
 return default;
 }, 2, "", true));
@@ -25194,7 +25194,7 @@ Z3_18720 = Fn((V _self1, int _argc18743, V x_18749, V y_18750, V z_18751, V _a18
 return Call(sphZ_14456, V.Undef, Add(((V)(50D)), x_18749), y_18750, z_18751);
 }, 3, "", true);
 pt_18721 = Fn((V _self1, int _argc18752, V p_18758, V _a18755, V _a18756, V _a18757, V[] _rest18753) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_18758, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_18758, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_18758, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_18758, 1D))).End()));
 }, 1, "", true);
 cv_18722 = Fn((V _self1, int _argc18759, V k_18765, V _a18762, V _a18763, V _a18764, V[] _rest18760) => {
 double v_18766 = 0;
@@ -25285,9 +25285,9 @@ i_18783++;
 }
 Call(set_14391, V.Undef, Get(A_18717, "body"), ((V)("d")), Invoke(H_14370, "closedD", Invoke(H_14370, "hull", bp_18729)));
 rim_18730 = Fn((V _self1, int _argc18790, V k_18796, V dz_18797, V _a18794, V _a18795, V[] _rest18791) => {
-V d_18798 = default;
+JsStrBuf d_18798 = null;
 V pen_18799 = default;
-d_18798 = ((V)(""));
+d_18798 = new JsStrBuf("");
 pen_18799 = (false ? V.True : V.False);
 {
 double i_18800 = 0;
@@ -25303,7 +25303,7 @@ x_18803 = (50D + ((ToNum(Get(A_18717, "FX")) * ToNum(k_18796)) * FdLibm.Cos(a_18
 y_18804 = Add(Get(A_18717, "FY"), ((V)(((ToNum(Get(A_18717, "FB")) * ToNum(k_18796)) * FdLibm.Sin(a_18802)))));
 z_18805 = Add(Invoke(A_18717, "zAt", ((V)(x_18803)), y_18804), dz_18797);
 if (GtN(Call(Z3_18720, V.Undef, ((V)((x_18803 - 50D))), y_18804, z_18805), 0.3)) {
-d_18798 = ((V)(string.Concat(ToStr(d_18798), (Truthy(pen_18799) ? "L" : "M"), ToStr(Call(pt_18721, V.Undef, Call(P3_18719, V.Undef, ((V)((x_18803 - 50D))), y_18804, z_18805))))));
+d_18798.S((Truthy(pen_18799) ? "L" : "M")).V(Call(pt_18721, V.Undef, Call(P3_18719, V.Undef, ((V)((x_18803 - 50D))), y_18804, z_18805)));
 pen_18799 = (true ? V.True : V.False);
 } else {
 pen_18799 = (false ? V.True : V.False);
@@ -25311,7 +25311,7 @@ pen_18799 = (false ? V.True : V.False);
 i_18800++;
 }
 }
-return (d_18798 is var _t18806 && Truthy(_t18806) ? _t18806 : ((V)("M0 0")));
+return (((V)(d_18798.Str)) is var _t18806 && Truthy(_t18806) ? _t18806 : ((V)("M0 0")));
 return default;
 }, 2, "", true);
 Call(set_14391, V.Undef, Get(A_18717, "rim"), ((V)("d")), Call(rim_18730, V.Undef, ((V)(1.03)), ((V)(1.1))));
@@ -25350,7 +25350,7 @@ double Lr_18853 = 0;
 V RG_18854 = default;
 V M_18855 = default;
 V C_18856 = default;
-V fd_18857 = default;
+JsStrBuf fd_18857 = null;
 double last_18858 = 0;
 V fr_18859 = default;
 sd_18843 = Get(o_18842, "sd");
@@ -25415,32 +25415,32 @@ i_18883++;
 }
 }
 Invoke(RG_18854, "push", Arr(CallSpread(P3_18719, V.Undef, new ArrBuilder().Spread(Call(ad_18733, V.Undef, C_18856, Call(dirAt_18849, V.Undef, ((V)(1D))), ((V)(1.6)))).V)));
-fd_18857 = ((V)(""));
+fd_18857 = new JsStrBuf("");
 {
 double i_18894 = 0;
 i_18894 = 0D;
 while (true) {
 if (!((i_18894 < (ToNum(Get(RG_18854, "length")) - 1D)))) break;
-fd_18857 = Add(fd_18857, Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(RG_18854, i_18894), "concat", GetIdx(RG_18854, (i_18894 + 1D))))));
+fd_18857.V(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(RG_18854, i_18894), "concat", GetIdx(RG_18854, (i_18894 + 1D))))));
 i_18894++;
 }
 }
-Call(set_14391, V.Undef, Get(o_18842, "e"), ((V)("d")), fd_18857);
+Call(set_14391, V.Undef, Get(o_18842, "e"), ((V)("d")), ((V)(fd_18857.Str)));
 if (GtN(fl_18845, 0.15)) {
-V sd2_18896 = default;
-sd2_18896 = ((V)(""));
+JsStrBuf sd2_18896 = null;
+sd2_18896 = new JsStrBuf("");
 {
 double i_18897 = 0;
 i_18897 = 3D;
 while (true) {
 if (!((i_18897 < (ToNum(Get(RG_18854, "length")) - 1D)))) break;
-sd2_18896 = Add(sd2_18896, Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(Invoke(GetIdx(RG_18854, i_18897), "concat", GetIdx(RG_18854, (i_18897 + 1D))), "map", Fn((V _self1, int _argc18899, V p_18905, V _a18902, V _a18903, V _a18904, V[] _rest18900) => {
+sd2_18896.V(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(Invoke(GetIdx(RG_18854, i_18897), "concat", GetIdx(RG_18854, (i_18897 + 1D))), "map", Fn((V _self1, int _argc18899, V p_18905, V _a18902, V _a18903, V _a18904, V[] _rest18900) => {
 return Arr(Add(GetIdx(p_18905, 0D), ((V)(0.6))), Add(GetIdx(p_18905, 1D), ((V)(1.3))));
 }, 1, "", true)))));
 i_18897++;
 }
 }
-Call(set_14391, V.Undef, Get(o_18842, "sh"), ((V)("d")), sd2_18896);
+Call(set_14391, V.Undef, Get(o_18842, "sh"), ((V)("d")), ((V)(sd2_18896.Str)));
 Call(set_14391, V.Undef, Get(o_18842, "sh"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.22 * ToNum(Call(SM_14384, V.Undef, ((V)(((ToNum(fl_18845) - 0.15) / 0.4))))))))));
 } else {
 Call(set_14391, V.Undef, Get(o_18842, "sh"), ((V)("opacity")), ((V)(0D)));
@@ -25477,7 +25477,7 @@ Invoke(Dn_18909, "push", CallSpread(P3_18719, V.Undef, new ArrBuilder().Spread(C
 i_18910++;
 }
 }
-Call(set_14391, V.Undef, Get(o_18842, "inr"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(U_18908, "concat", Invoke(Dn_18909, "reverse")), "map", pt_18721), "join", ((V)("L")))), "Z"))));
+Call(set_14391, V.Undef, Get(o_18842, "inr"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(U_18908, "concat", Invoke(Dn_18909, "reverse")), "map", pt_18721), "join", ((V)("L")))).S("Z").End())));
 Call(set_14391, V.Undef, Get(o_18842, "inr"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.85 * ToNum(Call(SM_14384, V.Undef, ((V)((ToNum(GetIdx(Call(DV_18727, V.Undef, Get(GetIdx(M_18855, 2D), "tv")), 2D)) * 4D))))))))));
 } else {
 Call(set_14391, V.Undef, Get(o_18842, "inr"), ((V)("opacity")), ((V)(0D)));
@@ -25495,14 +25495,14 @@ double y_18915 = 0;
 V C_18916 = default;
 V p_18917 = default;
 double r_18918 = 0;
-V d_18919 = default;
+JsStrBuf d_18919 = null;
 V fr_18920 = default;
 tw_18914 = Call(clamp_14385, V.Undef, Call(cv_18722, V.Undef, ((V)("tw"))), ((V)(0D)), ((V)(1.5)));
 y_18915 = (80.5 + (ToNum(oy_18726) * 0.3));
 C_18916 = Arr(((V)(((((ToNum(tw_18914) * 1.6) * FdLibm.Sin((ts_18718 * 19D))) + (FdLibm.Sin((ts_18718 * 1.6)) * 0.3)) - (ToNum(ox_18725) * 0.12)))), ((V)(y_18915)), ((V)(((-(ToNum(Get(A_18717, "KB")) * ToNum(Invoke(A_18717, "rB", ((V)(y_18915)))))) + 1.2))));
 p_18917 = CallSpread(P3_18719, V.Undef, new ArrBuilder().Spread(C_18916).V);
 r_18918 = (5.6 * (1D + (0.04 * FdLibm.Sin((ts_18718 * 2.3)))));
-d_18919 = ((V)(""));
+d_18919 = new JsStrBuf("");
 {
 double k_18921 = 0;
 k_18921 = 0D;
@@ -25512,11 +25512,11 @@ double a_18923 = 0;
 double rr_18924 = 0;
 a_18923 = ((k_18921 / 36D) * ToNum(TAU_14389));
 rr_18924 = (r_18918 * (1D + (0.06 * FdLibm.Sin(((a_18923 * 7D) + (ts_18718 * 1.5))))));
-d_18919 = ((V)(string.Concat(new string[] { ToStr(d_18919), (NumTruthy(k_18921) ? "L" : "M"), ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_18917, 0D), ((V)((rr_18924 * FdLibm.Cos(a_18923))))))), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_18917, 1D), ((V)((rr_18924 * FdLibm.Sin(a_18923))))))) })));
+d_18919.S((NumTruthy(k_18921) ? "L" : "M")).V(Call(r2_14387, V.Undef, Add(GetIdx(p_18917, 0D), ((V)((rr_18924 * FdLibm.Cos(a_18923))))))).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(p_18917, 1D), ((V)((rr_18924 * FdLibm.Sin(a_18923)))))));
 k_18921++;
 }
 }
-Call(set_14391, V.Undef, Get(A_18717, "tl"), ((V)("d")), ((V)(string.Concat(ToStr(d_18919), "Z"))));
+Call(set_14391, V.Undef, Get(A_18717, "tl"), ((V)("d")), ((V)(string.Concat(d_18919.Str, "Z"))));
 fr_18920 = (GtN(CallSpread(Z3_18720, V.Undef, new ArrBuilder().Spread(C_18916).V), 0D) ? V.True : V.False);
 if (!SEq(Get(A_18717, "tfr"), fr_18920)) {
 Set(A_18717, "tfr", fr_18920);
@@ -25525,9 +25525,9 @@ Invoke((Truthy(fr_18920) ? Get(A_18717, "tF") : Get(A_18717, "tB")), "appendChil
 }
 if (Truthy(Get(A_18717, "ds"))) {
 V sw_18925 = default;
-V d_18926 = default;
+JsStrBuf d_18926 = null;
 sw_18925 = Call(clamp_14385, V.Undef, Call(cv_18722, V.Undef, ((V)("dsw"))), ((V)((-1.5))), ((V)(1.5)));
-d_18926 = ((V)(""));
+d_18926 = new JsStrBuf("");
 Invoke(Arr(((V)((-1D))), ((V)(1D))), "forEach", Fn((V _self1, int _argc18927, V sd_18933, V _a18930, V _a18931, V _a18932, V[] _rest18928) => {
 double a_18934 = 0;
 V pen_18935 = default;
@@ -25547,7 +25547,7 @@ x_18939 = ((ToNum(sd_18933) * (7D + (0.8 * s_18938))) + ((((10.5 * s_18938) * s_
 y_18940 = (73.5 + ((10.5 * s_18938) * FdLibm.Cos(a_18934)));
 z_18941 = Add(Invoke(A_18717, "zAt", ((V)((50D + x_18939))), ((V)(y_18940))), ((V)(0.6)));
 if (GtN(Call(Z3_18720, V.Undef, ((V)(x_18939)), ((V)(y_18940)), z_18941), 0.5)) {
-d_18926 = ((V)(string.Concat(ToStr(d_18926), (Truthy(pen_18935) ? "L" : "M"), ToStr(Call(pt_18721, V.Undef, Call(P3_18719, V.Undef, ((V)(x_18939)), ((V)(y_18940)), z_18941))))));
+d_18926.S((Truthy(pen_18935) ? "L" : "M")).V(Call(pt_18721, V.Undef, Call(P3_18719, V.Undef, ((V)(x_18939)), ((V)(y_18940)), z_18941)));
 pen_18935 = (true ? V.True : V.False);
 } else {
 pen_18935 = (false ? V.True : V.False);
@@ -25557,7 +25557,7 @@ i_18936++;
 }
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(A_18717, "ds"), ((V)("d")), (d_18926 is var _t18942 && Truthy(_t18942) ? _t18942 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(A_18717, "ds"), ((V)("d")), (((V)(d_18926.Str)) is var _t18942 && Truthy(_t18942) ? _t18942 : ((V)("M0 0"))));
 }
 Invoke(Get(A_18717, "LG"), "forEach", Fn((V _self1, int _argc18943, V o_18949, V _a18946, V _a18947, V _a18948, V[] _rest18944) => {
 V f_18950 = default;
@@ -25653,7 +25653,7 @@ o_18974 = Arr();
 pq_18975 = Fn((V _self1, int _argc19011, V x_19017, V y_19018, V z_19019, V _a19016, V[] _rest19012) => {
 V p_19020 = default;
 p_19020 = Call(V_18973, V.Undef, x_19017, y_19018, z_19019);
-Invoke(o_18974, "push", ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_19020, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_19020, 1D)))))));
+Invoke(o_18974, "push", ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_19020, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_19020, 1D))).End())));
 return default;
 }, 3, "", true);
 YS_18976 = Arr();
@@ -25696,7 +25696,7 @@ Call(pq_18975, V.Undef, Add(((V)((50D + (ToNum(R_18977) * FdLibm.Sin(tv_19048)))
 i_19046++;
 }
 }
-Set(A_18963, "d", ((V)(string.Concat("M", ToStr(Invoke(o_18974, "join", ((V)("L")))), "Z"))));
+Set(A_18963, "d", ((V)(JsStrBuf.Begin().S("M").V(Invoke(o_18974, "join", ((V)("L")))).S("Z").End())));
 gh_18979 = Call(clamp_14385, V.Undef, Call(cv_18965, V.Undef, ((V)("gho"))), ((V)(0D)), ((V)(1D)));
 if (!SEq(gh_18979, Get(A_18963, "gh0"))) {
 Set(A_18963, "gh0", gh_18979);
@@ -25725,7 +25725,7 @@ Z3_19052 = Fn((V _self1, int _argc19070, V x_19076, V y_19077, V z_19078, V _a19
 return Call(sphZ_14456, V.Undef, Add(((V)(50D)), x_19076), y_19077, z_19078);
 }, 3, "", true);
 pt_19053 = Fn((V _self1, int _argc19079, V p_19085, V _a19082, V _a19083, V _a19084, V[] _rest19080) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_19085, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_19085, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_19085, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_19085, 1D))).End()));
 }, 1, "", true);
 cv_19054 = Fn((V _self1, int _argc19086, V k_19092, V _a19089, V _a19090, V _a19091, V[] _rest19087) => {
 double v_19093 = 0;
@@ -25818,10 +25818,10 @@ Invoke(o_19118, "push", Call(pt_19053, V.Undef, Call(V_19113, V.Undef, Add(((V)(
 i_19168++;
 }
 }
-Call(set_14391, V.Undef, Get(A_19049, "dress"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(o_19118, "join", ((V)("L")))), "Z"))));
+Call(set_14391, V.Undef, Get(A_19049, "dress"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(o_19118, "join", ((V)("L")))).S("Z").End())));
 if (Truthy(Get(A_19049, "seam"))) {
-V sd2_19171 = default;
-sd2_19171 = ((V)(""));
+JsStrBuf sd2_19171 = null;
+sd2_19171 = new JsStrBuf("");
 {
 double k_19172 = 0;
 k_19172 = 0D;
@@ -25843,7 +25843,7 @@ double y_19178 = 0;
 V r_19179 = default;
 y_19178 = (67.5 + ((((ToNum(Call(hem_19117, V.Undef, ((V)(tv_19174)))) - 0.6) - 67.5) * j_19176) / 4D));
 r_19179 = ((j_19176 == 4D) ? R_19119 : Call(Rf_19114, V.Undef, ((V)(y_19178))));
-sd2_19171 = ((V)(string.Concat(ToStr(sd2_19171), (NumTruthy(j_19176) ? "L" : "M"), ToStr(Call(pt_19053, V.Undef, Call(V_19113, V.Undef, Add(((V)((50D + (ToNum(r_19179) * FdLibm.Sin(tv_19174))))), Call(sw_19115, V.Undef, ((V)(y_19178)))), ((V)(y_19178)), ((V)(((ToNum(r_19179) * c_19175) + 0.2)))))))));
+sd2_19171.S((NumTruthy(j_19176) ? "L" : "M")).V(Call(pt_19053, V.Undef, Call(V_19113, V.Undef, Add(((V)((50D + (ToNum(r_19179) * FdLibm.Sin(tv_19174))))), Call(sw_19115, V.Undef, ((V)(y_19178)))), ((V)(y_19178)), ((V)(((ToNum(r_19179) * c_19175) + 0.2))))));
 j_19176++;
 }
 }
@@ -25851,12 +25851,12 @@ _cont19173: ;
 k_19172++;
 }
 }
-Call(set_14391, V.Undef, Get(A_19049, "seam"), ((V)("d")), (sd2_19171 is var _t19180 && Truthy(_t19180) ? _t19180 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(A_19049, "seam"), ((V)("d")), (((V)(sd2_19171.Str)) is var _t19180 && Truthy(_t19180) ? _t19180 : ((V)("M0 0"))));
 }
 }
 if (Truthy(Get(A_19049, "legs"))) {
-V d_19181 = default;
-d_19181 = ((V)(""));
+JsStrBuf d_19181 = null;
+d_19181 = new JsStrBuf("");
 Invoke(Get(A_19049, "feet"), "forEach", Fn((V _self1, int _argc19182, V f_19188, V _a19185, V _a19186, V _a19187, V[] _rest19183) => {
 double sd_19189 = 0;
 V lift_19190 = default;
@@ -25866,18 +25866,18 @@ sd_19189 = (LtN(Get(f_19188, "ox"), 50D) ? (-1D) : 1D);
 lift_19190 = ((sd_19189 < 0D) ? Get(P_14378, "footL") : Get(P_14378, "footR"));
 a_19191 = Call(byw_14461, V.Undef, ((V)((50D + (sd_19189 * 6.5)))), ((V)(81D)), ((V)(2D)));
 b_19192 = Call(byw_14461, V.Undef, Add(Get(f_19188, "ox"), ((V)((sd_19189 * 0.5)))), ((V)(((ToNum(Get(f_19188, "oy")) - 2.2) - ToNum(lift_19190)))), ((V)(5D)));
-d_19181 = ((V)(string.Concat(new string[] { ToStr(d_19181), "M", ToStr(Call(pt_19053, V.Undef, a_19191)), "L", ToStr(Call(pt_19053, V.Undef, b_19192)) })));
+d_19181.S("M").V(Call(pt_19053, V.Undef, a_19191)).S("L").V(Call(pt_19053, V.Undef, b_19192));
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(A_19049, "legs"), ((V)("d")), d_19181);
+Call(set_14391, V.Undef, Get(A_19049, "legs"), ((V)("d")), ((V)(d_19181.Str)));
 }
 {
 V hR_19193 = default;
 V lmin_19194 = default;
 double s2_19195 = 0;
 V HPt_19196 = default;
-V dF_19197 = default;
-V dB_19198 = default;
+JsStrBuf dF_19197 = null;
+JsStrBuf dB_19198 = null;
 V x0_19199 = default;
 V y0_19200 = default;
 V x1_19201 = default;
@@ -25886,7 +25886,7 @@ double NT_19203 = 0;
 double NL_19204 = 0;
 double bw_19205 = 0;
 double bh_19206 = 0;
-V sd3_19207 = default;
+JsStrBuf sd3_19207 = null;
 hR_19193 = Fn((V _self1, int _argc19208, V la_19214, V _a19211, V _a19212, V _a19213, V[] _rest19209) => {
 return ((V)((20D + (4D * ToNum(Call(SM_14384, V.Undef, ((V)(((0.5 - ToNum(la_19214)) / 0.6)))))))));
 }, 1, "", true);
@@ -25902,8 +25902,8 @@ w_19231 = Call(SM_14384, V.Undef, ((V)(((0.2 - ToNum(la_19229)) / 0.8))));
 return Arr(((V)((((ToNum(r_19230) * FdLibm.Cos(ToNum(la_19229))) * FdLibm.Sin(ToNum(th_19228))) + (s2_19195 * ToNum(w_19231))))), ((V)(((44D - (ToNum(r_19230) * FdLibm.Sin(ToNum(la_19229)))) - ((ToNum(oy_19058) * 0.3) * ToNum(w_19231))))), ((V)(((ToNum(r_19230) * FdLibm.Cos(ToNum(la_19229))) * FdLibm.Cos(ToNum(th_19228))))));
 return default;
 }, 2, "", true);
-dF_19197 = ((V)(""));
-dB_19198 = ((V)(""));
+dF_19197 = new JsStrBuf("");
+dB_19198 = new JsStrBuf("");
 x0_19199 = ((V)(1000000000D));
 y0_19200 = ((V)(1000000000D));
 x1_19201 = ((V)((-1000000000D)));
@@ -25955,11 +25955,11 @@ y1_19202 = GetIdx(s_19252, 1D);
 return s_19252;
 return default;
 }, 1, "", true));
-dd_19244 = ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(H_14370, "hull", sc_19243), "map", pt_19053), "join", ((V)("L")))), "Z")));
+dd_19244 = ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(H_14370, "hull", sc_19243), "map", pt_19053), "join", ((V)("L")))).S("Z").End()));
 if (((ToNum(zs_19242) / 6D) > 2D)) {
-dF_19197 = Add(dF_19197, dd_19244);
+dF_19197.V(dd_19244);
 } else {
-dB_19198 = Add(dB_19198, dd_19244);
+dB_19198.V(dd_19244);
 }
 j_19238++;
 }
@@ -25967,14 +25967,14 @@ j_19238++;
 i_19232++;
 }
 }
-Call(set_14391, V.Undef, Get(A_19049, "hF"), ((V)("d")), (dF_19197 is var _t19253 && Truthy(_t19253) ? _t19253 : ((V)("M0 0Z"))));
-Call(set_14391, V.Undef, Get(A_19049, "hB"), ((V)("d")), (dB_19198 is var _t19254 && Truthy(_t19254) ? _t19254 : ((V)("M0 0Z"))));
+Call(set_14391, V.Undef, Get(A_19049, "hF"), ((V)("d")), (((V)(dF_19197.Str)) is var _t19253 && Truthy(_t19253) ? _t19253 : ((V)("M0 0Z"))));
+Call(set_14391, V.Undef, Get(A_19049, "hB"), ((V)("d")), (((V)(dB_19198.Str)) is var _t19254 && Truthy(_t19254) ? _t19254 : ((V)("M0 0Z"))));
 bw_19205 = (ToNum(x1_19201) - ToNum(x0_19199));
 bh_19206 = (ToNum(y1_19202) - ToNum(y0_19200));
 Call(set_14391, V.Undef, Get(A_19049, "hg"), ((V)("cx")), Call(r2_14387, V.Undef, Add(x0_19199, ((V)((bw_19205 * 0.38))))));
 Call(set_14391, V.Undef, Get(A_19049, "hg"), ((V)("cy")), Call(r2_14387, V.Undef, Add(y0_19200, ((V)((bh_19206 * 0.3))))));
 Call(set_14391, V.Undef, Get(A_19049, "hg"), ((V)("r")), Call(r2_14387, V.Undef, ((V)(((bw_19205 + bh_19206) * 0.42)))));
-sd3_19207 = ((V)(""));
+sd3_19207 = new JsStrBuf("");
 Invoke(Arr(((V)((-0.7))), ((V)((-0.35))), ((V)(0D)), ((V)(0.35)), ((V)(0.7))), "forEach", Fn((V _self1, int _argc19255, V o2_19261, V _a19258, V _a19259, V _a19260, V[] _rest19256) => {
 V th_19262 = default;
 V P2_19263 = default;
@@ -25994,12 +25994,12 @@ return Add(s_19272, CallSpread(Z3_19052, V.Undef, new ArrBuilder().Spread(p_1927
 }, 2, "", true), ((V)(0D)))) / ToNum(Get(P2_19263, "length"))) < 4D)) {
 return default;
 }
-sd3_19207 = ((V)(string.Concat(ToStr(sd3_19207), "M", ToStr(Invoke(Invoke(P2_19263, "map", Fn((V _self1, int _argc19274, V p_19280, V _a19277, V _a19278, V _a19279, V[] _rest19275) => {
+sd3_19207.S("M").V(Invoke(Invoke(P2_19263, "map", Fn((V _self1, int _argc19274, V p_19280, V _a19277, V _a19278, V _a19279, V[] _rest19275) => {
 return Call(pt_19053, V.Undef, CallSpread(P3_19051, V.Undef, new ArrBuilder().Spread(p_19280).V));
-}, 1, "", true)), "join", ((V)("L")))))));
+}, 1, "", true)), "join", ((V)("L"))));
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(A_19049, "hS"), ((V)("d")), (sd3_19207 is var _t19281 && Truthy(_t19281) ? _t19281 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(A_19049, "hS"), ((V)("d")), (((V)(sd3_19207.Str)) is var _t19281 && Truthy(_t19281) ? _t19281 : ((V)("M0 0"))));
 }
 Invoke(Get(A_19049, "EARS"), "forEach", Fn((V _self1, int _argc19282, V o_19288, V _a19285, V _a19286, V _a19287, V[] _rest19283) => {
 V sd_19289 = default;
@@ -26017,7 +26017,7 @@ V wl_19300 = default;
 V wv_19301 = default;
 V tv_19302 = default;
 V RG_19303 = default;
-V fd_19304 = default;
+JsStrBuf fd_19304 = null;
 V fr_19305 = default;
 sd_19289 = Get(o_19288, "sd");
 up_19290 = (((V)((LtN(sd_19289, 0D) ? ToNum(Get(P_14378, "earL")) : ToNum(Get(P_14378, "earR"))))) is var _t19306 && Truthy(_t19306) ? _t19306 : ((V)(0D)));
@@ -26066,20 +26066,20 @@ Invoke(RG_19303, "push", ring_19321);
 i_19315++;
 }
 }
-fd_19304 = ((V)(""));
+fd_19304 = new JsStrBuf("");
 {
 double i_19325 = 0;
 i_19325 = 0D;
 while (true) {
 if (!((i_19325 < (ToNum(Get(RG_19303, "length")) - 1D)))) break;
-fd_19304 = Add(fd_19304, Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(RG_19303, i_19325), "concat", GetIdx(RG_19303, (i_19325 + 1D))))));
+fd_19304.V(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(RG_19303, i_19325), "concat", GetIdx(RG_19303, (i_19325 + 1D))))));
 i_19325++;
 }
 }
-Call(set_14391, V.Undef, Get(o_19288, "e"), ((V)("d")), fd_19304);
-Call(set_14391, V.Undef, Get(o_19288, "ln"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Arr(((V)(0.18)), ((V)(0.4)), ((V)(0.62))), "map", Fn((V _self1, int _argc19327, V s2_19333, V _a19330, V _a19331, V _a19332, V[] _rest19328) => {
+Call(set_14391, V.Undef, Get(o_19288, "e"), ((V)("d")), ((V)(fd_19304.Str)));
+Call(set_14391, V.Undef, Get(o_19288, "ln"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Arr(((V)(0.18)), ((V)(0.4)), ((V)(0.62))), "map", Fn((V _self1, int _argc19327, V s2_19333, V _a19330, V _a19331, V _a19332, V[] _rest19328) => {
 return Call(pt_19053, V.Undef, CallSpread(P3_19051, V.Undef, new ArrBuilder().Spread(Call(ad_19060, V.Undef, Call(ad_19060, V.Undef, R_19293, d_19297, s2_19333), tv_19302, ((V)((((1.3 * (1D - ToNum(s2_19333))) + 0.25) * 0.95))))).V));
-}, 1, "", true)), "join", ((V)("L"))))))));
+}, 1, "", true)), "join", ((V)("L")))).End())));
 Call(set_14391, V.Undef, Get(o_19288, "ln"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.8 * ToNum(Call(SM_14384, V.Undef, ((V)((ToNum(GetIdx(Call(DV_19059, V.Undef, tv_19302), 2D)) * 3D))))))))));
 fr_19305 = (GtN(CallSpread(Z3_19052, V.Undef, new ArrBuilder().Spread(Call(ad_19060, V.Undef, R_19293, d_19297, ((V)(0.5)))).V), 3D) ? V.True : V.False);
 if (!SEq(Get(o_19288, "fr"), fr_19305)) {
@@ -26095,24 +26095,24 @@ V p_19336 = default;
 double r_19337 = 0;
 V cP_19338 = default;
 V zc0_19339 = default;
-V tw_19340 = default;
+JsStrBuf tw_19340 = null;
 V Nn_19341 = default;
 V F0_19342 = default;
 V t1_19343 = default;
 V t2_19344 = default;
-V pe_19345 = default;
-V ct_19346 = default;
+JsStrBuf pe_19345 = null;
+JsStrBuf ct_19346 = null;
 V fv_19347 = default;
 B_19334 = Get(A_19049, "bun");
 C_19335 = Arr(((V)((((-ToNum(ox_19057)) * 0.12) + (FdLibm.Sin((ts_19050 * 1.5)) * 0.25)))), ((V)(((18D + (ToNum(oy_19058) * 0.35)) + (FdLibm.Sin((ts_19050 * 2.1)) * 0.2)))), ((V)((-1D))));
 p_19336 = CallSpread(P3_19051, V.Undef, new ArrBuilder().Spread(C_19335).V);
 r_19337 = 8D;
 cP_19338 = Fn((V _self1, int _argc19348, V x_19354, V y_19355, V rr_19356, V _a19353, V[] _rest19349) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_19354) - ToNum(rr_19356)))))), " ", ToStr(Call(r2_14387, V.Undef, y_19355)), "A", ToStr(Call(r2_14387, V.Undef, rr_19356)), " ", ToStr(Call(r2_14387, V.Undef, rr_19356)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, Add(x_19354, rr_19356))), " ", ToStr(Call(r2_14387, V.Undef, y_19355)), "A", ToStr(Call(r2_14387, V.Undef, rr_19356)), " ", ToStr(Call(r2_14387, V.Undef, rr_19356)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_19354) - ToNum(rr_19356)))))), " ", ToStr(Call(r2_14387, V.Undef, y_19355)), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_19354) - ToNum(rr_19356)))))).S(" ").V(Call(r2_14387, V.Undef, y_19355)).S("A").V(Call(r2_14387, V.Undef, rr_19356)).S(" ").V(Call(r2_14387, V.Undef, rr_19356)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, Add(x_19354, rr_19356))).S(" ").V(Call(r2_14387, V.Undef, y_19355)).S("A").V(Call(r2_14387, V.Undef, rr_19356)).S(" ").V(Call(r2_14387, V.Undef, rr_19356)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_19354) - ToNum(rr_19356)))))).S(" ").V(Call(r2_14387, V.Undef, y_19355)).S("Z").End()));
 }, 3, "", true);
 Call(set_14391, V.Undef, Get(B_19334, "e"), ((V)("d")), Call(cP_19338, V.Undef, GetIdx(p_19336, 0D), GetIdx(p_19336, 1D), ((V)(r_19337))));
 zc0_19339 = CallSpread(Z3_19052, V.Undef, new ArrBuilder().Spread(C_19335).V);
-tw_19340 = ((V)(""));
+tw_19340 = new JsStrBuf("");
 Invoke(Arr(((V)(0.3)), ((V)((-0.25)))), "forEach", Fn((V _self1, int _argc19357, V la_19363, V _a19360, V _a19361, V _a19362, V[] _rest19358) => {
 V pen_19364 = default;
 pen_19364 = (false ? V.True : V.False);
@@ -26126,7 +26126,7 @@ V q_19368 = default;
 b_19367 = ((k_19365 / 32D) * ToNum(TAU_14389));
 q_19368 = Arr(Add(GetIdx(C_19335, 0D), ((V)(((r_19337 * FdLibm.Cos(ToNum(la_19363))) * FdLibm.Sin(b_19367))))), ((V)(((ToNum(GetIdx(C_19335, 1D)) - (r_19337 * FdLibm.Sin(ToNum(la_19363)))) + (1.4 * FdLibm.Sin((b_19367 + (ToNum(la_19363) * 3D))))))), Add(GetIdx(C_19335, 2D), ((V)(((r_19337 * FdLibm.Cos(ToNum(la_19363))) * FdLibm.Cos(b_19367))))));
 if (((ToNum(CallSpread(Z3_19052, V.Undef, new ArrBuilder().Spread(q_19368).V)) - ToNum(zc0_19339)) > 0.8)) {
-tw_19340 = ((V)(string.Concat(ToStr(tw_19340), (Truthy(pen_19364) ? "L" : "M"), ToStr(Call(pt_19053, V.Undef, CallSpread(P3_19051, V.Undef, new ArrBuilder().Spread(q_19368).V))))));
+tw_19340.S((Truthy(pen_19364) ? "L" : "M")).V(Call(pt_19053, V.Undef, CallSpread(P3_19051, V.Undef, new ArrBuilder().Spread(q_19368).V)));
 pen_19364 = (true ? V.True : V.False);
 } else {
 pen_19364 = (false ? V.True : V.False);
@@ -26136,7 +26136,7 @@ k_19365++;
 }
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(B_19334, "tw"), ((V)("d")), (tw_19340 is var _t19369 && Truthy(_t19369) ? _t19369 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(B_19334, "tw"), ((V)("d")), (((V)(tw_19340.Str)) is var _t19369 && Truthy(_t19369) ? _t19369 : ((V)("M0 0"))));
 Nn_19341 = Invoke(Arr(((V)(0.8)), ((V)((-0.5))), ((V)(0.33))), "map", Fn((V _self1, int _argc19370, V v_19376, V _a19373, V _a19374, V _a19375, V[] _rest19371) => {
 return ((V)((ToNum(v_19376) / Hypot(0.8, 0.5, 0.33))));
 }, 1, "", true));
@@ -26152,7 +26152,7 @@ return ((V)((ToNum(c_19391) / ToNum(l_19384))));
 return default;
 }, 0, "", true), V.Undef);
 t2_19344 = Arr(((V)(((ToNum(GetIdx(Nn_19341, 1D)) * ToNum(GetIdx(t1_19343, 2D))) - (ToNum(GetIdx(Nn_19341, 2D)) * ToNum(GetIdx(t1_19343, 1D)))))), ((V)(((ToNum(GetIdx(Nn_19341, 2D)) * ToNum(GetIdx(t1_19343, 0D))) - (ToNum(GetIdx(Nn_19341, 0D)) * ToNum(GetIdx(t1_19343, 2D)))))), ((V)(((ToNum(GetIdx(Nn_19341, 0D)) * ToNum(GetIdx(t1_19343, 1D))) - (ToNum(GetIdx(Nn_19341, 1D)) * ToNum(GetIdx(t1_19343, 0D)))))));
-pe_19345 = ((V)(""));
+pe_19345 = new JsStrBuf("");
 {
 double k_19392 = 0;
 k_19392 = 0D;
@@ -26169,15 +26169,15 @@ while (true) {
 if (!((m_19396 < 8D))) break;
 double b_19398 = 0;
 b_19398 = ((m_19396 / 8D) * ToNum(TAU_14389));
-pe_19345 = ((V)(string.Concat(ToStr(pe_19345), (NumTruthy(m_19396) ? "L" : "M"), ToStr(Call(pt_19053, V.Undef, CallSpread(P3_19051, V.Undef, new ArrBuilder().Spread(Call(ad_19060, V.Undef, Call(ad_19060, V.Undef, Pc_19395, t1_19343, ((V)((1.8 * FdLibm.Cos(b_19398))))), t2_19344, ((V)((1.8 * FdLibm.Sin(b_19398)))))).V))))));
+pe_19345.S((NumTruthy(m_19396) ? "L" : "M")).V(Call(pt_19053, V.Undef, CallSpread(P3_19051, V.Undef, new ArrBuilder().Spread(Call(ad_19060, V.Undef, Call(ad_19060, V.Undef, Pc_19395, t1_19343, ((V)((1.8 * FdLibm.Cos(b_19398))))), t2_19344, ((V)((1.8 * FdLibm.Sin(b_19398)))))).V)));
 m_19396++;
 }
 }
-pe_19345 = ((V)(string.Concat(ToStr(pe_19345), "Z")));
+pe_19345.S("Z");
 k_19392++;
 }
 }
-ct_19346 = ((V)(""));
+ct_19346 = new JsStrBuf("");
 {
 double m_19399 = 0;
 m_19399 = 0D;
@@ -26185,12 +26185,12 @@ while (true) {
 if (!((m_19399 < 8D))) break;
 double b_19401 = 0;
 b_19401 = ((m_19399 / 8D) * ToNum(TAU_14389));
-ct_19346 = ((V)(string.Concat(ToStr(ct_19346), (NumTruthy(m_19399) ? "L" : "M"), ToStr(Call(pt_19053, V.Undef, CallSpread(P3_19051, V.Undef, new ArrBuilder().Spread(Call(ad_19060, V.Undef, Call(ad_19060, V.Undef, Call(ad_19060, V.Undef, F0_19342, Nn_19341, ((V)(0.6))), t1_19343, ((V)((1.4 * FdLibm.Cos(b_19401))))), t2_19344, ((V)((1.4 * FdLibm.Sin(b_19401)))))).V))))));
+ct_19346.S((NumTruthy(m_19399) ? "L" : "M")).V(Call(pt_19053, V.Undef, CallSpread(P3_19051, V.Undef, new ArrBuilder().Spread(Call(ad_19060, V.Undef, Call(ad_19060, V.Undef, Call(ad_19060, V.Undef, F0_19342, Nn_19341, ((V)(0.6))), t1_19343, ((V)((1.4 * FdLibm.Cos(b_19401))))), t2_19344, ((V)((1.4 * FdLibm.Sin(b_19401)))))).V)));
 m_19399++;
 }
 }
-Call(set_14391, V.Undef, Get(B_19334, "pe"), ((V)("d")), pe_19345);
-Call(set_14391, V.Undef, Get(B_19334, "ct"), ((V)("d")), ((V)(string.Concat(ToStr(ct_19346), "Z"))));
+Call(set_14391, V.Undef, Get(B_19334, "pe"), ((V)("d")), ((V)(pe_19345.Str)));
+Call(set_14391, V.Undef, Get(B_19334, "ct"), ((V)("d")), ((V)(string.Concat(ct_19346.Str, "Z"))));
 fv_19347 = Call(r2_14387, V.Undef, Call(SM_14384, V.Undef, ((V)((((ToNum(CallSpread(Z3_19052, V.Undef, new ArrBuilder().Spread(F0_19342).V)) - ToNum(zc0_19339)) + 2D) / 3D)))));
 Call(set_14391, V.Undef, Get(B_19334, "pe"), ((V)("opacity")), fv_19347);
 Call(set_14391, V.Undef, Get(B_19334, "ct"), ((V)("opacity")), fv_19347);
@@ -26220,7 +26220,7 @@ Hh_19416 = Get(o_19410, "H");
 WP_19417 = Fn((V _self1, int _argc19420, V u_19426, V v_19427, V _a19424, V _a19425, V[] _rest19421) => {
 return Arr(Add(GetIdx(Hh_19416, 0D), ((V)((((ToNum(sd_19411) * ToNum(u_19426)) * 1.16) * cf_19414)))), ((V)((ToNum(Add(Add(GetIdx(Hh_19416, 1D), ((V)((ToNum(v_19427) * 1.1)))), ((V)((((ToNum(u_19426) * ToNum(u_19426)) * 0.002) * FdLibm.Sin(((ts_19050 * 3D) + q0_19412))))))) - ((ToNum(wsp_19403) * ToNum(u_19426)) * (Truthy(Get(o_19410, "lo")) ? (-0.05) : 0.12))))), ((V)((ToNum(GetIdx(Hh_19416, 2D)) - ((ToNum(u_19426) * 1.16) * sf_19415)))));
 }, 2, "", true);
-Call(set_14391, V.Undef, Get(o_19410, "e"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Get(o_19410, "WL"), "map", Fn((V _self1, int _argc19428, V _a19430, V _a19431, V _a19432, V _a19433, V[] _rest19429) => {
+Call(set_14391, V.Undef, Get(o_19410, "e"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Get(o_19410, "WL"), "map", Fn((V _self1, int _argc19428, V _a19430, V _a19431, V _a19432, V _a19433, V[] _rest19429) => {
 V u_19436 = default;
 V v_19438 = default;
 { V _t19434 = ListOf(_a19430);
@@ -26230,8 +26230,8 @@ u_19436 = _t19435; }
 v_19438 = _t19437; }
 }
 return Call(pt_19053, V.Undef, CallSpread(P3_19051, V.Undef, new ArrBuilder().Spread(Call(WP_19417, V.Undef, u_19436, v_19438)).V));
-}, 1, "", true)), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(o_19410, "vn"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Get(o_19410, "VN"), "map", Fn((V _self1, int _argc19439, V _a19441, V _a19442, V _a19443, V _a19444, V[] _rest19440) => {
+}, 1, "", true)), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_19410, "vn"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Get(o_19410, "VN"), "map", Fn((V _self1, int _argc19439, V _a19441, V _a19442, V _a19443, V _a19444, V[] _rest19440) => {
 V u_19447 = default;
 V v_19449 = default;
 { V _t19445 = ListOf(_a19441);
@@ -26241,7 +26241,7 @@ u_19447 = _t19446; }
 v_19449 = _t19448; }
 }
 return Call(pt_19053, V.Undef, CallSpread(P3_19051, V.Undef, new ArrBuilder().Spread(Call(WP_19417, V.Undef, u_19447, v_19449)).V));
-}, 1, "", true)), "join", ((V)("L"))))))));
+}, 1, "", true)), "join", ((V)("L")))).End())));
 nz_19418 = System.Math.Abs(ToNum(GetIdx(Call(DV_19059, V.Undef, Arr(((V)(sf_19415)), ((V)(0D)), ((V)((ToNum(sd_19411) * cf_19414))))), 2D)));
 Call(set_14391, V.Undef, Get(o_19410, "e"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.6 + (0.3 * nz_19418))))));
 Call(set_14391, V.Undef, Get(o_19410, "vn"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.45 + (0.4 * nz_19418))))));
@@ -26275,7 +26275,7 @@ V bb_19463 = default;
 B_19450 = Get(I_14377, "bk");
 ts_19451 = (ToNum(now_14379) / 1000D);
 pt_19452 = Fn((V _self1, int _argc19464, V p_19470, V _a19467, V _a19468, V _a19469, V[] _rest19465) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_19470, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_19470, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_19470, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_19470, 1D))).End()));
 }, 1, "", true);
 tg_19453 = ((((ToNum(Get(P_14378, "x")) * 1.4) + (ToNum(Get(P_14378, "tilt")) * 0.5)) + (ToNum(Get(P_14378, "lean")) * 1.5)) + (ToNum(Get(P_14378, "turn")) * 12D));
 ly_19454 = (ToNum(Get(P_14378, "lift")) - (ToNum(sq_14416) * 8D));
@@ -26295,7 +26295,7 @@ g0_19457 = Call(glob_14432, V.Undef, ((V)(40D)), HY_14395);
 g1_19458 = Call(glob_14432, V.Undef, ((V)(60D)), HY_14395);
 kS_19459 = (Hypot((ToNum(GetIdx(g1_19458, 0D)) - ToNum(GetIdx(g0_19457, 0D))), (ToNum(GetIdx(g1_19458, 1D)) - ToNum(GetIdx(g0_19457, 1D)))) / 20D);
 circ_19460 = Fn((V _self1, int _argc19471, V c_19477, V r_19478, V _a19475, V _a19476, V[] _rest19472) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(c_19477, 0D)) - ToNum(r_19478)))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(c_19477, 1D))), "a", ToStr(Call(r2_14387, V.Undef, r_19478)), " ", ToStr(Call(r2_14387, V.Undef, r_19478)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((2D * ToNum(r_19478)))))), " 0a", ToStr(Call(r2_14387, V.Undef, r_19478)), " ", ToStr(Call(r2_14387, V.Undef, r_19478)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)(((-2D) * ToNum(r_19478)))))), " 0Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(c_19477, 0D)) - ToNum(r_19478)))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(c_19477, 1D))).S("a").V(Call(r2_14387, V.Undef, r_19478)).S(" ").V(Call(r2_14387, V.Undef, r_19478)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((2D * ToNum(r_19478)))))).S(" 0a").V(Call(r2_14387, V.Undef, r_19478)).S(" ").V(Call(r2_14387, V.Undef, r_19478)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)(((-2D) * ToNum(r_19478)))))).S(" 0Z").End()));
 }, 2, "", true);
 poly_19461 = Fn((V _self1, int _argc19479, V Q_19485, V _a19482, V _a19483, V _a19484, V[] _rest19480) => {
 double a_19486 = 0;
@@ -26319,11 +26319,11 @@ return ((V)(""));
 if ((a_19486 > 0D)) {
 Q_19485 = Invoke(Invoke(Q_19485, "slice"), "reverse");
 }
-return ((V)(string.Concat("M", ToStr(Invoke(Invoke(Q_19485, "map", pt_19452), "join", ((V)("L")))), "Z")));
+return ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Q_19485, "map", pt_19452), "join", ((V)("L")))).S("Z").End()));
 return default;
 }, 1, "", true);
 ell_19462 = Fn((V _self1, int _argc19491, V cx_19497, V cy_19498, V rx_19499, V ry_19500, V[] _rest19492) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(cx_19497) - ToNum(rx_19499)))))), " ", ToStr(Call(r2_14387, V.Undef, cy_19498)), "a", ToStr(Call(r2_14387, V.Undef, rx_19499)), " ", ToStr(Call(r2_14387, V.Undef, ry_19500)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((2D * ToNum(rx_19499)))))), " 0a", ToStr(Call(r2_14387, V.Undef, rx_19499)), " ", ToStr(Call(r2_14387, V.Undef, ry_19500)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)(((-2D) * ToNum(rx_19499)))))), " 0Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(cx_19497) - ToNum(rx_19499)))))).S(" ").V(Call(r2_14387, V.Undef, cy_19498)).S("a").V(Call(r2_14387, V.Undef, rx_19499)).S(" ").V(Call(r2_14387, V.Undef, ry_19500)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((2D * ToNum(rx_19499)))))).S(" 0a").V(Call(r2_14387, V.Undef, rx_19499)).S(" ").V(Call(r2_14387, V.Undef, ry_19500)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)(((-2D) * ToNum(rx_19499)))))).S(" 0Z").End()));
 }, 4, "", true);
 bb_19463 = Fn((V _self1, int _argc19501, V Q_19507, V _a19504, V _a19505, V _a19506, V[] _rest19502) => {
 V x0_19508 = default;
@@ -26398,9 +26398,9 @@ Invoke(Get(B_19450, "gr"), "setAttribute", ((V)("cy")), Call(r2_14387, V.Undef, 
 Invoke(Get(B_19450, "gr"), "setAttribute", ((V)("r")), Call(r2_14387, V.Undef, ((V)((62D * kS_19459)))));
 }
 ring_19521 = Fn((V _self1, int _argc19533, V y0_19539, V s_19540, V dx_19541, V dy_19542, V[] _rest19534) => {
-V d_19543 = default;
+JsStrBuf d_19543 = null;
 V pen_19544 = default;
-d_19543 = ((V)(""));
+d_19543 = new JsStrBuf("");
 pen_19544 = (false ? V.True : V.False);
 {
 double j_19545 = 0;
@@ -26416,7 +26416,7 @@ V p_19550 = default;
 y_19548 = Add(y0_19539, ((V)(((ToNum(s_19540) * 3.2) * FdLibm.Cos(f_19547)))));
 r_19549 = Add(Invoke(B_19450, "rT", y_19548), ((V)(0.1)));
 p_19550 = Call(sph_14455, V.Undef, ((V)((50D + (ToNum(r_19549) * FdLibm.Sin(f_19547))))), y_19548, ((V)(((ToNum(r_19549) * ToNum(KZ_19519)) * FdLibm.Cos(f_19547)))));
-d_19543 = ((V)(string.Concat(new string[] { ToStr(d_19543), (Truthy(pen_19544) ? "L" : "M"), ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_19550, 0D), dx_19541))), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_19550, 1D), dy_19542))) })));
+d_19543.S((Truthy(pen_19544) ? "L" : "M")).V(Call(r2_14387, V.Undef, Add(GetIdx(p_19550, 0D), dx_19541))).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(p_19550, 1D), dy_19542)));
 pen_19544 = (true ? V.True : V.False);
 } else {
 pen_19544 = (false ? V.True : V.False);
@@ -26424,7 +26424,7 @@ pen_19544 = (false ? V.True : V.False);
 j_19545++;
 }
 }
-return d_19543;
+return ((V)(d_19543.Str));
 return default;
 }, 4, "", true);
 Call(set_14391, V.Undef, Get(B_19450, "rg"), ((V)("d")), (Add(Call(ring_19521, V.Undef, ((V)(36.5)), ((V)((-1D))), ((V)(0D)), ((V)(0D))), Call(ring_19521, V.Undef, ((V)(78.5)), ((V)(1D)), ((V)(0D)), ((V)(0D)))) is var _t19551 && Truthy(_t19551) ? _t19551 : ((V)("M0 0"))));
@@ -26490,7 +26490,7 @@ V hl_19590 = default;
 V C_19591 = default;
 V w_19592 = default;
 V h_19593 = default;
-V sd_19594 = default;
+JsStrBuf sd_19594 = null;
 V pen_19595 = default;
 { V _t19596 = s_19588;
 if (_t19596.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t19596));
@@ -26511,7 +26511,7 @@ Call(set_14391, V.Undef, Get(o_19589, "b0"), ((V)("d")), Invoke(H_14370, "closed
 Call(set_14391, V.Undef, Get(o_19589, "m"), ((V)("d")), Invoke(H_14370, "closedD", Invoke(hl_19590, "map", Fn((V _self1, int _argc19604, V p_19610, V _a19607, V _a19608, V _a19609, V[] _rest19605) => {
 return Arr(((V)((ToNum(Add(GetIdx(C_19591, 0D), ((V)(((ToNum(GetIdx(p_19610, 0D)) - ToNum(GetIdx(C_19591, 0D))) * 0.93))))) - (ToNum(w_19592) * 0.02)))), ((V)((ToNum(Add(GetIdx(C_19591, 1D), ((V)(((ToNum(GetIdx(p_19610, 1D)) - ToNum(GetIdx(C_19591, 1D))) * 0.94))))) - (ToNum(h_19593) * 0.025)))));
 }, 1, "", true))));
-sd_19594 = ((V)(""));
+sd_19594 = new JsStrBuf("");
 pen_19595 = (false ? V.True : V.False);
 {
 double j_19611 = 0;
@@ -26528,12 +26528,12 @@ ly_19614 = ((ToNum(Get(o_19589, "b")) * 0.92) * FdLibm.Sin(f_19613));
 lz_19615 = ((ToNum(Get(o_19589, "cz")) * 0.92) * FdLibm.Cos(f_19613));
 lx_19616 = (ToNum(Get(o_19589, "a")) * 0.15);
 p_19617 = Call(sph_14455, V.Undef, ((V)((ToNum(Add(Get(s_19588, "cx"), ((V)((lx_19616 * ToNum(Get(s_19588, "cr"))))))) - (ly_19614 * ToNum(Get(s_19588, "sr")))))), Add(Add(Get(s_19588, "cy"), ((V)((lx_19616 * ToNum(Get(s_19588, "sr")))))), ((V)((ly_19614 * ToNum(Get(s_19588, "cr")))))), Add(Get(s_19588, "cz"), ((V)(lz_19615))));
-sd_19594 = ((V)(string.Concat(ToStr(sd_19594), (Truthy(pen_19595) ? "L" : "M"), ToStr(Call(pt_19452, V.Undef, p_19617)))));
+sd_19594.S((Truthy(pen_19595) ? "L" : "M")).V(Call(pt_19452, V.Undef, p_19617));
 pen_19595 = (true ? V.True : V.False);
 j_19611++;
 }
 }
-Call(set_14391, V.Undef, Get(o_19589, "sh"), ((V)("d")), sd_19594);
+Call(set_14391, V.Undef, Get(o_19589, "sh"), ((V)("d")), ((V)(sd_19594.Str)));
 Call(set_14391, V.Undef, Get(o_19589, "h"), ((V)("d")), Call(ell_19462, V.Undef, ((V)((ToNum(GetIdx(C_19591, 0D)) - (ToNum(w_19592) * 0.15)))), ((V)((ToNum(GetIdx(C_19591, 1D)) - (ToNum(h_19593) * 0.22)))), ((V)((ToNum(w_19592) * 0.12))), ((V)((ToNum(h_19593) * 0.07)))));
 return default;
 }, 1, "", true));
@@ -26541,7 +26541,7 @@ ord_19523 = Invoke(Invoke(SG_19522, "slice"), "sort", Fn((V _self1, int _argc196
 return ((V)((ToNum(Get(a_19624, "dz")) - ToNum(Get(b_19625, "dz")))));
 }, 2, "", true));
 k2_19524 = Invoke(Invoke(ord_19523, "map", Fn((V _self1, int _argc19626, V s_19632, V _a19629, V _a19630, V _a19631, V[] _rest19627) => {
-return ((V)(string.Concat(ToStr(Invoke(Get(B_19450, "SG"), "indexOf", Get(s_19632, "o"))), (GtN(Get(s_19632, "dz"), 2D) ? "f" : "b"))));
+return ((V)(JsStrBuf.Begin().V(Invoke(Get(B_19450, "SG"), "indexOf", Get(s_19632, "o"))).S((GtN(Get(s_19632, "dz"), 2D) ? "f" : "b")).End()));
 }, 1, "", true)), "join", ((V)(",")));
 if (!SEq(k2_19524, Get(B_19450, "ok"))) {
 Set(B_19450, "ok", k2_19524);
@@ -26587,13 +26587,13 @@ rfw_19641 = Call(clamp_14385, V.Undef, (((V)(ToNum(Get(P_14378, "rfw")))) is var
 Invoke(Get(B_19450, "RF"), "forEach", Fn((V _self1, int _argc19650, V R_19656, V _a19653, V _a19654, V _a19655, V[] _rest19651) => {
 V T_19657 = default;
 V Bt_19658 = default;
-V dl_19659 = default;
-V dk_19660 = default;
+JsStrBuf dl_19659 = null;
+JsStrBuf dk_19660 = null;
 V pl_19661 = default;
 T_19657 = Arr();
 Bt_19658 = Arr();
-dl_19659 = ((V)(""));
-dk_19660 = ((V)(""));
+dl_19659 = new JsStrBuf("");
+dk_19660 = new JsStrBuf("");
 pl_19661 = (false ? V.True : V.False);
 {
 double j_19662 = 0;
@@ -26620,20 +26620,20 @@ a_19669 = Call(sph_14455, V.Undef, ((V)((50D + (ToNum(Get(R_19656, "r")) * sf_19
 b_19670 = Call(sph_14455, V.Undef, ((V)((50D + (ToNum(Add(Get(R_19656, "r"), ((V)(0.2)))) * sf_19667)))), yb2_19666, ((V)((ToNum(Add(Get(R_19656, "r"), ((V)(0.2)))) * cf_19668))));
 Invoke(T_19657, "push", a_19669);
 Invoke(Bt_19658, "push", b_19670);
-dl_19659 = ((V)(string.Concat(ToStr(dl_19659), (Truthy(pl_19661) ? "L" : "M"), ToStr(Call(pt_19452, V.Undef, b_19670)))));
+dl_19659.S((Truthy(pl_19661) ? "L" : "M")).V(Call(pt_19452, V.Undef, b_19670));
 pl_19661 = (true ? V.True : V.False);
 if (((j_19662 % 3D) == 0D)) {
 V m_19671 = default;
 m_19671 = Call(sph_14455, V.Undef, ((V)((50D + (ToNum(Add(Get(R_19656, "r"), ((V)(0.15)))) * sf_19667)))), Add(Get(R_19656, "y0"), ((V)((ToNum(Get(R_19656, "h")) * 0.35)))), ((V)((ToNum(Add(Get(R_19656, "r"), ((V)(0.15)))) * cf_19668))));
-dk_19660 = ((V)(string.Concat(new string[] { ToStr(dk_19660), "M", ToStr(Call(pt_19452, V.Undef, m_19671)), "L", ToStr(Call(pt_19452, V.Undef, Call(sph_14455, V.Undef, ((V)((50D + (ToNum(Add(Get(R_19656, "r"), ((V)(0.2)))) * sf_19667)))), Add(Get(R_19656, "y0"), ((V)((ToNum(Get(R_19656, "h")) * 0.9)))), ((V)((ToNum(Add(Get(R_19656, "r"), ((V)(0.2)))) * cf_19668)))))) })));
+dk_19660.S("M").V(Call(pt_19452, V.Undef, m_19671)).S("L").V(Call(pt_19452, V.Undef, Call(sph_14455, V.Undef, ((V)((50D + (ToNum(Add(Get(R_19656, "r"), ((V)(0.2)))) * sf_19667)))), Add(Get(R_19656, "y0"), ((V)((ToNum(Get(R_19656, "h")) * 0.9)))), ((V)((ToNum(Add(Get(R_19656, "r"), ((V)(0.2)))) * cf_19668))))));
 }
 _cont19663: ;
 j_19662++;
 }
 }
 Call(set_14391, V.Undef, Get(R_19656, "e"), ((V)("d")), (GtN(Get(T_19657, "length"), 1D) ? Call(poly_19461, V.Undef, Invoke(T_19657, "concat", Invoke(Bt_19658, "reverse"))) : ((V)("M0 0"))));
-Call(set_14391, V.Undef, Get(R_19656, "l"), ((V)("d")), (dl_19659 is var _t19672 && Truthy(_t19672) ? _t19672 : ((V)("M0 0"))));
-Call(set_14391, V.Undef, Get(R_19656, "k"), ((V)("d")), (dk_19660 is var _t19673 && Truthy(_t19673) ? _t19673 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(R_19656, "l"), ((V)("d")), (((V)(dl_19659.Str)) is var _t19672 && Truthy(_t19672) ? _t19672 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(R_19656, "k"), ((V)("d")), (((V)(dk_19660.Str)) is var _t19673 && Truthy(_t19673) ? _t19673 : ((V)("M0 0"))));
 return default;
 }, 1, "", true));
 }
@@ -26650,7 +26650,7 @@ V T_19682 = default;
 V Bt_19683 = default;
 V dH_19684 = default;
 V ti_19685 = default;
-V gd_19686 = default;
+JsStrBuf gd_19686 = null;
 double sw_19687 = 0;
 V lf_19688 = default;
 V CRp_19689 = default;
@@ -26661,7 +26661,7 @@ V cw_19693 = default;
 V chh_19694 = default;
 V cc_19695 = default;
 V sh_19696 = default;
-V cl_19697 = default;
+JsStrBuf cl_19697 = null;
 double chy_19698 = 0;
 double CX_19699 = 0;
 double CZ_19700 = 0;
@@ -26712,7 +26712,7 @@ V rg_19724 = default;
 V o_19725 = default;
 V u_19726 = default;
 V w_19727 = default;
-V hd_19728 = default;
+JsStrBuf hd_19728 = null;
 rg_19724 = Fn((V _self1, int _argc19729, V r_19735, V y_19736, V _a19733, V _a19734, V[] _rest19730) => {
 V Q_19737 = default;
 Q_19737 = Arr();
@@ -26736,7 +26736,7 @@ w_19727 = Call(rg_19724, V.Undef, ((V)(35D)), ((V)(87.4)));
 Call(set_14391, V.Undef, Get(B_19450, "pR"), ((V)("d")), Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(o_19725, "concat", u_19726))));
 Call(set_14391, V.Undef, Get(B_19450, "pS"), ((V)("d")), Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(u_19726, "concat", Call(rg_19724, V.Undef, ((V)(41D)), ((V)(90D)))))));
 Call(set_14391, V.Undef, Get(B_19450, "pW"), ((V)("d")), Call(poly_19461, V.Undef, w_19727));
-hd_19728 = ((V)(""));
+hd_19728 = new JsStrBuf("");
 {
 double j_19741 = 0;
 j_19741 = 0D;
@@ -26744,11 +26744,11 @@ while (true) {
 if (!((j_19741 <= 16D))) break;
 double f_19743 = 0;
 f_19743 = (((-2.4) + ((j_19741 / 16D) * 1.5)) - yh_14401);
-hd_19728 = ((V)(string.Concat(ToStr(hd_19728), (NumTruthy(j_19741) ? "L" : "M"), ToStr(Call(pt_19452, V.Undef, Call(PV_19677, V.Undef, ((V)((50D + (39D * FdLibm.Sin(f_19743))))), ((V)(87.4)), ((V)((39D * FdLibm.Cos(f_19743))))))))));
+hd_19728.S((NumTruthy(j_19741) ? "L" : "M")).V(Call(pt_19452, V.Undef, Call(PV_19677, V.Undef, ((V)((50D + (39D * FdLibm.Sin(f_19743))))), ((V)(87.4)), ((V)((39D * FdLibm.Cos(f_19743)))))));
 j_19741++;
 }
 }
-Call(set_14391, V.Undef, Get(B_19450, "pH"), ((V)("d")), hd_19728);
+Call(set_14391, V.Undef, Get(B_19450, "pH"), ((V)("d")), ((V)(hd_19728.Str)));
 }
 R0_19679 = Add(Invoke(B_19450, "rS", ((V)(38D))), ((V)(0.5)));
 L_19680 = Fn((V _self1, int _argc19744, V f_19750, V _a19747, V _a19748, V _a19749, V[] _rest19745) => {
@@ -26808,7 +26808,7 @@ k_19763++;
 }
 }
 Call(set_14391, V.Undef, Get(B_19450, "carH"), ((V)("d")), Call(poly_19461, V.Undef, ti_19685));
-gd_19686 = ((V)(""));
+gd_19686 = new JsStrBuf("");
 {
 double j_19766 = 0;
 j_19766 = 0D;
@@ -26818,11 +26818,11 @@ double f_19768 = 0;
 V p_19769 = default;
 f_19768 = (((-2.05) + ((j_19766 / 14D) * 1.15)) - yh_14401);
 p_19769 = Call(PV_19677, V.Undef, ((V)((50D + ((ToNum(R0_19679) - 4D) * FdLibm.Sin(f_19768))))), ((V)(37.5)), ((V)(((ToNum(R0_19679) - 4D) * FdLibm.Cos(f_19768)))));
-gd_19686 = ((V)(string.Concat(ToStr(gd_19686), (NumTruthy(j_19766) ? "L" : "M"), ToStr(Call(pt_19452, V.Undef, p_19769)))));
+gd_19686.S((NumTruthy(j_19766) ? "L" : "M")).V(Call(pt_19452, V.Undef, p_19769));
 j_19766++;
 }
 }
-Call(set_14391, V.Undef, Get(B_19450, "carG"), ((V)("d")), gd_19686);
+Call(set_14391, V.Undef, Get(B_19450, "carG"), ((V)("d")), ((V)(gd_19686.Str)));
 sw_19687 = ((ToNum(ox_19455) * 0.3) + (FdLibm.Sin((ts_19451 * 1.4)) * 0.45));
 lf_19688 = Fn((V _self1, int _argc19770, V y_19776, V _a19773, V _a19774, V _a19775, V[] _rest19771) => {
 return Call(clamp_14385, V.Undef, ((V)(((38D - ToNum(y_19776)) / 12D))), ((V)(0D)), ((V)(1D)));
@@ -26887,7 +26887,7 @@ k_19813++;
 }
 }
 Call(set_14391, V.Undef, Get(B_19450, "crS"), ((V)("d")), Call(poly_19461, V.Undef, sh_19696));
-cl_19697 = ((V)(""));
+cl_19697 = new JsStrBuf("");
 Invoke(Arr(((V)(34.8)), ((V)(31.6))), "forEach", Fn((V _self1, int _argc19816, V y0_19822, V _a19819, V _a19820, V _a19821, V[] _rest19817) => {
 V pen_19823 = default;
 pen_19823 = (false ? V.True : V.False);
@@ -26902,14 +26902,14 @@ double r_19828 = 0;
 f_19826 = (((-System.Math.PI) / 2D) + ((j_19824 / 24D) * System.Math.PI));
 y_19827 = Add(y0_19822, ((V)((0.8 * FdLibm.Cos(f_19826)))));
 r_19828 = ((GtN(y0_19822, 33D) ? 9.3 : 6.6) + 0.05);
-cl_19697 = ((V)(string.Concat(ToStr(cl_19697), (Truthy(pen_19823) ? "L" : "M"), ToStr(Call(pt_19452, V.Undef, Call(cp3_19690, V.Undef, ((V)((50D + (r_19828 * FdLibm.Sin(f_19826))))), y_19827, ((V)((r_19828 * FdLibm.Cos(f_19826))))))))));
+cl_19697.S((Truthy(pen_19823) ? "L" : "M")).V(Call(pt_19452, V.Undef, Call(cp3_19690, V.Undef, ((V)((50D + (r_19828 * FdLibm.Sin(f_19826))))), y_19827, ((V)((r_19828 * FdLibm.Cos(f_19826)))))));
 pen_19823 = (true ? V.True : V.False);
 j_19824++;
 }
 }
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(B_19450, "crL"), ((V)("d")), cl_19697);
+Call(set_14391, V.Undef, Get(B_19450, "crL"), ((V)("d")), ((V)(cl_19697.Str)));
 Call(set_14391, V.Undef, Get(B_19450, "crH"), ((V)("d")), Call(ell_19462, V.Undef, ((V)((ToNum(GetIdx(cc_19695, 0D)) - (ToNum(cw_19693) * 0.2)))), ((V)((ToNum(GetIdx(cc_19695, 1D)) - (ToNum(chh_19694) * 0.18)))), ((V)((ToNum(cw_19693) * 0.12))), ((V)((ToNum(chh_19694) * 0.08)))));
 if (Get(B_19450, "cb").IsNullish) {
 Set(B_19450, "cb", ((V)(0D)));
@@ -26938,7 +26938,7 @@ Invoke(SP_19703, "push", Call(cp3_19690, V.Undef, ((V)(((CX_19699 + ((u_19832 * 
 k_19830++;
 }
 }
-Call(set_14391, V.Undef, Get(B_19450, "stem"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(SP_19703, "map", pt_19452), "join", ((V)("L"))))))));
+Call(set_14391, V.Undef, Get(B_19450, "stem"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(SP_19703, "map", pt_19452), "join", ((V)("L")))).End())));
 Set(W_14465, "top", GetIdx(SP_19703, 8D));
 cbk_19704 = (LtN(Call(sphZ_14456, V.Undef, ((V)(CX_19699)), ((V)(25D)), ((V)(CZ_19700))), (ToNum(Call(sphZ_14456, V.Undef, ((V)(50D)), ((V)(25D)), ((V)(0D)))) - 0.5)) ? V.True : V.False);
 if (!SEq(Get(B_19450, "cbk"), cbk_19704)) {
@@ -26958,7 +26958,7 @@ Invoke(pp_19834, "appendChild", Get(B_19450, "chG"));
 }
 if (SEqS(Get(B_19450, "kind"), "mochi")) {
 V hp_19835 = default;
-V pd_19836 = default;
+JsStrBuf pd_19836 = null;
 double LXs_19837 = 0;
 V u0_19838 = default;
 double shy_19839 = 0;
@@ -26970,8 +26970,8 @@ V sh_19844 = default;
 V sw0_19845 = default;
 V sh0_19846 = default;
 V sc_19847 = default;
-V dS_19848 = default;
-V dD_19849 = default;
+JsStrBuf dS_19848 = null;
+JsStrBuf dD_19849 = null;
 double swz_19850 = 0;
 double cz_19851 = 0;
 double sz2_19852 = 0;
@@ -27023,7 +27023,7 @@ k_19863++;
 }
 Call(set_14391, V.Undef, Get(B_19450, "bl"), ((V)("d")), Call(poly_19461, V.Undef, Q_19862));
 }
-pd_19836 = ((V)(""));
+pd_19836 = new JsStrBuf("");
 Invoke(Get(B_19450, "PD"), "forEach", Fn((V _self1, int _argc19866, V o_19872, V _a19869, V _a19870, V _a19871, V[] _rest19867) => {
 V r_19873 = default;
 double X_19874 = 0;
@@ -27034,10 +27034,10 @@ Z_19875 = (ToNum(r_19873) * FdLibm.Cos(ToNum(Get(o_19872, "f"))));
 if (((ToNum(Call(sphZ_14456, V.Undef, ((V)((50D + X_19874))), Get(o_19872, "y"), ((V)(Z_19875)))) - ToNum(Call(sphZ_14456, V.Undef, ((V)(50D)), Get(o_19872, "y"), ((V)(0D))))) < (ToNum(r_19873) * 0.25))) {
 return default;
 }
-pd_19836 = Add(pd_19836, Call(circ_19460, V.Undef, Call(sph_14455, V.Undef, ((V)((50D + X_19874))), Get(o_19872, "y"), ((V)(Z_19875))), ((V)((0.6 * kS_19459)))));
+pd_19836.V(Call(circ_19460, V.Undef, Call(sph_14455, V.Undef, ((V)((50D + X_19874))), Get(o_19872, "y"), ((V)(Z_19875))), ((V)((0.6 * kS_19459)))));
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(B_19450, "pd"), ((V)("d")), (pd_19836 is var _t19876 && Truthy(_t19876) ? _t19876 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(B_19450, "pd"), ((V)("d")), (((V)(pd_19836.Str)) is var _t19876 && Truthy(_t19876) ? _t19876 : ((V)("M0 0"))));
 LXs_19837 = ((ToNum(ox_19455) * 0.3) + (FdLibm.Sin((ts_19451 * 1.3)) * 0.35));
 u0_19838 = Fn((V _self1, int _argc19877, V y_19883, V _a19880, V _a19881, V _a19882, V[] _rest19878) => {
 return Call(clamp_14385, V.Undef, ((V)(((40D - ToNum(y_19883)) / 20D))), ((V)(0D)), ((V)(1D)));
@@ -27093,8 +27093,8 @@ sh0_19846 = _t19915; }
 sc_19847 = Call(P3s_19841, V.Undef, ((V)(0D)), ((V)(30D)), ((V)(0D)));
 Call(set_14391, V.Undef, Get(B_19450, "sb"), ((V)("d")), Invoke(H_14370, "closedD", sh_19844));
 Call(set_14391, V.Undef, Get(B_19450, "sh"), ((V)("d")), Call(ell_19462, V.Undef, ((V)((ToNum(GetIdx(sc_19847, 0D)) - (ToNum(sw0_19845) * 0.18)))), ((V)((ToNum(GetIdx(sc_19847, 1D)) - (ToNum(sh0_19846) * 0.2)))), ((V)((ToNum(sw0_19845) * 0.12))), ((V)((ToNum(sh0_19846) * 0.1)))));
-dS_19848 = ((V)(""));
-dD_19849 = ((V)(""));
+dS_19848 = new JsStrBuf("");
+dD_19849 = new JsStrBuf("");
 Invoke(Get(B_19450, "SD"), "forEach", Fn((V _self1, int _argc19916, V o_19922, V _a19919, V _a19920, V _a19921, V[] _rest19917) => {
 double X_19923 = 0;
 double Z_19924 = 0;
@@ -27105,12 +27105,12 @@ if (((ToNum(Call(Z3s_19842, V.Undef, ((V)(X_19923)), Get(o_19922, "y"), ((V)(Z_1
 return default;
 }
 p_19925 = Call(P3s_19841, V.Undef, ((V)(X_19923)), Get(o_19922, "y"), ((V)(Z_19924)));
-dD_19849 = Add(dD_19849, Call(circ_19460, V.Undef, p_19925, ((V)((0.95 * kS_19459)))));
-dS_19848 = Add(dS_19848, Call(ell_19462, V.Undef, GetIdx(p_19925, 0D), ((V)((ToNum(GetIdx(p_19925, 1D)) - (0.15 * kS_19459)))), ((V)((0.45 * kS_19459))), ((V)((0.62 * kS_19459)))));
+dD_19849.V(Call(circ_19460, V.Undef, p_19925, ((V)((0.95 * kS_19459)))));
+dS_19848.V(Call(ell_19462, V.Undef, GetIdx(p_19925, 0D), ((V)((ToNum(GetIdx(p_19925, 1D)) - (0.15 * kS_19459)))), ((V)((0.45 * kS_19459))), ((V)((0.62 * kS_19459)))));
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(B_19450, "sd"), ((V)("d")), (dS_19848 is var _t19926 && Truthy(_t19926) ? _t19926 : ((V)("M0 0"))));
-Call(set_14391, V.Undef, Get(B_19450, "sdD"), ((V)("d")), (dD_19849 is var _t19927 && Truthy(_t19927) ? _t19927 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(B_19450, "sd"), ((V)("d")), (((V)(dS_19848.Str)) is var _t19926 && Truthy(_t19926) ? _t19926 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(B_19450, "sdD"), ((V)("d")), (((V)(dD_19849.Str)) is var _t19927 && Truthy(_t19927) ? _t19927 : ((V)("M0 0"))));
 swz_19850 = (((ToNum(ox_19455) * 1.4) + (FdLibm.Sin((ts_19451 * 0.9)) * 3D)) * ToNum(D2R_14388));
 cz_19851 = FdLibm.Cos(swz_19850);
 sz2_19852 = FdLibm.Sin(swz_19850);
@@ -27158,8 +27158,8 @@ Invoke(Rr_19949, "push", CallSpread(P3s_19841, V.Undef, new ArrBuilder().Spread(
 k_19952++;
 }
 }
-Call(set_14391, V.Undef, Get(o_19943, "e"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(L_19948, "concat", Invoke(Rr_19949, "reverse")), "map", pt_19452), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(o_19943, "rb"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(M_19950, "slice", ((V)(0D)), ((V)(7D))), "map", pt_19452), "join", ((V)("L"))))))));
+Call(set_14391, V.Undef, Get(o_19943, "e"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(L_19948, "concat", Invoke(Rr_19949, "reverse")), "map", pt_19452), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_19943, "rb"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(M_19950, "slice", ((V)(0D)), ((V)(7D))), "map", pt_19452), "join", ((V)("L")))).End())));
 bk_19951 = (LtN(Call(Z3s_19842, V.Undef, ((V)(((ToNum(GetIdx(d_19946, 0D)) * ToNum(Get(o_19943, "L"))) * 0.5))), Add(GetIdx(R0_19853, 1D), ((V)(((ToNum(GetIdx(d_19946, 1D)) * ToNum(Get(o_19943, "L"))) * 0.5)))), ((V)(((ToNum(GetIdx(d_19946, 2D)) * ToNum(Get(o_19943, "L"))) * 0.5)))), (ToNum(Call(Z3s_19842, V.Undef, ((V)(0D)), ((V)(26D)), ((V)(0D)))) - 2D)) ? V.True : V.False);
 if (!SEq(Get(o_19943, "bk"), bk_19951)) {
 Set(o_19943, "bk", bk_19951);
@@ -27210,7 +27210,7 @@ V top_20007 = default;
 V Tp_20008 = default;
 V Bt_20009 = default;
 V L_20010 = default;
-V gd_20011 = default;
+JsStrBuf gd_20011 = null;
 rr_20003 = Fn((V _self1, int _argc20012, V y_20018, V _a20015, V _a20016, V _a20017, V[] _rest20013) => {
 double a_20019 = 0;
 double b_20020 = 0;
@@ -27294,7 +27294,7 @@ j_20039++;
 }
 }
 Call(set_14391, V.Undef, Get(T_20001, "fe"), ((V)("d")), Add(Call(poly_19461, V.Undef, top_20007), Call(poly_19461, V.Undef, Invoke(Tp_20008, "concat", Invoke(Bt_20009, "reverse")))));
-gd_20011 = ((V)(""));
+gd_20011 = new JsStrBuf("");
 {
 double j_20045 = 0;
 j_20045 = 0D;
@@ -27304,11 +27304,11 @@ double fv_20047 = 0;
 double f_20048 = 0;
 fv_20047 = ((-1.35) + ((j_20045 / 16D) * 1.25));
 f_20048 = (fv_20047 - yh_14401);
-gd_20011 = ((V)(string.Concat(ToStr(gd_20011), (NumTruthy(j_20045) ? "L" : "M"), ToStr(Call(pt_19452, V.Undef, Call(PV_19963, V.Undef, ((V)((50D + ((ToNum(R0_20006) - 1.4) * FdLibm.Sin(f_20048))))), Add(Get(T_20001, "yt"), ((V)(0.6))), ((V)(((ToNum(R0_20006) - 1.4) * FdLibm.Cos(f_20048))))))))));
+gd_20011.S((NumTruthy(j_20045) ? "L" : "M")).V(Call(pt_19452, V.Undef, Call(PV_19963, V.Undef, ((V)((50D + ((ToNum(R0_20006) - 1.4) * FdLibm.Sin(f_20048))))), Add(Get(T_20001, "yt"), ((V)(0.6))), ((V)(((ToNum(R0_20006) - 1.4) * FdLibm.Cos(f_20048)))))));
 j_20045++;
 }
 }
-Call(set_14391, V.Undef, Get(T_20001, "gle"), ((V)("d")), gd_20011);
+Call(set_14391, V.Undef, Get(T_20001, "gle"), ((V)("d")), ((V)(gd_20011.Str)));
 if (Truthy(Get(T_20001, "SP"))) {
 V sd_20049 = default;
 sd_20049 = Arr(((V)("")), ((V)("")), ((V)("")));
@@ -27330,7 +27330,7 @@ ca2_20060 = (FdLibm.Cos(ToNum(Get(o_20056, "a"))) * 1.1);
 sa2_20061 = (FdLibm.Sin(ToNum(Get(o_20056, "a"))) * 1.1);
 X_20062 = (ToNum(r_20058) * FdLibm.Sin(ToNum(f_20057)));
 Z_20063 = (ToNum(r_20058) * FdLibm.Cos(ToNum(f_20057)));
-OpSetK(sd_20049, Get(o_20056, "c"), 0, ((V)(string.Concat("M", ToStr(Call(pt_19452, V.Undef, Call(PV_19963, V.Undef, ((V)(((50D + X_20062) + (ToNum(GetIdx(tg_20059, 0D)) * ca2_20060)))), Add(Get(o_20056, "y"), ((V)(sa2_20061))), ((V)((Z_20063 + (ToNum(GetIdx(tg_20059, 2D)) * ca2_20060))))))), "L", ToStr(Call(pt_19452, V.Undef, Call(PV_19963, V.Undef, ((V)(((50D + X_20062) - (ToNum(GetIdx(tg_20059, 0D)) * ca2_20060)))), ((V)((ToNum(Get(o_20056, "y")) - sa2_20061))), ((V)((Z_20063 - (ToNum(GetIdx(tg_20059, 2D)) * ca2_20060)))))))))));
+OpSetK(sd_20049, Get(o_20056, "c"), 0, ((V)(JsStrBuf.Begin().S("M").V(Call(pt_19452, V.Undef, Call(PV_19963, V.Undef, ((V)(((50D + X_20062) + (ToNum(GetIdx(tg_20059, 0D)) * ca2_20060)))), Add(Get(o_20056, "y"), ((V)(sa2_20061))), ((V)((Z_20063 + (ToNum(GetIdx(tg_20059, 2D)) * ca2_20060))))))).S("L").V(Call(pt_19452, V.Undef, Call(PV_19963, V.Undef, ((V)(((50D + X_20062) - (ToNum(GetIdx(tg_20059, 0D)) * ca2_20060)))), ((V)((ToNum(Get(o_20056, "y")) - sa2_20061))), ((V)((Z_20063 - (ToNum(GetIdx(tg_20059, 2D)) * ca2_20060))))))).End())));
 return default;
 }, 1, "", true));
 Invoke(Get(T_20001, "sp"), "forEach", Fn((V _self1, int _argc20064, V e_20070, V i_20071, V _a20068, V _a20069, V[] _rest20065) => {
@@ -27356,7 +27356,7 @@ double rc_20102 = 0;
 double y0_20103 = 0;
 double y1_20104 = 0;
 V ring_20105 = default;
-V sd_20106 = default;
+JsStrBuf sd_20106 = null;
 V T0_20107 = default;
 V Tw_20108 = default;
 double cfo_20109 = 0;
@@ -27388,7 +27388,7 @@ return Q_20124;
 return default;
 }, 1, "", true);
 Call(set_14391, V.Undef, Get(o_20101, "b"), ((V)("d")), Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(Call(ring_20105, V.Undef, ((V)(y0_20103))), "concat", Call(ring_20105, V.Undef, ((V)(y1_20104)))))));
-sd_20106 = ((V)(""));
+sd_20106 = new JsStrBuf("");
 {
 double s_20128 = 0;
 s_20128 = 0D;
@@ -27406,7 +27406,7 @@ double f_20134 = 0;
 y_20133 = ((y0_20103 - 1D) - ((((y0_20103 - y1_20104) - 2D) * j_20131) / 14D));
 f_20134 = (((s_20128 * ToNum(TAU_14389)) / 3D) + ((y0_20103 - y_20133) * 0.55));
 if ((FdLibm.Cos((f_20134 + yh_14401)) > 0.15)) {
-sd_20106 = ((V)(string.Concat(ToStr(sd_20106), (Truthy(pen_20130) ? "L" : "M"), ToStr(Call(pt_19452, V.Undef, Call(PV_19963, V.Undef, Add(Add(((V)(50D)), Get(o_20101, "x")), ((V)(((rc_20102 + 0.05) * FdLibm.Sin(f_20134))))), ((V)(y_20133)), Add(Get(o_20101, "z"), ((V)(((rc_20102 + 0.05) * FdLibm.Cos(f_20134)))))))))));
+sd_20106.S((Truthy(pen_20130) ? "L" : "M")).V(Call(pt_19452, V.Undef, Call(PV_19963, V.Undef, Add(Add(((V)(50D)), Get(o_20101, "x")), ((V)(((rc_20102 + 0.05) * FdLibm.Sin(f_20134))))), ((V)(y_20133)), Add(Get(o_20101, "z"), ((V)(((rc_20102 + 0.05) * FdLibm.Cos(f_20134))))))));
 pen_20130 = (true ? V.True : V.False);
 } else {
 pen_20130 = (false ? V.True : V.False);
@@ -27417,10 +27417,10 @@ j_20131++;
 s_20128++;
 }
 }
-Call(set_14391, V.Undef, Get(o_20101, "s"), ((V)("d")), (sd_20106 is var _t20135 && Truthy(_t20135) ? _t20135 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(o_20101, "s"), ((V)("d")), (((V)(sd_20106.Str)) is var _t20135 && Truthy(_t20135) ? _t20135 : ((V)("M0 0"))));
 T0_20107 = Call(PV_19963, V.Undef, Add(((V)(50D)), Get(o_20101, "x")), ((V)(y1_20104)), Get(o_20101, "z"));
 Tw_20108 = Call(PV_19963, V.Undef, Add(((V)(50D)), Get(o_20101, "x")), ((V)((y1_20104 - 1D))), Get(o_20101, "z"));
-Call(set_14391, V.Undef, Get(o_20101, "w"), ((V)("d")), ((V)(string.Concat("M", ToStr(Call(pt_19452, V.Undef, T0_20107)), "L", ToStr(Call(pt_19452, V.Undef, Tw_20108))))));
+Call(set_14391, V.Undef, Get(o_20101, "w"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(pt_19452, V.Undef, T0_20107)).S("L").V(Call(pt_19452, V.Undef, Tw_20108)).End())));
 cfo_20109 = (1D - ToNum(Call(clamp_14385, V.Undef, (((V)(ToNum(Get(P_14378, "cbo")))) is var _t20136 && Truthy(_t20136) ? _t20136 : ((V)(0D))), ((V)(0D)), ((V)(1D)))));
 h_20110 = ((((6.4 * ((1D + (0.1 * FdLibm.Sin(((ts_19451 * 11D) + (ToNum(Get(o_20101, "i")) * 2D))))) + (0.06 * FdLibm.Sin(ToNum(Add(((V)((ts_19451 * 23D))), Get(o_20101, "i"))))))) * kS_19459) * Max(0.001, (cfo_20109 * cfo_20109))) * (1D + (ToNum(Call(clamp_14385, V.Undef, (((V)(ToNum(Get(P_14378, "clf")))) is var _t20137 && Truthy(_t20137) ? _t20137 : ((V)(0D))), ((V)(0D)), ((V)(1.5)))) * 0.5)));
 sw_20111 = (((FdLibm.Sin(((ts_19451 * 6D) + (ToNum(Get(o_20101, "i")) * 1.7))) * 0.5) - (ToNum(ox_19455) * 0.25)) * kS_19459);
@@ -27428,9 +27428,9 @@ bx_20112 = GetIdx(Tw_20108, 0D);
 by_20113 = Add(GetIdx(Tw_20108, 1D), ((V)((0.3 * kS_19459))));
 tp_20114 = Arr(Add(bx_20112, ((V)((sw_20111 * 2D)))), ((V)((ToNum(by_20113) - h_20110))));
 k2_20115 = kS_19459;
-Call(set_14391, V.Undef, Get(o_20101, "f1"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(pt_19452, V.Undef, tp_20114)), "Q", ToStr(Call(r2_14387, V.Undef, Add(Add(bx_20112, ((V)((2.7 * k2_20115)))), ((V)(sw_20111))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(by_20113) - (h_20110 * 0.38)))))), " ", ToStr(Call(pt_19452, V.Undef, Arr(bx_20112, by_20113))), "Q", ToStr(Call(r2_14387, V.Undef, ((V)(((ToNum(bx_20112) - (2.7 * k2_20115)) + sw_20111))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(by_20113) - (h_20110 * 0.38)))))), " ", ToStr(Call(pt_19452, V.Undef, tp_20114)), "Z" }))));
+Call(set_14391, V.Undef, Get(o_20101, "f1"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(pt_19452, V.Undef, tp_20114)).S("Q").V(Call(r2_14387, V.Undef, Add(Add(bx_20112, ((V)((2.7 * k2_20115)))), ((V)(sw_20111))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(by_20113) - (h_20110 * 0.38)))))).S(" ").V(Call(pt_19452, V.Undef, Arr(bx_20112, by_20113))).S("Q").V(Call(r2_14387, V.Undef, ((V)(((ToNum(bx_20112) - (2.7 * k2_20115)) + sw_20111))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(by_20113) - (h_20110 * 0.38)))))).S(" ").V(Call(pt_19452, V.Undef, tp_20114)).S("Z").End())));
 ti2_20116 = Arr(Add(bx_20112, ((V)((sw_20111 * 1.2)))), ((V)((ToNum(by_20113) - (h_20110 * 0.6)))));
-Call(set_14391, V.Undef, Get(o_20101, "f2"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(pt_19452, V.Undef, ti2_20116)), "Q", ToStr(Call(r2_14387, V.Undef, Add(Add(bx_20112, ((V)((1.2 * k2_20115)))), ((V)((sw_20111 * 0.6)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(by_20113) - (h_20110 * 0.2)))))), " ", ToStr(Call(r2_14387, V.Undef, bx_20112)), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(by_20113) - (0.4 * k2_20115)))))), "Q", ToStr(Call(r2_14387, V.Undef, ((V)(((ToNum(bx_20112) - (1.2 * k2_20115)) + (sw_20111 * 0.6)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(by_20113) - (h_20110 * 0.2)))))), " ", ToStr(Call(pt_19452, V.Undef, ti2_20116)), "Z" }))));
+Call(set_14391, V.Undef, Get(o_20101, "f2"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(pt_19452, V.Undef, ti2_20116)).S("Q").V(Call(r2_14387, V.Undef, Add(Add(bx_20112, ((V)((1.2 * k2_20115)))), ((V)((sw_20111 * 0.6)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(by_20113) - (h_20110 * 0.2)))))).S(" ").V(Call(r2_14387, V.Undef, bx_20112)).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(by_20113) - (0.4 * k2_20115)))))).S("Q").V(Call(r2_14387, V.Undef, ((V)(((ToNum(bx_20112) - (1.2 * k2_20115)) + (sw_20111 * 0.6)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(by_20113) - (h_20110 * 0.2)))))).S(" ").V(Call(pt_19452, V.Undef, ti2_20116)).S("Z").End())));
 Call(set_14391, V.Undef, Get(o_20101, "gw"), ((V)("d")), ((cfo_20109 > 0.02) ? Call(circ_19460, V.Undef, Arr(Add(bx_20112, ((V)(sw_20111))), ((V)((ToNum(by_20113) - (h_20110 * 0.45))))), ((V)((((4.4 * kS_19459) * cfo_20109) * (1D + (ToNum(Call(clamp_14385, V.Undef, (((V)(ToNum(Get(P_14378, "clf")))) is var _t20138 && Truthy(_t20138) ? _t20138 : ((V)(0D))), ((V)(0D)), ((V)(1.5)))) * 0.3)))))) : ((V)("M0 0"))));
 if (SEqN(Get(o_20101, "i"), 1D)) {
 Set(W_14465, "top", tp_20114);
@@ -27446,15 +27446,15 @@ V hR_20142 = default;
 V lmin_20143 = default;
 double s2_20144 = 0;
 V HPt_20145 = default;
-V dF_20146 = default;
-V dB_20147 = default;
+JsStrBuf dF_20146 = null;
+JsStrBuf dB_20147 = null;
 V x0_20148 = default;
 V y0_20149 = default;
 V x1_20150 = default;
 V y1_20151 = default;
 double NT_20152 = 0;
 double NL_20153 = 0;
-V sd3_20154 = default;
+JsStrBuf sd3_20154 = null;
 P3_20139 = Fn((V _self1, int _argc20155, V x_20161, V y_20162, V z_20163, V _a20160, V[] _rest20156) => {
 return Call(sph_14455, V.Undef, Add(((V)(50D)), x_20161), y_20162, z_20163);
 }, 3, "", true);
@@ -27543,8 +27543,8 @@ k_20215++;
 }
 Call(set_14391, V.Undef, Get(Get(B_19450, "dr"), "e"), ((V)("d")), Invoke(H_14370, "closedD", Invoke(H_14370, "hull", hp_20185)));
 if (Truthy(Get(B_19450, "pl"))) {
-V d_20218 = default;
-d_20218 = ((V)(""));
+JsStrBuf d_20218 = null;
+d_20218 = new JsStrBuf("");
 {
 double k_20219 = 0;
 k_20219 = 0D;
@@ -27564,7 +27564,7 @@ double y_20224 = 0;
 V r_20225 = default;
 y_20224 = (69D + (((((88D + (2.6 * FdLibm.Cos((f_20221 + yh_14401)))) - 1.2) - 69D) * j_20222) / 5D));
 r_20225 = Add(Call(rDf_20183, V.Undef, ((V)(Min(88D, y_20224)))), ((V)(0.1)));
-d_20218 = ((V)(string.Concat(ToStr(d_20218), (NumTruthy(j_20222) ? "L" : "M"), ToStr(Call(pt_19452, V.Undef, Call(P3_20139, V.Undef, Add(((V)((ToNum(r_20225) * FdLibm.Sin(f_20221)))), Call(sw_20184, V.Undef, ((V)(y_20224)))), ((V)(y_20224)), ((V)((ToNum(r_20225) * FdLibm.Cos(f_20221))))))))));
+d_20218.S((NumTruthy(j_20222) ? "L" : "M")).V(Call(pt_19452, V.Undef, Call(P3_20139, V.Undef, Add(((V)((ToNum(r_20225) * FdLibm.Sin(f_20221)))), Call(sw_20184, V.Undef, ((V)(y_20224)))), ((V)(y_20224)), ((V)((ToNum(r_20225) * FdLibm.Cos(f_20221)))))));
 j_20222++;
 }
 }
@@ -27572,7 +27572,7 @@ _cont20220: ;
 k_20219++;
 }
 }
-Call(set_14391, V.Undef, Get(B_19450, "pl"), ((V)("d")), (d_20218 is var _t20226 && Truthy(_t20226) ? _t20226 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(B_19450, "pl"), ((V)("d")), (((V)(d_20218.Str)) is var _t20226 && Truthy(_t20226) ? _t20226 : ((V)("M0 0"))));
 }
 zD_20187 = Fn((V _self1, int _argc20227, V x_20233, V y_20234, V k_20235, V _a20232, V[] _rest20228) => {
 return Add(((V)(System.Math.Sqrt(Max(0D, (Pow(ToNum(Call(rDf_20183, V.Undef, ((V)(Min(88D, ToNum(y_20234)))))), 2D) - ((ToNum(x_20233) - 50D) * (ToNum(x_20233) - 50D))))))), k_20235);
@@ -27636,8 +27636,8 @@ w_20284 = Call(SM_14384, V.Undef, ((V)(((0.2 - ToNum(la_20282)) / 0.9))));
 return Arr(((V)((((ToNum(r_20283) * FdLibm.Cos(ToNum(la_20282))) * FdLibm.Sin(ToNum(th_20281))) + (s2_20144 * ToNum(w_20284))))), ((V)(((HC_20141 - (ToNum(r_20283) * FdLibm.Sin(ToNum(la_20282)))) - ((ToNum(oy_19456) * 0.1) * ToNum(w_20284))))), ((V)(((ToNum(r_20283) * FdLibm.Cos(ToNum(la_20282))) * FdLibm.Cos(ToNum(th_20281))))));
 return default;
 }, 2, "", true);
-dF_20146 = ((V)(""));
-dB_20147 = ((V)(""));
+dF_20146 = new JsStrBuf("");
+dB_20147 = new JsStrBuf("");
 x0_20148 = ((V)(1000000000D));
 y0_20149 = ((V)(1000000000D));
 x1_20150 = ((V)((-1000000000D)));
@@ -27691,9 +27691,9 @@ return default;
 }, 1, "", true));
 dd_20297 = Call(poly_19461, V.Undef, Invoke(H_14370, "hull", sc_20296));
 if (((ToNum(zs_20295) / 6D) > 2D)) {
-dF_20146 = Add(dF_20146, dd_20297);
+dF_20146.V(dd_20297);
 } else {
-dB_20147 = Add(dB_20147, dd_20297);
+dB_20147.V(dd_20297);
 }
 j_20291++;
 }
@@ -27701,8 +27701,8 @@ j_20291++;
 i_20285++;
 }
 }
-Call(set_14391, V.Undef, Get(B_19450, "hF"), ((V)("d")), (dF_20146 is var _t20306 && Truthy(_t20306) ? _t20306 : ((V)("M0 0Z"))));
-Call(set_14391, V.Undef, Get(B_19450, "hB"), ((V)("d")), (dB_20147 is var _t20307 && Truthy(_t20307) ? _t20307 : ((V)("M0 0Z"))));
+Call(set_14391, V.Undef, Get(B_19450, "hF"), ((V)("d")), (((V)(dF_20146.Str)) is var _t20306 && Truthy(_t20306) ? _t20306 : ((V)("M0 0Z"))));
+Call(set_14391, V.Undef, Get(B_19450, "hB"), ((V)("d")), (((V)(dB_20147.Str)) is var _t20307 && Truthy(_t20307) ? _t20307 : ((V)("M0 0Z"))));
 {
 double bw_20308 = 0;
 double bh_20309 = 0;
@@ -27712,7 +27712,7 @@ Invoke(Get(B_19450, "hg"), "setAttribute", ((V)("cx")), Call(r2_14387, V.Undef, 
 Invoke(Get(B_19450, "hg"), "setAttribute", ((V)("cy")), Call(r2_14387, V.Undef, Add(y0_20149, ((V)((bh_20309 * 0.3))))));
 Invoke(Get(B_19450, "hg"), "setAttribute", ((V)("r")), Call(r2_14387, V.Undef, ((V)(((bw_20308 + bh_20309) * 0.42)))));
 }
-sd3_20154 = ((V)(""));
+sd3_20154 = new JsStrBuf("");
 Invoke(Arr(((V)((-0.8))), ((V)((-0.4))), ((V)(0D)), ((V)(0.4)), ((V)(0.8))), "forEach", Fn((V _self1, int _argc20310, V o2_20316, V _a20313, V _a20314, V _a20315, V[] _rest20311) => {
 V th_20317 = default;
 V P2_20318 = default;
@@ -27732,12 +27732,12 @@ return Add(s_20327, CallSpread(Z3_20140, V.Undef, new ArrBuilder().Spread(p_2032
 }, 2, "", true), ((V)(0D)))) / ToNum(Get(P2_20318, "length"))) < 4D)) {
 return default;
 }
-sd3_20154 = ((V)(string.Concat(ToStr(sd3_20154), "M", ToStr(Invoke(Invoke(P2_20318, "map", Fn((V _self1, int _argc20329, V p_20335, V _a20332, V _a20333, V _a20334, V[] _rest20330) => {
+sd3_20154.S("M").V(Invoke(Invoke(P2_20318, "map", Fn((V _self1, int _argc20329, V p_20335, V _a20332, V _a20333, V _a20334, V[] _rest20330) => {
 return Call(pt_19452, V.Undef, CallSpread(P3_20139, V.Undef, new ArrBuilder().Spread(p_20335).V));
-}, 1, "", true)), "join", ((V)("L")))))));
+}, 1, "", true)), "join", ((V)("L"))));
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(B_19450, "hS"), ((V)("d")), (sd3_20154 is var _t20336 && Truthy(_t20336) ? _t20336 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(B_19450, "hS"), ((V)("d")), (((V)(sd3_20154.Str)) is var _t20336 && Truthy(_t20336) ? _t20336 : ((V)("M0 0"))));
 if (Get(B_19450, "bv").IsNullish) {
 Set(B_19450, "bb2", ((V)(0D)));
 Set(B_19450, "bv", ((V)(0D)));
@@ -27748,7 +27748,7 @@ Invoke(Get(B_19450, "BN"), "forEach", Fn((V _self1, int _argc20338, V o_20344, V
 V C_20345 = default;
 V p_20346 = default;
 double r_20347 = 0;
-V l_20348 = default;
+JsStrBuf l_20348 = null;
 V pen_20349 = default;
 V fr_20350 = default;
 C_20345 = Arr(((V)(((ToNum(Get(o_20344, "sd")) * 18.5) + (s2_20144 * 0.8)))), ((V)((26.5 + (ToNum(Get(B_19450, "bb2")) * 0.5)))), ((V)((-3D))));
@@ -27756,7 +27756,7 @@ p_20346 = CallSpread(P3_20139, V.Undef, new ArrBuilder().Spread(C_20345).V);
 r_20347 = (7D * kS_19459);
 Call(set_14391, V.Undef, Get(o_20344, "e"), ((V)("d")), Call(circ_19460, V.Undef, p_20346, ((V)(r_20347))));
 Call(set_14391, V.Undef, Get(o_20344, "h"), ((V)("d")), Call(ell_19462, V.Undef, ((V)((ToNum(GetIdx(p_20346, 0D)) - (r_20347 * 0.35)))), ((V)((ToNum(GetIdx(p_20346, 1D)) - (r_20347 * 0.4)))), ((V)((r_20347 * 0.28))), ((V)((r_20347 * 0.18)))));
-l_20348 = ((V)(""));
+l_20348 = new JsStrBuf("");
 pen_20349 = (false ? V.True : V.False);
 {
 double k_20351 = 0;
@@ -27768,7 +27768,7 @@ V q_20354 = default;
 b_20353 = ((k_20351 / 24D) * ToNum(TAU_14389));
 q_20354 = Arr(Add(GetIdx(C_20345, 0D), ((V)(((7.05 * FdLibm.Cos(0.25)) * FdLibm.Sin(b_20353))))), ((V)(((ToNum(GetIdx(C_20345, 1D)) - (7.05 * FdLibm.Sin(0.25))) + (1.2 * FdLibm.Sin((b_20353 * 2D)))))), Add(GetIdx(C_20345, 2D), ((V)(((7.05 * FdLibm.Cos(0.25)) * FdLibm.Cos(b_20353))))));
 if (((ToNum(CallSpread(Z3_20140, V.Undef, new ArrBuilder().Spread(q_20354).V)) - ToNum(CallSpread(Z3_20140, V.Undef, new ArrBuilder().Spread(C_20345).V))) > 1D)) {
-l_20348 = ((V)(string.Concat(ToStr(l_20348), (Truthy(pen_20349) ? "L" : "M"), ToStr(Call(pt_19452, V.Undef, CallSpread(P3_20139, V.Undef, new ArrBuilder().Spread(q_20354).V))))));
+l_20348.S((Truthy(pen_20349) ? "L" : "M")).V(Call(pt_19452, V.Undef, CallSpread(P3_20139, V.Undef, new ArrBuilder().Spread(q_20354).V)));
 pen_20349 = (true ? V.True : V.False);
 } else {
 pen_20349 = (false ? V.True : V.False);
@@ -27776,7 +27776,7 @@ pen_20349 = (false ? V.True : V.False);
 k_20351++;
 }
 }
-Call(set_14391, V.Undef, Get(o_20344, "l"), ((V)("d")), (l_20348 is var _t20355 && Truthy(_t20355) ? _t20355 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(o_20344, "l"), ((V)("d")), (((V)(l_20348.Str)) is var _t20355 && Truthy(_t20355) ? _t20355 : ((V)("M0 0"))));
 fr_20350 = (GtN(CallSpread(Z3_20140, V.Undef, new ArrBuilder().Spread(C_20345).V), 6D) ? V.True : V.False);
 if (!SEq(Get(o_20344, "fr"), fr_20350)) {
 Set(o_20344, "fr", fr_20350);
@@ -27794,7 +27794,7 @@ V bt_20361 = default;
 V bb0_20362 = default;
 V ft_20363 = default;
 V fb_20364 = default;
-V bd_20365 = default;
+JsStrBuf bd_20365 = null;
 V gp_20366 = default;
 V gv_20367 = default;
 rc_20356 = 10.2;
@@ -27857,9 +27857,9 @@ ft_20363 = _t20401; }
 { V _t20402 = GetIdx(_t20400, 1D);
 fb_20364 = _t20402; }
 } }
-Call(set_14391, V.Undef, Get(B_19450, "cbk"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(bt_20361, "concat", Invoke(bb0_20362, "reverse")), "map", pt_19452), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(B_19450, "cfr"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(ft_20363, "concat", Invoke(Invoke(fb_20364, "slice"), "reverse")), "map", pt_19452), "join", ((V)("L")))), "Z"))));
-bd_20365 = ((V)(""));
+Call(set_14391, V.Undef, Get(B_19450, "cbk"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(bt_20361, "concat", Invoke(bb0_20362, "reverse")), "map", pt_19452), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(B_19450, "cfr"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(ft_20363, "concat", Invoke(Invoke(fb_20364, "slice"), "reverse")), "map", pt_19452), "join", ((V)("L")))).S("Z").End())));
+bd_20365 = new JsStrBuf("");
 {
 double j_20403 = 0;
 j_20403 = 0D;
@@ -27867,11 +27867,11 @@ while (true) {
 if (!((j_20403 <= 40D))) break;
 double f_20405 = 0;
 f_20405 = ((((-System.Math.PI) / 2D) + ((j_20403 / 40D) * System.Math.PI)) - yh_14401);
-bd_20365 = ((V)(string.Concat(ToStr(bd_20365), (NumTruthy(j_20403) ? "L" : "M"), ToStr(Call(pt_19452, V.Undef, Call(P3_20139, V.Undef, ((V)((cx_20358 + ((rc_20356 + 0.1) * FdLibm.Sin(f_20405))))), ((V)((yb0_20357 - 2D))), ((V)(((rc_20356 + 0.1) * FdLibm.Cos(f_20405))))))))));
+bd_20365.S((NumTruthy(j_20403) ? "L" : "M")).V(Call(pt_19452, V.Undef, Call(P3_20139, V.Undef, ((V)((cx_20358 + ((rc_20356 + 0.1) * FdLibm.Sin(f_20405))))), ((V)((yb0_20357 - 2D))), ((V)(((rc_20356 + 0.1) * FdLibm.Cos(f_20405)))))));
 j_20403++;
 }
 }
-Call(set_14391, V.Undef, Get(B_19450, "cbd"), ((V)("d")), bd_20365);
+Call(set_14391, V.Undef, Get(B_19450, "cbd"), ((V)("d")), ((V)(bd_20365.Str)));
 gp_20366 = Call(P3_20139, V.Undef, ((V)(cx_20358)), ((V)((yb0_20357 - 4.2))), ((V)((rc_20356 + 0.4))));
 gv_20367 = Call(r2_14387, V.Undef, Call(SM_14384, V.Undef, ((V)(((FdLibm.Cos(yh_14401) - 0.1) / 0.25)))));
 Call(set_14391, V.Undef, Get(B_19450, "gem"), ((V)("d")), Call(circ_19460, V.Undef, gp_20366, ((V)((1.6 * kS_19459)))));
@@ -27891,8 +27891,8 @@ double sw_20411 = 0;
 V F_20412 = default;
 V FZ_20413 = default;
 V hp_20414 = default;
-V dP_20415 = default;
-V dL_20416 = default;
+JsStrBuf dP_20415 = null;
+JsStrBuf dL_20416 = null;
 double cb_20417 = 0;
 V C_20418 = default;
 double cr_20419 = 0;
@@ -27947,8 +27947,8 @@ i_20456++;
 }
 }
 Set(B_19450, "d", Invoke(H_14370, "closedD", Invoke(H_14370, "hull", hp_20414)));
-dP_20415 = ((V)(""));
-dL_20416 = ((V)(""));
+dP_20415 = new JsStrBuf("");
+dL_20416 = new JsStrBuf("");
 {
 double k_20463 = 0;
 k_20463 = 0D;
@@ -27976,8 +27976,8 @@ V p_20473 = default;
 V c_20474 = default;
 p_20473 = Call(sph_14455, V.Undef, ((V)((50D + X_20471))), ((V)(y_20469)), ((V)(Z_20472)));
 c_20474 = ((V)((Truthy(pen_20466) ? "L" : "M")));
-dP_20415 = Add(dP_20415, Add(c_20474, Call(pt_19452, V.Undef, p_20473)));
-dL_20416 = ((V)(string.Concat(ToStr(dL_20416), ToStr(Add(c_20474, Call(r2_14387, V.Undef, Add(GetIdx(p_20473, 0D), ((V)(0.55)))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_20473, 1D))))));
+dP_20415.V(Add(c_20474, Call(pt_19452, V.Undef, p_20473)));
+dL_20416.V(Add(c_20474, Call(r2_14387, V.Undef, Add(GetIdx(p_20473, 0D), ((V)(0.55)))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_20473, 1D)));
 pen_20466 = (true ? V.True : V.False);
 } else {
 pen_20466 = (false ? V.True : V.False);
@@ -27988,15 +27988,15 @@ j_20467++;
 k_20463++;
 }
 }
-Call(set_14391, V.Undef, Get(B_19450, "pl"), ((V)("d")), (dP_20415 is var _t20475 && Truthy(_t20475) ? _t20475 : ((V)("M0 0"))));
-Call(set_14391, V.Undef, Get(B_19450, "plL"), ((V)("d")), (dL_20416 is var _t20476 && Truthy(_t20476) ? _t20476 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(B_19450, "pl"), ((V)("d")), (((V)(dP_20415.Str)) is var _t20475 && Truthy(_t20475) ? _t20475 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(B_19450, "plL"), ((V)("d")), (((V)(dL_20416.Str)) is var _t20476 && Truthy(_t20476) ? _t20476 : ((V)("M0 0"))));
 Invoke(Get(B_19450, "T"), "forEach", Fn((V _self1, int _argc20477, V T_20483, V ti_20484, V _a20481, V _a20482, V[] _rest20478) => {
 double rt_20485 = 0;
 V hq_20486 = default;
 V d_20487 = default;
 double rb_20488 = 0;
-V gD_20489 = default;
-V gL_20490 = default;
+JsStrBuf gD_20489 = null;
+JsStrBuf gL_20490 = null;
 V sd_20491 = default;
 rt_20485 = ((ToNum(fsw_20407) * ToNum(TAU_14389)) + ((FdLibm.Sin((ToNum(fsw_20407) * System.Math.PI)) * (ToNum(ti_20484) - 1D)) * 0.9));
 hq_20486 = Arr();
@@ -28050,8 +28050,8 @@ k_20499++;
 }
 }
 Call(set_14391, V.Undef, Get(T_20483, "e"), ((V)("d")), d_20487);
-gD_20489 = ((V)(""));
-gL_20490 = ((V)(""));
+gD_20489 = new JsStrBuf("");
+gL_20490 = new JsStrBuf("");
 Invoke(Arr(Arr(((V)((ToNum(Get(T_20483, "yb")) - 2.4))), ((V)(0D))), Arr(Add(Get(T_20483, "yt"), ((V)(((ToNum(Get(T_20483, "yb")) - ToNum(Get(T_20483, "yt"))) * 0.42)))), ((V)(1D)))), "forEach", Fn((V _self1, int _argc20504, V _a20506, V _a20507, V _a20508, V _a20509, V[] _rest20505) => {
 V pen_20515 = default;
 V yy_20512 = default;
@@ -28086,9 +28086,9 @@ V c_20525 = default;
 p_20524 = Call(F_20412, V.Undef, ((V)(X_20521)), y_20519, ((V)(Z_20522)));
 c_20525 = ((V)((Truthy(pen_20515) ? "L" : "M")));
 if (Truthy(hl_20514)) {
-gL_20490 = Add(gL_20490, Add(c_20525, Call(pt_19452, V.Undef, p_20524)));
+gL_20490.V(Add(c_20525, Call(pt_19452, V.Undef, p_20524)));
 } else {
-gD_20489 = Add(gD_20489, Add(c_20525, Call(pt_19452, V.Undef, p_20524)));
+gD_20489.V(Add(c_20525, Call(pt_19452, V.Undef, p_20524)));
 }
 pen_20515 = (true ? V.True : V.False);
 } else {
@@ -28099,8 +28099,8 @@ j_20516++;
 }
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(T_20483, "gd"), ((V)("d")), (gD_20489 is var _t20526 && Truthy(_t20526) ? _t20526 : ((V)("M0 0"))));
-Call(set_14391, V.Undef, Get(T_20483, "gl"), ((V)("d")), (gL_20490 is var _t20527 && Truthy(_t20527) ? _t20527 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(T_20483, "gd"), ((V)("d")), (((V)(gD_20489.Str)) is var _t20526 && Truthy(_t20526) ? _t20526 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(T_20483, "gl"), ((V)("d")), (((V)(gL_20490.Str)) is var _t20527 && Truthy(_t20527) ? _t20527 : ((V)("M0 0"))));
 sd_20491 = Arr(((V)("")), ((V)("")), ((V)("")));
 Invoke(Get(T_20483, "SP"), "forEach", Fn((V _self1, int _argc20528, V o_20534, V _a20531, V _a20532, V _a20533, V[] _rest20529) => {
 V r_20535 = default;
@@ -28124,7 +28124,7 @@ ca_20540 = (FdLibm.Cos(ToNum(Get(o_20534, "a"))) * 1.3);
 sa_20541 = (FdLibm.Sin(ToNum(Get(o_20534, "a"))) * 1.3);
 a_20542 = Call(F_20412, V.Undef, ((V)((X_20538 + (cf_20537 * ca_20540)))), Add(Get(o_20534, "y"), ((V)(sa_20541))), ((V)((Z_20539 - (sf_20536 * ca_20540)))));
 b_20543 = Call(F_20412, V.Undef, ((V)((X_20538 - (cf_20537 * ca_20540)))), ((V)((ToNum(Get(o_20534, "y")) - sa_20541))), ((V)((Z_20539 + (sf_20536 * ca_20540)))));
-OpSetK(sd_20491, Get(o_20534, "c"), 0, ((V)(string.Concat("M", ToStr(Call(pt_19452, V.Undef, a_20542)), "L", ToStr(Call(pt_19452, V.Undef, b_20543))))));
+OpSetK(sd_20491, Get(o_20534, "c"), 0, ((V)(JsStrBuf.Begin().S("M").V(Call(pt_19452, V.Undef, a_20542)).S("L").V(Call(pt_19452, V.Undef, b_20543)).End())));
 return default;
 }, 1, "", true));
 Invoke(Get(T_20483, "sp"), "forEach", Fn((V _self1, int _argc20544, V e_20550, V i_20551, V _a20548, V _a20549, V[] _rest20545) => {
@@ -28151,7 +28151,7 @@ Invoke(SP_20420, "push", Call(F_20412, V.Undef, ((V)((((1.5 + (((2D * (1D - u_20
 k_20553++;
 }
 }
-Call(set_14391, V.Undef, Get(B_19450, "stem"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(SP_20420, "map", pt_19452), "join", ((V)("L"))))))));
+Call(set_14391, V.Undef, Get(B_19450, "stem"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(SP_20420, "map", pt_19452), "join", ((V)("L")))).End())));
 Set(W_14465, "top", GetIdx(SP_20420, 8D));
 }
 if (SEqS(Get(B_19450, "kind"), "chip")) {
@@ -28162,16 +28162,16 @@ V R_20560 = default;
 V c0_20561 = default;
 V c1_20562 = default;
 V rimAt_20563 = default;
-V d_20564 = default;
+JsStrBuf d_20564 = null;
 V Fp_20565 = default;
 V Bp_20566 = default;
 double fz_20567 = 0;
 V fr_20568 = default;
 double sdv_20569 = 0;
 V ev_20570 = default;
-V dc_20571 = default;
-V dh_20572 = default;
-V dk_20573 = default;
+JsStrBuf dc_20571 = null;
+JsStrBuf dh_20572 = null;
+JsStrBuf dk_20573 = null;
 T_20557 = Get(B_19450, "T");
 D_20558 = Get(B_19450, "D");
 ZF_20559 = Get(B_19450, "ZF");
@@ -28183,7 +28183,7 @@ return Invoke(R_20560, "map", Fn((V _self1, int _argc20582, V p_20588, V _a20585
 return Call(sph_14455, V.Undef, Add(c0_20561, ((V)(((ToNum(GetIdx(p_20588, 0D)) - ToNum(c0_20561)) * ToNum(s_20580))))), Add(c1_20562, ((V)(((ToNum(GetIdx(p_20588, 1D)) - ToNum(c1_20562)) * ToNum(s_20580))))), z_20581);
 }, 1, "", true));
 }, 2, "", true);
-d_20564 = ((V)(""));
+d_20564 = new JsStrBuf("");
 Invoke(Arr(Arr(((V)(1D)), T_20557), Arr(((V)(1D)), ((V)((-ToNum(T_20557))))), Arr(((V)(0.8)), Add(T_20557, ((V)((ToNum(D_20558) * 0.36))))), Arr(((V)(0.8)), ((V)(((-ToNum(T_20557)) - (ToNum(D_20558) * 0.36))))), Arr(((V)(0.5)), Add(T_20557, ((V)((ToNum(D_20558) * 0.75))))), Arr(((V)(0.5)), ((V)(((-ToNum(T_20557)) - (ToNum(D_20558) * 0.75)))))), "forEach", Fn((V _self1, int _argc20589, V _a20591, V _a20592, V _a20593, V _a20594, V[] _rest20590) => {
 V s_20597 = default;
 V z_20599 = default;
@@ -28193,7 +28193,7 @@ s_20597 = _t20596; }
 { V _t20598 = GetIdx(_t20595, 1D);
 z_20599 = _t20598; }
 }
-d_20564 = Add(d_20564, Call(poly_19461, V.Undef, Call(rimAt_20563, V.Undef, s_20597, z_20599)));
+d_20564.V(Call(poly_19461, V.Undef, Call(rimAt_20563, V.Undef, s_20597, z_20599)));
 return default;
 }, 1, "", true));
 Fp_20565 = Call(rimAt_20563, V.Undef, ((V)(1D)), T_20557);
@@ -28205,11 +28205,11 @@ while (true) {
 if (!(Lt(((V)(i_20600)), Get(R_20560, "length")))) break;
 double j_20602 = 0;
 j_20602 = ((i_20600 + 1D) % ToNum(Get(R_20560, "length")));
-d_20564 = Add(d_20564, Call(poly_19461, V.Undef, Arr(GetIdx(Fp_20565, i_20600), GetIdx(Fp_20565, j_20602), GetIdx(Bp_20566, j_20602), GetIdx(Bp_20566, i_20600))));
+d_20564.V(Call(poly_19461, V.Undef, Arr(GetIdx(Fp_20565, i_20600), GetIdx(Fp_20565, j_20602), GetIdx(Bp_20566, j_20602), GetIdx(Bp_20566, i_20600))));
 i_20600++;
 }
 }
-Set(B_19450, "d", d_20564);
+Set(B_19450, "d", ((V)(d_20564.Str)));
 fz_20567 = (ToNum(Call(sphZ_14456, V.Undef, c0_20561, c1_20562, Add(T_20557, ((V)(1D))))) - ToNum(Call(sphZ_14456, V.Undef, c0_20561, c1_20562, T_20557)));
 fr_20568 = ((fz_20567 >= 0D) ? V.True : V.False);
 sdv_20569 = (Truthy(fr_20568) ? 1D : (-1D));
@@ -28221,8 +28221,8 @@ V mx_20604 = default;
 V dsc_20605 = default;
 double zr_20606 = 0;
 V ring_20607 = default;
-V ck_20608 = default;
-V cl_20609 = default;
+JsStrBuf ck_20608 = null;
+JsStrBuf cl_20609 = null;
 zf_20603 = Fn((V _self1, int _argc20610, V x_20616, V y_20617, V _a20614, V _a20615, V[] _rest20611) => {
 return ((V)((sdv_20569 * ToNum(Add(Call(ZF_20559, V.Undef, x_20616, y_20617), ((V)(0.05)))))));
 }, 2, "", true);
@@ -28252,7 +28252,7 @@ V o_20646 = default;
 V i_20647 = default;
 o_20646 = Call(rimAt_20563, V.Undef, s0_20644, ((V)(zr_20606)));
 i_20647 = Call(rimAt_20563, V.Undef, s1_20645, ((V)((sdv_20569 * ToNum(Add(Add(T_20557, ((V)(((ToNum(D_20558) * (1D - (ToNum(s1_20645) * ToNum(s1_20645)))) * 0.9)))), ((V)(0.05))))))));
-return ((V)(string.Concat(new string[] { "M", ToStr(Invoke(Invoke(o_20646, "map", pt_19452), "join", ((V)("L")))), "Z M", ToStr(Invoke(Invoke(i_20647, "map", pt_19452), "join", ((V)("L")))), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(o_20646, "map", pt_19452), "join", ((V)("L")))).S("Z M").V(Invoke(Invoke(i_20647, "map", pt_19452), "join", ((V)("L")))).S("Z").End()));
 return default;
 }, 2, "", true);
 Call(set_14391, V.Undef, Get(B_19450, "edge"), ((V)("d")), Call(ring_20607, V.Undef, ((V)(1D)), ((V)(0.88))));
@@ -28267,21 +28267,21 @@ Call(set_14391, V.Undef, Get(B_19450, "pit"), ((V)("d")), Invoke(Invoke(Get(B_19
 return Call(dsc_20605, V.Undef, GetIdx(o_20668, 0D), GetIdx(o_20668, 1D), ((V)((ToNum(GetIdx(o_20668, 2D)) * 1.4))));
 }, 1, "", true)), "join", ((V)(""))));
 Call(set_14391, V.Undef, Get(B_19450, "shn"), ((V)("d")), Add(Call(dsc_20605, V.Undef, ((V)((Truthy(fr_20568) ? 36D : 64D))), ((V)(40D)), ((V)(9D))), Call(dsc_20605, V.Undef, ((V)((Truthy(fr_20568) ? 32D : 68D))), ((V)(48D)), ((V)(5D)))));
-ck_20608 = ((V)(""));
-cl_20609 = ((V)(""));
+ck_20608 = new JsStrBuf("");
+cl_20609 = new JsStrBuf("");
 Invoke(Get(B_19450, "CK"), "forEach", Fn((V _self1, int _argc20669, V L_20675, V _a20672, V _a20673, V _a20674, V[] _rest20670) => {
 V Q_20676 = default;
 Q_20676 = Invoke(L_20675, "map", Fn((V _self1, int _argc20677, V p_20683, V _a20680, V _a20681, V _a20682, V[] _rest20678) => {
 return Call(sph_14455, V.Undef, Call(mx_20604, V.Undef, GetIdx(p_20683, 0D)), GetIdx(p_20683, 1D), Call(zf_20603, V.Undef, Call(mx_20604, V.Undef, GetIdx(p_20683, 0D)), GetIdx(p_20683, 1D)));
 }, 1, "", true));
-ck_20608 = ((V)(string.Concat(ToStr(ck_20608), "M", ToStr(Invoke(Invoke(Q_20676, "map", pt_19452), "join", ((V)("L")))))));
-cl_20609 = ((V)(string.Concat(ToStr(cl_20609), "M", ToStr(Invoke(Invoke(Q_20676, "map", Fn((V _self1, int _argc20684, V p_20690, V _a20687, V _a20688, V _a20689, V[] _rest20685) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_20690, 0D)) - 0.4))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_20690, 1D)) - 0.45))))))));
-}, 1, "", true)), "join", ((V)("L")))))));
+ck_20608.S("M").V(Invoke(Invoke(Q_20676, "map", pt_19452), "join", ((V)("L"))));
+cl_20609.S("M").V(Invoke(Invoke(Q_20676, "map", Fn((V _self1, int _argc20684, V p_20690, V _a20687, V _a20688, V _a20689, V[] _rest20685) => {
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_20690, 0D)) - 0.4))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_20690, 1D)) - 0.45))))).End()));
+}, 1, "", true)), "join", ((V)("L"))));
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(B_19450, "crk"), ((V)("d")), ck_20608);
-Call(set_14391, V.Undef, Get(B_19450, "crkL"), ((V)("d")), cl_20609);
+Call(set_14391, V.Undef, Get(B_19450, "crk"), ((V)("d")), ((V)(ck_20608.Str)));
+Call(set_14391, V.Undef, Get(B_19450, "crkL"), ((V)("d")), ((V)(cl_20609.Str)));
 Invoke(Arr(Arr(Get(B_19450, "edge"), ((V)(0.5))), Arr(Get(B_19450, "edge2"), ((V)(0.35))), Arr(Get(B_19450, "tst"), ((V)(0.32))), Arr(Get(B_19450, "tst2"), ((V)(0.28))), Arr(Get(B_19450, "shn"), ((V)(0.35))), Arr(Get(B_19450, "crk"), ((V)(0.55))), Arr(Get(B_19450, "crkL"), ((V)(0.5))), Arr(Get(B_19450, "pit"), ((V)(0.5)))), "forEach", Fn((V _self1, int _argc20691, V _a20693, V _a20694, V _a20695, V _a20696, V[] _rest20692) => {
 V e_20699 = default;
 V o_20701 = default;
@@ -28294,8 +28294,8 @@ o_20701 = _t20700; }
 return Call(set_14391, V.Undef, e_20699, ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((ToNum(o_20701) * ToNum(ev_20570))))));
 }, 1, "", true));
 }
-dc_20571 = ((V)(""));
-dh_20572 = ((V)(""));
+dc_20571 = new JsStrBuf("");
+dh_20572 = new JsStrBuf("");
 Invoke(Get(B_19450, "CH"), "forEach", Fn((V _self1, int _argc20702, V o_20708, V _a20705, V _a20706, V _a20707, V[] _rest20703) => {
 double z0_20709 = 0;
 V Q_20710 = default;
@@ -28316,20 +28316,20 @@ k_20711++;
 }
 }
 Invoke(Q_20710, "push", Call(sph_14455, V.Undef, Add(Get(o_20708, "x"), ((V)((0.2 * ToNum(Get(o_20708, "s")))))), ((V)((ToNum(Get(o_20708, "y")) - (ToNum(Get(o_20708, "s")) * 0.3)))), ((V)((z0_20709 + ((sdv_20569 * ToNum(Get(o_20708, "s"))) * 0.55))))));
-dc_20571 = Add(dc_20571, Call(poly_19461, V.Undef, Invoke(H_14370, "hull", Q_20710)));
-dh_20572 = Add(dh_20572, Call(circ_19460, V.Undef, Call(sph_14455, V.Undef, ((V)((ToNum(Get(o_20708, "x")) - (ToNum(Get(o_20708, "s")) * 0.3)))), ((V)((ToNum(Get(o_20708, "y")) - (ToNum(Get(o_20708, "s")) * 0.45)))), ((V)((z0_20709 + ((sdv_20569 * ToNum(Get(o_20708, "s"))) * 0.42))))), ((V)(((ToNum(Get(o_20708, "s")) * 0.26) * kS_19459)))));
+dc_20571.V(Call(poly_19461, V.Undef, Invoke(H_14370, "hull", Q_20710)));
+dh_20572.V(Call(circ_19460, V.Undef, Call(sph_14455, V.Undef, ((V)((ToNum(Get(o_20708, "x")) - (ToNum(Get(o_20708, "s")) * 0.3)))), ((V)((ToNum(Get(o_20708, "y")) - (ToNum(Get(o_20708, "s")) * 0.45)))), ((V)((z0_20709 + ((sdv_20569 * ToNum(Get(o_20708, "s"))) * 0.42))))), ((V)(((ToNum(Get(o_20708, "s")) * 0.26) * kS_19459)))));
 return default;
 }, 1, "", true));
-dk_20573 = ((V)(""));
+dk_20573 = new JsStrBuf("");
 if (Truthy(fr_20568)) {
 Invoke(Get(B_19450, "CR"), "forEach", Fn((V _self1, int _argc20714, V o_20720, V _a20717, V _a20718, V _a20719, V[] _rest20715) => {
-dk_20573 = Add(dk_20573, Call(circ_19460, V.Undef, Call(sph_14455, V.Undef, GetIdx(o_20720, 0D), GetIdx(o_20720, 1D), Add(Call(ZF_20559, V.Undef, GetIdx(o_20720, 0D), GetIdx(o_20720, 1D)), ((V)(0.1)))), ((V)((ToNum(GetIdx(o_20720, 2D)) * kS_19459)))));
+dk_20573.V(Call(circ_19460, V.Undef, Call(sph_14455, V.Undef, GetIdx(o_20720, 0D), GetIdx(o_20720, 1D), Add(Call(ZF_20559, V.Undef, GetIdx(o_20720, 0D), GetIdx(o_20720, 1D)), ((V)(0.1)))), ((V)((ToNum(GetIdx(o_20720, 2D)) * kS_19459)))));
 return default;
 }, 1, "", true));
 }
-Call(set_14391, V.Undef, Get(B_19450, "ce"), ((V)("d")), (dc_20571 is var _t20721 && Truthy(_t20721) ? _t20721 : ((V)("M0 0"))));
-Call(set_14391, V.Undef, Get(B_19450, "chh"), ((V)("d")), (dh_20572 is var _t20722 && Truthy(_t20722) ? _t20722 : ((V)("M0 0"))));
-Call(set_14391, V.Undef, Get(B_19450, "cr"), ((V)("d")), (dk_20573 is var _t20723 && Truthy(_t20723) ? _t20723 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(B_19450, "ce"), ((V)("d")), (((V)(dc_20571.Str)) is var _t20721 && Truthy(_t20721) ? _t20721 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(B_19450, "chh"), ((V)("d")), (((V)(dh_20572.Str)) is var _t20722 && Truthy(_t20722) ? _t20722 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(B_19450, "cr"), ((V)("d")), (((V)(dk_20573.Str)) is var _t20723 && Truthy(_t20723) ? _t20723 : ((V)("M0 0"))));
 Invoke(Arr(Get(B_19450, "ce"), Get(B_19450, "chh"), Get(B_19450, "cr")), "forEach", Fn((V _self1, int _argc20724, V e_20730, V _a20727, V _a20728, V _a20729, V[] _rest20725) => {
 return Call(set_14391, V.Undef, e_20730, ((V)("opacity")), ev_20570);
 }, 1, "", true));
@@ -28346,7 +28346,7 @@ V pr_20738 = default;
 V lay_20739 = default;
 V all_20740 = default;
 V setP_20741 = default;
-V dS_20742 = default;
+JsStrBuf dS_20742 = null;
 S_20731 = Get(B_19450, "S");
 front_20732 = (((cyh_14405 * cp_14407) >= 0D) ? V.True : V.False);
 lag_20733 = Fn((V _self1, int _argc20743, V y_20749, V _a20746, V _a20747, V _a20748, V[] _rest20744) => {
@@ -28370,12 +28370,12 @@ return Arr(GetIdx(p_20768, 0D), GetIdx(p_20768, 1D), ((V)((ToNum(Get(o_20766, "r
 return default;
 }, 1, "", true));
 lay_20739 = Fn((V _self1, int _argc20769, V ix_20775, V _a20772, V _a20773, V _a20774, V[] _rest20770) => {
-V b_20776 = default;
-V m_20777 = default;
-V h_20778 = default;
-b_20776 = ((V)(""));
-m_20777 = ((V)(""));
-h_20778 = ((V)(""));
+JsStrBuf b_20776 = null;
+JsStrBuf m_20777 = null;
+JsStrBuf h_20778 = null;
+b_20776 = new JsStrBuf("");
+m_20777 = new JsStrBuf("");
+h_20778 = new JsStrBuf("");
 Invoke(ix_20775, "forEach", Fn((V _self1, int _argc20779, V i_20785, V _a20782, V _a20783, V _a20784, V[] _rest20780) => {
 V x_20786 = default;
 V y_20787 = default;
@@ -28389,12 +28389,12 @@ y_20787 = _t20792; }
 { V _t20793 = GetIdx(_t20790, 2D);
 r_20788 = _t20793; }
 } }
-b_20776 = Add(b_20776, Call(circ_19460, V.Undef, Arr(x_20786, y_20787), r_20788));
-m_20777 = Add(m_20777, Call(circ_19460, V.Undef, Arr(((V)((ToNum(x_20786) - (0.07 * ToNum(r_20788))))), ((V)((ToNum(y_20787) - (0.09 * ToNum(r_20788)))))), ((V)((ToNum(r_20788) * 0.89)))));
-h_20778 = Add(h_20778, Call(circ_19460, V.Undef, Arr(((V)((ToNum(x_20786) - (0.3 * ToNum(r_20788))))), ((V)((ToNum(y_20787) - (0.36 * ToNum(r_20788)))))), ((V)((ToNum(r_20788) * 0.42)))));
+b_20776.V(Call(circ_19460, V.Undef, Arr(x_20786, y_20787), r_20788));
+m_20777.V(Call(circ_19460, V.Undef, Arr(((V)((ToNum(x_20786) - (0.07 * ToNum(r_20788))))), ((V)((ToNum(y_20787) - (0.09 * ToNum(r_20788)))))), ((V)((ToNum(r_20788) * 0.89)))));
+h_20778.V(Call(circ_19460, V.Undef, Arr(((V)((ToNum(x_20786) - (0.3 * ToNum(r_20788))))), ((V)((ToNum(y_20787) - (0.36 * ToNum(r_20788)))))), ((V)((ToNum(r_20788) * 0.42)))));
 return default;
 }, 1, "", true));
-return Arr(b_20776, m_20777, h_20778);
+return Arr(((V)(b_20776.Str)), ((V)(m_20777.Str)), ((V)(h_20778.Str)));
 return default;
 }, 1, "", true);
 {
@@ -28424,7 +28424,7 @@ return default;
 Call(setP_20741, V.Undef, GetIdx(Get(B_19450, "px"), 0D), (Truthy(front_20732) ? Get(B_19450, "aX") : Get(B_19450, "bX")), (Truthy(front_20732) ? Get(B_19450, "aXc") : Get(B_19450, "bXc")));
 Call(setP_20741, V.Undef, GetIdx(Get(B_19450, "px"), 1D), (Truthy(front_20732) ? Get(B_19450, "aE") : Get(B_19450, "belA")), Get(B_19450, "aEc"));
 Call(setP_20741, V.Undef, GetIdx(Get(B_19450, "px"), 2D), (Truthy(front_20732) ? Get(B_19450, "bE") : Get(B_19450, "belB")), Get(B_19450, "bEc"));
-dS_20742 = ((V)(""));
+dS_20742 = new JsStrBuf("");
 Invoke(Get(B_19450, "SL"), "forEach", Fn((V _self1, int _argc20817, V o_20823, V _a20820, V _a20821, V _a20822, V[] _rest20818) => {
 V s_20824 = default;
 double c_20825 = 0;
@@ -28447,10 +28447,10 @@ return default;
 u_20830 = Call(lag_20733, V.Undef, GetIdx(q_20829, 1D));
 p_20831 = Call(sph_14455, V.Undef, Add(Add(GetIdx(q_20829, 0D), ((V)((LX_20735 * ToNum(u_20830))))), Call(WV_20737, V.Undef, GetIdx(q_20829, 0D), GetIdx(q_20829, 1D))), ((V)((ToNum(GetIdx(q_20829, 1D)) - ((ToNum(oy_19456) * 0.3) * ToNum(u_20830))))), GetIdx(q_20829, 2D));
 k_20832 = (1.1 * kS_19459);
-dS_20742 = ((V)(string.Concat(new string[] { ToStr(dS_20742), "M", ToStr(Call(r2_14387, V.Undef, GetIdx(p_20831, 0D))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_20831, 1D)) - k_20832))))), "L", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_20831, 0D), ((V)((k_20832 * 0.9)))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_20831, 1D))), "L", ToStr(Call(r2_14387, V.Undef, GetIdx(p_20831, 0D))), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(p_20831, 1D), ((V)(k_20832))))), "L", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_20831, 0D)) - (k_20832 * 0.9)))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_20831, 1D))), "Z" })));
+dS_20742.S("M").V(Call(r2_14387, V.Undef, GetIdx(p_20831, 0D))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_20831, 1D)) - k_20832))))).S("L").V(Call(r2_14387, V.Undef, Add(GetIdx(p_20831, 0D), ((V)((k_20832 * 0.9)))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_20831, 1D))).S("L").V(Call(r2_14387, V.Undef, GetIdx(p_20831, 0D))).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(p_20831, 1D), ((V)(k_20832))))).S("L").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_20831, 0D)) - (k_20832 * 0.9)))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_20831, 1D))).S("Z");
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(B_19450, "salt"), ((V)("d")), (dS_20742 is var _t20833 && Truthy(_t20833) ? _t20833 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(B_19450, "salt"), ((V)("d")), (((V)(dS_20742.Str)) is var _t20833 && Truthy(_t20833) ? _t20833 : ((V)("M0 0"))));
 }
 }
 if (Truthy(((Get(I_14377, "bk") is var _t20834 && !Truthy(_t20834) ? _t20834 : Get(Get(I_14377, "bk"), "sn")) is var _t20835 && !Truthy(_t20835) ? _t20835 : Get(G("window"), "SN3D")))) {
@@ -28468,8 +28468,8 @@ double ly_20843 = 0;
 V ox_20844 = default;
 V oy_20845 = default;
 V hp_20846 = default;
-V dS_20847 = default;
-V dP_20848 = default;
+JsStrBuf dS_20847 = null;
+JsStrBuf dP_20848 = null;
 double lsp_20849 = 0;
 V lfl_20850 = default;
 double swz_20851 = 0;
@@ -28501,7 +28501,7 @@ Z3_20839 = Fn((V _self1, int _argc20880, V x_20886, V y_20887, V z_20888, V _a20
 return Call(sphZ_14456, V.Undef, Add(((V)(50D)), x_20886), y_20887, z_20888);
 }, 3, "", true);
 pt_20840 = Fn((V _self1, int _argc20889, V p_20895, V _a20892, V _a20893, V _a20894, V[] _rest20890) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_20895, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_20895, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_20895, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_20895, 1D))).End()));
 }, 1, "", true);
 cv_20841 = Fn((V _self1, int _argc20896, V k_20902, V _a20899, V _a20900, V _a20901, V[] _rest20897) => {
 double v_20903 = 0;
@@ -28553,8 +28553,8 @@ i_20904++;
 }
 }
 Set(A_20836, "d", Invoke(H_14370, "closedD", Invoke(H_14370, "hull", hp_20846)));
-dS_20847 = ((V)(""));
-dP_20848 = ((V)(""));
+dS_20847 = new JsStrBuf("");
+dP_20848 = new JsStrBuf("");
 Invoke(Get(A_20836, "SD"), "forEach", Fn((V _self1, int _argc20911, V o_20917, V _a20914, V _a20915, V _a20916, V[] _rest20912) => {
 double sf_20918 = 0;
 double cf_20919 = 0;
@@ -28590,17 +28590,17 @@ a_20937 = ((k_20935 / 10D) * ToNum(TAU_14389));
 c_20938 = FdLibm.Cos(a_20937);
 s_20939 = FdLibm.Sin(a_20937);
 m_20940 = ((V)((NumTruthy(k_20935) ? "L" : "M")));
-dP_20848 = Add(dP_20848, Add(m_20940, Call(E_20925, V.Undef, ((V)((0.35 + (c_20938 * 2.1)))), ((V)((s_20939 * 1.2))), ((V)((-0.1))))));
-dS_20847 = Add(dS_20847, Add(m_20940, Call(E_20925, V.Undef, ((V)((c_20938 * ((c_20938 < 0D) ? 1.75 : 1.15)))), ((V)(((s_20939 * 0.62) * ((c_20938 < 0D) ? (1D + (0.35 * c_20938)) : 1D)))), ((V)(0.3)))));
+dP_20848.V(Add(m_20940, Call(E_20925, V.Undef, ((V)((0.35 + (c_20938 * 2.1)))), ((V)((s_20939 * 1.2))), ((V)((-0.1))))));
+dS_20847.V(Add(m_20940, Call(E_20925, V.Undef, ((V)((c_20938 * ((c_20938 < 0D) ? 1.75 : 1.15)))), ((V)(((s_20939 * 0.62) * ((c_20938 < 0D) ? (1D + (0.35 * c_20938)) : 1D)))), ((V)(0.3)))));
 k_20935++;
 }
 }
-dP_20848 = ((V)(string.Concat(ToStr(dP_20848), "Z")));
-dS_20847 = ((V)(string.Concat(ToStr(dS_20847), "Z")));
+dP_20848.S("Z");
+dS_20847.S("Z");
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(A_20836, "dim"), ((V)("d")), (dP_20848 is var _t20941 && Truthy(_t20941) ? _t20941 : ((V)("M0 0Z"))));
-Call(set_14391, V.Undef, Get(A_20836, "sdE"), ((V)("d")), (dS_20847 is var _t20942 && Truthy(_t20942) ? _t20942 : ((V)("M0 0Z"))));
+Call(set_14391, V.Undef, Get(A_20836, "dim"), ((V)("d")), (((V)(dP_20848.Str)) is var _t20941 && Truthy(_t20941) ? _t20941 : ((V)("M0 0Z"))));
+Call(set_14391, V.Undef, Get(A_20836, "sdE"), ((V)("d")), (((V)(dS_20847.Str)) is var _t20942 && Truthy(_t20942) ? _t20942 : ((V)("M0 0Z"))));
 lsp_20849 = (ToNum(Call(cv_20841, V.Undef, ((V)("lsp")))) * ToNum(TAU_14389));
 lfl_20850 = Call(clamp_14385, V.Undef, Call(cv_20841, V.Undef, ((V)("lfl"))), ((V)((-0.6))), ((V)(1.3)));
 swz_20851 = ((((ToNum(ox_20844) * 1.6) + (FdLibm.Sin((ts_20837 * 0.9)) * 2.5)) + (ToNum(Call(clamp_14385, V.Undef, (Get(P_14378, "htilt") is var _t20943 && Truthy(_t20943) ? _t20943 : ((V)(0D))), ((V)((-10D))), ((V)(10D)))) * 0.3)) * ToNum(D2R_14388));
@@ -28618,9 +28618,9 @@ return default;
 col_20856 = Fn((V _self1, int _argc20953, V b_20959, V _a20956, V _a20957, V _a20958, V[] _rest20954) => {
 V Aa_20960 = default;
 Aa_20960 = (LtN(b_20959, 0.55) ? Arr(Arr(((V)(44D)), ((V)(120D)), ((V)(46D))), Arr(((V)(118D)), ((V)(200D)), ((V)(88D))), ((V)((ToNum(b_20959) / 0.55)))) : Arr(Arr(((V)(118D)), ((V)(200D)), ((V)(88D))), Arr(((V)(204D)), ((V)(246D)), ((V)(158D))), ((V)(((ToNum(b_20959) - 0.55) / 0.45)))));
-return ((V)(string.Concat("rgb(", ToStr(Invoke(Invoke(GetIdx(Aa_20960, 0D), "map", Fn((V _self1, int _argc20961, V c_20967, V j_20968, V _a20965, V _a20966, V[] _rest20962) => {
+return ((V)(JsStrBuf.Begin().S("rgb(").V(Invoke(Invoke(GetIdx(Aa_20960, 0D), "map", Fn((V _self1, int _argc20961, V c_20967, V j_20968, V _a20965, V _a20966, V[] _rest20962) => {
 return ((V)(Round(ToNum(Add(c_20967, ((V)(((ToNum(GetK(GetIdx(Aa_20960, 1D), j_20968)) - ToNum(c_20967)) * ToNum(GetIdx(Aa_20960, 2D))))))))));
-}, 2, "", true)), "join", ((V)(",")))), ")")));
+}, 2, "", true)), "join", ((V)(",")))).S(")").End()));
 return default;
 }, 1, "", true);
 cz_20857 = FdLibm.Cos(swz_20851);
@@ -28705,9 +28705,9 @@ return CallSpread(P3_20838, V.Undef, new ArrBuilder().Spread(v_21054).V);
 Dp_21000 = Invoke(Dn_20997, "map", Fn((V _self1, int _argc21055, V v_21061, V _a21058, V _a21059, V _a21060, V[] _rest21056) => {
 return CallSpread(P3_20838, V.Undef, new ArrBuilder().Spread(v_21061).V);
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(o_20987, "hU"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_20998, "concat", Invoke(Invoke(Up_20999, "slice"), "reverse")), "map", pt_20840), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(o_20987, "hD"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_20998, "concat", Invoke(Invoke(Dp_21000, "slice"), "reverse")), "map", pt_20840), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(o_20987, "rib"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Mp_20998, "slice", ((V)(0D)), ((V)(8D))), "map", pt_20840), "join", ((V)("L"))))))));
+Call(set_14391, V.Undef, Get(o_20987, "hU"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_20998, "concat", Invoke(Invoke(Up_20999, "slice"), "reverse")), "map", pt_20840), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_20987, "hD"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_20998, "concat", Invoke(Invoke(Dp_21000, "slice"), "reverse")), "map", pt_20840), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(o_20987, "rib"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Mp_20998, "slice", ((V)(0D)), ((V)(8D))), "map", pt_20840), "join", ((V)("L")))).End())));
 lit_21001 = Fn((V _self1, int _argc21062, V E_21068, V _a21065, V _a21066, V _a21067, V[] _rest21063) => {
 V a_21069 = default;
 V b_21070 = default;
@@ -28771,12 +28771,12 @@ Invoke(SP_20869, "push", Call(P3_20838, V.Undef, ((V)(x1_21083)), ((V)(((31D + (
 k_21076++;
 }
 }
-sdP_20870 = ((V)(string.Concat("M", ToStr(Invoke(Invoke(SP_20869, "map", pt_20840), "join", ((V)("L")))))));
+sdP_20870 = ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(SP_20869, "map", pt_20840), "join", ((V)("L")))).End()));
 Call(set_14391, V.Undef, GetIdx(Get(A_20836, "st"), 0D), ((V)("d")), sdP_20870);
 Call(set_14391, V.Undef, GetIdx(Get(A_20836, "st"), 1D), ((V)("d")), sdP_20870);
-Call(set_14391, V.Undef, GetIdx(Get(A_20836, "st"), 2D), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(SP_20869, "slice", ((V)(2D))), "map", Fn((V _self1, int _argc21086, V p_21092, V _a21089, V _a21090, V _a21091, V[] _rest21087) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_21092, 0D)) - 0.45))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_21092, 1D)) - 0.3))))))));
-}, 1, "", true)), "join", ((V)("L"))))))));
+Call(set_14391, V.Undef, GetIdx(Get(A_20836, "st"), 2D), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(SP_20869, "slice", ((V)(2D))), "map", Fn((V _self1, int _argc21086, V p_21092, V _a21089, V _a21090, V _a21091, V[] _rest21087) => {
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_21092, 0D)) - 0.45))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(p_21092, 1D)) - 0.3))))).End()));
+}, 1, "", true)), "join", ((V)("L")))).End())));
 Set(W_14465, "stem", GetIdx(SP_20869, 12D));
 }
 if (Truthy(Get(I_14377, "bb"))) {
@@ -28958,20 +28958,20 @@ return default;
 spikeD_14472 = Fn((V _self1, int _argc21210, V _a21212, V _a21213, V _a21214, V _a21215, V[] _rest21211) => {
 V S_21216 = default;
 V C_21217 = default;
-V d_21218 = default;
+JsStrBuf d_21218 = null;
 V gw_21219 = default;
 S_21216 = Get(I_14377, "spk");
 C_21217 = Call(sph_14455, V.Undef, HX_14394, HY_14395, ((V)(0D)));
-d_21218 = ((V)(""));
+d_21218 = new JsStrBuf("");
 if (Truthy(Get(S_21216, "pu"))) {
 double ext_21220 = 0;
-V dB_21221 = default;
-V dF_21222 = default;
+JsStrBuf dB_21221 = null;
+JsStrBuf dF_21222 = null;
 V gw_21223 = default;
 ext_21220 = ((((ToNum(Call(clamp_14385, V.Undef, Get(P_14378, "puff"), ((V)(0D)), ((V)(1.2)))) * 5D) + (ToNum(Call(clamp_14385, V.Undef, Get(P_14378, "wide"), ((V)(0D)), ((V)(1D)))) * 2.5)) + (Max(0D, (-ToNum(sq_14416))) * 8D)) + (Max(0D, ToNum(sq_14416)) * 4D));
 ext_21220 = Min(ext_21220, (6D + (ToNum((Get(I_14377, "pfB") is var _t21224 && Truthy(_t21224) ? _t21224 : ((V)(0D)))) * 2.5)));
-dB_21221 = ((V)(""));
-dF_21222 = ((V)(""));
+dB_21221 = new JsStrBuf("");
+dF_21222 = new JsStrBuf("");
 Invoke(Get(S_21216, "dirs"), "forEach", Fn((V _self1, int _argc21225, V n_21231, V _a21228, V _a21229, V _a21230, V[] _rest21226) => {
 V fr_21232 = default;
 V r1_21233 = default;
@@ -29012,17 +29012,17 @@ k_21250++;
 Invoke(pts_21240, "push", Call(sph_14455, V.Undef, Add(HX_14394, ((V)((ToNum(GetIdx(n_21231, 0D)) * ToNum(r1_21233))))), Add(HY_14395, ((V)((ToNum(GetIdx(n_21231, 1D)) * ToNum(r1_21233))))), ((V)((ToNum(GetIdx(n_21231, 2D)) * ToNum(r1_21233))))));
 dd_21241 = Invoke(H_14370, "closedD", Invoke(H_14370, "hull", pts_21240));
 if (GtN(Call(sphZ_14456, V.Undef, Add(HX_14394, ((V)((ToNum(GetIdx(n_21231, 0D)) * ToNum(Get(S_21216, "r0")))))), Add(HY_14395, ((V)((ToNum(GetIdx(n_21231, 1D)) * ToNum(Get(S_21216, "r0")))))), ((V)((ToNum(GetIdx(n_21231, 2D)) * ToNum(Get(S_21216, "r0")))))), (ToNum(Get(S_21216, "r0")) * 0.35))) {
-dF_21222 = Add(dF_21222, dd_21241);
+dF_21222.V(dd_21241);
 } else {
-dB_21221 = Add(dB_21221, dd_21241);
+dB_21221.V(dd_21241);
 }
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(S_21216, "elF"), ((V)("d")), dF_21222);
+Call(set_14391, V.Undef, Get(S_21216, "elF"), ((V)("d")), ((V)(dF_21222.Str)));
 gw_21223 = Call(glob_14432, V.Undef, GetIdx(Get(S_21216, "g0"), 0D), GetIdx(Get(S_21216, "g0"), 1D));
 Call(set_14391, V.Undef, Get(S_21216, "gr"), ((V)("cx")), Call(r2_14387, V.Undef, GetIdx(gw_21223, 0D)));
 Call(set_14391, V.Undef, Get(S_21216, "gr"), ((V)("cy")), Call(r2_14387, V.Undef, GetIdx(gw_21223, 1D)));
-return dB_21221;
+return ((V)(dB_21221.Str));
 }
 Invoke(Get(S_21216, "dirs"), "forEach", Fn((V _self1, int _argc21255, V n0_21261, V si_21262, V _a21259, V _a21260, V[] _rest21256) => {
 V n_21263 = default;
@@ -29049,13 +29049,13 @@ return default;
 }
 px_21270 = (((-vy_21268) / L_21269) * ToNum(Get(S_21216, "w")));
 py_21271 = ((vx_21267 / L_21269) * ToNum(Get(S_21216, "w")));
-d_21218 = ((V)(string.Concat(new string[] { ToStr(d_21218), "M", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(B_21266, 0D), ((V)(px_21270))))), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(B_21266, 1D), ((V)(py_21271))))), "L", ToStr(Call(r2_14387, V.Undef, GetIdx(T_21265, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(T_21265, 1D))), "L", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(B_21266, 0D)) - px_21270))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(B_21266, 1D)) - py_21271))))), "Z" })));
+d_21218.S("M").V(Call(r2_14387, V.Undef, Add(GetIdx(B_21266, 0D), ((V)(px_21270))))).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(B_21266, 1D), ((V)(py_21271))))).S("L").V(Call(r2_14387, V.Undef, GetIdx(T_21265, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(T_21265, 1D))).S("L").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(B_21266, 0D)) - px_21270))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(B_21266, 1D)) - py_21271))))).S("Z");
 return default;
 }, 2, "", true));
 gw_21219 = Call(glob_14432, V.Undef, GetIdx(Get(S_21216, "g0"), 0D), GetIdx(Get(S_21216, "g0"), 1D));
 Call(set_14391, V.Undef, Get(S_21216, "gr"), ((V)("cx")), Call(r2_14387, V.Undef, GetIdx(gw_21219, 0D)));
 Call(set_14391, V.Undef, Get(S_21216, "gr"), ((V)("cy")), Call(r2_14387, V.Undef, GetIdx(gw_21219, 1D)));
-return d_21218;
+return ((V)(d_21218.Str));
 return default;
 }, 0, "", true);
 puff_14473 = Fn((V _self1, int _argc21272, V q_21278, V F_21279, V fc_21280, V _a21277, V[] _rest21273) => {
@@ -29130,7 +29130,7 @@ return Arr(((V)((ToNum(Add(GetIdx(a_21351, 0D), GetIdx(b_21352, 0D))) / 2D))), (
 pp_21317 = Fn((V _self1, int _argc21353, V F_21359, V p_21360, V _a21357, V _a21358, V[] _rest21354) => {
 V q_21361 = default;
 q_21361 = Call(F_21359, V.Undef, GetIdx(p_21360, 0D), GetIdx(p_21360, 1D));
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(q_21361, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(q_21361, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(q_21361, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(q_21361, 1D))).End()));
 return default;
 }, 2, "", true);
 qb_21318 = Fn((V _self1, int _argc21362, V a_21368, V b_21369, V c_21370, V u_21371, V[] _rest21363) => {
@@ -29195,8 +29195,8 @@ SetK(J_21320, Get(l_21387, "i"), NewObj(4).Put("k", k_21391).Put("tip", Call(rot
 return default;
 }, 1, "", true));
 OD_21321 = Fn((V _self1, int _argc21406, V F_21412, V _a21409, V _a21410, V _a21411, V[] _rest21407) => {
-V s_21413 = default;
-s_21413 = ((V)(string.Concat("M", ToStr(Call(pp_21317, V.Undef, F_21412, GetIdx(V_21308, 9D))))));
+JsStrBuf s_21413 = null;
+s_21413 = new JsStrBuf(JsStrBuf.Begin().S("M").V(Call(pp_21317, V.Undef, F_21412, GetIdx(V_21308, 9D))).End());
 {
 double i_21414 = 0;
 i_21414 = 0D;
@@ -29204,11 +29204,11 @@ while (true) {
 if (!((i_21414 < 10D))) break;
 V j_21416 = default;
 j_21416 = GetIdx(J_21320, i_21414);
-s_21413 = ((V)(string.Concat(new string[] { ToStr(s_21413), "Q", ToStr(Call(pp_21317, V.Undef, F_21412, Get(j_21416, "cA"))), " ", ToStr(Call(pp_21317, V.Undef, F_21412, Get(j_21416, "tip"))), "Q", ToStr(Call(pp_21317, V.Undef, F_21412, Get(j_21416, "cB"))), " ", ToStr(Call(pp_21317, V.Undef, F_21412, GetIdx(V_21308, (i_21414 + 1D)))) })));
+s_21413.S("Q").V(Call(pp_21317, V.Undef, F_21412, Get(j_21416, "cA"))).S(" ").V(Call(pp_21317, V.Undef, F_21412, Get(j_21416, "tip"))).S("Q").V(Call(pp_21317, V.Undef, F_21412, Get(j_21416, "cB"))).S(" ").V(Call(pp_21317, V.Undef, F_21412, GetIdx(V_21308, (i_21414 + 1D))));
 i_21414 = (i_21414 + 2D);
 }
 }
-return ((V)(string.Concat(ToStr(s_21413), "Z")));
+return ((V)(string.Concat(s_21413.Str, "Z")));
 return default;
 }, 1, "", true);
 dir_21322 = ((fc_21313 >= 0D) ? 1D : (-1D));
@@ -29278,7 +29278,7 @@ return Call(sph_14455, V.Undef, x_21488, y_21489, ((V)(z_21476)));
 a0_21478 = GetIdx(V_21308, (ToNum(Add(i_21471, ((V)(9D)))) % 10D));
 b0_21479 = GetK(V_21308, Add(i_21471, ((V)(1D))));
 u_21480 = 0.35;
-d_21481 = ((V)(string.Concat(new string[] { "M", ToStr(Call(pp_21317, V.Undef, F_21477, Call(qb_21318, V.Undef, a0_21478, Get(j_21472, "cA"), Get(j_21472, "tip"), ((V)(u_21480))))), "Q", ToStr(Call(pp_21317, V.Undef, F_21477, Call(lp_21319, V.Undef, Get(j_21472, "cA"), Get(j_21472, "tip"), ((V)(u_21480))))), " ", ToStr(Call(pp_21317, V.Undef, F_21477, Get(j_21472, "tip"))), "Q", ToStr(Call(pp_21317, V.Undef, F_21477, Call(lp_21319, V.Undef, Get(j_21472, "tip"), Get(j_21472, "cB"), ((V)((1D - u_21480)))))), " ", ToStr(Call(pp_21317, V.Undef, F_21477, Call(qb_21318, V.Undef, Get(j_21472, "tip"), Get(j_21472, "cB"), b0_21479, ((V)((1D - u_21480)))))), "Z" })));
+d_21481 = ((V)(JsStrBuf.Begin().S("M").V(Call(pp_21317, V.Undef, F_21477, Call(qb_21318, V.Undef, a0_21478, Get(j_21472, "cA"), Get(j_21472, "tip"), ((V)(u_21480))))).S("Q").V(Call(pp_21317, V.Undef, F_21477, Call(lp_21319, V.Undef, Get(j_21472, "cA"), Get(j_21472, "tip"), ((V)(u_21480))))).S(" ").V(Call(pp_21317, V.Undef, F_21477, Get(j_21472, "tip"))).S("Q").V(Call(pp_21317, V.Undef, F_21477, Call(lp_21319, V.Undef, Get(j_21472, "tip"), Get(j_21472, "cB"), ((V)((1D - u_21480)))))).S(" ").V(Call(pp_21317, V.Undef, F_21477, Call(qb_21318, V.Undef, Get(j_21472, "tip"), Get(j_21472, "cB"), b0_21479, ((V)((1D - u_21480)))))).S("Z").End()));
 Call(set_14391, V.Undef, Get(o_21470, "p"), ((V)("d")), d_21481);
 Call(set_14391, V.Undef, Get(o_21470, "p"), ((V)("opacity")), Call(r2_14387, V.Undef, Call(SM_14384, V.Undef, ((V)((vs_21475 * 4D))))));
 Call(set_14391, V.Undef, Get(o_21470, "sh"), ((V)("d")), d_21481);
@@ -29296,14 +29296,14 @@ V SP0_21496 = default;
 V n_21497 = default;
 V SPn_21498 = default;
 V rings_21499 = default;
-V cd_21500 = default;
+JsStrBuf cd_21500 = null;
 double RX_21501 = 0;
 double RZ_21502 = 0;
 double RY_21503 = 0;
 double TR_21504 = 0;
 V secs_21505 = default;
-V fd_21506 = default;
-V bd_21507 = default;
+JsStrBuf fd_21506 = null;
+JsStrBuf bd_21507 = null;
 V lt_21508 = default;
 V l2_21509 = default;
 V tl_21510 = default;
@@ -29365,17 +29365,17 @@ k_21562++;
 return @out_21560;
 return default;
 }, 2, "", true));
-cd_21500 = ((V)(""));
+cd_21500 = new JsStrBuf("");
 {
 double i_21565 = 0;
 i_21565 = 0D;
 while (true) {
 if (!((i_21565 < (ToNum(n_21497) - 1D)))) break;
-cd_21500 = Add(cd_21500, Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(rings_21499, i_21565), "concat", GetIdx(rings_21499, (i_21565 + 1D))))));
+cd_21500.V(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(rings_21499, i_21565), "concat", GetIdx(rings_21499, (i_21565 + 1D))))));
 i_21565++;
 }
 }
-Call(set_14391, V.Undef, Get(CE_21490, "cone"), ((V)("d")), cd_21500);
+Call(set_14391, V.Undef, Get(CE_21490, "cone"), ((V)("d")), ((V)(cd_21500.Str)));
 RX_21501 = 12.4;
 RZ_21502 = 9.4;
 RY_21503 = 21.4;
@@ -29413,8 +29413,8 @@ Invoke(secs_21505, "push", NewObj(3).Put("out", @out_21574).Put("x", ((V)(cx_215
 j_21567++;
 }
 }
-fd_21506 = ((V)(""));
-bd_21507 = ((V)(""));
+fd_21506 = new JsStrBuf("");
+bd_21507 = new JsStrBuf("");
 {
 double j_21578 = 0;
 j_21578 = 0D;
@@ -29427,15 +29427,15 @@ A_21580 = GetIdx(secs_21505, j_21578);
 B_21581 = GetIdx(secs_21505, (j_21578 + 1D));
 dd_21582 = Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(Get(A_21580, "out"), "concat", Get(B_21581, "out"))));
 if (GeN(Call(cZ_21494, V.Undef, ((V)((ToNum(Add(Get(A_21580, "x"), Get(B_21581, "x"))) / 2D))), ((V)(RY_21503)), ((V)((ToNum(Add(Get(A_21580, "z"), Get(B_21581, "z"))) / 2D)))), 0D)) {
-fd_21506 = Add(fd_21506, dd_21582);
+fd_21506.V(dd_21582);
 } else {
-bd_21507 = Add(bd_21507, dd_21582);
+bd_21507.V(dd_21582);
 }
 j_21578++;
 }
 }
-Call(set_14391, V.Undef, Get(CE_21490, "rf"), ((V)("d")), fd_21506);
-Call(set_14391, V.Undef, Get(CE_21490, "rb"), ((V)("d")), bd_21507);
+Call(set_14391, V.Undef, Get(CE_21490, "rf"), ((V)("d")), ((V)(fd_21506.Str)));
+Call(set_14391, V.Undef, Get(CE_21490, "rb"), ((V)("d")), ((V)(bd_21507.Str)));
 lt_21508 = GetIdx(SPn_21498, (ToNum(n_21497) - 1D));
 l2_21509 = GetIdx(SPn_21498, (ToNum(n_21497) - 2D));
 tl_21510 = (((V)(Hypot((ToNum(GetIdx(lt_21508, 0D)) - ToNum(GetIdx(l2_21509, 0D))), (ToNum(GetIdx(lt_21508, 1D)) - ToNum(GetIdx(l2_21509, 1D)))))) is var _t21583 && Truthy(_t21583) ? _t21583 : ((V)(1D)));
@@ -29517,9 +29517,9 @@ Call(set_14391, V.Undef, Get(D_21599, "wall"), ((V)("d")), hF_21606);
 Call(set_14391, V.Undef, Get(D_21599, "wm"), ((V)("d")), Invoke(H_14370, "closedD", Call(ring_21602, V.Undef, Get(Get(D_21599, "hole"), "x"), Get(Get(D_21599, "hole"), "y"), Get(Get(D_21599, "hole"), "r"), ((V)(((-fz_21604) * dz_21605))), ((V)(24D)))));
 Invoke(Get(D_21599, "bites"), "forEach", Fn((V _self1, int _argc21627, V q_21633, V _a21630, V _a21631, V _a21632, V[] _rest21628) => {
 V c_21634 = default;
-V d_21635 = default;
+JsStrBuf d_21635 = null;
 c_21634 = Call(sph_14455, V.Undef, Get(q_21633, "x"), Get(q_21633, "y"), ((V)(0D)));
-d_21635 = ((V)(string.Concat("M", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(c_21634, 0D), Get(q_21633, "r")))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(c_21634, 1D))))));
+d_21635 = new JsStrBuf(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, Add(GetIdx(c_21634, 0D), Get(q_21633, "r")))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(c_21634, 1D))).End());
 {
 double k_21636 = 0;
 k_21636 = 1D;
@@ -29527,11 +29527,11 @@ while (true) {
 if (!((k_21636 <= 16D))) break;
 double f_21638 = 0;
 f_21638 = ((k_21636 / 16D) * ToNum(TAU_14389));
-d_21635 = ((V)(string.Concat(new string[] { ToStr(d_21635), "L", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(c_21634, 0D), ((V)((ToNum(Get(q_21633, "r")) * FdLibm.Cos(f_21638))))))), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(c_21634, 1D), ((V)((ToNum(Get(q_21633, "r")) * FdLibm.Sin(f_21638))))))) })));
+d_21635.S("L").V(Call(r2_14387, V.Undef, Add(GetIdx(c_21634, 0D), ((V)((ToNum(Get(q_21633, "r")) * FdLibm.Cos(f_21638))))))).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(c_21634, 1D), ((V)((ToNum(Get(q_21633, "r")) * FdLibm.Sin(f_21638)))))));
 k_21636++;
 }
 }
-Call(set_14391, V.Undef, Get(q_21633, "el"), ((V)("d")), ((V)(string.Concat(ToStr(d_21635), "Z"))));
+Call(set_14391, V.Undef, Get(q_21633, "el"), ((V)("d")), ((V)(string.Concat(d_21635.Str, "Z"))));
 return default;
 }, 1, "", true));
 }
@@ -29562,7 +29562,7 @@ return ((V)((((-ToNum(dx_21660)) * syh_14406) + (ToNum(z_21661) * cyh_14405))));
 P_21644 = Fn((V _self1, int _argc21662, V x_21668, V y_21669, V z_21670, V _a21667, V[] _rest21663) => {
 V p_21671 = default;
 p_21671 = Call(sph_14455, V.Undef, x_21668, y_21669, z_21670);
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_21671, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_21671, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_21671, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_21671, 1D))).End()));
 return default;
 }, 3, "", true);
 tw_21645 = (FdLibm.Sin((ToNum(now_14379) / 900D)) * 0.04);
@@ -29581,7 +29581,7 @@ dr_21682 = (3D + (4.6 * System.Math.Abs(s_21680)));
 a2_21683 = (ToNum(a_21679) - 0.38);
 x2_21684 = (50D + (9D * FdLibm.Sin(a2_21683)));
 z2_21685 = (9D * FdLibm.Cos(a2_21683));
-Call(set_14391, V.Undef, Get(o_21678, "el"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(P_21644, V.Undef, ((V)((50D + (2.5 * s_21680)))), ((V)(31D)), ((V)((2.5 * c_21681))))), " Q", ToStr(Call(P_21644, V.Undef, ((V)(x2_21684)), ((V)((31.6 + (dr_21682 * 0.35)))), ((V)(z2_21685)))), " ", ToStr(Call(P_21644, V.Undef, ((V)((50D + (15D * s_21680)))), ((V)((31D + dr_21682))), ((V)((15D * c_21681))))) }))));
+Call(set_14391, V.Undef, Get(o_21678, "el"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(P_21644, V.Undef, ((V)((50D + (2.5 * s_21680)))), ((V)(31D)), ((V)((2.5 * c_21681))))).S(" Q").V(Call(P_21644, V.Undef, ((V)(x2_21684)), ((V)((31.6 + (dr_21682 * 0.35)))), ((V)(z2_21685)))).S(" ").V(Call(P_21644, V.Undef, ((V)((50D + (15D * s_21680)))), ((V)((31D + dr_21682))), ((V)((15D * c_21681))))).End())));
 Call(set_14391, V.Undef, Get(o_21678, "el"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.8 * ToNum(Call(SM_14384, V.Undef, ((V)((ToNum(Add(Call(rotZ_21643, V.Undef, ((V)((15D * s_21680))), ((V)((15D * c_21681)))), ((V)(2D)))) / 7D))))))))));
 return default;
 }, 1, "", true));
@@ -29620,9 +29620,9 @@ Call(set_14391, V.Undef, Get(B_21639, "gr"), ((V)("cx")), Call(r2_14387, V.Undef
 Call(set_14391, V.Undef, Get(B_21639, "gr"), ((V)("cy")), Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(kc_21648, 1D)) - 2.4)))));
 Invoke(Get(B_21639, "cr"), "forEach", Fn((V _self1, int _argc21693, V o_21699, V _a21696, V _a21697, V _a21698, V[] _rest21694) => {
 V a_21700 = default;
-V d_21701 = default;
+JsStrBuf d_21701 = null;
 a_21700 = Add(Get(o_21699, "a"), ((V)((tw_21645 * 3D))));
-d_21701 = ((V)(""));
+d_21701 = new JsStrBuf("");
 {
 double i_21702 = 0;
 i_21702 = 0D;
@@ -29636,11 +29636,11 @@ u_21704 = ((-1D) + (i_21702 / 3D));
 v_21705 = ((-0.15) - (0.55 * (1D - ((u_21704 * u_21704) * 0.6))));
 ang_21706 = Add(a_21700, ((V)((u_21704 * 0.75))));
 rr_21707 = (System.Math.Sqrt(Max(0D, (1D - (v_21705 * v_21705)))) * 1.02);
-d_21701 = ((V)(string.Concat(ToStr(d_21701), (NumTruthy(i_21702) ? "L" : "M"), ToStr(Call(P_21644, V.Undef, Add(Cx_21640, ((V)(((ToNum(Get(B_21639, "rx")) * rr_21707) * FdLibm.Sin(ToNum(ang_21706)))))), Add(Cy_21641, ((V)((ToNum(Get(B_21639, "ry")) * v_21705)))), Add(Cz_21642, ((V)(((ToNum(Get(B_21639, "rx")) * rr_21707) * FdLibm.Cos(ToNum(ang_21706)))))))))));
+d_21701.S((NumTruthy(i_21702) ? "L" : "M")).V(Call(P_21644, V.Undef, Add(Cx_21640, ((V)(((ToNum(Get(B_21639, "rx")) * rr_21707) * FdLibm.Sin(ToNum(ang_21706)))))), Add(Cy_21641, ((V)((ToNum(Get(B_21639, "ry")) * v_21705)))), Add(Cz_21642, ((V)(((ToNum(Get(B_21639, "rx")) * rr_21707) * FdLibm.Cos(ToNum(ang_21706))))))));
 i_21702++;
 }
 }
-Call(set_14391, V.Undef, Get(o_21699, "el"), ((V)("d")), d_21701);
+Call(set_14391, V.Undef, Get(o_21699, "el"), ((V)("d")), ((V)(d_21701.Str)));
 Call(set_14391, V.Undef, Get(o_21699, "el"), ((V)("opacity")), Call(r2_14387, V.Undef, Call(SM_14384, V.Undef, ((V)(((ToNum(Call(rotZ_21643, V.Undef, ((V)(FdLibm.Sin(ToNum(a_21700)))), ((V)(FdLibm.Cos(ToNum(a_21700)))))) - 0.1) / 0.35))))));
 return default;
 }, 1, "", true));
@@ -29656,9 +29656,9 @@ V dr_21714 = default;
 V rip_21715 = default;
 V wob_21716 = default;
 PL_21708 = Fn((V _self1, int _argc21717, V a_21723, V _a21720, V _a21721, V _a21722, V[] _rest21718) => {
-return ((V)(string.Concat(ToStr(Invoke(Invoke(a_21723, "map", Fn((V _self1, int _argc21724, V p_21730, V k_21731, V _a21728, V _a21729, V[] _rest21725) => {
-return ((V)(string.Concat((Truthy(k_21731) ? "L" : "M"), ToStr(Call(r2_14387, V.Undef, GetIdx(p_21730, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_21730, 1D))))));
-}, 2, "", true)), "join", ((V)("")))), "Z")));
+return ((V)(JsStrBuf.Begin().V(Invoke(Invoke(a_21723, "map", Fn((V _self1, int _argc21724, V p_21730, V k_21731, V _a21728, V _a21729, V[] _rest21725) => {
+return ((V)(JsStrBuf.Begin().S((Truthy(k_21731) ? "L" : "M")).V(Call(r2_14387, V.Undef, GetIdx(p_21730, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_21730, 1D))).End()));
+}, 2, "", true)), "join", ((V)("")))).S("Z").End()));
 }, 1, "", true);
 ring_21709 = Fn((V _self1, int _argc21732, V y_21738, V r_21739, V n_21740, V rf_21741, V[] _rest21733) => {
 V o_21742 = default;
@@ -29736,7 +29736,7 @@ return Arr(((V)(58.4)), ((V)((37.3 + (0.9 * Max(0D, FdLibm.Cos(((3D * ToNum(a_21
 Call(set_14391, V.Undef, Get(BG_14451, "tomL"), ((V)("d")), Invoke(Invoke(Call(edge_21711, V.Undef, Fn((V _self1, int _argc21822, V a_21828, V _a21825, V _a21826, V _a21827, V[] _rest21823) => {
 return Arr(((V)(57D)), ((V)((37.6 + (0.9 * Max(0D, FdLibm.Cos(((3D * ToNum(a_21828)) + 0.5))))))));
 }, 1, "", true), ((V)((-0.25)))), "map", Fn((V _self1, int _argc21814, V p_21820, V k_21821, V _a21818, V _a21819, V[] _rest21815) => {
-return ((V)(string.Concat((Truthy(k_21821) ? "L" : "M"), ToStr(Call(r2_14387, V.Undef, GetIdx(p_21820, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_21820, 1D))))));
+return ((V)(JsStrBuf.Begin().S((Truthy(k_21821) ? "L" : "M")).V(Call(r2_14387, V.Undef, GetIdx(p_21820, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_21820, 1D))).End()));
 }, 2, "", true)), "join", ((V)(""))));
 Set(BG_14451, "cl", ((V)(2D)));
 dr_21714 = Fn((V _self1, int _argc21829, V a_21835, V _a21832, V _a21833, V _a21834, V[] _rest21830) => {
@@ -29821,8 +29821,8 @@ return Arr(Add(((V)((53.6 + (4.6 * ToNum(s_21910))))), Call(wob_21716, V.Undef, 
 return default;
 }, 1, "", true), ((V)(0.32))));
 {
-V d_21911 = default;
-d_21911 = ((V)(""));
+JsStrBuf d_21911 = null;
+d_21911 = new JsStrBuf("");
 {
 double k_21912 = 0;
 k_21912 = 0D;
@@ -29841,12 +29841,12 @@ goto _cont21913;
 p0_21916 = Call(bgP_14453, V.Undef, ((V)((37.9 * FdLibm.Sin(a_21914)))), ((V)(51D)), ((V)((37.9 * FdLibm.Cos(a_21914)))));
 s_21917 = Call(rip_21715, V.Undef, ((V)(a_21914)));
 p1_21918 = Call(bgP_14453, V.Undef, ((V)((38.6 * FdLibm.Sin(a_21914)))), Add(((V)((53.6 + (3.4 * ToNum(s_21917))))), Call(wob_21716, V.Undef, ((V)(a_21914)))), ((V)((38.6 * FdLibm.Cos(a_21914)))));
-d_21911 = ((V)(string.Concat(new string[] { ToStr(d_21911), "M", ToStr(Call(r2_14387, V.Undef, GetIdx(p0_21916, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p0_21916, 1D))), "L", ToStr(Call(r2_14387, V.Undef, GetIdx(p1_21918, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p1_21918, 1D))) })));
+d_21911.S("M").V(Call(r2_14387, V.Undef, GetIdx(p0_21916, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p0_21916, 1D))).S("L").V(Call(r2_14387, V.Undef, GetIdx(p1_21918, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p1_21918, 1D)));
 _cont21913: ;
 k_21912++;
 }
 }
-Call(set_14391, V.Undef, Get(BG_14451, "letV"), ((V)("d")), d_21911);
+Call(set_14391, V.Undef, Get(BG_14451, "letV"), ((V)("d")), ((V)(d_21911.Str)));
 }
 Set(BG_14451, "cl", ((V)(5D)));
 }
@@ -29884,9 +29884,9 @@ wr_21925 = Call(clamp_14385, V.Undef, (((V)(ToNum(Get(P_14378, "wrap")))) is var
 ml_21926 = Call(clamp_14385, V.Undef, (((V)(ToNum(Get(P_14378, "melt")))) is var _t21943 && Truthy(_t21943) ? _t21943 : ((V)(0D))), ((V)(0D)), ((V)(1.2)));
 tw_21927 = Call(clamp_14385, V.Undef, (((V)(ToNum(Get(P_14378, "tw")))) is var _t21944 && Truthy(_t21944) ? _t21944 : ((V)(0D))), ((V)(0D)), ((V)(1.5)));
 PL_21928 = Fn((V _self1, int _argc21945, V a_21951, V _a21948, V _a21949, V _a21950, V[] _rest21946) => {
-return ((V)(string.Concat(ToStr(Invoke(Invoke(a_21951, "map", Fn((V _self1, int _argc21952, V p_21958, V k_21959, V _a21956, V _a21957, V[] _rest21953) => {
-return ((V)(string.Concat((Truthy(k_21959) ? "L" : "M"), ToStr(Call(r2_14387, V.Undef, GetIdx(p_21958, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_21958, 1D))))));
-}, 2, "", true)), "join", ((V)("")))), "Z")));
+return ((V)(JsStrBuf.Begin().V(Invoke(Invoke(a_21951, "map", Fn((V _self1, int _argc21952, V p_21958, V k_21959, V _a21956, V _a21957, V[] _rest21953) => {
+return ((V)(JsStrBuf.Begin().S((Truthy(k_21959) ? "L" : "M")).V(Call(r2_14387, V.Undef, GetIdx(p_21958, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_21958, 1D))).End()));
+}, 2, "", true)), "join", ((V)("")))).S("Z").End()));
 }, 1, "", true);
 RO_21929 = Fn((V _self1, int _argc21960, V x0_21966, V x1_21967, V ytl_21968, V ytr_21969, V[] _rest21961) => {
 V ybl_21970 = default;
@@ -30016,7 +30016,7 @@ V a_22070 = default;
 V b_22071 = default;
 a_22070 = Call(sph_14455, V.Undef, ((V)(20D)), ((V)((yl_21933 + 1.5))), ((V)((fz_21923 * ToNum(Add(bz_21936, ((V)(0.1))))))));
 b_22071 = Call(sph_14455, V.Undef, ((V)(80D)), ((V)((yr_21934 + 1.5))), ((V)((fz_21923 * ToNum(Add(bz_21936, ((V)(0.1))))))));
-Call(set_14391, V.Undef, Get(C_21919, "bl"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, GetIdx(a_22070, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(a_22070, 1D))), "L", ToStr(Call(r2_14387, V.Undef, GetIdx(b_22071, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(b_22071, 1D))) }))));
+Call(set_14391, V.Undef, Get(C_21919, "bl"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, GetIdx(a_22070, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(a_22070, 1D))).S("L").V(Call(r2_14387, V.Undef, GetIdx(b_22071, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(b_22071, 1D))).End())));
 }
 mv_21939 = Call(SM_14384, V.Undef, ((V)((ToNum(ml_21926) / 0.15))));
 zz_21940 = (fz_21923 * ToNum(Add(bz_21936, ((V)(0.3)))));
@@ -30357,15 +30357,15 @@ amp_22292 = (22D + (ToNum(gl_22291) * 40D));
 Invoke(Get(Wh_22144, "stops"), "forEach", Fn((V _self1, int _argc22294, V sp0_22300, V i_22301, V _a22298, V _a22299, V[] _rest22295) => {
 V c_22302 = default;
 c_22302 = GetK(Get(Wh_22144, "hue"), i_22301);
-Call(set_14391, V.Undef, sp0_22300, ((V)("stop-color")), ((V)(string.Concat(new string[] { "hsl(", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(c_22302, 0D), ((V)((amp_22292 * FdLibm.Sin(((ts_22145 * (0.55 + (ToNum(gl_22291) * 0.9))) + (ToNum(i_22301) * 2.1))))))))), ",", ToStr(GetIdx(c_22302, 1D)), "%,", ToStr(GetIdx(c_22302, 2D)), "%)" }))));
+Call(set_14391, V.Undef, sp0_22300, ((V)("stop-color")), ((V)(JsStrBuf.Begin().S("hsl(").V(Call(r2_14387, V.Undef, Add(GetIdx(c_22302, 0D), ((V)((amp_22292 * FdLibm.Sin(((ts_22145 * (0.55 + (ToNum(gl_22291) * 0.9))) + (ToNum(i_22301) * 2.1))))))))).S(",").V(GetIdx(c_22302, 1D)).S("%,").V(GetIdx(c_22302, 2D)).S("%)").End())));
 return default;
 }, 2, "", true));
-Call(set_14391, V.Undef, Get(Wh_22144, "lg"), ((V)("gradientTransform")), ((V)(string.Concat("rotate(", ToStr(Call(r2_14387, V.Undef, ((V)((((yb_14400 / ToNum(D2R_14388)) * 0.6) + (FdLibm.Sin((ts_22145 * 0.4)) * 12D)))))), " 50 55)"))));
+Call(set_14391, V.Undef, Get(Wh_22144, "lg"), ((V)("gradientTransform")), ((V)(JsStrBuf.Begin().S("rotate(").V(Call(r2_14387, V.Undef, ((V)((((yb_14400 / ToNum(D2R_14388)) * 0.6) + (FdLibm.Sin((ts_22145 * 0.4)) * 12D)))))).S(" 50 55)").End())));
 } else {
 if (Truthy(Get(FN_22150, "bel"))) {
 double M_22303 = 0;
 V Gs_22304 = default;
-V bd_22305 = default;
+JsStrBuf bd_22305 = null;
 M_22303 = (Truthy(Get(FN_22150, "nw")) ? 13D : 7D);
 Gs_22304 = Invoke(Get(FN_22150, "bs"), "map", Fn((V _self1, int _argc22306, V _a22308, V _a22309, V _a22310, V _a22311, V[] _rest22307) => {
 V o_22325 = default;
@@ -30406,7 +30406,7 @@ j_22326++;
 return o_22325;
 return default;
 }, 1, "", true));
-bd_22305 = ((V)(""));
+bd_22305 = new JsStrBuf("");
 {
 double i_22330 = 0;
 i_22330 = 0D;
@@ -30426,7 +30426,7 @@ B_22335 = GetIdx(GetIdx(Gs_22304, i_22330), (j_22332 + 1D));
 C_22336 = GetIdx(GetIdx(Gs_22304, (i_22330 + 1D)), (j_22332 + 1D));
 D_22337 = GetIdx(GetIdx(Gs_22304, (i_22330 + 1D)), j_22332);
 if (((((ToNum(GetIdx(C_22336, 0D)) - ToNum(GetIdx(A_22334, 0D))) * (ToNum(GetIdx(B_22335, 1D)) - ToNum(GetIdx(D_22337, 1D)))) - ((ToNum(GetIdx(C_22336, 1D)) - ToNum(GetIdx(A_22334, 1D))) * (ToNum(GetIdx(B_22335, 0D)) - ToNum(GetIdx(D_22337, 0D))))) > 0.02)) {
-bd_22305 = ((V)(string.Concat(new string[] { ToStr(bd_22305), "M", ToStr(Call(r2_14387, V.Undef, GetIdx(A_22334, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(A_22334, 1D))), "L", ToStr(Call(r2_14387, V.Undef, GetIdx(B_22335, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(B_22335, 1D))), "L", ToStr(Call(r2_14387, V.Undef, GetIdx(C_22336, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(C_22336, 1D))), "L", ToStr(Call(r2_14387, V.Undef, GetIdx(D_22337, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(D_22337, 1D))), "Z" })));
+bd_22305.S("M").V(Call(r2_14387, V.Undef, GetIdx(A_22334, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(A_22334, 1D))).S("L").V(Call(r2_14387, V.Undef, GetIdx(B_22335, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(B_22335, 1D))).S("L").V(Call(r2_14387, V.Undef, GetIdx(C_22336, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(C_22336, 1D))).S("L").V(Call(r2_14387, V.Undef, GetIdx(D_22337, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(D_22337, 1D))).S("Z");
 }
 j_22332++;
 }
@@ -30434,7 +30434,7 @@ j_22332++;
 i_22330++;
 }
 }
-Call(set_14391, V.Undef, Get(Get(FN_22150, "bel"), "e"), ((V)("d")), (bd_22305 is var _t22338 && Truthy(_t22338) ? _t22338 : ((V)("M0 0Z"))));
+Call(set_14391, V.Undef, Get(Get(FN_22150, "bel"), "e"), ((V)("d")), (((V)(bd_22305.Str)) is var _t22338 && Truthy(_t22338) ? _t22338 : ((V)("M0 0Z"))));
 }
 if (Truthy(Get(FN_22150, "nw"))) {
 V N_22339 = default;
@@ -30459,7 +30459,7 @@ V rad_22357 = default;
 V ring_22358 = default;
 V RS_22359 = default;
 V tp_22360 = default;
-V hd_22361 = default;
+JsStrBuf hd_22361 = null;
 V pb_22362 = default;
 V pt_22363 = default;
 V al_22364 = default;
@@ -30467,19 +30467,19 @@ double nx_22365 = 0;
 double ny_22366 = 0;
 V M0_22367 = default;
 double w_22368 = 0;
-V gd_22369 = default;
-V gh_22370 = default;
+JsStrBuf gd_22369 = null;
+JsStrBuf gh_22370 = null;
 V on_22371 = default;
 double slp_22372 = 0;
 double pul_22373 = 0;
 V gp_22374 = default;
 V st4_22375 = default;
-V sfd_22376 = default;
-V sbd_22377 = default;
+JsStrBuf sfd_22376 = null;
+JsStrBuf sbd_22377 = null;
 V zT_22378 = default;
 V stt_22379 = default;
 V SP_22380 = default;
-V sd_22381 = default;
+JsStrBuf sd_22381 = null;
 N_22339 = Get(FN_22150, "nw");
 gl_22340 = Call(clamp_14385, V.Undef, (((V)(ToNum(Get(P_14378, "glow")))) is var _t22382 && Truthy(_t22382) ? _t22382 : ((V)(0D))), ((V)(0D)), ((V)(1.5)));
 V_22341 = Fn((V _self1, int _argc22383, V a_22389, V b_22390, V k_22391, V _a22388, V[] _rest22384) => {
@@ -30546,18 +30546,18 @@ return default;
 RS_22359 = Invoke(Arr(((V)(0D)), ((V)(0.2)), ((V)(0.4)), ((V)(0.6)), ((V)(0.8)), ((V)(0.94)), ((V)(1D))), "map", ring_22358);
 tp_22360 = Call(PJ_22344, V.Undef, Call(V_22341, V.Undef, T_22352, An_22354, ((V)(0.7))));
 Set(N_22339, "tp", tp_22360);
-hd_22361 = ((V)(""));
+hd_22361 = new JsStrBuf("");
 {
 double i_22444 = 0;
 i_22444 = 0D;
 while (true) {
 if (!((i_22444 < (ToNum(Get(RS_22359, "length")) - 1D)))) break;
-hd_22361 = Add(hd_22361, Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(RS_22359, i_22444), "concat", GetIdx(RS_22359, (i_22444 + 1D))))));
+hd_22361.V(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(RS_22359, i_22444), "concat", GetIdx(RS_22359, (i_22444 + 1D))))));
 i_22444++;
 }
 }
-hd_22361 = Add(hd_22361, Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(RS_22359, (ToNum(Get(RS_22359, "length")) - 1D)), "concat", Arr(tp_22360)))));
-Call(set_14391, V.Undef, Get(N_22339, "horn"), ((V)("d")), hd_22361);
+hd_22361.V(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(RS_22359, (ToNum(Get(RS_22359, "length")) - 1D)), "concat", Arr(tp_22360)))));
+Call(set_14391, V.Undef, Get(N_22339, "horn"), ((V)("d")), ((V)(hd_22361.Str)));
 pb_22362 = Call(PJ_22344, V.Undef, B_22351);
 pt_22363 = Call(PJ_22344, V.Undef, T_22352);
 al_22364 = (((V)(Hypot((ToNum(GetIdx(pt_22363, 0D)) - ToNum(GetIdx(pb_22362, 0D))), (ToNum(GetIdx(pt_22363, 1D)) - ToNum(GetIdx(pb_22362, 1D)))))) is var _t22446 && Truthy(_t22446) ? _t22446 : ((V)(1D)));
@@ -30569,8 +30569,8 @@ Call(set_14391, V.Undef, Get(N_22339, "lg"), ((V)("x1")), Call(r2_14387, V.Undef
 Call(set_14391, V.Undef, Get(N_22339, "lg"), ((V)("y1")), Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(M0_22367, 1D)) - (ny_22366 * w_22368))))));
 Call(set_14391, V.Undef, Get(N_22339, "lg"), ((V)("x2")), Call(r2_14387, V.Undef, Add(GetIdx(M0_22367, 0D), ((V)((nx_22365 * w_22368))))));
 Call(set_14391, V.Undef, Get(N_22339, "lg"), ((V)("y2")), Call(r2_14387, V.Undef, Add(GetIdx(M0_22367, 1D), ((V)((ny_22366 * w_22368))))));
-gd_22369 = ((V)(""));
-gh_22370 = ((V)(""));
+gd_22369 = new JsStrBuf("");
+gh_22370 = new JsStrBuf("");
 on_22371 = (false ? V.True : V.False);
 {
 double i_22447 = 0;
@@ -30596,15 +30596,15 @@ V a2_22456 = default;
 V h2_22457 = default;
 a2_22456 = Call(PJ_22344, V.Undef, p_22454);
 h2_22457 = Call(PJ_22344, V.Undef, Call(V_22341, V.Undef, Call(V_22341, V.Undef, c_22452, A_22353, ((V)(0.013))), n_22451, r_22453));
-gd_22369 = ((V)(string.Concat(new string[] { ToStr(gd_22369), (Truthy(on_22371) ? "L" : "M"), ToStr(Call(r2_14387, V.Undef, GetIdx(a2_22456, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(a2_22456, 1D))) })));
-gh_22370 = ((V)(string.Concat(new string[] { ToStr(gh_22370), (Truthy(on_22371) ? "L" : "M"), ToStr(Call(r2_14387, V.Undef, GetIdx(h2_22457, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(h2_22457, 1D))) })));
+gd_22369.S((Truthy(on_22371) ? "L" : "M")).V(Call(r2_14387, V.Undef, GetIdx(a2_22456, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(a2_22456, 1D)));
+gh_22370.S((Truthy(on_22371) ? "L" : "M")).V(Call(r2_14387, V.Undef, GetIdx(h2_22457, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(h2_22457, 1D)));
 }
 on_22371 = vis_22455;
 i_22447++;
 }
 }
-Call(set_14391, V.Undef, Get(N_22339, "grv"), ((V)("d")), (gd_22369 is var _t22458 && Truthy(_t22458) ? _t22458 : ((V)("M0 0"))));
-Call(set_14391, V.Undef, Get(N_22339, "grvH"), ((V)("d")), (gh_22370 is var _t22459 && Truthy(_t22459) ? _t22459 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(N_22339, "grv"), ((V)("d")), (((V)(gd_22369.Str)) is var _t22458 && Truthy(_t22458) ? _t22458 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(N_22339, "grvH"), ((V)("d")), (((V)(gh_22370.Str)) is var _t22459 && Truthy(_t22459) ? _t22459 : ((V)("M0 0"))));
 slp_22372 = (Truthy(Invoke(NewRegExp(RX4, "sleep", ""), "test", ((Get(I_14377, "cur") is var _t22460 && !Truthy(_t22460) ? _t22460 : Get(Get(I_14377, "cur"), "name")) is var _t22461 && Truthy(_t22461) ? _t22461 : ((V)(""))))) ? 0.4 : 1D);
 pul_22373 = ((0.5 + (0.5 * FdLibm.Sin((ts_22145 * ((slp_22372 < 1D) ? 1.1 : 2.3))))) * slp_22372);
 gp_22374 = Call(PJ_22344, V.Undef, Call(V_22341, V.Undef, T_22352, An_22354, ((V)((-1.5)))));
@@ -30621,11 +30621,11 @@ V X_22471 = default;
 V Y_22472 = default;
 X_22471 = Call(r2_14387, V.Undef, x_22468);
 Y_22472 = Call(r2_14387, V.Undef, y_22469);
-return ((V)(string.Concat(new string[] { "M", ToStr(X_22471), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(y_22469) - ToNum(r_22470)))))), "Q", ToStr(X_22471), " ", ToStr(Y_22472), " ", ToStr(Call(r2_14387, V.Undef, Add(x_22468, r_22470))), " ", ToStr(Y_22472), "Q", ToStr(X_22471), " ", ToStr(Y_22472), " ", ToStr(X_22471), " ", ToStr(Call(r2_14387, V.Undef, Add(y_22469, r_22470))), "Q", ToStr(X_22471), " ", ToStr(Y_22472), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_22468) - ToNum(r_22470)))))), " ", ToStr(Y_22472), "Q", ToStr(X_22471), " ", ToStr(Y_22472), " ", ToStr(X_22471), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(y_22469) - ToNum(r_22470)))))), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(X_22471).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(y_22469) - ToNum(r_22470)))))).S("Q").V(X_22471).S(" ").V(Y_22472).S(" ").V(Call(r2_14387, V.Undef, Add(x_22468, r_22470))).S(" ").V(Y_22472).S("Q").V(X_22471).S(" ").V(Y_22472).S(" ").V(X_22471).S(" ").V(Call(r2_14387, V.Undef, Add(y_22469, r_22470))).S("Q").V(X_22471).S(" ").V(Y_22472).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_22468) - ToNum(r_22470)))))).S(" ").V(Y_22472).S("Q").V(X_22471).S(" ").V(Y_22472).S(" ").V(X_22471).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(y_22469) - ToNum(r_22470)))))).S("Z").End()));
 return default;
 }, 3, "", true);
-sfd_22376 = ((V)(""));
-sbd_22377 = ((V)(""));
+sfd_22376 = new JsStrBuf("");
+sbd_22377 = new JsStrBuf("");
 zT_22378 = Call(DZ_22345, V.Undef, T_22352);
 {
 double i_22473 = 0;
@@ -30645,15 +30645,15 @@ q2_22478 = Call(PJ_22344, V.Undef, p_22477);
 z_22479 = Max(0D, FdLibm.Sin(((ts_22145 * 2.6) + (i_22473 * 2.1))));
 r_22480 = ((0.8 + (1.7 * z_22479)) + (ToNum(gl_22340) * 0.6));
 if (Ge(Call(DZ_22345, V.Undef, p_22477), zT_22378)) {
-sfd_22376 = Add(sfd_22376, Call(st4_22375, V.Undef, GetIdx(q2_22478, 0D), GetIdx(q2_22478, 1D), ((V)(r_22480))));
+sfd_22376.V(Call(st4_22375, V.Undef, GetIdx(q2_22478, 0D), GetIdx(q2_22478, 1D), ((V)(r_22480))));
 } else {
-sbd_22377 = Add(sbd_22377, Call(st4_22375, V.Undef, GetIdx(q2_22478, 0D), GetIdx(q2_22478, 1D), ((V)(r_22480))));
+sbd_22377.V(Call(st4_22375, V.Undef, GetIdx(q2_22478, 0D), GetIdx(q2_22478, 1D), ((V)(r_22480))));
 }
 i_22473++;
 }
 }
-Call(set_14391, V.Undef, Get(N_22339, "sF"), ((V)("d")), (sfd_22376 is var _t22481 && Truthy(_t22481) ? _t22481 : ((V)("M0 0"))));
-Call(set_14391, V.Undef, Get(N_22339, "sB"), ((V)("d")), (sbd_22377 is var _t22482 && Truthy(_t22482) ? _t22482 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(N_22339, "sF"), ((V)("d")), (((V)(sfd_22376.Str)) is var _t22481 && Truthy(_t22481) ? _t22481 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(N_22339, "sB"), ((V)("d")), (((V)(sbd_22377.Str)) is var _t22482 && Truthy(_t22482) ? _t22482 : ((V)("M0 0"))));
 stt_22379 = Get(Wh_22144, "st");
 SP_22380 = Fn((V _self1, int _argc22483, V i_22489, V f_22490, V _a22487, V _a22488, V[] _rest22484) => {
 double i0_22491 = 0;
@@ -30674,7 +30674,7 @@ r_22496 = Invoke(FN_22150, "RP", f_22490);
 return Call(BP_22149, V.Undef, Add(Call(L_22495, V.Undef, ((V)(0D))), ((V)((ToNum(Call(L_22495, V.Undef, ((V)(3D)))) * ToNum(GetIdx(r_22496, 0D)))))), Add(Call(L_22495, V.Undef, ((V)(1D))), ((V)((ToNum(Call(L_22495, V.Undef, ((V)(4D)))) * ToNum(GetIdx(r_22496, 1D)))))), Call(L_22495, V.Undef, ((V)(2D))));
 return default;
 }, 2, "", true);
-sd_22381 = ((V)(""));
+sd_22381 = new JsStrBuf("");
 Invoke(Get(N_22339, "SPT"), "forEach", Fn((V _self1, int _argc22504, V _a22506, V _a22507, V _a22508, V _a22509, V[] _rest22505) => {
 V p_22517 = default;
 V t1_22518 = default;
@@ -30716,10 +30716,10 @@ Invoke(o_22522, "push", Call(PJ_22344, V.Undef, Call(V_22341, V.Undef, Call(V_22
 k_22523++;
 }
 }
-sd_22381 = Add(sd_22381, Invoke(H_14370, "closedD", o_22522));
+sd_22381.V(Invoke(H_14370, "closedD", o_22522));
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(N_22339, "spots"), ((V)("d")), (sd_22381 is var _t22526 && Truthy(_t22526) ? _t22526 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(N_22339, "spots"), ((V)("d")), (((V)(sd_22381.Str)) is var _t22526 && Truthy(_t22526) ? _t22526 : ((V)("M0 0"))));
 }
 if (Truthy(Get(FN_22150, "sn"))) {
 V SNS_22527 = default;
@@ -30809,7 +30809,7 @@ V Wd_22612 = default;
 V secs_22613 = default;
 V cE_22614 = default;
 V tips_22615 = default;
-V fd_22616 = default;
+JsStrBuf fd_22616 = null;
 V M_22617 = default;
 V fr_22618 = default;
 sd_22601 = Get(Fp_22600, "sd");
@@ -30851,21 +30851,21 @@ cE_22614 = Call(V3_22571, V.Undef, R0_22605, u_22606, ((V)(Lf_22604)));
 tips_22615 = Invoke(Arr(((V)((-1D))), ((V)(1D))), "map", Fn((V _self1, int _argc22647, V k_22653, V _a22650, V _a22651, V _a22652, V[] _rest22648) => {
 return Call(ring_22611, V.Undef, Call(V3_22571, V.Undef, cE_22614, v_22609, ((V)(((ToNum(k_22653) * ToNum(Call(Wd_22612, V.Undef, ((V)(1D))))) * 0.55)))), ((V)(2.2)), ((V)(0.7)));
 }, 1, "", true));
-fd_22616 = ((V)(""));
+fd_22616 = new JsStrBuf("");
 {
 double i_22654 = 0;
 i_22654 = 0D;
 while (true) {
 if (!((i_22654 < (ToNum(Get(secs_22613, "length")) - 1D)))) break;
-fd_22616 = Add(fd_22616, Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(secs_22613, i_22654), "concat", GetIdx(secs_22613, (i_22654 + 1D))))));
+fd_22616.V(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(secs_22613, i_22654), "concat", GetIdx(secs_22613, (i_22654 + 1D))))));
 i_22654++;
 }
 }
 Invoke(tips_22615, "forEach", Fn((V _self1, int _argc22656, V tp_22662, V _a22659, V _a22660, V _a22661, V[] _rest22657) => {
-fd_22616 = Add(fd_22616, Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(secs_22613, (ToNum(Get(secs_22613, "length")) - 1D)), "concat", tp_22662))));
+fd_22616.V(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(secs_22613, (ToNum(Get(secs_22613, "length")) - 1D)), "concat", tp_22662))));
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(Fp_22600, "e"), ((V)("d")), fd_22616);
+Call(set_14391, V.Undef, Get(Fp_22600, "e"), ((V)("d")), ((V)(fd_22616.Str)));
 M_22617 = CallSpread(BP_22149, V.Undef, new ArrBuilder().Spread(Call(V3_22571, V.Undef, R0_22605, u_22606, ((V)((Lf_22604 * 0.45))))).V);
 fr_22618 = (GtN(Call(sphZ_14456, V.Undef, GetIdx(M_22617, 0D), GetIdx(M_22617, 1D), GetIdx(M_22617, 2D)), 0D) ? V.True : V.False);
 if (!SEq(fr_22618, Get(Fp_22600, "fr"))) {
@@ -30877,13 +30877,13 @@ return default;
 if (Truthy(Get(S_22567, "mz"))) {
 V MZ_22663 = default;
 V zS_22664 = default;
-V md_22665 = default;
+JsStrBuf md_22665 = null;
 V fr_22666 = default;
 MZ_22663 = Arr(Arr(((V)(45D)), ((V)(64.6)), ((V)(6.2)), ((V)(4.8)), ((V)(3.2))), Arr(((V)(55D)), ((V)(64.6)), ((V)(6.2)), ((V)(4.8)), ((V)(3.2))), Arr(((V)(50D)), ((V)(62.4)), ((V)(4.8)), ((V)(3.8)), ((V)(4D))));
 zS_22664 = Fn((V _self1, int _argc22667, V x_22673, V y_22674, V _a22671, V _a22672, V[] _rest22668) => {
 return Call(sz_14441, V.Undef, ((V)((ToNum(x_22673) - ToNum(HX_14394)))), ((V)((ToNum(y_22674) - ToNum(HY_14395)))));
 }, 2, "", true);
-md_22665 = ((V)(""));
+md_22665 = new JsStrBuf("");
 Invoke(MZ_22663, "forEach", Fn((V _self1, int _argc22675, V _a22677, V _a22678, V _a22679, V _a22680, V[] _rest22676) => {
 V pts_22692 = default;
 V cx_22683 = default;
@@ -30924,10 +30924,10 @@ j_22701++;
 }
 return default;
 }, 1, "", true));
-md_22665 = Add(md_22665, Invoke(H_14370, "closedD", Invoke(H_14370, "hull", pts_22692)));
+md_22665.V(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", pts_22692)));
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(Get(S_22567, "mz"), "e"), ((V)("d")), md_22665);
+Call(set_14391, V.Undef, Get(Get(S_22567, "mz"), "e"), ((V)("d")), ((V)(md_22665.Str)));
 Set(I_14377, "slZ", Fn((V _self1, int _argc22706, V x_22712, V y_22713, V _a22710, V _a22711, V[] _rest22707) => {
 double b_22714 = 0;
 b_22714 = 0D;
@@ -30969,7 +30969,7 @@ Invoke(Get(FN_22150, "par"), "insertBefore", Get(Get(S_22567, "mz"), "e"), (Trut
 if (!(Truthy(Get(FN_22150, "nw")))) {
 double ln_22733 = 0;
 V secs_22734 = default;
-V fd_22735 = default;
+JsStrBuf fd_22735 = null;
 ln_22733 = ((5D + (FdLibm.Sin((ts_22145 * 1.3)) * 1.2)) + (ToNum(Call(clamp_14385, V.Undef, Get(P_14378, "tilt"), ((V)((-20D))), ((V)(20D)))) * 0.08));
 secs_22734 = Arr();
 {
@@ -31015,19 +31015,19 @@ return default;
 i_22736++;
 }
 }
-fd_22735 = ((V)(""));
+fd_22735 = new JsStrBuf("");
 {
 double i_22769 = 0;
 i_22769 = 0D;
 while (true) {
 if (!((i_22769 < (ToNum(Get(secs_22734, "length")) - 1D)))) break;
-fd_22735 = ((V)(string.Concat(ToStr(fd_22735), ToStr(Invoke(Invoke(Invoke(H_14370, "hull", Invoke(GetIdx(secs_22734, i_22769), "concat", GetIdx(secs_22734, (i_22769 + 1D)))), "map", Fn((V _self1, int _argc22771, V p_22777, V k_22778, V _a22775, V _a22776, V[] _rest22772) => {
-return ((V)(string.Concat((Truthy(k_22778) ? "L" : "M"), ToStr(Call(r2_14387, V.Undef, GetIdx(p_22777, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_22777, 1D))))));
-}, 2, "", true)), "join", ((V)("")))), "Z")));
+fd_22735.V(Invoke(Invoke(Invoke(H_14370, "hull", Invoke(GetIdx(secs_22734, i_22769), "concat", GetIdx(secs_22734, (i_22769 + 1D)))), "map", Fn((V _self1, int _argc22771, V p_22777, V k_22778, V _a22775, V _a22776, V[] _rest22772) => {
+return ((V)(JsStrBuf.Begin().S((Truthy(k_22778) ? "L" : "M")).V(Call(r2_14387, V.Undef, GetIdx(p_22777, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_22777, 1D))).End()));
+}, 2, "", true)), "join", ((V)("")))).S("Z");
 i_22769++;
 }
 }
-Call(set_14391, V.Undef, Get(FN_22150, "fin"), ((V)("d")), fd_22735);
+Call(set_14391, V.Undef, Get(FN_22150, "fin"), ((V)("d")), ((V)(fd_22735.Str)));
 }
 }
 }
@@ -31072,20 +31072,20 @@ ox_22788 = (ToNum(Call(clamp_14385, V.Undef, ((V)((ToNum(Get(J_22779, "p")) - To
 oy_22789 = Call(clamp_14385, V.Undef, ((V)((ToNum(Get(J_22779, "l")) - ly_22787))), ((V)((-7D))), ((V)(7D)));
 OpSet(J_22779, "wp", 0, ((V)((ToNum(dtS_14466) * ((2.3 + (ToNum(jw_22781) * 5D)) + (System.Math.Abs(ToNum(jsw_22782)) * 1.5))))));
 SP_22790 = Fn((V _self1, int _argc22798, V a_22804, V cl_22805, V _a22802, V _a22803, V[] _rest22799) => {
-V d_22806 = default;
+JsStrBuf d_22806 = null;
 V l_22807 = default;
-d_22806 = ((V)(string.Concat("M", ToStr(Call(r2_14387, V.Undef, GetIdx(GetIdx(a_22804, 0D), 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(GetIdx(a_22804, 0D), 1D))))));
+d_22806 = new JsStrBuf(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, GetIdx(GetIdx(a_22804, 0D), 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(GetIdx(a_22804, 0D), 1D))).End());
 {
 double i_22808 = 0;
 i_22808 = 1D;
 while (true) {
 if (!((i_22808 < (ToNum(Get(a_22804, "length")) - 1D)))) break;
-d_22806 = ((V)(string.Concat(new string[] { ToStr(d_22806), "Q", ToStr(Call(r2_14387, V.Undef, GetIdx(GetIdx(a_22804, i_22808), 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(GetIdx(a_22804, i_22808), 1D))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(Add(GetIdx(GetIdx(a_22804, i_22808), 0D), GetIdx(GetIdx(a_22804, (i_22808 + 1D)), 0D))) / 2D))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(Add(GetIdx(GetIdx(a_22804, i_22808), 1D), GetIdx(GetIdx(a_22804, (i_22808 + 1D)), 1D))) / 2D))))) })));
+d_22806.S("Q").V(Call(r2_14387, V.Undef, GetIdx(GetIdx(a_22804, i_22808), 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(GetIdx(a_22804, i_22808), 1D))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(Add(GetIdx(GetIdx(a_22804, i_22808), 0D), GetIdx(GetIdx(a_22804, (i_22808 + 1D)), 0D))) / 2D))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(Add(GetIdx(GetIdx(a_22804, i_22808), 1D), GetIdx(GetIdx(a_22804, (i_22808 + 1D)), 1D))) / 2D)))));
 i_22808++;
 }
 }
 l_22807 = GetIdx(a_22804, (ToNum(Get(a_22804, "length")) - 1D));
-return ((V)(string.Concat(new string[] { ToStr(d_22806), "L", ToStr(Call(r2_14387, V.Undef, GetIdx(l_22807, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(l_22807, 1D))), (Truthy(cl_22805) ? "Z" : "") })));
+return ((V)(JsStrBuf.Begin().S(d_22806.Str).S("L").V(Call(r2_14387, V.Undef, GetIdx(l_22807, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(l_22807, 1D))).S((Truthy(cl_22805) ? "Z" : "")).End()));
 return default;
 }, 2, "", true);
 ord_22791 = Arr();
@@ -31428,20 +31428,20 @@ wd_22974 = Fn((V _self1, int _argc22988, V s_22994, V _a22991, V _a22992, V _a22
 return ((V)(((4.3 * (1D - (0.36 * ToNum(s_22994)))) * (1D + (sqp_22973 * 0.1)))));
 }, 1, "", true);
 SP_22975 = Fn((V _self1, int _argc22995, V a_23001, V cl_23002, V _a22999, V _a23000, V[] _rest22996) => {
-V d_23003 = default;
+JsStrBuf d_23003 = null;
 V l_23004 = default;
-d_23003 = ((V)(string.Concat("M", ToStr(Call(r2_14387, V.Undef, GetIdx(GetIdx(a_23001, 0D), 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(GetIdx(a_23001, 0D), 1D))))));
+d_23003 = new JsStrBuf(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, GetIdx(GetIdx(a_23001, 0D), 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(GetIdx(a_23001, 0D), 1D))).End());
 {
 double i_23005 = 0;
 i_23005 = 1D;
 while (true) {
 if (!((i_23005 < (ToNum(Get(a_23001, "length")) - 1D)))) break;
-d_23003 = ((V)(string.Concat(new string[] { ToStr(d_23003), "Q", ToStr(Call(r2_14387, V.Undef, GetIdx(GetIdx(a_23001, i_23005), 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(GetIdx(a_23001, i_23005), 1D))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(Add(GetIdx(GetIdx(a_23001, i_23005), 0D), GetIdx(GetIdx(a_23001, (i_23005 + 1D)), 0D))) / 2D))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(Add(GetIdx(GetIdx(a_23001, i_23005), 1D), GetIdx(GetIdx(a_23001, (i_23005 + 1D)), 1D))) / 2D))))) })));
+d_23003.S("Q").V(Call(r2_14387, V.Undef, GetIdx(GetIdx(a_23001, i_23005), 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(GetIdx(a_23001, i_23005), 1D))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(Add(GetIdx(GetIdx(a_23001, i_23005), 0D), GetIdx(GetIdx(a_23001, (i_23005 + 1D)), 0D))) / 2D))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(Add(GetIdx(GetIdx(a_23001, i_23005), 1D), GetIdx(GetIdx(a_23001, (i_23005 + 1D)), 1D))) / 2D)))));
 i_23005++;
 }
 }
 l_23004 = GetIdx(a_23001, (ToNum(Get(a_23001, "length")) - 1D));
-return ((V)(string.Concat(new string[] { ToStr(d_23003), "L", ToStr(Call(r2_14387, V.Undef, GetIdx(l_23004, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(l_23004, 1D))), (Truthy(cl_23002) ? "Z" : "") })));
+return ((V)(JsStrBuf.Begin().S(d_23003.Str).S("L").V(Call(r2_14387, V.Undef, GetIdx(l_23004, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(l_23004, 1D))).S((Truthy(cl_23002) ? "Z" : "")).End()));
 return default;
 }, 2, "", true);
 prj_22976 = Fn((V _self1, int _argc23007, V p_23013, V _a23010, V _a23011, V _a23012, V[] _rest23008) => {
@@ -31470,7 +31470,7 @@ V Ce_23038 = default;
 V t0_23039 = default;
 V w0_23040 = default;
 V C0_23041 = default;
-V cd_23042 = default;
+JsStrBuf cd_23042 = null;
 n_23027 = Get(Wp_23024, "length");
 e_23028 = (ToNum(n_23027) - 1D);
 T2_23029 = Arr();
@@ -31546,7 +31546,7 @@ i_23058++;
 Call(set_14391, V.Undef, Get(E_23023, "b"), ((V)("d")), Call(SP_22975, V.Undef, Invoke(Lp_23030, "concat", cap_23034, Invoke(Rp_23031, "reverse"), cap0_23035), (true ? V.True : V.False)));
 Call(set_14391, V.Undef, Get(E_23023, "hl"), ((V)("d")), Call(SP_22975, V.Undef, Invoke(hl_23032, "slice", ((V)(0D)), ((V)((-1D))))));
 Call(set_14391, V.Undef, Get(E_23023, "sh"), ((V)("d")), Call(SP_22975, V.Undef, sh_23033));
-cd_23042 = ((V)(""));
+cd_23042 = new JsStrBuf("");
 if (GtN(cv_23026, 0.02)) {
 Invoke(Arr(((V)(0.6)), ((V)(0.72)), ((V)(0.84)), ((V)(0.95))), "forEach", Fn((V _self1, int _argc23063, V s_23069, V _a23066, V _a23067, V _a23068, V[] _rest23064) => {
 double k_23070 = 0;
@@ -31558,11 +31558,11 @@ return default;
 }
 c_23071 = GetIdx(Wp_23024, k_23070);
 r_23072 = (0.95 * (1D - (0.3 * ToNum(s_23069))));
-cd_23042 = ((V)(string.Concat(new string[] { ToStr(cd_23042), "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(c_23071, 0D)) - r_23072))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(c_23071, 1D))), "a", ToStr(Call(r2_14387, V.Undef, ((V)(r_23072)))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(r_23072)))), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((2D * r_23072))))), " 0a", ToStr(Call(r2_14387, V.Undef, ((V)(r_23072)))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(r_23072)))), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)(((-2D) * r_23072))))), " 0" })));
+cd_23042.S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(c_23071, 0D)) - r_23072))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(c_23071, 1D))).S("a").V(Call(r2_14387, V.Undef, ((V)(r_23072)))).S(" ").V(Call(r2_14387, V.Undef, ((V)(r_23072)))).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((2D * r_23072))))).S(" 0a").V(Call(r2_14387, V.Undef, ((V)(r_23072)))).S(" ").V(Call(r2_14387, V.Undef, ((V)(r_23072)))).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)(((-2D) * r_23072))))).S(" 0");
 return default;
 }, 1, "", true));
 }
-Call(set_14391, V.Undef, Get(E_23023, "cu"), ((V)("d")), cd_23042);
+Call(set_14391, V.Undef, Get(E_23023, "cu"), ((V)("d")), ((V)(cd_23042.Str)));
 Call(set_14391, V.Undef, Get(E_23023, "cu"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((ToNum(cv_23026) * 0.9)))));
 return default;
 }, 4, "", true);
@@ -32020,7 +32020,7 @@ i_23353++;
 }
 Call(set_14391, V.Undef, Get(T_23331, "el"), ((V)("d")), Invoke(H_14370, "closedD", Invoke(H_14370, "hull", pts2_23338)));
 Call(set_14391, V.Undef, Get(T_23331, "hl"), ((V)("d")), Invoke(Invoke(rid_23339, "map", Fn((V _self1, int _argc23364, V p_23370, V k_23371, V _a23368, V _a23369, V[] _rest23365) => {
-return ((V)(string.Concat((Truthy(k_23371) ? "L" : "M"), ToStr(Call(r2_14387, V.Undef, GetIdx(p_23370, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_23370, 1D))))));
+return ((V)(JsStrBuf.Begin().S((Truthy(k_23371) ? "L" : "M")).V(Call(r2_14387, V.Undef, GetIdx(p_23370, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_23370, 1D))).End()));
 }, 2, "", true)), "join", ((V)(""))));
 fr_23341 = (GtN(Call(sphZ_14456, V.Undef, ((V)(50D)), ((V)(84D)), ((V)((z0_23336 - 6D)))), 0D) ? V.True : V.False);
 if (!SEq(fr_23341, Get(T_23331, "fr"))) {
@@ -32085,8 +32085,8 @@ double rx_23408 = 0;
 double ry_23409 = 0;
 double w_23410 = 0;
 V q2_23411 = default;
-V rd_23412 = default;
-V sd_23413 = default;
+JsStrBuf rd_23412 = null;
+JsStrBuf sd_23413 = null;
 Set(I_14377, "dzOn", ((V)(1D)));
 HRr_23405 = (Get(g_14390, "HR") is var _t23414 && Truthy(_t23414) ? _t23414 : ((V)(14D)));
 cy0_23406 = ((ToNum(HY_14395) - ToNum(HRr_23405)) - 6D);
@@ -32095,9 +32095,9 @@ rx_23408 = ((ToNum(HRr_23405) * 1.15) * gk_23407);
 ry_23409 = ((ToNum(HRr_23405) * 0.34) * gk_23407);
 w_23410 = (((ToNum(now_14379) / 1000D) * ToNum(TAU_14389)) * 0.85);
 q2_23411 = Fn((V _self1, int _argc23415, V p_23421, V _a23418, V _a23419, V _a23420, V[] _rest23416) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_23421, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_23421, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_23421, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_23421, 1D))).End()));
 }, 1, "", true);
-rd_23412 = ((V)(""));
+rd_23412 = new JsStrBuf("");
 {
 double k_23422 = 0;
 k_23422 = 0D;
@@ -32105,13 +32105,13 @@ while (true) {
 if (!((k_23422 <= 36D))) break;
 double f_23424 = 0;
 f_23424 = ((k_23422 / 36D) * ToNum(TAU_14389));
-rd_23412 = ((V)(string.Concat(ToStr(rd_23412), (NumTruthy(k_23422) ? "L" : "M"), ToStr(Call(q2_23411, V.Undef, Call(headT_14439, V.Undef, Add(HX_14394, ((V)((rx_23408 * FdLibm.Cos(f_23424))))), ((V)((cy0_23406 + (ry_23409 * FdLibm.Sin(f_23424)))))))))));
+rd_23412.S((NumTruthy(k_23422) ? "L" : "M")).V(Call(q2_23411, V.Undef, Call(headT_14439, V.Undef, Add(HX_14394, ((V)((rx_23408 * FdLibm.Cos(f_23424))))), ((V)((cy0_23406 + (ry_23409 * FdLibm.Sin(f_23424))))))));
 k_23422++;
 }
 }
-Call(set_14391, V.Undef, Get(I_14377, "dzR"), ((V)("d")), ((V)(string.Concat(ToStr(rd_23412), "Z"))));
+Call(set_14391, V.Undef, Get(I_14377, "dzR"), ((V)("d")), ((V)(string.Concat(rd_23412.Str, "Z"))));
 Call(set_14391, V.Undef, Get(I_14377, "dzR"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.6 * ToNum(dz_23379))))));
-sd_23413 = ((V)(""));
+sd_23413 = new JsStrBuf("");
 {
 double i_23425 = 0;
 i_23425 = 0D;
@@ -32136,15 +32136,15 @@ double r_23434 = 0;
 double a_23435 = 0;
 r_23434 = (NumTruthy((k_23432 % 2D)) ? (R_23430 * 0.45) : R_23430);
 a_23435 = (a0_23431 + ((k_23432 / 10D) * ToNum(TAU_14389)));
-sd_23413 = ((V)(string.Concat(ToStr(sd_23413), (NumTruthy(k_23432) ? "L" : "M"), ToStr(Call(q2_23411, V.Undef, Arr(Add(GetIdx(c_23429, 0D), ((V)((r_23434 * FdLibm.Sin(a_23435))))), ((V)((ToNum(GetIdx(c_23429, 1D)) - (r_23434 * FdLibm.Cos(a_23435)))))))))));
+sd_23413.S((NumTruthy(k_23432) ? "L" : "M")).V(Call(q2_23411, V.Undef, Arr(Add(GetIdx(c_23429, 0D), ((V)((r_23434 * FdLibm.Sin(a_23435))))), ((V)((ToNum(GetIdx(c_23429, 1D)) - (r_23434 * FdLibm.Cos(a_23435))))))));
 k_23432++;
 }
 }
-sd_23413 = ((V)(string.Concat(ToStr(sd_23413), "Z")));
+sd_23413.S("Z");
 i_23425++;
 }
 }
-Call(set_14391, V.Undef, Get(I_14377, "dzS"), ((V)("d")), sd_23413);
+Call(set_14391, V.Undef, Get(I_14377, "dzS"), ((V)("d")), ((V)(sd_23413.Str)));
 Call(set_14391, V.Undef, Get(I_14377, "dzS"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)(Min(1D, (ToNum(dz_23379) * 1.6))))));
 }
 }
@@ -32196,7 +32196,7 @@ rY_23442 = Get(T_23436, "rY");
 h_23443 = Get(T_23436, "h");
 hS_23444 = Call(SM_14384, V.Undef, ((V)(Min(1D, (ToNum(h_23443) * 2D)))));
 pS_23445 = Fn((V _self1, int _argc23472, V p_23478, V _a23475, V _a23476, V _a23477, V[] _rest23473) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_23478, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_23478, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_23478, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_23478, 1D))).End()));
 }, 1, "", true);
 zc_23446 = (Get(T_23436, "zc") is var _t23479 && Truthy(_t23479) ? _t23479 : ((V)(0D)));
 SA_23447 = Fn((V _self1, int _argc23480, V x_23486, V y_23487, V z_23488, V _a23485, V[] _rest23481) => {
@@ -32237,12 +32237,12 @@ if (Truthy(Get(T_23436, "v2"))) {
 V vf_23532 = default;
 V P2_23533 = default;
 V runs_23534 = default;
-V sd_23535 = default;
-V st_23536 = default;
+JsStrBuf sd_23535 = null;
+JsStrBuf st_23536 = null;
 double th0_23537 = 0;
 V tp_23538 = default;
 V bt_23539 = default;
-V md_23540 = default;
+JsStrBuf md_23540 = null;
 V pl_23541 = default;
 V pb_23542 = default;
 double pa_23543 = 0;
@@ -32253,11 +32253,11 @@ P2_23533 = Fn((V _self1, int _argc23551, V q_23557, V _a23554, V _a23555, V _a23
 return Call(SP_23448, V.Undef, GetIdx(Get(q_23557, "p"), 0D), GetIdx(Get(q_23557, "p"), 1D), GetIdx(Get(q_23557, "p"), 2D));
 }, 1, "", true);
 runs_23534 = Fn((V _self1, int _argc23558, V L_23564, V lim_23565, V closed_23566, V _a23563, V[] _rest23559) => {
-V d_23567 = default;
+JsStrBuf d_23567 = null;
 V pen_23568 = default;
 V n_23569 = default;
 V N_23570 = default;
-d_23567 = ((V)(""));
+d_23567 = new JsStrBuf("");
 pen_23568 = (false ? V.True : V.False);
 n_23569 = Get(L_23564, "length");
 N_23570 = (Truthy(closed_23566) ? Add(n_23569, ((V)(1D))) : n_23569);
@@ -32269,7 +32269,7 @@ if (!(Lt(((V)(i_23571)), N_23570))) break;
 V q_23573 = default;
 q_23573 = GetIdx(L_23564, (i_23571 % ToNum(n_23569)));
 if (Gt(Call(vf_23532, V.Undef, Get(q_23573, "n")), lim_23565)) {
-d_23567 = ((V)(string.Concat(ToStr(d_23567), (Truthy(pen_23568) ? "L" : "M"), ToStr(Call(pS_23445, V.Undef, Call(P2_23533, V.Undef, q_23573))))));
+d_23567.S((Truthy(pen_23568) ? "L" : "M")).V(Call(pS_23445, V.Undef, Call(P2_23533, V.Undef, q_23573)));
 pen_23568 = (true ? V.True : V.False);
 } else {
 pen_23568 = (false ? V.True : V.False);
@@ -32277,23 +32277,23 @@ pen_23568 = (false ? V.True : V.False);
 i_23571++;
 }
 }
-return d_23567;
+return ((V)(d_23567.Str));
 return default;
 }, 3, "", true);
-sd_23535 = ((V)(""));
-st_23536 = ((V)(""));
+sd_23535 = new JsStrBuf("");
+st_23536 = new JsStrBuf("");
 Invoke(Get(T_23436, "plates"), "forEach", Fn((V _self1, int _argc23574, V pl_23580, V i_23581, V _a23578, V _a23579, V[] _rest23575) => {
 V fc_23582 = default;
 V e_23583 = default;
-sd_23535 = Add(sd_23535, Call(runs_23534, V.Undef, Get(pl_23580, "edge"), ((V)(0D)), (true ? V.True : V.False)));
+sd_23535.V(Call(runs_23534, V.Undef, Get(pl_23580, "edge"), ((V)(0D)), (true ? V.True : V.False)));
 fc_23582 = Call(vf_23532, V.Undef, Get(Get(pl_23580, "c"), "n"));
 e_23583 = GetK(Get(T_23436, "puffs"), i_23581);
 if (GtN(fc_23582, 0.3)) {
-Call(set_14391, V.Undef, e_23583, ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Get(pl_23580, "puff"), "map", Fn((V _self1, int _argc23584, V q_23590, V _a23587, V _a23588, V _a23589, V[] _rest23585) => {
+Call(set_14391, V.Undef, e_23583, ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Get(pl_23580, "puff"), "map", Fn((V _self1, int _argc23584, V q_23590, V _a23587, V _a23588, V _a23589, V[] _rest23585) => {
 return Call(pS_23445, V.Undef, Call(P2_23533, V.Undef, q_23590));
-}, 1, "", true)), "join", ((V)("L")))), "Z"))));
+}, 1, "", true)), "join", ((V)("L")))).S("Z").End())));
 Call(set_14391, V.Undef, e_23583, ((V)("opacity")), Call(r2_14387, V.Undef, Call(SM_14384, V.Undef, ((V)(((ToNum(fc_23582) - 0.3) / 0.3))))));
-st_23536 = Add(st_23536, Call(runs_23534, V.Undef, Get(pl_23580, "sti"), ((V)(0.25)), (true ? V.True : V.False)));
+st_23536.V(Call(runs_23534, V.Undef, Get(pl_23580, "sti"), ((V)(0.25)), (true ? V.True : V.False)));
 } else {
 Call(set_14391, V.Undef, e_23583, ((V)("d")), ((V)("M0 0")));
 }
@@ -32318,25 +32318,25 @@ Invoke(bt_23539, "push", Call(SP_23448, V.Undef, ((V)(((ToNum(Call(rY_23442, V.U
 i_23591++;
 }
 }
-Call(set_14391, V.Undef, Get(T_23436, "band"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(tp_23538, "concat", Invoke(Invoke(bt_23539, "slice"), "reverse")), "map", pS_23445), "join", ((V)("L")))), "Z"))));
-md_23540 = ((V)(""));
+Call(set_14391, V.Undef, Get(T_23436, "band"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(tp_23538, "concat", Invoke(Invoke(bt_23539, "slice"), "reverse")), "map", pS_23445), "join", ((V)("L")))).S("Z").End())));
+md_23540 = new JsStrBuf("");
 Invoke(Get(T_23436, "marg"), "forEach", Fn((V _self1, int _argc23596, V m_23602, V i_23603, V _a23600, V _a23601, V[] _rest23597) => {
 V fc_23604 = default;
 V e_23605 = default;
-md_23540 = Add(md_23540, Add(Call(runs_23534, V.Undef, Get(m_23602, "seam"), ((V)(0D)), (false ? V.True : V.False)), Call(runs_23534, V.Undef, Get(m_23602, "bot"), ((V)(0D)), (false ? V.True : V.False))));
+md_23540.V(Add(Call(runs_23534, V.Undef, Get(m_23602, "seam"), ((V)(0D)), (false ? V.True : V.False)), Call(runs_23534, V.Undef, Get(m_23602, "bot"), ((V)(0D)), (false ? V.True : V.False))));
 fc_23604 = Call(vf_23532, V.Undef, Get(Get(m_23602, "c"), "n"));
 e_23605 = GetK(Get(T_23436, "mpuffs"), i_23603);
 if (GtN(fc_23604, 0.35)) {
-Call(set_14391, V.Undef, e_23605, ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Get(m_23602, "puff"), "map", Fn((V _self1, int _argc23606, V q_23612, V _a23609, V _a23610, V _a23611, V[] _rest23607) => {
+Call(set_14391, V.Undef, e_23605, ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Get(m_23602, "puff"), "map", Fn((V _self1, int _argc23606, V q_23612, V _a23609, V _a23610, V _a23611, V[] _rest23607) => {
 return Call(pS_23445, V.Undef, Call(P2_23533, V.Undef, q_23612));
-}, 1, "", true)), "join", ((V)("L")))), "Z"))));
+}, 1, "", true)), "join", ((V)("L")))).S("Z").End())));
 Call(set_14391, V.Undef, e_23605, ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.8 * ToNum(Call(SM_14384, V.Undef, ((V)(((ToNum(fc_23604) - 0.35) / 0.3))))))))));
 } else {
 Call(set_14391, V.Undef, e_23605, ((V)("d")), ((V)("M0 0")));
 }
 return default;
 }, 2, "", true));
-md_23540 = ((V)(string.Concat(ToStr(md_23540), "M", ToStr(Invoke(Invoke(tp_23538, "map", pS_23445), "join", ((V)("L")))))));
+md_23540.S("M").V(Invoke(Invoke(tp_23538, "map", pS_23445), "join", ((V)("L"))));
 pl_23541 = Arr();
 pb_23542 = Arr();
 pa_23543 = FdLibm.Atan2(0D, 1D);
@@ -32356,13 +32356,13 @@ Invoke(pb_23542, "push", Call(SP_23448, V.Undef, ((V)((((ToNum(Call(rY_23442, V.
 i_23613++;
 }
 }
-Call(set_14391, V.Undef, Get(T_23436, "plast"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(pl_23541, "concat", Invoke(Invoke(pb_23542, "slice"), "reverse")), "map", pS_23445), "join", ((V)("L")))), "Z"))));
+Call(set_14391, V.Undef, Get(T_23436, "plast"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(pl_23541, "concat", Invoke(Invoke(pb_23542, "slice"), "reverse")), "map", pS_23445), "join", ((V)("L")))).S("Z").End())));
 {
-V q_23618 = default;
+JsStrBuf q_23618 = null;
 V L2_23619 = default;
-q_23618 = ((V)(""));
+q_23618 = new JsStrBuf("");
 if ((cs_23439 > 0.05)) {
-q_23618 = ((V)(string.Concat("M", ToStr(Call(pS_23445, V.Undef, Call(SP_23448, V.Undef, ((V)(0D)), Add(Get(T_23436, "YB"), ((V)(0.6))), ((V)((ToNum(Call(rY_23442, V.Undef, Add(Get(T_23436, "YB"), ((V)(0.6))))) * ToNum(K_23441))))))), "L", ToStr(Call(pS_23445, V.Undef, Call(SP_23448, V.Undef, ((V)(0D)), ((V)((ToNum(Get(T_23436, "YU")) - 0.6))), ((V)(((ToNum(Call(rY_23442, V.Undef, ((V)((ToNum(Get(T_23436, "YU")) - 0.6))))) * 0.96) * ToNum(K_23441))))))))));
+q_23618.Set(JsStrBuf.Begin().S("M").V(Call(pS_23445, V.Undef, Call(SP_23448, V.Undef, ((V)(0D)), Add(Get(T_23436, "YB"), ((V)(0.6))), ((V)((ToNum(Call(rY_23442, V.Undef, Add(Get(T_23436, "YB"), ((V)(0.6))))) * ToNum(K_23441))))))).S("L").V(Call(pS_23445, V.Undef, Call(SP_23448, V.Undef, ((V)(0D)), ((V)((ToNum(Get(T_23436, "YU")) - 0.6))), ((V)(((ToNum(Call(rY_23442, V.Undef, ((V)((ToNum(Get(T_23436, "YU")) - 0.6))))) * 0.96) * ToNum(K_23441))))))).End());
 }
 L2_23619 = Arr();
 {
@@ -32378,32 +32378,32 @@ Invoke(L2_23619, "push", Call(SP_23448, V.Undef, ((V)((((ToNum(Call(rY_23442, V.
 i_23620++;
 }
 }
-q_23618 = ((V)(string.Concat(ToStr(q_23618), "M", ToStr(Invoke(Invoke(L2_23619, "map", pS_23445), "join", ((V)("L")))))));
-Call(set_14391, V.Undef, Get(T_23436, "pseam"), ((V)("d")), q_23618);
+q_23618.S("M").V(Invoke(Invoke(L2_23619, "map", pS_23445), "join", ((V)("L"))));
+Call(set_14391, V.Undef, Get(T_23436, "pseam"), ((V)("d")), ((V)(q_23618.Str)));
 }
-Call(set_14391, V.Undef, Get(T_23436, "hex"), ((V)("d")), sd_23535);
-Call(set_14391, V.Undef, Get(T_23436, "msm"), ((V)("d")), md_23540);
-Call(set_14391, V.Undef, Get(T_23436, "sti"), ((V)("d")), st_23536);
+Call(set_14391, V.Undef, Get(T_23436, "hex"), ((V)("d")), ((V)(sd_23535.Str)));
+Call(set_14391, V.Undef, Get(T_23436, "msm"), ((V)("d")), ((V)(md_23540.Str)));
+Call(set_14391, V.Undef, Get(T_23436, "sti"), ((V)("d")), ((V)(st_23536.Str)));
 if (Truthy(Get(T_23436, "rays"))) {
-V rd_23624 = default;
-rd_23624 = ((V)(""));
+JsStrBuf rd_23624 = null;
+rd_23624 = new JsStrBuf("");
 Invoke(Get(T_23436, "plates"), "forEach", Fn((V _self1, int _argc23625, V pl_23631, V _a23628, V _a23629, V _a23630, V[] _rest23626) => {
 if (GtN(Call(vf_23532, V.Undef, Get(Get(pl_23631, "c"), "n")), 0.25)) {
 Invoke(Get(pl_23631, "rays"), "forEach", Fn((V _self1, int _argc23632, V L_23638, V _a23635, V _a23636, V _a23637, V[] _rest23633) => {
-rd_23624 = Add(rd_23624, Call(runs_23534, V.Undef, L_23638, ((V)(0.2)), (false ? V.True : V.False)));
+rd_23624.V(Call(runs_23534, V.Undef, L_23638, ((V)(0.2)), (false ? V.True : V.False)));
 return default;
 }, 1, "", true));
 }
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(T_23436, "rays"), ((V)("d")), rd_23624);
+Call(set_14391, V.Undef, Get(T_23436, "rays"), ((V)("d")), ((V)(rd_23624.Str)));
 }
 Call(set_14391, V.Undef, Get(T_23436, "shine"), ((V)("d")), Call(toD_14380, V.Undef, (Truthy(Get(T_23436, "sea")) ? Call(ellS_14381, V.Undef, ((V)(36D)), ((V)(50.5)), ((V)(6.5)), ((V)(2.3)), ((V)((-24D))), ((V)(12D))) : Call(ellS_14381, V.Undef, ((V)(37D)), ((V)(42D)), ((V)(6.5)), ((V)(2.6)), ((V)((-30D))), ((V)(12D)))), glob_14432));
 } else {
 double th0_23639 = 0;
 V tp_23640 = default;
 V bt_23641 = default;
-V hd_23642 = default;
+JsStrBuf hd_23642 = null;
 th0_23639 = FdLibm.Atan2((-ss_23440), (ToNum(K_23441) * cs_23439));
 tp_23640 = Arr();
 bt_23641 = Arr();
@@ -32429,8 +32429,8 @@ Invoke(bt_23641, "push", Call(SP_23448, V.Undef, ((V)((ToNum(rB_23650) * FdLibm.
 i_23643++;
 }
 }
-Call(set_14391, V.Undef, Get(T_23436, "band"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(tp_23640, "concat", Invoke(bt_23641, "reverse")), "map", pS_23445), "join", ((V)("L")))), "Z"))));
-hd_23642 = ((V)(""));
+Call(set_14391, V.Undef, Get(T_23436, "band"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(tp_23640, "concat", Invoke(bt_23641, "reverse")), "map", pS_23445), "join", ((V)("L")))).S("Z").End())));
+hd_23642 = new JsStrBuf("");
 Invoke(Get(T_23436, "HEX"), "forEach", Fn((V _self1, int _argc23651, V _a23653, V _a23654, V _a23655, V _a23656, V[] _rest23652) => {
 V rc_23664 = default;
 V t0_23659 = default;
@@ -32448,7 +32448,7 @@ rc_23664 = Call(rY_23442, V.Undef, yc_23661);
 if (((ToNum(rc_23664) * (((-FdLibm.Sin(ToNum(t0_23659))) * ss_23440) + ((ToNum(K_23441) * FdLibm.Cos(ToNum(t0_23659))) * cs_23439))) < (ToNum(rc_23664) * 0.5))) {
 return default;
 }
-hd_23642 = ((V)(string.Concat(ToStr(hd_23642), "M", ToStr(Invoke(Invoke(Arr(((V)(30D)), ((V)(90D)), ((V)(150D)), ((V)(210D)), ((V)(270D)), ((V)(330D))), "map", Fn((V _self1, int _argc23665, V dg_23671, V _a23668, V _a23669, V _a23670, V[] _rest23666) => {
+hd_23642.S("M").V(Invoke(Invoke(Arr(((V)(30D)), ((V)(90D)), ((V)(150D)), ((V)(210D)), ((V)(270D)), ((V)(330D))), "map", Fn((V _self1, int _argc23665, V dg_23671, V _a23668, V _a23669, V _a23670, V[] _rest23666) => {
 double f_23672 = 0;
 V y_23673 = default;
 V r_23674 = default;
@@ -32459,10 +32459,10 @@ r_23674 = Call(rY_23442, V.Undef, y_23673);
 th_23675 = Add(t0_23659, ((V)(((ToNum(R_23663) * FdLibm.Cos(f_23672)) / Max(ToNum(r_23674), 4D)))));
 return Call(pS_23445, V.Undef, Call(SP_23448, V.Undef, ((V)((ToNum(r_23674) * FdLibm.Sin(ToNum(th_23675))))), y_23673, ((V)(((ToNum(r_23674) * ToNum(K_23441)) * FdLibm.Cos(ToNum(th_23675)))))));
 return default;
-}, 1, "", true)), "join", ((V)("L")))), "Z")));
+}, 1, "", true)), "join", ((V)("L")))).S("Z");
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(T_23436, "hex"), ((V)("d")), hd_23642);
+Call(set_14391, V.Undef, Get(T_23436, "hex"), ((V)("d")), ((V)(hd_23642.Str)));
 Call(set_14391, V.Undef, Get(T_23436, "shine"), ((V)("d")), Call(toD_14380, V.Undef, Call(ellS_14381, V.Undef, ((V)(30D)), ((V)(36D)), ((V)(8D)), ((V)(3.5)), ((V)((-32D))), ((V)(12D))), glob_14432));
 }
 {
@@ -32506,8 +32506,8 @@ Invoke(Get(T_23436, "gShell"), "appendChild", Get(T_23436, "wh"));
 }
 wb_23681 = (GtN((((V)(ToNum(Get(P_14378, "sblur")))) is var _t23696 && Truthy(_t23696) ? _t23696 : ((V)(0D))), 0.02) ? ((V)(0D)) : bl_23680);
 if (GtN(wb_23681, 0.02)) {
-V wd_23697 = default;
-wd_23697 = ((V)(""));
+JsStrBuf wd_23697 = null;
+wd_23697 = new JsStrBuf("");
 Invoke(Arr(Arr(((V)(40D)), ((V)(2.2)), ((V)(0.75))), Arr(((V)(53D)), ((V)(2.8)), ((V)(0.6))), Arr(((V)(65D)), ((V)(2.4)), ((V)(0.7)))), "forEach", Fn((V _self1, int _argc23698, V _a23700, V _a23701, V _a23702, V _a23703, V[] _rest23699) => {
 V r_23711 = default;
 V y_23706 = default;
@@ -32530,7 +32530,7 @@ while (true) {
 if (!((k_23719 <= 10D))) break;
 double f_23721 = 0;
 f_23721 = (ToNum(sd_23718) * ToNum(Add(f0_23710, ((V)(((k_23719 / 10D) * 0.75))))));
-wd_23697 = ((V)(string.Concat(ToStr(wd_23697), (NumTruthy(k_23719) ? "L" : "M"), ToStr(Call(pS_23445, V.Undef, Call(glob_14432, V.Undef, ((V)((50D + (ToNum(r_23711) * FdLibm.Sin(f_23721))))), Add(y_23706, ((V)((ToNum(ry_23708) * FdLibm.Cos(f_23721)))))))))));
+wd_23697.S((NumTruthy(k_23719) ? "L" : "M")).V(Call(pS_23445, V.Undef, Call(glob_14432, V.Undef, ((V)((50D + (ToNum(r_23711) * FdLibm.Sin(f_23721))))), Add(y_23706, ((V)((ToNum(ry_23708) * FdLibm.Cos(f_23721))))))));
 k_23719++;
 }
 }
@@ -32538,7 +32538,7 @@ return default;
 }, 1, "", true));
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(T_23436, "wh"), ((V)("d")), wd_23697);
+Call(set_14391, V.Undef, Get(T_23436, "wh"), ((V)("d")), ((V)(wd_23697.Str)));
 Call(set_14391, V.Undef, Get(T_23436, "wh"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.8 * ToNum(wb_23681))))));
 } else {
 if (!SEqN(Get(T_23436, "whOn"), 0D)) {
@@ -32555,10 +32555,10 @@ Bp_23458 = Call(glob_14432, V.Undef, ((V)((hcx_23455 + hw_23456))), ((V)(lip_234
 Cq_23459 = Call(glob_14432, V.Undef, ((V)(hcx_23455)), ((V)((lip_23454 + 7D))));
 Ct_23460 = Call(glob_14432, V.Undef, ((V)(hcx_23455)), ((V)((lip_23454 - (16D * ToNum(hS_23444))))));
 if ((GtN(h_23443, 0.01) && (cs_23439 > 0D))) {
-Call(set_14391, V.Undef, Get(T_23436, "hole"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(pS_23445, V.Undef, A_23457)), "Q", ToStr(Call(pS_23445, V.Undef, Ct_23460)), " ", ToStr(Call(pS_23445, V.Undef, Bp_23458)), "Q", ToStr(Call(pS_23445, V.Undef, Cq_23459)), " ", ToStr(Call(pS_23445, V.Undef, A_23457)), "Z" }))));
+Call(set_14391, V.Undef, Get(T_23436, "hole"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(pS_23445, V.Undef, A_23457)).S("Q").V(Call(pS_23445, V.Undef, Ct_23460)).S(" ").V(Call(pS_23445, V.Undef, Bp_23458)).S("Q").V(Call(pS_23445, V.Undef, Cq_23459)).S(" ").V(Call(pS_23445, V.Undef, A_23457)).S("Z").End())));
 Call(set_14391, V.Undef, Get(T_23436, "hole"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((ToNum(Call(SM_14384, V.Undef, ((V)((cs_23439 * 4D))))) * ToNum(Call(SM_14384, V.Undef, ((V)((ToNum(h_23443) * 5D))))))))));
 Set(Get(Get(T_23436, "lid"), "style"), "display", ((V)("")));
-Call(set_14391, V.Undef, Get(T_23436, "clip"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(pS_23445, V.Undef, Call(glob_14432, V.Undef, ((V)((-30D))), ((V)(lip_23454))))), "L", ToStr(Call(pS_23445, V.Undef, A_23457)), "Q", ToStr(Call(pS_23445, V.Undef, Cq_23459)), " ", ToStr(Call(pS_23445, V.Undef, Bp_23458)), "L", ToStr(Call(pS_23445, V.Undef, Call(glob_14432, V.Undef, ((V)(130D)), ((V)(lip_23454))))), "L", ToStr(Call(pS_23445, V.Undef, Call(glob_14432, V.Undef, ((V)(130D)), ((V)(150D))))), "L", ToStr(Call(pS_23445, V.Undef, Call(glob_14432, V.Undef, ((V)((-30D))), ((V)(150D))))), "Z" }))));
+Call(set_14391, V.Undef, Get(T_23436, "clip"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(pS_23445, V.Undef, Call(glob_14432, V.Undef, ((V)((-30D))), ((V)(lip_23454))))).S("L").V(Call(pS_23445, V.Undef, A_23457)).S("Q").V(Call(pS_23445, V.Undef, Cq_23459)).S(" ").V(Call(pS_23445, V.Undef, Bp_23458)).S("L").V(Call(pS_23445, V.Undef, Call(glob_14432, V.Undef, ((V)(130D)), ((V)(lip_23454))))).S("L").V(Call(pS_23445, V.Undef, Call(glob_14432, V.Undef, ((V)(130D)), ((V)(150D))))).S("L").V(Call(pS_23445, V.Undef, Call(glob_14432, V.Undef, ((V)((-30D))), ((V)(150D))))).S("Z").End())));
 } else {
 Call(set_14391, V.Undef, Get(T_23436, "hole"), ((V)("opacity")), ((V)(0D)));
 Set(Get(Get(T_23436, "lid"), "style"), "display", ((V)("none")));
@@ -32615,7 +32615,7 @@ double ux_23740 = 0;
 double uy_23741 = 0;
 double nx_23742 = 0;
 double ny_23743 = 0;
-V fd_23744 = default;
+JsStrBuf fd_23744 = null;
 dx_23737 = (ToNum(GetIdx(ne_23464, 0D)) - ToNum(GetIdx(nb_23463, 0D)));
 dy_23738 = (ToNum(GetIdx(ne_23464, 1D)) - ToNum(GetIdx(nb_23463, 1D)));
 ln_23739 = (((V)(Hypot(dx_23737, dy_23738))) is var _t23745 && Truthy(_t23745) ? _t23745 : ((V)(1D)));
@@ -32623,16 +32623,16 @@ ux_23740 = (dx_23737 / ToNum(ln_23739));
 uy_23741 = (dy_23738 / ToNum(ln_23739));
 nx_23742 = (-uy_23741);
 ny_23743 = ux_23740;
-fd_23744 = ((V)(""));
+fd_23744 = new JsStrBuf("");
 Invoke(Arr(((V)(0.3)), ((V)(0.55))), "forEach", Fn((V _self1, int _argc23746, V f_23752, V _a23749, V _a23750, V _a23751, V[] _rest23747) => {
 V cx_23753 = default;
 V cy_23754 = default;
 cx_23753 = Add(GetIdx(nb_23463, 0D), ((V)((dx_23737 * ToNum(f_23752)))));
 cy_23754 = Add(GetIdx(nb_23463, 1D), ((V)((dy_23738 * ToNum(f_23752)))));
-fd_23744 = ((V)(string.Concat(new string[] { ToStr(fd_23744), "M", ToStr(Call(pS_23445, V.Undef, Call(glob_14432, V.Undef, ((V)((ToNum(cx_23753) - ((nx_23742 * rN_23465) * 0.75)))), ((V)((ToNum(cy_23754) - ((ny_23743 * rN_23465) * 0.75))))))), "Q", ToStr(Call(pS_23445, V.Undef, Call(glob_14432, V.Undef, Add(cx_23753, ((V)((ux_23740 * 1.6)))), Add(cy_23754, ((V)((uy_23741 * 1.6))))))), " ", ToStr(Call(pS_23445, V.Undef, Call(glob_14432, V.Undef, Add(cx_23753, ((V)(((nx_23742 * rN_23465) * 0.75)))), Add(cy_23754, ((V)(((ny_23743 * rN_23465) * 0.75))))))) })));
+fd_23744.S("M").V(Call(pS_23445, V.Undef, Call(glob_14432, V.Undef, ((V)((ToNum(cx_23753) - ((nx_23742 * rN_23465) * 0.75)))), ((V)((ToNum(cy_23754) - ((ny_23743 * rN_23465) * 0.75))))))).S("Q").V(Call(pS_23445, V.Undef, Call(glob_14432, V.Undef, Add(cx_23753, ((V)((ux_23740 * 1.6)))), Add(cy_23754, ((V)((uy_23741 * 1.6))))))).S(" ").V(Call(pS_23445, V.Undef, Call(glob_14432, V.Undef, Add(cx_23753, ((V)(((nx_23742 * rN_23465) * 0.75)))), Add(cy_23754, ((V)(((ny_23743 * rN_23465) * 0.75)))))));
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(T_23436, "fold"), ((V)("d")), fd_23744);
+Call(set_14391, V.Undef, Get(T_23436, "fold"), ((V)("d")), ((V)(fd_23744.Str)));
 Call(set_14391, V.Undef, Get(T_23436, "fold"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.8 * ToNum(Call(SM_14384, V.Undef, ((V)(((ToNum(ln_23739) - 5D) / 5D))))))))));
 }
 ek_23467 = Call(SM_14384, V.Undef, (Get(I_14377, "pEw") is var _t23755 && Truthy(_t23755) ? _t23755 : ((V)(0D))));
@@ -32664,7 +32664,7 @@ double fy_23787 = 0;
 double px_23788 = 0;
 double py_23789 = 0;
 V pts_23790 = default;
-V td_23791 = default;
+JsStrBuf td_23791 = null;
 V tg_23792 = default;
 sd_23771 = Get(Lg_23770, "sd");
 fr_23772 = Get(Lg_23770, "fr");
@@ -32756,16 +32756,16 @@ k_23811++;
 }
 }
 Call(set_14391, V.Undef, Get(Lg_23770, "el"), ((V)("d")), Call(hullD_23450, V.Undef, pts_23790));
-td_23791 = ((V)(""));
+td_23791 = new JsStrBuf("");
 Invoke(Arr(((V)((-1D))), ((V)(0D)), ((V)(1D))), "forEach", Fn((V _self1, int _argc23816, V j_23822, V _a23819, V _a23820, V _a23821, V[] _rest23817) => {
 double ca_23823 = 0;
 double cw_23824 = 0;
 ca_23823 = (Truthy(v2_23470) ? 3.1 : 2.5);
 cw_23824 = (Truthy(v2_23470) ? 3.2 : 2.9);
-td_23791 = Add(td_23791, Call(toD_14380, V.Undef, Call(ellS_14381, V.Undef, Add(Add(fx_23786, ((V)(((dx_23784 * ca_23823) * kR_23783)))), ((V)((((px_23788 * ToNum(j_23822)) * cw_23824) * kR_23783)))), ((V)(((fy_23787 + ((dy_23785 * ca_23823) * kR_23783)) + (((py_23789 * ToNum(j_23822)) * cw_23824) * kR_23783)))), ((V)(((Truthy(v2_23470) ? 1.6 : 1.25) * kR_23783))), ((V)(((Truthy(v2_23470) ? 1.1 : 0.9) * kR_23783))), ((V)((FdLibm.Atan2(py_23789, px_23788) / ToNum(D2R_14388)))), ((V)(8D))), glob_14432));
+td_23791.V(Call(toD_14380, V.Undef, Call(ellS_14381, V.Undef, Add(Add(fx_23786, ((V)(((dx_23784 * ca_23823) * kR_23783)))), ((V)((((px_23788 * ToNum(j_23822)) * cw_23824) * kR_23783)))), ((V)(((fy_23787 + ((dy_23785 * ca_23823) * kR_23783)) + (((py_23789 * ToNum(j_23822)) * cw_23824) * kR_23783)))), ((V)(((Truthy(v2_23470) ? 1.6 : 1.25) * kR_23783))), ((V)(((Truthy(v2_23470) ? 1.1 : 0.9) * kR_23783))), ((V)((FdLibm.Atan2(py_23789, px_23788) / ToNum(D2R_14388)))), ((V)(8D))), glob_14432));
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(Lg_23770, "toe"), ((V)("d")), td_23791);
+Call(set_14391, V.Undef, Get(Lg_23770, "toe"), ((V)("d")), ((V)(td_23791.Str)));
 if (Truthy(fr_23772)) {
 SetK(W_14465, ((V)((LtN(sd_23771, 0D) ? "pawL" : "pawR"))), Call(glob_14432, V.Undef, fx_23786, ((V)(fy_23787))));
 }
@@ -32804,7 +32804,7 @@ V lead_23855 = default;
 V trail_23856 = default;
 V tr2_23857 = default;
 double N_23858 = 0;
-V spd_23859 = default;
+JsStrBuf spd_23859 = null;
 V zz_23860 = default;
 V tg_23861 = default;
 sd_23833 = Get(F_23832, "sd");
@@ -32915,17 +32915,17 @@ Invoke(tr2_23857, "push", Call(glob_14432, V.Undef, ((V)((ToNum(cx_23909) - ((wx
 i_23906++;
 }
 }
-Call(set_14391, V.Undef, Get(F_23832, "el"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(lead_23855, "concat", Invoke(Invoke(trail_23856, "slice"), "reverse")), "map", pS_23445), "join", ((V)("L")))), "Z"))));
-Call(set_14391, V.Undef, Get(F_23832, "ol"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(lead_23855, "map", pS_23445), "join", ((V)("L"))))))));
-Call(set_14391, V.Undef, Get(F_23832, "edge"), ((V)("d")), ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(Invoke(tr2_23857, "slice", ((V)(2D))), "concat", Invoke(Invoke(trail_23856, "slice", ((V)(2D))), "reverse")), "map", pS_23445), "join", ((V)("L")))), "Z"))));
-spd_23859 = ((V)(""));
+Call(set_14391, V.Undef, Get(F_23832, "el"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(lead_23855, "concat", Invoke(Invoke(trail_23856, "slice"), "reverse")), "map", pS_23445), "join", ((V)("L")))).S("Z").End())));
+Call(set_14391, V.Undef, Get(F_23832, "ol"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(lead_23855, "map", pS_23445), "join", ((V)("L")))).End())));
+Call(set_14391, V.Undef, Get(F_23832, "edge"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Invoke(tr2_23857, "slice", ((V)(2D))), "concat", Invoke(Invoke(trail_23856, "slice", ((V)(2D))), "reverse")), "map", pS_23445), "join", ((V)("L")))).S("Z").End())));
+spd_23859 = new JsStrBuf("");
 Invoke(Arr(((V)(0.3)), ((V)(0.5)), ((V)(0.68))), "forEach", Fn((V _self1, int _argc23912, V uu_23918, V j_23919, V _a23916, V _a23917, V[] _rest23913) => {
 double w_23920 = 0;
 w_23920 = (((ToNum(W0_23845) * ToNum(Call(hw_23852, V.Undef, uu_23918))) * 0.15) * (NumTruthy((ToNum(j_23919) % 2D)) ? 1D : (-1D)));
-spd_23859 = Add(spd_23859, Call(toD_14380, V.Undef, Call(ellS_14381, V.Undef, Add(Add(GetIdx(rS_23846, 0D), ((V)((ax_23853 * ToNum(uu_23918))))), ((V)((wx_23849 * w_23920)))), Add(Add(Add(GetIdx(rS_23846, 1D), ((V)((ay_23854 * ToNum(uu_23918))))), ((V)((wy_23850 * w_23920)))), ((V)((FdLibm.Sin((ToNum(uu_23918) * System.Math.PI)) * 1.2)))), ((V)((1.1 - (ToNum(j_23919) * 0.15)))), ((V)((0.8 - (ToNum(j_23919) * 0.1)))), ((V)((FdLibm.Atan2(ay_23854, ax_23853) / ToNum(D2R_14388)))), ((V)(8D))), glob_14432));
+spd_23859.V(Call(toD_14380, V.Undef, Call(ellS_14381, V.Undef, Add(Add(GetIdx(rS_23846, 0D), ((V)((ax_23853 * ToNum(uu_23918))))), ((V)((wx_23849 * w_23920)))), Add(Add(Add(GetIdx(rS_23846, 1D), ((V)((ay_23854 * ToNum(uu_23918))))), ((V)((wy_23850 * w_23920)))), ((V)((FdLibm.Sin((ToNum(uu_23918) * System.Math.PI)) * 1.2)))), ((V)((1.1 - (ToNum(j_23919) * 0.15)))), ((V)((0.8 - (ToNum(j_23919) * 0.1)))), ((V)((FdLibm.Atan2(ay_23854, ax_23853) / ToNum(D2R_14388)))), ((V)(8D))), glob_14432));
 return default;
 }, 2, "", true));
-Call(set_14391, V.Undef, Get(F_23832, "sp"), ((V)("d")), spd_23859);
+Call(set_14391, V.Undef, Get(F_23832, "sp"), ((V)("d")), ((V)(spd_23859.Str)));
 if (Truthy(fr_23834)) {
 SetK(W_14465, ((V)((LtN(sd_23833, 0D) ? "pawL" : "pawR"))), Call(glob_14432, V.Undef, GetIdx(tS_23847, 0D), GetIdx(tS_23847, 1D)));
 }
@@ -32938,9 +32938,9 @@ return default;
 }, 1, "", true));
 }
 if (Truthy(Get(T_23436, "hsc"))) {
-V hd2_23921 = default;
+JsStrBuf hd2_23921 = null;
 double zs_23922 = 0;
-hd2_23921 = ((V)(""));
+hd2_23921 = new JsStrBuf("");
 zs_23922 = 0D;
 Invoke(Arr(Arr(((V)(50D)), ((V)(45.6)), ((V)(3.3))), Arr(((V)(44.6)), ((V)(47.6)), ((V)(2.6))), Arr(((V)(55.4)), ((V)(47.6)), ((V)(2.6))), Arr(((V)(47.2)), ((V)(51.2)), ((V)(1.9))), Arr(((V)(52.8)), ((V)(51.2)), ((V)(1.9))), Arr(((V)(39.5)), ((V)(51D)), ((V)(1.8))), Arr(((V)(60.5)), ((V)(51D)), ((V)(1.8)))), "forEach", Fn((V _self1, int _argc23923, V _a23925, V _a23926, V _a23927, V _a23928, V[] _rest23924) => {
 V z_23936 = default;
@@ -32958,16 +32958,16 @@ r_23935 = _t23934; }
 z_23936 = Call(sphZ_14456, V.Undef, x_23931, y_23933);
 zs_23922 = Max(zs_23922, ToNum(z_23936));
 if (GtN(z_23936, 1D)) {
-hd2_23921 = ((V)(string.Concat(ToStr(hd2_23921), "M", ToStr(Invoke(Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D)), ((V)(3D)), ((V)(4D)), ((V)(5D))), "map", Fn((V _self1, int _argc23937, V k_23943, V _a23940, V _a23941, V _a23942, V[] _rest23938) => {
+hd2_23921.S("M").V(Invoke(Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D)), ((V)(3D)), ((V)(4D)), ((V)(5D))), "map", Fn((V _self1, int _argc23937, V k_23943, V _a23940, V _a23941, V _a23942, V[] _rest23938) => {
 double a_23944 = 0;
 a_23944 = (((ToNum(k_23943) / 6D) * ToNum(TAU_14389)) + 0.5);
 return Call(pS_23445, V.Undef, Call(sph_14455, V.Undef, Add(x_23931, ((V)((ToNum(r_23935) * FdLibm.Cos(a_23944))))), Add(y_23933, ((V)(((ToNum(r_23935) * 0.82) * FdLibm.Sin(a_23944)))))));
 return default;
-}, 1, "", true)), "join", ((V)("L")))), "Z")));
+}, 1, "", true)), "join", ((V)("L")))).S("Z");
 }
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(T_23436, "hsc"), ((V)("d")), hd2_23921);
+Call(set_14391, V.Undef, Get(T_23436, "hsc"), ((V)("d")), ((V)(hd2_23921.Str)));
 Call(set_14391, V.Undef, Get(T_23436, "hsc"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.9 * ToNum(Call(SM_14384, V.Undef, ((V)(((zs_23922 - 1D) / 5D))))))))));
 }
 {
@@ -33018,24 +33018,24 @@ Invoke(tgp_23951, "appendChild", Get(T_23436, "tg"));
 }
 }
 if (Truthy(Get(T_23436, "nos"))) {
-V nd_23962 = default;
+JsStrBuf nd_23962 = null;
 V nz_23963 = default;
-nd_23962 = ((V)(""));
+nd_23962 = new JsStrBuf("");
 nz_23963 = Call(sphZ_14456, V.Undef, ((V)(50D)), ((V)(61.8)));
 if (GtN(nz_23963, 1D)) {
 Invoke(Arr(((V)(48.2)), ((V)(51.8))), "forEach", Fn((V _self1, int _argc23964, V x_23970, V _a23967, V _a23968, V _a23969, V[] _rest23965) => {
-nd_23962 = Add(nd_23962, Call(toD_14380, V.Undef, Call(ellS_14381, V.Undef, x_23970, ((V)(61.9)), ((V)(0.62)), ((V)(0.5)), ((V)(0D)), ((V)(8D))), Fn((V _self1, int _argc23971, V xx_23977, V yy_23978, V _a23975, V _a23976, V[] _rest23972) => {
+nd_23962.V(Call(toD_14380, V.Undef, Call(ellS_14381, V.Undef, x_23970, ((V)(61.9)), ((V)(0.62)), ((V)(0.5)), ((V)(0D)), ((V)(8D))), Fn((V _self1, int _argc23971, V xx_23977, V yy_23978, V _a23975, V _a23976, V[] _rest23972) => {
 return Call(sph_14455, V.Undef, xx_23977, yy_23978);
 }, 2, "", true)));
 return default;
 }, 1, "", true));
 }
-Call(set_14391, V.Undef, Get(T_23436, "nos"), ((V)("d")), nd_23962);
+Call(set_14391, V.Undef, Get(T_23436, "nos"), ((V)("d")), ((V)(nd_23962.Str)));
 Call(set_14391, V.Undef, Get(T_23436, "nos"), ((V)("opacity")), Call(r2_14387, V.Undef, Call(SM_14384, V.Undef, ((V)(((ToNum(nz_23963) - 1D) / 5D))))));
 }
 }
 {
-foreach (V _k23979 in Iterate(Get(I_14377, "items"))) {
+foreach (V _k23979 in new JsIter(Get(I_14377, "items"))) {
 V q_23980 = default;
 q_23980 = _k23979;
 V e_23981 = default;
@@ -33191,7 +33191,7 @@ o_24001 = Arr();
 V_24002 = Fn((V _self1, int _argc24003, V x_24009, V y_24010, V z_24011, V _a24008, V[] _rest24004) => {
 V p_24012 = default;
 p_24012 = Call(headT_14439, V.Undef, x_24009, ((V)((ToNum(Add(HY_14395, ((V)(((ToNum(y_24010) - ToNum(HY_14395)) * cp_14407))))) - (ToNum(z_24011) * sp_14408)))));
-Invoke(o_24001, "push", ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_24012, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_24012, 1D)))))));
+Invoke(o_24001, "push", ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_24012, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_24012, 1D))).End())));
 return default;
 }, 3, "", true);
 {
@@ -33229,7 +33229,7 @@ Call(V_24002, V.Undef, ((V)((50D + (36D * FdLibm.Sin(tv_24021))))), ((V)((58.6 -
 i_24019++;
 }
 }
-headD_14474 = ((V)(string.Concat("M", ToStr(Invoke(o_24001, "join", ((V)("L")))), "Z")));
+headD_14474 = ((V)(JsStrBuf.Begin().S("M").V(Invoke(o_24001, "join", ((V)("L")))).S("Z").End()));
 Call(set_14391, V.Undef, e_23981, ((V)("d")), headD_14474);
 break;
 }
@@ -33451,9 +33451,9 @@ return Call(ring_24121, V.Undef, ((V)(((Lf_24118 - ToNum(r_24119)) + (ToNum(r_24
 }, 1, "", true));
 tp_24123 = Call(ax_24120, V.Undef, ((V)(Lf_24118)));
 Invoke(@out_24122, "push", Call(byw_14461, V.Undef, GetIdx(tp_24123, 0D), GetIdx(tp_24123, 1D), Get(F_24112, "z")));
-Call(set_14391, V.Undef, e_23981, ((V)("d")), ((V)(string.Concat(ToStr(Invoke(Invoke(Invoke(H_14370, "hull", @out_24122), "map", Fn((V _self1, int _argc24169, V p_24175, V k_24176, V _a24173, V _a24174, V[] _rest24170) => {
-return ((V)(string.Concat((Truthy(k_24176) ? "L" : "M"), ToStr(Call(r2_14387, V.Undef, GetIdx(p_24175, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_24175, 1D))))));
-}, 2, "", true)), "join", ((V)("")))), "Z"))));
+Call(set_14391, V.Undef, e_23981, ((V)("d")), ((V)(JsStrBuf.Begin().V(Invoke(Invoke(Invoke(H_14370, "hull", @out_24122), "map", Fn((V _self1, int _argc24169, V p_24175, V k_24176, V _a24173, V _a24174, V[] _rest24170) => {
+return ((V)(JsStrBuf.Begin().S((Truthy(k_24176) ? "L" : "M")).V(Call(r2_14387, V.Undef, GetIdx(p_24175, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_24175, 1D))).End()));
+}, 2, "", true)), "join", ((V)("")))).S("Z").End())));
 Pb_24124 = CallSpread(byw_14461, V.Undef, new ArrBuilder().Spread(Call(ax_24120, V.Undef, ((V)((Lf_24118 * 0.4))))).Add(Get(F_24112, "z")).V);
 Pt_24125 = CallSpread(byw_14461, V.Undef, new ArrBuilder().Spread(Call(ax_24120, V.Undef, ((V)((Lf_24118 * 0.8))))).Add(Get(F_24112, "z")).V);
 dx_24126 = (ToNum(GetIdx(Pt_24125, 0D)) - ToNum(GetIdx(Pb_24124, 0D)));
@@ -33958,7 +33958,7 @@ return Arr(((V)((ToNum(Add(px_24504, ((V)((vx_24524 * c_24526))))) - (vy_24525 *
 return default;
 }, 3, "", true);
 {
-foreach (V _k24528 in Iterate(Get(S2_24506, "secs"))) {
+foreach (V _k24528 in new JsIter(Get(S2_24506, "secs"))) {
 V sc_24529 = default;
 sc_24529 = _k24528;
 double w_24530 = 0;
@@ -34510,7 +34510,7 @@ ny_24902 = (-ny_24902);
 }
 bu_24903 = (Max(0D, ((ToNum(tl_24900) - rest_24730) - 2D)) * 0.18);
 gw_24904 = Call(SM_14384, V.Undef, ((V)((((len_24729 - rest_24730) - 0.5) / 5D))));
-Call(set_14391, V.Undef, tb_24742, ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, GetIdx(Sw_24895, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(Sw_24895, 1D))), " Q", ToStr(Call(r2_14387, V.Undef, ((V)((mx_24896 + (nx_24901 * bu_24903)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((my_24897 + (ny_24902 * bu_24903)))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(Pw_24739, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(Pw_24739, 1D))) }))));
+Call(set_14391, V.Undef, tb_24742, ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, GetIdx(Sw_24895, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(Sw_24895, 1D))).S(" Q").V(Call(r2_14387, V.Undef, ((V)((mx_24896 + (nx_24901 * bu_24903)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((my_24897 + (ny_24902 * bu_24903)))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(Pw_24739, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(Pw_24739, 1D))).End())));
 Call(set_14391, V.Undef, tb_24742, ((V)("stroke-width")), Call(r2_14387, V.Undef, ((V)((((ToNum(Get(a_24706, "rx")) * 1.6) * System.Math.Sqrt(((1D + (ToNum(sq_14416) * 0.4)) * sy_14417))) * ToNum(gw_24904))))));
 Call(set_14391, V.Undef, tb_24742, ((V)("opacity")), ((V)(((LtN(zv_24740, zH_24741) || LtN(gw_24904, 0.02)) ? 0D : 1D))));
 }
@@ -34541,7 +34541,7 @@ V wv_24932 = default;
 V tv_24933 = default;
 V CP_24934 = default;
 V RG_24935 = default;
-V fd_24936 = default;
+JsStrBuf fd_24936 = null;
 V mid_24937 = default;
 double zv_24938 = 0;
 V bk_24939 = default;
@@ -34622,17 +34622,17 @@ i_24983++;
 }
 }
 Invoke(RG_24935, "push", Arr(CallSpread(sph_14455, V.Undef, new ArrBuilder().Spread(Call(V_24919, V.Undef, Call(CP_24934, V.Undef, ((V)(1D))), d_24927, ((V)(0.9)))).V)));
-fd_24936 = ((V)(""));
+fd_24936 = new JsStrBuf("");
 {
 double i_24994 = 0;
 i_24994 = 0D;
 while (true) {
 if (!((i_24994 < (ToNum(Get(RG_24935, "length")) - 1D)))) break;
-fd_24936 = Add(fd_24936, Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(RG_24935, i_24994), "concat", GetIdx(RG_24935, (i_24994 + 1D))))));
+fd_24936.V(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(RG_24935, i_24994), "concat", GetIdx(RG_24935, (i_24994 + 1D))))));
 i_24994++;
 }
 }
-Call(set_14391, V.Undef, Get(a_24912, "e"), ((V)("d")), fd_24936);
+Call(set_14391, V.Undef, Get(a_24912, "e"), ((V)("d")), ((V)(fd_24936.Str)));
 Call(set_14391, V.Undef, Get(a_24912, "e"), ((V)("opacity")), ((V)(1D)));
 mid_24937 = Call(V_24919, V.Undef, R0_24929, d_24927, ((V)((L_24930 * 0.55))));
 zv_24938 = (ToNum(Call(sphZ_14456, V.Undef, GetIdx(mid_24937, 0D), GetIdx(mid_24937, 1D), GetIdx(mid_24937, 2D))) - ToNum(Call(sphZ_14456, V.Undef, ((V)(50D)), ((V)(62D)), ((V)((-4D))))));
@@ -34793,7 +34793,7 @@ nx_25069 = (-nx_25069);
 ny_25070 = (-ny_25070);
 }
 bu_25071 = (Max(0D, (ToNum(tl_25068) - 10D)) * 0.18);
-Call(set_14391, V.Undef, tb_25031, ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, GetIdx(Sw_25063, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(Sw_25063, 1D))), " Q", ToStr(Call(r2_14387, V.Undef, ((V)((mx_25064 + (nx_25069 * bu_25071)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((my_25065 + (ny_25070 * bu_25071)))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(Pw_25029, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(Pw_25029, 1D))) }))));
+Call(set_14391, V.Undef, tb_25031, ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, GetIdx(Sw_25063, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(Sw_25063, 1D))).S(" Q").V(Call(r2_14387, V.Undef, ((V)((mx_25064 + (nx_25069 * bu_25071)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((my_25065 + (ny_25070 * bu_25071)))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(Pw_25029, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(Pw_25029, 1D))).End())));
 Call(set_14391, V.Undef, tb_25031, ((V)("stroke-width")), Call(r2_14387, V.Undef, ((V)(((ToNum(Get(a_25003, "rx")) * 1.6) * System.Math.Sqrt(((1D + (ToNum(sq_14416) * 0.4)) * sy_14417)))))));
 Call(set_14391, V.Undef, tb_25031, ((V)("opacity")), Call(r2_14387, V.Undef, (LtN(zv_25030, (-3D)) ? ((V)(0D)) : Call(SM_14384, V.Undef, ((V)(((len_25020 - 7.5) / 5D)))))));
 }
@@ -34804,7 +34804,7 @@ Invoke(Arr(((V)("L")), ((V)("R"))), "forEach", Fn((V _self1, int _argc25073, V s
 double s_25080 = 0;
 V ox_25081 = default;
 V oy_25082 = default;
-if (Truthy(GetK(W_14465, ((V)(string.Concat("paw", ToStr(sd_25079))))))) {
+if (Truthy(GetK(W_14465, ((V)(JsStrBuf.Begin().S("paw").V(sd_25079).End()))))) {
 return default;
 }
 s_25080 = (SEqS(sd_25079, "L") ? (-1D) : 1D);
@@ -34815,7 +34815,7 @@ ox_25081 = _t25085; }
 { V _t25086 = GetIdx(_t25084, 1D);
 oy_25082 = _t25086; }
 } }
-SetK(W_14465, ((V)(string.Concat("paw", ToStr(sd_25079)))), Call(glob_14432, V.Undef, Add(((V)((50D + (s_25080 * System.Math.Abs((50D - ToNum(Get(g_14390, "pawX")))))))), (SEqS(sd_25079, "L") ? ox_25081 : ((V)((-ToNum(ox_25081)))))), Add(Get(g_14390, "pawY"), oy_25082)));
+SetK(W_14465, ((V)(JsStrBuf.Begin().S("paw").V(sd_25079).End())), Call(glob_14432, V.Undef, Add(((V)((50D + (s_25080 * System.Math.Abs((50D - ToNum(Get(g_14390, "pawX")))))))), (SEqS(sd_25079, "L") ? ox_25081 : ((V)((-ToNum(ox_25081)))))), Add(Get(g_14390, "pawY"), oy_25082)));
 return default;
 }, 1, "", true));
 if (Truthy(Get(I_14377, "mm"))) {
@@ -34842,8 +34842,8 @@ V hem_25106 = default;
 V wr_25107 = default;
 V RHt_25108 = default;
 V HP_25109 = default;
-V dB_25110 = default;
-V dF_25111 = default;
+JsStrBuf dB_25110 = null;
+JsStrBuf dF_25111 = null;
 V x0_25112 = default;
 V y0_25113 = default;
 V x1_25114 = default;
@@ -34854,7 +34854,7 @@ double TA_25118 = 0;
 double TB_25119 = 0;
 double pad_25120 = 0;
 V ringL_25121 = default;
-V sd2_25122 = default;
+JsStrBuf sd2_25122 = null;
 double br_25123 = 0;
 double TX_25124 = 0;
 double TY_25125 = 0;
@@ -34874,8 +34874,8 @@ V RP_25138 = default;
 V BW_25139 = default;
 V FR_25140 = default;
 V rings_25141 = default;
-V td_25142 = default;
-V sc_25143 = default;
+JsStrBuf td_25142 = null;
+JsStrBuf sc_25143 = null;
 V nF_25144 = default;
 V Tn_25145 = default;
 double fa_25146 = 0;
@@ -34893,8 +34893,8 @@ V O_25157 = default;
 double kv_25158 = 0;
 V FP_25159 = default;
 V qb_25160 = default;
-V fd_25161 = default;
-V rb_25162 = default;
+JsStrBuf fd_25161 = null;
+JsStrBuf rb_25162 = null;
 double vsd_25163 = 0;
 M_25087 = Get(I_14377, "mm");
 ts_25088 = (ToNum(now_14379) / 1000D);
@@ -34912,9 +34912,9 @@ PL_25092 = Fn((V _self1, int _argc25183, V a_25189, V _a25186, V _a25187, V _a25
 return Invoke(H_14370, "closedD", Invoke(H_14370, "hull", a_25189));
 }, 1, "", true);
 PG_25093 = Fn((V _self1, int _argc25190, V a_25196, V _a25193, V _a25194, V _a25195, V[] _rest25191) => {
-return ((V)(string.Concat("M", ToStr(Invoke(Invoke(Invoke(H_14370, "hull", a_25196), "map", Fn((V _self1, int _argc25197, V p_25203, V _a25200, V _a25201, V _a25202, V[] _rest25198) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_25203, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_25203, 1D))))));
-}, 1, "", true)), "join", ((V)("L")))), "Z")));
+return ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(H_14370, "hull", a_25196), "map", Fn((V _self1, int _argc25197, V p_25203, V _a25200, V _a25201, V _a25202, V[] _rest25198) => {
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_25203, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_25203, 1D))).End()));
+}, 1, "", true)), "join", ((V)("L")))).S("Z").End()));
 }, 1, "", true);
 tg_25094 = Add(Add(Add(Get(P_14378, "x"), ((V)((ToNum(Get(P_14378, "tilt")) * 0.45)))), ((V)((ToNum(Get(P_14378, "lean")) * 1.3)))), ((V)((ToNum(Get(P_14378, "turn")) * 12D))));
 ly_25095 = (ToNum(Get(P_14378, "lift")) - (ToNum(sq_14416) * 6D));
@@ -34973,8 +34973,8 @@ r_25247 = Add(((V)((ToNum(Call(RHt_25108, V.Undef, th_25242, j_25243)) * (1D + (
 return Arr(((V)(((50D + (FdLibm.Sin(ToNum(th_25242)) * ToNum(r_25247))) + ((((ToNum(ox_25097) * 0.9) + sw0_25101) + (ToNum(hfl_25100) * 4D)) * ToNum(w_25246))))), ((V)(((ToNum(y0_25245) - ((ToNum(oy_25098) * 0.5) * ToNum(w_25246))) - ((((ToNum(fl_25099) * 4D) + (System.Math.Abs(ToNum(hfl_25100)) * 1.5)) * ToNum(w_25246)) * ToNum(w_25246))))), ((V)(((FdLibm.Cos(ToNum(th_25242)) * ToNum(r_25247)) * 0.94))));
 return default;
 }, 3, "", true);
-dB_25110 = ((V)(""));
-dF_25111 = ((V)(""));
+dB_25110 = new JsStrBuf("");
+dF_25111 = new JsStrBuf("");
 x0_25112 = ((V)(1000000000D));
 y0_25113 = ((V)(1000000000D));
 x1_25114 = ((V)((-1000000000D)));
@@ -35007,9 +35007,9 @@ return default;
 }, 1, "", true));
 d_25260 = Call(PG_25093, V.Undef, s2_25259);
 if (Gt(((V)((ToNum(zs_25258) / ToNum(Get(p3_25255, "length"))))), thr_25256)) {
-dF_25111 = Add(dF_25111, d_25260);
+dF_25111.V(d_25260);
 } else {
-dB_25110 = Add(dB_25110, d_25260);
+dB_25110.V(d_25260);
 }
 return default;
 }, 3, "", true);
@@ -35119,7 +35119,7 @@ i_25319++;
 }
 return default;
 }, 1, "", true));
-sd2_25122 = ((V)(""));
+sd2_25122 = new JsStrBuf("");
 Invoke(Arr(((V)((-0.9))), ((V)((-0.55))), ((V)((-0.2))), ((V)(0.2)), ((V)(0.55)), ((V)(0.9))), "forEach", Fn((V _self1, int _argc25321, V o_25327, V _a25324, V _a25325, V _a25326, V[] _rest25322) => {
 double th_25328 = 0;
 V p3_25329 = default;
@@ -35139,17 +35139,17 @@ return Add(s_25338, Call(sphZ_14456, V.Undef, GetIdx(p_25339, 0D), GetIdx(p_2533
 }, 2, "", true), ((V)(0D)))) / ToNum(Get(p3_25329, "length"))) < 6D)) {
 return default;
 }
-sd2_25122 = ((V)(string.Concat(ToStr(sd2_25122), "M", ToStr(Invoke(Invoke(p3_25329, "map", Fn((V _self1, int _argc25340, V p_25346, V _a25343, V _a25344, V _a25345, V[] _rest25341) => {
+sd2_25122.S("M").V(Invoke(Invoke(p3_25329, "map", Fn((V _self1, int _argc25340, V p_25346, V _a25343, V _a25344, V _a25345, V[] _rest25341) => {
 V s_25347 = default;
 s_25347 = Call(sph_14455, V.Undef, GetIdx(p_25346, 0D), GetIdx(p_25346, 1D), GetIdx(p_25346, 2D));
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(s_25347, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(s_25347, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(s_25347, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(s_25347, 1D))).End()));
 return default;
-}, 1, "", true)), "join", ((V)("L")))))));
+}, 1, "", true)), "join", ((V)("L"))));
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(M_25087, "hB"), ((V)("d")), (dB_25110 is var _t25348 && Truthy(_t25348) ? _t25348 : ((V)("M0 0Z"))));
-Call(set_14391, V.Undef, Get(M_25087, "hF"), ((V)("d")), (dF_25111 is var _t25349 && Truthy(_t25349) ? _t25349 : ((V)("M0 0Z"))));
-Call(set_14391, V.Undef, Get(M_25087, "sF"), ((V)("d")), (sd2_25122 is var _t25350 && Truthy(_t25350) ? _t25350 : ((V)("M0 0Z"))));
+Call(set_14391, V.Undef, Get(M_25087, "hB"), ((V)("d")), (((V)(dB_25110.Str)) is var _t25348 && Truthy(_t25348) ? _t25348 : ((V)("M0 0Z"))));
+Call(set_14391, V.Undef, Get(M_25087, "hF"), ((V)("d")), (((V)(dF_25111.Str)) is var _t25349 && Truthy(_t25349) ? _t25349 : ((V)("M0 0Z"))));
+Call(set_14391, V.Undef, Get(M_25087, "sF"), ((V)("d")), (((V)(sd2_25122.Str)) is var _t25350 && Truthy(_t25350) ? _t25350 : ((V)("M0 0Z"))));
 {
 double bw_25351 = 0;
 double bh_25352 = 0;
@@ -35347,18 +35347,18 @@ m_25498++;
 return o_25497;
 return default;
 }, 1, "", true));
-td_25142 = ((V)(""));
+td_25142 = new JsStrBuf("");
 {
 double k_25500 = 0;
 k_25500 = 0D;
 while (true) {
 if (!((k_25500 < NT_25132))) break;
-td_25142 = Add(td_25142, Call(PG_25093, V.Undef, Invoke(GetIdx(rings_25141, k_25500), "concat", GetIdx(rings_25141, (k_25500 + 1D)))));
+td_25142.V(Call(PG_25093, V.Undef, Invoke(GetIdx(rings_25141, k_25500), "concat", GetIdx(rings_25141, (k_25500 + 1D)))));
 k_25500++;
 }
 }
-Call(set_14391, V.Undef, Get(M_25087, "tail"), ((V)("d")), td_25142);
-Call(set_14391, V.Undef, Get(M_25087, "tsh"), ((V)("d")), td_25142);
+Call(set_14391, V.Undef, Get(M_25087, "tail"), ((V)("d")), ((V)(td_25142.Str)));
+Call(set_14391, V.Undef, Get(M_25087, "tsh"), ((V)("d")), ((V)(td_25142.Str)));
 {
 V a_25502 = default;
 V b_25503 = default;
@@ -35376,7 +35376,7 @@ return default;
 Call(set_14391, V.Undef, Get(M_25087, "cgr"), ((V)("x1")), Call(r2_14387, V.Undef, a_25502));
 Call(set_14391, V.Undef, Get(M_25087, "cgr"), ((V)("x2")), Call(r2_14387, V.Undef, b_25503));
 }
-sc_25143 = ((V)(""));
+sc_25143 = new JsStrBuf("");
 Invoke(Arr(((V)(0.32)), ((V)(0.47)), ((V)(0.62))), "forEach", Fn((V _self1, int _argc25511, V s_25517, V ri_25518, V _a25515, V _a25516, V[] _rest25512) => {
 V n_25519 = default;
 V n2_25520 = default;
@@ -35404,14 +35404,14 @@ goto _cont25523;
 a_25527 = Call(BW_25139, V.Undef, Call(RP_25138, V.Undef, n_25519, ((V)((az_25524 - dl_25521))), ((V)(0.2))));
 b_25528 = Call(BW_25139, V.Undef, Mp_25525);
 c_25529 = Call(BW_25139, V.Undef, Call(RP_25138, V.Undef, n_25519, ((V)((az_25524 + dl_25521))), ((V)(0.2))));
-sc_25143 = ((V)(string.Concat(new string[] { ToStr(sc_25143), "M", ToStr(Call(r2_14387, V.Undef, GetIdx(a_25527, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(a_25527, 1D))), "Q", ToStr(Call(r2_14387, V.Undef, ((V)(((2D * ToNum(GetIdx(b_25528, 0D))) - (ToNum(Add(GetIdx(a_25527, 0D), GetIdx(c_25529, 0D))) / 2D)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(((2D * ToNum(GetIdx(b_25528, 1D))) - (ToNum(Add(GetIdx(a_25527, 1D), GetIdx(c_25529, 1D))) / 2D)))))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(c_25529, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(c_25529, 1D))) })));
+sc_25143.S("M").V(Call(r2_14387, V.Undef, GetIdx(a_25527, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(a_25527, 1D))).S("Q").V(Call(r2_14387, V.Undef, ((V)(((2D * ToNum(GetIdx(b_25528, 0D))) - (ToNum(Add(GetIdx(a_25527, 0D), GetIdx(c_25529, 0D))) / 2D)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)(((2D * ToNum(GetIdx(b_25528, 1D))) - (ToNum(Add(GetIdx(a_25527, 1D), GetIdx(c_25529, 1D))) / 2D)))))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(c_25529, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(c_25529, 1D)));
 _cont25523: ;
 m_25522++;
 }
 }
 return default;
 }, 2, "", true));
-Call(set_14391, V.Undef, Get(M_25087, "scl"), ((V)("d")), sc_25143);
+Call(set_14391, V.Undef, Get(M_25087, "scl"), ((V)("d")), ((V)(sc_25143.Str)));
 nF_25144 = Call(FR_25140, V.Undef, ((V)(0.86)));
 Tn_25145 = Get(GetIdx(SPN_25135, NT_25132), "T");
 fa_25146 = (((45D + ((ToNum(tun_25131) * 6D) * FdLibm.Sin(((ts_25088 * 6.5) - 3.6)))) - (ToNum(Call(clamp_14385, V.Undef, tlf_25130, ((V)(0D)), ((V)(1.5)))) * 68D)) * ToNum(D2R_14388));
@@ -35442,8 +35442,8 @@ return default;
 qb_25160 = Fn((V _self1, int _argc25561, V p_25567, V c_25568, V q_25569, V t_25570, V[] _rest25562) => {
 return Arr(((V)((((((1D - ToNum(t_25570)) * (1D - ToNum(t_25570))) * ToNum(GetIdx(p_25567, 0D))) + (((2D * ToNum(t_25570)) * (1D - ToNum(t_25570))) * ToNum(GetIdx(c_25568, 0D)))) + ((ToNum(t_25570) * ToNum(t_25570)) * ToNum(GetIdx(q_25569, 0D)))))), ((V)((((((1D - ToNum(t_25570)) * (1D - ToNum(t_25570))) * ToNum(GetIdx(p_25567, 1D))) + (((2D * ToNum(t_25570)) * (1D - ToNum(t_25570))) * ToNum(GetIdx(c_25568, 1D)))) + ((ToNum(t_25570) * ToNum(t_25570)) * ToNum(GetIdx(q_25569, 1D)))))));
 }, 4, "", true);
-fd_25161 = ((V)(""));
-rb_25162 = ((V)(""));
+fd_25161 = new JsStrBuf("");
+rb_25162 = new JsStrBuf("");
 vsd_25163 = (((((-ToNum(GetIdx(Nn_25156, 0D))) * syb_14404) + (ToNum(GetIdx(Nn_25156, 2D)) * cyb_14403)) >= 0D) ? 1D : (-1D));
 Invoke(Arr(((V)((-1D))), ((V)(1D))), "forEach", Fn((V _self1, int _argc25571, V sd_25577, V _a25574, V _a25575, V _a25576, V[] _rest25572) => {
 V L2_25578 = default;
@@ -35482,7 +35482,7 @@ Invoke(pp_25579, "push", Call(FP_25159, V.Undef, ((V)((ToNum(sd_25577) * ToNum(u
 Invoke(pp_25579, "push", Call(FP_25159, V.Undef, ((V)((ToNum(sd_25577) * ToNum(uu_25592)))), v_25594, ((V)((-1D)))));
 return default;
 }, 1, "", true));
-fd_25161 = Add(fd_25161, Call(PL_25092, V.Undef, pp_25579));
+fd_25161.V(Call(PL_25092, V.Undef, pp_25579));
 Invoke(Arr(Arr(((V)(0.4)), ((V)(1D))), Arr(((V)(0.72)), ((V)(1D))), Arr(((V)(1D)), ((V)(1D))), Arr(((V)(0.45)), ((V)(2D)))), "forEach", Fn((V _self1, int _argc25595, V _a25597, V _a25598, V _a25599, V _a25600, V[] _rest25596) => {
 V e_25606 = default;
 V a_25607 = default;
@@ -35498,13 +35498,13 @@ sg_25605 = _t25604; }
 e_25606 = (SEqN(sg_25605, 1D) ? Call(qb_25160, V.Undef, Arr(((V)((-4D))), ((V)(0D))), Arr(((V)((-14D))), ((V)(4D))), Arr(((V)((-22D))), ((V)(12D))), t_25603) : Call(qb_25160, V.Undef, Arr(((V)((-22D))), ((V)(12D))), Arr(((V)((-8D))), ((V)(13D))), Arr(((V)(0D)), ((V)(6D))), t_25603));
 a_25607 = Call(FP_25159, V.Undef, ((V)((ToNum(sd_25577) * (-1.2)))), ((V)(1.2)), ((V)((vsd_25163 * 1.05))));
 b_25608 = Call(FP_25159, V.Undef, ((V)(((ToNum(sd_25577) * ToNum(GetIdx(e_25606, 0D))) * 0.86))), ((V)((ToNum(GetIdx(e_25606, 1D)) * 0.86))), ((V)((vsd_25163 * 1.05))));
-rb_25162 = ((V)(string.Concat(new string[] { ToStr(rb_25162), "M", ToStr(Call(r2_14387, V.Undef, GetIdx(a_25607, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(a_25607, 1D))), "L", ToStr(Call(r2_14387, V.Undef, GetIdx(b_25608, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(b_25608, 1D))) })));
+rb_25162.S("M").V(Call(r2_14387, V.Undef, GetIdx(a_25607, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(a_25607, 1D))).S("L").V(Call(r2_14387, V.Undef, GetIdx(b_25608, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(b_25608, 1D)));
 return default;
 }, 1, "", true));
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(M_25087, "fl"), ((V)("d")), fd_25161);
-Call(set_14391, V.Undef, Get(M_25087, "frib"), ((V)("d")), rb_25162);
+Call(set_14391, V.Undef, Get(M_25087, "fl"), ((V)("d")), ((V)(fd_25161.Str)));
+Call(set_14391, V.Undef, Get(M_25087, "frib"), ((V)("d")), ((V)(rb_25162.Str)));
 Set(M_25087, "tailW", Call(FP_25159, V.Undef, ((V)(0D)), ((V)(9D)), ((V)(0D))));
 {
 V tz_25609 = default;
@@ -35587,7 +35587,7 @@ double gF_25665 = 0;
 double gFr_25666 = 0;
 V gFx_25667 = default;
 V gFy_25668 = default;
-V ringD_25669 = default;
+JsStrBuf ringD_25669 = null;
 double ringO_25670 = 0;
 V fjo_25671 = default;
 V tor_25672 = default;
@@ -35609,7 +35609,7 @@ gx_25656 = Add(((V)(50D)), Get(P_14378, "x"));
 sB_25657 = Arr(((V)("")), ((V)("")), ((V)("")));
 sF_25658 = Arr(((V)("")), ((V)("")), ((V)("")));
 cir_25659 = Fn((V _self1, int _argc25686, V x_25692, V y_25693, V r_25694, V _a25691, V[] _rest25687) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_25692) - ToNum(r_25694)))))), " ", ToStr(Call(r2_14387, V.Undef, y_25693)), "A", ToStr(Call(r2_14387, V.Undef, r_25694)), " ", ToStr(Call(r2_14387, V.Undef, r_25694)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, Add(x_25692, r_25694))), " ", ToStr(Call(r2_14387, V.Undef, y_25693)), "A", ToStr(Call(r2_14387, V.Undef, r_25694)), " ", ToStr(Call(r2_14387, V.Undef, r_25694)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_25692) - ToNum(r_25694)))))), " ", ToStr(Call(r2_14387, V.Undef, y_25693)), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_25692) - ToNum(r_25694)))))).S(" ").V(Call(r2_14387, V.Undef, y_25693)).S("A").V(Call(r2_14387, V.Undef, r_25694)).S(" ").V(Call(r2_14387, V.Undef, r_25694)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, Add(x_25692, r_25694))).S(" ").V(Call(r2_14387, V.Undef, y_25693)).S("A").V(Call(r2_14387, V.Undef, r_25694)).S(" ").V(Call(r2_14387, V.Undef, r_25694)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_25692) - ToNum(r_25694)))))).S(" ").V(Call(r2_14387, V.Undef, y_25693)).S("Z").End()));
 }, 3, "", true);
 fl_25660 = Fn((V _self1, int _argc25695, V S_25701, V bx_25702, V by_25703, V ux_25704, V[] _rest25696) => {
 V ul_25709 = default;
@@ -35650,7 +35650,7 @@ Lx_25718 = Add(bx_25702, ((V)((nx_25710 * rr_25716))));
 Ly_25719 = Add(by_25703, ((V)((ToNum(ny_25711) * rr_25716))));
 Rx_25720 = (ToNum(bx_25702) - (nx_25710 * rr_25716));
 Ry_25721 = (ToNum(by_25703) - (ToNum(ny_25711) * rr_25716));
-OpSetK(S_25701, ((V)(j_25713)), 0, ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, Lx_25718)), " ", ToStr(Call(r2_14387, V.Undef, Ly_25719)), "Q", ToStr(Call(r2_14387, V.Undef, Add(Lx_25718, ((V)(((ToNum(ux_25704) * hh_25715) * 0.55)))))), " ", ToStr(Call(r2_14387, V.Undef, Add(Ly_25719, ((V)(((ToNum(uy_25705) * hh_25715) * 0.55)))))), " ", ToStr(Call(r2_14387, V.Undef, Add(Add(bx_25702, ((V)((ToNum(ux_25704) * hh_25715)))), ((V)((nx_25710 * w_25717)))))), " ", ToStr(Call(r2_14387, V.Undef, Add(Add(by_25703, ((V)((ToNum(uy_25705) * hh_25715)))), ((V)((ToNum(ny_25711) * w_25717)))))), "Q", ToStr(Call(r2_14387, V.Undef, ((V)((Rx_25720 + ((ToNum(ux_25704) * hh_25715) * 0.55)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((Ry_25721 + ((ToNum(uy_25705) * hh_25715) * 0.55)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(Rx_25720)))), " ", ToStr(Call(r2_14387, V.Undef, ((V)(Ry_25721)))), "Q", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(bx_25702) - ((ToNum(ux_25704) * rr_25716) * 1.4)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(by_25703) - ((ToNum(uy_25705) * rr_25716) * 1.4)))))), " ", ToStr(Call(r2_14387, V.Undef, Lx_25718)), " ", ToStr(Call(r2_14387, V.Undef, Ly_25719)), "Z" }))));
+OpSetK(S_25701, ((V)(j_25713)), 0, ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, Lx_25718)).S(" ").V(Call(r2_14387, V.Undef, Ly_25719)).S("Q").V(Call(r2_14387, V.Undef, Add(Lx_25718, ((V)(((ToNum(ux_25704) * hh_25715) * 0.55)))))).S(" ").V(Call(r2_14387, V.Undef, Add(Ly_25719, ((V)(((ToNum(uy_25705) * hh_25715) * 0.55)))))).S(" ").V(Call(r2_14387, V.Undef, Add(Add(bx_25702, ((V)((ToNum(ux_25704) * hh_25715)))), ((V)((nx_25710 * w_25717)))))).S(" ").V(Call(r2_14387, V.Undef, Add(Add(by_25703, ((V)((ToNum(uy_25705) * hh_25715)))), ((V)((ToNum(ny_25711) * w_25717)))))).S("Q").V(Call(r2_14387, V.Undef, ((V)((Rx_25720 + ((ToNum(ux_25704) * hh_25715) * 0.55)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((Ry_25721 + ((ToNum(uy_25705) * hh_25715) * 0.55)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)(Rx_25720)))).S(" ").V(Call(r2_14387, V.Undef, ((V)(Ry_25721)))).S("Q").V(Call(r2_14387, V.Undef, ((V)((ToNum(bx_25702) - ((ToNum(ux_25704) * rr_25716) * 1.4)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(by_25703) - ((ToNum(uy_25705) * rr_25716) * 1.4)))))).S(" ").V(Call(r2_14387, V.Undef, Lx_25718)).S(" ").V(Call(r2_14387, V.Undef, Ly_25719)).S("Z").End())));
 j_25713++;
 }
 }
@@ -35664,7 +35664,7 @@ gF_25665 = 0D;
 gFr_25666 = 9D;
 gFx_25667 = GetIdx(c_25655, 0D);
 gFy_25668 = GetIdx(c_25655, 1D);
-ringD_25669 = ((V)(""));
+ringD_25669 = new JsStrBuf("");
 ringO_25670 = 0D;
 fjo_25671 = Call(clamp_14385, V.Undef, Call(cvv_25653, V.Undef, ((V)("fjo"))), ((V)(0D)), ((V)(1D)));
 if (GtN(fjo_25671, 0.02)) {
@@ -35761,7 +35761,7 @@ double o_25752 = 0;
 double R_25753 = 0;
 o_25752 = FdLibm.Sin((System.Math.PI * ToNum(bs_25674)));
 R_25753 = (14D + (ToNum(bs_25674) * 52D));
-ringD_25669 = Add(ringD_25669, Call(cir_25659, V.Undef, GetIdx(c_25655, 0D), GetIdx(c_25655, 1D), ((V)(R_25753))));
+ringD_25669.V(Call(cir_25659, V.Undef, GetIdx(c_25655, 0D), GetIdx(c_25655, 1D), ((V)(R_25753))));
 ringO_25670 = Max(ringO_25670, o_25752);
 {
 double i_25754 = 0;
@@ -35802,7 +35802,7 @@ Call(fl_25660, V.Undef, ((FdLibm.Sin(a_25764) > 0D) ? sF_25658 : sB_25657), Add(
 i_25762++;
 }
 }
-ringD_25669 = ((V)(string.Concat(new string[] { ToStr(ringD_25669), "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(gx_25656) - rx_25760))))), " ", ToStr(Call(r2_14387, V.Undef, G_14392)), "A", NumStr(rx_25760), " ", NumStr(ry_25761), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, Add(gx_25656, ((V)(rx_25760))))), " ", ToStr(Call(r2_14387, V.Undef, G_14392)), "A", NumStr(rx_25760), " ", NumStr(ry_25761), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(gx_25656) - rx_25760))))), " ", ToStr(Call(r2_14387, V.Undef, G_14392)), "Z" })));
+ringD_25669.S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(gx_25656) - rx_25760))))).S(" ").V(Call(r2_14387, V.Undef, G_14392)).S("A").N(rx_25760).S(" ").N(ry_25761).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, Add(gx_25656, ((V)(rx_25760))))).S(" ").V(Call(r2_14387, V.Undef, G_14392)).S("A").N(rx_25760).S(" ").N(ry_25761).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((ToNum(gx_25656) - rx_25760))))).S(" ").V(Call(r2_14387, V.Undef, G_14392)).S("Z");
 ringO_25670 = Max(ringO_25670, (Min(1D, ToNum(rg_25675)) * 0.8));
 gB_25661 = Max(gB_25661, (Min(1D, ToNum(rg_25675)) * 0.7));
 gBr_25662 = 46D;
@@ -35847,7 +35847,7 @@ Call(set_14391, V.Undef, Get(F_25652, "gB"), ((V)("d")), ((gB_25661 > 0.01) ? Ca
 Call(set_14391, V.Undef, Get(F_25652, "gB"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)(gB_25661))));
 Call(set_14391, V.Undef, Get(F_25652, "gF"), ((V)("d")), ((gF_25665 > 0.01) ? Call(cir_25659, V.Undef, gFx_25667, gFy_25668, ((V)(gFr_25666))) : ((V)("M0 0"))));
 Call(set_14391, V.Undef, Get(F_25652, "gF"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((gF_25665 * 0.8)))));
-Call(set_14391, V.Undef, Get(F_25652, "ring"), ((V)("d")), (ringD_25669 is var _t25796 && Truthy(_t25796) ? _t25796 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(F_25652, "ring"), ((V)("d")), (((V)(ringD_25669.Str)) is var _t25796 && Truthy(_t25796) ? _t25796 : ((V)("M0 0"))));
 Call(set_14391, V.Undef, Get(F_25652, "ring"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)(ringO_25670))));
 }
 if (Truthy((Get(I_14377, "lan") is var _t25797 && !Truthy(_t25797) ? _t25797 : Get(W_14465, "pawR")))) {
@@ -35876,7 +35876,7 @@ Set(L_25798, "th", Call(clamp_14385, V.Undef, Add(Get(L_25798, "th"), ((V)((ToNu
 ar_25804 = Invoke(Get(I_14377, "items"), "find", Fn((V _self1, int _argc25806, V q_25812, V _a25809, V _a25810, V _a25811, V[] _rest25807) => {
 return ((SEqS(Get(q_25812, "role"), "arm") && GtN(Get(q_25812, "side"), 0D)) ? V.True : V.False);
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(L_25798, "g"), ((V)("transform")), ((V)(string.Concat(new string[] { "translate(", ToStr(Call(r2_14387, V.Undef, hx_25799)), " ", ToStr(Call(r2_14387, V.Undef, hy_25800)), ") rotate(", ToStr(Call(r2_14387, V.Undef, ((V)(((ToNum(Get(L_25798, "th")) / ToNum(D2R_14388)) + (FdLibm.Sin((ToNum(now_14379) / 900D)) * 3D)))))), ")" }))));
+Call(set_14391, V.Undef, Get(L_25798, "g"), ((V)("transform")), ((V)(JsStrBuf.Begin().S("translate(").V(Call(r2_14387, V.Undef, hx_25799)).S(" ").V(Call(r2_14387, V.Undef, hy_25800)).S(") rotate(").V(Call(r2_14387, V.Undef, ((V)(((ToNum(Get(L_25798, "th")) / ToNum(D2R_14388)) + (FdLibm.Sin((ToNum(now_14379) / 900D)) * 3D)))))).S(")").End())));
 Call(set_14391, V.Undef, Get(L_25798, "g"), ((V)("opacity")), ((V)((Truthy((ar_25804 is var _t25813 && !Truthy(_t25813) ? _t25813 : (LtN(Get(ar_25804, "_zv"), (-3D)) ? V.True : V.False))) ? 0D : 1D))));
 fl_25805 = ((0.5 + ((0.5 * FdLibm.Sin((ToNum(now_14379) / 430D))) * 0.8)) + (FdLibm.Sin((ToNum(now_14379) / 160D)) * 0.12));
 Call(set_14391, V.Undef, Get(L_25798, "glow"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.6 + (fl_25805 * 0.4))))));
@@ -35911,7 +35911,7 @@ OpSet(d_25833, "y", 0, ((V)((ToNum(Get(d_25833, "vy")) * ToNum(dtS_14466)))));
 OpSet(d_25833, "t", 0, dtS_14466);
 k_25834 = 1D;
 st_25835 = (1D + (ToNum(Get(d_25833, "vy")) / 110D));
-Call(set_14391, V.Undef, Get(d_25833, "el"), ((V)("d")), ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, Get(d_25833, "x"))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(Get(d_25833, "y")) - ((1.5 * k_25834) * st_25835)))))), " Q", ToStr(Call(r2_14387, V.Undef, Add(Get(d_25833, "x"), ((V)((1D * k_25834)))))), " ", ToStr(Call(r2_14387, V.Undef, Get(d_25833, "y"))), " ", ToStr(Call(r2_14387, V.Undef, Add(Get(d_25833, "x"), ((V)((0.9 * k_25834)))))), " ", ToStr(Call(r2_14387, V.Undef, Add(Get(d_25833, "y"), ((V)((0.6 * k_25834)))))), " A", ToStr(Call(r2_14387, V.Undef, ((V)((0.9 * k_25834))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((0.9 * k_25834))))), " 0 1 1 ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(Get(d_25833, "x")) - (0.9 * k_25834)))))), " ", ToStr(Call(r2_14387, V.Undef, Add(Get(d_25833, "y"), ((V)((0.6 * k_25834)))))), " Q", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(Get(d_25833, "x")) - (1D * k_25834)))))), " ", ToStr(Call(r2_14387, V.Undef, Get(d_25833, "y"))), " ", ToStr(Call(r2_14387, V.Undef, Get(d_25833, "x"))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(Get(d_25833, "y")) - ((1.5 * k_25834) * st_25835)))))), "Z" }))));
+Call(set_14391, V.Undef, Get(d_25833, "el"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, Get(d_25833, "x"))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(Get(d_25833, "y")) - ((1.5 * k_25834) * st_25835)))))).S(" Q").V(Call(r2_14387, V.Undef, Add(Get(d_25833, "x"), ((V)((1D * k_25834)))))).S(" ").V(Call(r2_14387, V.Undef, Get(d_25833, "y"))).S(" ").V(Call(r2_14387, V.Undef, Add(Get(d_25833, "x"), ((V)((0.9 * k_25834)))))).S(" ").V(Call(r2_14387, V.Undef, Add(Get(d_25833, "y"), ((V)((0.6 * k_25834)))))).S(" A").V(Call(r2_14387, V.Undef, ((V)((0.9 * k_25834))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((0.9 * k_25834))))).S(" 0 1 1 ").V(Call(r2_14387, V.Undef, ((V)((ToNum(Get(d_25833, "x")) - (0.9 * k_25834)))))).S(" ").V(Call(r2_14387, V.Undef, Add(Get(d_25833, "y"), ((V)((0.6 * k_25834)))))).S(" Q").V(Call(r2_14387, V.Undef, ((V)((ToNum(Get(d_25833, "x")) - (1D * k_25834)))))).S(" ").V(Call(r2_14387, V.Undef, Get(d_25833, "y"))).S(" ").V(Call(r2_14387, V.Undef, Get(d_25833, "x"))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(Get(d_25833, "y")) - ((1.5 * k_25834) * st_25835)))))).S("Z").End())));
 Call(set_14391, V.Undef, Get(d_25833, "el"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.9 * Min(1D, (ToNum(Get(d_25833, "t")) * 8D)))))));
 if (Ge(Get(d_25833, "y"), Add(G_14392, ((V)(0.4))))) {
 Set(d_25833, "st", ((V)(2D)));
@@ -36022,13 +36022,13 @@ yw_25871 = Add(Get(P_14378, "spin"), ((V)((ToNum(Get(P_14378, "turn")) * 40D))))
 ph_25872 = ((ToNum(now_14379) / 1600D) + ((ToNum(yw_25871) * ToNum(D2R_14388)) * 0.8));
 h_25873 = (200D + (FdLibm.Sin(ph_25872) * 45D));
 if (Truthy(Get(S_25870, "ir"))) {
-Call(set_14391, V.Undef, Get(S_25870, "ir"), ((V)("gradientTransform")), ((V)(string.Concat("rotate(", ToStr(Call(r2_14387, V.Undef, ((V)(((ToNum(yw_25871) * 0.9) + ((ToNum(now_14379) / 1000D) * 18D)))))), " 0.5 0.5)"))));
+Call(set_14391, V.Undef, Get(S_25870, "ir"), ((V)("gradientTransform")), ((V)(JsStrBuf.Begin().S("rotate(").V(Call(r2_14387, V.Undef, ((V)(((ToNum(yw_25871) * 0.9) + ((ToNum(now_14379) / 1000D) * 18D)))))).S(" 0.5 0.5)").End())));
 }
 if (Truthy(Get(S_25870, "s2"))) {
-Call(set_14391, V.Undef, Get(S_25870, "s2"), ((V)("stop-color")), ((V)(string.Concat("hsl(", ToStr(Call(r2_14387, V.Undef, ((V)(h_25873)))), ",100%,87%)"))));
+Call(set_14391, V.Undef, Get(S_25870, "s2"), ((V)("stop-color")), ((V)(JsStrBuf.Begin().S("hsl(").V(Call(r2_14387, V.Undef, ((V)(h_25873)))).S(",100%,87%)").End())));
 }
 if (Truthy(Get(S_25870, "s3"))) {
-Call(set_14391, V.Undef, Get(S_25870, "s3"), ((V)("stop-color")), ((V)(string.Concat("hsl(", ToStr(Call(r2_14387, V.Undef, ((V)((h_25873 + 85D))))), ",100%,88%)"))));
+Call(set_14391, V.Undef, Get(S_25870, "s3"), ((V)("stop-color")), ((V)(JsStrBuf.Begin().S("hsl(").V(Call(r2_14387, V.Undef, ((V)((h_25873 + 85D))))).S(",100%,88%)").End())));
 }
 }
 E_14480 = Get(I_14377, "E");
@@ -36147,13 +36147,13 @@ Y0_25921 = Get(MO_14464, "y");
 y0_25922 = Add(Y0_25921, ((V)(((((-ToNum(sm_25915)) * 0.5) + (ToNum(fr_25917) * 1.3)) * mk0_25914))));
 d_25923 = ((((2.3 * (1D + (ToNum(sm_25915) * 0.45))) - (ToNum(fr_25917) * 4D)) * (1D - (op_25916 * 0.55))) * mk0_25914);
 ym_25924 = (ToNum(Y0_25921) - ((ToNum(fr_25917) * 0.2) * mk0_25914));
-lip_25925 = ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(X0_25920) - hw_25919))))), " ", ToStr(Call(r2_14387, V.Undef, y0_25922)), " Q", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(X0_25920) - (hw_25919 / 2D)))))), " ", ToStr(Call(r2_14387, V.Undef, Add(y0_25922, ((V)(d_25923))))), " ", ToStr(Call(r2_14387, V.Undef, X0_25920)), " ", ToStr(Call(r2_14387, V.Undef, ((V)(ym_25924)))), " Q", ToStr(Call(r2_14387, V.Undef, Add(X0_25920, ((V)((hw_25919 / 2D)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ym_25924 + d_25923))))), " ", ToStr(Call(r2_14387, V.Undef, Add(X0_25920, ((V)(hw_25919))))), " ", ToStr(Call(r2_14387, V.Undef, y0_25922)) })));
+lip_25925 = ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(X0_25920) - hw_25919))))).S(" ").V(Call(r2_14387, V.Undef, y0_25922)).S(" Q").V(Call(r2_14387, V.Undef, ((V)((ToNum(X0_25920) - (hw_25919 / 2D)))))).S(" ").V(Call(r2_14387, V.Undef, Add(y0_25922, ((V)(d_25923))))).S(" ").V(Call(r2_14387, V.Undef, X0_25920)).S(" ").V(Call(r2_14387, V.Undef, ((V)(ym_25924)))).S(" Q").V(Call(r2_14387, V.Undef, Add(X0_25920, ((V)((hw_25919 / 2D)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ym_25924 + d_25923))))).S(" ").V(Call(r2_14387, V.Undef, Add(X0_25920, ((V)(hw_25919))))).S(" ").V(Call(r2_14387, V.Undef, y0_25922)).End()));
 mv_25926 = Call(zc_14459, V.Undef, X0_25920, Y0_25921);
 Call(set_14391, V.Undef, Get(E_14480, "mouth"), ((V)("d")), Call(toD_14380, V.Undef, Call(parsePath_14382, V.Undef, lip_25925), face_14457));
 Call(set_14391, V.Undef, Get(E_14480, "mouth"), ((V)("opacity")), Call(r2_14387, V.Undef, mv_25926));
 Call(set_14391, V.Undef, Get(E_14480, "mouth"), ((V)("stroke-width")), Call(r2_14387, V.Undef, ((V)((1.2 * Max(0.8, mk0_25914))))));
 if ((op_25916 > 0.03)) {
-Call(set_14391, V.Undef, Get(E_14480, "mopen"), ((V)("d")), Call(toD_14380, V.Undef, Call(parsePath_14382, V.Undef, ((V)(string.Concat(new string[] { ToStr(lip_25925), " C", ToStr(Call(r2_14387, V.Undef, Add(X0_25920, ((V)(hw_25919))))), " ", ToStr(Call(r2_14387, V.Undef, Add(y0_25922, ((V)(((op_25916 * 8D) * mk0_25914)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(X0_25920) - hw_25919))))), " ", ToStr(Call(r2_14387, V.Undef, Add(y0_25922, ((V)(((op_25916 * 8D) * mk0_25914)))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(X0_25920) - hw_25919))))), " ", ToStr(Call(r2_14387, V.Undef, y0_25922)), "Z" })))), face_14457));
+Call(set_14391, V.Undef, Get(E_14480, "mopen"), ((V)("d")), Call(toD_14380, V.Undef, Call(parsePath_14382, V.Undef, ((V)(JsStrBuf.Begin().V(lip_25925).S(" C").V(Call(r2_14387, V.Undef, Add(X0_25920, ((V)(hw_25919))))).S(" ").V(Call(r2_14387, V.Undef, Add(y0_25922, ((V)(((op_25916 * 8D) * mk0_25914)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(X0_25920) - hw_25919))))).S(" ").V(Call(r2_14387, V.Undef, Add(y0_25922, ((V)(((op_25916 * 8D) * mk0_25914)))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(X0_25920) - hw_25919))))).S(" ").V(Call(r2_14387, V.Undef, y0_25922)).S("Z").End()))), face_14457));
 Call(set_14391, V.Undef, Get(E_14480, "tongue"), ((V)("d")), Call(toD_14380, V.Undef, Call(ellS_14381, V.Undef, X0_25920, Add(y0_25922, ((V)(((op_25916 * 4.2) * mk0_25914)))), ((V)((((2.3 * op_25916) * mw_25918) * mk0_25914))), ((V)(((1.4 * op_25916) * mk0_25914))), ((V)(0D)), ((V)(8D))), face_14457));
 Call(set_14391, V.Undef, Get(E_14480, "mopen"), ((V)("opacity")), Call(r2_14387, V.Undef, mv_25926));
 Call(set_14391, V.Undef, Get(E_14480, "tongue"), ((V)("opacity")), Call(r2_14387, V.Undef, mv_25926));
@@ -36198,9 +36198,9 @@ D_25944 = Fn((V _self1, int _argc25965, V s_25971, V _a25968, V _a25969, V _a259
 return Call(toD_14380, V.Undef, Call(parsePath_14382, V.Undef, s_25971), BF_25943);
 }, 1, "", true);
 bv_25945 = Call(r2_14387, V.Undef, mv_25926);
-Call(set_14391, V.Undef, Get(K_25941, "up"), ((V)("d")), Call(D_25944, V.Undef, ((V)(string.Concat(new string[] { "M46.6 60.2 Q50 58.4 53.4 60.2 Q51.7 ", ToStr(Call(r2_14387, V.Undef, ((V)((63.2 - (ToNum(o_25942) * 1.2)))))), " 50 ", ToStr(Call(r2_14387, V.Undef, ((V)((64.2 - (ToNum(o_25942) * 1.6)))))), " Q48.3 ", ToStr(Call(r2_14387, V.Undef, ((V)((63.2 - (ToNum(o_25942) * 1.2)))))), " 46.6 60.2Z" })))));
-Call(set_14391, V.Undef, Get(K_25941, "lo"), ((V)("d")), Call(D_25944, V.Undef, ((V)(string.Concat(new string[] { "M47.2 60.9 Q50 ", ToStr(Call(r2_14387, V.Undef, ((V)((62.4 + (ToNum(o_25942) * 5D)))))), " 52.8 60.9 Q51.3 ", ToStr(Call(r2_14387, V.Undef, ((V)((63.8 + (ToNum(o_25942) * 4.2)))))), " 50 ", ToStr(Call(r2_14387, V.Undef, ((V)((64.5 + (ToNum(o_25942) * 5D)))))), " Q48.7 ", ToStr(Call(r2_14387, V.Undef, ((V)((63.8 + (ToNum(o_25942) * 4.2)))))), " 47.2 60.9Z" })))));
-Call(set_14391, V.Undef, Get(K_25941, "in"), ((V)("d")), Call(D_25944, V.Undef, ((V)(string.Concat("M47 60.8 Q50 61.4 53 60.8 Q50 ", ToStr(Call(r2_14387, V.Undef, ((V)((63D + (ToNum(o_25942) * 6D)))))), " 47 60.8Z")))));
+Call(set_14391, V.Undef, Get(K_25941, "up"), ((V)("d")), Call(D_25944, V.Undef, ((V)(JsStrBuf.Begin().S("M46.6 60.2 Q50 58.4 53.4 60.2 Q51.7 ").V(Call(r2_14387, V.Undef, ((V)((63.2 - (ToNum(o_25942) * 1.2)))))).S(" 50 ").V(Call(r2_14387, V.Undef, ((V)((64.2 - (ToNum(o_25942) * 1.6)))))).S(" Q48.3 ").V(Call(r2_14387, V.Undef, ((V)((63.2 - (ToNum(o_25942) * 1.2)))))).S(" 46.6 60.2Z").End()))));
+Call(set_14391, V.Undef, Get(K_25941, "lo"), ((V)("d")), Call(D_25944, V.Undef, ((V)(JsStrBuf.Begin().S("M47.2 60.9 Q50 ").V(Call(r2_14387, V.Undef, ((V)((62.4 + (ToNum(o_25942) * 5D)))))).S(" 52.8 60.9 Q51.3 ").V(Call(r2_14387, V.Undef, ((V)((63.8 + (ToNum(o_25942) * 4.2)))))).S(" 50 ").V(Call(r2_14387, V.Undef, ((V)((64.5 + (ToNum(o_25942) * 5D)))))).S(" Q48.7 ").V(Call(r2_14387, V.Undef, ((V)((63.8 + (ToNum(o_25942) * 4.2)))))).S(" 47.2 60.9Z").End()))));
+Call(set_14391, V.Undef, Get(K_25941, "in"), ((V)("d")), Call(D_25944, V.Undef, ((V)(JsStrBuf.Begin().S("M47 60.8 Q50 61.4 53 60.8 Q50 ").V(Call(r2_14387, V.Undef, ((V)((63D + (ToNum(o_25942) * 6D)))))).S(" 47 60.8Z").End()))));
 Call(set_14391, V.Undef, Get(K_25941, "hl"), ((V)("d")), Call(toD_14380, V.Undef, Call(ellS_14381, V.Undef, ((V)(48.6)), ((V)(59.9)), ((V)(1.1)), ((V)(0.4)), ((V)((-10D))), ((V)(6D))), BF_25943));
 Call(set_14391, V.Undef, Get(K_25941, "up"), ((V)("opacity")), bv_25945);
 Call(set_14391, V.Undef, Get(K_25941, "lo"), ((V)("opacity")), bv_25945);
@@ -36230,9 +36230,9 @@ D_25975 = Fn((V _self1, int _argc25994, V s_26000, V _a25997, V _a25998, V _a259
 return Call(toD_14380, V.Undef, Call(parsePath_14382, V.Undef, s_26000), BF_25974);
 }, 1, "", true);
 bv_25976 = Call(r2_14387, V.Undef, mv_25926);
-Call(set_14391, V.Undef, Get(K_25972, "up"), ((V)("d")), Call(D_25975, V.Undef, ((V)(string.Concat("M45.5 54 Q50 50.6 54.5 54 Q50 ", ToStr(Call(r2_14387, V.Undef, ((V)((55.4 - (ToNum(o_25973) * 0.5)))))), " 45.5 54Z")))));
-Call(set_14391, V.Undef, Get(K_25972, "lo"), ((V)("d")), Call(D_25975, V.Undef, ((V)(string.Concat(new string[] { "M45.9 54.2 Q50 ", ToStr(Call(r2_14387, V.Undef, ((V)((55.5 + (ToNum(o_25973) * 3.4)))))), " 54.1 54.2 Q50 ", ToStr(Call(r2_14387, V.Undef, ((V)((58.6 + (ToNum(o_25973) * 4.6)))))), " 45.9 54.2Z" })))));
-Call(set_14391, V.Undef, Get(K_25972, "in"), ((V)("d")), Call(D_25975, V.Undef, ((V)(string.Concat(new string[] { "M45.8 54.1 Q50 ", ToStr(Call(r2_14387, V.Undef, ((V)((55.2 - (ToNum(o_25973) * 0.5)))))), " 54.2 54.1 Q50 ", ToStr(Call(r2_14387, V.Undef, ((V)((55.7 + (ToNum(o_25973) * 3.4)))))), " 45.8 54.1Z" })))));
+Call(set_14391, V.Undef, Get(K_25972, "up"), ((V)("d")), Call(D_25975, V.Undef, ((V)(JsStrBuf.Begin().S("M45.5 54 Q50 50.6 54.5 54 Q50 ").V(Call(r2_14387, V.Undef, ((V)((55.4 - (ToNum(o_25973) * 0.5)))))).S(" 45.5 54Z").End()))));
+Call(set_14391, V.Undef, Get(K_25972, "lo"), ((V)("d")), Call(D_25975, V.Undef, ((V)(JsStrBuf.Begin().S("M45.9 54.2 Q50 ").V(Call(r2_14387, V.Undef, ((V)((55.5 + (ToNum(o_25973) * 3.4)))))).S(" 54.1 54.2 Q50 ").V(Call(r2_14387, V.Undef, ((V)((58.6 + (ToNum(o_25973) * 4.6)))))).S(" 45.9 54.2Z").End()))));
+Call(set_14391, V.Undef, Get(K_25972, "in"), ((V)("d")), Call(D_25975, V.Undef, ((V)(JsStrBuf.Begin().S("M45.8 54.1 Q50 ").V(Call(r2_14387, V.Undef, ((V)((55.2 - (ToNum(o_25973) * 0.5)))))).S(" 54.2 54.1 Q50 ").V(Call(r2_14387, V.Undef, ((V)((55.7 + (ToNum(o_25973) * 3.4)))))).S(" 45.8 54.1Z").End()))));
 Call(set_14391, V.Undef, Get(K_25972, "hl"), ((V)("d")), Call(toD_14380, V.Undef, Call(ellS_14381, V.Undef, ((V)(48.4)), ((V)(52.5)), ((V)(1.7)), ((V)(0.6)), ((V)((-14D))), ((V)(6D))), BF_25974));
 Call(set_14391, V.Undef, Get(K_25972, "up"), ((V)("opacity")), bv_25976);
 Call(set_14391, V.Undef, Get(K_25972, "lo"), ((V)("opacity")), bv_25976);
@@ -36264,9 +36264,9 @@ D_26004 = Fn((V _self1, int _argc26024, V s_26030, V _a26027, V _a26028, V _a260
 return Call(toD_14380, V.Undef, Call(parsePath_14382, V.Undef, s_26030), BF_26003);
 }, 1, "", true);
 bv_26005 = Call(r2_14387, V.Undef, mv_25926);
-Call(set_14391, V.Undef, Get(K_26001, "up"), ((V)("d")), Call(D_26004, V.Undef, ((V)(string.Concat("M46.3 62 Q50 59.3 53.7 62 Q50 ", ToStr(Call(r2_14387, V.Undef, ((V)((63D - (ToNum(o_26002) * 0.4)))))), " 46.3 62Z")))));
-Call(set_14391, V.Undef, Get(K_26001, "lo"), ((V)("d")), Call(D_26004, V.Undef, ((V)(string.Concat(new string[] { "M46.7 62.3 Q50 ", ToStr(Call(r2_14387, V.Undef, ((V)((63.1 + (ToNum(o_26002) * 2.6)))))), " 53.3 62.3 Q50 ", ToStr(Call(r2_14387, V.Undef, ((V)((65.3 + (ToNum(o_26002) * 3.6)))))), " 46.7 62.3Z" })))));
-Call(set_14391, V.Undef, Get(K_26001, "in"), ((V)("d")), Call(D_26004, V.Undef, ((V)(string.Concat("M46.9 62.2 Q50 62.7 53.1 62.2 Q50 ", ToStr(Call(r2_14387, V.Undef, ((V)((63.3 + (ToNum(o_26002) * 2.8)))))), " 46.9 62.2Z")))));
+Call(set_14391, V.Undef, Get(K_26001, "up"), ((V)("d")), Call(D_26004, V.Undef, ((V)(JsStrBuf.Begin().S("M46.3 62 Q50 59.3 53.7 62 Q50 ").V(Call(r2_14387, V.Undef, ((V)((63D - (ToNum(o_26002) * 0.4)))))).S(" 46.3 62Z").End()))));
+Call(set_14391, V.Undef, Get(K_26001, "lo"), ((V)("d")), Call(D_26004, V.Undef, ((V)(JsStrBuf.Begin().S("M46.7 62.3 Q50 ").V(Call(r2_14387, V.Undef, ((V)((63.1 + (ToNum(o_26002) * 2.6)))))).S(" 53.3 62.3 Q50 ").V(Call(r2_14387, V.Undef, ((V)((65.3 + (ToNum(o_26002) * 3.6)))))).S(" 46.7 62.3Z").End()))));
+Call(set_14391, V.Undef, Get(K_26001, "in"), ((V)("d")), Call(D_26004, V.Undef, ((V)(JsStrBuf.Begin().S("M46.9 62.2 Q50 62.7 53.1 62.2 Q50 ").V(Call(r2_14387, V.Undef, ((V)((63.3 + (ToNum(o_26002) * 2.8)))))).S(" 46.9 62.2Z").End()))));
 Call(set_14391, V.Undef, Get(K_26001, "hl"), ((V)("d")), Call(toD_14380, V.Undef, Call(ellS_14381, V.Undef, ((V)(48.6)), ((V)(60.9)), ((V)(1.2)), ((V)(0.45)), ((V)((-10D))), ((V)(6D))), BF_26003));
 Call(set_14391, V.Undef, Get(K_26001, "up"), ((V)("opacity")), bv_26005);
 Call(set_14391, V.Undef, Get(K_26001, "lo"), ((V)("opacity")), bv_26005);
@@ -36290,7 +36290,7 @@ V t_26045 = default;
 t_26045 = Invoke(tops_14491, "find", Fn((V _self1, int _argc26046, V q_26052, V _a26049, V _a26050, V _a26051, V[] _rest26047) => {
 return (SEqN(Get(q_26052, "side"), (SEqS(sd_26044, "L") ? (-1D) : 1D)) ? V.True : V.False);
 }, 1, "", true));
-SetK(W_14465, ((V)(string.Concat("ear", ToStr(sd_26044)))), (Truthy(t_26045) ? Call(sph_14455, V.Undef, Get(t_26045, "cx"), Add(Get(Get(t_26045, "b"), "y"), ((V)(2D))), ((V)(0D))) : Call(headT_14439, V.Undef, Add(HX_14394, ((V)((((SEqS(sd_26044, "L") ? (-1D) : 1D) * ToNum(Get(g_14390, "HR"))) * 0.6)))), Add(Get(g_14390, "TOP"), ((V)(4D))))));
+SetK(W_14465, ((V)(JsStrBuf.Begin().S("ear").V(sd_26044).End())), (Truthy(t_26045) ? Call(sph_14455, V.Undef, Get(t_26045, "cx"), Add(Get(Get(t_26045, "b"), "y"), ((V)(2D))), ((V)(0D))) : Call(headT_14439, V.Undef, Add(HX_14394, ((V)((((SEqS(sd_26044, "L") ? (-1D) : 1D) * ToNum(Get(g_14390, "HR"))) * 0.6)))), Add(Get(g_14390, "TOP"), ((V)(4D))))));
 return default;
 }, 1, "", true));
 sideT_14492 = Invoke(Get(I_14377, "items"), "find", Fn((V _self1, int _argc26053, V q_26059, V _a26056, V _a26057, V _a26058, V[] _rest26054) => {
@@ -36307,7 +36307,7 @@ V T_26063 = default;
 double ts_26064 = 0;
 V Pk_26065 = default;
 V mp_26066 = default;
-V sd_26067 = default;
+JsStrBuf sd_26067 = null;
 K_26061 = Get(I_14377, "kite");
 N_26062 = Get(Get(K_26061, "rest"), "length");
 T_26063 = Invoke(Get(K_26061, "rest"), "map", Fn((V _self1, int _argc26068, V p_26074, V _a26071, V _a26072, V _a26073, V[] _rest26069) => {
@@ -36368,20 +36368,20 @@ i_26092++;
 }
 Pk_26065 = Get(K_26061, "P");
 mp_26066 = Fn((V _self1, int _argc26101, V a_26107, V b_26108, V _a26105, V _a26106, V[] _rest26102) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(Add(GetIdx(a_26107, 0D), GetIdx(b_26108, 0D))) / 2D))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(Add(GetIdx(a_26107, 1D), GetIdx(b_26108, 1D))) / 2D))))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, ((V)((ToNum(Add(GetIdx(a_26107, 0D), GetIdx(b_26108, 0D))) / 2D))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(Add(GetIdx(a_26107, 1D), GetIdx(b_26108, 1D))) / 2D))))).End()));
 }, 2, "", true);
-sd_26067 = ((V)(string.Concat("M", ToStr(Call(r2_14387, V.Undef, GetIdx(GetIdx(Pk_26065, 0D), 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(GetIdx(Pk_26065, 0D), 1D))))));
+sd_26067 = new JsStrBuf(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, GetIdx(GetIdx(Pk_26065, 0D), 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(GetIdx(Pk_26065, 0D), 1D))).End());
 {
 double i_26109 = 0;
 i_26109 = 1D;
 while (true) {
 if (!((i_26109 < (ToNum(N_26062) - 1D)))) break;
-sd_26067 = ((V)(string.Concat(new string[] { ToStr(sd_26067), " Q", ToStr(Call(r2_14387, V.Undef, GetIdx(GetIdx(Pk_26065, i_26109), 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(GetIdx(Pk_26065, i_26109), 1D))), " ", ToStr(Call(mp_26066, V.Undef, GetIdx(Pk_26065, i_26109), GetIdx(Pk_26065, (i_26109 + 1D)))) })));
+sd_26067.S(" Q").V(Call(r2_14387, V.Undef, GetIdx(GetIdx(Pk_26065, i_26109), 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(GetIdx(Pk_26065, i_26109), 1D))).S(" ").V(Call(mp_26066, V.Undef, GetIdx(Pk_26065, i_26109), GetIdx(Pk_26065, (i_26109 + 1D))));
 i_26109++;
 }
 }
-sd_26067 = ((V)(string.Concat(new string[] { ToStr(sd_26067), " L", ToStr(Call(r2_14387, V.Undef, GetIdx(GetIdx(Pk_26065, (ToNum(N_26062) - 1D)), 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(GetIdx(Pk_26065, (ToNum(N_26062) - 1D)), 1D))) })));
-Call(set_14391, V.Undef, Get(Get(K_26061, "str"), "e"), ((V)("d")), sd_26067);
+sd_26067.S(" L").V(Call(r2_14387, V.Undef, GetIdx(GetIdx(Pk_26065, (ToNum(N_26062) - 1D)), 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(GetIdx(Pk_26065, (ToNum(N_26062) - 1D)), 1D)));
+Call(set_14391, V.Undef, Get(Get(K_26061, "str"), "e"), ((V)("d")), ((V)(sd_26067.Str)));
 Invoke(Get(K_26061, "bows"), "forEach", Fn((V _self1, int _argc26111, V b_26117, V _a26114, V _a26115, V _a26116, V[] _rest26112) => {
 V j_26118 = default;
 double j0_26119 = 0;
@@ -36432,8 +36432,8 @@ V C_26150 = default;
 V R0_26151 = default;
 V jagP_26152 = default;
 V dP_26153 = default;
-V M_26154 = default;
-V S_26155 = default;
+JsStrBuf M_26154 = null;
+JsStrBuf S_26155 = null;
 V bolt_26156 = default;
 V eL_26157 = default;
 V eR_26158 = default;
@@ -36495,11 +36495,11 @@ return default;
 }, 6, "", true);
 dP_26153 = Fn((V _self1, int _argc26196, V Q_26202, V _a26199, V _a26200, V _a26201, V[] _rest26197) => {
 return Invoke(Invoke(Q_26202, "map", Fn((V _self1, int _argc26203, V p_26209, V i_26210, V _a26207, V _a26208, V[] _rest26204) => {
-return ((V)(string.Concat((Truthy(i_26210) ? "L" : "M"), ToStr(Call(r2_14387, V.Undef, GetIdx(p_26209, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_26209, 1D))))));
+return ((V)(JsStrBuf.Begin().S((Truthy(i_26210) ? "L" : "M")).V(Call(r2_14387, V.Undef, GetIdx(p_26209, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_26209, 1D))).End()));
 }, 2, "", true)), "join", ((V)("")));
 }, 1, "", true);
-M_26154 = ((V)(""));
-S_26155 = ((V)(""));
+M_26154 = new JsStrBuf("");
+S_26155 = new JsStrBuf("");
 bolt_26156 = Fn((V _self1, int _argc26211, V A_26217, V B_26218, V n_26219, V amp_26220, V[] _rest26212) => {
 V Q_26225 = default;
 double @base_26226 = 0;
@@ -36513,9 +36513,9 @@ br_26223 = (_argc26211 > 6 ? _rest26212[2] : V.Undef);
 small_26224 = (_argc26211 > 7 ? _rest26212[3] : V.Undef);
 Q_26225 = Call(jagP_26152, V.Undef, A_26217, B_26218, n_26219, amp_26220, bow_26221, k0_26222);
 if (Truthy(small_26224)) {
-S_26155 = Add(S_26155, Call(dP_26153, V.Undef, Q_26225));
+S_26155.V(Call(dP_26153, V.Undef, Q_26225));
 } else {
-M_26154 = Add(M_26154, Call(dP_26153, V.Undef, Q_26225));
+M_26154.V(Call(dP_26153, V.Undef, Q_26225));
 }
 @base_26226 = FdLibm.Atan2((ToNum(GetIdx(B_26218, 1D)) - ToNum(GetIdx(A_26217, 1D))), (ToNum(GetIdx(B_26218, 0D)) - ToNum(GetIdx(A_26217, 0D))));
 {
@@ -36529,7 +36529,7 @@ double l_26231 = 0;
 p_26229 = GetIdx(Q_26225, (1D + System.Math.Floor((ToNum(Call(rn_26149, V.Undef, Add(Add(k0_26222, ((V)(50D))), ((V)(b_26227))))) * (ToNum(n_26219) - 1D)))));
 a_26230 = (@base_26226 + ((ToNum(Call(rn_26149, V.Undef, Add(Add(k0_26222, ((V)(60D))), ((V)(b_26227))))) - 0.5) * 2D));
 l_26231 = (4D + (ToNum(Call(rn_26149, V.Undef, Add(Add(k0_26222, ((V)(70D))), ((V)(b_26227))))) * 8D));
-S_26155 = Add(S_26155, Call(dP_26153, V.Undef, Call(jagP_26152, V.Undef, p_26229, Arr(Add(GetIdx(p_26229, 0D), ((V)((FdLibm.Cos(a_26230) * l_26231)))), Add(GetIdx(p_26229, 1D), ((V)((FdLibm.Sin(a_26230) * l_26231))))), ((V)(3D)), ((V)(1.3)), ((V)(0D)), Add(Add(k0_26222, ((V)(80D))), ((V)((b_26227 * 7D)))))));
+S_26155.V(Call(dP_26153, V.Undef, Call(jagP_26152, V.Undef, p_26229, Arr(Add(GetIdx(p_26229, 0D), ((V)((FdLibm.Cos(a_26230) * l_26231)))), Add(GetIdx(p_26229, 1D), ((V)((FdLibm.Sin(a_26230) * l_26231))))), ((V)(3D)), ((V)(1.3)), ((V)(0D)), Add(Add(k0_26222, ((V)(80D))), ((V)((b_26227 * 7D)))))));
 b_26227++;
 }
 }
@@ -36588,17 +36588,17 @@ return default;
 }, 2, "", true));
 }
 Invoke(Get(Z_26146, "M"), "forEach", Fn((V _self1, int _argc26273, V p_26279, V i_26280, V _a26277, V _a26278, V[] _rest26274) => {
-if (Truthy(M_26154)) {
-Call(set_14391, V.Undef, p_26279, ((V)("d")), M_26154);
+if (((M_26154.Str).Length != 0)) {
+Call(set_14391, V.Undef, p_26279, ((V)("d")), ((V)(M_26154.Str)));
 }
-Call(set_14391, V.Undef, p_26279, ((V)("opacity")), (Truthy(M_26154) ? Call(r2_14387, V.Undef, ((V)((SEqN(i_26280, 1D) ? 0.75 : (Truthy(i_26280) ? 1D : 0.85))))) : ((V)(0D))));
+Call(set_14391, V.Undef, p_26279, ((V)("opacity")), (((M_26154.Str).Length != 0) ? Call(r2_14387, V.Undef, ((V)((SEqN(i_26280, 1D) ? 0.75 : (Truthy(i_26280) ? 1D : 0.85))))) : ((V)(0D))));
 return default;
 }, 2, "", true));
 Invoke(Get(Z_26146, "S"), "forEach", Fn((V _self1, int _argc26281, V p_26287, V i_26288, V _a26285, V _a26286, V[] _rest26282) => {
-if (Truthy(S_26155)) {
-Call(set_14391, V.Undef, p_26287, ((V)("d")), S_26155);
+if (((S_26155.Str).Length != 0)) {
+Call(set_14391, V.Undef, p_26287, ((V)("d")), ((V)(S_26155.Str)));
 }
-Call(set_14391, V.Undef, p_26287, ((V)("opacity")), (Truthy(S_26155) ? Call(r2_14387, V.Undef, ((V)((SEqN(i_26288, 1D) ? 0.7 : (Truthy(i_26288) ? 1D : 0.8))))) : ((V)(0D))));
+Call(set_14391, V.Undef, p_26287, ((V)("opacity")), (((S_26155.Str).Length != 0) ? Call(r2_14387, V.Undef, ((V)((SEqN(i_26288, 1D) ? 0.7 : (Truthy(i_26288) ? 1D : 0.8))))) : ((V)(0D))));
 return default;
 }, 2, "", true));
 Call(set_14391, V.Undef, Get(Z_26146, "fl"), ((V)("opacity")), (Truthy(strike_26161) ? Call(r2_14387, V.Undef, ((V)((0.1 + (ToNum(Call(rn_26149, V.Undef, ((V)(10D)))) * 0.1))))) : ((V)(0D))));
@@ -36652,17 +36652,17 @@ V CP_26330 = default;
 V WD_26331 = default;
 V CC_26332 = default;
 V ring_26333 = default;
-V td_26334 = default;
-V hd_26335 = default;
+JsStrBuf td_26334 = null;
+JsStrBuf hd_26335 = null;
 V pr_26336 = default;
 V ph_26337 = default;
-V sd_26338 = default;
-V kd_26339 = default;
+JsStrBuf sd_26338 = null;
+JsStrBuf kd_26339 = null;
 N_26289 = Get(I_14377, "gn");
 ts_26290 = (ToNum(now_14379) / 1000D);
 LC_26291 = 45.6;
 pt_26292 = Fn((V _self1, int _argc26340, V p_26346, V _a26343, V _a26344, V _a26345, V[] _rest26341) => {
-return ((V)(string.Concat(ToStr(Call(r2_14387, V.Undef, GetIdx(p_26346, 0D))), " ", ToStr(Call(r2_14387, V.Undef, GetIdx(p_26346, 1D))))));
+return ((V)(JsStrBuf.Begin().V(Call(r2_14387, V.Undef, GetIdx(p_26346, 0D))).S(" ").V(Call(r2_14387, V.Undef, GetIdx(p_26346, 1D))).End()));
 }, 1, "", true);
 cv_26293 = Fn((V _self1, int _argc26347, V k_26353, V _a26350, V _a26351, V _a26352, V[] _rest26348) => {
 double v_26354 = 0;
@@ -36671,13 +36671,13 @@ return ((V)(((v_26354 == v_26354) ? v_26354 : 0D)));
 return default;
 }, 1, "", true);
 cir_26294 = Fn((V _self1, int _argc26355, V x_26361, V y_26362, V r_26363, V _a26360, V[] _rest26356) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_26361) - ToNum(r_26363)))))), " ", ToStr(Call(r2_14387, V.Undef, y_26362)), "A", ToStr(Call(r2_14387, V.Undef, r_26363)), " ", ToStr(Call(r2_14387, V.Undef, r_26363)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, Add(x_26361, r_26363))), " ", ToStr(Call(r2_14387, V.Undef, y_26362)), "A", ToStr(Call(r2_14387, V.Undef, r_26363)), " ", ToStr(Call(r2_14387, V.Undef, r_26363)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_26361) - ToNum(r_26363)))))), " ", ToStr(Call(r2_14387, V.Undef, y_26362)), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_26361) - ToNum(r_26363)))))).S(" ").V(Call(r2_14387, V.Undef, y_26362)).S("A").V(Call(r2_14387, V.Undef, r_26363)).S(" ").V(Call(r2_14387, V.Undef, r_26363)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, Add(x_26361, r_26363))).S(" ").V(Call(r2_14387, V.Undef, y_26362)).S("A").V(Call(r2_14387, V.Undef, r_26363)).S(" ").V(Call(r2_14387, V.Undef, r_26363)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_26361) - ToNum(r_26363)))))).S(" ").V(Call(r2_14387, V.Undef, y_26362)).S("Z").End()));
 }, 3, "", true);
 ell_26295 = Fn((V _self1, int _argc26364, V x_26370, V y_26371, V rx_26372, V ry_26373, V[] _rest26365) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_26370) - ToNum(rx_26372)))))), " ", ToStr(Call(r2_14387, V.Undef, y_26371)), "A", ToStr(Call(r2_14387, V.Undef, rx_26372)), " ", ToStr(Call(r2_14387, V.Undef, ry_26373)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, Add(x_26370, rx_26372))), " ", ToStr(Call(r2_14387, V.Undef, y_26371)), "A", ToStr(Call(r2_14387, V.Undef, rx_26372)), " ", ToStr(Call(r2_14387, V.Undef, ry_26373)), " 0 1 0 ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_26370) - ToNum(rx_26372)))))), " ", ToStr(Call(r2_14387, V.Undef, y_26371)), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_26370) - ToNum(rx_26372)))))).S(" ").V(Call(r2_14387, V.Undef, y_26371)).S("A").V(Call(r2_14387, V.Undef, rx_26372)).S(" ").V(Call(r2_14387, V.Undef, ry_26373)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, Add(x_26370, rx_26372))).S(" ").V(Call(r2_14387, V.Undef, y_26371)).S("A").V(Call(r2_14387, V.Undef, rx_26372)).S(" ").V(Call(r2_14387, V.Undef, ry_26373)).S(" 0 1 0 ").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_26370) - ToNum(rx_26372)))))).S(" ").V(Call(r2_14387, V.Undef, y_26371)).S("Z").End()));
 }, 4, "", true);
 star_26296 = Fn((V _self1, int _argc26374, V x_26380, V y_26381, V r_26382, V _a26379, V[] _rest26375) => {
-return ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_14387, V.Undef, x_26380)), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(y_26381) - ToNum(r_26382)))))), "Q", ToStr(Call(r2_14387, V.Undef, x_26380)), " ", ToStr(Call(r2_14387, V.Undef, y_26381)), " ", ToStr(Call(r2_14387, V.Undef, Add(x_26380, r_26382))), " ", ToStr(Call(r2_14387, V.Undef, y_26381)), "Q", ToStr(Call(r2_14387, V.Undef, x_26380)), " ", ToStr(Call(r2_14387, V.Undef, y_26381)), " ", ToStr(Call(r2_14387, V.Undef, x_26380)), " ", ToStr(Call(r2_14387, V.Undef, Add(y_26381, r_26382))), "Q", ToStr(Call(r2_14387, V.Undef, x_26380)), " ", ToStr(Call(r2_14387, V.Undef, y_26381)), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(x_26380) - ToNum(r_26382)))))), " ", ToStr(Call(r2_14387, V.Undef, y_26381)), "Q", ToStr(Call(r2_14387, V.Undef, x_26380)), " ", ToStr(Call(r2_14387, V.Undef, y_26381)), " ", ToStr(Call(r2_14387, V.Undef, x_26380)), " ", ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(y_26381) - ToNum(r_26382)))))), "Z" })));
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14387, V.Undef, x_26380)).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(y_26381) - ToNum(r_26382)))))).S("Q").V(Call(r2_14387, V.Undef, x_26380)).S(" ").V(Call(r2_14387, V.Undef, y_26381)).S(" ").V(Call(r2_14387, V.Undef, Add(x_26380, r_26382))).S(" ").V(Call(r2_14387, V.Undef, y_26381)).S("Q").V(Call(r2_14387, V.Undef, x_26380)).S(" ").V(Call(r2_14387, V.Undef, y_26381)).S(" ").V(Call(r2_14387, V.Undef, x_26380)).S(" ").V(Call(r2_14387, V.Undef, Add(y_26381, r_26382))).S("Q").V(Call(r2_14387, V.Undef, x_26380)).S(" ").V(Call(r2_14387, V.Undef, y_26381)).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(x_26380) - ToNum(r_26382)))))).S(" ").V(Call(r2_14387, V.Undef, y_26381)).S("Q").V(Call(r2_14387, V.Undef, x_26380)).S(" ").V(Call(r2_14387, V.Undef, y_26381)).S(" ").V(Call(r2_14387, V.Undef, x_26380)).S(" ").V(Call(r2_14387, V.Undef, ((V)((ToNum(y_26381) - ToNum(r_26382)))))).S("Z").End()));
 }, 3, "", true);
 if (Get(N_26289, "lx").IsNullish) {
 Set(N_26289, "lx", Get(P_14378, "x"));
@@ -36792,7 +36792,7 @@ V W2_26537 = default;
 V T2_26538 = default;
 double n_26539 = 0;
 V RG_26540 = default;
-V d_26541 = default;
+JsStrBuf d_26541 = null;
 C_26536 = GetIdx(G3_26535, 0D);
 W2_26537 = GetIdx(G3_26535, 1D);
 T2_26538 = GetIdx(G3_26535, 2D);
@@ -36830,17 +36830,17 @@ Invoke(RG_26540, "push", r_26547);
 i_26542++;
 }
 }
-d_26541 = ((V)(""));
+d_26541 = new JsStrBuf("");
 {
 double i_26553 = 0;
 i_26553 = 0D;
 while (true) {
 if (!((i_26553 < n_26539))) break;
-d_26541 = Add(d_26541, Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(RG_26540, i_26553), "concat", GetIdx(RG_26540, (i_26553 + 1D))))));
+d_26541.V(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(GetIdx(RG_26540, i_26553), "concat", GetIdx(RG_26540, (i_26553 + 1D))))));
 i_26553++;
 }
 }
-return d_26541;
+return ((V)(d_26541.Str));
 return default;
 }, 1, "", true);
 O_26314 = Get(N_26289, "L");
@@ -36941,8 +36941,8 @@ k_26618++;
 return o_26617;
 return default;
 }, 2, "", true);
-td_26334 = ((V)(""));
-hd_26335 = ((V)(""));
+td_26334 = new JsStrBuf("");
+hd_26335 = new JsStrBuf("");
 pr_26336 = V.Null;
 ph_26337 = V.Null;
 Invoke(CC_26332, "forEach", Fn((V _self1, int _argc26621, V c_26627, V i_26628, V _a26625, V _a26626, V[] _rest26622) => {
@@ -36953,18 +36953,18 @@ w_26629 = GetK(WD_26331, i_26628);
 R_26630 = Call(ring_26333, V.Undef, c_26627, w_26629);
 Rh_26631 = Call(ring_26333, V.Undef, Arr(((V)((ToNum(GetIdx(c_26627, 0D)) - (ToNum(w_26629) * 0.3)))), ((V)((ToNum(GetIdx(c_26627, 1D)) - (ToNum(w_26629) * 0.32))))), ((V)((ToNum(w_26629) * 0.4))));
 if (Truthy(pr_26336)) {
-td_26334 = Add(td_26334, Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(pr_26336, "concat", R_26630))));
+td_26334.V(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(pr_26336, "concat", R_26630))));
 if ((GtN(i_26628, 2D) && LtN(i_26628, (TN_26329 - 1D)))) {
-hd_26335 = Add(hd_26335, Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(ph_26337, "concat", Rh_26631))));
+hd_26335.V(Invoke(H_14370, "closedD", Invoke(H_14370, "hull", Invoke(ph_26337, "concat", Rh_26631))));
 }
 }
 pr_26336 = R_26630;
 ph_26337 = Rh_26631;
 return default;
 }, 2, "", true));
-Call(set_14391, V.Undef, Get(N_26289, "tail"), ((V)("d")), td_26334);
-Call(set_14391, V.Undef, Get(N_26289, "thl"), ((V)("d")), (hd_26335 is var _t26632 && Truthy(_t26632) ? _t26632 : ((V)("M0 0"))));
-sd_26338 = ((V)(""));
+Call(set_14391, V.Undef, Get(N_26289, "tail"), ((V)("d")), ((V)(td_26334.Str)));
+Call(set_14391, V.Undef, Get(N_26289, "thl"), ((V)("d")), (((V)(hd_26335.Str)) is var _t26632 && Truthy(_t26632) ? _t26632 : ((V)("M0 0"))));
+sd_26338 = new JsStrBuf("");
 Invoke(Arr(((V)(0D)), ((V)(System.Math.PI))), "forEach", Fn((V _self1, int _argc26633, V a0_26639, V _a26636, V _a26637, V _a26638, V[] _rest26634) => {
 V pen_26640 = default;
 pen_26640 = (false ? V.True : V.False);
@@ -36992,7 +36992,7 @@ l_26649 = (((V)(Hypot(dx_26647, dy_26648))) is var _t26652 && Truthy(_t26652) ? 
 p2_26650 = (ToNum(Add(a0_26639, ((V)((s_26643 * 11D))))) - ((ts_26290 * 3.6) * ToNum(Add(((V)(1D)), wh_26327))));
 o_26651 = ((FdLibm.Sin(p2_26650) * ToNum(GetIdx(WD_26331, i_26641))) * 0.62);
 if ((FdLibm.Cos(p2_26650) > (-0.2))) {
-sd_26338 = ((V)(string.Concat(new string[] { ToStr(sd_26338), (Truthy(pen_26640) ? "L" : "M"), ToStr(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(c_26644, 0D)) - ((dy_26648 / ToNum(l_26649)) * o_26651)))))), " ", ToStr(Call(r2_14387, V.Undef, Add(GetIdx(c_26644, 1D), ((V)(((dx_26647 / ToNum(l_26649)) * o_26651)))))) })));
+sd_26338.S((Truthy(pen_26640) ? "L" : "M")).V(Call(r2_14387, V.Undef, ((V)((ToNum(GetIdx(c_26644, 0D)) - ((dy_26648 / ToNum(l_26649)) * o_26651)))))).S(" ").V(Call(r2_14387, V.Undef, Add(GetIdx(c_26644, 1D), ((V)(((dx_26647 / ToNum(l_26649)) * o_26651))))));
 pen_26640 = (true ? V.True : V.False);
 } else {
 pen_26640 = (false ? V.True : V.False);
@@ -37002,8 +37002,8 @@ i_26641++;
 }
 return default;
 }, 1, "", true));
-Call(set_14391, V.Undef, Get(N_26289, "tsw"), ((V)("d")), (sd_26338 is var _t26653 && Truthy(_t26653) ? _t26653 : ((V)("M0 0"))));
-kd_26339 = ((V)(""));
+Call(set_14391, V.Undef, Get(N_26289, "tsw"), ((V)("d")), (((V)(sd_26338.Str)) is var _t26653 && Truthy(_t26653) ? _t26653 : ((V)("M0 0"))));
+kd_26339 = new JsStrBuf("");
 {
 double k_26654 = 0;
 k_26654 = 0D;
@@ -37018,19 +37018,19 @@ i_26657 = Min(TN_26329, Round((u_26656 * TN_26329)));
 c_26658 = GetIdx(CC_26332, i_26657);
 r_26659 = ((((0.6 + (0.9 * FdLibm.Sin((System.Math.PI * u_26656)))) * (0.6 + (0.4 * FdLibm.Sin(((ts_26290 * 7D) + (k_26654 * 2D)))))) * (NumTruthy(slp_26302) ? 0.5 : 1D)) * (1D - ToNum(sg_26298)));
 if ((r_26659 > 0.1)) {
-kd_26339 = Add(kd_26339, Call(star_26296, V.Undef, Add(GetIdx(c_26658, 0D), ((V)((FdLibm.Sin(((k_26654 * 2.3) + (ts_26290 * 1.3))) * ToNum(Add(GetIdx(WD_26331, i_26657), ((V)(2.5)))))))), ((V)(((ToNum(GetIdx(c_26658, 1D)) - 2D) - (u_26656 * 3D)))), ((V)((r_26659 * 1.6)))));
+kd_26339.V(Call(star_26296, V.Undef, Add(GetIdx(c_26658, 0D), ((V)((FdLibm.Sin(((k_26654 * 2.3) + (ts_26290 * 1.3))) * ToNum(Add(GetIdx(WD_26331, i_26657), ((V)(2.5)))))))), ((V)(((ToNum(GetIdx(c_26658, 1D)) - 2D) - (u_26656 * 3D)))), ((V)((r_26659 * 1.6)))));
 }
 k_26654++;
 }
 }
-Call(set_14391, V.Undef, Get(N_26289, "spk"), ((V)("d")), (kd_26339 is var _t26660 && Truthy(_t26660) ? _t26660 : ((V)("M0 0"))));
+Call(set_14391, V.Undef, Get(N_26289, "spk"), ((V)("d")), (((V)(kd_26339.Str)) is var _t26660 && Truthy(_t26660) ? _t26660 : ((V)("M0 0"))));
 if (Truthy((Get(N_26289, "pft") is var _t26661 && !Truthy(_t26661) ? _t26661 : (((ToNum(now_14379) - ToNum(Get(N_26289, "pft"))) < 750D) ? V.True : V.False)))) {
 double k_26662 = 0;
 V B_26663 = default;
-V d_26664 = default;
+JsStrBuf d_26664 = null;
 k_26662 = ((ToNum(now_14379) - ToNum(Get(N_26289, "pft"))) / 750D);
 B_26663 = (Get(N_26289, "pfB") is var _t26665 && Truthy(_t26665) ? _t26665 : ((V)(1D)));
-d_26664 = ((V)(""));
+d_26664 = new JsStrBuf("");
 {
 double j_26666 = 0;
 j_26666 = 0D;
@@ -37040,17 +37040,17 @@ double a_26668 = 0;
 double R_26669 = 0;
 a_26668 = (((j_26666 / 7D) * ToNum(TAU_14389)) + 0.4);
 R_26669 = ((3D + (9D * ToNum(Call(SM_14384, V.Undef, ((V)(k_26662)))))) * ToNum(B_26663));
-d_26664 = Add(d_26664, Call(cir_26294, V.Undef, Add(GetIdx(tip_26321, 0D), ((V)((FdLibm.Cos(a_26668) * R_26669)))), ((V)(((ToNum(GetIdx(tip_26321, 1D)) - ((3D + (9D * ToNum(Call(SM_14384, V.Undef, ((V)(k_26662)))))) * ToNum(B_26663))) + ((FdLibm.Sin(a_26668) * R_26669) * 0.6)))), ((V)(((2.2 + (3.4 * k_26662)) * ToNum(B_26663))))));
+d_26664.V(Call(cir_26294, V.Undef, Add(GetIdx(tip_26321, 0D), ((V)((FdLibm.Cos(a_26668) * R_26669)))), ((V)(((ToNum(GetIdx(tip_26321, 1D)) - ((3D + (9D * ToNum(Call(SM_14384, V.Undef, ((V)(k_26662)))))) * ToNum(B_26663))) + ((FdLibm.Sin(a_26668) * R_26669) * 0.6)))), ((V)(((2.2 + (3.4 * k_26662)) * ToNum(B_26663))))));
 j_26666++;
 }
 }
-Call(set_14391, V.Undef, Get(N_26289, "pf"), ((V)("d")), d_26664);
+Call(set_14391, V.Undef, Get(N_26289, "pf"), ((V)("d")), ((V)(d_26664.Str)));
 Call(set_14391, V.Undef, Get(N_26289, "pf"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((0.85 * (1D - k_26662))))));
 } else {
 Call(set_14391, V.Undef, Get(N_26289, "pf"), ((V)("opacity")), ((V)(0D)));
 }
 if (GtN(sg_26298, 0.002)) {
-Call(set_14391, V.Undef, Get(N_26289, "art"), ((V)("transform")), ((V)(string.Concat(new string[] { "translate(", ToStr(Call(pt_26292, V.Undef, tip_26321)), ") rotate(", ToStr(Call(r2_14387, V.Undef, ((V)(((-150D) * ToNum(sg_26298)))))), ") scale(", ToStr(Call(r2_14387, V.Undef, ((V)((1D - (0.95 * ToNum(Call(SM_14384, V.Undef, ((V)((ToNum(gi_26297) * 1.35))))))))))), ") translate(", ToStr(Call(r2_14387, V.Undef, ((V)((-ToNum(GetIdx(tip_26321, 0D))))))), " ", ToStr(Call(r2_14387, V.Undef, ((V)((-ToNum(GetIdx(tip_26321, 1D))))))), ")" }))));
+Call(set_14391, V.Undef, Get(N_26289, "art"), ((V)("transform")), ((V)(JsStrBuf.Begin().S("translate(").V(Call(pt_26292, V.Undef, tip_26321)).S(") rotate(").V(Call(r2_14387, V.Undef, ((V)(((-150D) * ToNum(sg_26298)))))).S(") scale(").V(Call(r2_14387, V.Undef, ((V)((1D - (0.95 * ToNum(Call(SM_14384, V.Undef, ((V)((ToNum(gi_26297) * 1.35))))))))))).S(") translate(").V(Call(r2_14387, V.Undef, ((V)((-ToNum(GetIdx(tip_26321, 0D))))))).S(" ").V(Call(r2_14387, V.Undef, ((V)((-ToNum(GetIdx(tip_26321, 1D))))))).S(")").End())));
 Call(set_14391, V.Undef, Get(N_26289, "art"), ((V)("opacity")), Call(r2_14387, V.Undef, ((V)((1D - ToNum(Call(SM_14384, V.Undef, ((V)(((ToNum(gi_26297) - 0.8) / 0.2))))))))));
 Set(N_26289, "tf", ((V)(1D)));
 } else {

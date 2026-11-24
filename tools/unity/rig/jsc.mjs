@@ -112,6 +112,7 @@ class Compiler {
     let prog;
     traverse(ast, { Program(p) { prog = p; p.stop(); } });
     this.prog = prog;
+    this.sbufs = this.inferStrBufs(prog);
     this.typed = process.env.JSC_UNTYPED && (process.env.JSC_UNTYPED === '*' || process.env.JSC_UNTYPED.split(',').includes(this.name)) ? new Set() : this.inferNumbers(prog);
     this.strict = (prog.node.directives || []).some((d) => d.value.value === 'use strict');
     const body = [];
@@ -151,7 +152,7 @@ ${body.join('\n')}
       if (b.kind === 'param' || (skip && skip.has(b))) continue;
       if (scope.path.isProgram()) continue;
       if (b.kind === 'local' && b.path.isFunctionExpression()) continue;   // a named function expression: its own
-      out.push(this.typed.has(b) ? `double ${this.nameOf(b)} = 0;` : `V ${this.nameOf(b)} = default;`);
+      out.push(this.typed.has(b) ? `double ${this.nameOf(b)} = 0;` : this.sbufs.has(b) ? `JsStrBuf ${this.nameOf(b)} = null;` : `V ${this.nameOf(b)} = default;`);
     }
     return out;
   }
@@ -167,7 +168,34 @@ ${body.join('\n')}
     const b = path.scope.getBinding(name);
     if (!b || b.scope.path.isProgram()) return null;
     if (b.kind === 'local' && b.path.isFunctionExpression()) return { named: b, code: this.namedRef(b) };
-    return { code: this.nameOf(b), b, num: this.typed.has(b) };
+    return { code: this.nameOf(b), b, num: this.typed.has(b), sb: this.sbufs.has(b) };
+  }
+
+  // ------------------------------------------------------------------ strings built up in place
+  // a `let` that starts as a string and is only ever added to (`s += ...`) or set to a string: a JsStrBuf (the parts
+  // written into one buffer, the string made when it's read), not a new string at every +=
+  inferStrBufs(prog) {
+    const out = new Set();
+    const isStr = (p) => {
+      const n = p.node;
+      if (n.type === 'StringLiteral' || n.type === 'TemplateLiteral') return true;
+      if (n.type === 'BinaryExpression' && n.operator === '+') return isStr(p.get('left')) || isStr(p.get('right'));
+      if (n.type === 'ConditionalExpression') return isStr(p.get('consequent')) && isStr(p.get('alternate'));
+      return false;
+    };
+    prog.traverse({
+      VariableDeclarator: (d) => {
+        const decl = d.parentPath;
+        if (decl.node.kind !== 'let' || !d.get('id').isIdentifier() || !d.node.init || !isStr(d.get('init'))) return;
+        if (!decl.parentPath.isBlockStatement() && !decl.parentPath.isProgram()) return;   // (not a for head)
+        const b = d.scope.getBinding(d.node.id.name);
+        if (!b || b.scope.path.isProgram() || b.path !== d) return;
+        if (!b.constantViolations.length) return;
+        if (!b.constantViolations.every((v) => v.isAssignmentExpression() && v.get('left').isIdentifier() && (v.node.operator === '+=' || (v.node.operator === '=' && isStr(v.get('right')))))) return;
+        out.add(b);
+      },
+    });
+    return out;
   }
 
   // ------------------------------------------------------------------ numbers in doubles
@@ -325,6 +353,7 @@ ${body.join('\n')}
       return `{ V ${t} = ${this.v(p.get('right'))};\n${this.assignPattern(p.get('left'), t, p)} }`;
     }
     const e = this.expr(p);
+    if (e.stmtCode) return e.stmtCode + ';';
     if (e.stmt) return e.code + ';';
     return `_ = ${e.code};`;
   }
@@ -339,7 +368,7 @@ ${body.join('\n')}
       }
       if (id.isIdentifier()) {
         const r = this.ref(d, id.node.name);
-        const val = r && r.num ? this.n(d.get('init')) : this.v(d.get('init'));
+        const val = r && r.num ? this.n(d.get('init')) : r && r.sb ? `new JsStrBuf(${this.s(d.get('init'))})` : this.v(d.get('init'));
         out.push(r ? `${r.code} = ${val};` : `GSet(${csStr(id.node.name)}, ${val});`);
       } else {
         const t = this.tmp();
@@ -424,7 +453,7 @@ ${body.join('\n')}
     const target = decl ? decl.get('declarations')[0].get('id') : left;
     // bindings of a `let` / `const` head: declared in the body (a fresh one each turn)
     const own = decl && decl.node.kind !== 'var' && p.scope.path === p ? Object.values(p.scope.bindings) : [];
-    const src = n.type === 'ForInStatement' ? `ForInKeys(${this.v(p.get('right'))})` : `Iterate(${this.v(p.get('right'))})`;
+    const src = n.type === 'ForInStatement' ? `ForInKeys(${this.v(p.get('right'))})` : `new JsIter(${this.v(p.get('right'))})`;
     this.loops.push({ kind: 'foreach' });
     const body = [...own.map((b) => `V ${this.nameOf(b)} = default;`), this.assignPattern(target, it, p), this.stmtIn(p.get('body'))];
     this.loops.pop();
@@ -593,6 +622,7 @@ ${body.join('\n')}
   ident(p) {
     const name = p.node.name;
     const r = this.ref(p, name);
+    if (r && r.sb) return { code: `${r.code}.Str`, t: 's' };
     if (r) return { code: r.code, t: r.num ? 'n' : 'v' };
     if (name === 'arguments') {
       const f = [...this.fnStack].reverse().find((f) => !f.arrow);
@@ -727,10 +757,13 @@ ${body.join('\n')}
       case '+': {
         if (a.t === 'n' && b.t === 'n') return { code: `(${a.code} + ${b.code})`, t: 'n' };
         if (a.t === 's' || b.t === 's') {
+          // the chain's parts as they are (numbers too): strings only, four or fewer: string.Concat; else written into
+          // a lent buffer (JsStrBuf.Begin ... End: one string made, none for the numbers)
           const parts = [];
-          const flat = (e) => { if (e.concat) parts.push(...e.concat); else parts.push(this.toS(e)); };
+          const flat = (e) => { if (e.cparts) parts.push(...e.cparts); else parts.push(e); };
           flat(a); flat(b);
-          return { code: `string.Concat(${parts.length > 4 ? 'new string[] { ' + parts.join(', ') + ' }' : parts.join(', ')})`, t: 's', concat: parts };
+          const code = parts.length <= 4 && parts.every((q) => q.t === 's') ? `string.Concat(${parts.map((q) => q.code).join(', ')})` : `JsStrBuf.Begin()${this.appendParts({ cparts: parts })}.End()`;
+          return { code, t: 's', cparts: parts };
         }
         return { code: `Add(${this.toV(a)}, ${this.toV(b)})`, t: 'v' };
       }
@@ -769,6 +802,11 @@ ${body.join('\n')}
     }
     throw new Error('binary ' + op);
   }
+  // a JsStrBuf's appends for an expression (its concatenation's parts, or itself)
+  appendParts(e) {
+    const parts = e.cparts || [e];
+    return parts.map((q) => q.t === 's' ? `.S(${q.code})` : q.t === 'n' ? `.N(${q.code})` : q.t === 'b' ? `.B(${q.code})` : `.V(${q.code})`).join('');
+  }
   binary(p) {
     const n = p.node;
     return this.binaryOp(n.operator, this.expr(p.get('left')), this.expr(p.get('right')));
@@ -786,6 +824,7 @@ ${body.join('\n')}
       if (left.isIdentifier()) {
         const r = this.ref(left, left.node.name);
         if (r && r.num) return { code: `${r.code} = ${this.n(p.get('right'))}`, t: 'n', stmt: true };
+        if (r && r.sb) { const c = `${r.code}.Set(${this.s(p.get('right'))})`; return { code: `${c}.Str`, t: 's', stmtCode: c }; }
         const val = this.v(p.get('right'));
         if (r) return { code: `${r.code} = ${val}`, t: 'v', stmt: true };
         return { code: `GSet(${csStr(left.node.name)}, ${val})`, t: 'v', stmt: true };
@@ -798,6 +837,7 @@ ${body.join('\n')}
     if (op === '&&' || op === '||' || op === '??') throw this.err(p, 'logical assignment');
     if (left.isIdentifier()) {
       const r = this.ref(left, left.node.name);
+      if (r && r.sb && op === '+') { const c = r.code + this.appendParts(this.expr(p.get('right'))); return { code: `${c}.Str`, t: 's', stmtCode: c }; }
       const cur = r ? { code: r.code, t: r.num ? 'n' : 'v' } : { code: `G(${csStr(left.node.name)})`, t: 'v' };
       const res = this.binaryOp(op, cur, this.expr(p.get('right')));
       if (r && r.num) return { code: `${r.code} = ${this.toN(res)}`, t: 'n', stmt: true };

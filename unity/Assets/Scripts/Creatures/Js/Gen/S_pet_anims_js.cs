@@ -166,7 +166,7 @@ V b_174 = default;
 a_173 = GetIdx(GetIdx(L_163, 0D), 1D);
 b_174 = GetIdx(GetIdx(L_163, (ToNum(Get(L_163, "length")) - 1D)), 1D);
 if ((SEqS(p_162, "spin") ? (System.Math.Abs((((((ToNum(b_174) - ToNum(a_173)) % 360D) + 540D) % 360D) - 180D)) > 0.5) : (System.Math.Abs((ToNum(b_174) - ToNum(a_173))) > 0.000001))) {
-Invoke(Set(R_8, "LOOPWARN", (Get(R_8, "LOOPWARN") is var _t175 && Truthy(_t175) ? _t175 : Arr())), "push", ((V)(string.Concat(new string[] { ToStr(p_162), " ", ToStr(a_173), "->", ToStr(b_174) }))));
+Invoke(Set(R_8, "LOOPWARN", (Get(R_8, "LOOPWARN") is var _t175 && Truthy(_t175) ? _t175 : Arr())), "push", ((V)(JsStrBuf.Begin().V(p_162).S(" ").V(a_173).S("->").V(b_174).End())));
 }
 }
 }
@@ -1318,18 +1318,18 @@ M_923 = GetK(MOVES_909, key_922);
 D_924 = SetK(DESC_11, key_922, (GetK(DESC_11, key_922) is var _t925 && Truthy(_t925) ? _t925 : NewObj(0).V));
 Invoke(Arr(((V)("dance")), ((V)("happy")), ((V)("surprised")), ((V)("squish"))), "forEach", Fn((V _self1, int _argc926, V n_932, V _a929, V _a930, V _a931, V[] _rest927) => {
 if (Truthy(GetK(M_923, n_932))) {
-SetK(ST_911, ((V)(string.Concat(ToStr(n_932), "@", ToStr(key_922)))), GetIdx(GetK(M_923, n_932), 0D));
+SetK(ST_911, ((V)(JsStrBuf.Begin().V(n_932).S("@").V(key_922).End())), GetIdx(GetK(M_923, n_932), 0D));
 SetK(D_924, n_932, Arr(GetIdx(GetK(M_923, n_932), 1D), GetIdx(GetK(M_923, n_932), 2D)));
 }
 return default;
 }, 1, "", true));
 if (Truthy(Get(M_923, "quirk"))) {
-SetK(ST_911, ((V)(string.Concat("idle_quirk@", ToStr(key_922)))), Object_assign(GetIdx(Get(M_923, "quirk"), 0D), NewObj(1).Put("next", ((V)("idle"))).V));
+SetK(ST_911, ((V)(JsStrBuf.Begin().S("idle_quirk@").V(key_922).End())), Object_assign(GetIdx(Get(M_923, "quirk"), 0D), NewObj(1).Put("next", ((V)("idle"))).V));
 Set(D_924, "idle_quirk", Arr(GetIdx(Get(M_923, "quirk"), 1D), GetIdx(Get(M_923, "quirk"), 2D)));
 Invoke(QUIRK_912, "push", key_922);
 }
 if (Truthy(Get(M_923, "look"))) {
-SetK(ST_911, ((V)(string.Concat("idle_look@", ToStr(key_922)))), Get(M_923, "look"));
+SetK(ST_911, ((V)(JsStrBuf.Begin().S("idle_look@").V(key_922).End())), Get(M_923, "look"));
 }
 if (Truthy(Get(M_923, "press"))) {
 SetK(PRESS_32, key_922, Get(M_923, "press"));
@@ -1347,7 +1347,7 @@ SetK(CARD_25, key_934, GetK(CARDS_910, key_934));
 Invoke(SHARED_28, "forEach", Fn((V _self1, int _argc935, V n_941, V _a938, V _a939, V _a940, V[] _rest936) => {
 V nm_942 = default;
 V f_943 = default;
-nm_942 = ((V)(string.Concat(ToStr(n_941), "@", ToStr(key_934))));
+nm_942 = ((V)(JsStrBuf.Begin().V(n_941).S("@").V(key_934).End()));
 if (Truthy(((GetK(ST_911, nm_942) is var _t944 && Truthy(_t944) ? _t944 : GetK(Get(R_8, "STATES"), nm_942)) is var _t945 && Truthy(_t945) ? _t945 : (!(Truthy(GetK(Get(R_8, "STATES"), n_941))) ? V.True : V.False)))) {
 return default;
 }

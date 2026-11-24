@@ -229,7 +229,7 @@ V c_276 = default;
 V k_277 = default;
 c_276 = GetK(ROSTER_22, id_275);
 k_277 = (c_276 is var _t278 && !Truthy(_t278) ? _t278 : (Truthy(GetK(CARD_9, Get(c_276, "key"))) ? Get(c_276, "key") : Call(AK_20, V.Undef, Get(c_276, "key"))));
-return (Truthy((c_276 is var _t279 && !Truthy(_t279) ? _t279 : Get(c_276, "art"))) ? ((V)(string.Concat(new string[] { "export/tripo/", ToStr(k_277), "/", ToStr(k_277), (Truthy(GetK(CARD_9, k_277)) ? string.Concat("-card.png?v=", ToStr(GetK(CARD_9, k_277))) : string.Concat("-front.svg", (Truthy(GetK(SVGV_8, k_277)) ? string.Concat("?v=", ToStr(GetK(SVGV_8, k_277))) : ""))) }))) : V.Null);
+return (Truthy((c_276 is var _t279 && !Truthy(_t279) ? _t279 : Get(c_276, "art"))) ? ((V)(JsStrBuf.Begin().S("export/tripo/").V(k_277).S("/").V(k_277).S((Truthy(GetK(CARD_9, k_277)) ? JsStrBuf.Begin().S("-card.png?v=").V(GetK(CARD_9, k_277)).End() : string.Concat("-front.svg", (Truthy(GetK(SVGV_8, k_277)) ? JsStrBuf.Begin().S("?v=").V(GetK(SVGV_8, k_277)).End() : "")))).End())) : V.Null);
 return default;
 }, 1, "src", true)).Put("markArt", Fn((V _self280, int _argc281, V ids_287, V _a284, V _a285, V _a286, V[] _rest282) => {
 if (_self280.IsNullish) _self280 = GlobalV;

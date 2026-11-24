@@ -16,6 +16,9 @@
   <ItemGroup>
     <Compile Include="../../../unity/Assets/Scripts/Creatures/Js/*.cs" />
     <Compile Include="$(GEN)/*.cs" />
+    <!-- the drawing side's Unity-free part: the node tree, its parse, the scene compile (Vector), the direct tree -->
+    <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Creatures/RigTree.cs" />
     <Compile Include="*.cs" />
   </ItemGroup>
 </Project>

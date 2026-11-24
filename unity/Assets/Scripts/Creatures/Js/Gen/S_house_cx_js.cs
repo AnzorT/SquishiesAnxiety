@@ -275,7 +275,7 @@ V cur_235 = default;
 V last_236 = default;
 V scr_237 = default;
 V dirt_238 = default;
-V h_239 = default;
+JsStrBuf h_239 = null;
 W_226 = Get(I_224, "W");
 if (((!(Truthy(W_226)) || !(Truthy(Call(okp_35, V.Undef, Get(W_226, "pawL"))))) || !(Truthy(Call(okp_35, V.Undef, Get(W_226, "pawR")))))) {
 return ((V)(""));
@@ -324,28 +324,28 @@ scr_237 = Add(scr_237, Call(cl_29, V.Undef, ((V)(((Min(tl_228, ToNum(b_276)) - M
 return default;
 }, 1, "", true));
 dirt_238 = Call(cl_29, V.Undef, ((V)((1D - (ToNum(scr_237) * 0.75)))), ((V)(0D)), ((V)(1D)));
-h_239 = ((V)(""));
+h_239 = new JsStrBuf("");
 {
 double i_278 = 0;
 i_278 = 0D;
 while (true) {
 if (!(Lt(((V)(i_278)), done_234))) break;
-h_239 = Add(h_239, Call(G_26, V.Undef, sx_231, ((V)((sy_232 - (i_278 * 1.8)))), ((V)(0D)), ((V)(2.3)), Call(PLATE_56, V.Undef, ((V)(0D)))));
+h_239.V(Call(G_26, V.Undef, sx_231, ((V)((sy_232 - (i_278 * 1.8)))), ((V)(0D)), ((V)(2.3)), Call(PLATE_56, V.Undef, ((V)(0D)))));
 i_278++;
 }
 }
 if (Truthy((cur_235 is var _t280 && !Truthy(_t280) ? _t280 : (Lt(((V)(tl_228)), GetIdx(cur_235, 1D)) ? V.True : V.False)))) {
 V u_281 = default;
 u_281 = Call(ss_28, V.Undef, ((V)(((tl_228 - ToNum(GetIdx(cur_235, 0D))) / (ToNum(GetIdx(cur_235, 1D)) - ToNum(GetIdx(cur_235, 0D)))))));
-h_239 = Add(h_239, Call(G_26, V.Undef, Call(lerp_34, V.Undef, GetIdx(Get(W_226, "pawL"), 0D), sx_231, u_281), Call(lerp_34, V.Undef, ((V)((ToNum(GetIdx(Get(W_226, "pawL"), 1D)) - 1D))), ((V)((sy_232 - (ToNum(done_234) * 1.8)))), u_281), ((V)(0D)), ((V)(2.3)), Call(PLATE_56, V.Undef, ((V)(0D))), f0_227));
+h_239.V(Call(G_26, V.Undef, Call(lerp_34, V.Undef, GetIdx(Get(W_226, "pawL"), 0D), sx_231, u_281), Call(lerp_34, V.Undef, ((V)((ToNum(GetIdx(Get(W_226, "pawL"), 1D)) - 1D))), ((V)((sy_232 - (ToNum(done_234) * 1.8)))), u_281), ((V)(0D)), ((V)(2.3)), Call(PLATE_56, V.Undef, ((V)(0D))), f0_227));
 } else {
 V fi_282 = default;
 fi_282 = (Truthy(cur_235) ? Call(ss_28, V.Undef, ((V)((((tl_228 - ToNum(GetIdx(cur_235, 1D))) - 200D) / 300D)))) : ((V)(1D)));
 if (GtN(fi_282, 0.02)) {
-h_239 = Add(h_239, Call(G_26, V.Undef, GetIdx(Get(W_226, "pawL"), 0D), ((V)((ToNum(GetIdx(Get(W_226, "pawL"), 1D)) - 1D))), ((V)((-8D))), ((V)((2.3 * (0.6 + (0.4 * ToNum(fi_282)))))), Call(PLATE_56, V.Undef, dirt_238), ((V)((ToNum(f0_227) * ToNum(fi_282))))));
+h_239.V(Call(G_26, V.Undef, GetIdx(Get(W_226, "pawL"), 0D), ((V)((ToNum(GetIdx(Get(W_226, "pawL"), 1D)) - 1D))), ((V)((-8D))), ((V)((2.3 * (0.6 + (0.4 * ToNum(fi_282)))))), Call(PLATE_56, V.Undef, dirt_238), ((V)((ToNum(f0_227) * ToNum(fi_282))))));
 }
 }
-return Add(h_239, Call(G_26, V.Undef, GetIdx(Get(W_226, "pawR"), 0D), ((V)((ToNum(GetIdx(Get(W_226, "pawR"), 1D)) - 1D))), ((V)(10D)), ((V)(2.1)), SPONGE_57, f0_227));
+return ((V)(JsStrBuf.Begin().S(h_239.Str).V(Call(G_26, V.Undef, GetIdx(Get(W_226, "pawR"), 0D), ((V)((ToNum(GetIdx(Get(W_226, "pawR"), 1D)) - 1D))), ((V)(10D)), ((V)(2.1)), SPONGE_57, f0_227)).End()));
 return default;
 }, 2, "", true);
 return default;
@@ -559,7 +559,7 @@ double T_454 = 0;
 V d_455 = default;
 double op_456 = 0;
 double u_457 = 0;
-V h_458 = default;
+JsStrBuf h_458 = null;
 W_445 = Get(I_443, "W");
 if ((!(Truthy(W_445)) || !(Truthy(Call(okp_35, V.Undef, Get(W_445, "pawR")))))) {
 return ((V)(""));
@@ -597,11 +597,11 @@ if (((!h0_450.IsNullish && h1_451.IsNullish) && ((tl_447 - ToNum(h0_450)) > 1200
 op_456 = (1D - ToNum(Call(ss_28, V.Undef, ((V)((((tl_447 - ToNum(h0_450)) - 1200D) / 300D))))));
 }
 u_457 = ((ToNum(d_455) - 5D) / (FAR_453 - 5D));
-h_458 = ((V)(""));
+h_458 = new JsStrBuf("");
 if ((op_456 > 0.02)) {
-h_458 = ((V)(string.Concat(new string[] { ToStr(h_458), "<g opacity=\"", ToStr(Call(r2_30, V.Undef, ((V)(op_456)))), "\">", ToStr((Truthy(pong_434) ? Call(ci_32, V.Undef, Call(r2_30, V.Undef, Add(GetIdx(p_448, 0D), d_455)), Call(r2_30, V.Undef, ((V)(((ToNum(GetIdx(p_448, 1D)) - 2D) - (System.Math.Abs(FdLibm.Sin(((System.Math.PI * 2D) * u_457))) * 5D))))), ((V)(1.6)), ((V)("#ffffff")), ((V)("#c9cfdb"))) : ((V)(string.Concat(new string[] { "<ellipse cx=\"", ToStr(Call(r2_30, V.Undef, Add(GetIdx(p_448, 0D), d_455))), "\" cy=\"", ToStr(Call(r2_30, V.Undef, Add(GetIdx(p_448, 1D), ((V)(2.5))))), "\" rx=\"4.2\" ry=\"1.6\" fill=\"#2a2a36\" stroke=\"#111\" stroke-width=\"0.3\"/>" }))))), "</g>" })));
+h_458.S("<g opacity=\"").V(Call(r2_30, V.Undef, ((V)(op_456)))).S("\">").V((Truthy(pong_434) ? Call(ci_32, V.Undef, Call(r2_30, V.Undef, Add(GetIdx(p_448, 0D), d_455)), Call(r2_30, V.Undef, ((V)(((ToNum(GetIdx(p_448, 1D)) - 2D) - (System.Math.Abs(FdLibm.Sin(((System.Math.PI * 2D) * u_457))) * 5D))))), ((V)(1.6)), ((V)("#ffffff")), ((V)("#c9cfdb"))) : ((V)(JsStrBuf.Begin().S("<ellipse cx=\"").V(Call(r2_30, V.Undef, Add(GetIdx(p_448, 0D), d_455))).S("\" cy=\"").V(Call(r2_30, V.Undef, Add(GetIdx(p_448, 1D), ((V)(2.5))))).S("\" rx=\"4.2\" ry=\"1.6\" fill=\"#2a2a36\" stroke=\"#111\" stroke-width=\"0.3\"/>").End())))).S("</g>");
 }
-return Add(h_458, Call(G_26, V.Undef, GetIdx(p_448, 0D), GetIdx(p_448, 1D), ((V)((Truthy(pong_434) ? (-20D) : 0D))), ((V)(2.4)), PD_436, ((V)(f0_446))));
+return ((V)(JsStrBuf.Begin().S(h_458.Str).V(Call(G_26, V.Undef, GetIdx(p_448, 0D), GetIdx(p_448, 1D), ((V)((Truthy(pong_434) ? (-20D) : 0D))), ((V)(2.4)), PD_436, ((V)(f0_446)))).End()));
 return default;
 }, 2, "", true);
 return default;
@@ -620,7 +620,7 @@ double d_498 = 0;
 V s0_499 = default;
 V tip_500 = default;
 V L_501 = default;
-V h_502 = default;
+JsStrBuf h_502 = null;
 V S_503 = default;
 V home_504 = default;
 V bp_505 = default;
@@ -646,9 +646,9 @@ dy_497 = (dy_497 / d_498);
 s0_499 = Arr(((V)((ToNum(GetIdx(a_494, 0D)) - (dx_496 * 16D)))), ((V)((ToNum(GetIdx(a_494, 1D)) - (dy_497 * 16D)))));
 tip_500 = Arr(Add(GetIdx(b_495, 0D), ((V)((dx_496 * 14D)))), Add(GetIdx(b_495, 1D), ((V)((dy_497 * 14D)))));
 L_501 = Fn((V _self475, int _argc507, V p_513, V q_514, V c_515, V w_516, V[] _rest508) => {
-return ((V)(string.Concat(new string[] { "<path d=\"M", ToStr(Call(r2_30, V.Undef, GetIdx(p_513, 0D))), " ", ToStr(Call(r2_30, V.Undef, GetIdx(p_513, 1D))), "L", ToStr(Call(r2_30, V.Undef, GetIdx(q_514, 0D))), " ", ToStr(Call(r2_30, V.Undef, GetIdx(q_514, 1D))), "\" stroke=\"", ToStr(c_515), "\" stroke-width=\"", ToStr(w_516), "\" stroke-linecap=\"round\"/>" })));
+return ((V)(JsStrBuf.Begin().S("<path d=\"M").V(Call(r2_30, V.Undef, GetIdx(p_513, 0D))).S(" ").V(Call(r2_30, V.Undef, GetIdx(p_513, 1D))).S("L").V(Call(r2_30, V.Undef, GetIdx(q_514, 0D))).S(" ").V(Call(r2_30, V.Undef, GetIdx(q_514, 1D))).S("\" stroke=\"").V(c_515).S("\" stroke-width=\"").V(w_516).S("\" stroke-linecap=\"round\"/>").End()));
 }, 4, "", true);
-h_502 = ((V)(string.Concat(new string[] { "<g opacity=\"", ToStr(Call(r2_30, V.Undef, ((V)(f0_492)))), "\">", ToStr(Call(L_501, V.Undef, s0_499, tip_500, ((V)("#8a5a2c")), ((V)(2.6)))), ToStr(Call(L_501, V.Undef, s0_499, tip_500, ((V)("#c98a52")), ((V)(1.7)))), ToStr(Call(L_501, V.Undef, s0_499, Arr(Add(GetIdx(s0_499, 0D), ((V)((dx_496 * 12D)))), Add(GetIdx(s0_499, 1D), ((V)((dy_497 * 12D))))), ((V)("#3b2a24")), ((V)(2.8)))), ToStr(Call(ci_32, V.Undef, Call(r2_30, V.Undef, GetIdx(tip_500, 0D)), Call(r2_30, V.Undef, GetIdx(tip_500, 1D)), ((V)(1.1)), ((V)("#5ab4f0")))), "</g>" })));
+h_502 = new JsStrBuf(JsStrBuf.Begin().S("<g opacity=\"").V(Call(r2_30, V.Undef, ((V)(f0_492)))).S("\">").V(Call(L_501, V.Undef, s0_499, tip_500, ((V)("#8a5a2c")), ((V)(2.6)))).V(Call(L_501, V.Undef, s0_499, tip_500, ((V)("#c98a52")), ((V)(1.7)))).V(Call(L_501, V.Undef, s0_499, Arr(Add(GetIdx(s0_499, 0D), ((V)((dx_496 * 12D)))), Add(GetIdx(s0_499, 1D), ((V)((dy_497 * 12D))))), ((V)("#3b2a24")), ((V)(2.8)))).V(Call(ci_32, V.Undef, Call(r2_30, V.Undef, GetIdx(tip_500, 0D)), Call(r2_30, V.Undef, GetIdx(tip_500, 1D)), ((V)(1.1)), ((V)("#5ab4f0")))).S("</g>").End());
 S_503 = Invoke(Invoke((Get(Get(st_482, "rec"), "sh") is var _t524 && Truthy(_t524) ? _t524 : Arr()), "filter", Fn((V _self475, int _argc517, V v_523, V _a520, V _a521, V _a522, V[] _rest518) => {
 return (LeN(v_523, tl_493) ? V.True : V.False);
 }, 1, "", true)), "pop");
@@ -670,9 +670,9 @@ op_506 = Call(ss_28, V.Undef, ((V)(((e_525 - 1700D) / 500D))));
 }
 }
 if (GtN(op_506, 0.02)) {
-h_502 = ((V)(string.Concat(new string[] { ToStr(h_502), "<g opacity=\"", ToStr(Call(r2_30, V.Undef, op_506)), "\">", ToStr(Call(ci_32, V.Undef, Call(r2_30, V.Undef, GetIdx(bp_505, 0D)), Call(r2_30, V.Undef, GetIdx(bp_505, 1D)), ((V)(3D)), ((V)("#ffffff")), ((V)("#9aa3b2")))), ToStr(Call(ci_32, V.Undef, Call(r2_30, V.Undef, ((V)((ToNum(GetIdx(bp_505, 0D)) - 1D)))), Call(r2_30, V.Undef, ((V)((ToNum(GetIdx(bp_505, 1D)) - 1D)))), ((V)(0.8)), ((V)("#ffffff")))), "</g>" })));
+h_502.S("<g opacity=\"").V(Call(r2_30, V.Undef, op_506)).S("\">").V(Call(ci_32, V.Undef, Call(r2_30, V.Undef, GetIdx(bp_505, 0D)), Call(r2_30, V.Undef, GetIdx(bp_505, 1D)), ((V)(3D)), ((V)("#ffffff")), ((V)("#9aa3b2")))).V(Call(ci_32, V.Undef, Call(r2_30, V.Undef, ((V)((ToNum(GetIdx(bp_505, 0D)) - 1D)))), Call(r2_30, V.Undef, ((V)((ToNum(GetIdx(bp_505, 1D)) - 1D)))), ((V)(0.8)), ((V)("#ffffff")))).S("</g>");
 }
-return h_502;
+return ((V)(h_502.Str));
 return default;
 }, 2, "", true);
 return default;
@@ -895,7 +895,7 @@ V gx_709 = default;
 V gy_710 = default;
 V m_711 = default;
 V hd_712 = default;
-V h_713 = default;
+JsStrBuf h_713 = null;
 V b0_714 = default;
 V f_715 = default;
 V bx_716 = default;
@@ -914,7 +914,7 @@ gy_710 = _t721; }
 } }
 m_711 = Call(mid_43, V.Undef, W_707);
 hd_712 = Arr(Add(GetIdx(m_711, 0D), ((V)(3D))), ((V)((ToNum(gy_710) - 1D))));
-h_713 = ((V)(string.Concat(new string[] { "<path d=\"M", ToStr(Call(r2_30, V.Undef, GetIdx(m_711, 0D))), " ", ToStr(Call(r2_30, V.Undef, GetIdx(m_711, 1D))), "L", ToStr(Call(r2_30, V.Undef, GetIdx(hd_712, 0D))), " ", ToStr(Call(r2_30, V.Undef, GetIdx(hd_712, 1D))), "\" stroke=\"#6a7080\" stroke-width=\"1.5\" stroke-linecap=\"round\"/><rect x=\"", ToStr(Call(r2_30, V.Undef, ((V)((ToNum(GetIdx(hd_712, 0D)) - 1.6))))), "\" y=\"", ToStr(Call(r2_30, V.Undef, ((V)((ToNum(GetIdx(hd_712, 1D)) - 1.4))))), "\" width=\"7\" height=\"2.8\" rx=\"0.5\" fill=\"#6a7080\" stroke=\"#3a3a48\" stroke-width=\"0.3\"/>", ToStr(Call(ci_32, V.Undef, Call(r2_30, V.Undef, GetIdx(m_711, 0D)), Call(r2_30, V.Undef, GetIdx(m_711, 1D)), ((V)(1.6)), ((V)("#2a2a36")))) })));
+h_713 = new JsStrBuf(JsStrBuf.Begin().S("<path d=\"M").V(Call(r2_30, V.Undef, GetIdx(m_711, 0D))).S(" ").V(Call(r2_30, V.Undef, GetIdx(m_711, 1D))).S("L").V(Call(r2_30, V.Undef, GetIdx(hd_712, 0D))).S(" ").V(Call(r2_30, V.Undef, GetIdx(hd_712, 1D))).S("\" stroke=\"#6a7080\" stroke-width=\"1.5\" stroke-linecap=\"round\"/><rect x=\"").V(Call(r2_30, V.Undef, ((V)((ToNum(GetIdx(hd_712, 0D)) - 1.6))))).S("\" y=\"").V(Call(r2_30, V.Undef, ((V)((ToNum(GetIdx(hd_712, 1D)) - 1.4))))).S("\" width=\"7\" height=\"2.8\" rx=\"0.5\" fill=\"#6a7080\" stroke=\"#3a3a48\" stroke-width=\"0.3\"/>").V(Call(ci_32, V.Undef, Call(r2_30, V.Undef, GetIdx(m_711, 0D)), Call(r2_30, V.Undef, GetIdx(m_711, 1D)), ((V)(1.6)), ((V)("#2a2a36")))).End());
 b0_714 = Add(gx_709, ((V)(9D)));
 f_715 = Call(flyF_41, V.Undef, Get(Get(st_698, "rec"), "pt"), ((V)(tl_708)), NewObj(3).Put("fly", ((V)(1300D))).Put("away", ((V)(2600D))).Put("ret", ((V)(400D))).V);
 bx_716 = b0_714;
@@ -944,9 +944,9 @@ op_717 = Call(ss_28, V.Undef, u_723);
 }
 }
 if (GtN(op_717, 0.02)) {
-h_713 = ((V)(string.Concat(new string[] { ToStr(h_713), "<g opacity=\"", ToStr(Call(r2_30, V.Undef, op_717)), "\">", ToStr(Call(ci_32, V.Undef, Call(r2_30, V.Undef, bx_716), Call(r2_30, V.Undef, ((V)((ToNum(gy_710) - 1.8)))), ((V)(1.9)), ((V)("#ffffff")), ((V)("#9aa3b2")))), "</g>" })));
+h_713.S("<g opacity=\"").V(Call(r2_30, V.Undef, op_717)).S("\">").V(Call(ci_32, V.Undef, Call(r2_30, V.Undef, bx_716), Call(r2_30, V.Undef, ((V)((ToNum(gy_710) - 1.8)))), ((V)(1.9)), ((V)("#ffffff")), ((V)("#9aa3b2")))).S("</g>");
 }
-return h_713;
+return ((V)(h_713.Str));
 return default;
 }, 2, "", true);
 return default;
@@ -1121,7 +1121,7 @@ if (_self854.IsNullish) _self854 = GlobalV;
 X_862 = Call(o_21, V.Undef, (GetK(BB_19, key_861) is var _t871 && Truthy(_t871) ? _t871 : NewObj(0).V), (X_862 is var _t872 && Truthy(_t872) ? _t872 : NewObj(0).V));
 P_863 = (GetK(PROF_18, key_861) is var _t873 && Truthy(_t873) ? _t873 : NewObj(0).V);
 nm_864 = Fn((V _self854, int _argc874, V n_880, V _a877, V _a878, V _a879, V[] _rest875) => {
-return (Truthy(key_861) ? ((V)(string.Concat(ToStr(n_880), "@", ToStr(key_861)))) : n_880);
+return (Truthy(key_861) ? ((V)(JsStrBuf.Begin().V(n_880).S("@").V(key_861).End())) : n_880);
 }, 1, "", true);
 S_865 = NewObj(0).V;
 SB_866 = Call(o_21, V.Undef, SIT0_17, (Get(P_863, "pose") is var _t881 && Truthy(_t881) ? _t881 : NewObj(0).V));
@@ -1185,7 +1185,7 @@ V gaps_929 = default;
 V prop_930 = default;
 gaps_929 = (_argc919 > 4 ? _rest920[0] : V.Undef);
 prop_930 = (_argc919 > 5 ? _rest920[1] : V.Undef);
-st_931 = Call(H1_869, V.Undef, ((V)(string.Concat("g_", ToStr(n_925)))), B_926, ord_927, BK_928, gaps_929);
+st_931 = Call(H1_869, V.Undef, ((V)(JsStrBuf.Begin().S("g_").V(n_925).End())), B_926, ord_927, BK_928, gaps_929);
 if (Truthy(prop_930)) {
 Set(st_931, "prop", Call(prop_930, V.Undef, st_931));
 }
@@ -1341,9 +1341,9 @@ V A_1069 = default;
 V B_1070 = default;
 A_1069 = Call(hx_44, V.Undef, a_1066);
 B_1070 = Call(hx_44, V.Undef, b_1067);
-return ((V)(string.Concat("rgb(", ToStr(Invoke(Invoke(A_1069, "map", Fn((V _self2, int _argc1071, V v_1077, V i_1078, V _a1075, V _a1076, V[] _rest1072) => {
+return ((V)(JsStrBuf.Begin().S("rgb(").V(Invoke(Invoke(A_1069, "map", Fn((V _self2, int _argc1071, V v_1077, V i_1078, V _a1075, V _a1076, V[] _rest1072) => {
 return ((V)(Round(ToNum(Add(v_1077, ((V)(((ToNum(GetK(B_1070, i_1078)) - ToNum(v_1077)) * ToNum(Call(cl_29, V.Undef, u_1068, ((V)(0D)), ((V)(1D))))))))))));
-}, 2, "", true)), "join", ((V)(",")))), ")")));
+}, 2, "", true)), "join", ((V)(",")))).S(")").End()));
 return default;
 }, 3, "", true);
 push_46 = Fn((V _self2, int _argc1079, V rec_1085, V k_1086, V v_1087, V _a1084, V[] _rest1080) => {
@@ -1492,7 +1492,7 @@ return t_1241;
 return default;
 }, 1, "bubble", false)).V;
 PLATE_56 = Fn((V _self2, int _argc1242, V d_1248, V _a1245, V _a1246, V _a1247, V[] _rest1243) => {
-return ((V)(string.Concat("<ellipse cx=\"0\" cy=\"0\" rx=\"6\" ry=\"2.4\" fill=\"#ffffff\" stroke=\"#9fb4c9\" stroke-width=\"0.45\"/><ellipse cx=\"0\" cy=\"-0.2\" rx=\"3.8\" ry=\"1.3\" fill=\"none\" stroke=\"#5ab4f0\" stroke-width=\"0.4\" opacity=\"0.8\"/>", (GtN(d_1248, 0.03) ? string.Concat(new string[] { "<g opacity=\"", ToStr(Call(r2_30, V.Undef, d_1248)), "\">", ToStr(Call(ci_32, V.Undef, ((V)((-2D))), ((V)((-0.2))), ((V)(0.9)), ((V)("#c9a46a")))), ToStr(Call(ci_32, V.Undef, ((V)(1.6)), ((V)(0.4)), ((V)(0.7)), ((V)("#b9864a")))), ToStr(Call(ci_32, V.Undef, ((V)(0.4)), ((V)((-0.6))), ((V)(0.5)), ((V)("#d9b07a")))), "</g>" }) : ""))));
+return ((V)(string.Concat("<ellipse cx=\"0\" cy=\"0\" rx=\"6\" ry=\"2.4\" fill=\"#ffffff\" stroke=\"#9fb4c9\" stroke-width=\"0.45\"/><ellipse cx=\"0\" cy=\"-0.2\" rx=\"3.8\" ry=\"1.3\" fill=\"none\" stroke=\"#5ab4f0\" stroke-width=\"0.4\" opacity=\"0.8\"/>", (GtN(d_1248, 0.03) ? JsStrBuf.Begin().S("<g opacity=\"").V(Call(r2_30, V.Undef, d_1248)).S("\">").V(Call(ci_32, V.Undef, ((V)((-2D))), ((V)((-0.2))), ((V)(0.9)), ((V)("#c9a46a")))).V(Call(ci_32, V.Undef, ((V)(1.6)), ((V)(0.4)), ((V)(0.7)), ((V)("#b9864a")))).V(Call(ci_32, V.Undef, ((V)(0.4)), ((V)((-0.6))), ((V)(0.5)), ((V)("#d9b07a")))).S("</g>").End() : ""))));
 }, 1, "", true);
 SPONGE_57 = ((V)("<rect x=\"-2.4\" y=\"-1.6\" width=\"4.8\" height=\"3.2\" rx=\"0.7\" fill=\"#ffd24a\" stroke=\"#d9a22a\" stroke-width=\"0.35\"/><rect x=\"-2.4\" y=\"-1.6\" width=\"4.8\" height=\"1.1\" rx=\"0.5\" fill=\"#7cc35a\" stroke=\"#4f8f3a\" stroke-width=\"0.3\"/>"));
 GR0_59 = Call(S0_39, V.Undef, NewObj(6).Put("pitch", ((V)((-0.12)))).Put("ly", ((V)(0.6))).Put("armR", ((V)(40D))).Put("armL", ((V)(18D))).Put("smile", ((V)(0.8))).Put("hap", ((V)(0.4))).V, Call(hand_14, V.Undef, ((V)(1D)), ((V)(2D)), ((V)((-4D)))), Call(hand_14, V.Undef, ((V)((-1D))), ((V)(6D)), ((V)(2D))));
@@ -1547,7 +1547,7 @@ return default;
 }, 3, "serve", false)).V;
 TONGS_61 = ((V)("<path d=\"M0-0.6L13-1.6M0 0.6L13 1.6\" stroke=\"#9aa3b2\" stroke-width=\"0.9\" stroke-linecap=\"round\"/><path d=\"M-2.4-0.8H1V0.8H-2.4Z\" fill=\"#3b2a24\"/><path d=\"M12.4-2.4L14.2-1.2M12.4 2.4L14.2 1.2\" stroke=\"#7a8392\" stroke-width=\"0.7\" stroke-linecap=\"round\"/>"));
 PATTY_62 = Fn((V _self2, int _argc1305, V k_1311, V _a1308, V _a1309, V _a1310, V[] _rest1306) => {
-return ((V)(string.Concat(new string[] { "<ellipse cx=\"0\" cy=\"0\" rx=\"4.4\" ry=\"1.7\" fill=\"", ToStr(Call(mixC_45, V.Undef, ((V)("#e98a8a")), ((V)("#7a4428")), k_1311)), "\" stroke=\"#5a3018\" stroke-width=\"0.4\"/><path d=\"M-2.6-0.3H2.6M-1.6 0.6H1.8\" stroke=\"#3a1e10\" stroke-width=\"0.45\" opacity=\"", ToStr(Call(r2_30, V.Undef, ((V)((ToNum(k_1311) * 0.8))))), "\"/><ellipse cx=\"-1.4\" cy=\"-0.7\" rx=\"1.4\" ry=\"0.4\" fill=\"#ffffff\" opacity=\"0.25\"/>" })));
+return ((V)(JsStrBuf.Begin().S("<ellipse cx=\"0\" cy=\"0\" rx=\"4.4\" ry=\"1.7\" fill=\"").V(Call(mixC_45, V.Undef, ((V)("#e98a8a")), ((V)("#7a4428")), k_1311)).S("\" stroke=\"#5a3018\" stroke-width=\"0.4\"/><path d=\"M-2.6-0.3H2.6M-1.6 0.6H1.8\" stroke=\"#3a1e10\" stroke-width=\"0.45\" opacity=\"").V(Call(r2_30, V.Undef, ((V)((ToNum(k_1311) * 0.8))))).S("\"/><ellipse cx=\"-1.4\" cy=\"-0.7\" rx=\"1.4\" ry=\"0.4\" fill=\"#ffffff\" opacity=\"0.25\"/>").End()));
 }, 1, "", true);
 TW0_64 = Call(S0_39, V.Undef, NewObj(3).Put("lx", ((V)(0.7))).Put("ly", ((V)(0.4))).Put("pitch", ((V)((-0.04)))).V);
 TWB_65 = NewObj(3).Put("tap", Fn((V _self1312, int _argc1313, V t_1319, V _a1316, V _a1317, V _a1318, V[] _rest1314) => {
@@ -1694,7 +1694,7 @@ return t_1483;
 return default;
 }, 1, "bow", false)).V;
 MIC_76 = Fn((V _self2, int _argc1485, V c_1491, V _a1488, V _a1489, V _a1490, V[] _rest1486) => {
-return ((V)(string.Concat(new string[] { "<rect x=\"-1\" y=\"-1.1\" width=\"9\" height=\"2.2\" rx=\"1.1\" fill=\"", ToStr(c_1491), "\" stroke=\"", ToStr(Call(shade_31, V.Undef, c_1491, ((V)(0.6)))), "\" stroke-width=\"0.4\"/><circle cx=\"10\" cy=\"0\" r=\"2.6\" fill=\"#c9cfdb\" stroke=\"#6a7080\" stroke-width=\"0.45\"/><path d=\"M8.6-1.6L11.4 1.6M8.6 1.6L11.4-1.6M10-2.4V2.4\" stroke=\"#8a90a0\" stroke-width=\"0.3\"/><path d=\"M8.8-1.4Q9.6-2.2 10.8-1.8\" stroke=\"#fff\" stroke-width=\"0.5\" fill=\"none\" opacity=\"0.8\"/>" })));
+return ((V)(JsStrBuf.Begin().S("<rect x=\"-1\" y=\"-1.1\" width=\"9\" height=\"2.2\" rx=\"1.1\" fill=\"").V(c_1491).S("\" stroke=\"").V(Call(shade_31, V.Undef, c_1491, ((V)(0.6)))).S("\" stroke-width=\"0.4\"/><circle cx=\"10\" cy=\"0\" r=\"2.6\" fill=\"#c9cfdb\" stroke=\"#6a7080\" stroke-width=\"0.45\"/><path d=\"M8.6-1.6L11.4 1.6M8.6 1.6L11.4-1.6M10-2.4V2.4\" stroke=\"#8a90a0\" stroke-width=\"0.3\"/><path d=\"M8.8-1.4Q9.6-2.2 10.8-1.8\" stroke=\"#fff\" stroke-width=\"0.5\" fill=\"none\" opacity=\"0.8\"/>").End()));
 }, 1, "", true);
 micProp_77 = Fn((V _self2, int _argc1492, V col_1498, V _a1495, V _a1496, V _a1497, V[] _rest1493) => {
 return Fn((V _self2, int _argc1499, V I_1505, V _a1502, V _a1503, V _a1504, V[] _rest1500) => {
@@ -1819,11 +1819,11 @@ d_1590 = Max(Hypot((ToNum(GetIdx(b_1587, 0D)) - ToNum(GetIdx(a_1586, 0D))), (ToN
 hw_1591 = ((d_1590 * 1.15) + 5D);
 top_1592 = (Truthy(Call(okp_35, V.Undef, Get(W_1584, "head"))) ? Min(((ToNum(GetIdx(Get(W_1584, "head"), 1D)) - my_1589) + 1D), (-6D)) : (((-d_1590) * 1.4) - 5D));
 an_1593 = ((FdLibm.Atan2((ToNum(GetIdx(b_1587, 1D)) - ToNum(GetIdx(a_1586, 1D))), (ToNum(GetIdx(b_1587, 0D)) - ToNum(GetIdx(a_1586, 0D)))) * 180D) / System.Math.PI);
-arc_1594 = ((V)(string.Concat(new string[] { "M", ToStr(Call(r2_30, V.Undef, ((V)((-hw_1591))))), " 0C", ToStr(Call(r2_30, V.Undef, ((V)((-hw_1591))))), " ", ToStr(Call(r2_30, V.Undef, ((V)((top_1592 * 1.3))))), " ", ToStr(Call(r2_30, V.Undef, ((V)(hw_1591)))), " ", ToStr(Call(r2_30, V.Undef, ((V)((top_1592 * 1.3))))), " ", ToStr(Call(r2_30, V.Undef, ((V)(hw_1591)))), " 0" })));
+arc_1594 = ((V)(JsStrBuf.Begin().S("M").V(Call(r2_30, V.Undef, ((V)((-hw_1591))))).S(" 0C").V(Call(r2_30, V.Undef, ((V)((-hw_1591))))).S(" ").V(Call(r2_30, V.Undef, ((V)((top_1592 * 1.3))))).S(" ").V(Call(r2_30, V.Undef, ((V)(hw_1591)))).S(" ").V(Call(r2_30, V.Undef, ((V)((top_1592 * 1.3))))).S(" ").V(Call(r2_30, V.Undef, ((V)(hw_1591)))).S(" 0").End()));
 cup_1595 = Fn((V _self2, int _argc1597, V x_1603, V _a1600, V _a1601, V _a1602, V[] _rest1598) => {
-return ((V)(string.Concat(new string[] { "<rect x=\"", ToStr(Call(r2_30, V.Undef, ((V)((ToNum(x_1603) - 2.2))))), "\" y=\"-2\" width=\"4.4\" height=\"7\" rx=\"2\" fill=\"#2a2440\" stroke=\"#111\" stroke-width=\"0.35\"/><rect x=\"", ToStr(Call(r2_30, V.Undef, ((V)((ToNum(x_1603) - 1.3))))), "\" y=\"-0.8\" width=\"2.6\" height=\"4.6\" rx=\"1.2\" fill=\"", ToStr(col_1576), "\"/>" })));
+return ((V)(JsStrBuf.Begin().S("<rect x=\"").V(Call(r2_30, V.Undef, ((V)((ToNum(x_1603) - 2.2))))).S("\" y=\"-2\" width=\"4.4\" height=\"7\" rx=\"2\" fill=\"#2a2440\" stroke=\"#111\" stroke-width=\"0.35\"/><rect x=\"").V(Call(r2_30, V.Undef, ((V)((ToNum(x_1603) - 1.3))))).S("\" y=\"-0.8\" width=\"2.6\" height=\"4.6\" rx=\"1.2\" fill=\"").V(col_1576).S("\"/>").End()));
 }, 1, "", true);
-return Call(G_26, V.Undef, ((V)(mx_1588)), ((V)((my_1589 + 1D))), ((V)(an_1593)), ((V)(1D)), ((V)(string.Concat(new string[] { "<path d=\"", ToStr(arc_1594), "\" fill=\"none\" stroke=\"#2a2440\" stroke-width=\"2\"/><path d=\"", ToStr(arc_1594), "\" fill=\"none\" stroke=\"", ToStr(col_1576), "\" stroke-width=\"0.9\"/>", ToStr(Call(cup_1595, V.Undef, ((V)((-hw_1591))))), ToStr(Call(cup_1595, V.Undef, ((V)(hw_1591)))) }))), ((V)(Min(1D, (ToNum(f0_1585) * 1.3)))));
+return Call(G_26, V.Undef, ((V)(mx_1588)), ((V)((my_1589 + 1D))), ((V)(an_1593)), ((V)(1D)), ((V)(JsStrBuf.Begin().S("<path d=\"").V(arc_1594).S("\" fill=\"none\" stroke=\"#2a2440\" stroke-width=\"2\"/><path d=\"").V(arc_1594).S("\" fill=\"none\" stroke=\"").V(col_1576).S("\" stroke-width=\"0.9\"/>").V(Call(cup_1595, V.Undef, ((V)((-hw_1591))))).V(Call(cup_1595, V.Undef, ((V)(hw_1591)))).End())), ((V)(Min(1D, (ToNum(f0_1585) * 1.3)))));
 return default;
 }, 1, "", true);
 }, 1, "", true);
@@ -1971,10 +1971,10 @@ return Invoke(t_1730, "back", ((V)(300D)));
 return default;
 }, 3, "block", false)).V;
 PADDLE_87 = Fn((V _self2, int _argc1734, V c_1740, V _a1737, V _a1738, V _a1739, V[] _rest1735) => {
-return ((V)(string.Concat(new string[] { "<ellipse cx=\"0\" cy=\"1\" rx=\"4.2\" ry=\"2\" fill=\"", ToStr(c_1740), "\" stroke=\"", ToStr(Call(shade_31, V.Undef, c_1740, ((V)(0.65)))), "\" stroke-width=\"0.45\"/><ellipse cx=\"0\" cy=\"-0.4\" rx=\"1.5\" ry=\"1.1\" fill=\"", ToStr(Call(shade_31, V.Undef, c_1740, ((V)(1.2)))), "\" stroke=\"", ToStr(Call(shade_31, V.Undef, c_1740, ((V)(0.65)))), "\" stroke-width=\"0.35\"/>" })));
+return ((V)(JsStrBuf.Begin().S("<ellipse cx=\"0\" cy=\"1\" rx=\"4.2\" ry=\"2\" fill=\"").V(c_1740).S("\" stroke=\"").V(Call(shade_31, V.Undef, c_1740, ((V)(0.65)))).S("\" stroke-width=\"0.45\"/><ellipse cx=\"0\" cy=\"-0.4\" rx=\"1.5\" ry=\"1.1\" fill=\"").V(Call(shade_31, V.Undef, c_1740, ((V)(1.2)))).S("\" stroke=\"").V(Call(shade_31, V.Undef, c_1740, ((V)(0.65)))).S("\" stroke-width=\"0.35\"/>").End()));
 }, 1, "", true);
 PPAD_88 = Fn((V _self2, int _argc1741, V c_1747, V _a1744, V _a1745, V _a1746, V[] _rest1742) => {
-return ((V)(string.Concat(new string[] { "<path d=\"M-0.6 0H0.6V4H-0.6Z\" fill=\"#c98a52\" stroke=\"#8a5a2c\" stroke-width=\"0.3\"/><circle cx=\"0\" cy=\"-2.6\" r=\"3.2\" fill=\"", ToStr(c_1747), "\" stroke=\"", ToStr(Call(shade_31, V.Undef, c_1747, ((V)(0.65)))), "\" stroke-width=\"0.45\"/>" })));
+return ((V)(JsStrBuf.Begin().S("<path d=\"M-0.6 0H0.6V4H-0.6Z\" fill=\"#c98a52\" stroke=\"#8a5a2c\" stroke-width=\"0.3\"/><circle cx=\"0\" cy=\"-2.6\" r=\"3.2\" fill=\"").V(c_1747).S("\" stroke=\"").V(Call(shade_31, V.Undef, c_1747, ((V)(0.65)))).S("\" stroke-width=\"0.45\"/>").End()));
 }, 1, "", true);
 BL0_90 = Call(S0_39, V.Undef, NewObj(6).Put("pitch", ((V)((-0.2)))).Put("ly", ((V)(0.7))).Put("armL", ((V)(30D))).Put("armR", ((V)(22D))).Put("lean", ((V)(0.3))).Put("tilt", ((V)(3D))).V, Call(hand_14, V.Undef, ((V)((-1D))), ((V)(10D)), ((V)((-2D)))), Call(hand_14, V.Undef, ((V)(1D)), ((V)((-2D))), ((V)(2D))));
 BLB_91 = NewObj(5).Put("chalk", Fn((V _self1748, int _argc1749, V t_1755, V _a1752, V _a1753, V _a1754, V[] _rest1750) => {
@@ -2010,9 +2010,9 @@ return Invoke(t_1791, "back", ((V)(500D)));
 return default;
 }, 1, "circle", false)).V;
 ICX_93 = NewObj(7).Put("ball", ((V)("<circle cx=\"0\" cy=\"0\" r=\"3\" fill=\"#ffffff\" stroke=\"#3a3a48\" stroke-width=\"0.45\"/><path d=\"M0-1.2L1.15-0.35L0.7 1H-0.7L-1.15-0.35Z\" fill=\"#2a2a36\"/><path d=\"M0-1.2V-3M1.15-0.35L2.85-0.9M0.7 1L1.7 2.4M-0.7 1L-1.7 2.4M-1.15-0.35L-2.85-0.9\" stroke=\"#3a3a48\" stroke-width=\"0.35\"/>"))).Put("bball", Add(Add(Call(ci_32, V.Undef, ((V)(0D)), ((V)(0D)), ((V)(3D)), ((V)("#f28a2e")), ((V)("#b8561a"))), Call(pa_33, V.Undef, ((V)("M-3 0H3M0-3V3M-2.1-2.1Q0 0-2.1 2.1M2.1-2.1Q0 0 2.1 2.1")), V.Null, ((V)("#7a3a10")), ((V)(0.35)))), Call(ci_32, V.Undef, ((V)((-1.1))), ((V)((-1.2))), ((V)(0.7)), ((V)("rgba(255,255,255,0.45)"))))).Put("bocce", Add(Add(Call(ci_32, V.Undef, ((V)(0D)), ((V)(0D)), ((V)(2.4)), ((V)("#c0392b")), ((V)("#7a1e14"))), Call(pa_33, V.Undef, ((V)("M-2.2-0.6Q0 0.6 2.2-0.6")), V.Null, ((V)("#ffd24a")), ((V)(0.5)))), Call(ci_32, V.Undef, ((V)((-0.8))), ((V)((-0.9))), ((V)(0.6)), ((V)("#ffffff"))))).Put("bag", Fn((V _self2, int _argc1792, V c_1798, V _a1795, V _a1796, V _a1797, V[] _rest1793) => {
-return ((V)(string.Concat(new string[] { "<rect x=\"-2.6\" y=\"-2\" width=\"5.2\" height=\"4\" rx=\"1.2\" fill=\"", ToStr(c_1798), "\" stroke=\"", ToStr(Call(shade_31, V.Undef, c_1798, ((V)(0.65)))), "\" stroke-width=\"0.4\"/><path d=\"M-1.8-1.2H1.8\" stroke=\"#ffffff\" stroke-width=\"0.4\" opacity=\"0.5\"/>" })));
+return ((V)(JsStrBuf.Begin().S("<rect x=\"-2.6\" y=\"-2\" width=\"5.2\" height=\"4\" rx=\"1.2\" fill=\"").V(c_1798).S("\" stroke=\"").V(Call(shade_31, V.Undef, c_1798, ((V)(0.65)))).S("\" stroke-width=\"0.4\"/><path d=\"M-1.8-1.2H1.8\" stroke=\"#ffffff\" stroke-width=\"0.4\" opacity=\"0.5\"/>").End()));
 }, 1, "bag", true)).Put("shoe", Add(Call(pa_33, V.Undef, ((V)("M-2.6 2.4V-0.4A2.6 2.6 0 0 1 2.6-0.4V2.4")), V.Null, ((V)("#6a7080")), ((V)(1.3))), Call(pa_33, V.Undef, ((V)("M-2.6 2.4V-0.4A2.6 2.6 0 0 1 2.6-0.4V2.4")), V.Null, ((V)("#c9cfdb")), ((V)(0.45))))).Put("disc", Fn((V _self2, int _argc1799, V c_1805, V _a1802, V _a1803, V _a1804, V[] _rest1800) => {
-return ((V)(string.Concat(new string[] { "<ellipse cx=\"0\" cy=\"0\" rx=\"4.4\" ry=\"1.5\" fill=\"", ToStr(c_1805), "\" stroke=\"", ToStr(Call(shade_31, V.Undef, c_1805, ((V)(0.65)))), "\" stroke-width=\"0.4\"/><ellipse cx=\"0\" cy=\"-0.3\" rx=\"2.4\" ry=\"0.7\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"0.35\" opacity=\"0.6\"/>" })));
+return ((V)(JsStrBuf.Begin().S("<ellipse cx=\"0\" cy=\"0\" rx=\"4.4\" ry=\"1.5\" fill=\"").V(c_1805).S("\" stroke=\"").V(Call(shade_31, V.Undef, c_1805, ((V)(0.65)))).S("\" stroke-width=\"0.4\"/><ellipse cx=\"0\" cy=\"-0.3\" rx=\"2.4\" ry=\"0.7\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"0.35\" opacity=\"0.6\"/>").End()));
 }, 1, "disc", true)).Put("stone", Call(pa_33, V.Undef, ((V)("M-1.8 0.6Q-1.6-1.2 0-1.3Q1.8-1.2 1.9 0.4Q1.6 1.3 0 1.3Q-1.6 1.3-1.8 0.6Z")), ((V)("#a9a39a")), ((V)("#6a645a")))).V;
 GOB_94 = NewObj(3).Put("dribble", Fn((V _self1806, int _argc1807, V t_1813, V X_1814, V rec_1815, V _a1812, V[] _rest1808) => {
 V a_1816 = default;

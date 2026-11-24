@@ -226,7 +226,7 @@ V t_279 = default;
 t_279 = Call(TL_10, V.Undef, REST_16);
 InvokeK(SB_18, n_277, t_279);
 Invoke(t_279, "back", ((V)(320D)));
-SetK(Get(R_8, "STATES"), ((V)(string.Concat("hf", ToStr(Add(i_278, ((V)(1D))))))), Invoke(t_279, "out", NewObj(2).Put("next", ((V)("idle"))).Put("blend", ((V)(220D))).V));
+SetK(Get(R_8, "STATES"), ((V)(JsStrBuf.Begin().S("hf").V(Add(i_278, ((V)(1D)))).End())), Invoke(t_279, "out", NewObj(2).Put("next", ((V)("idle"))).Put("blend", ((V)(220D))).V));
 return default;
 }, 2, "", true));
 W_21 = Set(G("window"), "HouseIdle", NewObj(4).Put("SB", SB_18).Put("sp", sp_17).Put("PROF", NewObj(0).V).Put("build", Fn((V _self280, int _argc281, V key_287, V list_288, V X_289, V _a286, V[] _rest282) => {
@@ -256,8 +256,8 @@ a_304 = _t308; }
 Call((GetK(SB_18, n_303) is var _t309 && Truthy(_t309) ? _t309 : Get(SB_18, "look")), V.Undef, t_301, a_304);
 }
 Invoke(t_301, "back", ((V)(320D)));
-nm_302 = ((V)(string.Concat("hf", ToStr(Add(i_300, ((V)(1D)))))));
-SetK(S_290, ((V)(string.Concat(ToStr(nm_302), "@", ToStr(key_287)))), Invoke(t_301, "out", NewObj(2).Put("next", ((V)("idle"))).Put("blend", ((V)(220D))).V));
+nm_302 = ((V)(JsStrBuf.Begin().S("hf").V(Add(i_300, ((V)(1D)))).End()));
+SetK(S_290, ((V)(JsStrBuf.Begin().V(nm_302).S("@").V(key_287).End())), Invoke(t_301, "out", NewObj(2).Put("next", ((V)("idle"))).Put("blend", ((V)(220D))).V));
 Invoke(names_291, "push", nm_302);
 return default;
 }, 2, "", true));

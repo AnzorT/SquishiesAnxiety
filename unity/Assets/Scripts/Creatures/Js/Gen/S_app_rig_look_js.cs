@@ -77,7 +77,7 @@ return f_70;
 }
 svg_71 = Get(g_69, "ownerSVGElement");
 defs_72 = (Invoke(svg_71, "querySelector", ((V)("defs"))) is var _t76 && Truthy(_t76) ? _t76 : Invoke(svg_71, "insertBefore", Invoke(G("document"), "createElementNS", NS_8, ((V)("defs"))), Get(svg_71, "firstChild")));
-f_70 = Call(mk_13, V.Undef, ((V)("filter")), NewObj(6).Put("id", ((V)(string.Concat("sqlook", NumStr(PreInc(ref uid_10, 1D)))))).Put("x", ((V)("-15%"))).Put("y", ((V)("-15%"))).Put("width", ((V)("130%"))).Put("height", ((V)("130%"))).Put("color-interpolation-filters", ((V)("sRGB"))).V, defs_72);
+f_70 = Call(mk_13, V.Undef, ((V)("filter")), NewObj(6).Put("id", ((V)(JsStrBuf.Begin().S("sqlook").N(PreInc(ref uid_10, 1D)).End()))).Put("x", ((V)("-15%"))).Put("y", ((V)("-15%"))).Put("width", ((V)("130%"))).Put("height", ((V)("130%"))).Put("color-interpolation-filters", ((V)("sRGB"))).V, defs_72);
 a_73 = Call(mk_13, V.Undef, ((V)("feComponentTransfer")), NewObj(2).Put("in", ((V)("SourceAlpha"))).Put("result", ((V)("a"))).V, f_70);
 Call(mk_13, V.Undef, ((V)("feFuncA")), NewObj(3).Put("type", ((V)("linear"))).Put("slope", ((V)("2.5"))).Put("intercept", ((V)("-0.5"))).V, a_73);
 Set(f_70, "__m", Call(mk_13, V.Undef, ((V)("feMorphology")), NewObj(4).Put("in", ((V)("a"))).Put("operator", ((V)("dilate"))).Put("radius", ((V)("0.8"))).Put("result", ((V)("d"))).V, f_70));
@@ -114,7 +114,7 @@ own_91 = Invoke(g_88, "getAttribute", ((V)("filter")));
 if (SEqS(own_91, "none")) {
 own_91 = ((V)(""));
 }
-Set(Get(g_88, "style"), "filter", ((V)(string.Concat((Truthy(own_91) ? string.Concat(ToStr(own_91), " ") : ""), "url(#", ToStr(Get(f_90, "id")), ")"))));
+Set(Get(g_88, "style"), "filter", ((V)(JsStrBuf.Begin().S((Truthy(own_91) ? JsStrBuf.Begin().V(own_91).S(" ").End() : "")).S("url(#").V(Get(f_90, "id")).S(")").End())));
 return (true ? V.True : V.False);
 return default;
 }, 3, "paint", false);

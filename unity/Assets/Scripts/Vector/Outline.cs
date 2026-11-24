@@ -22,6 +22,10 @@ namespace SquishSquad.Vector
 
     public static class Outline
     {
+        static List<Vec2> L(Vec2 a) { var l = Vec2Pool.Get(4); l.Add(a); return l; }
+        static List<Vec2> L(Vec2 a, Vec2 b, Vec2 c) { var l = Vec2Pool.Get(4); l.Add(a); l.Add(b); l.Add(c); return l; }
+        static List<Vec2> L(Vec2 a, Vec2 b, Vec2 c, Vec2 d) { var l = Vec2Pool.Get(4); l.Add(a); l.Add(b); l.Add(c); l.Add(d); return l; }
+
         public static Shape Fill(Polyline outline, bool evenOdd)
         {
             var s = new Shape { Rule = evenOdd ? FillRule.EvenOdd : FillRule.NonZero };
@@ -42,7 +46,7 @@ namespace SquishSquad.Vector
                 var pts = outline.Contours[c];
                 if (pts.Count < 2) continue;
                 bool closed = outline.Closed.Count > c && outline.Closed[c];
-                var path = new List<Vec2>(pts);
+                var path = Vec2Pool.Get(pts.Count); path.AddRange(pts);
                 if (closed && (path[0].X != path[path.Count - 1].X || path[0].Y != path[path.Count - 1].Y)) path.Add(path[0]);
                 // where in the pattern the contour starts
                 double o = offset % total; if (o < 0) o += total;
@@ -50,7 +54,7 @@ namespace SquishSquad.Vector
                 while (o >= pattern[k]) { o -= pattern[k]; k = (k + 1) % pattern.Count; }
                 double left = pattern[k] - o;   // of the current dash / gap
                 bool on = k % 2 == 0;
-                List<Vec2> cur = on ? new List<Vec2> { path[0] } : null;
+                List<Vec2> cur = on ? L(path[0]) : null;
                 List<Vec2> first = null;
                 bool firstOpen = on;
                 for (int i = 1; i < path.Count; i++)
@@ -62,7 +66,7 @@ namespace SquishSquad.Vector
                         at += left;
                         var p = a + (b - a) * (at / seg);
                         if (on) { cur.Add(p); if (first == null && firstOpen) first = cur; else Emit(outp, cur); cur = null; }
-                        else cur = new List<Vec2> { p };
+                        else cur = L(p);
                         on = !on;
                         k = (k + 1) % pattern.Count;
                         left = pattern[k];
@@ -97,7 +101,7 @@ namespace SquishSquad.Vector
             double hw = width / 2;
             if (hw <= 0) return s;
             int steps = Math.Max(6, Math.Min(48, (int)Math.Ceiling(Math.PI / Math.Acos(Math.Max(-1, 1 - Math.Min(tolerance, hw) / hw)))));
-            List<Vec2> Circle(Vec2 c) { var l = new List<Vec2>(steps * 2); for (int i = 0; i < steps * 2; i++) { double a = Math.PI * i / steps; l.Add(new Vec2(c.X + hw * Math.Cos(a), c.Y + hw * Math.Sin(a))); } return l; }
+            List<Vec2> Circle(Vec2 c) { var l = Vec2Pool.Get(steps * 2); for (int i = 0; i < steps * 2; i++) { double a = Math.PI * i / steps; l.Add(new Vec2(c.X + hw * Math.Cos(a), c.Y + hw * Math.Sin(a))); } return l; }
 
             for (int ci = 0; ci < outline.Contours.Count; ci++)
             {
@@ -106,7 +110,7 @@ namespace SquishSquad.Vector
                 if (pts.Count == 1)
                 {
                     if (cap == Cap.Round) s.Polygons.Add(Circle(pts[0]));
-                    else if (cap == Cap.Square) s.Polygons.Add(new List<Vec2> { pts[0] + new Vec2(-hw, -hw), pts[0] + new Vec2(hw, -hw), pts[0] + new Vec2(hw, hw), pts[0] + new Vec2(-hw, hw) });
+                    else if (cap == Cap.Square) s.Polygons.Add(L(pts[0] + new Vec2(-hw, -hw), pts[0] + new Vec2(hw, -hw), pts[0] + new Vec2(hw, hw), pts[0] + new Vec2(-hw, hw)));
                     continue;
                 }
                 if (pts.Count < 2) continue;
@@ -119,7 +123,7 @@ namespace SquishSquad.Vector
                     var ext = new Vec2(d.X / len * hw, d.Y / len * hw);
                     var a0 = a; var b0 = b;
                     if (!closed && cap == Cap.Square) { if (i == 0) a0 = a - ext; if (i == segs - 1) b0 = b + ext; }
-                    s.Polygons.Add(new List<Vec2> { a0 + nrm, b0 + nrm, b0 - nrm, a0 - nrm });
+                    s.Polygons.Add(L(a0 + nrm, b0 + nrm, b0 - nrm, a0 - nrm));
                 }
                 int j0 = closed ? 0 : 1, j1 = closed ? pts.Count : pts.Count - 1;
                 for (int i = j0; i < j1; i++)
@@ -138,7 +142,7 @@ namespace SquishSquad.Vector
                     var n0 = new Vec2(-d0.Y / l0, d0.X / l0); var n1 = new Vec2(-d1.Y / l1, d1.X / l1);
                     double side = cross > 0 ? -1 : 1;
                     var o0 = p + n0 * (hw * side); var o1 = p + n1 * (hw * side);
-                    var poly = new List<Vec2> { p, o0, o1 };
+                    var poly = L(p, o0, o1);
                     if (join == Join.Miter)
                     {
                         double cosT = n0.X * n1.X + n0.Y * n1.Y;
@@ -146,7 +150,7 @@ namespace SquishSquad.Vector
                         if (miterLen <= miterLimit)
                         {
                             var mid = new Vec2(n0.X + n1.X, n0.Y + n1.Y); double ml = mid.Length;
-                            if (ml > 1e-12) poly = new List<Vec2> { p, o0, p + mid * (hw * side * miterLen / ml), o1 };
+                            if (ml > 1e-12) { poly.Clear(); poly.Add(p); poly.Add(o0); poly.Add(p + mid * (hw * side * miterLen / ml)); poly.Add(o1); }
                         }
                     }
                     s.Polygons.Add(poly);
@@ -158,7 +162,7 @@ namespace SquishSquad.Vector
 
         static List<Vec2> Dedupe(List<Vec2> c)
         {
-            var o = new List<Vec2>(c.Count);
+            var o = Vec2Pool.Get(c.Count);
             foreach (var p in c) if (o.Count == 0 || Math.Abs(o[o.Count - 1].X - p.X) > 1e-6 || Math.Abs(o[o.Count - 1].Y - p.Y) > 1e-6) o.Add(p);
             return o;
         }

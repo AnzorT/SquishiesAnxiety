@@ -54,8 +54,15 @@ namespace SquishSquad.Creatures.Js
         public static int Mount(string key) { var id = Rt.Invoke(_live, "mount", key); Rt.RunMicrotasks(); return (int)Rt.ToNum(id); }
         public static void Play(int id, string move) { Rt.Invoke(_live, "play", id, move); Rt.RunMicrotasks(); }
         /// <summary>The one clock: `ms` on (timers due fire in order, then the frame's callbacks), then the promise jobs.</summary>
-        public static void Frame(double ms) { Rt.Invoke(_live, "frame", ms); Rt.RunMicrotasks(); }
+        public static void Frame(double ms) { JsStrBuf.ResetCat(); Rt.Invoke(_live, "frame", ms); Rt.RunMicrotasks(); }
         public static double Now => Rt.ToNum(Rt.Invoke(_live, "now"));
+        /// <summary>The creature's &lt;svg&gt; element on the stand-in (RigTree reads it), or null.</summary>
+        public static V SvgElement(int id)
+        {
+            var el = Rt.Invoke(Rt.G("__native"), "host", id);
+            return el.IsNullish ? V.Null : Dom.FirstSvg(el);
+        }
+
         /// <summary>The creature's &lt;svg&gt; markup now, as live-host.js's svg(id) gives it (the fabric tile as
         /// href="grain", one line), written natively (run.mjs checks it against the JS).</summary>
         public static string Svg(int id)

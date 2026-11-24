@@ -1,4 +1,5 @@
-// A live creature on screen: each frame its SVG (from IRigFrames) is compiled (SvgScene) and drawn on the GPU
+// A live creature on screen: each frame its node tree (IRigTree: the native rig, no text) or its SVG (a recording)
+// is compiled (SvgScene) and drawn on the GPU
 // (VectorRenderer) into its own RenderTexture, shown on a quad. World units are screen pixels with y down as -y, like
 // MenuView: the creature's box is `boxPx` (left, top, width, height) on the screen, and the quad covers it plus a
 // margin of Margin x its size on each side (creatures draw outside their box: the app's SVG has overflow visible).
@@ -16,6 +17,7 @@ namespace SquishSquad.Creatures
         MeshRenderer _mr;
         Material _show;
         string _last;
+        readonly Vec2Pool _pool = new Vec2Pool();
         float _t0;
         int _size, _rtSize;
         float _scaleK = 1;
@@ -112,12 +114,24 @@ namespace SquishSquad.Creatures
             if (_failed) return;
             try
             {
-                var markup = _rig.FrameAt(t);
-                if (markup == _last) return;
-                _last = markup;
                 int pad = (_rtSize - _size) / 2;
-                var scene = SvgScene.Compile(SvgMarkup.Parse(markup), _size, _size, Affine.Translate(pad, pad));
-                _renderer.Render(scene, _rt);
+                SvgScene scene;
+                // the native rig: its node tree straight from the rig (no text), the outlines' point lists lent by the
+                // view's pool and taken back once drawn; a recording: its markup, parsed
+                var tree = _rig is IRigTree rt && !(_rig is ResultRig rr && !rr.Trees) ? rt.TreeAt(t) : null;
+                if (tree != null)
+                {
+                    using (Vec2Pool.Lend(_pool)) { scene = SvgScene.Compile(tree, _size, _size, Affine.Translate(pad, pad)); _renderer.Render(scene, _rt); }
+                    _pool.Recycle();
+                }
+                else
+                {
+                    var markup = _rig.FrameAt(t);
+                    if (markup == _last) return;
+                    _last = markup;
+                    scene = SvgScene.Compile(SvgMarkup.Parse(markup), _size, _size, Affine.Translate(pad, pad));
+                    _renderer.Render(scene, _rt);
+                }
                 if (!_reported)
                 {
                     // one line to find this creature by, and to see what it drew

@@ -21,6 +21,14 @@ namespace SquishSquad.Creatures
         void Play(string move);
     }
 
+    /// <summary>A rig that hands over its frame as the vector code's node tree, no SVG text in between (NativeRig: the
+    /// rig's element tree read straight into SvgNodes, Creatures/RigTree.cs). The tree is refilled in place: good until
+    /// the next call. CreatureView prefers it.</summary>
+    public interface IRigTree
+    {
+        SquishSquad.Vector.SvgNode TreeAt(float seconds);
+    }
+
     /// <summary>What the house drives on a live rig (NativeRig): the walk's ext channels, the idle fidgets.</summary>
     public interface IHouseRig
     {

@@ -904,7 +904,7 @@ Call(walkBack_31, V.Undef, t_1340, ((V)(480D)));
 }
 }
 Invoke(t_1340, "rest", ((V)(420D)));
-tap_1341 = Get((GetK(Get(R_8, "STATES"), ((V)(string.Concat("poke_", ToStr(nm_1336))))) is var _t1347 && Truthy(_t1347) ? _t1347 : NewObj(0).V), "tap");
+tap_1341 = Get((GetK(Get(R_8, "STATES"), ((V)(JsStrBuf.Begin().S("poke_").V(nm_1336).End()))) is var _t1347 && Truthy(_t1347) ? _t1347 : NewObj(0).V), "tap");
 tp_1342 = tap_1341;
 if (Truthy((Get(B_1321, "earTap") is var _t1348 && !Truthy(_t1348) ? _t1348 : (SEqS(spot_1339, "ear") ? V.True : V.False)))) {
 tp_1342 = Arr((LtN(s_1338, 0D) ? GetIdx(Get(B_1321, "earTap"), 0D) : ((V)((100D - ToNum(GetIdx(Get(B_1321, "earTap"), 0D)))))), GetIdx(Get(B_1321, "earTap"), 1D));
@@ -912,12 +912,12 @@ tp_1342 = Arr((LtN(s_1338, 0D) ? GetIdx(Get(B_1321, "earTap"), 0D) : ((V)((100D 
 if ((SEqS(spot_1339, "tail") && !(Truthy(Get(B_1321, "tail"))))) {
 tp_1342 = (Get(B_1321, "tailTap") is var _t1349 && Truthy(_t1349) ? _t1349 : Arr(((V)(78D)), ((V)(72D))));
 }
-SetK(ST_1318, ((V)(string.Concat("poke_", ToStr(nm_1336), "@", ToStr(key_1320)))), Invoke(t_1340, "done", NewObj(2).Put("tap", tp_1342).Put("stretch", ((V)(0.5))).V));
+SetK(ST_1318, ((V)(JsStrBuf.Begin().S("poke_").V(nm_1336).S("@").V(key_1320).End())), Invoke(t_1340, "done", NewObj(2).Put("tap", tp_1342).Put("stretch", ((V)(0.5))).V));
 side_1343 = ((V)((LtN(s_1338, 0D) ? "Left " : ((GtN(s_1338, 0D) && !SEqS(spot_1339, "tail")) ? "Right " : ""))));
 L_1344 = (Get(B_1321, "lbl") is var _t1350 && !Truthy(_t1350) ? _t1350 : GetK(Get(B_1321, "lbl"), spot_1339));
 label_1345 = (Truthy(L_1344) ? (string.Equals(Typeof(L_1344), "function") ? Call(L_1344, V.Undef, s_1338) : Add(((((SEqS(spot_1339, "head") || SEqS(spot_1339, "nose")) || SEqS(spot_1339, "belly")) || SEqS(spot_1339, "tail")) ? ((V)("")) : side_1343), L_1344)) : (((SEqS(spot_1339, "head") || SEqS(spot_1339, "nose")) || SEqS(spot_1339, "belly")) ? GetK(NAME_54, spot_1339) : (SEqS(spot_1339, "tail") ? ((V)((Truthy(Get(B_1321, "tail")) ? "Tail" : "Back end"))) : Add(side_1343, GetK(NAME_54, spot_1339)))));
 tx_1346 = GetK(GetK(TXT_1316, key_1320), spot_1339);
-SetK(D_1323, ((V)(string.Concat("poke_", ToStr(nm_1336)))), Arr(label_1345, (string.Equals(Typeof(tx_1346), "function") ? Call(tx_1346, V.Undef, s_1338) : tx_1346)));
+SetK(D_1323, ((V)(JsStrBuf.Begin().S("poke_").V(nm_1336).End())), Arr(label_1345, (string.Equals(Typeof(tx_1346), "function") ? Call(tx_1346, V.Undef, s_1338) : tx_1346)));
 return default;
 }, 1, "", true));
 }

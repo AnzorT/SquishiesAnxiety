@@ -34,6 +34,34 @@ namespace SquishSquad.Creatures.Js
             return (neg ? "-" : "") + Format(ds, n);
         }
 
+        /// <summary>Number::toString(d) written into a string buffer (no string made for the common cases).</summary>
+        public static void Write(JsStrBuf sb, double d)
+        {
+            double a = d < 0 ? -d : d;
+            if (d == 0 || double.IsNaN(d) || double.IsInfinity(d)) { sb.S(ToString(d)); return; }
+            int start, len;
+            if (a < 9007199254740992.0 && a == Math.Floor(a)) { Fill(d < 0, (long)a, 0, out start, out len); }
+            else
+            {
+                int k = 0;
+                if (a < 1e7 && a >= 1e-6) for (int j = 1; j <= 6; j++) { double r = Math.Round(a * Pow10[j]); if (r / Pow10[j] == a) { k = j; Fill(d < 0, (long)r, j, out start, out len); goto put; } }
+                sb.S(ToString(d)); return;
+            }
+            put:
+            var b = _buf;
+            for (int i = 0; i < len; i++) sb.Put(b[start + i]);
+        }
+        static void Fill(bool neg, long q, int k, out int start, out int len)
+        {
+            var b = _buf ??= new char[40];
+            int p = b.Length, written = 0;
+            do { b[--p] = (char)('0' + (int)(q % 10)); q /= 10; written++; if (written == k) b[--p] = '.'; } while (q > 0);
+            if (written < k) { while (written < k) { b[--p] = '0'; written++; } b[--p] = '.'; }
+            if (k > 0 && b[p] == '.') b[--p] = '0';
+            if (neg) b[--p] = '-';
+            start = p; len = b.Length - p;
+        }
+
         [ThreadStatic] static char[] _buf;
         // q / 10^k written out: its digits with the point k from the right ("0.0x" when it needs leading zeros)
         static string Digits(bool neg, long q, int k)

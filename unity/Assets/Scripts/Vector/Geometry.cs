@@ -99,6 +99,32 @@ namespace SquishSquad.Vector
         public bool IsEmpty { get { foreach (var c in Contours) if (c.Count > 1) return false; return true; } }
     }
 
+    /// <summary>Point lists for a scene's outlines, reused frame after frame by whoever draws a scene every frame (a
+    /// live creature: Creatures/CreatureView): `using (Vec2Pool.Lend(pool))` around the compile and the draw, then
+    /// pool.Recycle() takes every list back (the scene can't be used after). Without a pool: plain new lists.</summary>
+    public sealed class Vec2Pool
+    {
+        readonly Stack<List<Vec2>> _free = new Stack<List<Vec2>>();
+        readonly List<List<Vec2>> _lent = new List<List<Vec2>>();
+        [ThreadStatic] static Vec2Pool _current;
+        public static List<Vec2> Get(int cap = 0)
+        {
+            var p = _current;
+            if (p == null) return new List<Vec2>(cap);
+            var l = p._free.Count > 0 ? p._free.Pop() : new List<Vec2>(Math.Max(cap, 16));
+            p._lent.Add(l);
+            return l;
+        }
+        public void Recycle() { foreach (var l in _lent) { l.Clear(); _free.Push(l); } _lent.Clear(); }
+        public static Scope Lend(Vec2Pool p) => new Scope(p);
+        public readonly struct Scope : IDisposable
+        {
+            readonly Vec2Pool _prev;
+            public Scope(Vec2Pool p) { _prev = _current; _current = p; }
+            public void Dispose() => _current = _prev;
+        }
+    }
+
     public static class Geometry
     {
         // Curves are cut so no chord strays more than `tolerance` output pixels from the curve.
@@ -255,8 +281,8 @@ namespace SquishSquad.Vector
         void Flush() { if (_cur != null && _cur.Count > 0) { _out.Contours.Add(_cur); _out.Closed.Add(false); } _cur = null; }
         void Emit(Vec2 user) { _box.Add(user); _cur.Add(_m.Apply(user)); }
 
-        public void MoveTo(double x, double y) { Flush(); _cur = new List<Vec2>(); _p = _start = new Vec2(x, y); Emit(_p); }
-        void Ensure() { if (_cur == null) { _cur = new List<Vec2>(); Emit(_p); } }
+        public void MoveTo(double x, double y) { Flush(); _cur = Vec2Pool.Get(); _p = _start = new Vec2(x, y); Emit(_p); }
+        void Ensure() { if (_cur == null) { _cur = Vec2Pool.Get(); Emit(_p); } }
         public void LineTo(double x, double y) { Ensure(); _p = new Vec2(x, y); Emit(_p); }
         public void Close()
         {
@@ -285,20 +311,25 @@ namespace SquishSquad.Vector
 
         void CurveBox(Vec2 p0, Vec2 p1, Vec2 p2, Vec2 p3)
         {
-            foreach (var t in Extrema(p0.X, p1.X, p2.X, p3.X)) _box.Add(Bez(p0, p1, p2, p3, t));
-            foreach (var t in Extrema(p0.Y, p1.Y, p2.Y, p3.Y)) _box.Add(Bez(p0, p1, p2, p3, t));
+            int k = Extrema(p0.X, p1.X, p2.X, p3.X, out var a, out var b);
+            if (k > 0) _box.Add(Bez(p0, p1, p2, p3, a)); if (k > 1) _box.Add(Bez(p0, p1, p2, p3, b));
+            k = Extrema(p0.Y, p1.Y, p2.Y, p3.Y, out a, out b);
+            if (k > 0) _box.Add(Bez(p0, p1, p2, p3, a)); if (k > 1) _box.Add(Bez(p0, p1, p2, p3, b));
         }
         static Vec2 Bez(Vec2 a, Vec2 b, Vec2 c, Vec2 d, double t) { double u = 1 - t; return a * (u * u * u) + b * (3 * u * u * t) + c * (3 * u * t * t) + d * (t * t * t); }
-        static IEnumerable<double> Extrema(double a, double b, double c, double d)
+        // the curve's turning points in (0, 1), in order found: how many (no iterator: this runs for every curve)
+        static int Extrema(double a, double b, double c, double d, out double r0, out double r1)
         {
+            r0 = r1 = 0; int n = 0;
             double A = -a + 3 * b - 3 * c + d, B = 2 * (a - 2 * b + c), C = b - a;
-            if (Math.Abs(A) < 1e-12) { if (Math.Abs(B) > 1e-12) { var t = -C / B; if (t > 0 && t < 1) yield return t; } yield break; }
+            if (Math.Abs(A) < 1e-12) { if (Math.Abs(B) > 1e-12) { var t = -C / B; if (t > 0 && t < 1) r0 = t; return t > 0 && t < 1 ? 1 : 0; } return 0; }
             double disc = B * B - 4 * A * C;
-            if (disc < 0) yield break;
+            if (disc < 0) return 0;
             double s = Math.Sqrt(disc);
             var t1 = (-B + s) / (2 * A); var t2 = (-B - s) / (2 * A);
-            if (t1 > 0 && t1 < 1) yield return t1;
-            if (t2 > 0 && t2 < 1) yield return t2;
+            if (t1 > 0 && t1 < 1) { r0 = t1; n = 1; }
+            if (t2 > 0 && t2 < 1) { if (n == 0) r0 = t2; else r1 = t2; n++; }
+            return n;
         }
 
         // SVG arc (endpoint form), flattened from its centre form

@@ -1279,7 +1279,7 @@ return default;
 return New(Fragment_12);
 return default;
 }, 0, "createDocumentFragment", false)).Put("getElementById", Fn((V _self761, int _argc762, V id_768, V _a765, V _a766, V _a767, V[] _rest763) => {
-return Invoke(html_721, "querySelector", ((V)(string.Concat("#", ToStr(id_768)))));
+return Invoke(html_721, "querySelector", ((V)(JsStrBuf.Begin().S("#").V(id_768).End())));
 return default;
 }, 1, "getElementById", false)).Put("querySelector", Fn((V _self769, int _argc770, V s_776, V _a773, V _a774, V _a775, V[] _rest771) => {
 return Invoke(html_721, "querySelector", s_776);
@@ -1623,7 +1623,7 @@ return default;
 }, 1, "", false);
 kebab_14 = Fn((V _self1177, int _argc1178, V s_1184, V _a1181, V _a1182, V _a1183, V[] _rest1179) => {
 return Invoke(Invoke(s_1184, "replace", NewRegExp(RX14, "[A-Z]", "g"), Fn((V _self1185, int _argc1186, V c_1192, V _a1189, V _a1190, V _a1191, V[] _rest1187) => {
-return ((V)(string.Concat("-", ToStr(Invoke(c_1192, "toLowerCase")))));
+return ((V)(JsStrBuf.Begin().S("-").V(Invoke(c_1192, "toLowerCase")).End()));
 return default;
 }, 1, "", false)), "replace", NewRegExp(RX13, "^webkit-", ""), ((V)("-webkit-")));
 return default;
@@ -1636,7 +1636,7 @@ o_1200 = Arr();
 foreach (V _k1202 in ForInKeys(_self1193)) {
 k_1201 = _k1202;
 if (Truthy(((Invoke(Get(Get(G("Object"), "prototype"), "hasOwnProperty"), "call", _self1193, k_1201) is var _t1203 && !Truthy(_t1203) ? _t1203 : (!SEqS(GetK(_self1193, k_1201), "") ? V.True : V.False)) is var _t1204 && !Truthy(_t1204) ? _t1204 : (!GetK(_self1193, k_1201).IsNullish ? V.True : V.False)))) {
-Invoke(o_1200, "push", ((V)(string.Concat(ToStr(Call(kebab_14, V.Undef, k_1201)), ": ", ToStr(GetK(_self1193, k_1201)), ";"))));
+Invoke(o_1200, "push", ((V)(JsStrBuf.Begin().V(Call(kebab_14, V.Undef, k_1201)).S(": ").V(GetK(_self1193, k_1201)).S(";").End())));
 }
 }
 }
@@ -2063,15 +2063,15 @@ V el_1673 = default;
 el_1673 = _self1666;
 return New(G("Proxy"), NewObj(0).V, NewObj(3).Put("get", Fn((V _self1674, int _argc1675, V t_1681, V k_1682, V _a1679, V _a1680, V[] _rest1676) => {
 V v_1683 = default;
-v_1683 = Invoke(el_1673, "getAttribute", ((V)(string.Concat("data-", ToStr(Call(kebab_14, V.Undef, ((V)(ToStrS(k_1682)))))))));
+v_1683 = Invoke(el_1673, "getAttribute", ((V)(JsStrBuf.Begin().S("data-").V(Call(kebab_14, V.Undef, ((V)(ToStrS(k_1682))))).End())));
 return (SEq(v_1683, V.Null) ? V.Undef : v_1683);
 return default;
 }, 2, "get", false)).Put("set", Fn((V _self1684, int _argc1685, V t_1691, V k_1692, V v_1693, V _a1690, V[] _rest1686) => {
-Invoke(el_1673, "setAttribute", ((V)(string.Concat("data-", ToStr(Call(kebab_14, V.Undef, ((V)(ToStrS(k_1692)))))))), v_1693);
+Invoke(el_1673, "setAttribute", ((V)(JsStrBuf.Begin().S("data-").V(Call(kebab_14, V.Undef, ((V)(ToStrS(k_1692))))).End())), v_1693);
 return (true ? V.True : V.False);
 return default;
 }, 3, "set", false)).Put("deleteProperty", Fn((V _self1694, int _argc1695, V t_1701, V k_1702, V _a1699, V _a1700, V[] _rest1696) => {
-Invoke(el_1673, "removeAttribute", ((V)(string.Concat("data-", ToStr(Call(kebab_14, V.Undef, ((V)(ToStrS(k_1702)))))))));
+Invoke(el_1673, "removeAttribute", ((V)(JsStrBuf.Begin().S("data-").V(Call(kebab_14, V.Undef, ((V)(ToStrS(k_1702))))).End())));
 return (true ? V.True : V.False);
 return default;
 }, 2, "deleteProperty", false)).V);
@@ -2168,7 +2168,7 @@ return default;
 }, 1, "", false));
 Set(Get(Element_18, "prototype"), "toDataURL", Fn((V _self1830, int _argc1831, V _a1833, V _a1834, V _a1835, V _a1836, V[] _rest1832) => {
 V id_1837 = default;
-id_1837 = ((V)(string.Concat("shim-canvas:", ToStr(Get(_self1830, "__id")))));
+id_1837 = ((V)(JsStrBuf.Begin().S("shim-canvas:").V(Get(_self1830, "__id")).End()));
 SetK(CANVASES_60, id_1837, _self1830);
 return id_1837;
 return default;
