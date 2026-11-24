@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- "Heading home"'s night off Unity: Menu/HeadingNight.cs on the menu's house picture, drawn as MenuView.Heading.cs
+       shows it with every room lit, compared with the app's (capture.mjs). -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <Optimize>true</Optimize>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../unity/Assets/Scripts/Menu/HeadingNight.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
+    <Compile Include="../vector-test/ReferenceRaster.cs;../vector-test/Png.cs" />
+    <Compile Include="*.cs" />
+  </ItemGroup>
+</Project>

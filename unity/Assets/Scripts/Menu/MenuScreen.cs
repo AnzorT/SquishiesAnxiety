@@ -239,16 +239,35 @@ namespace SquishSquad.Menu
         // same document the app's WebView house uses; offline: kept on the device), their level, their creatures and their
         // coins (what the Catalog spends goes to the account as the app's bridge sends it: cribCoins with the difference)
         bool _houseOpening;
-        async void OpenHouse()
+        // (the house's save, loaded while "Heading home" shows: MenuView.Heading.cs; ShowHouse builds the house from it)
+        string _houseJson; bool _houseLoaded, _showWhenLoaded;
+        async System.Threading.Tasks.Task LoadHouse()
         {
-            if (_houseOpening || _game != null) return;
-            _houseOpening = true;
+            if (_houseOpening) return;
+            _houseOpening = true; _houseLoaded = false;
             var p = CharactersPageLink.Get();
             string json = null;
             try { json = p?.Fb != null && p.Uid != null ? await p.Fb.Data.LoadHouse(p.Uid) : PlayerPrefs.GetString(HouseKey, null); }
             catch (System.Exception) { json = null; }
             _houseOpening = false;
+            _houseJson = json; _houseLoaded = true;
+            if (this != null && _view != null) _view.HomeLoaded();
+            if (_showWhenLoaded && this != null) { _showWhenLoaded = false; ShowHouse(); }
+        }
+        void StartHouseLoad() { _ = LoadHouse(); }
+        // without the trip (the view couldn't walk): load, then open
+        async void OpenHouse()
+        {
+            if (_houseOpening || _game != null) return;
+            await LoadHouse();
+            ShowHouse();
+        }
+        void ShowHouse()
+        {
             if (_game != null || this == null) return;
+            if (!_houseLoaded) { if (_houseOpening) _showWhenLoaded = true; else OpenHouse(); return; }
+            var p = CharactersPageLink.Get();
+            string json = _houseJson; _houseLoaded = false; _houseJson = null;
             var prof = ProfileOrEmpty(p);
             int lv = prof.TryGetValue("level", out var lvO) ? System.Convert.ToInt32(lvO) : System.Math.Max(1, _playerLevel);
             bool online = p?.Fb != null && p.Uid != null;
@@ -572,7 +591,7 @@ namespace SquishSquad.Menu
             if (tap == "trophies") { OpenAchievements(); return; }
             if (tap == "settings") { OpenSettings(); return; }
             if (tap == "shop") { OpenShop("daily"); return; }
-            if (tap == "home") { if (!_view.GoHome(NowMs, OpenHouse)) OpenHouse(); return; }   // (the walk to the door and the flight in first: MenuView.Home.cs)
+            if (tap == "home") { if (!_view.GoHome(NowMs, ShowHouse, StartHouseLoad)) OpenHouse(); return; }   // (the walk, Heading home while the house loads, the flight in: MenuView.Home.cs)   // (the walk to the door and the flight in first: MenuView.Home.cs)
             Tapped?.Invoke(tap);
             if (Tapped == null) ShowToast(tap.ToUpperInvariant() + " isn't in the Unity version yet");
         }

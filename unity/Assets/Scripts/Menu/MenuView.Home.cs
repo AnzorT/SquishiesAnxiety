@@ -10,8 +10,9 @@
 // The door swings open as it nears (doorOpen: the door's group squeezed to 0.18 of its width about its left edge and
 // skewed -6°, the warm doorway light coming on behind it), drawn here over the house's picture from main-menu-scene.js's
 // own door (its colour by the house's tier) and shut again on the way back.
-// Not here yet: develop's "Heading home" screen between the walk and the flight (app/menu.js M.headingHome: night falls on the house, its rooms
-// light up as the house loads, the wooden bar and a tip): the flight follows the walk at once.
+// Between the walk and the flight: develop's "Heading home" (app/menu.js M.headingHome, MenuView.Heading.cs): night
+// falls on the house and its rooms light up while the house loads (GoHome's `load`, told done by HomeLoaded); the
+// flight starts once it has (and after 2 s at least).
 using System;
 using SquishSquad.Creatures;
 using SquishSquad.Vector;
@@ -33,11 +34,13 @@ namespace SquishSquad.Menu
             return 3 * (1 - t) * t * t + t * t * t;
         }
 
-        /// <summary>MY HOUSE: starts the walk to the door; `arrived` runs once the camera is through it (the house opens).</summary>
-        public bool GoHome(float nowMs, Action arrived)
+        /// <summary>MY HOUSE: starts the walk to the door; `load` runs as "Heading home" comes on (the house's loading:
+        /// HomeLoaded() once it's in), `arrived` once the camera is through the door (the house opens). Without `load`, the
+        /// flight follows the walk at once.</summary>
+        public bool GoHome(float nowMs, Action arrived, Action load = null)
         {
             if (Where != Place.Home) return false;
-            Where = Place.ToHouse; _homeT = nowMs; _onHome = arrived;
+            Where = Place.ToHouse; _homeT = nowMs; _onHome = arrived; _hhLoad = load; _hhLoaded = false; _hhT0 = -1; _zoomT0 = -1;
             Fade(0, nowMs);
             if (!(_idle is IHouseRig)) Clip("home-enter");   // (a live rig turns by its yaw, below)
             return true;
@@ -62,10 +65,19 @@ namespace SquishSquad.Menu
                 float wt = Mathf.Clamp01((t - TurnMs) / WalkMs);
                 bool walking = t > TurnMs && t < TurnMs + WalkMs;
                 Stage(EIO(wt), wt > 0.84f ? Mathf.Max(0, 1 - (wt - 0.84f) / 0.16f) : 1, walking ? t - TurnMs : -1);
-                Door(Mathf.Clamp01((wt - 0.35f) / 0.45f));
-                float zt = Mathf.Clamp01((t - TurnMs - WalkMs) / ZoomInMs);
+                if (_hhNight == null) Door(Mathf.Clamp01((wt - 0.35f) / 0.45f));   // (under the night: the night has it)
+                float zt;
+                if (_hhLoad != null)
+                {
+                    // Heading home, then the flight once the house is in
+                    if (t < TurnMs + WalkMs) { Zoom(1, 0); return; }
+                    if (_hhT0 < 0) StartHeading(ms);
+                    if (TickHeading(ms) && _zoomT0 < 0) _zoomT0 = ms;
+                    zt = _zoomT0 < 0 ? 0 : Mathf.Clamp01((ms - _zoomT0) / ZoomInMs);
+                }
+                else zt = Mathf.Clamp01((t - TurnMs - WalkMs) / ZoomInMs);
                 Zoom(1 + 5.2f * zt * zt * zt, zt > 0.45f ? Mathf.Min(1, (zt - 0.45f) / 0.5f) : 0);
-                if (zt >= 1) { Where = Place.House; var a = _onHome; _onHome = null; a?.Invoke(); }
+                if (zt >= 1) { if (_hhT0 >= 0) KillHeading(); Where = Place.House; var a = _onHome; _onHome = null; a?.Invoke(); }
                 return;
             }
             if (Where == Place.House) { Zoom(6.2f, 1); return; }
@@ -142,9 +154,18 @@ namespace SquishSquad.Menu
                 + "<path d=\"" + arch + "\" fill=\"#3a2418\"/><path d=\"" + arch + "\" fill=\"url(#mmDoorL)\" opacity=\"" + F(t) + "\"/>"
                 + "<g transform=\"translate(488 273.5) scale(" + F(1 - 0.82f * t) + " 1) skewY(" + F(-6 * t) + ") translate(-488 -273.5)\">"
                 + "<path d=\"" + arch + "\" fill=\"" + door + "\" stroke=\"" + OL + "\" stroke-width=\"1.1\"/><path d=\"M494 298 V262 M500 298 V256 M506 298 V262\" stroke=\"" + seam + "\" stroke-width=\"0.8\"/>"
-                + "<circle cx=\"500\" cy=\"263\" r=\"4.2\" fill=\"#fff4d0\" stroke=\"" + OL + "\" stroke-width=\"0.9\"/><circle cx=\"507\" cy=\"281\" r=\"1.6\" fill=\"#ffd66b\" stroke=\"#8a6a1a\" stroke-width=\"0.5\"/></g></svg>";
+                + "<circle cx=\"500\" cy=\"263\" r=\"4.2\" fill=\"#fff4d0\" stroke=\"" + OL + "\" stroke-width=\"0.9\"/><circle cx=\"507\" cy=\"281\" r=\"1.6\" fill=\"#ffd66b\" stroke=\"#8a6a1a\" stroke-width=\"0.5\"/></g>"
+                + DoorFront(OL) + "</svg>";
             using (var vr = new VectorRenderer()) vr.Render(SvgScene.Compile(SvgMarkup.Parse(svg), _doorRt.width, _doorRt.height, Affine.Identity, null), _doorRt);
         }
+
+        // what main-menu-scene.js draws after the door, over its foot: the two steps and the house's foundation strip
+        // (x 417, 166 wide, its joints every 14 from 425), clipped to the door's box
+        internal static string DoorFront(string OL) =>
+            "<rect x=\"478\" y=\"300\" width=\"44\" height=\"5\" rx=\"1\" fill=\"#b8ab98\" stroke=\"" + OL + "\" stroke-width=\"1\"/>"
+            + "<rect x=\"472\" y=\"304\" width=\"56\" height=\"5\" rx=\"1\" fill=\"#a89a86\" stroke=\"" + OL + "\" stroke-width=\"1\"/>"
+            + "<rect x=\"417\" y=\"293\" width=\"166\" height=\"8\" fill=\"#b8ab98\" stroke=\"" + OL + "\" stroke-width=\"1\"/>"
+            + "<path d=\"M481 293 V301 M495 293 V301 M509 293 V301\" stroke=\"#8a7c6a\" stroke-width=\"0.7\"/>";
 
         // the world scaled `k` about the door, the veil at `veil`
         void Zoom(float k, float veil)

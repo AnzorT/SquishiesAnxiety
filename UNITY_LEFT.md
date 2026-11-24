@@ -53,11 +53,16 @@ lists what isn't, so it can be picked up item by item with Claude Code.
 
 ## 3. House: "Heading home" and Renovate
 
-- **"Heading home":** the loading screen while the house opens (`webgame/app/menu.js`, from line ~290, REDESIGN_V9):
-  night falls on the house, its rooms light up as it loads, a wooden bar and a tip. Unity flies straight in after the
-  walk (`Menu/MenuView.Home.cs`).
-- **Renovate:** check against the app and finish what differs (`House/View/HouseEditView.cs`, see the house rows in
-  `UNITY_SYNC_DEVELOP.md` and `HOUSE_PORT_PLAN.md`).
+- **"Heading home":** ✅ done 2026-11-24. The loading screen while the house opens (`webgame/app/menu.js`
+  M.headingHome, REDESIGN_V9): night falls on the house, its rooms light up as it loads, the moon and stars, the
+  lettering and a tip (no bar since the user's ruling). Unity: `Menu/MenuView.Heading.cs` with the night made by
+  `Menu/HeadingNight.cs` (Unity-free); `MenuScreen` loads the house under it. Test: `tools/unity/heading-test`
+  (`capture.mjs` holds the app's night with every room lit; lv12: 1.04 %).
+- **Renovate:** checked 2026-11-24. Re-exporting its pieces from develop's build (`export-edit.mjs`) changes nothing but
+  the text pictures' anti-aliasing, and develop's house-page changes since the port (tray stills, yard toys out of the
+  tray, the veil) are in. What still differs is **signs**: the toolbar's "Aa" (writing on a sign: the page's sign
+  editor with its presets) only toasts in Unity, and a sign's own text isn't drawn (`RoomCompose`: HTML text,
+  `sh.texts`). Both need the house's runtime drawing (`HouseDraw.Eval`, see item 4's "Also").
 
 ## 4. Sort and Hop: animated creatures on the play screens
 
