@@ -15,7 +15,7 @@ namespace SquishSquad.Menu
         object _profileSeen;
         readonly float _openedReal;
         public bool Closed { get; private set; }
-        public bool Covers => Time.unscaledTime * 1000 - _openedReal > PageMotion.OpenMs + 50;
+        public bool Covers => true;   // (develop: whole from its first frame, the menu under it not drawn: PageMotion.Layer)
 
         /// <summary>Opens the page (null: not exported: tools/unity/export-pages.mjs).</summary>
         public static CharactersPage Open(Transform parent, float w, float h, float nowMs, int order)

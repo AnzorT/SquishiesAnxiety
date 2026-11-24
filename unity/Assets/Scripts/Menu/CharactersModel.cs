@@ -14,8 +14,9 @@
 // ends jumping a group (380 ms ease-in-out). A tap on a card picks it; CHOOSE puts it in front of the house (the app's
 // toast at the bottom right for 2.4 s).
 // The loading screen over it while it opens: five of the player's creatures dealt from the deck (one every 200 ms
-// from 160 ms, each turned over 300 ms after it lands), a bar filling, a tip changing every 2.8 s; once the page is
-// ready (Unity: at once) and 1.9 s have passed, the cards fly up and fade, then the screen fades.
+// from 160 ms, each turned over 300 ms after it lands), a tip changing every 2.8 s (no progress bar since 2026-11-16, the
+// user: "remove the progress bars"); once the page is ready (Unity: at once) and 1.9 s have passed, the cards fly up
+// and fade, then the screen fades.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -98,7 +99,7 @@ namespace SquishSquad.Menu
             if (In(10, 330, 34, 34, x, y)) return HitKind.Prev;
             if (In(G.PgW - 10 - 34, 330, 34, 34, x, y)) return HitKind.Next;
             var act = ActPic();
-            if (act != null && PageGeom.In(Arr(act.box), x, y)) return HitKind.Act;
+            if (act != null && PageGeom.In(new double[] { act.box[0] + Mid, act.box[1], act.box[2], act.box[3] }, x, y)) return HitKind.Act;
             if (y >= 284)
                 foreach (var c in _cards)
                 {
@@ -157,7 +158,7 @@ namespace SquishSquad.Menu
         const double MIN = 1900;
         readonly List<string> _deal;
         /// <summary>When the loading screen's cards fly off (null: from its own rule: the page ready at once, then the
-        /// first frame 1.9 s in with the bar full). The tests give the app's own moment.</summary>
+        /// first frame 1.9 s in). The tests give the app's own moment.</summary>
         public double? AwayAt;
         double _lastNow;
 
@@ -173,23 +174,13 @@ namespace SquishSquad.Menu
             return own.Count > 15 ? own.GetRange(0, 15) : own;
         }
 
-        // the bar: p0 eased each frame toward its goal (0.14 of the way once ready; ready at the first frame)
-        static double Progress(double t)
-        {
-            if (t <= 0) return 0;
-            int frames = (int)Math.Floor(t / (1000 / 60.0)) + 1;   // (its first step at the first frame)
-            double p = 1 - Math.Pow(0.86, frames);
-            return 1 - p < 0.005 ? 1 : p;
-        }
-
         double Away()
         {
             if (AwayAt.HasValue) return AwayAt.Value;
-            // the first frame at or after MIN once the bar is full (it is long before)
+            // the first frame at or after MIN from the deal's start (develop: sinceShown >= MIN, shownAt the steady moment;
+            // the page is ready at once)
             double fr = 1000 / 60.0;
-            double t = Math.Ceiling(MIN / fr) * fr;
-            while (Progress(t) < 1) t += fr;
-            return t;
+            return Math.Ceiling((DealDelay + MIN) / fr) * fr;
         }
 
         public bool Loading(double now) => now - OpenedAt < Away() + 900;
@@ -207,16 +198,17 @@ namespace SquishSquad.Menu
             double t = now - OpenedAt, te = now - EndlessEpoch;
             d.Add(g.Screen("bg", L.bg));
             d.Add(g.At("head", L.head));
-            // the rays (sqSpin 60 s linear) about their middle
-            d.Add(g.Pic("rays", L.rays, 426 - 410, 170 - 410, 1, PageGeom.About(410, 410, Affine.Rotate(360 * Frac(te / 60000)))));
+            // the rays (sqSpin 60 s linear) about their middle, at the page's middle (left: 50%, since 2026-11-20)
+            double rw = L.rays.box[2], rh = L.rays.box[3], sh = Mid;
+            d.Add(g.Pic("rays", L.rays, G.PgW / 2 - rw / 2, 170 - rh / 2, 1, PageGeom.About(rw / 2, rh / 2, Affine.Rotate(360 * Frac(te / 60000)))));
             // the platform
-            d.Add(g.At("side", L.side));
-            d.Add(g.At("glow", L.glow));
+            d.Add(Shifted("side", L.side, sh));
+            d.Add(Shifted("glow", L.glow, sh));
             double deg = 360 * Frac(te / 12000) % 30;
             var stripe = L.stripes[(int)Math.Round(deg / 0.5) % L.stripes.Length];
-            d.Add(g.At("stripes", stripe));
-            d.Add(g.At("centre", L.centre));
-            double rx = L.ring[0], ry = L.ring[1];
+            d.Add(Shifted("stripes", stripe, sh));
+            d.Add(Shifted("centre", L.centre, sh));
+            double rx = L.ring[0] + sh, ry = L.ring[1];
             for (int i = 0; i < 16; i++)
             {
                 double p = Frac((te + i * 750) / 12000);
@@ -238,7 +230,7 @@ namespace SquishSquad.Menu
                     op = k;   // (opacity 0 -> 1 along the same curve, clamped)
                     op = Math.Max(0, Math.Min(1, op));
                 }
-                d.Add(g.Pic("rig", Owns(Pick) ? st.still : st.sil, L.rig[0], L.rig[1], op, css));
+                d.Add(g.Pic("rig", Owns(Pick) ? st.still : st.sil, L.rig[0] + sh, L.rig[1], op, css));
             }
             // its tags and name plate
             var c = _byKey.TryGetValue(Pick ?? "", out var cc) ? cc : null;
@@ -254,7 +246,7 @@ namespace SquishSquad.Menu
                 if (stg != null) d.Add(g.Pic("set", stg, x + w1 + 12 + w2 + 12, stg.box[1]));
             }
             var act = ActPic();
-            if (act != null) d.Add(g.At("act", act));
+            if (act != null) d.Add(Shifted("act", act, sh));
 
             // the row
             int from = d.Count;
@@ -313,8 +305,10 @@ namespace SquishSquad.Menu
 
         /// <summary>The row's left edge for a sticky label (pu, from the row's scroll position): measured from the app.</summary>
         public double StickyEdge = 54;
-        /// <summary>The loading screen deals from its first frame (requestAnimationFrame after it's made).</summary>
-        public double DealDelay = 16;
+        /// <summary>When the loading screen starts dealing: develop (PERF 2026-11-20) deals once frames reach the screen at a
+        /// normal pace (SquishPerf.steady: three frames in a row under 34 ms after its first, at 60 Hz the fourth frame,
+        /// 64 ms after it's made); it was its first frame (16 ms).</summary>
+        public double DealDelay = 64;
 
         double PressScale(string key, double now)
         {
@@ -322,6 +316,13 @@ namespace SquishSquad.Menu
             if (key == _released && now - _releaseAt < 150) return 0.95 + 0.05 * Ease((now - _releaseAt) / 150);
             return 1;
         }
+
+        /// <summary>The spotlight (rays, platform, creature, CHOOSE) stands at the page's middle (webgame/app/menu.js .sq-c2
+        /// .rig left: calc(50% - 75px) and the others, since 2026-11-20: the user, "the character in the spotlight
+        /// wouldn't be in the middle of the screen"): its pieces were cut on the reference page, so they move by the
+        /// difference between this page's middle and the reference's.</summary>
+        double Mid => L.reference != null && L.reference.pgW > 0 ? G.PgW / 2 - L.reference.pgW / 2 : 0;
+        PageDraw Shifted(string key, PagePic p, double dx) => G.Pic(key, p, p.box[0] + dx, p.box[1]);
 
         PagePic ActPic() => Pick == null ? null : !Owns(Pick) ? L.shop : Pick != InUse ? L.choose : null;
 
@@ -418,15 +419,8 @@ namespace SquishSquad.Menu
                 d.Add(g.Pic("gs-card" + i, pic, cw[0] + dx, cw[1], op, css * Affine.Translate(pic.box[0] - cw[0], pic.box[1] - cw[1])));
             }
             t += DealDelay; away += DealDelay;
-            // the band and the bar
+            // the band (only the tip in it)
             g.Slice(d, "gs-band", gs.band, 0, gs.band.box[1], G.PgW, 0, 0);
-            d.Add(g.Pic("gs-bar", gs.bar, gs.bar.box[0] + dx, gs.bar.box[1]));
-            double p0 = Progress(t);
-            double fw = Math.Min(p0 * 440, 434);
-            if (fw > 0) g.Slice(d, "gs-fill", gs.fill, gs.fill.box[0] + dx, gs.fill.box[1], fw, Math.Min(8, fw / 2), Math.Min(8, fw / 2));
-            d.Add(g.Pic("gs-knob", gs.knob, gs.knob.box[0] + dx + Math.Round(p0 * 1000) / 10 * 4.4, gs.knob.box[1]));
-            int pc = (int)Math.Floor(p0 * 100 + 0.5);
-            if (pc >= 0 && pc < gs.pcs.Length) { var pp = gs.pcs[pc]; d.Add(g.Pic("gs-pc", pp, pp.box[0] + dx, pp.box[1])); }
             // the tip: another every 2.8 s (out .25s, swapped 260 ms later, back in .25s)
             int tipN = gs.tips.Length;
             if (tipN > 0)

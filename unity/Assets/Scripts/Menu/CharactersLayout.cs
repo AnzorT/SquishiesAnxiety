@@ -44,9 +44,9 @@ namespace SquishSquad.Menu
         [Serializable]
         public class Gs
         {
-            public PagePic bg, rays, title, bk, band, bar, fill, knob;
-            public float[] table, deck, pcBox, cw;
-            public PagePic[] backs, pcs, counts;
+            public PagePic bg, rays, title, bk, band;
+            public float[] table, deck, cw;
+            public PagePic[] backs, counts;
             public Tip[] tips;
             public GsCard[] cards;
             public string[] tipsText;

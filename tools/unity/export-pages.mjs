@@ -98,6 +98,19 @@ async function openApp(browser, state) {
   page.on('pageerror', e => errs.push(e.message));
   await page.route(/^https?:/, r => { errs.push('internet: ' + r.request().url()); r.abort(); });
   await page.addInitScript(SEED);
+  // The page's loaders keep time with their Web Animations (develop, PERF 2026-11-20: menu.js gatherSquad's clock() is
+  // document.timeline.currentTime - its first animation's startTime). The animations are held still here (CDP playback
+  // rate 0) and seeked by hand, so that clock would stand still: it reads the virtual clock instead (performance.now,
+  // which page.clock moves), each animation's start being the virtual moment it was made.
+  await page.addInitScript(() => {
+    try { Object.defineProperty(document.timeline, 'currentTime', { configurable: true, get: () => performance.now() }); } catch (e) { /* kept */ }
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (k, o) {
+      const a = animate.call(this, k, o), st = performance.now();
+      try { Object.defineProperty(a, 'startTime', { configurable: true, get: () => st, set() {} }); } catch (e) { /* kept */ }
+      return a;
+    };
+  });
   // inside the app: messages go to "the app" (kept in __sent), its player seeded into the engines' saves
   await page.addInitScript(st => { window.__squishOutbox = []; window.ReactNativeWebView = { postMessage(m) { (window.__sent = window.__sent || []).push(JSON.parse(m)); } }; window.__SQUISH_INIT__ = { state: st }; }, state);
   await page.clock.install({ time: T0 });
@@ -538,7 +551,12 @@ async function characters() {
   await advance(page, 4000, 50); await page.waitForTimeout(1500);
   await page.evaluate(() => document.querySelector('.mm-page2 [data-x]').click());
   const open = async () => {
-    await page.evaluate(() => { window.__born = new Map(); window.__now = 0; window.__awayAt = null; window.SquishMenu.characters(window.SquishMenu._x); });
+    // (the page refuses to open while the last one is still closing, x.busy: wait for that, off the virtual time base)
+    for (let i = 0; i < 100; i++) {
+      if (await page.evaluate(() => { window.__born = new Map(); window.__now = 0; window.__awayAt = null; return !!window.SquishMenu.characters(window.SquishMenu._x); })) break;
+      if (i === 99) throw new Error('the Characters page would not open');
+      await page.clock.runFor(50); await page.waitForTimeout(20);
+    }
     await note(page);
   };
   const close = () => page.evaluate(() => { const b = document.querySelector('.mm-page2 [data-x]'); if (b) b.click(); });
@@ -551,7 +569,7 @@ async function characters() {
     const step = 4;
     for (let t = 0; t < ms; t += step) {
       await advance(page, Math.min(step, ms - t), step);
-      await page.evaluate(() => { const g = document.querySelector('.sq-gs'); if (g && g.classList.contains('away') && window.__awayAt == null) window.__awayAt = window.__now; });
+      await page.evaluate(() => { const g = document.querySelector('.sq-gs'); if (g && (g.classList.contains('away') || g.classList.contains('sq-leaving')) && window.__awayAt == null) window.__awayAt = window.__now; });
     }
     return page.evaluate(() => window.__awayAt);
   };
@@ -716,20 +734,15 @@ async function characters() {
     P.gs.rays = await cutWhole(page, OUT, 'gs/rays', '.sq-gs .rays', '.sq-gs .rays{transform:none!important;}');
     P.gs.title = await cut(page, OUT, 'gs/title', { q: '.sq-gs .ttl svg' });
     P.gs.table = await boxOf(page, '.sq-gs .table');
+    // (develop: the deal is Web Animations, so the frozen values sit on the deck, its backs and the cards themselves,
+    // inline and !important: they come off first, or they'd win over the cuts' own)
+    await page.evaluate(() => document.querySelectorAll('.sq-gs .deck, .sq-gs .deck .back, .sq-gs .cw, .sq-gs .fl').forEach(e => { e.style.removeProperty('opacity'); e.style.removeProperty('transform'); }));
     P.gs.backs = [];
-    for (let i = 0; i < 3; i++) P.gs.backs.push(await cut(page, OUT, `gs/deck-${i}`, { q: '.sq-gs .deck .back', i, css: '.sq-gs .deck{opacity:1!important;transform:none!important;}.sq-gs .deck .back{visibility:visible!important;}' }));
+    for (let i = 0; i < 3; i++) P.gs.backs.push(await cut(page, OUT, `gs/deck-${i}`, { q: '.sq-gs .deck .back', i, css: '.sq-gs .deck{opacity:1!important;transform:none!important;}.sq-gs .deck .back{visibility:visible!important;opacity:1!important;}' }));
     P.gs.deck = await boxOf(page, '.sq-gs .deck');
     P.gs.bk = await cut(page, OUT, 'gs/back', { q: '.sq-gs .cw .bk', css: '.sq-gs .cw{transform:none!important;opacity:1!important;}.sq-gs .fl{transform:none!important;}.sq-gs .bk{transform:none!important;}' });
     P.gs.band = await cut(page, OUT, 'gs/band', { q: '.sq-gs .band', hide: ['*'] });
-    P.gs.bar = await cut(page, OUT, 'gs/bar', { q: '.sq-gs .bar', hide: ['*'] });
-    P.gs.fill = await cut(page, OUT, 'gs/bar-fill', { q: '.sq-gs .bar i', css: '.sq-gs .bar i{width:calc(100% - 6px)!important;}' });
-    P.gs.knob = await cut(page, OUT, 'gs/knob', { q: '.sq-gs .bar b', css: '.sq-gs .bar b{left:0!important;}' });
-    P.gs.pcBox = await boxOf(page, '.sq-gs .pc');
-    P.gs.pcs = [];
-    for (let n = 0; n <= 100; n++) {
-      await page.evaluate(n => { document.querySelector('.sq-gs .pc').textContent = n + '%'; }, n);
-      P.gs.pcs.push(await cut(page, OUT, `gs/pc/${n}`, { q: '.sq-gs .pc' }));
-    }
+    // (no progress bar since 2026-11-16, the user: "remove the progress bars": the band holds only the tip)
     P.gs.tips = [];
     const tips = await page.evaluate(() => ['Rarities: Common, Rare, Epic, Legendary, Rainbow', 'Hold your creature to squeeze it, drag to spin it', 'Tap a card to see a creature, tap USE to put it in front of your house', 'Collect a whole group to earn its Rainbow chest']);
     for (let i = 0; i < tips.length; i++) {
@@ -743,6 +756,15 @@ async function characters() {
     }
     // each creature's card as the loading screen deals it (92 wide, its drop shadow), upright and face up
     P.gs.cw = await boxOf(page, '.sq-gs .cw');
+    // (develop, PERF 2026-11-20: the page's row, where each card is copied from, is built under the loader once its first
+    // deal has played, ~1.7 s in: on to then, before the loader leaves, ~1.95 s)
+    await uncut(page); await unfreeze(page);
+    for (let i = 0; i < 200 && !(await page.evaluate(() => !!document.querySelector('.sq-c2 .row [data-id]') && !!document.querySelector('.sq-gs .cw .fc'))); i++) {
+      await advance(page, 16); await page.waitForTimeout(20);
+    }
+    await freeze(page, {});
+    // (the frozen deal's values off the cards again: each card is cut upright at its own box, not where it was dealt)
+    await page.evaluate(() => document.querySelectorAll('.sq-gs .cw, .sq-gs .fl').forEach(e => { e.style.removeProperty('opacity'); e.style.removeProperty('transform'); }));
     P.gs.cards = [];
     const deal = '.sq-gs .cw{transform:none!important;opacity:1!important;}.sq-gs .fl{transform:none!important;}';
     for (const c of list) {

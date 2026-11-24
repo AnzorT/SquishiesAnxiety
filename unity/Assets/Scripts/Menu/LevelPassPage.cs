@@ -26,7 +26,7 @@ namespace SquishSquad.Menu
         readonly CharactersPageView _view;
         object _profileSeen;
         public bool Closed { get; private set; }
-        public bool Covers => _m != null && Time.unscaledTime * 1000 - _openedReal > PageMotion.OpenMs + 50;
+        public bool Covers => _m != null;   // (develop: whole from its first frame, the menu under it not drawn: PageMotion.Layer)
         readonly float _openedReal;
 
         public static LevelPassLayout Layout => _layout ??= LoadJson<LevelPassLayout>(LevelPassLayout.Root + "levelpass");

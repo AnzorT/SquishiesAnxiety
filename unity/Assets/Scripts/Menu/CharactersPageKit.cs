@@ -175,10 +175,12 @@ namespace SquishSquad.Menu
             return (t, 1.06 + (1 - 1.06) * t);
         }
 
-        /// <summary>The whole page as a layer, moved and faded as it opens.</summary>
+        /// <summary>The whole page as a layer. develop (PERF 2026-11-20): the Characters page (.sq-chars) and the Level
+        /// Pass (.sq-pass) open with `animation: none`, whole from their first frame over a menu no longer drawn (on the
+        /// phone the fade froze part-way, a see-through ghost of the loader over the menu): no mmPage fade any more.</summary>
         public static PageDraw Layer(PageGeom g, List<PageDraw> page, double msSinceOpen)
         {
-            var (o, s) = Open(msSinceOpen);
+            double o = 1, s = 1;
             return new PageDraw
             {
                 Key = "page", Layer = page, W = (int)Math.Ceiling(g.W), H = (int)Math.Ceiling(g.H), Opacity = o,
