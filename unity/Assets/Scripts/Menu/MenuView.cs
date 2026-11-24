@@ -31,7 +31,7 @@ namespace SquishSquad.Menu
         readonly List<BirdView> _birds = new List<BirdView>();
         MenuLayout.Weather _weather;
         float _w, _h;
-        readonly string _creatureKey;
+        string _creatureKey;   // (Mittens when the chosen one can't be animated yet: Build)
 
         // the current screen's geometry
         float _k, _ox, _oy;          // scene: px per viewBox unit and where viewBox (0, 0) lands
@@ -102,6 +102,14 @@ namespace SquishSquad.Menu
             // 2. the creature and its name plate (they stand in the scene), 3. the weather, 4. the HUD
             // the creature: live or recorded when it can be (else the exported still, Mittens'); its name plate with it
             var rig = _creatureKey != null ? Rigs.For(_creatureKey) : null;
+            // one the menu can't animate yet (no recording, the live rig off) is Mittens, moving: his recording, plate and
+            // clips, so PLAY's walk and the intro (which hides him, drops the box, pops him out) have a creature to move,
+            // not a still of him that stays put
+            if (rig == null && _creatureKey != null && _creatureKey != "mittens")
+            {
+                var mittens = Rigs.For("mittens");
+                if (mittens != null) { rig = mittens; _creatureKey = "mittens"; }
+            }
             string plateKey = rig != null ? _creatureKey : "mittens";
             int order = WorldOrder;
             foreach (var p in _layout.hud) if (p.world) _pieces.Add(new PieceView(this, p.id == "name" ? PlateFor(p, plateKey) : p, order++));
