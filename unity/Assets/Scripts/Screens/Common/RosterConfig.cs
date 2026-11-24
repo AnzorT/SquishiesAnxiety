@@ -11,7 +11,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using SquishSquad.Backend;
+#if UNITY_5_3_OR_NEWER
 using UnityEngine;
+#endif
 
 namespace SquishSquad.Screens
 {
@@ -51,13 +53,30 @@ namespace SquishSquad.Screens
             return c.Set != "heroes" && c.Set != "elemental" && (pass || !c.Pass) && ShopData.IsOut(c, Hidden);
         }
 
+#if UNITY_5_3_OR_NEWER
+        // the games that build outside Unity too (tools/unity's tests, without the Shop's data) ask through hooks
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void HookGames()
+        {
+            Games.Sort.SortLevel.IdIsOut = IdOut;
+            Games.Sort.SortDef.KeyIsOut = KeyOut;
+            Games.Stack.StackGame.InGames = k => InGames(k);
+        }
+#endif
+
         /// <summary>Reads config/roster once (signed in) and applies it; a failure leaves the defaults.</summary>
         public static async Task Load(FirebaseClient fb)
         {
             if (fb == null || _loading) return;
             _loading = true;
             try { Set(await fb.Data.ReadConfig("roster")); }
-            catch (Exception e) { Debug.LogWarning("[RosterConfig] " + e.Message); _loading = false; }
+            catch (Exception e)
+            {
+#if UNITY_5_3_OR_NEWER
+                Debug.LogWarning("[RosterConfig] " + e.Message);
+#endif
+                _loading = false;
+            }
         }
     }
 }

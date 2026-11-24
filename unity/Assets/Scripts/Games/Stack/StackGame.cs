@@ -901,11 +901,13 @@ namespace SquishSquad.Games.Stack
         }
 
         // the squishies Stack may use (src/stack/roster.js castOf): out (config/roster), never the Masked or Elemental
-        // Heroes, no season-pass creature (all of them, should that leave too few for a level)
+        // Heroes, no season-pass creature (all of them, should that leave too few for a level). InGames: set by
+        // Screens/RosterConfig in Unity; null (tools/unity's tests): every one
+        public static Func<string, bool> InGames;
         List<string> CastKeys(int atLeast = 3)
         {
             var keys = new List<string>();
-            foreach (var k in _layout.art.Keys) if (SquishSquad.Screens.RosterConfig.InGames(k)) keys.Add(k);
+            foreach (var k in _layout.art.Keys) if (InGames == null || InGames(k)) keys.Add(k);
             return keys.Count >= atLeast ? keys : new List<string>(_layout.art.Keys);
         }
 

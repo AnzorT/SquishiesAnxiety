@@ -96,11 +96,14 @@ namespace SquishSquad.Games.Sort
         /// <summary>Tests: the board for a spec instead of a fresh random deal.</summary>
         public Func<LevelSpec, BoardData> MakeBoardHook;
 
-        // (src/sort/themes.js poolOf: only the squishies that are out, config/roster: Screens/RosterConfig; every one,
-        // should none be)
+        // (src/sort/themes.js poolOf: only the squishies that are out, config/roster; every one, should none be)
+        /// <summary>Whether the creature with this id is out (Screens/RosterConfig sets it in Unity; null, in tools/unity's
+        /// tests: every one).</summary>
+        public static Func<string, bool> IdIsOut;
         static List<PoolEntry> OutPool(List<PoolEntry> pool)
         {
-            var l = pool.FindAll(p => SquishSquad.Screens.RosterConfig.IdOut(p.Id));
+            if (IdIsOut == null) return pool;
+            var l = pool.FindAll(p => IdIsOut(p.Id));
             return l.Count > 0 ? l : pool;
         }
         public Func<double> Random = new System.Random().NextDouble;

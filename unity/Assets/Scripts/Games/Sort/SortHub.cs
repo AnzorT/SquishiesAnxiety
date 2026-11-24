@@ -36,11 +36,15 @@ namespace SquishSquad.Games.Sort
             SortSave.Record(new Dictionary<string, object> { { "sort.seen", true } });   // SortScreen.js
         }
 
+        /// <summary>Whether the creature with this key is out (config/roster: Screens/RosterConfig sets it in Unity; null,
+        /// in tools/unity's tests: every one).</summary>
+        public static Func<string, bool> KeyIsOut;
+
         // (src/sort/themes.js poolOf: only the ones that are out, config/roster; the cut-outs are named by key)
         public static List<string> Pool(string theme)
         {
             var files = theme == "cupboard" ? HubsData.Current.sortPools.cupboard : HubsData.Current.sortPools.fridge;
-            var outs = files == null ? null : System.Array.FindAll(files, f => SquishSquad.Screens.RosterConfig.KeyOut(f));
+            var outs = files == null || KeyIsOut == null ? null : System.Array.FindAll(files, f => KeyIsOut(f));
             return HubsData.Arts(outs != null && outs.Length > 0 ? outs : files);
         }
         static string ShelvesOf(int n) => $"{n} {(n > 1 ? "SHELVES" : "SHELF")}";
