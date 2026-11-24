@@ -24,7 +24,7 @@ using SquishSquad.Vector;
 
 namespace SquishSquad.Games.Hop
 {
-    public sealed class HopLevel
+    public sealed partial class HopLevel
     {
         // ---- setup --------------------------------------------------------------------------------------------------
         public Action OnExit;
@@ -40,11 +40,12 @@ namespace SquishSquad.Games.Hop
         /// view's background) in its box snapped to the pixel grid. 0: as laid out.</summary>
         public static float PixelSnap;
         public const float LeftW = 250, RightW = 150;
-        public float AreaW => W - LeftW - RightW;
+        public float AreaW => W - LeftW - (_blitz ? BlitzRightW : RightW);
         readonly Ticker _tk;
         readonly IList<HopSquishy> _cast;
         readonly List<HopLayer> _layers = new List<HopLayer>();
-        public IReadOnlyList<HopLayer> Layers => _layers;
+        /// <summary>What's on screen (Blitz: the board's area left out while paused, and during the countdown until GO).</summary>
+        public IReadOnlyList<HopLayer> Layers => BoardHidden ? _layers.FindAll(l => l.Order < O_RUG || l.Order >= O_CHIPS + 50) : _layers;
 
         const double PLAYER_W = 0.86, FRIEND_W = 0.72;
         static readonly Dictionary<string, string> WHY = new Dictionary<string, string>
@@ -56,9 +57,11 @@ namespace SquishSquad.Games.Hop
             ["locked"] = "Pick up every friend first. Then the ★ opens!",
         };
 
-        public HopLevel(float screenW, float screenH, int startLv, IList<HopSquishy> cast, IDictionary<string, object> profile, Ticker ticker)
+        public HopLevel(float screenW, float screenH, int startLv, IList<HopSquishy> cast, IDictionary<string, object> profile, Ticker ticker, bool blitz = false, Func<int, int> seedOf = null)
         {
             W = screenW; H = screenH;
+            _blitz = blitz;
+            if (seedOf != null) SeedOf = seedOf;
             _tk = ticker;
             Ticker.Default = ticker;
             _cast = cast;
@@ -67,6 +70,7 @@ namespace SquishSquad.Games.Hop
             _lv = Levels.ClampLv(startLv);
             _hopper = HopRoster.HopperOf(_cast, Profile);
             _player = new Pose();
+            if (_blitz) BlitzInit();
             BuildFixed();
             BuildLevel();
             NewGo();
@@ -153,6 +157,8 @@ namespace SquishSquad.Games.Hop
             public int Shown;
             public int[] Life;
             public int TipT = -1;
+            // okAt[k]: whether a full clear was still possible after k hops (Blitz's save goes back to the last one that was)
+            public List<bool> OkAt = new List<bool> { true };
         }
         readonly GState G = new GState();
 
@@ -163,7 +169,7 @@ namespace SquishSquad.Games.Hop
         string _tip;
         bool _stuck, _paused, _hintAsk;
         HopCards.Result _result;
-        bool Blocked => _paused || _hintAsk || _result != null || _stuck;
+        bool Blocked => _paused || _hintAsk || _result != null || _stuck || _blitzCard != null;
         public string Phase => _phase;
 
         void Sync()
@@ -326,8 +332,13 @@ namespace SquishSquad.Games.Hop
                     if ((nxt.Got & _board.Fbit[c]) != 0 && (prev.Got & _board.Fbit[c]) == 0) Collect(c);
                 if (nxt.Done) { Win(); return; }
                 Check();
+                SetOkAt(G.Moves.Count, G.Feasible);
                 Sync();
-                if (Engine.Moves(_board, G.St).Count == 0) { GoStuck(); return; }
+                bool stuckNow = Engine.Moves(_board, G.St).Count == 0;
+                // Blitz: a hop that leaves no full clear is the mistake that stops the run (or getting stuck, if the solver
+                // gave up)
+                if (_blitz && (!G.Feasible || stuckNow)) { BlitzMistake(G.Feasible ? "stuck" : "mistake"); return; }
+                if (stuckNow) { GoStuck(); return; }
                 G.Busy = false;
                 Drain();
             }
@@ -549,7 +560,9 @@ namespace SquishSquad.Games.Hop
             G.Over = true;
             G.Won = true;
             G.Busy = true;
+            if (_blitz) _clk.Pause();
             _phase = "won";
+            _warn = false;
             Sync();
             var q = BoardGeometry.StandOn(B, _board.Goal);
             Snd.Play("st_land");
@@ -558,14 +571,15 @@ namespace SquishSquad.Games.Hop
             Later(160, () =>
             {
                 Snd.Play("sd_solve");
-                Snd.Play("sd_confetti");
+                if (!_blitz) Snd.Play("sd_confetti");
                 Snd.Win();
-                Spray("confetti", q.X, q.Y - B.T * 0.6, 1);
+                if (!_blitz) Spray("confetti", q.X, q.Y - B.T * 0.6, 1);
                 // two happy hops on the ★
                 _player.Hp.SetValue(0);
                 _player.LiftH.SetValue(B.T * 0.55);
                 Animated.Sequence(Timing(_player.Hp, 1, 340, Easing.Linear), Animated.Timing(_player.Hp, new TimingConfig { ToValue = 0, Duration = 0, UseNativeDriver = true }), Timing(_player.Hp, 1, 340, Easing.Linear)).Start();
             });
+            if (_blitz) { BlitzCleared(); return; }
             int left = Engine.LeftOf(_board, G.St.Life);
             var outc = Levels.AfterLevel(Profile, _spec, new HopResult { Takebacks = G.Takebacks, Hinted = G.Hinted });
             HopSave.Paid(outc, Profile);   // (signed in: saveHop)
@@ -626,6 +640,7 @@ namespace SquishSquad.Games.Hop
             G.St = Engine.NewState(_board);
             G.Hist = new List<HopState>();
             G.Moves = new List<int>();
+            G.OkAt = new List<bool> { true };
             if (forget) { G.Hinted = false; G.Takebacks = 0; }
             G.Over = false;
             G.Won = false;
@@ -642,6 +657,34 @@ namespace SquishSquad.Games.Hop
             SetHintAsk(false);
             SetGlow(-1);
             _tip = null;
+            // everything hidden, ready to come in
+            foreach (int i in _cells)
+            {
+                _cellA[i].A0.SetValue(0);
+                _cellA[i].A1.SetValue(0);
+                _bubbleA[i]?.SetValue(0);
+            }
+            _starPop.SetValue(0);
+            _starGone.SetValue(0);
+            _player.O.SetValue(0);
+            foreach (var a in _friendA) a.O.SetValue(0);
+            if (_blitz) { BlitzGo(); _hudKey = null; return; }
+            Enter();
+            _phase = "play";
+            if (forget)
+            {
+                Say($"LEVEL {_spec.Lv}", chips: new[] { Levels.TIER_NAMES[_spec.Tier], _room.Name.ToUpperInvariant() }, hold: 800);
+                var rec = Levels.Record(Profile);
+                bool seen = rec.Best != null && rec.Best.ContainsKey(Js.KeyOf(_spec.Lv)) && Js.Truthy(rec.Best[Js.KeyOf(_spec.Lv)]);
+                var news = _spec.News != null && !seen && Levels.TWISTS.TryGetValue(_spec.News, out var tw) ? tw : null;
+                if (news != null) Later(1500, () => { Snd.Play("st_news"); Say(news.Text, small: true, sub: news.Sub, hold: 1700, ink: "#0c5a9c"); });
+            }
+            _hudKey = null;
+        }
+
+        // the board fluffs in, back to front; the hopper drops in, the friends pop up
+        void Enter()
+        {
             // the board fluffs in, back to front
             foreach (int i in _cells)
             {
@@ -658,8 +701,6 @@ namespace SquishSquad.Games.Hop
                     Timing(bub, 1, 260, Easing.Out(Easing.Quad), 360).Start();
                 }
             }
-            _starPop.SetValue(0);
-            _starGone.SetValue(0);
             // the hopper drops in, the friends pop up
             var p = PoseOn(_board.Start, _pw, _ph, _board.Life[_board.Start]);
             _playerZ = ZOf(_board.Start, 2);
@@ -685,16 +726,6 @@ namespace SquishSquad.Games.Hop
                 _slotPop[k].SetValue(1);
             }
             Snd.Play("sd_boardIn");
-            _phase = "play";
-            if (forget)
-            {
-                Say($"LEVEL {_spec.Lv}", chips: new[] { Levels.TIER_NAMES[_spec.Tier], _room.Name.ToUpperInvariant() }, hold: 800);
-                var rec = Levels.Record(Profile);
-                bool seen = rec.Best != null && rec.Best.ContainsKey(Js.KeyOf(_spec.Lv)) && Js.Truthy(rec.Best[Js.KeyOf(_spec.Lv)]);
-                var news = _spec.News != null && !seen && Levels.TWISTS.TryGetValue(_spec.News, out var tw) ? tw : null;
-                if (news != null) Later(1500, () => { Snd.Play("st_news"); Say(news.Text, small: true, sub: news.Sub, hold: 1700, ink: "#0c5a9c"); });
-            }
-            _hudKey = null;
         }
 
         // ---- moving on, pausing and leaving ------------------------------------------------------------------------------
@@ -720,11 +751,24 @@ namespace SquishSquad.Games.Hop
         void Pause()
         {
             if (Blocked || _phase != "play") return;
+            if (_blitz)
+            {
+                _clk.Pause();
+                Snd.Play("sd_pause");
+            }
             SetPaused(true);
+        }
+
+        void Resume()
+        {
+            SetPaused(false);
+            if (_blitz && _phase == "play") _clk.Resume();
         }
 
         void Leave()
         {
+            PayOut();
+            if (_blitz) { _clk.Pause(); StopInterval(); }
             ClearTimers();
             _alive = false;
             OnExit?.Invoke();
@@ -745,8 +789,10 @@ namespace SquishSquad.Games.Hop
         public void Back()
         {
             if (_hintAsk) SetHintAsk(false);
-            else if (_paused) SetPaused(false);
-            else if (_result != null || _stuck) Leave();
+            else if (_paused) Resume();
+            else if (_blitzCard == "save") EndRun();
+            else if (_result != null || _stuck || _blitzCard == "over") Leave();
+            else if (_blitz && _phase != "play") return;
             else Pause();
         }
 
@@ -794,7 +840,7 @@ namespace SquishSquad.Games.Hop
             if (on == _paused) return;
             _paused = on;
             if (!on) { Close(ref _pauseCard); return; }
-            _pauseCard = Open(HopCards.PauseCard(W, H, () => SetPaused(false), Leave), PAUSE);
+            _pauseCard = Open(HopCards.PauseCard(W, H, Resume, Leave), PAUSE);
         }
 
         void SetHintAsk(bool on)
@@ -861,13 +907,21 @@ namespace SquishSquad.Games.Hop
                 var ct = new TextStyle { Font = "Fredoka_700Bold", Size = 12, LetterSpacing = 0.6f, Color = "#ffffff" };
                 y += 8;
                 float total = -6, ch = UiSvg.LineBox(ct) + 6 + 4;
-                foreach (var c in chips) total += UiSvg.Width(c, ct) + 18 + 4 + 6;
+                // (Blitz's "⏱ 0:14": no font has ⏱, Chrome draws its emoji: Resources/Screens/emoji/timer-11, at 12)
+                const float EK = 12f / 11, EW = 8.59375f * EK, EH = 15 * EK, EADV = 8.579940795898438f * EK, EBASE = 11 * EK;
+                float TextW(string c) => c.StartsWith("⏱") ? EADV + UiSvg.Width(c.Substring(1), ct) : UiSvg.Width(c, ct);
+                foreach (var c in chips) total += TextW(c) + 18 + 4 + 6;
                 float cx = (w - total) / 2;
                 foreach (var c in chips)
                 {
-                    float cw = UiSvg.Width(c, ct) + 18 + 4;
+                    float cw = TextW(c) + 18 + 4;
                     s.Box(cx, y, cw, ch, new BoxStyle { Background = "#e01e4a", Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
-                    s.Text(c, cx + 2 + 9, y + 2 + 3, ct);
+                    if (c.StartsWith("⏱"))
+                    {
+                        s.Image("Screens/emoji/timer-11", cx + 2 + 9, UiSvg.Baseline(ct, y + 2 + 3) - EBASE, EW, EH);
+                        s.Text(c.Substring(1), cx + 2 + 9 + EADV, y + 2 + 3, ct);
+                    }
+                    else s.Text(c, cx + 2 + 9, y + 2 + 3, ct);
                     cx += cw + 6;
                 }
                 y += ch;
@@ -932,9 +986,13 @@ namespace SquishSquad.Games.Hop
             _backTop = Add("back top", O_HUD + 21).Svg(LoadXml("back-top"), 48, 52, 4);
             // the right column: three 55 dp buttons 10 apart after 8 dp of padding, centred down it
             float bx = W - RightW + 14, by0 = (H - 193) / 2 + 8;
-            _btns.Add(new Btn(this, "undo", bx, by0, O_BUTTONS, () => Undo()));
-            _btns.Add(new Btn(this, "restart", bx, by0 + 65, O_BUTTONS + 2, () => Restart()));
-            _btns.Add(new Btn(this, "hint", bx, by0 + 130, O_BUTTONS + 4, () => AskHint()));
+            // (Blitz: no UNDO, RESTART or hints; the rule and the board's clock on the glass instead)
+            if (!_blitz)
+            {
+                _btns.Add(new Btn(this, "undo", bx, by0, O_BUTTONS, () => Undo()));
+                _btns.Add(new Btn(this, "restart", bx, by0 + 65, O_BUTTONS + 2, () => Restart()));
+                _btns.Add(new Btn(this, "hint", bx, by0 + 130, O_BUTTONS + 4, () => AskHint()));
+            }
             _banner = Add("banner", O_BANNER);
             _pShadow = Add("hopper shadow", O_Z);
             _pPic = Add("hopper", O_Z);
@@ -947,10 +1005,10 @@ namespace SquishSquad.Games.Hop
         // what a level has: the room, the board, the friends (Game.js's useMemos on the level)
         void BuildLevel()
         {
-            _spec = Levels.LevelSpec(_lv);
+            _spec = _blitz ? Blitz.BlitzSpec(_idx, _seed) : Levels.LevelSpec(_lv);
             _board = _spec.Board;
             _room = Levels.ROOMS[_spec.Room];
-            _friends = HopRoster.FriendsOf(_cast, _hopper, _board.Friends.Length, _lv);
+            _friends = HopRoster.FriendsOf(_cast, _hopper, _board.Friends.Length, _blitz ? 101 + _idx * 31 + (_seed & 1023) : _lv);
             _slotOrder = Enumerable.Range(0, _board.Friends.Length).OrderBy(k => _board.Order[_board.Friends[k]]).ToArray();
             var g = RoomGeom();
             B = BoardGeometry.Layout(_board.W, _board.H, AreaW, H, g.floorY);
@@ -1242,7 +1300,14 @@ namespace SquishSquad.Games.Hop
                 Beats = _spec.Beats, Dance = _room.Dance, TipWarn = !_view.Feasible && _phase != "won", Tip = _tip ?? TipFor(),
                 Friends = _board.Friends.Length, LeftToOpen = leftToOpen,
             };
-            string key = $"{hud.Room}|{hud.Lv}|{hud.Tier}|{hud.Stars}|{hud.Left}|{hud.Hops}|{hud.NextBeat}|{hud.Beats}|{hud.TipWarn}|{hud.Tip}|{hud.LeftToOpen}";
+            if (_blitz)
+            {
+                // Blitz: the boards cleared this run, and the best run (gold once it's beaten)
+                int bestRun = (int)Js.ToNumber(Levels.Record(Profile).BlitzTop);
+                hud.Blitz = true; hud.Room = "Blitz Mode"; hud.Cleared = _cleared; hud.Best = Math.Max(bestRun, _cleared); hud.BestBeaten = _cleared > bestRun && bestRun > 0;
+                hud.Tip = null; hud.TipWarn = false;
+            }
+            string key = $"{hud.Room}|{hud.Lv}|{hud.Tier}|{hud.Stars}|{hud.Left}|{hud.Hops}|{hud.NextBeat}|{hud.Beats}|{hud.TipWarn}|{hud.Tip}|{hud.LeftToOpen}|{hud.Cleared}|{hud.Best}|{hud.BestBeaten}";
             if (key != _hudKey)
             {
                 _hudKey = key;
@@ -1267,10 +1332,14 @@ namespace SquishSquad.Games.Hop
             }
             _backLip.Transform = Affine.Translate(10, 8.9453125 + 4);   // (pressed, the button moves down 3 and its lip up 3)
             _backTop.Transform = Affine.Translate(10, 8.9453125 + (_backDown ? 3 : 0));
-            _btns[0].SetOn(!(!(playing || _phase == "stuck") || _view.Hops == 0));
-            _btns[1].SetOn(!(!(playing || _phase == "stuck") || _view.Hops == 0));
-            _btns[2].SetOn(!(!playing || (_view.Hinted && !AdsFree && !AdReady)));
-            foreach (var b in _btns) b.Draw();
+            if (!_blitz)
+            {
+                _btns[0].SetOn(!(!(playing || _phase == "stuck") || _view.Hops == 0));
+                _btns[1].SetOn(!(!(playing || _phase == "stuck") || _view.Hops == 0));
+                _btns[2].SetOn(!(!playing || (_view.Hinted && !AdsFree && !AdReady)));
+                foreach (var b in _btns) b.Draw();
+            }
+            else BlitzDraw();
 
             // the room-switch flash
             float fl = (float)_flash.GetValue();
@@ -1330,6 +1399,7 @@ namespace SquishSquad.Games.Hop
         /// <summary>A finger (or the mouse) down at (x, y), screen dp.</summary>
         public void Down(float x, float y)
         {
+            if (BlitzCardOpen) { BlitzCardsDown(x, y); _cardDown = true; _touch = null; return; }
             if (CardOpen)
             {
                 for (int i = _cards.Count - 1; i >= 0; i--) if (_cards[i].card.Down(x, y)) break;
@@ -1366,13 +1436,14 @@ namespace SquishSquad.Games.Hop
             if (_cardDown)
             {
                 _cardDown = false;
+                if (BlitzCardsUp(x, y)) return;
                 for (int i = _cards.Count - 1; i >= 0; i--) if (_cards[i].card.Up(x, y)) break;
                 return;
             }
             if (_backDown)
             {
                 _backDown = false;
-                if (x >= 6 && x <= 62 && y >= 4.94 && y <= 64.94) { if (_phase == "play") Pause(); else Leave(); }
+                if (x >= 6 && x <= 62 && y >= 4.94 && y <= 64.94) { if (_phase == "play") Pause(); else if (!(_blitz && _phase != "won" && _blitzCard == null)) Leave(); }
                 return;
             }
             if (_pressed != null)

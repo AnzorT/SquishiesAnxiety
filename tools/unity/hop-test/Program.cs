@@ -1,5 +1,6 @@
 // dotnet run -c Release --project tools/unity/hop-test -- <capture dir> [scene ...]   (capture.mjs: the app's shots)
 // dotnet run -c Release --project tools/unity/hop-test -- cards <capture dir>          (cards.mjs: the cards alone)
+// dotnet run -c Release --project tools/unity/hop-test -- blitzflow                     (BLITZ MODE's run, BlitzFlow.cs)
 // Builds the Squish Hop level from the Unity code (Games/Hop/HopLevel: the port of src/hop/Game.js) for each scene the
 // app was captured in, runs its clock frame by frame as capture.mjs ran the page's (16 ms frames; the same taps at the
 // same moments, at the same spots), draws the whole screen at each shot (every layer as Unity shows it: an SVG drawn
@@ -34,6 +35,7 @@ static class Program
         Fx.LikeWeb = true;
         HopLevel.PixelSnap = 2.8125f;   // the reference phone
         if (args[0] == "cards") return HopCardsTest.Run(args[1]);
+        if (args[0] == "blitzflow") return HopBlitzFlow.Run(LoadCast());
         if (args[0] == "stuck")
         {
             // the shortest way to get stuck on a level (for capture.mjs's STUCK! scene): hops as U R D L
@@ -112,7 +114,7 @@ static class Program
         ["hop"] = new Dictionary<string, object> { ["seen"] = true, ["lv"] = 12.0 },
     };
 
-    static List<HopSquishy> LoadCast()
+    public static List<HopSquishy> LoadCast()
     {
         var j = JsonDocument.Parse(File.ReadAllText(Res("Hop/hop.json"))).RootElement;
         var heads = j.GetProperty("heads").EnumerateArray().Select(h => h.GetString()).ToHashSet();
@@ -132,7 +134,7 @@ static class Program
     }
 
     // ---- the screen as one SVG, every layer as Unity shows it --------------------------------------------------------
-    static string Screen(HopLevel level)
+    public static string Screen(HopLevel level)
     {
         var sb = new StringBuilder("<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" width=\"832\" height=\"384\" viewBox=\"0 0 832 384\">");
         int n = 0;
@@ -140,7 +142,7 @@ static class Program
         bool cardsDone = false;
         foreach (var l in layers)
         {
-            if (!cardsDone && l.Order >= HopLevel.CardOrder) { foreach (var c in level.Cards) { c.Update(); foreach (var cl in c.Layers()) Card(sb, cl, ref n); } cardsDone = true; }
+            if (!cardsDone && l.Order >= HopLevel.CardOrder) { foreach (var c in level.AllCards) { c.Update(); foreach (var cl in c.Layers()) Card(sb, cl, ref n); } cardsDone = true; }
             if (!l.Visible || l.Opacity <= 0) continue;
             var p = "p" + n++ + "-";
             var m = l.Transform;
@@ -254,6 +256,15 @@ static class Program
         var px = new float[w * h * 4];
         for (int i = 0; i < px.Length; i++) px[i] = rgba[i] / 255f;
         return Images[href] = (w, h, px);
+    }
+
+    /// <summary>Draws `svg` at the reference phone's size (2340 x 1080) into `outPng` (BlitzFlow's HOP_SHOTS).</summary>
+    public static void Render(string svg, string outPng)
+    {
+        const int W = 2340, H = 1080;
+        ReferenceRaster.LoadImage = Load;
+        var scene = SvgScene.Compile(SvgMarkup.Parse(svg), W, H, Affine.Identity, href => { var i = Load(href); return i.Item3 == null ? ((int, int)?)null : (i.Item1, i.Item2); });
+        Png.Write(outPng, W, H, ReferenceRaster.Resolve(ReferenceRaster.Render(scene, W, H, 2), 2, W, H));
     }
 
     public static (double total, double board, double hud) Compare(string svg, string appPng, string outPng, string diffPng)

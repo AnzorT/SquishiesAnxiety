@@ -34,6 +34,10 @@ namespace SquishSquad.Games.Hop
             public string Tip;
             public int Friends;          // slots in the goal card
             public int LeftToOpen;       // friends still to land in it (the mini ★ is shut while > 0)
+            // BLITZ MODE: "Blitz Mode" with no tier line, the boards cleared and the best run (gold NEW BEST once it's
+            // beaten) in place of the stars, LEFT and HOPS, and no tip
+            public bool Blitz, BestBeaten;
+            public int Cleared, Best;
         }
 
         // ---- the top bar ---------------------------------------------------------------------------------------------
@@ -76,22 +80,34 @@ namespace SquishSquad.Games.Hop
             // the top bar's title box: x 66 = 10 padding + 48 button + 8 gap, 53.89 tall from y 8
             RoomTitle(s, 66, 8, d.Room);
             float subY = 8 + 40.890625f - 2;
-            var tier = Levels.TIER_NAMES[d.Tier];
-            float chipW = UiSvg.BoxWidth(tier, TierText) + 2 * 6 + 2 * 2;
-            string full = $"SQUISH HOP · LEVEL {d.Lv}";
-            float room = 184 - 6 - chipW;
-            float subW = Math.Min(UiSvg.BoxWidth(full, Sub), room);
-            s.Text(Ellipsize(full, Sub, room), 66, subY, Sub);
-            float chipX = 66 + subW + 6;
-            s.Box(chipX, subY, chipW, 15, new BoxStyle { Background = Levels.TIER_COLORS[d.Tier], Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
-            s.Text(tier, chipX + 2 + 6, subY + 2, TierText);
+            if (!d.Blitz)
+            {
+                var tier = Levels.TIER_NAMES[d.Tier];
+                float chipW = UiSvg.BoxWidth(tier, TierText) + 2 * 6 + 2 * 2;
+                string full = $"SQUISH HOP · LEVEL {d.Lv}";
+                float room = 184 - 6 - chipW;
+                float subW = Math.Min(UiSvg.BoxWidth(full, Sub), room);
+                s.Text(Ellipsize(full, Sub, room), 66, subY, Sub);
+                float chipX = 66 + subW + 6;
+                s.Box(chipX, subY, chipW, 15, new BoxStyle { Background = Levels.TIER_COLORS[d.Tier], Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
+                s.Text(tier, chipX + 2 + 6, subY + 2, TierText);
+            }
 
             // the strip's right part (under the goal card, 8 dp): the meter row, wrapping, then the tip
             float rx = 30, ry = GoalY + GoalH + 8, rw = 200;
             var items = new List<(float w, float h, Action<float, float> draw)>();
-            items.Add((64, 24, (x, y) => Meter(s, x, y, d.Stars)));
-            items.Add(Pill(s, $"LEFT {d.Left}", "#ffd23a", PillText));
-            items.Add(Pill(s, $"HOPS {d.Hops}", "#ffe6b8", new TextStyle { Font = PillText.Font, Size = PillText.Size, LetterSpacing = PillText.LetterSpacing, Color = INK }));
+            if (d.Blitz)
+            {
+                items.Add(Pill(s, $"CLEARED {d.Cleared}", "#ffd23a", PillText));
+                items.Add(Pill(s, $"{(d.BestBeaten ? "NEW BEST" : "BEST")} {d.Best}", d.BestBeaten ? "#ffffff" : "#ffe6b8",
+                    new TextStyle { Font = PillText.Font, Size = PillText.Size, LetterSpacing = PillText.LetterSpacing, Color = d.BestBeaten ? "#ffffff" : INK }, d.BestBeaten ? "#ffb02e" : "#ffffff"));
+            }
+            else
+            {
+                items.Add((64, 24, (x, y) => Meter(s, x, y, d.Stars)));
+                items.Add(Pill(s, $"LEFT {d.Left}", "#ffd23a", PillText));
+                items.Add(Pill(s, $"HOPS {d.Hops}", "#ffe6b8", new TextStyle { Font = PillText.Font, Size = PillText.Size, LetterSpacing = PillText.LetterSpacing, Color = INK }));
+            }
             if (d.Beats) items.Add(BeatPill(s, d.NextBeat));
             // flex-wrap: lines of items 6 apart, each item centred in its line, lines 6 apart
             float y = ry;
@@ -107,13 +123,16 @@ namespace SquishSquad.Games.Hop
                 i0 = i1;
                 if (i0 < items.Count) y += 6;
             }
-            // the tip: three lines always (numberOfLines 3), 5 dp under the meter row
+            // the tip: three lines always (numberOfLines 3), 5 dp under the meter row (Blitz: none)
             float tipY = y + 5;
-            var tip = new TextStyle { Font = Tip.Font, Size = Tip.Size, LineHeight = Tip.LineHeight, Color = d.TipWarn ? "#ffd0d6" : "#ffffff" };
-            var lines = CardArt.Wrap(d.Tip ?? "", tip, rw);
-            if (lines.Count > 3) { lines[2] = Ellipsize(string.Join(" ", lines.GetRange(2, lines.Count - 2)), tip, rw); lines.RemoveRange(3, lines.Count - 3); }
-            for (int i = 0; i < lines.Count; i++) s.Text(lines[i], rx, tipY + i * 15, tip);
-            float bottom = tipY + 45;
+            if (!d.Blitz)
+            {
+                var tip = new TextStyle { Font = Tip.Font, Size = Tip.Size, LineHeight = Tip.LineHeight, Color = d.TipWarn ? "#ffd0d6" : "#ffffff" };
+                var lines = CardArt.Wrap(d.Tip ?? "", tip, rw);
+                if (lines.Count > 3) { lines[2] = Ellipsize(string.Join(" ", lines.GetRange(2, lines.Count - 2)), tip, rw); lines.RemoveRange(3, lines.Count - 3); }
+                for (int i = 0; i < lines.Count; i++) s.Text(lines[i], rx, tipY + i * 15, tip);
+            }
+            float bottom = d.Blitz ? y : tipY + 45;
             // the glass strip behind it all (drawn first: inserted under)
             var glass = new UiSvg(LeftW, h).Box(22, 73.890625f, 216, bottom + 6 + 2 - 73.890625f, new BoxStyle { Background = "rgba(91,58,41,0.75)", Radius = 20, BorderWidth = 2, BorderColor = "rgba(255,255,255,0.9)" });
             var m = s.Markup;
@@ -124,12 +143,12 @@ namespace SquishSquad.Games.Hop
         }
 
         // a pill: paddingH 8, paddingV 1, a 2 dp border (Chrome draws 2.5 as 2)
-        static (float, float, Action<float, float>) Pill(UiSvg s, string text, string border, TextStyle t)
+        static (float, float, Action<float, float>) Pill(UiSvg s, string text, string border, TextStyle t, string bg = "#ffffff")
         {
             float w = UiSvg.BoxWidth(text, t) + 2 * 8 + 2 * 2, h = UiSvg.LineBox(t) + 2 + 4;
             return (w, h, (x, y) =>
             {
-                s.Box(x, y, w, h, new BoxStyle { Background = "#ffffff", Radius = 999, BorderWidth = 2, BorderColor = border });
+                s.Box(x, y, w, h, new BoxStyle { Background = bg, Radius = 999, BorderWidth = 2, BorderColor = border });
                 s.Text(text, x + 2 + 8, y + 2 + 1, t);
             });
         }

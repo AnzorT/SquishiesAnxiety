@@ -110,7 +110,7 @@ namespace SquishSquad.Games.Squishdoku
         public const float LeftW = 236, RightW = 206;
         public const string GLASS = "rgba(91,58,41,0.75)";
         static readonly TextStyle SubText = new TextStyle { Font = Heavy, Size = 11, Color = "#ffffff", LetterSpacing = 0.6f, Shadows = new[] { new Shadow(CRIB_INK, 0, 1, 1.5f) } };
-        static readonly TextStyle ChipText = new TextStyle { Font = Display, Size = 11.5f, LetterSpacing = 0.5f, Color = "#ffffff" };
+        public static readonly TextStyle ChipText = new TextStyle { Font = Display, Size = 11.5f, LetterSpacing = 0.5f, Color = "#ffffff" };
         static readonly TextStyle PerfectText = new TextStyle { Font = Display, Size = 10.5f, LetterSpacing = 0.6f, Color = "#ffe08a" };
         static readonly TextStyle LostText = new TextStyle { Font = Display, Size = 10.5f, LetterSpacing = 0.6f, Color = "#e9d6ff" };
         static readonly TextStyle PhaseText = new TextStyle { Font = Black, Size = 11, LetterSpacing = 0.6f, Color = "#ffffff" };
@@ -234,10 +234,10 @@ namespace SquishSquad.Games.Squishdoku
             new UiSvg(192, 40).Box(0, 0, 192, 40, new BoxStyle { Gradient = new[] { "rgba(255,226,92,0)", "rgba(255,226,92,0.85)", "rgba(255,226,92,0)" }, GradientAngle = 90, Radius = 999 }).Markup;
 
         /// <summary>Hud.js TimerBar under its label and markers: the track with the fill `frac` of the way, yellow then red as
-        /// it runs down, and the last seconds' red wash (`warn` its opacity). 196 x 34.</summary>
-        public static string Bar(double frac, double warn)
+        /// it runs down, and the last seconds' red wash (`warn` its opacity). `w` (196) x 34.</summary>
+        public static string Bar(double frac, double warn, float w = BarW)
         {
-            const float w = BarW, inner = w - 6;
+            float inner = w - 6;
             var s = new UiSvg(w, BarH);
             var track = new BoxStyle { Background = "rgba(91,52,24,0.28)", Radius = 999 };
             s.Box(0, 6, w, 22, track);
@@ -263,11 +263,11 @@ namespace SquishSquad.Games.Squishdoku
         }
 
         /// <summary>The bar's label, centred on it (red in the last seconds).</summary>
-        public static string BarText(string label, bool warn)
+        public static string BarText(string label, bool warn, float w = BarW)
         {
             var t = warn ? new TextStyle { Font = Display, Size = 13.5f, Color = "#c4002b" } : BarLabel;
             float lw = UiSvg.BoxWidth(label, t), lh = UiSvg.LineBox(t);
-            return new UiSvg(BarW, BarH).Text(label, Card.Snap(BarW / 2 - lw / 2), Card.Snap((BarH - lh) / 2), t).Markup;
+            return new UiSvg(w, BarH).Text(label, Card.Snap(w / 2 - lw / 2), Card.Snap((BarH - lh) / 2), t).Markup;
         }
 
         /// <summary>Hud.js Marker: a creature riding on the bar (its head on a pin), 26 x 34.</summary>

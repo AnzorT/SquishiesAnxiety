@@ -22,6 +22,14 @@ namespace SquishSquad.Games.Hop
             Send(o.Update, o.Coins, o.Xp, profile, up ? o.After.Level : (double?)null);
         }
 
+        /// <summary>saveHop(uid, out.update, out.coins, out.xp, profile): what a Blitz run paid (Game.js payOut).</summary>
+        public static void Paid(AfterBlitzResult o, IDictionary<string, object> profile)
+        {
+            if (o == null) return;
+            bool up = o.LevelUps != null && o.LevelUps.Count > 0 && o.After != null;
+            Send(o.Update, o.Coins, o.Xp, profile, up ? o.After.Level : (double?)null);
+        }
+
         /// <summary>saveHop(uid, update, 0): a loss's record, a flag (afterStuck, 'hop.seen': true).</summary>
         public static void Record(IDictionary<string, object> update) => Send(update, 0, 0, null, null);
 

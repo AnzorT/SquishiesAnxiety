@@ -359,6 +359,7 @@ namespace SquishSquad.Menu
             {
                 case SquishSquad.Games.Stack.StackGame g: g.OnExit = () => Back(hub); break;
                 case SquishSquad.Games.Sort.SortGame g: g.OnExit = () => Back(hub); break;
+                case SquishSquad.Games.Hop.HopGame g: g.OnExit = () => Back(hub); break;
             }
             _game = run;
         }
@@ -420,6 +421,7 @@ namespace SquishSquad.Menu
             var s = SquishSquad.Games.Hop.HopScreen.Create(transform);
             s.OnLevel = lv => MenuState.HopLevel = lv;
             s.OnExit = AfterGame;
+            s.OpenBlitz = _ => OpenBlitzOver(s, () => SquishSquad.Games.Hop.HopGame.CreateBlitz(transform));
             _game = s;
         }
 
