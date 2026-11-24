@@ -1,6 +1,7 @@
-// Records a creature's frames from the app's own rig code (on the browser stand-in) for the Unity app to play back,
-// until the JS engine runs the rig live inside Unity: each frame is the creature's <svg> markup, as the live host
-// would hand it over.
+// Records a creature's frames from the app's own rig code (on the browser stand-in): each frame is the creature's <svg>
+// markup, as the native rig hands it over. The Unity app no longer ships recordings: it runs the rig itself, compiled
+// to C# (jsc.mjs, Creatures/NativeRig.cs), and plays a recording only if that can't start (Creatures/RigFrames.cs
+// RecordedRig). This stays for looking at a clip frame by frame, or for a fallback recording.
 //
 //   node tools/unity/rig/record.mjs mittens [--seconds 8] [--fps 30] [--moves idle]
 //   node tools/unity/rig/record.mjs mittens --clip park-enter --seconds 4    (PLAY's walk to the Game Park; park-leave)
@@ -11,8 +12,8 @@
 // plays it: <key>-res-wait (resWait, a loop), -res-fill (the fill and the slow jump: resWait, resWow at 62 % of the
 // fill, then resHappy, the page's arms and turn and its bursts in it), -res-happy (resHappy with the page's sway and its
 // four happy moves, as the first of the three plays them), -res-miss (resMiss, its tear, then resSad). The body's lift,
-// squash and tilt are the card's (Ui/Cards/TrioItem.cs), not in the clips. Also writes Creatures/result-states.txt: the
-// page's states for the live engine (Creatures/LiveRig.cs).
+// squash and tilt are the card's (Ui/Cards/TrioItem.cs), not in the clips. (The native rig gets the page's states
+// compiled in by jsc.mjs, which takes them from the page the same way.)
 //
 // -> unity/Assets/Resources/Creatures/<key>[-<clip>].bytes (gzip of: fps\n then one frame per line), grain tile alongside.
 import fs from 'node:fs';
@@ -65,8 +66,6 @@ if (CLIP === 'result') {
     + `(function () { if (window.__resStates) return; window.__resStates = true;\n${helpers}\n${body}\n`
     + `  // (the last controller RiveRig.mount made: Creatures/ResultRig.cs keeps it per creature, for the bursts)\n`
     + `  const mount = window.RiveRig.mount; window.RiveRig.mount = function () { const c = mount.apply(this, arguments); window.__resLast = c; return c; };\n})();\n`;
-  fs.mkdirSync(OUT, { recursive: true });
-  fs.writeFileSync(path.join(OUT, 'result-states.txt'), states);
   run(states, 'result-states');
   // result.html's moves on the rig (ext) and its bursts, frame by frame from each clip's start (the first character: idx 0)
   run(`(() => {

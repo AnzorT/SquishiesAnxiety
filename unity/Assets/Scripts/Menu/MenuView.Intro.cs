@@ -226,8 +226,8 @@ namespace SquishSquad.Menu
             if (it.Tb < 0 && t >= 5350 && up && BoxHit(pagePx)) { it.Tb = t; return; }
             if (SquishOn(t) && it.N < 3 && it.FlyAt < 0)
             {
-                if (down && CreatureHit(pagePx)) { it.PressAt = t; it.RingOffAt = t; MenuSynth.Play("intro-press"); }
-                if (up && it.PressAt >= 0) { it.PressAt = -1; it.FlyAt = t; MenuSynth.Play("intro-squish" + it.N); it.Bursts.Add((t, 500, 330, 10, Warm, 120, 600, it.Bursts.Count)); var (cx, cy) = RoomCentre(IORDER[it.N]); it.Spark = (t, 500, 335, cx, cy); }
+                if (down && CreatureHit(pagePx)) { it.PressAt = t; it.RingOffAt = t; MenuSynth.Play("intro-press"); NativeSquish(true); }
+                if (up && it.PressAt >= 0) { NativeSquish(false); it.PressAt = -1; it.FlyAt = t; MenuSynth.Play("intro-squish" + it.N); it.Bursts.Add((t, 500, 330, 10, Warm, 120, 600, it.Bursts.Count)); var (cx, cy) = RoomCentre(IORDER[it.N]); it.Spark = (t, 500, 335, cx, cy); }
             }
         }
 
@@ -334,7 +334,7 @@ namespace SquishSquad.Menu
             // the rest of the house: kitchen, movie, the dome, 280 ms apart, chimes; then dawn
             if (it.Tr >= 0)
                 for (int i = 0; i < 3; i++) if (t >= it.Tr + i * 280) Once(it, "rest" + i, () => MenuSynth.Play("intro-rest" + i));
-            if (it.Tr >= 0 && t >= DawnAt) { Hush(it, DawnAt); Once(it, "dawn", () => { MenuSynth.Play("intro-dawn"); if (Creature != null && _danceClip != null) Creature.SetFrames(_danceClip); }); }
+            if (it.Tr >= 0 && t >= DawnAt) { Hush(it, DawnAt); Once(it, "dawn", () => { MenuSynth.Play("intro-dawn"); IntroMove("dance", ref _danceClip); }); }
 
             // the house's lights: the pictures crossfaded
             DrawLights(it, t);
@@ -411,6 +411,26 @@ namespace SquishSquad.Menu
         }
 
         RecordedRig _surprised, _look, _danceClip;
+        // the native rig plays the intro's own states (intro.js play('surprised') ... play('dance')); a recording, its clips
+        void IntroMove(string move, ref RecordedRig clip)
+        {
+            if (Creature == null) return;
+            if (_idle is NativeRig) { if (move == "idle") Creature.SetFrames(_idle); Creature.Play(move); return; }
+            if (move == "idle") { if (_idle != null) Creature.SetFrames(_idle); return; }
+            clip ??= RecordedRig.Load(_creatureKey + "-intro-" + move);
+            if (clip == null) return;
+            clip.Loop = move == "dance";
+            Creature.SetFrames(clip);
+        }
+        // intro.js's squish: the rig squeezes at once (i.press) and lets go on the rig's own pointer up (native only;
+        // a recording is squashed by the stage, below)
+        void NativeSquish(bool down)
+        {
+            if (!(_idle is NativeRig n)) return;
+            if (down) { n.Pointer("pointerdown", 50, 60); n.Press(); }
+            else n.Pointer("pointerup", 50, 60);
+        }
+
         void DrawMittens(Intro it, double t)
         {
             if (Creature == null || it.Tb < 0) return;
@@ -419,17 +439,16 @@ namespace SquishSquad.Menu
             if (!Creature.gameObject.activeSelf)
             {
                 Creature.gameObject.SetActive(true);
-                _surprised ??= RecordedRig.Load(_creatureKey + "-intro-surprised"); _look ??= RecordedRig.Load(_creatureKey + "-intro-look"); _danceClip ??= RecordedRig.Load(_creatureKey + "-intro-dance");
-                if (_surprised != null) { _surprised.Loop = false; Creature.SetFrames(_surprised); }
+                IntroMove("surprised", ref _surprised);
             }
-            if (t >= it.Tb + 1830) Once(it, "look", () => { if (_look != null) { _look.Loop = false; Creature.SetFrames(_look); } });
-            if (t >= it.Tb + 3330) Once(it, "idle", () => { if (_idle != null) Creature.SetFrames(_idle); });
+            if (t >= it.Tb + 1830) Once(it, "look", () => IntroMove("look", ref _look));
+            if (t >= it.Tb + 3330) Once(it, "idle", () => { RecordedRig none = null; IntroMove("idle", ref none); });
             var piece = _pieces.Find(x => x.Data.id == "creature");
             if (piece == null) return;
             // he grows up out of the box from his feet (.3 -> 1, backOut) with a little jump (720 ms); a squish squeezes him
             double sx = 1, sy = 1, jump = 0;
             if (u < 720) { double s = 0.3 + 0.7 * BackOut(u / 720); sx = sy = s; jump = Math.Sin(Math.Min(1, u / 720 * 1.3) * Math.PI) * 20; }
-            if (it.PressAt >= 0) { double p = Clamp01((t - it.PressAt) / 120); sx *= 1 + 0.08 * p; sy *= 1 - 0.12 * p; }
+            if (it.PressAt >= 0 && !(_idle is NativeRig)) { double p = Clamp01((t - it.PressAt) / 120); sx *= 1 + 0.08 * p; sy *= 1 - 0.12 * p; }
             var hit = piece.Hit;
             var pivot = World(new Vector2(hit.x + hit.width * 0.5f, hit.y + hit.height * 0.96f));
             var q = pivot - _creatureHome;

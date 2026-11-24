@@ -1,10 +1,10 @@
 // Where a creature's frames come from. Each frame is the creature's <svg> markup as the app's own rig code produces
-// it (rive-rig.js and friends, unchanged). Two sources:
-//   RecordedRig: frames recorded from the rig code by tools/unity/rig/record.mjs, played back in a loop. What the
-//     app runs until the JS engine is in the project.
-//   LiveRig: the rig code itself running in a JS engine inside Unity on tools/unity/rig/dom-shim.js, driven by
-//     Unity's clock, so every creature and move works (built with SQUISH_PUERTS: Creatures/LiveRig.cs).
-// Rigs.For(key) picks: live when it's built in and starts, else the recording.
+// it (rive-rig.js and friends). Two sources:
+//   NativeRig: the rig code itself, compiled to C# (tools/unity/rig/jsc.mjs: Creatures/Js), run by Unity's clock, so
+//     every creature and every move works, the same frames as the app (Creatures/NativeRig.cs).
+//   RecordedRig: frames recorded from the rig code by tools/unity/rig/record.mjs, played back in a loop: the fallback
+//     if the native rig can't run.
+// Rigs.For(key) picks: native, else the recording.
 using System;
 using System.IO;
 using System.IO.Compression;
@@ -21,7 +21,7 @@ namespace SquishSquad.Creatures
         void Play(string move);
     }
 
-    /// <summary>What the house drives on a live rig (LiveRig): the walk's ext channels, the idle fidgets.</summary>
+    /// <summary>What the house drives on a live rig (NativeRig): the walk's ext channels, the idle fidgets.</summary>
     public interface IHouseRig
     {
         void Ext(System.Collections.Generic.IDictionary<string, double> e);
@@ -35,14 +35,11 @@ namespace SquishSquad.Creatures
 
     public static class Rigs
     {
-        /// <summary>The creature's frames: live (SQUISH_PUERTS) when the engine starts, else its recording (null when
-        /// it has none).</summary>
+        /// <summary>The creature's frames: native when the rig runs, else its recording (null when it has none).</summary>
         public static IRigFrames For(string key)
         {
-#if SQUISH_PUERTS
-            var live = LiveRig.Create(key);
+            var live = NativeRig.Create(key);
             if (live != null) return live;
-#endif
             return RecordedRig.Load(key);
         }
     }

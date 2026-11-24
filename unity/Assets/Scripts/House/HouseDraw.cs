@@ -1,6 +1,7 @@
 // The house's piece drawings made at runtime (HOUSE_PORT_PLAN.md stage 5 on): any piece in any state, angle and sign
-// text, by the page's own drawing code in the JS engine (tools/unity/house/draw-host.js, bundled in Resources/Rig;
-// Creatures/LiveRig.cs fills Eval when the engine runs). The stage-1 export (house-pieces.json) answers first; this is
+// text, by the page's own drawing code (tools/unity/house/draw-host.js). Nothing fills Eval yet: the JS engine plan is
+// gone (the creature rig is compiled to C# instead, tools/unity/rig/jsc.mjs; the house's drawing code could be
+// compiled the same way). The stage-1 export (house-pieces.json) answers first; this is
 // what the room asks when the export doesn't have a drawing. Pictures come back as SVG text, named the way the export
 // names them (SMIL stripped, ids renumbered, sha1: the same drawing gets the same name) and kept in Pics.
 // tools/unity/house/draw-check.mjs checks the host against the export (every variant and render equal).

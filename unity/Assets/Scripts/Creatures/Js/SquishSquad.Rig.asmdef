@@ -1,0 +1,14 @@
+{
+    "name": "SquishSquad.Rig",
+    "rootNamespace": "SquishSquad.Creatures.Js",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

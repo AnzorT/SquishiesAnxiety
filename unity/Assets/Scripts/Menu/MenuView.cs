@@ -198,6 +198,7 @@ namespace SquishSquad.Menu
         Vector3 _creatureHome;
         IRigFrames _idle;
         RecordedRig _clip;
+        NativeRig _parkRig;
         RenderTexture _parkTex;
         const float ParkPad = 160;   // menu.js PAD: where the creature stands in the park (the house's pad is at 500)
         const float FadeMs = 300;
@@ -231,6 +232,8 @@ namespace SquishSquad.Menu
         void Clip(string name)
         {
             if (Creature == null || _creatureKey == null) return;
+            // the native rig walks it itself (native-host.js parkStart / parkStep: menu.js's turn, HouseWalk's gait, 'happy')
+            if (_idle is NativeRig nr && name.StartsWith("park-")) { nr.ParkStart(name == "park-enter"); _parkRig = nr; return; }
             _clip = RecordedRig.Load(_creatureKey + "-" + name);
             if (_clip == null) return;
             _clip.Loop = false;
@@ -268,6 +271,7 @@ namespace SquishSquad.Menu
             if (Where != Place.ToPark && Where != Place.ToHome) return;
             bool enter = Where == Place.ToPark;
             float turn = enter ? 380 : 340, walk = enter ? 2300 : 2100, t = ms - _tripStart;
+            _parkRig?.ParkStep(t);
             float X0 = _ox + 500 * _k, X1 = _ox + ParkPad * _k;
             float wt = Mathf.Clamp01((t - turn) / walk), cam, scr;
             if (enter) { scr = X0 + (X1 - X0) * EOUT(wt); cam = _w * EIOC(Mathf.Clamp01((wt - 0.06f) / 0.94f)); }
@@ -276,6 +280,7 @@ namespace SquishSquad.Menu
             if (Creature != null) Creature.transform.localPosition = _creatureHome + new Vector3(scr - X0 - cam, 0, 0);
             if (t < 2 * turn + walk) return;
             // arrived
+            _parkRig?.ParkStep(2 * turn + walk); _parkRig = null;   // (its last step: 'happy')
             if (enter) { Where = Place.Park; ShowGames(_tripStart + 2 * turn + walk, false); }
             else { Where = Place.Home; _world.localPosition = Vector3.zero; if (Creature != null) Creature.transform.localPosition = _creatureHome; Fade(1, ms); Vignette(true, ms); }
             // the clip ends in 'happy'; back to the idle loop once it has played

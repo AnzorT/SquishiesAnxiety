@@ -1,6 +1,6 @@
 // Puts a ported screen's pieces (Ui/Screens: a list of ScreenPiece, rebuilt whenever something changes) on screen:
 // one UiPiece per piece id, redrawn only when its SVG changes (a piece that only moves or fades costs nothing), in list
-// order; a "mittens" slot becomes the live creature (CreatureView with the recorded idle, as on the menu). Also the
+// order; a "mittens" slot becomes the live creature (CreatureView with the native rig's idle, as on the menu). Also the
 // screen's pointer in dp (y down), shared by the start-up screens.
 using System;
 using System.Collections.Generic;
