@@ -13,6 +13,43 @@ namespace SquishSquad.Menu
         public Scene scene;
         public Weather[] weather;
         public Piece[] hud;
+        public HudText hudText;     // where the player's numbers are drawn (MenuView.Hud.cs); null in an older export
+        public NamePlate[] names;   // every roster creature's name plate, in place of the 'name' piece's (export --names)
+
+        [Serializable]
+        public class NamePlate
+        {
+            public string key;
+            public string res;
+            public int[] rect;          // reference px, as the 'name' piece's
+        }
+
+        [Serializable]
+        public class HudText
+        {
+            public float k;             // the HUD's scale (384 / 393)
+            public float hudWidth;      // its width in its own px on the reference screen
+            public HudPill[] pills;
+            public HudCrest crest;
+        }
+
+        [Serializable]
+        public class HudPill
+        {
+            public string id;
+            public float[] pill;        // the reference's pill box (reference px)
+            public string text;
+            public float[] iconOffset;  // its coin / gem picture's box from the pill's (reference px)
+        }
+
+        [Serializable]
+        public class HudCrest
+        {
+            public float[] svg;         // the crest's <svg> (viewBox 0 0 120 104), reference px
+            public float[] cin;         // .sq-cin: it floats and presses about 50 % 62 % of this
+            public int level;
+            public bool ring;
+        }
 
         [Serializable]
         public class Reference

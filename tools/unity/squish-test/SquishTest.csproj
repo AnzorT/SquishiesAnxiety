@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="*.cs" />
+    <!-- the port's pure parts (no UnityEngine): the stage's maths, the card, the squish, the shader's maths, the rules -->
+    <Compile Include="../../../unity/Assets/Scripts/Games/Squish/ThreeMath.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Squish/SquishCard.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Squish/SquishToy.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Squish/SquishShaderMath.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Squish/SquishShade.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Squish/SquishRules.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Backend/Json.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Squish/SquishHudArt.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/UiFont.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/UiSvg.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/Cards/CardArt.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
+    <Compile Include="../vector-test/ReferenceRaster.cs" />
+    <Compile Include="../vector-test/Png.cs" />
+  </ItemGroup>
+</Project>

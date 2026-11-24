@@ -77,11 +77,27 @@ namespace SquishSquad.EditorTools
         }
     }
 
-    // The menu's pictures go in exactly as exported: no resizing, no compression, no mipmaps (pixel for pixel with the
+    // The menu's (and the Game Park carousel's) pictures go in exactly as exported: no resizing, no compression, no mipmaps (pixel for pixel with the
     // app on the reference screen). The house pictures are JPEG bytes (.bytes), decoded at run time, so they aren't
     // textures here at all.
     public sealed class MenuArtImport : AssetPostprocessor
     {
+        // The phone build's art: ASTC 4x4 on Android (8 bits a pixel instead of RGBA32's 32: a quarter of the APK's and
+        // the GPU's memory, hardly visible at the A15's density). Standalone and the editor stay exact (RGBA32), so the
+        // screenshot comparisons with Chrome are unchanged. false: Android exact too.
+        public const bool CompressOnAndroid = true;
+
+        static void PhoneArt(TextureImporter ti)
+        {
+            if (!CompressOnAndroid) return;
+            var s = ti.GetPlatformTextureSettings("Android");
+            s.overridden = true;
+            s.maxTextureSize = 4096;
+            s.format = TextureImporterFormat.ASTC_4x4;
+            s.compressionQuality = 100;
+            ti.SetPlatformTextureSettings(s);
+        }
+
         void OnPreprocessTexture()
         {
             var ti = (TextureImporter)assetImporter;
@@ -93,7 +109,22 @@ namespace SquishSquad.EditorTools
                 ti.textureCompression = TextureImporterCompression.Uncompressed;
                 return;
             }
-            if (!assetPath.StartsWith("Assets/Resources/Menu/")) return;
+            if (assetPath.StartsWith("Assets/Resources/Stack/art/"))
+            {
+                // the squishies' cut-outs (every game uses them): drawn at many sizes, often well below their own, so
+                // mipmapped (trilinear) like Chrome's smooth downscaling; kept exact, never resized to a power of two
+                ti.textureType = TextureImporterType.Default; ti.npotScale = TextureImporterNPOTScale.None;
+                ti.mipmapEnabled = true; ti.filterMode = FilterMode.Trilinear; ti.wrapMode = TextureWrapMode.Clamp;
+                ti.alphaIsTransparency = true; ti.alphaSource = TextureImporterAlphaSource.FromInput; ti.sRGBTexture = true;
+                ti.textureCompression = TextureImporterCompression.Uncompressed;
+                PhoneArt(ti);
+                return;
+            }
+            // (Resources/Park: the Game Park's carousel, tools/unity/export-park.mjs; the games' pieces and rooms)
+            string[] exact = { "Assets/Resources/Menu/", "Assets/Resources/Park/", "Assets/Resources/Stack/", "Assets/Resources/Sort/", "Assets/Resources/Hop/", "Assets/Resources/Squishdoku/", "Assets/Resources/Cards/", "Assets/Resources/Squish/" };
+            bool ours = false;
+            foreach (var e in exact) if (assetPath.StartsWith(e)) { ours = true; break; }
+            if (!ours) return;
             ti.textureType = TextureImporterType.Default;
             ti.npotScale = TextureImporterNPOTScale.None;
             ti.mipmapEnabled = false;
@@ -114,6 +145,7 @@ namespace SquishSquad.EditorTools
                 s.textureCompression = TextureImporterCompression.Uncompressed;
                 ti.SetPlatformTextureSettings(s);
             }
+            PhoneArt(ti);
         }
     }
 }

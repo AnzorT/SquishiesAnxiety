@@ -1,0 +1,16 @@
+{
+ "name": "premigration",
+ "profile": {
+  "level": 11,
+  "coins": 800
+ },
+ "house": "{\"owned\":{\"R:LIV-011\":1,\"dentedBowl\":3,\"R:BED-080\":1,\"R:KIT-015\":1,\"R:KIT-010\":1},\"rooms\":{\"living\":[{\"id\":\"i1\",\"t\":\"dentedBowl\",\"x\":300,\"y\":250,\"r\":0,\"c\":0},{\"id\":\"i2\",\"t\":\"R:LIV-006\",\"x\":430,\"y\":190,\"r\":330,\"c\":0}],\"kitchen\":[{\"id\":\"i3\",\"t\":\"R:KIT-015\",\"x\":176,\"y\":150,\"r\":330,\"c\":0},{\"id\":\"i4\",\"t\":\"R:KIT-010\",\"x\":292,\"y\":150,\"r\":330,\"c\":0},{\"id\":\"i9\",\"t\":\"dentedBowl\",\"x\":500,\"y\":260,\"r\":0,\"c\":0}],\"bedroom\":[{\"id\":\"i5\",\"t\":\"R:BED-080\",\"x\":400,\"y\":230,\"r\":330,\"c\":0,\"e\":20},{\"id\":\"i6\",\"t\":\"R:BED-015\",\"x\":330,\"y\":198,\"r\":330,\"c\":0}]},\"toys\":{\"living\":[{\"id\":\"livingt0\",\"k\":\"ball\",\"x\":380,\"y\":300}],\"backyard\":[{\"id\":\"backyardt0\",\"k\":\"ball\",\"x\":380,\"y\":300}]},\"surf\":{\"living\":{\"light\":\"rv_LIV-038\",\"win\":\"rv_LIV-032\"},\"kitchen\":{\"light\":\"rv_KIT-037\",\"win\":\"rv_KIT-032\"},\"bedroom\":{\"light\":\"rv_BED-030\"},\"dance\":{\"light\":\"rv_CLB-026\"}},\"rOwn\":{\"LIV-038\":1,\"LIV-032\":1,\"KIT-037\":1,\"KIT-032\":1,\"BED-030\":1,\"BED-050\":1,\"CLB-026\":1,\"LIV-021\":1,\"GONE-999\":1},\"rtex\":{\"living\":{\"wall\":\"LIV-021\"}},\"open\":{\"living\":1,\"kitchen\":1,\"bedroom\":1,\"bathroom\":1,\"backyard\":1,\"dance\":1},\"night\":{\"bedroom\":1},\"uid\":12,\"seenLv\":11,\"cur\":\"bedroom\",\"cr\":{\"mittens\":\"kitchen\"},\"needs\":{\"mittens\":{\"h\":40,\"c\":50,\"e\":60,\"f\":70}},\"sOwn\":{\"w_peel\":1},\"lx\":{\"kitchen\":300},\"futureKey\":{\"keep\":[1,2,3]}}",
+ "rooms": [
+  "living",
+  "kitchen",
+  "bathroom",
+  "bedroom",
+  "backyard",
+  "dance"
+ ]
+}

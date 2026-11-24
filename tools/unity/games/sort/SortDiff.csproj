@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Squish Sort's differential test, C# side: replays fixtures/*.json
+       (written by fixtures.mjs from the JS) through the Unity port.
+       node tools/unity/games/sort/fixtures.mjs && dotnet run -c Release (project tools/unity/games/sort) -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- Unity 6's C#: keep the port to C# 9 -->
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="../../../../unity/Assets/Scripts/Games/Sort/**/*.cs" />
+  </ItemGroup>
+</Project>

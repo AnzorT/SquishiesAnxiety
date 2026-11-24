@@ -22,6 +22,27 @@ namespace SquishSquad.Menu
             set { PlayerPrefs.SetString(SeasonKey, value); PlayerPrefs.Save(); }
         }
 
+        /// <summary>The Squish Stack level the player is on (the profile's stack.lv once Firebase is in).</summary>
+        public static int StackLevel
+        {
+            get => Mathf.Clamp(PlayerPrefs.GetInt("stack.level", 1), 1, 50);
+            set { PlayerPrefs.SetInt("stack.level", Mathf.Clamp(value, 1, 50)); PlayerPrefs.Save(); }
+        }
+
+        /// <summary>The Squish Sort fridge level the player is on (sort.fridge in the profile once it's wired).</summary>
+        public static int SortLevel
+        {
+            get => Mathf.Clamp(PlayerPrefs.GetInt("sort.level", 1), 1, 50);
+            set { PlayerPrefs.SetInt("sort.level", Mathf.Clamp(value, 1, 50)); PlayerPrefs.Save(); }
+        }
+
+        /// <summary>The Squish Hop level the player was last on (hop.lv in the profile once it's wired).</summary>
+        public static int HopLevel
+        {
+            get => Mathf.Clamp(PlayerPrefs.GetInt("hop.level", 1), 1, 100);
+            set { PlayerPrefs.SetInt("hop.level", Mathf.Clamp(value, 1, 100)); PlayerPrefs.Save(); }
+        }
+
         public static string Season => SeasonSetting == "auto" ? AutoSeason(DateTime.Now) : SeasonSetting;
 
         // main-menu-scene.js: Dec-Feb snowy, May-Sep sunny, otherwise rainy

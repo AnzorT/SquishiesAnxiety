@@ -1,0 +1,4 @@
+bin/
+obj/
+# written by fixtures.mjs (about 10 MB)
+fixtures/

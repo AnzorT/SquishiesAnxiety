@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><AssemblyName>LiveTest</AssemblyName><TargetFramework>net8.0</TargetFramework><LangVersion>10.0</LangVersion><EnableDefaultCompileItems>false</EnableDefaultCompileItems><DefineConstants>SQUISH_PUERTS;SQUISH_PUERTS_QUICKJS</DefineConstants><Nullable>disable</Nullable></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../../unity/Assets/Scripts/Creatures/LiveRig.cs;../../../../unity/Assets/Scripts/Creatures/RigFrames.cs;../../../../unity/Assets/Scripts/Backend/Json.cs;Stub.cs;Program.cs;../../../../unity/Assets/Scripts/House/HouseDraw.cs;../../../../unity/Assets/Scripts/House/HouseJson.cs;../../../../unity/Assets/Scripts/Anim/JsNumber.cs" />
+    <PackageReference Include="Puerts.QuickJS.Complete" Version="3.0.4" />
+  </ItemGroup>
+</Project>

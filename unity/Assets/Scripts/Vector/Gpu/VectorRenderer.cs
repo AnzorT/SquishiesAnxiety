@@ -395,6 +395,19 @@ namespace SquishSquad.Vector.Gpu
         {
             if (paint.Kind == PaintKind.None || opacity <= 0) return null;
             if (paint.Kind == PaintKind.Solid) return paint.Color.A <= 0 ? null : SolidProps(paint.Color, opacity);
+            if (paint.Kind == PaintKind.Image)
+            {
+                // px -> user -> the picture's 0..1 square (y down) -> texture uv (y up)
+                if (paint.Image == null || !Images.TryGetValue(paint.Image, out var img) || img.tex == null) return null;
+                var u = Affine.Translate(0, 1) * Affine.ScaleBy(1, -1) * paint.UserToImage * userToPx.Inverse();
+                var ip = new MaterialPropertyBlock();
+                ip.SetFloat("_Kind", 3);
+                ip.SetVector("_G0", new Vector4((float)u.A, (float)u.C, (float)u.E, 0));
+                ip.SetVector("_G1", new Vector4((float)u.B, (float)u.D, (float)u.F, 0));
+                ip.SetTexture("_Img", img.tex);
+                ip.SetFloat("_Opacity", opacity);
+                return ip;
+            }
             // px -> user -> objectBoundingBox -> gradient space
             var m = userToPx.Inverse();
             if (paint.BoundingBoxUnits)

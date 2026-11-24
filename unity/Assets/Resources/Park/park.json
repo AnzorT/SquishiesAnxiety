@@ -1,0 +1,1031 @@
+{
+ "note": "Written by tools/unity/export-park.mjs from webgame/app/menu.js showGames. Units: \"pu\" = the page's CSS px (the park page is scale(k), k = H / 393 dp); \"px\" = device pixels on the reference screen. Every picture is placed relative to its element's box (at = picture top-left minus box top-left, px).",
+ "reference": {
+  "px": [
+   2340,
+   1080
+  ],
+  "dp": [
+   832,
+   384
+  ],
+  "dpr": 2.8125,
+  "k": 0.977099,
+  "u": 2.7481,
+  "pgW": 851.5,
+  "carL": 247,
+  "CW": 487,
+  "creature": "mittens"
+ },
+ "games": [
+  {
+   "id": "squish",
+   "name": "Squish Time",
+   "open": true
+  },
+  {
+   "id": "squishdoku",
+   "name": "Squishdoku",
+   "open": true
+  },
+  {
+   "id": "sort",
+   "name": "Squish Sort",
+   "open": true
+  },
+  {
+   "id": "stack",
+   "name": "Squish Stack",
+   "open": true
+  },
+  {
+   "id": "hop",
+   "name": "Squish Hop",
+   "open": true
+  }
+ ],
+ "dim": {
+  "res": "dim",
+  "box": [
+   0,
+   0,
+   2340,
+   1080
+  ],
+  "rect": [
+   0,
+   0,
+   2340,
+   1080
+  ]
+ },
+ "header": {
+  "res": "header",
+  "at": [
+   -33.9695,
+   -9.9771
+  ],
+  "size": [
+   638,
+   179
+  ],
+  "box": [
+   16,
+   12,
+   819.5,
+   46
+  ],
+  "back": [
+   0,
+   8.2443,
+   109.9237,
+   109.9237
+  ]
+ },
+ "rays": {
+  "res": "rays",
+  "at": [
+   100.0763,
+   190.9924
+  ],
+  "size": [
+   1338,
+   1080
+  ]
+ },
+ "halo": {
+  "res": "halo",
+  "at": [
+   4.3053,
+   6.2214
+  ],
+  "size": [
+   869,
+   869
+  ]
+ },
+ "arrowL": {
+  "res": "arrow-l",
+  "at": [
+   -34.2595,
+   -16.9847
+  ],
+  "size": [
+   179,
+   179
+  ]
+ },
+ "arrowR": {
+  "res": "arrow-r",
+  "at": [
+   -32.0993,
+   -15.9847
+  ],
+  "size": [
+   175,
+   178
+  ]
+ },
+ "dotOn": {
+  "res": "dot-on",
+  "at": [
+   -5.2061,
+   -4.5267
+  ],
+  "size": [
+   59,
+   28
+  ],
+  "box": [
+   514.25,
+   379,
+   18,
+   7
+  ]
+ },
+ "dotOff": {
+  "res": "dot-off",
+  "at": [
+   -5.1603,
+   -4.5267
+  ],
+  "size": [
+   28,
+   28
+  ],
+  "box": [
+   538.25,
+   379,
+   7,
+   7
+  ]
+ },
+ "dots": [
+  514.25,
+  379,
+  18,
+  7,
+  538.25,
+  379,
+  7,
+  7,
+  551.25,
+  379,
+  6.9999,
+  7,
+  564.25,
+  379,
+  7,
+  7,
+  577.25,
+  379,
+  7,
+  7
+ ],
+ "go": {
+  "res": "go",
+  "at": [
+   -36.1069,
+   -19.1622
+  ],
+  "size": [
+   480,
+   199
+  ],
+  "box": [
+   895.8779,
+   699.1317,
+   406.7175,
+   126.4122
+  ]
+ },
+ "goDim": {
+  "res": "go-dim",
+  "at": [
+   -36.1069,
+   -19.1622
+  ],
+  "size": [
+   480,
+   199
+  ]
+ },
+ "cards": [
+  {
+   "id": "squish",
+   "card": {
+    "res": "cards/squish",
+    "at": [
+     -85.229,
+     -46.0305
+    ],
+    "size": [
+     1510,
+     990
+    ]
+   },
+   "win": [
+    35.7252,
+    129.1603,
+    1266.8702,
+    538.1107
+   ],
+   "go": [
+    895.8779,
+    699.1317,
+    406.7175,
+    126.4122
+   ],
+   "over": {
+    "res": "cards/squish-over",
+    "at": [
+     0.0458,
+     0.8092
+    ],
+    "size": [
+     1268,
+     537
+    ]
+   },
+   "mask": {
+    "res": "cards/squish-mask",
+    "at": [
+     0.0458,
+     0.8092
+    ],
+    "size": [
+     1268,
+     537
+    ]
+   },
+   "hasClip": false,
+   "clip": null,
+   "hasSquish": true,
+   "squish": {
+    "img": {
+     "res": "cards/squish-creature",
+     "at": [
+      223.7061,
+      44.7844
+     ],
+     "size": [
+      359,
+      407
+     ],
+     "box": [
+      253.3397,
+      43.0248,
+      760.1049,
+      473.5305
+     ]
+    },
+    "l": {
+     "res": "cards/squish-line-l",
+     "at": [
+      1.0449,
+      0.334
+     ],
+     "size": [
+      58,
+      129
+     ],
+     "box": [
+      38.0009,
+      204.4752,
+      122.2472,
+      129.1173
+     ]
+    },
+    "r": {
+     "res": "cards/squish-line-r",
+     "at": [
+      64.4237,
+      0.334
+     ],
+     "size": [
+      58,
+      129
+     ],
+     "box": [
+      1106.6221,
+      204.4752,
+      122.2471,
+      129.1173
+     ]
+    }
+   }
+  },
+  {
+   "id": "squishdoku",
+   "card": {
+    "res": "cards/squishdoku",
+    "at": [
+     -85.229,
+     -46.0305
+    ],
+    "size": [
+     1510,
+     990
+    ]
+   },
+   "win": [
+    35.7252,
+    129.1603,
+    1266.8702,
+    538.1107
+   ],
+   "go": [
+    895.8779,
+    699.1317,
+    406.7175,
+    126.4122
+   ],
+   "over": {
+    "res": "cards/squishdoku-over",
+    "at": [
+     0.0458,
+     0.8092
+    ],
+    "size": [
+     1268,
+     537
+    ]
+   },
+   "mask": {
+    "res": "cards/squishdoku-mask",
+    "at": [
+     0.0458,
+     0.8092
+    ],
+    "size": [
+     1268,
+     537
+    ]
+   },
+   "hasClip": true,
+   "clip": {
+    "file": "Park/squishdoku.mp4",
+    "size": [
+     1000,
+     400
+    ]
+   },
+   "hasSquish": false,
+   "squish": null
+  },
+  {
+   "id": "sort",
+   "card": {
+    "res": "cards/sort",
+    "at": [
+     -85.229,
+     -46.0305
+    ],
+    "size": [
+     1510,
+     990
+    ]
+   },
+   "win": [
+    35.7252,
+    129.1603,
+    1266.8702,
+    538.1107
+   ],
+   "go": [
+    895.8779,
+    699.1317,
+    406.7175,
+    126.4122
+   ],
+   "over": {
+    "res": "cards/sort-over",
+    "at": [
+     0.0458,
+     0.8092
+    ],
+    "size": [
+     1268,
+     537
+    ]
+   },
+   "mask": {
+    "res": "cards/sort-mask",
+    "at": [
+     0.0458,
+     0.8092
+    ],
+    "size": [
+     1268,
+     537
+    ]
+   },
+   "hasClip": true,
+   "clip": {
+    "file": "Park/sort.mp4",
+    "size": [
+     1000,
+     400
+    ]
+   },
+   "hasSquish": false,
+   "squish": null
+  },
+  {
+   "id": "stack",
+   "card": {
+    "res": "cards/stack",
+    "at": [
+     -85.229,
+     -46.0305
+    ],
+    "size": [
+     1510,
+     990
+    ]
+   },
+   "win": [
+    35.7252,
+    129.1603,
+    1266.8702,
+    538.1107
+   ],
+   "go": [
+    895.8779,
+    699.1317,
+    406.7175,
+    126.4122
+   ],
+   "over": {
+    "res": "cards/stack-over",
+    "at": [
+     0.0458,
+     0.8092
+    ],
+    "size": [
+     1268,
+     537
+    ]
+   },
+   "mask": {
+    "res": "cards/stack-mask",
+    "at": [
+     0.0458,
+     0.8092
+    ],
+    "size": [
+     1268,
+     537
+    ]
+   },
+   "hasClip": true,
+   "clip": {
+    "file": "Park/stack.mp4",
+    "size": [
+     1000,
+     400
+    ]
+   },
+   "hasSquish": false,
+   "squish": null
+  },
+  {
+   "id": "hop",
+   "card": {
+    "res": "cards/hop",
+    "at": [
+     -85.229,
+     -46.0305
+    ],
+    "size": [
+     1510,
+     990
+    ]
+   },
+   "win": [
+    35.7252,
+    129.1603,
+    1266.8702,
+    538.1107
+   ],
+   "go": [
+    895.8779,
+    699.1317,
+    406.7175,
+    126.4122
+   ],
+   "over": {
+    "res": "cards/hop-over",
+    "at": [
+     0.0458,
+     0.8092
+    ],
+    "size": [
+     1268,
+     537
+    ]
+   },
+   "mask": {
+    "res": "cards/hop-mask",
+    "at": [
+     0.0458,
+     0.8092
+    ],
+    "size": [
+     1268,
+     537
+    ]
+   },
+   "hasClip": true,
+   "clip": {
+    "file": "Park/hop.mp4",
+    "size": [
+     1000,
+     400
+    ]
+   },
+   "hasSquish": false,
+   "squish": null
+  }
+ ],
+ "shots": {
+  "dir": "webgame/test/out/unity-park",
+  "plate": "plate.png",
+  "each": [
+   "park-squish.png",
+   "park-squishdoku.png",
+   "park-sort.png",
+   "park-stack.png",
+   "park-hop.png"
+  ],
+  "motion": [
+   {
+    "kind": "in",
+    "ms": 120,
+    "file": "in-120.png",
+    "from": 0,
+    "css": [
+     {
+      "slot": "matrix(1, 0, 0, 1, 0, 0)",
+      "slotO": 1,
+      "gc": "matrix(0.908619, 0, 0, 0.908619, 73.105, 0)",
+      "gcO": 0.196981,
+      "gcOrigin": "243.5px 159px",
+      "filter": "brightness(1.16624)",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       1134.74,
+       293.32,
+       1151.1,
+       488.94
+      ],
+      "img": "matrix(1, 0, 0, 1, 0, 0)"
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 259, 0)",
+      "slotO": 0,
+      "gc": "matrix(0.8, 0, 0, 0.8, 160, 0)",
+      "gcO": 0,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       2167.5,
+       375.99,
+       810.8,
+       344.39
+      ],
+      "img": null
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 299, 0)",
+      "slotO": 0,
+      "gc": "matrix(0.8, 0, 0, 0.8, 160, 0)",
+      "gcO": 0,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       2277.43,
+       375.99,
+       810.8,
+       344.39
+      ],
+      "img": null
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 339, 0)",
+      "slotO": 0,
+      "gc": "matrix(0.8, 0, 0, 0.8, 160, 0)",
+      "gcO": 0,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       2387.35,
+       375.99,
+       810.8,
+       344.39
+      ],
+      "img": null
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 379, 0)",
+      "slotO": 0,
+      "gc": "matrix(0.8, 0, 0, 0.8, 160, 0)",
+      "gcO": 0,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       2497.27,
+       375.99,
+       810.8,
+       344.39
+      ],
+      "img": null
+     }
+    ]
+   },
+   {
+    "kind": "in",
+    "ms": 300,
+    "file": "in-300.png",
+    "from": 0,
+    "css": [
+     {
+      "slot": "matrix(1, 0, 0, 1, 0, 0)",
+      "slotO": 1,
+      "gc": "matrix(0.99679, 0, 0, 0.99679, 2.56809, 0)",
+      "gcO": 0.852283,
+      "gcOrigin": "243.5px 159px",
+      "filter": "brightness(1.02643)",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       885.04,
+       266.18,
+       1262.8,
+       536.38
+      ],
+      "img": "matrix(1, 0, 0, 1, 0, 0)"
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 259, 0)",
+      "slotO": 0,
+      "gc": "matrix(0.981818, 0, 0, 0.981818, 14.5458, 0)",
+      "gcO": 0.68254,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       1755.59,
+       331.23,
+       995.07,
+       422.66
+      ],
+      "img": null
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 299, 0)",
+      "slotO": 0,
+      "gc": "matrix(0.945771, 0, 0, 0.945771, 43.3829, 0)",
+      "gcO": 0.39619,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       1947.18,
+       340.1,
+       958.54,
+       407.14
+      ],
+      "img": null
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 339, 0)",
+      "slotO": 0,
+      "gc": "matrix(0.869581, 0, 0, 0.869581, 104.335, 0)",
+      "gcO": 0.0784286,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       2229.71,
+       358.86,
+       881.32,
+       374.34
+      ],
+      "img": null
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 379, 0)",
+      "slotO": 0,
+      "gc": "matrix(0.8, 0, 0, 0.8, 160, 0)",
+      "gcO": 0,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       2497.27,
+       375.99,
+       810.8,
+       344.39
+      ],
+      "img": null
+     }
+    ]
+   },
+   {
+    "kind": "in",
+    "ms": 600,
+    "file": "in-600.png",
+    "from": 0,
+    "css": [
+     {
+      "slot": "matrix(1, 0, 0, 1, 0, 0)",
+      "slotO": 1,
+      "gc": "matrix(1.00024, 0, 0, 1.00024, -0.191348, 0)",
+      "gcO": 1,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       875.28,
+       265.12,
+       1267.17,
+       538.24
+      ],
+      "img": "matrix(1, 0, 0, 1, 0, 0)"
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 259, 0)",
+      "slotO": 0,
+      "gc": "matrix(1.00118, 0, 0, 1.00118, -0.944647, 0)",
+      "gcO": 1,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       1711.72,
+       326.46,
+       1014.69,
+       431
+      ],
+      "img": null
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 299, 0)",
+      "slotO": 0,
+      "gc": "matrix(1.00225, 0, 0, 1.00225, -1.80017, 0)",
+      "gcO": 0.995542,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       1819.22,
+       326.19,
+       1015.78,
+       431.46
+      ],
+      "img": null
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 339, 0)",
+      "slotO": 0,
+      "gc": "matrix(1.00226, 0, 0, 1.00226, -1.81097, 0)",
+      "gcO": 0.962358,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       1929.12,
+       326.19,
+       1015.79,
+       431.46
+      ],
+      "img": null
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 379, 0)",
+      "slotO": 0,
+      "gc": "matrix(0.998917, 0, 0, 0.998917, 0.866191, 0)",
+      "gcO": 0.885229,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       2046.62,
+       327.01,
+       1012.4,
+       430.02
+      ],
+      "img": null
+     }
+    ]
+   },
+   {
+    "kind": "go",
+    "ms": 100,
+    "file": "go-100.png",
+    "from": 0,
+    "to": 1,
+    "css": [
+     {
+      "slot": "matrix(0.864843, 0, 0, 0.864843, -175.028, 0)",
+      "slotO": 0.515368,
+      "gc": "none",
+      "gcO": 1,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       480.57,
+       306.79,
+       1095.64,
+       465.38
+      ],
+      "img": "matrix(1, 0, 0, 1, 0, 0)"
+     },
+     {
+      "slot": "matrix(0.935157, 0, 0, 0.935157, 83.9718, 0)",
+      "slotO": 0.484632,
+      "gc": "none",
+      "gcO": 1,
+      "gcOrigin": "243.5px 159px",
+      "filter": "brightness(1.24666)",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       1147.79,
+       285.15,
+       1184.72,
+       503.22
+      ],
+      "img": null
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 271.969, 0)",
+      "slotO": 0,
+      "gc": "none",
+      "gcO": 1,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       1750.04,
+       326.75,
+       1013.5,
+       430.49
+      ],
+      "img": null
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 311.969, 0)",
+      "slotO": 0,
+      "gc": "none",
+      "gcO": 1,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       1859.96,
+       326.75,
+       1013.5,
+       430.49
+      ],
+      "img": null
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 351.969, 0)",
+      "slotO": 0,
+      "gc": "none",
+      "gcO": 1,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       1969.88,
+       326.75,
+       1013.5,
+       430.49
+      ],
+      "img": null
+     }
+    ]
+   },
+   {
+    "kind": "go",
+    "ms": 250,
+    "file": "go-250.png",
+    "from": 0,
+    "to": 1,
+    "css": [
+     {
+      "slot": "matrix(0.796356, 0, 0, 0.796356, -263.719, 0)",
+      "slotO": 0.0531131,
+      "gc": "none",
+      "gcO": 1,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       280.23,
+       327.87,
+       1008.88,
+       428.53
+      ],
+      "img": "matrix(1, 0, 0, 1, 0, 0)"
+     },
+     {
+      "slot": "matrix(1.00364, 0, 0, 1.00364, -4.71896, 0)",
+      "slotO": 0.946887,
+      "gc": "none",
+      "gcO": 1,
+      "gcOrigin": "243.5px 159px",
+      "filter": "brightness(1.06916)",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       860.68,
+       264.07,
+       1271.48,
+       540.07
+      ],
+      "img": null
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 258.271, 0)",
+      "slotO": 0,
+      "gc": "none",
+      "gcO": 1,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       1712.39,
+       326.75,
+       1013.5,
+       430.49
+      ],
+      "img": null
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 298.271, 0)",
+      "slotO": 0,
+      "gc": "none",
+      "gcO": 1,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       1822.32,
+       326.75,
+       1013.5,
+       430.49
+      ],
+      "img": null
+     },
+     {
+      "slot": "matrix(0.8, 0, 0, 0.8, 338.271, 0)",
+      "slotO": 0,
+      "gc": "none",
+      "gcO": 1,
+      "gcOrigin": "243.5px 159px",
+      "filter": "none",
+      "h": 318,
+      "sh": 318,
+      "win": [
+       1932.24,
+       326.75,
+       1013.5,
+       430.49
+      ],
+      "img": null
+     }
+    ]
+   }
+  ]
+ }
+}

@@ -36,6 +36,8 @@ namespace SquishSquad.Vector
         public LayerNode Root;
         public readonly Dictionary<string, SvgNode> Ids = new Dictionary<string, SvgNode>();
         public double Tolerance = Geometry.DefaultTolerance;
+        /// <summary>The pixel size of a picture an &lt;image&gt; names (for preserveAspectRatio); unknown: drawn as "none".</summary>
+        public Func<string, (int w, int h)?> ImageSize;
 
         sealed class Style
         {
@@ -48,9 +50,11 @@ namespace SquishSquad.Vector
         public static SvgScene Compile(SvgNode root, double width, double height) => Compile(root, width, height, Affine.Identity);
 
         // `outer` maps the <svg>'s width x height box into the output (e.g. a margin for parts drawn outside it)
-        public static SvgScene Compile(SvgNode root, double width, double height, Affine outer)
+        public static SvgScene Compile(SvgNode root, double width, double height, Affine outer) => Compile(root, width, height, outer, null);
+
+        public static SvgScene Compile(SvgNode root, double width, double height, Affine outer, Func<string, (int w, int h)?> imageSize)
         {
-            var sc = new SvgScene();
+            var sc = new SvgScene { ImageSize = imageSize };
             Index(root, sc.Ids);
             var svg = Find(root, "svg");
             sc.Root = new LayerNode { Name = "root" };
@@ -164,7 +168,11 @@ namespace SquishSquad.Vector
                 if (st.Visibility == "hidden" || st.Visibility == "collapse") { }
                 else Shape(n, m, st, layer ? 1f : opacity, list, layer);
             }
-            else return;   // images, text and unknown elements: not used by the rigs
+            else if (n.Tag == "image")
+            {
+                if (st.Visibility != "hidden" && st.Visibility != "collapse") Image(n, m, layer ? 1f : opacity, list);
+            }
+            else return;   // text and unknown elements: the UI exporter turns text into glyph paths
 
             if (L == null) return;
             if (L.Children.Count == 0) return;
@@ -195,9 +203,48 @@ namespace SquishSquad.Vector
             {
                 var join = st.LineJoin == "round" ? Outline.Join.Round : st.LineJoin == "bevel" ? Outline.Join.Bevel : Outline.Join.Miter;
                 var cap = st.LineCap == "round" ? Outline.Cap.Round : st.LineCap == "square" ? Outline.Cap.Square : Outline.Cap.Butt;
-                var sh = Outline.Stroke(outline, st.StrokeWidth * m.Scale, join, cap, st.MiterLimit, Tolerance);
+                var dashed = outline;
+                var dash = n.Prop("stroke-dasharray");
+                if (!string.IsNullOrEmpty(dash) && dash.Trim() != "none")
+                {
+                    var list = new List<double>();
+                    int i = 0;
+                    while (SvgNum.TryRead(dash, ref i, out var v)) list.Add(v * m.Scale);
+                    if (list.Count % 2 == 1) list.AddRange(list.ToArray());
+                    double off = SvgNum.Parse(n.Prop("stroke-dashoffset") ?? "0", 0) * m.Scale;
+                    dashed = Outline.Dash(outline, list, off);
+                }
+                var sh = Outline.Stroke(dashed, st.StrokeWidth * m.Scale, join, cap, st.MiterLimit, Tolerance);
                 if (!sh.IsEmpty) into.Add(new FillNode { Shape = sh, Paint = stroke, Opacity = opacity * st.StrokeOpacity, UserBox = box, UserToPx = m });
             }
+        }
+
+        // a picture in its viewport (x, y, width, height), placed by preserveAspectRatio: a rect filled with it, the
+        // part of the picture's rect inside the viewport
+        void Image(SvgNode n, Affine m, float opacity, List<RenderNode> into)
+        {
+            var href = n["href"] ?? n["xlink:href"];
+            double x = n.Num("x"), y = n.Num("y"), w = n.Num("width"), h = n.Num("height");
+            if (string.IsNullOrEmpty(href) || w <= 0 || h <= 0) return;
+            double ix = x, iy = y, iw = w, ih = h;
+            var size = ImageSize?.Invoke(href);
+            var par = (n["preserveAspectRatio"] ?? "xMidYMid meet").Trim();
+            if (size.HasValue && size.Value.w > 0 && size.Value.h > 0 && !par.StartsWith("none"))
+            {
+                double sw = size.Value.w, sh = size.Value.h;
+                double k = par.Contains("slice") ? Math.Max(w / sw, h / sh) : Math.Min(w / sw, h / sh);
+                iw = sw * k; ih = sh * k;
+                double ax = par.Contains("xMin") ? 0 : par.Contains("xMax") ? 1 : 0.5, ay = par.Contains("YMin") ? 0 : par.Contains("YMax") ? 1 : 0.5;
+                ix = x + (w - iw) * ax; iy = y + (h - ih) * ay;
+            }
+            double x0 = Math.Max(x, ix), y0 = Math.Max(y, iy), x1 = Math.Min(x + w, ix + iw), y1 = Math.Min(y + h, iy + ih);
+            if (x1 <= x0 || y1 <= y0) return;
+            var poly = new List<Vec2> { m.Apply(new Vec2(x0, y0)), m.Apply(new Vec2(x1, y0)), m.Apply(new Vec2(x1, y1)), m.Apply(new Vec2(x0, y1)) };
+            var shape = new Shape { Rule = FillRule.NonZero };
+            shape.Polygons.Add(poly);
+            var paint = new Paint { Kind = PaintKind.Image, Image = href, BoundingBoxUnits = false, UserToImage = Affine.ScaleBy(1 / iw, 1 / ih) * Affine.Translate(-ix, -iy) };
+            var box = new Box { X0 = x0, Y0 = y0, X1 = x1, Y1 = y1 };
+            into.Add(new FillNode { Shape = shape, Paint = paint, Opacity = opacity, UserBox = box, UserToPx = m });
         }
 
         Paint Resolve(string value, string currentColor)

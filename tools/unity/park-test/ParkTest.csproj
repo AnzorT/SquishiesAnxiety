@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9</LangVersion>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../unity/Assets/Scripts/Menu/ParkLayout.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Menu/ParkModel.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
+  </ItemGroup>
+</Project>

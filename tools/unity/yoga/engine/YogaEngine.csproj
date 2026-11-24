@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Compiles the vendored Yoga engine exactly as Unity sees it: netstandard2.1 API surface,
+       C# 9, no implicit usings, no unsafe code. Sources: unity/Assets/Scripts/ThirdParty/Yoga.
+       Used by ../tests (the upstream Yoga.Net test suite). -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AssemblyName>Yoga.Net</AssemblyName>
+    <RootNamespace>Facebook.Yoga</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../../unity/Assets/Scripts/ThirdParty/Yoga/**/*.cs" />
+  </ItemGroup>
+</Project>

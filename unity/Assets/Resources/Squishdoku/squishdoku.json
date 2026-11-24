@@ -1,0 +1,704 @@
+{
+ "screen": [
+  832,
+  384
+ ],
+ "crib": {
+  "back": {
+   "b": [
+    10.10874080657959,
+    13.4375,
+    48,
+    52
+   ],
+   "lip": [
+    0,
+    4,
+    48,
+    48
+   ]
+  },
+  "pause": {
+   "b": [
+    10,
+    13.4375,
+    48,
+    52
+   ],
+   "lip": [
+    0,
+    4,
+    48,
+    48
+   ]
+  }
+ },
+ "tools": {
+  "place-on": {
+   "b": [
+    672.8125,
+    220,
+    112.375,
+    53
+   ],
+   "lip": [
+    0,
+    5,
+    112.375,
+    48
+   ],
+   "ring": [
+    0,
+    0,
+    112.375,
+    48
+   ]
+  },
+  "mark-off": {
+   "b": [
+    672.8125,
+    281,
+    112.375,
+    53
+   ],
+   "lip": [
+    0,
+    5,
+    112.375,
+    48
+   ],
+   "ring": [
+    0,
+    0,
+    112.375,
+    48
+   ]
+  },
+  "place-off": {
+   "b": [
+    672.8125,
+    220,
+    112.375,
+    53
+   ],
+   "lip": [
+    0,
+    5,
+    112.375,
+    48
+   ],
+   "ring": [
+    0,
+    0,
+    112.375,
+    48
+   ]
+  },
+  "mark-on": {
+   "b": [
+    672.8125,
+    281,
+    112.375,
+    53
+   ],
+   "lip": [
+    0,
+    5,
+    112.375,
+    48
+   ],
+   "ring": [
+    0,
+    0,
+    112.375,
+    48
+   ]
+  }
+ },
+ "RoomTitle": [
+  [
+   66,
+   8,
+   170,
+   40.891
+  ]
+ ],
+ "Chip": [
+  [
+   158.391,
+   46.891,
+   52.344,
+   24
+  ]
+ ],
+ "ScoreRow": [
+  [
+   47,
+   84.891,
+   152,
+   52
+  ]
+ ],
+ "TimerBar": [
+  [
+   25,
+   172.891,
+   196,
+   34
+  ]
+ ],
+ "PhasePill": [
+  [
+   10,
+   222.891,
+   95.219,
+   27
+  ]
+ ],
+ "Buddy": [
+  [
+   687,
+   126,
+   84,
+   84
+  ],
+  [
+   687,
+   126,
+   84,
+   84
+  ]
+ ],
+ "RoomBoard": [
+  [
+   236,
+   0,
+   390,
+   384
+  ],
+  [
+   236,
+   0,
+   390,
+   384
+  ]
+ ],
+ "artList": [
+  {
+   "key": "acorn",
+   "file": "acorn",
+   "ar": 1.263
+  },
+  {
+   "key": "aeroswift",
+   "file": "aeroswift",
+   "ar": 1.194
+  },
+  {
+   "key": "aurora",
+   "file": "aurora",
+   "ar": 0.943
+  },
+  {
+   "key": "avo",
+   "file": "avo",
+   "ar": 1.372
+  },
+  {
+   "key": "bao",
+   "file": "bao",
+   "ar": 0.817
+  },
+  {
+   "key": "batty",
+   "file": "batty",
+   "ar": 0.86
+  },
+  {
+   "key": "berri",
+   "file": "berri",
+   "ar": 1.003
+  },
+  {
+   "key": "biscuit",
+   "file": "biscuit",
+   "ar": 0.945
+  },
+  {
+   "key": "boba",
+   "file": "boba",
+   "ar": 1.295
+  },
+  {
+   "key": "boo",
+   "file": "boo",
+   "ar": 0.881
+  },
+  {
+   "key": "breeze",
+   "file": "breeze",
+   "ar": 0.81
+  },
+  {
+   "key": "bubbly",
+   "file": "bubbly",
+   "ar": 1.034
+  },
+  {
+   "key": "bunbun",
+   "file": "bunbun",
+   "ar": 0.724
+  },
+  {
+   "key": "cakey",
+   "file": "cakey",
+   "ar": 1.185
+  },
+  {
+   "key": "chefbun",
+   "file": "chefbun",
+   "ar": 1.096
+  },
+  {
+   "key": "chip",
+   "file": "chip",
+   "ar": 0.824
+  },
+  {
+   "key": "choco",
+   "file": "choco",
+   "ar": 1
+  },
+  {
+   "key": "chronoshade",
+   "file": "chronoshade",
+   "ar": 1.184
+  },
+  {
+   "key": "countsquishula",
+   "file": "countsquishula",
+   "ar": 0.974
+  },
+  {
+   "key": "crois",
+   "file": "crois",
+   "ar": 0.744
+  },
+  {
+   "key": "crystalline",
+   "file": "crystalline",
+   "ar": 1.275
+  },
+  {
+   "key": "cuppy",
+   "file": "cuppy",
+   "ar": 1.203
+  },
+  {
+   "key": "drako",
+   "file": "drako",
+   "ar": 0.952
+  },
+  {
+   "key": "duchess",
+   "file": "duchess",
+   "ar": 1.123
+  },
+  {
+   "key": "dunkie",
+   "file": "dunkie",
+   "ar": 0.952
+  },
+  {
+   "key": "dusty",
+   "file": "dusty",
+   "ar": 0.803
+  },
+  {
+   "key": "ember",
+   "file": "ember",
+   "ar": 1.098
+  },
+  {
+   "key": "fawn",
+   "file": "fawn",
+   "ar": 0.942
+  },
+  {
+   "key": "finn",
+   "file": "finn",
+   "ar": 1.056
+  },
+  {
+   "key": "floof",
+   "file": "floof",
+   "ar": 0.832
+  },
+  {
+   "key": "frybo",
+   "file": "frybo",
+   "ar": 1.116
+  },
+  {
+   "key": "gigagrowth",
+   "file": "gigagrowth",
+   "ar": 1.226
+  },
+  {
+   "key": "gourdy",
+   "file": "gourdy",
+   "ar": 0.941
+  },
+  {
+   "key": "gumdrop",
+   "file": "gumdrop",
+   "ar": 1.287
+  },
+  {
+   "key": "hana",
+   "file": "hana",
+   "ar": 1.472
+  },
+  {
+   "key": "hexie",
+   "file": "hexie",
+   "ar": 1.164
+  },
+  {
+   "key": "hocus",
+   "file": "hocus",
+   "ar": 1.217
+  },
+  {
+   "key": "hoot",
+   "file": "hoot",
+   "ar": 1.405
+  },
+  {
+   "key": "jelli",
+   "file": "jelli",
+   "ar": 1.012
+  },
+  {
+   "key": "jinni",
+   "file": "jinni",
+   "ar": 1.591
+  },
+  {
+   "key": "kernel",
+   "file": "kernel",
+   "ar": 1.055
+  },
+  {
+   "key": "kiko",
+   "file": "kiko",
+   "ar": 1.064
+  },
+  {
+   "key": "kiwi",
+   "file": "kiwi",
+   "ar": 0.918
+  },
+  {
+   "key": "lemmy",
+   "file": "lemmy",
+   "ar": 0.992
+  },
+  {
+   "key": "leo",
+   "file": "leo",
+   "ar": 1.112
+  },
+  {
+   "key": "lumi",
+   "file": "lumi",
+   "ar": 1.463
+  },
+  {
+   "key": "maca",
+   "file": "maca",
+   "ar": 0.861
+  },
+  {
+   "key": "magmara",
+   "file": "magmara",
+   "ar": 1.709
+  },
+  {
+   "key": "mallow",
+   "file": "mallow",
+   "ar": 0.718
+  },
+  {
+   "key": "mamapaws",
+   "file": "mamapaws",
+   "ar": 1.064
+  },
+  {
+   "key": "marina",
+   "file": "marina",
+   "ar": 1.235
+  },
+  {
+   "key": "melo",
+   "file": "melo",
+   "ar": 0.719
+  },
+  {
+   "key": "mittens",
+   "file": "mittens",
+   "ar": 1.152
+  },
+  {
+   "key": "mochi",
+   "file": "mochi",
+   "ar": 0.989
+  },
+  {
+   "key": "moss",
+   "file": "moss",
+   "ar": 0.997
+  },
+  {
+   "key": "mumbles",
+   "file": "mumbles",
+   "ar": 1.433
+  },
+  {
+   "key": "nibbles",
+   "file": "nibbles",
+   "ar": 1.365
+  },
+  {
+   "key": "nimbo",
+   "file": "nimbo",
+   "ar": 0.722
+  },
+  {
+   "key": "octo",
+   "file": "octo",
+   "ar": 0.972
+  },
+  {
+   "key": "panko",
+   "file": "panko",
+   "ar": 1.26
+  },
+  {
+   "key": "peachy",
+   "file": "peachy",
+   "ar": 1.005
+  },
+  {
+   "key": "pearl",
+   "file": "pearl",
+   "ar": 1.053
+  },
+  {
+   "key": "phantasm",
+   "file": "phantasm",
+   "ar": 1.112
+  },
+  {
+   "key": "pina",
+   "file": "pina",
+   "ar": 1.336
+  },
+  {
+   "key": "pip",
+   "file": "pip",
+   "ar": 0.957
+  },
+  {
+   "key": "pitaya",
+   "file": "pitaya",
+   "ar": 0.817
+  },
+  {
+   "key": "pixie",
+   "file": "pixie",
+   "ar": 1.234
+  },
+  {
+   "key": "plip",
+   "file": "plip",
+   "ar": 1.077
+  },
+  {
+   "key": "poppy",
+   "file": "poppy",
+   "ar": 0.913
+  },
+  {
+   "key": "prickle",
+   "file": "prickle",
+   "ar": 0.992
+  },
+  {
+   "key": "puddi",
+   "file": "puddi",
+   "ar": 0.943
+  },
+  {
+   "key": "puff",
+   "file": "puff",
+   "ar": 0.957
+  },
+  {
+   "key": "quill",
+   "file": "quill",
+   "ar": 0.97
+  },
+  {
+   "key": "scoop",
+   "file": "scoop",
+   "ar": 1.507
+  },
+  {
+   "key": "sealy",
+   "file": "sealy",
+   "ar": 0.814
+  },
+  {
+   "key": "shelly",
+   "file": "shelly",
+   "ar": 0.872
+  },
+  {
+   "key": "sprout",
+   "file": "sprout",
+   "ar": 1.124
+  },
+  {
+   "key": "sugarplum",
+   "file": "sugarplum",
+   "ar": 1.562
+  },
+  {
+   "key": "teddy",
+   "file": "teddy",
+   "ar": 1.253
+  },
+  {
+   "key": "tutti",
+   "file": "tutti",
+   "ar": 0.976
+  },
+  {
+   "key": "twinkle",
+   "file": "twinkle",
+   "ar": 1.069
+  },
+  {
+   "key": "twisty",
+   "file": "twisty",
+   "ar": 0.9
+  },
+  {
+   "key": "unibun",
+   "file": "unibun",
+   "ar": 1.81
+  },
+  {
+   "key": "waffles",
+   "file": "waffles",
+   "ar": 1.256
+  },
+  {
+   "key": "wisecrack",
+   "file": "wisecrack",
+   "ar": 1.11
+  },
+  {
+   "key": "zappi",
+   "file": "zappi",
+   "ar": 1.118
+  }
+ ],
+ "toolList": [
+  {
+   "name": "place-on",
+   "b": [
+    672.8125,
+    220,
+    112.375,
+    53
+   ],
+   "lip": [
+    0,
+    5,
+    112.375,
+    48
+   ],
+   "ring": [
+    0,
+    0,
+    112.375,
+    48
+   ]
+  },
+  {
+   "name": "mark-off",
+   "b": [
+    672.8125,
+    281,
+    112.375,
+    53
+   ],
+   "lip": [
+    0,
+    5,
+    112.375,
+    48
+   ],
+   "ring": [
+    0,
+    0,
+    112.375,
+    48
+   ]
+  },
+  {
+   "name": "place-off",
+   "b": [
+    672.8125,
+    220,
+    112.375,
+    53
+   ],
+   "lip": [
+    0,
+    5,
+    112.375,
+    48
+   ],
+   "ring": [
+    0,
+    0,
+    112.375,
+    48
+   ]
+  },
+  {
+   "name": "mark-on",
+   "b": [
+    672.8125,
+    281,
+    112.375,
+    53
+   ],
+   "lip": [
+    0,
+    5,
+    112.375,
+    48
+   ],
+   "ring": [
+    0,
+    0,
+    112.375,
+    48
+   ]
+  }
+ ]
+}

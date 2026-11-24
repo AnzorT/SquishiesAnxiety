@@ -1,0 +1,17 @@
+{
+ "name": "lv12",
+ "profile": {
+  "level": 12,
+  "coins": 2500
+ },
+ "house": null,
+ "rooms": [
+  "living",
+  "kitchen",
+  "bathroom",
+  "bedroom",
+  "backyard",
+  "dance",
+  "movie"
+ ]
+}

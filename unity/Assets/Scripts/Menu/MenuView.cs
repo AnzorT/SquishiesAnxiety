@@ -17,7 +17,7 @@ using UnityEngine;
 
 namespace SquishSquad.Menu
 {
-    public sealed class MenuView : IDisposable
+    public sealed partial class MenuView : IDisposable
     {
         const int SceneOrder = 0, WorldOrder = 10, WeatherOrder = 20, HudOrder = 30;
 
@@ -41,6 +41,20 @@ namespace SquishSquad.Menu
         public string Season { get; private set; }
         public int Level { get; private set; }
         public IReadOnlyList<PieceView> Pieces => _pieces;
+
+        // the 'name' piece with this creature's plate (export-menu.mjs --names), or as exported (Mittens')
+        MenuLayout.Piece PlateFor(MenuLayout.Piece p, string key)
+        {
+            var plate = _layout.names == null || key == null ? null : System.Array.Find(_layout.names, n => n.key == key);
+            if (plate == null || plate.rect == null || plate.rect.Length != 4) return p;
+            return new MenuLayout.Piece
+            {
+                id = p.id, res = plate.res, rect = plate.rect, world = p.world, tap = p.tap, press = p.press,
+                hasFlourish = p.hasFlourish, flourish = p.flourish,
+                // (where a tap counts: the plate's own box, as the exported one's is)
+                hit = new float[] { plate.rect[0], plate.rect[1], plate.rect[2], plate.rect[3] },
+            };
+        }
 
         /// <summary>The creature drawn live from its rig frames (null: its still picture is shown).</summary>
         public CreatureView Creature { get; private set; }
@@ -83,23 +97,27 @@ namespace SquishSquad.Menu
             }
 
             // 2. the creature and its name plate (they stand in the scene), 3. the weather, 4. the HUD
+            // the creature: live or recorded when it can be (else the exported still, Mittens'); its name plate with it
+            var rig = _creatureKey != null ? Rigs.For(_creatureKey) : null;
+            string plateKey = rig != null ? _creatureKey : "mittens";
             int order = WorldOrder;
-            foreach (var p in _layout.hud) if (p.world) _pieces.Add(new PieceView(this, p, order++));
+            foreach (var p in _layout.hud) if (p.world) _pieces.Add(new PieceView(this, p.id == "name" ? PlateFor(p, plateKey) : p, order++));
             BuildWeather();
             order = HudOrder;
             foreach (var p in _layout.hud) if (!p.world) _pieces.Add(new PieceView(this, p, order++));
+            BuildHud();   // the player's numbers (MenuView.Hud.cs)
 
             // the creature, animated by the app's own rig code (recorded frames for now), in place of its still
             if (_creatureKey != null)
             {
                 var piece = _pieces.Find(x => x.Data.id == "creature");
-                var rig = piece != null ? RecordedRig.Load(_creatureKey) : null;
-                if (rig != null)
+                if (piece != null && rig != null)
                 {
                     Creature = CreatureView.Create(_world, rig, piece.Hit, piece.Order);
                     _creatureHome = Creature.transform.localPosition;
                     _idle = rig;
                     piece.UseLive();
+                    Creature.Failed = _ => piece.UseStill();
                 }
             }
         }
@@ -159,7 +177,13 @@ namespace SquishSquad.Menu
             }
             foreach (var p in _pieces) p.Tick(ms);
             TickTrip(ms);
+            TickHud(ms);
             TickClip();
+            if (Carousel != null)
+            {
+                Carousel.Tick(ms);
+                if (Carousel.Model.Done(ms)) { Carousel.Dispose(); Carousel = null; }
+            }
         }
 
         // ---- PLAY: the walk to the Game Park and back (webgame/app/menu.js enterPark / leavePark) ---------------------
@@ -167,7 +191,8 @@ namespace SquishSquad.Menu
         public Place Where { get; private set; } = Place.Home;
         float _tripStart = -1, _fadeFrom = 1, _fadeTo = 1, _fadeStart;
         Vector3 _creatureHome;
-        RecordedRig _idle, _clip;
+        IRigFrames _idle;
+        RecordedRig _clip;
         RenderTexture _parkTex;
         const float ParkPad = 160;   // menu.js PAD: where the creature stands in the park (the house's pad is at 500)
         const float FadeMs = 300;
@@ -190,6 +215,7 @@ namespace SquishSquad.Menu
         public bool LeavePark(float nowMs)
         {
             if (Where != Place.Park) return false;
+            Carousel?.Model.Leave(nowMs);   // the carousel goes out while the creature turns (menu.js leavePark)
             Where = Place.ToHome;
             _tripStart = nowMs;
             Clip("park-leave");
@@ -212,6 +238,7 @@ namespace SquishSquad.Menu
         {
             float a = CurrentFade(ms);
             foreach (var p in _pieces) if (p.Data.id != "creature") p.SetAlpha(a);
+            _hudAlpha = a;
             if (Where == Place.Home || Where == Place.Park) return;
             bool enter = Where == Place.ToPark;
             float turn = enter ? 380 : 340, walk = enter ? 2300 : 2100, t = ms - _tripStart;
@@ -223,7 +250,7 @@ namespace SquishSquad.Menu
             if (Creature != null) Creature.transform.localPosition = _creatureHome + new Vector3(scr - X0 - cam, 0, 0);
             if (t < 2 * turn + walk) return;
             // arrived
-            if (enter) Where = Place.Park;
+            if (enter) { Where = Place.Park; ShowGames(_tripStart + 2 * turn + walk, false); }
             else { Where = Place.Home; _world.localPosition = Vector3.zero; if (Creature != null) Creature.transform.localPosition = _creatureHome; Fade(1, ms); }
             // the clip ends in 'happy'; back to the idle loop once it has played
         }
@@ -234,6 +261,23 @@ namespace SquishSquad.Menu
             if (Creature.Seconds < _clip.Duration + 1.2f) return;
             _clip = null;
             Creature.SetFrames(_idle);
+        }
+
+        // ---- the games carousel in the park (menu.js showGames; ParkCarousel / ParkModel) --------------------------
+        /// <summary>The carousel while it's on screen (in the park, and while it goes out).</summary>
+        public ParkCarousel Carousel { get; private set; }
+        /// <summary>The game in the middle when the carousel opens (null: the one last chosen, as the app).</summary>
+        public string ParkStartGame;
+        ParkLayout _parkLayout;
+        const int CarouselOrder = 100;
+
+        /// <summary>The carousel, made at `nowMs` (instant: at once, as when the app comes back into the park from a game).</summary>
+        public void ShowGames(double nowMs, bool instant)
+        {
+            if (Carousel != null) { Carousel.Dispose(); Carousel = null; }
+            _parkLayout ??= ParkCarousel.LoadLayout();
+            if (_parkLayout == null) return;
+            Carousel = new ParkCarousel(_parkLayout, _root, _w, _h, nowMs, instant, ParkStartGame, CarouselOrder);
         }
 
         // the park's SVG, drawn once by the vector renderer into a texture placed one screen to the left of the house
@@ -295,12 +339,29 @@ namespace SquishSquad.Menu
             }
             var R = _layout.reference;
             float W = R.px[0], H = R.px[1];
-            float cx = p.hit[0] + p.hit[2] / 2f, cy = p.hit[1] + p.hit[3] / 2f;
-            float x = cx < W / 3f ? refPx.x * _f : cx > W * 2f / 3f ? _w - (W - refPx.x) * _f : _w / 2f + (refPx.x - W / 2f) * _f;
-            float y = cy < H / 3f ? refPx.y * _f : cy > H * 2f / 3f ? _h - (H - refPx.y) * _f : _h / 2f + (refPx.y - H / 2f) * _f;
+            Anchor(p, out int ax, out int ay);
+            float x = ax < 0 ? refPx.x * _f : ax > 0 ? _w - (W - refPx.x) * _f : _w / 2f + (refPx.x - W / 2f) * _f;
+            float y = ay < 0 ? refPx.y * _f : ay > 0 ? _h - (H - refPx.y) * _f : _h / 2f + (refPx.y - H / 2f) * _f;
             return new Vector2(x, y);
         }
         float ScaleOf(MenuLayout.Piece p) => p.world ? _k / _kRef : _f;
+
+        // Which screen edges a HUD piece holds to (-1 left / top, 0 centre, 1 right / bottom). The app lays the HUD out
+        // in rows (main-menu.js / app/menu.js CSS): the tabs are one row from the left, the coin and gem pills, the trophy
+        // and the gear one row from the right, PLAY in the bottom-left corner, the crest in the bottom-right one. A row
+        // moves as one, so its gaps stay as in the app on any screen shape.
+        void Anchor(MenuLayout.Piece p, out int ax, out int ay)
+        {
+            var id = p.id ?? "";
+            if (id.StartsWith("tab-")) { ax = -1; ay = -1; return; }
+            if (id.StartsWith("pill-") || id.StartsWith("orb-")) { ax = 1; ay = -1; return; }
+            if (id == "play") { ax = -1; ay = 1; return; }
+            if (id == "crest") { ax = 1; ay = 1; return; }
+            var R = _layout.reference;
+            float cx = p.hit[0] + p.hit[2] / 2f, cy = p.hit[1] + p.hit[3] / 2f;
+            ax = cx < R.px[0] / 3f ? -1 : cx > R.px[0] * 2f / 3f ? 1 : 0;
+            ay = cy < R.px[1] / 3f ? -1 : cy > R.px[1] * 2f / 3f ? 1 : 0;
+        }
 
         static Vector2 Snap(Vector2 v, float scale) => Mathf.Approximately(scale, 1f) ? new Vector2(Mathf.Round(v.x), Mathf.Round(v.y)) : v;
         public static Vector3 World(Vector2 pagePx) => new Vector3(pagePx.x, -pagePx.y, 0f);
@@ -352,8 +413,14 @@ namespace SquishSquad.Menu
             if (Application.isPlaying) UnityEngine.Object.Destroy(o); else UnityEngine.Object.DestroyImmediate(o);
         }
 
+        /// <summary>Hides the whole menu (while a game is open over it) or shows it again.</summary>
+        public bool Shown { get => _root.gameObject.activeSelf; set => _root.gameObject.SetActive(value); }
+
         public void Dispose()
         {
+            DisposeHud();
+            Carousel?.Dispose();
+            Carousel = null;
             if (_root != null) Kill(_root.gameObject);
             foreach (var o in _made) Kill(o);
             _made.Clear();
@@ -367,9 +434,15 @@ namespace SquishSquad.Menu
         public sealed class PieceView
         {
             public readonly MenuLayout.Piece Data;
-            public readonly Rect Hit;              // page px on this screen (y down)
+            public Rect Hit { get; internal set; }  // page px on this screen (y down)
             readonly Transform _pivot;             // presses scale / move around this point
             readonly Vector3 _pivotPos;
+            Vector3 _offset;                       // moved from its exported place (a pill's picture as the row reflows)
+            internal Transform Pivot => _pivot;
+            internal Vector2 PivotPx => new Vector2(_pivotPos.x, -_pivotPos.y);
+            internal bool Pressed => _pressed;
+            /// <summary>Moves the piece `px` (page px, y down) from where it was exported.</summary>
+            internal void Offset(Vector2 px) { _offset = new Vector3(px.x, -px.y, 0); _pivot.localPosition = _pivotPos + _offset; }
             readonly SpriteRenderer _art, _fl;
             readonly Sprite[] _frames;
             readonly float _scale;
@@ -378,6 +451,7 @@ namespace SquishSquad.Menu
 
             // a live creature draws itself (CreatureView): no still, no placeholder breath
             public void UseLive() { _live = true; _art.enabled = false; }
+            public void UseStill() { _live = false; _art.enabled = true; }
 
             // the HUD's fade (menu.js x.fade): every picture of the piece at this opacity
             public void SetAlpha(float a)
@@ -423,7 +497,7 @@ namespace SquishSquad.Menu
                 if (press == null) return;
                 float s = on ? press.scale : 1f;
                 _pivot.localScale = new Vector3(s, s, 1f);
-                _pivot.localPosition = _pivotPos + (on ? new Vector3(0f, -press.dy * dpPx, 0f) : Vector3.zero);
+                _pivot.localPosition = _pivotPos + _offset + (on ? new Vector3(0f, -press.dy * dpPx, 0f) : Vector3.zero);
             }
 
             public void Tick(float ms)

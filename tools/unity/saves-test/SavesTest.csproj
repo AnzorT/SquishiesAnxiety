@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The four puzzle games' saves to the account (Backend/GameSaves.cs, Games/*/…Save.cs, Games/Shared/AccountSaves.cs)
+       against the Local Emulator Suite, compared with what the app's own saveX writes (app.mjs); run notes at the top of Program.cs. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../unity/Assets/Scripts/Backend/**/*.cs" Exclude="../../../unity/Assets/Scripts/Backend/Unity/**" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Shared/AccountSaves.cs" />
+    <!-- each game's outcomes (Levels.AfterLevel / AfterBlitz…) and its save hook -->
+    <Compile Include="../../../unity/Assets/Scripts/Games/Stack/Levels.cs;../../../unity/Assets/Scripts/Games/Stack/StackXp.cs;../../../unity/Assets/Scripts/Games/Stack/Js.cs;../../../unity/Assets/Scripts/Games/Stack/StackSave.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Sort/Levels.cs;../../../unity/Assets/Scripts/Games/Sort/PlayerXp.cs;../../../unity/Assets/Scripts/Games/Sort/JsMath.cs;../../../unity/Assets/Scripts/Games/Sort/SortSave.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Hop/Levels.cs;../../../unity/Assets/Scripts/Games/Hop/PlayerXp.cs;../../../unity/Assets/Scripts/Games/Hop/Js.cs;../../../unity/Assets/Scripts/Games/Hop/LevelData.g.cs;../../../unity/Assets/Scripts/Games/Hop/Engine.cs;../../../unity/Assets/Scripts/Games/Hop/HopSave.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Squishdoku/Levels.cs;../../../unity/Assets/Scripts/Games/Squishdoku/PlayerXp.cs;../../../unity/Assets/Scripts/Games/Squishdoku/Js.cs;../../../unity/Assets/Scripts/Games/Squishdoku/LevelData.g.cs;../../../unity/Assets/Scripts/Games/Squishdoku/SdSave.cs" />
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+</Project>

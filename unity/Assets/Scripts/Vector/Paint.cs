@@ -15,7 +15,7 @@ namespace SquishSquad.Vector
         public override string ToString() => $"rgba({R * 255:0},{G * 255:0},{B * 255:0},{A:0.##})";
     }
 
-    public enum PaintKind { None, Solid, Linear, Radial }
+    public enum PaintKind { None, Solid, Linear, Radial, Image }
 
     public sealed class Paint
     {
@@ -26,6 +26,9 @@ namespace SquishSquad.Vector
         public double X1, Y1, X2 = 1, Y2, Cx = 0.5, Cy = 0.5, R = 0.5, Fx = 0.5, Fy = 0.5;
         public int Spread;   // 0 pad, 1 reflect, 2 repeat
         public readonly List<(float offset, RGBA color)> Stops = new List<(float, RGBA)>();
+        // Image: the picture's name (an <image> href) and the map from user space to its 0..1 square (y down)
+        public string Image;
+        public Affine UserToImage = Affine.Identity;
         Affine _gti; bool _gtiReady;
 
         public static readonly Paint None = new Paint { Kind = PaintKind.None };

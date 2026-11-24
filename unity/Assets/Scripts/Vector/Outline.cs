@@ -29,6 +29,65 @@ namespace SquishSquad.Vector
             return s;
         }
 
+        /// <summary>SVG's stroke-dasharray: each contour cut into dashes along its length (in px), starting `offset`
+        /// into the pattern; a closed contour's last dash runs on into its first.</summary>
+        public static Polyline Dash(Polyline outline, List<double> pattern, double offset)
+        {
+            double total = 0;
+            foreach (var d in pattern) { if (d < 0) return outline; total += d; }
+            if (pattern.Count == 0 || total <= 0) return outline;
+            var outp = new Polyline();
+            for (int c = 0; c < outline.Contours.Count; c++)
+            {
+                var pts = outline.Contours[c];
+                if (pts.Count < 2) continue;
+                bool closed = outline.Closed.Count > c && outline.Closed[c];
+                var path = new List<Vec2>(pts);
+                if (closed && (path[0].X != path[path.Count - 1].X || path[0].Y != path[path.Count - 1].Y)) path.Add(path[0]);
+                // where in the pattern the contour starts
+                double o = offset % total; if (o < 0) o += total;
+                int k = 0;
+                while (o >= pattern[k]) { o -= pattern[k]; k = (k + 1) % pattern.Count; }
+                double left = pattern[k] - o;   // of the current dash / gap
+                bool on = k % 2 == 0;
+                List<Vec2> cur = on ? new List<Vec2> { path[0] } : null;
+                List<Vec2> first = null;
+                bool firstOpen = on;
+                for (int i = 1; i < path.Count; i++)
+                {
+                    var a = path[i - 1]; var b = path[i];
+                    double seg = (b - a).Length, at = 0;
+                    while (seg - at > left)
+                    {
+                        at += left;
+                        var p = a + (b - a) * (at / seg);
+                        if (on) { cur.Add(p); if (first == null && firstOpen) first = cur; else Emit(outp, cur); cur = null; }
+                        else cur = new List<Vec2> { p };
+                        on = !on;
+                        k = (k + 1) % pattern.Count;
+                        left = pattern[k];
+                    }
+                    left -= seg - at;
+                    if (on) cur.Add(b);
+                }
+                // a closed contour that ends in a dash and started in one: they're one dash
+                if (on && cur != null)
+                {
+                    if (closed && first != null) { cur.AddRange(first.GetRange(1, first.Count - 1)); first = null; }
+                    Emit(outp, cur);
+                }
+                if (first != null) Emit(outp, first);
+            }
+            return outp;
+        }
+
+        static void Emit(Polyline p, List<Vec2> pts)
+        {
+            if (pts.Count < 2) return;
+            p.Contours.Add(pts);
+            p.Closed.Add(false);
+        }
+
         public enum Join { Miter, Round, Bevel }
         public enum Cap { Butt, Round, Square }
 

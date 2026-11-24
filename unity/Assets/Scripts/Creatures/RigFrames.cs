@@ -2,8 +2,9 @@
 // it (rive-rig.js and friends, unchanged). Two sources:
 //   RecordedRig: frames recorded from the rig code by tools/unity/rig/record.mjs, played back in a loop. What the
 //     app runs until the JS engine is in the project.
-//   a live host (next): the rig code itself running in a JS engine inside Unity on tools/unity/rig/dom-shim.js,
-//     driven by Unity's clock, so moves, pokes and the house's behaviours all work.
+//   LiveRig: the rig code itself running in a JS engine inside Unity on tools/unity/rig/dom-shim.js, driven by
+//     Unity's clock, so every creature and move works (built with SQUISH_PUERTS: Creatures/LiveRig.cs).
+// Rigs.For(key) picks: live when it's built in and starts, else the recording.
 using System;
 using System.IO;
 using System.IO.Compression;
@@ -18,6 +19,32 @@ namespace SquishSquad.Creatures
         string FrameAt(float seconds);
         /// <summary>Plays a move ("idle", "dance", "hop", ...). A recording only has the moves it was recorded with.</summary>
         void Play(string move);
+    }
+
+    /// <summary>What the house drives on a live rig (LiveRig): the walk's ext channels, the idle fidgets.</summary>
+    public interface IHouseRig
+    {
+        void Ext(System.Collections.Generic.IDictionary<string, double> e);
+        void Fidgets(bool on);
+        bool InFidget();
+        /// <summary>The states the rig went into since the last call (the house's onRig).</summary>
+        string[] Events();
+        /// <summary>The creature turned (degrees; the yard games' yaw).</summary>
+        void Yaw(double deg);
+    }
+
+    public static class Rigs
+    {
+        /// <summary>The creature's frames: live (SQUISH_PUERTS) when the engine starts, else its recording (null when
+        /// it has none).</summary>
+        public static IRigFrames For(string key)
+        {
+#if SQUISH_PUERTS
+            var live = LiveRig.Create(key);
+            if (live != null) return live;
+#endif
+            return RecordedRig.Load(key);
+        }
     }
 
     public sealed class RecordedRig : IRigFrames

@@ -4,8 +4,34 @@ The Unity version of the app, built screen by screen next to the current React N
 Unity has caught up. Same Firebase backend, same look: the pictures come out of the current app's own code, so on the
 reference phone (Galaxy A15, 2340 x 1080) Unity draws the same pixels.
 
-**Ported so far: the Main Menu** (house picture for every level and season, rain / snow / birds, every HUD button, the
-crest's and PLAY's flourishes, pressed looks). Taps show a "not in the Unity version yet" note; nothing else is ported.
+**Ported so far** (see `../UNITY_MIGRATION_PLAN.md` for the details and the checks):
+- start-up: splash, log in / register, the email check; the menu with the player's coins, gems and level
+- the Main Menu (house picture for every level and season, weather, the HUD, flourishes, presses), PLAY's walk to the
+  Game Park and its games carousel
+- all five games from their cards: Squish Time; Squishdoku, Sort, Stack and Hop with hubs, level maps, levels, cards
+  and Blitz
+- CHARACTERS, the Level Pass (crest), Achievements (trophy), Settings with Stats (gear), the daily spin, the streak
+  and the daily challenges (once a day, as the app)
+- in progress: the Shop with chest opening and the Level Road, saving the games' progress to the account, the house
+  (`../HOUSE_PORT_PLAN.md`). The SHOP tab and the house's tab still say "not in the Unity version yet".
+
+## The tools, one per screen
+
+Each screen has an exporter (cuts what's fixed out of the running app: `npx expo start --web --port 8081` for the
+React Native screens; the webgame build for the menu's) and a test (drives the app on a virtual clock, plays the same
+input on the Unity code, draws it with the reference rasteriser and diffs the pixels):
+
+| Screen | Export | Test (`dotnet run -c Release --project tools/unity/<test> -- ...`) |
+|---|---|---|
+| Menu, park, pages | `export-menu.mjs`, `export-park.mjs`, `export-pages.mjs` | `park-test`, `pages-test` |
+| Start-up screens | (drawn) | `auth-test` (+ `-- emu` against the Firebase emulators) |
+| Games | `export-<game>.mjs` | `stack-test`, `sort-test`, `hop-test`, `squishdoku-test`, `maps-test`, `squish-test` |
+| Achievements, settings, spin, streak, daily | `export-screens.mjs` | `screens-test` (+ `-- emu`) |
+| Game rules | | `games/<game>` (vs the JS on the same inputs) |
+| Fonts, text | `ui/fonts.py` | `ui/TextTest` |
+| Animations (RN's Animated) | | `anim` |
+| Layout (Yoga) | | `yoga/tests` |
+| Firebase client | | `backend` (start `backend/start-emulators.sh` first; never the live project) |
 
 ## Open it
 
@@ -14,19 +40,32 @@ crest's and PLAY's flourishes, pressed looks). Taps show a "not in the Unity ver
 2. The first open writes the project settings (`Assets/Editor/ProjectSetup.cs`: Gamma colour, landscape, IL2CPP ARM64,
    app id `com.plushcrush.unity`, the Input Manager) and an empty `Assets/Scenes/Main.unity`. **Restart the editor once**
    so the input setting takes effect, then commit the new `ProjectSettings/` and `.meta` files.
-3. Press Play in any scene: `Assets/Scripts/App/Boot.cs` builds the menu. Set the Game view to 2340 x 1080 to see it at
-   the reference size.
+3. Press Play in any scene: `Assets/Scripts/App/Boot.cs` starts the app's flow (`App/AppFlow.cs`): the splash, then log
+   in / register (the live Firebase project, as the app), the email check for a new account, then the menu with your
+   coins, gems and level. "Dev: menu offline" (top middle, editor and development builds) skips to the menu with the
+   exported numbers. Set the Game view to 2340 x 1080 to see it at the reference size.
 4. On the phone: **Squish Squad → Build Android APK** (or File → Build Settings). It has its own app id, so it installs
    next to the current app for side-by-side testing.
 
-The number at the top middle is the frame rate. Tap it for the dev panel: level 1-30 and season (auto follows the
-month, like the app).
+The number at the top middle is the frame rate. Tap it for the dev panel: level 1-30 (offline) and season (auto follows
+the month, like the app), and Sign out.
+
+## The start-up screens: `tools/unity/auth-test`
+
+Splash, log in / register and verify are drawn by the Unity code (`Assets/Scripts/Ui/Screens`), so there's nothing to
+export: `node tools/unity/auth-test/capture.mjs <dir>` screenshots the app's states (Expo web, `src/web/Preview.js`
+"splash", "auth", "verify"), `dotnet run -c Release --project tools/unity/auth-test -- shots <dir>` draws the same
+states from the Unity code and reports the pixels that differ. `node tools/unity/auth-test/menu.mjs <dir>` and
+`-- menu <dir>` do the same for the menu's pills and crest with several players, and `-- emu` runs the screens' logic
+against the Firebase emulators (`tools/unity/backend/start-emulators.sh`).
 
 ## The art: `node tools/unity/export-menu.mjs`
 
 Builds the in-app web game, opens the menu in Chromium at the A15's size with the clock frozen, and cuts out every piece
 into `Assets/Resources/Menu/` (needs `python3 -m pip install pillow` for the JPEGs). Run it again whenever the menu's
-design changes. `--levels 1,5 --seasons rainy` exports fewer states; `--no-build` reuses the last web build.
+design changes. `--levels 1,5 --seasons rainy` exports fewer states; `--no-build` reuses the last web build;
+`--hud-only` redoes just the HUD pieces. The numbers the player's profile changes aren't in the pictures: the coin and
+gem pills are cut as their pictures only, the crest without its level number, and `Menu/HudArt.cs` draws the rest.
 
 - `scene/<season>-<level>.jpg.bytes`: the house picture for each of the 90 states (JPEG, decoded by `MenuView`)
 - `weather/`: one band of rain or snow and a bird, animated in Unity like `webgame/app/menu.js` does
@@ -36,6 +75,16 @@ design changes. `--levels 1,5 --seasons rainy` exports fewer states; `--no-build
 
 `node tools/unity/compare.mjs --compose` rebuilds the menu from those pieces with the same placement rules as
 `MenuView.cs` and compares it with the reference (it matches except JPEG noise on edges and sub-pixel rain).
+
+## The Game Park's games carousel: `node tools/unity/export-park.mjs`
+
+Opens the menu straight into the Game Park (as the app does when you come back from a game) with the app's games list,
+and cuts out the carousel's pieces into `Assets/Resources/Park/` (each card, its window's inner shadow and shape,
+PLAY, the dim, the header, the rays, the halo, the arrows, the dots, Squish Time's creature) with `park.json`; copies
+the game clips to `Assets/StreamingAssets/Park/`; writes the app's screenshots to `webgame/test/out/unity-park/`
+(`../Reference/park-a15.png` for CI). Run `export-menu.mjs` first (or pass `--no-build` to reuse its web build).
+`dotnet run -c Release --project tools/unity/park-test` then draws the Unity code's carousel over the app's park and
+reports the pixels that differ from the app (`-- 2048 1536` draws it on another screen shape).
 
 ## The creatures' animations: `tools/unity/rig/`
 

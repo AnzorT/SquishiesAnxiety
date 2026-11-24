@@ -1,6 +1,8 @@
 // Web, development only: the games' popups on their own, to check their layout without playing a level
 // (http://localhost:8081/?phone=1&preview=1 in a window the phone's size, e.g. 832 x 384 for the A15 sideways), and
-// the screens a test account can't reach (verify).
+// the screens a test account can't reach (verify), and the start-up screens signed out (splash, auth) for the Unity
+// port's comparisons (tools/unity/auth-test), and the menu's screens for a made-up player ("scr-…": SCREENS below,
+// tools/unity/screens-test).
 // window.__preview('sd-result') shows one card; the names are the keys of CARDS below. Nothing here touches the account.
 import React, { useEffect, useMemo, useState } from 'react';
 import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -16,6 +18,7 @@ import * as SORT from '../sort/Cards';
 import * as STACK from '../stack/Cards';
 import * as HOP from '../hop/Cards';
 import VerifyEmailScreen from '../screens/VerifyEmailScreen';
+import AuthScreen from '../screens/AuthScreen';
 import VaultLoader from '../components/VaultLoader';
 import ChestSmash from '../components/ChestSmash';
 import Freeze from '../components/Freeze';
@@ -27,7 +30,7 @@ import DailySpinScreen from '../screens/DailySpinScreen';
 import ShopScreen from '../screens/ShopScreen';
 import { WHEEL, todayKey } from '../dailySpin';
 import { Asset } from 'expo-asset';
-import { BY_ID, lineup } from '../squad/data';
+import { BY_ID, DEFAULT_OFFERS, lineup } from '../squad/data';
 import StackGame from '../stack/Game';
 import SdRegular from '../squishdoku/RegularGame';
 import SdBlitz from '../squishdoku/BlitzGame';
@@ -40,6 +43,18 @@ import { MODEL_STARTS, levelSpec } from '../sort/levels';
 import STACK_ART from '../stack/art';
 import SD_BODIES from '../squishdoku/bodies';
 import { rosterOf } from '../squishdoku/roster';
+// (the Unity port's screens, below)
+import AchievementsScreen from '../screens/AchievementsScreen';
+import StreakScreen from '../screens/StreakScreen';
+import DailyChallengesSheet from '../screens/DailyChallengesSheet';
+import SettingsRoyal from '../screens/royal/SettingsRoyal';
+import StatsScreen from '../screens/StatsScreen';
+import { PageBg } from '../royal';
+import { challengesFor } from '../progression';
+import LevelRoadScreen from '../screens/LevelRoadScreen';
+import { setOfferProducts } from '../economy';
+import { priceLabel } from '../billing/common';
+import auth from '@react-native-firebase/auth';
 
 const noop = () => {};
 // a number from the page's address (?lv=…), or `d`
@@ -195,7 +210,216 @@ function StackForestPreview() {
   return <StackScreen profile={{ ownedIds: [sel], lobby: { sel }, stack: { lv, best, seen: true } }} creatures={[]} uid={null} onBack={noop} />;
 }
 
+// The Unity port's comparisons (tools/unity, "game-…"): the games' whole screens (hub, map, levels) for a made-up
+// player: no uid, so nothing is saved. Creatures' stills are the bundled Stack cut-outs (the real ones come from
+// Storage), every creature listed (the ones with no cut-out: a blank picture).
+const srcUri = (s) => (s == null ? null : typeof s === 'string' ? s : typeof s === 'number' ? Asset.fromModule(s).uri : s.uri || s.default || null);
+const PORT_CREATURES = Object.values(BY_ID).map((d) => ({ id: d.id, thumb: { url: srcUri(STACK_ART[d.key] && STACK_ART[d.key].src) || 'about:blank' } }));
+const PLAYER = {
+  coins: 100,
+  gems: 600,
+  ownedIds: ['1'],
+  sdk: { plays: 3, lv: 12 },
+  sort: { seen: true, lv: 12 },
+  stack: { seen: true, lv: 12 },
+  hop: { seen: true, lv: 12 },
+};
+const game = (Screen) => () => (
+  <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 0, height: 0 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
+    <Screen profile={PLAYER} creatures={PORT_CREATURES} uid={null} adsFree haptics={false} onBack={noop} />
+  </SafeAreaProvider>
+);
+
+// The Unity port's other screens (tools/unity/screens-test, tools/unity/export-screens.mjs): Achievements, the streak,
+// the daily challenges sheet, Settings, Stats and the Daily Spin, for a made-up player whose days are counted from
+// today (the page's own clock), so the streak is alive and today's challenges are half done. Creatures' pictures are
+// the bundled Stack cut-outs (the real plush art comes from Storage), with no rig (no mood faces). Nothing is saved:
+// the handlers do nothing, the spin's "server" answers after 800 ms (window.__spinAnswer sets what it answers).
+const fitFrame = (ar) => (ar >= 1 ? [(1 - 1 / ar) / 2, 0, 1 / ar, 1] : [0, (1 - ar) / 2, 1, ar]);
+const NAMED = Object.values(BY_ID).map((d) => {
+  const a = STACK_ART[d.key];
+  const url = srcUri(a && a.src);
+  const art = url ? { url, frame: fitFrame(a.ar) } : null;
+  return { id: d.id, name: d.name, key: d.key, thumb: { url: url || 'about:blank' }, plush: art ? { md: art, mdLocked: art, lg: art, lgLocked: art, sm: art } : undefined };
+});
+const dayKey = (back) => {
+  const d = new Date();
+  d.setDate(d.getDate() - back);
+  return todayKey(d);
+};
+// today's challenges: the first `claimed` claimed, `full` more done but not claimed, the rest part-way
+function dailyOf(claimed, full, chest = false) {
+  const date = todayKey();
+  const prog = {}, cl = {};
+  challengesFor(date).forEach((c, i) => {
+    prog[c.ev] = i < claimed + full ? c.goal : Math.floor(c.goal / 2);
+    if (i < claimed) cl[c.id] = true;
+  });
+  return { date, prog, claimed: cl, chest };
+}
+function screenPlayer(kind) {
+  if (kind === 'new') return { nickname: 'Mia', coins: 100, gems: 30, ownedIds: ['0', '1'], pxp: 0 };
+  const p = {
+    nickname: 'Mia',
+    coins: 2450,
+    gems: 85,
+    ownedIds: ['0', '1', '3', '4', '5', '6', '7', '12', '22', '24'],
+    totalEarned: 12500,
+    stats: { presses: 342, longestHoldMs: 12400, playTime: { 1: 754000, 12: 302000, 3: 95000, 22: 41000 } },
+    adsWatched: 2,
+    chestOpens: 6,
+    tierPulls: { Epic: 1 },
+    spins: 4,
+    pxp: 1600,
+    bestStreak: 4,
+    streak: 3,
+    lastFull: dayKey(1),
+    chests: 5,
+    maxMult: 2,
+    cribCare: 12,
+    daily: dailyOf(2, 1),
+  };
+  if (kind === 'done') return { ...p, streak: 4, lastFull: dayKey(0), daily: dailyOf(6, 0, true) };
+  if (kind === 'ready') return { ...p, daily: dailyOf(6, 0) };
+  if (kind === 'zero') return { ...p, streak: 0, lastFull: dayKey(5), daily: dailyOf(0, 1) };
+  if (kind === 'long') return { ...p, streak: 8, bestStreak: 8, daily: dailyOf(4, 2) };
+  return p;
+}
+const scr = (render) => () => (
+  <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 0, height: 0 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>{render()}</SafeAreaProvider>
+);
+function ScrSpinPreview() {
+  const onSpin = () =>
+    new Promise((resolve) => setTimeout(() => resolve(window.__spinAnswer || { index: 6, kind: 'coins', amount: 500, jackpot: false }), 800));
+  return <DailySpinScreen onSpin={onSpin} onDone={noop} bonusLeft={1} adsFree name="Mia" creatures={NAMED} />;
+}
+const sheet = (kind) => scr(() => (
+  <View style={StyleSheet.absoluteFill}>
+    <PageBg />
+    <DailyChallengesSheet visible profile={screenPlayer(kind)} onClose={noop} onClaim={noop} onClaimChest={noop} onOpenCrib={noop} />
+  </View>
+));
+const settings = (tester) => scr(() => (
+  <SettingsRoyal onBack={noop} nickname="Mia" onSaveNickname={noop} onSubmitFeedback={() => Promise.resolve()} onLogout={noop} onReplayTutorial={noop} onOpenStats={noop} onOpenAchievements={noop} onOpenRoad={noop} tester={tester} wallet={{ coins: 2450, gems: 85, level: 4 }} fpsOn={false} onToggleFps={noop} />
+));
+const SCREENS = {
+  'scr-achievements': scr(() => <AchievementsScreen creatures={NAMED} profile={screenPlayer('mid')} customCount={0} onBack={noop} />),
+  'scr-achievements-new': scr(() => <AchievementsScreen creatures={NAMED} profile={screenPlayer('new')} customCount={0} onBack={noop} />),
+  'scr-streak': scr(() => <StreakScreen profile={screenPlayer('mid')} mascot={NAMED[1]} onClose={noop} onOpenDaily={noop} />),
+  'scr-streak-intro': scr(() => <StreakScreen profile={screenPlayer('mid')} mascot={NAMED[1]} intro onClose={noop} onOpenDaily={noop} />),
+  'scr-streak-done': scr(() => <StreakScreen profile={screenPlayer('done')} mascot={NAMED[1]} intro onClose={noop} onOpenDaily={noop} />),
+  'scr-streak-zero': scr(() => <StreakScreen profile={screenPlayer('zero')} mascot={NAMED[1]} onClose={noop} onOpenDaily={noop} />),
+  'scr-streak-long': scr(() => <StreakScreen profile={screenPlayer('long')} mascot={NAMED[1]} onClose={noop} onOpenDaily={noop} />),
+  'scr-daily': sheet('mid'),
+  'scr-daily-ready': sheet('ready'),
+  'scr-daily-done': sheet('done'),
+  'scr-settings': settings(false),
+  'scr-settings-tester': settings(true),
+  'scr-stats': scr(() => <StatsScreen creatures={NAMED} customCreatures={[]} profile={screenPlayer('mid')} onBack={noop} />),
+  'scr-stats-new': scr(() => <StatsScreen creatures={NAMED} customCreatures={[]} profile={screenPlayer('new')} onBack={noop} />),
+  'scr-spin': scr(() => <ScrSpinPreview />),
+};
+
+// The Unity port's Shop, chests and level road (tools/unity/shop-test, tools/unity/export-shop.mjs): the royal Shop on
+// each tab and the landscape Level Road for made-up players, with the app's default offers (config/offers missing)
+// and the prices' fallback labels (config/pricing missing). Nothing reaches Firebase: while one of these is up, a
+// made-up "server" answers the `squad` moves (callFunction's fetch, signed in as nobody) after 600 ms with a fixed
+// roll (window.__squadAnswer(move, args) can say otherwise); the profile doesn't change.
+setOfferProducts(DEFAULT_OFFERS);
+const shopDay = (back) => dayKey(back);
+function shopPlayer(kind) {
+  const base = {
+    nickname: 'Mia',
+    coins: 5200,
+    gems: 640,
+    ownedIds: ['0', '1', '3', '4', '5', '6', '7', '12', '22', '24'],
+    copies: { 2: 3, 8: 1, 9: 6, 10: 2, 13: 4 },
+    chestOpens: 6,
+    epic: 6,
+    freeAt: 0,
+    totalEarned: 20000,
+    jarBase: 0,
+    gemFirst: { gems_80: true },
+    shopStreak: { count: 2, last: shopDay(1) },
+    passXp: 300,
+    pxp: 1600,
+    levelGot: { 1: true, 2: true },
+    lobby: { sel: '1' },
+  };
+  if (kind === 'poor')
+    return { ...base, coins: 120, gems: 40, freeAt: Date.now() + 2 * 3600e3 + 754000, adChests: { day: shopDay(0), n: 3 }, dealDay: shopDay(0), shopStreak: { count: 3, last: shopDay(0) }, epic: 9, adsFree: true, gemFirst: {} };
+  if (kind === 'road-new') return { ...base, pxp: 120, levelGot: {} };
+  return base;
+}
+function fakeSquad(move, args) {
+  const day = shopDay(0);
+  const hot = lineup(day);
+  const pick = (group, size) => {
+    const c = Object.values(BY_ID).find((x) => x.set === group && !x.reward && !x.pass) || BY_ID['1'];
+    return { group, size, final: size, upgraded: false, id: c.id, rar: c.rar, isNew: false, copies: 3, need: 5, coins: 0, dupeCoins: 0, setBonus: 0, luck: false };
+  };
+  if (move === 'groupChest') return pick(args.group, args.size);
+  if (move === 'freeChest') return pick(hot[0], 'common');
+  if (move === 'adChest') return pick(hot[1], 'rare');
+  if (move === 'dealChest') return pick(hot[0], 'legendary');
+  if (move === 'rainbowChest') return pick(args.group, 'set');
+  if (move === 'streakClaim') return { kind: 'coins', n: 500, day: 3 };
+  if (move === 'passClaim') return { kind: 'gems', n: 80, i: args.i };
+  if (move === 'swap') return { coins: [2000, 9000, 25000][args.i] || 0 };
+  if (move === 'levelClaim') return { kind: 'coins', n: 500, lv: args.i };
+  if (move === 'levelClaimAll') return { results: [] };
+  return { error: 'unknown_move' };
+}
+function useFakeServer() {
+  useEffect(() => {
+    const a = auth();
+    const had = Object.getOwnPropertyDescriptor(a, 'currentUser');
+    Object.defineProperty(a, 'currentUser', { configurable: true, get: () => ({ uid: 'preview', getIdToken: async () => 'preview' }) });
+    const realFetch = window.fetch;
+    window.fetch = (url, init) => {
+      const m = /cloudfunctions\.net\/(\w+)$/.exec(String(url));
+      if (!m) return realFetch(url, init);
+      const { data } = JSON.parse((init && init.body) || '{}');
+      const { move, ...args } = data || {};
+      const answer = (window.__squadAnswer && window.__squadAnswer(move, args)) || fakeSquad(move, args);
+      (window.__squadCalls = window.__squadCalls || []).push({ move, args });
+      return new Promise((resolve) =>
+        setTimeout(() => resolve({ ok: true, status: 200, json: async () => (answer.error ? { error: { message: answer.error } } : { result: answer }) }), 600),
+      );
+    };
+    return () => {
+      window.fetch = realFetch;
+      if (had) Object.defineProperty(a, 'currentUser', had);
+      else delete a.currentUser;
+    };
+  }, []);
+}
+function ShopPreview({ kind, tab }) {
+  useFakeServer();
+  const profile = useMemo(() => shopPlayer(kind), [kind]);
+  return <ShopScreen royal profile={profile} creatures={NAMED} offers={null} onSeenOffer={noop} onBuyProduct={() => Promise.resolve(null)} priceOf={(k) => priceLabel(k)} onBack={noop} startTab={tab} />;
+}
+function RoadPreview({ kind }) {
+  useFakeServer();
+  const profile = useMemo(() => shopPlayer(kind), [kind]);
+  return <LevelRoadScreen profile={profile} creatures={NAMED} onBack={noop} />;
+}
+const SHOP = {
+  'shop-daily': scr(() => <ShopPreview kind="shop" tab="daily" />),
+  'shop-chests': scr(() => <ShopPreview kind="shop" tab="chests" />),
+  'shop-deals': scr(() => <ShopPreview kind="shop" tab="deals" />),
+  'shop-gems': scr(() => <ShopPreview kind="shop" tab="gems" />),
+  'shop-daily-poor': scr(() => <ShopPreview kind="poor" tab="daily" />),
+  'shop-chests-poor': scr(() => <ShopPreview kind="poor" tab="chests" />),
+  'shop-deals-poor': scr(() => <ShopPreview kind="poor" tab="deals" />),
+  'shop-gems-poor': scr(() => <ShopPreview kind="poor" tab="gems" />),
+  road: scr(() => <RoadPreview kind="shop" />),
+  'road-new': scr(() => <RoadPreview kind="road-new" />),
+};
+
 const CARDS = {
+  ...SCREENS,
+  ...SHOP,
   'sort-fridges': () => <FridgeGallery />,
   'sd-result': (v) => <SD.ResultCard visible={v} res={withStars(res)} titles={SD.SD_RESULT_TITLES} perfectTitle="PERFECT SQUISH!" uris={uris} keys={KEYS} coins={res.levelCoins} backLabel="MAP" onNext={noop} onReplay={noop} onBack={noop} />,
   'sd-perfect': (v) => <SD.ResultCard visible={v} res={best} titles={SD.SD_RESULT_TITLES} perfectTitle="PERFECT SQUISH!" uris={uris} keys={KEYS} coins={best.levelCoins} backLabel="MAP" onNext={noop} onReplay={noop} onBack={noop} />,
@@ -254,7 +478,14 @@ const CARDS = {
   shop: () => (
     <ShopScreen startTab={new URLSearchParams(window.location.search).get('tab') || 'daily'} creatures={CREATURES} profile={{ ...PROFILE, coins: 4200 }} priceOf={() => null} onBuyProduct={noop} onSeenOffer={noop} onBack={noop} />
   ),
+  'game-squishdoku': game(SquishdokuScreen),
+  'game-sort': game(SortScreen),
+  'game-stack': game(StackScreen),
+  'game-hop': game(HopScreen),
   verify: () => <VerifyEmailScreen email="new.player@example.com" onVerified={noop} onLogout={noop} />,
+  // (no "splash": the app's SplashScreen is gone, the game intro (squad-intro.js) took its place)
+  // Log in / Register signed out (Firebase is only called when its buttons are tapped)
+  auth: () => <AuthScreen />,
 };
 
 export default function Preview() {
@@ -275,6 +506,8 @@ export default function Preview() {
   useEffect(() => {
     window.__preview = setName;
     window.__previewNames = Object.keys(CARDS);
+    window.__screenPlayer = screenPlayer;
+    window.__shopPlayer = shopPlayer;
   }, []);
   if (!fonts) return null;
   const card = CARDS[name];

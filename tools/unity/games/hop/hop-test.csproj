@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Squish Hop's differential test, the C# half: replays tools/unity/games/hop/fixtures/*.json (written by
+       fixtures.mjs from the JS) through the Unity port in unity/Assets/Scripts/Games/Hop and compares.
+       Run: node tools/unity/games/hop/fixtures.mjs, then dotnet run -c Release (project tools/unity/games/hop/hop-test.csproj). -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <RootNamespace>HopTest</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../../unity/Assets/Scripts/Games/Hop/**/*.cs" />
+    <Compile Include="*.cs" />
+  </ItemGroup>
+</Project>

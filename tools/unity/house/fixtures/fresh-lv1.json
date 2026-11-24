@@ -1,0 +1,11 @@
+{
+ "name": "fresh-lv1",
+ "profile": {
+  "level": 1,
+  "coins": 100
+ },
+ "house": null,
+ "rooms": [
+  "living"
+ ]
+}

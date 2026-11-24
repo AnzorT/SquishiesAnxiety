@@ -1,0 +1,19 @@
+{
+ "name": "lv30-beach",
+ "profile": {
+  "level": 30,
+  "coins": 20000
+ },
+ "house": "{\"cur\":\"beach\",\"open\":{\"living\":1},\"uid\":1}",
+ "room": "beach",
+ "rooms": [
+  "living",
+  "kitchen",
+  "bathroom",
+  "bedroom",
+  "backyard",
+  "dance",
+  "movie",
+  "beach"
+ ]
+}

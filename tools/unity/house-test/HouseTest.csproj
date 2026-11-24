@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Checks the Unity app's house port (unity/Assets/Scripts/House) against the house page, outside Unity.
+       Usage: see Program.cs. The page's answers come from tools/unity/house/export-house.mjs (captures). -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../unity/Assets/Scripts/House/**/*.cs" Exclude="../../../unity/Assets/Scripts/House/View/**" />
+    <Compile Include="../../../unity/Assets/Scripts/Anim/JsNumber.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Anim/Easing.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Anim/JsMath.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Backend/**/*.cs" Exclude="../../../unity/Assets/Scripts/Backend/Unity/**" />
+    <Compile Include="../vector-test/ReferenceRaster.cs" />
+    <Compile Include="../vector-test/Png.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Yard/*.cs" />
+    <Compile Include="*.cs" />
+  </ItemGroup>
+</Project>

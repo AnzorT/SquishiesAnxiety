@@ -1,5 +1,6 @@
 // Entry points for CI (.github/workflows/unity.yml), also usable from the editor's "Squish Squad" menu.
-//   -executeMethod SquishSquad.EditorTools.CiBuild.CaptureMenu   screenshots of the Main Menu -> CiOut/*.png
+//   -executeMethod SquishSquad.EditorTools.CiBuild.CaptureMenu   screenshots of the Main Menu, Squish Stack and the
+//                                                                start-up screens (splash, log in, verify) -> CiOut/*.png
 //   -executeMethod SquishSquad.EditorTools.CiBuild.BuildAndroid  the APK -> Builds/Android/SquishSquad.apk (or -customBuildPath)
 using System;
 using System.IO;
@@ -36,6 +37,23 @@ namespace SquishSquad.EditorTools
                 foreach (var (name, w, h) in Screens) Shot(layout, outDir, name, w, h, name != "menu-a15");
                 Shot(layout, outDir, "menu-a15-live", 2340, 1080, true);
                 Shot(layout, outDir, "menu-a15-park", 2340, 1080, true, 3200f);   // after PLAY's walk to the Game Park
+                // the games carousel at rest, 1.5 s after the walk ends (3060 ms), Squish Time in the middle (compare with
+                // unity/Reference/park-a15.png around the creature, which is drawn live here), and on other screen shapes
+                Shot(layout, outDir, "park-a15", 2340, 1080, true, 4560f);
+                Shot(layout, outDir, "park-2400x1080", 2400, 1080, true, 4560f);
+                Shot(layout, outDir, "park-2048x1536", 2048, 1536, true, 4560f);
+                // Squish Stack, level 12: the intro banner, the deal, playing (compare with unity/Reference/stack-level-12.png:
+                // the squishies are picked at random, so only the screen around them matches), and a move
+                StackShots(outDir, 2340, 1080, "stack-a15", new[] { (600.0, "intro"), (2200.0, "deal"), (6500.0, "play"), (8000.0, "moved") });
+                StackShots(outDir, 2400, 1080, "stack-2400x1080", new[] { (6500.0, "play") });
+                StackShots(outDir, 2048, 1536, "stack-2048x1536", new[] { (6500.0, "play") });
+                // its cards, opened at 6.5 s and settled 7.2 s later (compare with tools/unity/stack-test cards.mjs's pictures,
+                // stack-result-7200.png and so on: the same sample result; the page behind is the level here)
+                foreach (var card in new[] { "result", "fail", "pause", "hint" }) StackShots(outDir, 2340, 1080, "stack-a15", new[] { (6500.0, "card-" + card) });
+                // the start-up screens (compare with tools/unity/auth-test capture.mjs's pictures of the same states)
+                StartupShots(outDir, 2340, 1080, "a15");
+                StartupShots(outDir, 2048, 1536, "2048x1536");
+                PageShots(outDir);   // (the Characters page and the Level Pass)
                 Exit(0);
             }
             catch (Exception e)
@@ -51,6 +69,7 @@ namespace SquishSquad.EditorTools
             var cam = MenuScreen.CreateCamera(root);
             MenuScreen.FitCamera(cam, w, h);
             var view = new MenuView(layout, root, w, h, layout.reference.level, layout.reference.season, "mittens", live);
+            view.ParkStartGame = "squish";   // (not the editor's remembered game: the same picture every run)
             view.Tick(0f);
             if (parkMs >= 0)
             {
@@ -63,6 +82,79 @@ namespace SquishSquad.EditorTools
             Debug.Log($"[CiBuild] {name}.png {w}x{h}{(view.Creature != null ? " (live creature)" : "")}");
             view.Dispose();
             UnityEngine.Object.DestroyImmediate(root.gameObject);
+        }
+
+        static void StackShots(string outDir, int w, int h, string name, (double ms, string label)[] times)
+        {
+            var root = new GameObject("Capture").transform;
+            var cam = MenuScreen.CreateCamera(root);
+            MenuScreen.FitCamera(cam, w, h);
+            SquishSquad.Ui.UiPiece.PxPerDp = h / 384f;
+            var game = SquishSquad.Games.Stack.StackGame.Create(root, 12, w, h);
+            game.Init(0);
+            double t = 0;
+            foreach (var (ms, label) in times)
+            {
+                // (the move at 7 s: the first cushion's top squishy onto the next cushion)
+                if (label == "moved") { for (; t <= 7000; t += 1000.0 / 60) game.Advance(t); game.TapMove(0, 1); }
+                var at = ms;
+                if (label.StartsWith("card-")) { for (; t <= ms; t += 1000.0 / 60) game.Advance(t); game.ShowCard(label.Substring(5)); at = ms + 7200; }
+                for (; t <= at; t += 1000.0 / 60) game.Advance(t);   // every frame, as the springs need
+                File.WriteAllBytes(Path.Combine(outDir, $"{name}-{label}.png"), Render(cam, w, h));
+                Debug.Log($"[CiBuild] {name}-{label}.png {w}x{h}");
+            }
+            UnityEngine.Object.DestroyImmediate(root.gameObject);
+        }
+
+        // the splash settled (7 s in, the app not ready: 90 %), log in, register, an error, and the verify screen
+        static void StartupShots(string outDir, int w, int h, string size)
+        {
+            SquishSquad.Ui.UiFont.ReadJson = n => Resources.Load<TextAsset>("Fonts/" + n)?.text;
+            SquishSquad.Ui.UiFont.ParseJson = j => JsonUtility.FromJson<SquishSquad.Ui.UiFontData>(j);
+            SquishSquad.Ui.UiPiece.PxPerDp = h / 384f;
+            float W = w / SquishSquad.Ui.UiPiece.PxPerDp, H = 384;
+            var shots = new (string name, Func<System.Collections.Generic.List<SquishSquad.Ui.Screens.ScreenPiece>> pieces)[]
+            {
+                ("splash", () =>
+                {
+                    var ticker = new SquishSquad.Anim.Ticker(0);
+                    var m = new SquishSquad.Ui.Screens.SplashModel(ticker);
+                    for (double t = 16; t <= 7000; t += 16) ticker.Tick(t);
+                    return new SquishSquad.Ui.Screens.SplashArt(W, H).Pieces(m);
+                }),
+                ("login", () => Auth(W, H, m => { })),
+                ("login-error", () => Auth(W, H, m => m.Error = "Enter your email and password.")),
+                ("register", () => Auth(W, H, m => m.Register = true)),
+                ("register-error", () => Auth(W, H, m => { m.Register = true; m.Error = "Enter your age."; })),
+                ("verify", () =>
+                {
+                    var m = new SquishSquad.Ui.Screens.VerifyModel { Email = "new.player@example.com" };
+                    var art = new SquishSquad.Ui.Screens.VerifyArt(W, H);
+                    return art.Pieces(m, new SquishSquad.Ui.Screens.VerifyUi(), art.Layout(m));
+                }),
+            };
+            foreach (var (name, pieces) in shots)
+            {
+                var root = new GameObject("Capture").transform;
+                var cam = MenuScreen.CreateCamera(root);
+                MenuScreen.FitCamera(cam, w, h);
+                var host = new SquishSquad.App.ScreenHost(root, name);
+                host.Show(pieces());
+                if (host.Creature != null) host.Creature.RenderAt(0f);
+                File.WriteAllBytes(Path.Combine(outDir, $"start-{name}-{size}.png"), Render(cam, w, h));
+                Debug.Log($"[CiBuild] start-{name}-{size}.png {w}x{h}");
+                host.Dispose();
+                UnityEngine.Object.DestroyImmediate(root.gameObject);
+            }
+        }
+
+        static System.Collections.Generic.List<SquishSquad.Ui.Screens.ScreenPiece> Auth(float w, float h, Action<SquishSquad.Ui.Screens.AuthModel> set)
+        {
+            var m = new SquishSquad.Ui.Screens.AuthModel();
+            set(m);
+            var art = new SquishSquad.Ui.Screens.AuthArt(w, h);
+            var f = art.Layout(m, out _);
+            return art.Pieces(m, new SquishSquad.Ui.Screens.AuthUi { PillX = m.Register ? 1 : 0, CaretOn = false }, f);
         }
 
         static byte[] Render(Camera cam, int w, int h)
@@ -102,6 +194,33 @@ namespace SquishSquad.EditorTools
             });
             Debug.Log($"[CiBuild] Android build: {report.summary.result}, {report.summary.totalSize / 1048576f:0.0} MB, {report.summary.totalErrors} errors -> {path}");
             Exit(report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded ? 0 : 1);
+        }
+
+        // The Characters page and the Level Pass at rest, offline (the exported demo save: Mittens in use, level and coins
+        // the exported menu's), on the reference screen and a tablet. Compare with tools/unity/pages-test's pictures
+        // (webgame/test/out/unity-pages/unity/ch-top.png; the Level Pass there is the test player's, level 7).
+        static void PageShots(string outDir)
+        {
+            SquishSquad.Ui.UiFont.ReadJson = n => Resources.Load<TextAsset>("Fonts/" + n)?.text;
+            SquishSquad.Ui.UiFont.ParseJson = j => JsonUtility.FromJson<SquishSquad.Ui.UiFontData>(j);
+            foreach (var (size, w, h) in new[] { ("a15", 2340, 1080), ("2048x1536", 2048, 1536) })
+                foreach (var lp in new[] { true, false })
+                {
+                    var root = new GameObject("Capture").transform;
+                    var cam = MenuScreen.CreateCamera(root);
+                    MenuScreen.FitCamera(cam, w, h);
+                    IMenuPage page = lp ? (IMenuPage)LevelPassPage.Open(root, w, h, 0, 1000) : CharactersPage.Open(root, w, h, 0, 1000);
+                    var name = (lp ? "levelpass-" : "characters-") + size;
+                    if (page != null)
+                    {
+                        for (float t = 0; t <= 4000; t += 1000f / 30) page.Tick(t);   // (the Characters page's loading screen over by then)
+                        File.WriteAllBytes(Path.Combine(outDir, name + ".png"), Render(cam, w, h));
+                        Debug.Log($"[CiBuild] {name}.png {w}x{h}");
+                        page.Dispose();
+                    }
+                    else Debug.LogWarning($"[CiBuild] {name}: the page isn't exported (tools/unity/export-pages.mjs)");
+                    UnityEngine.Object.DestroyImmediate(root.gameObject);
+                }
         }
 
         static string Arg(string name)

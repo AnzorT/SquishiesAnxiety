@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Upstream Yoga.Net test suite (tests/Yoga.Net.Tests, MIT), run against the C# 9 /
+       netstandard2.1 engine in unity/Assets/Scripts/ThirdParty/Yoga.
+       Run command: see unity/Assets/Scripts/ThirdParty/Yoga/README.md -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../engine/YogaEngine.csproj" />
+  </ItemGroup>
+</Project>

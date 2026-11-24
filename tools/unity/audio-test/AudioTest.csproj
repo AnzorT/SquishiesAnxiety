@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The Unity port's sound code (unity/Assets/Scripts/Audio, its plain C# parts) against the app's src/audio, outside
+       Unity. Run run.mjs with node first, then dotnet run (Release) with this project. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <LangVersion>9.0</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../unity/Assets/Scripts/Audio/JsTimers.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Audio/SoundBackend.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Audio/SoundFiles.g.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Audio/SfxCore.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Audio/SquishLoop.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Audio/SfxRates.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Audio/Haptics.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Audio/Music.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Audio/MenuSynth.cs" />
+    <Compile Include="Stubs.cs" />
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+</Project>

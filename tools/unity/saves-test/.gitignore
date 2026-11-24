@@ -1,0 +1,6 @@
+bin/
+obj/
+# emulator state / logs if the emulators are ever started from here
+*-debug.log
+emulator-data/
+.firebase/
