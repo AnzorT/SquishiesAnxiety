@@ -57,16 +57,15 @@ static class Program
 
     public static SortData Data()
     {
-        var d = new SortData { BackXml = File.ReadAllText(Res("Sort/back.xml")) };
+        var d = new SortData
+        {
+            BackXml = File.ReadAllText(Res("Sort/back.xml")), BackLipXml = File.ReadAllText(Res("Hop/back-lip.xml")),
+            BackTopXml = File.ReadAllText(Res("Hop/back-top.xml")), PauseTopXml = File.ReadAllText(Res("Hop/pause-top.xml")),
+        };
         var props = JsonDocument.Parse(File.ReadAllText(Res("Sort/props.json"))).RootElement;
         foreach (var t in new[] { "fridge", "cupboard" }) d.Props[t] = props.GetProperty(t).EnumerateArray().Select(e => e.GetString()).ToList();
         var pools = JsonDocument.Parse(File.ReadAllText(Res("Sort/sort.json"))).RootElement;
         foreach (var t in new[] { "fridge", "cupboard" }) d.Pools[t] = pools.GetProperty(t).EnumerateArray().Select(e => new PoolEntry(e.GetProperty("id").GetString(), "Stack/art/" + e.GetProperty("file").GetString())).ToList();
-        var bf = Res("Sort/blitz.json");
-        if (File.Exists(bf))
-            foreach (var r in JsonDocument.Parse(File.ReadAllText(bf)).RootElement.GetProperty("rasters").EnumerateArray())
-                SortArt.Rasters[r.GetProperty("ch").GetString() + "|" + r.GetProperty("size").GetDouble().ToString(System.Globalization.CultureInfo.InvariantCulture)] =
-                    (r.GetProperty("file").GetString(), (float)r.GetProperty("w").GetDouble(), (float)r.GetProperty("h").GetDouble(), (float)r.GetProperty("dy").GetDouble());
         return d;
     }
 

@@ -81,7 +81,10 @@ namespace SquishSquad.Games.Sort
     {
         public Dictionary<string, List<string>> Props = new Dictionary<string, List<string>>();
         public Dictionary<string, List<PoolEntry>> Pools = new Dictionary<string, List<PoolEntry>>();
-        public string BackXml;   // Resources/Sort/back.xml
+        public string BackXml;   // Resources/Sort/back.xml (the fork's orb; no longer drawn)
+        /// <summary>The Crib's orange back button (src/crib/Hud.js CribButton, 44: Squish Hop's, Resources/Hop/back-lip,
+        /// back-top and pause-top, the top with the pause icon while a Blitz round is sorted).</summary>
+        public string BackLipXml, BackTopXml, PauseTopXml;
     }
 
     public sealed partial class SortLevel
@@ -171,6 +174,7 @@ namespace SquishSquad.Games.Sort
         int _mistakes;
         int? _selected, _dragK;
         int _peekLeft, _left;
+        KeyLoop _warnLoop;
         bool _paused, _showInside = true, _foodMoved;
         Dictionary<int, int> _insideNow = new Dictionary<int, int>();
         readonly List<int> _timers = new List<int>();
@@ -761,7 +765,6 @@ namespace SquishSquad.Games.Sort
         sealed class Touch { public float X0, Y0; public int? K; public bool Moved; }
         Touch _touch;
         bool _cardDown, _backDown;
-        public (float x, float y, float size) BackOrb = (12, 12, 40);
 
         bool CardOpen { get { if (BCardOpen) return true; foreach (var c in _cards) if (c.Visible) return true; return false; } }
 
@@ -804,7 +807,8 @@ namespace SquishSquad.Games.Sort
         public void Down(float sx, float sy)
         {
             if (CardOpen) { CardsTap(true, sx, sy); _cardDown = true; return; }
-            if (Math.Abs(sx - (BackOrb.x + 20)) <= 26 && Math.Abs(sy - (BackOrb.y + 20)) <= 26) { _backDown = true; return; }
+            float by = SortArt.BackY(_blitz);
+            if (sx >= 10 - 4 && sx <= 58 + 4 && sy >= by - 4 && sy <= by + 52 + 4) { _backDown = true; return; }
             float x = sx - AreaX, y = sy;
             if (x < 0 || x > AreaW || Phase != "place" || _paused) return;
             _touch = new Touch { X0 = x, Y0 = y, K = HitPiece(x, y) };
@@ -905,20 +909,19 @@ namespace SquishSquad.Games.Sort
             // develop: the fridge stands in the Crib's kitchen by day (as Squish Hop's levels stand in its rooms; hop/Room.js)
             SetM(L("room"), "kitchen", () => SquishSquad.Games.Squishdoku.Rooms.Svg("kitchen", "day", _sw, _sh), _sw, _sh, 0);
 
-            // ---- the HUD's left column
-            string barLabel; bool showBar = true, red = false; string[] barColors; double frac;
-            if (Phase == "peek" || Phase == "deal") { barLabel = Phase == "peek" ? $"REMEMBER! {_peekLeft}" : "GET READY"; barColors = new[] { "#ffe45c", "#ff8a3d" }; frac = _peekBar.GetValue(); }
-            else if (Phase == "place" || Phase == "won" || Phase == "lost" || _blitz)
+            // ---- the HUD's left column (develop: Squish Hop's top bar and glass): the hearts (Blitz: CLEARED / BEST and the
+            // rule) and one bar, the peek's countdown with the eye, then the clock (Blitz: the round's)
+            bool placing = Phase == "place", peeking = Phase == "peek" || Phase == "deal";
+            string barLabel = Phase == "peek" ? _peekLeft.ToString() : Phase == "deal" ? " " : Levels.Clock(_left > 0 ? _left * 1000.0 : Spec.LimitMs);
+            double frac = peeking ? _peekBar.GetValue() : _clk.Frac.GetValue();
+            bool warn = placing && _left <= 10;
+            var hud = new SortArt.Hud { ModelName = _m.Name, Tier = Spec.Tier, Eye = peeking, BarLabel = barLabel, Blitz = _blitz };
+            if (_blitz)
             {
-                // (Blitz: the round's clock shows all the time, stopped between the sorting)
-                barLabel = Levels.Clock(_left > 0 ? _left * 1000.0 : Spec.LimitMs);
-                red = Phase == "place" && _left <= 10;
-                barColors = new[] { "#b8ffd9", "#3ddc97" }; frac = _clk.Frac.GetValue();
+                int bestRun = (int)(Levels.Record(Profile).Blitz.Top ?? 0);
+                hud.Cleared = _cleared; hud.Best = Math.Max(bestRun, _cleared); hud.BestBeaten = _cleared > bestRun && bestRun > 0;
             }
-            else { barLabel = Phase == "shake" || Phase == "close" ? "SHAKING…" : " "; showBar = false; barColors = null; frac = 1; }
-            var hud = new SortArt.Hud { Theme = _theme, ModelName = _m.Name, Lv = Spec.Lv, Tier = Spec.Tier, BarLabel = barLabel, BarRed = red, ShowBar = showBar,
-                Blitz = _blitz, Round = Spec.Round ?? 0 };
-            SetM(L("left column"), $"{_deal}|{barLabel}|{red}|{showBar}|{hud.Revived}", () => SortArt.LeftColumn(hud, _sh), SortArt.LeftW, _sh, 4);
+            SetM(L("left column"), $"{_deal}|{peeking}|{hud.Cleared}|{hud.Best}|{hud.BestBeaten}", () => SortArt.LeftColumn(hud, _sh), SortArt.LeftW + 200, _sh, 4);
             var hl = SortArt.HudLayout(hud);
             for (int i = 0; i < (_blitz ? 0 : Levels.HEARTS); i++)
             {
@@ -929,26 +932,30 @@ namespace SquishSquad.Games.Sort
                     if (on) { _hearts[i].StopAnimation(); _hearts[i].SetValue(1); }
                     else Animated.Sequence(Animated.Timing(_hearts[i], Timing(1.6, 120)), Animated.Spring(_hearts[i], Spring(0, 5, 120))).Start();
                 }
-                float hx = hl.heartsX + 2 + 8 + i * 27, hy = hl.heartsY + 2 + 5;
-                var e = L("heart empty " + i); SetM(e, "", SortArt.HeartEmpty, 24, 24, 3); e.Transform = Affine.Translate(hx, hy);
-                var f = L("heart " + i); SetM(f, "", SortArt.HeartFull, 24, 24, 3);
+                float hx = hl.heartsX + i * 30, hy = hl.heartsY;
+                var e = L("heart empty " + i); SetM(e, "", () => SortArt.HeartEmpty(26, "rgba(255,255,255,0.28)"), 26, 26, 3); e.Transform = Affine.Translate(hx, hy);
+                var f = L("heart " + i); SetM(f, "", () => SortArt.HeartFull(26), 26, 26, 3);
                 double t = _hearts[i].GetValue();
                 double sc = Lerp(t, new[] { 0, 1, 1.6 }, new[] { 0.4, 1, 1.35 }, true);
                 f.Opacity = (float)Lerp(t, new[] { 0, 0.3, 1.6 }, new[] { 0.0, 1, 1 }, true);
-                f.Transform = Affine.Translate(hx, hy) * About(24, 24, Affine.ScaleBy(sc, sc));
+                f.Transform = Affine.Translate(hx, hy) * About(26, 26, Affine.ScaleBy(sc, sc));
             }
-            if (showBar)
-            {
-                var fl = L("bar fill");
-                float shift = (float)((1 - Math.Max(0, Math.Min(1, frac))) * hl.trackW);
-                SetM(fl, $"{hl.trackW}|{barColors[0]}|{shift}", () => SortArt.BarFill(hl.trackW, barColors, shift), hl.trackW, 14, 1);
-                fl.Transform = Affine.Translate(hl.trackX, hl.barY + 8);
-            }
-            var back = L("back"); back.Set(_data.BackXml, 40, 40); back.Transform = Affine.Translate(BackOrb.x, BackOrb.y);
+            // the TimerBar (squishdoku/Hud.js, 186 wide), its last ten seconds throbbing
+            if (warn && _warnLoop == null) { _warnLoop = new KeyLoop(500, KeyLoop.PHASE, Array.ConvertAll(KeyLoop.PHASE, p => p < 0.5 ? 2 * p : 2 - 2 * p)); _warnLoop.Mount(); }
+            else if (!warn && _warnLoop != null) { _warnLoop.Unmount(); _warnLoop = null; }
+            double wv = _warnLoop?.Value ?? 0;
+            var bar = Affine.Translate(hl.barX, hl.barY) * About(SortArt.BarW, Squishdoku.SdArt.BarH, Affine.ScaleBy(1 + 0.04 * wv, 1 + 0.04 * wv));
+            var bl = L("bar"); double bf = Math.Round(Math.Max(0, Math.Min(1, frac)) * 1900) / 1900, wr = Math.Round(wv * 50) / 50;
+            SetM(bl, $"{bf}|{wr}", () => Squishdoku.SdArt.Bar(bf, wr, SortArt.BarW), SortArt.BarW, Squishdoku.SdArt.BarH, 2); bl.Transform = bar;
+            var bt = L("bar label"); SetM(bt, $"{barLabel}|{warn}", () => Squishdoku.SdArt.BarText(barLabel, warn, SortArt.BarW), SortArt.BarW, Squishdoku.SdArt.BarH, 2); bt.Transform = bar;
+            // the back button: the lip stays, the top moves 3 dp down while pressed (Blitz while sorting: the pause icon)
+            float backY = SortArt.BackY(_blitz);
+            var bkl = L("back lip"); bkl.Set(_data.BackLipXml, 48, 48, 4); bkl.Transform = Affine.Translate(10, backY + 4);
+            var bkt = L("back top"); bkt.Set(_blitz && placing ? _data.PauseTopXml : _data.BackTopXml, 48, 52, 4); bkt.Transform = Affine.Translate(10, backY + (_backDown ? 3 : 0));
 
             // ---- the tray
             var tray = L("tray");
-            SetM(tray, _deal.ToString(), () => SortArt.Tray(SortModels.THEMES[_theme], _tg, Board.TrayCap), _tg.Tw, _tg.Th, 12);
+            SetM(tray, _deal.ToString(), () => SortArt.Tray(_tg, Board.TrayCap), _tg.Tw, _tg.Th, 4);
             tray.Transform = area * Affine.Translate(_tg.Tx, _tg.Ty);
 
             // ---- the container, shaking as one: translate, squash and turn about its middle, popped in

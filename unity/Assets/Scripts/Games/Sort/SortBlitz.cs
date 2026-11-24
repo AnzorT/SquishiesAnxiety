@@ -11,8 +11,8 @@
 //                    each round, a tenth of xp.blitz.sort each); PLAY AGAIN / QUIT. Leaving or starting over pays out.
 //   pause            the back orb (or Android's back) while sorting: the shared pause card (RESUME / QUIT)
 // The cards are Squishdoku's (Overlays.js BlitzSaveCard / BlitzOverCard, unit "round": Games/Squishdoku/SdBlitzCards).
-// Not ported yet: the 3, 2, 1, GO! that opens a run, develop's new HUD (the Crib's top bar and glass with CLEARED /
-// BEST), the droop at GAME OVER. This file is SortLevel's Blitz half. Open it with SortLevel.Blitz(...)
+// The HUD is SortLevel's (develop's: "Blitz Mode", CLEARED / BEST and the rule on the glass, the pause icon while
+// sorting). Not ported yet: the droop at GAME OVER. This file is SortLevel's Blitz half. Open it with SortLevel.Blitz(...)
 // (SortGame.CreateBlitz in Unity). No UnityEngine here.
 using System;
 using System.Collections.Generic;
