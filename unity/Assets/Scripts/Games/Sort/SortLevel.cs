@@ -340,7 +340,7 @@ namespace SquishSquad.Games.Sort
                 After = outc.After != null ? new XpLevel(outc.After.Level, outc.After.Into, outc.After.Need) : default,
             };
             var spec = Spec;
-            Later(1500, () => _result = Open(SortCards.ResultCard(_sw, _sh, res, spec.Lv, spec.Tier, spec.ParMs, _lv >= Levels.LEVELS, Next, Replay, Leave), 0));
+            Later(1500, () => _result = Open(SortCards.ResultCard(_sw, _sh, res, _lv >= Levels.LEVELS, Next, Replay, Leave), 0));
         }
 
         void Mistake()
@@ -654,7 +654,7 @@ namespace SquishSquad.Games.Sort
             _paused = true;
             StopInterval();
             if (_blitz) _run.Pause();
-            else _pause = Open(SortCards.PauseCard(_sw, _sh, Resume, () => { _paused = false; Replay(); }, Leave), 2);
+            else _pause = Open(SortCards.PauseCard(_sw, _sh, Resume, Leave), 2);
         }
 
         void Resume()

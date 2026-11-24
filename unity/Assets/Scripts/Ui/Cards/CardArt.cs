@@ -165,11 +165,13 @@ namespace SquishSquad.Ui.Cards
 
         // ---- Overlays.js XpBar: LV badge, the track, "XP" (260 x 30); the fill is its own piece -------------------------
         public const float XpW = 260, XpH = 30;
-        const float TrackX = 38, TrackW = XpW - 30 - 54 - 16, TrackY = 8, TrackH = 14;
+        const float TrackX = 38, TrackY = 8, TrackH = 14;   // (the track: XpBar(w) - 100 wide)
 
-        public static string XpBar(double level)
+        /// <summary>The bar `w` wide (xpRow: the badge 30, the track, "XP" 54, 8 dp apart).</summary>
+        public static string XpBar(double level, float w = XpW)
         {
-            var s = new UiSvg(XpW, XpH);
+            float TrackW = w - 30 - 54 - 16;
+            var s = new UiSvg(w, XpH);
             s.Box(0, 0, 30, 30, new BoxStyle { Background = "#b8641c", Radius = 15, BorderWidth = 2.5f, BorderColor = "#ffffff" });
             var lt = Style(Display, 14, "#ffffff");
             s.Text(((long)level).ToString(CultureInfo.InvariantCulture), 2.5f, 2.5f + (25 - UiSvg.LineBox(lt)) / 2, lt, 25, 0.5f);
@@ -180,9 +182,10 @@ namespace SquishSquad.Ui.Cards
         }
 
         /// <summary>The fill: `frac` of the track's inside, its gradient across its own width, clipped by the track.</summary>
-        public static string XpFill(double frac)
+        public static string XpFill(double frac, float width = XpW)
         {
-            var s = new UiSvg(XpW, XpH);
+            float TrackW = width - 30 - 54 - 16;
+            var s = new UiSvg(width, XpH);
             float x = TrackX + 2, y = TrackY + 2, w = (float)(frac * (TrackW - 4)), h = TrackH - 4;
             if (w <= 0) return s.Markup;
             var clip = s.NewId("xc");
@@ -196,6 +199,8 @@ namespace SquishSquad.Ui.Cards
         // ---- Overlays.js levelUp: "LEVEL n!" and its line in a brown box (the lines rock inside) --------------------------
         public static readonly TextStyle LevelUpText = Style(Display, 17, "#ffffff");
         public static readonly TextStyle LevelUpSub = Style(Heavy, 11, "#ffe9cc");
+        public static readonly TextStyle LevelUpTextSmall = Style(Display, 13, "#ffffff");
+        public static readonly TextStyle LevelUpSubSmall = Style(Heavy, 9, "#ffe9cc");
 
         // ---- ui.js SdButton -------------------------------------------------------------------------------------------
         public static readonly Dictionary<string, (string ring, string[] colors)> BTN = new Dictionary<string, (string, string[])>
@@ -219,6 +224,8 @@ namespace SquishSquad.Ui.Cards
             public float Size = 17, PadH = 18, PadV = 9;
             public bool Disabled;
             public float? Width;
+            /// <summary>A fixed face height (faceStyle height: the result card's trioFace, 48), the label centred in it.</summary>
+            public float? FaceHeight;
             public const float Lip = 5;
 
             public ButtonLook(string kind, string label, float size, float padH, float padV, float? width = null)
@@ -229,7 +236,7 @@ namespace SquishSquad.Ui.Cards
                 : new TextStyle { Font = Display, Size = Size, Color = "#ffffff", Shadows = Outline3(BTN.TryGetValue(Kind, out var b) ? b.ring : BTN["pink"].ring, 2) };
 
             public float FaceW => Width.HasValue ? Width.Value - 5 : UiSvg.BoxWidth(Label, LabelStyle) + 2 * PadH + 6;
-            public float FaceH => UiSvg.LineBox(LabelStyle) + 2 * PadV + 6;
+            public float FaceH => FaceHeight ?? UiSvg.LineBox(LabelStyle) + 2 * PadV + 6;
             public float RingW => FaceW + 5;
             public float RingH => FaceH + 5;
             /// <summary>The whole button: the ring and the lip under it.</summary>
@@ -257,7 +264,7 @@ namespace SquishSquad.Ui.Cards
                 s.Open($"clip-path=\"url(#{clip})\"");
                 s.Box(px + pw * 0.08f, py + 2, pw * 0.84f, ph * 0.42f, new BoxStyle { Background = "rgba(255,255,255,0.45)", Radius = 999 });
                 s.Close();
-                s.Text(Label, px + PadH, py + PadV, LabelStyle, pw - 2 * PadH, 0.5f);
+                s.Text(Label, px + PadH, FaceHeight.HasValue ? py + (ph - UiSvg.LineBox(LabelStyle)) / 2 : py + PadV, LabelStyle, pw - 2 * PadH, 0.5f);
                 return s.Markup;
             }
         }

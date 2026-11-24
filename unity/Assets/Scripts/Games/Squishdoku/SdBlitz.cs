@@ -505,7 +505,7 @@ namespace SquishSquad.Games.Squishdoku
         {
             if (Phase == "paused" && (_pauseCard == null || !_pauseCard.Visible))
             {
-                ICardView c = new CardView(BlitzCards.Pause(W, H, () => AsInput(Resume), () => AsInput(Again), () => AsInput(Exit)));
+                ICardView c = new CardView(BlitzCards.Pause(W, H, () => AsInput(Resume), () => AsInput(Exit)));
                 _pauseCard?.Hide();
                 _pauseCard = c;
                 Show(ref _pauseCard, c);

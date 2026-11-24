@@ -30,9 +30,9 @@ static class CardsTest
                     Stars = 2, Coins = 90, Xp = 40, Moves = 9, Par = 7, LevelUps = 1, Unlocked = true, Hinted = false,
                     Before = new XpLevel(6, 560, 700), After = new XpLevel(7, 40, 800),
                 };
-                return StackCards.ResultCard(W, H, res, 9, 1, false, Noop, Noop, Noop);
+                return StackCards.ResultCard(W, H, res, false, Noop, Noop, Noop);
             case "stack-fail": return StackCards.FailCard(W, H, null, Noop, Noop);
-            case "stack-pause": return StackCards.PauseCard(W, H, true, Noop, Noop, Noop);
+            case "stack-pause": return StackCards.PauseCard(W, H, Noop, Noop);
             case "stack-hint": return StackCards.HintCard(W, H, true, false, Noop, Noop);
         }
         throw new ArgumentException(name);
@@ -78,7 +78,7 @@ static class CardsTest
         void Run(double ms) { double end = tk.Now + ms; while (tk.Now < end) { tk.Tick(Math.Min(tk.Now + 16, end)); } }
         string pressed = null;
         var res = new StackCards.Result { Stars = 3, Coins = 270, Xp = 40, Moves = 7, Par = 7, Before = new XpLevel(6, 560, 700), After = new XpLevel(6, 600, 700) };
-        var card = StackCards.ResultCard(832, 384, res, 12, 2, false, () => pressed = "next", () => pressed = "replay", () => pressed = "menu");
+        var card = StackCards.ResultCard(832, 384, res, false, () => pressed = "next", () => pressed = "replay", () => pressed = "menu");
         card.Show();
         Run(7200);
         card.Update();

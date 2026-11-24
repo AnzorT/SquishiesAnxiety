@@ -22,13 +22,13 @@ static class CardsTest
         var res = new SdCards.Result { Stars = 2, Perfect = false, Ms = 83000, Mistakes = 1, LevelCoins = 90, Xp = 40, LevelUps = 1, Unlocked = true, Before = before, After = new XpLevel(7, 40, 800) };
         switch (name)
         {
-            case "sd-result": return SdCards.ResultCard(W, H, res, 12, 6, false, new string[3], false, Noop, Noop, Noop);
+            case "sd-result": return SdCards.ResultCard(W, H, res, new string[3], false, Noop, Noop, Noop);
             case "sd-perfect":
                 var best = new SdCards.Result { Stars = 3, Perfect = true, Ms = 83000, Mistakes = 0, LevelCoins = 270, Xp = 40, LevelUps = 1, Unlocked = true, Before = before, After = new XpLevel(7, 40, 800) };
-                return SdCards.ResultCard(W, H, best, 12, 6, true, new string[3], false, Noop, Noop, Noop);
+                return SdCards.ResultCard(W, H, best, new string[3], false, Noop, Noop, Noop);
             case "sd-timeup": return SdCards.TimeUpCard(W, H, 0, null, Noop, Noop);
             case "sd-hearts": return SdCards.TimeUpCard(W, H, 3, null, Noop, Noop);
-            case "sd-pause": return SdCards.PauseCard(W, H, Noop, Noop, Noop);
+            case "sd-pause": return SdCards.PauseCard(W, H, Noop, Noop);
             // Preview.js: the shared Blitz cards (unit "board")
             case "sd-revive": return BlitzCards.Revive(W, H, 4, "board", true, false, Noop, Noop);
             case "sd-blitzfail": return BlitzCards.Fail(W, H, "mistake", 4, 6, "board", Noop, Noop);

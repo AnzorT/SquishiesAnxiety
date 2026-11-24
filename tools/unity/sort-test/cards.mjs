@@ -14,7 +14,6 @@ fs.mkdirSync(out, { recursive: true });
 const CARDS = [
   ['sort-result', [300, 2300, 7200]],
   ['sort-fail', [400, 3600]],
-  ['sort-pause', [150, 2000]],
 ];
 const clock = fs.readFileSync(path.join(ROOT, 'tools', 'unity', 'rig', 'virtual-clock.js'), 'utf8');
 for (const [card, times] of CARDS) {

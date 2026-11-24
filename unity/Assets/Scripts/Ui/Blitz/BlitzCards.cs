@@ -74,27 +74,20 @@ namespace SquishSquad.Ui.Blitz
         /// <summary>BlitzWinCard: all `rounds` steps cleared (10 in Squish Stack's and Squish Sort's Blitz).</summary>
         public static Card Win(float screenW, float screenH, WinResult res, string unit, Action onAgain, Action onQuit, int rounds = 10)
         {
-            var c = new Card(screenW, screenH) { RetriggerOnHide = true };
+            var c = new Card(screenW, screenH) { RetriggerOnHide = true, Column = true };
             c.Left.Add(new TitleItem(new CardArt.Title("BLITZ CHAMPION!", 26, "gold")) { Pop = new PopIn(60) });
             c.Left.Add(new TextItem($"{rounds} {unit.ToUpperInvariant()}S · {Clock(res.Ms)}{(res.NewBest ? " · NEW BEST!" : "")}", Sub));
             c.Left.Add(new HeadsItem(3, res.Pictures, 300, 300));
             var reward = new RewardItem(res.Coins, res.Xp, 1400, 1100) { Slide = new SlideIn(1300, 20) };
             c.Right.Add(reward);
-            CardParts.XpGain(c.Right, res.Xp, res.Before, res.After, res.LevelUps, 1900);
+            CardParts.XpGainCompact(c.Right, res.Xp, res.Before, res.After, res.LevelUps, 1900);
             c.Right.Add(new ButtonsItem(false, Small("white", "DONE", onQuit), Big("cyan", "AGAIN", onAgain)) { Slide = new SlideIn(1700, 30) });
-            // the FxLayer over the right column: three confetti bursts as it opens
+            // the FxLayer over the card (a column card): three confetti bursts as it opens
             c.Right.Add(new ColumnFx(reward, (0, "confetti", 60, 40, 1), (450, "confetti", 140, 40, 1), (900, "confetti", 220, 40, 1)));
             return c;
         }
 
-        /// <summary>PauseCard `blitz`: the Blitz clock frozen.</summary>
-        public static Card Pause(float screenW, float screenH, Action onResume, Action onRestart, Action onQuit)
-        {
-            var c = new Card(screenW, screenH) { RetriggerOnHide = true };
-            c.Left.Add(new TitleItem(new CardArt.Title("PAUSED", 32, "pink")) { Pop = new PopIn(40) });
-            c.Left.Add(new TextItem("The Blitz clock is frozen. Take a breath!", Body, 6));
-            c.Right.Add(new ButtonsItem(true, Wide("green", "RESUME", 18, onResume), Wide("purple", "START OVER", 16, onRestart), Wide("white", "QUIT", 16, onQuit)));
-            return c;
-        }
+        /// <summary>The shared pause card (develop: every game's Regular and Blitz): RESUME / QUIT, no START OVER.</summary>
+        public static Card Pause(float screenW, float screenH, Action onResume, Action onQuit) => GameCards.PauseCard(screenW, screenH, onResume, onQuit);
     }
 }

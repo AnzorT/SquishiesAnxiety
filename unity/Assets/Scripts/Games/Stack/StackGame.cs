@@ -521,7 +521,7 @@ namespace SquishSquad.Games.Stack
                 Moves = _moves, Par = _puzzle.Par, Hinted = _hinted,
             };
             int lv = _spec.Lv, tier = _spec.Tier;
-            Later(1500, () => _result = Open(StackCards.ResultCard(W, H, res, lv, tier, _lv >= Levels.LEVELS, Next, Replay, Leave), RESULT));
+            Later(1500, () => _result = Open(StackCards.ResultCard(W, H, res, _lv >= Levels.LEVELS, Next, Replay, Leave), RESULT));
             Hud();
         }
 
@@ -547,7 +547,7 @@ namespace SquishSquad.Games.Stack
             if (_blitz) { BlitzPause(); return; }
             PauseClock();
             _paused = true;
-            _pause = Open(StackCards.PauseCard(W, H, _spec.Clock, Resume, Replay, Leave), PAUSE);
+            _pause = Open(StackCards.PauseCard(W, H, Resume, Leave), PAUSE);
             Hud();
         }
 
@@ -870,7 +870,7 @@ namespace SquishSquad.Games.Stack
                         Stars = 2, Coins = 90, Xp = 40, Moves = 9, Par = 7, LevelUps = 1, Unlocked = true,
                         Before = new XpLevel(6, 560, 700), After = new XpLevel(7, 40, 800),
                     };
-                    _result = Open(StackCards.ResultCard(W, H, res, 9, 1, false, Next, Replay, Leave), RESULT);
+                    _result = Open(StackCards.ResultCard(W, H, res, false, Next, Replay, Leave), RESULT);
                     break;
             }
             Hud();

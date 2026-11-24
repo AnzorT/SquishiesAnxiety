@@ -40,13 +40,11 @@ namespace SquishSquad.Ui.Blitz
         public HeadsItem(int earned, string[] pictures, double first, double step)
         {
             _pictures = pictures ?? new string[3];
-            MarginTop = 6; MarginBottom = 22;
+            MarginTop = 0; MarginBottom = 2;   // (develop's slots: marginTop 0, marginBottom 2)
             for (int i = 0; i < 3; i++)
             {
                 var s = new Slot { Earned = i < earned, Big = i == 1, Delay = first + i * step };
-                s.S = s.Big ? 78 : 64;
-                s.Box = s.S + 16;
-                s.Mt = s.Big ? -10 : 6;
+                Size(s);
                 s.Scale = Fx.Lerp(new[] { 0.0, 1 }, new[] { s.Earned ? 0 : 1.6, 1 });
                 s.Rotate = Fx.Lerp(new[] { 0.0, 1 }, new[] { s.Earned ? -30.0 : 0, 0 });
                 _slots[i] = s;
@@ -55,6 +53,14 @@ namespace SquishSquad.Ui.Blitz
 
         public override bool IsStatic => false;
         string Pic(int i) => i < _pictures.Length ? _pictures[i] : null;
+
+        /// <summary>Slot: 78 (the middle) or 64, x 0.72 in a column card; the middle one 10 dp higher (none in a column card).</summary>
+        void Size(Slot s)
+        {
+            s.S = (float)Math.Round((s.Big ? 78 : 64) * (Compact ? 0.72 : 1), MidpointRounding.AwayFromZero);
+            s.Box = s.S + 16;
+            s.Mt = Compact ? 0 : s.Big ? -10 : 6;
+        }
 
         static string HeadSvg(float size, string pic, string ring, string bg, bool dim)
         {
@@ -66,6 +72,7 @@ namespace SquishSquad.Ui.Blitz
         public override void Measure(float colW)
         {
             W = 0; H = 0;
+            foreach (var s in _slots) Size(s);
             foreach (var s in _slots) { W += s.Box; H = Math.Max(H, s.Mt + s.Box); }
             float x = 0;
             foreach (var s in _slots) { s.Bx = x; s.By = (H - (s.Mt + s.Box)) / 2 + s.Mt; x += s.Box; }
@@ -341,11 +348,11 @@ namespace SquishSquad.Ui.Blitz
         public ColumnFx(CardItem first, params (double at, string kind, double x, double y, double scale)[] plan)
         {
             _first = first; _plan = plan;
-            MarginTop = -6;   // (the column's 6 dp gap before it, given back)
         }
 
         public override bool IsStatic => false;
-        public override void Measure(float colW) { W = 0; H = 0; }
+        // (the column's gap before it given back: 6 dp, 3 in a column card)
+        public override void Measure(float colW) { W = 0; H = 0; MarginTop = Compact ? -3 : -6; }
 
         public override void Mount()
         {
@@ -376,7 +383,8 @@ namespace SquishSquad.Ui.Blitz
 
         public override void Place(Affine card, float opacity)
         {
-            var col = card * Affine.Translate(ColX, _first.Y - _first.MarginTop);
+            // (a column card's FxLayer covers the whole fill, inside the rim: 6 dp in)
+            var col = Compact ? card * Affine.Translate(6, 6) : card * Affine.Translate(ColX, _first.Y - _first.MarginTop);
             foreach (var b in _bursts) b.Place(col, opacity);
         }
     }

@@ -1,0 +1,92 @@
+// The mini-games' shared cards, as the app has them on develop (src/squishdoku/Overlays.js; the user, 2026-11-16/17:
+// "one result card for all of them", "less text, UI not text", one pause card for every game and Blitz, the fail cards'
+// two buttons the same size with RETRY in the app's gold). Every one is a `column` card (Card.Column): the title and
+// picture on top, the rest under them.
+//   ResultCard  the title, the three stars (Squishdoku: its score creatures and PERFECT's stamp) popping in, the coins
+//               counting up (×3 on a perfect), the XP bar with LEVEL n! beside it, MENU (Squishdoku: MAP) and REPLAY
+//               white and NEXT ▶ gold, the three 100 x 48. No line of numbers, no "… for 3 stars", no LEVEL n UNLOCKED.
+//   PauseCard   PAUSED, RESUME (gold) and QUIT (white) down the card: no body text, no RESTART.
+//   FailCard    a title and a rocking head, a line, MENU / MAP (white) and RETRY (gold), each 150 wide.
+// Each game keeps its words (its titles, its fail lines) in its own *Cards.cs.
+using System;
+using System.Collections.Generic;
+
+namespace SquishSquad.Ui.Cards
+{
+    public static class GameCards
+    {
+        /// <summary>A level's win: `res` of ResultCard.</summary>
+        public sealed class Result
+        {
+            public int Stars, LevelUps;
+            public bool Perfect;
+            public double Coins, Xp;
+            public XpLevel? Before;
+            public XpLevel After;
+        }
+
+        static readonly TextStyle Body = CardArt.Style(CardArt.Heavy, 14, CardArt.INK);
+
+        /// <summary>trioFace: 100 x 48, the label 16 (a 105 dp ring around the face).</summary>
+        public static CardButton Trio(string kind, string label, Action a) =>
+            new CardButton(new CardArt.ButtonLook(kind, label, 16, 4, 0, 105) { FaceHeight = 48 }, a);
+        /// <summary>pairFace: 150 wide, 8 x 11 in, the label 17.</summary>
+        public static CardButton Pair(string kind, string label, Action a) => new CardButton(new CardArt.ButtonLook(kind, label, 17, 8, 11, 155), a);
+        /// <summary>wideFace: as wide as the card's column, 12 dp above and below the label.</summary>
+        public static CardButton Wide(string kind, string label, float size, Action a) => new CardButton(new CardArt.ButtonLook(kind, label, size, 18, 12), a);
+
+        /// <summary>The stars' moments without the characters (Overlays.js T0 / STEP when `keys` aren't drawn): the first star
+        /// at 380 ms, then every 480; the coins 200 ms after the third; the buttons 300 ms after it.</summary>
+        public const double StarsT0 = 380, StarsStep = 480;
+
+        /// <summary>The one result card. `titles`: the 1, 2 and 3 star titles; `perfectTitle`: Squishdoku's perfect solve
+        /// (PERFECT SQUISH!); `score`: what stands where the stars do (null: the three stars), with `scoreTop` (it's the top
+        /// result: the title in gold) and its moments `coinsAt` / `buttonsAt`; `reward`: the coins row (null: the shared
+        /// one); `last`: level 50, no NEXT.</summary>
+        public static Card ResultCard(float screenW, float screenH, Result res, string[] titles, bool last, Action onBack, Action onReplay, Action onNext,
+            string backLabel = "MENU", string perfectTitle = null, CardItem score = null, bool? scoreTop = null, double? coinsAt = null, double? buttonsAt = null,
+            Func<double, CardItem> reward = null)
+        {
+            var c = new Card(screenW, screenH) { Column = true };
+            bool top = scoreTop ?? res.Stars == 3;
+            string title = res.Perfect && perfectTitle != null ? perfectTitle : titles[Math.Max(0, Math.Min(titles.Length - 1, res.Stars - 1))];
+            c.Left.Add(new TitleItem(new CardArt.Title(title, title.Length > 13 ? 27 : 30, top ? "gold" : "pink")) { Pop = new PopIn(80) });
+            c.Left.Add(score ?? new StarsItem(res.Stars, StarsT0, StarsStep));
+            double cAt = coinsAt ?? StarsT0 + 3 * StarsStep + 200;
+            var R = c.Right;
+            var row = reward != null ? reward(cAt) : new RewardItem(res.Coins, res.Xp, cAt);
+            row.Slide = new SlideIn(cAt - 150, 20);
+            R.Add(row);
+            CardParts.XpGainCompact(R, res.Xp, res.Before, res.After, res.LevelUps, cAt + 500);
+            var buttons = new List<CardButton> { Trio("white", backLabel, onBack), Trio("white", "REPLAY", onReplay) };
+            if (!last) buttons.Add(Trio("gold", "NEXT ▶", onNext));
+            R.Add(new ButtonsItem(false, buttons.ToArray()) { Slide = new SlideIn(buttonsAt ?? StarsT0 + 2 * StarsStep + 300, 30) });
+            return c;
+        }
+
+        /// <summary>The one pause card (every game, Regular and Blitz).</summary>
+        public static Card PauseCard(float screenW, float screenH, Action onResume, Action onQuit)
+        {
+            var c = new Card(screenW, screenH) { Column = true };
+            c.Left.Add(new TitleItem(new CardArt.Title("PAUSED", 30, "gold")));
+            c.Right.Add(new ButtonsItem(true, Wide("gold", "RESUME", 18, onResume), Wide("white", "QUIT", 16, onQuit)));
+            return c;
+        }
+
+        /// <summary>Time's up / out of hearts / OH NO!: `title` (`size`, `fill`) and the head of `picture` (a Resources path,
+        /// on `headBg`) rocking, `line`, then `backLabel` (white; none: null) and RETRY (gold).</summary>
+        public static Card FailCard(float screenW, float screenH, string title, float size, string fill, string picture, string headBg, string line,
+            string backLabel, Action onBack, Action onRetry)
+        {
+            var c = new Card(screenW, screenH) { Tint = "rgba(80,0,30,0.5)", RetriggerOnHide = true, Column = true };
+            c.Left.Add(new TitleItem(new CardArt.Title(title, size, fill)) { Pop = new PopIn(60) });
+            c.Left.Add(new HeadItem(86, picture, "#ffffff", headBg, true, new Rock(8, 1800)) { Pop = new PopIn(220) });
+            c.Right.Add(new TextItem(line, Body, 6));
+            var b = new List<CardButton>();
+            if (backLabel != null) b.Add(Pair("white", backLabel, onBack));
+            b.Add(Pair("gold", "RETRY", onRetry));
+            c.Right.Add(new ButtonsItem(false, b.ToArray()) { Slide = new SlideIn(380) });
+            return c;
+        }
+    }
+}

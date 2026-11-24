@@ -13,8 +13,6 @@ fs.mkdirSync(out, { recursive: true });
 // and the page only starts a burst once React has rendered it, after the stepping)
 const CARDS = [
   ['stack-result', [300, 2300, 7200]],
-  ['stack-fail', [400, 3600]],
-  ['stack-pause', [150, 2000]],
   ['stack-hint', [150, 2000]],
 ];
 const clock = fs.readFileSync(path.join(ROOT, 'tools', 'unity', 'rig', 'virtual-clock.js'), 'utf8');

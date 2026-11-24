@@ -31,6 +31,10 @@ namespace SquishSquad.Ui.Cards
         public string Tint = "rgba(50,24,6,0.55)";
         /// <summary>Its PopIns and SlideIns are keyed on `visible` (trigger={visible}): they start again as it closes.</summary>
         public bool RetriggerOnHide;
+        /// <summary>Overlay's `column` (develop, 2026-11-16/17: every mini-game's result, pause, time's up and fail card):
+        /// one column, maxWidth 440, the fill 16 dp in at the sides and 8 at the top and bottom, 3 dp between items; Left
+        /// then Right, stacked (the &lt;Split /&gt; is ignored); its items drawn Compact.</summary>
+        public bool Column;
 
         readonly float _sw, _sh;
         readonly CardLayer _scrim = new CardLayer("scrim"), _frame = new CardLayer("card");
@@ -112,6 +116,16 @@ namespace SquishSquad.Ui.Cards
                 CardW = Math.Min(avail, 380);
                 fillH = 24;
             }
+            else if (Column)
+            {
+                CardW = Math.Min(avail, 440);
+                float colW = CardW - 12 - 32;
+                var all = new List<CardItem>(Left); all.AddRange(Right);
+                foreach (var i in all) i.Compact = true;
+                float inner = Measure(all, colW, ColumnGap);
+                fillH = inner + 16;
+                Place(all, 22, 14, colW, ColumnGap);
+            }
             else
             {
                 // two columns: maxWidth 660, the fill 20 dp in at the sides, 22 dp between the columns
@@ -138,20 +152,20 @@ namespace SquishSquad.Ui.Cards
             _scrim.Set(new UiSvg(_sw, _sh).Box(0, 0, _sw, _sh, new BoxStyle { Background = Tint }).Markup, _sw, _sh, 0);
         }
 
-        const float Gap = 6;
+        const float Gap = 6, ColumnGap = 3;
 
-        static float Measure(List<CardItem> col, float colW)
+        static float Measure(List<CardItem> col, float colW, float gap = Gap)
         {
             float h = 0;
             for (int i = 0; i < col.Count; i++)
             {
                 col[i].Measure(colW);
-                h += col[i].MarginTop + col[i].H + col[i].MarginBottom + (i > 0 ? Gap : 0);
+                h += col[i].MarginTop + col[i].H + col[i].MarginBottom + (i > 0 ? gap : 0);
             }
             return h;
         }
 
-        static void Place(List<CardItem> col, float x, float y, float colW)
+        static void Place(List<CardItem> col, float x, float y, float colW, float gap = Gap)
         {
             foreach (var it in col)
             {
@@ -159,7 +173,7 @@ namespace SquishSquad.Ui.Cards
                 it.ColX = x; it.ColW = colW;
                 it.X = Snap(x + (colW - it.W) / 2);
                 it.Y = y;
-                y += it.H + it.MarginBottom + Gap;
+                y += it.H + it.MarginBottom + gap;
             }
         }
 
@@ -222,6 +236,8 @@ namespace SquishSquad.Ui.Cards
         public readonly List<CardLayer> Layers = new List<CardLayer>();
         public PopIn Pop;
         public SlideIn Slide;
+        /// <summary>In a `column` card (Overlays.js useCompact): stars, score creatures and the XP bar drawn smaller.</summary>
+        public bool Compact;
 
         /// <summary>Drawn on the card itself (it never moves on it).</summary>
         public virtual bool IsStatic => Pop == null && Slide == null;
@@ -365,9 +381,7 @@ namespace SquishSquad.Ui.Cards
             for (int i = 0; i < 3; i++)
             {
                 var s = new OneStar { Earned = i < stars, Big = i == 1, Delay = first + i * step };
-                s.S = s.Big ? 74 : 60;
-                s.Box = s.S + 20;
-                s.Mt = s.Big ? -12 : 6;
+                Size(s);
                 s.Scale = Fx.Lerp(new[] { 0.0, 1 }, new[] { s.Earned ? 0 : 1.5, 1 });
                 s.Rotate = Fx.Lerp(new[] { 0.0, 1 }, new[] { s.Earned ? -40.0 : 0, 0 });
                 _stars[i] = s;
@@ -376,9 +390,19 @@ namespace SquishSquad.Ui.Cards
 
         public override bool IsStatic => false;
 
+        /// <summary>Overlays.js Star: 74 (the middle) or 60, x 0.72 in a column card (rounded), in a box 20 bigger; the
+        /// middle one 12 dp higher, the others 6 lower (a column card: no offsets).</summary>
+        void Size(OneStar s)
+        {
+            s.S = (float)Math.Round((s.Big ? 74 : 60) * (Compact ? 0.72 : 1), MidpointRounding.AwayFromZero);
+            s.Box = s.S + 20;
+            s.Mt = Compact ? 0 : s.Big ? -12 : 6;
+        }
+
         public override void Measure(float colW)
         {
             W = 0; H = 0;
+            foreach (var s in _stars) Size(s);
             foreach (var s in _stars) { W += s.Box; H = Math.Max(H, s.Mt + s.Box); }
             float x = 0;
             foreach (var s in _stars) { s.Bx = x; s.By = (H - (s.Mt + s.Box)) / 2 + s.Mt; x += s.Box; }
@@ -416,9 +440,10 @@ namespace SquishSquad.Ui.Cards
                 s.A.Start();
                 if (s.Earned) s.Spin.Mount();
                 int n = Array.IndexOf(_stars, s) + 1;
+                // (the card plays each star's sound at its moment, ResultCard; the star bursts 60 ms after)
+                _sounds.Add(_tk.SetTimeout(() => Snd.Play(star.Earned ? "sd_star" + n : "sd_starEmpty"), s.Delay));
                 s.Timer = _tk.SetTimeout(() =>
                 {
-                    Snd.Play(star.Earned ? "sd_star" + n : "sd_starEmpty");
                     if (!star.Earned) return;
                     var b = new Burst("gold", star.S / 2 + 10, star.S / 2 + 10, 1);
                     star.Bursts.Add(b);
@@ -429,8 +454,12 @@ namespace SquishSquad.Ui.Cards
             if (_earned == 3) _perfectTimer = _tk.SetTimeout(() => Snd.Play("sd_perfect"), _perfectAt);
         }
 
+        readonly List<int> _sounds = new List<int>();
+
         public override void Unmount()
         {
+            foreach (var id in _sounds) _tk?.ClearTimeout(id);
+            _sounds.Clear();
             if (_perfectTimer >= 0) { _tk?.ClearTimeout(_perfectTimer); _perfectTimer = -1; }
             foreach (var s in _stars)
             {
@@ -541,18 +570,22 @@ namespace SquishSquad.Ui.Cards
         readonly CardLayer _bar, _fillLayer;
         double _lv = double.NaN, _frac = double.NaN;
 
-        public XpBarItem(XpLevel before, XpLevel after, double delay)
+        readonly float _w;
+
+        /// <summary>`width`: the row's (xpRow 260; a column card's beside LEVEL n!: 200).</summary>
+        public XpBarItem(XpLevel before, XpLevel after, double delay, float width = CardArt.XpW)
         {
+            _w = width;
             _fill = new XpFill(before.Level, before.Into, before.Need, after.Level, after.Into, after.Need, delay);
             _bar = Layer("xp bar");
             _fillLayer = Layer("xp fill");
         }
         public override bool IsStatic => false;
-        public override void Measure(float colW) { W = CardArt.XpW; H = CardArt.XpH; Redraw(); }
+        public override void Measure(float colW) { W = _w; H = CardArt.XpH; _lv = _frac = double.NaN; Redraw(); }
         void Redraw()
         {
-            if (_fill.Level != _lv) { _lv = _fill.Level; _bar.Set(CardArt.XpBar(_lv), W, H, 2); }
-            if (_fill.Frac != _frac) { _frac = _fill.Frac; _fillLayer.Set(CardArt.XpFill(_frac), W, H, 2); }
+            if (_fill.Level != _lv) { _lv = _fill.Level; _bar.Set(CardArt.XpBar(_lv, _w), W, H, 2); }
+            if (_fill.Frac != _frac) { _frac = _fill.Frac; _fillLayer.Set(CardArt.XpFill(_frac, _w), W, H, 2); }
         }
         public override void Mount() => _fill.Mount();
         public override void Unmount() { base.Unmount(); _fill.Unmount(); }
@@ -568,24 +601,33 @@ namespace SquishSquad.Ui.Cards
         float _rw;
         const float RockH = 36;
 
-        public LevelUpItem(double level, string sub = "A new prize on your level road")
+        readonly bool _small;
+
+        /// <summary>`small`: levelUpCompact (a column card, beside the XP bar): 10 x 2 dp in, a 2.5 dp border, radius 12,
+        /// LEVEL n! 13 and its line 9 (1 dp up), not rocking.</summary>
+        public LevelUpItem(double level, string sub = "A new prize on your level road", bool small = false)
         {
+            _small = small;
             _title = "LEVEL " + level.ToString(System.Globalization.CultureInfo.InvariantCulture) + "!";
             _sub = sub;
             _box = Layer("level up");
             _text = Layer("level up text");
         }
         public override bool IsStatic => false;
+        float _px, _py, _bw;
         public override void Measure(float colW)
         {
-            _rw = Math.Max(UiSvg.BoxWidth(_title, CardArt.LevelUpText), UiSvg.BoxWidth(_sub, CardArt.LevelUpSub));
-            float lh = UiSvg.LineBox(CardArt.LevelUpText), lh2 = UiSvg.LineBox(CardArt.LevelUpSub);
-            W = _rw + 2 * 14 + 6;
-            H = lh + lh2 + 2 * 5 + 6;
-            _box.Set(new UiSvg(W, H).Box(0, 0, W, H, new BoxStyle { Background = "#b8641c", Radius = 16, BorderWidth = 3, BorderColor = "#ffffff" }).Markup, W, H, 2);
+            TextStyle t1 = _small ? CardArt.LevelUpTextSmall : CardArt.LevelUpText, t2 = _small ? CardArt.LevelUpSubSmall : CardArt.LevelUpSub;
+            float sub = _small ? -1 : 0;
+            _px = _small ? 10 : 14; _py = _small ? 2 : 5; _bw = _small ? 2.5f : 3;
+            _rw = Math.Max(UiSvg.BoxWidth(_title, t1), UiSvg.BoxWidth(_sub, t2));
+            float lh = UiSvg.LineBox(t1), lh2 = UiSvg.LineBox(t2) + sub;
+            W = _rw + 2 * _px + 2 * _bw;
+            H = lh + lh2 + 2 * _py + 2 * _bw;
+            _box.Set(new UiSvg(W, H).Box(0, 0, W, H, new BoxStyle { Background = "#b8641c", Radius = _small ? 12 : 16, BorderWidth = _bw, BorderColor = "#ffffff" }).Markup, W, H, 2);
             var s = new UiSvg(_rw, lh + lh2);
-            s.Text(_title, 0, 0, CardArt.LevelUpText, _rw, 0.5f);
-            s.Text(_sub, 0, lh, CardArt.LevelUpSub, _rw, 0.5f);
+            s.Text(_title, 0, 0, t1, _rw, 0.5f);
+            s.Text(_sub, 0, lh + sub, t2, _rw, 0.5f);
             _text.Set(s.Markup, _rw, lh + lh2, 4);
         }
         /// <summary>When "LEVEL n!" pops (sd_levelUp), ms after the card opens; negative: no sound.</summary>
@@ -606,7 +648,7 @@ namespace SquishSquad.Ui.Cards
         {
             var (m, o) = Box(card, opacity);
             _box.Transform = m;
-            _text.Transform = m * Affine.Translate(3 + 14, 3 + 5) * _rock.Local(_rw, _text.H);
+            _text.Transform = m * Affine.Translate(_bw + _px, _bw + _py) * (_small ? Affine.Identity : _rock.Local(_rw, _text.H));
             _box.Opacity = _text.Opacity = o;
         }
     }
@@ -711,5 +753,53 @@ namespace SquishSquad.Ui.Cards
             col.Add(new XpBarItem(before.Value, after, delay) { Slide = new SlideIn(delay - 200, 16) });
             if (levelUps > 0) col.Add(new LevelUpItem(after.Level) { Pop = new PopIn(delay + 600), SoundAt = delay + 600 });
         }
+
+        /// <summary>XpGain in a column card: the bar (260, or 200 when LEVEL n! is beside it) and "LEVEL n!" / "New prize
+        /// on your road" side by side, 10 dp apart (xpCompact).</summary>
+        public static void XpGainCompact(List<CardItem> col, double xp, XpLevel? before, XpLevel after, int levelUps, double delay)
+        {
+            if (xp == 0 || before == null) return;
+            var bar = new XpBarItem(before.Value, after, delay, levelUps > 0 ? 200 : 260) { Slide = new SlideIn(delay - 200, 16) };
+            if (levelUps <= 0) { col.Add(new RowItem(10, bar)); return; }
+            col.Add(new RowItem(10, bar, new LevelUpItem(after.Level, "New prize on your road", true) { Pop = new PopIn(delay + 600), SoundAt = delay + 600 }));
+        }
+    }
+
+    /// <summary>Items side by side (a flexDirection: row View), `gap` apart, centred across, each with its own PopIn /
+    /// SlideIn.</summary>
+    public sealed class RowItem : CardItem
+    {
+        readonly List<CardItem> _kids;
+        readonly float _gap;
+
+        public RowItem(float gap, params CardItem[] kids) { _gap = gap; _kids = new List<CardItem>(kids); }
+
+        public override bool IsStatic => false;
+        public override IEnumerable<CardButton> Buttons { get { foreach (var k in _kids) foreach (var b in k.Buttons) yield return b; } }
+
+        public override void Measure(float colW)
+        {
+            W = -_gap; H = 0;
+            foreach (var k in _kids) { k.Compact = Compact; k.Measure(colW); W += k.W + _gap; H = Math.Max(H, k.H); }
+            Layers.Clear();
+            foreach (var k in _kids) Layers.AddRange(k.Layers);
+        }
+
+        public override void Snapped()
+        {
+            float x = X;
+            foreach (var k in _kids)
+            {
+                k.OX = OX; k.OY = OY;
+                k.X = Card.Snap(x); k.Y = Y + (H - k.H) / 2;
+                k.Snapped();
+                x += k.W + _gap;
+            }
+        }
+
+        public override void Mount() { foreach (var k in _kids) k.Mount(); }
+        public override void Unmount() { foreach (var k in _kids) k.Unmount(); }
+        public override void Trigger() { foreach (var k in _kids) k.Trigger(); }
+        public override void Place(Affine card, float opacity) { foreach (var k in _kids) k.Place(card, opacity); }
     }
 }

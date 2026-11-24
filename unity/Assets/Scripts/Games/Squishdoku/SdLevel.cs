@@ -326,7 +326,7 @@ namespace SquishSquad.Games.Squishdoku
             ClockPause();
             Phase = "paused";
             Snd.Play("sd_pause");
-            _pauseCard = OpenCard(SdCards.PauseCard(W, H, Resume, Restart, Exit), 0);
+            _pauseCard = OpenCard(SdCards.PauseCard(W, H, Resume, Exit), 0);
             Hud();
         }
 
@@ -391,7 +391,7 @@ namespace SquishSquad.Games.Squishdoku
         {
             var pics = new string[3];
             for (int i = 0; i < 3; i++) pics[i] = _score[i]?.Picture;
-            _resultCard = OpenCard(SdCards.ResultCard(W, H, res, Spec.Lv, Spec.N, Spec.Head, pics, _lv >= Levels.LevelCount, Next, Restart, Exit), 2);
+            _resultCard = OpenCard(SdCards.ResultCard(W, H, res, pics, _lv >= Levels.LevelCount, Next, Restart, Exit), 2);
         }
 
         /// <summary>Opens a card as the game would, with src/web/Preview.js's sample data for the result (tests).</summary>

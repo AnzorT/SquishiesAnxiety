@@ -160,7 +160,7 @@ namespace SquishSquad.Ui.Blitz
         {
             if (Paused || CardName != null) return;
             Paused = true;
-            Open(ref _pause, BlitzCards.Pause(_w, _h, Resume, Again, Quit));
+            Open(ref _pause, BlitzCards.Pause(_w, _h, Resume, Quit));
         }
 
         void Resume() { Paused = false; Close(ref _pause); OnResume?.Invoke(); }

@@ -757,14 +757,13 @@ namespace SquishSquad.Games.Hop
         }
         static void Close(ref Card c, bool emptied = false) { c?.Hide(emptied); c = null; }
 
-        string NextRoom => _lv < Levels.LEVELS ? Levels.ROOMS[Levels.StageOf(_lv + 1).Room].Name : null;
 
         void SetResult(HopCards.Result res)
         {
             _result = res;
             if (res == null) { Close(ref _resultCard, true); return; }
             Close(ref _resultCard, true);
-            _resultCard = Open(HopCards.ResultCard(W, H, res, _spec.Lv, _spec.Tier, _room.Dance, NextRoom, () => GoTo(_lv + 1), () => GoTo(_lv), Leave), RESULT);
+            _resultCard = Open(HopCards.ResultCard(W, H, res, _lv >= Levels.LEVELS, () => GoTo(_lv + 1), () => GoTo(_lv), Leave), RESULT);
         }
 
         void SetStuck(bool on)
@@ -774,7 +773,7 @@ namespace SquishSquad.Games.Hop
             if (!on) { Close(ref _stuckCard); return; }
             int n = _board.Friends.Length;
             bool shut = _board.Nbrs[_view.Cur].Contains(_board.Goal) && Popcount(_view.Got) < n;
-            _stuckCard = Open(HopCards.StuckCard(W, H, _hopper?.Sad, _hopper?.Picture, shut, () => { SetStuck(false); Undo(); }, Retry), STUCK);
+            _stuckCard = Open(HopCards.StuckCard(W, H, _hopper, shut, Retry), STUCK);
         }
 
         void SetPaused(bool on)
@@ -782,7 +781,7 @@ namespace SquishSquad.Games.Hop
             if (on == _paused) return;
             _paused = on;
             if (!on) { Close(ref _pauseCard); return; }
-            _pauseCard = Open(HopCards.PauseCard(W, H, () => SetPaused(false), () => { SetPaused(false); _fresh = false; NewRound(); }, Leave), PAUSE);
+            _pauseCard = Open(HopCards.PauseCard(W, H, () => SetPaused(false), Leave), PAUSE);
         }
 
         void SetHintAsk(bool on)

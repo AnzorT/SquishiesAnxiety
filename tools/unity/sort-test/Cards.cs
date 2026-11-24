@@ -26,9 +26,9 @@ static class CardsTest
                     Stars = 2, Coins = 90, Xp = 40, Mistakes = 0, Ms = 83000, LevelUps = 1, Unlocked = true,
                     Before = new XpLevel(6, 560, 700), After = new XpLevel(7, 40, 800),
                 };
-                return SortCards.ResultCard(W, H, res, 9, 1, 40000, false, Noop, Noop, Noop);
+                return SortCards.ResultCard(W, H, res, false, Noop, Noop, Noop);
             case "sort-fail": return SortCards.FailCard(W, H, "hearts", null, Noop, Noop);
-            case "sort-pause": return SortCards.PauseCard(W, H, Noop, Noop, Noop);
+            case "sort-pause": return SortCards.PauseCard(W, H, Noop, Noop);
         }
         throw new ArgumentException(name);
     }

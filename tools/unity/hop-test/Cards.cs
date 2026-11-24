@@ -24,12 +24,12 @@ static class HopCardsTest
             case "hop-result":
                 var res = new HopCards.Result
                 {
-                    Stars = 2, Coins = 90, Xp = 40, Hops = 14, Left = 2, LevelUps = 1, Unlocked = true, Hinted = false,
+                    Stars = 3, Coins = 90, Xp = 40, Hops = 14, Left = 2, LevelUps = 1, Unlocked = true, Hinted = false,   // (Preview.js: stars 3)
                     Before = new XpLevel(6, 560, 700), After = new XpLevel(7, 40, 800),
                 };
-                return HopCards.ResultCard(W, H, res, 9, 1, false, "Kitchen", Noop, Noop, Noop);
-            case "hop-stuck": return HopCards.StuckCard(W, H, null, null, true, Noop, Noop);
-            case "hop-pause": return HopCards.PauseCard(W, H, Noop, Noop, Noop);
+                return HopCards.ResultCard(W, H, res, false, Noop, Noop, Noop);
+            case "hop-stuck": return HopCards.StuckCard(W, H, null, true, Noop);   // (the app shows CAST[0], Acorn: not drawn here)
+            case "hop-pause": return HopCards.PauseCard(W, H, Noop, Noop);
             case "hop-hint": return HopCards.HintCard(W, H, true, false, Noop, Noop);
         }
         throw new ArgumentException(name);

@@ -14,7 +14,6 @@ fs.mkdirSync(out, { recursive: true });
 const CARDS = [
   ['hop-result', [300, 2300, 7200]],
   ['hop-stuck', [400, 3600]],
-  ['hop-pause', [150, 2000]],
   ['hop-hint', [150, 2000]],
 ];
 const clock = fs.readFileSync(path.join(ROOT, 'tools', 'unity', 'rig', 'virtual-clock.js'), 'utf8');

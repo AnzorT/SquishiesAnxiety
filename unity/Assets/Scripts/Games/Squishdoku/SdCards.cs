@@ -1,14 +1,15 @@
 // Squishdoku's cards over the board (src/squishdoku/Overlays.js), built from the shared card pieces (Ui/Cards):
-//   Result   the solve: the title pops, the three score creatures pop in one by one (STEP 520 ms apart; an earned one
-//            bursts in with rays and gold sparks, a missed one thuds in grey), PERFECT!'s stamp slams down, the coins
-//            count up (×3 on a PERFECT), the XP bar fills, LEVEL n! and LEVEL n+1 UNLOCKED pop, MAP / REPLAY / NEXT slide in
-//   TimeUp   the clock ran out, or (hearts) the mistakes did: the title and the creature's head pop, the head rocks
-//   Pause    the clock frozen, the board hidden: RESUME / RESTART / QUIT
+//   Result   the shared result card (Ui/Cards/GameCards.cs) with Squishdoku's three score creatures (STEP 520 ms apart; an
+//            earned one bursts in with rays and gold sparks, a missed one thuds in grey), PERFECT!'s stamp and ×3 coins,
+//            then MAP / REPLAY / NEXT ▶
+//   TimeUp   the clock ran out, or (hearts) the mistakes did: the shared fail card, MAP / RETRY
+//   Pause    the shared pause card: RESUME / QUIT
 // Every delay and spring is the app's. The score creatures' slots and the stamp are Squishdoku's own items (Slot,
 // Stamp); the rest is the shared kit.
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
+using SquishSquad.Audio;
 using SquishSquad.Ui;
 using SquishSquad.Ui.Cards;
 using SquishSquad.Vector;
@@ -18,14 +19,6 @@ namespace SquishSquad.Games.Squishdoku
     public static class SdCards
     {
         public const double STEP = 520;
-        static readonly TextStyle Sub = CardArt.Style(CardArt.Display, 12.5f, "#9a6a3a", 0.6f);
-        static readonly TextStyle Unlocked = CardArt.Style(CardArt.Display, 13, "#16a86a", 0.8f);
-        static readonly TextStyle Body = CardArt.Style(CardArt.Heavy, 14, CardArt.INK);
-
-        static CardButton Small(string kind, string label, Action a) => new CardButton(new CardArt.ButtonLook(kind, label, 15, 14, 10), a);
-        static CardButton Big(string kind, string label, Action a) => new CardButton(new CardArt.ButtonLook(kind, label, 18, 22, 12), a);
-        static CardButton Wide(string kind, string label, float size, Action a) => new CardButton(new CardArt.ButtonLook(kind, label, size, 18, 12), a);
-
         /// <summary>The result's `res`: { stars, perfect, ms, mistakes, levelCoins, xp, levelUps, before, after, unlocked }.</summary>
         public sealed class Result
         {
@@ -38,45 +31,28 @@ namespace SquishSquad.Games.Squishdoku
 
         public static double CoinsAt(Result res) => 420 + 3 * STEP + (res.Perfect ? 600 : 100);
 
-        /// <summary>The solve. `pictures`: the three score creatures (Resources paths, or null); `last`: no NEXT.</summary>
-        public static Card ResultCard(float screenW, float screenH, Result res, int lv, int n, bool head, string[] pictures, bool last, Action onNext, Action onReplay, Action onMap)
+        public static readonly string[] RESULT_TITLES = { "SOLVED!", "NICE ONE!", "SQUISHTASTIC!" };
+
+        /// <summary>The solve, on the shared card: the three score creatures (`pictures`: Resources paths, or null) and on a
+        /// perfect solve PERFECT's stamp and ×3 coins; MAP / REPLAY / NEXT ▶. `last`: no NEXT.</summary>
+        public static Card ResultCard(float screenW, float screenH, Result res, string[] pictures, bool last, Action onNext, Action onReplay, Action onMap)
         {
-            var c = new Card(screenW, screenH);
             double cAt = CoinsAt(res);
-            string title = res.Perfect ? "PERFECT SQUISH!" : res.Stars == 3 ? "SQUISHTASTIC!" : res.Stars == 2 ? "NICE ONE!" : "SOLVED!";
-            c.Left.Add(new TitleItem(new CardArt.Title(title, res.Perfect ? 26 : 30, res.Perfect ? "gold" : "pink")) { Pop = new PopIn(80) });
-            var mis = res.Mistakes > 0 ? $" · {res.Mistakes} MISTAKE{(res.Mistakes > 1 ? "S" : "")}" : "";
-            c.Left.Add(new TextItem($"LEVEL {lv} · {n}×{n} · {Levels.Clock(res.Ms)}{mis}{(head ? " · HEAD START" : "")}", Sub));
-            c.Left.Add(new SlotsItem(res.Stars, pictures, res.Perfect));
-            c.Right.Add(new RewardItem(res.LevelCoins, res.Xp, cAt, res.Perfect) { Slide = new SlideIn(cAt - 150, 20) });
-            CardParts.XpGain(c.Right, res.Xp, res.Before, res.After, res.LevelUps, cAt + 500);
-            if (res.Unlocked) c.Right.Add(new TextItem($"LEVEL {lv + 1} UNLOCKED", Unlocked) { Pop = new PopIn(cAt + 600) });
-            var buttons = new List<CardButton> { Small("white", "MAP", onMap), Small("purple", "REPLAY", onReplay) };
-            if (!last) buttons.Add(Big("green", "NEXT ▶", onNext));
-            c.Right.Add(new ButtonsItem(false, buttons.ToArray()) { Slide = new SlideIn(420 + 2 * STEP + 300, 30) });
-            return c;
+            return GameCards.ResultCard(screenW, screenH,
+                new GameCards.Result { Stars = res.Stars, Perfect = res.Perfect, Coins = res.LevelCoins, Xp = res.Xp, Before = res.Before, After = res.After, LevelUps = res.LevelUps },
+                RESULT_TITLES, last, onMap, onReplay, onNext, "MAP", "PERFECT SQUISH!",
+                score: new SlotsItem(res.Stars, pictures, res.Perfect), scoreTop: res.Perfect, coinsAt: cAt, buttonsAt: 420 + 2 * STEP + 300,
+                reward: at => new RewardItem(res.LevelCoins, res.Xp, at, res.Perfect));
         }
 
         /// <summary>The clock ran out, or (`hearts`, their number) the hearts were all lost. `picture`: the first score
         /// creature's still.</summary>
-        public static Card TimeUpCard(float screenW, float screenH, int hearts, string picture, Action onRetry, Action onMap)
-        {
-            var c = new Card(screenW, screenH) { Tint = "rgba(80,0,30,0.5)", RetriggerOnHide = true };
-            c.Left.Add(new TitleItem(new CardArt.Title(hearts > 0 ? "OUT OF HEARTS!" : "TIME'S UP!", hearts > 0 ? 28 : 32, "pink")) { Pop = new PopIn(60) });
-            c.Left.Add(new HeadItem(86, picture, "#ffffff", "#f3e6d4", true, new Rock(8, 1800)) { Pop = new PopIn(220) });
-            c.Right.Add(new TextItem(hearts > 0 ? $"{hearts} mistakes. The same board is waiting: think it through and try again!" : "The same board is waiting. Try it again!", Body, 6));
-            c.Right.Add(new ButtonsItem(false, Small("white", "MAP", onMap), Big("pink", "RETRY", onRetry)) { Slide = new SlideIn(380) });
-            return c;
-        }
+        public static Card TimeUpCard(float screenW, float screenH, int hearts, string picture, Action onRetry, Action onMap) =>
+            GameCards.FailCard(screenW, screenH, hearts > 0 ? "OUT OF HEARTS!" : "TIME'S UP!", hearts > 0 ? 28 : 32, "pink", picture, "#f3e6d4",
+                hearts > 0 ? $"{hearts} mistakes. The same board is waiting: think it through and try again!" : "The same board is waiting. Try it again!", "MAP", onMap, onRetry);
 
-        public static Card PauseCard(float screenW, float screenH, Action onResume, Action onRestart, Action onQuit)
-        {
-            var c = new Card(screenW, screenH) { RetriggerOnHide = true };
-            c.Left.Add(new TitleItem(new CardArt.Title("PAUSED", 32, "pink")) { Pop = new PopIn(40) });
-            c.Left.Add(new TextItem("The clock is frozen. The board is hidden so no peeking!", Body, 6));
-            c.Right.Add(new ButtonsItem(true, Wide("green", "RESUME", 18, onResume), Wide("purple", "RESTART", 16, onRestart), Wide("white", "QUIT", 16, onQuit)));
-            return c;
-        }
+        /// <summary>The shared pause card: RESUME / QUIT.</summary>
+        public static Card PauseCard(float screenW, float screenH, Action onResume, Action onQuit) => GameCards.PauseCard(screenW, screenH, onResume, onQuit);
 
         // ==== Squishdoku's own items ======================================================================================
 
@@ -114,17 +90,20 @@ namespace SquishSquad.Games.Squishdoku
             static readonly TextStyle StampSub = CardArt.Style(CardArt.Display, 8.5f, "#e01e4a", 1);
             Ticker _tk;
 
+            readonly int _stars;
+
+            /// <summary>develop's slots: { marginTop 0, marginBottom 2 } (26 with the stamp under them), each Slot 78 (the
+            /// middle) or 64, x 0.72 in a column card; their sounds at their moments (ResultCard's timers).</summary>
             public SlotsItem(int stars, string[] pictures, bool perfect)
             {
                 _pictures = pictures ?? new string[3];
                 _perfect = perfect;
-                MarginTop = 6; MarginBottom = 22;
+                _stars = stars;
+                MarginTop = 0; MarginBottom = perfect ? 26 : 2;
                 for (int i = 0; i < 3; i++)
                 {
                     var s = new Slot { Earned = i < stars, Big = i == 1, Delay = 420 + i * STEP };
-                    s.S = s.Big ? 78 : 64;
-                    s.Box = s.S + 16;
-                    s.Mt = s.Big ? -10 : 6;
+                    Size(s);
                     s.Scale = Fx.Lerp(new[] { 0.0, 1 }, new[] { s.Earned ? 0 : 1.6, 1 });
                     s.Rotate = Fx.Lerp(new[] { 0.0, 1 }, new[] { s.Earned ? -30.0 : 0, 0 });
                     _slots[i] = s;
@@ -135,9 +114,17 @@ namespace SquishSquad.Games.Squishdoku
 
             string Pic(int i) => i < _pictures.Length ? _pictures[i] : null;
 
+            void Size(Slot s)
+            {
+                s.S = (float)Math.Round((s.Big ? 78 : 64) * (Compact ? 0.72 : 1), MidpointRounding.AwayFromZero);
+                s.Box = s.S + 16;
+                s.Mt = Compact ? 0 : s.Big ? -10 : 6;
+            }
+
             public override void Measure(float colW)
             {
                 W = 0; H = 0;
+                foreach (var s in _slots) Size(s);
                 foreach (var s in _slots) { W += s.Box; H = Math.Max(H, s.Mt + s.Box); }
                 float x = 0;
                 foreach (var s in _slots) { s.Bx = x; s.By = (H - (s.Mt + s.Box)) / 2 + s.Mt; x += s.Box; }
@@ -152,14 +139,12 @@ namespace SquishSquad.Games.Squishdoku
                 }
                 if (_perfect)
                 {
-                    // the stamp: a 3.5 dp red border, 10 x 1 padding; PERFECT! over NO ✕ · NO MISTAKES (2 dp up)
-                    float tw = Math.Max(UiSvg.BoxWidth("PERFECT!", StampText), UiSvg.BoxWidth("NO ✕ · NO MISTAKES", StampSub));
-                    float l1 = UiSvg.LineBox(StampText), l2 = UiSvg.LineBox(StampSub);
-                    _stampW = tw + 2 * 10 + 7; _stampH = l1 - 2 + l2 + 2 + 7;
+                    // the stamp: a 3.5 dp red border, 10 x 1 padding, PERFECT! (develop: no NO ✕ · NO MISTAKES line)
+                    float tw = UiSvg.BoxWidth("PERFECT!", StampText), l1 = UiSvg.LineBox(StampText);
+                    _stampW = tw + 2 * 10 + 7; _stampH = l1 + 2 + 7;
                     var st = new UiSvg(_stampW, _stampH);
                     st.Box(0, 0, _stampW, _stampH, new BoxStyle { Background = "rgba(255,255,255,0.92)", Radius = 10, BorderWidth = 3.5f, BorderColor = "#e01e4a" });
                     st.Text("PERFECT!", 13.5f, 4.5f, StampText, tw, 0.5f);
-                    st.Text("NO ✕ · NO MISTAKES", 13.5f, 4.5f + l1 - 2, StampSub, tw, 0.5f);
                     (_stamp ??= new CardLayer("stamp")).Set(st.Markup, _stampW, _stampH, 2);
                 }
                 Rebuild();
@@ -188,6 +173,8 @@ namespace SquishSquad.Games.Squishdoku
                     s.A = Animated.Spring(s.T, Fx.Spring(1, s.Earned ? 3.6 : 7, s.Earned ? 170 : 120, s.Delay));
                     s.A.Start();
                     if (s.Earned) s.Spin.Mount();
+                    int n = Array.IndexOf(_slots, s) + 1;
+                    _sounds.Add(_tk.SetTimeout(() => Snd.Play(slot.Earned ? "sd_star" + n : "sd_starEmpty"), s.Delay));
                     s.Timer = _tk.SetTimeout(() =>
                     {
                         if (!slot.Earned) return;
@@ -197,6 +184,7 @@ namespace SquishSquad.Games.Squishdoku
                         Rebuild();
                     }, s.Delay + 60);
                 }
+                if (_perfect) _sounds.Add(_tk.SetTimeout(() => Snd.Play("sd_perfect"), 420 + 3 * STEP));
                 if (_perfect)
                 {
                     _stampT.SetValue(0);
@@ -205,8 +193,12 @@ namespace SquishSquad.Games.Squishdoku
                 }
             }
 
+            readonly List<int> _sounds = new List<int>();
+
             public override void Unmount()
             {
+                foreach (var id in _sounds) _tk?.ClearTimeout(id);
+                _sounds.Clear();
                 foreach (var s in _slots)
                 {
                     s.A?.Stop();
