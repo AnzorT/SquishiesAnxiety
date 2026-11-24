@@ -29,8 +29,6 @@ static class BlitzTest
         ["hop"] = new Dictionary<string, object> { ["seen"] = true, ["lv"] = 12.0 },
     };
 
-    static readonly int[] BLITZ_K = { 3, 3, 3, 3, 3, 4, 4, 4, 4, 4 };
-
     public static int Run(string dir, Func<string, string> res)
     {
         Fx.LikeWeb = true;
@@ -70,8 +68,6 @@ static class BlitzTest
             return pz;
         };
         g.CastSource = n => puzzles[cur].GetProperty("who").EnumerateArray().Select(k => Who(k.GetString())).ToArray();
-        if (sc.TryGetProperty("heads", out var heads) && heads.ValueKind == JsonValueKind.Array)
-            g.WinPictures = () => heads.EnumerateArray().Select(k => Who(k.GetString()).Picture).ToArray();
         g.Save = false;
         g.Init(0);
         double T0 = g.CountdownAt;
@@ -118,7 +114,7 @@ static class BlitzTest
         return Flow() ? 0 : 1;
     }
 
-    // what the app's run wasn't shot doing: the clock running out, Android's back on a pause, QUIT
+    // what the app's run wasn't shot doing: Android's back on a pause and on the save card, PLAY AGAIN, QUIT
     static bool Flow()
     {
         bool ok = true;
@@ -131,23 +127,46 @@ static class BlitzTest
         g.Init(0);
         double now = 0;
         void Run(double ms) { double end = now + ms; while (now < end) { now = Math.Min(now + 16, end); g.Advance(now); } }
+        bool Paused() => (bool)typeof(StackGame).GetField("_paused", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(g);
+        void Back() => typeof(StackGame).GetMethod("Back", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(g, null);
         Run(5000);
         Check(g.Phase == "play", "playing once dealt");
         g.TapBack();
         Run(500);
-        Check(g.Run.Paused && g.Run.CardOpen, "the back orb pauses");
-        Run(10000);
-        typeof(StackGame).GetMethod("Back", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(g, null);
+        Check(Paused(), "the back orb pauses");
+        Back();
         Run(500);
-        Check(!g.Run.Paused && g.Phase == "play", "Android's back resumes");
-        Run(4 * 60 * 1000 - 5000);   // (the run's 4:00 clock, StackBlitz RUN_MS)
-        Check(g.Phase == "play", "the clock froze while paused (10 s): still playing 3:55 later");
-        Run(5000);
-        Check(g.Phase == "lost" && g.Run.CardName == "fail" && g.Run.FailReason == "time", "then it runs out: BACK TO PUZZLE 1! (the clock)");
+        Check(!Paused() && g.Phase == "play", "Android's back resumes");
+        Mistake(g);
+        Run(1000);
+        Check(g.Phase == "held" && g.BlitzCard == null, "a big one on a smaller one holds the run");
+        Run(1500);
+        Check(g.BlitzCard == "save", "then the save card (1.5 s after the landing)");
+        Check(g.PressCard("SAVE IT") && g.Phase == "play", "SAVE IT (free with Remove Ads): on from the same puzzle");
+        Run(500);
+        Mistake(g);
         Run(2000);
-        Check(g.Run.Done == 0, "the pips drained");
+        Back();
+        Run(500);
+        Check(g.BlitzCard == "over" && g.Phase == "lost", "Android's back on the save card: GAME OVER");
+        Check(g.PressCard("PLAY AGAIN") && g.Cleared == 0, "PLAY AGAIN: a new run");
+        Run(6000);
+        Check(g.Phase == "play", "its countdown, then playing");
+        g.TapBack();
+        Run(500);
         Check(g.PressCard("QUIT") && left, "QUIT leaves");
         return ok;
+    }
+
+    // a big one onto a smaller one: the first two cushions' tops the wrong way round
+    static void Mistake(StackGame g)
+    {
+        var pos = (int[])typeof(StackGame).GetField("_pos", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(g);
+        int k = pos.Max() + 1;
+        int Top(int c) { for (int r = 0; r < pos.Length; r++) if (pos[r] == c) return r; return -1; }
+        for (int a = 0; a < Math.Max(k, 3); a++)
+            for (int b = 0; b < Math.Max(k, 3); b++)
+                if (a != b && Top(a) >= 0 && Top(b) >= 0 && Top(a) > Top(b)) { g.TapMove(a, b); return; }
     }
 
     // the C# engine's best move from where the game's squishies are (its private state, read through the test hook)

@@ -38,14 +38,21 @@ namespace SquishSquad.Ui.Cards
         }
 
         /// <summary>Places every layer of `cards` (bottom first); pieces of layers no longer shown go.</summary>
-        public void Sync(IEnumerable<Card> cards)
+        public void Sync(IEnumerable<Card> cards) => SyncLayers(LayersOf(cards));
+
+        /// <summary>The same for any cards (a Blitz run's broad cards among the others, bottom first).</summary>
+        public void Sync(IEnumerable<SquishSquad.Ui.Blitz.ICardView> cards) => SyncLayers(LayersOf(cards));
+
+        static IEnumerable<IEnumerable<CardLayer>> LayersOf(IEnumerable<Card> cards) { foreach (var c in cards) { c.Update(); yield return c.Layers(); } }
+        static IEnumerable<IEnumerable<CardLayer>> LayersOf(IEnumerable<SquishSquad.Ui.Blitz.ICardView> cards) { foreach (var c in cards) { c.Update(); yield return c.Layers(); } }
+
+        void SyncLayers(IEnumerable<IEnumerable<CardLayer>> cards)
         {
             _seen.Clear();
             int i = 0;
-            foreach (var c in cards)
+            foreach (var layers in cards)
             {
-                c.Update();
-                foreach (var l in c.Layers())
+                foreach (var l in layers)
                 {
                     _seen.Add(l);
                     if (l.Creature != null)

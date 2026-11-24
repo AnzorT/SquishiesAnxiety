@@ -15,6 +15,8 @@
     <Compile Include="../../../unity/Assets/Scripts/Ui/AdHook.cs" />
     <!-- StackGame (and its Blitz) runs on UnityStubs.cs; the screen and hub hosts are left out -->
     <Compile Include="../../../unity/Assets/Scripts/Games/Stack/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Stack/StackScreen.cs;../../../unity/Assets/Scripts/Games/Stack/StackHub*.cs" />
+    <!-- develop's Blitz shows Squishdoku's save and GAME OVER cards, and saves by its blitzSave -->
+    <Compile Include="../../../unity/Assets/Scripts/Games/Squishdoku/SdBlitzCards.cs;../../../unity/Assets/Scripts/Games/Squishdoku/SdSave.cs;../../../unity/Assets/Scripts/Games/Squishdoku/Engine.cs;../../../unity/Assets/Scripts/Games/Squishdoku/Js.cs;../../../unity/Assets/Scripts/Games/Squishdoku/LevelData.g.cs;../../../unity/Assets/Scripts/Games/Squishdoku/Levels.cs;../../../unity/Assets/Scripts/Games/Squishdoku/PlayerXp.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Backend/OfflineWallet.cs" />
     <Compile Include="../vector-test/ReferenceRaster.cs" />
