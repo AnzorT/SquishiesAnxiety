@@ -74,7 +74,7 @@ namespace SquishSquad.House.View
             Clear();
             _tpl ??= new HouseTemplate(Res("room-template"));
             var model = new RoomModel(Save);
-            if (Sim != null) { model.StateOf = Sim.RStOf; model.VarOf = Sim.VarOf; model.EditOn = Sim.Edit; model.ESel = Sim.ESel; }
+            if (Sim != null) { model.StateOf = Sim.RStOf; model.VarOf = Sim.VarOf; model.EditOn = Sim.Edit; model.ESel = Sim.ESel; model.Season = Sim.SeasonNow(); }
             var vals = model.Build(Save.Cur);
             Notes.Clear(); Notes.AddRange(model.Missing);
             if (vals == null) return;

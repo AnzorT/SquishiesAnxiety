@@ -89,6 +89,7 @@ namespace SquishSquad.House.View
             _sim = new HouseCreatures(_room.Save, new HouseWalk(walkJson));
             _sim.SetMoves(walkJson);
             _sim.Toast = Toast;
+            _sim.WeatherNow = () => SquishSquad.Menu.MenuState.Season;   // (today's weather: config/weather, else the month)
             _sim.HasFront = id => _room.Fronts.TryGetValue(id, out var f) && f;
             _sim.Saved = Save;
             _sim.RoomChanged = () => _dirty = true;   // (drawn once a frame, in Update)

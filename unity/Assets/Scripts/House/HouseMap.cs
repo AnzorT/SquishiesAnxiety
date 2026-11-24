@@ -51,8 +51,17 @@ namespace SquishSquad.House
             if (_mapGoAt >= 0 && now >= _mapGoAt) { _mapGoAt = -1; var r = MapGo; PickRoom(r); }
         }
 
-        /// <summary>seasonNow: Dec-Feb snowy, May-Sep sunny, else rainy.</summary>
-        public string SeasonNow() { int mo = Month(); return mo == 11 || mo <= 1 ? "snowy" : mo >= 4 && mo <= 8 ? "sunny" : "rainy"; }
+        /// <summary>Today's weather as the app picks it (Firestore config/weather: Menu/Weather.cs via MenuState.Season),
+        /// or null: the page's SquishWeatherNow (webgame/app/bridge.js).</summary>
+        public Func<string> WeatherNow;
+
+        /// <summary>seasonNow: (2026-11-21, webgame/patches.mjs) the app's weather first; else Dec-Feb snowy, May-Sep
+        /// sunny, else rainy.</summary>
+        public string SeasonNow()
+        {
+            var w = WeatherNow?.Invoke(); if (w == "sunny" || w == "rainy" || w == "snowy") return w;
+            int mo = Month(); return mo == 11 || mo <= 1 ? "snowy" : mo >= 4 && mo <= 8 ? "sunny" : "rainy";
+        }
 
         public string MapHint => Carry != null ? Carry.Name + " is coming with you" : "Tap a place to go there";
 

@@ -1,5 +1,6 @@
 // What the menu shows: the player's level (1-30) and the season. Until the Firebase profile is ported, the level is a
-// local setting; the season follows the month exactly like main-menu-scene.js autoSeason().
+// local setting; the season is today's weather as the app picks it (Menu/Weather.cs: Firestore config/weather, else the
+// month exactly like main-menu-scene.js autoSeason()), unless the debug panel pins one.
 using System;
 using UnityEngine;
 
@@ -43,13 +44,12 @@ namespace SquishSquad.Menu
             set { PlayerPrefs.SetInt("hop.level", Mathf.Clamp(value, 1, 100)); PlayerPrefs.Save(); }
         }
 
+        // 2026-11-21 (webgame/patches.mjs: the menu's world and the house ask the app's SquishWeatherNow before their own
+        // month rule): today's weather from config/weather (Weather.Today)
         public static string Season => SeasonSetting == "auto" ? AutoSeason(DateTime.Now) : SeasonSetting;
 
-        // main-menu-scene.js: Dec-Feb snowy, May-Sep sunny, otherwise rainy
-        public static string AutoSeason(DateTime now)
-        {
-            int mo = now.Month - 1;
-            return mo == 11 || mo <= 1 ? "snowy" : mo >= 4 && mo <= 8 ? "sunny" : "rainy";
-        }
+        // today's weather: config/weather's one option, else the month's (main-menu-scene.js: Dec-Feb snowy, May-Sep
+        // sunny, otherwise rainy) when it is listed
+        public static string AutoSeason(DateTime now) => Weather.Today(now);
     }
 }
