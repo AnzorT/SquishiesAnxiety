@@ -71,6 +71,7 @@ namespace SquishSquad.Menu
             public float unitsPerPx;     // viewBox units per picture pixel
             public SceneState[] states;
             public SceneState[] parks;   // the Game Park's SVG (gzip) per state: drawn once by the vector renderer
+            public string vignette;      // the house's vignette (mmVig) alone, on the pictures' canvas (null: baked into them)
         }
 
         [Serializable]

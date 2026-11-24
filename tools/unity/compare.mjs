@@ -65,6 +65,8 @@ async function compose() {
   const sx = Math.round(ox + L.scene.originUnits[0] * k), sy = Math.round(oy + L.scene.originUnits[1] * k);
   blit(canvas, scene, sx, sy);
   const png = rel => PNG.sync.read(fs.readFileSync(path.join(MENU, rel + '.png')));
+  // its vignette, over it (MenuView: the house picture's own canvas, on at home)
+  if (L.scene.vignette) blit(canvas, png(L.scene.vignette), sx, sy);
   for (const h of L.hud.filter(h => h.world)) blit(canvas, png(h.res), h.rect[0], h.rect[1]);
   const w = L.weather.find(x => x.season === st.season);
   if (w && w.band) {   // frozen at the start of its loop, as in the reference

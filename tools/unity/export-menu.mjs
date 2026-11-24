@@ -130,7 +130,10 @@ async function sceneShots(browser, page) {
   for (const season of SEASONS) for (const level of LEVELS) {
     const svg = await page.evaluate(({ level, season }) => {
       const st = window.MainMenuScene.state({ level, season });
-      return window.SquishMenu.still(window.MainMenuScene.svg(st), st, null);
+      // (without its vignette: the app fades the vignette out while the Game Park is beside the house, menu.js
+      // vignette(); Unity draws it as its own picture, scene/vignette)
+      // (develop's still() wraps the SVG in <div class="sq-live">: unwrapped, or the picture lands 2 px off on the canvas)
+      return window.SquishMenu.still(window.MainMenuScene.svg(st), st, null).replace(/^<div class="sq-live">([\s\S]*)<\/div>$/, '$1').replace(/<rect x="-60" y="-20" width="1120" height="500" fill="url\(#[^)]*Vig\)" pointer-events="none"\/>/, '');
     }, { level, season });
     await cp.evaluate(({ svg, L, T, PX }) => {
       document.body.innerHTML = '<div id="f" style="position:absolute;left:' + L + 'px;top:' + T + 'px;width:' + PX.w + 'px;height:' + PX.h + 'px">' + svg + '</div>';
@@ -144,12 +147,30 @@ async function sceneShots(browser, page) {
     pending.push([tmp, path.join(OUT, `scene/${season}-${level}.jpg.bytes`)]);
     fs.mkdirSync(path.join(OUT, 'scene'), { recursive: true });
   }
+  // the vignette (main-menu-scene.js mmVig: the same in every state) on its own, on the same canvas, see-through
+  const vig = await page.evaluate(() => {
+    const st = window.MainMenuScene.state({ level: 1, season: 'sunny' });
+    const doc = new DOMParser().parseFromString(window.SquishMenu.still(window.MainMenuScene.svg(st), st, null).replace(/^<div class="sq-live">([\s\S]*)<\/div>$/, '$1'), 'image/svg+xml');
+    const rect = doc.querySelector('rect[fill$="Vig)"]'), grad = doc.getElementById(/url\(#([^)]*)\)/.exec(rect.getAttribute('fill'))[1]);
+    const keep = new Set();
+    for (const e of [rect, grad]) for (let n = e; n; n = n.parentNode) keep.add(n);
+    const prune = n => [...n.children].forEach(c => { if (c === grad) return; if (!keep.has(c)) c.remove(); else prune(c); });
+    prune(doc.documentElement);
+    return new XMLSerializer().serializeToString(doc.documentElement);
+  });
+  await cp.evaluate(({ svg, L, T, PX }) => {
+    document.body.innerHTML = '<div id="f" style="position:absolute;left:' + L + 'px;top:' + T + 'px;width:' + PX.w + 'px;height:' + PX.h + 'px">' + svg + '</div>';
+    document.documentElement.style.background = 'transparent'; document.body.style.background = 'transparent';
+    const sv = document.querySelector('#f svg'); sv.style.overflow = 'visible';
+  }, { svg: vig, L, T, PX });
+  await cp.waitForTimeout(60);
+  fs.writeFileSync(path.join(OUT, 'scene/vignette.png'), await cp.screenshot({ omitBackground: true }));
   await ctx.close();
   execFileSync('python3', ['-c', 'import sys\nfrom PIL import Image\nq=int(sys.argv[1])\nfor a,b in zip(sys.argv[2::2],sys.argv[3::2]): Image.open(a).convert("RGB").save(b,format="JPEG",quality=q,subsampling=0,optimize=True)',
     String(JPEG_Q), ...pending.flat()], { stdio: 'inherit' });
   pending.forEach(([tmp]) => fs.rmSync(tmp));
   // texture pixel (0,0) is screen pixel (-L, -T) on the reference screen; in viewBox units:
-  return { states: out, size: [W, H], originUnits: [(-L - ox) / k, (-T - oy) / k], unitsPerPx: 1 / k };
+  return { states: out, size: [W, H], originUnits: [(-L - ox) / k, (-T - oy) / k], unitsPerPx: 1 / k, vignette: 'scene/vignette' };
 }
 
 // rain / snow bands and birds, as app/menu.js weather() draws them for each season (it runs inside the real page)

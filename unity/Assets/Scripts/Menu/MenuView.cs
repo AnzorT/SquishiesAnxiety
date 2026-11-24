@@ -94,6 +94,9 @@ namespace SquishSquad.Menu
                 float s = _k * _layout.scene.unitsPerPx;
                 var pos = new Vector2(_ox + _layout.scene.originUnits[0] * _k, _oy + _layout.scene.originUnits[1] * _k);
                 Picture("scene", _world, tex, Snap(pos, s), s, SceneOrder);
+                // its vignette, faded out while the Game Park is beside the house (menu.js vignette(): opacity .45s ease)
+                if (!string.IsNullOrEmpty(_layout.scene.vignette))
+                    _vignette = Picture("vignette", _world, Load(_layout.scene.vignette), Snap(pos, s), s, SceneOrder + 1);
             }
 
             // 2. the creature and its name plate (they stand in the scene), 3. the weather, 4. the HUD
@@ -208,6 +211,7 @@ namespace SquishSquad.Menu
             Where = Place.ToPark;
             _tripStart = nowMs;
             Fade(0, nowMs);
+            Vignette(false, nowMs + 16);   // (menu.js: with the park's picture, the frame after the tap)
             Clip("park-enter");
             return true;
         }
@@ -234,8 +238,28 @@ namespace SquishSquad.Menu
         void Fade(float to, float nowMs) { _fadeFrom = CurrentFade(nowMs); _fadeTo = to; _fadeStart = nowMs; }
         float CurrentFade(float ms) => Mathf.Lerp(_fadeFrom, _fadeTo, Mathf.Clamp01((ms - _fadeStart) / FadeMs));
 
+        // the house's vignette: on at home, off in the park, each way an opacity transition of .45s ease
+        SpriteRenderer _vignette;
+        float _vigFrom = 1, _vigTo = 1, _vigStart;
+        void Vignette(bool on, float ms) { _vigFrom = VignetteAt(ms); _vigTo = on ? 1 : 0; _vigStart = ms; }
+        float VignetteAt(float ms) => Mathf.Lerp(_vigFrom, _vigTo, CssEase(Mathf.Clamp01((ms - _vigStart) / 450f)));
+        // CSS `ease` (cubic-bezier(.25,.1,.25,1))
+        static float CssEase(float x)
+        {
+            if (x <= 0 || x >= 1) return x;
+            float lo = 0, hi = 1, t = x;
+            for (int i = 0; i < 24; i++)
+            {
+                t = (lo + hi) / 2;
+                float bx = 3 * (1 - t) * (1 - t) * t * .25f + 3 * (1 - t) * t * t * .25f + t * t * t;
+                if (bx < x) lo = t; else hi = t;
+            }
+            return 3 * (1 - t) * (1 - t) * t * .1f + 3 * (1 - t) * t * t + t * t * t;
+        }
+
         void TickTrip(float ms)
         {
+            if (_vignette != null) { var c = _vignette.color; c.a = VignetteAt(ms); _vignette.color = c; }
             float a = CurrentFade(ms);
             foreach (var p in _pieces) if (p.Data.id != "creature") p.SetAlpha(a);
             _hudAlpha = a;
@@ -251,7 +275,7 @@ namespace SquishSquad.Menu
             if (t < 2 * turn + walk) return;
             // arrived
             if (enter) { Where = Place.Park; ShowGames(_tripStart + 2 * turn + walk, false); }
-            else { Where = Place.Home; _world.localPosition = Vector3.zero; if (Creature != null) Creature.transform.localPosition = _creatureHome; Fade(1, ms); }
+            else { Where = Place.Home; _world.localPosition = Vector3.zero; if (Creature != null) Creature.transform.localPosition = _creatureHome; Fade(1, ms); Vignette(true, ms); }
             // the clip ends in 'happy'; back to the idle loop once it has played
         }
 
@@ -317,7 +341,7 @@ namespace SquishSquad.Menu
             var mat = new Material(Resources.Load<Shader>("VectorShaders/VectorShow")) { mainTexture = _parkTex };
             _made.Add(mat);
             mr.sharedMaterial = mat;
-            mr.sortingOrder = SceneOrder + 1;   // menu.js puts the park layer just after the house picture
+            mr.sortingOrder = SceneOrder + 2;   // menu.js puts the park layer just after the house picture (and its vignette)
         }
 
         public PieceView HitTest(Vector2 pagePx)
