@@ -951,7 +951,7 @@ namespace SquishSquad.Games.Sort
             else s.Text(Ellipsis(title, tn, tw), tx, ty, tn);
             float ry = ty + UiSvg.LineBox(tn);
             float rowH = Math.Max(UiSvg.LineBox(LevelText), UiSvg.LineBox(ChallengeText) + 6);
-            var lvl = d.Blitz ? $"ROUND {d.Round}/{d.Rounds}" : "LEVEL " + d.Lv;
+            var lvl = d.Blitz ? $"ROUND {d.Round}" : "LEVEL " + d.Lv;
             var tier = Levels.TIER_NAMES[d.Tier];
             float chipW = UiSvg.BoxWidth(tier, ChallengeText) + 14 + 4, chipH = UiSvg.LineBox(ChallengeText) + 2 + 4;
             // (numberOfLines 1: a line too long for the row beside its chip shrinks and ends in "…", as ROUND 10/10 does)
@@ -965,10 +965,10 @@ namespace SquishSquad.Games.Sort
             var L = HudLayout(d);
             if (d.Blitz)
             {
-                // Game.js: <Chip bg={revived ? '#b9a6cc' : '#ffb02e'} color="#ffffff">
-                var label = d.Revived ? "REVIVE USED" : "♥ 1 REVIVE";
+                // the endless run's rule (develop, 2026-11-17: no revive; the rounds cleared are the pips' count)
+                var label = "1 MISTAKE = GAME OVER";
                 float cw = WidthR(label, ChipText) + 18 + 4;
-                s.Box(12, L.heartsY, cw, ChipH, new BoxStyle { Background = d.Revived ? "#b9a6cc" : "#ffb02e", Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
+                s.Box(12, L.heartsY, cw, ChipH, new BoxStyle { Background = "#e01e4a", Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
                 TextR(s, label, 12 + 2 + 9, L.heartsY + 2 + 3, ChipText);
             }
             else s.Box(12, L.heartsY, 3 * 24 + 2 * 3 + 16 + 4, 38, new BoxStyle { Background = "rgba(255,255,255,0.8)", Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });

@@ -74,7 +74,9 @@ const deal = (label, spec, poolSize, kinds) => {
 for (let lv = 1; lv <= L.LEVELS; lv++)
   for (const skill of [-2, -1, 0, 1, 2])
     for (let n = 0; n < 3; n++) deal(`lv${lv} skill${skill} #${n}`, L.levelSpec(lv, skill), n === 2 ? 40 : 27, KINDS_DATA);
-for (let i = 0; i < L.BLITZ_ROUNDS; i++)
+// the endless Blitz (develop, 2026-11-17): the climb, then the eight-shelf levels for good
+const BLITZ_N = 22;
+for (let i = 0; i < BLITZ_N; i++)
   for (const skill of [-2, -1, 0, 1, 2])
     for (let n = 0; n < 3; n++) deal(`blitz${i} skill${skill} #${n}`, L.blitzSpec(i, skill), 27, KINDS_DATA);
 // odd specs: tiny shelves, small pools, few clutter kinds, more twists than room
@@ -183,9 +185,9 @@ const skillInputs = [-3, -2, -1.5, -1, -0.999, -0.5, 0, 0.5, 1, 1.19, 1.2, 1.5, 
 const levelSpecs = [];
 for (const lv of lvInputs) for (const skill of skillInputs) levelSpecs.push({ lv: enc(lv), skill: enc(skill), out: skill === undefined ? L.levelSpec(lv) : L.levelSpec(lv, skill) });
 const blitzSpecs = [];
-for (let i = -2; i <= 11; i++) for (const skill of skillInputs) blitzSpecs.push({ i, skill: enc(skill), out: skill === undefined ? L.blitzSpec(i) : L.blitzSpec(i, skill) });
-const blitzThemes = [];
-for (let i = -3; i <= 12; i++) blitzThemes.push({ i, out: L.blitzTheme(i) });
+for (let i = -2; i <= 40; i++) for (const skill of skillInputs) blitzSpecs.push({ i, skill: enc(skill), out: skill === undefined ? L.blitzSpec(i) : L.blitzSpec(i, skill) });
+const blitzCoins = [];
+for (let i = 0; i < BLITZ_N; i++) for (const skill of [-2, 0, 1.3, 2]) blitzCoins.push({ i, skill, out: L.blitzCoins(L.blitzSpec(i, skill)) });
 const skillShifts = [-5, -2, -1.0001, -1, -0.9999, 0, 1, 1.1999, 1.2, 1.2001, 2, 9].map((s) => ({ skill: s, out: L.skillShift(s) }));
 const nextSkills = [];
 for (const skill of [-2.5, -2, -1.37, -0.5, 0, 0.33, 0.07, 1, 1.9, 2, 2.4, undefined])
@@ -200,7 +202,7 @@ for (const skill of [-2.5, -2, -1.37, -0.5, 0, 0.33, 0.07, 1, 1.9, 2, 2.4, undef
 // specs to score: every level at three skills, and the blitz rounds
 const scoreSpecs = [];
 for (let lv = 1; lv <= L.LEVELS; lv++) for (const skill of [-2, 0, 2]) scoreSpecs.push({ kind: 'level', lv, skill });
-for (let i = 0; i < L.BLITZ_ROUNDS; i++) for (const skill of [-2, 0, 2]) scoreSpecs.push({ kind: 'blitz', i, skill });
+for (let i = 0; i < BLITZ_N; i++) for (const skill of [-2, 0, 2]) scoreSpecs.push({ kind: 'blitz', i, skill });
 const specOf = (s) => (s.kind === 'blitz' ? L.blitzSpec(s.i, s.skill) : L.levelSpec(s.lv, s.skill));
 const starsFor = [];
 const coins = [];
@@ -262,7 +264,9 @@ const genProfile = () => {
     put(s, 'blitz', maybe(0.5, () => {
       if (c.chance(0.08)) return null;
       const b = {};
-      put(b, 'reached', maybe(0.7, () => c.pick([null, 0, 1, 5, 6, 9, 10])));
+      put(b, 'top', maybe(0.7, () => c.pick([null, 0, 1, 4, 5, 9, 10, 17])));
+      put(b, 'runs', maybe(0.5, () => c.pick([null, 0, 1, 3, 12])));
+      put(b, 'reached', maybe(0.4, () => c.pick([null, 0, 1, 5, 6, 9, 10])));
       put(b, 'bestMs', maybe(0.6, () => c.pick([null, 0, 150000, 200000, 299999, c.int(60000, 300000)])));
       put(b, 'wins', maybe(0.6, () => c.pick([null, 0, 1, c.int(2, 40)])));
       return b;
@@ -271,7 +275,7 @@ const genProfile = () => {
   }));
   return p;
 };
-const profiles = [{}, { sort: {} }, { sort: null }, { pxp: 0 }, { pxp: 150 }, { sort: { fridge: { lv: 3, best: { 1: 3 } } } }, { sort: { fridge: { lv: 50 } } }, { sort: { blitz: { reached: 10, bestMs: 0, wins: 0 } } }];
+const profiles = [{}, { sort: {} }, { sort: null }, { pxp: 0 }, { pxp: 150 }, { sort: { fridge: { lv: 3, best: { 1: 3 } } } }, { sort: { fridge: { lv: 50 } } }, { sort: { blitz: { reached: 10, bestMs: 0, wins: 0 } } }, { sort: { blitz: { top: 12, runs: 4 } } }];
 for (let n = 0; n < 400; n++) profiles.push(genProfile());
 
 const records = profiles.map((p) => {
@@ -288,6 +292,7 @@ const configs = [
 ];
 const afterLevels = [];
 const afterBlitzes = [];
+const prizes = [];
 configs.forEach((cfg, ci) => {
   setLevelsConfig(cfg);
   const per = ci === 0 ? profiles.length : 80;
@@ -305,11 +310,10 @@ configs.forEach((cfg, ci) => {
       afterLevels.push({ config: ci, profile: n, theme, spec: s, result: { won: result.won, mistakes: enc(result.mistakes), ms: enc(result.ms) }, out: L.afterLevel(p, theme, spec, result) });
     }
     for (let j = 0; j < (ci === 0 ? 3 : 1); j++) {
-      const won = c.chance(0.5);
-      const reached = won ? 10 : c.int(0, 10);
-      const ms = c.pick([1000, 150000, 200000, 250000, 299999, c.int(60000, 300000)]);
-      afterBlitzes.push({ config: ci, profile: n, won, reached, ms, out: won ? L.afterBlitz(p, { won, reached, ms }) : L.afterBlitz(p, { won, reached }) });
+      const cleared = c.pick([0, 0, 1, 3, 4, 5, 9, 10, 11, 16, 25]);
+      afterBlitzes.push({ config: ci, profile: n, cleared, out: L.afterBlitz(p, { cleared }) });
     }
+    if (n < 40) for (const cleared of [0, 1, 5, 10, 13, 14, 30]) prizes.push({ config: ci, cleared, skill: rec.bSkill, out: L.blitzPrize(cleared, rec.bSkill) });
   }
 });
 setLevelsConfig(null);
@@ -323,10 +327,6 @@ const constants = {
   HEARTS: L.HEARTS,
   SKILL_MIN: L.SKILL_MIN,
   SKILL_MAX: L.SKILL_MAX,
-  BLITZ_ROUNDS: L.BLITZ_ROUNDS,
-  BLITZ_MS: L.BLITZ_MS,
-  BLITZ_COINS: L.BLITZ_COINS,
-  BLITZ_XP: L.BLITZ_XP,
   THEME_KEYS: L.THEME_KEYS,
   KINDS: KINDS_DATA,
   SIZE_NAMES: M.SIZE_NAMES,
@@ -336,8 +336,8 @@ const constants = {
 const write = (name, data) => fs.writeFileSync(path.join(outDir, name), JSON.stringify(data));
 write('boards.json', boards);
 write('plays.json', plays);
-write('levels.json', { constants, levelSpecs, blitzSpecs, blitzThemes, skillShifts, nextSkills, starsFor, coins, xps, clocks, models });
-write('profiles.json', { configs, profiles, records, afterLevels, afterBlitzes });
+write('levels.json', { constants, levelSpecs, blitzSpecs, blitzCoins, skillShifts, nextSkills, starsFor, coins, xps, clocks, models });
+write('profiles.json', { configs, profiles, records, afterLevels, afterBlitzes, prizes });
 const steps = plays.reduce((a, p) => a + p.steps.length, 0);
 console.log(
   `sort fixtures: ${boards.length} boards, ${plays.length} plays (${steps} drops), ${levelSpecs.length} levelSpecs, ${blitzSpecs.length} blitzSpecs, ${nextSkills.length} nextSkills, ${starsFor.length} starsFor, ${coins.length} coinsFor, ${xps.length} xpFor, ${clocks.length} clocks, ${records.length} records, ${afterLevels.length} afterLevels, ${afterBlitzes.length} afterBlitzes -> ${path.relative(process.cwd(), outDir)}`,

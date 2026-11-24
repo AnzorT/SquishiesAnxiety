@@ -124,7 +124,7 @@ static class Render
             }
     }
 
-    public static byte[] Draw(string bg, IReadOnlyList<SortLayer> layers, IEnumerable<Card> cards, int W, int H, string svgOut = null)
+    public static byte[] Draw(string bg, IReadOnlyList<SortLayer> layers, IEnumerable<SquishSquad.Ui.Blitz.ICardView> cards, int W, int H, string svgOut = null)
     {
         double k = W / 832.0;
         ReferenceRaster.Buffer acc = null;
@@ -160,7 +160,7 @@ static class Render
         return ReferenceRaster.Resolve(acc, SS, W, H);
     }
 
-    public static (int visible, int total) Compare(string bg, IReadOnlyList<SortLayer> layers, IEnumerable<Card> cards, string appPng, string outPng, string diffPng)
+    public static (int visible, int total) Compare(string bg, IReadOnlyList<SortLayer> layers, IEnumerable<SquishSquad.Ui.Blitz.ICardView> cards, string appPng, string outPng, string diffPng)
     {
         var (W, H, reference) = Png.Read(appPng);
         var ours = Draw(bg, layers, cards, W, H, Path.ChangeExtension(outPng, ".svg"));

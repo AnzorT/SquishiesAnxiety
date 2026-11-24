@@ -18,6 +18,7 @@ using SquishSquad.Anim;
 using SquishSquad.Audio;
 using SquishSquad.Ui;
 using SquishSquad.Ui.Cards;
+using SquishSquad.Ui.Blitz;
 using SquishSquad.Vector;
 using static SquishSquad.Games.Sort.SortGeometry;
 
@@ -195,7 +196,6 @@ namespace SquishSquad.Games.Sort
             _started = true;
             _clk = new Clock(_tk);
             Snd.Preload(LoadSounds);
-            _pips?.Mount();
             NewRound();
         }
 
@@ -255,7 +255,7 @@ namespace SquishSquad.Games.Sort
         // ---- the end of a level -----------------------------------------------------------------------------------
         Card _result, _fail, _pause;
         readonly List<Card> _cards = new List<Card>();   // on screen (closing ones too), bottom first: result, fail, pause
-        public IEnumerable<Card> Cards => _blitz ? _run.Cards() : _cards;
+        public IEnumerable<ICardView> Cards => AllCards();
 
         Card Open(Card c, int rank)
         {
@@ -272,7 +272,7 @@ namespace SquishSquad.Games.Sort
         void Lose(string reason)
         {
             if (Phase != "place") return;
-            if (_blitz) { _run.EndRun(reason); return; }
+            if (_blitz) { BlitzStop(reason); return; }
             Phase = "lost";
             _clk.Pause();
             _selected = null;
@@ -327,8 +327,8 @@ namespace SquishSquad.Games.Sort
                     Animated.Timing(A.Hop, Timing(0, 200, Easing.Bounce))).Start());
             }
             Animated.Sequence(Array.ConvertAll(new[] { 0.4, 1, 0.5, 1 }, v => Animated.Timing(_light, Timing(v, 110)))).Start();
-            // Blitz: a pip fills; on to the next round, or the run is won
-            if (_blitz) { _run.Cleared(); return; }
+            // Blitz: one more cleared; on to the next round
+            if (_blitz) { BlitzCleared(); return; }
             double ms = _clk.Elapsed();
             var outc = Levels.AfterLevel(Profile, _theme, Spec, true, _mistakes, ms);
             SortSave.Paid(outc, Profile);
@@ -347,7 +347,7 @@ namespace SquishSquad.Games.Sort
         {
             _mistakes += 1;
             Snd.Wrong();
-            if (_blitz) { BlitzMistake(); return; }
+            if (_blitz) { BlitzStop("mistake"); return; }
             Later(160, () => Snd.Play("fs_heart"));
             if (_mistakes >= Levels.HEARTS) Later(500, () => Lose("hearts"));
         }
@@ -406,9 +406,9 @@ namespace SquishSquad.Games.Sort
             if (Spec.Mixed > 0) notes.Add("Some got mixed up inside!");
             if (Spec.Mixed > 0) Later(300, () => Snd.Play("fs_mixed"));
             Say("PUT THEM BACK!", small: true, sub: notes.Count > 0 ? string.Join("  ", notes) : "Drag or tap them home", hold: 900);
-            // Blitz: the run's one clock goes on from where the last round left it
-            if (!_blitz) _clk.Start(Spec.LimitMs);
-            else BlitzClock();
+            // (Blitz: each round on its own clock, BlitzSpec's)
+            _clk.Start(Spec.LimitMs);
+            if (_blitz) _runStarted = true;
             Effect(() => { if (Phase == "place" && !_paused) StartInterval(); });
         }
 
@@ -593,7 +593,7 @@ namespace SquishSquad.Games.Sort
             Close(ref _fail);
             Close(ref _pause);
             var rec = Levels.Record(Profile);
-            if (_blitz) { _theme = Levels.BlitzTheme(_run.Idx); Spec = Levels.BlitzSpec(_run.Idx, rec.BSkill); }
+            if (_blitz) Spec = Levels.BlitzSpec(_idx, rec.BSkill);
             else Spec = Levels.LevelSpec(_lv, rec.Of(_theme).Skill);
             Board = MakeBoardHook != null ? MakeBoardHook(Spec) : Sort.Board.MakeBoard(Spec, _data.Pools[_theme], Random, Props.Kinds);
             _m = SortModels.ModelOf(_theme, Spec.Model);
@@ -606,13 +606,12 @@ namespace SquishSquad.Games.Sort
             _anims = new PieceAnim[Board.Pieces.Count];
             for (int k = 0; k < _ins.Length; k++) { _ins[k] = new InsideAnim(); _anims[k] = new PieceAnim(); }
 
-            // (Blitz keeps its clock from round to round: again resets it)
-            if (!_blitz) _clk.Reset();
+            _clk.Reset();
             _paused = false;
             _selected = null; _dragK = null;
             _bannerOn = false;
             _mistakes = 0;
-            if (!_blitz) _left = 0;
+            _left = 0;
             _play = Sort.Board.StartState(Board);
             _showInside = true;
             _foodMoved = false;
@@ -628,7 +627,7 @@ namespace SquishSquad.Games.Sort
             bool bigger = !_blitz && Spec.First && Spec.Lv > 1;
             var chips = new List<string>();
             if (bigger) chips.Add($"LEVEL {Spec.Lv}");
-            chips.Add(_blitz ? SortModels.THEMES[_theme].Name.ToUpperInvariant() : Levels.TIER_NAMES[Spec.Tier]);
+            chips.Add(_blitz ? "SNACK FRIDGE" : Levels.TIER_NAMES[Spec.Tier]);
             if (Spec.More && !_blitz) chips.Add("+1 SHELF");
             if (Spec.Decoys > 0) chips.Add($"{Spec.Decoys} IMPOSTOR{(Spec.Decoys > 1 ? "S" : "")}");
             if (Spec.Swaps > 0) chips.Add("SNEAKY SWAP");
@@ -665,8 +664,7 @@ namespace SquishSquad.Games.Sort
             _clk.Pause();
             _paused = true;
             StopInterval();
-            if (_blitz) _run.Pause();
-            else _pause = Open(SortCards.PauseCard(_sw, _sh, Resume, Leave), 2);
+            _pause = Open(SortCards.PauseCard(_sw, _sh, Resume, Leave), 2);
         }
 
         void Resume()
@@ -682,8 +680,7 @@ namespace SquishSquad.Games.Sort
             ClearTimers();
             StopInterval();
             _clk.Reset();
-            _run?.ClearTimers();
-            _pips?.Unmount();
+            if (_blitz) PayOut();
             _exited = true;
             OnExit?.Invoke();
         }
@@ -691,8 +688,10 @@ namespace SquishSquad.Games.Sort
         /// <summary>Android's back: a pause resumes, sorting pauses, anything else leaves.</summary>
         public void Back()
         {
-            if (_paused) { if (_blitz) BlitzResume(); else Resume(); }
+            if (_paused) Resume();
             else if (Phase == "place") Pause();
+            else if (_blitz && _blitzCard == "save") EndRun();
+            else if (_blitz && Phase == "held") return;
             else Leave();
         }
 
@@ -741,7 +740,7 @@ namespace SquishSquad.Games.Sort
         bool _cardDown, _backDown;
         public (float x, float y, float size) BackOrb = (12, 12, 40);
 
-        bool CardOpen { get { if (_blitz) return _run.CardOpen; foreach (var c in _cards) if (c.Visible) return true; return false; } }
+        bool CardOpen { get { if (BCardOpen) return true; foreach (var c in _cards) if (c.Visible) return true; return false; } }
 
         int? HitPiece(float x, float y)
         {
@@ -772,9 +771,16 @@ namespace SquishSquad.Games.Sort
             _hoverX.SetValue(c.x - _g.S / 2); _hoverY.SetValue(c.y - _g.S / 2); _hoverO.SetValue(1);
         }
 
+        // a tap on the cards: the run's first (they're over the level's), then the level's
+        void CardsTap(bool down, float sx, float sy)
+        {
+            for (int i = _bcards.Count - 1; i >= 0; i--) if (_bcards[i].Visible && (down ? _bcards[i].Down(sx, sy) : _bcards[i].Up(sx, sy))) return;
+            for (int i = _cards.Count - 1; i >= 0; i--) if (down ? _cards[i].Down(sx, sy) : _cards[i].Up(sx, sy)) break;
+        }
+
         public void Down(float sx, float sy)
         {
-            if (CardOpen) { if (_blitz) _run.Down(sx, sy); else for (int i = _cards.Count - 1; i >= 0; i--) if (_cards[i].Down(sx, sy)) break; _cardDown = true; return; }
+            if (CardOpen) { CardsTap(true, sx, sy); _cardDown = true; return; }
             if (Math.Abs(sx - (BackOrb.x + 20)) <= 26 && Math.Abs(sy - (BackOrb.y + 20)) <= 26) { _backDown = true; return; }
             float x = sx - AreaX, y = sy;
             if (x < 0 || x > AreaW || Phase != "place" || _paused) return;
@@ -808,8 +814,7 @@ namespace SquishSquad.Games.Sort
             if (_cardDown)
             {
                 _cardDown = false;
-                if (_blitz) _run.Up(sx, sy);
-                else for (int i = _cards.Count - 1; i >= 0; i--) if (_cards[i].Up(sx, sy)) break;
+                CardsTap(false, sx, sy);
                 return;
             }
             if (_backDown)
@@ -880,17 +885,16 @@ namespace SquishSquad.Games.Sort
             if (Phase == "peek" || Phase == "deal") { barLabel = Phase == "peek" ? $"REMEMBER! {_peekLeft}" : "GET READY"; barColors = new[] { "#ffe45c", "#ff8a3d" }; frac = _peekBar.GetValue(); }
             else if (Phase == "place" || Phase == "won" || Phase == "lost" || _blitz)
             {
-                // (Blitz: the run's clock shows all the time, stopped between the sorting)
-                barLabel = Levels.Clock(_left > 0 || (_blitz && _runStarted) ? _left * 1000.0 : _blitz ? Levels.BLITZ_MS : Spec.LimitMs);
+                // (Blitz: the round's clock shows all the time, stopped between the sorting)
+                barLabel = Levels.Clock(_left > 0 ? _left * 1000.0 : Spec.LimitMs);
                 red = Phase == "place" && _left <= 10;
                 barColors = new[] { "#b8ffd9", "#3ddc97" }; frac = _clk.Frac.GetValue();
             }
             else { barLabel = Phase == "shake" || Phase == "close" ? "SHAKING…" : " "; showBar = false; barColors = null; frac = 1; }
             var hud = new SortArt.Hud { Theme = _theme, ModelName = _m.Name, Lv = Spec.Lv, Tier = Spec.Tier, BarLabel = barLabel, BarRed = red, ShowBar = showBar,
-                Blitz = _blitz, Round = Spec.Round ?? 0, Revived = _blitz && _run.Revived, Rounds = _blitz ? _run.Rounds : 10 };
+                Blitz = _blitz, Round = Spec.Round ?? 0 };
             SetM(L("left column"), $"{_deal}|{barLabel}|{red}|{showBar}|{hud.Revived}", () => SortArt.LeftColumn(hud, _sh), SortArt.LeftW, _sh, 4);
             var hl = SortArt.HudLayout(hud);
-            if (_blitz) DrawPips(hud);
             for (int i = 0; i < (_blitz ? 0 : Levels.HEARTS); i++)
             {
                 bool on = i < Levels.HEARTS - _mistakes;
@@ -984,12 +988,11 @@ namespace SquishSquad.Games.Sort
                 bn.Transform = area * Affine.Translate(0, Math.Max(0, _g.By - 34)) * About(AreaW, _bannerH, Affine.ScaleBy(bs, bs) * Affine.Rotate(br));
             }
             DrawFx(area);
-            if (_blitz) foreach (var c in _run.Cards()) c.Update();
-            else
-            {
-                foreach (var c in _cards) c.Update();
-                _cards.RemoveAll(c => !c.Shown);
-            }
+            if (_blitz) RefreshSave();
+            foreach (var c in _cards) c.Update();
+            _cards.RemoveAll(c => !c.Shown);
+            foreach (var c in _bcards) c.Update();
+            _bcards.RemoveAll(c => !c.Shown);
         }
 
         // ---- the effects (squishdoku/fx.js FxLayer over the game: the dust, sparks, poofs, angry puffs and confetti) -----

@@ -27,11 +27,6 @@ static class BlitzTest
         level.MakeBoardHook = _ => boards[Math.Min(dealt++, boards.Count - 1)];
         var q = new Queue<double>(js.GetProperty("randoms").EnumerateArray().Select(e => e.GetDouble()));
         level.Random = () => q.Count > 0 ? q.Dequeue() : 0.5;
-        if (js.TryGetProperty("uris", out var u) && u.ValueKind == JsonValueKind.Array)
-        {
-            var pics = u.EnumerateArray().Select(e => e.ValueKind == JsonValueKind.String ? Program.Uri(e.GetString()) : null).ToArray();
-            level.PickCreatures = (_, k) => pics;
-        }
         level.Start();
         level.Update();
         string bg = File.ReadAllText(Program.Res("Sort/bg.xml"));
@@ -54,7 +49,7 @@ static class BlitzTest
             var app = Path.Combine(dir, $"blitz-{ms}.png");
             if (!File.Exists(app) || (only != null && !only.Split(',').Contains(ms.ToString()))) continue;
             var (visible, total) = Render.Compare(bg, level.Layers, level.Cards, app, Path.Combine(dir, $"unity-{ms}.png"), Path.Combine(dir, $"diff-{ms}.png"));
-            Console.WriteLine($"{level.Phase,-7} r{level.Run.Idx + 1,-2} {ms,6} ms {e.GetProperty("name").GetString(),-22}: {visible,6} of {total} px differ visibly ({100.0 * visible / total:0.00} %)");
+            Console.WriteLine($"{level.Phase,-7} r{level.RoundIdx + 1,-2} {ms,6} ms {e.GetProperty("name").GetString(),-22}: {visible,6} of {total} px differ visibly ({100.0 * visible / total:0.00} %)");
         }
         return 0;
     }

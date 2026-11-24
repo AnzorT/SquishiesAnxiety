@@ -65,8 +65,6 @@ namespace SquishSquad.Games.Sort
             return g;
         }
 
-        /// <summary>Blitz: the run (set before Init: AdsFree, AdReady, ShowAd, Sound); null on a Regular level.</summary>
-        public Ui.Blitz.BlitzRun Run => _level?.Run;
         public SortLevel Level => _level;
         /// <summary>Blitz: called with the level made, before it starts (to set Run's hooks).</summary>
         public Action<SortLevel> OnBlitzMade;

@@ -43,9 +43,9 @@ namespace SquishSquad.Games.Sort
             return l;
         }
 
-        // a theme's model number i (0 SMALL ... 6 VERY VERY LARGE); any theme
-        // but 'cupboard' is the fridge, `i | 0` clamped to 0-6
-        public static ContainerModel ModelOf(string theme, double i) => (theme == "cupboard" ? CUPBOARDS : FRIDGES)[Math.Max(0, Math.Min(6, JsMath.ToInt32(i)))];
+        // the fridge number i (0 SMALL ... 6 VERY VERY LARGE), `i | 0` clamped
+        // to 0-6; `theme` is always the fridge now (kept for the callers)
+        public static ContainerModel ModelOf(string theme, double i) => FRIDGES[Math.Max(0, Math.Min(6, JsMath.ToInt32(i)))];
     }
 
     public sealed class SortTheme

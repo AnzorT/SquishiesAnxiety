@@ -104,7 +104,10 @@ namespace SquishSquad.Games.Shared
         readonly MapForest _forest;
         readonly float _k;   // a forest map: px per picture unit (its height / TileH)
 
-        public LevelMap(IReadOnlyList<MapLevel> list, float width, float top, float height, IList<string> uris, Func<int, string> bannerOf, Func<int, MapIcon> iconOf = null, MapForest forest = null)
+        /// <summary>`roomOf` (develop, 2026-11-17: the map's background is the room its levels are played in): the room
+        /// level i is played in, drawn behind the map (DrawRooms); `rowAt`: where the row's middle line runs, as a fraction
+        /// of the map's height (lower over a room's floor: royal/WorldBg.js ROW_ON_FLOOR, 0.75).</summary>
+        public LevelMap(IReadOnlyList<MapLevel> list, float width, float top, float height, IList<string> uris, Func<int, string> bannerOf, Func<int, MapIcon> iconOf = null, MapForest forest = null, Func<int, string> roomOf = null, float rowAt = 0.5f)
         {
             _list = list; _n = list.Count; _width = width; _top = top; _H = (float)Math.Round(height);
             _uris = uris ?? new List<string>(); _bannerOf = bannerOf; _iconOf = iconOf;
@@ -123,7 +126,8 @@ namespace SquishSquad.Games.Shared
                 return;
             }
             // a gentle wave about the middle line (a little above it: the stars hang under a beaten level)
-            double amp = Math.Min(22, _H * 0.07), mid = _H * 0.5 - 10;
+            _rowAt = rowAt;
+            double amp = Math.Min(rowAt > 0.6 ? 14 : 22, _H * 0.07), mid = _H * rowAt - 10;
             double x = 0;
             for (int i = 0; i < _n; i++)
             {
@@ -139,6 +143,58 @@ namespace SquishSquad.Games.Shared
             }
             ContentW = _points[_n - 1].X + 120;
             Scroll.Max = Math.Max(0, ContentW - width);
+            // the rooms along the page: a room from where its first band starts (between the last band's last level and
+            // the sign) to the next room's
+            if (roomOf != null)
+            {
+                _rooms = new List<(string room, float x0, float x1)>();
+                for (int i = 0; i < _n; i++)
+                {
+                    if (_points[i].Sign == null) continue;
+                    string room = roomOf(i);
+                    if (_rooms.Count > 0 && _rooms[_rooms.Count - 1].room == room) continue;
+                    float x0 = i == 0 ? 0 : _points[i].Sign.Value - (SIGN_GAP - NODE / 2) / 2;
+                    if (_rooms.Count > 0) { var l = _rooms[_rooms.Count - 1]; _rooms[_rooms.Count - 1] = (l.room, l.x0, x0); }
+                    _rooms.Add((room, x0, 0));
+                }
+                var last = _rooms[_rooms.Count - 1];
+                _rooms[_rooms.Count - 1] = (last.room, last.x0, Math.Max(ContentW, width));
+            }
+        }
+
+        List<(string room, float x0, float x1)> _rooms;
+        float _rowAt = 0.5f;
+        public bool HasRooms => _rooms != null;
+        const float POST_W = 16;
+
+        /// <summary>royal/WorldBg.js RoomBackdrop: the rooms the levels are played in, behind the map and its header, a
+        /// picture a screen wide (Room.js `full`, in daylight) repeated side by side for as long as its levels run, a
+        /// wooden post where one room gives way to the next; moved by the map's scroll, faded with the map (not slid).
+        /// Only the pictures about the screen are drawn.</summary>
+        public void DrawRooms(LayerFrame f, float opacity, float screenH)
+        {
+            if (_rooms == null) return;
+            double sx = Scroll.X, lo = sx - _width, hi = sx + 2 * _width;
+            for (int j = 0; j < _rooms.Count; j++)
+            {
+                var (room, x0, x1) = _rooms[j];
+                double from = x0 + Math.Max(0, Math.Floor((lo - x0) / _width)) * _width;
+                for (double x = from; x < Math.Min(x1, hi); x += _width)
+                {
+                    float w = (float)Math.Min(_width, x1 - x);
+                    var l = f.L($"map room {j} {x:0}");
+                    l.Set(room + "|" + w, () => SquishSquad.Games.Squishdoku.Rooms.Svg(room, "day", _width, screenH, true, w), w, screenH, 0);
+                    l.Transform = Affine.Translate(x - sx, 0);
+                    l.Opacity = opacity;
+                }
+                if (j > 0 && x0 > lo - POST_W && x0 < hi + POST_W)
+                {
+                    var p = f.L("map room post " + j);
+                    p.Set("post", () => new UiSvg(POST_W, screenH).Box(0, 0, POST_W, screenH, new BoxStyle { Background = "#7a4a22" }).Box(3, 0, POST_W - 6, screenH, new BoxStyle { Background = "#c7884a" }).Markup, POST_W, screenH, 0);
+                    p.Transform = Affine.Translate(x0 - POST_W / 2 - sx, 0);
+                    p.Opacity = opacity;
+                }
+            }
         }
 
         /// <summary>The player's record: the level they're on and each level's best stars (0 if none).</summary>
@@ -253,7 +309,7 @@ namespace SquishSquad.Games.Shared
                 l.Transform = content * Affine.Translate(d.x0, d.y0);
                 l.Opacity = opacity;
             }
-            // the signs: a picture over the banner, the two centred down the row's height (top -10)
+            // the signs: a picture over the banner, the two centred on the row's middle line (H x rowAt - 10)
             for (int i = 0; _forest == null && i < _n; i++)
             {
                 if (_points[i].Sign == null) continue;
@@ -263,7 +319,7 @@ namespace SquishSquad.Games.Shared
                 var (lines, bw, bh) = MapArt.BannerBox(text, sw);
                 var icon = _hasIcon[i] ? _iconOf(i) : null;
                 float total = (icon != null ? icon.H + 8 : 0) + bh;
-                float y = -10 + (_H - total) / 2;
+                float y = _H * _rowAt - 10 - total / 2;
                 if (icon != null)
                 {
                     if (Built(i))

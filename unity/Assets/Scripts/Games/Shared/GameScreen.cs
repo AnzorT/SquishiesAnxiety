@@ -46,6 +46,9 @@ namespace SquishSquad.Games.Shared
         /// <summary>The map is the whole screen with the header over it, and draws its own background (develop: Squish
         /// Stack's forest, StackScreen.js "the map is the forest, the whole screen, with this bar over its sky").</summary>
         public virtual bool FullMap => false;
+        /// <summary>The map's title and line on a plaque, to read over the room behind the map (develop's SortScreen.js /
+        /// HopScreen.js styles.plaque).</summary>
+        public virtual bool Plaque => false;
         /// <summary>Today's season (the screen's, for the map's pictures).</summary>
         public string Season = "sunny";
         /// <summary>The player's selected character's key (the Menu's pick: Squish Stack's forest walker), or null.</summary>
@@ -105,7 +108,7 @@ namespace SquishSquad.Games.Shared
         TextStyle SubStyle => Def.FullMap
             ? new TextStyle { Font = HeadSub.Font, Size = HeadSub.Size, Color = "#ffffff", Shadows = new[] { new Shadow("rgba(60,30,10,0.8)", 0, 1, 2) } }
             : HeadSub;
-        Frame _back, _help, _titleBox, _title, _sub, _pill, _pillText;
+        Frame _back, _help, _titleBox, _plaque, _title, _sub, _pill, _pillText;
         float _headerH;
         string _headerFor;
 
@@ -120,18 +123,20 @@ namespace SquishSquad.Games.Shared
             _headerFor = key;
             var root = new FlexNode("header").Row().AlignItems(YGAlign.Center).Gap(10).PadH(14).Padding(YGEdge.Top, 6).Padding(YGEdge.Bottom, 2);
             var back = root.Add(new FlexNode("back").Size(40, 40));
-            FlexNode box = null, title = null, sub = null, help = null, pill = null, pillText = null;
+            FlexNode box = null, plaque = null, title = null, sub = null, help = null, pill = null, pillText = null;
             if (Titled)
             {
                 box = root.Add(new FlexNode("titleBox").Flex(1).AlignItems(YGAlign.Center));
-                title = box.Add(new Para(Def.Title, TitleStyle).Leaf("title"));
-                sub = box.Add(new Para(Def.Sub, SubStyle).Leaf("sub"));
+                var inner = box;
+                if (Def.Plaque) inner = plaque = box.Add(new FlexNode("plaque").AlignItems(YGAlign.Center).PadH(16).Padding(YGEdge.Top, 1).Padding(YGEdge.Bottom, 3).Border(2));
+                title = inner.Add(new Para(Def.Title, TitleStyle).Leaf("title"));
+                sub = inner.Add(new Para(Def.Sub, SubStyle).Leaf("sub"));
                 if (Def.HelpOrb) help = root.Add(new FlexNode("help").Size(40, 40));
                 pill = root.Add(new FlexNode("pill").PadH(10).PadV(4).Border(2.5f));
                 pillText = pill.Add(new Para("★ " + Def.Stars, Pill).Leaf("pillText"));
             }
             root.Layout(W, float.NaN);
-            _back = back.Frame; _titleBox = box?.Frame ?? default; _title = title?.Frame ?? default; _sub = sub?.Frame ?? default;
+            _back = back.Frame; _titleBox = box?.Frame ?? default; _plaque = plaque?.Frame ?? default; _title = title?.Frame ?? default; _sub = sub?.Frame ?? default;
             _help = help?.Frame ?? default; _pill = pill?.Frame ?? default; _pillText = pillText?.Frame ?? default;
             _headerH = root.Frame.H;
             return _headerH;
@@ -257,9 +262,14 @@ namespace SquishSquad.Games.Shared
             // the page is the host's (exported PageBg); the map's world fades in with the map (MapBackdrop)
             if (Sw.View == "map" && !Def.FullMap)
             {
-                var bg = Frame.L("world");
-                bg.SetPicture($"Maps/world-{Season}.jpg", W, H);
-                bg.Opacity = vop;
+                // develop: the rooms the levels are played in (royal/WorldBg.js RoomBackdrop), else the season's world
+                if (_map != null && _map.HasRooms) _map.DrawRooms(Frame, vop * (_mapReveal?.ContentOpacity ?? 1), H);
+                else
+                {
+                    var bg = Frame.L("world");
+                    bg.SetPicture($"Maps/world-{Season}.jpg", W, H);
+                    bg.Opacity = vop;
+                }
             }
             float top = ViewTop;
             // the kept map, then the view's slot
@@ -323,6 +333,7 @@ namespace SquishSquad.Games.Shared
             tl.Set(key, () =>
             {
                 var s = new UiSvg(b.W, b.H);
+                if (Def.Plaque) s.Box(_plaque.X - b.X, _plaque.Y - b.Y, _plaque.W, _plaque.H, new BoxStyle { Background = "rgba(255,247,234,0.94)", Radius = 16, BorderWidth = FlexNode.Bw(2), BorderColor = "#e2b27a" });
                 new Para(Def.Title, TitleStyle).Draw(s, _title.X - b.X, _title.Y - b.Y, _title.W);
                 new Para(Def.Sub, SubStyle).Draw(s, _sub.X - b.X, _sub.Y - b.Y, _sub.W);
                 return s.Markup;

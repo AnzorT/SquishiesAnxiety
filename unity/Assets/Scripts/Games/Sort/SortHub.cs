@@ -1,8 +1,7 @@
-// Squish Sort's screen for GameScreen (src/screens/SortScreen.js) and its hub (src/sort/Hub.js, landscape): the title,
-// the line about the game, BLITZ and HOW TO PLAY on the left; a card per container on the right (the Snack Fridge and
-// the Toy Cupboard), each with the fridge or cupboard the player is up to, its doors opening and shutting forever with
-// squishies inside, its level and stars, and PLAY (its own 50-level map). Each container has its own record and map:
-// a banner per fridge (its picture over it) and per shelf it gains.
+// Squish Sort's screen for GameScreen (src/screens/SortScreen.js) and its hub (src/sort/Hub.js, landscape: develop's
+// GameHub, Squishdoku's pieces with this game's pictures: REGULAR MODE, the fridge's 50 levels; BLITZ MODE, the best
+// run; HOW TO PLAY). Only the fridge since 2026-11-17 (the Toy Cupboard is gone). Its map: a banner per fridge (its
+// picture over it) and per shelf it gains.
 // MiniContainer (sort/Container.js): a container drawn full size and shrunk to fit; shut for good on the map.
 using System;
 using System.Collections.Generic;
@@ -24,8 +23,9 @@ namespace SquishSquad.Games.Sort
         SortRecord Rec => Levels.Record(_profile);
         public override string Id => "sort";
         public override string Theme => ThemeKey;
-        public override string Title => SortModels.THEMES[ThemeKey].Name.ToUpperInvariant();
-        public override string TitleColor => SortModels.THEMES[ThemeKey].Ring;
+        public override string Title => "SQUISH SORT";
+        // (develop: the title on a plaque over the kitchen behind the map)
+        public override bool Plaque => true;
         public override string Sub => $"{(int)Levels.DoneIn(Rec, ThemeKey)} / {Levels.LEVELS} levels";
         public override string Stars => ((int)Levels.StarsIn(Rec, ThemeKey)).ToString();
         public override bool Seen => Rec.Seen;
@@ -58,7 +58,8 @@ namespace SquishSquad.Games.Sort
                 var m = SortModels.ModelOf(theme, L.Model);
                 return L.First ? $"{m.Size}\n{m.Name.ToUpperInvariant()}" : $"+1 SHELF · {ShelvesOf(L.Rows)}";
             }
-            var map = new LevelMap(list, w, top, h, Pool(theme), Banner, Icon);
+            // develop: the kitchen behind the map (SortScreen.js roomOf), the row on its floor (ROW_ON_FLOOR)
+            var map = new LevelMap(list, w, top, h, Pool(theme), Banner, Icon, roomOf: _ => "kitchen", rowAt: 0.75f);
             Refresh(map);
             return map;
         }
@@ -69,7 +70,7 @@ namespace SquishSquad.Games.Sort
             map.SetRecord((int)t.Lv, lv => (int)JsMath.OrNum(JsMath.Get(t.Best, JsMath.Key(lv)), 0));
         }
 
-        public override Hub NewHub(GameScreen screen) => new SortHub(this, _profile, screen);
+        public override Hub NewHub(GameScreen screen) => SortHub.New(_profile, screen);
     }
 
     /// <summary>sort/Container.js MiniContainer: `m` with `rows` x `cols` shelves drawn full size (S 64) and shrunk to
@@ -167,192 +168,16 @@ namespace SquishSquad.Games.Sort
         public double Rotate => Deg.Evaluate(Wob.GetValue());
     }
 
-    public sealed class SortHub : Hub
+    /// <summary>src/sort/Hub.js (develop, 2026-11-17: "make sure the screens of squish sort matches the other game's
+    /// screen"): the new design's GameHub (Games/Shared/ModeHub) with Squish Sort's pictures; REGULAR MODE is the fridge's
+    /// 50-level map (only the fridge since 2026-11-17).</summary>
+    public static class SortHub
     {
-        readonly IDictionary<string, object> _profile;
-        readonly GameScreen _screen;
-        readonly SortDef _def;
-        FlexNode _titleN, _taglineN, _rulesN;
-        CardArt.Title _title;
-        Para _tagline;
-        ModeCard _blitz;
-        HubButton _rules;
-        readonly PopIn _titlePop = new PopIn(60, 0.3, -10), _taglinePop = new PopIn(220);
-        readonly SlideIn _rulesSlide = new SlideIn(640, 30);
-        readonly Rock _titleRock = new Rock(2, 3400);
-        readonly List<ThemeCard> _cards = new List<ThemeCard>();
-        static readonly TextStyle Tagline = new TextStyle { Font = MapArt.Heavy, Size = 13, Color = MapArt.INK, LineHeight = 18 };
-
-        public SortHub(SortDef def, IDictionary<string, object> profile, GameScreen screen) { _def = def; _profile = profile; _screen = screen; }
-
-        public override IEnumerable<HubButton> Buttons
+        public static Hub New(IDictionary<string, object> profile, GameScreen screen)
         {
-            get { yield return _blitz.Cta; yield return _rules; foreach (var c in _cards) yield return c.Play; }
-        }
-
-        public override void Build(float w, float top, float h)
-        {
-            var rec = Levels.Record(_profile);
-            var root = new FlexNode("hub").Size(w, h).Row().AlignItems(YGAlign.Center).Justify(YGJustify.Center).PadH(24).Padding(YGEdge.Bottom, 10).Gap(28);
-            var col1 = root.Add(new FlexNode("col1").Width(350).AlignItems(YGAlign.Center).Gap(12));
-            _title = new CardArt.Title("SQUISH SORT", 36, "gold");
-            _titleN = col1.Add(new FlexNode("title").Size(_title.W, _title.H));
-            _tagline = new Para("Remember who sits where.\nThe doors shut, it shakes… sort them back!", Tagline, 0.5f);
-            _taglineN = col1.Add(_tagline.Leaf("tagline"));
-            var b = rec.Blitz;
-            double reached = b.Reached ?? 0, wins = b.Wins ?? 0;
-            _blitz = new ModeCard("hub blitz", "blitz", "BLITZ ⚡",
-                new[] { $"{Levels.BLITZ_ROUNDS} rounds · {Levels.Clock(Levels.BLITZ_MS)} · fridge & cupboard", "1 mistake = back to round 1",
-                    reached > 0 ? $"Best: round {reached}{(wins > 0 ? $" · {wins} win{(wins > 1 ? "s" : "")}" : "")}" : "No runs yet" }, 540,
-                () => _screen.OnBlitz?.Invoke(null));
-            col1.Add(_blitz.Build());
-            _rules = HubButton.Drawn("hub rules", new CardArt.ButtonLook("white", "HOW TO PLAY", 14, 16, 8), () => _screen.ShowRules(true));
-            _rulesN = col1.Add(new FlexNode("rules").Size(_rules.W, _rules.H));
-            var col2 = root.Add(new FlexNode("col2").Width(350).AlignItems(YGAlign.Center).Gap(12));
-            int i = 0;
-            foreach (var k in new[] { "fridge", "cupboard" })
-            {
-                var pool = SortDef.Pool(k);
-                var uris = pool.GetRange(Math.Min(pool.Count, i * 3), Math.Max(0, Math.Min(3, pool.Count - i * 3)));
-                string key = k;
-                var card = new ThemeCard(k, rec, uris, 300 + i * 120, () => { _def.ThemeKey = key; _screen.Go("map"); });
-                _cards.Add(card);
-                col2.Add(card.Build());
-                i++;
-            }
-            root.Layout(w, h);
-            root.Offset(0, top);
-        }
-
-        public override void Mount()
-        {
-            _titlePop.Trigger(); _taglinePop.Trigger(); _rulesSlide.Trigger(); _titleRock.Mount();
-            _blitz.Mount();
-            foreach (var c in _cards) c.Mount();
-        }
-
-        public override void Unmount()
-        {
-            _titlePop.Stop(); _taglinePop.Stop(); _rulesSlide.Stop(); _titleRock.Unmount();
-            _blitz.Unmount();
-            foreach (var c in _cards) c.Unmount();
-        }
-
-        public override void Draw(LayerFrame f, Affine view, float opacity)
-        {
-            var t = f.L("hub title");
-            var tf = _titleN.Frame;
-            t.Set("title", _title.Markup, tf.W, tf.H, 8);
-            t.Transform = view * Affine.Translate(tf.X, tf.Y) * _titlePop.Local(tf.W, tf.H) * _titleRock.Local(tf.W, tf.H);
-            t.Opacity = opacity * _titlePop.Opacity;
-            var g = f.L("hub tagline");
-            var gf = _taglineN.Frame;
-            g.Set("tagline", () => { var s = new UiSvg(gf.W, gf.H); _tagline.Draw(s, 0, 0, gf.W); return s.Markup; }, gf.W, gf.H, 2);
-            g.Transform = view * Affine.Translate(gf.X, gf.Y) * _taglinePop.Local(gf.W, gf.H);
-            g.Opacity = opacity * _taglinePop.Opacity;
-            _blitz.Draw(f, view, opacity);
-            var rf = _rulesN.Frame;
-            _rules.Draw(f, view * Affine.Translate(rf.X, rf.Y) * _rulesSlide.Local, opacity * _rulesSlide.Opacity);
-            foreach (var c in _cards) c.Draw(f, view, opacity);
-        }
-
-        /// <summary>Hub.js ThemeCard (landscape: the shorter card, no blurb).</summary>
-        sealed class ThemeCard
-        {
-            readonly string _k;
-            readonly SlideIn _slide;
-            readonly DoorLoop _doors = new DoorLoop();
-            readonly MiniContainer _mini;
-            readonly IList<string> _uris;
-            public readonly HubButton Play;
-            readonly string _ring, _name, _modelLine, _chip, _stars;
-            readonly string[] _colors;
-            FlexNode _wrap, _face, _miniN, _titleN, _modelN, _chipN, _chipText, _starsN, _playN;
-            static readonly TextStyle Model = new TextStyle { Font = MapArt.Display, Size = 11, LetterSpacing = 0.6f };
-            static readonly TextStyle Chip = new TextStyle { Font = MapArt.Display, Size = 11, LetterSpacing = 0.6f, Color = "#ffffff" };
-            static readonly TextStyle StarsText = new TextStyle { Font = MapArt.Display, Size = 14, Color = "#b86200" };
-
-            public ThemeCard(string k, SortRecord rec, IList<string> uris, double delay, Action onPlay)
-            {
-                _k = k; _uris = uris;
-                _slide = new SlideIn(delay, 50);
-                bool fridge = k == "fridge";
-                _ring = fridge ? "#1f5f7a" : "#6a3a12";
-                _colors = fridge ? new[] { "#f0fbff", "#bfe9fb", "#7fd0f0" } : new[] { "#fff6e6", "#ffd9a8", "#f0a860" };
-                var t = rec.Of(k);
-                int lv = (int)t.Lv;
-                var L = Levels.LEVEL_LIST[Math.Max(0, Math.Min(Levels.LEVELS, lv) - 1)];
-                var m = SortModels.ModelOf(k, L.Model);
-                _mini = new MiniContainer(k, L.Model, Math.Min(3, L.Rows), L.Cols, 74);
-                _name = SortModels.THEMES[k].Name.ToUpperInvariant();
-                _modelLine = $"{m.Size} · {m.Name.ToUpperInvariant()}";
-                _chip = $"LEVEL {lv}/{Levels.LEVELS}";
-                _stars = $"★ {(int)Levels.StarsIn(rec, k)}";
-                Play = HubButton.Drawn("hub play " + k, new CardArt.ButtonLook("green", "PLAY ▶", 17, 18, 6), onPlay).Pulsing(1.05, 1300);
-            }
-
-            TextStyle TitleStyle => new TextStyle { Font = MapArt.Display, Size = 22, LetterSpacing = 0.8f, Color = _ring };
-            TextStyle ModelStyle => new TextStyle { Font = Model.Font, Size = Model.Size, LetterSpacing = Model.LetterSpacing, Color = _ring };
-
-            public FlexNode Build()
-            {
-                _wrap = new FlexNode("card " + _k).AlignSelf(YGAlign.Stretch);
-                var ring = _wrap.Add(new FlexNode("ring").Padding(2.5f).Padding(YGEdge.Bottom, 7));
-                _face = ring.Add(new FlexNode("face").Row().AlignItems(YGAlign.Center).PadH(14).PadV(8).Gap(12).Border(3));
-                _miniN = _face.Add(new FlexNode("mini").Size(_mini.W, _mini.H));
-                var body = _face.Add(new FlexNode("body").Flex(1).Gap(2));
-                _titleN = body.Add(new Para(_name, TitleStyle).Leaf("title"));
-                _modelN = body.Add(new Para(_modelLine, ModelStyle).Leaf("model"));
-                var row = body.Add(new FlexNode("row6").Row().AlignItems(YGAlign.Center).Gap(6).Margin(YGEdge.Top, 2));
-                _chipN = row.Add(new FlexNode("chip").PadH(8).PadV(2).Border(2));
-                _chipText = _chipN.Add(new Para(_chip, Chip).Leaf("chipText"));
-                _starsN = row.Add(new Para(_stars, StarsText).Leaf("stars"));
-                _playN = body.Add(new FlexNode("play").Size(Play.W, Play.H).AlignSelf(YGAlign.FlexStart).Margin(YGEdge.Top, 4));
-                return _wrap;
-            }
-
-            public void Mount() { _slide.Trigger(); _doors.Mount(); Play.Mount(); }
-            public void Unmount() { _slide.Stop(); _doors.Unmount(); Play.Unmount(); }
-
-            string Markup()
-            {
-                var w = _wrap.Frame;
-                float ox = w.X, oy = w.Y;
-                var s = new UiSvg(w.W, w.H);
-                s.Box(0, 0, w.W, w.H, new BoxStyle { Background = _ring, Radius = 26 });
-                var fc = _face.Frame;
-                float fx = fc.X - ox, fy = fc.Y - oy, b = FlexNode.Bw(3);
-                s.Box(fx, fy, fc.W, fc.H, new BoxStyle { Background = "#ffffff", Radius = 23.5f });
-                float px = fx + b, py = fy + b, pw = fc.W - 2 * b, ph = fc.H - 2 * b, r = 23.5f - b;
-                s.Box(px, py, pw, ph, new BoxStyle { Gradient = _colors, GradientStops = new[] { 0f, 0.55f, 1 }, Radius = r });
-                var clip = s.NewId("tc");
-                s.Def($"<clipPath id=\"{clip}\"><path d=\"{UiSvg.RRect(px, py, pw, ph, new[] { r, r, r, r })}\"/></clipPath>");
-                s.Open($"clip-path=\"url(#{clip})\"");
-                s.Box(px + 14, py + 3, pw - 28, ph * 0.3f, new BoxStyle { Background = "rgba(255,255,255,0.4)", Radius = 20 });
-                s.Close();
-                new Para(_name, TitleStyle).Draw(s, _titleN.Frame.X - ox, _titleN.Frame.Y - oy, _titleN.Frame.W);
-                new Para(_modelLine, ModelStyle).Draw(s, _modelN.Frame.X - ox, _modelN.Frame.Y - oy, _modelN.Frame.W);
-                var c = _chipN.Frame;
-                s.Box(c.X - ox, c.Y - oy, c.W, c.H, new BoxStyle { Background = _ring, Radius = 999, BorderWidth = FlexNode.Bw(2), BorderColor = "#ffffff" });
-                new Para(_chip, Chip).Draw(s, _chipText.Frame.X - ox, _chipText.Frame.Y - oy, _chipText.Frame.W);
-                new Para(_stars, StarsText).Draw(s, _starsN.Frame.X - ox, _starsN.Frame.Y - oy, _starsN.Frame.W);
-                return s.Markup;
-            }
-
-            public void Draw(LayerFrame f, Affine view, float opacity)
-            {
-                var w = _wrap.Frame;
-                var at = view * Affine.Translate(w.X, w.Y) * _slide.Local;
-                float op = opacity * _slide.Opacity;
-                var l = f.L("hub card " + _k);
-                l.Set(_chip + _stars, Markup, w.W, w.H, 4);
-                l.Transform = at; l.Opacity = op;
-                var mf = _miniN.Frame;
-                // the container rattles about its middle (rotate ±5°) inside the card, clipped by it (not copied: the clip)
-                var mat = at * Affine.Translate(mf.X - w.X, mf.Y - w.Y) * Fx.About(mf.W, mf.H, Affine.Rotate(_doors.Rotate));
-                _mini.Draw(f, "hub mini " + _k, mat, op, _doors.Door.GetValue(), _uris);
-                Play.Draw(f, at * Affine.Translate(_playN.Frame.X - w.X, _playN.Frame.Y - w.Y), op);
-            }
+            var rec = Levels.Record(profile);
+            return new ModeHub("SQUISH SORT", "Sort", (int)rec.Fridge.Lv, (int)Levels.DoneIn(rec, "fridge"), Levels.LEVELS, (int)(rec.Blitz.Top ?? 0),
+                () => screen.Go("map"), () => screen.OnBlitz?.Invoke(null), () => screen.ShowRules(true));
         }
     }
 }
