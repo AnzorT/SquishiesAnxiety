@@ -11,9 +11,10 @@
 //                                    prices and odds, the deal, the swaps, copies, the default offers and level road),
 //                                    the chests' names, the products' fallback prices (src/economy.js)
 //   Chests/vault-*.png|jpg           "To the treasure vault" (src/components/VaultLoader.js): the table, the map, the
-//                                    bar's fill, the key, the glow; vault.json its layout (src/components/vaultArt.js)
+//                                    glow (no bar); vault.json its layout (src/components/vaultArt.js)
 //   Chests/paw.png, paw.json       the vault coin's 🐾 (no picture of the squishy), as Chrome draws it
-//   Chests/vault-room.jpg            the room the chest is smashed in (android/app/src/main/assets/chest)
+//   Chests/vault/<group>.jpg         each group's vault room the chest is smashed in, spots.json where its twinkles pop
+//                                    (android/app/src/main/assets/chest/vault)
 //   Chests/models.json               Chest Smash v2's chest models (chest-models.js + chest-<group>.js), built by the
 //                                    design's own code: every group's five chests as data (parts, shapes as path
 //                                    commands, paints, materials), drawn and damaged by Screens/Chests/ChestEngine.cs
@@ -73,7 +74,6 @@ const shop = {
   upgrade: squad.UPGRADE,
   copies: squad.COPIES,
   deal: squad.GDEAL,
-  luckMax: squad.LUCK_MAX,
   adChests: squad.AD_CHESTS,
   freeMs: squad.FREE_MS,
   swaps: squad.SWAPS,
@@ -93,13 +93,20 @@ console.log(`shop.json: ${shop.roster.length} creatures, ${shop.offers.offers.le
 const ROYAL = path.join(ROOT, 'assets', 'royal');
 conv(path.join(ROYAL, 'vault-table.jpg'), path.join(CHESTS, 'vault-table.jpg'), 92);
 conv(path.join(ROYAL, 'vault-map.webp'), path.join(CHESTS, 'vault-map.png'));
-for (const n of ['fill', 'key', 'glow']) conv(path.join(ROYAL, `vault-${n}.png`), path.join(CHESTS, `vault-${n}.png`));
+conv(path.join(ROYAL, 'vault-glow.png'), path.join(CHESTS, 'vault-glow.png'));   // (no bar, so no fill or key, since 2026-11-16)
 const va = fs.readFileSync(path.join(ROOT, 'src', 'components', 'vaultArt.js'), 'utf8');
 const vault = {};
 for (const m of va.matchAll(/export const (\w+) = (.*?);\n/g)) vault[m[1]] = JSON.parse(m[2]);
 fs.writeFileSync(path.join(CHESTS, 'vault.json'), JSON.stringify(vault));
 const CHEST_DIR = path.join(ROOT, 'android', 'app', 'src', 'main', 'assets', 'chest');
-conv(path.join(CHEST_DIR, 'vault-room.jpg'), path.join(CHESTS, 'vault-room.jpg'), 92);
+// each group's own vault room (2026-11-18: one room per group, tools/chest/vault-room.mjs) and where its twinkles pop
+fs.mkdirSync(path.join(CHESTS, 'vault'), { recursive: true });
+for (const f of fs.readdirSync(path.join(CHEST_DIR, 'vault'))) if (f.endsWith('.webp')) conv(path.join(CHEST_DIR, 'vault', f), path.join(CHESTS, 'vault', f.replace('.webp', '.jpg')), 90);
+{
+  const w = {};
+  vm.runInNewContext(fs.readFileSync(path.join(CHEST_DIR, 'vault', 'spots.js'), 'utf8'), { window: w });
+  fs.writeFileSync(path.join(CHESTS, 'vault', 'spots.json'), JSON.stringify(w.VAULT_SPOTS));
+}
 
 // ---- the chest models, built by the design's own code ----------------------------------------------------------------
 const ctx = { console, Math: Object.create(Math), performance: { now: () => 0 } };

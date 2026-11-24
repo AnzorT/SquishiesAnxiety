@@ -92,13 +92,13 @@ namespace SquishSquad.Screens
             ById = All.ToDictionary(c => c.Id);
             SetOf = Prof.Map(j["setOf"]).ToDictionary(kv => kv.Key, kv => { var m = Prof.Map(kv.Value); return (Prof.List(m["ids"]).Select(x => (string)x).ToArray(), Prof.Str(Prof.Get(m, "reward"))); });
             int si = 0;
-            Sizes = Prof.List(j["sizes"]).Select(Prof.Map).Select(m => { var p = Prof.Map(m["price"]); return new ChestSize { K = (string)m["k"], Odds = Prof.List(m["odds"]).Select(Prof.D).ToArray(), Cur = (string)p["cur"], Price = Prof.Num(p["n"]), I = si++ }; }).ToList();
+            Sizes = Prof.List(j["sizes"]).Select(Prof.Map).Select(m => { var p = Prof.Map(m["price"]); return new ChestSize { K = (string)m["k"], Odds = m.ContainsKey("odds") ? Prof.List(m["odds"]).Select(Prof.D).ToArray() : null, Cur = (string)p["cur"], Price = Prof.Num(p["n"]), I = si++ }; }).ToList();
             Upgrade = Prof.Map(j["upgrade"]).ToDictionary(kv => kv.Key, kv => Prof.D(kv.Value));
             DupeCoins = Prof.Map(j["dupeCoins"]).ToDictionary(kv => kv.Key, kv => Prof.D(kv.Value));
             Copies = Prof.List(j["copies"]).Select(Prof.D).ToArray();
             var d = Prof.Map(j["deal"]);
             DealGems = Prof.Num(d["gems"]); DealWas = Prof.Num(d["was"]); DealCoins = Prof.Num(d["coins"]); DealSize = (string)d["size"];
-            LuckMax = Prof.Num(j["luckMax"]); AdChests = Prof.Num(j["adChests"]); FreeMs = Prof.Num(j["freeMs"]);
+            LuckMax = j.ContainsKey("luckMax") ? Prof.Num(j["luckMax"]) : 0; AdChests = Prof.Num(j["adChests"]); FreeMs = Prof.Num(j["freeMs"]);
             StartGems = Prof.Num(Prof.Map(j["start"])["gems"]);
             RainbowMode = (string)j["rainbow"]; SetRewards = Prof.Truthy(j["setRewards"]);
             Swaps = Prof.List(j["swaps"]).Select(Prof.Map).Select(m => (Prof.Num(m["coins"]), Prof.Num(m["gems"]))).ToList();
@@ -130,7 +130,12 @@ namespace SquishSquad.Screens
         public static int DropRar(SquadCreature c) => c.Reward || c.Rar > 3 ? 3 : c.Rar;
         public static bool InGroupChest(SquadCreature c, string k, bool setRewards, string rainbow) => c.Set == k && !c.Pass && (!c.Reward || (!setRewards && rainbow != "chest"));
         public static double CopiesHad(IDictionary<string, object> p, string id) => Prof.Num(Prof.Get(Prof.Map(Prof.Get(p, "copies")), id));
-        public static double NeedOf(SquadCreature c) { Ensure(); return c == null ? 1 : (c.Rar < Copies.Length ? Copies[c.Rar] : 1); }
+        // (no Rainbow count since 2026-11-17: a Rainbow creature takes Legendary's)
+        public static double NeedOf(SquadCreature c) { Ensure(); return c == null ? 1 : Copies[Math.Min(c.Rar, Copies.Length - 1)]; }
+        /// <summary>functions/squad.js chestPool: what a chest of group `k` holds, only its own rarity (2026-11-18).</summary>
+        public static List<SquadCreature> ChestPool(string k, string size, List<string> artIds, bool setRewards = false, string rainbow = "chest") { Ensure(); int r = SizeI(size); return All.Where(c => c.Rar == r && InGroupChest(c, k, setRewards, rainbow) && artIds.Contains(c.Id)).ToList(); }
+        /// <summary>ShopChests.js groupCollected: how many of a group's chest creatures, of every rarity, are owned.</summary>
+        public static (int have, int total) GroupCollected(string k, IDictionary<string, object> p, List<string> artIds, bool setRewards = false, string rainbow = "chest") { Ensure(); var all = All.Where(c => InGroupChest(c, k, setRewards, rainbow) && artIds.Contains(c.Id)).ToList(); return (all.Count(c => Prof.Owns(p, c.Id)), all.Count); }
 
         // ---- money ------------------------------------------------------------------------------------------------------
         /// <summary>squad/data.js wallet: gems before the first squad move are the starting ones.</summary>
@@ -231,15 +236,14 @@ namespace SquishSquad.Screens
             }
             int ti = SizeI(size);
             var T = Sizes[ti];
-            var pool = All.Where(c => InGroupChest(c, gk, setRewards, rainbow) && artIds.Contains(c.Id)).ToList();
-            double epicUp = Math.Round((T.Odds[2] + T.Odds[3]) * 10) / 10;
+            var pool = ChestPool(gk, size, artIds, setRewards, rainbow);   // (only this chest's own rarity)
             bool coins = T.Cur == "coins";
             return new ChestInfo
             {
                 Ti = ti, T = T, Pool = pool, Have = pool.Count(c => Prof.Owns(profile, c.Id)),
                 Name = ChestName(gk, ti),
                 LookBg = coins ? GOLD_BG : PURPLE_BG, LookRim = coins ? "#b86200" : "#45189a", LookInk = coins ? "#7a3d00" : "#ffffff", LookTs = coins ? null : "#45189a",
-                Odds = (T.Odds[3] != 0 ? $"Leg {Prof.JsStr(T.Odds[3])}% · " : "") + $"Epic+ {Prof.JsStr(epicUp)}%",
+                Odds = $"Only {SIZE_NAME[ti]} pals",
                 DupeCoins = "+" + Prof.Fmt(DupeCoins[size]),
                 UpNote = ti <= 1 ? $"{Prof.JsStr(Upgrade[size])}% chance it upgrades on your first smash" : "",
             };

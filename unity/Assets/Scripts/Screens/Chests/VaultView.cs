@@ -1,10 +1,10 @@
 // "To the treasure vault" (src/components/VaultLoader.js, REDESIGN_V9 step 7), as pure C#: over a chest smash while it
 // gets ready. The treasure map on the wood table (pictures: Resources/Chests/vault-*, tools/unity/export-shop.mjs); a
-// red dotted trail shows dot by dot from Home towards the X as the bar fills (creeping to 90 % over 5.2 s, ease out
-// cubic), the player's squishy hopping along it in a gold coin (a paw with no picture), the candle's light flickering,
-// a tip changing every 2.8 s. Once the smash is ready (Ready(), and at least 1.6 s on screen) the bar fills (260 ms),
-// the map zooms into the X in a golden glow (620 ms, ease in cubic) and the screen fades off the chest (from 430 ms,
-// 240 ms); then OnDone. Laid out in the recording's frame (639 x 295), scaled to fit the screen. Its layout:
+// red dotted trail shows dot by dot from Home towards the X (creeping to 90 % of the way over 5.2 s, ease out cubic),
+// the player's squishy hopping along it in a gold coin (a paw with no picture), the candle's light flickering, a tip
+// changing every 2.8 s; no progress bar (develop, 2026-11-16). Once the smash is ready (Ready(), and at least 1.6 s on
+// screen) the coin runs to the X (260 ms), the whole screen zooms into it in a golden glow (620 ms, ease in cubic) and
+// fades off the chest (from 430 ms, 240 ms); then OnDone. Laid out in the recording's frame (639 x 295), scaled to fit the screen. Its layout:
 // Resources/Chests/vault.json (src/components/vaultArt.js).
 using System;
 using System.Collections.Generic;
@@ -26,7 +26,7 @@ namespace SquishSquad.Screens
         readonly string _buddy;   // the squishy's picture key (Stack art), or null: the paw
         public static readonly string[] TIPS =
         {
-            "The lucky meter guarantees an Epic or better at least every 10 chests",
+            "Each chest holds only pals of its own rarity",
             "Rarities: Common, Rare, Epic, Legendary, Rainbow",
             "Smash a Common or Rare chest hard: its first hit can upgrade it",
             "Collect a whole group to earn its Rainbow chest",
@@ -34,7 +34,7 @@ namespace SquishSquad.Screens
         const double MIN_MS = 1600, CREEP_MS = 5200;
         const float ZOOM = 2.6f, COIN = 30;
 
-        static float FW, FH, MX, MY, MW, MH, PAD, BX, BY, BW, BH, XX, XY;
+        static float FW, FH, MX, MY, MW, MH, PAD, XX, XY;
         static float[][] TRAIL;
         static double[] AT;
 
@@ -82,14 +82,13 @@ namespace SquishSquad.Screens
             FW = N(j["FRAME"], "w"); FH = N(j["FRAME"], "h");
             MX = N(j["MAP"], "x"); MY = N(j["MAP"], "y"); MW = N(j["MAP"], "w"); MH = N(j["MAP"], "h");
             PAD = (float)Prof.Num(j["MAP_PAD"]);
-            BX = N(j["BAR"], "x"); BY = N(j["BAR"], "y"); BW = N(j["BAR"], "w"); BH = N(j["BAR"], "h");
             var x = Prof.List(j["X"]); XX = (float)Prof.D(x[0]); XY = (float)Prof.D(x[1]);
             TRAIL = Prof.List(j["TRAIL"]).Select(p => Prof.List(p).Select(v => (float)Prof.D(v)).ToArray()).ToArray();
             int n = TRAIL.Length;
             AT = Enumerable.Range(0, n).Select(i => (double)i / (n - 1) * 0.985).ToArray();
         }
 
-        /// <summary>The smash has painted: the bar fills and the map zooms in (at least MIN_MS after it came up).</summary>
+        /// <summary>The smash has painted: the coin runs to the X and the screen zooms in (at least MIN_MS after it came up).</summary>
         public void Ready()
         {
             if (_leaving) return;
@@ -115,8 +114,6 @@ namespace SquishSquad.Screens
         public void Down(float x, float y) { }
         public void Move(float x, float y) { }
         public void Up(float x, float y) { }
-
-        static readonly TextStyle PctT0 = T(Kit.Display, 11.5f, CREAM);
 
         public List<ScreenPiece> Pieces()
         {
@@ -154,46 +151,14 @@ namespace SquishSquad.Screens
             double ty = Motion.Lerp(prog, AT, TRAIL.Select(p => (double)(Mx(p[1]) - cs * 0.62f)).ToArray()) - 5 * s * hop;
             Coin(map, (float)tx, (float)ty, cs);
             float z = (float)(1 + (ZOOM - 1) * zoom);
-            var mm = Affine.Translate(Fx(MX - PAD), Fy(MY - PAD)) * Affine.Translate((1 - ZOOM) * (xX - mw / 2) * zoom, (1 - ZOOM) * (xY - mh / 2) * zoom) * About(mw, mh, Affine.ScaleBy(z, z));
-            list.Add(new ScreenPiece { Id = "map", Svg = map.Markup, W = mw, H = mh, Margin = 8, Transform = mm });
+            list.Add(new ScreenPiece { Id = "map", Svg = map.Markup, W = mw, H = mh, Margin = 8, Transform = Affine.Translate(Fx(MX - PAD), Fy(MY - PAD)) });
             // the title
             float ls = (float)Math.Round(25 * s);
             var (lw, lh) = LetteringSize("To the treasure vault", ls);
             var title = new UiSvg(lw, lh);
             Lettering(title, "To the treasure vault", "gold", ls, 0, 0);
             list.Add(Piece("title", title, (W - lw) / 2, Fy(10)));
-            // the bar: the fill sliding in from the left in the groove, the key riding its end
-            float inset = 3 * s, innerW = BW * s - inset * 2, innerH = BH * s - inset * 2;
-            float bw = BW * s, bh = BH * s;
-            var bar = new UiSvg(bw, bh);
-            bar.Box(0, 0, bw, bh, new BoxStyle { Radius = bh / 2, Background = "#fff1c4", BorderWidth = Bw(1.5f), BorderColor = "#6b4426", Shadows = new[] { new Shadow("rgba(42,20,4,0.5)", 0, 2, 4) } });
-            float gx = inset, gy = inset;
-            // (the groove: padding inset - 1.5 s inside the 1.5 border)
-            float pad = inset - 1.5f * s + Bw(1.5f);
-            gx = pad; gy = pad;
-            float gw = bw - 2 * pad, gh = bh - 2 * pad;
-            bar.Box(gx, gy, gw, gh, new BoxStyle { Radius = innerH / 2, Background = "#7a4a22" });
-            var clip = bar.NewId("vg");
-            bar.Def($"<clipPath id=\"{clip}\"><path d=\"{UiSvg.RRect(gx + 1, gy + 1, gw - 2, gh - 2, new[] { innerH / 2 - 1, innerH / 2 - 1, innerH / 2 - 1, innerH / 2 - 1 })}\"/></clipPath>");
-            bar.Open($"clip-path=\"url(#{clip})\"");
-            float fx = gx + 1 + (float)(-innerW + innerW * prog);
-            var fclip = bar.NewId("vf");
-            bar.Def($"<clipPath id=\"{fclip}\"><path d=\"{UiSvg.RRect(fx, gy + 1, innerW, innerH, new[] { innerH / 2, innerH / 2, innerH / 2, innerH / 2 })}\"/></clipPath>");
-            bar.Open($"clip-path=\"url(#{fclip})\"");
-            bar.Image("Chests/vault-fill", fx, gy + 1, innerW, innerH);
-            bar.Close();
-            bar.Close();
-            bar.Box(gx, gy, gw, gh, new BoxStyle { Radius = innerH / 2, BorderWidth = 1, BorderColor = "#5e3a1c" });
-            list.Add(Piece("bar", bar, Fx(BX), Fy(BY), 1, null, 8));
-            var key = new UiSvg(28 * s, 28 * s);
-            key.Image("Chests/vault-key", 0, 0, 28 * s, 28 * s);
-            list.Add(Piece("key", key, Fx(BX) + inset - 14 * s + (float)(innerW * prog), Fy(BY + BH / 2) - 14 * s, 1, null, 0));
-            // the percentage and the tip
-            var pt = T(Kit.Display, 11.5f * s, CREAM, 0, 18 * s, new[] { new Shadow("#3a1e08", 0, 1.5f, 1) });
-            string pct = $"{(int)Math.Round(prog * 100)}%";
-            var ps = new UiSvg(Math.Max(1, W(pct, pt)), LH(pt));
-            ps.Text(pct, 0, 0, pt);
-            list.Add(Piece("pct", ps, Fx(BX + BW + 9), Fy(BY + BH / 2) - 9 * s, 1, null, 4));
+            // the tip, in the gap under the map (no progress bar since 2026-11-16: "remove the progress bars")
             var tipT = T(Heavy, 9.6f * s, CREAM, 0, 0, new[] { new Shadow("#3a1e08", 0, 1, 1) });
             var headT = T(Heavy, 9.6f * s, "#ffd56b", 0, 0, new[] { new Shadow("#3a1e08", 0, 1, 1) });
             string tip = TIPS[_tip];
@@ -201,7 +166,15 @@ namespace SquishSquad.Screens
             var tsv = new UiSvg(tw, LH(tipT));
             tsv.Text("Tip: ", 0, 0, headT);
             tsv.Text(tip, hw, 0, tipT);
-            list.Add(Piece("tip", tsv, (W - tw) / 2, Fy(272), (float)_tipFade.GetValue(), null, 4));
+            list.Add(Piece("tip", tsv, (W - tw) / 2, Fy(262), (float)_tipFade.GetValue(), null, 4));
+            // the way out zooms the whole screen into the X, as a camera would (2026-11-17): a scale about the screen's
+            // middle, moved back so the X stays where it is
+            if (zoom > 0)
+            {
+                float sx = Fx(MX - PAD) + xX, sy = Fy(MY - PAD) + xY;
+                var cam = Affine.Translate((1 - ZOOM) * (sx - W / 2) * zoom, (1 - ZOOM) * (sy - H / 2) * zoom) * About(W, H, Affine.ScaleBy(z, z));
+                foreach (var piece in list) piece.Transform = cam * piece.Transform;
+            }
             if (op >= 0.999) return list;
             return new List<ScreenPiece> { Piece("vault", Pieces2(list), W, H, 0, 0, (float)op, null, 0) };
         }

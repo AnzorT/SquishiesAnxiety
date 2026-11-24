@@ -2,9 +2,9 @@
 // 393-tall units, the header (the back orb, "Shop", the coin and gem pills: tap one for Gems), the four tabs across the
 // top (Daily, Chests, Deals, Gems; their red badges: the free / ad chests waiting, today's streak gift, 2X) and the tab:
 //   Daily   (royal/ShopChestsRoyal.js ShopDailyRoyal): today's free chest (or its countdown), the Rare chest for a video
-//           (FREE with Remove Ads; Unity has no ads yet, so WATCH only says so), the daily deal and the Lucky meter
-//   Chests  (ShopChestsRoyal): a page per group (today's HOT ones, the season, the rest), its four chests, OPEN for the
-//           price; the arrows, a swipe, the dots; the Rainbow line
+//           (FREE with Remove Ads; Unity has no ads yet, so WATCH only says so) and the daily deal (no Lucky meter since 2026-11-16)
+//   Chests  (ShopChestsRoyal): a page per group (today's HOT ones, the season, the rest), the chests it can fill (each holds only its own rarity), OPEN for the
+//           price; the arrows, a swipe (no dots); the Rainbow line
 //   Deals, Gems: ShopDeals.cs
 // and over it the sheets (ShopSheets.cs: a chest's, the odds, not enough coins / gems) and the toasts. Every move goes
 // to the server (OnSquad: the `squad` Cloud Function, ShopWrites); a chest's move hands the host the chest to open
@@ -112,7 +112,7 @@ namespace SquishSquad.Screens
             _bob = new Loop[4];
             for (int i = 0; i < 4; i++) _bob[i] = new Loop(_t, 2800, Tab == "chests" ? (i * 0.7 % 2.8) * 1000 : 0);
             _dealBob = new Loop(_t, 2600);
-            _page = Math.Max(0, Math.Min(_page, 99));
+            _page = Math.Max(0, Math.Min(_page, Pages.Count - 1)); if (!_sliding && !_dragging) _pageX = _page;
             BuildDealsLoops();
             _dirty = true;
         }
@@ -465,7 +465,7 @@ namespace SquishSquad.Screens
             bool welcome = !Prof.Owns(_profile, "1") && !Prof.Truthy(Prof.Get(_profile, "chestOpens"));
             int adsLeft = (int)Math.Max(0, ShopData.AdChests - AdsUsed);
             PageHead(list, "head", 110, null, null, "Today", $"Hot picks change in {ShopData.Hms(ShopData.UntilMidnight(now))}", HeadTimer, false);
-            float x = (SW - (156 * 3 + 200 + 36)) / 2, y = CARDS_Y;
+            float x = (SW - (156 * 2 + 200 + 24)) / 2, y = CARDS_Y;   // (the Lucky meter was the fourth until 2026-11-16)
             // Free chest
             string freeGk = welcome ? ShopData.ById["1"].Set : hot[0];
             double freeAt = Prof.Num(Prof.Get(_profile, "freeAt"));
@@ -480,8 +480,6 @@ namespace SquishSquad.Screens
             GoldBtn(list, adsLeft > 0 ? "ad" : "ad-off", adLabel, x + 10, TileBtnY(y, 38), 136, 38, 15, false, adsLeft > 0 ? "gold" : "vel", adsLeft > 0 ? 1 : 0.55f);
             x += 156 + 12;
             Deal(list, hot[0], Prof.Str(Prof.Get(_profile, "dealDay")) == _day, x, y, now);
-            x += 200 + 12;
-            Lucky(list, x, y);
         }
 
         static readonly float TILE_LETTER = LetteringSize("Free chest", 17).h;
@@ -578,37 +576,6 @@ namespace SquishSquad.Screens
                 });
         }
 
-        void Lucky(List<ScreenPiece> list, float x, float y)
-        {
-            double max = ShopData.LuckMax;
-            int n = (int)Math.Min(Prof.Num(Prof.Get(_profile, "epic")), max);
-            int left = (int)Math.Max(1, max - n);
-            string note = $"Epic or better in {left} {(left == 1 ? "chest" : "chests")}";
-            var (lw, lh) = LetteringSize("Lucky meter", 16);
-            var noteT = Note(11);
-            var linkT = T(Heavy, 11, CREAM);
-            float linkH = LH(linkT) + 10, linkW = W("Drop odds", linkT) + 24;
-            float total = 34 + 7 + lh + 7 + LH(noteT) + 7 + 13 + 7 + 6 + linkH;
-            float cy = (CARD_H - total) / 2;
-            var s = new UiSvg(156, CARD_H);
-            Plaque(s, 0, 0, 156, CARD_H, "vel", 18, 3, 2, 4);
-            s.Drawing($"<path d=\"M12 2L14.6 8.6L21.5 9.2L16.2 13.7L17.9 20.5L12 16.8L6.1 20.5L7.8 13.7L2.5 9.2L9.4 8.6Z\" fill=\"#ffc928\" stroke=\"{INK}\" stroke-width=\"1.4\" stroke-linejoin=\"round\"/>", 61, cy, 34, 34, "0 0 24 24");
-            cy += 34 + 7;
-            Lettering(s, "Lucky meter", "white", 16, (156 - lw) / 2, cy);
-            cy += lh + 7;
-            TxtC(s, note, 78, cy, noteT);
-            cy += LH(noteT) + 7;
-            float bx = 8 + (140 - (10 * (float)max + 3 * ((float)max - 1))) / 2;
-            for (int i = 0; i < max; i++)
-                s.Box(bx + i * 13, cy, 10, 13, new BoxStyle { Radius = 4, Background = i < n ? (i >= max - 3 ? "#ff8a1e" : "#ffd24a") : "rgba(107,68,38,0.35)" });
-            cy += 13 + 7 + 6;
-            float lx = (156 - linkW) / 2;
-            s.Box(lx, cy, linkW, linkH, new BoxStyle { Radius = 999, Background = "rgba(107,68,38,0.45)" });
-            s.Text("Drop odds", lx + 12, cy + 5, linkT);
-            list.Add(Piece("lucky", s, x, y, 1, null, 8));
-            _hits.Add("odds", x + lx, y + cy, linkW, linkH);
-        }
-
         // ---- Chests: a page per group ----------------------------------------------------------------------------------------
         List<ShopData.GroupPageInfo> _pages;
         string _pagesDay;
@@ -616,7 +583,10 @@ namespace SquishSquad.Screens
         {
             get { if (_pages == null || _pagesDay != _day) { _pages = ShopData.AllChests(_day, _hidden); _pagesDay = _day; } return _pages; }
         }
-        int _page, _at;
+        // the page last shown, kept while the app runs: the Shop comes back on the group you were on (2026-11-20, the
+        // user: back from opening chests it went to the first one)
+        static int _lastAt;
+        int _page = _lastAt, _at = _lastAt;
         float _pageX;   // the list's offset in pages (moves while it slides)
         CompositeAnimation _slide;
         readonly AnimatedValue _slideV = new AnimatedValue(0);
@@ -644,7 +614,7 @@ namespace SquishSquad.Screens
         {
             if (_sliding) _pageX = _slideFrom + (_page - _slideFrom) * (float)_slideV.GetValue();
             else if (!_dragging && Tab == "chests") _pageX = _page;
-            if (Tab == "chests") _at = (int)Math.Round(_pageX);
+            if (Tab == "chests") { _at = Math.Max(0, Math.Min(Pages.Count - 1, (int)Math.Round(_pageX))); _lastAt = _at; }
         }
 
         static readonly string[] SIZE_INK = { "#8a5a34", "#1f6fd6", "#8a2ad8", "#c46a00" };
@@ -656,37 +626,30 @@ namespace SquishSquad.Screens
             int first = (int)Math.Floor(_pageX), last = (int)Math.Ceiling(_pageX);
             for (int i = Math.Max(0, first); i <= Math.Min(pages.Count - 1, last); i++)
                 GroupPage(list, pages[i], (i - _pageX) * SW, i == 0);
-            // the arrows and the dots
+            // the arrows
             bool lOff = _at == 0, rOff = _at >= pages.Count - 1;
             float ay = 108 + 285 / 2f - 36;
             list.Add(Piece("orb-left", Xml("orb-left"), 40, 40, 16, ay + (_pressed == "arrow-left" && !lOff ? 2 : 0), lOff ? 0.35f : 1));
             list.Add(Piece("orb-right", Xml("orb-right"), 40, 40, SW - 56, ay + (_pressed == "arrow-right" && !rOff ? 2 : 0), rOff ? 0.35f : 1));
             if (!lOff) _hits.Add("arrow-left", 16, ay, 40, 40, 8);
             if (!rOff) _hits.Add("arrow-right", SW - 56, ay, 40, 40, 8);
-            float dw = 16 + (pages.Count - 1) * 6 + (pages.Count - 1) * 5;
-            var d = new UiSvg(dw, 6);
-            float dx = 0;
-            for (int i = 0; i < pages.Count; i++)
-            {
-                bool on = i == _at;
-                d.Box(dx, 0, on ? 16 : 6, 6, new BoxStyle { Radius = 3, Background = on ? CREAM : "rgba(107,68,38,0.45)" });
-                dx += (on ? 16 : 6) + 5;
-            }
-            list.Add(Piece("dots", d, (SW - dw) / 2, SH - 3 - 6, 1, null, 0));
+            // (no page dots: the user had them removed, 2026-11-20)
         }
 
         static readonly string[] SOLD = { "common", "rare", "epic", "legendary" };
 
         void GroupPage(List<ScreenPiece> list, ShopData.GroupPageInfo g, float ox, bool first)
         {
-            var c0 = ShopData.Chest(g.K, "common", _profile, _artIds);
+            // each chest holds only its own rarity, so a group shows only the chests it can fill
+            var sold = new List<(int ti, ChestInfo info)>();
+            for (int ti = 0; ti < 4; ti++) { var info = ShopData.Chest(g.K, SOLD[ti], _profile, _artIds); if (info.Pool.Count > 0) sold.Add((ti, info)); }
+            var all = ShopData.GroupCollected(g.K, _profile, _artIds);
             string label = ShopData.GROUP_LABEL.TryGetValue(g.K, out var gl) ? gl : g.K;
-            PageHead(list, "head-" + g.K, 110, g.Tag != "" ? g.Tag : null, g.TagBg, label, $"{c0.Have} / {c0.Pool.Count} collected", T(Heavy, 10.5f, CREAM), true);
+            PageHead(list, "head-" + g.K, 110, g.Tag != "" ? g.Tag : null, g.TagBg, label, $"{all.have} / {all.total} collected", T(Heavy, 10.5f, CREAM), true);
             Shift(list, ox);
-            float x = (SW - (160 * 4 + 36)) / 2 + ox, y = CARDS_Y;
-            for (int ti = 0; ti < 4; ti++)
+            float x = (SW - (160 * sold.Count + 12 * Math.Max(0, sold.Count - 1))) / 2 + ox, y = CARDS_Y;
+            foreach (var (ti, info) in sold)
             {
-                var info = ti == 0 ? c0 : ShopData.Chest(g.K, SOLD[ti], _profile, _artIds);
                 ChestCard(list, g.K, SOLD[ti], ti, info, x, y);
                 x += 160 + 12;
             }
@@ -760,7 +723,8 @@ namespace SquishSquad.Screens
                 return;
             }
             var nt = Note(11);
-            string text = rb.Opened ? $"{rb.Reward.Name}, this group's Rainbow, is in your squad." : $"Collect all {(ShopData.GROUP_LABEL.TryGetValue(gk, out var gl) ? gl : "this group")} pals for its Rainbow chest · {rb.Have} / {rb.Need}";
+            int left = Math.Max(0, rb.Need - rb.Have);
+            string text = rb.Opened ? $"{rb.Reward.Name}, this group's Rainbow, is in your squad." : $"Unlock {left} more {(ShopData.GROUP_LABEL.TryGetValue(gk, out var gl) ? gl : "group")} {(left == 1 ? "pal" : "pals")} to earn the Rainbow chest with {rb.Reward.Name} inside · {rb.Have} / {rb.Need}";
             float tw = 14 + 7 + W(text, nt);
             var s = new UiSvg(tw, 26);
             s.Box(0, 6, 14, 14, new BoxStyle { Radius = 7, Gradient = SIZE_DOT[4], GradientAngle = 90, BorderWidth = Bw(1.5f), BorderColor = "#ffffff" });

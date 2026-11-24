@@ -143,7 +143,7 @@ namespace SquishSquad.Screens
             for (int i = 0; i < ShopData.Sizes.Count; i++)
             {
                 var T0 = ShopData.Sizes[i];
-                string odds = earned && T0.K == "set" ? "Not sold: earned once by unlocking a group, with its Rainbow pal" : string.Join(" / ", T0.Odds.Select(o => Prof.JsStr(o) + "%"));
+                string odds = earned && T0.K == "set" ? "Not sold: earned once by unlocking a group, with its Rainbow pal" : $"100% {ShopData.SIZE_NAME[T0.I]} pals";
                 var flow = new TextFlow(odds, OddsOdds);
                 float fw = vw - 24 - 80 - 8, fh = flow.Measure(fw).h;
                 var nt = T(Kit.Display, 14, TC_C[i]);
@@ -153,7 +153,7 @@ namespace SquishSquad.Screens
                 flow.Draw(s, 12 + 80 + 8, y + (rh - fh) / 2, fw);
                 y += rh + 10;
             }
-            string note = "Order: Common / Rare / Epic / Legendary. Common and Rare chests can upgrade on your first smash. The lucky meter guarantees an Epic or better at least every 10 chests. Duplicates turn into coins." + (earned ? " Rainbow pals come only from their group's Rainbow chest." : "");
+            string note = "Each chest holds only pals of its own rarity. Common and Rare chests can upgrade on your first smash, and then hold the rarity they became. Duplicates turn into coins." + (earned ? " Rainbow pals come only from their group's Rainbow chest." : "");
             var nf = new TextFlow(note, OddsNote, 0);
             float nh = nf.Measure(vw).h;
             // (a Text in a column with alignItems center: as wide as its longest line, centred)
@@ -253,22 +253,19 @@ namespace SquishSquad.Screens
             {
                 if (C.UpNote != "") { TxtC(s, C.UpNote, cx, y, SheetUp); y += LH(SheetUp) + 8; }
                 // the odds
-                float cw = (rw - 18) / 4, oh = 7 + LH(OddPct0) + 1 + LH(OddName0) + 7;
-                for (int i = 0; i < 4; i++)
+                // (one: each chest holds only its own rarity, 2026-11-18)
+                float oh = 7 + LH(OddPct0) + 1 + LH(OddName0) + 7;
                 {
-                    double o = C.T.Odds[i];
-                    float ox = rx + i * (cw + 6);
-                    s.Open(o != 0 ? "" : "opacity=\"0.45\"");
-                    s.Box(ox, y, cw, oh, new BoxStyle { Radius = 12, Background = RAR_ROW[i].bg });
+                    int i = C.Ti;
+                    s.Box(rx, y, rw, oh, new BoxStyle { Radius = 12, Background = RAR_ROW[i].bg });
                     var pt = T(Kit.Display, 16, RAR_ROW[i].ink); var nt = T(Black, 9.5f, RAR_ROW[i].ink);
-                    TxtC(s, Prof.JsStr(o) + "%", ox + cw / 2, y + 7, pt);
-                    TxtC(s, RAR_ROW[i].name, ox + cw / 2, y + 7 + LH(pt) + 1, nt);
-                    s.Close();
+                    TxtC(s, "100%", rx + rw / 2, y + 7, pt);
+                    TxtC(s, RAR_ROW[i].name, rx + rw / 2, y + 7 + LH(pt) + 1, nt);
                 }
                 y += oh + 8;
                 y = InsideRow(s, "Squishies inside", $"{C.Have} / {C.Pool.Count} collected", rx, rw, y);
                 y = Mons(s, C.Pool, rx, rw, y, false);
-                var line = $"Duplicate: {C.DupeCoins} coins · Lucky meter counts this chest";
+                var line = $"Duplicate: {C.DupeCoins} coins";
                 float lw2 = 16 + 4 + W(line, CoinsLine), lx = cx - lw2 / 2, lh = Math.Max(16, LH(CoinsLine));
                 Contain(s, Coin(0), lx, y + (lh - 16) / 2, 16, 16);
                 s.Text(line, lx + 20, y + (lh - LH(CoinsLine)) / 2, CoinsLine);
