@@ -107,11 +107,12 @@ namespace SquishSquad.Creatures.Js
         {
             var fn = repl.O as JsFunction;
             string rs = fn == null ? Rt.ToStr(repl) : null;
-            var sb = new StringBuilder();
             int last = 0;
             int start = Global ? 0 : (Sticky ? LastIndex : 0);
             if (Global) LastIndex = 0;
             var m = Rx.Match(s, Math.Min(start, s.Length));
+            if (!m.Success) { if (Sticky && !Global) LastIndex = 0; return s; }   // (nothing to replace: the same string)
+            var sb = new StringBuilder(s.Length + 16);
             while (m.Success)
             {
                 if (Sticky && m.Index != start) break;

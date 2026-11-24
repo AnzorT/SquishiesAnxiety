@@ -269,7 +269,7 @@ namespace SquishSquad.Creatures.Js
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public V At(int i) { if ((uint)i < (uint)Len) { var v = A[i]; return v.O == Tag.Hole ? default : v; } return default; }
         internal bool HasAt(int i) => (uint)i < (uint)Len && A[i].O != Tag.Hole;
-        public void Push(V v) { if (Len == A.Length) Array.Resize(ref A, Math.Max(8, Len * 2)); A[Len++] = v; }
+        public void Push(V v) { if (Len == A.Length) Array.Resize(ref A, Len < 16 ? 16 : Len * 2); A[Len++] = v; }
         public void SetAt(int i, V v)
         {
             if (i < Len) { A[i] = v; return; }

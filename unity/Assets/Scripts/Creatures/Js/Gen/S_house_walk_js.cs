@@ -10,8 +10,8 @@ namespace SquishSquad.Creatures.Js.Gen
         public static void Run()
         {
 Call(Fn((V _self1, int _argc2, V _a4, V _a5, V _a6, V _a7, V[] _rest3) => {
-V TAU_8 = default;
-V PI_9 = default;
+double TAU_8 = 0;
+double PI_9 = 0;
 V S_10 = default;
 V C_11 = default;
 V ab_12 = default;
@@ -23,8 +23,8 @@ V PROF_17 = default;
 V DEF_18 = default;
 V W_19 = default;
 if (_self1.IsNullish) _self1 = GlobalV;
-TAU_8 = ((V)((System.Math.PI * 2D)));
-PI_9 = ((V)(System.Math.PI));
+TAU_8 = (System.Math.PI * 2D);
+PI_9 = System.Math.PI;
 S_10 = Get(G("Math"), "sin");
 C_11 = Get(G("Math"), "cos");
 ab_12 = Get(G("Math"), "abs");
@@ -35,14 +35,14 @@ pw_14 = Fn((V _self1, int _argc27, V x_33, V k_34, V _a31, V _a32, V[] _rest28) 
 return ((V)(Pow(ToNum(Call(ab_12, V.Undef, x_33)), ToNum(k_34))));
 }, 2, "", true);
 jmp_15 = Fn((V _self1, int _argc35, V p_41, V a_42, V b_43, V _a40, V[] _rest36) => {
-V u_44 = default;
-u_44 = ((V)(((((ToNum(p_41) / ToNum(TAU_8)) % 1D) + 1D) % 1D)));
-if ((Gt(u_44, a_42) && Lt(u_44, b_43))) {
-V au_45 = default;
-au_45 = ((V)(((ToNum(u_44) - ToNum(a_42)) / (ToNum(b_43) - ToNum(a_42)))));
-return NewObj(3).Put("air", Call(S_10, V.Undef, ((V)((ToNum(PI_9) * ToNum(au_45)))))).Put("au", au_45).Put("gb", ((V)(0D))).V;
+double u_44 = 0;
+u_44 = ((((ToNum(p_41) / TAU_8) % 1D) + 1D) % 1D);
+if ((Gt(((V)(u_44)), a_42) && Lt(((V)(u_44)), b_43))) {
+double au_45 = 0;
+au_45 = ((u_44 - ToNum(a_42)) / (ToNum(b_43) - ToNum(a_42)));
+return NewObj(3).Put("air", Call(S_10, V.Undef, ((V)((PI_9 * au_45))))).Put("au", ((V)(au_45))).Put("gb", ((V)(0D))).V;
 }
-return NewObj(3).Put("air", ((V)(0D))).Put("au", ((V)((-1D)))).Put("gb", Call(S_10, V.Undef, ((V)((ToNum(PI_9) * ((((ToNum(u_44) - ToNum(b_43)) + 1D) % 1D) / ToNum(Add(((V)((1D - ToNum(b_43)))), a_42)))))))).V;
+return NewObj(3).Put("air", ((V)(0D))).Put("au", ((V)((-1D)))).Put("gb", Call(S_10, V.Undef, ((V)((PI_9 * ((((u_44 - ToNum(b_43)) + 1D) % 1D) / ToNum(Add(((V)((1D - ToNum(b_43)))), a_42)))))))).V;
 return default;
 }, 3, "", true);
 G_16 = NewObj(18).Put("trot", NewObj(3).Put("r", ((V)(1D))).Put("dl", ((V)(2D))).Put("f", Fn((V _self46, int _argc47, V p_53, V A_54, V o_55, V _a52, V[] _rest48) => {
@@ -83,7 +83,7 @@ Set(o_77, "lift", ((V)(((14D * ToNum(A_76)) * ToNum(Get(j_78, "air"))))));
 Set(o_77, "sq", ((V)((((0.12 * ToNum(A_76)) * ToNum(Get(j_78, "gb"))) - ((0.07 * ToNum(A_76)) * ToNum(Get(j_78, "air")))))));
 Set(o_77, "footL", Set(o_77, "footR", ((V)(((2D * ToNum(A_76)) * ToNum(Get(j_78, "air")))))));
 Set(o_77, "armL", Set(o_77, "armR", ((V)(((20D * ToNum(A_76)) * ToNum(Get(j_78, "air")))))));
-Set(o_77, "pitch", ((V)((GeN(Get(j_78, "au"), 0D) ? ((-0.05) * ToNum(Call(C_11, V.Undef, ((V)((ToNum(PI_9) * ToNum(Get(j_78, "au")))))))) : (0.03 * ToNum(Get(j_78, "gb")))))));
+Set(o_77, "pitch", ((V)((GeN(Get(j_78, "au"), 0D) ? ((-0.05) * ToNum(Call(C_11, V.Undef, ((V)((PI_9 * ToNum(Get(j_78, "au")))))))) : (0.03 * ToNum(Get(j_78, "gb")))))));
 return NewObj(2).Put("v", ((V)((GeN(Get(j_78, "au"), 0D) ? 1.5 : 0.18)))).Put("land", Get(j_78, "gb")).V;
 return default;
 }, 3, "f", false)).V).Put("bounce", NewObj(3).Put("r", ((V)(0.7))).Put("dl", ((V)(1.5))).Put("f", Fn((V _self79, int _argc80, V p_86, V A_87, V o_88, V _a85, V[] _rest81) => {
@@ -105,7 +105,7 @@ Set(o_99, "lift", ((V)((3D + ((2.5 * ToNum(A_98)) * ToNum(s_100))))));
 Set(o_99, "x", ((V)(((0.8 * ToNum(A_98)) * ToNum(Call(S_10, V.Undef, Add(p_97, ((V)(0.8)))))))));
 Set(o_99, "tilt", ((V)(((2.5 * ToNum(A_98)) * ToNum(Call(S_10, V.Undef, Add(p_97, ((V)(0.8)))))))));
 Set(o_99, "armL", ((V)((6D + ((7D * ToNum(A_98)) * ToNum(Call(S_10, V.Undef, ((V)((2D * ToNum(p_97)))))))))));
-Set(o_99, "armR", ((V)((6D + ((7D * ToNum(A_98)) * ToNum(Call(S_10, V.Undef, Add(((V)((2D * ToNum(p_97)))), PI_9))))))));
+Set(o_99, "armR", ((V)((6D + ((7D * ToNum(A_98)) * ToNum(Call(S_10, V.Undef, ((V)(((2D * ToNum(p_97)) + PI_9))))))))));
 Set(o_99, "pitch", ((V)(0.06)));
 Set(o_99, "sq", ((V)(((0.025 * ToNum(A_98)) * ToNum(Call(S_10, V.Undef, ((V)((2D * ToNum(p_97))))))))));
 return default;
@@ -119,7 +119,7 @@ Set(o_110, "pitch", ((V)(0.07)));
 Set(o_110, "footL", Set(o_110, "footR", ((V)(0.8))));
 if (SEqS(Get(P_111, "wing"), "own")) {
 Set(o_110, "armL", ((V)((8D + (5D * ToNum(Call(S_10, V.Undef, ((V)((2D * ToNum(p_108)))))))))));
-Set(o_110, "armR", ((V)((8D + (5D * ToNum(Call(S_10, V.Undef, Add(((V)((2D * ToNum(p_108)))), PI_9))))))));
+Set(o_110, "armR", ((V)((8D + (5D * ToNum(Call(S_10, V.Undef, ((V)(((2D * ToNum(p_108)) + PI_9))))))))));
 } else {
 Set(o_110, "armL", Set(o_110, "armR", ((V)((34D + (30D * ToNum(Call(S_10, V.Undef, ((V)((6D * ToNum(p_108))))))))))));
 }
@@ -258,7 +258,7 @@ s_225 = Call(S_10, V.Undef, p_222);
 Set(o_224, "lift", ((V)((3D + ((1.5 * ToNum(A_223)) * ToNum(s_225))))));
 Set(o_224, "pitch", ((V)(0.05)));
 Set(o_224, "armL", ((V)((10D + (4D * ToNum(Call(S_10, V.Undef, Add(p_222, ((V)(1D))))))))));
-Set(o_224, "armR", ((V)((10D + (4D * ToNum(Call(S_10, V.Undef, Add(Add(p_222, ((V)(1D))), PI_9))))))));
+Set(o_224, "armR", ((V)((10D + (4D * ToNum(Call(S_10, V.Undef, Add(Add(p_222, ((V)(1D))), ((V)(PI_9))))))))));
 Set(o_224, "tilt", ((V)(((1.5 * ToNum(A_223)) * ToNum(Call(S_10, V.Undef, Add(p_222, ((V)(0.6)))))))));
 Set(o_224, "sq", ((V)(((0.02 * ToNum(A_223)) * ToNum(Call(S_10, V.Undef, ((V)((2D * ToNum(p_222))))))))));
 return default;
@@ -307,18 +307,18 @@ V g_278 = default;
 if (_self269.IsNullish) _self269 = GlobalV;
 P_277 = Invoke(W_19, "prof", key_276);
 g_278 = (GetK(G_16, Get(P_277, "g")) is var _t279 && Truthy(_t279) ? _t279 : Get(G_16, "trot"));
-return ((V)(((1000D * ToNum(TAU_8)) / ((11D * ToNum(Get(g_278, "r"))) * ToNum((Get(P_277, "r") is var _t280 && Truthy(_t280) ? _t280 : ((V)(1D))))))));
+return ((V)(((1000D * TAU_8) / ((11D * ToNum(Get(g_278, "r"))) * ToNum((Get(P_277, "r") is var _t280 && Truthy(_t280) ? _t280 : ((V)(1D))))))));
 return default;
 }, 1, "period", false)).Put("step", Fn((V _self281, int _argc282, V key_288, V st_289, V E_290, V w_291, V[] _rest283) => {
 V rk_295 = default;
 V P_296 = default;
 V g_297 = default;
-V A_298 = default;
+double A_298 = 0;
 V p_299 = default;
 V o_300 = default;
 V m_301 = default;
-V sr_302 = default;
-V sd_303 = default;
+double sr_302 = 0;
+double sd_303 = 0;
 V fx_304 = default;
 V now_305 = default;
 V dt_292 = default;
@@ -332,23 +332,23 @@ key_288 = ((Get(G("window"), "SQ_ALIAS") is var _t306 && !Truthy(_t306) ? _t306 
 rk_295 = Set(st_289, "rk", Add((Get(st_289, "rk") is var _t308 && Truthy(_t308) ? _t308 : ((V)(0D))), ((V)((((Truthy(Get(st_289, "run")) ? 1D : 0D) - ToNum((Get(st_289, "rk") is var _t309 && Truthy(_t309) ? _t309 : ((V)(0D))))) * Min(1D, (ToNum(dt_292) * 6D)))))));
 P_296 = Invoke(W_19, "prof", key_288);
 g_297 = (GetK(G_16, Get(P_296, "g")) is var _t310 && Truthy(_t310) ? _t310 : Get(G_16, "trot"));
-A_298 = ((V)((ToNum((Get(P_296, "a") is var _t311 && Truthy(_t311) ? _t311 : ((V)(1D)))) * (1D + (0.28 * ToNum(rk_295))))));
+A_298 = (ToNum((Get(P_296, "a") is var _t311 && Truthy(_t311) ? _t311 : ((V)(1D)))) * (1D + (0.28 * ToNum(rk_295))));
 Set(st_289, "ph", Add((Get(st_289, "ph") is var _t312 && Truthy(_t312) ? _t312 : ((V)(0D))), ((V)((((((ToNum(dt_292) * 11D) * ToNum(Get(g_297, "r"))) * ToNum((Get(P_296, "r") is var _t313 && Truthy(_t313) ? _t313 : ((V)(1D))))) * ToNum((spd_293 is var _t314 && Truthy(_t314) ? _t314 : ((V)(0D))))) * (1D + (0.6 * ToNum(rk_295))))))));
 if (LtN(w_291, 0.002)) {
 return NewObj(2).Put("v", ((V)(1D))).Put("fx", V.Null).V;
 }
 p_299 = Get(st_289, "ph");
 o_300 = NewObj(0).V;
-m_301 = (Invoke(g_297, "f", p_299, A_298, o_300, P_296) is var _t315 && Truthy(_t315) ? _t315 : NewObj(0).V);
-sr_302 = ((V)(((ToNum((spin_294 is var _t316 && Truthy(_t316) ? _t316 : ((V)(0D)))) * ToNum(PI_9)) / 180D)));
-sd_303 = ((V)((0.45 + (0.55 * ToNum(Call(ab_12, V.Undef, Call(C_11, V.Undef, sr_302)))))));
+m_301 = (Invoke(g_297, "f", p_299, ((V)(A_298)), o_300, P_296) is var _t315 && Truthy(_t315) ? _t315 : NewObj(0).V);
+sr_302 = ((ToNum((spin_294 is var _t316 && Truthy(_t316) ? _t316 : ((V)(0D)))) * PI_9) / 180D);
+sd_303 = (0.45 + (0.55 * ToNum(Call(ab_12, V.Undef, Call(C_11, V.Undef, ((V)(sr_302)))))));
 if (Truthy(Get(o_300, "tilt"))) {
-OpSet(o_300, "tilt", 2, sd_303);
+OpSet(o_300, "tilt", 2, ((V)(sd_303)));
 }
 if (Truthy(Get(o_300, "x"))) {
-OpSet(o_300, "x", 2, sd_303);
+OpSet(o_300, "x", 2, ((V)(sd_303)));
 }
-Set(o_300, "tilt", Add((Get(o_300, "tilt") is var _t317 && Truthy(_t317) ? _t317 : ((V)(0D))), ((V)(((ToNum(Get(W_19, "DLS")) * ToNum((!Get(P_296, "dl").IsNullish ? Get(P_296, "dl") : Get(g_297, "dl")))) * ToNum(Call(S_10, V.Undef, sr_302)))))));
+Set(o_300, "tilt", Add((Get(o_300, "tilt") is var _t317 && Truthy(_t317) ? _t317 : ((V)(0D))), ((V)(((ToNum(Get(W_19, "DLS")) * ToNum((!Get(P_296, "dl").IsNullish ? Get(P_296, "dl") : Get(g_297, "dl")))) * ToNum(Call(S_10, V.Undef, ((V)(sr_302)))))))));
 if (Truthy(Get(P_296, "x"))) {
 {
 foreach (V _k318 in ForInKeys(Get(P_296, "x"))) {
@@ -390,7 +390,7 @@ add_331 = Fn((V _self281, int _argc334, V k_340, V v_341, V _a338, V _a339, V[] 
 SetK(o_300, k_340, Add((GetK(o_300, k_340) is var _t342 && Truthy(_t342) ? _t342 : ((V)(0D))), ((V)((ToNum(v_341) * ToNum(rk_295))))));
 return default;
 }, 2, "", true);
-Call(add_331, V.Undef, ((V)("tilt")), ((V)(((3.5 * ToNum(Get(W_19, "DLS"))) * ToNum(Call(S_10, V.Undef, sr_302))))));
+Call(add_331, V.Undef, ((V)("tilt")), ((V)(((3.5 * ToNum(Get(W_19, "DLS"))) * ToNum(Call(S_10, V.Undef, ((V)(sr_302))))))));
 Call(add_331, V.Undef, ((V)("pitch")), ((V)((-0.06))));
 Call(add_331, V.Undef, ((V)("open")), ((V)(0.32)));
 Call(add_331, V.Undef, ((V)("mw")), ((V)((-0.25))));

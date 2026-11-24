@@ -67,16 +67,16 @@ return q_34;
 return default;
 }, 0, "TL", false);
 whip_18 = Fn((V _self59, int _argc60, V t_66, V d_67, V _a64, V _a65, V[] _rest61) => {
-V ld_68 = default;
+double ld_68 = 0;
 V A_69 = default;
 V B_70 = default;
 V FT_71 = default;
 if (_self59.IsNullish) _self59 = GlobalV;
-ld_68 = ((V)((GtN(d_67, 0D) ? 1D : (-1D))));
-A_69 = Get(Call(S_14, V.Undef, ld_68), "arm");
-B_70 = Get(Call(S_14, V.Undef, ((V)((-ToNum(ld_68))))), "arm");
-FT_71 = Get(Call(S_14, V.Undef, ld_68), "foot");
-Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(t_66, "to", ((V)(75D)), NewObj(9).Put("lx", ((V)((0.9 * ToNum(d_67))))).Put("htilt", ((V)((3D * ToNum(d_67))))).Put("sq", ((V)((-0.03)))).PutK(A_69, ((V)(6D))).PutK(B_70, ((V)(6D))).Put("earL", ((V)((-3D)))).Put("earR", ((V)((-3D)))).Put("hap", ((V)(0.2))).Put("open", ((V)(0D))).V, ((V)("io"))), "to", ((V)(155D)), Call(o_16, V.Undef, NewObj(15).Put("sq", ((V)(0.14))).Put("spin", ((V)(((-32D) * ToNum(d_67))))).Put("turn", ((V)(((-0.12) * ToNum(d_67))))).Put("hyaw", ((V)((0.55 * ToNum(d_67))))).Put("tilt", ((V)(((-3D) * ToNum(d_67))))).Put("lean", ((V)(((-1D) * ToNum(d_67))))).Put("htilt", ((V)((7D * ToNum(d_67))))).Put("lx", d_67).PutK(B_70, ((V)(70D))).PutK(A_69, ((V)((-6D)))).Put("close", ((V)(0.2))).Put("earL", ((V)(10D))).Put("earR", ((V)(10D))).Put("wag", ((V)((14D * ToNum(d_67))))).Put("hap", ((V)(0.35))).V, Call(hand_15, V.Undef, ld_68, ((V)(7D)), ((V)((-2D))), ((V)(5D)))), ((V)("o"))), "to", ((V)(100D)), NewObj(4).Put("sq", ((V)(0.16))).Put("spin", ((V)(((-36D) * ToNum(d_67))))).Put("htilt", ((V)((8D * ToNum(d_67))))).PutK(B_70, ((V)(76D))).V, ((V)("io"))), "to", ((V)(50D)), Call(o_16, V.Undef, NewObj(15).Put("spin", ((V)((40D * ToNum(d_67))))).Put("sblur", ((V)(0.5))).Put("sq", ((V)((-0.1)))).Put("turn", ((V)(0D))).Put("hyaw", ((V)((0.35 * ToNum(d_67))))).Put("tilt", ((V)((4D * ToNum(d_67))))).Put("lean", ((V)((0.6 * ToNum(d_67))))).Put("htilt", ((V)((10D * ToNum(d_67))))).Put("lx", ((V)((0.6 * ToNum(d_67))))).PutK(B_70, ((V)(125D))).PutK(A_69, ((V)(30D))).Put("close", ((V)(0D))).Put("earL", ((V)((-8D)))).Put("earR", ((V)((-8D)))).PutK(FT_71, ((V)(8D))).V, Call(hand_15, V.Undef, ld_68, ((V)(0D)), ((V)(2D)), ((V)(3D))), Call(hand_15, V.Undef, ((V)((-ToNum(ld_68)))), ((V)(0D)), ((V)((-4D))), ((V)(3D)))), ((V)("l"))), "to", ((V)(180D)), NewObj(7).Put("spin", ((V)((378D * ToNum(d_67))))).Put("sq", ((V)((-0.12)))).PutK(B_70, ((V)(128D))).PutK(A_69, ((V)(32D))).Put("earL", ((V)((-12D)))).Put("earR", ((V)((-12D)))).PutK(FT_71, ((V)(9D))).V, ((V)("l"))), "to", ((V)(200D)), Call(o_16, V.Undef, NewObj(17).Put("spin", ((V)((360D * ToNum(d_67))))).Put("sblur", ((V)(0D))).Put("sq", ((V)(0.12))).PutK(FT_71, ((V)(0D))).Put("hyaw", ((V)(((-0.12) * ToNum(d_67))))).Put("tilt", ((V)(((-2D) * ToNum(d_67))))).Put("lean", ((V)(0D))).Put("htilt", ((V)(((-3D) * ToNum(d_67))))).Put("lx", ((V)(0D))).PutK(A_69, ((V)(115D))).PutK(B_70, ((V)(40D))).Put("earL", ((V)(12D))).Put("earR", ((V)(12D))).Put("wag", ((V)(((-18D) * ToNum(d_67))))).Put("hap", ((V)(1D))).Put("smile", ((V)(1D))).Put("open", ((V)(0.3))).V, Call(hand_15, V.Undef, ld_68, ((V)(0D)), ((V)(0D)), ((V)(0D))), Call(hand_15, V.Undef, ((V)((-ToNum(ld_68)))), ((V)(0D)), ((V)(0D)), ((V)(0D)))), ((V)("o"))), "to", ((V)(1D)), NewObj(1).Put("spin", ((V)(0D))).V, ((V)("l")));
+ld_68 = (GtN(d_67, 0D) ? 1D : (-1D));
+A_69 = Get(Call(S_14, V.Undef, ((V)(ld_68))), "arm");
+B_70 = Get(Call(S_14, V.Undef, ((V)((-ld_68)))), "arm");
+FT_71 = Get(Call(S_14, V.Undef, ((V)(ld_68))), "foot");
+Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(t_66, "to", ((V)(75D)), NewObj(9).Put("lx", ((V)((0.9 * ToNum(d_67))))).Put("htilt", ((V)((3D * ToNum(d_67))))).Put("sq", ((V)((-0.03)))).PutK(A_69, ((V)(6D))).PutK(B_70, ((V)(6D))).Put("earL", ((V)((-3D)))).Put("earR", ((V)((-3D)))).Put("hap", ((V)(0.2))).Put("open", ((V)(0D))).V, ((V)("io"))), "to", ((V)(155D)), Call(o_16, V.Undef, NewObj(15).Put("sq", ((V)(0.14))).Put("spin", ((V)(((-32D) * ToNum(d_67))))).Put("turn", ((V)(((-0.12) * ToNum(d_67))))).Put("hyaw", ((V)((0.55 * ToNum(d_67))))).Put("tilt", ((V)(((-3D) * ToNum(d_67))))).Put("lean", ((V)(((-1D) * ToNum(d_67))))).Put("htilt", ((V)((7D * ToNum(d_67))))).Put("lx", d_67).PutK(B_70, ((V)(70D))).PutK(A_69, ((V)((-6D)))).Put("close", ((V)(0.2))).Put("earL", ((V)(10D))).Put("earR", ((V)(10D))).Put("wag", ((V)((14D * ToNum(d_67))))).Put("hap", ((V)(0.35))).V, Call(hand_15, V.Undef, ((V)(ld_68)), ((V)(7D)), ((V)((-2D))), ((V)(5D)))), ((V)("o"))), "to", ((V)(100D)), NewObj(4).Put("sq", ((V)(0.16))).Put("spin", ((V)(((-36D) * ToNum(d_67))))).Put("htilt", ((V)((8D * ToNum(d_67))))).PutK(B_70, ((V)(76D))).V, ((V)("io"))), "to", ((V)(50D)), Call(o_16, V.Undef, NewObj(15).Put("spin", ((V)((40D * ToNum(d_67))))).Put("sblur", ((V)(0.5))).Put("sq", ((V)((-0.1)))).Put("turn", ((V)(0D))).Put("hyaw", ((V)((0.35 * ToNum(d_67))))).Put("tilt", ((V)((4D * ToNum(d_67))))).Put("lean", ((V)((0.6 * ToNum(d_67))))).Put("htilt", ((V)((10D * ToNum(d_67))))).Put("lx", ((V)((0.6 * ToNum(d_67))))).PutK(B_70, ((V)(125D))).PutK(A_69, ((V)(30D))).Put("close", ((V)(0D))).Put("earL", ((V)((-8D)))).Put("earR", ((V)((-8D)))).PutK(FT_71, ((V)(8D))).V, Call(hand_15, V.Undef, ((V)(ld_68)), ((V)(0D)), ((V)(2D)), ((V)(3D))), Call(hand_15, V.Undef, ((V)((-ld_68))), ((V)(0D)), ((V)((-4D))), ((V)(3D)))), ((V)("l"))), "to", ((V)(180D)), NewObj(7).Put("spin", ((V)((378D * ToNum(d_67))))).Put("sq", ((V)((-0.12)))).PutK(B_70, ((V)(128D))).PutK(A_69, ((V)(32D))).Put("earL", ((V)((-12D)))).Put("earR", ((V)((-12D)))).PutK(FT_71, ((V)(9D))).V, ((V)("l"))), "to", ((V)(200D)), Call(o_16, V.Undef, NewObj(17).Put("spin", ((V)((360D * ToNum(d_67))))).Put("sblur", ((V)(0D))).Put("sq", ((V)(0.12))).PutK(FT_71, ((V)(0D))).Put("hyaw", ((V)(((-0.12) * ToNum(d_67))))).Put("tilt", ((V)(((-2D) * ToNum(d_67))))).Put("lean", ((V)(0D))).Put("htilt", ((V)(((-3D) * ToNum(d_67))))).Put("lx", ((V)(0D))).PutK(A_69, ((V)(115D))).PutK(B_70, ((V)(40D))).Put("earL", ((V)(12D))).Put("earR", ((V)(12D))).Put("wag", ((V)(((-18D) * ToNum(d_67))))).Put("hap", ((V)(1D))).Put("smile", ((V)(1D))).Put("open", ((V)(0.3))).V, Call(hand_15, V.Undef, ((V)(ld_68)), ((V)(0D)), ((V)(0D)), ((V)(0D))), Call(hand_15, V.Undef, ((V)((-ld_68))), ((V)(0D)), ((V)(0D)), ((V)(0D)))), ((V)("o"))), "to", ((V)(1D)), NewObj(1).Put("spin", ((V)(0D))).V, ((V)("l")));
 return t_66;
 return default;
 }, 2, "whip", false);
@@ -90,22 +90,22 @@ return Arr();
 W_80 = Arr();
 cur_81 = V.Null;
 {
-V i_82 = default;
-i_82 = ((V)(1D));
+double i_82 = 0;
+i_82 = 1D;
 while (true) {
-if (!(Lt(i_82, Get(K_79, "length")))) break;
+if (!(Lt(((V)(i_82)), Get(K_79, "length")))) break;
 V a_84 = default;
 V b_85 = default;
-V dv_86 = default;
-V dt_87 = default;
-a_84 = GetIdx(K_79, (ToNum(i_82) - 1D));
-b_85 = GetK(K_79, i_82);
-dv_86 = ((V)((ToNum(GetIdx(b_85, 1D)) - ToNum(GetIdx(a_84, 1D)))));
-dt_87 = ((V)((ToNum(GetIdx(b_85, 0D)) - ToNum(GetIdx(a_84, 0D)))));
-if ((LeN(dt_87, 2D) && (System.Math.Abs(ToNum(dv_86)) >= 90D))) {
+double dv_86 = 0;
+double dt_87 = 0;
+a_84 = GetIdx(K_79, (i_82 - 1D));
+b_85 = GetIdx(K_79, i_82);
+dv_86 = (ToNum(GetIdx(b_85, 1D)) - ToNum(GetIdx(a_84, 1D)));
+dt_87 = (ToNum(GetIdx(b_85, 0D)) - ToNum(GetIdx(a_84, 0D)));
+if (((dt_87 <= 2D) && (System.Math.Abs(dv_86) >= 90D))) {
 goto _cont83;
 }
-if ((System.Math.Abs(ToNum(dv_86)) < 0.01)) {
+if ((System.Math.Abs(dv_86) < 0.01)) {
 if (Truthy((cur_81 is var _t88 && !Truthy(_t88) ? _t88 : (((ToNum(GetIdx(a_84, 0D)) - ToNum(Get(cur_81, "t1"))) > 0D) ? V.True : V.False)))) {
 Invoke(W_80, "push", cur_81);
 cur_81 = V.Null;
@@ -114,15 +114,15 @@ goto _cont83;
 }
 if (Truthy((cur_81 is var _t89 && !Truthy(_t89) ? _t89 : (((ToNum(GetIdx(a_84, 0D)) - ToNum(Get(cur_81, "t1"))) <= 60D) ? V.True : V.False)))) {
 Set(cur_81, "t1", GetIdx(b_85, 0D));
-OpSet(cur_81, "net", 0, dv_86);
+OpSet(cur_81, "net", 0, ((V)(dv_86)));
 } else {
 if (Truthy(cur_81)) {
 Invoke(W_80, "push", cur_81);
 }
-cur_81 = NewObj(3).Put("t0", GetIdx(a_84, 0D)).Put("t1", GetIdx(b_85, 0D)).Put("net", dv_86).V;
+cur_81 = NewObj(3).Put("t0", GetIdx(a_84, 0D)).Put("t1", GetIdx(b_85, 0D)).Put("net", ((V)(dv_86))).V;
 }
 _cont83: ;
-PostInc(ref i_82, 1D);
+i_82++;
 }
 }
 if (Truthy(cur_81)) {
@@ -150,7 +150,7 @@ V tl_120 = default;
 V Wc_121 = default;
 V Wk_122 = default;
 V Wt_123 = default;
-V dl_124 = default;
+double dl_124 = 0;
 V M_125 = default;
 V k_126 = default;
 V chans_127 = default;
@@ -174,13 +174,13 @@ Wc_121 = Get(tl_120, "t");
 Wk_122 = Get(tl_120, "k");
 Wt_123 = Add(Wc_121, ((V)(300D)));
 {
-V dl_148 = default;
-dl_148 = ((V)((ToNum(Wt_123) - (ToNum(t1_117) - ToNum(t0_116)))));
-Wt_123 = Add(Wt_123, ((V)(((System.Math.Ceiling((ToNum(dl_148) / 250D)) * 250D) - ToNum(dl_148)))));
+double dl_148 = 0;
+dl_148 = (ToNum(Wt_123) - (ToNum(t1_117) - ToNum(t0_116)));
+Wt_123 = Add(Wt_123, ((V)(((System.Math.Ceiling((dl_148 / 250D)) * 250D) - dl_148))));
 }
-dl_124 = ((V)((ToNum(Wt_123) - (ToNum(t1_117) - ToNum(t0_116)))));
+dl_124 = (ToNum(Wt_123) - (ToNum(t1_117) - ToNum(t0_116)));
 M_125 = Fn((V _self106, int _argc149, V t_155, V _a152, V _a153, V _a154, V[] _rest150) => {
-return (Lt(t_155, t0_116) ? t_155 : (Le(t_155, t1_117) ? Add(t0_116, ((V)((((ToNum(t_155) - ToNum(t0_116)) * ToNum(Wt_123)) / Max(1D, (ToNum(t1_117) - ToNum(t0_116))))))) : Add(t_155, dl_124)));
+return (Lt(t_155, t0_116) ? t_155 : (Le(t_155, t1_117) ? Add(t0_116, ((V)((((ToNum(t_155) - ToNum(t0_116)) * ToNum(Wt_123)) / Max(1D, (ToNum(t1_117) - ToNum(t0_116))))))) : Add(t_155, ((V)(dl_124)))));
 }, 1, "", true);
 k_126 = NewObj(0).V;
 chans_127 = New(G("Set"), new ArrBuilder().Spread(Object_keys(Get(st_113, "k"))).Spread(Object_keys(Wk_122)).Spread(Invoke(Object_keys(NEUTRAL_19), "filter", Fn((V _self106, int _argc156, V c_162, V _a159, V _a160, V _a161, V[] _rest157) => {
@@ -230,12 +230,12 @@ Invoke(N_175, "push", Arr(Add(t0_116, Wt_123), v1_174, ((V)("io"))));
 if (Truthy(K_170)) {
 Invoke(K_170, "forEach", Fn((V _self106, int _argc191, V q_197, V _a194, V _a195, V _a196, V[] _rest192) => {
 if (Gt(GetIdx(q_197, 0D), t1_117)) {
-Invoke(N_175, "push", Arr(Add(GetIdx(q_197, 0D), dl_124), GetIdx(q_197, 1D), GetIdx(q_197, 2D)));
+Invoke(N_175, "push", Arr(Add(GetIdx(q_197, 0D), ((V)(dl_124))), GetIdx(q_197, 1D), GetIdx(q_197, 2D)));
 }
 return default;
 }, 1, "", true));
 } else {
-Invoke(N_175, "push", Arr(Add(L_118, dl_124), Call(rv_13, V.Undef, c_169), ((V)("l"))));
+Invoke(N_175, "push", Arr(Add(L_118, ((V)(dl_124))), Call(rv_13, V.Undef, c_169), ((V)("l"))));
 }
 SetK(k_126, c_169, N_175);
 } else {
@@ -247,9 +247,9 @@ return default;
 }, 1, "", true));
 @out_128 = Object_assign(NewObj(0).V, st_113, NewObj(1).Put("k", k_126).V);
 if (Truthy(Get(st_113, "loop"))) {
-Set(@out_128, "loop", Add(Get(st_113, "loop"), dl_124));
+Set(@out_128, "loop", Add(Get(st_113, "loop"), ((V)(dl_124))));
 } else {
-Set(@out_128, "dur", Add(Get(st_113, "dur"), dl_124));
+Set(@out_128, "dur", Add(Get(st_113, "dur"), ((V)(dl_124))));
 }
 if (Truthy(Get(st_113, "ev"))) {
 Set(@out_128, "ev", Invoke(Get(st_113, "ev"), "map", Fn((V _self106, int _argc205, V e_211, V _a208, V _a209, V _a210, V[] _rest206) => {
@@ -266,7 +266,7 @@ V f_219 = default;
 V Mi_220 = default;
 f_219 = Get(st_113, "fx");
 Mi_220 = Fn((V _self106, int _argc221, V t_227, V _a224, V _a225, V _a226, V[] _rest222) => {
-return (Lt(t_227, t0_116) ? t_227 : (Le(t_227, Add(t0_116, Wt_123)) ? Add(t0_116, ((V)((((ToNum(t_227) - ToNum(t0_116)) * (ToNum(t1_117) - ToNum(t0_116))) / ToNum(Wt_123))))) : ((V)((ToNum(t_227) - ToNum(dl_124))))));
+return (Lt(t_227, t0_116) ? t_227 : (Le(t_227, Add(t0_116, Wt_123)) ? Add(t0_116, ((V)((((ToNum(t_227) - ToNum(t0_116)) * (ToNum(t1_117) - ToNum(t0_116))) / ToNum(Wt_123))))) : ((V)((ToNum(t_227) - dl_124)))));
 }, 1, "", true);
 Set(@out_128, "fx", Fn((V _self106, int _argc228, V I_234, V tt_235, V _a232, V _a233, V[] _rest229) => {
 return Call(f_219, V.Undef, I_234, Call(Mi_220, V.Undef, tt_235));
@@ -293,12 +293,12 @@ return st_243;
 }
 @out_247 = st_243;
 {
-V i_252 = default;
-i_252 = ((V)((ToNum(Get(W_246, "length")) - 1D)));
+double i_252 = 0;
+i_252 = (ToNum(Get(W_246, "length")) - 1D);
 while (true) {
-if (!(GeN(i_252, 0D))) break;
-@out_247 = Call(splice_23, V.Undef, @out_247, GetK(W_246, i_252), Call(dirsFor_22, V.Undef, mode_245, i_252));
-PostInc(ref i_252, -1D);
+if (!((i_252 >= 0D))) break;
+@out_247 = Call(splice_23, V.Undef, @out_247, GetIdx(W_246, i_252), Call(dirsFor_22, V.Undef, mode_245, ((V)(i_252))));
+i_252--;
 }
 }
 Set(@out_247, "__whip", Get(W_246, "length"));

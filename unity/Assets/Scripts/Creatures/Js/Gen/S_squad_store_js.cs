@@ -32,7 +32,7 @@ V FIN_26 = default;
 V STAGES_27 = default;
 V STAGE_FX_28 = default;
 V CHESTS_29 = default;
-V SET_BONUS_30 = default;
+double SET_BONUS_30 = 0;
 V SEED_31 = default;
 V S_32 = default;
 V pend_33 = default;
@@ -195,7 +195,7 @@ FIN_26 = Arr(NewObj(4).Put("k", ((V)("n"))).Put("name", ((V)("Normal"))).Put("od
 STAGES_27 = Arr(NewObj(3).Put("name", ((V)("Baby"))).Put("xp", ((V)(0D))).Put("stars", ((V)(0D))).V, NewObj(3).Put("name", ((V)("Grown"))).Put("xp", ((V)(100D))).Put("stars", ((V)(10D))).V, NewObj(3).Put("name", ((V)("Best Friend"))).Put("xp", ((V)(300D))).Put("stars", ((V)(40D))).V);
 STAGE_FX_28 = Arr(NewObj(3).Put("sx", ((V)(0.8))).Put("sy", ((V)(0.72))).Put("crown", (false ? V.True : V.False)).V, NewObj(3).Put("sx", ((V)(1D))).Put("sy", ((V)(1D))).Put("crown", (false ? V.True : V.False)).V, NewObj(3).Put("sx", ((V)(1.04))).Put("sy", ((V)(1.04))).Put("crown", (true ? V.True : V.False)).V);
 CHESTS_29 = NewObj(6).Put("basic", NewObj(1).Put("odds", Arr(((V)(72D)), ((V)(22D)), ((V)(5D)), ((V)(1D)))).V).Put("silver", NewObj(1).Put("odds", Arr(((V)(55D)), ((V)(33D)), ((V)(9.5)), ((V)(2.5)))).V).Put("gold", NewObj(2).Put("odds", Arr(((V)(30D)), ((V)(45D)), ((V)(20D)), ((V)(5D)))).Put("gp", ((V)(1D))).V).Put("crystal", NewObj(2).Put("odds", Arr(((V)(0D)), ((V)(50D)), ((V)(38D)), ((V)(12D)))).Put("gp", ((V)(1D))).V).Put("rainbow", NewObj(3).Put("odds", Arr(((V)(0D)), ((V)(0D)), ((V)(70D)), ((V)(30D)))).Put("gp", ((V)(1D))).Put("fx", ((V)(3D))).V).Put("season", NewObj(2).Put("odds", Arr(((V)(50D)), ((V)(30D)), ((V)(15D)), ((V)(5D)))).Put("season", ((V)(1D))).V).V;
-SET_BONUS_30 = ((V)(50D));
+SET_BONUS_30 = 50D;
 SEED_31 = Fn((V _self1, int _argc215, V _a217, V _a218, V _a219, V _a220, V[] _rest216) => {
 return NewObj(7).Put("v", ((V)(1D))).Put("fp11", ((V)(1D))).Put("gems", ((V)(600D))).Put("stars", ((V)(180D))).Put("pity", ((V)(18D))).Put("epic", ((V)(4D))).Put("col", Object_fromEntries(Invoke(Arr(Arr(((V)(0D)), NewObj(4).Put("f", NewObj(2).Put("n", ((V)(1D))).Put("s", ((V)(1D))).V).Put("eq", ((V)("s"))).Put("st", ((V)(1D))).Put("xp", ((V)(160D))).V), Arr(((V)(1D)), NewObj(4).Put("f", NewObj(1).Put("n", ((V)(1D))).V).Put("eq", ((V)("n"))).Put("st", ((V)(2D))).Put("xp", ((V)(320D))).V), Arr(((V)(2D)), NewObj(4).Put("f", NewObj(2).Put("n", ((V)(1D))).Put("r", ((V)(1D))).V).Put("eq", ((V)("r"))).Put("st", ((V)(0D))).Put("xp", ((V)(40D))).V), Arr(((V)(3D)), NewObj(4).Put("f", NewObj(1).Put("n", ((V)(1D))).V).Put("eq", ((V)("n"))).Put("st", ((V)(0D))).Put("xp", ((V)(70D))).V)), "concat", Invoke(Arr(((V)(4D)), ((V)(5D)), ((V)(7D)), ((V)(14D)), ((V)(28D)), ((V)(6D)), ((V)(10D)), ((V)(11D)), ((V)(8D)), ((V)(12D)), ((V)(22D)), ((V)(23D)), ((V)(9D)), ((V)(13D))), "map", Fn((V _self1, int _argc221, V id_227, V _a224, V _a225, V _a226, V[] _rest222) => {
 return Arr(id_227, NewObj(4).Put("f", NewObj(1).Put("n", ((V)(1D))).V).Put("eq", ((V)("n"))).Put("st", ((V)(0D))).Put("xp", ((V)(((ToNum(id_227) * 37D) % 90D)))).V);
@@ -206,7 +206,7 @@ pend_33 = (false ? V.True : V.False);
 prof_37 = Fn((V _self1, int _argc228, V _a230, V _a231, V _a232, V _a233, V[] _rest229) => {
 return (Truthy(Get(G("window"), "SquishProfile")) ? Invoke(Get(G("window"), "SquishProfile"), "get") : V.Null);
 }, 0, "", true);
-API_38 = NewObj(39).Put("RAR", RAR_11).Put("SETS", SETS_12).Put("SEASON", SEASON_15).Put("HEROES", HEROES_13).Put("ELEMENTAL", ELEMENTAL_14).Put("ROSTER", ROSTER_22).Put("STAR_PRICE", STAR_PRICE_23).Put("COIN_PRICE", COIN_PRICE_24).Put("DUPE", DUPE_25).Put("FIN", FIN_26).Put("STAGES", STAGES_27).Put("STAGE_FX", STAGE_FX_28).Put("CHESTS", CHESTS_29).Put("SET_BONUS", SET_BONUS_30).Put("stageOf", Fn((V _self234, int _argc235, V id_241, V _a238, V _a239, V _a240, V[] _rest236) => {
+API_38 = NewObj(39).Put("RAR", RAR_11).Put("SETS", SETS_12).Put("SEASON", SEASON_15).Put("HEROES", HEROES_13).Put("ELEMENTAL", ELEMENTAL_14).Put("ROSTER", ROSTER_22).Put("STAR_PRICE", STAR_PRICE_23).Put("COIN_PRICE", COIN_PRICE_24).Put("DUPE", DUPE_25).Put("FIN", FIN_26).Put("STAGES", STAGES_27).Put("STAGE_FX", STAGE_FX_28).Put("CHESTS", CHESTS_29).Put("SET_BONUS", ((V)(SET_BONUS_30))).Put("stageOf", Fn((V _self234, int _argc235, V id_241, V _a238, V _a239, V _a240, V[] _rest236) => {
 V e_242 = default;
 if (_self234.IsNullish) _self234 = GlobalV;
 e_242 = GetK(Get(Call(load_35, V.Undef), "col"), id_241);
@@ -373,7 +373,7 @@ return (SEq(Get(x_434, "key"), Get(c_423, "set")) ? V.True : V.False);
 }, 1, "", true));
 if (Truthy((((st_427 is var _t435 && !Truthy(_t435) ? _t435 : (!Get(st_427, "reward").IsNullish ? V.True : V.False)) is var _t436 && !Truthy(_t436) ? _t436 : (!(Truthy(GetK(Get(s_422, "col"), Get(st_427, "reward")))) ? V.True : V.False)) is var _t437 && !Truthy(_t437) ? _t437 : Invoke(Get(st_427, "ids"), "every", Get(API_38, "owns"))))) {
 SetK(Get(s_422, "col"), Get(st_427, "reward"), NewObj(4).Put("f", NewObj(1).Put("n", ((V)(1D))).V).Put("eq", ((V)("n"))).Put("st", ((V)(0D))).Put("xp", ((V)(0D))).V);
-OpSet(s_422, "stars", 0, SET_BONUS_30);
+OpSet(s_422, "stars", 0, ((V)(SET_BONUS_30)));
 Set(@out_425, "reward", Get(st_427, "reward"));
 }
 }
@@ -486,14 +486,14 @@ return default;
 V T_543 = default;
 V s_544 = default;
 V odds_545 = default;
-V x_546 = default;
-V r_547 = default;
+double x_546 = 0;
+double r_547 = 0;
 V pool_548 = default;
 V w_549 = default;
-V y_550 = default;
-V k_551 = default;
+double y_550 = 0;
+double k_551 = 0;
 V m_552 = default;
-V fr_553 = default;
+double fr_553 = 0;
 V f_554 = default;
 if (_self535.IsNullish) _self535 = GlobalV;
 T_543 = (GetK(CHESTS_29, tier_542) is var _t555 && Truthy(_t555) ? _t555 : Get(CHESTS_29, "basic"));
@@ -503,38 +503,38 @@ Set(s_544, "pity", Add((Get(s_544, "pity") is var _t556 && Truthy(_t556) ? _t556
 }
 Set(s_544, "epic", Add((Get(s_544, "epic") is var _t557 && Truthy(_t557) ? _t557 : ((V)(0D))), ((V)(1D))));
 odds_545 = Get(T_543, "odds");
-x_546 = ((V)((ToNum(Invoke(G("Math"), "random")) * ToNum(Invoke(odds_545, "reduce", Fn((V _self535, int _argc558, V a_564, V b_565, V _a562, V _a563, V[] _rest559) => {
+x_546 = (ToNum(Invoke(G("Math"), "random")) * ToNum(Invoke(odds_545, "reduce", Fn((V _self535, int _argc558, V a_564, V b_565, V _a562, V _a563, V[] _rest559) => {
 return Add(a_564, b_565);
-}, 2, "", true), ((V)(0D)))))));
-r_547 = ((V)(0D));
+}, 2, "", true), ((V)(0D)))));
+r_547 = 0D;
 {
 while (true) {
-if (!(LtN(r_547, 3D))) break;
-if (Lt(x_546, GetK(odds_545, r_547))) {
+if (!((r_547 < 3D))) break;
+if (Lt(((V)(x_546)), GetIdx(odds_545, r_547))) {
 break;
 }
-x_546 = ((V)((ToNum(x_546) - ToNum(GetK(odds_545, r_547)))));
-PostInc(ref r_547, 1D);
+x_546 = (x_546 - ToNum(GetIdx(odds_545, r_547)));
+r_547++;
 }
 }
 if (Truthy((Get(T_543, "gp") is var _t567 && !Truthy(_t567) ? _t567 : (GeN(Get(s_544, "pity"), 30D) ? V.True : V.False)))) {
-r_547 = ((V)(3D));
+r_547 = 3D;
 }
-if ((LtN(r_547, 2D) && GeN(Get(s_544, "epic"), 10D))) {
-r_547 = ((V)(2D));
+if (((r_547 < 2D) && GeN(Get(s_544, "epic"), 10D))) {
+r_547 = 2D;
 }
-if (SEqN(r_547, 3D)) {
+if ((r_547 == 3D)) {
 Set(s_544, "pity", ((V)(0D)));
 }
-if (GeN(r_547, 2D)) {
+if ((r_547 >= 2D)) {
 Set(s_544, "epic", ((V)(0D)));
 }
 pool_548 = Invoke(ROSTER_22, "filter", Fn((V _self535, int _argc568, V c_574, V _a571, V _a572, V _a573, V[] _rest569) => {
-return (((Truthy(Get(T_543, "season")) ? (Get(c_574, "season") is var _t575 && !Truthy(_t575) ? _t575 : (!(Truthy(Get(c_574, "pass"))) ? V.True : V.False)) : Get(c_574, "base")) is var _t576 && !Truthy(_t576) ? _t576 : (SEq(Get(c_574, "rar"), r_547) ? V.True : V.False)) is var _t577 && !Truthy(_t577) ? _t577 : Get(c_574, "art"));
+return (((Truthy(Get(T_543, "season")) ? (Get(c_574, "season") is var _t575 && !Truthy(_t575) ? _t575 : (!(Truthy(Get(c_574, "pass"))) ? V.True : V.False)) : Get(c_574, "base")) is var _t576 && !Truthy(_t576) ? _t576 : (SEqN(Get(c_574, "rar"), r_547) ? V.True : V.False)) is var _t577 && !Truthy(_t577) ? _t577 : Get(c_574, "art"));
 }, 1, "", true));
 if (!(Truthy(Get(pool_548, "length")))) {
 pool_548 = Invoke(Invoke(Invoke(ROSTER_22, "filter", Fn((V _self535, int _argc595, V c_601, V _a598, V _a599, V _a600, V[] _rest596) => {
-return ((Get(c_601, "base") is var _t602 && !Truthy(_t602) ? _t602 : Get(c_601, "art")) is var _t603 && !Truthy(_t603) ? _t603 : (Le(Get(c_601, "rar"), r_547) ? V.True : V.False));
+return ((Get(c_601, "base") is var _t602 && !Truthy(_t602) ? _t602 : Get(c_601, "art")) is var _t603 && !Truthy(_t603) ? _t603 : (LeN(Get(c_601, "rar"), r_547) ? V.True : V.False));
 }, 1, "", true)), "sort", Fn((V _self535, int _argc587, V a_593, V b_594, V _a591, V _a592, V[] _rest588) => {
 return ((V)((ToNum(Get(b_594, "rar")) - ToNum(Get(a_593, "rar")))));
 }, 2, "", true)), "filter", Fn((V _self535, int _argc578, V c_584, V i_585, V a_586, V _a583, V[] _rest579) => {
@@ -544,25 +544,25 @@ return (SEq(Get(c_584, "rar"), Get(GetIdx(a_586, 0D), "rar")) ? V.True : V.False
 w_549 = Invoke(pool_548, "map", Fn((V _self535, int _argc604, V c_610, V _a607, V _a608, V _a609, V[] _rest605) => {
 return ((V)((Truthy(Invoke(API_38, "owns", Get(c_610, "id"))) ? 1D : 3D)));
 }, 1, "", true));
-y_550 = ((V)((ToNum(Invoke(G("Math"), "random")) * ToNum(Invoke(w_549, "reduce", Fn((V _self535, int _argc611, V a_617, V b_618, V _a615, V _a616, V[] _rest612) => {
+y_550 = (ToNum(Invoke(G("Math"), "random")) * ToNum(Invoke(w_549, "reduce", Fn((V _self535, int _argc611, V a_617, V b_618, V _a615, V _a616, V[] _rest612) => {
 return Add(a_617, b_618);
-}, 2, "", true), ((V)(0D)))))));
-k_551 = ((V)(0D));
+}, 2, "", true), ((V)(0D)))));
+k_551 = 0D;
 {
 while (true) {
-if (!(LtN(k_551, (ToNum(Get(pool_548, "length")) - 1D)))) break;
-if (Lt(y_550, GetK(w_549, k_551))) {
+if (!((k_551 < (ToNum(Get(pool_548, "length")) - 1D)))) break;
+if (Lt(((V)(y_550)), GetIdx(w_549, k_551))) {
 break;
 }
-y_550 = ((V)((ToNum(y_550) - ToNum(GetK(w_549, k_551)))));
-PostInc(ref k_551, 1D);
+y_550 = (y_550 - ToNum(GetIdx(w_549, k_551)));
+k_551++;
 }
 }
 m_552 = (Get(T_543, "fx") is var _t620 && Truthy(_t620) ? _t620 : ((V)(1D)));
-fr_553 = ((V)((ToNum(Invoke(G("Math"), "random")) * 100D)));
-f_554 = ((V)((LtN(fr_553, (0.1 * ToNum(m_552))) ? "g" : (LtN(fr_553, (0.6 * ToNum(m_552))) ? "r" : (LtN(fr_553, (2.6 * ToNum(m_552))) ? "s" : "n")))));
+fr_553 = (ToNum(Invoke(G("Math"), "random")) * 100D);
+f_554 = ((V)(((fr_553 < (0.1 * ToNum(m_552))) ? "g" : ((fr_553 < (0.6 * ToNum(m_552))) ? "r" : ((fr_553 < (2.6 * ToNum(m_552))) ? "s" : "n")))));
 Call(save_36, V.Undef, (true ? V.True : V.False));
-return NewObj(3).Put("id", Get(GetK(pool_548, k_551), "id")).Put("rar", r_547).Put("f", f_554).V;
+return NewObj(3).Put("id", Get(GetIdx(pool_548, k_551), "id")).Put("rar", ((V)(r_547))).Put("f", f_554).V;
 return default;
 }, 1, "roll", false)).Put("reset", Fn((V _self621, int _argc622, V _a624, V _a625, V _a626, V _a627, V[] _rest623) => {
 if (_self621.IsNullish) _self621 = GlobalV;

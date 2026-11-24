@@ -207,7 +207,7 @@ Set(W_305, "__frRoll", ((V)(1D)));
 st0_326 = Get(W_305, "step");
 Set(W_305, "step", Fn((V _self327, int _argc328, V key_334, V st_335, V E_336, V w_337, V[] _rest329) => {
 V r_342 = default;
-V dir_343 = default;
+double dir_343 = 0;
 V mv_344 = default;
 V dt_338 = default;
 V spd_339 = default;
@@ -221,21 +221,21 @@ r_342 = Invoke(st0_326, "apply", _self327, _arguments341);
 if ((!SEqS(key_334, "blueby") && !SEqS(key_334, "coco"))) {
 return r_342;
 }
-dir_343 = ((V)(FdLibm.Sin(((ToNum((spin_340 is var _t345 && Truthy(_t345) ? _t345 : ((V)(0D)))) * System.Math.PI) / 180D))));
+dir_343 = FdLibm.Sin(((ToNum((spin_340 is var _t345 && Truthy(_t345) ? _t345 : ((V)(0D)))) * System.Math.PI) / 180D));
 mv_344 = ((GtN((spd_339 is var _t346 && Truthy(_t346) ? _t346 : ((V)(0D))), 0D) && GtN(w_337, 0.3)) ? V.True : V.False);
 Set(st_335, "ra", (Get(st_335, "ra") is var _t347 && Truthy(_t347) ? _t347 : ((V)(0D))));
 Set(st_335, "rv", (Get(st_335, "rv") is var _t348 && Truthy(_t348) ? _t348 : ((V)(0D))));
 if (Truthy(mv_344)) {
-V tv_349 = default;
-tv_349 = ((V)((((300D * ToNum(spd_339)) * (Truthy(Get(st_335, "run")) ? 1.6 : 1D)) * ToNum(((System.Math.Abs(ToNum(dir_343)) < 0.3) ? ((V)((LtN(dir_343, 0D) ? (-0.3) : 0.3))) : dir_343)))));
-OpSet(st_335, "rv", 0, ((V)(((ToNum(tv_349) - ToNum(Get(st_335, "rv"))) * Min(1D, (ToNum(dt_338) * 6D))))));
+double tv_349 = 0;
+tv_349 = (((300D * ToNum(spd_339)) * (Truthy(Get(st_335, "run")) ? 1.6 : 1D)) * ((System.Math.Abs(dir_343) < 0.3) ? ((dir_343 < 0D) ? (-0.3) : 0.3) : dir_343));
+OpSet(st_335, "rv", 0, ((V)(((tv_349 - ToNum(Get(st_335, "rv"))) * Min(1D, (ToNum(dt_338) * 6D))))));
 OpSet(st_335, "ra", 0, ((V)((ToNum(Get(st_335, "rv")) * ToNum(dt_338)))));
 } else {
-V tg_350 = default;
-tg_350 = ((V)((Round((ToNum(Get(st_335, "ra")) / 360D)) * 360D)));
-OpSet(st_335, "rv", 0, ((V)(((((ToNum(tg_350) - ToNum(Get(st_335, "ra"))) * 60D) - (ToNum(Get(st_335, "rv")) * 7D)) * Min(ToNum(dt_338), 0.05)))));
+double tg_350 = 0;
+tg_350 = (Round((ToNum(Get(st_335, "ra")) / 360D)) * 360D);
+OpSet(st_335, "rv", 0, ((V)(((((tg_350 - ToNum(Get(st_335, "ra"))) * 60D) - (ToNum(Get(st_335, "rv")) * 7D)) * Min(ToNum(dt_338), 0.05)))));
 OpSet(st_335, "ra", 0, ((V)((ToNum(Get(st_335, "rv")) * Min(ToNum(dt_338), 0.05)))));
-if (((System.Math.Abs((ToNum(tg_350) - ToNum(Get(st_335, "ra")))) < 0.3) && (System.Math.Abs(ToNum(Get(st_335, "rv"))) < 2D))) {
+if (((System.Math.Abs((tg_350 - ToNum(Get(st_335, "ra")))) < 0.3) && (System.Math.Abs(ToNum(Get(st_335, "rv"))) < 2D))) {
 Set(st_335, "ra", ((V)(0D)));
 Set(st_335, "rv", ((V)(0D)));
 }

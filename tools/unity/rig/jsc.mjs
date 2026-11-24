@@ -14,7 +14,8 @@
 //     turn when a closure keeps it; var / function declarations hoisted; the top level the global object's
 //   - functions take (this, argc, a0..a3, rest): no array for a call of up to four arguments
 //   - numbers stay doubles and strings C# strings where the expression's type is plain (arithmetic, literals,
-//     concatenation), V otherwise; Math.* and a few built-ins called directly
+//     concatenation), V otherwise; a let / const that only ever holds numbers is a C# double; Math.* (fdlibm, as V8)
+//     and a few built-ins called directly; the stand-in's markup writer done natively (Creatures/Js/Dom.cs)
 //
 //   node tools/unity/rig/jsc.mjs            (after node webgame/build.mjs; writes Creatures/Js/Gen)
 //   node tools/unity/rig/jsc.mjs --test     (also the test scenarios, tools/unity/rig-test/scenarios.js, for rig-test)
@@ -111,6 +112,7 @@ class Compiler {
     let prog;
     traverse(ast, { Program(p) { prog = p; p.stop(); } });
     this.prog = prog;
+    this.typed = process.env.JSC_UNTYPED && (process.env.JSC_UNTYPED === '*' || process.env.JSC_UNTYPED.split(',').includes(this.name)) ? new Set() : this.inferNumbers(prog);
     this.strict = (prog.node.directives || []).some((d) => d.value.value === 'use strict');
     const body = [];
     // the top level: var / function declarations are the global object's (they are in a browser too)
@@ -149,7 +151,7 @@ ${body.join('\n')}
       if (b.kind === 'param' || (skip && skip.has(b))) continue;
       if (scope.path.isProgram()) continue;
       if (b.kind === 'local' && b.path.isFunctionExpression()) continue;   // a named function expression: its own
-      out.push(`V ${this.nameOf(b)} = default;`);
+      out.push(this.typed.has(b) ? `double ${this.nameOf(b)} = 0;` : `V ${this.nameOf(b)} = default;`);
     }
     return out;
   }
@@ -165,7 +167,70 @@ ${body.join('\n')}
     const b = path.scope.getBinding(name);
     if (!b || b.scope.path.isProgram()) return null;
     if (b.kind === 'local' && b.path.isFunctionExpression()) return { named: b, code: this.namedRef(b) };
-    return { code: this.nameOf(b), b };
+    return { code: this.nameOf(b), b, num: this.typed.has(b) };
+  }
+
+  // ------------------------------------------------------------------ numbers in doubles
+  // `let` / `const` bindings that only ever hold numbers (every value they get is an arithmetic result, a numeric
+  // literal, a Math call or another such binding) are C# doubles: no conversions, no V in between. Found by a
+  // fixpoint: assume all candidates, drop the ones a value can't be shown numeric for, until nothing changes.
+  inferNumbers(prog) {
+    const cand = new Set();
+    prog.traverse({
+      VariableDeclarator: (d) => {
+        const decl = d.parentPath;
+        if (decl.node.kind === 'var' || !d.get('id').isIdentifier() || !d.node.init) return;
+        if (decl.parentPath.isForInStatement() || decl.parentPath.isForOfStatement()) return;
+        const b = d.scope.getBinding(d.node.id.name);
+        if (!b || b.scope.path.isProgram() || b.path !== d) return;
+        if (b.constantViolations.some((v) => !(v.isUpdateExpression() || (v.isAssignmentExpression() && v.get('left').isIdentifier())))) return;
+        // a for-loop `let` a closure keeps (a fresh copy each turn: forStmt) stays a V
+        if (decl.parentPath.isForStatement() && decl.parentPath.node.init === decl.node) {
+          const fnp = decl.parentPath.getFunctionParent();
+          if (b.referencePaths.concat(b.constantViolations).some((r) => r.getFunctionParent() !== fnp)) return;
+        }
+        cand.add(b);
+      },
+    });
+    const isNum = (p) => {
+      const n = p.node;
+      switch (n.type) {
+        case 'NumericLiteral': return true;
+        case 'ParenthesizedExpression': return isNum(p.get('expression'));
+        case 'UnaryExpression': return n.operator === '-' || n.operator === '+' || n.operator === '~';
+        case 'UpdateExpression': return true;
+        case 'BinaryExpression':
+          if (n.operator === '+') return isNum(p.get('left')) && isNum(p.get('right'));
+          return ['-', '*', '/', '%', '**', '|', '&', '^', '<<', '>>', '>>>'].includes(n.operator);
+        case 'ConditionalExpression': return isNum(p.get('consequent')) && isNum(p.get('alternate'));
+        case 'SequenceExpression': { const e = p.get('expressions'); return isNum(e[e.length - 1]); }
+        case 'AssignmentExpression':
+          if (n.operator === '=') return isNum(p.get('right'));
+          if (n.operator === '+=') return isNum(p.get('left')) && isNum(p.get('right'));
+          return !['&&=', '||=', '??='].includes(n.operator);
+        case 'Identifier': {
+          if (n.name === 'NaN' || n.name === 'Infinity') return !p.scope.getBinding(n.name);
+          const b = p.scope.getBinding(n.name);
+          return !!b && cand.has(b);
+        }
+        case 'CallExpression': {
+          const c = p.get('callee');
+          if (c.isMemberExpression() && !c.node.computed && this.isGlobal(c.get('object'), 'Math') && MATH[c.node.property.name] && !p.node.arguments.some((a) => a.type === 'SpreadElement')) return true;
+          if (c.isIdentifier() && !c.scope.getBinding(c.node.name) && ['parseFloat', 'parseInt', 'Number'].includes(c.node.name)) return true;
+          return false;
+        }
+        case 'MemberExpression': return this.isGlobal(p.get('object'), 'Math') && !n.computed && ['PI', 'E', 'SQRT2', 'LN2', 'LN10', 'LOG2E', 'LOG10E', 'SQRT1_2'].includes(n.property.name);
+        default: return false;
+      }
+    };
+    for (let changed = true; changed;) {
+      changed = false;
+      for (const b of [...cand]) {
+        const ok = isNum(b.path.get('init')) && b.constantViolations.every((v) => v.isUpdateExpression() || (v.node.operator === '+=' ? isNum(v.get('right')) : v.node.operator === '=' ? isNum(v.get('right')) : true));
+        if (!ok) { cand.delete(b); changed = true; }
+      }
+    }
+    return cand;
   }
   namedRef(b) { return this.nameOf(b) + '.v'; }
 
@@ -274,7 +339,7 @@ ${body.join('\n')}
       }
       if (id.isIdentifier()) {
         const r = this.ref(d, id.node.name);
-        const val = this.v(d.get('init'));
+        const val = r && r.num ? this.n(d.get('init')) : this.v(d.get('init'));
         out.push(r ? `${r.code} = ${val};` : `GSet(${csStr(id.node.name)}, ${val});`);
       } else {
         const t = this.tmp();
@@ -288,7 +353,7 @@ ${body.join('\n')}
     const n = p.node;
     if (n.type === 'Identifier') {
       const r = this.ref(p, n.name);
-      return r ? `${r.code} = ${src};` : `GSet(${csStr(n.name)}, ${src});`;
+      return r ? `${r.code} = ${r.num ? `ToNum(${src})` : src};` : `GSet(${csStr(n.name)}, ${src});`;
     }
     if (n.type === 'MemberExpression') return this.setMember(p, src) + ';';
     if (n.type === 'AssignmentPattern') {
@@ -528,7 +593,7 @@ ${body.join('\n')}
   ident(p) {
     const name = p.node.name;
     const r = this.ref(p, name);
-    if (r) return { code: r.code, t: 'v' };
+    if (r) return { code: r.code, t: r.num ? 'n' : 'v' };
     if (name === 'arguments') {
       const f = [...this.fnStack].reverse().find((f) => !f.arrow);
       if (f && f.argsName) return { code: f.argsName, t: 'v' };
@@ -720,6 +785,7 @@ ${body.join('\n')}
     if (n.operator === '=') {
       if (left.isIdentifier()) {
         const r = this.ref(left, left.node.name);
+        if (r && r.num) return { code: `${r.code} = ${this.n(p.get('right'))}`, t: 'n', stmt: true };
         const val = this.v(p.get('right'));
         if (r) return { code: `${r.code} = ${val}`, t: 'v', stmt: true };
         return { code: `GSet(${csStr(left.node.name)}, ${val})`, t: 'v', stmt: true };
@@ -732,8 +798,9 @@ ${body.join('\n')}
     if (op === '&&' || op === '||' || op === '??') throw this.err(p, 'logical assignment');
     if (left.isIdentifier()) {
       const r = this.ref(left, left.node.name);
-      const cur = r ? { code: r.code, t: 'v' } : { code: `G(${csStr(left.node.name)})`, t: 'v' };
+      const cur = r ? { code: r.code, t: r.num ? 'n' : 'v' } : { code: `G(${csStr(left.node.name)})`, t: 'v' };
       const res = this.binaryOp(op, cur, this.expr(p.get('right')));
+      if (r && r.num) return { code: `${r.code} = ${this.toN(res)}`, t: 'n', stmt: true };
       if (r) return { code: `${r.code} = ${this.toV(res)}`, t: 'v', stmt: true };
       return { code: `GSet(${csStr(left.node.name)}, ${this.toV(res)})`, t: 'v', stmt: true };
     }
@@ -747,6 +814,7 @@ ${body.join('\n')}
     const n = p.node, a = p.get('argument'), d = n.operator === '++' ? '1D' : '-1D';
     if (a.isIdentifier()) {
       const r = this.ref(a, a.node.name);
+      if (r && r.num) return { code: n.prefix ? `${n.operator}${r.code}` : `${r.code}${n.operator}`, t: 'n', stmt: true };
       if (r) return { code: `${n.prefix ? 'PreInc' : 'PostInc'}(ref ${r.code}, ${d})`, t: 'n', stmt: true };
       return { code: `GInc(${csStr(a.node.name)}, ${d}, ${n.prefix ? 'true' : 'false'})`, t: 'n', stmt: true };
     }

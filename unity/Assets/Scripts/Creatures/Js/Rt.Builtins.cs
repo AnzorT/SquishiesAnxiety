@@ -386,14 +386,9 @@ namespace SquishSquad.Creatures.Js
         {
             if (t.Len == 0) return "";
             if (t.Len == 1) { var v = t.A[0]; return v.IsNullish || v.IsHole ? "" : ToStr(v); }
-            var sb = new StringBuilder();
-            for (int i = 0; i < t.Len; i++)
-            {
-                if (i > 0) sb.Append(sep);
-                var v = t.A[i];
-                if (!v.IsNullish && !v.IsHole) sb.Append(ToStr(v));
-            }
-            return sb.ToString();
+            var parts = new string[t.Len];
+            for (int i = 0; i < t.Len; i++) { var v = t.A[i]; parts[i] = v.IsNullish || v.IsHole ? "" : ToStr(v); }
+            return string.Join(sep, parts);
         }
         // a stable merge sort (V8's TimSort is stable: the same order for any consistent comparator); undefined last,
         // holes after them

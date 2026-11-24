@@ -14,7 +14,7 @@ V R_8 = default;
 V REST_9 = default;
 V r2_10 = default;
 V SM_11 = default;
-V TAU_12 = default;
+double TAU_12 = 0;
 V TL_13 = default;
 V S_14 = default;
 V hand_15 = default;
@@ -116,18 +116,18 @@ Invoke(em_59, "push", Arr(t_60, Add(t_60, dur_117), every_118, preset_119, where
 return o_61;
 return default;
 }, 5, "em", false)).Put("osc", Fn((V _self122, int _argc123, V dt_129, V n_130, V A_131, V B_132, V[] _rest124) => {
-V h_134 = default;
+double h_134 = 0;
 V ez_133 = default;
 if (_self122.IsNullish) _self122 = GlobalV;
 ez_133 = (_argc123 > 4 ? _rest124[0] : V.Undef);
-h_134 = ((V)(((ToNum(dt_129) / ToNum(n_130)) / 2D)));
+h_134 = ((ToNum(dt_129) / ToNum(n_130)) / 2D);
 {
-V i_135 = default;
-i_135 = ((V)(0D));
+double i_135 = 0;
+i_135 = 0D;
 while (true) {
-if (!(Lt(i_135, n_130))) break;
-Invoke(Invoke(o_61, "to", h_134, A_131, (ez_133 is var _t138 && Truthy(_t138) ? _t138 : ((V)("io")))), "to", h_134, B_132, (ez_133 is var _t137 && Truthy(_t137) ? _t137 : ((V)("io"))));
-PostInc(ref i_135, 1D);
+if (!(Lt(((V)(i_135)), n_130))) break;
+Invoke(Invoke(o_61, "to", ((V)(h_134)), A_131, (ez_133 is var _t138 && Truthy(_t138) ? _t138 : ((V)("io")))), "to", ((V)(h_134)), B_132, (ez_133 is var _t137 && Truthy(_t137) ? _t137 : ((V)("io"))));
+i_135++;
 }
 }
 return o_61;
@@ -185,7 +185,7 @@ Set(R_8, "movesV", ((V)(1D)));
 REST_9 = Get(R_8, "REST");
 r2_10 = Get(R_8, "r2");
 SM_11 = Get(R_8, "SM");
-TAU_12 = ((V)((System.Math.PI * 2D)));
+TAU_12 = (System.Math.PI * 2D);
 S_14 = Fn((V _self1, int _argc197, V s_203, V _a200, V _a201, V _a202, V[] _rest198) => {
 return (LtN(s_203, 0D) ? NewObj(9).Put("arm", ((V)("armL"))).Put("hx", ((V)("hLx"))).Put("hy", ((V)("hLy"))).Put("hz", ((V)("hLz"))).Put("ear", ((V)("earL"))).Put("wink", ((V)("winkL"))).Put("foot", ((V)("footL"))).Put("eye", ((V)("eyeL"))).Put("paw", ((V)("pawL"))).V : NewObj(9).Put("arm", ((V)("armR"))).Put("hx", ((V)("hRx"))).Put("hy", ((V)("hRy"))).Put("hz", ((V)("hRz"))).Put("ear", ((V)("earR"))).Put("wink", ((V)("winkR"))).Put("foot", ((V)("footR"))).Put("eye", ((V)("eyeR"))).Put("paw", ((V)("pawR"))).V);
 }, 1, "", true);
@@ -218,20 +218,20 @@ V turn_241 = default;
 V e_242 = default;
 t_240 = Call(TL_13, V.Undef);
 turn_241 = Fn((V _self1, int _argc243, V T_249, V from_250, V to_251, V d1_252, V[] _rest244) => {
-V s_254 = default;
-V dir_255 = default;
-V bendTo_256 = default;
-V twTo_257 = default;
-V wg_258 = default;
+double s_254 = 0;
+double dir_255 = 0;
+double bendTo_256 = 0;
+double twTo_257 = 0;
+double wg_258 = 0;
 V d2_253 = default;
 d2_253 = (_argc243 > 4 ? _rest244[0] : V.Undef);
-s_254 = ((V)(Sign((ToNum(to_251) - ToNum(from_250)))));
-dir_255 = ((V)(Sign(ToNum(to_251))));
-bendTo_256 = ((V)(((ToNum(dir_255) * 4D) * ToNum(k_239))));
-twTo_257 = ((V)(((ToNum(to_251) * 0.36) * ToNum(k_239))));
-wg_258 = ((V)(((-ToNum(s_254)) * 14D)));
-Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(t_240, "at", T_249), "to", ((V)(110D)), NewObj(1).Put("lx", ((V)((ToNum(dir_255) * 0.9)))).V, ((V)("o"))), "e", ((V)("blink"))), "to", d1_252, NewObj(4).Put("hyaw", ((V)((ToNum(Add(from_250, to_251)) / 2D)))).Put("pitch", ((V)((-0.24)))).Put("earL", ((V)((ToNum(s_254) * 8D)))).Put("earR", ((V)(((-ToNum(s_254)) * 8D)))).V, ((V)("i"))), "to", d2_253, NewObj(5).Put("hyaw", Add(to_251, ((V)((ToNum(s_254) * 0.08))))).Put("pitch", ((V)(0.05))).Put("earL", ((V)(((-ToNum(s_254)) * 3D)))).Put("earR", ((V)((ToNum(s_254) * 3D)))).Put("htilt", ((V)(((ToNum(dir_255) * 3D) - ToNum(bendTo_256))))).V, ((V)("o"))), "to", ((V)(320D)), NewObj(4).Put("hyaw", to_251).Put("pitch", ((V)(0D))).Put("earL", ((V)(0D))).Put("earR", ((V)(0D))).V, ((V)("io")));
-Invoke(Invoke(Invoke(t_240, "at", Add(T_249, ((V)(200D)))), "to", Add(d1_252, d2_253), NewObj(4).Put("twist", Add(twTo_257, ((V)(((ToNum(s_254) * 0.06) * ToNum(k_239)))))).Put("turn", ((V)((ToNum(to_251) * 0.07)))).Put("bend", Add(bendTo_256, ((V)(((ToNum(s_254) * 1.2) * ToNum(k_239)))))).Put("wag", wg_258).V, ((V)("io"))), "to", ((V)(360D)), NewObj(3).Put("twist", twTo_257).Put("bend", bendTo_256).Put("wag", ((V)((ToNum(wg_258) * 0.4)))).V, ((V)("io")));
+s_254 = Sign((ToNum(to_251) - ToNum(from_250)));
+dir_255 = Sign(ToNum(to_251));
+bendTo_256 = ((dir_255 * 4D) * ToNum(k_239));
+twTo_257 = ((ToNum(to_251) * 0.36) * ToNum(k_239));
+wg_258 = ((-s_254) * 14D);
+Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(t_240, "at", T_249), "to", ((V)(110D)), NewObj(1).Put("lx", ((V)((dir_255 * 0.9)))).V, ((V)("o"))), "e", ((V)("blink"))), "to", d1_252, NewObj(4).Put("hyaw", ((V)((ToNum(Add(from_250, to_251)) / 2D)))).Put("pitch", ((V)((-0.24)))).Put("earL", ((V)((s_254 * 8D)))).Put("earR", ((V)(((-s_254) * 8D)))).V, ((V)("i"))), "to", d2_253, NewObj(5).Put("hyaw", Add(to_251, ((V)((s_254 * 0.08))))).Put("pitch", ((V)(0.05))).Put("earL", ((V)(((-s_254) * 3D)))).Put("earR", ((V)((s_254 * 3D)))).Put("htilt", ((V)(((dir_255 * 3D) - bendTo_256)))).V, ((V)("o"))), "to", ((V)(320D)), NewObj(4).Put("hyaw", to_251).Put("pitch", ((V)(0D))).Put("earL", ((V)(0D))).Put("earR", ((V)(0D))).V, ((V)("io")));
+Invoke(Invoke(Invoke(t_240, "at", Add(T_249, ((V)(200D)))), "to", Add(d1_252, d2_253), NewObj(4).Put("twist", ((V)((twTo_257 + ((s_254 * 0.06) * ToNum(k_239)))))).Put("turn", ((V)((ToNum(to_251) * 0.07)))).Put("bend", ((V)((bendTo_256 + ((s_254 * 1.2) * ToNum(k_239)))))).Put("wag", ((V)(wg_258))).V, ((V)("io"))), "to", ((V)(360D)), NewObj(3).Put("twist", ((V)(twTo_257))).Put("bend", ((V)(bendTo_256))).Put("wag", ((V)((wg_258 * 0.4)))).V, ((V)("io")));
 return Add(Add(Add(Add(T_249, ((V)(110D))), d1_252), d2_253), ((V)(320D)));
 return default;
 }, 5, "", true);
@@ -268,12 +268,12 @@ Set(ST_18, "idle_waveR", Call(wave_19, V.Undef, ((V)(1D))));
 Invoke(Get(R_8, "FIDGETS"), "push", ((V)("idle_look")), ((V)("idle_yawn")), ((V)("idle_waveL")), ((V)("idle_waveR")));
 Set(ST_18, "dance", Call(Fn((V _self1, int _argc277, V _a279, V _a280, V _a281, V _a282, V[] _rest278) => {
 V t_283 = default;
-V h_284 = default;
+double h_284 = 0;
 V bt_285 = default;
 t_283 = Call(TL_13, V.Undef);
-h_284 = ((V)(250D));
+h_284 = 250D;
 bt_285 = Fn((V _self1, int _argc286, V dn_292, V up_293, V _a290, V _a291, V[] _rest287) => {
-return Invoke(Invoke(t_283, "to", h_284, Call(o_17, V.Undef, NewObj(2).Put("sq", ((V)(0.1))).Put("lift", ((V)(0D))).V, dn_292), ((V)("io"))), "to", h_284, Call(o_17, V.Undef, NewObj(2).Put("sq", ((V)((-0.04)))).Put("lift", ((V)(1.6))).V, (up_293 is var _t294 && Truthy(_t294) ? _t294 : NewObj(0).V)), ((V)("o")));
+return Invoke(Invoke(t_283, "to", ((V)(h_284)), Call(o_17, V.Undef, NewObj(2).Put("sq", ((V)(0.1))).Put("lift", ((V)(0D))).V, dn_292), ((V)("io"))), "to", ((V)(h_284)), Call(o_17, V.Undef, NewObj(2).Put("sq", ((V)((-0.04)))).Put("lift", ((V)(1.6))).V, (up_293 is var _t294 && Truthy(_t294) ? _t294 : NewObj(0).V)), ((V)("o")));
 }, 2, "", true);
 Invoke(t_283, "e", ((V)("emit")), ((V)("note")), ((V)("head")));
 Call(bt_285, V.Undef, NewObj(8).Put("x", ((V)(4D))).Put("lean", ((V)(2D))).Put("armL", ((V)((-6D)))).Put("armR", ((V)(34D))).Put("htilt", ((V)(3D))).Put("turn", ((V)(0.2))).Put("hap", ((V)(0.7))).Put("smile", ((V)(0.9))).V, NewObj(1).Put("footL", ((V)(2.5))).V);
@@ -307,7 +307,7 @@ Invoke(t_283, "e", ((V)("emit")), ((V)("note")), ((V)("head")));
 Invoke(Arr(((V)(1D)), ((V)((-1D))), ((V)(1D))), "forEach", Fn((V _self1, int _argc313, V d_319, V _a316, V _a317, V _a318, V[] _rest314) => {
 return Call(bt_285, V.Undef, NewObj(9).Put("sq", ((V)(0.09))).Put("pitch", ((V)((-0.25)))).Put("armL", ((V)((GtN(d_319, 0D) ? 22D : 6D)))).Put("armR", ((V)((GtN(d_319, 0D) ? 6D : 22D)))).Put("htilt", ((V)((ToNum(d_319) * 3D)))).Put("turn", ((V)((ToNum(d_319) * 0.15)))).Put("x", ((V)((ToNum(d_319) * 1.5)))).Put("winkR", ((V)(0D))).Put("open", ((V)(0.15))).V, NewObj(2).Put("sq", ((V)((-0.02)))).Put("lift", ((V)(1D))).V);
 }, 1, "", true));
-Invoke(Invoke(t_283, "to", h_284, NewObj(7).Put("sq", ((V)(0.09))).Put("pitch", ((V)((-0.25)))).Put("armL", ((V)(6D))).Put("armR", ((V)(22D))).Put("htilt", ((V)((-3D)))).Put("turn", ((V)((-0.15)))).Put("x", ((V)((-1.5)))).V, ((V)("io"))), "rest", h_284, ((V)("io")));
+Invoke(Invoke(t_283, "to", ((V)(h_284)), NewObj(7).Put("sq", ((V)(0.09))).Put("pitch", ((V)((-0.25)))).Put("armL", ((V)(6D))).Put("armR", ((V)(22D))).Put("htilt", ((V)((-3D)))).Put("turn", ((V)((-0.15)))).Put("x", ((V)((-1.5)))).V, ((V)("io"))), "rest", ((V)(h_284)), ((V)("io")));
 return Invoke(t_283, "loop");
 return default;
 }, 0, "", true), V.Undef));
@@ -329,14 +329,14 @@ return default;
 STYLE_24 = NewObj(9).Put("chomp", Fn((V _self345, int _argc346, V t_352, V H_353, V f_354, V _a351, V[] _rest347) => {
 if (_self345.IsNullish) _self345 = GlobalV;
 {
-V i_355 = default;
-i_355 = ((V)(0D));
+double i_355 = 0;
+i_355 = 0D;
 while (true) {
-if (!(Lt(i_355, Get(f_354, "n")))) break;
-Call(bite_23, V.Undef, t_352, H_353, (SEqN(i_355, (ToNum(Get(f_354, "n")) - 1D)) ? V.True : V.False));
+if (!(Lt(((V)(i_355)), Get(f_354, "n")))) break;
+Call(bite_23, V.Undef, t_352, H_353, ((i_355 == (ToNum(Get(f_354, "n")) - 1D)) ? V.True : V.False));
 Call(chew_21, V.Undef, t_352, (Get(f_354, "chew") is var _t357 && Truthy(_t357) ? _t357 : ((V)(3D))));
 Call(gulp_22, V.Undef, t_352);
-PostInc(ref i_355, 1D);
+i_355++;
 }
 }
 return default;
@@ -344,12 +344,12 @@ return default;
 if (_self358.IsNullish) _self358 = GlobalV;
 Invoke(t_365, "to", ((V)(320D)), Call(o_17, V.Undef, Get(H_366, "mouth"), NewObj(2).Put("pitch", ((V)((-0.05)))).Put("ly", ((V)(0.5))).V), ((V)("io")));
 {
-V i_368 = default;
-i_368 = ((V)(0D));
+double i_368 = 0;
+i_368 = 0D;
 while (true) {
-if (!(Lt(i_368, Get(f_367, "n")))) break;
+if (!(Lt(((V)(i_368)), Get(f_367, "n")))) break;
 Invoke(Invoke(Invoke(Invoke(t_365, "to", ((V)(85D)), NewObj(3).Put("open", ((V)(0.3))).Put("mw", ((V)(0.6))).Put("sq", ((V)(0.02))).V, ((V)("o"))), "to", ((V)(85D)), NewObj(3).Put("open", ((V)(0D))).Put("sq", ((V)(0D))).Put("puff", ((V)(0.45))).V, ((V)("io"))), "e", ((V)("bite"))), "e", ((V)("emit")), ((V)("crumb")), ((V)("mouth")), ((V)(1D)));
-PostInc(ref i_368, 1D);
+i_368++;
 }
 }
 Invoke(Invoke(t_365, "e", ((V)("done"))), "to", ((V)(260D)), Call(o_17, V.Undef, Get(H_366, "chest"), NewObj(2).Put("puff", ((V)(0.55))).Put("mw", ((V)(1D))).V), ((V)("io")));
@@ -361,24 +361,24 @@ V m_380 = default;
 if (_self370.IsNullish) _self370 = GlobalV;
 m_380 = Get(H_378, "mouth");
 {
-V row_381 = default;
-row_381 = ((V)(0D));
+double row_381 = 0;
+row_381 = 0D;
 while (true) {
-if (!(LtN(row_381, 2D))) break;
+if (!((row_381 < 2D))) break;
 Invoke(t_377, "to", ((V)(300D)), Call(o_17, V.Undef, m_380, NewObj(5).Put("hLx", Add(Get(m_380, "hLx"), ((V)(6D)))).Put("hRx", Add(Get(m_380, "hRx"), ((V)(6D)))).Put("pitch", ((V)((-0.05)))).Put("ly", ((V)(0.4))).Put("turn", ((V)(0.15))).V), ((V)("io")));
 {
-V i_383 = default;
-i_383 = ((V)(0D));
+double i_383 = 0;
+i_383 = 0D;
 while (true) {
-if (!(Lt(i_383, Get(f_379, "n")))) break;
-V p_385 = default;
-p_385 = ((V)((6D - ((ToNum(Add(i_383, ((V)(1D)))) * 12D) / ToNum(Get(f_379, "n"))))));
-Invoke(Invoke(Invoke(Invoke(t_377, "to", ((V)(110D)), NewObj(4).Put("open", ((V)(0.35))).Put("hLx", Add(Get(m_380, "hLx"), p_385)).Put("hRx", Add(Get(m_380, "hRx"), p_385)).Put("turn", ((V)(((-ToNum(p_385)) / 32D)))).V, ((V)("io"))), "to", ((V)(90D)), NewObj(2).Put("open", ((V)(0D))).Put("sq", ((V)(0.03))).V, ((V)("o"))), "e", ((V)("bite"))), "e", ((V)("emit")), ((V)("crumb")), ((V)("mouth")), ((V)(1D)));
-PostInc(ref i_383, 1D);
+if (!(Lt(((V)(i_383)), Get(f_379, "n")))) break;
+double p_385 = 0;
+p_385 = (6D - (((i_383 + 1D) * 12D) / ToNum(Get(f_379, "n"))));
+Invoke(Invoke(Invoke(Invoke(t_377, "to", ((V)(110D)), NewObj(4).Put("open", ((V)(0.35))).Put("hLx", Add(Get(m_380, "hLx"), ((V)(p_385)))).Put("hRx", Add(Get(m_380, "hRx"), ((V)(p_385)))).Put("turn", ((V)(((-p_385) / 32D)))).V, ((V)("io"))), "to", ((V)(90D)), NewObj(2).Put("open", ((V)(0D))).Put("sq", ((V)(0.03))).V, ((V)("o"))), "e", ((V)("bite"))), "e", ((V)("emit")), ((V)("crumb")), ((V)("mouth")), ((V)(1D)));
+i_383++;
 }
 }
 Invoke(Invoke(Invoke(t_377, "to", ((V)(170D)), NewObj(5).Put("hLx", Add(Get(m_380, "hLx"), ((V)(6D)))).Put("hRx", Add(Get(m_380, "hRx"), ((V)(6D)))).Put("turn", ((V)(0.2))).Put("sq", ((V)(0D))).Put("wide", ((V)(0.4))).V, ((V)("o"))), "e", ((V)("ding"))), "to", ((V)(120D)), NewObj(1).Put("wide", ((V)(0D))).V);
-PostInc(ref row_381, 1D);
+row_381++;
 }
 }
 Invoke(Invoke(t_377, "e", ((V)("done"))), "to", ((V)(300D)), Call(o_17, V.Undef, Get(H_378, "chest"), NewObj(2).Put("turn", ((V)(0D))).Put("puff", ((V)(0.7))).V), ((V)("io")));
@@ -403,12 +403,12 @@ OpSetK(L_396, q_398, 0, ((V)(3D)));
 }
 Invoke(t_393, "to", ((V)(320D)), Call(o_17, V.Undef, L_396, NewObj(1).Put("ly", ((V)(0.5))).V), ((V)("io")));
 {
-V i_399 = default;
-i_399 = ((V)(0D));
+double i_399 = 0;
+i_399 = 0D;
 while (true) {
-if (!(Lt(i_399, Get(f_395, "n")))) break;
-Invoke(Invoke(Invoke(t_393, "to", ((V)(170D)), NewObj(6).Put("tongue", ((V)(1D))).Put("pitch", ((V)(0.25))).Put("sq", ((V)((-0.04)))).Put("open", ((V)(0.12))).Put("hap", ((V)(0.5))).Put("turn", ((V)((Truthy(Get(f_395, "swirl")) ? (NumTruthy((ToNum(i_399) % 2D)) ? 0.25 : (-0.25)) : 0D)))).V, ((V)("io"))), "e", ((V)("lick"))), "to", ((V)(230D)), NewObj(4).Put("tongue", ((V)(0.15))).Put("pitch", ((V)((-0.05)))).Put("sq", ((V)(0.01))).Put("open", ((V)(0D))).V, ((V)("io")));
-PostInc(ref i_399, 1D);
+if (!(Lt(((V)(i_399)), Get(f_395, "n")))) break;
+Invoke(Invoke(Invoke(t_393, "to", ((V)(170D)), NewObj(6).Put("tongue", ((V)(1D))).Put("pitch", ((V)(0.25))).Put("sq", ((V)((-0.04)))).Put("open", ((V)(0.12))).Put("hap", ((V)(0.5))).Put("turn", ((V)((Truthy(Get(f_395, "swirl")) ? (NumTruthy((i_399 % 2D)) ? 0.25 : (-0.25)) : 0D)))).V, ((V)("io"))), "e", ((V)("lick"))), "to", ((V)(230D)), NewObj(4).Put("tongue", ((V)(0.15))).Put("pitch", ((V)((-0.05)))).Put("sq", ((V)(0.01))).Put("open", ((V)(0D))).V, ((V)("io")));
+i_399++;
 }
 }
 Invoke(t_393, "to", ((V)(200D)), NewObj(4).Put("tongue", ((V)(0D))).Put("turn", ((V)(0D))).Put("hap", ((V)(0.8))).Put("smile", ((V)(0.8))).V, ((V)("io")));
@@ -429,10 +429,10 @@ return default;
 }, 2, "whole", false)).Put("slurp", Fn((V _self410, int _argc411, V t_417, V H_418, V f_419, V _a416, V[] _rest412) => {
 if (_self410.IsNullish) _self410 = GlobalV;
 {
-V i_420 = default;
-i_420 = ((V)(0D));
+double i_420 = 0;
+i_420 = 0D;
 while (true) {
-if (!(LtN(i_420, 3D))) break;
+if (!((i_420 < 3D))) break;
 V a_422 = default;
 Invoke(t_417, "to", ((V)(220D)), NewObj(4).Put("pitch", ((V)((-0.25)))).Put("ly", ((V)(0.6))).Put("mw", ((V)(0.5))).Put("open", ((V)(0.25))).V, ((V)("io")));
 a_422 = Get(t_417, "t");
@@ -441,7 +441,7 @@ Invoke(Get(f_419, "wins"), "push", Arr(a_422, Get(t_417, "t")));
 Invoke(t_417, "to", ((V)(120D)), NewObj(4).Put("open", ((V)(0D))).Put("mw", ((V)(1D))).Put("puff", ((V)(0.6))).Put("pitch", ((V)(0.05))).V, ((V)("o")));
 Call(chew_21, V.Undef, t_417, ((V)(2D)));
 Call(gulp_22, V.Undef, t_417);
-PostInc(ref i_420, 1D);
+i_420++;
 }
 }
 Invoke(t_417, "e", ((V)("done")));
@@ -462,17 +462,17 @@ return default;
 }, 2, "big", false)).Put("gobble", Fn((V _self443, int _argc444, V t_450, V H_451, V f_452, V _a449, V[] _rest445) => {
 if (_self443.IsNullish) _self443 = GlobalV;
 {
-V i_453 = default;
-i_453 = ((V)(0D));
+double i_453 = 0;
+i_453 = 0D;
 while (true) {
-if (!(Lt(i_453, Get(f_452, "n")))) break;
+if (!(Lt(((V)(i_453)), Get(f_452, "n")))) break;
 Invoke(Invoke(Invoke(Invoke(t_450, "to", ((V)(160D)), Call(o_17, V.Undef, Get(H_451, "mouth"), NewObj(2).Put("open", ((V)(0.85))).Put("pitch", ((V)((-0.1)))).V), ((V)("io"))), "to", ((V)(70D)), NewObj(3).Put("open", ((V)(0D))).Put("sq", ((V)(0.06))).Put("puff", ((V)(0.7))).V, ((V)("o"))), "e", ((V)("bite"))), "e", ((V)("emit")), ((V)("crumb")), ((V)("mouth")), ((V)(2D)));
-if (SEqN(i_453, (ToNum(Get(f_452, "n")) - 1D))) {
+if ((i_453 == (ToNum(Get(f_452, "n")) - 1D))) {
 Invoke(t_450, "e", ((V)("done")));
 }
 Invoke(t_450, "to", ((V)(160D)), Call(o_17, V.Undef, Get(H_451, "chest"), NewObj(1).Put("sq", ((V)(0D))).V), ((V)("io")));
 Call(chew_21, V.Undef, t_450, ((V)(1D)));
-PostInc(ref i_453, 1D);
+i_453++;
 }
 }
 Call(gulp_22, V.Undef, t_450);
@@ -533,7 +533,7 @@ V c_519 = default;
 V W_520 = default;
 V x_521 = default;
 V y_522 = default;
-V nb_523 = default;
+double nb_523 = 0;
 V id_524 = default;
 V m_525 = default;
 V body_526 = default;
@@ -550,15 +550,15 @@ y_522 = ((V)(((ToNum(Add(GetIdx(Get(W_520, "pawL"), 1D), GetIdx(Get(W_520, "pawR
 } else {
 if (Truthy((Get(f_509, "grip") is var _t528 && !Truthy(_t528) ? _t528 : Get(I_517, "gripStick")))) {
 V s_529 = default;
-V a_530 = default;
+double a_530 = 0;
 V gx_531 = default;
 V gy_532 = default;
 s_529 = (Get(f_509, "sc") is var _t533 && Truthy(_t533) ? _t533 : ((V)(1.15)));
-a_530 = ((V)(((ToNum((GetIdx(Get(f_509, "grip"), 2D) is var _t534 && Truthy(_t534) ? _t534 : ((V)(0D)))) * System.Math.PI) / 180D)));
+a_530 = ((ToNum((GetIdx(Get(f_509, "grip"), 2D) is var _t534 && Truthy(_t534) ? _t534 : ((V)(0D)))) * System.Math.PI) / 180D);
 gx_531 = GetIdx(Get(f_509, "grip"), 0D);
 gy_532 = GetIdx(Get(f_509, "grip"), 1D);
-x_521 = ((V)((ToNum(GetIdx(Get(W_520, "pawR"), 0D)) - (((ToNum(gx_531) * FdLibm.Cos(ToNum(a_530))) - (ToNum(gy_532) * FdLibm.Sin(ToNum(a_530)))) * ToNum(s_529)))));
-y_522 = ((V)((ToNum(GetIdx(Get(W_520, "pawR"), 1D)) - (((ToNum(gx_531) * FdLibm.Sin(ToNum(a_530))) + (ToNum(gy_532) * FdLibm.Cos(ToNum(a_530)))) * ToNum(s_529)))));
+x_521 = ((V)((ToNum(GetIdx(Get(W_520, "pawR"), 0D)) - (((ToNum(gx_531) * FdLibm.Cos(a_530)) - (ToNum(gy_532) * FdLibm.Sin(a_530))) * ToNum(s_529)))));
+y_522 = ((V)((ToNum(GetIdx(Get(W_520, "pawR"), 1D)) - (((ToNum(gx_531) * FdLibm.Sin(a_530)) + (ToNum(gy_532) * FdLibm.Cos(a_530))) * ToNum(s_529)))));
 } else {
 x_521 = ((V)((ToNum(GetIdx(Get(W_520, "pawR"), 0D)) - 2.5)));
 y_522 = ((V)((ToNum(GetIdx(Get(W_520, "pawR"), 1D)) - (6D * ToNum((!Get(I_517, "foodK1").IsNullish ? Get(I_517, "foodK1") : (!Get(I_517, "foodK").IsNullish ? Get(I_517, "foodK") : ((V)(1D)))))))));
@@ -571,26 +571,26 @@ y_522 = ((V)((ToNum(Add(GetIdx(Get(W_520, "pawL"), 1D), GetIdx(Get(W_520, "pawR"
 if (Truthy((Get(I_517, "foodDY") is var _t538 && !Truthy(_t538) ? _t538 : GetK(Get(I_517, "foodDY"), key_510)))) {
 y_522 = Add(y_522, GetK(Get(I_517, "foodDY"), key_510));
 }
-nb_523 = ((V)(Min(ToNum((Get(c_519, "bite") is var _t539 && Truthy(_t539) ? _t539 : ((V)(0D)))), ToNum((Truthy(Get(f_509, "bm")) ? Get(Get(f_509, "bm"), "length") : ((V)(0D)))))));
+nb_523 = Min(ToNum((Get(c_519, "bite") is var _t539 && Truthy(_t539) ? _t539 : ((V)(0D)))), ToNum((Truthy(Get(f_509, "bm")) ? Get(Get(f_509, "bm"), "length") : ((V)(0D)))));
 id_524 = ((V)(string.Concat("bm", ToStr(Get(I_517, "u")), ToStr(key_510))));
 m_525 = ((V)(""));
-if (Truthy(nb_523)) {
+if (NumTruthy(nb_523)) {
 m_525 = ((V)(string.Concat("<mask id=\"", ToStr(id_524), "\" maskUnits=\"userSpaceOnUse\" x=\"-30\" y=\"-30\" width=\"60\" height=\"60\"><rect x=\"-30\" y=\"-30\" width=\"60\" height=\"60\" fill=\"#fff\"/>")));
 {
-V i_540 = default;
-i_540 = ((V)(0D));
+double i_540 = 0;
+i_540 = 0D;
 while (true) {
-if (!(Lt(i_540, nb_523))) break;
+if (!((i_540 < nb_523))) break;
 V b_542 = default;
-b_542 = GetK(Get(f_509, "bm"), i_540);
+b_542 = GetIdx(Get(f_509, "bm"), i_540);
 m_525 = ((V)(string.Concat(new string[] { ToStr(m_525), "<circle cx=\"", ToStr(GetIdx(b_542, 0D)), "\" cy=\"", ToStr(GetIdx(b_542, 1D)), "\" r=\"", ToStr(GetIdx(b_542, 2D)), "\" fill=\"#000\"/>" })));
-PostInc(ref i_540, 1D);
+i_540++;
 }
 }
 m_525 = ((V)(string.Concat(ToStr(m_525), "</mask>")));
 }
 body_526 = (string.Equals(Typeof(Get(f_509, "svg")), "function") ? Invoke(f_509, "svg", I_517, t_518, c_519, x_521, y_522, f_509) : Get(f_509, "svg"));
-return ((V)(string.Concat(new string[] { "<g transform=\"translate(", ToStr(Call(r2_10, V.Undef, x_521)), " ", ToStr(Call(r2_10, V.Undef, y_522)), ") rotate(", ToStr((Truthy((Get(f_509, "grip") is var _t545 && !Truthy(_t545) ? _t545 : Get(I_517, "gripStick"))) ? (GetIdx(Get(f_509, "grip"), 2D) is var _t543 && Truthy(_t543) ? _t543 : ((V)(0D))) : (Get(f_509, "rot") is var _t544 && Truthy(_t544) ? _t544 : ((V)(0D))))), ") scale(", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(Call(SM_11, V.Undef, ((V)((ToNum(t_518) / 220D))))) * ToNum((Get(f_509, "sc") is var _t546 && Truthy(_t546) ? _t546 : ((V)(1.15))))))))), ")\">", ToStr(m_525), "<g", (Truthy(nb_523) ? string.Concat(" mask=\"url(#", ToStr(id_524), ")\"") : ""), ">", ToStr(body_526), "</g></g>" })));
+return ((V)(string.Concat(new string[] { "<g transform=\"translate(", ToStr(Call(r2_10, V.Undef, x_521)), " ", ToStr(Call(r2_10, V.Undef, y_522)), ") rotate(", ToStr((Truthy((Get(f_509, "grip") is var _t545 && !Truthy(_t545) ? _t545 : Get(I_517, "gripStick"))) ? (GetIdx(Get(f_509, "grip"), 2D) is var _t543 && Truthy(_t543) ? _t543 : ((V)(0D))) : (Get(f_509, "rot") is var _t544 && Truthy(_t544) ? _t544 : ((V)(0D))))), ") scale(", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(Call(SM_11, V.Undef, ((V)((ToNum(t_518) / 220D))))) * ToNum((Get(f_509, "sc") is var _t546 && Truthy(_t546) ? _t546 : ((V)(1.15))))))))), ")\">", ToStr(m_525), "<g", (NumTruthy(nb_523) ? string.Concat(" mask=\"url(#", ToStr(id_524), ")\"") : ""), ">", ToStr(body_526), "</g></g>" })));
 return default;
 }, 2, "", true);
 }, 2, "", true);
@@ -608,9 +608,9 @@ if (_self574.IsNullish) _self574 = GlobalV;
 Invoke(Invoke(Invoke(t_581, "to", ((V)(450D)), Call(o_17, V.Undef, Call(hand_15, V.Undef, ((V)(1D)), ((V)(10D)), ((V)((-30D)))), NewObj(4).Put("pitch", ((V)(0.5))).Put("ly", ((V)((-0.9)))).Put("open", ((V)(0.6))).Put("armR", ((V)(30D))).V), ((V)("io"))), "wait", ((V)(500D))), "to", ((V)(380D)), Call(o_17, V.Undef, Call(hand_15, V.Undef, ((V)(1D)), ((V)(6D)), ((V)((-8D)))), NewObj(4).Put("pitch", ((V)(0D))).Put("ly", ((V)(0.3))).Put("open", ((V)(0D))).Put("armR", ((V)(0D))).V), ((V)("io")));
 return default;
 }, 1, "pre", false)).Put("svg", ((V)("<path d=\"M-4.5 4 L4.5 4 L0 -7 Z\" fill=\"#ffd25a\"/><path d=\"M-5 4 Q0 6.2 5 4 L4.6 5.6 Q0 7.6 -4.6 5.6Z\" fill=\"#d9903a\"/><circle cx=\"-1.2\" cy=\"1.4\" r=\"1.1\" fill=\"#e2483a\"/><circle cx=\"1.4\" cy=\"-1.4\" r=\"0.9\" fill=\"#e2483a\"/><circle cx=\"1.6\" cy=\"2.4\" r=\"0.8\" fill=\"#e2483a\"/>"))).V).Put("icecream", NewObj(9).Put("label", ((V)("Ice cream"))).Put("d", ((V)("Four long licks, then a bite of cone."))).Put("hold", ((V)("R"))).Put("style", ((V)("lick"))).Put("n", ((V)(4D))).Put("then", (true ? V.True : V.False)).Put("react", ((V)("yum"))).Put("bm", Arr(Arr(((V)(0D)), ((V)((-6D))), ((V)(3.4))), Arr(((V)(0D)), ((V)((-2.4))), ((V)(3.8))))).Put("svg", Fn((V _self1, int _argc582, V I_588, V t_589, V c_590, V _a587, V[] _rest583) => {
-V k_591 = default;
-k_591 = ((V)((1D - (0.07 * Min(4D, ToNum((Get(c_590, "lick") is var _t592 && Truthy(_t592) ? _t592 : ((V)(0D)))))))));
-return ((V)(string.Concat(new string[] { "<path d=\"M-3.4 0 L3.4 0 L0 9 Z\" fill=\"#e8b06a\"/><path d=\"M-2.4 1.6 L1.6 5.6 M2.4 1.6 L-1.6 5.6\" stroke=\"#c48a45\" stroke-width=\"0.5\"/><circle cx=\"0\" cy=\"-1.6\" r=\"3.8\" fill=\"#ffc0de\"/><circle cx=\"0\" cy=\"", ToStr(Call(r2_10, V.Undef, ((V)(((-5.2) * ToNum(k_591)))))), "\" r=\"", ToStr(Call(r2_10, V.Undef, ((V)((3D * ToNum(k_591)))))), "\" fill=\"#fff4c2\"/>" })));
+double k_591 = 0;
+k_591 = (1D - (0.07 * Min(4D, ToNum((Get(c_590, "lick") is var _t592 && Truthy(_t592) ? _t592 : ((V)(0D)))))));
+return ((V)(string.Concat(new string[] { "<path d=\"M-3.4 0 L3.4 0 L0 9 Z\" fill=\"#e8b06a\"/><path d=\"M-2.4 1.6 L1.6 5.6 M2.4 1.6 L-1.6 5.6\" stroke=\"#c48a45\" stroke-width=\"0.5\"/><circle cx=\"0\" cy=\"-1.6\" r=\"3.8\" fill=\"#ffc0de\"/><circle cx=\"0\" cy=\"", ToStr(Call(r2_10, V.Undef, ((V)(((-5.2) * k_591))))), "\" r=\"", ToStr(Call(r2_10, V.Undef, ((V)((3D * k_591))))), "\" fill=\"#fff4c2\"/>" })));
 return default;
 }, 3, "svg", true)).V).Put("burger", NewObj(7).Put("label", ((V)("Burger"))).Put("d", ((V)("Opens super wide for one huge chomp."))).Put("hold", ((V)("two"))).Put("style", ((V)("big"))).Put("react", ((V)("yum"))).Put("bm", Arr(Arr(((V)(0D)), ((V)((-6D))), ((V)(3.6))), Arr(((V)(3.6)), ((V)((-4.6))), ((V)(3.6))))).Put("svg", ((V)("<path d=\"M-6 3.6 L6 3.6 Q6 6.4 3 6.4 L-3 6.4 Q-6 6.4 -6 3.6Z\" fill=\"#e8963a\"/><rect x=\"-6.2\" y=\"1.2\" width=\"12.4\" height=\"2.6\" rx=\"1.3\" fill=\"#7a3a24\"/><path d=\"M-5.6 0.6 L5.6 0.6 L4 2.6 L2.4 1.4 L-5.6 1.6Z\" fill=\"#ffd23a\"/><path d=\"M-6.4 -0.6 Q-4.8 1 -3.2 -0.4 Q-1.6 1 0 -0.4 Q1.6 1 3.2 -0.4 Q4.8 1 6.4 -0.6 L6.4 0.8 L-6.4 0.8Z\" fill=\"#7ad36a\"/><path d=\"M-6 -0.6 Q-6 -6.5 0 -6.5 Q6 -6.5 6 -0.6Z\" fill=\"#f0a64a\"/><path d=\"M-2.4 -4.2 l0.8 -0.3 M1 -5 l0.8 0.2 M3 -3.4 l0.6 -0.5 M-4 -2.6 l0.5 -0.6\" stroke=\"#fff4d6\" stroke-width=\"0.6\" stroke-linecap=\"round\"/>"))).V).Put("sushi", NewObj(6).Put("label", ((V)("Sushi"))).Put("d", ((V)("Pops it in whole, cheeks puffed, love."))).Put("hold", ((V)("two"))).Put("style", ((V)("whole"))).Put("react", ((V)("love"))).Put("svg", ((V)("<rect x=\"-4.5\" y=\"-1.5\" width=\"9\" height=\"4.5\" rx=\"2.2\" fill=\"#ffffff\" stroke=\"#e8e0d8\" stroke-width=\"0.4\"/><path d=\"M-4.8 -1 Q-5 -4 0 -4 Q5 -4 4.8 -1 Q0 0 -4.8 -1Z\" fill=\"#ff8a65\"/><path d=\"M-2.5 -3.6 L-1.5 -1 M0.5 -3.9 L1.3 -1.1 M3 -3.4 L3.4 -1.2\" stroke=\"#ffd1bf\" stroke-width=\"0.6\"/><rect x=\"-1.2\" y=\"-4\" width=\"2.4\" height=\"7\" fill=\"#2f4a3a\"/>"))).V).Put("watermelon", NewObj(9).Put("label", ((V)("Watermelon"))).Put("d", ((V)("Typewriter bites across, spits a seed."))).Put("hold", ((V)("two"))).Put("style", ((V)("typewriter"))).Put("n", ((V)(5D))).Put("seed", (true ? V.True : V.False)).Put("react", ((V)("yum"))).Put("bm", Invoke(Call(top_27, V.Undef, ((V)(5D)), ((V)((-0.2))), ((V)(10D)), ((V)(2D))), "concat", Call(top_27, V.Undef, ((V)(5D)), ((V)(1.8)), ((V)(9D)), ((V)(2.2))))).Put("svg", ((V)("<path d=\"M-7 0 A7 7 0 0 0 7 0 Z\" fill=\"#7ad36a\"/><path d=\"M-6 0 A6 6 0 0 0 6 0 Z\" fill=\"#ff5a6a\"/><ellipse cx=\"-2.6\" cy=\"2\" rx=\"0.4\" ry=\"0.7\" fill=\"#2a1a30\"/><ellipse cx=\"0\" cy=\"3.4\" rx=\"0.4\" ry=\"0.7\" fill=\"#2a1a30\"/><ellipse cx=\"2.6\" cy=\"2\" rx=\"0.4\" ry=\"0.7\" fill=\"#2a1a30\"/>"))).V).Put("strawberry", NewObj(7).Put("label", ((V)("Strawberry"))).Put("d", ((V)("One bite, blushes, hearts."))).Put("hold", ((V)("R"))).Put("style", ((V)("whole"))).Put("react", ((V)("love"))).Put("sc", ((V)(0.8))).Put("svg", ((V)("<path d=\"M0 6 Q-5.6 2 -4.6 -2.4 Q-3.6 -4.4 0 -3.6 Q3.6 -4.4 4.6 -2.4 Q5.6 2 0 6Z\" fill=\"#ff4b5c\"/><path d=\"M-3 -3.4 L-1 -5.6 L0 -3.8 L1 -5.6 L3 -3.4 Q0 -2.6 -3 -3.4Z\" fill=\"#5fc24a\"/><circle cx=\"-2\" cy=\"-0.6\" r=\"0.35\" fill=\"#ffe08a\"/><circle cx=\"1.4\" cy=\"0.4\" r=\"0.35\" fill=\"#ffe08a\"/><circle cx=\"-0.4\" cy=\"2.6\" r=\"0.35\" fill=\"#ffe08a\"/><circle cx=\"2.4\" cy=\"-1.8\" r=\"0.35\" fill=\"#ffe08a\"/>"))).V).Put("cupcake", NewObj(9).Put("label", ((V)("Cupcake"))).Put("d", ((V)("Licks the frosting, then bites."))).Put("hold", ((V)("two"))).Put("style", ((V)("lick"))).Put("n", ((V)(2D))).Put("then", (true ? V.True : V.False)).Put("react", ((V)("love"))).Put("bm", Arr(Arr(((V)(0D)), ((V)((-5.6))), ((V)(3.4))), Arr(((V)(2.4)), ((V)((-2.6))), ((V)(3.4))))).Put("svg", ((V)("<path d=\"M-4.6 0 L4.6 0 L3.4 6 L-3.4 6Z\" fill=\"#7cc8ff\"/><path d=\"M-2.4 0.4 L-1.8 5.6 M0 0.4 L0 5.6 M2.4 0.4 L1.8 5.6\" stroke=\"#5aa8e8\" stroke-width=\"0.5\"/><path d=\"M-5 0.4 Q-6 -2.6 -3 -3 Q-2.6 -6 0 -5.6 Q2.6 -6 3 -3 Q6 -2.6 5 0.4Z\" fill=\"#ffc0de\"/><circle cx=\"0\" cy=\"-6.4\" r=\"1.4\" fill=\"#ff3b4b\"/>"))).V).Put("noodles", NewObj(7).Put("label", ((V)("Noodles"))).Put("d", ((V)("Slurps long noodles from the bowl."))).Put("hold", ((V)("two"))).Put("style", ((V)("slurp"))).Put("react", ((V)("yum"))).Put("wins", Arr()).Put("svg", Fn((V _self1, int _argc593, V I_599, V t_600, V c_601, V x_602, V[] _rest594) => {
 V h_605 = default;
@@ -624,31 +624,31 @@ w_606 = Invoke(((F_604 is var _t614 && !Truthy(_t614) ? _t614 : Get(F_604, "wins
 return ((Ge(t_600, GetIdx(q_613, 0D)) && Le(t_600, GetIdx(q_613, 1D))) ? V.True : V.False);
 }, 1, "", true));
 if (Truthy((w_606 is var _t616 && !Truthy(_t616) ? _t616 : Get(Get(I_599, "W"), "mouth")))) {
-V u_617 = default;
-V mx_618 = default;
-V my_619 = default;
-V by_620 = default;
-u_617 = ((V)(((ToNum(t_600) - ToNum(GetIdx(w_606, 0D))) / (ToNum(GetIdx(w_606, 1D)) - ToNum(GetIdx(w_606, 0D))))));
-mx_618 = ((V)((ToNum(GetIdx(Get(Get(I_599, "W"), "mouth"), 0D)) - ToNum(x_602))));
-my_619 = ((V)(((ToNum(GetIdx(Get(Get(I_599, "W"), "mouth"), 1D)) - ToNum(y_603)) + 0.5)));
-by_620 = ((V)(((-1.5) + ((ToNum(Add(my_619, ((V)(1.5)))) * ToNum(u_617)) * 0.92))));
-h_605 = ((V)(string.Concat(new string[] { ToStr(h_605), "<path d=\"M0 ", ToStr(Call(r2_10, V.Undef, by_620)), " Q", ToStr(Call(r2_10, V.Undef, ((V)(((ToNum(mx_618) * 0.5) + (FdLibm.Sin((ToNum(t_600) / 60D)) * 1.4)))))), " ", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(Add(by_620, my_619)) / 2D))))), " ", ToStr(Call(r2_10, V.Undef, mx_618)), " ", ToStr(Call(r2_10, V.Undef, my_619)), "\" stroke=\"#ffe08a\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"/>" })));
+double u_617 = 0;
+double mx_618 = 0;
+double my_619 = 0;
+double by_620 = 0;
+u_617 = ((ToNum(t_600) - ToNum(GetIdx(w_606, 0D))) / (ToNum(GetIdx(w_606, 1D)) - ToNum(GetIdx(w_606, 0D))));
+mx_618 = (ToNum(GetIdx(Get(Get(I_599, "W"), "mouth"), 0D)) - ToNum(x_602));
+my_619 = ((ToNum(GetIdx(Get(Get(I_599, "W"), "mouth"), 1D)) - ToNum(y_603)) + 0.5);
+by_620 = ((-1.5) + (((my_619 + 1.5) * u_617) * 0.92));
+h_605 = ((V)(string.Concat(new string[] { ToStr(h_605), "<path d=\"M0 ", ToStr(Call(r2_10, V.Undef, ((V)(by_620)))), " Q", ToStr(Call(r2_10, V.Undef, ((V)(((mx_618 * 0.5) + (FdLibm.Sin((ToNum(t_600) / 60D)) * 1.4)))))), " ", ToStr(Call(r2_10, V.Undef, ((V)(((by_620 + my_619) / 2D))))), " ", ToStr(Call(r2_10, V.Undef, ((V)(mx_618)))), " ", ToStr(Call(r2_10, V.Undef, ((V)(my_619)))), "\" stroke=\"#ffe08a\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"/>" })));
 }
 return h_605;
 return default;
 }, 6, "svg", true)).V).Put("corn", NewObj(8).Put("label", ((V)("Corn on the cob"))).Put("d", ((V)("Typewriter-style rows, ding at each end."))).Put("hold", ((V)("two"))).Put("style", ((V)("typewriter"))).Put("n", ((V)(6D))).Put("react", ((V)("yum"))).Put("bm", Invoke(Call(top_27, V.Undef, ((V)(6D)), ((V)((-2.6))), ((V)(11D)), ((V)(1.6))), "concat", Call(top_27, V.Undef, ((V)(6D)), ((V)((-0.6))), ((V)(11D)), ((V)(1.8))))).Put("svg", ((V)("<path d=\"M-7 0 L-9.6 -2.6 L-9 2.6Z M7 0 L9.6 -2.6 L9 2.6Z\" fill=\"#9be38a\"/><rect x=\"-7\" y=\"-2.8\" width=\"14\" height=\"5.6\" rx=\"2.8\" fill=\"#ffd84a\"/><path d=\"M-5 -2.6 L-5 2.6 M-2.5 -2.8 L-2.5 2.8 M0 -2.8 L0 2.8 M2.5 -2.8 L2.5 2.8 M5 -2.6 L5 2.6 M-7 0 L7 0\" stroke=\"#f0b52a\" stroke-width=\"0.4\"/>"))).V).Put("lollipop", NewObj(9).Put("label", ((V)("Lollipop"))).Put("d", ((V)("Five swirly licks."))).Put("hold", ((V)("R"))).Put("style", ((V)("lick"))).Put("n", ((V)(5D))).Put("swirl", (true ? V.True : V.False)).Put("react", ((V)("love"))).Put("grip", Arr(((V)(0D)), ((V)(10.5)), ((V)((-30D))))).Put("svg", Fn((V _self1, int _argc621, V I_627, V t_628, V c_629, V _a626, V[] _rest622) => {
-V k_630 = default;
-k_630 = ((V)((1D - (0.06 * Min(5D, ToNum((Get(c_629, "lick") is var _t631 && Truthy(_t631) ? _t631 : ((V)(0D)))))))));
-return ((V)(string.Concat(new string[] { "<path d=\"M0 3 L0 ", NumStr((Truthy(Get(I_627, "gripStick")) ? 14D : 10D)), "\" stroke=\"#ffffff\" stroke-width=\"1.2\" stroke-linecap=\"round\"/><g transform=\"scale(", ToStr(Call(r2_10, V.Undef, k_630)), ")\"><circle cx=\"0\" cy=\"-1\" r=\"4.6\" fill=\"#ff7fc8\"/><path d=\"M0 -1 m-3 0 a3 3 0 1 1 3 3 a2 2 0 1 1 -2 -2 a1 1 0 1 1 1 1\" stroke=\"#fff\" stroke-width=\"0.9\" fill=\"none\"/></g>" })));
+double k_630 = 0;
+k_630 = (1D - (0.06 * Min(5D, ToNum((Get(c_629, "lick") is var _t631 && Truthy(_t631) ? _t631 : ((V)(0D)))))));
+return ((V)(string.Concat(new string[] { "<path d=\"M0 3 L0 ", NumStr((Truthy(Get(I_627, "gripStick")) ? 14D : 10D)), "\" stroke=\"#ffffff\" stroke-width=\"1.2\" stroke-linecap=\"round\"/><g transform=\"scale(", ToStr(Call(r2_10, V.Undef, ((V)(k_630)))), ")\"><circle cx=\"0\" cy=\"-1\" r=\"4.6\" fill=\"#ff7fc8\"/><path d=\"M0 -1 m-3 0 a3 3 0 1 1 3 3 a2 2 0 1 1 -2 -2 a1 1 0 1 1 1 1\" stroke=\"#fff\" stroke-width=\"0.9\" fill=\"none\"/></g>" })));
 return default;
 }, 3, "svg", true)).V).Put("fish", NewObj(9).Put("label", ((V)("Fish"))).Put("d", ((V)("Jumps with excitement, then gobbles it up."))).Put("hold", ((V)("two"))).Put("style", ((V)("gobble"))).Put("n", ((V)(4D))).Put("react", ((V)("yum"))).Put("bm", Arr(Arr(((V)((-5D))), ((V)(0D)), ((V)(2.6))), Arr(((V)((-2.4))), ((V)((-0.4))), ((V)(2.8))), Arr(((V)(0.6)), ((V)(0D)), ((V)(2.8))), Arr(((V)(3.6)), ((V)(0D)), ((V)(3D))))).Put("pre", Fn((V _self632, int _argc633, V t_639, V _a636, V _a637, V _a638, V[] _rest634) => {
 if (_self632.IsNullish) _self632 = GlobalV;
 Invoke(Invoke(Invoke(Invoke(t_639, "to", ((V)(160D)), NewObj(1).Put("sq", ((V)(0.18))).V, ((V)("io"))), "to", ((V)(260D)), NewObj(6).Put("sq", ((V)((-0.15)))).Put("lift", ((V)(9D))).Put("wide", ((V)(1D))).Put("armL", ((V)(40D))).Put("armR", ((V)(40D))).Put("open", ((V)(0.5))).V, ((V)("o"))), "to", ((V)(260D)), NewObj(2).Put("lift", ((V)(0D))).Put("sq", ((V)(0.2))).V, ((V)("i"))), "to", ((V)(200D)), NewObj(5).Put("sq", ((V)(0D))).Put("wide", ((V)(0.3))).Put("armL", ((V)(0D))).Put("armR", ((V)(0D))).Put("open", ((V)(0D))).V, ((V)("io")));
 return default;
 }, 1, "pre", false)).Put("svg", ((V)("<path d=\"M-6 0 Q-2 -4.6 3.6 -0.4 L7 -3.4 L6.4 0 L7 3.4 L3.6 0.4 Q-2 4.6 -6 0Z\" fill=\"#7cc8ff\"/><path d=\"M-1 -2 Q0 0 -1 2\" stroke=\"#5aa8e8\" stroke-width=\"0.6\" fill=\"none\"/><circle cx=\"-3.6\" cy=\"-0.8\" r=\"0.8\" fill=\"#2a1a30\"/>"))).V).Put("pepper", NewObj(10).Put("label", ((V)("Hot pepper"))).Put("d", ((V)("One bite, turns red, steam, fans her tongue."))).Put("hold", ((V)("R"))).Put("style", ((V)("chomp"))).Put("n", ((V)(1D))).Put("chew", ((V)(2D))).Put("react", ((V)("spicy"))).Put("rot", ((V)(20D))).Put("bm", Arr(Arr(((V)(0.5)), ((V)((-3.4))), ((V)(2.4))))).Put("svg", ((V)("<path d=\"M-1 -4 Q4 -3 3 3 Q2 7 -2 8 Q1 4 0 0 Q-0.6 -2.6 -1 -4Z\" fill=\"#ff3b30\"/><path d=\"M-1 -4 Q-2 -6 0 -7\" stroke=\"#4caf50\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\"/>"))).V).Put("lemon", NewObj(9).Put("label", ((V)("Lemon"))).Put("d", ((V)("One bite, huge sour pucker, shivers."))).Put("hold", ((V)("R"))).Put("style", ((V)("chomp"))).Put("n", ((V)(1D))).Put("chew", ((V)(1D))).Put("react", ((V)("sour"))).Put("bm", Arr(Arr(((V)(0D)), ((V)((-3.6))), ((V)(2.6))))).Put("svg", ((V)("<path d=\"M-5.4 0 Q-5.4 -4 0 -4 Q5.4 -4 5.4 0 Q5.4 4 0 4 Q-5.4 4 -5.4 0Z M5.2 -0.7 L6.8 0 L5.2 0.7Z M-5.2 -0.7 L-6.8 0 L-5.2 0.7Z\" fill=\"#ffe14a\"/><ellipse cx=\"-1.8\" cy=\"-1.6\" rx=\"1.4\" ry=\"0.7\" fill=\"#ffffff\" opacity=\"0.5\"/>"))).V).Put("juice", NewObj(7).Put("label", ((V)("Juice box"))).Put("d", ((V)("Sips through the straw, squeezes the box."))).Put("hold", ((V)("R"))).Put("style", ((V)("sip"))).Put("react", ((V)("yum"))).Put("mp", Call(hand_15, V.Undef, ((V)(1D)), ((V)(17D)), ((V)((-3D))))).Put("svg", Fn((V _self1, int _argc640, V I_646, V t_647, V c_648, V _a645, V[] _rest641) => {
-V k_649 = default;
-k_649 = ((V)((Truthy(Get(c_648, "crumple")) ? 0.75 : 1D)));
-return ((V)(string.Concat("<g transform=\"scale(", ToStr(k_649), " 1)\"><rect x=\"-3.4\" y=\"-3\" width=\"6.8\" height=\"9\" rx=\"0.8\" fill=\"#9be38a\"/><rect x=\"-2.4\" y=\"0\" width=\"4.8\" height=\"3.6\" rx=\"0.6\" fill=\"#ffffff\"/><circle cx=\"0\" cy=\"1.8\" r=\"1.1\" fill=\"#ff9a3a\"/></g><path d=\"M1.4 -3 L2.4 -8.4\" stroke=\"#ff5cc6\" stroke-width=\"0.9\" stroke-linecap=\"round\"/>")));
+double k_649 = 0;
+k_649 = (Truthy(Get(c_648, "crumple")) ? 0.75 : 1D);
+return ((V)(string.Concat("<g transform=\"scale(", NumStr(k_649), " 1)\"><rect x=\"-3.4\" y=\"-3\" width=\"6.8\" height=\"9\" rx=\"0.8\" fill=\"#9be38a\"/><rect x=\"-2.4\" y=\"0\" width=\"4.8\" height=\"3.6\" rx=\"0.6\" fill=\"#ffffff\"/><circle cx=\"0\" cy=\"1.8\" r=\"1.1\" fill=\"#ff9a3a\"/></g><path d=\"M1.4 -3 L2.4 -8.4\" stroke=\"#ff5cc6\" stroke-width=\"0.9\" stroke-linecap=\"round\"/>")));
 return default;
 }, 3, "svg", true)).V).Put("popsicle", NewObj(9).Put("label", ((V)("Popsicle"))).Put("d", ((V)("Licks, bites, brain freeze."))).Put("hold", ((V)("R"))).Put("style", ((V)("lick"))).Put("n", ((V)(3D))).Put("then", (true ? V.True : V.False)).Put("react", ((V)("freeze"))).Put("bm", Arr(Arr(((V)(0D)), ((V)((-6D))), ((V)(3.2))))).Put("svg", ((V)("<rect x=\"-0.8\" y=\"3.6\" width=\"1.6\" height=\"5\" rx=\"0.8\" fill=\"#f0c890\"/><rect x=\"-3.4\" y=\"-6\" width=\"6.8\" height=\"10\" rx=\"3.4\" fill=\"#7cc8ff\"/><rect x=\"-3.4\" y=\"-1\" width=\"6.8\" height=\"5\" rx=\"0\" fill=\"#ff8fc8\"/><rect x=\"-3.4\" y=\"-6\" width=\"6.8\" height=\"10\" rx=\"3.4\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"0.4\"/>"))).V).V;
 meal_29 = Fn((V _self1, int _argc650, V key_656, V f_657, V _a654, V _a655, V[] _rest651) => {
@@ -681,15 +681,15 @@ return Fn((V _self1, int _argc682, V I_688, V t_689, V _a686, V _a687, V[] _rest
 V c_690 = default;
 V W_691 = default;
 V P_692 = default;
-V sq_693 = default;
+double sq_693 = 0;
 c_690 = Get(I_688, "ctr");
 W_691 = Get(I_688, "W");
 if (Truthy((Get(c_690, "toolgone") is var _t694 && Truthy(_t694) ? _t694 : (!(Truthy(Get(W_691, "pawR"))) ? V.True : V.False)))) {
 return ((V)(""));
 }
 P_692 = (SEqS(Get(opt_681, "hold"), "two") ? Arr(((V)((ToNum(Add(GetIdx(Get(W_691, "pawL"), 0D), GetIdx(Get(W_691, "pawR"), 0D))) / 2D))), ((V)(((ToNum(Add(GetIdx(Get(W_691, "pawL"), 1D), GetIdx(Get(W_691, "pawR"), 1D))) / 2D) - 3D)))) : GetK(W_691, ((V)((SEqS(Get(opt_681, "hold"), "L") ? "pawL" : "pawR")))));
-sq_693 = ((V)((Truthy((Get(opt_681, "squish") is var _t695 && !Truthy(_t695) ? _t695 : Get(Get(I_688, "ctT"), "squeak"))) ? (1D - (0.3 * Max(0D, (1D - ((ToNum(Invoke(G("performance"), "now")) - ToNum(Get(Get(I_688, "ctT"), "squeak"))) / 260D))))) : 1D)));
-return ((V)(string.Concat(new string[] { "<g transform=\"translate(", ToStr(Call(r2_10, V.Undef, Add(GetIdx(P_692, 0D), (Get(opt_681, "dx") is var _t696 && Truthy(_t696) ? _t696 : ((V)(0D)))))), " ", ToStr(Call(r2_10, V.Undef, Add(GetIdx(P_692, 1D), (Get(opt_681, "dy") is var _t697 && Truthy(_t697) ? _t697 : ((V)(0D)))))), ") rotate(", ToStr((Get(opt_681, "rot") is var _t698 && Truthy(_t698) ? _t698 : ((V)(0D)))), ") scale(", ToStr(Call(r2_10, V.Undef, Call(SM_11, V.Undef, ((V)((ToNum(t_689) / 220D)))))), " ", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(Call(SM_11, V.Undef, ((V)((ToNum(t_689) / 220D))))) * ToNum(sq_693)))))), ")\">", ToStr((string.Equals(Typeof(svg_680), "function") ? Call(svg_680, V.Undef, I_688, t_689) : svg_680)), "</g>" })));
+sq_693 = (Truthy((Get(opt_681, "squish") is var _t695 && !Truthy(_t695) ? _t695 : Get(Get(I_688, "ctT"), "squeak"))) ? (1D - (0.3 * Max(0D, (1D - ((ToNum(Invoke(G("performance"), "now")) - ToNum(Get(Get(I_688, "ctT"), "squeak"))) / 260D))))) : 1D);
+return ((V)(string.Concat(new string[] { "<g transform=\"translate(", ToStr(Call(r2_10, V.Undef, Add(GetIdx(P_692, 0D), (Get(opt_681, "dx") is var _t696 && Truthy(_t696) ? _t696 : ((V)(0D)))))), " ", ToStr(Call(r2_10, V.Undef, Add(GetIdx(P_692, 1D), (Get(opt_681, "dy") is var _t697 && Truthy(_t697) ? _t697 : ((V)(0D)))))), ") rotate(", ToStr((Get(opt_681, "rot") is var _t698 && Truthy(_t698) ? _t698 : ((V)(0D)))), ") scale(", ToStr(Call(r2_10, V.Undef, Call(SM_11, V.Undef, ((V)((ToNum(t_689) / 220D)))))), " ", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(Call(SM_11, V.Undef, ((V)((ToNum(t_689) / 220D))))) * sq_693))))), ")\">", ToStr((string.Equals(Typeof(svg_680), "function") ? Call(svg_680, V.Undef, I_688, t_689) : svg_680)), "</g>" })));
 return default;
 }, 2, "", true);
 }, 2, "", true);
@@ -700,17 +700,17 @@ WAND_34 = ((V)("<path d=\"M0 0 L0 9\" stroke=\"#ff5cc6\" stroke-width=\"1\" stro
 FOAM_35 = Arr(Arr(((V)((-12D))), ((V)(4D)), ((V)(5D))), Arr(((V)((-4D))), ((V)((-1D))), ((V)(6D))), Arr(((V)(5D)), ((V)(0D)), ((V)(5.5))), Arr(((V)(13D)), ((V)(5D)), ((V)(4.5))), Arr(((V)(0D)), ((V)(6D)), ((V)(5D))), Arr(((V)((-8D))), ((V)(8D)), ((V)(4D))), Arr(((V)(9D)), ((V)(9D)), ((V)(4D))), Arr(((V)((-15D))), ((V)(10D)), ((V)(3.4))), Arr(((V)(16D)), ((V)(11D)), ((V)(3.2))));
 foamFx_36 = Fn((V _self1, int _argc699, V t0_705, V t1_706, V _a703, V _a704, V[] _rest700) => {
 return Fn((V _self1, int _argc707, V I_713, V t_714, V _a711, V _a712, V[] _rest708) => {
-V n_715 = default;
-V fade_716 = default;
+double n_715 = 0;
+double fade_716 = 0;
 V x_717 = default;
 V y_718 = default;
 V h_719 = default;
 if (Lt(t_714, t0_705)) {
 return ((V)(""));
 }
-n_715 = ((V)(Min(ToNum(Get(FOAM_35, "length")), (System.Math.Floor(((ToNum(t_714) - ToNum(t0_705)) / 260D)) + 1D))));
-fade_716 = ((V)((1D - ToNum(Call(SM_11, V.Undef, ((V)(((ToNum(t_714) - ToNum(t1_706)) / 500D))))))));
-if (LeN(fade_716, 0D)) {
+n_715 = Min(ToNum(Get(FOAM_35, "length")), (System.Math.Floor(((ToNum(t_714) - ToNum(t0_705)) / 260D)) + 1D));
+fade_716 = (1D - ToNum(Call(SM_11, V.Undef, ((V)(((ToNum(t_714) - ToNum(t1_706)) / 500D))))));
+if ((fade_716 <= 0D)) {
 return ((V)(""));
 }
 { V _t720 = (Get(Get(I_713, "W"), "head") is var _t721 && Truthy(_t721) ? _t721 : Arr(((V)(50D)), ((V)(17D))));
@@ -720,20 +720,20 @@ x_717 = _t723; }
 { V _t724 = GetIdx(_t722, 1D);
 y_718 = _t724; }
 } }
-h_719 = ((V)(string.Concat("<g opacity=\"", ToStr(Call(r2_10, V.Undef, fade_716)), "\">")));
+h_719 = ((V)(string.Concat("<g opacity=\"", ToStr(Call(r2_10, V.Undef, ((V)(fade_716)))), "\">")));
 {
-V i_725 = default;
-i_725 = ((V)(0D));
+double i_725 = 0;
+i_725 = 0D;
 while (true) {
-if (!(Lt(i_725, n_715))) break;
+if (!((i_725 < n_715))) break;
 V f_727 = default;
 V g_728 = default;
-V w_729 = default;
-f_727 = GetK(FOAM_35, i_725);
-g_728 = Call(SM_11, V.Undef, ((V)((((ToNum(t_714) - ToNum(t0_705)) - (ToNum(i_725) * 260D)) / 300D))));
-w_729 = ((V)((FdLibm.Sin(ToNum(Add(((V)((ToNum(t_714) / 300D))), i_725))) * 0.4)));
-h_719 = ((V)(string.Concat(new string[] { ToStr(h_719), "<circle cx=\"", ToStr(Call(r2_10, V.Undef, Add(x_717, GetIdx(f_727, 0D)))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(Add(y_718, GetIdx(f_727, 1D))) - 2D))))), "\" r=\"", ToStr(Call(r2_10, V.Undef, Add(((V)((ToNum(GetIdx(f_727, 2D)) * ToNum(g_728)))), w_729))), "\" fill=\"#ffffff\" stroke=\"#d6f2fc\" stroke-width=\"0.6\"/>" })));
-PostInc(ref i_725, 1D);
+double w_729 = 0;
+f_727 = GetIdx(FOAM_35, i_725);
+g_728 = Call(SM_11, V.Undef, ((V)((((ToNum(t_714) - ToNum(t0_705)) - (i_725 * 260D)) / 300D))));
+w_729 = (FdLibm.Sin(((ToNum(t_714) / 300D) + i_725)) * 0.4);
+h_719 = ((V)(string.Concat(new string[] { ToStr(h_719), "<circle cx=\"", ToStr(Call(r2_10, V.Undef, Add(x_717, GetIdx(f_727, 0D)))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(Add(y_718, GetIdx(f_727, 1D))) - 2D))))), "\" r=\"", ToStr(Call(r2_10, V.Undef, ((V)(((ToNum(GetIdx(f_727, 2D)) * ToNum(g_728)) + w_729))))), "\" fill=\"#ffffff\" stroke=\"#d6f2fc\" stroke-width=\"0.6\"/>" })));
+i_725++;
 }
 }
 return ((V)(string.Concat(ToStr(h_719), "</g>")));
@@ -797,14 +797,14 @@ V t_770 = default;
 t_770 = Call(TL_13, V.Undef);
 Invoke(t_770, "to", ((V)(250D)), NewObj(3).Put("hap", ((V)(1D))).Put("smile", ((V)(1D))).Put("open", ((V)(0.4))).V);
 {
-V i_771 = default;
-i_771 = ((V)(0D));
+double i_771 = 0;
+i_771 = 0D;
 while (true) {
-if (!(LtN(i_771, 6D))) break;
+if (!((i_771 < 6D))) break;
 V two_773 = default;
-two_773 = (((ToNum(i_771) % 3D) != 1D) ? V.True : V.False);
-Invoke(Invoke(Invoke(Invoke(Invoke(t_770, "to", ((V)(200D)), NewObj(6).Put("armL", ((V)((Truthy((two_773 is var _t774 && Truthy(_t774) ? _t774 : ((V)((ToNum(i_771) % 2D))))) ? 70D : 10D)))).Put("armR", ((V)((Truthy((two_773 is var _t775 && Truthy(_t775) ? _t775 : (!(NumTruthy((ToNum(i_771) % 2D))) ? V.True : V.False))) ? 70D : 10D)))).Put("sq", ((V)((-0.05)))).Put("lift", ((V)(2D))).Put("earL", ((V)((-6D)))).Put("earR", ((V)((-6D)))).V, ((V)("io"))), "to", ((V)(110D)), NewObj(6).Put("armL", ((V)((-12D)))).Put("armR", ((V)((-12D)))).Put("sq", ((V)(0.12))).Put("lift", ((V)(0D))).Put("earL", ((V)(8D))).Put("earR", ((V)(8D))).V, ((V)("o"))), "e", ((V)("emit")), ((V)("splash")), ((V)("pawL"))), "e", ((V)("emit")), ((V)("splash")), ((V)("pawR"))), "wait", ((V)(120D)));
-PostInc(ref i_771, 1D);
+two_773 = (((i_771 % 3D) != 1D) ? V.True : V.False);
+Invoke(Invoke(Invoke(Invoke(Invoke(t_770, "to", ((V)(200D)), NewObj(6).Put("armL", ((V)((Truthy((two_773 is var _t774 && Truthy(_t774) ? _t774 : ((V)((i_771 % 2D))))) ? 70D : 10D)))).Put("armR", ((V)((Truthy((two_773 is var _t775 && Truthy(_t775) ? _t775 : (!(NumTruthy((i_771 % 2D))) ? V.True : V.False))) ? 70D : 10D)))).Put("sq", ((V)((-0.05)))).Put("lift", ((V)(2D))).Put("earL", ((V)((-6D)))).Put("earR", ((V)((-6D)))).V, ((V)("io"))), "to", ((V)(110D)), NewObj(6).Put("armL", ((V)((-12D)))).Put("armR", ((V)((-12D)))).Put("sq", ((V)(0.12))).Put("lift", ((V)(0D))).Put("earL", ((V)(8D))).Put("earR", ((V)(8D))).V, ((V)("o"))), "e", ((V)("emit")), ((V)("splash")), ((V)("pawL"))), "e", ((V)("emit")), ((V)("splash")), ((V)("pawR"))), "wait", ((V)(120D)));
+i_771++;
 }
 }
 Invoke(Invoke(Invoke(t_770, "to", ((V)(300D)), NewObj(6).Put("armL", ((V)(0D))).Put("armR", ((V)(0D))).Put("sq", ((V)(0D))).Put("earL", ((V)(0D))).Put("earR", ((V)(0D))).Put("open", ((V)(0.2))).V, ((V)("io"))), "osc", ((V)(600D)), ((V)(2D)), NewObj(1).Put("sq", ((V)(0.05))).V, NewObj(1).Put("sq", ((V)(0D))).V), "rest", ((V)(450D)));
@@ -823,12 +823,12 @@ V t_789 = default;
 t_789 = Call(TL_13, V.Undef);
 Invoke(t_789, "to", ((V)(350D)), Call(o_17, V.Undef, Call(hand_15, V.Undef, ((V)(1D)), ((V)(6D)), ((V)((-8D))))), ((V)("io")));
 {
-V i_790 = default;
-i_790 = ((V)(0D));
+double i_790 = 0;
+i_790 = 0D;
 while (true) {
-if (!(LtN(i_790, 3D))) break;
+if (!((i_790 < 3D))) break;
 Invoke(Invoke(Invoke(Invoke(Invoke(t_789, "to", ((V)(300D)), Call(o_17, V.Undef, Call(hand_15, V.Undef, ((V)(1D)), ((V)(12D)), ((V)((-13D)))), NewObj(4).Put("puff", ((V)(1D))).Put("pitch", ((V)(0D))).Put("lx", ((V)(0D))).Put("ly", ((V)(0D))).V), ((V)("io"))), "to", ((V)(450D)), NewObj(4).Put("puff", ((V)(0D))).Put("mw", ((V)(0.35))).Put("open", ((V)(0.18))).Put("sq", ((V)(0.04))).V, ((V)("io"))), "e", ((V)("emit")), ((V)("bigbubble")), ((V)("pawR"))), "e", ((V)("emit")), ((V)("bubble")), ((V)("pawR")), ((V)(2D))), "to", ((V)(500D)), NewObj(8).Put("mw", ((V)(1D))).Put("open", ((V)(0D))).Put("sq", ((V)(0D))).Put("lx", ((V)(0.7))).Put("ly", ((V)((-0.7)))).Put("pitch", ((V)(0.3))).Put("hap", ((V)(0.6))).Put("smile", ((V)(0.8))).V, ((V)("io")));
-PostInc(ref i_790, 1D);
+i_790++;
 }
 }
 Invoke(Invoke(Invoke(Invoke(Invoke(t_789, "to", ((V)(260D)), NewObj(2).Put("armL", ((V)(120D))).Put("hLy", ((V)((-6D)))).V, ((V)("o"))), "e", ((V)("emit")), ((V)("spark")), Arr(((V)(70D)), ((V)(26D))), ((V)(5D))), "to", ((V)(300D)), NewObj(4).Put("armL", ((V)(0D))).Put("hLy", ((V)(0D))).Put("hap", ((V)(1D))).Put("open", ((V)(0.35))).V, ((V)("io"))), "e", ((V)("toolgone"))), "rest", ((V)(450D)));
@@ -894,21 +894,21 @@ return ((V)(""));
 h_865 = ((V)(""));
 n_851 = ((V)(Min(ToNum(n_851), ToNum(Get(SOAP_39, "length")))));
 {
-V i_866 = default;
-i_866 = ((V)(0D));
+double i_866 = 0;
+i_866 = 0D;
 while (true) {
-if (!(Lt(i_866, n_851))) break;
+if (!(Lt(((V)(i_866)), n_851))) break;
 V w_868 = default;
 V dx_869 = default;
 V dy_870 = default;
 V rr_871 = default;
 V p_872 = default;
-V g_873 = default;
+double g_873 = 0;
 V x_874 = default;
 V y_875 = default;
-V wb_876 = default;
-V R0_877 = default;
-{ V _t878 = GetK(SOAP_39, i_866);
+double wb_876 = 0;
+double R0_877 = 0;
+{ V _t878 = GetIdx(SOAP_39, i_866);
 { V _t879 = ListOf(_t878);
 { V _t880 = GetIdx(_t879, 0D);
 w_868 = _t880; }
@@ -923,17 +923,17 @@ p_872 = GetK(W_864, w_868);
 if (!(Truthy(p_872))) {
 goto _cont867;
 }
-g_873 = ((V)((ToNum(Call(SM_11, V.Undef, ((V)((((ToNum(t_863) - ToNum(a_852)) - ((ToNum(i_866) * (ToNum(f_853) - ToNum(a_852))) / ToNum(n_851))) / 260D))))) * (1D - ToNum(Call(SM_11, V.Undef, ((V)((((ToNum(t_863) - ToNum(r_854)) - ((ToNum(i_866) % 5D) * 60D)) / ToNum((rd_855 is var _t884 && Truthy(_t884) ? _t884 : ((V)(450D)))))))))))));
-if (LeN(g_873, 0.01)) {
+g_873 = (ToNum(Call(SM_11, V.Undef, ((V)((((ToNum(t_863) - ToNum(a_852)) - ((i_866 * (ToNum(f_853) - ToNum(a_852))) / ToNum(n_851))) / 260D))))) * (1D - ToNum(Call(SM_11, V.Undef, ((V)((((ToNum(t_863) - ToNum(r_854)) - ((i_866 % 5D) * 60D)) / ToNum((rd_855 is var _t884 && Truthy(_t884) ? _t884 : ((V)(450D)))))))))));
+if ((g_873 <= 0.01)) {
 goto _cont867;
 }
 x_874 = Add(GetIdx(p_872, 0D), dx_869);
 y_875 = Add(GetIdx(p_872, 1D), dy_870);
-wb_876 = ((V)((FdLibm.Sin(((ToNum(t_863) / 340D) + (ToNum(i_866) * 1.7))) * 0.35)));
-R0_877 = Add(((V)((ToNum(rr_871) * (0.4 + (0.6 * ToNum(g_873)))))), wb_876);
-h_865 = ((V)(string.Concat(new string[] { ToStr(h_865), "<g opacity=\"", ToStr(Call(r2_10, V.Undef, g_873)), "\"><circle cx=\"", ToStr(Call(r2_10, V.Undef, x_874)), "\" cy=\"", ToStr(Call(r2_10, V.Undef, y_875)), "\" r=\"", ToStr(Call(r2_10, V.Undef, R0_877)), "\" fill=\"#ffffff\" stroke=\"#cfeefc\" stroke-width=\"0.55\"/><circle cx=\"", ToStr(Call(r2_10, V.Undef, Add(x_874, ((V)((ToNum(R0_877) * 0.85)))))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, Add(y_875, ((V)((ToNum(R0_877) * 0.35)))))), "\" r=\"", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(R0_877) * 0.55))))), "\" fill=\"#ffffff\" stroke=\"#cfeefc\" stroke-width=\"0.45\"/><circle cx=\"", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(x_874) - (ToNum(R0_877) * 0.75)))))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, Add(y_875, ((V)((ToNum(R0_877) * 0.45)))))), "\" r=\"", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(R0_877) * 0.45))))), "\" fill=\"#ffffff\" stroke=\"#cfeefc\" stroke-width=\"0.45\"/><circle cx=\"", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(x_874) - (ToNum(R0_877) * 0.3)))))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(y_875) - (ToNum(R0_877) * 0.35)))))), "\" r=\"", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(R0_877) * 0.22))))), "\" fill=\"#e6f7ff\"/></g>" })));
+wb_876 = (FdLibm.Sin(((ToNum(t_863) / 340D) + (i_866 * 1.7))) * 0.35);
+R0_877 = ((ToNum(rr_871) * (0.4 + (0.6 * g_873))) + wb_876);
+h_865 = ((V)(string.Concat(new string[] { ToStr(h_865), "<g opacity=\"", ToStr(Call(r2_10, V.Undef, ((V)(g_873)))), "\"><circle cx=\"", ToStr(Call(r2_10, V.Undef, x_874)), "\" cy=\"", ToStr(Call(r2_10, V.Undef, y_875)), "\" r=\"", ToStr(Call(r2_10, V.Undef, ((V)(R0_877)))), "\" fill=\"#ffffff\" stroke=\"#cfeefc\" stroke-width=\"0.55\"/><circle cx=\"", ToStr(Call(r2_10, V.Undef, Add(x_874, ((V)((R0_877 * 0.85)))))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, Add(y_875, ((V)((R0_877 * 0.35)))))), "\" r=\"", ToStr(Call(r2_10, V.Undef, ((V)((R0_877 * 0.55))))), "\" fill=\"#ffffff\" stroke=\"#cfeefc\" stroke-width=\"0.45\"/><circle cx=\"", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(x_874) - (R0_877 * 0.75)))))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, Add(y_875, ((V)((R0_877 * 0.45)))))), "\" r=\"", ToStr(Call(r2_10, V.Undef, ((V)((R0_877 * 0.45))))), "\" fill=\"#ffffff\" stroke=\"#cfeefc\" stroke-width=\"0.45\"/><circle cx=\"", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(x_874) - (R0_877 * 0.3)))))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(y_875) - (R0_877 * 0.35)))))), "\" r=\"", ToStr(Call(r2_10, V.Undef, ((V)((R0_877 * 0.22))))), "\" fill=\"#e6f7ff\"/></g>" })));
 _cont867: ;
-PostInc(ref i_866, 1D);
+i_866++;
 }
 }
 return h_865;
@@ -948,11 +948,11 @@ Set(GetIdx(Get(B_37, "duck"), 2D), "fx", Fn((V _self1, int _argc893, V I_899, V 
 V h_901 = default;
 V hd_902 = default;
 V u_903 = default;
-V up_904 = default;
+double up_904 = 0;
 h_901 = ((V)(""));
 Invoke(Arr(Arr(((V)(16D)), ((V)(0.62)), ((V)(0D))), Arr(((V)(30D)), ((V)(0.5)), ((V)(1D))), Arr(((V)(72D)), ((V)(0.55)), ((V)(1D))), Arr(((V)(86D)), ((V)(0.66)), ((V)(0D))), Arr(((V)(50D)), ((V)(0.45)), ((V)(0D)))), "forEach", Fn((V _self1, int _argc905, V _a907, V i_911, V _a909, V _a910, V[] _rest906) => {
 V x_919 = default;
-V y_920 = default;
+double y_920 = 0;
 V sp_921 = default;
 V x0_914 = default;
 V sc_916 = default;
@@ -966,16 +966,16 @@ sc_916 = _t915; }
 fl_918 = _t917; }
 }
 x_919 = Add(x0_914, ((V)((FdLibm.Sin(((ToNum(t_900) / 900D) + (ToNum(i_911) * 2D))) * 3D))));
-y_920 = ((V)(((92D + (FdLibm.Sin(ToNum(Add(((V)((ToNum(t_900) / 380D))), i_911))) * 0.8)) - (SEqN(i_911, 4D) ? 4D : 0D))));
+y_920 = ((92D + (FdLibm.Sin(ToNum(Add(((V)((ToNum(t_900) / 380D))), i_911))) * 0.8)) - (SEqN(i_911, 4D) ? 4D : 0D));
 sp_921 = Call(SM_11, V.Undef, ((V)(((ToNum(t_900) - (ToNum(i_911) * 160D)) / 300D))));
-h_901 = ((V)(string.Concat(new string[] { ToStr(h_901), "<g transform=\"translate(", ToStr(Call(r2_10, V.Undef, x_919)), " ", ToStr(Call(r2_10, V.Undef, y_920)), ") rotate(", ToStr(Call(r2_10, V.Undef, ((V)((FdLibm.Sin(ToNum(Add(((V)((ToNum(t_900) / 420D))), i_911))) * 8D))))), ") scale(", ToStr(Call(r2_10, V.Undef, sp_921)), ")\">", ToStr(Call(MINI_41, V.Undef, sc_916, fl_918)), "</g>" })));
+h_901 = ((V)(string.Concat(new string[] { ToStr(h_901), "<g transform=\"translate(", ToStr(Call(r2_10, V.Undef, x_919)), " ", ToStr(Call(r2_10, V.Undef, ((V)(y_920)))), ") rotate(", ToStr(Call(r2_10, V.Undef, ((V)((FdLibm.Sin(ToNum(Add(((V)((ToNum(t_900) / 420D))), i_911))) * 8D))))), ") scale(", ToStr(Call(r2_10, V.Undef, sp_921)), ")\">", ToStr(Call(MINI_41, V.Undef, sc_916, fl_918)), "</g>" })));
 return default;
 }, 2, "", true));
 hd_902 = Get(Get(I_899, "W"), "head");
 u_903 = Call(SM_11, V.Undef, ((V)(((ToNum(t_900) - 3600D) / 380D))));
-up_904 = ((V)((FdLibm.Sin((System.Math.PI * Min(1D, Max(0D, ((ToNum(t_900) - 3600D) / 380D))))) * 8D)));
+up_904 = (FdLibm.Sin((System.Math.PI * Min(1D, Max(0D, ((ToNum(t_900) - 3600D) / 380D))))) * 8D);
 if (Truthy(((hd_902 is var _t922 && !Truthy(_t922) ? _t922 : (GtN(t_900, 3600D) ? V.True : V.False)) is var _t923 && !Truthy(_t923) ? _t923 : (LtN(t_900, (Truthy(Get(I_899, "cur")) ? 1000000000D : 1000000000D)) ? V.True : V.False)))) {
-h_901 = ((V)(string.Concat(new string[] { ToStr(h_901), "<g transform=\"translate(", ToStr(Call(r2_10, V.Undef, Add(Add(GetIdx(hd_902, 0D), ((V)(2D))), ((V)(((1D - ToNum(u_903)) * 26D)))))), " ", ToStr(Call(r2_10, V.Undef, ((V)((((ToNum(GetIdx(hd_902, 1D)) - 3D) - ToNum(up_904)) + ((1D - ToNum(u_903)) * 60D)))))), ") rotate(", ToStr(Call(r2_10, V.Undef, ((V)((FdLibm.Sin((ToNum(t_900) / 300D)) * 6D))))), ")\">", ToStr(Call(MINI_41, V.Undef, ((V)(0.6)), ((V)(0D)))), "</g>" })));
+h_901 = ((V)(string.Concat(new string[] { ToStr(h_901), "<g transform=\"translate(", ToStr(Call(r2_10, V.Undef, Add(Add(GetIdx(hd_902, 0D), ((V)(2D))), ((V)(((1D - ToNum(u_903)) * 26D)))))), " ", ToStr(Call(r2_10, V.Undef, ((V)((((ToNum(GetIdx(hd_902, 1D)) - 3D) - up_904) + ((1D - ToNum(u_903)) * 60D)))))), ") rotate(", ToStr(Call(r2_10, V.Undef, ((V)((FdLibm.Sin((ToNum(t_900) / 300D)) * 6D))))), ")\">", ToStr(Call(MINI_41, V.Undef, ((V)(0.6)), ((V)(0D)))), "</g>" })));
 }
 return h_901;
 return default;
@@ -996,14 +996,14 @@ return Invoke(t_931, "done", NewObj(1).Put("prop", Fn((V _self1, int _argc934, V
 V c_942 = default;
 V W_943 = default;
 V now_944 = default;
-V ma_945 = default;
+double ma_945 = 0;
 V eL_946 = default;
 V eR_947 = default;
 V m_948 = default;
-V cx_949 = default;
-V cy_950 = default;
-V w_951 = default;
-V ang_952 = default;
+double cx_949 = 0;
+double cy_950 = 0;
+double w_951 = 0;
+double ang_952 = 0;
 V id_953 = default;
 V h_954 = default;
 c_942 = Get(I_940, "ctT");
@@ -1012,24 +1012,24 @@ if ((!(Truthy(Get(c_942, "mask"))) || !(Truthy(Get(W_943, "eyeL"))))) {
 return ((V)(""));
 }
 now_944 = Invoke(G("performance"), "now");
-ma_945 = ((V)((ToNum(Call(SM_11, V.Undef, ((V)(((ToNum(now_944) - ToNum(Get(c_942, "mask"))) / 900D))))) * (Truthy(Get(c_942, "maskoff")) ? (1D - ToNum(Call(SM_11, V.Undef, ((V)(((ToNum(now_944) - ToNum(Get(c_942, "maskoff"))) / 500D)))))) : 1D))));
+ma_945 = (ToNum(Call(SM_11, V.Undef, ((V)(((ToNum(now_944) - ToNum(Get(c_942, "mask"))) / 900D))))) * (Truthy(Get(c_942, "maskoff")) ? (1D - ToNum(Call(SM_11, V.Undef, ((V)(((ToNum(now_944) - ToNum(Get(c_942, "maskoff"))) / 500D)))))) : 1D));
 eL_946 = Get(W_943, "eyeL");
 eR_947 = Get(W_943, "eyeR");
 m_948 = Get(W_943, "mouth");
-cx_949 = ((V)((ToNum(Add(GetIdx(eL_946, 0D), GetIdx(eR_947, 0D))) / 2D)));
-cy_950 = ((V)(((ToNum(Add(GetIdx(eL_946, 1D), GetIdx(eR_947, 1D))) / 2D) + 3D)));
-w_951 = ((V)(Max(6D, (ToNum(GetIdx(eR_947, 0D)) - ToNum(GetIdx(eL_946, 0D))))));
-ang_952 = ((V)(((FdLibm.Atan2((ToNum(GetIdx(eR_947, 1D)) - ToNum(GetIdx(eL_946, 1D))), (ToNum(GetIdx(eR_947, 0D)) - ToNum(GetIdx(eL_946, 0D)))) * 180D) / System.Math.PI)));
+cx_949 = (ToNum(Add(GetIdx(eL_946, 0D), GetIdx(eR_947, 0D))) / 2D);
+cy_950 = ((ToNum(Add(GetIdx(eL_946, 1D), GetIdx(eR_947, 1D))) / 2D) + 3D);
+w_951 = Max(6D, (ToNum(GetIdx(eR_947, 0D)) - ToNum(GetIdx(eL_946, 0D))));
+ang_952 = ((FdLibm.Atan2((ToNum(GetIdx(eR_947, 1D)) - ToNum(GetIdx(eL_946, 1D))), (ToNum(GetIdx(eR_947, 0D)) - ToNum(GetIdx(eL_946, 0D)))) * 180D) / System.Math.PI);
 id_953 = ((V)(string.Concat("mk", ToStr(Get(I_940, "u")))));
 h_954 = ((V)(""));
-if (GtN(ma_945, 0.01)) {
-h_954 = ((V)(string.Concat(new string[] { ToStr(h_954), "<mask id=\"", ToStr(id_953), "\" maskUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"100\" height=\"100\"><rect width=\"100\" height=\"100\" fill=\"#fff\"/><ellipse cx=\"", ToStr(Call(r2_10, V.Undef, GetIdx(eL_946, 0D))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, GetIdx(eL_946, 1D))), "\" rx=\"4.6\" ry=\"4.6\" fill=\"#000\"/><ellipse cx=\"", ToStr(Call(r2_10, V.Undef, GetIdx(eR_947, 0D))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, GetIdx(eR_947, 1D))), "\" rx=\"4.6\" ry=\"4.6\" fill=\"#000\"/><ellipse cx=\"", ToStr(Call(r2_10, V.Undef, GetIdx(m_948, 0D))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, Add(GetIdx(m_948, 1D), ((V)(0.5))))), "\" rx=\"3.6\" ry=\"2.2\" fill=\"#000\"/></mask>", "<g mask=\"url(#", ToStr(id_953), ")\" opacity=\"", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(ma_945) * 0.92))))), "\"><ellipse cx=\"", ToStr(Call(r2_10, V.Undef, cx_949)), "\" cy=\"", ToStr(Call(r2_10, V.Undef, cy_950)), "\" rx=\"", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(w_951) * 1.12))))), "\" ry=\"", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(w_951) * 0.86))))), "\" transform=\"rotate(", ToStr(Call(r2_10, V.Undef, ang_952)), " ", ToStr(Call(r2_10, V.Undef, cx_949)), " ", ToStr(Call(r2_10, V.Undef, cy_950)), ")\" fill=\"#9fd67a\"/><circle cx=\"", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(cx_949) - (ToNum(w_951) * 0.6)))))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, Add(cy_950, ((V)(3D))))), "\" r=\"1\" fill=\"#c4eaa6\"/><circle cx=\"", ToStr(Call(r2_10, V.Undef, Add(cx_949, ((V)((ToNum(w_951) * 0.5)))))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, ((V)((ToNum(cy_950) - 4D))))), "\" r=\"0.8\" fill=\"#c4eaa6\"/><circle cx=\"", ToStr(Call(r2_10, V.Undef, Add(cx_949, ((V)((ToNum(w_951) * 0.2)))))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, Add(cy_950, ((V)(6D))))), "\" r=\"0.7\" fill=\"#c4eaa6\"/></g>" })));
+if ((ma_945 > 0.01)) {
+h_954 = ((V)(string.Concat(new string[] { ToStr(h_954), "<mask id=\"", ToStr(id_953), "\" maskUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"100\" height=\"100\"><rect width=\"100\" height=\"100\" fill=\"#fff\"/><ellipse cx=\"", ToStr(Call(r2_10, V.Undef, GetIdx(eL_946, 0D))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, GetIdx(eL_946, 1D))), "\" rx=\"4.6\" ry=\"4.6\" fill=\"#000\"/><ellipse cx=\"", ToStr(Call(r2_10, V.Undef, GetIdx(eR_947, 0D))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, GetIdx(eR_947, 1D))), "\" rx=\"4.6\" ry=\"4.6\" fill=\"#000\"/><ellipse cx=\"", ToStr(Call(r2_10, V.Undef, GetIdx(m_948, 0D))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, Add(GetIdx(m_948, 1D), ((V)(0.5))))), "\" rx=\"3.6\" ry=\"2.2\" fill=\"#000\"/></mask>", "<g mask=\"url(#", ToStr(id_953), ")\" opacity=\"", ToStr(Call(r2_10, V.Undef, ((V)((ma_945 * 0.92))))), "\"><ellipse cx=\"", ToStr(Call(r2_10, V.Undef, ((V)(cx_949)))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, ((V)(cy_950)))), "\" rx=\"", ToStr(Call(r2_10, V.Undef, ((V)((w_951 * 1.12))))), "\" ry=\"", ToStr(Call(r2_10, V.Undef, ((V)((w_951 * 0.86))))), "\" transform=\"rotate(", ToStr(Call(r2_10, V.Undef, ((V)(ang_952)))), " ", ToStr(Call(r2_10, V.Undef, ((V)(cx_949)))), " ", ToStr(Call(r2_10, V.Undef, ((V)(cy_950)))), ")\" fill=\"#9fd67a\"/><circle cx=\"", ToStr(Call(r2_10, V.Undef, ((V)((cx_949 - (w_951 * 0.6)))))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, ((V)((cy_950 + 3D))))), "\" r=\"1\" fill=\"#c4eaa6\"/><circle cx=\"", ToStr(Call(r2_10, V.Undef, ((V)((cx_949 + (w_951 * 0.5)))))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, ((V)((cy_950 - 4D))))), "\" r=\"0.8\" fill=\"#c4eaa6\"/><circle cx=\"", ToStr(Call(r2_10, V.Undef, ((V)((cx_949 + (w_951 * 0.2)))))), "\" cy=\"", ToStr(Call(r2_10, V.Undef, ((V)((cy_950 + 6D))))), "\" r=\"0.7\" fill=\"#c4eaa6\"/></g>" })));
 }
 if (Truthy((Get(c_942, "cuke") is var _t956 && !Truthy(_t956) ? _t956 : (!(Truthy((Get(c_942, "cukeoff") is var _t955 && !Truthy(_t955) ? _t955 : (((ToNum(now_944) - ToNum(Get(c_942, "cukeoff"))) > 250D) ? V.True : V.False)))) ? V.True : V.False)))) {
-V k_957 = default;
-k_957 = ((V)((ToNum(Call(SM_11, V.Undef, ((V)(((ToNum(now_944) - ToNum(Get(c_942, "cuke"))) / 200D))))) * (Truthy(Get(c_942, "cukeoff")) ? (1D - ToNum(Call(SM_11, V.Undef, ((V)(((ToNum(now_944) - ToNum(Get(c_942, "cukeoff"))) / 250D)))))) : 1D))));
+double k_957 = 0;
+k_957 = (ToNum(Call(SM_11, V.Undef, ((V)(((ToNum(now_944) - ToNum(Get(c_942, "cuke"))) / 200D))))) * (Truthy(Get(c_942, "cukeoff")) ? (1D - ToNum(Call(SM_11, V.Undef, ((V)(((ToNum(now_944) - ToNum(Get(c_942, "cukeoff"))) / 250D)))))) : 1D));
 Invoke(Arr(eL_946, eR_947), "forEach", Fn((V _self1, int _argc958, V e_964, V _a961, V _a962, V _a963, V[] _rest959) => {
-h_954 = ((V)(string.Concat(new string[] { ToStr(h_954), "<g transform=\"translate(", ToStr(Call(r2_10, V.Undef, GetIdx(e_964, 0D))), " ", ToStr(Call(r2_10, V.Undef, GetIdx(e_964, 1D))), ") scale(", ToStr(Call(r2_10, V.Undef, k_957)), ")\"><circle r=\"5\" fill=\"#5fae4a\"/><circle r=\"4.2\" fill=\"#c8ef9a\"/><circle r=\"1.2\" fill=\"#e8ffd0\"/><path d=\"M0 -3.4 L0 -1.6 M0 1.6 L0 3.4 M-3.4 0 L-1.6 0 M1.6 0 L3.4 0\" stroke=\"#a6dc78\" stroke-width=\"0.5\"/></g>" })));
+h_954 = ((V)(string.Concat(new string[] { ToStr(h_954), "<g transform=\"translate(", ToStr(Call(r2_10, V.Undef, GetIdx(e_964, 0D))), " ", ToStr(Call(r2_10, V.Undef, GetIdx(e_964, 1D))), ") scale(", ToStr(Call(r2_10, V.Undef, ((V)(k_957)))), ")\"><circle r=\"5\" fill=\"#5fae4a\"/><circle r=\"4.2\" fill=\"#c8ef9a\"/><circle r=\"1.2\" fill=\"#e8ffd0\"/><path d=\"M0 -3.4 L0 -1.6 M0 1.6 L0 3.4 M-3.4 0 L-1.6 0 M1.6 0 L3.4 0\" stroke=\"#a6dc78\" stroke-width=\"0.5\"/></g>" })));
 return default;
 }, 1, "", true));
 }
@@ -1115,11 +1115,11 @@ return default;
 pokeSide_46 = Fn((V _self1, int _argc1026, V s_1032, V _a1029, V _a1030, V _a1031, V[] _rest1027) => {
 V k_1033 = default;
 V j_1034 = default;
-V d_1035 = default;
+double d_1035 = 0;
 k_1033 = Call(S_14, V.Undef, s_1032);
 j_1034 = Call(S_14, V.Undef, ((V)((-ToNum(s_1032)))));
-d_1035 = ((V)((-ToNum(s_1032))));
-return Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(Call(TL_13, V.Undef), "to", ((V)(90D)), NewObj(8).Put("x", ((V)((ToNum(d_1035) * 3D)))).Put("lean", ((V)((ToNum(d_1035) * 4D)))).Put("tilt", ((V)((ToNum(d_1035) * 8D)))).Put("sq", ((V)(0.06))).Put("wide", ((V)(0.8))).PutK(Get(k_1033, "foot"), ((V)(3D))).PutK(Get(j_1034, "arm"), ((V)(60D))).Put("open", ((V)(0.3))).V, ((V)("o"))), "to", ((V)(250D)), NewObj(4).Put("x", ((V)((ToNum(d_1035) * 6D)))).Put("tilt", ((V)((ToNum(d_1035) * 10D)))).Put("lean", ((V)((ToNum(d_1035) * 3D)))).Put("lift", ((V)(2D))).V, ((V)("o"))), "to", ((V)(220D)), NewObj(4).Put("lift", ((V)(0D))).Put("tilt", ((V)((ToNum(d_1035) * 2D)))).Put("sq", ((V)(0.08))).PutK(Get(k_1033, "foot"), ((V)(0D))).V, ((V)("i"))), "to", ((V)(220D)), NewObj(3).Put("tilt", ((V)(((-ToNum(d_1035)) * 2D)))).Put("sq", ((V)(0D))).PutK(Get(j_1034, "arm"), ((V)(0D))).V, ((V)("io"))), "to", ((V)(300D)), NewObj(8).Put("x", ((V)(0D))).Put("tilt", ((V)(0D))).Put("lean", ((V)(0D))).Put("lx", ((V)((ToNum(s_1032) * 0.9)))).Put("turn", ((V)((ToNum(s_1032) * 0.3)))).Put("wide", ((V)(0D))).Put("open", ((V)(0D))).Put("frown", ((V)(0.4))).V, ((V)("io"))), "to", ((V)(300D)), Call(o_17, V.Undef, Call(hand_15, V.Undef, s_1032, ((V)((-3D))), ((V)((-2D))))), ((V)("io"))), "osc", ((V)(500D)), ((V)(2D)), NewObj(1).PutK(Get(k_1033, "hy"), ((V)((-4D)))).V, NewObj(1).PutK(Get(k_1033, "hy"), ((V)(0D))).V), "rest", ((V)(400D))), "done", NewObj(1).Put("tap", Arr(((V)((LtN(s_1032, 0D) ? 30D : 70D))), ((V)(78D)))).V);
+d_1035 = (-ToNum(s_1032));
+return Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(Call(TL_13, V.Undef), "to", ((V)(90D)), NewObj(8).Put("x", ((V)((d_1035 * 3D)))).Put("lean", ((V)((d_1035 * 4D)))).Put("tilt", ((V)((d_1035 * 8D)))).Put("sq", ((V)(0.06))).Put("wide", ((V)(0.8))).PutK(Get(k_1033, "foot"), ((V)(3D))).PutK(Get(j_1034, "arm"), ((V)(60D))).Put("open", ((V)(0.3))).V, ((V)("o"))), "to", ((V)(250D)), NewObj(4).Put("x", ((V)((d_1035 * 6D)))).Put("tilt", ((V)((d_1035 * 10D)))).Put("lean", ((V)((d_1035 * 3D)))).Put("lift", ((V)(2D))).V, ((V)("o"))), "to", ((V)(220D)), NewObj(4).Put("lift", ((V)(0D))).Put("tilt", ((V)((d_1035 * 2D)))).Put("sq", ((V)(0.08))).PutK(Get(k_1033, "foot"), ((V)(0D))).V, ((V)("i"))), "to", ((V)(220D)), NewObj(3).Put("tilt", ((V)(((-d_1035) * 2D)))).Put("sq", ((V)(0D))).PutK(Get(j_1034, "arm"), ((V)(0D))).V, ((V)("io"))), "to", ((V)(300D)), NewObj(8).Put("x", ((V)(0D))).Put("tilt", ((V)(0D))).Put("lean", ((V)(0D))).Put("lx", ((V)((ToNum(s_1032) * 0.9)))).Put("turn", ((V)((ToNum(s_1032) * 0.3)))).Put("wide", ((V)(0D))).Put("open", ((V)(0D))).Put("frown", ((V)(0.4))).V, ((V)("io"))), "to", ((V)(300D)), Call(o_17, V.Undef, Call(hand_15, V.Undef, s_1032, ((V)((-3D))), ((V)((-2D))))), ((V)("io"))), "osc", ((V)(500D)), ((V)(2D)), NewObj(1).PutK(Get(k_1033, "hy"), ((V)((-4D)))).V, NewObj(1).PutK(Get(k_1033, "hy"), ((V)(0D))).V), "rest", ((V)(400D))), "done", NewObj(1).Put("tap", Arr(((V)((LtN(s_1032, 0D) ? 30D : 70D))), ((V)(78D)))).V);
 return default;
 }, 1, "", true);
 Set(ST_18, "poke_sideL", Call(pokeSide_46, V.Undef, ((V)((-1D)))));
@@ -1190,20 +1190,20 @@ V h_1084 = default;
 c_1083 = (Get(Get(I_1081, "W"), "body") is var _t1085 && Truthy(_t1085) ? _t1085 : Arr(((V)(50D)), ((V)(78D))));
 h_1084 = ((V)(""));
 {
-V i_1086 = default;
-i_1086 = ((V)(0D));
+double i_1086 = 0;
+i_1086 = 0D;
 while (true) {
-if (!(LtN(i_1086, 2D))) break;
-V a_1088 = default;
+if (!((i_1086 < 2D))) break;
+double a_1088 = 0;
 V x_1089 = default;
-V y_1090 = default;
-V fl_1091 = default;
-a_1088 = ((V)(((ToNum(tt_1082) / (520D + (ToNum(i_1086) * 140D))) + (ToNum(i_1086) * System.Math.PI))));
-x_1089 = Add(GetIdx(c_1083, 0D), ((V)((FdLibm.Cos(ToNum(a_1088)) * (26D - (ToNum(i_1086) * 4D))))));
-y_1090 = ((V)(((ToNum(GetIdx(c_1083, 1D)) - 18D) + (FdLibm.Sin((ToNum(a_1088) * 1.3)) * 12D))));
-fl_1091 = ((V)((FdLibm.Sin(ToNum(Add(((V)((ToNum(tt_1082) / 18D))), i_1086))) * 0.6)));
-h_1084 = ((V)(string.Concat(new string[] { ToStr(h_1084), "<g transform=\"translate(", ToStr(Call(r2_10, V.Undef, x_1089)), " ", ToStr(Call(r2_10, V.Undef, y_1090)), ")\"><ellipse cx=\"-0.8\" cy=\"-1\" rx=\"1.1\" ry=\"", ToStr(Call(r2_10, V.Undef, ((V)((0.5 + (ToNum(fl_1091) * 0.4)))))), "\" fill=\"#ffffff\" opacity=\"0.8\"/><ellipse cx=\"0.8\" cy=\"-1\" rx=\"1.1\" ry=\"", ToStr(Call(r2_10, V.Undef, ((V)((0.5 - (ToNum(fl_1091) * 0.4)))))), "\" fill=\"#ffffff\" opacity=\"0.8\"/><circle r=\"0.95\" fill=\"#2a1a30\"/></g>" })));
-PostInc(ref i_1086, 1D);
+double y_1090 = 0;
+double fl_1091 = 0;
+a_1088 = ((ToNum(tt_1082) / (520D + (i_1086 * 140D))) + (i_1086 * System.Math.PI));
+x_1089 = Add(GetIdx(c_1083, 0D), ((V)((FdLibm.Cos(a_1088) * (26D - (i_1086 * 4D))))));
+y_1090 = ((ToNum(GetIdx(c_1083, 1D)) - 18D) + (FdLibm.Sin((a_1088 * 1.3)) * 12D));
+fl_1091 = (FdLibm.Sin(((ToNum(tt_1082) / 18D) + i_1086)) * 0.6);
+h_1084 = ((V)(string.Concat(new string[] { ToStr(h_1084), "<g transform=\"translate(", ToStr(Call(r2_10, V.Undef, x_1089)), " ", ToStr(Call(r2_10, V.Undef, ((V)(y_1090)))), ")\"><ellipse cx=\"-0.8\" cy=\"-1\" rx=\"1.1\" ry=\"", ToStr(Call(r2_10, V.Undef, ((V)((0.5 + (fl_1091 * 0.4)))))), "\" fill=\"#ffffff\" opacity=\"0.8\"/><ellipse cx=\"0.8\" cy=\"-1\" rx=\"1.1\" ry=\"", ToStr(Call(r2_10, V.Undef, ((V)((0.5 - (fl_1091 * 0.4)))))), "\" fill=\"#ffffff\" opacity=\"0.8\"/><circle r=\"0.95\" fill=\"#2a1a30\"/></g>" })));
+i_1086++;
 }
 }
 return h_1084;
@@ -1214,16 +1214,16 @@ return default;
 }, 0, "", true), V.Undef));
 whip_48 = Fn((V _self1, int _argc1092, V t_1098, V dir_1099, V chain_1100, V _a1097, V[] _rest1093) => {
 V d_1101 = default;
-V ld_1102 = default;
+double ld_1102 = 0;
 V A_1103 = default;
 V B_1104 = default;
 V FT_1105 = default;
 d_1101 = (dir_1099 is var _t1106 && Truthy(_t1106) ? _t1106 : ((V)(1D)));
-ld_1102 = ((V)((GtN(d_1101, 0D) ? 1D : (-1D))));
-A_1103 = Get(Call(S_14, V.Undef, ld_1102), "arm");
-B_1104 = Get(Call(S_14, V.Undef, ((V)((-ToNum(ld_1102))))), "arm");
-FT_1105 = Get(Call(S_14, V.Undef, ld_1102), "foot");
-Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(t_1098, "to", ((V)(75D)), Call(o_17, V.Undef, NewObj(9).Put("lx", ((V)((0.9 * ToNum(d_1101))))).Put("htilt", ((V)((3D * ToNum(d_1101))))).Put("sq", ((V)((-0.03)))).PutK(A_1103, ((V)(6D))).PutK(B_1104, ((V)(6D))).Put("earL", ((V)((-3D)))).Put("earR", ((V)((-3D)))).Put("hap", ((V)(0.2))).Put("open", ((V)(0D))).V), ((V)("io"))), "to", ((V)(155D)), Call(o_17, V.Undef, NewObj(15).Put("sq", ((V)(0.14))).Put("spin", ((V)(((-32D) * ToNum(d_1101))))).Put("turn", ((V)(((-0.12) * ToNum(d_1101))))).Put("hyaw", ((V)((0.55 * ToNum(d_1101))))).Put("tilt", ((V)(((-3D) * ToNum(d_1101))))).Put("lean", ((V)(((-1D) * ToNum(d_1101))))).Put("htilt", ((V)((7D * ToNum(d_1101))))).Put("lx", d_1101).PutK(B_1104, ((V)(70D))).PutK(A_1103, ((V)((-6D)))).Put("close", ((V)(0.2))).Put("earL", ((V)(10D))).Put("earR", ((V)(10D))).Put("wag", ((V)((14D * ToNum(d_1101))))).Put("hap", ((V)(0.35))).V, Call(hand_15, V.Undef, ld_1102, ((V)(7D)), ((V)((-2D))), ((V)(5D)))), ((V)("o"))), "to", ((V)(100D)), NewObj(4).Put("sq", ((V)(0.16))).Put("spin", ((V)(((-36D) * ToNum(d_1101))))).Put("htilt", ((V)((8D * ToNum(d_1101))))).PutK(B_1104, ((V)(76D))).V, ((V)("io"))), "to", ((V)(50D)), Call(o_17, V.Undef, NewObj(15).Put("spin", ((V)((40D * ToNum(d_1101))))).Put("sblur", ((V)(0.5))).Put("sq", ((V)((-0.1)))).Put("turn", ((V)(0D))).Put("hyaw", ((V)((0.35 * ToNum(d_1101))))).Put("tilt", ((V)((4D * ToNum(d_1101))))).Put("lean", ((V)((0.6 * ToNum(d_1101))))).Put("htilt", ((V)((10D * ToNum(d_1101))))).Put("lx", ((V)((0.6 * ToNum(d_1101))))).PutK(B_1104, ((V)(125D))).PutK(A_1103, ((V)(30D))).Put("close", ((V)(0D))).Put("earL", ((V)((-8D)))).Put("earR", ((V)((-8D)))).PutK(FT_1105, ((V)(8D))).V, Call(hand_15, V.Undef, ld_1102, ((V)(0D)), ((V)(2D)), ((V)(3D))), Call(hand_15, V.Undef, ((V)((-ToNum(ld_1102)))), ((V)(0D)), ((V)((-4D))), ((V)(3D)))), ((V)("l"))), "to", ((V)(180D)), NewObj(7).Put("spin", ((V)((378D * ToNum(d_1101))))).Put("sq", ((V)((-0.12)))).PutK(B_1104, ((V)(128D))).PutK(A_1103, ((V)(32D))).Put("earL", ((V)((-12D)))).Put("earR", ((V)((-12D)))).PutK(FT_1105, ((V)(9D))).V, ((V)("l"))), "to", ((V)(200D)), Call(o_17, V.Undef, NewObj(17).Put("spin", ((V)((360D * ToNum(d_1101))))).Put("sblur", ((V)(0D))).Put("sq", ((V)(0.12))).PutK(FT_1105, ((V)(0D))).Put("hyaw", ((V)(((-0.12) * ToNum(d_1101))))).Put("tilt", ((V)(((-2D) * ToNum(d_1101))))).Put("lean", ((V)(0D))).Put("htilt", ((V)(((-3D) * ToNum(d_1101))))).Put("lx", ((V)(0D))).PutK(A_1103, ((V)(115D))).PutK(B_1104, ((V)(40D))).Put("earL", ((V)(12D))).Put("earR", ((V)(12D))).Put("wag", ((V)(((-18D) * ToNum(d_1101))))).Put("hap", ((V)(1D))).Put("smile", ((V)(1D))).Put("open", ((V)(0.3))).V, Call(hand_15, V.Undef, ld_1102, ((V)(0D)), ((V)(0D)), ((V)(0D))), Call(hand_15, V.Undef, ((V)((-ToNum(ld_1102)))), ((V)(0D)), ((V)(0D)), ((V)(0D)))), ((V)("o"))), "to", ((V)(1D)), NewObj(1).Put("spin", ((V)(0D))).V, ((V)("l")));
+ld_1102 = (GtN(d_1101, 0D) ? 1D : (-1D));
+A_1103 = Get(Call(S_14, V.Undef, ((V)(ld_1102))), "arm");
+B_1104 = Get(Call(S_14, V.Undef, ((V)((-ld_1102)))), "arm");
+FT_1105 = Get(Call(S_14, V.Undef, ((V)(ld_1102))), "foot");
+Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(Invoke(t_1098, "to", ((V)(75D)), Call(o_17, V.Undef, NewObj(9).Put("lx", ((V)((0.9 * ToNum(d_1101))))).Put("htilt", ((V)((3D * ToNum(d_1101))))).Put("sq", ((V)((-0.03)))).PutK(A_1103, ((V)(6D))).PutK(B_1104, ((V)(6D))).Put("earL", ((V)((-3D)))).Put("earR", ((V)((-3D)))).Put("hap", ((V)(0.2))).Put("open", ((V)(0D))).V), ((V)("io"))), "to", ((V)(155D)), Call(o_17, V.Undef, NewObj(15).Put("sq", ((V)(0.14))).Put("spin", ((V)(((-32D) * ToNum(d_1101))))).Put("turn", ((V)(((-0.12) * ToNum(d_1101))))).Put("hyaw", ((V)((0.55 * ToNum(d_1101))))).Put("tilt", ((V)(((-3D) * ToNum(d_1101))))).Put("lean", ((V)(((-1D) * ToNum(d_1101))))).Put("htilt", ((V)((7D * ToNum(d_1101))))).Put("lx", d_1101).PutK(B_1104, ((V)(70D))).PutK(A_1103, ((V)((-6D)))).Put("close", ((V)(0.2))).Put("earL", ((V)(10D))).Put("earR", ((V)(10D))).Put("wag", ((V)((14D * ToNum(d_1101))))).Put("hap", ((V)(0.35))).V, Call(hand_15, V.Undef, ((V)(ld_1102)), ((V)(7D)), ((V)((-2D))), ((V)(5D)))), ((V)("o"))), "to", ((V)(100D)), NewObj(4).Put("sq", ((V)(0.16))).Put("spin", ((V)(((-36D) * ToNum(d_1101))))).Put("htilt", ((V)((8D * ToNum(d_1101))))).PutK(B_1104, ((V)(76D))).V, ((V)("io"))), "to", ((V)(50D)), Call(o_17, V.Undef, NewObj(15).Put("spin", ((V)((40D * ToNum(d_1101))))).Put("sblur", ((V)(0.5))).Put("sq", ((V)((-0.1)))).Put("turn", ((V)(0D))).Put("hyaw", ((V)((0.35 * ToNum(d_1101))))).Put("tilt", ((V)((4D * ToNum(d_1101))))).Put("lean", ((V)((0.6 * ToNum(d_1101))))).Put("htilt", ((V)((10D * ToNum(d_1101))))).Put("lx", ((V)((0.6 * ToNum(d_1101))))).PutK(B_1104, ((V)(125D))).PutK(A_1103, ((V)(30D))).Put("close", ((V)(0D))).Put("earL", ((V)((-8D)))).Put("earR", ((V)((-8D)))).PutK(FT_1105, ((V)(8D))).V, Call(hand_15, V.Undef, ((V)(ld_1102)), ((V)(0D)), ((V)(2D)), ((V)(3D))), Call(hand_15, V.Undef, ((V)((-ld_1102))), ((V)(0D)), ((V)((-4D))), ((V)(3D)))), ((V)("l"))), "to", ((V)(180D)), NewObj(7).Put("spin", ((V)((378D * ToNum(d_1101))))).Put("sq", ((V)((-0.12)))).PutK(B_1104, ((V)(128D))).PutK(A_1103, ((V)(32D))).Put("earL", ((V)((-12D)))).Put("earR", ((V)((-12D)))).PutK(FT_1105, ((V)(9D))).V, ((V)("l"))), "to", ((V)(200D)), Call(o_17, V.Undef, NewObj(17).Put("spin", ((V)((360D * ToNum(d_1101))))).Put("sblur", ((V)(0D))).Put("sq", ((V)(0.12))).PutK(FT_1105, ((V)(0D))).Put("hyaw", ((V)(((-0.12) * ToNum(d_1101))))).Put("tilt", ((V)(((-2D) * ToNum(d_1101))))).Put("lean", ((V)(0D))).Put("htilt", ((V)(((-3D) * ToNum(d_1101))))).Put("lx", ((V)(0D))).PutK(A_1103, ((V)(115D))).PutK(B_1104, ((V)(40D))).Put("earL", ((V)(12D))).Put("earR", ((V)(12D))).Put("wag", ((V)(((-18D) * ToNum(d_1101))))).Put("hap", ((V)(1D))).Put("smile", ((V)(1D))).Put("open", ((V)(0.3))).V, Call(hand_15, V.Undef, ((V)(ld_1102)), ((V)(0D)), ((V)(0D)), ((V)(0D))), Call(hand_15, V.Undef, ((V)((-ld_1102))), ((V)(0D)), ((V)(0D)), ((V)(0D)))), ((V)("o"))), "to", ((V)(1D)), NewObj(1).Put("spin", ((V)(0D))).V, ((V)("l")));
 if (Truthy(chain_1100)) {
 return t_1098;
 }

@@ -18,6 +18,7 @@
   function I(id) { var c = ctl[id]; return c && c._I; }
   G.__native = {
     ctl: function (id) { return ctl[id] || null; },
+    host: function (id) { return els[id] || null; },
     // the house walk's / the result card's channels on the rig this frame (live-host.js ext, from an object)
     ext: function (id, o) {
       var c = ctl[id]; if (!c) return;

@@ -56,7 +56,19 @@ namespace SquishSquad.Creatures.Js
         /// <summary>The one clock: `ms` on (timers due fire in order, then the frame's callbacks), then the promise jobs.</summary>
         public static void Frame(double ms) { Rt.Invoke(_live, "frame", ms); Rt.RunMicrotasks(); }
         public static double Now => Rt.ToNum(Rt.Invoke(_live, "now"));
-        public static string Svg(int id) { var s = Rt.Invoke(_live, "svg", id); return s.IsNullish ? null : Rt.ToStr(s); }
+        /// <summary>The creature's &lt;svg&gt; markup now, as live-host.js's svg(id) gives it (the fabric tile as
+        /// href="grain", one line), written natively (run.mjs checks it against the JS).</summary>
+        public static string Svg(int id)
+        {
+            var el = Rt.Invoke(Rt.G("__native"), "host", id);
+            if (el.IsNullish) return null;
+            var svg = Dom.FirstSvg(el);
+            if (svg.IsNullish) return null;
+            var s = Dom.Serialize(svg);
+            if (s.IndexOf("shim-canvas:", StringComparison.Ordinal) >= 0) s = Canvas.Replace(s, "href=\"grain\"");
+            return s.Replace('\n', ' ');
+        }
+        static readonly System.Text.RegularExpressions.Regex Canvas = new System.Text.RegularExpressions.Regex("href=\"shim-canvas:[^\"]*\"");
         public static void Unmount(int id) { Rt.Invoke(_live, "unmount", id); Rt.RunMicrotasks(); }
         public static void Yaw(int id, double deg) => Rt.Invoke(_live, "yaw", id, deg);
         public static void Fidgets(int id, bool on) => Rt.Invoke(_live, "fidgets", id, on);

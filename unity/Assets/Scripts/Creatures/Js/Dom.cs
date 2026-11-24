@@ -58,6 +58,22 @@ namespace SquishSquad.Creatures.Js
             sb.Append("</").Append(tag).Append('>');
         }
 
+        /// <summary>el.querySelector('svg'): the first element named svg under `el`, in document order.</summary>
+        public static V FirstSvg(V el)
+        {
+            var kids = Rt.Get(el, "childNodes").O as JsArray;
+            if (kids == null) return V.Null;
+            for (int i = 0; i < kids.Len; i++)
+            {
+                var c = kids.At(i);
+                if (!(c.O is JsObject) || Rt.ToNum(Rt.Get(c, "nodeType")) != 1) continue;
+                if (string.Equals(Rt.ToStr(Rt.Get(c, "localName")), "svg", System.StringComparison.OrdinalIgnoreCase)) return c;
+                var r = FirstSvg(c);
+                if (!r.IsNullish) return r;
+            }
+            return V.Null;
+        }
+
         // kebab(): camelCase to kebab-case, webkit- to -webkit-
         static void Kebab(StringBuilder sb, string k)
         {

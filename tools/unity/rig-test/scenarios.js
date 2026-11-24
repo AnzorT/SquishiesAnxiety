@@ -16,7 +16,8 @@
   var AR = function (K) { return { armL: K, armR: K }; };
 
   function ctlOf(id) { return G.__native.ctl(id); }
-  function svg(id) { return G.__live.svg(id); }
+  // (the native host's own markup writer when there is one: RigHost.Svg, what Unity draws)
+  function svg(id) { return G.__svgOf ? G.__svgOf(id) : G.__live.svg(id); }
 
   // each scenario: frames (16 ms each), a snapshot every `every`, setup(c) once, step(c, f, t) before each frame
   var S = {

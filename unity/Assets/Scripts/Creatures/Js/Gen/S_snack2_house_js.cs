@@ -93,12 +93,12 @@ return default;
 return Call(sp_26, V.Undef, t_128, NewObj(4).Put("cap", ((V)(0.7))).Put("wob", ((V)(0.8))).Put("smile", ((V)(1D))).Put("hap", ((V)(0.6))).V, ((V)(1200D)), ((V)(700D)));
 }, 1, "sunny", true)).Put("toco", Fn((V _self10, int _argc129, V t_135, V _a132, V _a133, V _a134, V[] _rest130) => {
 {
-V i_136 = default;
-i_136 = ((V)(0D));
+double i_136 = 0;
+i_136 = 0D;
 while (true) {
-if (!(LtN(i_136, 2D))) break;
+if (!((i_136 < 2D))) break;
 Invoke(Invoke(t_135, "to", ((V)(110D)), NewObj(1).Put("snap", ((V)((-0.5)))).V, ((V)("o"))), "to", ((V)(200D)), NewObj(1).Put("snap", ((V)(0.4))).V, ((V)("io")));
-PostInc(ref i_136, 1D);
+i_136++;
 }
 }
 Invoke(Invoke(t_135, "to", ((V)(150D)), NewObj(1).Put("snap", ((V)(0D))).V), "fx", ((V)("lettuce")), ((V)("head")), ((V)(2D)));
@@ -221,7 +221,7 @@ Set(W_308, "__snRoll", ((V)(1D)));
 st0_329 = Get(W_308, "step");
 Set(W_308, "step", Fn((V _self330, int _argc331, V key_337, V st_338, V E_339, V w_340, V[] _rest332) => {
 V r_345 = default;
-V dir_346 = default;
+double dir_346 = 0;
 V mv_347 = default;
 V dt_341 = default;
 V spd_342 = default;
@@ -235,21 +235,21 @@ r_345 = Invoke(st0_329, "apply", _self330, _arguments344);
 if (!SEqS(key_337, "sunny")) {
 return r_345;
 }
-dir_346 = ((V)(FdLibm.Sin(((ToNum((spin_343 is var _t348 && Truthy(_t348) ? _t348 : ((V)(0D)))) * System.Math.PI) / 180D))));
+dir_346 = FdLibm.Sin(((ToNum((spin_343 is var _t348 && Truthy(_t348) ? _t348 : ((V)(0D)))) * System.Math.PI) / 180D));
 mv_347 = ((GtN((spd_342 is var _t349 && Truthy(_t349) ? _t349 : ((V)(0D))), 0D) && GtN(w_340, 0.3)) ? V.True : V.False);
 Set(st_338, "ra", (Get(st_338, "ra") is var _t350 && Truthy(_t350) ? _t350 : ((V)(0D))));
 Set(st_338, "rv", (Get(st_338, "rv") is var _t351 && Truthy(_t351) ? _t351 : ((V)(0D))));
 if (Truthy(mv_347)) {
-V tv_352 = default;
-tv_352 = ((V)((((300D * ToNum(spd_342)) * (Truthy(Get(st_338, "run")) ? 1.6 : 1D)) * ToNum(((System.Math.Abs(ToNum(dir_346)) < 0.3) ? ((V)((LtN(dir_346, 0D) ? (-0.3) : 0.3))) : dir_346)))));
-OpSet(st_338, "rv", 0, ((V)(((ToNum(tv_352) - ToNum(Get(st_338, "rv"))) * Min(1D, (ToNum(dt_341) * 6D))))));
+double tv_352 = 0;
+tv_352 = (((300D * ToNum(spd_342)) * (Truthy(Get(st_338, "run")) ? 1.6 : 1D)) * ((System.Math.Abs(dir_346) < 0.3) ? ((dir_346 < 0D) ? (-0.3) : 0.3) : dir_346));
+OpSet(st_338, "rv", 0, ((V)(((tv_352 - ToNum(Get(st_338, "rv"))) * Min(1D, (ToNum(dt_341) * 6D))))));
 OpSet(st_338, "ra", 0, ((V)((ToNum(Get(st_338, "rv")) * ToNum(dt_341)))));
 } else {
-V tg_353 = default;
-tg_353 = ((V)((Round((ToNum(Get(st_338, "ra")) / 360D)) * 360D)));
-OpSet(st_338, "rv", 0, ((V)(((((ToNum(tg_353) - ToNum(Get(st_338, "ra"))) * 60D) - (ToNum(Get(st_338, "rv")) * 7D)) * Min(ToNum(dt_341), 0.05)))));
+double tg_353 = 0;
+tg_353 = (Round((ToNum(Get(st_338, "ra")) / 360D)) * 360D);
+OpSet(st_338, "rv", 0, ((V)(((((tg_353 - ToNum(Get(st_338, "ra"))) * 60D) - (ToNum(Get(st_338, "rv")) * 7D)) * Min(ToNum(dt_341), 0.05)))));
 OpSet(st_338, "ra", 0, ((V)((ToNum(Get(st_338, "rv")) * Min(ToNum(dt_341), 0.05)))));
-if (((System.Math.Abs((ToNum(tg_353) - ToNum(Get(st_338, "ra")))) < 0.3) && (System.Math.Abs(ToNum(Get(st_338, "rv"))) < 2D))) {
+if (((System.Math.Abs((tg_353 - ToNum(Get(st_338, "ra")))) < 0.3) && (System.Math.Abs(ToNum(Get(st_338, "rv"))) < 2D))) {
 Set(st_338, "ra", ((V)(0D)));
 Set(st_338, "rv", ((V)(0D)));
 }
@@ -312,12 +312,12 @@ return default;
 }, 1, "", true), ((V)("curtsy"))));
 Call(d_367, V.Undef, ((V)("toco")), Arr(Fn((V _self356, int _argc435, V t_441, V _a438, V _a439, V _a440, V[] _rest436) => {
 {
-V i_442 = default;
-i_442 = ((V)(0D));
+double i_442 = 0;
+i_442 = 0D;
 while (true) {
-if (!(LtN(i_442, 2D))) break;
+if (!((i_442 < 2D))) break;
 Invoke(Invoke(t_441, "to", ((V)(110D)), NewObj(1).Put("snap", ((V)((-0.5)))).V, ((V)("o"))), "to", ((V)(200D)), NewObj(1).Put("snap", ((V)(0.4))).V, ((V)("io")));
-PostInc(ref i_442, 1D);
+i_442++;
 }
 }
 Invoke(Invoke(t_441, "to", ((V)(150D)), NewObj(1).Put("snap", ((V)(0D))).V), "fx", ((V)("lettuce")), ((V)("head")), ((V)(2D)));

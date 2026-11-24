@@ -53,15 +53,16 @@ fs.writeFileSync(path.join(SCRATCH, 'list.json'), JSON.stringify(list));
 
 // ---- the C# side (built and run in a child process while Node runs the JS)
 const GEN = path.join(SCRATCH, 'gen');
+const BIN = process.env.RIG_TEST_BIN || path.join(HERE, 'bin/Release/net8.0');   // (another one to run two tests at once)
 if (!argv.includes('--no-build')) {
   execFileSync('node', [path.join(REPO, 'tools/unity/rig/jsc.mjs'), '--test', '--out', GEN], { stdio: ['ignore', 'ignore', 'inherit'] });
-  execFileSync('dotnet', ['build', '-c', 'Release', '-v', 'q', '-nologo', '-p:GEN=' + GEN], { cwd: HERE, stdio: ['ignore', 'ignore', 'inherit'] });
+  execFileSync('dotnet', ['build', '-c', 'Release', '-v', 'q', '-nologo', '-p:GEN=' + GEN, '-o', BIN], { cwd: HERE, stdio: ['ignore', 'ignore', 'inherit'] });
 }
 // the C# side runs in a child process alongside: one JSON line per run on its stdout, compared as they come
 const { spawn } = await import('node:child_process');
 const readline = await import('node:readline');
 const t0 = Date.now();
-const cs = spawn('dotnet', [path.join(HERE, 'bin/Release/net8.0/RigTest.dll'), 'run', path.join(SCRATCH, 'list.json'), '-'], { stdio: ['ignore', 'pipe', 'inherit'] });
+const cs = spawn('dotnet', [path.join(BIN, 'RigTest.dll'), 'run', path.join(SCRATCH, 'list.json'), '-'], { stdio: ['ignore', 'pipe', 'inherit'] });
 const csLines = readline.createInterface({ input: cs.stdout, crlfDelay: Infinity })[Symbol.asyncIterator]();
 
 // Chrome draws both and counts the pixels that differ (> 24 in a channel), as parity.mjs

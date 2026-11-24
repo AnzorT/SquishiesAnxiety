@@ -53,12 +53,12 @@ return NewObj(3).Put("a", NewObj(1).Put("wag", a_63).V).Put("b", NewObj(1).Put("
 }, 2, "", true);
 ears_18 = Fn((V _self2, int _argc66, V t_72, V n_73, V _a70, V _a71, V[] _rest67) => {
 {
-V i_74 = default;
-i_74 = ((V)(0D));
+double i_74 = 0;
+i_74 = 0D;
 while (true) {
-if (!(Lt(i_74, (n_73 is var _t76 && Truthy(_t76) ? _t76 : ((V)(2D)))))) break;
+if (!(Lt(((V)(i_74)), (n_73 is var _t76 && Truthy(_t76) ? _t76 : ((V)(2D)))))) break;
 Invoke(Invoke(t_72, "to", ((V)(110D)), NewObj(2).Put("earL", ((V)((-14D)))).Put("earR", ((V)(14D))).V, ((V)("o"))), "to", ((V)(130D)), NewObj(2).Put("earL", ((V)(10D))).Put("earR", ((V)((-10D)))).V);
-PostInc(ref i_74, 1D);
+i_74++;
 }
 }
 return Invoke(t_72, "to", ((V)(140D)), NewObj(2).Put("earL", ((V)(0D))).Put("earR", ((V)(0D))).V);
@@ -87,12 +87,12 @@ Call(bk_16, V.Undef, t_115);
 return default;
 }, 1, "s", true)).V).Put("ribbit", NewObj(2).Put("sw", ((V)("glide"))).Put("s", Fn((V _self2, int _argc116, V t_122, V _a119, V _a120, V _a121, V[] _rest117) => {
 {
-V i_123 = default;
-i_123 = ((V)(0D));
+double i_123 = 0;
+i_123 = 0D;
 while (true) {
-if (!(LtN(i_123, 3D))) break;
+if (!((i_123 < 3D))) break;
 Invoke(Invoke(Invoke(t_122, "to", ((V)(120D)), NewObj(4).Put("lift", Add(Get(Get(t_122, "B"), "lift"), ((V)(3D)))).Put("sq", ((V)((ToNum(Get(Get(t_122, "B"), "sq")) - 0.06)))).Put("hap", ((V)(1D))).Put("open", ((V)(0.4))).V, ((V)("o"))), "to", ((V)(160D)), NewObj(2).Put("lift", Get(Get(t_122, "B"), "lift")).Put("sq", Add(Get(Get(t_122, "B"), "sq"), ((V)(0.04)))).V, ((V)("i"))), "fx", ((V)("splash")), ((V)("body")), ((V)(4D)));
-PostInc(ref i_123, 1D);
+i_123++;
 }
 }
 Call(bk_16, V.Undef, t_122);
@@ -109,12 +109,12 @@ Call(bk_16, V.Undef, t_145, ((V)(600D)));
 return default;
 }, 1, "s", true)).V).Put("poppy", NewObj(2).Put("k", NewObj(2).Put("a", NewObj(2).Put("earL", ((V)((-18D)))).Put("earR", ((V)(16D))).V).Put("b", NewObj(2).Put("earL", ((V)(16D))).Put("earR", ((V)((-18D)))).V).V).Put("s", Fn((V _self2, int _argc146, V t_152, V _a149, V _a150, V _a151, V[] _rest147) => {
 {
-V i_153 = default;
-i_153 = ((V)(0D));
+double i_153 = 0;
+i_153 = 0D;
 while (true) {
-if (!(LtN(i_153, 3D))) break;
+if (!((i_153 < 3D))) break;
 Invoke(Invoke(Invoke(t_152, "to", ((V)(140D)), NewObj(4).Put("lift", Add(Get(Get(t_152, "B"), "lift"), ((V)(3D)))).Put("sq", ((V)((ToNum(Get(Get(t_152, "B"), "sq")) - 0.06)))).Put("hap", ((V)(1D))).Put("open", ((V)(0.4))).V, ((V)("o"))), "to", ((V)(160D)), NewObj(2).Put("lift", Get(Get(t_152, "B"), "lift")).Put("sq", Add(Get(Get(t_152, "B"), "sq"), ((V)(0.04)))).V, ((V)("i"))), "fx", ((V)("splash")), ((V)("body")), ((V)(4D)));
-PostInc(ref i_153, 1D);
+i_153++;
 }
 }
 Call(bk_16, V.Undef, t_152);
@@ -137,12 +137,12 @@ Call(bk_16, V.Undef, t_182, ((V)(500D)));
 return default;
 }, 1, "s", true)).V).Put("bubbly", NewObj(2).Put("sw", ((V)("float"))).Put("s", Fn((V _self2, int _argc183, V t_189, V _a186, V _a187, V _a188, V[] _rest184) => {
 {
-V i_190 = default;
-i_190 = ((V)(0D));
+double i_190 = 0;
+i_190 = 0D;
 while (true) {
-if (!(LtN(i_190, 3D))) break;
-Invoke(Invoke(Invoke(t_189, "to", ((V)(300D)), NewObj(2).Put("puff", ((V)(0.6))).Put("sq", Add(Get(Get(t_189, "B"), "sq"), ((V)(0.05)))).V), "to", ((V)(200D)), NewObj(2).Put("puff", ((V)(0D))).Put("open", ((V)(0.4))).V, ((V)("o"))), "fx", ((V)((SEqN(i_190, 2D) ? "bigbubble" : "bubble"))), ((V)("mouth")), ((V)(2D)));
-PostInc(ref i_190, 1D);
+if (!((i_190 < 3D))) break;
+Invoke(Invoke(Invoke(t_189, "to", ((V)(300D)), NewObj(2).Put("puff", ((V)(0.6))).Put("sq", Add(Get(Get(t_189, "B"), "sq"), ((V)(0.05)))).V), "to", ((V)(200D)), NewObj(2).Put("puff", ((V)(0D))).Put("open", ((V)(0.4))).V, ((V)("o"))), "fx", ((V)(((i_190 == 2D) ? "bigbubble" : "bubble"))), ((V)("mouth")), ((V)(2D)));
+i_190++;
 }
 }
 Call(bk_16, V.Undef, t_189);
@@ -208,12 +208,12 @@ Call(bk_16, V.Undef, t_303);
 return default;
 }, 1, "s", true)).V).Put("jelli", NewObj(2).Put("sw", ((V)("float"))).Put("s", Fn((V _self2, int _argc304, V t_310, V _a307, V _a308, V _a309, V[] _rest305) => {
 {
-V i_311 = default;
-i_311 = ((V)(0D));
+double i_311 = 0;
+i_311 = 0D;
 while (true) {
-if (!(LtN(i_311, 3D))) break;
+if (!((i_311 < 3D))) break;
 Invoke(Invoke(Invoke(Invoke(t_310, "to", ((V)(400D)), NewObj(1).Put("sq", Add(Get(Get(t_310, "B"), "sq"), ((V)(0.1)))).V, ((V)("i"))), "to", ((V)(500D)), NewObj(2).Put("sq", ((V)((ToNum(Get(Get(t_310, "B"), "sq")) - 0.05)))).Put("lift", Add(Get(Get(t_310, "B"), "lift"), ((V)(1.4)))).V, ((V)("o"))), "fx", ((V)("bubble")), ((V)("body")), ((V)(2D))), "to", ((V)(500D)), NewObj(2).Put("sq", Get(Get(t_310, "B"), "sq")).Put("lift", Get(Get(t_310, "B"), "lift")).V, ((V)("s")));
-PostInc(ref i_311, 1D);
+i_311++;
 }
 }
 Call(bk_16, V.Undef, t_310, ((V)(300D)));

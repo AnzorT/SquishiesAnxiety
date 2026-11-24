@@ -14,7 +14,7 @@ V V2_8 = default;
 V MOVES_9 = default;
 V V2N_10 = default;
 V KEY_11 = default;
-V TAU_12 = default;
+double TAU_12 = 0;
 V w2_13 = default;
 V G_14 = default;
 if (_self1.IsNullish) _self1 = GlobalV;
@@ -38,7 +38,7 @@ InvokeSpread(Get(Get(G("window"), "SquishRig"), "CREATURES"), "splice", new ArrB
 Set(Get(G("window"), "SquishRig"), "__v2", (true ? V.True : V.False));
 }
 KEY_11 = NewObj(7).Put("idle", ((V)("idle"))).Put("happy", ((V)("happy"))).Put("dance1", ((V)("dance"))).Put("dance2", ((V)("dance"))).Put("dance3", ((V)("dance"))).Put("sleeping", ((V)("sleep"))).Put("eating", ((V)("eat"))).V;
-TAU_12 = ((V)((System.Math.PI * 2D)));
+TAU_12 = (System.Math.PI * 2D);
 w2_13 = Fn((V _self1, int _argc25, V c_31, V t_32, V G_33, V _a30, V[] _rest26) => {
 V b_34 = default;
 V a_35 = default;
@@ -62,12 +62,12 @@ sh_37 = _t47; }
 } }
 u_39 = Add(((V)((ToNum(t_32) / ToNum(P_36)))), ph_38);
 if (SEqS(sh_37, "sq")) {
-return Add(b_34, ((V)(((ToNum(a_35) * FdLibm.Tanh((4D * FdLibm.Sin((ToNum(TAU_12) * ToNum(u_39)))))) / FdLibm.Tanh(4D)))));
+return Add(b_34, ((V)(((ToNum(a_35) * FdLibm.Tanh((4D * FdLibm.Sin((TAU_12 * ToNum(u_39)))))) / FdLibm.Tanh(4D)))));
 }
 if (SEqS(sh_37, "hop2")) {
-V x_48 = default;
-x_48 = ((V)(((ToNum(t_32) % ToNum(P_36)) / ToNum(P_36))));
-return (LtN(x_48, 0.5) ? Add(b_34, ((V)((ToNum(a_35) * System.Math.Abs(FdLibm.Sin(((ToNum(TAU_12) * ToNum(x_48)) * 2D))))))) : b_34);
+double x_48 = 0;
+x_48 = ((ToNum(t_32) % ToNum(P_36)) / ToNum(P_36));
+return ((x_48 < 0.5) ? Add(b_34, ((V)((ToNum(a_35) * System.Math.Abs(FdLibm.Sin(((TAU_12 * x_48) * 2D))))))) : b_34);
 }
 return Invoke(G_33, "wave", c_31, t_32);
 return default;

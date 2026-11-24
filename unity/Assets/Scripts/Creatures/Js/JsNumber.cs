@@ -20,31 +20,32 @@ namespace SquishSquad.Creatures.Js
             if (double.IsInfinity(d)) return d > 0 ? "Infinity" : "-Infinity";
             bool neg = d < 0;
             double a = neg ? -d : d;
-            if (a < 9007199254740992.0 && a == Math.Floor(a))
-            {
-                long l = (long)a;
-                return (neg ? "-" : "") + l.ToString(Inv);
-            }
+            if (a < 9007199254740992.0 && a == Math.Floor(a)) return Digits(neg, (long)a, 0);
             // a few decimals (what the rig's r2 / toFixed leave): the k-place decimal that is exactly this double
             if (a < 1e7 && a >= 1e-6)
             {
                 for (int k = 1; k <= 6; k++)
                 {
                     double r = Math.Round(a * Pow10[k]);
-                    if (r / Pow10[k] == a)
-                    {
-                        long q = (long)r;
-                        string digits = q.ToString(Inv);
-                        var sb = new StringBuilder(digits.Length + 3);
-                        if (neg) sb.Append('-');
-                        if (digits.Length <= k) { sb.Append("0."); sb.Append('0', k - digits.Length); sb.Append(digits); }
-                        else { sb.Append(digits, 0, digits.Length - k); sb.Append('.'); sb.Append(digits, digits.Length - k, k); }
-                        return sb.ToString();
-                    }
+                    if (r / Pow10[k] == a) return Digits(neg, (long)r, k);
                 }
             }
             Shortest(a, out string ds, out int n);
             return (neg ? "-" : "") + Format(ds, n);
+        }
+
+        [ThreadStatic] static char[] _buf;
+        // q / 10^k written out: its digits with the point k from the right ("0.0x" when it needs leading zeros)
+        static string Digits(bool neg, long q, int k)
+        {
+            var b = _buf ??= new char[40];
+            int p = b.Length;
+            int written = 0;
+            do { b[--p] = (char)('0' + (int)(q % 10)); q /= 10; written++; if (written == k) b[--p] = '.'; } while (q > 0);
+            if (written < k) { while (written < k) { b[--p] = '0'; written++; } b[--p] = '.'; }
+            if (k > 0 && b[p] == '.') b[--p] = '0';
+            if (neg) b[--p] = '-';
+            return new string(b, p, b.Length - p);
         }
 
         /// <summary>The shortest decimal digits that read back as `a` (> 0) and the decimal point's place n

@@ -60,216 +60,219 @@ DeleteK(els_13, id_64);
 return Call(unmount_17, V.Undef, id_64);
 return default;
 }, 1, "", false));
-Set(G_8, "__native", NewObj(12).Put("ctl", Fn((V _self65, int _argc66, V id_72, V _a69, V _a70, V _a71, V[] _rest67) => {
+Set(G_8, "__native", NewObj(13).Put("ctl", Fn((V _self65, int _argc66, V id_72, V _a69, V _a70, V _a71, V[] _rest67) => {
 return (GetK(ctl_9, id_72) is var _t73 && Truthy(_t73) ? _t73 : V.Null);
 return default;
-}, 1, "ctl", false)).Put("ext", Fn((V _self74, int _argc75, V id_81, V o_82, V _a79, V _a80, V[] _rest76) => {
-V c_83 = default;
-V h_84 = default;
-V k_85 = default;
-V k2_86 = default;
-c_83 = GetK(ctl_9, id_81);
-if (!(Truthy(c_83))) {
+}, 1, "ctl", false)).Put("host", Fn((V _self74, int _argc75, V id_81, V _a78, V _a79, V _a80, V[] _rest76) => {
+return (GetK(els_13, id_81) is var _t82 && Truthy(_t82) ? _t82 : V.Null);
+return default;
+}, 1, "host", false)).Put("ext", Fn((V _self83, int _argc84, V id_90, V o_91, V _a88, V _a89, V[] _rest85) => {
+V c_92 = default;
+V h_93 = default;
+V k_94 = default;
+V k2_95 = default;
+c_92 = GetK(ctl_9, id_90);
+if (!(Truthy(c_92))) {
 return default;
 }
-h_84 = GetK(ext_10, id_81);
-if (!(Truthy(h_84))) {
-h_84 = SetK(ext_10, id_81, NewObj(0).V);
-if (Truthy(Get(c_83, "ext"))) {
-Invoke(c_83, "ext", h_84);
+h_93 = GetK(ext_10, id_90);
+if (!(Truthy(h_93))) {
+h_93 = SetK(ext_10, id_90, NewObj(0).V);
+if (Truthy(Get(c_92, "ext"))) {
+Invoke(c_92, "ext", h_93);
 }
 }
 {
-foreach (V _k87 in ForInKeys(h_84)) {
-k_85 = _k87;
-SetK(h_84, k_85, ((V)(0D)));
+foreach (V _k96 in ForInKeys(h_93)) {
+k_94 = _k96;
+SetK(h_93, k_94, ((V)(0D)));
 }
 }
 {
-foreach (V _k88 in ForInKeys(o_82)) {
-k2_86 = _k88;
-SetK(h_84, k2_86, GetK(o_82, k2_86));
+foreach (V _k97 in ForInKeys(o_91)) {
+k2_95 = _k97;
+SetK(h_93, k2_95, GetK(o_91, k2_95));
 }
 }
 return default;
-}, 2, "ext", false)).Put("events", Fn((V _self89, int _argc90, V id_96, V _a93, V _a94, V _a95, V[] _rest91) => {
-return Invoke(G("JSON"), "parse", Invoke(Get(G_8, "__live"), "events", id_96));
+}, 2, "ext", false)).Put("events", Fn((V _self98, int _argc99, V id_105, V _a102, V _a103, V _a104, V[] _rest100) => {
+return Invoke(G("JSON"), "parse", Invoke(Get(G_8, "__live"), "events", id_105));
 return default;
-}, 1, "events", false)).Put("walkStep", Fn((V _self97, int _argc98, V id_104, V key_105, V w_106, V dt_107, V[] _rest99) => {
-V i_109 = default;
-V s_110 = default;
-V k_111 = default;
-V spin_108 = default;
-spin_108 = (_argc98 > 4 ? _rest99[0] : V.Undef);
-i_109 = Call(I_18, V.Undef, id_104);
-if (!(Truthy(i_109))) {
+}, 1, "events", false)).Put("walkStep", Fn((V _self106, int _argc107, V id_113, V key_114, V w_115, V dt_116, V[] _rest108) => {
+V i_118 = default;
+V s_119 = default;
+V k_120 = default;
+V spin_117 = default;
+spin_117 = (_argc107 > 4 ? _rest108[0] : V.Undef);
+i_118 = Call(I_18, V.Undef, id_113);
+if (!(Truthy(i_118))) {
 return default;
 }
-s_110 = (GetK(walk_11, id_104) is var _t112 && Truthy(_t112) ? _t112 : SetK(walk_11, id_104, NewObj(2).Put("E", NewObj(0).V).Put("ws", NewObj(0).V).V));
-if (!SEq(Get(i_109, "ext"), Get(s_110, "E"))) {
-Set(i_109, "ext", Get(s_110, "E"));
+s_119 = (GetK(walk_11, id_113) is var _t121 && Truthy(_t121) ? _t121 : SetK(walk_11, id_113, NewObj(2).Put("E", NewObj(0).V).Put("ws", NewObj(0).V).V));
+if (!SEq(Get(i_118, "ext"), Get(s_119, "E"))) {
+Set(i_118, "ext", Get(s_119, "E"));
 }
 {
-foreach (V _k113 in ForInKeys(Get(s_110, "E"))) {
-k_111 = _k113;
-SetK(Get(s_110, "E"), k_111, ((V)(0D)));
+foreach (V _k122 in ForInKeys(Get(s_119, "E"))) {
+k_120 = _k122;
+SetK(Get(s_119, "E"), k_120, ((V)(0D)));
 }
 }
-if (Truthy(((GtN(w_106, 0D) ? V.True : V.False) is var _t114 && !Truthy(_t114) ? _t114 : Get(G_8, "HouseWalk")))) {
+if (Truthy(((GtN(w_115, 0D) ? V.True : V.False) is var _t123 && !Truthy(_t123) ? _t123 : Get(G_8, "HouseWalk")))) {
 try {
-Invoke(Get(G_8, "HouseWalk"), "step", key_105, Get(s_110, "ws"), Get(s_110, "E"), w_106, dt_107, ((V)(1D)), spin_108);
-} catch (System.Exception _ex115) {
-V e_116 = default;
-e_116 = Caught(_ex115);
+Invoke(Get(G_8, "HouseWalk"), "step", key_114, Get(s_119, "ws"), Get(s_119, "E"), w_115, dt_116, ((V)(1D)), spin_117);
+} catch (System.Exception _ex124) {
+V e_125 = default;
+e_125 = Caught(_ex124);
 
 }
 }
 return default;
-}, 5, "walkStep", false)).Put("emit", Fn((V _self117, int _argc118, V id_124, V kind_125, V at_126, V x_127, V[] _rest119) => {
-V i_130 = default;
-V p_131 = default;
-V y_128 = default;
-V n_129 = default;
-y_128 = (_argc118 > 4 ? _rest119[0] : V.Undef);
-n_129 = (_argc118 > 5 ? _rest119[1] : V.Undef);
-i_130 = Call(I_18, V.Undef, id_124);
-if ((!(Truthy(i_130)) || !(Truthy(Get(Get(G_8, "RiveRig"), "emit"))))) {
+}, 5, "walkStep", false)).Put("emit", Fn((V _self126, int _argc127, V id_133, V kind_134, V at_135, V x_136, V[] _rest128) => {
+V i_139 = default;
+V p_140 = default;
+V y_137 = default;
+V n_138 = default;
+y_137 = (_argc127 > 4 ? _rest128[0] : V.Undef);
+n_138 = (_argc127 > 5 ? _rest128[1] : V.Undef);
+i_139 = Call(I_18, V.Undef, id_133);
+if ((!(Truthy(i_139)) || !(Truthy(Get(Get(G_8, "RiveRig"), "emit"))))) {
 return default;
 }
-p_131 = (Truthy(at_126) ? ((Get(i_130, "W") is var _t132 && !Truthy(_t132) ? _t132 : GetK(Get(i_130, "W"), at_126)) is var _t133 && Truthy(_t133) ? _t133 : Arr(((V)(50D)), ((V)(50D)))) : Arr(x_127, y_128));
-Invoke(Get(G_8, "RiveRig"), "emit", i_130, kind_125, p_131, (GtN(n_129, 0D) ? n_129 : ((V)(0D))));
+p_140 = (Truthy(at_135) ? ((Get(i_139, "W") is var _t141 && !Truthy(_t141) ? _t141 : GetK(Get(i_139, "W"), at_135)) is var _t142 && Truthy(_t142) ? _t142 : Arr(((V)(50D)), ((V)(50D)))) : Arr(x_136, y_137));
+Invoke(Get(G_8, "RiveRig"), "emit", i_139, kind_134, p_140, (GtN(n_138, 0D) ? n_138 : ((V)(0D))));
 return default;
-}, 6, "emit", false)).Put("parkStart", Fn((V _self134, int _argc135, V id_141, V key_142, V enter_143, V _a140, V[] _rest136) => {
-V i_144 = default;
-V c_145 = default;
-V HW_146 = default;
-V E_147 = default;
-V ws_148 = default;
-V prev_149 = default;
-V ph_150 = default;
-V turn_151 = default;
-V walkMs_152 = default;
-V dir_153 = default;
-i_144 = Call(I_18, V.Undef, id_141);
-c_145 = GetK(ctl_9, id_141);
-if (!(Truthy(i_144))) {
-return default;
-}
-HW_146 = Get(G_8, "HouseWalk");
-E_147 = NewObj(0).V;
-ws_148 = NewObj(0).V;
-prev_149 = Get(i_144, "ext");
-ph_150 = ((V)(0D));
-turn_151 = ((V)((Truthy(enter_143) ? 380D : 340D)));
-walkMs_152 = ((V)((Truthy(enter_143) ? 2300D : 2100D)));
-dir_153 = ((V)((Truthy(enter_143) ? (-90D) : 90D)));
-SetK(park_12, id_141, Fn((V _self154, int _argc155, V now_161, V _a158, V _a159, V _a160, V[] _rest156) => {
-V tt_162 = default;
-V w_163 = default;
-V k_164 = default;
-V k2_165 = default;
-if (SEqN(ph_150, 0D)) {
-Invoke(c_145, "play", ((V)("idle")));
-ph_150 = ((V)(1D));
-}
-if (Lt(now_161, turn_151)) {
-Set(i_144, "spinOff", ((V)((ToNum(dir_153) * ToNum(Call(EIO_14, V.Undef, ((V)((ToNum(now_161) / ToNum(turn_151))))))))));
+}, 6, "emit", false)).Put("parkStart", Fn((V _self143, int _argc144, V id_150, V key_151, V enter_152, V _a149, V[] _rest145) => {
+V i_153 = default;
+V c_154 = default;
+V HW_155 = default;
+V E_156 = default;
+V ws_157 = default;
+V prev_158 = default;
+V ph_159 = default;
+V turn_160 = default;
+V walkMs_161 = default;
+V dir_162 = default;
+i_153 = Call(I_18, V.Undef, id_150);
+c_154 = GetK(ctl_9, id_150);
+if (!(Truthy(i_153))) {
 return default;
 }
-if (Lt(now_161, Add(turn_151, walkMs_152))) {
-if (!SEq(Get(i_144, "ext"), E_147)) {
-Set(i_144, "ext", E_147);
+HW_155 = Get(G_8, "HouseWalk");
+E_156 = NewObj(0).V;
+ws_157 = NewObj(0).V;
+prev_158 = Get(i_153, "ext");
+ph_159 = ((V)(0D));
+turn_160 = ((V)((Truthy(enter_152) ? 380D : 340D)));
+walkMs_161 = ((V)((Truthy(enter_152) ? 2300D : 2100D)));
+dir_162 = ((V)((Truthy(enter_152) ? (-90D) : 90D)));
+SetK(park_12, id_150, Fn((V _self163, int _argc164, V now_170, V _a167, V _a168, V _a169, V[] _rest165) => {
+V tt_171 = default;
+V w_172 = default;
+V k_173 = default;
+V k2_174 = default;
+if (SEqN(ph_159, 0D)) {
+Invoke(c_154, "play", ((V)("idle")));
+ph_159 = ((V)(1D));
 }
-tt_162 = ((V)(((ToNum(now_161) - ToNum(turn_151)) / ToNum(walkMs_152))));
-w_163 = ((V)(Min(1D, (ToNum(tt_162) / 0.08), ((1D - ToNum(tt_162)) / 0.1))));
+if (Lt(now_170, turn_160)) {
+Set(i_153, "spinOff", ((V)((ToNum(dir_162) * ToNum(Call(EIO_14, V.Undef, ((V)((ToNum(now_170) / ToNum(turn_160))))))))));
+return default;
+}
+if (Lt(now_170, Add(turn_160, walkMs_161))) {
+if (!SEq(Get(i_153, "ext"), E_156)) {
+Set(i_153, "ext", E_156);
+}
+tt_171 = ((V)(((ToNum(now_170) - ToNum(turn_160)) / ToNum(walkMs_161))));
+w_172 = ((V)(Min(1D, (ToNum(tt_171) / 0.08), ((1D - ToNum(tt_171)) / 0.1))));
 {
-foreach (V _k166 in ForInKeys(E_147)) {
-k_164 = _k166;
-SetK(E_147, k_164, ((V)(0D)));
+foreach (V _k175 in ForInKeys(E_156)) {
+k_173 = _k175;
+SetK(E_156, k_173, ((V)(0D)));
 }
 }
 try {
-Invoke(HW_146, "step", key_142, ws_148, E_147, ((V)(Max(0D, ToNum(w_163)))), ((V)(0.016)), ((V)(1D)), dir_153);
-} catch (System.Exception _ex167) {
-V e_168 = default;
-e_168 = Caught(_ex167);
+Invoke(HW_155, "step", key_151, ws_157, E_156, ((V)(Max(0D, ToNum(w_172)))), ((V)(0.016)), ((V)(1D)), dir_162);
+} catch (System.Exception _ex176) {
+V e_177 = default;
+e_177 = Caught(_ex176);
 
 }
-Set(i_144, "spinOff", dir_153);
+Set(i_153, "spinOff", dir_162);
 return default;
 }
-if (SEq(Get(i_144, "ext"), E_147)) {
+if (SEq(Get(i_153, "ext"), E_156)) {
 {
-foreach (V _k169 in ForInKeys(E_147)) {
-k2_165 = _k169;
-SetK(E_147, k2_165, ((V)(0D)));
+foreach (V _k178 in ForInKeys(E_156)) {
+k2_174 = _k178;
+SetK(E_156, k2_174, ((V)(0D)));
 }
 }
-Set(i_144, "ext", prev_149);
+Set(i_153, "ext", prev_158);
 }
-if (Lt(now_161, Add(((V)((2D * ToNum(turn_151)))), walkMs_152))) {
-Set(i_144, "spinOff", ((V)((ToNum(dir_153) * (1D - ToNum(Call(EIO_14, V.Undef, ((V)((((ToNum(now_161) - ToNum(turn_151)) - ToNum(walkMs_152)) / ToNum(turn_151)))))))))));
+if (Lt(now_170, Add(((V)((2D * ToNum(turn_160)))), walkMs_161))) {
+Set(i_153, "spinOff", ((V)((ToNum(dir_162) * (1D - ToNum(Call(EIO_14, V.Undef, ((V)((((ToNum(now_170) - ToNum(turn_160)) - ToNum(walkMs_161)) / ToNum(turn_160)))))))))));
 return default;
 }
-if (SEqN(ph_150, 1D)) {
-Set(i_144, "spinOff", ((V)(0D)));
-Invoke(c_145, "play", ((V)("happy")));
-ph_150 = ((V)(2D));
-DeleteK(park_12, id_141);
+if (SEqN(ph_159, 1D)) {
+Set(i_153, "spinOff", ((V)(0D)));
+Invoke(c_154, "play", ((V)("happy")));
+ph_159 = ((V)(2D));
+DeleteK(park_12, id_150);
 }
 return default;
 }, 1, "", false));
 return default;
-}, 3, "parkStart", false)).Put("parkStep", Fn((V _self170, int _argc171, V id_177, V ms_178, V _a175, V _a176, V[] _rest172) => {
-if (Truthy(GetK(park_12, id_177))) {
-InvokeK(park_12, id_177, ms_178);
+}, 3, "parkStart", false)).Put("parkStep", Fn((V _self179, int _argc180, V id_186, V ms_187, V _a184, V _a185, V[] _rest181) => {
+if (Truthy(GetK(park_12, id_186))) {
+InvokeK(park_12, id_186, ms_187);
 }
 return default;
-}, 2, "parkStep", false)).Put("pointer", Fn((V _self179, int _argc180, V id_186, V type_187, V x_188, V y_189, V[] _rest181) => {
-V el_190 = default;
-V w_191 = default;
-el_190 = Call(hostEl_16, V.Undef, id_186);
-if (!(Truthy(el_190))) {
+}, 2, "parkStep", false)).Put("pointer", Fn((V _self188, int _argc189, V id_195, V type_196, V x_197, V y_198, V[] _rest190) => {
+V el_199 = default;
+V w_200 = default;
+el_199 = Call(hostEl_16, V.Undef, id_195);
+if (!(Truthy(el_199))) {
 return default;
 }
-Set(el_190, "__rect", NewObj(4).Put("left", ((V)(0D))).Put("top", ((V)(0D))).Put("width", ((V)(100D))).Put("height", ((V)(100D))).V);
-w_191 = Get(el_190, "firstChild");
-if (!(Truthy(w_191))) {
+Set(el_199, "__rect", NewObj(4).Put("left", ((V)(0D))).Put("top", ((V)(0D))).Put("width", ((V)(100D))).Put("height", ((V)(100D))).V);
+w_200 = Get(el_199, "firstChild");
+if (!(Truthy(w_200))) {
 return default;
 }
-Invoke(w_191, "dispatchEvent", NewObj(6).Put("type", type_187).Put("clientX", x_188).Put("clientY", y_189).Put("pointerId", ((V)(1D))).Put("preventDefault", Fn((V _self192, int _argc193, V _a195, V _a196, V _a197, V _a198, V[] _rest194) => {
+Invoke(w_200, "dispatchEvent", NewObj(6).Put("type", type_196).Put("clientX", x_197).Put("clientY", y_198).Put("pointerId", ((V)(1D))).Put("preventDefault", Fn((V _self201, int _argc202, V _a204, V _a205, V _a206, V _a207, V[] _rest203) => {
 
 return default;
-}, 0, "preventDefault", false)).Put("stopPropagation", Fn((V _self199, int _argc200, V _a202, V _a203, V _a204, V _a205, V[] _rest201) => {
+}, 0, "preventDefault", false)).Put("stopPropagation", Fn((V _self208, int _argc209, V _a211, V _a212, V _a213, V _a214, V[] _rest210) => {
 
 return default;
 }, 0, "stopPropagation", false)).V);
 return default;
-}, 4, "pointer", false)).Put("press", Fn((V _self206, int _argc207, V id_213, V _a210, V _a211, V _a212, V[] _rest208) => {
-V i_214 = default;
-i_214 = Call(I_18, V.Undef, id_213);
-if (Truthy(i_214)) {
-Set(i_214, "press", (true ? V.True : V.False));
-Set(i_214, "pressT", Invoke(Get(G_8, "performance"), "now"));
+}, 4, "pointer", false)).Put("press", Fn((V _self215, int _argc216, V id_222, V _a219, V _a220, V _a221, V[] _rest217) => {
+V i_223 = default;
+i_223 = Call(I_18, V.Undef, id_222);
+if (Truthy(i_223)) {
+Set(i_223, "press", (true ? V.True : V.False));
+Set(i_223, "pressT", Invoke(Get(G_8, "performance"), "now"));
 }
 return default;
-}, 1, "press", false)).Put("light", Fn((V _self215, int _argc216, V id_222, V json_223, V _a220, V _a221, V[] _rest217) => {
-V c_224 = default;
-c_224 = GetK(ctl_9, id_222);
-if (Truthy((c_224 is var _t225 && !Truthy(_t225) ? _t225 : Get(c_224, "light")))) {
-Invoke(c_224, "light", (Truthy(json_223) ? Invoke(G("JSON"), "parse", json_223) : V.Null));
+}, 1, "press", false)).Put("light", Fn((V _self224, int _argc225, V id_231, V json_232, V _a229, V _a230, V[] _rest226) => {
+V c_233 = default;
+c_233 = GetK(ctl_9, id_231);
+if (Truthy((c_233 is var _t234 && !Truthy(_t234) ? _t234 : Get(c_233, "light")))) {
+Invoke(c_233, "light", (Truthy(json_232) ? Invoke(G("JSON"), "parse", json_232) : V.Null));
 }
 return default;
-}, 2, "light", false)).Put("state", Fn((V _self226, int _argc227, V id_233, V _a230, V _a231, V _a232, V[] _rest228) => {
-V i_234 = default;
-i_234 = Call(I_18, V.Undef, id_233);
-return (Truthy((i_234 is var _t235 && !Truthy(_t235) ? _t235 : Get(i_234, "cur"))) ? Get(Get(i_234, "cur"), "name") : V.Null);
+}, 2, "light", false)).Put("state", Fn((V _self235, int _argc236, V id_242, V _a239, V _a240, V _a241, V[] _rest237) => {
+V i_243 = default;
+i_243 = Call(I_18, V.Undef, id_242);
+return (Truthy((i_243 is var _t244 && !Truthy(_t244) ? _t244 : Get(i_243, "cur"))) ? Get(Get(i_243, "cur"), "name") : V.Null);
 return default;
-}, 1, "state", false)).Put("spinOff", Fn((V _self236, int _argc237, V id_243, V deg_244, V _a241, V _a242, V[] _rest238) => {
-V i_245 = default;
-i_245 = Call(I_18, V.Undef, id_243);
-if (Truthy(i_245)) {
-Set(i_245, "spinOff", deg_244);
+}, 1, "state", false)).Put("spinOff", Fn((V _self245, int _argc246, V id_252, V deg_253, V _a250, V _a251, V[] _rest247) => {
+V i_254 = default;
+i_254 = Call(I_18, V.Undef, id_252);
+if (Truthy(i_254)) {
+Set(i_254, "spinOff", deg_253);
 }
 return default;
 }, 2, "spinOff", false)).V);

@@ -97,12 +97,12 @@ k_69 = Call(S_9, V.Undef, s_65);
 a_67 = (a_67 is var _t70 && Truthy(_t70) ? _t70 : ((V)(150D)));
 Invoke(t_64, "to", ((V)(300D)), Call(o_12, V.Undef, NewObj(1).PutK(Get(k_69, "arm"), a_67).V, (x_68 is var _t71 && Truthy(_t71) ? _t71 : NewObj(0).V)), ((V)("io")));
 {
-V i_72 = default;
-i_72 = ((V)(0D));
+double i_72 = 0;
+i_72 = 0D;
 while (true) {
-if (!(Lt(i_72, (n_66 is var _t74 && Truthy(_t74) ? _t74 : ((V)(2D)))))) break;
+if (!(Lt(((V)(i_72)), (n_66 is var _t74 && Truthy(_t74) ? _t74 : ((V)(2D)))))) break;
 Invoke(Invoke(t_64, "to", ((V)(170D)), NewObj(1).PutK(Get(k_69, "arm"), ((V)((ToNum(a_67) - 16D)))).V, ((V)("io"))), "to", ((V)(170D)), NewObj(1).PutK(Get(k_69, "arm"), a_67).V, ((V)("io")));
-PostInc(ref i_72, 1D);
+i_72++;
 }
 }
 return Invoke(t_64, "to", ((V)(300D)), NewObj(3).PutK(Get(k_69, "arm"), ((V)(0D))).Put("winkL", ((V)(0D))).Put("winkR", ((V)(0D))).V, ((V)("io")));
@@ -115,12 +115,12 @@ k_83 = Call(S_9, V.Undef, s_82);
 h_84 = Call(hand_10, V.Undef, s_82, ((V)(12D)), ((V)((-20D))));
 Invoke(Invoke(t_81, "e", ((V)("blink2"))), "to", ((V)(300D)), Call(o_12, V.Undef, h_84, NewObj(2).PutK(Get(k_83, "arm"), ((V)(20D))).PutK(Get(k_83, "wink"), ((V)(1D))).V), ((V)("io")));
 {
-V i_85 = default;
-i_85 = ((V)(0D));
+double i_85 = 0;
+i_85 = 0D;
 while (true) {
-if (!(LtN(i_85, 2D))) break;
+if (!((i_85 < 2D))) break;
 Invoke(Invoke(t_81, "to", ((V)(170D)), NewObj(2).PutK(Get(k_83, "hx"), Add(GetK(h_84, Get(k_83, "hx")), ((V)((LtN(s_82, 0D) ? 3D : (-3D)))))).PutK(Get(k_83, "hy"), ((V)((ToNum(GetK(h_84, Get(k_83, "hy"))) - 1.5)))).V, ((V)("io"))), "to", ((V)(170D)), NewObj(2).PutK(Get(k_83, "hx"), GetK(h_84, Get(k_83, "hx"))).PutK(Get(k_83, "hy"), GetK(h_84, Get(k_83, "hy"))).V, ((V)("io")));
-PostInc(ref i_85, 1D);
+i_85++;
 }
 }
 return Invoke(Invoke(t_81, "to", ((V)(300D)), NewObj(4).PutK(Get(k_83, "hx"), ((V)(0D))).PutK(Get(k_83, "hy"), ((V)(0D))).PutK(Get(k_83, "arm"), ((V)(0D))).PutK(Get(k_83, "wink"), ((V)(0D))).V, ((V)("io"))), "e", ((V)("blink")));
@@ -276,9 +276,9 @@ return Call(swing_16, V.Undef, u_365, ((V)(900D)), ((V)(3D)), NewObj(2).Put("til
 }, 1, "", true));
 return default;
 }, 2, "belly", true)).Put("side", Fn((V _self1, int _argc366, V t_372, V s_373, V _a370, V _a371, V[] _rest367) => {
-V d_374 = default;
-d_374 = ((V)((-ToNum(s_373))));
-Invoke(Invoke(Invoke(Invoke(t_372, "to", ((V)(420D)), NewObj(3).Put("x", ((V)((ToNum(d_374) * 6D)))).Put("tilt", ((V)((ToNum(d_374) * 24D)))).Put("wide", ((V)(0.6))).V, ((V)("io"))), "to", ((V)(380D)), NewObj(1).Put("tilt", ((V)((ToNum(d_374) * 18D)))).V, ((V)("io"))), "to", ((V)(520D)), NewObj(3).Put("x", ((V)(0D))).Put("tilt", ((V)(((-ToNum(d_374)) * 3D)))).Put("wide", ((V)(0D))).V, ((V)("io"))), "to", ((V)(260D)), NewObj(1).Put("tilt", ((V)(0D))).V, ((V)("io")));
+double d_374 = 0;
+d_374 = (-ToNum(s_373));
+Invoke(Invoke(Invoke(Invoke(t_372, "to", ((V)(420D)), NewObj(3).Put("x", ((V)((d_374 * 6D)))).Put("tilt", ((V)((d_374 * 24D)))).Put("wide", ((V)(0.6))).V, ((V)("io"))), "to", ((V)(380D)), NewObj(1).Put("tilt", ((V)((d_374 * 18D)))).V, ((V)("io"))), "to", ((V)(520D)), NewObj(3).Put("x", ((V)(0D))).Put("tilt", ((V)(((-d_374) * 3D)))).Put("wide", ((V)(0D))).V, ((V)("io"))), "to", ((V)(260D)), NewObj(1).Put("tilt", ((V)(0D))).V, ((V)("io")));
 Call(giggle_20, V.Undef, t_372, ((V)(2D)));
 return default;
 }, 2, "side", true)).Put("foot", Fn((V _self1, int _argc375, V t_381, V s_382, V _a379, V _a380, V[] _rest376) => {
@@ -451,9 +451,9 @@ return Invoke(u_698, "osc", ((V)(900D)), ((V)(4D)), NewObj(1).Put("chb", ((V)(1D
 }, 1, "", true));
 return default;
 }, 2, "belly", true)).Put("side", Fn((V _self1, int _argc699, V t_705, V s_706, V _a703, V _a704, V[] _rest700) => {
-V d_707 = default;
-d_707 = ((V)((-ToNum(s_706))));
-Invoke(Invoke(Invoke(t_705, "to", ((V)(260D)), NewObj(2).Put("tilt", ((V)((ToNum(d_707) * 9D)))).Put("chb", ((V)(1D))).V, ((V)("o"))), "to", ((V)(320D)), NewObj(2).Put("tilt", ((V)(((-ToNum(d_707)) * 4D)))).Put("chb", ((V)(0.3))).V, ((V)("io"))), "to", ((V)(300D)), NewObj(2).Put("tilt", ((V)(0D))).Put("chb", ((V)(0D))).V, ((V)("io")));
+double d_707 = 0;
+d_707 = (-ToNum(s_706));
+Invoke(Invoke(Invoke(t_705, "to", ((V)(260D)), NewObj(2).Put("tilt", ((V)((d_707 * 9D)))).Put("chb", ((V)(1D))).V, ((V)("o"))), "to", ((V)(320D)), NewObj(2).Put("tilt", ((V)(((-d_707) * 4D)))).Put("chb", ((V)(0.3))).V, ((V)("io"))), "to", ((V)(300D)), NewObj(2).Put("tilt", ((V)(0D))).Put("chb", ((V)(0D))).V, ((V)("io")));
 Call(see_18, V.Undef, t_705, ((V)("side")), s_706, ((V)(200D)));
 Call(unsee_19, V.Undef, t_705, ((V)(300D)));
 return default;

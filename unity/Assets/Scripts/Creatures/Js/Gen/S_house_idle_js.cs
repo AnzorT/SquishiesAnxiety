@@ -83,12 +83,12 @@ if (_self78.IsNullish) _self78 = GlobalV;
 n_86 = (n_86 is var _t87 && Truthy(_t87) ? _t87 : ((V)(3D)));
 Invoke(t_85, "to", ((V)(160D)), NewObj(3).Put("hap", ((V)(0.9))).Put("smile", ((V)(1D))).Put("open", ((V)(0.35))).V);
 {
-V i_88 = default;
-i_88 = ((V)(0D));
+double i_88 = 0;
+i_88 = 0D;
 while (true) {
-if (!(Lt(i_88, n_86))) break;
+if (!(Lt(((V)(i_88)), n_86))) break;
 Invoke(Invoke(Invoke(t_85, "to", ((V)(110D)), NewObj(2).Put("sq", ((V)(0.1))).Put("lift", ((V)(0D))).V, ((V)("i"))), "to", ((V)(190D)), NewObj(6).Put("sq", ((V)((-0.07)))).Put("lift", ((V)(5D))).Put("footL", ((V)(1.5))).Put("footR", ((V)(1.5))).Put("armL", ((V)(30D))).Put("armR", ((V)(30D))).V, ((V)("o"))), "to", ((V)(170D)), NewObj(6).Put("sq", ((V)(0D))).Put("lift", ((V)(0D))).Put("footL", ((V)(0D))).Put("footR", ((V)(0D))).Put("armL", ((V)(0D))).Put("armR", ((V)(0D))).V, ((V)("i")));
-PostInc(ref i_88, 1D);
+i_88++;
 }
 }
 Invoke(t_85, "to", ((V)(140D)), NewObj(1).Put("sq", ((V)(0.06))).V, ((V)("o")));
@@ -114,12 +114,12 @@ return default;
 if (_self116.IsNullish) _self116 = GlobalV;
 Invoke(t_123, "to", ((V)(320D)), NewObj(4).Put("lx", ((V)(0.9))).Put("turn", ((V)(0.25))).Put("htilt", ((V)(5D))).Put("mw", ((V)(0.6))).V, ((V)("io")));
 {
-V i_124 = default;
-i_124 = ((V)(0D));
+double i_124 = 0;
+i_124 = 0D;
 while (true) {
-if (!(LtN(i_124, 4D))) break;
+if (!((i_124 < 4D))) break;
 Invoke(Invoke(Invoke(t_123, "to", ((V)(130D)), NewObj(1).Put("footR", ((V)(2.4))).V, ((V)("o"))), "to", ((V)(150D)), NewObj(2).Put("footR", ((V)(0D))).Put("sq", ((V)(0.02))).V, ((V)("i"))), "to", ((V)(60D)), NewObj(1).Put("sq", ((V)(0D))).V);
-PostInc(ref i_124, 1D);
+i_124++;
 }
 }
 Invoke(Invoke(t_123, "to", ((V)(300D)), NewObj(3).Put("lx", ((V)((-0.6)))).Put("turn", ((V)((-0.15)))).Put("htilt", ((V)((-3D)))).V, ((V)("io"))), "wait", ((V)(300D)));
