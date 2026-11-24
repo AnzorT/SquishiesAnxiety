@@ -1,10 +1,12 @@
-// The Yard Games page (HOUSE_PORT_PLAN.md stage 11; Yard Mini Games.dc.html + yard-games.js): one phone-shaped frame
-// in the middle of the screen holding the hub (the title, your player on a little stage, the strip to pick anyone,
-// the seven game cards) or a game: its layers (bg, the creatures behind, mid, the creatures, fg; Games/Yard), the top
+// The Yard Games (HOUSE_PORT_PLAN.md stage 11; Yard Mini Games.dc.html + yard-games.js): the page of the seven games
+// (develop: the menu's games page in yard mode, YardPageModel.cs: wide poster cards dragged sideways, a game locked
+// until one of its toys is bought in the Backyard's catalog) or a game in one phone-shaped frame in the middle of the
+// screen (the games are still the portrait ones of the Nov 13 prototype: develop's landscape versions, yard-games.js
+// v4-v6, aren't ported yet): its layers (bg, the creatures behind, mid, the creatures, fg; Games/Yard), the top
 // bar (back, the name, the score and time pills), the hint, the games' own pills and buttons, the toasts, the intro
 // card (how to play, the options) and the results card (stars, the best, the coins preview). Opened from the
 // backyard's Yard Games button (HouseScreen); the bests are kept on the device (the page's localStorage yardgames.v1).
-//   var y = YardScreen.Create(parent, rosterKeys, nameOf);   y.OnExit = ...;
+//   var y = YardScreen.Create(parent, rosterKeys, nameOf, player, open, need);   y.OnExit = ...;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -13,6 +15,7 @@ using SquishSquad.Anim;
 using SquishSquad.Creatures;
 using SquishSquad.House;
 using SquishSquad.House.View;
+using SquishSquad.Menu;
 using SquishSquad.Ui;
 using SquishSquad.Vector;
 using UnityEngine;
@@ -40,7 +43,6 @@ namespace SquishSquad.Games.Yard.View
         YardGame _g; YardCtx _c; string _ov; double _ovT0; double _t0;
         (string title, int stars, bool nb, int best, int coins) _res; string _resSub;
         readonly Dictionary<string, int> _ver = new Dictionary<string, int>();
-        double _scroll, _strip, _hubH;
         readonly List<(string id, float x, float y, float w, float h)> _hits = new List<(string, float, float, float, float)>();
 
         // pieces
@@ -50,13 +52,16 @@ namespace SquishSquad.Games.Yard.View
         const int O = 200;
 
         sealed class Cr { public YardCreature C; public GameObject Root, Inner; public CreatureView V; public IHouseRig Live; public double S0; public UiPiece Still; }
-        readonly List<Cr> _crs = new List<Cr>(); Cr _hubCr; string _hubKey;
+        readonly List<Cr> _crs = new List<Cr>();
         AudioSource _au; readonly Dictionary<string, AudioClip> _clips = new Dictionary<string, AudioClip>();
 
-        public static YardScreen Create(Transform parent, IList<string> roster, Func<string, string> nameOf)
+        /// <summary>player: the menu's creature (it plays every game, as the app's page picks it); open: is a game open
+        /// (HouseYard.Locked: a toy of it bought); need: what a locked game's tap says (HouseYard.NeedText).</summary>
+        public static YardScreen Create(Transform parent, IList<string> roster, Func<string, string> nameOf, string player = null, Func<string, bool> open = null, Func<string, string> need = null)
         {
             var go = new GameObject("yard games"); go.transform.SetParent(parent, false);
             var s = go.AddComponent<YardScreen>();
+            s._player = player; s._open = open; s._need = need;
             s._roster = roster != null && roster.Count > 0 ? roster : new[] { "biscuit", "pip", "mallow", "nimbo", "ribbit", "bao", "mittens", "sealy", "frybo", "poppy" };
             s._nameOf = nameOf ?? (k => string.IsNullOrEmpty(k) ? k : char.ToUpperInvariant(k[0]) + k.Substring(1));
             return s;
@@ -79,13 +84,14 @@ namespace SquishSquad.Games.Yard.View
             if (YardCreature.Walker == null) try { YardCreature.Walker = new HouseWalk(HouseRoomView.Res("walk")); } catch (Exception) { }
             foreach (var t in Games) _defs.Add((YardGame)Activator.CreateInstance(t));
             Load();
+            if (_player != null && _roster.Contains(_player)) _save.Player = _player;
             El.TextHook = TextEl;
             Hub();
         }
 
         void OnDestroy()
         {
-            EndGame(); KillHubCr();
+            EndGame(); ClosePage();
             if (_root != null) Destroy(_root.gameObject);
         }
 
@@ -261,10 +267,9 @@ namespace SquishSquad.Games.Yard.View
             }
         }
         void KillCr(Cr o) { if (o.Root != null) Destroy(o.Root); if (o.Still != null) Destroy(o.Still.gameObject); }
-        void KillHubCr() { if (_hubCr != null) KillCr(_hubCr); _hubCr = null; _hubKey = null; }
 
         // ---------- the hub and a game ----------
-        void Hub() { EndGame(); _g = null; _c = null; _ov = null; _scroll = 0; }
+        void Hub() { EndGame(); _g = null; _c = null; _ov = null; }
         void EndGame()
         {
             if (_g != null) try { _g.Destroy(); } catch (Exception) { }
@@ -273,7 +278,7 @@ namespace SquishSquad.Games.Yard.View
         }
         void Play(YardGame def)
         {
-            EndGame(); KillHubCr();
+            EndGame(); ClosePage();
             _g = (YardGame)Activator.CreateInstance(def.GetType());
             if (_opts.TryGetValue(_g.Id ?? def.Id, out var op)) _g.Opt = op;
             var key = _save.Player;
@@ -301,10 +306,11 @@ namespace SquishSquad.Games.Yard.View
             if (_root == null) return;
             double now = Now;
             if (Input.GetKeyDown(KeyCode.Escape)) { if (_g != null) { Hub(); return; } Exit(); return; }
-            HandleInput(now);
+            if (_g == null) { PageInput(now); if (_g == null) { _used.Clear(); HideUnused(); DrawPage(now); return; } }
+            else HandleInput(now);
             _used.Clear(); _hits.Clear();
             Backdrop();
-            if (_g != null) DrawGame(now); else DrawHub(now);
+            if (_g != null) DrawGame(now);
             HideUnused();
         }
         void Exit() { Save(); OnExit?.Invoke(); Destroy(gameObject); }
@@ -514,111 +520,117 @@ namespace SquishSquad.Games.Yard.View
             }, hits);
         }
 
-        // ---------- the hub ----------
-        void DrawHub(double now)
+        // ---------- the page of the games ----------
+        string _player; Func<string, bool> _open; Func<string, string> _need;
+        static YardPageLayout _layout;
+        YardPageModel _page; CharactersPageView _pv;
+        readonly Dictionary<string, string> _crSvg = new Dictionary<string, string>();
+        readonly Dictionary<string, string> _opp = new Dictionary<string, string>();
+        void OpenPage()
         {
-            float top = (float)-_scroll;
-            Draw("hubbg", "b", 0, 0, W, H, O, u => u.Box(0, 0, W, H, new BoxStyle { Gradient = new[] { "#8fd0ff", "#bfe6ff", "#bfe6ff", "#a8dc8a", "#8fcf73" }, GradientStops = new[] { 0, 0.28f, 0.3f, 0.302f, 1 }, Radius = 30 }), 0);
-            var key = _save.Player; var pick = new StringBuilder(); foreach (var kv in _save.Best) pick.Append(kv.Key).Append(kv.Value);
-            float headH = 22.32f * cq, meY = headH + 2 * cq, meH = 32 * cq, stripY = meY + meH, gridY = stripY + 21 * cq;
-            float colW = (92 - 3.4f) / 2 * cq;
-            var gname = TS(Fred, 4.8f, "#4a1a73", 1.05f); var gitem = TS(Nun8, 2.9f, "#6b5590", 1.2f); var gb = TS(Nun8, 2.7f, "#a8287a", 1);
-            var foot = TS(Nun7, 3, "#2f5a22", 1.35f);
-            // the cards' heights (a row is as tall as its taller card)
-            var heights = new List<float>(); var items = new List<List<string>>();
-            foreach (var G in _defs) { var it = Wrap(G.Item, gitem, colW - 5.2f * cq); items.Add(it); heights.Add(2.6f * cq + 22 * cq + 2 * cq + Lh(gname) + 0.6f * cq + it.Count * Lh(gitem) + 3 * cq); }
-            var rowY = new List<float>(); float gy = gridY + 1 * cq;
-            for (int i = 0; i < _defs.Count; i += 2) { rowY.Add(gy); gy += Math.Max(heights[i], i + 1 < heights.Count ? heights[i + 1] : 0) + 3.4f * cq; }
-            gy += -3.4f * cq + 2 * cq;
-            var fl = Wrap("Examples of the backyard mini games. Coins are shown as a preview and not added to your wallet.", foot, 88 * cq);
-            float footY = gy + 2 * cq; _hubH = footY + fl.Count * Lh(foot) + 4 * cq;
-            _scroll = Math.Max(0, Math.Min(_scroll, _hubH - H)); top = (float)-_scroll;
-            float pickS = 15 * cq, stripW = _roster.Count * (pickS + 2 * cq) - 2 * cq + 8 * cq;
-            _strip = Math.Max(0, Math.Min(_strip, stripW - W));
-            string hk = $"{F(_scroll)}|{F(_strip)}|{key}|{_muted}|{pick}";
-            Draw("hub", hk, 0, 0, W, H, O + 2, u =>
+            if (_page != null) return;
+            if (_layout == null) { var t = Resources.Load<TextAsset>(YardPageLayout.Root + "yardpage"); if (t == null) return; _layout = JsonUtility.FromJson<YardPageLayout>(t.text); Resources.UnloadAsset(t); }
+            UiFont.ReadJson ??= n => Resources.Load<TextAsset>("Fonts/" + n)?.text;
+            UiFont.ParseJson ??= j => JsonUtility.FromJson<UiFontData>(j);
+            _page = new YardPageModel(_layout, _w, _h)
             {
-                u.Def("<clipPath id=\"hubc\"><rect width=\"360\" height=\"640\" rx=\"30\"/></clipPath>");
-                u.Open($"clip-path=\"url(#hubc)\""); u.Open($"transform=\"translate(0 {F(top)})\"");
-                // the head
-                var ht = TS(Fred, 10, "#ffffff", 1); float tw = UiSvg.Width("Yard Games", ht), tx = W / 2 - tw / 2, tb = UiSvg.Baseline(ht, 5 * cq);
-                var fd = UiFont.Get(Fred); string sw = F(1 * cq * fd.UnitsPerEm / ht.Size);
-                u.Glyphs("Yard Games", tx, tb + 1.2f * cq, Fred, ht.Size, 0, "#6a2fb0", $"stroke=\"#6a2fb0\" stroke-width=\"{sw}\" stroke-linejoin=\"round\"");
-                u.Glyphs("Yard Games", tx, tb, Fred, ht.Size, 0, "#6a2fb0", $"stroke=\"#6a2fb0\" stroke-width=\"{sw}\" stroke-linejoin=\"round\"");
-                u.Glyphs("Yard Games", tx, tb, Fred, ht.Size, 0, "#ffffff");
-                u.Text("Play with the games in your backyard", 0, 17 * cq, TS(Nun8, 3.6f, "#3b2a6e", 1.2f), W, 0.5f);
-                // the sound button
-                float mx = W - 13 * cq, my = 3 * cq, ms = 10 * cq;
-                u.Box(mx, my, ms, ms, new BoxStyle { Background = "rgba(255,255,255,0.85)", Radius = 999 });
-                u.Raw($"<g transform=\"translate({F(mx + ms / 2)} {F(my + ms / 2)}) scale({F(cq * 0.32)})\"><path d=\"M-7-3H-3L2-7V7L-3 3H-7Z\" fill=\"#6a2fb0\"/>" + (_muted ? "<path d=\"M4-3L9 3M9-3L4 3\" stroke=\"#e0479f\" stroke-width=\"2\" stroke-linecap=\"round\"/>" : "<path d=\"M4.5-3.5Q7 0 4.5 3.5M6.5-6Q11 0 6.5 6\" fill=\"none\" stroke=\"#6a2fb0\" stroke-width=\"1.6\" stroke-linecap=\"round\"/>") + "</g>");
-                // your player
-                float mex = 4 * cq, mew = W - 8 * cq;
-                u.Box(mex, meY, mew, meH, new BoxStyle { Background = "rgba(255,255,255,0.9)", Radius = 6 * cq, Shadows = new[] { new Shadow("rgba(80,140,60,0.35)", 0, 1.2f * cq, 0) } });
-                u.Box(mex + 2 * cq, meY + 2 * cq, 28 * cq, 28 * cq, new BoxStyle { Gradient = new[] { "#ffffff", "#e8f6ff", "#d6efff" }, GradientStops = new[] { 0, 0.6f, 1 }, Radius = 5 * cq });
-                float tx2 = mex + 33 * cq, ty = meY + meH / 2 - 17.2f * cq / 2;
-                u.Text("YOUR PLAYER", tx2, ty, TS(Nun8, 3.2f, "#8a5bb8", 1, 0.08f * 3.2f * cq));
-                u.Text(_nameOf(key), tx2, ty + 4.2f * cq, TS(Fred, 7.2f, "#4a1a73", 1.1f));
-                u.Text("Pick anyone below", tx2, ty + 13.1f * cq, TS(Nun7, 3.4f, "#6b5590", 1.2f));
-                // the strip
-                u.Open($"transform=\"translate({F(-_strip)} 0)\"");
-                for (int i = 0; i < _roster.Count; i++)
-                {
-                    string k = _roster[i]; bool on = k == key; float x = 4 * cq + i * (pickS + 2 * cq), y = stripY + 3 * cq, s = on ? 1.08f : 1;
-                    float cx = x + pickS / 2, cy = y + pickS / 2, r = pickS / 2 * s;
-                    u.Raw($"<circle cx=\"{F(cx)}\" cy=\"{F(cy + 0.8f * cq)}\" r=\"{F(r)}\" fill=\"rgba(60,110,40,0.35)\"/>");
-                    if (on) u.Raw($"<circle cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(r + 0.8f * cq)}\" fill=\"#ffffff\"/>");
-                    u.Raw($"<circle cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(r)}\" fill=\"{(on ? "#e0479f" : "#ffffff")}\"/><circle cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(r - 0.8f * cq * s)}\" fill=\"#ffffff\"/>");
-                    float iw = (r - 0.8f * cq * s) * 1.7f; u.Image("Stack/art/" + k, cx - iw / 2, cy - iw / 2, iw, iw, "xMidYMid meet");
-                }
-                u.Close();
-                // the cards
-                for (int i = 0; i < _defs.Count; i++)
-                {
-                    var G = _defs[i]; float x = 4 * cq + (i % 2) * (colW + 3.4f * cq), y = rowY[i / 2], h = Math.Max(heights[i], (i ^ 1) < heights.Count ? heights[i ^ 1] : 0);
-                    string gc = G.Color ?? "#ff8a3d";
-                    u.Box(x, y, colW, h, new BoxStyle { Background = "#ffffff", Radius = 6 * cq, Shadows = new[] { new Shadow(Mix(gc, 0.55, "#3b2457"), 0, 1.4f * cq, 0) } });
-                    float ix = x + 2.6f * cq, iy = y + 2.6f * cq, iw = colW - 5.2f * cq, ih = 22 * cq;
-                    var cid = u.NewId("gi"); u.Def($"<clipPath id=\"{cid}\"><rect x=\"{F(ix)}\" y=\"{F(iy)}\" width=\"{F(iw)}\" height=\"{F(ih)}\" rx=\"{F(4 * cq)}\"/></clipPath>");
-                    u.Box(ix, iy, iw, ih, new BoxStyle { Background = Mix(gc, 0.22, "#ffffff"), Radius = 4 * cq });
-                    u.Raw($"<g clip-path=\"url(#{cid})\">{Icon(G.Icon, ix, iy, iw, ih)}</g>");
-                    float ny = iy + ih + 2 * cq; u.Text(G.Name, x, ny, gname, colW, 0.5f); ny += Lh(gname) + 0.6f * cq;
-                    foreach (var l in items[i]) { u.Text(l, x, ny, gitem, colW, 0.5f); ny += Lh(gitem); }
-                    _save.Best.TryGetValue(G.Id, out var bv); string bt = bv > 0 ? "★ Best " + bv : "New!";
-                    float bw = UiSvg.BoxWidth(bt, gb) + 4 * cq, bh = 2.7f * cq + 1.6f * cq, bx = x + colW - 3.6f * cq - bw, by = y + 3.6f * cq;
-                    u.Box(bx, by, bw, bh, new BoxStyle { Background = "#ffffff", Radius = 999, Shadows = new[] { new Shadow("rgba(0,0,0,0.1)", 0, 0.4f * cq, 0) } }); u.Text(bt, bx, by + (bh - Lh(gb)) / 2, gb, bw, 0.5f);
-                }
-                for (int i = 0; i < fl.Count; i++) u.Text(fl[i], 0, footY + i * Lh(foot), foot, W, 0.5f);
-                u.Close(); u.Close(); return u;
-            }, 0);
-            // its taps (in frame units, scrolled)
-            _hits.Add(("mute", W - 13 * cq, 3 * cq + top, 10 * cq, 10 * cq));
-            for (int i = 0; i < _roster.Count; i++) { float x = 4 * cq + i * (15 * cq + 2 * cq) - (float)_strip, y = stripY + 3 * cq + top; if (x > -15 * cq && x < W) _hits.Add(("pick:" + _roster[i], x, y, 15 * cq, 15 * cq)); }
-            for (int i = 0; i < _defs.Count; i++) { float x = 4 * cq + (i % 2) * (colW + 3.4f * cq), y = rowY[i / 2] + top; _hits.Add(("game:" + i, x, y, colW, heights[i])); }
-            // your player, live in its little stage (hidden once it scrolls under the top)
-            if (_hubKey != key) { KillHubCr(); _hubKey = key; var yc = new YardCreature { Key = key }; yc.set(W / 2, H * 0.92, H * 0.95); _hubCr = MakeCr(yc); yc.play("happy"); _hubT = now; }
-            if (_hubCr != null)
-            {
-                if (_hubT > 0 && now - _hubT > 2400) { _hubCr.C.play("idle"); _hubT = 0; }
-                float sx = 4 * cq + 2 * cq, sy = meY + 2 * cq + top, ss = 28 * cq;
-                var c = _hubCr.C; c.Size = ss; c.X = sx + ss / 2; c.Y = sy + ss * 0.93; c.Hidden = sy < 4 || sy + ss > H - 4;
-                PlaceCr(_hubCr, O + 5);
-            }
+                Open = id => _open == null || _open(id),
+                Best = id => _save.Best.TryGetValue(id, out var b) ? b : 0,
+                Creature = PosterCreature,
+                Scroll = _pageScroll,
+            };
+            _pv = new CharactersPageView(YardPageLayout.Root, _root, O);
         }
-        double _hubT;
+        double _pageScroll;
+        void ClosePage() { if (_page != null) _pageScroll = _page.Scroll; _page = null; _pv?.Dispose(); _pv = null; }
+        void DrawPage(double now)
+        {
+            if (_page == null) OpenPage();
+            if (_page == null) { Exit(); return; }   // (not exported: tools/unity/house/export-yardpage.mjs)
+            _pv.Show(_page.Draw(now));
+        }
+
+        // a creature in a poster (yg-intros.js posterRig): the player's rig (the opponent's: one of the yard's pool) posed
+        // as the poster says (its ext channels, its yaw), let settle ~0.9 s and kept as a still. develop draws it in the
+        // rig's look 3 (the bold ink line), which the Unity rigs don't have; nor the ping-pong paddle on its paw.
+        string PosterCreature(string game, int i, bool grey)
+        {
+            string ck = game + "|" + i + "|" + grey;
+            if (_crSvg.TryGetValue(ck, out var done)) return done;
+            var g = Array.Find(_layout.games, x => x.id == game); var sl = g.slots[i];
+            string key = _save.Player;
+            if (sl.who == "opp")
+            {
+                if (!_opp.TryGetValue(game, out key)) { var pool = new List<string>(_roster); pool.Remove(_save.Player); key = pool.Count > 0 ? pool[UnityEngine.Random.Range(0, pool.Count)] : null; _opp[game] = key; }
+            }
+            string svg = null;
+            var rig = key != null ? Rigs.For(key) : null;
+            if (rig != null)
+            {
+                try
+                {
+                    if (rig is IHouseRig hr)
+                    {
+                        hr.Fidgets(false);
+                        var e = new Dictionary<string, double>(); for (int k = 0; k < (sl.poseK?.Length ?? 0); k++) e[sl.poseK[k]] = sl.poseV[k];
+                        hr.Ext(e); if (sl.yaw != 0) hr.Yaw(sl.yaw);
+                    }
+                    for (int f = 0; f <= 9; f++) svg = rig.FrameAt(f * 0.1f);
+                }
+                catch (Exception) { svg = null; }
+                (rig as IDisposable)?.Dispose();
+            }
+            if (svg != null)
+            {
+                // the rig's own svg in the slot's box: (-w/2, -0.93 w), w x w
+                int a = svg.IndexOf("<svg", StringComparison.Ordinal), b = a >= 0 ? svg.IndexOf('>', a) : -1;
+                if (b > a)
+                {
+                    var head = System.Text.RegularExpressions.Regex.Replace(svg.Substring(a, b - a), "\\s(x|y|width|height|overflow)=\"[^\"]*\"", "");
+                    svg = head + $" x=\"{F(-sl.w / 2)}\" y=\"{F(-sl.w * 0.93)}\" width=\"{F(sl.w)}\" height=\"{F(sl.w)}\" overflow=\"visible\"" + svg.Substring(b);
+                    if (grey) svg = YardPageModel.Greyed(svg);
+                }
+                else svg = null;
+            }
+            _crSvg[ck] = svg;
+            return svg;
+        }
+
+        // the page's touches: the back orb leaves, a card plays its game (a locked one says what to buy), the row drags
+        bool _pDown; string _pHit; YardPageModel.Hit _pKind;
+        void PageInput(double now)
+        {
+            if (_page == null) return;
+            bool down = Input.GetMouseButtonDown(0), up = Input.GetMouseButtonUp(0), held = Input.GetMouseButton(0);
+            Vector2 pos = Input.mousePosition;
+            if (Input.touchCount > 0) { var t = Input.GetTouch(0); pos = t.position; down = t.phase == TouchPhase.Began; up = t.phase == TouchPhase.Ended || t.phase == TouchPhase.Canceled; held = !up; }
+            double px = pos.x, py = _h - pos.y;
+            float wh = Input.mouseScrollDelta.y; if (wh != 0) _page.Wheel(-wh * 100);
+            if (down) { _pDown = true; _pKind = _page.HitTest(px, py, out _pHit); _page.Down(px, now); return; }
+            if (!_pDown) return;
+            if (held && !up) { _page.Move(px, now); return; }
+            _pDown = false;
+            if (_page.Up(now)) return;   // (a drag isn't a tap)
+            var k = _page.HitTest(px, py, out var id);
+            if (k != _pKind || id != _pHit) return;
+            if (k == YardPageModel.Hit.Back) { Sfx("tap"); Exit(); return; }
+            if (k != YardPageModel.Hit.Card) return;
+            var def = _defs.Find(d => d.Id == id); if (def == null) return;
+            if (!_page.Open(id)) { _page.Toast(_need?.Invoke(id) ?? def.Name + " opens with the Backyard", now); return; }
+            Sfx("pop"); Play(def);
+        }
 
         // ---------- input ----------
-        bool _down, _moved, _dragStrip; Vector2 _downAt; double _lastY, _lastX; string _press;
+        bool _down, _moved; Vector2 _downAt; double _lastY, _lastX; string _press;
         void HandleInput(double now)
         {
             bool down = Input.GetMouseButtonDown(0), up = Input.GetMouseButtonUp(0), held = Input.GetMouseButton(0);
             Vector2 pos = Input.mousePosition;
             if (Input.touchCount > 0) { var t = Input.GetTouch(0); pos = t.position; down = t.phase == TouchPhase.Began; up = t.phase == TouchPhase.Ended || t.phase == TouchPhase.Canceled; held = !up; }
             double ux = (pos.x - _fx) / _K, uy = (_h - pos.y - _fy) / _K;
-            if (_wheel(now)) return;
             if (down)
             {
                 _down = true; _moved = false; _downAt = pos; _lastX = ux; _lastY = uy; _press = Hit(ux, uy);
-                _dragStrip = _g == null && _press != null && _press.StartsWith("pick:");
                 if (_g != null && _ov == null)
                 {
                     if (_press != null && _press.StartsWith("btn:")) { _c.PressButton(_press.Substring(4)); _press = "used"; return; }
@@ -632,7 +644,6 @@ namespace SquishSquad.Games.Yard.View
             if (held && !up)
             {
                 if (_press == "game") { if (_c.playing) _g.Move(ux, uy, _c.Now); }
-                else if (_g == null && _moved) { if (_dragStrip) _strip -= ux - _lastX; else _scroll -= uy - _lastY; }
                 _lastX = ux; _lastY = uy;
                 return;
             }
@@ -641,11 +652,6 @@ namespace SquishSquad.Games.Yard.View
             if (_moved || _press == null || _press == "used") return;
             var h = Hit(ux, uy); if (h != _press) return;
             Tap(h);
-        }
-        bool _wheel(double now)
-        {
-            float d = Input.mouseScrollDelta.y; if (_g != null || d == 0) return false;
-            _scroll -= d * 40; return false;
         }
         string Hit(double x, double y)
         {
@@ -658,9 +664,6 @@ namespace SquishSquad.Games.Yard.View
             if (h == "play") { Begin(); return; }
             if (h == "again") { Sfx("pop"); Play(_g); return; }
             if (h.StartsWith("opt:")) { _g.Opt = h.Substring(4); _opts[_g.Id] = _g.Opt; Sfx("tap"); return; }
-            if (h == "mute") { _muted = !_muted; PlayerPrefs.SetString(SaveKey + ".mute", _muted ? "1" : "0"); return; }
-            if (h.StartsWith("pick:")) { _save.Player = h.Substring(5); Save(); Sfx("pop"); return; }
-            if (h.StartsWith("game:")) { Sfx("pop"); Play(_defs[int.Parse(h.Substring(5), CultureInfo.InvariantCulture)]); }
         }
     }
 }

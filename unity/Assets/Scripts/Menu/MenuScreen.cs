@@ -254,9 +254,11 @@ namespace SquishSquad.Menu
             bool online = p?.Fb != null && p.Uid != null;
             double coins = prof.TryGetValue("coins", out var cO) ? System.Convert.ToDouble(cO) : 0;
             var roster = LevelPassPage.Roster;
-            var owned = roster != null ? CharactersPageLink.Squad(roster.roster, roster.demo, p).Item1 : null;
+            var squad = roster != null ? CharactersPageLink.Squad(roster.roster, roster.demo, p) : (null, null);
+            var owned = squad.Item1;
             BeforeGame();
             var s = SquishSquad.House.View.HouseScreen.Create(transform, json, lv, owned);
+            s.PlayerKey = squad.Item2;   // (the yard games are played by the menu's creature)
             // (offline, the dev menu: the offline wallet's coins; before, 0, so every BUY in the Catalog was refused)
             // (signed in: the profile's coins as they are now: the feed may bring new ones while the house is open)
             double Live() { var q = CharactersPageLink.Get()?.Profile; return q != null && q.TryGetValue("coins", out var v) && v != null ? System.Convert.ToDouble(v) : coins; }

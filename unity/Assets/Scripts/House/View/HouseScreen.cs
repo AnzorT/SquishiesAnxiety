@@ -66,6 +66,8 @@ namespace SquishSquad.House.View
             return s;
         }
         List<string> _ownedKeys;
+        /// <summary>The menu's creature (the one in use): it plays the yard games.</summary>
+        public string PlayerKey;
         const string MoviesKey = "squish.house.movies";
 
         double Now => Time.unscaledTimeAsDouble * 1000;
@@ -260,7 +262,11 @@ namespace SquishSquad.House.View
             Save();
             PlayerPrefs.DeleteKey(YardNewKey);   // (games.js yardSeen: the NEW badge goes once the games are seen)
             _camera.enabled = false; if (_yardBtn != null) _yardBtn.Visible = false; if (_yardNew != null) _yardNew.Visible = false;
-            _yard = SquishSquad.Games.Yard.View.YardScreen.Create(transform.parent, _ownedKeys, null);
+            // (the games page: a game open once a toy of it is bought here, its tap otherwise saying which; the menu's
+            // creature plays: games.js yardLocked / yardNeed, main-menu.js playGame's cre())
+            var S = _room.Save;
+            _yard = SquishSquad.Games.Yard.View.YardScreen.Create(transform.parent, _ownedKeys, null, PlayerKey,
+                g => !HouseYard.Locked(g, S.H.Obj("owned"), S.D), g => HouseYard.NeedText(g, S.D));
             _yard.OnExit = () => { _yard = null; if (_camera != null) _camera.enabled = true; };
         }
 
