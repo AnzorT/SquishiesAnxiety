@@ -32,6 +32,7 @@ namespace SquishSquad.Menu
         MeshRenderer _mr;
         MaterialPropertyBlock _quadProps;
         int _used;
+        bool _disposed;   // (Dispose runs once; a Show after it does nothing: its command buffer is released)
         static readonly int PxToClip = Shader.PropertyToID("_ParkPxToClip");
 
         /// <summary>Pictures of another page's folder ("LevelPass/you/...": the marker's creatures) by a prefix.</summary>
@@ -48,6 +49,7 @@ namespace SquishSquad.Menu
         /// <summary>Draws the page (its root draw: the page's layer) for this frame.</summary>
         public void Show(PageDraw root)
         {
+            if (_disposed) return;
             _used = 0;
             Texture tex = root.Layer != null ? Layer(root) : Picture(root.Res, root.Jpeg);
             EnsureQuad();
@@ -210,6 +212,8 @@ namespace SquishSquad.Menu
 
         public void Dispose()
         {
+            if (_disposed) return;
+            _disposed = true;
             foreach (var t in _pics.Values) Kill(t);
             _pics.Clear();
             foreach (var r in _svgs.Values) if (r != null) { r.Release(); Kill(r); }

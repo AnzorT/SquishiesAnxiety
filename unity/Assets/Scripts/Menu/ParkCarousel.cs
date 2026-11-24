@@ -30,6 +30,7 @@ namespace SquishSquad.Menu
         readonly Dictionary<string, RenderTexture> _layers = new Dictionary<string, RenderTexture>();
         readonly Dictionary<int, Clip> _clips = new Dictionary<int, Clip>();
         readonly CommandBuffer _cb = new CommandBuffer { name = "SquishSquad.Park" };
+        bool _disposed;   // (Dispose runs once; a Tick after it does nothing: its command buffer is released)
         readonly MaterialPropertyBlock _props = new MaterialPropertyBlock();
         static readonly int PxToClip = Shader.PropertyToID("_ParkPxToClip");
 
@@ -65,6 +66,7 @@ namespace SquishSquad.Menu
 
         public void Tick(double now)
         {
+            if (_disposed) return;
             var draws = Model.Draws(now);
             var used = new HashSet<string>();
             var usedClips = new HashSet<int>();
@@ -211,6 +213,8 @@ namespace SquishSquad.Menu
 
         public void Dispose()
         {
+            if (_disposed) return;
+            _disposed = true;
             foreach (var c in _clips.Values) c.Dispose();
             _clips.Clear();
             foreach (var q in _quads.Values) q.Dispose();

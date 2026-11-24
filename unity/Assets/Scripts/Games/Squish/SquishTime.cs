@@ -291,7 +291,8 @@ namespace SquishSquad.Games.Squish
         {
             if (!_started) return;
             HandleInput();
-            if (this != null) Advance(Time.unscaledTimeAsDouble * 1000);
+            // (Exit inside HandleInput disposes the stage; `this` is still alive until the end of the frame)
+            if (this != null && _stage != null) Advance(Time.unscaledTimeAsDouble * 1000);
         }
 
         /// <summary>Runs the clock to `nowMs`: the toy's frame (useFrame), the stage, the HUD.</summary>
@@ -641,10 +642,11 @@ namespace SquishSquad.Games.Squish
             if (_gestureOn) Release(_tk.Now);
             OnExit?.Invoke();
             _stage?.Dispose();
+            _stage = null;
             if (Application.isPlaying) Destroy(gameObject); else DestroyImmediate(gameObject);
         }
 
-        void OnDestroy() { _stage?.Dispose(); _snd?.Close(); _snd = null; }
+        void OnDestroy() { _stage?.Dispose(); _stage = null; _snd?.Close(); _snd = null; }
 
         // ---- the profile (App.js's handlers) --------------------------------------------------------------------------------
         bool Online => _fb != null && !string.IsNullOrEmpty(_uid);

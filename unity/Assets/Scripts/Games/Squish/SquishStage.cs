@@ -28,6 +28,7 @@ namespace SquishSquad.Games.Squish
         readonly MeshRenderer _quadMr;
         RenderTexture _rt;
         int _px;
+        bool _disposed;   // (Dispose runs once; a Draw after it does nothing: its command buffer is released)
         bool _calibrated;
         readonly SquishShade.LightSet _lights;
         readonly Vector4[] _press = new Vector4[SquishToy.MaxPresses];
@@ -181,6 +182,7 @@ namespace SquishSquad.Games.Squish
         /// <summary>Draws the toy's frame and places the stage's quad on `stage` (dp, y down, from the screen's top-left).</summary>
         public void Draw(SquishToy toy, HudBox stage, float pxPerDp)
         {
+            if (_disposed) return;
             int px = Mathf.Max(1, Mathf.RoundToInt(stage.W * pxPerDp));
             EnsureTarget(px);
             if (!_calibrated) Calibrate();
@@ -237,6 +239,8 @@ namespace SquishSquad.Games.Squish
 
         public void Dispose()
         {
+            if (_disposed) return;
+            _disposed = true;
             if (_rt != null) { _rt.Release(); Object.Destroy(_rt); }
             _cb.Release();
             Object.Destroy(_mesh); Object.Destroy(_glow); Object.Destroy(_crown);
