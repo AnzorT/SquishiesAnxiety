@@ -47,6 +47,10 @@ namespace SquishSquad.Games.Hop
             return new ScreenPoint(X * s, yr * s, s);
         }
 
+        /// <summary>How far the board's widest (front) edge keeps from the sides of its area (develop, 2026-11-21: it was 5,
+        /// and on the Galaxy A15 the board ran into the goal panel and RESTART).</summary>
+        public const double GUTTER = 20;
+
         // Where a w × h board goes in an area aw × ah whose floor starts floorY down (the room picture's floor line;
         // the board sits in the floor below it, and may reach a little above it).
         public static BoardLayout Layout(int w, int h, double aw, double ah, double floorY = 0, double tilt = TILT, double maxT = 96)
@@ -59,7 +63,7 @@ namespace SquishSquad.Games.Hop
             double uh = front.Y - back.Y;
             double top = JsMax(0, floorY);
             double space = ah - top + ah * 0.06;
-            double T = JsMax(26, Math.Floor(JsMin(JsMin((aw - 10) / uw, space / uh), maxT)));
+            double T = JsMax(26, Math.Floor(JsMin(JsMin((aw - 2 * GUTTER) / uw, space / uh), maxT)));
             double bottom = JsMin(ah - 8, top + (ah - top) / 2 + (uh * T) / 2);
             return new BoardLayout { W = w, H = h, T = T, Cx = aw / 2, Cy = bottom - front.Y * T, Tilt = tilt, C = c, Sn = sn };
         }

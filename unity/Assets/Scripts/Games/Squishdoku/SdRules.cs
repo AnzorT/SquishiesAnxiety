@@ -29,7 +29,7 @@ namespace SquishSquad.Games.Squishdoku
             var c = new Card(screenW, screenH) { RetriggerOnHide = true };
             c.Left.Add(new TitleItem(new CardArt.Title("HOW TO PLAY", 26, "pink")) { Pop = new PopIn(40) });
             c.Left.Add(new MiniBoardItem(roster, headOf, 150) { Pop = new PopIn(140) });
-            c.Left.Add(new ButtonsItem(false, new CardButton(new CardArt.ButtonLook("green", "GOT IT!", 18, 30, 9), onClose)) { MarginTop = 4 });
+            c.Left.Add(new ButtonsItem(false, new CardButton(new CardArt.ButtonLook("gold", "GOT IT!", 18, 30, 9)   /* develop: the app's gold (2026-11-16) */, onClose)) { MarginTop = 4 });
             c.Right.Add(new RulesItem());
             return c;
         }
