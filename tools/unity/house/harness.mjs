@@ -95,6 +95,11 @@ export async function openHouse(browser, fixture = {}, opts = {}) {
   await page.addInitScript(RNG);
   await page.addInitScript(SEED_LS);
   await page.addInitScript(INFLIGHT);
+  // develop's app/menu.js turns the room's textures and furniture into WebP bitmaps a moment after they first show
+  // (SquishTex, PERF 2026-11-20: the same pictures, cheaper for the phone's WebView) and the light-up dance floors into
+  // baked frames (SquishDisco): kept as the vector drawings here, which the Unity port draws, so the captures don't
+  // depend on when a bitmap happened to be ready
+  await page.addInitScript(() => { for (const k of ['SquishTex', 'SquishDisco']) Object.defineProperty(window, k, { configurable: true, get: () => (k === 'SquishTex' ? (u => u) : () => null), set: () => {} }); });
   const cdp = await ctx.newCDPSession(page);
   await cdp.send('Animation.enable');
   await cdp.send('Animation.setPlaybackRate', { playbackRate: 0 });

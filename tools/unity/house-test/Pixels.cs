@@ -15,6 +15,8 @@ static partial class Program
     static (int w, int h, float[] px) LoadPng(string href)
     {
         if (PngCache.TryGetValue(href, out var c)) return c;
+        // the dance room's 3D floor: its picture drawn by HouseFlat from its tile
+        if (href.StartsWith("flat:") && HouseFlat.Specs.TryGetValue(href, out var fs)) return PngCache[href] = HouseFlat.Render(fs, LoadPng);
         var f = Path.Combine(Res, "pics", href + ".png");
         if (!File.Exists(f)) return (0, 0, null);
         var (w, h, rgba) = Png.Read(f); var px = new float[w * h * 4]; for (int i = 0; i < px.Length; i++) px[i] = rgba[i] / 255f;
