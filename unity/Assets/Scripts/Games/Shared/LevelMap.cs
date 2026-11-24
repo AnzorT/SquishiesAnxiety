@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
 using SquishSquad.Audio;
+using SquishSquad.Ui;
 using SquishSquad.Ui.Cards;
 using SquishSquad.Vector;
 
@@ -36,6 +37,19 @@ namespace SquishSquad.Games.Shared
         public float W, H, Margin = 4;
         /// <summary>`key`: the same key, the same picture (its texture isn't drawn again).</summary>
         public MapIcon(string key, string markup, float w, float h) { Key = key; Markup = markup; W = w; H = h; }
+    }
+
+    /// <summary>A map whose levels stand on a road painted into its background (develop: Squish Stack's forest,
+    /// src/stack/ForestMap.js): the pictures (`Tiles`, Resources paths of JPEG bytes, shown in turn, each TileW x TileH
+    /// units, scaled to the map's height), the levels' places along the road (`Nodes`, units), the bands' signs (`Signs`:
+    /// x and the band's first level), the road's middle line (`RoadY`) and width, and the map's length.</summary>
+    public sealed class MapForest
+    {
+        public string[] Tiles;
+        public double TileW = 1000, TileH = 460, RoadW = 58, Width;
+        public IReadOnlyList<double> Nodes;
+        public IReadOnlyList<(double x, int i)> Signs;
+        public Func<double, double> RoadY;
     }
 
     public sealed class LevelMap
@@ -82,7 +96,10 @@ namespace SquishSquad.Games.Shared
         static readonly Interpolator BobY = Fx.Lerp(new[] { 0.0, 1 }, new[] { 0.0, -6 });
 
         /// <summary>`width`: the screen's (the map's) width; `top`, `height`: the scroll view's box on the screen (dp).</summary>
-        public LevelMap(IReadOnlyList<MapLevel> list, float width, float top, float height, IList<string> uris, Func<int, string> bannerOf, Func<int, MapIcon> iconOf = null)
+        readonly MapForest _forest;
+        readonly float _k;   // a forest map: px per picture unit (its height / TileH)
+
+        public LevelMap(IReadOnlyList<MapLevel> list, float width, float top, float height, IList<string> uris, Func<int, string> bannerOf, Func<int, MapIcon> iconOf = null, MapForest forest = null)
         {
             _list = list; _n = list.Count; _width = width; _top = top; _H = (float)Math.Round(height);
             _uris = uris ?? new List<string>(); _bannerOf = bannerOf; _iconOf = iconOf;
@@ -90,6 +107,16 @@ namespace SquishSquad.Games.Shared
             for (int i = 0; i < _n; i++) _anims[i] = new NodeAnim();
             _hasIcon = new bool[_n];
             _points = new Point[_n];
+            _forest = forest;
+            if (forest != null)
+            {
+                // the levels on the road (ForestMap.js: x * k, roadY(x) * k), the signs drawn by the road (Draw)
+                _k = (float)(_H / forest.TileH);
+                for (int i = 0; i < _n; i++) _points[i] = new Point { X = (float)(forest.Nodes[i] * _k), Y = (float)(forest.RoadY(forest.Nodes[i]) * _k) };
+                ContentW = (float)(forest.Width * _k);
+                Scroll.Max = Math.Max(0, ContentW - width);
+                return;
+            }
             // a gentle wave about the middle line (a little above it: the stars hang under a beaten level)
             double amp = Math.Min(22, _H * 0.07), mid = _H * 0.5 - 10;
             double x = 0;
@@ -141,7 +168,8 @@ namespace SquishSquad.Games.Shared
 
         string StateOf(int lv) => lv < _cur ? "done" : lv == _cur ? (_stars(lv) > 0 ? "done" : "current") : "locked";
 
-        string Mascot => _uris.Count > 0 ? _uris[(_cur * 11) % _uris.Count] : null;
+        // (a forest map: no head by the current level; the app's walker, the selected character's live rig, stands there)
+        string Mascot => _forest == null && _uris.Count > 0 ? _uris[(_cur * 11) % _uris.Count] : null;
 
         // ---- mounting: the first 12 nodes now, 10 more every frame, the scroll a timer later -------------------------
         public void Mount()
@@ -206,8 +234,9 @@ namespace SquishSquad.Games.Shared
             var content = view * Affine.Translate(-Scroll.X, _top);
             double sx = Scroll.X;
             bool OnScreen(float x0, float x1) => x1 - sx > -40 && x0 - sx < _width + 40;
+            if (_forest != null) DrawForest(f, content, opacity, OnScreen);
             // the dots
-            for (int i = 0; i < _n - 1; i++)
+            for (int i = 0; _forest == null && i < _n - 1; i++)
             {
                 if (!Built(i) || !Built(i + 1) || _points[i + 1].Sign != null) continue;
                 var a = _points[i]; var b = _points[i + 1];
@@ -220,7 +249,7 @@ namespace SquishSquad.Games.Shared
                 l.Opacity = opacity;
             }
             // the signs: a picture over the banner, the two centred down the row's height (top -10)
-            for (int i = 0; i < _n; i++)
+            for (int i = 0; _forest == null && i < _n; i++)
             {
                 if (_points[i].Sign == null) continue;
                 float sw = _hasIcon[i] ? SIGN_W : SIGN_W_TEXT, x = _points[i].Sign.Value;
@@ -275,6 +304,59 @@ namespace SquishSquad.Games.Shared
                     hl.Opacity = op;
                 }
             }
+        }
+
+        // ---- the forest (ForestMap.js) --------------------------------------------------------------------------------
+        const float FSIGN_W = 136, FSIGN_H = 70;
+        static readonly TextStyle SignText = new TextStyle { Font = MapArt.Display, Size = 12, LineHeight = 15, LetterSpacing = 1.2f, Color = "#ffffff" };
+
+        void DrawForest(LayerFrame f, Affine content, float opacity, Func<float, float, bool> onScreen)
+        {
+            var F = _forest;
+            // the pictures side by side, the whole height (each 1 px wider: no hairline between them)
+            double tileW = F.TileW * _k;
+            for (int i = 0; i * tileW < ContentW; i++)
+            {
+                float x = (float)Math.Floor(i * tileW), w = (float)Math.Ceiling(tileW) + 1;
+                if (!onScreen(x, x + w)) continue;
+                var l = f.L("map tile " + i);
+                l.SetPicture(F.Tiles[i % F.Tiles.Length], w, _H);
+                l.Transform = content * Affine.Translate(x, 0);
+                l.Opacity = opacity;
+            }
+            // a band's wooden sign on the road's far edge
+            foreach (var (sx, si) in F.Signs)
+            {
+                float cx = (float)(sx * _k), y = (float)((F.RoadY(sx) - F.RoadW / 2) * _k + 6);
+                if (!onScreen(cx - FSIGN_W / 2, cx + FSIGN_W / 2)) continue;
+                var text = _bannerOf(si);
+                var l = f.L("map sign " + si);
+                l.Set(text, () => WoodSign(text), FSIGN_W, FSIGN_H, 6);
+                l.Transform = content * Affine.Translate(cx - FSIGN_W / 2, y - FSIGN_H);
+                l.Opacity = opacity;
+            }
+        }
+
+        /// <summary>ForestMap.js Sign: in a 136 x 70 box, at its bottom: the board (#b8641c, a 2.5 dp cream border, radius 10,
+        /// 10 x 3 in, its text's two halves on two lines) on two posts (6 x 16, 44 dp apart).</summary>
+        static string WoodSign(string text)
+        {
+            var parts = text.Split(new[] { " · " }, StringSplitOptions.None);
+            float lh = 15, tw = 0;
+            foreach (var t in parts) tw = Math.Max(tw, UiSvg.BoxWidth(t, SignText));
+            float bw = tw + 2 * 10 + 5, bh = parts.Length * lh + 2 * 3 + 5;
+            float by = FSIGN_H - 16 - bh, bx = (FSIGN_W - bw) / 2;
+            var s = new UiSvg(FSIGN_W, FSIGN_H);
+            // the posts (borderLeft / borderRight 1.5 #4a2a10)
+            float px = (FSIGN_W - (6 + 44 + 6)) / 2;
+            foreach (var x in new[] { px, px + 50 })
+            {
+                s.Box(x, FSIGN_H - 16, 6, 16, new BoxStyle { Background = "#4a2a10" });
+                s.Box(x + 1.5f, FSIGN_H - 16, 3, 16, new BoxStyle { Background = "#7a4a22" });
+            }
+            s.Box(bx, by, bw, bh, new BoxStyle { Background = "#b8641c", Radius = 10, BorderWidth = 2.5f, BorderColor = "#fff3dc", Shadows = new[] { new Shadow("rgba(42,22,8,0.35)", 0, 2, 3) } });
+            for (int i = 0; i < parts.Length; i++) s.Text(parts[i], bx + 12.5f, by + 2.5f + 3 + i * lh, SignText, tw, 0.5f);
+            return s.Markup;
         }
 
         // ---- touch (screen dp) -------------------------------------------------------------------------------------------

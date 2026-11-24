@@ -92,7 +92,7 @@ static class Program
             GameDef def = card == "game-stack" ? new SquishSquad.Games.Stack.StackDef(profile)
                 : card == "game-sort" ? new SquishSquad.Games.Sort.SortDef(profile)
                 : (GameDef)new SquishSquad.Games.Hop.HopDef(profile);
-            var screen = new GameScreen(def, 832, 384) { Season = "rainy" };
+            var screen = new GameScreen(def, 832, 384) { Season = Environment.GetEnvironmentVariable("SEASON") ?? "rainy" };
             screen.Start();
             screen.Update();
             var log = JsonDocument.Parse(File.ReadAllText(Path.Combine(sdir, "log.json"))).RootElement.EnumerateArray().ToList();

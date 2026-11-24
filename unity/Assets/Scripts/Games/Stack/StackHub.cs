@@ -42,10 +42,20 @@ namespace SquishSquad.Games.Stack
         {
             var list = new List<MapLevel>();
             foreach (var l in Levels.LEVEL_LIST) list.Add(new MapLevel(l.Band, l.Tier));
-            var map = new LevelMap(list, w, top, h, Cast, i => $"{Levels.LEVEL_LIST[i].N} SQUISHIES · {Levels.LEVEL_LIST[i].K} CUSHIONS");
+            // develop: the forest road (src/stack/ForestMap.js, road.js), the whole screen
+            var bands = new List<int>();
+            foreach (var l in Levels.LEVEL_LIST) bands.Add(l.Band);
+            var (nodes, signs, width) = Road.Layout(bands);
+            string season = Season == "rainy" || Season == "snowy" ? Season : "sunny";
+            var tiles = new string[Road.TILES];
+            for (int i = 0; i < tiles.Length; i++) tiles[i] = $"Stack/forest/{season}-{i}.jpg";
+            var forest = new MapForest { Tiles = tiles, TileW = Road.TILE_W, TileH = Road.TILE_H, RoadW = Road.ROAD_W, Width = width, Nodes = nodes, Signs = signs, RoadY = Road.Y };
+            var map = new LevelMap(list, w, top, h, Cast, i => $"{Levels.LEVEL_LIST[i].N} SQUISHIES · {Levels.LEVEL_LIST[i].K} CUSHIONS", null, forest);
             Refresh(map);
             return map;
         }
+
+        public override bool FullMap => true;
 
         public override void Refresh(LevelMap map)
         {

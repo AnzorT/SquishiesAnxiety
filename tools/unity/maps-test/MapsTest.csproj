@@ -22,8 +22,8 @@
     <Compile Include="../../../unity/Assets/Scripts/Audio/Snd.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Ui/AdHook.cs" />
     <Compile Include="../../../unity/Assets/Scripts/ThirdParty/Yoga/**/*.cs" />
-    <Compile Include="../../../unity/Assets/Scripts/Games/Shared/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Shared/GameScreenHost.cs" />
-    <Compile Include="../../../unity/Assets/Scripts/Games/Stack/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Stack/StackGame.cs;../../../unity/Assets/Scripts/Games/Stack/StackScreen.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Shared/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Shared/GameScreenHost.cs;../../../unity/Assets/Scripts/Games/Shared/AccountSaves.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Stack/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Stack/StackGame.cs;../../../unity/Assets/Scripts/Games/Stack/StackScreen.cs;../../../unity/Assets/Scripts/Games/Stack/StackBlitz.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Games/Sort/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Sort/SortGame.cs;../../../unity/Assets/Scripts/Games/Sort/SortDoorPiece.cs;../../../unity/Assets/Scripts/Games/Sort/SortScreen.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Games/Hop/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Hop/HopGame.cs;../../../unity/Assets/Scripts/Games/Hop/HopMesh.cs;../../../unity/Assets/Scripts/Games/Hop/HopScreen.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />

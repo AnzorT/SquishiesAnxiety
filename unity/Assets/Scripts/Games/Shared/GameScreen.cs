@@ -43,6 +43,11 @@ namespace SquishSquad.Games.Shared
         public abstract void MarkSeen();
         /// <summary>The map of the theme being played (Sort: the fridge's or the cupboard's).</summary>
         public abstract LevelMap NewMap(float w, float top, float h);
+        /// <summary>The map is the whole screen with the header over it, and draws its own background (develop: Squish
+        /// Stack's forest, StackScreen.js "the map is the forest, the whole screen, with this bar over its sky").</summary>
+        public virtual bool FullMap => false;
+        /// <summary>Today's season (the screen's, for the map's pictures).</summary>
+        public string Season = "sunny";
         /// <summary>The map's record again (after a level).</summary>
         public abstract void Refresh(LevelMap map);
         public virtual Hub NewHub(GameScreen screen) => null;
@@ -91,6 +96,13 @@ namespace SquishSquad.Games.Shared
         static readonly TextStyle HeadTitle = new TextStyle { Font = MapArt.Display, Size = 20, LetterSpacing = 1 };
         static readonly TextStyle HeadSub = new TextStyle { Font = MapArt.Heavy, Size = 11.5f, Color = MapArt.INK };
         static readonly TextStyle Pill = new TextStyle { Font = MapArt.Display, Size = 14, Color = "#b86200" };
+        // over a full-screen map's sky (StackScreen.js headerTitle / headerSub): white, with a soft brown shadow
+        TextStyle TitleStyle => Def.FullMap
+            ? new TextStyle { Font = HeadTitle.Font, Size = HeadTitle.Size, LetterSpacing = HeadTitle.LetterSpacing, Color = "#ffffff", Shadows = new[] { new Shadow("rgba(90,40,10,0.85)", 0, 2, 3) } }
+            : new TextStyle { Font = HeadTitle.Font, Size = HeadTitle.Size, LetterSpacing = HeadTitle.LetterSpacing, Color = Def.TitleColor };
+        TextStyle SubStyle => Def.FullMap
+            ? new TextStyle { Font = HeadSub.Font, Size = HeadSub.Size, Color = "#ffffff", Shadows = new[] { new Shadow("rgba(60,30,10,0.8)", 0, 1, 2) } }
+            : HeadSub;
         Frame _back, _help, _titleBox, _title, _sub, _pill, _pillText;
         float _headerH;
         string _headerFor;
@@ -110,9 +122,8 @@ namespace SquishSquad.Games.Shared
             if (Titled)
             {
                 box = root.Add(new FlexNode("titleBox").Flex(1).AlignItems(YGAlign.Center));
-                var ts = new TextStyle { Font = HeadTitle.Font, Size = HeadTitle.Size, LetterSpacing = HeadTitle.LetterSpacing, Color = Def.TitleColor };
-                title = box.Add(new Para(Def.Title, ts).Leaf("title"));
-                sub = box.Add(new Para(Def.Sub, HeadSub).Leaf("sub"));
+                title = box.Add(new Para(Def.Title, TitleStyle).Leaf("title"));
+                sub = box.Add(new Para(Def.Sub, SubStyle).Leaf("sub"));
                 if (Def.HelpOrb) help = root.Add(new FlexNode("help").Size(40, 40));
                 pill = root.Add(new FlexNode("pill").PadH(10).PadV(4).Border(2.5f));
                 pillText = pill.Add(new Para("★ " + Def.Stars, Pill).Leaf("pillText"));
@@ -163,7 +174,8 @@ namespace SquishSquad.Games.Shared
         void MountMap()
         {
             _headerFor = null;
-            float top = LayoutHeader();
+            float top = Def.FullMap ? 0 : LayoutHeader();
+            Def.Season = Season;
             _map = Def.NewMap(W, top, H - top);
             _map.OnPlay = Play;
             _map.Mount();
@@ -241,7 +253,7 @@ namespace SquishSquad.Games.Shared
             float vop = Sw.Opacity;
             var view = Sw.Transform;
             // the page is the host's (exported PageBg); the map's world fades in with the map (MapBackdrop)
-            if (Sw.View == "map")
+            if (Sw.View == "map" && !Def.FullMap)
             {
                 var bg = Frame.L("world");
                 bg.SetPicture($"Maps/world-{Season}.jpg", W, H);
@@ -309,9 +321,8 @@ namespace SquishSquad.Games.Shared
             tl.Set(key, () =>
             {
                 var s = new UiSvg(b.W, b.H);
-                var ts = new TextStyle { Font = HeadTitle.Font, Size = HeadTitle.Size, LetterSpacing = HeadTitle.LetterSpacing, Color = Def.TitleColor };
-                new Para(Def.Title, ts).Draw(s, _title.X - b.X, _title.Y - b.Y, _title.W);
-                new Para(Def.Sub, HeadSub).Draw(s, _sub.X - b.X, _sub.Y - b.Y, _sub.W);
+                new Para(Def.Title, TitleStyle).Draw(s, _title.X - b.X, _title.Y - b.Y, _title.W);
+                new Para(Def.Sub, SubStyle).Draw(s, _sub.X - b.X, _sub.Y - b.Y, _sub.W);
                 return s.Markup;
             }, b.W, b.H, 4);
             tl.Transform = Affine.Translate(b.X, b.Y);
