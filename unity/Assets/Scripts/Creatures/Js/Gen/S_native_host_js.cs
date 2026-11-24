@@ -60,7 +60,7 @@ DeleteK(els_13, id_64);
 return Call(unmount_17, V.Undef, id_64);
 return default;
 }, 1, "", false));
-Set(G_8, "__native", NewObj(13).Put("ctl", Fn((V _self65, int _argc66, V id_72, V _a69, V _a70, V _a71, V[] _rest67) => {
+Set(G_8, "__native", NewObj(14).Put("ctl", Fn((V _self65, int _argc66, V id_72, V _a69, V _a70, V _a71, V[] _rest67) => {
 return (GetK(ctl_9, id_72) is var _t73 && Truthy(_t73) ? _t73 : V.Null);
 return default;
 }, 1, "ctl", false)).Put("host", Fn((V _self74, int _argc75, V id_81, V _a78, V _a79, V _a80, V[] _rest76) => {
@@ -263,16 +263,50 @@ if (Truthy((c_233 is var _t234 && !Truthy(_t234) ? _t234 : Get(c_233, "light")))
 Invoke(c_233, "light", (Truthy(json_232) ? Invoke(G("JSON"), "parse", json_232) : V.Null));
 }
 return default;
-}, 2, "light", false)).Put("state", Fn((V _self235, int _argc236, V id_242, V _a239, V _a240, V _a241, V[] _rest237) => {
-V i_243 = default;
-i_243 = Call(I_18, V.Undef, id_242);
-return (Truthy((i_243 is var _t244 && !Truthy(_t244) ? _t244 : Get(i_243, "cur"))) ? Get(Get(i_243, "cur"), "name") : V.Null);
+}, 2, "light", false)).Put("restBox", Fn((V _self235, int _argc236, V id_242, V _a239, V _a240, V _a241, V[] _rest237) => {
+V c_243 = default;
+V i_244 = default;
+V el_245 = default;
+V svg_246 = default;
+V b_247 = default;
+c_243 = GetK(ctl_9, id_242);
+i_244 = Call(I_18, V.Undef, id_242);
+el_245 = GetK(els_13, id_242);
+if ((!(Truthy(c_243)) || !(Truthy(el_245)))) {
+return V.Null;
+}
+if (Truthy((Get(i_244, "generic") is var _t248 && !Truthy(_t248) ? _t248 : (!(Truthy(Get(i_244, "ready"))) ? V.True : V.False)))) {
+return V.Null;
+}
+if (!(Truthy(Get(G_8, "__heroPre")))) {
+Set(G_8, "__heroPre", ((V)(1D)));
+Object_assign(Get(Get(G_8, "RiveRig"), "PRE"), NewObj(2).Put("unDust", NewObj(8).Put("n", ((V)(8D))).Put("sp", ((V)(26D))).Put("vy", ((V)((-5D)))).Put("g", ((V)(10D))).Put("life", ((V)(650D))).Put("r", Arr(((V)(1.4)), ((V)(2.6)))).Put("col", Arr(((V)("#ffffff")), ((V)("#fff6e6")), ((V)("#f6e2c4")))).Put("kind", ((V)("dot"))).V).Put("unSpark", NewObj(8).Put("n", ((V)(8D))).Put("sp", ((V)(34D))).Put("vy", ((V)((-14D)))).Put("g", ((V)(0D))).Put("life", ((V)(800D))).Put("r", Arr(((V)(2.2)), ((V)(3.8)))).Put("col", Arr(((V)("#fff3a0")), ((V)("#ffffff")), ((V)("#ffd23a")), ((V)("#ffd1f5")))).Put("kind", ((V)("star"))).V).V);
+}
+Invoke(c_243, "_pose", ((V)("idle")), ((V)(0D)));
+svg_246 = Invoke(el_245, "querySelector", ((V)("svg")));
+b_247 = V.Null;
+try {
+b_247 = (svg_246 is var _t249 && !Truthy(_t249) ? _t249 : Invoke(svg_246, "getBBox"));
+} catch (System.Exception _ex250) {
+V e_251 = default;
+e_251 = Caught(_ex250);
+
+}
+if ((!(Truthy(b_247)) || !(GtN(Get(b_247, "width"), 1D)))) {
+return V.Null;
+}
+return Arr(Get(b_247, "x"), Get(b_247, "y"), Get(b_247, "width"), Get(b_247, "height"));
 return default;
-}, 1, "state", false)).Put("spinOff", Fn((V _self245, int _argc246, V id_252, V deg_253, V _a250, V _a251, V[] _rest247) => {
-V i_254 = default;
-i_254 = Call(I_18, V.Undef, id_252);
-if (Truthy(i_254)) {
-Set(i_254, "spinOff", deg_253);
+}, 1, "restBox", false)).Put("state", Fn((V _self252, int _argc253, V id_259, V _a256, V _a257, V _a258, V[] _rest254) => {
+V i_260 = default;
+i_260 = Call(I_18, V.Undef, id_259);
+return (Truthy((i_260 is var _t261 && !Truthy(_t261) ? _t261 : Get(i_260, "cur"))) ? Get(Get(i_260, "cur"), "name") : V.Null);
+return default;
+}, 1, "state", false)).Put("spinOff", Fn((V _self262, int _argc263, V id_269, V deg_270, V _a267, V _a268, V[] _rest264) => {
+V i_271 = default;
+i_271 = Call(I_18, V.Undef, id_269);
+if (Truthy(i_271)) {
+Set(i_271, "spinOff", deg_270);
 }
 return default;
 }, 2, "spinOff", false)).V);

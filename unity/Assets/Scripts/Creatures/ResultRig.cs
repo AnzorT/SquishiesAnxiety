@@ -207,7 +207,7 @@ namespace SquishSquad.Creatures
 
         // the layer's transform (rig units → screen dp, y down) as the holder's position, turn and scale (world units are
         // screen pixels, y up; the view's box is `size` px for the 100 units). A squash and a turn, never a skew.
-        static void Place(Transform t, Affine m, int size)
+        internal static void Place(Transform t, Affine m, int size)
         {
             float k = UiPiece.PxPerDp, q = k * 100f / size;
             double a = m.A * q, b = -m.B * q, c = -m.C * q, d = m.D * q;   // the 2 x 2 on (px right, px up)

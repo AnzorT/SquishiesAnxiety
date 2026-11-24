@@ -86,6 +86,14 @@ namespace SquishSquad.Creatures.Js
             if (l == null || l.Count == 0) return Array.Empty<string>();
             var o = new string[l.Count]; for (int i = 0; i < l.Count; i++) o[i] = Rt.ToStr(l.At(i)); return o;
         }
+        /// <summary>The creature's body box at rest [x, y, w, h] (native-host.js restBox), null until it's drawn.</summary>
+        public static double[] RestBox(int id)
+        {
+            var b = Rt.Invoke(Rt.G("__native"), "restBox", id).O as JsArray;
+            if (b == null) return null;
+            return new[] { Rt.ToNum(b.At(0)), Rt.ToNum(b.At(1)), Rt.ToNum(b.At(2)), Rt.ToNum(b.At(3)) };
+        }
+
         /// <summary>Calls one of native-host.js's helpers (__native.name(args)).</summary>
         public static V Native(string name, params V[] args) => Rt.InvokeSpread(Rt.G("__native"), name, new JsArray(args).V);
     }

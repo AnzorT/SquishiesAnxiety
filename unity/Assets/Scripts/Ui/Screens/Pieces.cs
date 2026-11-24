@@ -20,8 +20,20 @@ namespace SquishSquad.Ui.Screens
         public float Opacity = 1;
         /// <summary>Not an SVG: a slot the host fills (the live creature), at Transform, W x H.</summary>
         public bool Slot;
+        /// <summary>A live creature the host draws on its rig (with Slot): the chest unlock's hero.</summary>
+        public LiveCreature Live;
 
         public ScreenPiece At(float x, float y) { Transform = Affine.Translate(x, y); return this; }
+    }
+
+    /// <summary>The chest unlock's creature on its rig (tools/chest/host.html rigLive / popAt): which one, how long since
+    /// the BAM brought it out, its place (feet at Fx, Fy, its body as big as fits W x H, screen dp) and the burst's
+    /// middle (Cy), which it grows out of.</summary>
+    public sealed class LiveCreature
+    {
+        public string Key;
+        public double Ms;
+        public float Fx, Fy, W, H, Cy;
     }
 
     public static class Pieces

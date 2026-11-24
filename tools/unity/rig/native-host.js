@@ -76,6 +76,21 @@
     press: function (id) { var i = I(id); if (i) { i.press = true; i.pressT = G.performance.now(); } },
     // the scene's light on the rig (ctl.light), from JSON (null: its own)
     light: function (id, json) { var c = ctl[id]; if (c && c.light) c.light(json ? JSON.parse(json) : null); },
+    // tools/chest/host.html rigReady: its body's box at rest (idle, t 0), [x, y, w, h], once it's drawn (null before);
+    // the landing's dust and sparkles defined once (host.html adds them to RiveRig.PRE)
+    restBox: function (id) {
+      var c = ctl[id], i = I(id), el = els[id]; if (!c || !el) return null;
+      if (i.generic && !i.ready) return null;
+      if (!G.__heroPre) { G.__heroPre = 1; Object.assign(G.RiveRig.PRE, {
+        unDust: { n: 8, sp: 26, vy: -5, g: 10, life: 650, r: [1.4, 2.6], col: ['#ffffff', '#fff6e6', '#f6e2c4'], kind: 'dot' },
+        unSpark: { n: 8, sp: 34, vy: -14, g: 0, life: 800, r: [2.2, 3.8], col: ['#fff3a0', '#ffffff', '#ffd23a', '#ffd1f5'], kind: 'star' },
+      }); }
+      c._pose('idle', 0);
+      var svg = el.querySelector('svg'), b = null;
+      try { b = svg && svg.getBBox(); } catch (e) { /* not drawn yet */ }
+      if (!b || !(b.width > 1)) return null;
+      return [b.x, b.y, b.width, b.height];
+    },
     // the rig's state machine and a few of its switches
     state: function (id) { var i = I(id); return i && i.cur ? i.cur.name : null; },
     spinOff: function (id, deg) { var i = I(id); if (i) i.spinOff = deg; },

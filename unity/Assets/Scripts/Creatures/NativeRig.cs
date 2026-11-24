@@ -174,6 +174,8 @@ namespace SquishSquad.Creatures
         /// <summary>The rig's light (rive-rig ctl.light: the scene's, as JSON; null for its own).</summary>
         public void Light(string json) { if (!_gone) try { RigHost.Native("light", _id, json != null ? (V)json : V.Null); } catch (Exception) { } }
 
+        internal int Id => _id;
+
         public void Dispose()
         {
             if (_gone) return;

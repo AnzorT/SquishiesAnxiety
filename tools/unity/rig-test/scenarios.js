@@ -66,6 +66,22 @@
         G.__native.walkStep(c.id, c.key, w, 0.016, 90);
       },
     },
+    // the chest unlock's creature (tools/chest/host.html rigReady / popAt, Creatures/HeroCreature.cs): its box at rest,
+    // out of the burst turning once with its arms up, the landing's dust and sparkles, its cheer
+    hero: {
+      frames: 150, every: 5,
+      setup: function (c) { c.bb = G.__native.restBox(c.id) || [30, 20, 40, 70]; c.ctl.play('surprised'); },
+      step: function (c, f, t) {
+        var land = 640, arm = t < land ? 55 * SM(t / 160) : 55 * (1 - SM((t - land) / 250));
+        G.__native.ext(c.id, t < 1060 ? { spin: t < land ? 360 * SM(t / (land - 40)) : 0, armL: arm, armR: arm } : {});
+        if (t === 640) {
+          var b = c.bb;
+          G.__native.emit(c.id, 'unDust', null, b[0] + b[2] / 2, b[1] + b[3] - 2, 0);
+          G.__native.emit(c.id, 'unSpark', null, b[0] + b[2] / 2, b[1] + 4, 0);
+          c.ctl.play('happy');
+        }
+      },
+    },
     // the Squad House: standing free, its own idle fidgets
     house: { frames: 900, every: 25, setup: function (c) { G.__live.fidgets(c.id, true); } },
   };
