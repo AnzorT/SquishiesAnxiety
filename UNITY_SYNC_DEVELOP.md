@@ -79,7 +79,7 @@ template came from the unpatched prototype). Checked with `house-test save` (5 /
 (54 / 58 rooms equal: the beach's live scene and the dance floor's CSS are drawn another way) and `pixels` (the room
 drawn by the reference rasteriser against develop's page; visibly different pixels, day / night):
 lv12 living 0.35 / 0.03 %, lv12 backyard 0.86 / 0.04 % (unchanged), lv12 dance 1.17 → 0.37 / 0.06 %, decorated
-living 1.99 / 0.46 % before, decorated dance (renovated brick wall and light-up floor) 24.3 → 3.5 / 0.4 %. What's
+living 1.99 / 0.46 → 2.01 / 0.48 % (the blur traded for strokes), decorated dance (renovated brick wall and light-up floor) 24.3 → 3.5 / 0.4 %. What's
 left there is anti-aliasing along the floor tiles and furniture edges, and the brick wall's neon strip glow.
 
 | | develop | Unity before |

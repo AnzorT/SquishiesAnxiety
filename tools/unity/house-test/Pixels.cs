@@ -16,7 +16,7 @@ static partial class Program
     {
         if (PngCache.TryGetValue(href, out var c)) return c;
         // the dance room's 3D floor: its picture drawn by HouseFlat from its tile
-        if (href.StartsWith("flat:") && HouseFlat.Specs.TryGetValue(href, out var fs)) return PngCache[href] = HouseFlat.Render(fs, LoadPng);
+        if (href.StartsWith("flat:") && HouseFlat.Specs.TryGetValue(href, out var fs)) { var sw = Stopwatch.StartNew(); var r = PngCache[href] = HouseFlat.Render(fs, LoadPng); Console.WriteLine($"  (the 3D floor's picture: {r.w} x {r.h} px in {sw.ElapsedMilliseconds} ms)"); return r; }
         var f = Path.Combine(Res, "pics", href + ".png");
         if (!File.Exists(f)) return (0, 0, null);
         var (w, h, rgba) = Png.Read(f); var px = new float[w * h * 4]; for (int i = 0; i < px.Length; i++) px[i] = rgba[i] / 255f;
