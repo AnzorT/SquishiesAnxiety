@@ -10,7 +10,8 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="../../../../unity/Assets/Scripts/Games/Stack/**/*.cs" />
+    <!-- the rules only (the screens and their drawing need Unity and the UI) -->
+    <Compile Include="../../../../unity/Assets/Scripts/Games/Stack/Engine.cs;../../../../unity/Assets/Scripts/Games/Stack/Js.cs;../../../../unity/Assets/Scripts/Games/Stack/Levels.cs;../../../../unity/Assets/Scripts/Games/Stack/Road.cs;../../../../unity/Assets/Scripts/Games/Stack/StackXp.cs" />
     <Compile Include="Program.cs" />
   </ItemGroup>
 </Project>

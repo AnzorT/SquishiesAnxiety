@@ -12,7 +12,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="../../../../unity/Assets/Scripts/Games/Squishdoku/**/*.cs" />
+    <!-- the rules only (the screens and their drawing need Unity and the UI) -->
+    <Compile Include="../../../../unity/Assets/Scripts/Games/Squishdoku/Engine.cs;../../../../unity/Assets/Scripts/Games/Squishdoku/Js.cs;../../../../unity/Assets/Scripts/Games/Squishdoku/LevelData.g.cs;../../../../unity/Assets/Scripts/Games/Squishdoku/Levels.cs;../../../../unity/Assets/Scripts/Games/Squishdoku/PlayerXp.cs" />
     <Compile Include="*.cs" />
   </ItemGroup>
 </Project>

@@ -15,6 +15,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
-    <Compile Include="../../../../unity/Assets/Scripts/Games/Sort/**/*.cs" />
+    <!-- the rules only (the screens and their drawing need Unity and the UI) -->
+    <Compile Include="../../../../unity/Assets/Scripts/Games/Sort/Board.cs;../../../../unity/Assets/Scripts/Games/Sort/Catalog.cs;../../../../unity/Assets/Scripts/Games/Sort/JsMath.cs;../../../../unity/Assets/Scripts/Games/Sort/Levels.cs;../../../../unity/Assets/Scripts/Games/Sort/PlayerXp.cs;../../../../unity/Assets/Scripts/Games/Sort/SortGeometry.cs;../../../../unity/Assets/Scripts/Games/Sort/SortModels.cs" />
   </ItemGroup>
 </Project>
