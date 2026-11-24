@@ -47,8 +47,12 @@ namespace SquishSquad.Vector.Gpu
             _ramp = new Texture2D(256, RampRows, TextureFormat.RGBA32, false, true) { name = "gradient ramps", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, hideFlags = HideFlags.HideAndDontSave };
         }
 
+        bool _disposed;   // (Dispose runs once; a Render after it does nothing: its command buffer is released)
+
         public void Dispose()
         {
+            if (_disposed) return;
+            _disposed = true;
             _cb.Release();
             Kill(_mesh); Kill(_stencil); Kill(_cover); Kill(_composite); Kill(_filter); Kill(_ramp);
             foreach (var t in _noise.Values) Kill(t);
@@ -60,6 +64,7 @@ namespace SquishSquad.Vector.Gpu
         // ---- one frame --------------------------------------------------------------------------------------------
         public void Render(SvgScene scene, RenderTexture target)
         {
+            if (_disposed) return;
             _w = target.width; _h = target.height;
             _verts.Clear(); _usedSubs = 0; _tempSeq = 0;
             _rampPaints.Clear(); _rampRow.Clear();
