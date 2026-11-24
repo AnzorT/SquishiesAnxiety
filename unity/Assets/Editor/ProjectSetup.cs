@@ -47,6 +47,12 @@ namespace SquishSquad.EditorTools
             // the menu reads touches through UnityEngine.Input (the Input Manager); takes effect after an editor restart
             SetProjectSetting("activeInputHandler", 0);
 
+            // Preferences > General > Script Changes While Playing: "Recompile After Finished Playing" (1). The editor's
+            // default, "Recompile And Continue Playing" (0), swaps the code under the running app and resets every static
+            // it set up at launch (the fonts, the screens' layouts): each screen then throws every frame. So 0 always
+            // becomes 1; "Stop Playing And Recompile" (2), if chosen in Preferences, stays.
+            if (EditorPrefs.GetInt("ScriptCompilationDuringPlay", 0) == 0) EditorPrefs.SetInt("ScriptCompilationDuringPlay", 1);
+
             EnsureMainScene();
         }
 
