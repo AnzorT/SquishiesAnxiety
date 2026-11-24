@@ -262,7 +262,7 @@ static class Program
             profile = await fb.Data.GetProfile(uidA);
             Assert((string)profile["nickname"] == "Mittens" && D(profile["age"]) == 14, "nickname trimmed, age");
             Assert(D(profile["coins"]) == 250 && D(profile["totalEarned"]) == 250 && D(profile["generationCredits"]) == 1, "coins as double");
-            Assert((bool)profile["adsFree"] == false && (string)profile["tut"] == "start" && D(profile["level"]) == 1 && D(profile["pxp"]) == 0, "flags");
+            Assert((bool)profile["adsFree"] == false && !profile.ContainsKey("tut") && D(profile["level"]) == 1 && D(profile["pxp"]) == 0, "flags");
             var owned = (List<object>)profile["ownedIds"];
             Assert(owned.Count == 1 && (string)owned[0] == "0", "ownedIds ['0']");
             var stats = M(profile["stats"]);

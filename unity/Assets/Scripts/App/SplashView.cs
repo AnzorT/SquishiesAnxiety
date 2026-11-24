@@ -1,8 +1,10 @@
-// src/screens/SplashScreen.js in Unity (Ui/Screens/SplashArt + SplashModel): the title, the loading bar and its line
-// on the app's clock. AppFlow says when the app is ready (signed in or not, and the profile here); Finished fires 250 ms
-// after the bar is full, as the app's onFinish. A tap doesn't skip it.
+// The launch, as the app has it on develop (App.js, 2026-11-16: the designer's game intro replaced the splash screen,
+// src/screens/SplashScreen.js deleted): no title, no loading bar, only the launch colour (LAUNCH_BG #2a1608) until the
+// app is ready (sign-in known and, signed in, the profile here: AppFlow's SetReady), 10 s at most; then Finished. The
+// game intro plays on the menu after it (and after log in / the email check). The old splash's art (Ui/Screens/
+// SplashArt, SplashModel) is no longer shown.
 using System;
-using SquishSquad.Anim;
+using System.Collections.Generic;
 using SquishSquad.Ui;
 using SquishSquad.Ui.Screens;
 using UnityEngine;
@@ -11,12 +13,12 @@ namespace SquishSquad.App
 {
     public sealed class SplashView : MonoBehaviour
     {
-        Ticker _ticker;
-        SplashModel _model;
-        SplashArt _art;
+        public const string LaunchBg = "#2a1608";
+        const float MaxSeconds = 10;
+
         ScreenHost _host;
-        string _shown;
-        bool _ready;
+        float _start, _w;
+        bool _ready, _done;
         public event Action Finished;
 
         public static SplashView Create(Transform parent)
@@ -26,16 +28,12 @@ namespace SquishSquad.App
             return go.AddComponent<SplashView>();
         }
 
-        /// <summary>The app is ready: the bar fills the rest (1.5 s after the start at the earliest).</summary>
-        public void SetReady() { _ready = true; _model?.SetReady(); }
+        /// <summary>The app is ready (App.js launchReady): the launch is over.</summary>
+        public void SetReady() => _ready = true;
 
         void Start()
         {
-            UiPiece.PxPerDp = Screen.height / 384f;
-            _ticker = new Ticker(Time.unscaledTimeAsDouble * 1000);
-            _model = new SplashModel(_ticker);
-            _model.Finished += () => Finished?.Invoke();
-            if (_ready) _model.SetReady();
+            _start = Time.unscaledTime;
             _host = new ScreenHost(transform, "pieces");
         }
 
@@ -43,14 +41,17 @@ namespace SquishSquad.App
 
         void Update()
         {
-            _ticker.Tick(Time.unscaledTimeAsDouble * 1000);
+            UiPiece.PxPerDp = Screen.height / 384f;
             float w = Screen.width / UiPiece.PxPerDp;
-            if (_art == null || _art.W != w) { UiPiece.PxPerDp = Screen.height / 384f; _art = new SplashArt(Screen.width / UiPiece.PxPerDp, 384); _shown = null; }
-            // the fill moves in quarter-pixel steps at most (no redraw for less)
-            string key = _model.Label + "|" + Math.Round(_model.Fill.GetValue() * SplashModel.TRACK_W * UiPiece.PxPerDp * 4);
-            if (key == _shown) return;
-            _shown = key;
-            _host.Show(_art.Pieces(_model));
+            if (w != _w)
+            {
+                _w = w;
+                var bg = new UiSvg(w, 384).Box(0, 0, w, 384, new BoxStyle { Background = LaunchBg });
+                _host.Show(new List<ScreenPiece> { new ScreenPiece { Id = "launch", Svg = bg.Markup, W = w, H = 384, Margin = 0 } });
+            }
+            if (_done || !(_ready || Time.unscaledTime - _start > MaxSeconds)) return;
+            _done = true;
+            Finished?.Invoke();
         }
     }
 }

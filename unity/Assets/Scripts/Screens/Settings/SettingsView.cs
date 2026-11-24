@@ -1,6 +1,6 @@
 // src/screens/royal/SettingsRoyal.js (REDESIGN_V7 step 3, landscape), as pure C#: the header (back orb, "Settings",
 // "Playing as <name>"); three columns of wood panels: Sound (Music, Sound effects, and a tester's FPS counter), Nickname
-// (its field) and Your squad (Stats), More (Send feedback, Replay tutorial, a tester's Test wallet, LOG OUT); SAVE in
+// (its field) and Your squad (Stats), More (Send feedback, a tester's Test wallet, LOG OUT; develop: no Replay tutorial, the guided tutorial was removed); SAVE in
 // the middle at the bottom with its pulsing glow; the toast; the feedback box (a modal: CANCEL / SEND); a tester's Test
 // wallet (TestWalletView) over it all. In the design's 393-tall units (royal Stage).
 // The switches are candy/ToggleSwitch: the knob springs across (friction 6, tension 140), the colours cross-fade, the
@@ -128,7 +128,6 @@ namespace SquishSquad.Screens
         static readonly (string id, string label, string d)[] More =
         {
             ("feedback", "Send feedback", "M4 5h16v11H8l-4 4Z"),
-            ("tutorial", "Replay tutorial", "M4 12a8 8 0 1 0 2.3-5.7 M4 4v4h4"),
             ("wallet", "Test wallet", "M4 7h16v12H4Z M4 7l3-3h10l3 3 M15 13h2"),
         };
         const string STATS_D = "M5 20V11 M12 20V5 M19 20v-6";

@@ -22,8 +22,8 @@ namespace SquishSquad.Backend
         readonly FirebaseFunctions functions;
         IProfileFeed feed;
 
-        // src/data/creatures.js STARTER_CREATURE_IDS
-        public static readonly string[] StarterCreatureIds = { "0" };
+        // src/data/creatures.js NEW_PLAYER_CREATURE_IDS (develop, 2026-11-21: new players own Nimbo and Mittens)
+        public static readonly string[] StarterCreatureIds = { "0", "1" };
 
         public Action<string> Log = s => Console.WriteLine(s);
 
@@ -57,7 +57,6 @@ namespace SquishSquad.Backend
                 { "ownedIds", StarterCreatureIds.Cast<object>().ToList() },
                 { "stats", new Dictionary<string, object> { { "presses", 0.0 }, { "longestHoldMs", 0.0 }, { "playTime", new Dictionary<string, object>() } } },
                 { "achievements", new Dictionary<string, object> { { "speedTap", false }, { "watchAd", false } } },
-                { "tut", "start" },
                 { "level", 1.0 },
                 { "pxp", 0.0 },
                 { "createdAt", FieldValue.ServerTimestamp },

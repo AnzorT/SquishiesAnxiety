@@ -92,7 +92,7 @@ static class Emu
         Check(user != null && user.NeedsVerification, "a new email account needs verifying");
         Check(store.Read("squish.auth.keepSignedIn") == "0", "\"Keep me signed in\" unticked was saved");
         var profile = await fb.Data.GetProfile(user.Uid);
-        Check(profile != null && (string)profile["nickname"] == "Mia" && (double)profile["age"] == 14 && (string)profile["email"] == email && (double)profile["coins"] == 250 && (string)profile["tut"] == "start",
+        Check(profile != null && (string)profile["nickname"] == "Mia" && (double)profile["age"] == 14 && (string)profile["email"] == email && (double)profile["coins"] == 250 && !profile.ContainsKey("tut"),   // (develop: no tutorial flag)
             "createUserProfile: nickname \"Mia\" (trimmed), age 14, 250 coins, the tutorial's start");
         var codes = await OobCodes(http);
         Check(codes.Any(c => (string)c["email"] == email && (string)c["requestType"] == "VERIFY_EMAIL"), "the verification mail was sent");
