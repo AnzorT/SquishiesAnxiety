@@ -30,8 +30,19 @@ namespace SquishSquad.Menu
             if (_view == null) { _playerLevel = lv; _creatureKey = MenuKey(ChosenKey()); return; }
             var key = MenuKey(ChosenKey());
             if ((lv != _playerLevel || key != _creatureKey) && _view.Where == MenuView.Place.Home && _game == null) { _playerLevel = lv; _creatureKey = key; Rebuild(); return; }
-            _view.SetHud(v ?? HudValues.Baked, NowMs);
+            _view.SetHud(v ?? OfflineHud(), NowMs);
         }
+
+        // Offline (the dev menu, no account): the exported numbers, with the offline wallet's coins (Backend/OfflineWallet.cs:
+        // what the games and Squish Time pay, what the Catalog spends), kept on the device
+        static HudValues OfflineHud()
+        {
+            var h = HudValues.Baked;
+            h.Coins = SquishSquad.Backend.OfflineWallet.Coins(h.Coins);
+            return h;
+        }
+        const string OfflineCoinsKey = "squish.offline.coins";
+        void OfflineChanged() { if (_player == null && _view != null) _view.SetHud(OfflineHud(), NowMs); }
 
         int ViewLevel => _player != null && _playerLevel > 0 ? _playerLevel : MenuState.Level;
 
@@ -76,6 +87,10 @@ namespace SquishSquad.Menu
             Instance = this;
             _cam = CreateCamera(transform);
             _layout = MenuLayout.Load();
+            SquishSquad.Backend.OfflineWallet.Start = HudValues.Baked.Coins;
+            SquishSquad.Backend.OfflineWallet.Load = () => PlayerPrefs.HasKey(OfflineCoinsKey) ? PlayerPrefs.GetString(OfflineCoinsKey) : null;
+            SquishSquad.Backend.OfflineWallet.Store = v => { PlayerPrefs.SetString(OfflineCoinsKey, v); PlayerPrefs.Save(); };
+            SquishSquad.Backend.OfflineWallet.Changed += OfflineChanged;
         }
 
         void Start() => Rebuild();
@@ -84,6 +99,7 @@ namespace SquishSquad.Menu
         {
             ClosePage();   // (the Characters page / Level Pass, if open)
             _view?.Dispose();
+            SquishSquad.Backend.OfflineWallet.Changed -= OfflineChanged;
             if (Instance == this) Instance = null;
         }
 
@@ -119,7 +135,7 @@ namespace SquishSquad.Menu
             _creatureKey = MenuKey(ChosenKey());
             _view = new MenuView(_layout, transform, _w, _h, ViewLevel, MenuState.Season, _creatureKey);
             _t0 = Time.unscaledTime;
-            if (_player != null) _view.SetHud(_player, 0f);
+            _view.SetHud(_player ?? OfflineHud(), 0f);
             _view.Tick(0f);
         }
 
@@ -234,14 +250,20 @@ namespace SquishSquad.Menu
             if (_game != null || this == null) return;
             var prof = ProfileOrEmpty(p);
             int lv = prof.TryGetValue("level", out var lvO) ? System.Convert.ToInt32(lvO) : System.Math.Max(1, _playerLevel);
+            bool online = p?.Fb != null && p.Uid != null;
             double coins = prof.TryGetValue("coins", out var cO) ? System.Convert.ToDouble(cO) : 0;
             var roster = LevelPassPage.Roster;
             var owned = roster != null ? CharactersPageLink.Squad(roster.roster, roster.demo, p).Item1 : null;
             BeforeGame();
             var s = SquishSquad.House.View.HouseScreen.Create(transform, json, lv, owned);
-            s.Coins = () => coins;
+            // (offline, the dev menu: the offline wallet's coins; before, 0, so every BUY in the Catalog was refused)
+            // (signed in: the profile's coins as they are now: the feed may bring new ones while the house is open)
+            double Live() { var q = CharactersPageLink.Get()?.Profile; return q != null && q.TryGetValue("coins", out var v) && v != null ? System.Convert.ToDouble(v) : coins; }
+            s.Coins = () => online ? Live() : SquishSquad.Backend.OfflineWallet.Coins(SquishSquad.Backend.OfflineWallet.Start);
             s.Spend = n =>
             {
+                if (!online) return SquishSquad.Backend.OfflineWallet.Spend(n, SquishSquad.Backend.OfflineWallet.Start);
+                coins = Live();
                 if (coins < n) return false;
                 coins -= n;
                 if (p?.Fb != null && p.Uid != null) _ = p.Fb.Data.CribCoins(p.Uid, -n);   // (gameData.js gameCoins: the difference, as the bridge sends it)

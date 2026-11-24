@@ -568,6 +568,7 @@ namespace SquishSquad.Games.Squish
             double earned = _earner.Stop();
             if (earned <= 0) return;
             if (Online) Fire(_fb.Data.AddCoins(_uid, earned), "addCoins");
+            else SquishSquad.Backend.OfflineWallet.Paid(earned);   // (the dev menu offline: Backend/OfflineWallet.cs)
             NoteDaily("earn", earned);
         }
 

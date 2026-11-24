@@ -119,7 +119,9 @@ namespace SquishSquad.House.View
             _movie = new HouseMovieView(_room, _sim, _k, mvo?.Obj("icons"));
             _club = new HouseClubView(_room, _sim);
             _beach = new HouseBeachView(_room, _sim, _k); _sim.BeachHooks();
-            _toast = UiPiece.Create(world, "toast", 31100);
+            // the page's toast is z-index 1100, over the Catalog and the map (1000): a BUY's "Not enough coins" shows over
+            // the Catalog (it was drawn under it, so a refused BUY looked like nothing happened)
+            _toast = UiPiece.Create(world, "toast", 34000);
             _toast.Opacity = 0;
         }
 

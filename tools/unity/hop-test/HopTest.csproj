@@ -14,6 +14,7 @@
     <Compile Include="../../../unity/Assets/Scripts/Ui/AdHook.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Games/Hop/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Hop/HopGame.cs;../../../unity/Assets/Scripts/Games/Hop/HopMesh.cs;../../../unity/Assets/Scripts/Games/Hop/HopScreen.cs;../../../unity/Assets/Scripts/Games/Hop/HopScreenModel.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Backend/OfflineWallet.cs" />
     <Compile Include="../vector-test/ReferenceRaster.cs" />
     <Compile Include="../vector-test/Png.cs" />
   </ItemGroup>

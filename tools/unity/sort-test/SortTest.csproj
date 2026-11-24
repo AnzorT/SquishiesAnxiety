@@ -15,6 +15,7 @@
     <Compile Include="../../../unity/Assets/Scripts/Ui/AdHook.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Games/Sort/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Sort/SortGame.cs;../../../unity/Assets/Scripts/Games/Sort/SortDoorPiece.cs;../../../unity/Assets/Scripts/Games/Sort/SortHub*.cs;../../../unity/Assets/Scripts/Games/Sort/SortScreen.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Backend/OfflineWallet.cs" />
     <Compile Include="../vector-test/ReferenceRaster.cs" />
     <Compile Include="../vector-test/Png.cs" />
   </ItemGroup>

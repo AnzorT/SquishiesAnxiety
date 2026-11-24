@@ -41,7 +41,9 @@ namespace SquishSquad.Games.Squishdoku
         static void Send(IDictionary<string, object> update, double coins, double xp, IDictionary<string, object> profile, double? levelAfter)
         {
             var to = To;
-            if (to == null || update == null) return;
+            // (no account: the dev menu's offline wallet takes the coins: Backend/OfflineWallet.cs)
+            if (to == null) { if (coins > 0) SquishSquad.Backend.OfflineWallet.Paid(coins); return; }
+            if (update == null) return;
             try { to(new Dictionary<string, object>(update), coins, xp, profile, levelAfter); }
             catch (Exception e) { Console.WriteLine("saveSquishdoku failed: " + e.Message); }
         }
