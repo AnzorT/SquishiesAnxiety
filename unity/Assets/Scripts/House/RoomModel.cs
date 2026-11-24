@@ -97,7 +97,13 @@ namespace SquishSquad.House
               o["divOp"] = (one && rnd && full) || wr ? 0.0 : 0.22; }
             // rnFlat (the dance room's perspective floor is CSS 3D: drawn from its exported picture, see RoomCompose)
             { var Df = rnd && f != null ? TexOf(f) : null; var FR = Df?.Obj("floorRoom");
-              o["flatOn"] = FR != null; o["flatBg"] = FR != null ? "layers" : "none"; }
+              o["flatOn"] = FR != null; o["flatBg"] = FR != null ? "flat:" + f : "none"; o["flatFx"] = new List<object>();
+              if (FR != null)
+              {
+                  var ls = new List<HouseFlat.Layer>();
+                  foreach (var lo in FR.Arr("layers") ?? new List<object>()) if (lo is JObj l) ls.Add(new HouseFlat.Layer { Url = l.Str("url"), X = l.Num("x"), Y = l.Num("y"), W = l.Num("w"), H = l.Num("h"), Rep = l.Truthy("rep") });
+                  HouseFlat.Floors[f] = (ls, FR.Str("bg") ?? "#08080a");
+              } }
             o["wallS"] = ws != "" ? ws : (w != null ? T(w, "wall") : GIF);
             o["ws"] = ws != "" ? O("x", 0.0, "y", -480.0, "h", 600.0, "t", "matrix(1 0.0244 0 1 0 0)") : O("x", 100.0, "y", -50.0, "h", 150.0, "t", "matrix(1 0 0 1 0 0)");
             o["trim"] = bd != "" ? bd : sh.Obj("P").Str("trim");

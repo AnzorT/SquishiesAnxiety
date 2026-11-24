@@ -13,7 +13,7 @@ namespace SquishSquad.House
     public sealed class ShopCard
     {
         public string Id, Name, Tier, Price, Cnt, BTxt, Look;   // Look: "lock", "own", "buy" (the button's colours)
-        public bool HasCnt, Locked, On;
+        public bool HasCnt, Locked, On, NoPrice;   // NoPrice: a yard game's toy once its game is unlocked (patches.mjs pD)
     }
 
     public sealed partial class HouseCreatures
@@ -92,9 +92,11 @@ namespace SquishSquad.House
         {
             var H = S.H; string id = r.Str("id"); bool surf = IsSurf(r), lk = r.Num("lv") > Lvl;
             double own = surf ? (HouseJson.Truthy(H.Obj("rOwn")?[id]) ? 1 : 0) : H.Obj("owned")?.Num("R:" + id) ?? 0;
-            bool on = surf && own > 0 && RnIsOn(r); string st = lk ? "lock" : surf && own > 0 ? "own" : "buy";
-            return new ShopCard { Id = id, Name = S.D.ShortName(r), Tier = "Lv " + HouseJson.JsString(r["lv"]), Price = HouseJson.JsString(r["cost"]), HasCnt = !surf && own > 0, Cnt = "x" + HouseJson.JsString(own), Locked = lk, On = on, Look = st,
-                BTxt = lk ? "LV " + HouseJson.JsString(r["lv"]) : st == "own" ? (on ? "IN USE" : "OWNED") : "BUY" };
+            // (patches.mjs, 2026-11-18: a yard game's toy shows as owned once its game is unlocked, UNLOCKED, no price, no x1)
+            var YGo = Yard(r);
+            bool on = surf && own > 0 && RnIsOn(r); string st = lk ? "lock" : (surf && own > 0) || (YGo != null && YGo.Open) ? "own" : "buy";
+            return new ShopCard { Id = id, Name = S.D.ShortName(r), Tier = "Lv " + HouseJson.JsString(r["lv"]), Price = HouseJson.JsString(r["cost"]), HasCnt = !surf && own > 0 && YGo == null, NoPrice = YGo != null && YGo.Open, Cnt = "x" + HouseJson.JsString(own), Locked = lk, On = on, Look = st,
+                BTxt = lk ? "LV " + HouseJson.JsString(r["lv"]) : st == "own" ? (YGo != null ? "UNLOCKED" : on ? "IN USE" : "OWNED") : "BUY" };
         }
 
         /// <summary>A card's button: locked says so; BUY buys and opens its detail; OWNED / IN USE open it.</summary>
@@ -104,6 +106,11 @@ namespace SquishSquad.House
             if (c.Locked) { Toast("Reach level " + HouseJson.JsString(r["lv"]) + " to buy this"); return; }
             if (c.Look == "buy") { if (BuyR(id)) OpenDet(id); } else OpenDet(id);
         }
+        /// <summary>The yard game a catalog row's toy opens (SquishApp.yardGameOf), or null.</summary>
+        HouseYard.Game Yard(JObj r) => HouseYard.Of("R:" + r.Str("id"), r, S.H.Obj("owned"), S.D);
+        /// <summary>A yard game was just bought (SquishApp.yardNew: the YARD GAMES button's NEW badge).</summary>
+        public Action<string> YardNew;
+
         public void OpenDet(string id) { Det = id; DetCol = 0; Bump(); }
         public void CloseDet() { Det = null; Bump(); }
         public void SetCat(string c) { var RA = RoomRows(Rm); if (c == "All" ? RA.Count > 0 : RA.Exists(r => HouseSave.CatOfRow(r) == c)) { CCt = c; CPg = 0; Det = null; Bump(); } }
@@ -119,12 +126,14 @@ namespace SquishSquad.House
             bool surf = IsSurf(r), lk = r.Num("lv") > Lvl; string hr = S.D.RMap(r.Str("room"));
             double own = surf ? (HouseJson.Truthy(H.Obj("rOwn")?[id]) ? 1 : 0) : H.Obj("owned")?.Num("R:" + id) ?? 0;
             bool can = FreeShop || Coins() >= r.Num("cost"), on = surf && own > 0 && RnIsOn(r); var T = ShopRow(id);
+            // (patches.mjs: a yard game's toy: what buying it does, Unlocked! once bought, no second copy, no Place it, no tag line)
+            var YGd = Yard(r); if (YGd != null) T = null;
             string rl = HouseFrame.RLAB.TryGetValue(hr ?? "", out var n) ? n : hr;
             return new ShopDet { Id = id, Name = S.D.ShortName(r), LvTxt = (lk ? "Unlocks at Lv " : "Lv ") + HouseJson.JsString(r["lv"]), LvLock = lk,
-                Room = (r.Str("room") == "MOV" ? "Movie Room · " : "") + rl + " · " + r.Str("slotName"), Desc = T?.Str("note") ?? r.Str("note") ?? "",
-                Own = surf ? (own > 0 ? (on ? "Up in the " + rl : "You own this") : "") : (own > 0 ? "You own " + HouseJson.JsString(own) : ""),
-                Locked = lk, LockTxt = "Unlocks at level " + HouseJson.JsString(r["lv"]), CanBuy = !lk && !(surf && own > 0), Price = HouseJson.JsString(r["cost"]), CanAfford = can,
-                HasPlace = !lk && own > 0 && !on, PlaceTxt = surf ? "Put it up" : "Place it", What = T?.Str("what") ?? "", Sec = T?.Str("sec") ?? "" };
+                Room = (r.Str("room") == "MOV" ? "Movie Room · " : "") + rl + " · " + r.Str("slotName"), Desc = YGd != null ? "A yard game: buying it unlocks " + YGd.Name + " in YARD GAMES (the button top right in the Backyard). It isn't placed in the yard." : T?.Str("note") ?? r.Str("note") ?? "",
+                Own = YGd != null ? (YGd.Open ? "Unlocked! Play " + YGd.Name + " in YARD GAMES" : "") : surf ? (own > 0 ? (on ? "Up in the " + rl : "You own this") : "") : (own > 0 ? "You own " + HouseJson.JsString(own) : ""),
+                Locked = lk, LockTxt = "Unlocks at level " + HouseJson.JsString(r["lv"]), CanBuy = !lk && !(surf && own > 0) && !(YGd != null && YGd.Open), Price = HouseJson.JsString(r["cost"]), CanAfford = can,
+                HasPlace = !lk && own > 0 && !on && YGd == null, PlaceTxt = surf ? "Put it up" : "Place it", What = T?.Str("what") ?? "", Sec = T?.Str("sec") ?? "" };
         }
 
         /// <summary>buyR: a row bought with coins (a surface once; a piece into storage).</summary>
@@ -133,10 +142,14 @@ namespace SquishSquad.House
             var r = S.D.Row(id); if (r == null) return false; var H = S.H;
             if (r.Num("lv") > Lvl) { Toast("Reach level " + HouseJson.JsString(r["lv"]) + " to buy this"); return false; }
             bool surf = IsSurf(r); if (surf && HouseJson.Truthy(H.Obj("rOwn")?[id])) return true;
+            // (patches.mjs: a yard game's toy is bought once; any one of its toys unlocks the game, the others aren't sold after it)
+            var YGb = Yard(r); if (YGb != null && YGb.Open) { Toast(YGb.Name + " is already unlocked: play it in YARD GAMES"); return false; }
             if (!FreeShop && r.Num("cost") > 0) { bool ok = false; try { ok = Spend(r.Num("cost")); } catch (Exception) { } if (!ok) { Toast("Not enough coins"); return false; } }
             if (surf) H.Ensure("rOwn")[id] = 1.0;
             else { if (S.RnReg(id) == null) { Toast("That piece is not ready yet"); return false; } var o = H.Ensure("owned"); o["R:" + id] = o.Num("R:" + id) + 1; }
-            SaveNow(); CoinsChanged?.Invoke(); Bump(); Toast(S.D.ShortName(r) + " is yours!"); return true;
+            SaveNow(); CoinsChanged?.Invoke(); Bump();
+            if (YGb != null) { Toast(YGb.Name + " unlocked! Play it in YARD GAMES"); YardNew?.Invoke(YGb.Id); } else Toast(S.D.ShortName(r) + " is yours!");
+            return true;
         }
         /// <summary>The coins changed (the header's pill).</summary>
         public Action CoinsChanged;

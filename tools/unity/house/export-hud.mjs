@@ -11,7 +11,8 @@
 // The toast is drawn by Unity from the page's style (its text changes); its numbers are in HouseHud.cs.
 import fs from 'node:fs';
 import path from 'node:path';
-import { launch, openHouse, REPO } from './harness.mjs';
+import { pathToFileURL } from 'node:url';
+import { launch, openHouse, buildWeb, REPO, WORK } from './harness.mjs';
 import { loadFixtures } from './fixtures.mjs';
 import { fontData, HERE as UI } from '../ui/snap-page.mjs';
 import { snap } from '../ui/snap-page.mjs';
@@ -95,8 +96,63 @@ async function wheel(fx, locked) {
   await W.ctx.close();
   return sizes;
 }
+// the backyard's YARD GAMES button (webgame/app/games.js ensureBtn: the menu's gold tab, .sq-yard-wrap at right 22 px,
+// top 14 px of the house's box) and its NEW badge (2026-11-18: a game bought since the Yard Games were last opened; it
+// pulses 1 -> 1.14 -> 1 over 1.4 s, sqYardB). The menu draws it over the house, so it is cut from the menu's page
+// (App.dc.html: .mm-root's colours), built there with games.js's own markup and styles.
+async function yardButton() {
+  const src = fs.readFileSync(path.join(REPO, 'webgame/app/games.js'), 'utf8');
+  const css = new Function('return ' + /var BTN_CSS = ([\s\S]*?);\n/.exec(src)[1])();
+  const pad = /var PAD = '([^']*)'/.exec(src)[1];
+  const ctx = await browser.newContext({ viewport: { width: 832, height: 384 }, deviceScaleFactor: 2.8125 });
+  const pg = await ctx.newPage();
+  await pg.route(/^https?:/, (r) => r.abort());
+  await pg.goto(pathToFileURL(path.join(WORK, 'App.dc.html')).href);
+  await pg.waitForFunction(() => !!document.querySelector('.mm-root'), null, { timeout: 60000 });
+  await pg.evaluate(() => document.fonts.ready);
+  await pg.evaluate((fd) => { window.__snapFonts = fd.names; window.__snapGlyphs = Object.fromEntries(Object.entries(fd.glyphs).map(([k, v]) => [k, new Set(v)])); window.__snapUpm = fd.upm; window.__snapPaths = fd.paths; }, fd);
+  await pg.addScriptTag({ path: path.join(UI, 'snap.js') });
+  await pg.evaluate(({ css, pad }) => {
+    const st = document.createElement('style'); st.textContent = css + '*{animation:none!important;transition:none!important}'; document.head.appendChild(st);
+    const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:0;top:0;width:852px;height:393px;z-index:99999;';
+    const wrap = document.createElement('div'); wrap.className = 'mm-root sq-yard-wrap';
+    const btn = document.createElement('button'); btn.className = 'sq-yard mm-tab mm-p tip v-gold'; btn.dataset.hud = 'yard';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#3d1268" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="' + pad + '"/></svg><span>YARD GAMES</span>';
+    const b = document.createElement('i'); b.className = 'sq-yard-b'; b.textContent = 'NEW'; b.dataset.hud = 'yard-new'; btn.appendChild(b);
+    wrap.appendChild(btn); host.appendChild(wrap); document.body.appendChild(host);
+  }, { css, pad });
+  await pg.waitForTimeout(300);
+  const out = {};
+  const r = async (sel) => pg.evaluate((sel) => { const e = document.querySelector(sel).getBoundingClientRect(); return [e.left, e.top, e.width, e.height]; }, sel);
+  const btnR = await r('[data-hud="yard"]'), newR = await r('[data-hud="yard-new"]');
+  await pg.evaluate(() => { document.querySelector('[data-hud="yard-new"]').style.visibility = 'hidden'; });
+  const s1 = await snap(pg, '[data-hud="yard"]');
+  await pg.evaluate(() => { document.querySelector('[data-hud="yard-new"]').style.visibility = ''; });
+  const s2 = await snap(pg, '[data-hud="yard-new"]');
+  fs.writeFileSync(path.join(OUT, 'hud', 'yard.xml'), s1.svg);
+  fs.writeFileSync(path.join(OUT, 'hud', 'yard-new.xml'), s2.svg);
+  const R3 = (v) => Math.round(v * 1000) / 1000;
+  // the button's box (right 22, top 14 in the house's box) and where the snaps sit against it (their paint reaches
+  // past it: the tips, the glow), the badge's box for its pulse (scaled about its centre)
+  // the menu's back orb over the house (Main Menu.dc.html .mm-hback, app/menu.js's wood look): left 12, bottom 12 of the
+  // screen (menu dp, not the house's scale), 44 x 44
+  await pg.evaluate(() => {
+    const host = document.createElement('div'); host.className = 'mm-house'; host.style.cssText = 'position:fixed;left:0;top:0;width:832px;height:384px;z-index:99999;background:none;';
+    host.innerHTML = '<button class="mm-hback" data-hud="back" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5L8 12L15 19"></path></svg></button>';
+    document.body.appendChild(host);
+  });
+  await pg.waitForTimeout(100);
+  const backR = await r('[data-hud="back"]'), s3 = await snap(pg, '[data-hud="back"]');
+  fs.writeFileSync(path.join(OUT, 'hud', 'back.xml'), s3.svg);
+  out.back = { left: R3(backR[0]), bottom: R3(384 - backR[1] - backR[3]), w: R3(backR[2]), h: R3(backR[3]), snap: [R3(s3.x - backR[0]), R3(s3.y - backR[1]), R3(s3.w), R3(s3.h)] };
+  out.yard = { right: R3(852 - btnR[0] - btnR[2]), top: R3(btnR[1]), w: R3(btnR[2]), h: R3(btnR[3]), snap: [R3(s1.x - btnR[0]), R3(s1.y - btnR[1]), R3(s1.w), R3(s1.h)],
+    badge: [R3(newR[0] - btnR[0]), R3(newR[1] - btnR[1]), R3(newR[2]), R3(newR[3])], badgeSnap: [R3(s2.x - btnR[0]), R3(s2.y - btnR[1]), R3(s2.w), R3(s2.h)], pulse: { ms: 1400, scale: 1.14 } };
+  await ctx.close();
+  return out;
+}
+Object.assign(hud, await yardButton());
 const fixtures = loadFixtures();
-hud.wheel = { ...(await wheel(fixtures.find((f) => f.name === 'lv30-beach'), false)), ...(await wheel(fixtures.find((f) => f.name === 'fresh-lv1'), true)) };
+hud.wheel ={ ...(await wheel(fixtures.find((f) => f.name === 'lv30-beach'), false)), ...(await wheel(fixtures.find((f) => f.name === 'fresh-lv1'), true)) };
 fs.writeFileSync(path.join(OUT, 'hud.json'), JSON.stringify(hud, null, 1));
 console.log('wheel:', JSON.stringify(hud.wheel));
 console.log('hud:', JSON.stringify(pieces));

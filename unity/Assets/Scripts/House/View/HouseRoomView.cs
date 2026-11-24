@@ -23,11 +23,12 @@ namespace SquishSquad.House.View
         public int SortingOrder = 10;
         public int Msaa = 8;
 
-        /// <summary>The part of the frame (x, y, w, h frame px) the room texture covers: the frame at camK 0.85.</summary>
-        public static readonly double[] View = Region(0.85);
+        /// <summary>The part of the frame (x, y, w, h frame px) the room texture covers: the frame at camK 0.85 (with its
+        /// margins past the 852 x 393 room on a taller or wider screen: HouseFrame.MX / MY).</summary>
+        public static double[] View => Region(0.85);
         static double[] Region(double k)
         {
-            var a = HouseCamera.ToBox(0, 0, k); var b = HouseCamera.ToBox(852, 393, k);
+            var a = HouseCamera.ToBox(-HouseFrame.MX, -HouseFrame.MY, k); var b = HouseCamera.ToBox(852 + HouseFrame.MX, 393 + HouseFrame.MY, k);
             double x0 = Math.Floor(a.x), y0 = Math.Floor(a.y + HouseFrame.BoxTop), x1 = Math.Ceiling(b.x), y1 = Math.Ceiling(b.y + HouseFrame.BoxTop);
             return new[] { x0, y0, x1 - x0, y1 - y0 };
         }
@@ -95,8 +96,24 @@ namespace SquishSquad.House.View
                 Pieces.Add(new Piece { Quad = q, Region = lp.Region, Box = lp.Box, Z = lp.Z, Index = idx, Toy = lp.Index, Kind = lp.Kind, Id = lp.Id, Renderer = _lastRenderer });
             }
             SetCamera(CamK);
-            if (L.Night != null) Quad("night", Render(L.Night, new double[] { 0, 0, 852, 393 }, k), 852 * k, 393 * k, 30000);
+            if (_itemsOp < 1) ItemsOpacity(_itemsOp);
+            // (the night is the frame's: inset 0, a gradient over the whole frame, so stretched to it)
+            if (L.Night != null)
+            {
+                var nq = Quad("night", Render(L.Night, new double[] { 0, 0, 852, 393 }, k), 852 * k, 393 * k, 30000);
+                float x0 = (float)(-HouseFrame.MX * k), y0 = (float)(HouseFrame.MY * k), x1 = (float)((852 + HouseFrame.MX) * k), y1 = (float)(-(393 + HouseFrame.MY) * k);
+                nq.SetVertices(new[] { new Vector3(x0, y0, 0), new Vector3(x1, y0, 0), new Vector3(x1, y1, 0), new Vector3(x0, y1, 0) }); nq.RecalculateBounds();
+            }
         }
+
+        /// <summary>The furniture layer's opacity (.sq-items: the pieces, toys and props over the bare room; the trip in fades
+        /// it in, app/menu.js houseDrawn). Kept across redraws.</summary>
+        public void ItemsOpacity(float a)
+        {
+            _itemsOp = a;
+            foreach (var p in Pieces) if (p.Renderer != null) p.Renderer.sharedMaterial.SetFloat("_Opacity", a);
+        }
+        float _itemsOp = 1;
 
         /// <summary>The room's camK (renderVals: 0.85 indoors, 1 in the dance room, outdoors and on the beach).</summary>
         public double RoomK { get; private set; } = 1;
@@ -110,10 +127,16 @@ namespace SquishSquad.House.View
             PatternExpand.Expand(root);
             float vw = (float)view[2], vh = (float)view[3];
             int tw = Mathf.CeilToInt(vw * k), th = Mathf.CeilToInt(vh * k);
-            var images = new Dictionary<string, Texture2D>();
+            var images = new Dictionary<string, Texture2D>(); var made = new HashSet<Texture2D>();
             (int, int)? Size(string href)
             {
-                if (!images.TryGetValue(href, out var t)) images[href] = t = Resources.Load<Texture2D>("House/pics/" + href);
+                if (!images.TryGetValue(href, out var t))
+                {
+                    // the dance room's 3D floor: its picture drawn by HouseFlat from the floor's tile (RoomCompose)
+                    if (href.StartsWith("flat:")) { t = FlatPicture(href); if (t != null) made.Add(t); }
+                    else t = Resources.Load<Texture2D>("House/pics/" + href);
+                    images[href] = t;
+                }
                 return t == null ? ((int, int)?)null : (t.width, t.height);
             }
             var scene = SvgScene.Compile(root, vw * k, vh * k, Affine.Identity, Size);
@@ -129,8 +152,36 @@ namespace SquishSquad.House.View
             Graphics.Blit(msaa, tex);
             msaa.Release(); Destroy(msaa);
             _made.Add(tex);
-            foreach (var t in images.Values) if (t != null) Resources.UnloadAsset(t);
+            foreach (var t in images.Values) if (t != null && !made.Contains(t)) Resources.UnloadAsset(t);
             return tex;
+        }
+
+        // HouseFlat's picture of a 3D floor as a texture; its tiles read back from the GPU (they aren't imported readable)
+        // (kept: the room is drawn again on every change of a piece, the floor's picture takes a moment to make)
+        static string _flatKey; static Texture2D _flatTex;
+        static Texture2D FlatPicture(string href)
+        {
+            if (href == _flatKey && _flatTex != null) return _flatTex;
+            if (!HouseFlat.Specs.TryGetValue(href, out var spec)) return null;
+            if (_flatTex != null) Destroy(_flatTex);
+            var (w, h, rgba) = HouseFlat.Render(spec, url =>
+            {
+                var t = Resources.Load<Texture2D>("House/pics/" + url); if (t == null) return (0, 0, null);
+                var rt = RenderTexture.GetTemporary(t.width, t.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+                Graphics.Blit(t, rt); var prev = RenderTexture.active; RenderTexture.active = rt;
+                var r = new Texture2D(t.width, t.height, TextureFormat.RGBA32, false); r.ReadPixels(new Rect(0, 0, t.width, t.height), 0, 0); r.Apply();
+                RenderTexture.active = prev; RenderTexture.ReleaseTemporary(rt);
+                var px = r.GetPixels32(); int tw = t.width, th = t.height; var f = new float[tw * th * 4];
+                for (int y = 0; y < th; y++) for (int x = 0; x < tw; x++) { var c = px[(th - 1 - y) * tw + x]; int i = (y * tw + x) * 4; f[i] = c.r / 255f; f[i + 1] = c.g / 255f; f[i + 2] = c.b / 255f; f[i + 3] = c.a / 255f; }
+                Destroy(r); Resources.UnloadAsset(t);
+                return (tw, th, f);
+            });
+            var o = new Texture2D(w, h, TextureFormat.RGBA32, false) { name = "flat floor", wrapMode = TextureWrapMode.Clamp };
+            var cs = new Color32[w * h];
+            for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) { int i = (y * w + x) * 4; cs[(h - 1 - y) * w + x] = new Color32((byte)(rgba[i] * 255 + 0.5f), (byte)(rgba[i + 1] * 255 + 0.5f), (byte)(rgba[i + 2] * 255 + 0.5f), (byte)(rgba[i + 3] * 255 + 0.5f)); }
+            o.SetPixels32(cs); o.Apply(false, true);
+            _flatKey = href; _flatTex = o;
+            return o;
         }
 
         // a quad covering the frame on screen (fw x fh px from the top-left, y down), showing `tex`
@@ -171,7 +222,11 @@ namespace SquishSquad.House.View
                 double gx = b.x, gy = b.y + HouseFrame.BoxTop;
                 return new Vector2((float)((gx - View[0]) / View[2]), (float)(1 - (gy - View[1]) / View[3]));
             }
-            _quad.SetUVs(0, new[] { Uv(0, 0), Uv(852, 0), Uv(852, 393), Uv(0, 393) });
+            // (the whole frame: the room's picture reaches past the 852 x 393 room, more floor and ceiling show)
+            double fx0 = -HouseFrame.MX, fy0 = -HouseFrame.MY, fx1 = 852 + HouseFrame.MX, fy1 = 393 + HouseFrame.MY;
+            Vector3 F(double fx, double fy) => new Vector3((float)(fx * _k), (float)(-fy * _k), 0);
+            _quad.SetVertices(new[] { F(fx0, fy0), F(fx1, fy0), F(fx1, fy1), F(fx0, fy1) }); _quad.RecalculateBounds();
+            _quad.SetUVs(0, new[] { Uv(fx0, fy0), Uv(fx1, fy0), Uv(fx1, fy1), Uv(fx0, fy1) });
             // a piece's quad: its corners (frame px at camK 1) scaled by k about (426, 393), the box's (426, 343)
             Vector3 V(double gx, double gy) { double fx = 426 + k * (gx - 426), fy = 393 + k * (gy - 393); return new Vector3((float)(fx * _k), (float)(-fy * _k), 0); }
             foreach (var p in Pieces)

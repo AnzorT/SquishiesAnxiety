@@ -40,7 +40,10 @@ namespace SquishSquad.House.View
         }
 
         Affine Frame => Affine.ScaleBy(_k / UiPiece.PxPerDp, _k / UiPiece.PxPerDp);
-        double[] R(string id) { var a = _P.Arr(id); return a == null ? null : new[] { (double)a[0], (double)a[1], (double)a[2], (double)a[3] }; }
+        // (the room's map button, the map's Back and weather chip keep to the frame's top-left: patches.mjs houseBox)
+        double[] R(string id) { var a = _P.Arr(id); return a == null ? null : new[] { (double)a[0] - HouseFrame.MX, (double)a[1] - HouseFrame.MY, (double)a[2], (double)a[3] }; }
+        // the whole frame (room px): the sea, the cream fade
+        static double FX0 => -HouseFrame.MX; static double FY0 => -HouseFrame.MY; static float FW => (float)(852 + 2 * HouseFrame.MX); static float FH => (float)(393 + 2 * HouseFrame.MY);
         static string N(double v) => HouseGeo.N(Math.Round(v * 1000) / 1000);
 
         UiPiece Piece(string id, int order) { if (!_p.TryGetValue(id, out var p)) { p = UiPiece.Create(_parent, "map " + id, order); _p[id] = p; } p.Visible = true; p.Opacity = 1; p.Order = order; _used.Add(id); return p; }
@@ -87,21 +90,22 @@ namespace SquishSquad.House.View
             double s = Sc(now); float o = (float)Op(now);
             var zoom = Affine.Translate(_ox, _oy) * Affine.ScaleBy(s, s) * Affine.Translate(-_ox, -_oy);
             // the sea behind, the picture
-            var sea = mx.Str("seaBg") ?? "#4d8ea9";
-            var bg = Drawn("sea", sea, () => (new UiSvg(852, 393).Box(0, 0, 852, 393, new BoxStyle { Background = sea }).Markup, 852, 393), O, 0); bg.Transform = Frame;
+            // (patches.mjs: the sea round the map is its gradient carried on, sea0 at the map's top and sea1 at its bottom)
+            string s0 = mx.Str("sea0") ?? mx.Str("seaBg") ?? "#4d8ea9", s1 = mx.Str("sea1") ?? s0, seaKey = s0 + s1 + FW + "x" + FH;
+            var bg = Drawn("sea", seaKey, () => (new UiSvg(FW, FH).Box(0, 0, FW, FH, new BoxStyle { Gradient = new[] { s0, s0, s1, s1 }, GradientStops = new[] { 0f, (float)(HouseFrame.MY / FH), (float)((393 + HouseFrame.MY) / FH), 1f } }).Markup, FW, FH), O, 0); bg.Transform = Frame * Affine.Translate(FX0, FY0);
             string svg = null; string key = HouseJson.Stringify(_vals.Arr("mapTiles")?.ConvertAll(t => (object)((t as JObj)?.Num("glow") ?? 0))) + mx.Str("grass") + mx.Str("label") + _sim.SeasonNow();
             var pic = Drawn("pic", key, () => { svg ??= HouseCreatures.MapSvg(_tpl, _vals); return (svg, 852, 393); }, O + 1, 0);
             pic.Transform = Frame * zoom; pic.Opacity = o;
             Labels(zoom, o);
             // the cream fade as the room is entered
             double ft = _fadeT0 < 0 ? 0 : Math.Max(0, Math.Min(1, Ease(Math.Max(0, Math.Min(1, (now - _fadeT0) / 300)))));
-            if (ft > 0) { var fd = Drawn("fade", "f", () => (new UiSvg(852, 393).Box(0, 0, 852, 393, new BoxStyle { Background = "#fff6e2" }).Markup, 852, 393), O + 40, 0); fd.Transform = Frame; fd.Opacity = (float)ft; }
+            if (ft > 0) { var fd = Drawn("fade", "f" + FW + "x" + FH, () => (new UiSvg(FW, FH).Box(0, 0, FW, FH, new BoxStyle { Background = "#fff6e2" }).Markup, FW, FH), O + 40, 0); fd.Transform = Frame * Affine.Translate(FX0, FY0); fd.Opacity = (float)ft; }
             // Back, the weather, the hint, the level chip
             Fixed("back", O + 50); Fixed("weather-" + _sim.SeasonNow(), O + 50);
             var hst = new TextStyle { Font = "Fredoka_600SemiBold", Size = 12.5f, Color = "#6b4426", LineHeight = 18 }; string hint = _sim.MapHint;
             float hw = UiSvg.BoxWidth(hint, hst) + 20, hh = 22;
             var hp = Drawn("hint", hint, () => { var u = new UiSvg(hw, hh); u.Box(0, 0, hw, hh, new BoxStyle { Background = "#fff6e2", Radius = 6, Shadows = new[] { new Shadow("#6b4426", 0, 0, 0, 2), new Shadow("rgba(107,68,38,0.35)", 0, 2, 0, 2) } }); u.Text(hint, 10, 2, hst); return (u.Markup, hw, hh); }, O + 50);
-            hp.Transform = Frame * Affine.Translate(14 + hw / 2, 393 - 12 - hh / 2) * Affine.Rotate(-1.5) * Affine.Translate(-hw / 2, -hh / 2);
+            hp.Transform = Frame * Affine.Translate(14 - HouseFrame.MX + hw / 2, 393 + HouseFrame.MY - 12 - hh / 2) * Affine.Rotate(-1.5) * Affine.Translate(-hw / 2, -hh / 2);
             var lst = new TextStyle { Font = "Fredoka_700Bold", Size = 13, Color = "#5b3418" }; string lt = "Lv " + _sim.S.Level + " · " + mx.Str("label");
             float lw = 2 + 6 + 16 + 5 + UiSvg.BoxWidth(lt, lst) + 11 + 2;
             var lp = Drawn("lvchip", lt, () =>
@@ -110,7 +114,7 @@ namespace SquishSquad.House.View
                 u.Raw("<g transform=\"translate(8 6)\">" + Regex.Replace((string)_bits[4], "^<svg[^>]*>|</svg>$", "") + "</g>");
                 u.Text(lt, 2 + 6 + 16 + 5, (28 - UiSvg.LineBox(lst)) / 2, lst); return (u.Markup, lw, 28);
             }, O + 50);
-            lp.Transform = Frame * Affine.Translate(852 - 16 - lw, 12);
+            lp.Transform = Frame * Affine.Translate(852 + HouseFrame.MX - 16 - lw, 12 - HouseFrame.MY);
             foreach (var kv in _p) if (!_used.Contains(kv.Key)) kv.Value.Visible = false;
         }
         double Sc(double now) { double t = (now - _scT0) / 600; return t >= 1 ? _scTo : t <= 0 ? _scFrom : _scFrom + (_scTo - _scFrom) * Move(t); }

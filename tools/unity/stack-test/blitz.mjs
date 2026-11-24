@@ -1,11 +1,12 @@
 // Squish Stack's Blitz as the app plays it (Expo web, src/web/Preview.js "game-stack": a made-up player with Remove Ads,
 // nothing saved), on a virtual clock, for Blitz.cs to play the same from the Unity code (StackGame.CreateBlitz) and compare.
-//   The hub is opened in real time, then the page's clock is replaced (tools/unity/rig/virtual-clock.js) and BLITZ GO
+//   The hub is opened in real time, then the page's clock is replaced (tools/unity/rig/virtual-clock.js) and BLITZ MODE
 //   tapped. The clock is stepped 16 ms a frame; T0 is when the countdown's timers are set (3, 2, 1, GO! from T0 + 200).
-//   Then the run is played: every puzzle solved with the engine's best moves (one tap-tap move every 450 ms once it's
-//   dealt), a mistake on puzzle 2 (REVIVE), all ten cleared (BLITZ CHAMPION!), AGAIN, a pause on the new run's puzzle 1
-//   (RESUME), a mistake, BACK TO PUZZLE 1 (the fail card). Every tap and every screenshot is logged with its moment.
-// node blitz.mjs <out dir>   <out>/blitz-<ms>.png  the screen at T0 + ms;  <out>/blitz.json  the puzzles, steps, the win's heads
+//   Then develop's endless run is played: every puzzle solved with the engine's best moves (one tap-tap move every 450 ms
+//   once it's dealt), a mistake on puzzle 2 (the save card: SAVE IT), puzzles 2-4 cleared, a mistake on puzzle 5 (END
+//   RUN: GAME OVER), PLAY AGAIN, a pause on the new run's puzzle 1 (RESUME). Every tap and every screenshot is logged
+//   with its moment.
+// node blitz.mjs <out dir>   <out>/blitz-<ms>.png  the screen at T0 + ms;  <out>/blitz.json  the puzzles and steps
 import fs from 'node:fs';
 import path from 'node:path';
 import { openApp, ROOT } from '../ui/snap-page.mjs';
@@ -38,7 +39,6 @@ await page.evaluate(() => {
       puzzle: vals.find((v) => Array.isArray(v) && v[0] && v[0].sol && v[0].start)[0],
       who: vals.find((v) => Array.isArray(v) && Array.isArray(v[0]) && v[0][0] && v[0][0].key && 'mine' in v[0][0])[0],
       cast: found.memoizedProps.cast,
-      win: vals.find((v) => v && typeof v === 'object' && !Array.isArray(v) && Array.isArray(v.uris)) || null,
     };
   };
   // engine.js bestMove on the page's own solution: the moves from `pos` to the goal
@@ -79,13 +79,13 @@ const run = (ms) =>
     }
   }, ms);
 
-await page.mouse.click(712, 270); // BLITZ GO
+await page.mouse.click(612, 180); // BLITZ MODE
 let T0 = null;
 for (let i = 0; i < 600 && T0 == null; i++) {
   await frame();
   T0 = await page.evaluate(() => window.__cdAt);
 }
-console.log('BLITZ GO tapped; the countdown set at', T0);
+console.log('BLITZ MODE tapped; the countdown set at', T0);
 // every squishy's picture loaded (in real time: the page's clock waits)
 await page.evaluate(async () => {
   const uris = [...new Set(window.__game().cast.map((c) => c.uri).filter((u) => u && u !== 'about:blank'))];
@@ -122,7 +122,8 @@ async function waitPhase(ph, fresh = true) {
   await page.screenshot({ path: path.join(out, 'stuck.png') });
   throw new Error(`no ${ph} (${await page.evaluate(() => window.__game().phase)} at ${await rel()})`);
 }
-const colX = (k, p) => 250 + (432 / k) * (p + 0.5);
+// (the cushions sit between the two 200 dp side columns)
+const colX = (k, p) => 200 + (432 / k) * (p + 0.5);
 async function tapMove(k, from, to, what = 'move') {
   const ms = await rel();
   await page.mouse.click(colX(k, from), 300);
@@ -142,14 +143,12 @@ async function press(label) {
   steps.push({ at: ms, press: label });
   console.log(`  ${label} at ${ms} ms`);
 }
-// a puzzle's best moves, 450 ms apart from when it's playable (`shots`: moments after that to shoot); k by puzzle
-// (levels.js BLITZ)
-const BLITZ_K = [3, 3, 3, 3, 3, 4, 4, 4, 4, 4];
-let idx = 0;
+// a puzzle's best moves, 450 ms apart from when it's playable (`shots`: moments after that to shoot)
+const kOf = () => page.evaluate(() => window.__game().puzzle.sol.k);
 async function puzzle(shots) {
   const t = await waitPhase('play');
   const g = await noteP();
-  g.k = BLITZ_K[idx];
+  g.k = await kOf();
   const moves = await page.evaluate((s) => window.__solve(s), g.start);
   const plan = moves.map((m, i) => ({ ms: t + 100 + i * 450, m })).concat((shots || []).map(([ms, name]) => ({ ms: t + ms, name })));
   plan.sort((a, b) => a.ms - b.ms);
@@ -158,14 +157,13 @@ async function puzzle(shots) {
     if (s.m) await tapMove(g.k, s.m[0], s.m[1]);
     else await shot(s.name);
   }
-  idx++;
   return t + 100 + (moves.length - 1) * 450; // the last move
 }
 // a big one onto a smaller one (after best moves until there is one)
 async function mistake(fresh = true) {
   const t = await waitPhase("play", fresh);
   const g = await noteP();
-  g.k = BLITZ_K[idx];
+  g.k = await kOf();
   let pos = g.start.slice();
   const topOf = (p, c) => { for (let r = 0; r < p.length; r++) if (p[r] === c) return r; return -1; };
   let ms = t + 100;
@@ -182,44 +180,45 @@ async function mistake(fresh = true) {
   }
 }
 
-// ---- run 1: the countdown, puzzle 1 solved, a mistake on puzzle 2 and the revive, all ten, the win ----
+// ---- run 1: the countdown, puzzle 1 solved, a mistake on puzzle 2 and its save, puzzles 2-4, a mistake on 5: GAME OVER
 await shotAt(600, 'countdown 3');
 await shotAt(1000, 'countdown 2');
 await shotAt(1700, 'countdown 1');
 await shotAt(2400, 'GO!');
 await shotAt(2750, 'GO! and the deal');
 let last = await puzzle([[50, 'puzzle 1 in play'], [100 + 450 + 150, 'a move in the air']]);
-await shotAt(last + 700, 'puzzle 1 cleared, its pip');
+await shotAt(last + 700, 'puzzle 1 cleared, CLEARED 1');
 await shotAt(last + 1700, 'puzzle 2: its banner');
 let [m, pos] = await mistake();
 await shotAt(m + 300, 'TOO BIG!');
-await shotAt(m + 1450, 'the revive card coming');
-await shotAt(m + 3500, 'the revive card');
-await press('REVIVE');
-await shotAt(m + 3800, 'revived');
+await shotAt(m + 1200, 'everyone drooping');
+await shotAt(m + 1650, 'the save card coming');
+await shotAt(m + 3500, 'the save card');
+await press('SAVE IT');
+await shotAt(m + 3800, 'saved');
 // puzzle 2 from where the mistake left it
 {
   const g = puzzles[puzzles.length - 1];
   const t = await rel();
   const moves = await page.evaluate((s) => window.__solve(s), pos);
   for (let i = 0; i < moves.length; i++) { await at(t + 300 + i * 450); await tapMove(g.k, moves[i][0], moves[i][1]); }
-  idx++;
 }
-for (let p = 2; p < 10; p++) last = await puzzle(p === 6 ? [[60, 'puzzle 7 in play (a picture goal)']] : p === 9 ? [[60, 'puzzle 10 in play']] : []);
-await shotAt(last + 1000, 'the tenth cleared');
-await shotAt(last + 1800, 'BLITZ CHAMPION! opening');
-await shotAt(last + 4500, 'BLITZ CHAMPION! counting');
-await shotAt(last + 8000, 'BLITZ CHAMPION!');
-const heads = await page.evaluate(() => { const g = window.__game(); const by = Object.fromEntries(g.cast.map((c) => [c.uri, c.key])); return g.win ? g.win.uris.map((u) => (u && u !== 'about:blank' ? by[u] : '')) : null; });
-await press('AGAIN');
-// ---- run 2: the countdown again, a pause, a mistake, BACK TO PUZZLE 1 ----
-idx = 0;
+for (let p = 2; p < 4; p++) last = await puzzle(p === 3 ? [[60, 'puzzle 4 in play']] : []);
+[m] = await mistake();
+await shotAt(m + 3500, 'the save card again');
+await press('END RUN');
+const to = await rel();
+await shotAt(to + 400, 'GAME OVER opening');
+await shotAt(to + 1500, 'GAME OVER counting');
+await shotAt(to + 5000, 'GAME OVER');
+await press('PLAY AGAIN');
+// ---- run 2: the countdown again, a pause ----
 const t2 = await waitPhase('play');
 await noteP();
 await shotAt(t2 + 200, 'run 2 in play');
 {
   const ms = await rel();
-  await page.mouse.click(32, 32.5);
+  await page.mouse.click(32, 26);
   await page.waitForTimeout(200);
   steps.push({ at: ms, back: true });
 }
@@ -227,12 +226,7 @@ const tp = await rel();
 await shotAt(tp + 150, 'paused, opening');
 await shotAt(tp + 2000, 'paused');
 await press('RESUME');
-[m] = await mistake(false);
-await shotAt(m + 2500, 'the revive card again');
-await press('BACK TO PUZZLE 1');
-const tf = await rel();
-await shotAt(tf + 400, 'BACK TO PUZZLE 1! opening');
-await shotAt(tf + 3600, 'BACK TO PUZZLE 1!');
-fs.writeFileSync(path.join(out, 'blitz.json'), JSON.stringify({ T0, steps, puzzles, heads }, null, 1));
+await shotAt(tp + 2400, 'resumed');
+fs.writeFileSync(path.join(out, 'blitz.json'), JSON.stringify({ T0, steps, puzzles }, null, 1));
 if (errors.length) console.log('page errors:', errors.slice(0, 3).join(' | '));
 await browser.close();

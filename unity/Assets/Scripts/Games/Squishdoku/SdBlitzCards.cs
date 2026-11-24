@@ -1,4 +1,5 @@
-// Squishdoku's own Blitz cards (src/squishdoku/Overlays.js), one wide column each (Overlay `broad`, Ui/Blitz BroadCard):
+// Squishdoku's own Blitz cards (src/squishdoku/Overlays.js), one wide column each (Overlay `broad`, Ui/Blitz BroadCard);
+// develop's Squish Stack Blitz shows them too, with its own `unit` ("puzzle": Game.js):
 //   Save   a mistake or the clock ended the run: TIME'S UP! / OOPS!, "Save your run and keep going on board n?", and in a
 //          row (each up to 220 dp): SAVE IT (an ad, once a run; free with Remove Ads), SAVE FOR <gem> price (twice the
 //          last each time), END RUN
@@ -24,7 +25,7 @@ namespace SquishSquad.Games.Squishdoku
         /// <summary>BlitzSaveCard's props.</summary>
         public sealed class SaveState
         {
-            public string Reason = "mistake";
+            public string Reason = "mistake", Unit = "board";
             public int Board = 1, Cleared, Gems, Price = 10;
             public bool AdUsed, AdReady, AdsFree, Saving;
             public string Error;
@@ -35,8 +36,8 @@ namespace SquishSquad.Games.Squishdoku
             var c = new BroadCard(screenW, screenH) { Tint = BlitzCards.Tint, RetriggerOnHide = true };
             bool shortOf = s.Gems < s.Price;
             c.Add(new TitleItem(new CardArt.Title(s.Reason == "time" ? "TIME'S UP!" : "OOPS!", 34, "pink")) { Pop = new PopIn(40) });
-            c.Add(new TextItem($"Save your run and keep going on board {s.Board}?", BlitzCards.Body, 6));
-            c.Add(new TextItem($"{s.Cleared} board{(s.Cleared == 1 ? "" : "s")} cleared so far", BlitzCards.SmallText));
+            c.Add(new TextItem($"Save your run and keep going on {s.Unit} {s.Board}?", BlitzCards.Body, 6));
+            c.Add(new TextItem($"{s.Cleared} {s.Unit}{(s.Cleared == 1 ? "" : "s")} cleared so far", BlitzCards.SmallText));
             c.Add(new ButtonRowItem(10, 10, true, SaveRow(s, onAd, onGems, onEnd)));
             return c;
         }
@@ -77,11 +78,11 @@ namespace SquishSquad.Games.Squishdoku
             public XpLevel After;
         }
 
-        public static BroadCard Over(float screenW, float screenH, OverResult res, Action onAgain, Action onQuit)
+        public static BroadCard Over(float screenW, float screenH, OverResult res, Action onAgain, Action onQuit, string unit = "board")
         {
             var c = new BroadCard(screenW, screenH) { Tint = BlitzCards.TintDeep, RetriggerOnHide = true };
             c.Add(new TitleItem(new CardArt.Title("GAME OVER", 32, res.NewTop ? "gold" : "pink")) { Pop = new PopIn(40, 2.4, -12, 6, 160) });
-            c.Add(new TextItem("BOARDS CLEARED", BlitzCards.Sub));
+            c.Add(new TextItem($"{unit.ToUpperInvariant()}S CLEARED", BlitzCards.Sub));
             c.Add(new CountItem(res.Cleared, 300, 700, BigNum, 80));
             c.Add(new TextItem(res.NewTop ? "NEW BEST!" : $"BEST {res.Best}", res.NewTop ? NewBest : BestPlain));
             if (res.Coins != 0) c.Add(new RewardItem(res.Coins, res.Xp, 800, 1000) { Slide = new SlideIn(700, 20) });

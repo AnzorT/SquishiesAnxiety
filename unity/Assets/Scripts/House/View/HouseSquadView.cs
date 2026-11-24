@@ -39,6 +39,9 @@ namespace SquishSquad.House.View
         readonly Dictionary<HouseCreature, One> _all = new Dictionary<HouseCreature, One>();
         readonly List<UiPiece> _fx = new List<UiPiece>();
         float _k;   // screen px per frame px
+        /// <summary>The trip in (app/menu.js houseDrawn, fillEnd): the creatures' boxes fade with the furniture layer
+        /// (.sq-items), and only the first Mounted creatures have their rig up (the page mounts one every 0.22 s).</summary>
+        public float Fade = 1; public int Mounted = int.MaxValue;
 
         public HouseSquadView(Transform parent, HouseCreatures sim, float screenK)
         {
@@ -141,7 +144,10 @@ namespace SquishSquad.House.View
                 // ring of water there and no shadow; the board under him, the rod in front
                 bool wet = c.Wet && !c.Rsw; double ins = wet ? Math.Round(20 + 18 * c.Wd) : 0;
                 o.Rig?.ClipBottom(wet ? (float)((120 - ins) / 120) : -1);
-                o.Floor.Opacity = wet ? 0 : 1;
+                o.Floor.Opacity = (wet ? 0 : 1) * Fade;
+                bool up = i < Mounted;
+                if (o.Rig != null) o.Rig.GetComponent<MeshRenderer>().enabled = up;
+                if (o.Still != null) o.Still.Visible = up;
                 if (wet)
                 {
                     if (o.Ring == null) { o.Ring = UiPiece.Create(o.Root.transform, "ring", 0); o.Ring.SetSvg(RingSvg, 76, 16, 4); }
@@ -177,7 +183,7 @@ namespace SquishSquad.House.View
                     o.Tag ??= UiPiece.Create(o.Root.transform, "tag", 0);
                     var b = Bubble(c.Name ?? c.Key, TagStyle, 10, 1, 6, false);
                     if (o.TagFor != c.Name) { o.Tag.SetSvg(b.svg, b.w, b.h, 8); o.TagFor = c.Name; }
-                    o.Tag.Transform = Above(tagT, b.w); o.Tag.Order = order + 3; o.Tag.Opacity = 1;
+                    o.Tag.Transform = Above(tagT, b.w); o.Tag.Order = order + 3; o.Tag.Opacity = Fade;
                 }
                 else if (o.Tag != null) o.Tag.Opacity = 0;
                 double since = now - c.SayAt;
@@ -189,7 +195,7 @@ namespace SquishSquad.House.View
                     // opacity / translateY ease in over 0.25 s, out 0.25 s after 1.6 s (CSS transitions)
                     double inT = Math.Min(1, since / 250), outT = since > HouseCreatures.SayMs ? Math.Min(1, (since - HouseCreatures.SayMs) / 250) : 0;
                     double op = Ease(inT) * (1 - Ease(outT)), dy = -8 * op;
-                    o.Say.Transform = Above(sayT + dy, b.w); o.Say.Order = order + 3; o.Say.Opacity = (float)op;
+                    o.Say.Transform = Above(sayT + dy, b.w); o.Say.Order = order + 3; o.Say.Opacity = (float)op * Fade;
                 }
                 else if (o.Say != null) o.Say.Opacity = 0;
             }

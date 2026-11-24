@@ -268,6 +268,9 @@ namespace SquishSquad.House
 
         /// <summary>The walking part of tick (ms). Returns nothing; read the creatures (Transform) and Particles.</summary>
         double _mvLast;
+        /// <summary>The house frozen under its Catalog or map (patches.mjs safe: this.last = n): no tick, its clocks kept
+        /// up so nothing jumps when it runs again.</summary>
+        public void Freeze(double now) { Last = now; _mvLast = now; }
         public void Tick(double now)
         {
             double dt = Math.Min(0.1, Math.Max(0, (now - Last) / 1000)); Last = now;

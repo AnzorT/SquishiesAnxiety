@@ -88,7 +88,9 @@ namespace SquishSquad.House
         {
             s = s ?? new JObj();
             H = new JObj();
-            H["owned"] = Or(s["owned"]); H["rooms"] = Or(s["rooms"]); H["toys"] = Or(s["toys"]); H["cr"] = Or(s["cr"]); H["needs"] = Or(s["needs"]);
+            H["owned"] = Or(s["owned"]); H["rooms"] = Or(s["rooms"]); H["toys"] = Or(s["toys"]);
+            H["cr"] = Or(s["cr"]); H["needs"] = Or(s["needs"]);
+            HouseYard.Strip(H.Obj("rooms"));   // (patches.mjs: the yard games' toys are never placed; one from before is taken out, still bought)
             H["cur"] = s.Has("cur") ? s["cur"] : HouseJson.Undefined;
             H["night"] = Or(s["night"]); H["uid"] = HouseJson.Or(s["uid"], 1.0); H["surf"] = Or(s["surf"]); H["sOwn"] = Or(s["sOwn"]); H["open"] = Or(s["open"]);
             H["seenLv"] = HouseJson.Or(s["seenLv"], 0.0); H["rOwn"] = Or(s["rOwn"]); H["rtex"] = Or(s["rtex"]); H["lx"] = Or(s["lx"]);

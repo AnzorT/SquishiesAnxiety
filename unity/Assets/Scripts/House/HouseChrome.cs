@@ -18,6 +18,12 @@ namespace SquishSquad.House
     public static class HouseFrame
     {
         public const double W = 852, H = 393, BoxTop = 50, OX = 426, OY = 343;
+        /// <summary>The house's frame past the 852 x 393 room on each side (design px; 0 on the design's own shape). PERF
+        /// 2026-11-20 (webgame/patches.mjs, app/menu.js houseBox; the user: "something white that makes it look like we're
+        /// not in full screen"): the frame is the screen at the scale that fits 852 x 393 in it (852 wide and taller on a
+        /// taller screen, 393 tall and wider on a wider one); the room, the Catalog and the map stay 852 x 393 in its
+        /// middle (rmX = MX, rmY = MY), the HUD keeps to its edges, the sea, the dim and the night fill it.</summary>
+        public static double MX, MY;
         /// <summary>RLAB: the rooms' names in messages.</summary>
         public static readonly Dictionary<string, string> RLAB = new Dictionary<string, string>
         {
@@ -140,9 +146,18 @@ namespace SquishSquad.House
         static Func<double, double> Bz(List<object> e) => e != null && e.Count == 4 ? Easing.Bezier((double)e[0], (double)e[1], (double)e[2], (double)e[3]) : Easing.Bezier(0.25, 0.1, 0.25, 1);
 
         /// <summary>From Resources/House/hud.json (tools/unity/house/export-hud.mjs).</summary>
+        /// <summary>The backyard's YARD GAMES button (games.js: right / top of the house's box, its size; where its picture
+        /// and its NEW badge's sit against it, frame px) and the menu's back orb (left / bottom of the screen in menu dp).</summary>
+        public sealed class YardBtn { public double Right, Top, W, H, PulseMs = 1400, PulseScale = 1.14; public double[] Snap, Badge, BadgeSnap; }
+        public sealed class BackOrb { public double Left, Bottom, W, H; public double[] Snap; }
+        public YardBtn Yard; public BackOrb Back;
+        static double[] A4(JObj o, string k) { var a = o.Arr(k); return a == null ? null : new[] { (double)a[0], (double)a[1], (double)a[2], (double)a[3] }; }
+
         public HouseHud(string hudJson)
         {
             var j = (JObj)HouseJson.Parse(hudJson);
+            if (j.Obj("yard") is JObj y) Yard = new YardBtn { Right = y.Num("right"), Top = y.Num("top"), W = y.Num("w"), H = y.Num("h"), Snap = A4(y, "snap"), Badge = A4(y, "badge"), BadgeSnap = A4(y, "badgeSnap"), PulseMs = y.Obj("pulse")?.Num("ms") ?? 1400, PulseScale = y.Obj("pulse")?.Num("scale") ?? 1.14 };
+            if (j.Obj("back") is JObj bk) Back = new BackOrb { Left = bk.Num("left"), Bottom = bk.Num("bottom"), W = bk.Num("w"), H = bk.Num("h"), Snap = A4(bk, "snap") };
             foreach (var k in j.Obj("pieces").Keys) Pieces[k] = R(j.Obj("pieces")[k]);
             foreach (var k in j.Obj("buttons").Keys) Buttons[k] = R(j.Obj("buttons")[k]);
             var d = j.Obj("drawer"); var a = j.Obj("arrow");

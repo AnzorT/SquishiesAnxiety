@@ -3,7 +3,9 @@
 // transform-origin) becomes a group transform, boxes are painted in CSS stacking order (z-index, then document order),
 // a background colour or radial-gradient becomes a rect with a gradient, and every picture (<image href="name">) is
 // inlined from Resources/House/pics (its ids prefixed so pictures don't share gradients), or kept as an image when it
-// ships as PNG. Not drawn yet: the dance room's CSS-3D floor (rt.flatOn) and HTML text (sh.texts, signs): Notes says so.
+// ships as PNG; a box's clip-path: path(...) clips its children. The dance room's CSS-3D floor (rt.flatOn: a rotateX
+// plane under a parent's perspective) is a picture HouseFlat draws (<image href="flat:..">). Not drawn yet: HTML text
+// (sh.texts, signs): Notes says so.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -50,7 +52,8 @@ namespace SquishSquad.House
         }
 
         // a positioned HTML box: its transform, its background, its children (svgs and boxes) in stacking order
-        void Box(Dom d, StringBuilder sb, double pw, double ph, string fenceHtml)
+        // persp: the parent's CSS perspective (d, origin x, y in this box's parent's px), or null
+        void Box(Dom d, StringBuilder sb, double pw, double ph, string fenceHtml, double[] persp = null)
         {
             var st = Style(d["style"]);
             if (st.TryGetValue("visibility", out var vis) && vis == "hidden") return;
@@ -65,6 +68,11 @@ namespace SquishSquad.House
             if (st.TryGetValue("height", out var hs)) h = hs.EndsWith("%") ? ph * P(hs) / 100 : P(hs);
             else if (st.ContainsKey("bottom")) { if (!st.ContainsKey("top")) top = ph - P(st["bottom"]) - h; else h = ph - top - P(st["bottom"]); }
             var tf = "translate(" + N(left) + " " + N(top) + ")";
+            // the dance room's 3D floor: a plane turned rotateX under the parent's perspective, drawn as its picture
+            if (persp != null && st.TryGetValue("transform", out var tr3) && tr3.StartsWith("rotateX(") && st.TryGetValue("background", out var fb) && fb.StartsWith("flat:"))
+            {
+                Flat(fb.Substring(5).Trim(), st, left, top, w, h, P(tr3), persp, sb); return;
+            }
             if (st.TryGetValue("transform", out var tr) && tr != "none")
             {
                 double ox = 0, oy = 0;
@@ -76,18 +84,47 @@ namespace SquishSquad.House
             }
             sb.Append("<g transform=\"").Append(tf).Append('"').Append(st.TryGetValue("opacity", out var o2) && P(o2) < 1 ? " opacity=\"" + N(P(o2)) + "\"" : "").Append('>');
             if (st.TryGetValue("background", out var bg)) Background(bg, w, h, st.TryGetValue("border-radius", out var br) && br == "50%", sb);
-            if (st.TryGetValue("clip-path", out var cp) && cp != "none") Notes.Add("css clip-path box not drawn (" + cp.Substring(0, Math.Min(40, cp.Length)) + ")");
+            bool clipped = false;
+            if (st.TryGetValue("clip-path", out var cp) && cp != "none")
+            {
+                var pm = Regex.Match(cp, @"^path\(\s*['""]([^'""]*)['""]\s*\)$");
+                if (pm.Success) { var cid = "cp" + (picN++); sb.Append("<defs><clipPath id=\"").Append(cid).Append("\"><path d=\"").Append(pm.Groups[1].Value).Append("\"/></clipPath></defs><g clip-path=\"url(#").Append(cid).Append(")\">"); clipped = true; }
+                else Notes.Add("css clip-path box not drawn (" + cp.Substring(0, Math.Min(40, cp.Length)) + ")");
+            }
+            // a perspective for the children (CSS perspective, perspective-origin in this box's px)
+            double[] kidP = null;
+            if (st.TryGetValue("perspective", out var pv) && pv != "none")
+            {
+                double ppx = w / 2, ppy = h / 2;
+                if (st.TryGetValue("perspective-origin", out var po)) { var q = po.Split(' '); ppx = Pos(q[0], w); ppy = q.Length > 1 ? Pos(q[1], h) : h / 2; }
+                kidP = new[] { P(pv), ppx, ppy };
+            }
             // children: CSS stacking inside this box (z-index auto first in order, then by z-index)
             var kids = new List<(int z, int i, Dom n)>();
             for (int i = 0; i < d.Children.Count; i++) { var c = d.Children[i]; var cs = Style(c["style"]); int z = cs.TryGetValue("z-index", out var zv) ? (int)P(zv) : 0; kids.Add((z, i, c)); }
             kids.Sort((a, b) => a.z != b.z ? a.z.CompareTo(b.z) : a.i.CompareTo(b.i));
             foreach (var (_, _, c) in kids)
             {
-                if (c.Tag == "div") Box(c, sb, w, h, fenceHtml);
+                if (c.Tag == "div") Box(c, sb, w, h, fenceHtml, kidP);
                 else if (c.Tag == "svg") Svg(c, sb, w, h, fenceHtml);
                 else if (c.Tag == "span" || c.Tag == "#text") { if (c.Inner().Trim().Length > 0) Notes.Add("html text not drawn: " + c.Inner()); }
             }
+            if (clipped) sb.Append("</g>");
             sb.Append("</g>");
+        }
+
+        // rnFlat's plane: its box (left, top, w, h in the perspective box's px), transform-origin, rotateX (deg), the
+        // perspective -> HouseFlat's picture, placed over the part of the box it covers
+        void Flat(string floorId, Dictionary<string, string> st, double left, double top, double w, double h, double angle, double[] persp, StringBuilder sb)
+        {
+            double ox = w / 2, oy = h / 2;
+            if (st.TryGetValue("transform-origin", out var org)) { var p = org.Split(' '); ox = Pos(p[0], w); oy = p.Length > 1 ? Pos(p[1], h) : h / 2; }
+            if (!HouseFlat.Floors.TryGetValue(floorId, out var fl)) { Notes.Add("the dance floor " + floorId + " has no layers"); return; }
+            var s = new HouseFlat.Spec { L = left, T = top, W = w, H = h, Ox = ox, Oy = oy, Angle = angle, D = persp[0], Px = persp[1], Py = persp[2], Layers = fl.layers, Bg = fl.bg };
+            HouseFlat.Bounds(s);
+            var href = "flat:" + floorId + "|" + string.Join(",", Array.ConvertAll(new[] { left, top, w, h, ox, oy, angle, persp[0], persp[1], persp[2] }, N));
+            HouseFlat.Specs[href] = s;
+            sb.Append("<image href=\"").Append(href).Append("\" x=\"").Append(N(s.X0)).Append("\" y=\"").Append(N(s.Y0)).Append("\" width=\"").Append(N(s.X1 - s.X0)).Append("\" height=\"").Append(N(s.Y1 - s.Y0)).Append("\" preserveAspectRatio=\"none\"/>");
         }
 
         static readonly Regex Rgba = new Regex(@"rgba?\(([^)]*)\)");
@@ -139,7 +176,14 @@ namespace SquishSquad.House
                     }
                     sb.Append("</radialGradient></defs>").Append(shape).Append(" fill=\"url(#").Append(id).Append(")\"/>");
                 }
-                else if (L == "layers") Notes.Add("the dance room's CSS-3D floor (rt.flatOn) not drawn");
+                else if (L.StartsWith("linear-gradient(") && LinearV(L, w, h, out var stops))
+                {
+                    // a top-to-bottom linear-gradient (to bottom / 180deg), stops in px or %: the dance floor's shading
+                    var id = "bg" + (picN++);
+                    sb.Append("<defs><linearGradient id=\"").Append(id).Append("\" gradientUnits=\"userSpaceOnUse\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"").Append(N(h)).Append("\">");
+                    foreach (var (off, c) in stops) { var (col, al) = Col(c); sb.Append("<stop offset=\"").Append(N(off)).Append("\" stop-color=\"").Append(col).Append("\" stop-opacity=\"").Append(N(al)).Append("\"/>"); }
+                    sb.Append("</linearGradient></defs>").Append(shape).Append(" fill=\"url(#").Append(id).Append(")\"/>");
+                }
                 else if (L != "none" && !L.StartsWith("url(") && !L.StartsWith("linear-gradient"))
                 {
                     var (col, al) = Col(L);
@@ -147,6 +191,24 @@ namespace SquishSquad.House
                 }
                 else if (L != "none") Notes.Add("css background not drawn: " + L.Substring(0, Math.Min(40, L.Length)));
             }
+        }
+        // linear-gradient(to bottom | 180deg, colour [stop], ...) -> its stops (0..1 of h); false for other directions
+        static bool LinearV(string L, double w, double h, out List<(double off, string col)> stops)
+        {
+            stops = new List<(double, string)>();
+            var args = SplitTop(L.Substring(16, L.Length - 17)); int si = 0; var first = args[0].Trim();
+            if (first == "to bottom" || first == "180deg") si = 1;
+            else if (first.StartsWith("to ") || first.EndsWith("deg")) return false;
+            int n = args.Count - si; double last = 0;
+            for (int k = si; k < args.Count; k++)
+            {
+                var a = args[k].Trim(); var m = Regex.Match(a, @"^(.*?)\s+([-\d.]+)(px|%)$");
+                string c = m.Success ? m.Groups[1].Value : a;
+                double off = m.Success ? (m.Groups[3].Value == "%" ? P(m.Groups[2].Value) / 100 : P(m.Groups[2].Value) / h) : n == 1 ? 0 : (double)(k - si) / (n - 1);
+                off = Math.Max(last, Math.Min(1, off)); last = off;
+                stops.Add((off, c));
+            }
+            return true;
         }
         static double Pos(string v, double size) => v.EndsWith("%") ? size * P(v) / 100 : v == "center" ? size / 2 : v == "left" || v == "top" ? 0 : v == "right" || v == "bottom" ? size : P(v);
         static List<string> SplitTop(string s)
@@ -207,7 +269,9 @@ namespace SquishSquad.House
                 var tf = At("transform", null);
                 var head = "<svg x=\"" + At("x", "0") + "\" y=\"" + At("y", "0") + "\" width=\"" + At("width", "0") + "\" height=\"" + At("height", "0") + "\"" + (vb != "" ? " viewBox=\"" + vb + "\"" : "") + " preserveAspectRatio=\"" + par + "\">";
                 var res = head + inner.Substring(m0.Index + m0.Length);
-                return tf != null ? "<g transform=\"" + tf + "\">" + res + "</g>" : res;
+                res = tf != null ? "<g transform=\"" + tf + "\">" + res + "</g>" : res;
+                // (an image kept in <defs> for <use>: the Dance Room's round wall is 16 slices of one brick picture)
+                var idm = Regex.Match(a, "\\sid=\"([^\"]*)\""); return idm.Success ? "<g id=\"" + idm.Groups[1].Value + "\">" + res + "</g>" : res;
             });
         }
 

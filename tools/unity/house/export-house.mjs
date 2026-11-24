@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { openHouse, launch, REPO } from './harness.mjs';
+import { openHouse, launch, buildWeb, REPO, WORK } from './harness.mjs';
 import { loadFixtures } from './fixtures.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -120,13 +120,18 @@ function pageRoom() {
 
 // the room's markup from the page itself: the room box (the shell's svg, the items, toys, creatures) and the night
 // overlay, as the template has them (unity/Assets/Scripts/House/HouseTemplate.cs evaluates it)
+// (from the page as built with webgame/patches.mjs, develop's: the rooms' edge shading as six see-through strokes, the
+// Dance Room's trims as softStroke, the furniture layer's class. The frame's own placement, patched to the menu's
+// houseBox (left {{ rmX }}, top {{ rmT }}: the room in the middle of a taller or wider frame), is put back to the
+// design's 0 / 50: Unity places the 852 x 393 room in its frame itself, HouseScreen.Box)
 function roomTemplate() {
-  const f = path.join(REPO, 'webgame/.cache'), dir = fs.readdirSync(f).find(d => d.startsWith('Squish-Squad-Prototype'));
-  const L = fs.readFileSync(path.join(f, dir, 'squish-squad/Squad House v6.dc.html'), 'utf8').split('\n');
-  const a = L.findIndex(l => l.includes('<div style="position:absolute; left:0; top:50px; width:852px; height:393px; transform:scale({{ camK }})'));
+  const file = path.join(WORK, 'Squad House v6.dc.html');
+  const L = fs.readFileSync(file, 'utf8').split('\n');
+  const a = L.findIndex(l => l.includes('<div style="position:absolute; left:{{ rmX }}px; top:{{ rmT }}px; width:852px; height:393px; transform:scale({{ camK }})'));
   const b = L.findIndex((l, i) => i > a && l.includes('<sc-if value="{{ night.on }}"'));
-  if (a < 0 || b < 0) throw new Error('room template not found in Squad House v6.dc.html (the design changed?)');
-  return '<!-- Squad House v6.dc.html lines ' + (a + 1) + '-' + (b + 1) + ' (tools/unity/house/export-house.mjs) -->\n' + L.slice(a, b + 1).join('\n') + '\n';
+  if (a < 0 || b < 0) throw new Error('room template not found in the built Squad House v6.dc.html (the design or its patches changed?)');
+  L[a] = L[a].replace('left:{{ rmX }}px; top:{{ rmT }}px;', 'left:0; top:50px;');
+  return '<!-- Squad House v6.dc.html as built (webgame/build.mjs + patches.mjs) lines ' + (a + 1) + '-' + (b + 1) + ' (tools/unity/house/export-house.mjs) -->\n' + L.slice(a, b + 1).join('\n') + '\n';
 }
 
 // ---- node side ---------------------------------------------------------------------------------------------------
@@ -200,6 +205,17 @@ async function main() {
         }
         console.log(fx.name, rk, night ? 'night' : 'day', Object.keys(R.variants).length, 'variants', H.errs.length ? H.errs.slice(0, 2) : '');
       }
+    }
+    // the Dance Room's glass-dome sky in every weather, day and night (2026-11-21: config/weather can show any of them;
+    // the page's seasonNow asks SquishWeatherNow first, so it is set for each one in turn)
+    if (!gls['sunny|false'] && open.includes('dance')) {
+      const skies = await H.page.evaluate(() => {
+        const sh = window.__sh, w0 = window.SquishWeatherNow, n0 = sh.H.night.bedroom, out = {};
+        for (const s of ['sunny', 'rainy', 'snowy']) for (const n of [false, true]) { window.SquishWeatherNow = () => s; if (n) sh.H.night.bedroom = 1; else delete sh.H.night.bedroom; out[s + '|' + n] = sh.glassSky(); }
+        window.SquishWeatherNow = w0; if (n0) sh.H.night.bedroom = n0; else delete sh.H.night.bedroom;
+        return out;
+      });
+      for (const k in skies) if (!gls[k] && skies[k] && skies[k].startsWith('data:')) gls[k] = picture(skies[k]);
     }
     await H.close();
   }
