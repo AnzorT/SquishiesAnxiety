@@ -2,13 +2,16 @@
 // (REDESIGN_V8): the Crib's room behind (hop/Room.js), the board of plush cushions lying on its floor (RoomBoard.js), the
 // top bar, the score creatures and the clock in a column on the left (Hud.js), the buddy and the tools on the right.
 //   intro    the cushions cascade in, LEVEL n pops; HEAD START's creature drops in; then the clock starts
-//   play     tap a cushion to place a creature (right: it drops on, its patch ripples, everyone hops; wrong: it shakes its
-//            head and poofs, the board shakes, the cell gets its ✕ a moment later, and from level 46 a heart goes);
-//            long-press or the MARK tool to mark ✕ (drag to paint); tap a placed creature to wiggle it. The score
-//            creatures fall off as the times A and B pass; a ✕ or a mistake ends the PERFECT run
-//   solved   everyone hops row by row, confetti, the result card 1700 ms after: MAP / REPLAY / NEXT
-//   timeup   the clock ran out: the board shakes, TIME'S UP (RETRY / MAP);  out / nohearts: the last heart went
-//   paused   the top bar's pause (or Android's back): the board is hidden, the clock frozen (RESUME / RESTART / QUIT)
+//   play     tap a cushion to place a creature (right: it pops up happy, a happy wave runs along its row, column and
+//            patch, everyone cheers; wrong: it turns sad, flashes red, shakes its head and poofs, the board shakes, the
+//            cell gets its ✕ a moment later, and from level 46 a heart goes); long-press or the MARK tool to mark ✕ (drag
+//            to paint); tap a placed creature to wiggle it. The score creatures fall off as the times A and B pass; a ✕
+//            or a mistake ends the PERFECT run
+//   solved   everyone turns happy and a bounce ripples out from the last one, confetti, the result card 1700 ms after:
+//            MAP / REPLAY / NEXT
+//   out      the clock ran out or the last heart went: the board shakes, everyone on it droops one after another, then
+//            timeup (TIME'S UP) / nohearts (OUT OF HEARTS): RETRY / MAP
+//   paused   the top bar's pause (or Android's back): the board is hidden, the clock frozen (RESUME / QUIT)
 // Every motion is the app's (SquishSquad.Anim is React Native's Animated; the same timings, springs, easings, delays).
 // No UnityEngine here: SquishdokuGame shows the layers and feeds the touches; tools/unity/squishdoku-test runs it as is.
 // Not ported: sounds, haptics, the buddy's live rig (its still hops and shakes instead). Profile is kept in memory
@@ -117,8 +120,8 @@ namespace SquishSquad.Games.Squishdoku
             Hud();
             // the board cascades in, the level banner pops, HEAD START's creature drops in, then the clock starts
             double settled = 60 + (2 * Spec.N - 1) * 34 + 450;
-            Later(60, () => { Intro(); Snd.Play("sd_boardIn"); Effect(ShowBanner); });
-            if (_given >= 0) Later(settled, () => { Place(_given); Snd.Play("sd_place"); _placedCount = 1; });
+            Later(60, () => { _board.Intro(); Snd.Play("sd_boardIn"); Effect(ShowBanner); });
+            if (_given >= 0) Later(settled, () => { _board.Place(_given); Snd.Play("sd_place"); _placedCount = 1; });
             Later(settled + (_given >= 0 ? 450 : 0), () =>
             {
                 Phase = "play";
@@ -176,38 +179,58 @@ namespace SquishSquad.Games.Squishdoku
         }
         void StopInterval() { if (_interval >= 0) _tk.ClearTimeout(_interval); _interval = -1; }
 
+        // a lost level's card, once the creatures have drooped (board SadAll: `ms`)
+        void CardAfter(string card, double ms) => Later(ms, () =>
+        {
+            if (Phase != "out") return;
+            Phase = card;
+            Effect(() => OpenTimeUp(card == "nohearts" ? Spec.Hearts : 0));
+            Hud();
+        });
+
+        // the clock ran out: the board locks, everyone on it turns sad and droops one after another, then the card
         void TimeUp()
         {
             if (Phase != "play") return;
             ClockPause();
-            Phase = "timeup";
+            Phase = "out";
             _warn = false;
             Snd.Play("sd_timeUp");
             Snd.Wrong();
             BuddyReact("timeup");
             Shake();
+            double sad = _board.SadAll();
+            CardAfter("timeup", Math.Max(500, sad + 250));
             var r = Levels.AfterLevel(Profile, Spec, false);
             SdSave.Record(r.Update);   // (signed in: saveSquishdoku)
             Apply(r.Update);
             StopInterval();
-            Effect(() => OpenTimeUp(0));
             Hud();
         }
 
-        // the last heart: the board locks at once, the wrong creature's shake plays out, then the card
-        void OutOfHearts()
+        /// <summary>The clock running out now (RegularGame.js's window.__sdk.timeUp, the browser tests' hook).</summary>
+        public void TimeUpNow() => AsInput(TimeUp);
+
+        // the last heart: the board locks at once (no more taps, the clock stops), the wrong creature's shake plays out
+        // while everyone else droops, nearest it first, then the card
+        void OutOfHearts(int cell)
         {
             ClockPause();
             Phase = "out";
             _warn = false;
-            Snd.Play("sd_blitzFail");
-            Snd.Wrong();
             StopInterval();
             var r = Levels.AfterLevel(Profile, Spec, false);
             SdSave.Record(r.Update);   // (signed in: saveSquishdoku)
             Apply(r.Update);
-            Later(450, () => { BuddyReact("timeup"); Shake(); });
-            Later(1000, () => { Phase = "nohearts"; Effect(() => OpenTimeUp(Spec.Hearts)); Hud(); });
+            Later(450, () =>
+            {
+                Snd.Play("sd_blitzFail");
+                BuddyReact("timeup");
+                Snd.Wrong();
+                Shake();
+                double sad = _board.SadAll(cell);
+                CardAfter("nohearts", Math.Max(550, sad + 250));
+            });
             Hud();
         }
 
@@ -243,17 +266,17 @@ namespace SquishSquad.Games.Squishdoku
             _marks.Remove(cell);
             if (Spec.Puzzle.Solution[r] == c)
             {
-                Place(cell);
+                _board.Place(cell);
                 Snd.Play("sd_place", rate: 1 + Math.Min(8, _combo) * 0.06);
                 Snd.Place();
                 BuddyReact("right", _combo + 1);
                 _combo++;
                 _placedCount++;
-                if (_placedCount == n) Solved();
+                if (_placedCount == n) Solved(cell);
             }
             else
             {
-                Wrong(cell);
+                _board.Wrong(cell);
                 Snd.Play("sd_wrong");
                 Later(200, Snd.Wrong);
                 BuddyReact("wrong");
@@ -266,7 +289,7 @@ namespace SquishSquad.Games.Squishdoku
                     _heartsLost = _mistakes;
                     HeartsChanged();
                     Later(160, () => Snd.Play("fs_heart"));
-                    if (_mistakes >= Spec.Hearts) { OutOfHearts(); return; }
+                    if (_mistakes >= Spec.Hearts) { OutOfHearts(cell); return; }
                 }
                 // the cell it can't be gets its ✕ (this one doesn't count as using ✕)
                 Later(950, () =>
@@ -277,10 +300,11 @@ namespace SquishSquad.Games.Squishdoku
             Hud();
         }
 
-        void OnTapPiece(int cell) { Snd.Play("sd_squeak", rate: 0.85 + SndRandom.NextDouble() * 0.35); Snd.Tap(); Rock(cell, new[] { -0.7, 0.7, -0.4, 0 }, 380); }
+        void OnTapPiece(int cell) { Snd.Play("sd_squeak", rate: 0.85 + SndRandom.NextDouble() * 0.35); Snd.Tap(); _board.Wiggle(cell); }
 
         // ---- solved ------------------------------------------------------------------------------------------------------
-        void Solved()
+        // `cell`: the last creature, where the win's ripple starts
+        void Solved(int cell)
         {
             double ms = Elapsed;
             ClockPause();
@@ -299,13 +323,14 @@ namespace SquishSquad.Games.Squishdoku
                 Before = outc.Before != null ? new XpLevel(outc.Before.Level, outc.Before.Into, outc.Before.Need) : (XpLevel?)null,
                 After = outc.After != null ? new XpLevel(outc.After.Level, outc.After.Into, outc.After.Need) : default,
             };
+            // every creature turns happy and the bounce ripples out from the last one (it starts as that one lands)
+            var beats = _board.HopAll(cell);
+            for (int i = 0; i < beats.Count; i++) Snd.Play("sd_hop", delay: beats[i], rate: 0.9 + i * 0.06);
             Later(420, () =>
             {
                 Snd.Play("sd_solve");
                 Snd.Win();
                 BuddyReact("solve");
-                HopAll();
-                for (int r = 0; r < Spec.N; r++) Snd.Play("sd_hop", delay: r * 75, rate: 0.9 + r * 0.06);
             });
             Later(650, () =>
             {
@@ -415,389 +440,43 @@ namespace SquishSquad.Games.Squishdoku
         }
 
         // =====================================================================================================================
-        // ---- the board (RoomBoard.js) --------------------------------------------------------------------------------------
+        // ---- the board (RoomBoard.js: SdBoard, Blitz's too) ------------------------------------------------------------------
         public readonly float AreaX;
         readonly float AreaW;
-        Board _B;
-        int _N;
-        public Board BoardGeo => _B;
-
-        sealed class Pose
-        {
-            public readonly AnimatedValue X = new AnimatedValue(0), Y = new AnimatedValue(0), K = new AnimatedValue(1), O = new AnimatedValue(1),
-                Shadow = new AnimatedValue(1), Rot = new AnimatedValue(0), Hp = new AnimatedValue(0), LiftH = new AnimatedValue(0),
-                Land = new AnimatedValue(1);
-            public KeyLoop Breathe, Peek;
-            public SdLayer ShadowL, Body;
-        }
-
-        sealed class CellA { public readonly AnimatedValue A = new AnimatedValue(0), Bump = new AnimatedValue(0); public SdLayer L; public Board.Box Box; }
-
-        CellA[] _cellA;
-        Pose[] _poses;
-        bool[] _markOn, _placed, _shown;
-        AnimatedValue[] _markT;
-        SdLayer[] _markL;
-        Board.Box[] _markBox;
-        int _red = -1;
-        KeyLoop _redPulse;
-        SdLayer _redL;
-        Board.Box _redBox;
-        readonly AnimatedValue _shakeX = new AnimatedValue(0);
-        readonly List<(Burst b, bool root)> _bursts = new List<(Burst, bool)>();
-        int _trick = -1;
-        float _pw;
-
-        static readonly double[] PEEK_AT = { 0, 0.84, 0.88, 0.92, 0.96, 1 };
-        static readonly double[] PEEK_DEG = { 0, 0, -9, 8, -3, 0 };
-        static readonly double[] TRIANGLE = Array.ConvertAll(KeyLoop.PHASE, p => p < 0.5 ? 2 * p : 2 - 2 * p);
-
-        static TimingConfig T(double to, double ms, Func<double, double> easing = null, double delay = 0) =>
-            new TimingConfig { ToValue = to, Duration = ms, Easing = easing ?? Easing.Out(Easing.Quad), Delay = delay, UseNativeDriver = true };
+        SdBoard _board;
+        public Board BoardGeo => _board?.B;
 
         void BuildBoard()
         {
             var geo = Rooms.Geometry(Stage.Room, W, H);
-            _B = Board.Layout(Spec.N, Spec.N, AreaW, H, geo.FloorY - 0, Board.SDK_TILT, 80);
-            if (_poses != null) foreach (var p in _poses) { p.Breathe?.Unmount(); p.Peek?.Unmount(); }
-            _redPulse?.Unmount();
-            if (_trick >= 0) _tk.ClearTimeout(_trick);
-            foreach (var (b, _) in _bursts.ToArray()) b.Stop();   // (a stopped burst takes itself off the list)
-            _bursts.Clear();
-            _N = Spec.N * Spec.N;
-            _cellA = new CellA[_N]; _poses = new Pose[_N];
-            _markOn = new bool[_N]; _placed = new bool[_N]; _shown = new bool[_N];
-            _markT = new AnimatedValue[_N]; _markL = new SdLayer[_N]; _markBox = new Board.Box[_N];
-            _red = -1;
+            var B = Board.Layout(Spec.N, Spec.N, AreaW, H, geo.FloorY - 0, Board.SDK_TILT, 80);
+            _board?.Unmount();
             _marks.Clear();
-            _shakeX.SetValue(0);
-            _pw = (float)(_B.T * 0.7);
-            for (int cell = 0; cell < _N; cell++)
+            _board = new SdBoard(B, Spec.N, Spec.Puzzle.Regions, Spec.Puzzle.Solution, Spec.Puzzle.Colors, _pieces, _tk, () => Locked, () => true, Effect)
             {
-                var (svg, box) = SdArt.Cushion(_B, cell, Spec.Puzzle.Colors[Spec.Puzzle.Regions[cell]]);
-                _cellA[cell] = new CellA { L = new SdLayer("cushion " + cell).Set(svg, (float)box.Width, (float)box.Height, 2), Box = box };
-                var p = _poses[cell] = new Pose();
-                var c = PieceOf(cell);
-                float h = HOf(cell);
-                p.ShadowL = new SdLayer("shadow " + cell).Set(SdArt.Shadow(_pw * 0.72f, h * 0.15f, "rgba(69,16,122,0.28)"), _pw * 0.72f, h * 0.15f, 1);
-                p.Body = new SdLayer("creature " + cell).SetPicture(c.Picture, _pw, h);
-            }
-            // now and then one placed creature does a trick, so a board in progress never sits still
-            Action trick = null;
-            trick = () =>
-            {
-                _trick = _tk.SetTimeout(trick, 1400);
-                if (Locked) return;
-                var on = new List<int>();
-                for (int i = 0; i < _N; i++) if (_placed[i]) on.Add(i);
-                if (on.Count == 0) return;
-                int cell = on[(int)Math.Floor(Random() * on.Count)];
-                if (Random() < 0.5) Hop(cell, 0, 0.3);
-                else Rock(cell, new[] { -0.5, 0.5, 0 }, 420);
+                OnTap = OnTap,
+                OnTapPiece = OnTapPiece,
+                OnMark = OnMark,
+                XTool = () => _xTool,
             };
-            _trick = _tk.SetTimeout(trick, 1400);
         }
 
         bool Locked => Phase != "play";
-        SdCreature PieceOf(int cell) { int r = Spec.Puzzle.Regions[cell]; return r < _pieces.Length && _pieces[r] != null ? _pieces[r] : _pieces[0]; }
-        float HOf(int cell) => _pw * PieceOf(cell).Ar;
-        int ZOf(int cell) => 10 + cell / Spec.N * 3;
+        static readonly double[] TRIANGLE = Array.ConvertAll(KeyLoop.PHASE, p => p < 0.5 ? 2 * p : 2 - 2 * p);
+        static TimingConfig T(double to, double ms, Func<double, double> easing = null, double delay = 0) =>
+            new TimingConfig { ToValue = to, Duration = ms, Easing = easing ?? Easing.Out(Easing.Quad), Delay = delay, UseNativeDriver = true };
+        void Shake() => _board.Shake();
+        void SetMark(int cell, bool on) => _board.SetMark(cell, on);
 
-        (double x, double y, double k) PoseOn(int cell)
+        void RootBurst(string kind, double x, double y, double scale)
         {
-            var q = _B.StandOn(cell);
-            float h = HOf(cell);
-            double k = q.S / _B.T;
-            return (q.X - _pw / 2.0, q.Y - h / 2.0 * (1 + k), k);
-        }
-
-        void Show(int cell, bool on)
-        {
-            if (_shown[cell] == on) return;
-            _shown[cell] = on;
-            var p = _poses[cell];
-            if (on)
-            {
-                // the piece mounts: its breathing and its peeking start (each a native loop, after its delay)
-                double delay = cell * 530 % 2600;
-                var br = p.Breathe = new KeyLoop(2200, KeyLoop.PHASE, KeyLoop.UP_DOWN, delay);
-                var pk = p.Peek = new KeyLoop(6000, PEEK_AT, PEEK_DEG, delay);
-                Effect(() => { if (p.Breathe == br) { br.Mount(); pk.Mount(); } });
-            }
-            else { p.Breathe?.Unmount(); p.Peek?.Unmount(); p.Breathe = p.Peek = null; }
-        }
-
-        void SetMark(int cell, bool on)
-        {
-            if (_markOn[cell] == on) return;
-            _markOn[cell] = on;
-            if (on && !_placed[cell]) MountMark(cell);
-        }
-
-        void MountMark(int cell)
-        {
-            var (svg, box) = SdArt.XMark(_B, cell);
-            _markL[cell] ??= new SdLayer("x " + cell);
-            _markL[cell].Set(svg, (float)box.Width, (float)box.Height, 2);
-            _markBox[cell] = box;
-            var t = _markT[cell] = new AnimatedValue(0);
-            Effect(() => Animated.Spring(t, Fx.Spring(1, 5, 180)).Start());
-        }
-
-        void Unmark(int cell) { if (_markOn[cell]) _markOn[cell] = false; }
-
-        // a creature drops onto its cushion and lands with a squash; `done` once it's down
-        void Drop(int cell, Action done)
-        {
-            var P = _poses[cell];
-            var p = PoseOn(cell);
-            P.Rot.SetValue(0); P.Hp.SetValue(0);
-            P.Land.SetValue(1); P.Shadow.SetValue(1);
-            P.X.SetValue(p.x); P.K.SetValue(p.k);
-            P.Y.SetValue(p.y - _B.T * 0.9);
-            P.O.SetValue(0);
-            Show(cell, true);
-            Later(30, () => Animated.Parallel(Animated.Timing(P.Y, T(p.y, 200, Easing.In(Easing.Quad))), Animated.Timing(P.O, T(1, 90, Easing.Linear))).Start(r =>
-            {
-                P.Land.SetValue(0);
-                Animated.Timing(P.Land, T(1, 240)).Start();
-                done?.Invoke();
-            }));
-        }
-
-        // a little hop on the spot
-        void Hop(int cell, double delay = 0, double high = 0.45)
-        {
-            var P = _poses[cell];
-            Later(delay, () =>
-            {
-                P.Hp.SetValue(0);
-                P.LiftH.SetValue(_B.T * high);
-                Animated.Timing(P.Hp, T(1, 340, Easing.Linear)).Start(r =>
-                {
-                    P.Land.SetValue(0);
-                    Animated.Timing(P.Land, T(1, 200)).Start();
-                });
-            });
-        }
-
-        void Rock(int cell, double[] seq, double ms)
-        {
-            var a = new CompositeAnimation[seq.Length];
-            for (int i = 0; i < seq.Length; i++) a[i] = Animated.Timing(_poses[cell].Rot, T(seq[i], ms / seq.Length, Easing.InOut(Easing.Quad)));
-            Animated.Sequence(a).Start();
-        }
-
-        void Bounce(int cell, double delay)
-        {
-            var b = _cellA[cell].Bump;
-            Later(delay, () =>
-            {
-                b.SetValue(0);
-                Animated.Sequence(Animated.Timing(b, T(1, 110)), Animated.Timing(b, T(0, 220, Easing.InOut(Easing.Quad)))).Start();
-            });
-        }
-
-        void Shake()
-        {
-            _shakeX.SetValue(0);
-            var ks = new[] { 1, -0.85, 0.65, -0.45, 0.25, -0.1, 0 };
-            var a = new CompositeAnimation[ks.Length];
-            for (int i = 0; i < ks.Length; i++) a[i] = Animated.Timing(_shakeX, new TimingConfig { ToValue = ks[i] * 9, Duration = 42, UseNativeDriver = true });
-            Animated.Sequence(a).Start();
-        }
-
-        void Burst(string kind, double x, double y, double scale)
-        {
-            // a busy board never piles up more than a dozen at once (FxLayer)
+            // a busy screen never piles up more than a dozen at once (FxLayer)
             var b = new Burst(kind, x, y, scale);
-            AddBurst(b, false);
+            if (_bursts.Count > 11) { var first = _bursts[0]; first.Stop(); _bursts.Remove(first); }
+            _bursts.Add(b);
+            b.Start(() => _bursts.Remove(b));
         }
-        void RootBurst(string kind, double x, double y, double scale) => AddBurst(new Burst(kind, x, y, scale), true);
-
-        void AddBurst(Burst b, bool root)
-        {
-            int count = 0;
-            foreach (var e in _bursts) if (e.root == root) count++;
-            for (int i = 0; count > 11 && i < _bursts.Count; i++)
-                if (_bursts[i].root == root) { var dead = _bursts[i].b; dead.Stop(); _bursts.RemoveAll(e => e.b == dead); i--; count--; }
-            _bursts.Add((b, root));
-            b.Start(() => _bursts.RemoveAll(e => e.b == b));
-        }
-
-        // distances through the patch from `from` (the ripple's delays)
-        Dictionary<int, int> DistancesInPatch(int from)
-        {
-            int n = Spec.N;
-            var regions = Spec.Puzzle.Regions;
-            var dist = new Dictionary<int, int> { [from] = 0 };
-            var order = new List<int> { from };
-            var todo = new Queue<int>();
-            todo.Enqueue(from);
-            int[][] dirs = { new[] { 1, 0 }, new[] { -1, 0 }, new[] { 0, 1 }, new[] { 0, -1 } };
-            while (todo.Count > 0)
-            {
-                int cell = todo.Dequeue(), r = cell / n, c = cell % n;
-                foreach (var d in dirs)
-                {
-                    int rr = r + d[0], cc = c + d[1];
-                    if (rr < 0 || rr >= n || cc < 0 || cc >= n) continue;
-                    int nb = rr * n + cc;
-                    if (regions[nb] != regions[from] || dist.ContainsKey(nb)) continue;
-                    dist[nb] = dist[cell] + 1;
-                    order.Add(nb);
-                    todo.Enqueue(nb);
-                }
-            }
-            return dist;
-        }
-
-        // a right creature: it drops onto its cushion, its patch ripples out from it, its row and column bob, sparks fly,
-        // everyone cheers with a hop
-        void Place(int cell)
-        {
-            var before = (bool[])_placed.Clone();
-            _placed[cell] = true;
-            Unmark(cell);
-            Drop(cell, () =>
-            {
-                var q = _B.StandOn(cell);
-                Burst("pop", q.X, q.Y - q.S * 0.2, q.S / 56);
-                Burst("spark", q.X, q.Y - q.S * 0.5, q.S / 56);
-                Hop(cell, 60, 0.35);
-            });
-            const double land = 200;
-            int n = Spec.N;
-            var dist = DistancesInPatch(cell);
-            // (a Map: in the order the cells were reached)
-            foreach (var kv in dist) Bounce(kv.Key, land + kv.Value * 45);
-            int r = cell / n, c = cell % n;
-            for (int i = 0; i < n; i++)
-            {
-                int row = r * n + i, col = i * n + c;
-                if (!dist.ContainsKey(row)) Bounce(row, land + Math.Abs(i - c) * 35);
-                if (!dist.ContainsKey(col)) Bounce(col, land + Math.Abs(i - r) * 35);
-            }
-            for (int other = 0; other < _N; other++)
-            {
-                if (!before[other] || other == cell) continue;
-                int d = Math.Abs(other / n - r) + Math.Abs(other % n - c);
-                Hop(other, land + 60 + d * 55, 0.3);
-            }
-        }
-
-        // a wrong creature: it drops on, the cell glows red, it shakes its head and shrinks away in a poof; the board
-        // shakes, everyone startles
-        void Wrong(int cell)
-        {
-            Unmark(cell);
-            SetRed(cell);
-            var P = _poses[cell];
-            Drop(cell, () =>
-            {
-                Rock(cell, new[] { -0.9, 0.9, -0.7, 0.7, -0.3, 0 }, 560);
-                Later(620, () =>
-                {
-                    var q = _B.StandOn(cell);
-                    Animated.Parallel(Animated.Timing(P.K, T(0.05, 220, Easing.In(Easing.Quad))), Animated.Timing(P.O, T(0, 220))).Start(r =>
-                    {
-                        Show(cell, false);
-                        if (_red == cell) SetRed(-1);
-                    });
-                    Burst("poof", q.X, q.Y - q.S * 0.3, q.S / 56);
-                });
-            });
-            Later(260, () => { var q = _B.StandOn(cell); Burst("angry", q.X, q.Y - q.S * 0.6, q.S / 56); });
-            Later(200, Shake);
-            for (int other = 0; other < _N; other++) if (_placed[other]) Hop(other, 240 + Random() * 80, 0.18);
-        }
-
-        void SetRed(int cell)
-        {
-            if (_red == cell) return;
-            _redPulse?.Unmount();
-            _redPulse = null;
-            _red = cell;
-            if (cell < 0) return;
-            var (svg, box) = SdArt.RedGlow(_B, cell);
-            (_redL ??= new SdLayer("red glow")).Set(svg, (float)box.Width, (float)box.Height, 2);
-            _redBox = box;
-            _redPulse = new KeyLoop(260, KeyLoop.PHASE, Array.ConvertAll(TRIANGLE, k => 0.35 + (0.9 - 0.35) * k));
-            var pulse = _redPulse;
-            Effect(() => { if (_redPulse == pulse) pulse.Mount(); });
-        }
-
-        // the board cascading in, a diagonal wave from the back left
-        void Intro()
-        {
-            int n = Spec.N;
-            for (int cell = 0; cell < _N; cell++)
-            {
-                var A = _cellA[cell];
-                A.A.SetValue(0);
-                Animated.Timing(A.A, T(1, 300, Easing.Out(Easing.Back(1.4)), (cell % n + cell / n) * 34)).Start();
-            }
-        }
-
-        // every creature hops, row by row (back to front), and the cushions bob
-        void HopAll()
-        {
-            for (int cell = 0; cell < _N; cell++)
-            {
-                double d = cell / Spec.N * 75;
-                if (_placed[cell]) Hop(cell, d, 0.6);
-                Bounce(cell, d + 120);
-            }
-        }
-
-        // ---- the board's touches: tap, drag-to-mark, long-press-to-mark --------------------------------------------------------
-        const double LONG_PRESS_MS = 380, MOVE_SLOP = 8;
-        sealed class Gesture { public int Start = -1, Last = -1; public bool Painting, PaintOn = true, Moved, LongDone; public int Timer = -1; public float X0, Y0; }
-        Gesture _g;
-
-        void Paint(int cell)
-        {
-            var g = _g;
-            if (cell < 0 || cell == g.Last) return;
-            g.Last = cell;
-            if (_placed[cell]) return;
-            if (_markOn[cell] == g.PaintOn) return;
-            OnMark(cell, g.PaintOn);
-        }
-
-        void BoardDown(float x, float y)
-        {
-            var g = _g = new Gesture { X0 = x, Y0 = y };
-            g.Start = _B.CellAt(x, y);
-            if (Locked || g.Start < 0) return;
-            if (_xTool) { g.Painting = true; g.PaintOn = !_markOn[g.Start]; }
-            else if (!_placed[g.Start])
-                g.Timer = _tk.SetTimeout(() => { g.LongDone = true; g.Painting = true; g.PaintOn = !_markOn[g.Start]; Paint(g.Start); }, LONG_PRESS_MS);
-        }
-
-        void BoardMove(float x, float y)
-        {
-            var g = _g;
-            if (g == null || Locked) return;
-            if (!g.Moved && Math.Abs(x - g.X0) + Math.Abs(y - g.Y0) > MOVE_SLOP)
-            {
-                g.Moved = true;
-                if (!g.Painting) _tk.ClearTimeout(g.Timer);
-                if (g.Painting && g.Last < 0) Paint(g.Start);
-            }
-            if (g.Painting && g.Moved) Paint(_B.CellAt(x, y));
-        }
-
-        void BoardUp()
-        {
-            var g = _g;
-            _g = null;
-            if (g == null) return;
-            _tk.ClearTimeout(g.Timer);
-            if (Locked || g.Start < 0 || g.LongDone || g.Moved) return;
-            if (_placed[g.Start]) { OnTapPiece(g.Start); return; }
-            OnTap(g.Start);
-        }
+        readonly List<Burst> _bursts = new List<Burst>();
 
         // =====================================================================================================================
         // ---- the HUD (RegularGame.js's columns, Hud.js) -------------------------------------------------------------------------
@@ -1037,18 +716,11 @@ namespace SquishSquad.Games.Squishdoku
         // =====================================================================================================================
         // ---- every frame: where everything is, in paint order ---------------------------------------------------------------
         static Interpolator L(double[] i, double[] o, bool clamp = false) => Fx.Lerp(i, o, clamp);
-        static readonly Interpolator CushScale = L(new[] { 0.0, 1 }, new[] { 0.3, 1 }), BumpScale = L(new[] { 0.0, 1 }, new[] { 1, 1.09 });
-        static readonly Interpolator Arc = L(new[] { 0, 0.25, 0.5, 0.75, 1 }, new[] { 0, -0.75, -1, -0.75, 0 });
-        static readonly Interpolator HpX = L(new[] { 0, 0.4, 1 }, new[] { 1, 0.9, 1 }), LandX = L(new[] { 0, 0.55, 1 }, new[] { 1.14, 0.96, 1 });
-        static readonly Interpolator HpY = L(new[] { 0, 0.4, 1 }, new[] { 1, 1.12, 1 }), LandY = L(new[] { 0, 0.55, 1 }, new[] { 0.86, 1.05, 1 });
-        static readonly Interpolator RotDeg = L(new[] { -1.0, 1 }, new[] { -10.0, 10 }), ShadowK = L(new[] { -1.0, 0 }, new[] { 0.6, 1 });
         static readonly Interpolator OutOp = L(new[] { 0, 0.7, 1 }, new[] { 1.0, 1, 0 }), OutY = L(new[] { 0, 0.25, 1 }, new[] { 0.0, -14, 70 }), OutK = L(new[] { 0.0, 1 }, new[] { 1, 0.6 });
         static readonly Interpolator MarkOp = L(new[] { 0, 0.8, 1 }, new[] { 1.0, 1, 0 }), MarkY = L(new[] { 0, 0.2, 1 }, new[] { 0.0, -10, 50 }), MarkRot = L(new[] { 0.0, 1 }, new[] { 0.0, 120 });
         static readonly Interpolator HeartOp = L(new[] { 0, 0.3, 1.6 }, new[] { 0.0, 1, 1 }, true), HeartK = L(new[] { 0, 1, 1.6 }, new[] { 0.4, 1, 1.35 }, true);
-        static readonly Interpolator XScale = L(new[] { 0.0, 1 }, new[] { 1.6, 1 });
 
         static Affine About(double w, double h, Affine m) => Affine.Translate(w / 2, h / 2) * m * Affine.Translate(-w / 2, -h / 2);
-        static Affine Feet(double h, Affine m) => Affine.Translate(0, h / 2) * m * Affine.Translate(0, -h / 2);
 
         readonly Dictionary<CardLayer, SdLayer> _mirrors = new Dictionary<CardLayer, SdLayer>();
         readonly List<SdLayer> _frame = new List<SdLayer>();
@@ -1060,40 +732,8 @@ namespace SquishSquad.Games.Squishdoku
             o.Clear();
             o.Add(_room);
             bool hidden = Phase == "paused";
-            double shake = _shakeX.GetValue();
-            var area = Affine.Translate(AreaX + shake, 0);
             // the board (hidden while paused)
-            if (_B != null && !hidden)
-            {
-                for (int cell = 0; cell < _N; cell++)
-                {
-                    var A = _cellA[cell];
-                    double a = A.A.GetValue(), b = A.Bump.GetValue(), k = CushScale.Evaluate(a) * BumpScale.Evaluate(b);
-                    A.L.Transform = area * Affine.Translate(A.Box.Left, A.Box.Top) * About(A.Box.Width, A.Box.Height, Affine.Translate(0, b * -_B.T * 0.06) * Affine.ScaleBy(k, k));
-                    A.L.Opacity = (float)a;
-                    o.Add(A.L);
-                }
-                for (int cell = 0; cell < _N; cell++)
-                {
-                    if (!_markOn[cell] || _placed[cell] || _markL[cell] == null) continue;
-                    double t = _markT[cell].GetValue(), k = XScale.Evaluate(t);
-                    var bx = _markBox[cell];
-                    _markL[cell].Transform = area * Affine.Translate(bx.Left, bx.Top) * About(bx.Width, bx.Height, Affine.ScaleBy(k, k));
-                    _markL[cell].Opacity = (float)t;
-                    o.Add(_markL[cell]);
-                }
-                if (_red >= 0)
-                {
-                    _redL.Transform = area * Affine.Translate(_redBox.Left, _redBox.Top);
-                    _redL.Opacity = (float)_redPulse.Value;
-                    o.Add(_redL);
-                }
-                var order = new List<int>();
-                for (int cell = 0; cell < _N; cell++) if (_shown[cell]) order.Add(cell);
-                order.Sort((p, q) => ZOf(p) != ZOf(q) ? ZOf(p).CompareTo(ZOf(q)) : p.CompareTo(q));
-                foreach (var cell in order) PlacePiece(cell, area, o);
-                foreach (var (bu, root) in _bursts) if (!root) { bu.Place(area, 1); foreach (var l in bu.Layers) o.Add(SdLayer.Mirror(l, _mirrors)); }
-            }
+            if (_board != null && !hidden) _board.Layers(Affine.Translate(AreaX, 0), o);
             // the banner, over the board area's middle, 22% down
             if (_bannerShown)
             {
@@ -1180,7 +820,7 @@ namespace SquishSquad.Games.Squishdoku
                 o.Add(_toolLip[i]); o.Add(_toolFace[i]);
             }
             // the screen's bursts (the solve's confetti)
-            foreach (var (bu, root) in _bursts) if (root) { bu.Place(Affine.Identity, 1); foreach (var l in bu.Layers) o.Add(SdLayer.Mirror(l, _mirrors)); }
+            foreach (var bu in _bursts) { bu.Place(Affine.Identity, 1); foreach (var l in bu.Layers) o.Add(SdLayer.Mirror(l, _mirrors)); }
             // the cards: placed, and gone once closed
             foreach (var c in _cards)
             {
@@ -1197,29 +837,6 @@ namespace SquishSquad.Games.Squishdoku
                 foreach (var d in dead) _mirrors.Remove(d);
             }
             return o;
-        }
-
-        // hop/Pieces.js Piece: placed and sized by x, y, k; hopping by lift; squashed by sx, sy and rocked by rot from its
-        // feet; breathing and peeking about
-        void PlacePiece(int cell, Affine area, List<SdLayer> o)
-        {
-            var P = _poses[cell];
-            double w = _pw, h = HOf(cell);
-            double hp = P.Hp.GetValue(), land = P.Land.GetValue(), arc = Arc.Evaluate(hp);
-            double sx = HpX.Evaluate(hp) * LandX.Evaluate(land), sy = HpY.Evaluate(hp) * LandY.Evaluate(land);
-            double br = P.Breathe?.Value ?? 0, peek = P.Peek?.Value ?? 0;
-            double k = P.K.GetValue();
-            var outer = area * About(w, h, Affine.Translate(P.X.GetValue(), P.Y.GetValue()) * Affine.ScaleBy(k, k));
-            float op = (float)P.O.GetValue();
-            double sk = ShadowK.Evaluate(arc);
-            P.ShadowL.Transform = outer * Affine.Translate(0.14 * w, 0.9 * h) * About(0.72 * w, 0.15 * h, Affine.ScaleBy(sk, sk));
-            P.ShadowL.Opacity = op * (float)P.Shadow.GetValue();
-            o.Add(P.ShadowL);
-            P.Body.Transform = outer * Affine.Translate(0, arc * P.LiftH.GetValue())
-                * About(w, h, Feet(h, Affine.ScaleBy(sx, sy) * Affine.Rotate(RotDeg.Evaluate(P.Rot.GetValue()))))
-                * About(w, h, Feet(h, Affine.ScaleBy(1 + 0.03 * br, 1 - 0.03 * br) * Affine.Rotate(peek)));
-            P.Body.Opacity = op;
-            o.Add(P.Body);
         }
 
         // =====================================================================================================================
@@ -1253,12 +870,12 @@ namespace SquishSquad.Games.Squishdoku
                     return;
                 }
             }
-            if (x >= AreaX && x < AreaX + AreaW && !(Phase == "paused") && _B != null) { _onBoard = true; BoardDown(x - AreaX, y); }
+            if (x >= AreaX && x < AreaX + AreaW && !(Phase == "paused") && _board != null) { _onBoard = true; _board.Down(x - AreaX, y); }
         }
 
         void MoveNow(float x, float y)
         {
-            if (_onBoard) BoardMove(x - AreaX, y);
+            if (_onBoard) _board.Move(x - AreaX, y);
         }
 
         void UpNow(float x, float y)
@@ -1284,19 +901,19 @@ namespace SquishSquad.Games.Squishdoku
                 }
                 return;
             }
-            if (_onBoard) { _onBoard = false; BoardUp(); }
+            if (_onBoard) { _onBoard = false; _board.Up(); }
         }
 
         /// <summary>A tap on cell `cell` as a finger would (tests).</summary>
         public void TapCell(int cell)
         {
-            var q = _B.Project(cell % Spec.N + 0.5, cell / Spec.N + 0.5);
+            var q = _board.B.Project(cell % Spec.N + 0.5, cell / Spec.N + 0.5);
             Down((float)(AreaX + q.X), (float)q.Y);
             Up((float)(AreaX + q.X), (float)q.Y);
         }
 
-        public bool IsPlaced(int cell) => _placed[cell];
-        public bool IsMarked(int cell) => _markOn[cell];
+        public bool IsPlaced(int cell) => _board.IsPlaced(cell);
+        public bool IsMarked(int cell) => _board.IsMarked(cell);
         public int ScoreLeft => _left;
         public bool Perfect => _perfect;
         public int HeartsLost => _heartsLost;

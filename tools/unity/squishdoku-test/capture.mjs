@@ -2,7 +2,7 @@
 // frame on a virtual clock, for Program.cs to play the same from the Unity code (SdLevel) and compare.
 //   The level is opened in real time (the view slides in), then the page's clock is replaced (tools/unity/rig/
 //   virtual-clock.js) and Math.random made 0.5 (so the board's tricks, the bursts and the buddy's words are the same
-//   on both sides), the level paused and RESTARTed: the same board starts again with nothing else moving, at virtual
+//   on both sides), its clock run out and RETRY pressed: the same board starts again with nothing else moving, at virtual
 //   time T0. From there the clock is stepped 16 ms a frame; taps (a right creature, a wrong one, the ✕ tool, two ✕)
 //   happen at set moments between frames, and the screen is shot at set moments.
 // node capture.mjs <out dir> [level] [scenario: play (a right creature, a wrong one, two ✕, the clock running out) |
@@ -91,17 +91,18 @@ const run = (ms) =>
       for (let i = 0; i < YIELDS; i++) await y();
     }
   }, [ms, YIELDS]);
-// pause (the top bar's button), the card open for a second, then RESTART: T0
-await page.mouse.click(34, 39);
-await page.waitForTimeout(400);
+// the clock run out at once (RegularGame's window.__sdk, develop's pause card has no RESTART any more), its card up
+// for a moment, then RETRY: T0
+await page.evaluate(() => window.__sdk.timeUp());
 let now = await page.evaluate(() => window.__clock.now);
-await run(now + 1000);
-const restart = await page.evaluate(() => {
-  const b = window.__components('SdButton').map((c) => c.el).find((e) => e.innerText.includes('RESTART'));
+await run(now + 1500);
+await page.waitForTimeout(400);
+const retry = await page.evaluate(() => {
+  const b = window.__components('SdButton').map((c) => c.el).find((e) => e && e.innerText.includes('RETRY'));
   const r = b.getBoundingClientRect();
   return [r.x + r.width / 2, r.y + r.height / 2];
 });
-await page.mouse.click(restart[0], restart[1]);
+await page.mouse.click(retry[0], retry[1]);
 await page.waitForTimeout(2500); // the same board made again (its pictures, React), the clock still
 const T0 = await page.evaluate(() => window.__clock.now);
 
@@ -142,6 +143,6 @@ for (const s of steps) {
 const intervals = await page.evaluate(() => window.__sdIntervals);
 const intervalAt = intervals.filter((t) => t >= T0).map((t) => t - T0)[0];
 console.log('the clock interval made at', intervalAt, 'ms (play at', play, ')');
-fs.writeFileSync(path.join(out, 'scenario.json'), JSON.stringify({ lv: LV, head: HEAD, n, pauseFor: 1000, play, intervalAt, steps }));
+fs.writeFileSync(path.join(out, 'scenario.json'), JSON.stringify({ lv: LV, head: HEAD, n, retryAfter: 1500, play, intervalAt, steps }));
 if (errors.length) console.log('page errors:', errors.slice(0, 3).join(' | '));
 await browser.close();

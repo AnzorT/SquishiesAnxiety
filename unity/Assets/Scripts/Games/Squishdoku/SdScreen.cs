@@ -75,6 +75,10 @@ namespace SquishSquad.Games.Squishdoku
         bool _bonesUp;
         string _bonesKind;
         int _goGen;
+        // royal/WorldBg.js useRoomUnder (2026-11-20, the user: flickering): the map's room stays up, at full opacity, under
+        // a level that has just started until 900 ms after the level is built, then goes (the level covers it)
+        bool _roomUnder;
+        int _underTimer = -1;
 
         SdHub _hub;
         SdMap _map;
@@ -102,6 +106,8 @@ namespace SquishSquad.Games.Squishdoku
             _slideA.Start();
             string was = View;
             View = next;
+            _tk.ClearTimeout(_underTimer);
+            _roomUnder = next == "play";
             // what goes: the hub and a level or a run (their ViewSlot is keyed by the view); the map unless a level is
             // opened from it (KeptView)
             if (was == "hub") { _hub?.Unmount(); _hub = null; }
@@ -141,6 +147,7 @@ namespace SquishSquad.Games.Squishdoku
                 case "play":
                     _level = new SdLevel(W, H, _playLv, _head, _cast, _buddy, _xml, _tk);
                     _level.OnExit = unlocked => AsInput(() => LeaveLevel(unlocked));
+                    Effect(() => _underTimer = _tk.SetTimeout(() => _roomUnder = false, 900));
                     break;
                 case "blitz":
                     _blitz = new SdBlitz(W, H, _cast, _buddy, _xml, _tk) { AdsFree = AdsFree, AdReady = AdReady, ShowAd = ShowAd, Save = Save };
@@ -309,7 +316,8 @@ namespace SquishSquad.Games.Squishdoku
             // the wood page (the room covers it in a level or a run)
             Cover(_wood, "Squishdoku/wood-bg", 2340, 1080);
             o.Add(_wood);
-            if (View == "map" && _map != null)
+            bool under = View == "play" && _roomUnder;
+            if ((View == "map" || under) && _map != null)
             {
                 // develop (2026-11-17): the chapter's room behind the map (royal/WorldBg.js RoomBackdrop: Room.js `full`,
                 // by day, a picture a screen wide repeated along the page), moved by the map's scroll, faded with it
@@ -322,7 +330,7 @@ namespace SquishSquad.Games.Squishdoku
                     string room = _map.Room;
                     if (!_roomKeys.TryGetValue(i, out var k) || k != room + w) { _roomKeys[i] = room + w; t.Set(Rooms.Svg(room, "day", W, H, true, w), w, H, 0); }
                     t.Transform = Affine.Translate(x - sx, 0);
-                    t.Opacity = viewOp;
+                    t.Opacity = under ? 1 : viewOp;
                     o.Add(t);
                 }
             }

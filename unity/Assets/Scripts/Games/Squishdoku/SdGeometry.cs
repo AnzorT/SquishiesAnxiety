@@ -17,6 +17,9 @@ namespace SquishSquad.Games.Squishdoku
         public double T, Cx, Cy, Tilt, C, Sn;
 
         public const double TILT = 38, DEPTH = 13;
+        /// <summary>board.js GUTTER: how far the board's widest (front) edge keeps from the sides of its area (2026-11-21:
+        /// it was 5, and on the phone the board ran into the goal panel and RESTART).</summary>
+        public const double GUTTER = 20;
         /// <summary>RoomBoard.js SDK_TILT: leaned back less than Squish Hop's, so the bigger boards keep big cells.</summary>
         public const double SDK_TILT = 30;
 
@@ -39,7 +42,7 @@ namespace SquishSquad.Games.Squishdoku
             double uw = 2 * front.X, uh = front.Y - back.Y;
             double top = Math.Max(0, floorY);
             double space = ah - top + ah * 0.06;
-            double T = Math.Max(26, Math.Floor(Math.Min(Math.Min((aw - 10) / uw, space / uh), maxT)));
+            double T = Math.Max(26, Math.Floor(Math.Min(Math.Min((aw - 2 * GUTTER) / uw, space / uh), maxT)));
             double bottom = Math.Min(ah - 8, top + (ah - top) / 2 + uh * T / 2);
             return new Board { W = w, H = h, T = T, Cx = aw / 2, Cy = bottom - front.Y * T, Tilt = tilt, C = c, Sn = sn };
         }
