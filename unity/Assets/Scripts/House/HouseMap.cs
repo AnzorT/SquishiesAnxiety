@@ -80,8 +80,14 @@ namespace SquishSquad.House
             _mapKey = key;
             try { var s = HouseDraw.Eval?.Invoke("__house.map(" + HouseJson.Stringify(key) + ")"); _mapVals = s == null ? null : HouseJson.Parse(s) as JObj; }
             catch (Exception) { _mapVals = null; }
+            // PERF 2026-11-20 (webgame/patches.mjs mapVals hv): on a touch screen a room on the map doesn't light up when
+            // touched or picked (no glow, its label not grown, its pill cream); a mouse hovering still lights it
+            if (HoverNone && _mapVals?.Arr("mapTiles") is List<object> tl)
+                foreach (var o in tl) if (o is JObj t) { t["glow"] = 0.0; t["sc"] = 1.0; t["sbg"] = "#fff6e2"; }
             return _mapVals;
         }
+        /// <summary>The screen has no hover (a phone: CSS (hover: none)); set by the house screen.</summary>
+        public static bool HoverNone;
 
         // ---- the picture: the template filled in, as SVG text ----
         static HouseTemplate _mapTpl;

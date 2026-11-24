@@ -99,7 +99,7 @@ namespace SquishSquad.House.View
             _used.Clear(); _hits.Clear();
             if (!_sim.Shop) { foreach (var p in _p.Values) p.Visible = false; return; }
             var S = _sim.S; var v = _sim.Rc(); string rm = _sim.CRm ?? "LIV";
-            Drawn("dim", "dim", () => new UiSvg(852, 393).Box(0, 0, 852, 393, new BoxStyle { Background = "rgba(40,22,10,0.55)" }), 0, 0, O);
+            Drawn("dim", "dim" + HouseFrame.MX + HouseFrame.MY, () => new UiSvg((float)(852 + 2 * HouseFrame.MX), (float)(393 + 2 * HouseFrame.MY)).Box(0, 0, (float)(852 + 2 * HouseFrame.MX), (float)(393 + 2 * HouseFrame.MY), new BoxStyle { Background = "rgba(40,22,10,0.55)" }), -HouseFrame.MX, -HouseFrame.MY, O);   // (its dimmed backdrop fills the frame: patches.mjs)
             var bk = R("book"); Fixed("book", bk[0], bk[1], O + 1);
             string lk = v.open ? "" : "-lock";
             var rt = R("room-" + rm + lk) != null ? "room-" + rm + lk : "room-" + rm; var rr = R(rt); if (rr != null) Fixed(rt, rr[0], rr[1], O + 1);
@@ -150,9 +150,10 @@ namespace SquishSquad.House.View
             var bst = T("Fredoka_700Bold", 10, c.Look == "lock" ? "#5a4a3a" : c.Look == "own" ? "#ffffff" : "#5b3418", 0, 0.4f);
             var tst = T("Fredoka_700Bold", 9.5f, "#ffffff", 13);
             double iw = w - 4 - 12, ih = h - 4 - 12 - 8 - 23 - 20 - 6, nameTop = 2 + 6 + 8 + ih + 3, rowTop = nameTop + 23 + 3;
-            float pw = UiSvg.BoxWidth(c.Price, pst), bw = UiSvg.BoxWidth(c.BTxt, bst) + 20, rowW = pw + 3 + 11 + 6 + bw;
-            double rx = (w - rowW) / 2, bx = rx + pw + 3 + 11 + 6;
-            string key = c.Id + c.BTxt + c.Cnt + c.HasCnt + c.Look;
+            // (a yard game's unlocked toy: no price, its button alone in the row; patches.mjs pD)
+            float pw = UiSvg.BoxWidth(c.Price, pst), bw = UiSvg.BoxWidth(c.BTxt, bst) + 20, rowW = c.NoPrice ? bw : pw + 3 + 11 + 6 + bw;
+            double rx = (w - rowW) / 2, bx = c.NoPrice ? rx : rx + pw + 3 + 11 + 6;
+            string key = c.Id + c.BTxt + c.Cnt + c.HasCnt + c.Look + c.NoPrice;
             Drawn("card" + i, key, () =>
             {
                 var s = new UiSvg((float)w, (float)h);
@@ -165,8 +166,8 @@ namespace SquishSquad.House.View
                 s.Text(c.Tier, 13, 8, tst);
                 var nl = Wrap(c.Name, nst, w - 16, true); if (nl.Count > 2) { nl = nl.GetRange(0, 2); nl[1] += "\u2026"; }
                 Lines(s, nl, 8, nameTop + (nl.Count == 1 ? 0 : 0), w - 16, nst, 0.5);
-                s.Text(c.Price, (float)rx, (float)(rowTop + (20 - UiSvg.LineBox(pst)) / 2), pst);
-                s.Raw($"<defs><radialGradient id=\"cg{i}\" cx=\"0.35\" cy=\"0.3\" r=\"0.75\"><stop offset=\"0\" stop-color=\"#fff3c4\"/><stop offset=\"0.45\" stop-color=\"#f2c255\"/><stop offset=\"1\" stop-color=\"#b8862a\"/></radialGradient></defs><circle cx=\"{N(rx + pw + 3 + 5.5)}\" cy=\"{N(rowTop + 10)}\" r=\"6.25\" fill=\"#6b4426\"/><circle cx=\"{N(rx + pw + 3 + 5.5)}\" cy=\"{N(rowTop + 10)}\" r=\"5.5\" fill=\"url(#cg{i})\"/>");
+                if (!c.NoPrice) s.Text(c.Price, (float)rx, (float)(rowTop + (20 - UiSvg.LineBox(pst)) / 2), pst);
+                if (!c.NoPrice) s.Raw($"<defs><radialGradient id=\"cg{i}\" cx=\"0.35\" cy=\"0.3\" r=\"0.75\"><stop offset=\"0\" stop-color=\"#fff3c4\"/><stop offset=\"0.45\" stop-color=\"#f2c255\"/><stop offset=\"1\" stop-color=\"#b8862a\"/></radialGradient></defs><circle cx=\"{N(rx + pw + 3 + 5.5)}\" cy=\"{N(rowTop + 10)}\" r=\"6.25\" fill=\"#6b4426\"/><circle cx=\"{N(rx + pw + 3 + 5.5)}\" cy=\"{N(rowTop + 10)}\" r=\"5.5\" fill=\"url(#cg{i})\"/>");
                 var bs = new BoxStyle { Radius = 6, BorderWidth = 2, BorderColor = c.Look == "lock" ? "#7a6a58" : "#6b4426", Shadows = new[] { new Shadow(c.Look == "lock" ? "#7a6a58" : "#6b4426", 0, 2, 0) } };
                 if (c.Look == "lock") bs.Gradient = GREYB; else if (c.Look == "own") { bs.Gradient = GREENB; bs.GradientStops = GREENB_AT; } else { bs.Gradient = BRASS; bs.GradientStops = BRASS_AT; }
                 s.Box((float)bx, (float)rowTop, bw, 20, bs);
@@ -208,7 +209,7 @@ namespace SquishSquad.House.View
         void Detail()
         {
             var d = _sim.Rd(); if (d == null) return;
-            Drawn("ddim", "d", () => new UiSvg(852, 393).Box(0, 0, 852, 393, new BoxStyle { Background = "rgba(40,22,10,0.4)" }), 0, 0, O + 10);
+            Drawn("ddim", "d" + HouseFrame.MX + HouseFrame.MY, () => new UiSvg((float)(852 + 2 * HouseFrame.MX), (float)(393 + 2 * HouseFrame.MY)).Box(0, 0, (float)(852 + 2 * HouseFrame.MX), (float)(393 + 2 * HouseFrame.MY), new BoxStyle { Background = "rgba(40,22,10,0.4)" }), -HouseFrame.MX, -HouseFrame.MY, O + 10);
             var r = R("det"); double x0 = r[0], y0 = r[1], W = r[2], Hh = r[3];
             var around = Affine.Translate(x0 + W / 2, y0 + Hh / 2) * Affine.Rotate(-0.6) * Affine.Translate(-(x0 + W / 2), -(y0 + Hh / 2));
             Fixed("det", x0, y0, O + 11, around);

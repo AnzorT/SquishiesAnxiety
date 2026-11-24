@@ -392,7 +392,7 @@ namespace SquishSquad.House
             var H = S.H; string rk = S.Cur, tab = CurTab(); var o = new List<(string, string, string, bool, bool, bool)>();
             if (tab == "furn")
             {
-                var ts = new List<string>(); foreach (var t in H.Obj("owned")?.Keys ?? new List<string>()) { var D = S.D.CatOf(t); if (D != null && D.Truthy("reno") && D.Str("room") == rk && FreeCount(t) > 0) ts.Add(t); }
+                var ts = new List<string>(); foreach (var t in H.Obj("owned")?.Keys ?? new List<string>()) { var D = S.D.CatOf(t); if (D != null && D.Truthy("reno") && D.Str("room") == rk && FreeCount(t) > 0 && HouseYard.GameKey(t) == null) ts.Add(t); }   // (patches.mjs: not the yard games' toys)
                 StableSort(ts, (a, b) => S.D.CatOf(a).Num("lv").CompareTo(S.D.CatOf(b).Num("lv")));
                 foreach (var t in ts) o.Add((t, S.D.ShortName(S.D.Row(S.D.CatOf(t).Str("reno"))), "x" + FreeCount(t), true, false, true));
                 return o;
