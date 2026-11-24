@@ -28,6 +28,9 @@ namespace SquishSquad.EditorTools
             try
             {
                 ProjectSetup.Apply();
+                SquishSquad.Ui.UiFont.ReadJson ??= n => Resources.Load<TextAsset>("Fonts/" + n)?.text;
+                SquishSquad.Ui.UiFont.ParseJson ??= j => JsonUtility.FromJson<SquishSquad.Ui.UiFontData>(j);
+                SquishSquad.Ui.SvgText.Install();   // (the park's sign is SVG <text>)
                 var layout = MenuLayout.Load();
                 var outDir = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "CiOut"));
                 Directory.CreateDirectory(outDir);

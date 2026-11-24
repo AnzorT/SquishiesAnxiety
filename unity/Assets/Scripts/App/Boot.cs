@@ -21,6 +21,7 @@ namespace SquishSquad.App
             // the app's fonts for text drawn in Unity (Resources/Fonts, tools/unity/ui/fonts.py)
             UiFont.ReadJson = name => Resources.Load<TextAsset>("Fonts/" + name)?.text;
             UiFont.ParseJson = json => JsonUtility.FromJson<UiFontData>(json);
+            SvgText.Install();   // SVG <text> in the exported art (the park's sign, …) drawn in those fonts
             // the ears: without an AudioListener nothing is heard (the cameras the screens make don't carry one)
             if (Object.FindAnyObjectByType<AudioListener>() == null)
             {

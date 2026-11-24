@@ -172,7 +172,11 @@ namespace SquishSquad.Vector
             {
                 if (st.Visibility != "hidden" && st.Visibility != "collapse") Image(n, m, layer ? 1f : opacity, list);
             }
-            else return;   // text and unknown elements: the UI exporter turns text into glyph paths
+            else if (n.Tag == "text")
+            {
+                if (st.Visibility != "hidden" && st.Visibility != "collapse") Text(n, m, st, layer ? 1f : opacity, list);
+            }
+            else return;   // unknown elements
 
             if (L == null) return;
             if (L.Children.Count == 0) return;
@@ -184,6 +188,60 @@ namespace SquishSquad.Vector
         }
 
         static bool IsAncestor(SvgNode a, SvgNode n) { for (var p = n; p != null; p = p.Parent) if (p == a) return true; return false; }
+
+        /// <summary>A line of text as glyph outlines: each glyph's path in its font's units (y up), placed at (x, y) in
+        /// the text's user space and scaled by `scale` (y flipped), and the line's box (its advance by the font's ascent
+        /// and descent), which a gradient in objectBoundingBox units spans.</summary>
+        public sealed class GlyphRun
+        {
+            public readonly List<(string d, double x, double y, double scale)> Glyphs = new List<(string d, double x, double y, double scale)>();
+            public Box Box = Box.Empty;
+        }
+
+        /// <summary>A &lt;text&gt; element's glyphs, or null to leave it out. The renderer has no fonts of its own: the host
+        /// sets this (Ui/SvgText.Install: the app's fonts, laid out as Chrome lays out a line).</summary>
+        public static Func<SvgNode, GlyphRun> TextGlyphs;
+
+        // <text>: its glyphs' outlines, all filled and then all stroked as Chrome paints a run (or strokes first with
+        // paint-order: stroke), the paints mapped over the line's box. The stroke's width is the text's, not the glyphs'.
+        void Text(SvgNode n, Affine m, Style st, float opacity, List<RenderNode> into)
+        {
+            var run = TextGlyphs?.Invoke(n);
+            if (run == null || run.Glyphs.Count == 0) return;
+            var fill = Resolve(st.Fill, st.Color);
+            var stroke = Resolve(st.Stroke, st.Color);
+            if (fill.Kind == PaintKind.None && stroke.Kind == PaintKind.None) return;
+            var outlines = new List<Polyline>(run.Glyphs.Count);
+            foreach (var g in run.Glyphs)
+            {
+                var path = new SvgNode { Tag = "path" };
+                path.Attrs.Add(new KeyValuePair<string, string>("d", g.d));
+                var o = Geometry.Flatten(path, m * Affine.Translate(g.x, g.y) * Affine.ScaleBy(g.scale, -g.scale), Tolerance, out _);
+                if (!o.IsEmpty) outlines.Add(o);
+            }
+            void Fills()
+            {
+                if (fill.Kind == PaintKind.None) return;
+                foreach (var o in outlines)
+                {
+                    var sh = Outline.Fill(o, st.FillRule == "evenodd");
+                    if (!sh.IsEmpty) into.Add(new FillNode { Shape = sh, Paint = fill, Opacity = opacity * st.FillOpacity, UserBox = run.Box, UserToPx = m });
+                }
+            }
+            void Strokes()
+            {
+                if (stroke.Kind == PaintKind.None || st.StrokeWidth <= 0) return;
+                var join = st.LineJoin == "round" ? Outline.Join.Round : st.LineJoin == "bevel" ? Outline.Join.Bevel : Outline.Join.Miter;
+                var cap = st.LineCap == "round" ? Outline.Cap.Round : st.LineCap == "square" ? Outline.Cap.Square : Outline.Cap.Butt;
+                foreach (var o in outlines)
+                {
+                    var sh = Outline.Stroke(o, st.StrokeWidth * m.Scale, join, cap, st.MiterLimit, Tolerance);
+                    if (!sh.IsEmpty) into.Add(new FillNode { Shape = sh, Paint = stroke, Opacity = opacity * st.StrokeOpacity, UserBox = run.Box, UserToPx = m });
+                }
+            }
+            if ((n.Prop("paint-order") ?? "").Trim().StartsWith("stroke")) { Strokes(); Fills(); }
+            else { Fills(); Strokes(); }
+        }
 
         // one shape: its fill, then its stroke (with the element's opacity folded in when it's not drawn as a layer;
         // when both are painted and the opacity is below 1 the caller has made a layer)
