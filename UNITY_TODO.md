@@ -1,6 +1,6 @@
 # Squish Squad → Unity: what's left
 
-Status: 2026-11-23. Everything listed in `UNITY_MIGRATION_PLAN.md` as ✅ is ported, but nothing has run in a real
+Status: 2026-11-24. Everything listed in `UNITY_MIGRATION_PLAN.md` as ✅ is ported, but nothing has run in a real
 Unity yet. All of `unity/Assets/Scripts` compiles against Unity's libraries (the `UnityEngine.Modules` NuGet package)
 apart from `Haptics.Android.cs`' `Handheld` (missing from that package, not from Unity).
 
@@ -49,10 +49,14 @@ apart from `Haptics.Android.cs`' `Handheld` (missing from that package, not from
 
 - Add the Unity license secrets in GitHub, so CI builds and sends screenshots.
 - Test on the PC and on the Galaxy A15: fix what breaks and measure the FPS (the native rig's cost first: on this PC
-  ~2 ms a frame for one creature with its markup, ~3.5-5 ms for a result card's three, ~1.5 MB allocated per creature
-  frame; `NativeRig.LastFrameMs` reports it in the app; the scripts' start-up runs on a worker thread at launch). If
-  the A15 is short, the next steps are typed numeric locals and direct calls in `jsc.mjs`, and stepping a card's
-  three at 30 fps.
+  (.NET 8, x64) a frame with its markup is ~1.1 ms for Mittens, ~2.1 ms for Kiko, 3.4-4.9 ms for a result card's
+  three, ~1-2 MB allocated per creature frame: about half of what the same rig costs in V8 (Node) here, which is what
+  the app's own WebView runs on the A15; `NativeRig.LastFrameMs` reports it in the app; the scripts' start-up, ~2.5 s
+  under .NET's JIT, runs on a worker thread at launch). If the A15 is short, the next steps are direct calls of known
+  functions in `jsc.mjs`, fewer string allocations, and stepping a card's three at 30 fps.
+- The native rig against the JS (`tools/unity/rig-test/run.mjs --all`, 118 creatures x 13 scenarios): 62,516 of
+  62,540 snapshots the same markup, the rest at most 0.006 % of their pixels apart (last-bit differences: V8's
+  Math.pow isn't quite fdlibm's, the port matches it 96 % of the time; Math.tanh / cbrt / log2 are the platform's).
 - Still on stills, not live rigs: Squish Sort's and Squish Hop's play screens (tools/rig/sort.html / hop.html stages:
   their page scripts could be compiled with `jsc.mjs` the same way), the chest unlock's creature after BAM
   (`ChestSmashView.HeroRig`), and the house's runtime drawings (`House/HouseDraw.Eval`: draw-host.js, the same way).

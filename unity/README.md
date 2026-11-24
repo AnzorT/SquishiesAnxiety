@@ -102,8 +102,9 @@ hands each frame's SVG to `CreatureView`. Every creature, every move; no JS engi
   it beside the JS rig in Node, the same scenarios on the same clock and seed (`rig-test/scenarios.js`: the menu's
   idle and fidgets, moves, a poke and a squeeze, the intro, MY HOUSE's turn, the park walk, the result card's four
   clips, the Stack road walk, the house's fidgets), and compares every snapshot's markup; ones that differ are drawn
-  by Chrome both ways and compared by pixels. `dotnet tools/unity/rig-test/bin/Release/net8.0/RigTest.dll bench`
-  times frames.
+  by Chrome both ways and compared by pixels (all 118 creatures x 13 scenarios: 62,516 of 62,540 snapshots the same
+  markup, the rest at most 0.006 % of their pixels apart). `dotnet tools/unity/rig-test/bin/Release/net8.0/RigTest.dll
+  bench [alloc] [keys]` times frames (here ~1.1 ms for Mittens with its markup, about half of V8's for the same rig).
 - `node tools/unity/rig/parity.mjs mittens lumi ...` runs creatures in Chrome and on the stand-in, through idle, dance,
   hop, squish, wave and happy, and compares the whole SVG tree every few frames. Text differences are drawn both ways
   and compared by pixels. `--log-bbox` lists every measurement the rig takes on both sides.
