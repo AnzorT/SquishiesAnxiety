@@ -64,8 +64,29 @@ namespace SquishSquad.House.View
         public void RoomButton(bool show)
         {
             if (!show) return;
-            Fixed("btn-" + _sim.S.Cur, O - 2000);
+            var p = Fixed("btn-" + _sim.S.Cur, O - 2000);
+            if (p != null && Held == "btn") p.Transform = p.Transform * Shrunk("btn-" + _sim.S.Cur);
         }
+        // a held Fixed piece: 92 % about its own centre (like the menu's Level crest)
+        Affine Shrunk(string id) { var r = R(id); double w = r[2], h = r[3]; return Affine.Translate(w / 2, h / 2) * Affine.ScaleBy(0.92, 0.92) * Affine.Translate(-w / 2, -h / 2); }
+
+        // ---- the press: what's under the finger shrinks to 92 % while it stays there (the room's map button, Back, a room) ----
+        string _downId;
+        public string Held { get; private set; }
+        string HitId(double fx, double fy, double now)
+        {
+            if (!_sim.Map) return OnRoomButton(fx, fy) ? "btn" : null;
+            var b = R("back"); if (b != null && fx >= b[0] && fx <= b[0] + b[2] && fy >= b[1] && fy <= b[1] + b[3]) return "back";
+            if (_sim.MapGo != null) return null;
+            double s = Sc(now), mx = _ox + (fx - _ox) / s, my = _oy + (fy - _oy) / s;
+            foreach (var t in _tiles) if (mx >= t.x0 && mx <= t.x1 && my >= t.y0 && my <= t.y1) return "room:" + t.rk;
+            return null;
+        }
+        /// <summary>A press began at a frame point (the map's taps, or the room's map button): what it's on is held.</summary>
+        public void PressDown(double fx, double fy, double now) => _downId = Held = HitId(fx, fy, now);
+        /// <summary>The finger moved: held only while it's still on what the press began on.</summary>
+        public void PressMove(double fx, double fy, double now) => Held = _downId != null && HitId(fx, fy, now) == _downId ? _downId : null;
+        public void PressUp() => _downId = Held = null;
         public bool OnRoomButton(double fx, double fy) { var r = R("btn-" + _sim.S.Cur); return r != null && fx >= r[0] && fx <= r[0] + r[2] && fy >= r[1] && fy <= r[1] + r[3]; }
 
         JObj _vals; List<(string rk, double x0, double y0, double x1, double y1)> _tiles = new List<(string, double, double, double, double)>();
@@ -101,7 +122,8 @@ namespace SquishSquad.House.View
             double ft = _fadeT0 < 0 ? 0 : Math.Max(0, Math.Min(1, Ease(Math.Max(0, Math.Min(1, (now - _fadeT0) / 300)))));
             if (ft > 0) { var fd = Drawn("fade", "f" + FW + "x" + FH, () => (new UiSvg(FW, FH).Box(0, 0, FW, FH, new BoxStyle { Background = "#fff6e2" }).Markup, FW, FH), O + 40, 0); fd.Transform = Frame * Affine.Translate(FX0, FY0); fd.Opacity = (float)ft; }
             // Back, the weather, the hint, the level chip
-            Fixed("back", O + 50); Fixed("weather-" + _sim.SeasonNow(), O + 50);
+            var bk = Fixed("back", O + 50); if (bk != null && Held == "back") bk.Transform = bk.Transform * Shrunk("back");
+            Fixed("weather-" + _sim.SeasonNow(), O + 50);
             var hst = new TextStyle { Font = "Fredoka_600SemiBold", Size = 12.5f, Color = "#6b4426", LineHeight = 18 }; string hint = _sim.MapHint;
             float hw = UiSvg.BoxWidth(hint, hst) + 20, hh = 22;
             var hp = Drawn("hint", hint, () => { var u = new UiSvg(hw, hh); u.Box(0, 0, hw, hh, new BoxStyle { Background = "#fff6e2", Radius = 6, Shadows = new[] { new Shadow("#6b4426", 0, 0, 0, 2), new Shadow("rgba(107,68,38,0.35)", 0, 2, 0, 2) } }); u.Text(hint, 10, 2, hst); return (u.Markup, hw, hh); }, O + 50);
@@ -172,8 +194,8 @@ namespace SquishSquad.House.View
                     if (more) { u.Box((float)fx, (float)fy, (float)moreW, 24, new BoxStyle { Background = "#fff6e2", Radius = 12, Shadows = new[] { new Shadow("#4a2e1a", 0, 0, 0, 1.5f) } }); u.Text(m.Str("moreN"), (float)(fx + (moreW - UiSvg.BoxWidth(m.Str("moreN"), moS)) / 2), (float)(fy + (24 - UiSvg.LineBox(moS)) / 2), moS); }
                     return (u.Markup, cw, ch);
                 }, O + 5);
-                double lx = m.Num("lx"), ly = m.Num("ly"), sc = m.Num("sc", 1);
-                p.Transform = Frame * zoom * Affine.Translate(lx, ly) * Affine.ScaleBy(sc, sc) * Affine.Translate(-cw / 2, -Hl / 2 + canvasTop);
+                double lx = m.Num("lx"), ly = m.Num("ly"), sc = m.Num("sc", 1), ps = Held == "room:" + rk ? 0.92 : 1;   // (held: 92 % about the label's centre)
+                p.Transform = Frame * zoom * Affine.Translate(lx, ly) * Affine.ScaleBy(sc * ps, sc * ps) * Affine.Translate(-cw / 2, -Hl / 2 + canvasTop);
                 p.Opacity = op;
                 // where a tap picks this room: its label, and its silhouette's box
                 _tiles.Add((rk, lx - cw / 2 * sc, ly + (-Hl / 2 + canvasTop) * sc, lx + cw / 2 * sc, ly + (-Hl / 2 + canvasTop + ch) * sc));

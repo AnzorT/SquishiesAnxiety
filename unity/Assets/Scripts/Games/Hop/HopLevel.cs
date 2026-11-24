@@ -1261,8 +1261,10 @@ namespace SquishSquad.Games.Hop
                 double pop = _slotPop[k].GetValue();
                 _slots[k].Transform = Affine.Translate(HopHud.GoalX + shakeX + sx, HopHud.GoalY + sy) * About(ssz, ssz, Affine.ScaleBy(pop, pop));
             }
-            _backLip.Transform = Affine.Translate(10, 8.9453125 + 4);   // (pressed, the button moves down 3 and its lip up 3)
-            _backTop.Transform = Affine.Translate(10, 8.9453125 + (_backDown ? 3 : 0));
+            // (held: the whole back button, lip and top, 48 x 52, shrinks to 0.92 about its centre)
+            var backAt = Affine.Translate(10, 8.9453125) * Fx.Pressed(48, 52, _backDown ? 1 : 0);
+            _backLip.Transform = backAt * Affine.Translate(0, 4);
+            _backTop.Transform = backAt;
             _btns[0].SetOn(!(!(playing || _phase == "stuck") || _view.Hops == 0));
             _btns[1].SetOn(!(!(playing || _phase == "stuck") || _view.Hops == 0));
             _btns[2].SetOn(!(!playing || (_view.Hinted && !AdsFree && !AdReady)));
@@ -1428,8 +1430,8 @@ namespace SquishSquad.Games.Hop
             }
         }
 
-        // ---- a button (squishdoku/ui.js SdButton): the lip stays, the face moves down 4 dp while pressed and the whole
-        // button shrinks to 0.93 (timing 70 ms in, spring friction 3.5 tension 260 out)
+        // ---- a button (squishdoku/ui.js SdButton): while pressed the whole button (lip and face) shrinks to 0.92 about its
+        // centre, as the menu's Level crest does (timing 70 ms in, spring friction 3.5 tension 260 out)
         sealed class Btn
         {
             readonly string _name;
@@ -1468,11 +1470,9 @@ namespace SquishSquad.Games.Hop
 
             public void Draw()
             {
-                double t = _t.GetValue();
-                double s = 1 + (0.93 - 1) * t, ty = (Lip - 1) * t;
-                var whole = Affine.Translate(_x, _y) * About(BW, BH, Affine.ScaleBy(s, s));
+                var whole = Affine.Translate(_x, _y) * Fx.Pressed(BW, BH, _t.GetValue());
                 _lip.Transform = whole * Affine.Translate(0, Lip);
-                _face.Transform = whole * Affine.Translate(0, ty);
+                _face.Transform = whole;
             }
         }
     }

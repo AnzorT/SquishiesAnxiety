@@ -399,7 +399,7 @@ namespace SquishSquad.Screens
             string hub = Phase == "spinning" ? "…" : "SPIN";
             bool live = Phase == "idle" || Phase == "adReady";
             float B = HUB + 8;
-            Add(Piece("hub", HubSvg(hub, live), B, B + 5, S / 2 - B / 2, S / 2 - B / 2, 1, _pressed == "hub" && live ? About(B, B + 5, Affine.ScaleBy(0.94, 0.94)) : (Affine?)null, 4));
+            Add(Piece("hub", HubSvg(hub, live), B, B + 5, S / 2 - B / 2, S / 2 - B / 2, 1, _pressed == "hub" && live ? About(B, B + 5, Affine.ScaleBy(0.92, 0.92)) : (Affine?)null, 4));
             SidePieces(list);
             if (Phase == "prize" && Result != null) Card(list);
             return list;
@@ -408,7 +408,8 @@ namespace SquishSquad.Screens
         void Button(List<ScreenPiece> list, string id, CardArt.ButtonLook b, float x, float y, Action<UiSvg> content = null)
         {
             bool down = _pressed == id;
-            list.Add(Piece(id + "-lip", b.LipMarkup(), b.RingW, b.RingH, x, y + CardArt.ButtonLook.Lip, 1, null, 2));
+            const float L = CardArt.ButtonLook.Lip;
+            list.Add(Piece(id + "-lip", b.LipMarkup(), b.RingW, b.RingH, x, y + L, 1, Shrink(down, b.RingW / 2, (b.RingH - L) / 2), 2));
             var face = b.FaceMarkup();
             if (content != null)
             {
@@ -417,8 +418,13 @@ namespace SquishSquad.Screens
                 content(s);
                 face = s.Markup;
             }
-            list.Add(Piece(id, face, b.RingW, b.RingH, x, y + (down ? CardArt.ButtonLook.Lip - 1 : 0), 1, down ? About(b.RingW, b.RingH, Affine.ScaleBy(0.93, 0.93)) : (Affine?)null, 2));
+            list.Add(Piece(id, face, b.RingW, b.RingH, x, y, 1, Shrink(down, b.RingW / 2, (b.RingH + L) / 2), 2));
         }
+
+        /// <summary>A held button (its face and the lip under it) shrinks to 92 % about the whole button's middle, (cx, cy)
+        /// in the piece's own units, as the menu's Level crest does.</summary>
+        static Affine Shrink(bool held, double cx, double cy) =>
+            held ? Affine.Translate(cx, cy) * Affine.ScaleBy(0.92, 0.92) * Affine.Translate(-cx, -cy) : Affine.Identity;
 
         void SidePieces(List<ScreenPiece> list)
         {
@@ -499,10 +505,11 @@ namespace SquishSquad.Screens
             var b = CollectBtn;
             bool down = _pressed == "collect";
             var lip = Piece("collect-lip", b.LipMarkup(), b.RingW, b.RingH, 0, 0, (float)pop, null, 2);
-            lip.Transform = Affine.Translate(cb.X, cb.Y) * about * Affine.Translate(23, y + CardArt.ButtonLook.Lip);
+            const float L = CardArt.ButtonLook.Lip;
+            lip.Transform = Affine.Translate(cb.X, cb.Y) * about * Affine.Translate(23, y + L) * Shrink(down, b.RingW / 2, (b.RingH - L) / 2);
             list.Add(lip);
             var face = Piece("collect", b.FaceMarkup(), b.RingW, b.RingH, 0, 0, (float)pop, null, 2);
-            face.Transform = Affine.Translate(cb.X, cb.Y) * about * Affine.Translate(23, y + (down ? CardArt.ButtonLook.Lip - 1 : 0)) * (down ? About(b.RingW, b.RingH, Affine.ScaleBy(0.93, 0.93)) : Affine.Identity);
+            face.Transform = Affine.Translate(cb.X, cb.Y) * about * Affine.Translate(23, y) * Shrink(down, b.RingW / 2, (b.RingH + L) / 2);
             list.Add(face);
         }
 

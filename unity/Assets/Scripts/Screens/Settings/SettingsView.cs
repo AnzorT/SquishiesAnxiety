@@ -183,13 +183,14 @@ namespace SquishSquad.Screens
         }
 
         // ---- the pointer (screen dp → design units) ----------------------------------------------------------------------
-        string _pressed;
+        string _pressed, _downId, _toggleDown;   // drawn held (while the finger stays on it); what the press began on
         public void Down(float sx, float sy)
         {
             float x = sx / K, y = sy / K;
             _lastY = y; _dragged = 0;
-            _pressed = Hit(x, y);
-            if (_pressed != null && _pressed.StartsWith("toggle-")) Motion.Timing(_toggles[_pressed.Substring(7)].Press, 1, 90, Motion.OutQuad).Start();
+            _downId = _pressed = Hit(x, y);
+            _toggleDown = null;
+            if (_pressed != null && _pressed.StartsWith("toggle-")) { _toggleDown = _pressed; Motion.Timing(_toggles[_pressed.Substring(7)].Press, 1, 90, Motion.OutQuad).Start(); }
             if (_pressed != null && _pressed.StartsWith("w:")) Wallet?.Down(_pressed.Substring(2));
         }
         public void Wheel(float x, float y, float dy) { if (WallOpen && Wallet != null) Wallet.Scroll(dy); }
@@ -198,23 +199,31 @@ namespace SquishSquad.Screens
         float _dragged;
         public void Move(float sx, float sy)
         {
-            float y = sy / K;
+            float x = sx / K, y = sy / K;
             if (_lastY.HasValue && WallOpen && Wallet != null)
             {
                 _dragged += Math.Abs(y - _lastY.Value);
                 Wallet.Scroll(_lastY.Value - y);
-                if (_dragged > 8) _pressed = null;
+                if (_dragged > 8) _downId = _pressed = null;
             }
             _lastY = y;
+            // a button grows back when the finger slides off it (and shrinks again if it comes back)
+            if (_downId != null)
+            {
+                _pressed = Hit(x, y) == _downId ? _downId : null;
+                if (_downId.StartsWith("w:")) Wallet?.Hold(_pressed != null, _downId.Substring(2));
+            }
+            else if (Wallet != null && WallOpen && _dragged > 8) Wallet.Hold(false, null);
         }
         public void Up(float sx, float sy)
         {
             float x = sx / K, y = sy / K;
             _lastY = null;
             var h = Hit(x, y);
-            var p = _pressed;
-            _pressed = null;
-            if (p != null && p.StartsWith("toggle-")) Motion.Timing(_toggles[p.Substring(7)].Press, 0, 90, Motion.OutQuad).Start();
+            var p = _downId;
+            _pressed = _downId = null;
+            if (_toggleDown != null) Motion.Timing(_toggles[_toggleDown.Substring(7)].Press, 0, 90, Motion.OutQuad).Start();
+            _toggleDown = null;
             if (h == null || h != p) { if (h == null && Focused == "nick") Focused = null; return; }
             Audio.Snd.Play("tap");
             switch (h)
@@ -328,22 +337,29 @@ namespace SquishSquad.Screens
             float lw = W(label, InkT), lh = LH(InkT);
             Icon(s, d, 14, (at.H - 18) / 2, 18, "#ffffff", 2.3f);
             s.Text(label, 14 + 18 + 10, (at.H - lh) / 2, InkT);
-            list.Add(Piece(id, s, at.X, at.Y + (_pressed == id ? 2 : 0), 1, null, 8));
+            list.Add(Piece(id, s, at.X, at.Y, 1, Shrink(_pressed == id, at.W / 2, (at.H + 3) / 2), 8));
         }
+
+        /// <summary>A held button shrinks to 92 % about its middle (cx, cy in the piece's own units: a plaque's 3 dp lip
+        /// in), as the menu's Level crest does.</summary>
+        static Affine Shrink(bool held, double cx, double cy) =>
+            held ? Affine.Translate(cx, cy) * Affine.ScaleBy(0.92, 0.92) * Affine.Translate(-cx, -cy) : Affine.Identity;
 
         void Btn(List<ScreenPiece> list, string id, string label, string variant, float size, Frame at, float radius, bool glow)
         {
+            bool held = _pressed == id;
             if (glow)
             {
+                // (the glow round it shrinks with it)
                 double ph = _glow.GetValue();
                 float op = (float)(0.35 + 0.65 * Motion.UpDown(ph));
-                list.Add(Piece(id + "-glow", Glow(at.W, at.H, Math.Min(radius, 40), 10), at.W + 20, at.H + 20, at.X - 10, at.Y - 10, op, null, 0));
+                list.Add(Piece(id + "-glow", Glow(at.W, at.H, Math.Min(radius, 40), 10), at.W + 20, at.H + 20, at.X - 10, at.Y - 10, op, Shrink(held, 10 + at.W / 2, 10 + (at.H + 3) / 2), 0));
             }
             var s = new UiSvg(at.W, at.H);
             Plaque(s, 0, 0, at.W, at.H, variant, radius);
             var (lw, lh) = LetteringSize(label, size);
             Lettering(s, label, variant == "gold" ? "whiteB" : "white", size, (at.W - lw) / 2, (at.H - lh) / 2);
-            list.Add(Piece(id, s, at.X, at.Y + (_pressed == id ? 2 : 0), 1, null, 8));
+            list.Add(Piece(id, s, at.X, at.Y, 1, Shrink(held, at.W / 2, (at.H + 3) / 2), 8));
         }
 
         void Input(List<ScreenPiece> list, Frame at)
@@ -453,7 +469,7 @@ namespace SquishSquad.Screens
                     p.Transform = Affine.Translate(wb.X, wb.Y) * p.Transform;
                     list.Add(p);
                 }
-            list.Add(Piece("orb-close34", Xml("orb-close34"), 34, 34, SW / 2 + 196, 18 + (_pressed == "wall-close" ? 2 : 0)));
+            list.Add(Piece("orb-close34", Xml("orb-close34"), 34, 34, SW / 2 + 196, 18, 1, Shrink(_pressed == "wall-close", 17, 17)));
         }
     }
 }

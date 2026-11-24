@@ -315,7 +315,7 @@ namespace SquishSquad.Games.Shared
             LayoutHeader();
             var back = Frame.L("header back");
             back.Set("back", () => HubsData.LoadXml("Hubs/back"), 40, 40, 6);
-            back.Transform = Affine.Translate(_back.X, _back.Y + (_backDown ? 2 : 0));
+            back.Transform = Affine.Translate(_back.X, _back.Y) * Fx.Pressed(40, 40, _backDown ? 1 : 0);
             if (!Titled) return;
             var tl = Frame.L("header title");
             string key = Def.Title + "|" + Def.Sub;
@@ -332,7 +332,7 @@ namespace SquishSquad.Games.Shared
             {
                 var hl = Frame.L("header help");
                 hl.Set("help", () => HubsData.LoadXml("Hubs/help"), 40, 40, 6);
-                hl.Transform = Affine.Translate(_help.X, _help.Y + (_helpDown ? 2 : 0));
+                hl.Transform = Affine.Translate(_help.X, _help.Y) * Fx.Pressed(40, 40, _helpDown ? 1 : 0);
             }
             var pl = Frame.L("header pill");
             var p = _pill; var pt = _pillText;

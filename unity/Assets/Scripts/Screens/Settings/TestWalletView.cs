@@ -145,6 +145,16 @@ namespace SquishSquad.Screens
         }
 
         public void Down(string id) { _down = id; }
+        /// <summary>The finger left the button it went down on (or came back): it grows back (shrinks again).</summary>
+        public void Hold(bool on, string id) { _down = on ? id : null; }
+        /// <summary>A held button shrinks to 92 % about its middle (cx, cy), as the page's others and the menu's Level crest
+        /// do: opens its group (true: Close it after drawing the button).</summary>
+        bool Shrink(UiSvg s, string id, float cx, float cy)
+        {
+            if (_down != id) return false;
+            s.Open($"transform=\"translate({F(cx)} {F(cy)}) scale(0.92) translate({F(-cx)} {F(-cy)})\"");
+            return true;
+        }
 
         /// <summary>A tap on `id`; returns the field to type into, if it's one.</summary>
         public string Tap(string id)
@@ -192,28 +202,36 @@ namespace SquishSquad.Screens
                 foreach (var q in qs)
                 {
                     var qf = f["q-" + q.Id];
+                    bool gq = Shrink(s, "q-" + q.Id, qf.X + qf.W / 2, qf.Y + qf.H / 2);
                     s.Box(qf.X, qf.Y, qf.W, qf.H, new BoxStyle { Radius = 999, Background = q.Bg, BorderWidth = 2, BorderColor = q.Border });
                     var qt = f["qt-" + q.Id];
                     s.Text(q.Label, qt.X, qt.Y, T(Kit.Display, 12, q.Color));
+                    if (gq) s.Close();
                 }
             foreach (var (k, ch) in new[] { ("lvminus", "−"), ("lvplus", "+") })
             {
                 var sf = f[k];
+                bool gk = Shrink(s, k, sf.X + 14, sf.Y + 14);
                 s.Box(sf.X, sf.Y, 28, 28, new BoxStyle { Radius = 14, Background = "#fff1e4", BorderWidth = 2, BorderColor = "#f2c39e" });
                 // (no font here has U+2212: a bar the minus sign's size)
                 if (k == "lvminus") s.Box(sf.X + 14 - 4, sf.Y + 14 - 0.9f, 8, 1.8f, new BoxStyle { Background = "#8a3a0e" });
                 else s.Text(ch, sf.X, sf.Y + (28 - LH(StepT)) / 2, StepT, 28, 0.5f);
+                if (gk) s.Close();
             }
             var fp = f["fps"];
+            bool gf = Shrink(s, "fps", fp.X + 29, fp.Y + 16.5f);
             bool on = FpsOn();
             s.Box(fp.X, fp.Y, 58, 33, new BoxStyle { Radius = 16.5f, Background = on ? "#0b6f68" : INK });
             s.Box(fp.X + 2, fp.Y + 2, 54, 26, new BoxStyle { Radius = 15, Gradient = on ? new[] { "#c8fff4", "#4fe6cf", "#14b3a0" } : new[] { "#efe6dc", "#d6c2a8", "#b39878" }, GradientStops = new[] { 0f, 0.55f, 1 }, BorderWidth = Bw(2.5f), BorderColor = "#ffffff" });
             s.Box(fp.X + 6 + (on ? 28 : 0), fp.Y + 6, 17, 17, new BoxStyle { Radius = 8.5f, Gradient = new[] { "#ffffff", "#fff6ea", "#f0dcc0" } });
+            if (gf) s.Close();
             var st = f["set"];
+            bool gs = Shrink(s, "set", st.X + st.W / 2, st.Y + st.H / 2);
             s.Box(st.X, st.Y, st.W, st.H, new BoxStyle { Radius = 18, Background = "#b86200" });
             var sfc = f["setFace"];
             s.Box(sfc.X, sfc.Y, sfc.W, sfc.H, new BoxStyle { Radius = 16, Gradient = new[] { "#fff3b0", "#ffd83a", "#ffb000" }, BorderWidth = 3, BorderColor = "#ffffff" });
             var stt = f["setText"]; s.Text("Set", stt.X, stt.Y, SetT);
+            if (gs) s.Close();
             s.Close(); s.Close();
             return new List<ScreenPiece> { Piece("wallet", s, 0, 0, 1, null, 0) };
         }

@@ -173,7 +173,8 @@ namespace SquishSquad.App
         }
 
         // ---- taps -----------------------------------------------------------------------------------------------------
-        static bool Holds(string hit) => hit == "submit" || hit == "google" || hit == "facebook" || hit == "tiktok";
+        static bool Holds(string hit) => hit == "submit" || hit == "google" || hit == "facebook" || hit == "tiktok"
+            || hit == "tab-login" || hit == "tab-register" || hit == "eye" || hit == "keep";
 
         void Pointer()
         {

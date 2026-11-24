@@ -299,18 +299,19 @@ namespace SquishSquad.House.View
             double mt = Math.Max(0, Math.Min(SH.Mv.Num("dur"), SH.Mt)), dur = SH.Mv.Num("dur");
             string ttl = SH.MsgT > 0 && SH.Msg != "" ? SH.Msg : SH.Mv.Str("title"), tm = T(mt) + " / " + T(dur), ic = SH.Pause ? "play" : "pause", fi = _sim.FzOn ? "shrink" : "full";
             int fill = (int)Math.Round(180 * mt / dur);
-            string key = ttl + "|" + tm + "|" + fill + "|" + ic + "|" + fi;
+            string hb = HeldId, hbar = hb == "play" || hb == "list" || hb == "full" || hb == "stop" ? hb : "";   // (the held bar button: shrunk)
+            string key = ttl + "|" + tm + "|" + fill + "|" + ic + "|" + fi + "|" + hbar;
             _bar ??= UiPiece.Create(_room.transform, "movie bar", ord + 10);
             if (_barKey != key)
             {
                 _barKey = key; float W = (float)BarW, H = (float)BarH; var s = new UiSvg(W, H);
                 s.Box(0, 0, W, H, new BoxStyle { Background = "#f6ead2", Radius = H / 2, BorderWidth = 2, BorderColor = "#c9ad86", Shadows = new[] { new Shadow("rgba(90,58,30,0.28)", 0, 3, 0) } });
-                double x = 2 + 6; void Btn(string name, bool main, double size) { s.Box((float)x, 7, 34, 34, new BoxStyle { Background = main ? "#e2b14a" : "#fbf3e3", Radius = 17, BorderWidth = 2, BorderColor = main ? "#8a6420" : "#c9ad86" }); s.Raw(Inner(Ic(name), x + 17 - size / 2, 7 + 17 - size / 2, size)); x += 34 + 8; }
-                Btn(ic, true, 14);
+                double x = 2 + 6; void Btn(string name, string id, bool main, double size) { bool pr = hbar == id; if (pr) s.Open(PressG(x + 17, 7 + 17)); s.Box((float)x, 7, 34, 34, new BoxStyle { Background = main ? "#e2b14a" : "#fbf3e3", Radius = 17, BorderWidth = 2, BorderColor = main ? "#8a6420" : "#c9ad86" }); s.Raw(Inner(Ic(name), x + 17 - size / 2, 7 + 17 - size / 2, size)); if (pr) s.Close(); x += 34 + 8; }
+                Btn(ic, "play", true, 14);
                 string t2 = ttl; float tmw = UiSvg.BoxWidth(tm, TmSt); while (t2.Length > 1 && UiSvg.BoxWidth(t2, TtlSt) > 180 - tmw - 6) t2 = t2.Substring(0, t2.Length - 2) + "\u2026";
                 s.Text(t2, (float)x, 9, TtlSt); s.Text(tm, (float)(x + 180 - tmw), 10.5f, TmSt);
                 s.Box((float)x, 30, 180, 7, new BoxStyle { Background = "#e2cfa8", Radius = 3.5f }); if (fill > 0) s.Box((float)x, 30, Math.Max(7, fill), 7, new BoxStyle { Background = "#8a6420", Radius = 3.5f });
-                x += 180 + 8; Btn("list", false, 14); Btn(fi, false, 15); Btn("skip", false, 14);
+                x += 180 + 8; Btn("list", "list", false, 14); Btn(fi, "full", false, 15); Btn("skip", "stop", false, 14);
                 _bar.SetSvg(s.Markup, W, H, 8);
             }
             // in the room: centred at the bottom of the room (104 px up), with the camera; full screen: at the view's bottom
@@ -321,22 +322,25 @@ namespace SquishSquad.House.View
             _menu ??= UiPiece.Create(_room.transform, "movie picker", ord + 11);
             if (_sim.MenuOn && _barOp > 0)
             {
-                var rows = _sim.MovieMenu(); string mk = string.Join("|", rows.ConvertAll(r => r.mv.Str("id") + r.ok + r.cur + r.sub));
+                var rows = _sim.MovieMenu(); string hrow = hb != null && hb.StartsWith("row") ? hb : "";   // (the held row: shrunk)
+                string mk = string.Join("|", rows.ConvertAll(r => r.mv.Str("id") + r.ok + r.cur + r.sub)) + "|" + hrow;
                 double MH = 8 + 2 + 18 + rows.Count * (42 + 3) + 8;
                 if (_menuKey != mk)
                 {
                     _menuKey = mk; float W = 270, H = (float)MH; var s = new UiSvg(W, H);
                     s.Box(0, 0, W, H, new BoxStyle { Background = "#fbf3e3", Radius = 18, BorderWidth = 2, BorderColor = "#c9ad86", Shadows = new[] { new Shadow("rgba(90,58,30,0.25)", 0, 4, 0) } });
                     s.Text("Movies", 2 + 8 + 6, 2 + 8 + 2, new TextStyle { Font = "Fredoka_600SemiBold", Size = 12, Color = "#8a5a2e" });
-                    double y = 2 + 8 + 18 + 3;
+                    double y = 2 + 8 + 18 + 3; int ri = 0;
                     foreach (var (mv, ok, cur, sub) in rows)
                     {
+                        bool pr = hrow == "row" + ri++; if (pr) s.Open(PressG(10 + 125, y + 21));
                         s.Box(10, (float)y, 250, 42, new BoxStyle { Background = cur ? "#f3dca6" : ok ? "#ffffff" : "rgba(0,0,0,0)", Radius = 12, BorderWidth = 2, BorderColor = cur ? "#8a6420" : "rgba(0,0,0,0)" });
                         s.Box(10 + 11, (float)(y + 10), 22, 22, new BoxStyle { Background = ok ? "#e2b14a" : "#eadcc2", Radius = 11 });
                         var ns = new TextStyle { Font = "Fredoka_700Bold", Size = 11, Color = "#3a1a5c" }; string tn = HouseJson.JsString(mv["tier"]);
                         s.Text(tn, (float)(10 + 11 + 11 - UiSvg.BoxWidth(tn, ns) / 2), (float)(y + 21 - UiSvg.LineBox(ns) / 2), ns);
                         var a = new TextStyle { Font = "Fredoka_600SemiBold", Size = 12.5f, Color = ok ? "#3a1a5c" : "#9a8262" }; var b = new TextStyle { Font = "Fredoka_500Medium", Size = 10.5f, Color = ok ? "#8a5a2e" : "#a8916f" };
                         s.Text(mv.Str("title"), 10 + 11 + 22 + 8, (float)(y + 7), a); s.Text(sub, 10 + 11 + 22 + 8, (float)(y + 22), b);
+                        if (pr) s.Close();
                         y += 42 + 3;
                     }
                     _menu.SetSvg(s.Markup, W, H, 8);
@@ -350,11 +354,13 @@ namespace SquishSquad.House.View
             if (focus && show)
             {
                 if (_xb.Width < 1) { var s = new UiSvg(34, 34); s.Box(0, 0, 34, 34, new BoxStyle { Background = "#fbf3e3", Radius = 17, BorderWidth = 2, BorderColor = "#c9ad86" }); s.Raw(Inner(Ic("shrink"), 9.5, 9.5, 15)); _xb.SetSvg(s.Markup, 34, 34, 6); }
-                _xb.Visible = true; _xb.Transform = Frame * Affine.Translate(852 - 14 - 34, 12);
+                _xb.Visible = true; _xb.Transform = Frame * Affine.Translate(852 - 14 - 34, 12) * (hb == "x" ? Affine.Translate(17, 17) * Affine.ScaleBy(0.92, 0.92) * Affine.Translate(-17, -17) : Affine.Identity);
             }
             else _xb.Visible = false;
         }
         static string T(double s) { int t = (int)Math.Floor(s); return (t / 60) + ":" + (t % 60).ToString("00"); }
+        // a held control drawn in a picture: a <g>'s attributes shrinking what it holds to 92 % about (cx, cy)
+        static string PressG(double cx, double cy) => $"transform=\"translate({HouseGeo.N(cx)} {HouseGeo.N(cy)}) scale(0.92) translate({HouseGeo.N(-cx)} {HouseGeo.N(-cy)})\"";
 
         /// <summary>Whether a frame point is on the player bar or the open picker.</summary>
         public bool Hits(double fx, double fy)
@@ -399,6 +405,45 @@ namespace SquishSquad.House.View
             if (_sim.MenuOn) { _sim.MenuOn = false; return true; }
             return false;
         }
+
+        // ---- the press (the menu's Level crest): the control a press began on shrinks to 92 % about its centre while the
+        // finger is on it: "play", "list", "full", "stop" (the bar's, redrawn), "row<i>" (the picker's, redrawn), "x" (full
+        // screen's close, scaled). The hit areas never change, so Tap is unchanged.
+        string _held; bool _heldOn;
+        string HeldId => _heldOn ? _held : null;
+        // the control a tap at (fx, fy) would act on (Tap's tests, without acting), or null
+        string Under(double fx, double fy)
+        {
+            if (_sim.Show == null) return null;
+            bool focus = _sim.FzP > 0;
+            if (focus && fx >= 852 - 48 && fy <= 46 && _xb != null && _xb.Visible) return "x";
+            if (_barOp <= 0) return null;
+            double lx = (fx - _barX) / _barS, ly = (fy - _barY) / _barS;
+            if (_sim.MenuOn && _menu != null && _menu.Visible)
+            {
+                double my = ly - (BarH - 48 - (8 + 2 + 18 + _sim.MovieMenu().Count * 45 + 8)), mx = lx - (BarW - 270);
+                if (mx >= 0 && mx <= 270 && my >= 0)
+                {
+                    int i = (int)Math.Floor((my - (2 + 8 + 18 + 3)) / 45); var rows = _sim.MovieMenu();
+                    return i >= 0 && i < rows.Count && rows[i].ok && !rows[i].cur ? "row" + i : null;
+                }
+            }
+            if (lx >= 0 && lx <= BarW && ly >= 0 && ly <= BarH)
+            {
+                double x = lx - 8, b = 34 + 8 + 180 + 8;
+                if (x >= 0 && x < 34) return "play";
+                if (x >= b && x < b + 34) return "list";
+                if (x >= b + 42 && x < b + 42 + 34) return "full";
+                if (x >= b + 84 && x < b + 84 + 34) return "stop";
+            }
+            return null;
+        }
+        /// <summary>A press began at (fx, fy) (frame px: the same coordinates Tap gets): the control under it (the one Tap would act on) is held.</summary>
+        public void PressDown(double fx, double fy, double now) { _held = Under(fx, fy); _heldOn = _held != null; }
+        /// <summary>The finger moved: the control is drawn held only while the finger is still on it.</summary>
+        public void PressMove(double fx, double fy) { if (_held != null) _heldOn = Under(fx, fy) == _held; }
+        /// <summary>Released or cancelled (a drag): nothing is held.</summary>
+        public void PressUp() { _held = null; _heldOn = false; }
 
         public void Destroy()
         {

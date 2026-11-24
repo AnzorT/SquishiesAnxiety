@@ -90,7 +90,8 @@ namespace SquishSquad.Screens
         /// <summary>royal/parts.js PageHeader: the back orb, the gold title, a note.</summary>
         public static void Header(List<ScreenPiece> list, string title, string note, bool backDown)
         {
-            list.Add(Piece("orb-back", Xml("orb-back"), 40, 40, 16, 15 + (backDown ? 2 : 0)));
+            // (held: the orb shrinks to 92 % about its middle, as the menu's Level crest does)
+            list.Add(Piece("orb-back", Xml("orb-back"), 40, 40, 16, 15, 1, backDown ? About(40, 40, Affine.ScaleBy(0.92, 0.92)) : (Affine?)null));
             var (lw, lh) = LetteringSize(title, 30);
             var s = new UiSvg(lw, lh);
             Lettering(s, title, "gold", 30, 0, 0);

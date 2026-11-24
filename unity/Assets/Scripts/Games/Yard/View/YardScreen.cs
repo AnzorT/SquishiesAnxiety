@@ -302,6 +302,8 @@ namespace SquishSquad.Games.Yard.View
             double now = Now;
             if (Input.GetKeyDown(KeyCode.Escape)) { if (_g != null) { Hub(); return; } Exit(); return; }
             HandleInput(now);
+            var was = _held; _held = Held();
+            if (was != null && was != _held && was.StartsWith("btn:")) _btnUp[was] = now;
             _used.Clear(); _hits.Clear();
             Backdrop();
             if (_g != null) DrawGame(now); else DrawHub(now);
@@ -331,12 +333,15 @@ namespace SquishSquad.Games.Yard.View
         {
             var c = _c; int H0 = O + 70;
             float barH = 15.2f * cq;
-            Draw("top", _g.Id, 0, 0, W, barH, H0, u =>
+            bool backDown = _held == "back";
+            Draw("top", _g.Id + (backDown ? "|p" : ""), 0, 0, W, barH, H0, u =>
             {
                 u.Box(0, 0, W, barH, new BoxStyle { Gradient = new[] { "rgba(255,255,255,0.85)", "rgba(255,255,255,0)" }, Radii = new[] { 30f, 30f, 0, 0 } });
                 float bx = 3 * cq, by = 2.6f * cq, bs = 10 * cq;
+                if (backDown) u.Open(PressG(bx + bs / 2, by + bs / 2));
                 u.Box(bx, by, bs, bs, new BoxStyle { Background = "#ffffff", Radius = 999, Shadows = new[] { new Shadow("#c9b6f2", 0, 0.8f * cq, 0) } });
                 u.Raw($"<path d=\"M{F(bx + bs * 0.56)} {F(by + bs * 0.3)}L{F(bx + bs * 0.4)} {F(by + bs * 0.5)}L{F(bx + bs * 0.56)} {F(by + bs * 0.7)}\" fill=\"none\" stroke=\"#6a2fb0\" stroke-width=\"{F(1.3 * cq)}\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>");
+                if (backDown) u.Close();
                 var t = TS(Fred, 5.2f, "#4a1a73", 1.1f); u.Text(_g.Name, 15 * cq, by + bs / 2 - Lh(t) / 2, t);
                 return u;
             });
@@ -393,7 +398,9 @@ namespace SquishSquad.Games.Yard.View
                 float x0 = W / 2 - (bw * n + gap * (n - 1)) / 2, y0 = H - H * 0.022f - bh;
                 for (int i = 0; i < n; i++)
                 {
-                    var b = c.Buttons[i]; float x = x0 + i * (bw + gap); double pu = (c.Now - b.PressedAt) / 150;
+                    // shrunk to 92 % while the finger is on it, then springing back to 100 % over 150 ms from the release
+                    var b = c.Buttons[i]; float x = x0 + i * (bw + gap); string hid = "btn:" + b.Id;
+                    double pu = _held == hid ? 0 : _btnUp.TryGetValue(hid, out var upAt) ? (now - upAt) / 150 : (c.Now - b.PressedAt) / 150;
                     var p = Draw("btn" + i, b.Id + b.Lit + b.Label, x, y0, bw, bh, H0 + 2, u =>
                     {
                         u.Box(0, 0, bw, bh, new BoxStyle { Background = b.Lit ? Mix(b.Color, 0.18, "#ffffff") : "#ffffff", Radius = bw * 0.22f, BorderWidth = b.Lit ? 0.8f * cq : 0, BorderColor = b.Color, Shadows = new[] { new Shadow(Mix(b.Color, 0.55, "#3b2457"), 0, 1.2f * cq, 0) } });
@@ -401,7 +408,7 @@ namespace SquishSquad.Games.Yard.View
                         var lt = new TextStyle { Font = Fred, Size = Mathf.Clamp(4.6f * cq, 12, 20), Color = b.Color, LineHeight = Mathf.Clamp(4.6f * cq, 12, 20) };
                         u.Text(b.Label, 0, bh * 0.1f + ic + bh * 0.04f, lt, bw, 0.5f); return u;
                     });
-                    if (pu >= 0 && pu < 1) p.Transform = At(x, y0 + 1 * cq * (1 - pu));
+                    if (pu >= 0 && pu < 1) p.Transform = Around(x, y0, x + bw / 2, y0 + bh / 2, 1 - (1 - Shrink) * (1 - pu));
                     _hits.Add(("btn:" + b.Id, x, y0, bw, bh));
                 }
             }
@@ -437,11 +444,13 @@ namespace SquishSquad.Games.Yard.View
             p.Transform = Around(x, y, W / 2, H / 2, k);
             foreach (var hh in hits) _hits.Add((hh.id, x + hh.x, y + hh.y, hh.w, hh.h));
         }
-        static void Btn(UiSvg u, string label, float x, float y, float w, float h, float font, bool ghost)
+        void Btn(UiSvg u, string label, float x, float y, float w, float h, float font, bool ghost, bool pressed = false)
         {
+            if (pressed) u.Open(PressG(x + w / 2, y + h / 2));
             var st = ghost ? new BoxStyle { Background = "#f1eafc", Radius = 999, Shadows = new[] { new Shadow("#c9b6f2", 0, 1.4f * cq, 0) } }
                            : new BoxStyle { Gradient = new[] { "#ff8fd2", "#e0479f" }, Radius = 999, Shadows = new[] { new Shadow("#a8287a", 0, 1.4f * cq, 0) } };
             u.Box(x, y, w, h, st); var t = TS(Fred, font, ghost ? "#6a2fb0" : "#ffffff", 1); u.Text(label, x, y + (h - Lh(t)) / 2, t, w, 0.5f);
+            if (pressed) u.Close();
         }
 
         void Intro(double now)
@@ -464,7 +473,8 @@ namespace SquishSquad.Games.Yard.View
             y += 3 * cq; float gw = UiSvg.BoxWidth("Play", TS(Fred, 6.4f, "#fff")) + 28 * cq, gh = 6.4f * cq + 7.2f * cq, gY = y; hits.Add(("play", cw / 2 - gw / 2, gY, gw, gh)); y += gh + 1.4f * cq;
             y += 3 * cq; float bY = y; y += Lh(best) + 5 * cq;
             _save.Best.TryGetValue(G.Id, out var bv); string bt = bv > 0 ? "Best " + bv : "No best yet";
-            Card("intro", G.Id + G.Opt, y, now, (u, w) =>
+            string ih = _held != null && (_held == "play" || _held.StartsWith("opt:")) ? _held : "";
+            Card("intro", G.Id + G.Opt + "|" + ih, y, now, (u, w) =>
             {
                 u.Raw(Icon(G.Icon, w / 2 - 17 * cq, icY, 34 * cq, 24 * cq));
                 u.Text(G.Name, 0, tY, ttl, w, 0.5f); u.Text("Yard: " + G.Item, 0, sY, sub, w, 0.5f);
@@ -472,11 +482,13 @@ namespace SquishSquad.Games.Yard.View
                 foreach (var l in hows) { u.Raw($"<circle cx=\"{F(pad + 2 * cq)}\" cy=\"{F(yy + Lh(how) / 2)}\" r=\"{F(0.7 * cq)}\" fill=\"#4a3566\"/>"); foreach (var s in l) { u.Text(s, pad + 5 * cq, yy, how); yy += Lh(how); } yy += 2 * cq; }
                 foreach (var o in opts)
                 {
-                    bool on = o.id == G.Opt;
+                    bool on = o.id == G.Opt, pr = ih == "opt:" + o.id;
+                    if (pr) u.Open(PressG(o.x + o.w / 2, oY + oh / 2));
                     u.Box(o.x, oY, o.w, oh, new BoxStyle { Background = on ? "#6a2fb0" : "#faf6ff", Radius = 999, BorderWidth = 0.6f * cq, BorderColor = on ? "#6a2fb0" : "#e0d2f7" });
                     u.Text(o.label, o.x, oY + (oh - Lh(opt)) / 2, TS(Nun8, 3.6f, on ? "#ffffff" : "#4a1a73", 1), o.w, 0.5f);
+                    if (pr) u.Close();
                 }
-                Btn(u, "Play", w / 2 - gw / 2, gY, gw, gh, 6.4f, false);
+                Btn(u, "Play", w / 2 - gw / 2, gY, gw, gh, 6.4f, false, ih == "play");
                 u.Text(bt, 0, bY, best, w, 0.5f); return u;
             }, hits);
         }
@@ -492,7 +504,8 @@ namespace SquishSquad.Games.Yard.View
             var hits = new List<(string, float, float, float, float)> { ("hub", bx, rY, w1, bh), ("again", bx + w1 + 3 * cq, rY, w2, bh) };
             // the stars pop in one by one (0.1 s, 0.25 s, 0.4 s): the card redraws until they're in
             double since = (now - _ovT0) / 1000; int phase = since < 0.1 ? 0 : (int)Math.Min(10, Math.Floor((since - 0.1) / 0.05)) + 1;
-            Card("res", "r" + _c.score + r.title + phase, y, now, (u, w) =>
+            string rh = _held == "hub" || _held == "again" ? _held : "";
+            Card("res", "r" + _c.score + r.title + phase + "|" + rh, y, now, (u, w) =>
             {
                 u.Text(r.title, 0, tY, ttl, w, 0.5f);
                 float sz = 11 * cq, gap = 2 * cq, x0 = w / 2 - (3 * sz + 2 * gap) / 2;
@@ -509,7 +522,7 @@ namespace SquishSquad.Games.Yard.View
                 u.Text(_c.score.ToString(CultureInfo.InvariantCulture), 0, sY, sc, w, 0.5f);
                 u.Text(_resSub, 0, bY, sub, w, 0.5f);
                 u.Box(w / 2 - cwid / 2, cY, cwid, ch, new BoxStyle { Background = "#fff3c2", Radius = 999 }); u.Text(ct, w / 2 - cwid / 2, cY + (ch - Lh(coin)) / 2, coin, cwid, 0.5f);
-                Btn(u, "Yard", bx, rY, w1, bh, 5.4f, true); Btn(u, "Play again", bx + w1 + 3 * cq, rY, w2, bh, 5.4f, false);
+                Btn(u, "Yard", bx, rY, w1, bh, 5.4f, true, rh == "hub"); Btn(u, "Play again", bx + w1 + 3 * cq, rY, w2, bh, 5.4f, false, rh == "again");
                 return u;
             }, hits);
         }
@@ -535,7 +548,7 @@ namespace SquishSquad.Games.Yard.View
             _scroll = Math.Max(0, Math.Min(_scroll, _hubH - H)); top = (float)-_scroll;
             float pickS = 15 * cq, stripW = _roster.Count * (pickS + 2 * cq) - 2 * cq + 8 * cq;
             _strip = Math.Max(0, Math.Min(_strip, stripW - W));
-            string hk = $"{F(_scroll)}|{F(_strip)}|{key}|{_muted}|{pick}";
+            string held = _held ?? "", hk = $"{F(_scroll)}|{F(_strip)}|{key}|{_muted}|{pick}|{held}";
             Draw("hub", hk, 0, 0, W, H, O + 2, u =>
             {
                 u.Def("<clipPath id=\"hubc\"><rect width=\"360\" height=\"640\" rx=\"30\"/></clipPath>");
@@ -549,8 +562,10 @@ namespace SquishSquad.Games.Yard.View
                 u.Text("Play with the games in your backyard", 0, 17 * cq, TS(Nun8, 3.6f, "#3b2a6e", 1.2f), W, 0.5f);
                 // the sound button
                 float mx = W - 13 * cq, my = 3 * cq, ms = 10 * cq;
+                if (held == "mute") u.Open(PressG(mx + ms / 2, my + ms / 2));
                 u.Box(mx, my, ms, ms, new BoxStyle { Background = "rgba(255,255,255,0.85)", Radius = 999 });
                 u.Raw($"<g transform=\"translate({F(mx + ms / 2)} {F(my + ms / 2)}) scale({F(cq * 0.32)})\"><path d=\"M-7-3H-3L2-7V7L-3 3H-7Z\" fill=\"#6a2fb0\"/>" + (_muted ? "<path d=\"M4-3L9 3M9-3L4 3\" stroke=\"#e0479f\" stroke-width=\"2\" stroke-linecap=\"round\"/>" : "<path d=\"M4.5-3.5Q7 0 4.5 3.5M6.5-6Q11 0 6.5 6\" fill=\"none\" stroke=\"#6a2fb0\" stroke-width=\"1.6\" stroke-linecap=\"round\"/>") + "</g>");
+                if (held == "mute") u.Close();
                 // your player
                 float mex = 4 * cq, mew = W - 8 * cq;
                 u.Box(mex, meY, mew, meH, new BoxStyle { Background = "rgba(255,255,255,0.9)", Radius = 6 * cq, Shadows = new[] { new Shadow("rgba(80,140,60,0.35)", 0, 1.2f * cq, 0) } });
@@ -563,19 +578,22 @@ namespace SquishSquad.Games.Yard.View
                 u.Open($"transform=\"translate({F(-_strip)} 0)\"");
                 for (int i = 0; i < _roster.Count; i++)
                 {
-                    string k = _roster[i]; bool on = k == key; float x = 4 * cq + i * (pickS + 2 * cq), y = stripY + 3 * cq, s = on ? 1.08f : 1;
+                    string k = _roster[i]; bool on = k == key, pr = held == "pick:" + k; float x = 4 * cq + i * (pickS + 2 * cq), y = stripY + 3 * cq, s = on ? 1.08f : 1;
                     float cx = x + pickS / 2, cy = y + pickS / 2, r = pickS / 2 * s;
+                    if (pr) u.Open(PressG(cx, cy));
                     u.Raw($"<circle cx=\"{F(cx)}\" cy=\"{F(cy + 0.8f * cq)}\" r=\"{F(r)}\" fill=\"rgba(60,110,40,0.35)\"/>");
                     if (on) u.Raw($"<circle cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(r + 0.8f * cq)}\" fill=\"#ffffff\"/>");
                     u.Raw($"<circle cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(r)}\" fill=\"{(on ? "#e0479f" : "#ffffff")}\"/><circle cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(r - 0.8f * cq * s)}\" fill=\"#ffffff\"/>");
                     float iw = (r - 0.8f * cq * s) * 1.7f; u.Image("Stack/art/" + k, cx - iw / 2, cy - iw / 2, iw, iw, "xMidYMid meet");
+                    if (pr) u.Close();
                 }
                 u.Close();
                 // the cards
                 for (int i = 0; i < _defs.Count; i++)
                 {
                     var G = _defs[i]; float x = 4 * cq + (i % 2) * (colW + 3.4f * cq), y = rowY[i / 2], h = Math.Max(heights[i], (i ^ 1) < heights.Count ? heights[i ^ 1] : 0);
-                    string gc = G.Color ?? "#ff8a3d";
+                    string gc = G.Color ?? "#ff8a3d"; bool pr = held == "game:" + i;
+                    if (pr) u.Open(PressG(x + colW / 2, y + h / 2));
                     u.Box(x, y, colW, h, new BoxStyle { Background = "#ffffff", Radius = 6 * cq, Shadows = new[] { new Shadow(Mix(gc, 0.55, "#3b2457"), 0, 1.4f * cq, 0) } });
                     float ix = x + 2.6f * cq, iy = y + 2.6f * cq, iw = colW - 5.2f * cq, ih = 22 * cq;
                     var cid = u.NewId("gi"); u.Def($"<clipPath id=\"{cid}\"><rect x=\"{F(ix)}\" y=\"{F(iy)}\" width=\"{F(iw)}\" height=\"{F(ih)}\" rx=\"{F(4 * cq)}\"/></clipPath>");
@@ -586,6 +604,7 @@ namespace SquishSquad.Games.Yard.View
                     _save.Best.TryGetValue(G.Id, out var bv); string bt = bv > 0 ? "★ Best " + bv : "New!";
                     float bw = UiSvg.BoxWidth(bt, gb) + 4 * cq, bh = 2.7f * cq + 1.6f * cq, bx = x + colW - 3.6f * cq - bw, by = y + 3.6f * cq;
                     u.Box(bx, by, bw, bh, new BoxStyle { Background = "#ffffff", Radius = 999, Shadows = new[] { new Shadow("rgba(0,0,0,0.1)", 0, 0.4f * cq, 0) } }); u.Text(bt, bx, by + (bh - Lh(gb)) / 2, gb, bw, 0.5f);
+                    if (pr) u.Close();
                 }
                 for (int i = 0; i < fl.Count; i++) u.Text(fl[i], 0, footY + i * Lh(foot), foot, W, 0.5f);
                 u.Close(); u.Close(); return u;
@@ -607,7 +626,21 @@ namespace SquishSquad.Games.Yard.View
         double _hubT;
 
         // ---------- input ----------
-        bool _down, _moved, _dragStrip; Vector2 _downAt; double _lastY, _lastX; string _press;
+        bool _down, _moved, _dragStrip; Vector2 _downAt; double _lastY, _lastX; string _press, _pressOn;
+        // the control under a held finger (drawn shrunk to 92 % about its centre, like the menu's Level crest) and when
+        // each game button was let go (they spring back to full size from then)
+        string _held; readonly Dictionary<string, double> _btnUp = new Dictionary<string, double>();
+        const float Shrink = 0.92f;
+        // a held control drawn in a picture: a <g>'s attributes shrinking what it holds about (cx, cy)
+        static string PressG(float cx, float cy) => $"transform=\"translate({F(cx)} {F(cy)}) scale({F(Shrink)}) translate({F(-cx)} {F(-cy)})\"";
+        /// <summary>The control being held: the press started on it, the finger is still on it and it hasn't turned into a
+        /// drag (a game button, which fired on the down, stays held while the finger is on it).</summary>
+        string Held()
+        {
+            if (!_down || _pressOn == null || Hit(_lastX, _lastY) != _pressOn) return null;
+            if (_pressOn.StartsWith("btn:")) return _press == "used" ? _pressOn : null;
+            return !_moved && _press == _pressOn ? _pressOn : null;
+        }
         void HandleInput(double now)
         {
             bool down = Input.GetMouseButtonDown(0), up = Input.GetMouseButtonUp(0), held = Input.GetMouseButton(0);
@@ -617,7 +650,7 @@ namespace SquishSquad.Games.Yard.View
             if (_wheel(now)) return;
             if (down)
             {
-                _down = true; _moved = false; _downAt = pos; _lastX = ux; _lastY = uy; _press = Hit(ux, uy);
+                _down = true; _moved = false; _downAt = pos; _lastX = ux; _lastY = uy; _press = _pressOn = Hit(ux, uy);
                 _dragStrip = _g == null && _press != null && _press.StartsWith("pick:");
                 if (_g != null && _ov == null)
                 {

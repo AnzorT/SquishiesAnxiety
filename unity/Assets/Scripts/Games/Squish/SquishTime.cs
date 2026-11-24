@@ -65,6 +65,7 @@ namespace SquishSquad.Games.Squish
         UiPiece _setCard, _punDim, _punCard, _punTitle;
         readonly UiPiece[] _toggles = new UiPiece[5];
         UiPiece _strength, _direction;
+        UiPiece _closeHeld, _acceptHeld;   // a shade over the settings' ✕ / the punishment's button while held (they're in their cards' art)
         AnimatedValue _wheel, _hintOpacity, _setHintOpacity, _squishAnim, _rotateAnim, _touchAnim, _bobAnim, _pulseAnim, _punT;
         bool _showHints, _showSetHint, _setHintGone, _settingsOpen, _punishOpen;
         int _setHintTimer = -1;
@@ -76,7 +77,7 @@ namespace SquishSquad.Games.Squish
         enum Gesture { None, Poke, Orbit }
         Gesture _mode;
         bool _hadTwo, _gestureOn, _hudDown;
-        Vector2 _lastTouch, _soundAnchor, _lastCentroid, _hudAt;
+        Vector2 _lastTouch, _soundAnchor, _lastCentroid, _hudAt, _hudNow;
         double _holdStart;
         readonly SquishRules.Earner _earner = new SquishRules.Earner();
         readonly SquishRules.AbuseGuard _abuse = new SquishRules.AbuseGuard();
@@ -248,6 +249,9 @@ namespace SquishSquad.Games.Squish
             _punCard = Piece("punish", 201, X("punish"), _L.Punish, 24);
             var title = SquishHudArt.PunishTitle();
             _punTitle = Piece("punish title", 202, title.Markup(), new HudBox(0, 0, title.W, title.H), 8);
+            _closeHeld = Piece("close held", 102, Shade(_L.CloseX.W, _L.CloseX.H), _L.CloseX, 2);
+            _acceptHeld = Piece("accept held", 203, Shade(_L.PunishButton.W, _L.PunishButton.H), new HudBox(0, 0, _L.PunishButton.W, _L.PunishButton.H), 2);
+            _closeHeld.Visible = _acceptHeld.Visible = false;
 
             // the loops (useLoopAnim: 0 -> 1 -> 0, inOut(ease), forever)
             _squishAnim = Loop(1700); _rotateAnim = Loop(1700); _touchAnim = Loop(1700);
@@ -336,8 +340,17 @@ namespace SquishSquad.Games.Squish
             _setHand.Transform = Affine.Translate(_L.SettingsHand.X, _L.SettingsHand.Y - 7 * _bobAnim.GetValue());
             _setHand.Opacity = (float)so;
             _setHint.Opacity = (float)so;
-            // the gear's glyph turns half round as the settings open
-            _gearGlyph.Transform = About(_L.GearGlyph, Affine.Rotate(180 * _wheel.GetValue()));
+            // what's held shrinks to 0.92 about its own centre, as the menu's Level crest does (the back orb, the gear with
+            // its glyph, the boosts, the settings' switches and choices)
+            string held = HudHeld();
+            Affine Pressed(string id, HudBox b) => Affine.Translate(b.X, b.Y) * global::SquishSquad.Ui.Cards.Fx.Pressed(b.W, b.H, held == id ? 1 : 0);
+            _back.Transform = Pressed("back", _L.Back);
+            _gear.Transform = Pressed("gear", _L.Gear);
+            _boosts.Transform = Pressed("boosts", _L.Boosts);
+            // the gear's glyph turns half round as the settings open (and shrinks with the gear, about the gear's centre)
+            var gearPress = Pressed("gear", _L.Gear) * Affine.Translate(-_L.Gear.X, -_L.Gear.Y);
+            _gearGlyph.Transform = gearPress * About(_L.GearGlyph, Affine.Rotate(180 * _wheel.GetValue()));
+            _closeHeld.Visible = _settingsOpen && held == "close";
             // the ripples: scale 0.25 -> 1, opacity 0 -> 0.5 -> 0
             for (int i = 0; i < 3; i++)
             {
@@ -372,17 +385,17 @@ namespace SquishSquad.Games.Squish
                 if (!_settingsOpen) continue;
                 var b = _L.InSettings($"toggle-{i}-on");
                 _toggles[i].SetSvg(X($"toggle-{i}-{(on[i] ? "on" : "off")}"), b.W, b.H, 6);
-                _toggles[i].Transform = Affine.Translate(b.X, b.Y);
+                _toggles[i].Transform = Pressed("toggle-" + i, b);
             }
             _strength.Visible = _direction.Visible = _settingsOpen;
             if (_settingsOpen)
             {
                 var sb = _L.InSettings("strength-" + PokeStrength);
                 _strength.SetSvg(X("strength-" + PokeStrength), sb.W, sb.H, 6);
-                _strength.Transform = Affine.Translate(sb.X, sb.Y);
+                _strength.Transform = Pressed("strength", sb);
                 var db = _L.InSettings("direction-" + (PokeOutward ? "out" : "in"));
                 _direction.SetSvg(X("direction-" + (PokeOutward ? "out" : "in")), db.W, db.H, 6);
-                _direction.Transform = Affine.Translate(db.X, db.Y);
+                _direction.Transform = Pressed("direction", db);
             }
             // the punishment: springs in small and tilted (PunishCard)
             _punDim.Visible = _punCard.Visible = _punTitle.Visible = _punishOpen;
@@ -395,8 +408,42 @@ namespace SquishSquad.Games.Squish
                 var tb = A("punishTitle");
                 _punTitle.Transform = turn * Affine.Translate(tb.X - A("punish").X, tb.Y - A("punish").Y);
                 _punTitle.Opacity = _punCard.Opacity;
+                var pb = _L.PunishButton;
+                _acceptHeld.Transform = turn * Affine.Translate(pb.X - _L.Punish.X, pb.Y - _L.Punish.Y);
+                _acceptHeld.Opacity = _punCard.Opacity;
             }
+            _acceptHeld.Visible = _punishOpen && held == "accept";
         }
+
+        // the HUD control under p (as Tap reads it), and the one held: the press's, while the finger stays on it
+        string HudId(Vector2 p)
+        {
+            if (_punishOpen) return _L.PunishButton.Contains(p.x, p.y) ? "accept" : null;
+            if (_settingsOpen)
+            {
+                if (_L.CloseX.Contains(p.x, p.y)) return "close";
+                if (!_L.Settings.Contains(p.x, p.y)) return null;
+                for (int i = 0; i < 5; i++) if (_L.InSettings($"toggle-{i}-on").Contains(p.x, p.y)) return "toggle-" + i;
+                if (_L.InSettings("strength-1").Contains(p.x, p.y)) return "strength";
+                if (_L.InSettings("direction-in").Contains(p.x, p.y)) return "direction";
+                return null;
+            }
+            if (_L.Back.Contains(p.x, p.y)) return "back";
+            if (_L.Gear.Contains(p.x, p.y)) return "gear";
+            if (_L.Boosts.Contains(p.x, p.y)) return "boosts";
+            return null;
+        }
+
+        string HudHeld()
+        {
+            if (!_hudDown) return null;
+            var id = HudId(_hudAt);
+            return id != null && HudId(_hudNow) == id ? id : null;
+        }
+
+        static string Shade(float w, float h) =>
+            $"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{w.ToString(System.Globalization.CultureInfo.InvariantCulture)}\" height=\"{h.ToString(System.Globalization.CultureInfo.InvariantCulture)}\">" +
+            $"<rect width=\"{w.ToString(System.Globalization.CultureInfo.InvariantCulture)}\" height=\"{h.ToString(System.Globalization.CultureInfo.InvariantCulture)}\" rx=\"{(Math.Min(w, h) / 2).ToString(System.Globalization.CultureInfo.InvariantCulture)}\" fill=\"rgba(60,20,0,0.22)\"/></svg>";
 
         // ---- the touches ---------------------------------------------------------------------------------------------------
         static Vector2 Dp(Vector2 px) => new Vector2(px.x / UiPiece.PxPerDp, (Screen.height - px.y) / UiPiece.PxPerDp);
@@ -434,12 +481,13 @@ namespace SquishSquad.Games.Squish
             {
                 var p = pts[0];
                 // the overlays first (they cover the screen), then the HUD, then the stage
-                if (_punishOpen || _settingsOpen || !_L.Stage.Contains(p.x, p.y) || HudHit(p)) { _hudDown = true; _hudAt = p; return; }
+                if (_punishOpen || _settingsOpen || !_L.Stage.Contains(p.x, p.y) || HudHit(p)) { _hudDown = true; _hudAt = _hudNow = p; return; }
                 Grant(pts, now);
                 return;
             }
             if (_hudDown)
             {
+                if (pts.Count > 0) _hudNow = pts[0];
                 if (allUp) { _hudDown = false; Tap(_hudAt); }
                 return;
             }

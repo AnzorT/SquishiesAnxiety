@@ -132,8 +132,17 @@ namespace SquishSquad.Menu
                 if (_inTrack) _m.Track.Down(px.x / pu, nowMs);
             }
             else if (held && _pressing && _inTrack) _m.Track.Move(px.x / pu, nowMs);
+            // what's held shrinks while the finger stays on it (not once the row is dragged)
+            if (_pressing && (down || held))
+            {
+                var on = _m.HitTest(px.x, px.y, out int onLevel);
+                bool still = on == _downHit && onLevel == _downLevel && !(_inTrack && _m.Track.Moved);
+                _m.Held = still ? on : LevelPassModel.HitKind.None;
+                _m.HeldLevel = still ? onLevel : 0;
+            }
             if (!up || !_pressing) return;
             _pressing = false;
+            _m.Held = LevelPassModel.HitKind.None;
             if (_inTrack && _m.Track.Up(nowMs)) return;   // (a drag isn't a tap)
             var hit = _m.HitTest(px.x, px.y, out int level);
             if (hit != _downHit || level != _downLevel) return;

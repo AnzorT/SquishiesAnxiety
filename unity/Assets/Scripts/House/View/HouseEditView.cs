@@ -50,12 +50,13 @@ namespace SquishSquad.House.View
         double[] R(string id) { var a = _E.Obj("pieces").Arr(id); return a == null ? null : new[] { (double)a[0], (double)a[1], (double)a[2], (double)a[3] }; }
 
         // a fixed piece by id (its SVG from Resources/House/edit), placed at frame (x, y), optionally turned about its centre
-        UiPiece Fixed(string id, double x, double y, int order, double deg = 0, float op = 1)
+        // (`around`: a frame transform over it, a held button's shrink)
+        UiPiece Fixed(string id, double x, double y, int order, double deg = 0, float op = 1, Affine? around = null)
         {
             var r = R(id); if (r == null) return null;
             if (!_p.TryGetValue(id, out var p)) { p = UiPiece.Create(_parent, "edit " + id, order); p.SetSvg(HouseRoomView.Res("edit/" + id), (float)r[2], (float)r[3], 14); _p[id] = p; }
             p.Visible = true; p.Opacity = op;
-            p.Transform = Frame * Affine.Translate(x + r[2] / 2, y + r[3] / 2) * Affine.Rotate(deg) * Affine.Translate(-r[2] / 2, -r[3] / 2);
+            p.Transform = Frame * (around ?? Affine.Identity) * Affine.Translate(x + r[2] / 2, y + r[3] / 2) * Affine.Rotate(deg) * Affine.Translate(-r[2] / 2, -r[3] / 2);
             _used.Add(id);
             return p;
         }
@@ -126,7 +127,7 @@ namespace SquishSquad.House.View
         double _tbTop;     // the toolbar box's top (frame px) now
         public void Update(double now)
         {
-            _used.Clear();
+            _used.Clear(); _now = now;
             var S = _sim.S; string cur = S.Cur;
             if (!_sim.Edit) { Hide(); return; }
             bool open = _sim.ROpen != false;
@@ -136,11 +137,11 @@ namespace SquishSquad.House.View
             _rvTy.Set(open ? 0 : 134, now); _rvTab.Set(_tb.On ? tbShift : 0, now); _rvRot.Set(open ? 180 : 0, now);
             double ty = _rvTy.At(now);
             // the Done and House shop buttons
-            var d = R("done"); Fixed("done", d[0], d[1], O + 9); var sh = R("shop"); Fixed("shop", sh[0], sh[1], O + 9);
+            var d = R("done"); Fixed("done", d[0], d[1], O + 9, 0, 1, HeldShrink("done", d[0], d[1], d[2], d[3])); var sh = R("shop"); Fixed("shop", sh[0], sh[1], O + 9, 0, 1, HeldShrink("shop", sh[0], sh[1], sh[2], sh[3]));
             // the toolbox
-            var tab = R("rv-tab"); double tx = tab[0] + _rvTab.At(now);
-            Fixed("rv-tab", tx, tab[1] + ty, O + 2);
-            var ar = R("rv-arrow"); Fixed("rv-arrow", ar[0] + (tx - tab[0]), ar[1] + ty, O + 3, _rvRot.At(now));
+            var tab = R("rv-tab"); double tx = tab[0] + _rvTab.At(now); var tk = HeldShrink("rv-tab", tx, tab[1] + ty, tab[2], tab[3]);   // (held: the tab and its arrow shrink about the tab's centre)
+            Fixed("rv-tab", tx, tab[1] + ty, O + 2, 0, 1, tk);
+            var ar = R("rv-arrow"); Fixed("rv-arrow", ar[0] + (tx - tab[0]), ar[1] + ty, O + 3, _rvRot.At(now), 1, tk);
             var box = R("rv-box"); Fixed("rv-box", box[0], box[1] + ty, O);
             var well = R("rv-well"); Fixed("rv-well", well[0], well[1] + ty, O + 1);
             int h = _sim.ESel == null ? 0 : _sim.ESel == "__light" ? 2 : 1;
@@ -150,7 +151,8 @@ namespace SquishSquad.House.View
             if (tabs != null) foreach (List<object> t in tabs)
                 {
                     string k = (string)t[0], id = $"tab-{k}{(cur == "beach" ? "-b" : "")}-{(k == ct ? "on" : "off")}";
-                    Fixed(id, (double)t[1], (double)t[2] + ty, k == ct ? O + 4 : O + 3);
+                    var tr = R(id); double tX = (double)t[1], tY = (double)t[2] + ty;
+                    Fixed(id, tX, tY, k == ct ? O + 4 : O + 3, 0, 1, tr == null ? null : HeldShrink("tab:" + k, tX, tY, tr[2], tr[3]));
                 }
             DrawTray(well[0], well[1] + ty, well[2], well[3]);
             DrawToolbar(now, tOpen, open);
@@ -168,7 +170,8 @@ namespace SquishSquad.House.View
             _scrollMax = Math.Max(0, 10 + _tray.Count * 87 - 9 + 10 - ww);
             _scroll = Math.Max(0, Math.Min(_scrollMax, _scroll));
             var sb = new StringBuilder(); foreach (var c in _tray) sb.Append(c.id).Append(c.n).Append(c.on).Append('|');
-            string key = sb + "@" + Math.Round(_scroll) + "#" + _sim.CurTab();
+            string held = _held != null && _held.StartsWith("card:") ? _held.Substring(5) : null;   // (the held card is drawn shrunk)
+            string key = sb + "@" + Math.Round(_scroll) + "#" + _sim.CurTab() + "^" + held;
             Drawn("tray", key, () =>
             {
                 var s = new UiSvg((float)ww, (float)wh);
@@ -182,7 +185,7 @@ namespace SquishSquad.House.View
                     var st = new TextStyle { Font = "Fredoka_600SemiBold", Size = 12.5f, Color = "#8a6a4a" };
                     s.Text(empty, 16, (float)(8 + (wh - 8 - UiSvg.LineBox(st)) / 2), st);
                 }
-                for (int i = 0; i < _tray.Count; i++) Card(s, _tray[i], 10 + i * 87 - _scroll, 8, ((i * 37) % 5 - 2) * 0.7, i);
+                for (int i = 0; i < _tray.Count; i++) Card(s, _tray[i], 10 + i * 87 - _scroll, 8, ((i * 37) % 5 - 2) * 0.7, i, _tray[i].id == held ? Shrink : 1);
                 s.Close();
                 return s;
             }, wx, wy, O + 1);
@@ -190,10 +193,10 @@ namespace SquishSquad.House.View
 
         static string N(double v) => HouseGeo.N(Math.Round(v * 1000) / 1000);
 
-        void Card(UiSvg s, (string id, string name, string n, bool hasN, bool on, bool isPiece) c, double x, double y, double rot, int i)
+        void Card(UiSvg s, (string id, string name, string n, bool hasN, bool on, bool isPiece) c, double x, double y, double rot, int i, double press = 1)
         {
             double W = 78, H = 72;
-            s.Open($"transform=\"translate({N(x + W / 2)} {N(y + H / 2)}) rotate({N(rot)}) translate({N(-W / 2)} {N(-H / 2)})\"");
+            s.Open($"transform=\"translate({N(x + W / 2)} {N(y + H / 2)}) rotate({N(rot)}){(press != 1 ? $" scale({N(press)})" : "")} translate({N(-W / 2)} {N(-H / 2)})\"");
             s.Box(0, 0, (float)W, (float)H, new BoxStyle { Background = c.on ? "#eef6df" : "#fff6e2", Radius = 6, Shadows = new[] { new Shadow("#6b4426", 0, 0, 0, 1.5f), new Shadow("rgba(107,68,38,0.35)", 0, 2.5f, 0, 1.5f) } });
             s.Box(35.5f, 3, 7, 7, new BoxStyle { Background = "#f1dcb4", Radius = 3.5f, Shadows = new[] { new Shadow("#b8862a", 0, 0, 0, 1.5f) } });
             // the picture: contained in 64 x 42 at (7, 10)
@@ -247,8 +250,8 @@ namespace SquishSquad.House.View
             if (!tb.On) return;
             double line = 393 - _tbBot.At(now), ch = _tbCh.At(now);
             // the tab (margin-left 44) sits on the clip box; the box shows while the clip box has any height
-            var t = R("tb-tab"); double tabY = line - ch - t[3] + 2.5;
-            Fixed("tb-tab", 14 + 44, tabY, O + 21); var ta = R("tb-arrow"); Fixed("tb-arrow", 14 + 44 + (t[2] - ta[2]) / 2, tabY + (t[3] - 2.5 - ta[3]) / 2, O + 22, _tbRot.At(now));
+            var t = R("tb-tab"); double tabY = line - ch - t[3] + 2.5; var tk = HeldShrink("tb-tab", 14 + 44, tabY, t[2], t[3]);   // (held: the tab and its arrow shrink about the tab's centre)
+            Fixed("tb-tab", 14 + 44, tabY, O + 21, 0, 1, tk); var ta = R("tb-arrow"); Fixed("tb-arrow", 14 + 44 + (t[2] - ta[2]) / 2, tabY + (t[3] - 2.5 - ta[3]) / 2, O + 22, _tbRot.At(now), 1, tk);
             if (ch < 1) { _tbTop = -1e9; return; }
             double top = line - ch; _tbTop = top;
             double bw = tb.W, bh = 51;
@@ -273,7 +276,7 @@ namespace SquishSquad.House.View
                     case "slider": Slider(x, y0, tb.Deg); break;
                     default:
                         double op = id == "tb-make-smaller" ? tb.DnOp : id == "tb-make-bigger" ? tb.UpOp : id == "tb-width-smaller" ? tb.WDnOp : id == "tb-width-bigger" ? tb.WUpOp : id == "tb-height-smaller" ? tb.HDnOp : id == "tb-height-bigger" ? tb.HUpOp : id == "tb-move-the-light-back-to-the-middle" ? tb.MidOp : 1;
-                        Fixed(id, x, y0, O + 23, 0, (float)op); break;
+                        var er = R(id); Fixed(id, x, y0, O + 23, 0, (float)op, er == null ? null : HeldShrink("el:" + id, x, y0, er[2], er[3])); break;
                 }
             }
         }
@@ -347,54 +350,93 @@ namespace SquishSquad.House.View
             return null;
         }
 
+        // what a tap at a frame point acts on, in Tap's order: "done", "shop", "rv-tab" (the toolbox's tab), "tab:<key>" (a
+        // category tab), "tb-tab" (the toolbar's tab), "el:<id>" (the first toolbar element across fx: a label does nothing), or null
+        string UiHit(double fx, double fy, double now)
+        {
+            bool In(double[] r) => r != null && fx >= r[0] && fx <= r[0] + r[2] && fy >= r[1] && fy <= r[1] + r[3];
+            if (In(R("done"))) return "done";
+            if (In(R("shop"))) return "shop";
+            double ty = _rvTy.At(now);
+            var tab = R("rv-tab"); double tx = tab[0] + _rvTab.At(now);
+            if (fx >= tx && fx <= tx + tab[2] && fy >= tab[1] + ty && fy <= tab[1] + ty + tab[3]) return "rv-tab";
+            var tabs = _E.Obj("tabs").Arr(_sim.S.Cur);
+            if (tabs != null) foreach (List<object> t in tabs) { double x = (double)t[1], y = (double)t[2] + ty, w = (double)t[3]; if (fx >= x && fx <= x + w && fy >= y && fy <= y + 29) return "tab:" + (string)t[0]; }
+            if (_tb == null || !_tb.On) return null;
+            var tt = R("tb-tab"); double line = 393 - _tbBot.At(now), ch = _tbCh.At(now), tabY = line - ch - tt[3] + 2.5;
+            if (fx >= 58 && fx <= 58 + tt[2] && fy >= tabY && fy <= tabY + tt[3]) return "tb-tab";
+            if (_tbTop < -1e8 || fy < _tbTop || fy > _tbTop + 51) return null;
+            foreach (var (id, x, w) in _tb.Els) if (fx >= x && fx <= x + w) return "el:" + id;
+            return null;
+        }
+
         /// <summary>A tap (press and release on the UI): the button under it does its thing.</summary>
         public void Tap(double fx, double fy, double now)
         {
-            bool In(double[] r, double dy = 0) => r != null && fx >= r[0] && fx <= r[0] + r[2] && fy >= r[1] + dy && fy <= r[1] + dy + r[3];
-            if (In(R("done"))) { _sim.DoneEdit(now); return; }
-            if (In(R("shop"))) { _sim.OpenCat(); return; }
-            double ty = _rvTy.At(now); bool open = _sim.ROpen != false;
-            var tab = R("rv-tab"); double tx = tab[0] + _rvTab.At(now);
-            if (fx >= tx && fx <= tx + tab[2] && fy >= tab[1] + ty && fy <= tab[1] + ty + tab[3]) { _sim.ROpen = !open; _sim.Bumped(); return; }
-            var tabs = _E.Obj("tabs").Arr(_sim.S.Cur);
-            if (tabs != null) foreach (List<object> t in tabs) { double x = (double)t[1], y = (double)t[2] + ty, w = (double)t[3]; if (fx >= x && fx <= x + w && fy >= y && fy <= y + 29) { _sim.RTab = (string)t[0]; _sim.ROpen = true; _scroll = 0; _sim.Bumped(); return; } }
-            if (_tb == null || !_tb.On) return;
-            var tt = R("tb-tab"); double line = 393 - _tbBot.At(now), ch = _tbCh.At(now), tabY = line - ch - tt[3] + 2.5;
-            bool tOpen = _sim.ROpen == false && _sim.TbC != _sim.ESel;
-            if (fx >= 58 && fx <= 58 + tt[2] && fy >= tabY && fy <= tabY + tt[3]) { if (tOpen) _sim.TbC = _sim.ESel; else { _sim.TbC = null; _sim.ROpen = false; } _sim.Bumped(); return; }
-            if (_tbTop < -1e8 || fy < _tbTop || fy > _tbTop + 51) return;
-            foreach (var (id, x, w) in _tb.Els)
+            string hit = UiHit(fx, fy, now);
+            if (hit == null) return;
+            if (hit == "done") { _sim.DoneEdit(now); return; }
+            if (hit == "shop") { _sim.OpenCat(); return; }
+            if (hit == "rv-tab") { bool open = _sim.ROpen != false; _sim.ROpen = !open; _sim.Bumped(); return; }
+            if (hit.StartsWith("tab:")) { _sim.RTab = hit.Substring(4); _sim.ROpen = true; _scroll = 0; _sim.Bumped(); return; }
+            if (hit == "tb-tab") { bool tOpen = _sim.ROpen == false && _sim.TbC != _sim.ESel; if (tOpen) _sim.TbC = _sim.ESel; else { _sim.TbC = null; _sim.ROpen = false; } _sim.Bumped(); return; }
+            switch (hit.Substring(3))
             {
-                if (fx < x || fx > x + w) continue;
-                switch (id)
-                {
-                    case "tb-confirm-placement": _sim.ESel = null; _sim.TxE = null; _sim.Bumped(); break;
-                    case "tb-rotate": _sim.EditRot(now); break;
-                    case "tb-make-smaller": if (_tb.Lt) _sim.LightSize(-1); else _sim.EditSize(-1); break;
-                    case "tb-make-bigger": if (_tb.Lt) _sim.LightSize(1); else _sim.EditSize(1); break;
-                    case "tb-width-smaller": _sim.EditSize(-1, "sw"); break;
-                    case "tb-width-bigger": _sim.EditSize(1, "sw"); break;
-                    case "tb-height-smaller": _sim.EditSize(-1, "sh"); break;
-                    case "tb-height-bigger": _sim.EditSize(1, "sh"); break;
-                    case "tb-write-on-the-sign": Toast?.Invoke("Writing on signs isn't in the Unity version yet"); break;
-                    case "tb-change-the-light": _sim.RTab = "light"; _sim.ROpen = true; _sim.Bumped(); break;
-                    case "tb-move-the-light-back-to-the-middle": _sim.LightMid(); break;
-                    case "tb-put-away-in-storage": _sim.TxE = null; if (_tb.Lt) _sim.LightStore(); else _sim.EditStore(now); break;
-                }
-                return;
+                case "tb-confirm-placement": _sim.ESel = null; _sim.TxE = null; _sim.Bumped(); break;
+                case "tb-rotate": _sim.EditRot(now); break;
+                case "tb-make-smaller": if (_tb.Lt) _sim.LightSize(-1); else _sim.EditSize(-1); break;
+                case "tb-make-bigger": if (_tb.Lt) _sim.LightSize(1); else _sim.EditSize(1); break;
+                case "tb-width-smaller": _sim.EditSize(-1, "sw"); break;
+                case "tb-width-bigger": _sim.EditSize(1, "sw"); break;
+                case "tb-height-smaller": _sim.EditSize(-1, "sh"); break;
+                case "tb-height-bigger": _sim.EditSize(1, "sh"); break;
+                case "tb-write-on-the-sign": Toast?.Invoke("Writing on signs isn't in the Unity version yet"); break;
+                case "tb-change-the-light": _sim.RTab = "light"; _sim.ROpen = true; _sim.Bumped(); break;
+                case "tb-move-the-light-back-to-the-middle": _sim.LightMid(); break;
+                case "tb-put-away-in-storage": _sim.TxE = null; if (_tb.Lt) _sim.LightStore(); else _sim.EditStore(now); break;
             }
         }
+
+        // ---- held controls (like the menu's Level crest): the held one is drawn shrunk to 92 % about its centre ----
+        string _down, _held;   // the control the press began on (UiHit's id, or "card:<tray id>"); it while the finger is still on it
+        double _now;
+        // a held control placed at frame (x, y), w x h: shrunk to 92 % about its centre (like the menu's Level crest), or null
+        const double Shrink = 0.92;
+        Affine? HeldShrink(string id, double x, double y, double w, double h)
+        {
+            if (_held != id) return null;
+            double cx = x + w / 2, cy = y + h / 2;
+            return Affine.Translate(cx, cy) * Affine.ScaleBy(Shrink, Shrink) * Affine.Translate(-cx, -cy);
+        }
+        // the control Tap or TrayTap would act on for a press at a frame point (through Press: the UI or the tray)
+        string HeldAt(double fx, double fy, double now)
+        {
+            switch (Press(fx, fy, now))
+            {
+                case "ui": return UiHit(fx, fy, now);
+                case "tray": { int i = TrayIndex(fx); return i < 0 ? null : "card:" + _tray[i].id; }
+                default: return null;
+            }
+        }
+        /// <summary>A press began at (fx, fy) (frame px: the same coordinates Tap / TrayTap get) on the edit UI or the tray: the control under it (the one Tap or TrayTap would act on) is held.</summary>
+        public void PressDown(double fx, double fy, double now) { _now = now; _down = _held = HeldAt(fx, fy, now); }
+        /// <summary>The finger moved: the control is drawn held only while the finger is still on it.</summary>
+        public void PressMove(double fx, double fy) { if (_down == null) return; _held = HeldAt(fx, fy, _now) == _down ? _down : null; }
+        /// <summary>Released or cancelled (a drag): nothing is held.</summary>
+        public void PressUp() { _down = _held = null; }
 
         /// <summary>The rotation slider pressed or dragged at frame x (slDown's at()).</summary>
         public void SliderAt(double fx, double now) { var it = _sim.ESelItem; if (it == null || _slX < -1e8) return; _sim.RotSet(it, (fx - _slX - 10) / 116 * 360, now); }
 
         /// <summary>The tray dragged by dx frame px (its scroll), or tapped at frame x: the card under it.</summary>
         public void TrayScroll(double dx) { _scroll = Math.Max(0, Math.Min(_scrollMax, _scroll - dx)); }
-        public void TrayTap(double fx)
+        public void TrayTap(double fx) { int i = TrayIndex(fx); if (i >= 0) _sim.TrayGo(_tray[i].id); }
+        // the tray card at frame x (cards 78 wide, 87 apart, from 10 px in, scrolled), or -1 (a gap, past the last)
+        int TrayIndex(double fx)
         {
-            var well = R("rv-well"); double x = fx - well[0] - 10 + _scroll; if (x < 0 || _tray == null) return;
-            int i = (int)Math.Floor(x / 87); if (i >= _tray.Count || x - i * 87 > 78) return;
-            _sim.TrayGo(_tray[i].id);
+            var well = R("rv-well"); double x = fx - well[0] - 10 + _scroll; if (x < 0 || _tray == null) return -1;
+            int i = (int)Math.Floor(x / 87); if (i >= _tray.Count || x - i * 87 > 78) return -1;
+            return i;
         }
 
         public void Destroy() { foreach (var p in _p.Values) if (p != null) Object.Destroy(p.gameObject); _p.Clear(); }

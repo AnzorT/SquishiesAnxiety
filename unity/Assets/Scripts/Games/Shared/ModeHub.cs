@@ -111,12 +111,12 @@ namespace SquishSquad.Games.Shared
             _rules.Draw(f, view * Affine.Translate(RulesX, RulesY) * _slideQ.Local, opacity * _slideQ.Opacity);
         }
 
-        // a panel (sinking 2 dp while held), its name (Lettering's box (12, 6) 348 x 34, its <svg> centred in it on whole
+        // a panel (shrinking to 0.92 about its centre while held), its name (Lettering's box (12, 6) 348 x 34, its <svg> centred in it on whole
         // dp) and its info row
         void DrawPanel(LayerFrame f, string kind, (string svg, float w, float h) name, HubButton btn, float x, SlideIn slide, Func<string> info, string infoKey, Affine view, float opacity)
         {
             float y = CardsY;
-            var m = view * Affine.Translate(x, y + (btn.Held ? 2 : 0)) * slide.Local;
+            var m = view * Affine.Translate(x, y) * slide.Local * Fx.Pressed(CardW, CardH, btn.Held ? 1 : 0);
             btn.Place(view * Affine.Translate(x, y) * slide.Local);
             float op = opacity * slide.Opacity;
             var p = f.L("hub panel " + kind);

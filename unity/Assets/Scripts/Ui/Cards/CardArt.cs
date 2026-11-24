@@ -245,10 +245,10 @@ namespace SquishSquad.Ui.Cards
 
             (string ring, string[] colors) Colors => BTN[Disabled ? "grey" : BTN.ContainsKey(Kind) ? Kind : "pink"];
 
-            /// <summary>The lip (stays put; RingW x RingH, shown Lip dp below the ring's top).</summary>
+            /// <summary>The lip (RingW x RingH, shown Lip dp below the ring's top; pressed, it shrinks with the face).</summary>
             public string LipMarkup() => new UiSvg(RingW, RingH).Box(0, 0, RingW, RingH, new BoxStyle { Background = Colors.ring, Radius = 999 }).Markup;
 
-            /// <summary>The ring with the face in it (moves down when pressed): RingW x RingH.</summary>
+            /// <summary>The ring with the face in it (pressed, the whole button shrinks to 0.92: CardFx Press): RingW x RingH.</summary>
             public string FaceMarkup()
             {
                 var c = Colors;

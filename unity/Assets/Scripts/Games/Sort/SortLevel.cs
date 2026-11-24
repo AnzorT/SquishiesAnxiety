@@ -915,7 +915,7 @@ namespace SquishSquad.Games.Sort
                 SetM(fl, $"{hl.trackW}|{barColors[0]}|{shift}", () => SortArt.BarFill(hl.trackW, barColors, shift), hl.trackW, 14, 1);
                 fl.Transform = Affine.Translate(hl.trackX, hl.barY + 8);
             }
-            var back = L("back"); back.Set(_data.BackXml, 40, 40); back.Transform = Affine.Translate(BackOrb.x, BackOrb.y);
+            var back = L("back"); back.Set(_data.BackXml, 40, 40); back.Transform = Affine.Translate(BackOrb.x, BackOrb.y) * Fx.Pressed(40, 40, _backDown ? 1 : 0);   // (held: it shrinks to 0.92)
 
             // ---- the tray
             var tray = L("tray");

@@ -88,6 +88,9 @@ namespace SquishSquad.Menu
                 if (_inRow) _m.Row.Down(px.x / pu, nowMs);
                 if (_downHit == CharactersModel.HitKind.Card) _m.Press(_downKey, nowMs);
             }
+            // a button (not a card: those have their own press) shrinks while the finger stays on it
+            if (_pressing && (down || held) && _downHit != CharactersModel.HitKind.Card && _downHit != CharactersModel.HitKind.None)
+                _m.Held = _m.HitTest(px.x, px.y, out _) == _downHit && !(_inRow && _m.Row.Moved) ? _downHit : CharactersModel.HitKind.None;
             else if (held && _pressing && _inRow)
             {
                 _m.Row.Move(px.x / pu, nowMs);
@@ -95,6 +98,7 @@ namespace SquishSquad.Menu
             }
             if (!up || !_pressing) return;
             _pressing = false;
+            _m.Held = CharactersModel.HitKind.None;
             _m.Release(nowMs);
             if (_inRow && _m.Row.Up(nowMs)) return;   // (a drag isn't a tap)
             var hit = _m.HitTest(px.x, px.y, out string key);

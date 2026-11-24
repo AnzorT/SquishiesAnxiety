@@ -232,8 +232,19 @@ namespace SquishSquad.Menu
             return false;
         }
 
-        /// <summary>PLAY held down: .sq-gc .go:active translateY(2px).</summary>
-        public bool PlayPressed;
+        /// <summary>What's held down (and the dot's index for Hit.Dot): it shrinks until it's let go or the finger
+        /// leaves it, as the menu's Level crest does (scale .92; the user, 2026-11-24: every button), PLAY (the app's
+        /// .sq-gc .go:active is translateY(2px)) as well as the back orb, the arrows and the dots.</summary>
+        public Hit Pressed;
+        public int PressedDot = -1;
+        const double HeldScale = 0.92;
+        bool IsHeld(Hit h, int dot = -1) => Pressed == h && !Leaving && (h != Hit.Dot || dot == PressedDot);
+        // draws [from..] shrunk about (cx, cy) screen px
+        static void Shrink(List<Draw> o, int from, double cx, double cy)
+        {
+            var m = Affine.Translate(cx, cy) * Affine.ScaleBy(HeldScale, HeldScale) * Affine.Translate(-cx, -cy);
+            for (int i = from; i < o.Count; i++) { var d = o[i]; d.M = m * d.M; o[i] = d; }
+        }
 
         static bool In(double x, double y, double l, double t, double w, double h) => x >= l && x < l + w && y >= t && y < t + h;
         bool InMapped(Affine m, float[] r, double x, double y)
@@ -324,7 +335,23 @@ namespace SquishSquad.Menu
 
             // the header: the back orb and "Game Park" (16 pu in, 12 down; slides down 14 pu as it comes in)
             double ho = _headO.At(now);
-            if (ho > 0) o.Add(Pic("header", L.header, L.header.box[0], L.header.box[1] + _headY.At(now), ho));
+            if (ho > 0)
+            {
+                double hy = L.header.box[1] + _headY.At(now);
+                var hd = Pic("header", L.header, L.header.box[0], hy, ho);
+                if (!IsHeld(Hit.Back)) o.Add(hd);
+                else
+                {
+                    // the orb is in the same picture as the title: held, it's drawn as its own slice (cut in the
+                    // clear gap between them, 30 picture px right of its box) and that slice shrinks about its middle
+                    var b = L.header.back;
+                    double cut = Math.Min(1, Math.Max(0, (b[0] + b[2] + 30 - L.header.at[0]) / L.header.size[0]));
+                    var orb = hd; orb.Key = "header-orb"; orb.U1 = cut;
+                    var title = hd; title.Key = "header"; title.U0 = cut;
+                    o.Add(title); o.Add(orb);
+                    Shrink(o, o.Count - 1, L.header.box[0] * Pu + (b[0] + b[2] / 2) * _s, hy * Pu + (b[1] + b[3] / 2) * _s);
+                }
+            }
 
             // the rays and the halo behind the middle card
             double ro = _rays.At(now), lo = _halo.At(now);
@@ -342,11 +369,15 @@ namespace SquishSquad.Menu
             for (int i = 0; i < _n; i++)
             {
                 double w = dots[i * 2 + 1], m = _dotM[i].At(now);
+                int d0 = o.Count;
                 if (m < 1) AddDot(o, "dot" + i + "off", L.dotOff, 7, dots[i * 2], w, 1 - m);
                 if (m > 0) AddDot(o, "dot" + i + "on", L.dotOn, 18, dots[i * 2], w, m);
+                if (IsHeld(Hit.Dot, i)) Shrink(o, d0, (dots[i * 2] + w / 2) * Pu, (393 - 14 + 3.5) * Pu);
             }
             o.Add(Pic("arrowL", L.arrowL, CarL + 10, Cy - 20, Cur == 0 ? 0.4 : 1));
+            if (IsHeld(Hit.Prev)) Shrink(o, o.Count - 1, (CarL + 30) * Pu, Cy * Pu);
             o.Add(Pic("arrowR", L.arrowR, PgW - 52, Cy - 20, Cur == _n - 1 ? 0.4 : 1));
+            if (IsHeld(Hit.Next)) Shrink(o, o.Count - 1, (PgW - 32) * Pu, Cy * Pu);
             return o;
         }
 
@@ -424,11 +455,12 @@ namespace SquishSquad.Menu
                     }
             }
             ch.Add(OnCard(k + "over", c.over, m, wx, wy, 1, 1));
-            // PLAY: saturate(.7) off the middle; 2 pu down while held
+            // PLAY: saturate(.7) off the middle; shrunk about its middle while held
             bool mid = i == Cur;
             var gp = mid ? (ParkLayout.Pic)L.go : L.goDim;
-            double press = mid && PlayPressed && !Leaving ? 2 * RefU : 0;   // (2 pu in the card's own px)
-            ch.Add(OnCard(k + "go", gp, m, c.go[0], c.go[1] + press, 1, 1));
+            var gm = m;
+            if (mid && IsHeld(Hit.Play)) { double gx2 = c.go[0] + c.go[2] / 2, gy2 = c.go[1] + c.go[3] / 2; gm = m * Affine.Translate(gx2, gy2) * Affine.ScaleBy(HeldScale, HeldScale) * Affine.Translate(-gx2, -gy2); }
+            ch.Add(OnCard(k + "go", gp, gm, c.go[0], c.go[1], 1, 1));
             o.Add(group);
         }
 

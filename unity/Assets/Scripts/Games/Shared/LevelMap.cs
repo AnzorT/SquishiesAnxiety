@@ -293,7 +293,7 @@ namespace SquishSquad.Games.Shared
                 var A = _anims[i];
                 float h = MapArt.NodeH(state);
                 double t = A.T.GetValue(), sh = A.Shake.GetValue();
-                double s = t * PulseScale.Evaluate(A.Pulse != null ? A.Pulse.Value : 0);
+                double s = t * PulseScale.Evaluate(A.Pulse != null ? A.Pulse.Value : 0) * (i == _heldNode ? 0.92 : 1);   // (held: it shrinks to 0.92, as every button does)
                 var m = content * Affine.Translate(p.X - NODE / 2, p.Y - NODE / 2) * Fx.About(NODE, h, Affine.ScaleBy(s, s) * Affine.Translate(ShakeX.Evaluate(sh), 0) * Affine.Rotate(ShakeDeg.Evaluate(sh)));
                 float op = opacity * (float)Math.Max(0, Math.Min(1, t));
                 var l = f.L("map node " + lv);
@@ -471,25 +471,26 @@ namespace SquishSquad.Games.Shared
         }
 
         // ---- touch (screen dp) -------------------------------------------------------------------------------------------
-        int _downNode = -1;
+        int _downNode = -1, _heldNode = -1;   // the node the press began on; the one drawn held (the finger still on it)
 
         public void Down(float x, float y)
         {
             Scroll.Down(x, _tk?.Now ?? 0);
-            _downNode = Scroll.NotATap ? -1 : NodeAt(x, y);
+            _heldNode = _downNode = Scroll.NotATap ? -1 : NodeAt(x, y);
         }
 
         public void Move(float x, float y)
         {
             Scroll.Move(x, _tk?.Now ?? 0);
             if (Scroll.NotATap) _downNode = -1;
+            _heldNode = _downNode >= 0 && NodeAt(x, y) == _downNode ? _downNode : -1;
         }
 
         public void Up(float x, float y)
         {
             Scroll.Up(x, _tk?.Now ?? 0);
             int n = _downNode;
-            _downNode = -1;
+            _downNode = _heldNode = -1;
             if (n < 0 || Scroll.NotATap || NodeAt(x, y) != n) return;
             Press(n);
         }

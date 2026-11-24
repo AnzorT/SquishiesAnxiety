@@ -141,14 +141,15 @@ namespace SquishSquad.Screens
         public float ScrollMax { get { Frames(); return Math.Max(0, _contentH - VpH); } }
 
         // ---- the pointer ---------------------------------------------------------------------------------------------
-        string _pressed;
+        string _pressed, _downId;   // what's drawn held (only while the finger stays on it), what the press began on
         bool _down, _dragging;
         float _y0, _scroll0;
-        public void Down(float x, float y) { _down = true; _dragging = false; _y0 = y; _scroll0 = ScrollY; _pressed = Hit(x, y); }
+        public void Down(float x, float y) { _down = true; _dragging = false; _y0 = y; _scroll0 = ScrollY; _downId = _pressed = Hit(x, y); }
         public void Move(float x, float y)
         {
             if (!_down) return;
             if (!_dragging && Math.Abs(y - _y0) > 8 && InPanel(x, _y0)) { _dragging = true; _pressed = null; }
+            if (!_dragging) _pressed = Hit(x, y) == _downId ? _downId : null;
             if (_dragging) { float s = Math.Max(0, Math.Min(ScrollMax, _scroll0 - (y - _y0))); if (s != ScrollY) { ScrollY = s; _content = null; } }
         }
         public void Up(float x, float y)
@@ -157,8 +158,8 @@ namespace SquishSquad.Screens
             _down = false;
             if (_dragging) return;
             var h = Hit(x, y);
-            var p = _pressed;
-            _pressed = null;
+            var p = _downId;
+            _pressed = _downId = null;
             if (h == null || h != p) return;
             Audio.Snd.Play("tap");
             if (h == "close" || h == "scrim") OnClose?.Invoke();
@@ -203,9 +204,9 @@ namespace SquishSquad.Screens
             list.Add(Piece("panel", ring, RingX, RingY, 1, null, 40));
             // the content, clipped to the panel and scrolled (drawn again when it scrolls)
             list.Add(Piece("content", _content ??= Content(f), VpW, VpH, VpX, VpY, 1, null, 0));
-            // the buttons over it (they sink when held)
+            // the buttons over it (held, they shrink to 92 % about their middle, as the menu's Level crest does)
             float sy = VpY - ScrollY;
-            list.Add(Piece("close", Xml("round-close"), 36, 40, VpX + f["close"].X, sy + f["close"].Y, 1, null, 12));
+            list.Add(Piece("close", Xml("round-close"), 36, 40, VpX + f["close"].X, sy + f["close"].Y, 1, Shrink(_pressed == "close", 36, 40), 12));
             if (f.TryGetValue("crib-crib", out var cf)) Button(list, "crib", OpenCrib, cf, sy, 0);
             foreach (var r in V.Game.Concat(V.Crib))
                 if (f.TryGetValue("claim-" + r.Id, out var bf)) Button(list, "claim-" + r.Id, ClaimBtn(r), bf, sy, 0);
@@ -215,11 +216,14 @@ namespace SquishSquad.Screens
 
         void Button(List<ScreenPiece> list, string id, CandyButton b, Frame at, float sy, double pulse)
         {
-            var p = About(b.FaceW, b.H, Affine.ScaleBy(1 + pulse, 1 + pulse));
-            var face = _pressed == id ? Affine.Translate(0, b.Sz.Lip - 1) * About(b.FaceW, b.FaceH, Affine.ScaleBy(0.97, 0.97)) : Affine.Identity;
+            // (held: the whole button, its lip, face and caption, shrinks to 92 % about its middle)
+            var p = About(b.FaceW, b.H, Affine.ScaleBy(1 + pulse, 1 + pulse)) * Shrink(_pressed == id, b.FaceW, b.H);
             list.Add(Piece(id + "-lip", b.LipSvg(), b.FaceW, b.H, VpX + at.X, sy + at.Y, 1, p));
-            list.Add(Piece(id, b.FaceSvg(), b.FaceW, b.FaceH, VpX + at.X, sy + at.Y, 1, p * face, 16));
+            list.Add(Piece(id, b.FaceSvg(), b.FaceW, b.FaceH, VpX + at.X, sy + at.Y, 1, p, 16));
         }
+
+        /// <summary>A held button shrinks to 92 % about the middle of its w x h box, as the menu's Level crest does.</summary>
+        static Affine Shrink(bool held, float w, float h) => held ? About(w, h, Affine.ScaleBy(0.92, 0.92)) : Affine.Identity;
 
         static readonly string[] BarFill = { "#ffe08a", "#ffb347", "#f07a1c" };
         static readonly float[] BarStops = { 0, 0.55f, 1 };

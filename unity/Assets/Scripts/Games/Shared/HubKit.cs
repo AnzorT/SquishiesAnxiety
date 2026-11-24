@@ -1,9 +1,10 @@
 // The pieces the games' hubs are made of (src/squishdoku/ui.js, fx.js, Hub.js), laid out with Yoga (FlexNode, React
 // Native's defaults) and drawn as layers:
-//   HubButton   an SdButton: the lip stays, the ring and face move down 4 dp while pressed and the whole button shrinks
-//               to 0.93 (70 ms in, a spring out); in a Pulse (a forever scale up and down, one loop) or not. Drawn from
-//               CardArt.ButtonLook, or exported (GO ⚡: its emoji is Chrome's)
-//               An Area is a box tapped as a whole and drawn by its hub (royal Plaque with onPress: it sinks 2 dp while held)
+//   HubButton   an SdButton: while pressed the whole button (lip, ring and face) shrinks to 0.92 about its centre, as
+//               the menu's Level crest does (70 ms in, a spring out); in a Pulse (a forever scale up and down, one loop) or
+//               not. Drawn from CardArt.ButtonLook, or exported (GO ⚡: its emoji is Chrome's)
+//               An Area is a box tapped as a whole and drawn by its hub (royal Plaque with onPress: it shrinks to 0.92
+//               while held)
 //   ModeCard    squishdoku/Hub.js ModeCard: a card sliding in (SlideIn, dy 50): its title, its lines, a progress bar,
 //               the pulsing button
 //   Para        a Text with lines of its own (\n), each wrapped and centred
@@ -76,10 +77,9 @@ namespace SquishSquad.Games.Shared
         {
             if (Pulse != null) { double p = _pulseScale.Evaluate(Pulse.Value); at = at * Fx.About(W, H, Affine.ScaleBy(p, p)); }
             _at = at;
-            double t = Press.T, s = 1 + (0.93 - 1) * t, ty = (Lip - 1) * t;
-            var whole = at * Fx.About(W, H, Affine.ScaleBy(s, s));
+            var whole = at * Press.Local(W, H);
             var lip = f.L(Name + " lip"); lip.Set("lip", _lip, _ringW, _ringH, 2); lip.Transform = whole * Affine.Translate(0, Lip); lip.Opacity = opacity;
-            var face = f.L(Name + " face"); face.Set("face", _face, _ringW, _ringH, 2); face.Transform = whole * Affine.Translate(0, ty); face.Opacity = opacity;
+            var face = f.L(Name + " face"); face.Set("face", _face, _ringW, _ringH, 2); face.Transform = whole; face.Opacity = opacity;
         }
 
         /// <summary>A screen point on it (hitSlop 6).</summary>

@@ -161,13 +161,23 @@ namespace SquishSquad.Ui.Screens
                 double t = ui.NoteT;
                 Add("note", s, nf, (float)t, Affine.Translate(0, 6 * (1 - t)));
             }
-            var press = ui.Pressed == "check" ? Affine.Translate(0, 2) : Affine.Identity;
+            // a held button shrinks to 92 % about its middle (cx, cy), as the menu's Level crest does: the extra transform for
+            // one of its pieces drawn at `at` (Add puts a piece at its frame's snapped top-left)
+            Affine Shrink(bool on, Frame at, float cx, float cy)
+            {
+                if (!on) return Affine.Identity;
+                double lx = cx - Screens.Pieces.Snap(at.X), ly = cy - Screens.Pieces.Snap(at.Y);
+                return Affine.Translate(lx, ly) * Affine.ScaleBy(0.92, 0.92) * Affine.Translate(-lx, -ly);
+            }
+            bool held = ui.Pressed == "check";
             var rf = f["btn-ring"];
-            Add("btn", AuthArt.PlaqueSvg(rf.W, rf.H, "gold", 15), new Frame(rf.X - 1.6f, rf.Y - 1.6f, 0, 0), 1, press, 2);
-            if (!m.Busy) Add("glint", AuthArt.GlintSvg(rf.W, rf.H, ui.GlintMs), rf, 1, press, 0);
-            if (f.TryGetValue("label", out var lb)) { var s = new UiSvg(lb.W, lb.H); SquishSquad.Screens.Kit.Lettering(s, Label, "whiteB", z.BtnFont, 0, 0); Add("label", s, lb, 1, press); }
+            float bcx = rf.X + rf.W / 2, bcy = rf.Y + rf.H / 2 + 1.5f;   // the button's middle (its 3 dp lip in): its glint, label and dots shrink with it
+            var bf = new Frame(rf.X - 1.6f, rf.Y - 1.6f, 0, 0);
+            Add("btn", AuthArt.PlaqueSvg(rf.W, rf.H, "gold", 15), bf, 1, Shrink(held, bf, bcx, bcy), 2);
+            if (!m.Busy) Add("glint", AuthArt.GlintSvg(rf.W, rf.H, ui.GlintMs), rf, 1, Shrink(held, rf, bcx, bcy), 0);
+            if (f.TryGetValue("label", out var lb)) { var s = new UiSvg(lb.W, lb.H); SquishSquad.Screens.Kit.Lettering(s, Label, "whiteB", z.BtnFont, 0, 0); Add("label", s, lb, 1, Shrink(held, lb, bcx, bcy)); }
             for (int i = 0; i < 3; i++)
-                if (f.TryGetValue("dot" + i, out var df)) { var (svg, tr) = AuthArt.Dot(i, ui.DotsMs, 10); Add("dot" + i, svg, df, 1, press * tr); }
+                if (f.TryGetValue("dot" + i, out var df)) { var (svg, tr) = AuthArt.Dot(i, ui.DotsMs, 10); Add("dot" + i, svg, df, 1, Shrink(held, df, bcx, bcy) * tr); }
             foreach (var (id, text, icon) in new[] { ("resend", "Send it again", "M4 12a8 8 0 1 0 2.3-5.7 M4 4v4h4"), ("logout", "Log out", "M14 5h5v14h-5 M10 8l-4 4 4 4 M6 12h10") })
             {
                 var lf = f[id];
@@ -176,7 +186,8 @@ namespace SquishSquad.Ui.Screens
                 SquishSquad.Screens.Kit.Icon(s, icon, ic.X - lf.X + 1.6f, ic.Y - lf.Y + 1.6f, 17, "#ffffff", 2.4f);
                 var lt = f[id + "-t"];
                 s.Text(text, lt.X - lf.X + 1.6f, lt.Y - lf.Y + 1.6f, LinkSt);
-                Add(id, s, new Frame(lf.X - 1.6f, lf.Y - 1.6f, 0, 0), 1, ui.Pressed == id ? Affine.Translate(0, 2) : Affine.Identity, 2);
+                var at = new Frame(lf.X - 1.6f, lf.Y - 1.6f, 0, 0);
+                Add(id, s, at, 1, Shrink(ui.Pressed == id, at, lf.X + lf.W / 2, lf.Y + lf.H / 2 + 1.5f), 2);
             }
             return list;
         }

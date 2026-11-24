@@ -3,7 +3,7 @@
 //   Spin (RaysSpin's turn)                              src/components/candy/Decor.js
 //   Burst (FxLayer's particle bursts)                   src/squishdoku/fx.js
 //   XpFill (XpBar's fill and level number)              src/squishdoku/Overlays.js
-//   Press (SdButton squashing)                          src/squishdoku/ui.js
+//   Press (a held button shrinks, as the Level crest)   src/squishdoku/ui.js's SdButton timing
 // Each gives its transform about a view's centre (as React Native's transform origin) and its opacity. Timers and
 // frames run on Ticker.Default (the screen's clock), as the app's setTimeout / requestAnimationFrame do.
 using System;
@@ -27,6 +27,10 @@ namespace SquishSquad.Ui.Cards
 
         /// <summary>A view's transform list applied about the centre of its w x h box (React Native's origin).</summary>
         public static Affine About(float w, float h, Affine m) => Affine.Translate(w / 2.0, h / 2.0) * m * Affine.Translate(-w / 2.0, -h / 2.0);
+
+        /// <summary>A button's press (as the menu's Level crest): the whole w x h button shrinks to 0.92 about its centre,
+        /// in its own space; `t` 0 up, 1 held (or a press animation's value in between).</summary>
+        public static Affine Pressed(float w, float h, double t) { double s = Press.ScaleAt(t); return About(w, h, Affine.ScaleBy(s, s)); }
 
         /// <summary>Math.random() for the particle bursts.</summary>
         public static Func<double> Random = new Random().NextDouble;
@@ -381,13 +385,22 @@ namespace SquishSquad.Ui.Cards
         public double Frac => _t.GetValue();
     }
 
-    /// <summary>ui.js SdButton's squash: down in 70 ms, back with a bouncy spring.</summary>
+    /// <summary>A button's press: in over 70 ms, back with a bouncy spring. While held the whole button (lip, face and
+    /// label) shrinks to 0.92 about its centre, as the menu's Level crest does.</summary>
     public sealed class Press
     {
+        /// <summary>How far a held button shrinks (to 1 - Shrink).</summary>
+        public const double Shrink = 0.08;
         readonly AnimatedValue _t = new AnimatedValue(0);
-        /// <summary>Pressed: it sinks, with the app's button "tap" (CandyButton / SdButton onPressIn).</summary>
+        /// <summary>Pressed: it shrinks, with the app's button "tap" (CandyButton / SdButton onPressIn).</summary>
         public void Down() { Audio.Snd.Play("tap"); Animated.Timing(_t, Fx.Timing(1, 70)).Start(); }
         public void Up() => Animated.Spring(_t, Fx.Spring(0, 3.5, 260)).Start();
         public double T => _t.GetValue();
+        /// <summary>The button's scale now: 1 → 0.92 as the press goes in.</summary>
+        public double Scale => ScaleAt(T);
+        /// <summary>The press's shrink about the centre of a w x h button, in the button's own space.</summary>
+        public Affine Local(float w, float h) => Fx.Pressed(w, h, T);
+        /// <summary>The scale for a press at `t` (0 up, 1 held).</summary>
+        public static double ScaleAt(double t) => 1 - Shrink * t;
     }
 }

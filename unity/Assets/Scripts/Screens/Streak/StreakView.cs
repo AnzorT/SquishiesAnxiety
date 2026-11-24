@@ -179,7 +179,7 @@ namespace SquishSquad.Screens
             var f = Layout();
             var list = new List<ScreenPiece>();
             list.Add(Piece("bg", PageBg(W, H), W, H, 0, 0, 1, null, 0));
-            if (!Intro) list.Add(Piece("orb", Xml("orb-back"), 40, 40, f["orb"].X, f["orb"].Y + (_pressed == "back" ? 2 : 0)));
+            if (!Intro) list.Add(Piece("orb", Xml("orb-back"), 40, 40, f["orb"].X, f["orb"].Y, 1, Shrink(_pressed == "back", 40, 40)));
             {
                 var tf = f["title"];
                 var s = new UiSvg(tf.W, tf.H);
@@ -289,15 +289,21 @@ namespace SquishSquad.Screens
                 var bf = f["btn"];
                 double p = V.ChestDone ? 0 : _pulse.GetValue();
                 var pulse = About(bf.W, bf.H, Affine.ScaleBy(1 + 0.05 * p, 1 + 0.05 * p));
-                bool down = _pressed == "main";
-                list.Add(Piece("btn-lip", b.LipSvg(), b.FaceW, b.H, bf.X, bf.Y, 1, pulse));
-                // pressed: the face sinks onto the lip (lip - 1) and shrinks to 0.97 (an 80 ms timing in the app)
-                var face = down ? Affine.Translate(0, b.Sz.Lip - 1) * About(b.FaceW, b.FaceH, Affine.ScaleBy(0.97, 0.97)) : Affine.Identity;
-                list.Add(Piece("btn-face", b.FaceSvg(), b.FaceW, b.FaceH, bf.X, bf.Y, 1, pulse * face, 16));
+                // pressed: the whole button (its lip, face and caption) shrinks to 92 % about its middle, as the menu's
+                // Level crest does
+                var press = Shrink(_pressed == "main", b.FaceW, b.H);
+                list.Add(Piece("btn-lip", b.LipSvg(), b.FaceW, b.H, bf.X, bf.Y, 1, pulse * press));
+                list.Add(Piece("btn-face", b.FaceSvg(), b.FaceW, b.FaceH, bf.X, bf.Y, 1, pulse * press, 16));
             }
             if (f.TryGetValue("laterText", out var lt) && Intro && !V.ChestDone)
-                list.Add(Piece("later", TextBox("Later", LaterText), lt.X, lt.Y, _pressed == "later" ? 0.6f : 1));
+            {
+                var ls = TextBox("Later", LaterText);
+                list.Add(Piece("later", ls, lt.X, lt.Y, _pressed == "later" ? 0.6f : 1, Shrink(_pressed == "later", ls.W, ls.H)));
+            }
         }
+
+        /// <summary>A held button shrinks to 92 % about the middle of its w x h box, as the menu's Level crest does.</summary>
+        static Affine Shrink(bool held, float w, float h) => held ? About(w, h, Affine.ScaleBy(0.92, 0.92)) : Affine.Identity;
 
         static readonly Dictionary<string, (string[] colors, string ring, string text)> LOOK = new Dictionary<string, (string[], string, string)>
         {

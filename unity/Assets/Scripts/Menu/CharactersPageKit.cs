@@ -100,6 +100,29 @@ namespace SquishSquad.Menu
         /// <summary>A picture at its own box (as cut).</summary>
         public PageDraw At(string key, PagePic p, double opacity = 1) => Pic(key, p, p.box[0], p.box[1], opacity);
 
+        /// <summary>A held button's scale: the Level crest's press (.sq-crest:active scale(.92)), every button's.</summary>
+        public const double HeldScale = 0.92;
+
+        /// <summary>A held button: draws [from..] of `list` shrunk to HeldScale about (cx, cy) pu.</summary>
+        public void Shrink(List<PageDraw> list, int from, double cx, double cy)
+        {
+            var m = Affine.Translate(cx * Pu, cy * Pu) * Affine.ScaleBy(HeldScale, HeldScale) * Affine.Translate(-cx * Pu, -cy * Pu);
+            for (int i = from; i < list.Count; i++) { var d = list[i]; d.M = m * d.M; list[i] = d; }
+        }
+
+        /// <summary>The page's header picture (the back orb, then the title, one picture: .mm-pgh) with the orb held:
+        /// the orb's slice (cut in the clear gap after the orb's box `back`, pu: its shadow ends about 4 pu out, the
+        /// title starts about 16 pu out) shrunk about the orb's middle, the title as it is.</summary>
+        public void Header(List<PageDraw> into, PageDraw head, PagePic p, float[] back, bool held)
+        {
+            if (!held) { into.Add(head); return; }
+            double cut = Math.Max(0, Math.Min(1, ((back[0] + back[2] + 10 - p.box[0]) * URef - p.at[0]) / head.W));
+            var orb = head; orb.Key = head.Key + ":orb"; orb.U1 = cut;
+            var title = head; title.U0 = cut;
+            into.Add(title); into.Add(orb);
+            Shrink(into, into.Count - 1, back[0] + back[2] / 2, back[1] + back[3] / 2);
+        }
+
         /// <summary>A whole-screen picture (a background), stretched to the screen.</summary>
         public PageDraw Screen(string key, PagePic p) =>
             new PageDraw { Key = key, Res = p.res, Jpeg = true, M = Affine.ScaleBy(W / p.size[0], H / p.size[1]), W = p.size[0], H = p.size[1], U0 = 0, V0 = 0, U1 = 1, V1 = 1, Opacity = 1 };

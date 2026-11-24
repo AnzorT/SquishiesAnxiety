@@ -16,6 +16,7 @@ namespace SquishSquad.Menu
         PieceView _coinsIcon, _gemsIcon, _crest;
         float _hudAlpha = 1;
         string _coinsShown, _gemsShown, _crestShown;
+        Vector2 _coinsAt, _gemsAt;   // the pills' boxes, dp (they shrink with their pictures' press)
         float _ringFrom = -1;   // ms the ring's sweep started (-1: none)
         static bool _ringShown; // M.crest's ringShown: the sweep plays once per run
 
@@ -72,8 +73,7 @@ namespace SquishSquad.Menu
                     piece.SetSvg(svg.Markup, svg.W, svg.H, 20);   // (its soft shadow reaches 18 px below)
                     if (id == "pill-coins") _coinsShown = text; else _gemsShown = text;
                 }
-                piece.Transform = Affine.Translate(at.x / ppd, at.y / ppd);
-                piece.Apply();
+                if (id == "pill-coins") _coinsAt = at / ppd; else _gemsAt = at / ppd;
                 var refPill = System.Array.Find(ht.pills, p => p.id == id);
                 if (icon != null && refPill != null)
                 {
@@ -90,6 +90,8 @@ namespace SquishSquad.Menu
         void TickHud(float ms)
         {
             if (_coinsPill == null) return;
+            _coinsPill.Transform = Held(_coinsIcon) * Affine.Translate(_coinsAt.x, _coinsAt.y);
+            _gemsPill.Transform = Held(_gemsIcon) * Affine.Translate(_gemsAt.x, _gemsAt.y);
             _coinsPill.Opacity = _gemsPill.Opacity = _hudAlpha;
             _coinsPill.Apply(); _gemsPill.Apply();
             if (_crestText == null) return;
@@ -122,6 +124,14 @@ namespace SquishSquad.Menu
             _crestText.Transform = m;
             _crestText.Opacity = _hudAlpha;
             _crestText.Apply();
+        }
+
+        // a pill's number box shrinks with its coin / gem picture's press, about the same point (dp)
+        static Affine Held(PieceView icon)
+        {
+            if (icon == null || icon.PressS == 1) return Affine.Identity;
+            var c = icon.PivotNowPx / UiPiece.PxPerDp; double s = icon.PressS;
+            return Affine.Translate(c.x, c.y) * Affine.ScaleBy(s, s) * Affine.Translate(-c.x, -c.y);
         }
 
         void DisposeHud()

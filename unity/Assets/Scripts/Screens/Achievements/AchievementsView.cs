@@ -88,7 +88,8 @@ namespace SquishSquad.Screens
         // ---- the pointer (screen dp) -----------------------------------------------------------------------------------
         float _dx0, _dy0;
         bool _down, _captured;
-        string _pressed;
+        string _pressed, _downId;           // the orb drawn held (while the finger stays on it), the one the press began on
+        int _badgeDown = -1, _badgeHeld = -1;   // the same for a badge (it shrinks a little while held)
 
         (float x, float y) ToStage(float x, float y) => (x / K, y / K);
 
@@ -96,7 +97,8 @@ namespace SquishSquad.Screens
         {
             var (x, y) = ToStage(sx, sy);
             _down = true; _captured = false; _dx0 = x; _dy0 = y;
-            _pressed = HitButton(x, y);
+            _downId = _pressed = HitButton(x, y);
+            _badgeDown = _badgeHeld = _downId == null ? HitBadge(x, y) : -1;
         }
 
         public void Move(float sx, float sy)
@@ -105,13 +107,17 @@ namespace SquishSquad.Screens
             var (x, y) = ToStage(sx, sy);
             float dx = x - _dx0, dy = y - _dy0;
             // the pan takes over from the badges once it's clearly sideways, and only in the stage
-            if (!_captured && Math.Abs(dx) > 10 && Math.Abs(dx) > Math.Abs(dy) && _dy0 >= 60 && _dy0 < SH - 100) { _captured = true; _pressed = null; }
+            if (!_captured && Math.Abs(dx) > 10 && Math.Abs(dx) > Math.Abs(dy) && _dy0 >= 60 && _dy0 < SH - 100) { _captured = true; _pressed = null; _badgeHeld = -1; }
+            if (_captured) return;
+            _pressed = _downId != null && HitButton(x, y) == _downId ? _downId : null;
+            _badgeHeld = _badgeDown >= 0 && HitBadge(x, y) == _badgeDown ? _badgeDown : -1;
         }
 
         public void Up(float sx, float sy)
         {
             if (!_down) return;
             _down = false;
+            _pressed = _downId = null; _badgeDown = _badgeHeld = -1;
             var (x, y) = ToStage(sx, sy);
             float dx = x - _dx0;
             if (_captured)
@@ -212,6 +218,7 @@ namespace SquishSquad.Screens
                 float op = (float)Curve(fade, i, OpacityOf);
                 if (op <= 0) continue;
                 var m = SlotTransform(i);
+                if (i == _badgeHeld) m = m * About(SLOT, SLOT, Affine.ScaleBy(0.92, 0.92));   // (held: 92 %, as the menu's Level crest)
                 if (z >= 49)
                 {
                     float glowR = BADGE / 2 + (e.Done ? 34 : 16);
@@ -235,8 +242,9 @@ namespace SquishSquad.Screens
             return Staged(list, K);
         }
 
+        // (held: the orb shrinks to 92 % about its middle, as the menu's Level crest does)
         ScreenPiece Orb(string icon, (float x, float y) at, float opacity = 1) =>
-            Piece("orb-" + icon, Xml("orb-" + icon), 40, 40, at.x, at.y + (_pressed == icon ? 2 : 0), opacity);
+            Piece("orb-" + icon, Xml("orb-" + icon), 40, 40, at.x, at.y, opacity, _pressed == icon ? About(40, 40, Affine.ScaleBy(0.92, 0.92)) : (Affine?)null);
 
         void Header(List<ScreenPiece> list)
         {

@@ -94,6 +94,41 @@ namespace SquishSquad.House.View
         List<(string id, double x, double y, double w, double h, string act)> _hits = new List<(string, double, double, double, double, string)>();
         public bool On => _sim.Shop;
 
+        // ---- the press (the menu's Level crest): the control a press began on shrinks to 92 % about its centre while
+        // the finger is on it. A control is its hit's "id|act" (the hits are rebuilt each Update; the key stays the same).
+        // Its hit rect never changes, so Tap is unchanged.
+        const double Shrink = 0.92;
+        string _held; bool _heldOn;
+        bool Held(string key) => _heldOn && _held == key;
+        // a held control placed at (x, y), w x h (frame px): scaled about its centre, under `around`
+        Affine? Press(string key, double x, double y, double w, double h, Affine? around = null)
+        {
+            if (!Held(key)) return around;
+            double cx = x + w / 2, cy = y + h / 2;
+            return (around ?? Affine.Identity) * Affine.Translate(cx, cy) * Affine.ScaleBy(Shrink, Shrink) * Affine.Translate(-cx, -cy);
+        }
+        // the same inside a drawn picture: a <g>'s attributes scaling what it holds about (cx, cy)
+        static string PressG(double cx, double cy) => $"transform=\"translate({N(cx)} {N(cy)}) scale({N(Shrink)}) translate({N(-cx)} {N(-cy)})\"";
+        static bool IsDet(string id) => id == "dclose" || id == "buy" || id == "place" || id == "dcard" || id == "dout";
+        // the control a tap at (fx, fy) would act on (Tap's walk), or null (the detail card's body, outside it)
+        string Under(double fx, double fy)
+        {
+            var detOpen = _sim.Det != null;
+            foreach (var h in _hits)
+            {
+                if (detOpen != IsDet(h.id)) continue;
+                if (fx < h.x || fx > h.x + h.w || fy < h.y || fy > h.y + h.h) continue;
+                return h.id == "dcard" || h.id == "dout" ? null : h.id + "|" + h.act;
+            }
+            return null;
+        }
+        /// <summary>A press began at (fx, fy) (frame px: the same coordinates Tap gets): the control under it (the one Tap would act on) is held.</summary>
+        public void PressDown(double fx, double fy, double now) { _held = Under(fx, fy); _heldOn = _held != null; }
+        /// <summary>The finger moved: the control is drawn held only while the finger is still on it.</summary>
+        public void PressMove(double fx, double fy) { if (_held != null) _heldOn = Under(fx, fy) == _held; }
+        /// <summary>Released or cancelled (a drag): nothing is held.</summary>
+        public void PressUp() { _held = null; _heldOn = false; }
+
         public void Update(double now)
         {
             _used.Clear(); _hits.Clear();
@@ -136,7 +171,7 @@ namespace SquishSquad.House.View
             string lvT = "Lv " + _sim.S.Level, coT = _sim.Coins().ToString("#,0", CultureInfo.InvariantCulture);
             double lvW = 2 + 5 + li[2] + 4 + UiSvg.BoxWidth(lvT, lst) + 8 + 2, coW = 2 + 4 + ci[2] + 4 + UiSvg.BoxWidth(coT, lst) + 9 + 2;
             double xc = 852 - 38 - cl[2], xco = xc - 6 - coW, xlv = xco - 6 - lvW, y = 1 + (28 - 25) / 2.0;
-            Fixed("close", xc, y, O + 2); _hits.Add(("close", xc, y, cl[2], 25, "closeshop"));
+            Fixed("close", xc, y, O + 2, Press("close|closeshop", xc, y, cl[2], cl[3])); _hits.Add(("close", xc, y, cl[2], 25, "closeshop"));
             Drawn("lv", lvT, () => { var s = new UiSvg((float)lvW, 25); s.Box(0, 0, (float)lvW, 25, new BoxStyle { Gradient = BRASS, GradientStops = BRASS_AT, Radius = 7, BorderWidth = 2, BorderColor = "#6b4426", Shadows = new[] { new Shadow("#6b4426", 0, 2, 0) } }); s.Text(lvT, (float)(2 + 5 + li[2] + 4), (25 - UiSvg.LineBox(lst)) / 2, lst); return s; }, xlv, y, O + 2);
             Fixed("lv-icon", xlv + 2 + 5, y + (25 - li[3]) / 2, O + 3);
             Drawn("coins", coT, () => { var s = new UiSvg((float)coW, 25); s.Box(0, 0, (float)coW, 25, new BoxStyle { Background = "#fff6e2", Radius = 7, BorderWidth = 2, BorderColor = "#6b4426", Shadows = new[] { new Shadow("#6b4426", 0, 2, 0) } }); s.Text(coT, (float)(2 + 4 + ci[2] + 4), (25 - UiSvg.LineBox(lst)) / 2, lst); return s; }, xco, y, O + 2);
@@ -153,7 +188,9 @@ namespace SquishSquad.House.View
             // (a yard game's unlocked toy: no price, its button alone in the row; patches.mjs pD)
             float pw = UiSvg.BoxWidth(c.Price, pst), bw = UiSvg.BoxWidth(c.BTxt, bst) + 20, rowW = c.NoPrice ? bw : pw + 3 + 11 + 6 + bw;
             double rx = (w - rowW) / 2, bx = c.NoPrice ? rx : rx + pw + 3 + 11 + 6;
-            string key = c.Id + c.BTxt + c.Cnt + c.HasCnt + c.Look + c.NoPrice;
+            // held: the picture shrinks the whole card, the button is redrawn shrunk about its centre
+            bool btnHeld = Held("card-btn|act:" + c.Id);
+            string key = c.Id + c.BTxt + c.Cnt + c.HasCnt + c.Look + c.NoPrice + (btnHeld ? "|held" : "");
             Drawn("card" + i, key, () =>
             {
                 var s = new UiSvg((float)w, (float)h);
@@ -170,10 +207,12 @@ namespace SquishSquad.House.View
                 if (!c.NoPrice) s.Raw($"<defs><radialGradient id=\"cg{i}\" cx=\"0.35\" cy=\"0.3\" r=\"0.75\"><stop offset=\"0\" stop-color=\"#fff3c4\"/><stop offset=\"0.45\" stop-color=\"#f2c255\"/><stop offset=\"1\" stop-color=\"#b8862a\"/></radialGradient></defs><circle cx=\"{N(rx + pw + 3 + 5.5)}\" cy=\"{N(rowTop + 10)}\" r=\"6.25\" fill=\"#6b4426\"/><circle cx=\"{N(rx + pw + 3 + 5.5)}\" cy=\"{N(rowTop + 10)}\" r=\"5.5\" fill=\"url(#cg{i})\"/>");
                 var bs = new BoxStyle { Radius = 6, BorderWidth = 2, BorderColor = c.Look == "lock" ? "#7a6a58" : "#6b4426", Shadows = new[] { new Shadow(c.Look == "lock" ? "#7a6a58" : "#6b4426", 0, 2, 0) } };
                 if (c.Look == "lock") bs.Gradient = GREYB; else if (c.Look == "own") { bs.Gradient = GREENB; bs.GradientStops = GREENB_AT; } else { bs.Gradient = BRASS; bs.GradientStops = BRASS_AT; }
+                if (btnHeld) s.Open(PressG(bx + bw / 2, rowTop + 10));
                 s.Box((float)bx, (float)rowTop, bw, 20, bs);
                 s.Text(c.BTxt, (float)bx + 10, (float)(rowTop + (20 - UiSvg.LineBox(bst)) / 2), bst);
+                if (btnHeld) s.Close();
                 return s;
-            }, x, y, O + 3);
+            }, x, y, O + 3, Press("card-img|det:" + c.Id, x, y, w, h));
             _hits.Add(("card-img", x + 8, y + 16, iw, ih, "det:" + c.Id));
             _hits.Add(("card-btn", x + bx, y + rowTop, bw, 20, "act:" + c.Id));
         }
@@ -190,7 +229,7 @@ namespace SquishSquad.House.View
                     var s = new UiSvg(w, 21); var bs = new BoxStyle { Radius = 6, BorderWidth = 2, BorderColor = "#6b4426", Shadows = new[] { new Shadow(c.on ? "#6b4426" : "rgba(107,68,38,0.35)", 0, 2, 0) }, Opacity = c.any ? 1 : 0.45f };
                     if (c.on) { bs.Gradient = BRASS; bs.GradientStops = BRASS_AT; } else bs.Background = "#fff6e2";
                     s.Box(0, 0, w, 21, bs); var t2 = T(st.Font, st.Size, st.Color, st.LineHeight); t2.Opacity = c.any ? 1 : 0.45f; s.Text(c.label, 8, (21 - 10.5f) / 2, t2); return s;
-                }, x, y, O + 3);
+                }, x, y, O + 3, Press("cat|cat:" + c.id, x, y, w, 21));
                 _hits.Add(("cat", x, y, w, 21, "cat:" + c.id));
                 x += w + 4;
             }
@@ -200,8 +239,8 @@ namespace SquishSquad.House.View
         {
             var st = T("Fredoka_600SemiBold", 11.5f, "#8a6a4a"); string txt = "Page " + (pi + 1) + " of " + np; float tw = UiSvg.BoxWidth(txt, st);
             double right = 16 + 414 + 366, y = 29 + 326, nx = right - 24, tx = nx - 8 - tw, px = tx - 8 - 24;
-            var pp = Fixed("prev", px, y, O + 3); pp.Opacity = pi > 0 || prevC ? 1 : 0.4f; _hits.Add(("prev", px, y, 24, 24, "prev"));
-            var np2 = Fixed("next", nx, y, O + 3); np2.Opacity = pi < np - 1 || nextC ? 1 : 0.4f; _hits.Add(("next", nx, y, 24, 24, "next"));
+            var pp = Fixed("prev", px, y, O + 3, Press("prev|prev", px, y, 24, 24)); pp.Opacity = pi > 0 || prevC ? 1 : 0.4f; _hits.Add(("prev", px, y, 24, 24, "prev"));
+            var np2 = Fixed("next", nx, y, O + 3, Press("next|next", nx, y, 24, 24)); np2.Opacity = pi < np - 1 || nextC ? 1 : 0.4f; _hits.Add(("next", nx, y, 24, 24, "next"));
             Drawn("page", txt, () => { var s = new UiSvg(tw, 24); s.Text(txt, 0, (24 - UiSvg.LineBox(st)) / 2, st); return s; }, tx, y, O + 3);
         }
 
@@ -213,13 +252,15 @@ namespace SquishSquad.House.View
             var r = R("det"); double x0 = r[0], y0 = r[1], W = r[2], Hh = r[3];
             var around = Affine.Translate(x0 + W / 2, y0 + Hh / 2) * Affine.Rotate(-0.6) * Affine.Translate(-(x0 + W / 2), -(y0 + Hh / 2));
             Fixed("det", x0, y0, O + 11, around);
-            var dc = R("det-close"); Fixed("det-close", dc[0], dc[1], O + 14, around); _hits.Add(("dclose", dc[0], dc[1], dc[2], dc[3], "close"));
+            var dc = R("det-close"); Fixed("det-close", dc[0], dc[1], O + 14, Press("dclose|close", dc[0], dc[1], dc[2], dc[3], around)); _hits.Add(("dclose", dc[0], dc[1], dc[2], dc[3], "close"));
             bool fx = d.What != "";
             var wst = T("Fredoka_600SemiBold", 11, "#16668f", 13.42f); var sst = T("Fredoka_700Bold", 11, "#9a6a12", 13.42f); var lst = T("Nunito_900Black", 9, "#1e8fc4", 0, 0.81f);
             var wl = fx ? Wrap(d.What, wst, 184) : new List<string>(); var sl = fx && d.Sec != "" ? Wrap("\u2605 Secret: " + d.Sec, sst, 184) : new List<string>();
             double fxH = fx ? 5 + UiSvg.LineBox(lst) + 3 + wl.Count * 13.42 + (sl.Count > 0 ? 3 + sl.Count * 13.42 : 0) + 5 : 0, imgH = fx ? 122 : 170;
             double colH = Hh - 28, contH = imgH + (fx ? 8 + fxH : 0), cy = y0 + 14 + (colH - contH) / 2;
-            string key = d.Id + d.Own + d.CanBuy + d.HasPlace + d.Locked + d.CanAfford;
+            // held: Buy or Place is redrawn shrunk about its centre (the locked bar takes no tap)
+            string held = Held("buy|buy:" + d.Id) ? "buy" : Held("place|place:" + d.Id) ? "place" : "";
+            string key = d.Id + d.Own + d.CanBuy + d.HasPlace + d.Locked + d.CanAfford + "|" + held;
             Drawn("dbody", key, () =>
             {
                 var s = new UiSvg((float)W, (float)Hh);
@@ -244,6 +285,7 @@ namespace SquishSquad.House.View
                 var ost = T("Nunito_800ExtraBold", 11, "#2f7a42"); if (d.Own != "") s.Text(d.Own, (float)rx, (float)yy, ost);
                 foreach (var (kind, by) in Buttons(d, Hh))
                 {
+                    bool pr = kind == held; if (pr) s.Open(PressG(rx + rw / 2, by + 18));
                     if (kind == "lock")
                     {
                         s.Box((float)rx, (float)by, (float)rw, 36, new BoxStyle { Gradient = GREYB, Radius = 8, BorderWidth = 2, BorderColor = "#7a6a58" });
@@ -265,6 +307,7 @@ namespace SquishSquad.House.View
                         var pt = T("Fredoka_700Bold", 15, "#fff6e2", 0, 0, new[] { new Shadow("#6b4426", 0, 1.5f, 0), new Shadow("#6b4426", 1, 0, 0), new Shadow("#6b4426", -1, 0, 0) }); float tw = UiSvg.BoxWidth(d.PlaceTxt, pt);
                         s.Text(d.PlaceTxt, (float)(rx + (rw - tw) / 2), (float)(by + (36 - UiSvg.LineBox(pt)) / 2), pt);
                     }
+                    if (pr) s.Close();
                 }
                 return s;
             }, x0, y0, O + 12, around);

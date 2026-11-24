@@ -474,6 +474,7 @@ namespace SquishSquad.Menu
         // ---- one HUD piece ------------------------------------------------------------------------------------------
         public sealed class PieceView
         {
+            const float PressScale = 0.92f;        // the Level crest's .sq-crest:active scale(.92): every button's press
             public readonly MenuLayout.Piece Data;
             public Rect Hit { get; internal set; }  // page px on this screen (y down)
             readonly Transform _pivot;             // presses scale / move around this point
@@ -482,6 +483,11 @@ namespace SquishSquad.Menu
             internal Transform Pivot => _pivot;
             internal Vector2 PivotPx => new Vector2(_pivotPos.x, -_pivotPos.y);
             internal bool Pressed => _pressed;
+            /// <summary>The press's scale right now (1 when not held) and where it scales about, page px (the pills' live
+            /// number boxes shrink with it).</summary>
+            internal float PressS => _pressed && _press != null ? _press.scale : 1;
+            internal Vector2 PivotNowPx => new Vector2(_pivotPos.x + _offset.x, -(_pivotPos.y + _offset.y));
+            readonly MenuLayout.Press _press;
             /// <summary>Moves the piece `px` (page px, y down) from where it was exported.</summary>
             internal void Offset(Vector2 px) { _offset = new Vector3(px.x, -px.y, 0); _pivot.localPosition = _pivotPos + _offset; }
             readonly SpriteRenderer _art, _fl;
@@ -510,6 +516,12 @@ namespace SquishSquad.Menu
                 var h0 = v.Map(p, new Vector2(p.hit[0], p.hit[1]));
                 Hit = new Rect(h0.x, h0.y, p.hit[2] * _scale, p.hit[3] * _scale);
                 var press = p.press ?? new MenuLayout.Press { scale = 1f, pivot = new[] { 0.5f, 0.5f } };
+                // every button shrinks while held, as the Level crest does (the user, 2026-11-24: "zoom out and then
+                // in, all the buttons"): PLAY's exported press (3 dp down) and the tabs', pills' and orbs' (none: the
+                // app has no :active style for them) become the crest's scale(.92) about the button's middle
+                if (!string.IsNullOrEmpty(p.tap) && press.scale == 1f)
+                    press = new MenuLayout.Press { dy = 0, scale = PressScale, pivot = press.pivot };
+                _press = press;
                 var pv = press.pivot != null && press.pivot.Length == 2 ? press.pivot : new[] { 0.5f, 0.5f };
                 var pivotPx = new Vector2(Hit.x + Hit.width * pv[0], Hit.y + Hit.height * pv[1]);
 
@@ -534,7 +546,7 @@ namespace SquishSquad.Menu
             public void SetPressed(bool on, float dpPx)
             {
                 _pressed = on;
-                var press = Data.press;
+                var press = _press;
                 if (press == null) return;
                 float s = on ? press.scale : 1f;
                 _pivot.localScale = new Vector3(s, s, 1f);

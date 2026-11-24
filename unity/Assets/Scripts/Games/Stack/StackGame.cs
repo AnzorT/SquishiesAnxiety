@@ -978,6 +978,7 @@ namespace SquishSquad.Games.Stack
             double bs = Piecewise(t, new[] { 0.0, 1, 2 }, new[] { 0.3, 1, 1.25 }), br = Piecewise(t, new[] { 0.0, 1, 2 }, new[] { -12.0, -3, 0 });
             var bc = Affine.Translate(_bannerW / 2.0, _bannerH / 2.0); var bci = Affine.Translate(-_bannerW / 2.0, -_bannerH / 2.0);
             _bannerPiece.Transform = Affine.Translate(ax, ay + 4) * bc * Affine.ScaleBy(bs, bs) * Affine.Rotate(br) * bci;
+            _back.Transform = Affine.Translate(_layout.back[0], _layout.back[1]) * Fx.Pressed(40, 40, _backDown ? 1 : 0);   // (held: it shrinks to 0.92)
             foreach (var b in _btns) b.Draw();
             if (_blitz) BlitzDraw();
             // the cards: placed, and gone once closed
@@ -1096,8 +1097,8 @@ namespace SquishSquad.Games.Stack
             Destroy(gameObject);
         }
 
-        // ---- a button (squishdoku/ui.js SdButton): the lip stays, the face moves down 4 dp while pressed and the whole
-        // button shrinks to 0.93 (timing 70 ms in, spring friction 3.5 tension 260 out)
+        // ---- a button (squishdoku/ui.js SdButton): while pressed the whole button (lip and face) shrinks to 0.92 about its
+        // centre, as the menu's Level crest does (timing 70 ms in, spring friction 3.5 tension 260 out)
         sealed class Btn
         {
             readonly StackGame _game;
@@ -1138,12 +1139,9 @@ namespace SquishSquad.Games.Stack
 
             public void Draw()
             {
-                double t = _t.GetValue();
-                double s = 1 + (0.93 - 1) * t, ty = (Lip - 1) * t;
-                var c = Affine.Translate(BW / 2.0, BH / 2.0); var ci = Affine.Translate(-BW / 2.0, -BH / 2.0);
-                var whole = Affine.Translate(_x, _y) * c * Affine.ScaleBy(s, s) * ci;
+                var whole = Affine.Translate(_x, _y) * Fx.Pressed(BW, BH, _t.GetValue());
                 _lip.Transform = whole * Affine.Translate(0, Lip);
-                _face.Transform = whole * Affine.Translate(0, ty);
+                _face.Transform = whole;
             }
         }
     }

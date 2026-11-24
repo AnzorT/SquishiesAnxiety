@@ -838,9 +838,11 @@ namespace SquishSquad.Screens
             {
                 var (o, dy) = Rise(sms, 400, 700);
                 float bw = Math.Min(230, SideW), bh = 60, bx = colE + SideW / 2 - bw / 2, by = 12 + (H - 24 - bh) / 2;
+                // held, the whole button (its lip and shadow with it) shrinks to 92 % about its middle, as the menu's
+                // Level crest does
                 bool down = _collectDown;
                 var b = new UiSvg(bw, bh);
-                b.Box(0, 0, bw, bh, new BoxStyle { Radius = 999, Gradient = new[] { "#fff7b0", "#ffd23a", "#ff9c0a" }, Shadows = down ? new[] { new Shadow("#9c4d06", 0, 0, 0, 2.5f), new Shadow("#9c4d06", 0, 1, 0, 2.5f), new Shadow("rgba(60,30,5,0.35)", 0, 5, 10) } : new[] { new Shadow("#9c4d06", 0, 0, 0, 2.5f), new Shadow("#9c4d06", 0, 5, 0, 2.5f), new Shadow("rgba(60,30,5,0.4)", 0, 11, 18) } });
+                b.Box(0, 0, bw, bh, new BoxStyle { Radius = 999, Gradient = new[] { "#fff7b0", "#ffd23a", "#ff9c0a" }, Shadows = new[] { new Shadow("#9c4d06", 0, 0, 0, 2.5f), new Shadow("#9c4d06", 0, 5, 0, 2.5f), new Shadow("rgba(60,30,5,0.4)", 0, 11, 18) } });
                 // its padding box: the light on its top half (::before), the shine sweeping (::after, c2Shine 2.8 s after 1.4 s)
                 float iw = bw - 6, ih = bh - 6;
                 var clip = b.NewId("cc");
@@ -852,7 +854,8 @@ namespace SquishSquad.Screens
                 b.Box(0, 0, bw, bh, new BoxStyle { Radius = 999, BorderWidth = 3, BorderColor = "#ffffff" });
                 var ct = T(Display, 26, "#ffffff", 1, 0, new[] { new Shadow("#9c4d06", 0, 2.5f, 0), new Shadow("#9c4d06", 2, 0, 0), new Shadow("#9c4d06", -2, 0, 0), new Shadow("#9c4d06", 0, -1.5f, 0) });
                 TxtC(b, "COLLECT", bw / 2, (bh - LH(ct)) / 2, ct);
-                list.Add(Piece("collect", b, bx, by + (down ? 4 : 0), o * fade, Affine.Translate(0, dy), 30));
+                var press = down ? About(bw, bh + 5, Affine.ScaleBy(0.92, 0.92)) : Affine.Identity;   // (its 5 dp lip in)
+                list.Add(Piece("collect", b, bx, by, o * fade, Affine.Translate(0, dy) * press, 30));
                 _collectBox = new Frame(bx, by, bw, bh);
             }
             if (mg != null) Merge(list, now, fade);

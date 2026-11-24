@@ -316,14 +316,14 @@ namespace SquishSquad.Games.Squishdoku
             var page = view * Affine.Translate(-ScrollX, Top);
             _chapterL.Transform = page; _chapterL.Opacity = opacity; o.Add(_chapterL);
             float ax = 14 + HEAD_W / 2f - 45;
-            _orbL.Transform = page * Affine.Translate(ax, ArrowsY + (_down == -1 ? 2 : 0)); _orbL.Opacity = opacity * (_chapter <= 1 ? 0.4f : 1); o.Add(_orbL);
-            _orbR.Transform = page * Affine.Translate(ax + 54, ArrowsY + (_down == -2 ? 2 : 0)); _orbR.Opacity = opacity * (_chapter >= Levels.Chapters ? 0.4f : 1); o.Add(_orbR);
+            _orbL.Transform = page * Affine.Translate(ax, ArrowsY) * Fx.Pressed(_orbL.W, _orbL.H, _down == -1 ? 1 : 0); _orbL.Opacity = opacity * (_chapter <= 1 ? 0.4f : 1); o.Add(_orbL);
+            _orbR.Transform = page * Affine.Translate(ax + 54, ArrowsY) * Fx.Pressed(_orbR.W, _orbR.H, _down == -2 ? 1 : 0); _orbR.Opacity = opacity * (_chapter >= Levels.Chapters ? 0.4f : 1); o.Add(_orbR);
             DrawDots();
             _dotsL.Transform = page; _dotsL.Opacity = opacity; o.Add(_dotsL);
             foreach (var n in _nodes)
             {
                 if (n == null) continue;
-                double t = n.T.GetValue(), pulse = 1 + 0.08 * (n.Pulse?.Value ?? 0), sh = n.Shake.GetValue();
+                double t = n.T.GetValue(), pulse = (1 + 0.08 * (n.Pulse?.Value ?? 0)) * (_down == n.Lv ? 0.92 : 1), sh = n.Shake.GetValue();   // (held: it shrinks to 0.92, as every button does)
                 var m = page * Affine.Translate(n.X - NODE / 2, n.Y - NODE / 2) * Fx.About(NODE, n.BoxH, Affine.ScaleBy(t * pulse, t * pulse) * Affine.Translate(6 * sh, 0) * Affine.Rotate(8 * sh));
                 float op = (float)Math.Max(0, Math.Min(1, t)) * opacity;
                 n.Body.Transform = m; n.Body.Opacity = op; o.Add(n.Body);
@@ -343,7 +343,7 @@ namespace SquishSquad.Games.Squishdoku
             }
             if (_nextL != null)
             {
-                _nextL.Transform = page * Affine.Translate(_points[_count - 1].x + 54, MapH / 2 - 24 + (_down == -3 ? 0 : 0));
+                _nextL.Transform = page * Affine.Translate(_points[_count - 1].x + 54, MapH / 2 - 24) * Fx.Pressed(_nextL.W, _nextL.H, _down == -3 ? 1 : 0);
                 _nextL.Opacity = opacity; o.Add(_nextL);
             }
         }

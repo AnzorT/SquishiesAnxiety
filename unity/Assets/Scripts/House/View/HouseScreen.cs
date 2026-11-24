@@ -173,7 +173,8 @@ namespace SquishSquad.House.View
             }
             var b = YardBox(); int n = YardBtnOn ? YardNewList().Count : 0;
             _yardBtn.Visible = YardBtnOn;
-            _yardBtn.Transform = Frame * Affine.Translate(b[0] + y.Snap[0], b[1] + y.Snap[1]);
+            var yardPress = HeldShrink("yardbtn", b[0] + b[2] / 2, b[1] + b[3] / 2);   // (held: the button and its badge shrink about its centre)
+            _yardBtn.Transform = Frame * yardPress * Affine.Translate(b[0] + y.Snap[0], b[1] + y.Snap[1]);
             // the badge: "NEW" (its picture); for more than one, "2 NEW"... drawn the badge's way
             _yardNew.Visible = n > 0;
             if (n > 0)
@@ -196,7 +197,7 @@ namespace SquishSquad.House.View
                 double ph = now % y.PulseMs / y.PulseMs, e = ph < 0.5 ? Ease(ph * 2) : Ease((1 - ph) * 2), sc = 1 + (y.PulseScale - 1) * e;
                 double w = n > 1 ? UiSvg.BoxWidth(_yardNewTxt, new TextStyle { Font = "Fredoka_700Bold", Size = 11, LetterSpacing = 0.5f }) + 18 : y.BadgeSnap[2];
                 double cx = b[0] + b[2] + 10 - w / 2, cy = b[1] + y.Badge[1] + y.Badge[3] / 2;
-                _yardNew.Transform = Frame * Affine.Translate(cx, cy) * Affine.ScaleBy(sc, sc) * Affine.Translate(-w / 2, -y.BadgeSnap[3] / 2);
+                _yardNew.Transform = Frame * yardPress * Affine.Translate(cx, cy) * Affine.ScaleBy(sc, sc) * Affine.Translate(-w / 2, -y.BadgeSnap[3] / 2);
             }
         }
         string _yardNewTxt;
@@ -215,7 +216,7 @@ namespace SquishSquad.House.View
             if (_back == null) { _back = UiPiece.Create(_room.transform, "back orb", 30995); _back.SetSvg(HouseRoomView.Res("hud/back"), (float)o.Snap[2], (float)o.Snap[3], 16); }
             var b = BackBox(); double dk = UiPiece.PxPerDp / _k;
             _back.Visible = BackOn;
-            _back.Transform = Frame * Affine.Translate(b[0], b[1]) * Affine.ScaleBy(dk, dk) * Affine.Translate(o.Snap[0], o.Snap[1]);
+            _back.Transform = Frame * HeldShrink("back", b[0] + b[2] / 2, b[1] + b[3] / 2) * Affine.Translate(b[0], b[1]) * Affine.ScaleBy(dk, dk) * Affine.Translate(o.Snap[0], o.Snap[1]);
         }
         void Leave() { Save(); OnExit?.Invoke(); Destroy(gameObject); }
 
@@ -296,6 +297,7 @@ namespace SquishSquad.House.View
             _movie.Update(now);
             if (!frozen) { _club.Update(now); _beach.Update(now); _squad.Update(k, now); MoveToy(now); }
             Fill(now);
+            _wheel.Held = _held != null && _held.StartsWith("wheel:") ? _held.Substring(6) : null;
             _wheel.Update(k, now);
             if (now >= _saveAt) { _saveAt = now + 5000; Save(); }
             // the drawer (translate(-50%, ty): its pieces' rects are at ty 0), the arrow turning about its centre
@@ -303,9 +305,11 @@ namespace SquishSquad.House.View
             var tab = _hud.Pieces["tab"]; var panel = _hud.Pieces["panel"]; var arrow = _hud.Pieces["arrow"];
             _tab.Visible = _arrow.Visible = _panel.Visible = !_sim.Edit;   // (notEdit)
             ty += HouseFrame.MY;   // (the drawer keeps to the frame's bottom)
-            _tab.Transform = Frame * Affine.Translate(tab.X, tab.Y + ty);
+            var tabPress = HeldShrink("hud:tab", tab.X + tab.W / 2, tab.Y + ty + tab.H / 2);   // (held: the tab and its arrow shrink about the tab's centre)
+            _tab.Transform = Frame * tabPress * Affine.Translate(tab.X, tab.Y + ty);
             _panel.Transform = Frame * Affine.Translate(panel.X, panel.Y + ty);
-            _arrow.Transform = Frame * Affine.Translate(arrow.X + arrow.W / 2, arrow.Y + ty + arrow.H / 2) * Affine.Rotate(_hud.ArrowDeg(now)) * Affine.Translate(-arrow.W / 2, -arrow.H / 2);
+            DrawBtnShade(ty);
+            _arrow.Transform = Frame * tabPress * Affine.Translate(arrow.X + arrow.W / 2, arrow.Y + ty + arrow.H / 2) * Affine.Rotate(_hud.ArrowDeg(now)) * Affine.Translate(-arrow.W / 2, -arrow.H / 2);
             DrawYardBtn(now);
             DrawBack();
             DrawToast(now);
@@ -366,19 +370,22 @@ namespace SquishSquad.House.View
             if (down)
             {
                 _down = true; _downAt = pos; _moved = false; _pressX = fx; _pressY = fy; _press = null;
-                if (_sim.Map) { _press = "map"; return; }     // (the map covers everything: its taps on release)
-                if (_sim.Show != null && (_sim.FzP > 0 || _movie.Hits(fx, fy))) { _press = "theater"; return; }   // (the player bar, the picker, full screen)
-                if (_sim.Shop) { _press = "shop"; return; }   // (the Catalog covers everything: its taps on release)
-                if (_map.OnRoomButton(fx, fy)) { _press = "mapbtn"; return; }
-                if (OnYardBtn(fx, fy)) { _press = "yardbtn"; return; }
-                if (OnBack(fx, fy)) { _press = "back"; return; }
+                // (each press also shows what it's on held: it shrinks until it's let go or the finger leaves it)
+                if (_sim.Map) { _press = "map"; _map.PressDown(fx, fy, now); return; }     // (the map covers everything: its taps on release)
+                if (_sim.Show != null && (_sim.FzP > 0 || _movie.Hits(fx, fy))) { _press = "theater"; _movie.PressDown(fx, fy, now); return; }   // (the player bar, the picker, full screen)
+                if (_sim.Shop) { _press = "shop"; _shop.PressDown(fx, fy, now); return; }   // (the Catalog covers everything: its taps on release)
+                if (_map.OnRoomButton(fx, fy)) { _press = "mapbtn"; _map.PressDown(fx, fy, now); return; }
+                if (OnYardBtn(fx, fy)) { _press = "yardbtn"; _held = "yardbtn"; return; }
+                if (OnBack(fx, fy)) { _press = "back"; _held = "back"; return; }
                 if (_sim.Edit) EditPress(fx, fy, b.x, b.y, now);
+                else _heldId = _held = HeldAt(fx, fy, now);   // (the drawer, the wheel: their taps on release)
                 return;
             }
             if (!_down) return;
             if ((pos - _downAt).magnitude > 12 * _k) _moved = true;
             if (held && !up)
             {
+                if (_moved) ReleaseHeld(); else MoveHeld(fx, fy, now);
                 switch (_press)
                 {
                     case "slider": _edit.SliderAt(fx, now); break;
@@ -390,6 +397,7 @@ namespace SquishSquad.House.View
             }
             if (!up) return;
             _down = false;
+            ReleaseHeld();
             var pr = _press; _press = null;
             switch (pr)
             {
@@ -410,12 +418,55 @@ namespace SquishSquad.House.View
             Tap(fx, fy, now);
         }
 
+        // ---- held buttons: the House's own (Back, Yard Games, the drawer's tab and buttons, the wheel) and, through
+        // their PressDown / PressMove / PressUp, the map's, the Catalog's, the theater's and Renovate's
+        string _held, _heldId;
+        string HeldAt(double fx, double fy, double now)
+        {
+            if (_hud.Covers(fx, fy, now)) { var h = _hud.Tap(fx, fy, now); return h != null ? "hud:" + h : null; }
+            var w = _wheel.Tap(fx, fy, _cam.K(now));
+            return w != null ? "wheel:" + w : null;
+        }
+        void MoveHeld(double fx, double fy, double now)
+        {
+            switch (_press)
+            {
+                case "map": case "mapbtn": _map.PressMove(fx, fy, now); break;
+                case "theater": _movie.PressMove(fx, fy); break;
+                case "shop": _shop.PressMove(fx, fy); break;
+                case "ui": case "tray": _edit.PressMove(fx, fy); break;
+                case "yardbtn": _held = OnYardBtn(fx, fy) ? "yardbtn" : null; break;
+                case "back": _held = OnBack(fx, fy) ? "back" : null; break;
+                case null: if (_heldId != null) _held = HeldAt(fx, fy, now) == _heldId ? _heldId : null; break;
+            }
+        }
+        void ReleaseHeld()
+        {
+            _map.PressUp(); _movie.PressUp(); _shop.PressUp(); _edit.PressUp();
+            _held = _heldId = null;
+        }
+        // a held button shrinks to 92 % about its centre (cx, cy: frame px), like the menu's Level crest; back to 100 % on release
+        Affine HeldShrink(string id, double cx, double cy) => _held == id ? Affine.Translate(cx, cy) * Affine.ScaleBy(0.92, 0.92) * Affine.Translate(-cx, -cy) : Affine.Identity;
+
+        // a shade over the drawer's RENOVATE / CATALOG while held (they're part of the drawer's picture)
+        UiPiece _btnShade;
+        void DrawBtnShade(double ty)
+        {
+            string id = _held != null && _held.StartsWith("hud:") && _held != "hud:tab" ? _held.Substring(4) : null;
+            if (id == null || !_hud.Buttons.TryGetValue(id, out var r)) { if (_btnShade != null) _btnShade.Visible = false; return; }
+            if (_btnShade == null) _btnShade = UiPiece.Create(_room.transform, "hud button held", 31003);
+            float w = (float)r.W, h = (float)r.H;
+            _btnShade.SetSvg(new UiSvg(w, h).Box(0, 0, w, h, new BoxStyle { Radius = Math.Min(w, h) / 2 * 0.6f, Background = "rgba(60,30,10,0.22)" }).Markup, w, h, 2);
+            _btnShade.Visible = !_sim.Edit;
+            _btnShade.Transform = Frame * Affine.Translate(r.X, r.Y + ty);
+        }
+
         // Renovate: the edit UI first, then the light's handle, a piece (picked up: itemDown), the floor (the selection goes)
         void EditPress(double fx, double fy, double bx, double by, double now)
         {
             var e = _edit.Press(fx, fy, now);
             if (e == "slider") { _press = "slider"; _sim.RotStart(); _edit.SliderAt(fx, now); return; }
-            if (e != null) { _press = e; return; }
+            if (e != null) { _press = e; if (e == "ui" || e == "tray") _edit.PressDown(fx, fy, now); return; }
             if (_edit.OnLight(bx, by)) { _press = "light"; _sim.LightDown(bx); return; }
             var top = PieceAt(fx, fy, _cam.K(now));
             if (top != null && top.Kind != "toy" && top.Id != null) { _press = "drag"; _sim.EditDown(top.Id, bx, by, now); return; }

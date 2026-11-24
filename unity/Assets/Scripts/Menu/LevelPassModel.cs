@@ -167,6 +167,11 @@ namespace SquishSquad.Menu
 
         static double[] Arr(float[] f) => Array.ConvertAll(f, v => (double)v);
 
+        /// <summary>The button held down (the back orb, CLAIM ALL, a level, CLAIM) and its level: it shrinks while held (PageGeom.Shrink).</summary>
+        public HitKind Held;
+        public int HeldLevel;
+        bool IsHeld(HitKind k, int lv = 0) => Held == k && (k != HitKind.Level || lv == HeldLevel);
+
         /// <summary>A tap on a level: picks it; a second tap on one waiting claims it.</summary>
         public void TapLevel(int lv, double now)
         {
@@ -276,15 +281,17 @@ namespace SquishSquad.Menu
             var d = new List<PageDraw>();
             var g = G;
             d.Add(g.Screen("bg", L.bg));
-            d.Add(g.At("head", L.head));
+            g.Header(d, g.At("head", L.head), L.head, L.back, Held == HitKind.Back);
             // the header's right-hand row
             var (allX, lvxX, pillX, _) = HeaderXs();
             if (allX >= 0)
             {
-                double w = AllWidth();
-                g.Slice(d, "all", L.allBox, allX, 20, w, 16, 16);
+                double w = AllWidth(), ay = 20;
+                int a0 = d.Count;
+                g.Slice(d, "all", L.allBox, allX, ay, w, 16, 16);
                 string t = AllLabel;
-                d.Add(g.Svg("all-text", allX + 15, 20 + 2 + (26 - PageText.Line(AllText)) / 2, PageText.Width(t, AllText), PageText.Line(AllText), (s, ox, oy) => s.Text(t, ox, oy, AllText)));
+                d.Add(g.Svg("all-text", allX + 15, ay + 2 + (26 - PageText.Line(AllText)) / 2, PageText.Width(t, AllText), PageText.Line(AllText), (s, ox, oy) => s.Text(t, ox, oy, AllText)));
+                if (IsHeld(HitKind.ClaimAll)) g.Shrink(d, a0, allX + w / 2, 35);
             }
             {
                 double w = LvxWidth();
@@ -335,6 +342,7 @@ namespace SquishSquad.Menu
                 }
                 else if (cur) css = PageGeom.About(23, 23, Affine.ScaleBy(1.12, 1.12));
                 double bx = sx + cx - 23, by = top + 41;
+                int l0 = d.Count;
                 var dp = Array.Find(L.discs, q => q.id == disc);
                 if (dp != null) d.Add(g.Pic("disc" + row.L, dp, bx, by, 1, css));
                 var np = Array.Find(L.nums, q => q.L == row.L && q.on == row.Reached);
@@ -345,6 +353,7 @@ namespace SquishSquad.Menu
                     if (b != null) d.Add(g.Pic("badge" + row.L, b, bx, by, 1, css * Affine.Translate(b.box[0] - b.button[0], b.box[1] - b.button[1])));
                 }
                 if (sel && L.arrow != null) d.Add(g.Pic("arrow", L.arrow, bx, by, 1, css));
+                if (IsHeld(HitKind.Level, row.L)) g.Shrink(d, l0, bx + 23, by + 23);
             }
             // the "you" marker, over the levels
             d.Add(g.Pic("you", L.you, sx + fill - 17, top));
@@ -365,7 +374,11 @@ namespace SquishSquad.Menu
             if (sub != null) d.Add(g.At("sub", sub));
             string act = sr.R != null && sr.Claimable && sp == 0 ? "claim" : sp == 1 ? "claiming" : sr.Reached ? "claimed" : "togo";
             var ap = Array.Find(L.acts, q => q.id == act);
-            if (ap != null) d.Add(g.At("act", ap));
+            if (ap != null)
+            {
+                d.Add(g.At("act", ap));
+                if (act == "claim" && IsHeld(HitKind.Claim)) g.Shrink(d, d.Count - 1, ap.box[0] + ap.box[2] / 2, ap.box[1] + ap.box[3] / 2);
+            }
             if (act == "togo")
             {
                 string t = PageText.Fmt(XpTo(Sel)) + " XP to go";

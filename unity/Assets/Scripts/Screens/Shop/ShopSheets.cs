@@ -94,7 +94,7 @@ namespace SquishSquad.Screens
             group.Add(Piece("sheet-body", _sheetSvg, vw, vh, 0, 0, 1, m * Affine.Translate(18, 16), 0));
             // the chest bobbing on its backdrop, and the buy button (pieces of their own: they move)
             foreach (var p in _sheetLive) { p.Transform = m * Affine.Translate(18, 16 - _sheetScroll) * p.Transform; group.Add(p); }
-            group.Add(Piece("orb-close", ShopXml("orb-close36"), 36, 36, 0, 0, 1, m * Affine.Translate(pw - 36 + 12, -12 + (_pressed == "sheet-close" ? 2 : 0))));
+            group.Add(Piece("orb-close", ShopXml("orb-close36"), 36, 36, 0, 0, 1, m * Affine.Translate(pw - 36 + 12, -12) * Shrink(_pressed == "sheet-close", 18, 18)));
             float op = (float)Math.Min(1, Math.Max(0, up));
             if (op < 0.999f) list.Add(Piece("sheet-all", SquishSquad.Ui.Screens.Pieces.Compose(group, SW, SH), SW, SH, 0, 0, op, null, 0));
             else list.AddRange(group);
@@ -173,9 +173,12 @@ namespace SquishSquad.Screens
             // CandyBtn gold, stretched, padV 12, lip 5: GET GEMS / GET COINS
             var bt = T(Kit.Display, 18, "#ffffff", 0, 0, Outline3("#9c4d06", 2));
             float faceH = LH(bt) + 24 + 6, bh = faceH + 5 + 5;
-            CandyRinged(s, 0, y, vw, faceH, "#9c4d06", new[] { "#fff7b0", "#ffd23a", "#ff9c0a" }, 5, 2.5f, 3);
+            // (a piece of its own, over the body: it shrinks to 92 % while held, as the chest sheet's buy button)
+            var btn = new UiSvg(vw, bh);
+            CandyRinged(btn, 0, 0, vw, faceH, "#9c4d06", new[] { "#fff7b0", "#ffd23a", "#ff9c0a" }, 5, 2.5f, 3);
             string label = gems ? "GET GEMS" : "GET COINS";
-            TxtC(s, label, vw / 2, y + 2.5f + 3 + 12, bt);
+            TxtC(btn, label, vw / 2, 2.5f + 3 + 12, bt);
+            _sheetLive.Add(Piece("broke-go", btn, 0, y, 1, Shrink(_pressed == "broke-go", vw / 2, bh / 2), 4));
             _sheetHits.Add(("broke-go", 0, y, vw, bh));
             return y + bh;
         }
@@ -236,7 +239,7 @@ namespace SquishSquad.Screens
             if (afford) { Contain(b, gems ? Gem(0) : Coin(0), tx, 2 + 11, 30, 30); tx += 36; }
             b.Text(label, tx, 2 + (52 - LH(lt)) / 2, lt);
             bool down = _pressed == "sheet-buy";
-            _sheetLive.Add(Piece("sheet-buy", b, 0, 196 + 10 + (down ? 3 : 0), 1, null, 4));
+            _sheetLive.Add(Piece("sheet-buy", b, 0, 196 + 10, 1, Shrink(down, lw / 2, 61 / 2f), 4));   // (held: 92 %, lip and all)
             _sheetHits.Add(("sheet-buy", 0, 206, lw, 61));
             float leftH = 196 + 10 + 61;
             // the right

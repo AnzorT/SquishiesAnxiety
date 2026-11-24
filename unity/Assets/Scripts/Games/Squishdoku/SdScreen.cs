@@ -315,7 +315,7 @@ namespace SquishSquad.Games.Squishdoku
             }
             if (!full)
             {
-                _orb.Transform = Affine.Translate(14, 6 + (_orbDown ? 2 : 0));
+                _orb.Transform = Affine.Translate(14, 6) * Fx.Pressed(_orb.W, _orb.H, _orbDown ? 1 : 0);
                 o.Add(_orb);
                 if (View == "map")
                 {

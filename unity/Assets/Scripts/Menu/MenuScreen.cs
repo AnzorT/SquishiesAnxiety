@@ -455,11 +455,19 @@ namespace SquishSquad.Menu
                 _parkPress = true;
                 _parkDown = page;
                 _parkHit = m.HitTest(page.x, page.y, out _parkDot);
-                m.PlayPressed = _parkHit == ParkModel.Hit.Play;
+            }
+            // what's held shrinks while the finger stays on it (the card's window counts as PLAY)
+            if (_parkPress && held)
+            {
+                var on = m.HitTest(page.x, page.y, out int dotOn);
+                bool still = on == _parkHit && (on != ParkModel.Hit.Dot || dotOn == _parkDot) && on != ParkModel.Hit.Card && on != ParkModel.Hit.None;
+                m.Pressed = still ? on : ParkModel.Hit.None;
+                m.PressedDot = still ? dotOn : -1;
             }
             if (!_parkPress || !up) return;
             _parkPress = false;
-            m.PlayPressed = false;
+            m.Pressed = ParkModel.Hit.None;
+            m.PressedDot = -1;
             if (m.InCarousel(_parkDown.x, _parkDown.y) && m.Swipe(_parkDown.x, _parkDown.y, page.x, page.y, NowMs)) return;
             var hit = m.HitTest(page.x, page.y, out int dot);
             if (hit != _parkHit || (hit == ParkModel.Hit.Dot && dot != _parkDot)) return;   // (a click: down and up on it)

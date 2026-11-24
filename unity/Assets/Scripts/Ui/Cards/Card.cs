@@ -688,15 +688,14 @@ namespace SquishSquad.Ui.Cards
             Face.Set(Look.FaceMarkup(), Look.RingW, Look.RingH, 2);
         }
 
-        /// <summary>`at`: the button's box (top-left) to the screen. The lip stays, the face moves down 4 dp while pressed
-        /// and the whole button shrinks to 0.93.</summary>
+        /// <summary>`at`: the button's box (top-left) to the screen. While pressed the whole button (lip and face) shrinks
+        /// to 0.92 about its centre.</summary>
         public void Place(Affine at, float opacity)
         {
             _at = at;
-            double t = Press.T, s = 1 + (0.93 - 1) * t, ty = (CardArt.ButtonLook.Lip - 1) * t;
-            var whole = at * Fx.About(W, H, Affine.ScaleBy(s, s));
+            var whole = at * Press.Local(W, H);
             Lip.Transform = whole * Affine.Translate(0, CardArt.ButtonLook.Lip);
-            Face.Transform = whole * Affine.Translate(0, ty);
+            Face.Transform = whole;
             Lip.Opacity = Face.Opacity = opacity;
         }
 

@@ -212,7 +212,7 @@ namespace SquishSquad.Ui.Screens
             foreach (var (id, label, isReg) in new[] { ("tab-login", "Log in", false), ("tab-register", "Register", true) })
             {
                 var tt = Fr(id + "-t");
-                Add(id, new UiSvg(tt.W, tt.H).Text(label, 0, 0, m.Register == isReg ? TabOn : TabOff), tt);
+                Add(id, new UiSvg(tt.W, tt.H).Text(label, 0, 0, m.Register == isReg ? TabOn : TabOff), tt, 1, Shrink(ui.Pressed == id, tt, tt.X + tt.W / 2, tt.Y + tt.H / 2));
             }
 
             if (Has("blocked"))
@@ -243,7 +243,7 @@ namespace SquishSquad.Ui.Screens
                     string eye = m.ShowPass ? "Hide" : "Show";
                     float ew = UiSvg.BoxWidth(eye, EyeStyle), eh = UiSvg.LineBox(EyeStyle);
                     var ef = new Frame(inf.Right - 11 - ew, inf.Y + (inf.H - eh) / 2, ew, eh);
-                    Add("eye", new UiSvg(ew, eh).Text(eye, 0, 0, EyeStyle), ef);
+                    Add("eye", new UiSvg(ew, eh).Text(eye, 0, 0, EyeStyle), ef, 1, Shrink(ui.Pressed == "eye", ef, ef.X + ew / 2, ef.Y + eh / 2));
                     f["eye"] = ef;   // (for the tap)
                 }
                 if (ui.Focus == id && ui.CaretOn)
@@ -253,15 +253,18 @@ namespace SquishSquad.Ui.Screens
                 }
             }
 
-            // the gold button (Btn: a gold plaque, radius 15; it sinks 2 while held), its light sweeping across
-            var press = ui.Pressed == "submit" ? Affine.Translate(0, 2) : Affine.Identity;
+            // the gold button (Btn: a gold plaque, radius 15; it shrinks to 92 % while held, its glint, label and dots with
+            // it), its light sweeping across
             var rf = Fr("submit-ring");
+            bool held = ui.Pressed == "submit";
+            float bcx = rf.X + rf.W / 2, bcy = rf.Y + rf.H / 2 + 1.5f;   // the button's middle (its 3 dp lip in)
             {
                 const float ring = 1.6f, lip = 3;
                 var s = new UiSvg(rf.W + 2 * ring, rf.H + 2 * ring + lip);
                 Kit.Plaque(s, ring, ring, rf.W, rf.H, "gold", 15, 2.5f, ring, lip);
-                Add("submit", s, new Frame(rf.X - ring, rf.Y - ring, s.W, s.H), 1, press, 2);
-                if (!m.Submitting) Add("glint", Glint(rf.W, rf.H, ui.GlintMs), rf, 1, press, 0);
+                var bf = new Frame(rf.X - ring, rf.Y - ring, s.W, s.H);
+                Add("submit", s, bf, 1, Shrink(held, bf, bcx, bcy), 2);
+                if (!m.Submitting) Add("glint", Glint(rf.W, rf.H, ui.GlintMs), rf, 1, Shrink(held, rf, bcx, bcy), 0);
             }
             if (Has("label"))
             {
@@ -270,20 +273,23 @@ namespace SquishSquad.Ui.Screens
                 Kit.Lettering(s, m.ButtonLabel, "whiteB", z.BtnFont, 0, 0);
                 // useFadeUp: opacity t, translateY 6 -> 0
                 double t = ui.LabelT;
-                Add("label", s, lb, (float)t, press * Affine.Translate(0, 6 * (1 - t)));
+                Add("label", s, lb, (float)t, Shrink(held, lb, bcx, bcy) * Affine.Translate(0, 6 * (1 - t)));
             }
             for (int i = 0; i < 3; i++)
             {
                 if (!Has("dot" + i)) continue;
                 var df = Fr("dot" + i);
                 var (svg, tr) = Dot(i, ui.DotsMs, 10);
-                Add("dot" + i, svg, df, 1, press * tr);
+                Add("dot" + i, svg, df, 1, Shrink(held, df, bcx, bcy) * tr);
             }
             // Keep me signed in: a gold tick box
             var kb = Fr("keep-box");
-            Add("keep-box", KeepBox(m.Keep), kb);
             var kt = Fr("keep-t");
-            Add("keep-t", new UiSvg(kt.W, kt.H).Text("Keep me signed in", 0, 0, KeepStyle), kt);
+            bool keepHeld = ui.Pressed == "keep";
+            // (the box and its words shrink as one, about their middle)
+            float kcx = (kb.X + kt.X + kt.W) / 2, kcy = (Math.Min(kb.Y, kt.Y) + Math.Max(kb.Y + kb.H, kt.Y + kt.H)) / 2;
+            Add("keep-box", KeepBox(m.Keep), kb, 1, Shrink(keepHeld, kb, kcx, kcy));
+            Add("keep-t", new UiSvg(kt.W, kt.H).Text("Keep me signed in", 0, 0, KeepStyle), kt, 1, Shrink(keepHeld, kt, kcx, kcy));
             // OR, or the error in its place
             if (Has("error"))
             {
@@ -300,7 +306,7 @@ namespace SquishSquad.Ui.Screens
                 var ot = Fr("or-t");
                 Add("or-t", new UiSvg(ot.W, ot.H).Text("OR", 0, 0, OrStyle), ot);
             }
-            // Google / Facebook / TikTok: pearl plaques (radius 14), sinking 2 while held
+            // Google / Facebook / TikTok: pearl plaques (radius 14), shrinking to 92 % while held
             foreach (var (id, label, logo) in Socials)
             {
                 var sf = Fr("s-" + id);
@@ -311,7 +317,8 @@ namespace SquishSquad.Ui.Screens
                 s.Drawing(logo, lg.X - sf.X + ring, lg.Y - sf.Y + ring, lg.W, lg.H, "0 0 24 24");
                 var lt = Fr("s-" + id + "-t");
                 s.Text(label, lt.X - sf.X + ring, lt.Y - sf.Y + ring, SocialStyle);
-                Add("s-" + id, s, new Frame(sf.X - ring, sf.Y - ring, s.W, s.H), 1, ui.Pressed == id ? Affine.Translate(0, 2) : Affine.Identity, 2);
+                var at = new Frame(sf.X - ring, sf.Y - ring, s.W, s.H);
+                Add("s-" + id, s, at, 1, Shrink(ui.Pressed == id, at, sf.X + sf.W / 2, sf.Y + (sf.H + lip) / 2), 2);
             }
             return list;
         }
@@ -444,6 +451,17 @@ namespace SquishSquad.Ui.Screens
         };
 
         // ---- taps ----------------------------------------------------------------------------------------------------
+        // a held button (the gold one, the socials, and the smaller taps: the tabs, Show / Hide, Keep me signed in) shrinks
+        // to 92 % about its middle (cx, cy: screen dp), as the menu's Level crest does: the extra transform for one of its
+        // pieces drawn at `at` (Add puts a piece at its frame's snapped top-left)
+        const double PRESS = 0.92;
+        static Affine Shrink(bool held, Frame at, float cx, float cy)
+        {
+            if (!held) return Affine.Identity;
+            double lx = cx - Screens.Pieces.Snap(at.X), ly = cy - Screens.Pieces.Snap(at.Y);
+            return Affine.Translate(lx, ly) * Affine.ScaleBy(PRESS, PRESS) * Affine.Translate(-lx, -ly);
+        }
+
         /// <summary>What a tap at (x, y) dp hits: a tab, a field, the eye, the button, the box, a social button.</summary>
         public string HitTest(Dictionary<string, Frame> f, AuthUi ui, float x, float y)
         {

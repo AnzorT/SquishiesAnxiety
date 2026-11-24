@@ -1106,9 +1106,10 @@ namespace SquishSquad.Games.Squishdoku
             }
             // the left column
             o.Add(_leftL);
-            double press = _cribPress ? 3 : 0;
-            _cribLip.Transform = Affine.Translate(SdArt.CribX, SdArt.CribY + 4);
-            _cribFace.Transform = Affine.Translate(SdArt.CribX, SdArt.CribY + press);
+            // (held: the whole crib button, lip and face, 48 x 52, shrinks to 0.92 about its centre)
+            var crib = Affine.Translate(SdArt.CribX, SdArt.CribY) * Fx.Pressed(48, 52, _cribPress ? 1 : 0);
+            _cribLip.Transform = crib * Affine.Translate(0, 4);
+            _cribFace.Transform = crib;
             o.Add(_cribLip); o.Add(_cribFace);
             double glow = _glowOn.GetValue() * (_glowPulse?.Value ?? 1);
             _glowL.Transform = Affine.Translate(SdArt.RowX - 20, SdArt.RowY + 6) * About(192, 40, Affine.ScaleBy(0.9 + 0.15 * glow, 1));
@@ -1173,10 +1174,10 @@ namespace SquishSquad.Games.Squishdoku
             }
             for (int i = 0; i < 2; i++)
             {
-                double t = _toolT[i].GetValue(), s = 1 + (0.93 - 1) * t;
-                var whole = Affine.Translate(R.ToolX, R.ToolY + i * (SdArt.ToolH + 8)) * About(SdArt.ToolW, SdArt.ToolH, Affine.ScaleBy(s, s));
+                // (pressed: the whole tool button, lip and face, shrinks to 0.92 about its centre)
+                var whole = Affine.Translate(R.ToolX, R.ToolY + i * (SdArt.ToolH + 8)) * Fx.Pressed(SdArt.ToolW, SdArt.ToolH, _toolT[i].GetValue());
                 _toolLip[i].Transform = whole * Affine.Translate(0, 5);
-                _toolFace[i].Transform = whole * Affine.Translate(0, 4 * t);
+                _toolFace[i].Transform = whole;
                 o.Add(_toolLip[i]); o.Add(_toolFace[i]);
             }
             // the screen's bursts (the solve's confetti)

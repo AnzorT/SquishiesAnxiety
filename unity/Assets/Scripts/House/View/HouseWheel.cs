@@ -45,6 +45,10 @@ namespace SquishSquad.House.View
         static double T(int i) { double a = (i - 3) * 42; return Math.Round((-Math.Sqrt(1 - (a / 150) * (a / 150)) * 55 - 34) * 10) / 10; }
         static readonly Func<double, double> EaseOut = SquishSquad.Anim.Easing.Bezier(0, 0, 0.58, 1);
 
+        /// <summary>The wheel's button held down ("open", "close" or a room's id): it shrinks to 92 % about its centre while held.</summary>
+        public string Held;
+        double Press(string id) => Held == id ? 0.92 : 1;
+
         public void SetOpen(bool open, double now) { Open = open; if (open) _openAt = now; else _openAt = now; }
 
         // where the wheel's origin is (the page's hx, hy: room box px)
@@ -70,20 +74,20 @@ namespace SquishSquad.House.View
             if (op <= 0 || o == null && !show) return;
             var (hx, hy) = o ?? (0, 0);
             double fx = 426 + camK * (hx - 426), fy = 393 + camK * (hy + HouseFrame.BoxTop - 393);
-            Affine At(double x, double y, float w, float h, double popAt)
+            Affine At(double x, double y, float w, float h, double popAt, double press)
             {
-                double t = EaseOut(Math.Max(0, Math.Min(1, (now - popAt) / 220))), sc = 0.92 + 0.08 * t;
+                double t = EaseOut(Math.Max(0, Math.Min(1, (now - popAt) / 220))), sc = (0.92 + 0.08 * t) * press;
                 return Affine.ScaleBy(1 / pk, 1 / pk) * Affine.Translate((fx + x + w / 2) * _k, (fy + y + h / 2) * _k) * Affine.ScaleBy(_k * sc, _k * sc) * Affine.Translate(-w / 2, -h / 2);
             }
             double Pop(double popAt) => EaseOut(Math.Max(0, Math.Min(1, (now - popAt) / 220)));
             if (!Open)
             {
                 var b = P("qa-open"); var (w, h) = _size["qa-open"];
-                b.Transform = At(-15, -15, w, h, _shownAt); b.Opacity = (float)(op * Pop(_shownAt));
+                b.Transform = At(-15, -15, w, h, _shownAt, Press("open")); b.Opacity = (float)(op * Pop(_shownAt));
                 return;
             }
             var x0 = P("qa-close"); var (cw, ch) = _size["qa-close"];
-            x0.Transform = At(-13, -13, cw, ch, _openAt); x0.Opacity = (float)(op * Pop(_openAt));
+            x0.Transform = At(-13, -13, cw, ch, _openAt, Press("close")); x0.Opacity = (float)(op * Pop(_openAt));
             for (int i = 0; i < HouseCreatures.QA.Length; i++)
             {
                 var q = HouseCreatures.QA[i];
@@ -92,7 +96,7 @@ namespace SquishSquad.House.View
                 if (!_size.ContainsKey(id)) continue;
                 var b = P(id); var (w, h) = _size[id];
                 double at = _openAt + i * 30;
-                b.Transform = At(L(i), T(i), w, h, at);
+                b.Transform = At(L(i), T(i), w, h, at, Press(q.Id));
                 b.Opacity = (float)(op * Pop(at) * (lk ? 0.55 : 1));
             }
         }

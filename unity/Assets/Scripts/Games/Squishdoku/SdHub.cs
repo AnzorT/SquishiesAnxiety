@@ -140,18 +140,18 @@ namespace SquishSquad.Games.Squishdoku
             _togOn.Transform = tm; _togOn.Opacity = ho * (float)OnOp.Evaluate(p); o.Add(_togOn);
             _knob.Transform = tm * Affine.Translate(KnobX + Travel * p, KnobY) * Fx.About(Knob, Knob, Affine.ScaleBy(1 + 0.18 * q, 1 - 0.14 * q));
             _knob.Opacity = ho; o.Add(_knob);
-            // HOW TO PLAY (SdButton: the whole button shrinks to 0.93, the ring sinks 4 dp)
-            double t = _press.T, s = 1 + (0.93 - 1) * t;
-            var whole = view * Affine.Translate(RulesX, RulesY) * _slideQ.Local * Fx.About(RulesW, RulesH, Affine.ScaleBy(s, s));
+            // HOW TO PLAY (SdButton: while pressed the whole button, lip and ring, shrinks to 0.92 about its centre)
+            var whole = view * Affine.Translate(RulesX, RulesY) * _slideQ.Local * _press.Local(RulesW, RulesH);
             float qo = opacity * _slideQ.Opacity;
             _rulesLip.Transform = whole * Affine.Translate(0, 5); _rulesLip.Opacity = qo; o.Add(_rulesLip);
-            _rulesFace.Transform = whole * Affine.Translate(0, 4 * t); _rulesFace.Opacity = qo; o.Add(_rulesFace);
+            _rulesFace.Transform = whole; _rulesFace.Opacity = qo; o.Add(_rulesFace);
         }
 
-        // the panel's name: Lettering's box (12, 6) 348 x 34, its <svg> centred in it on whole dp
+        // the panel (shrinking to 0.92 about its centre while held); its name: Lettering's box (12, 6) 348 x 34, its <svg>
+        // centred in it on whole dp
         static void Panel(SdLayer panel, SdLayer info, SdLayer name, (float x, float y, float w, float h) r, SlideIn slide, bool down, Affine view, float opacity, List<SdLayer> o)
         {
-            var m = view * Affine.Translate(r.x, r.y + (down ? 2 : 0)) * slide.Local;
+            var m = view * Affine.Translate(r.x, r.y) * slide.Local * Fx.Pressed(r.w, r.h, down ? 1 : 0);
             panel.Transform = m; panel.Opacity = opacity * slide.Opacity; o.Add(panel);
             float lx = 12 + (348 - name.W) / 2, ly = 6 + (34 - name.H) / 2;
             name.Transform = m * Affine.Translate(Card.Whole(r.x + lx) - r.x, Card.Whole(r.y + ly) - r.y); name.Opacity = panel.Opacity; o.Add(name);

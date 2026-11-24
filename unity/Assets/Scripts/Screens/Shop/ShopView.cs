@@ -345,9 +345,16 @@ namespace SquishSquad.Screens
 
         static readonly TextStyle PurseT = Ink(13.5f);
 
+        /// <summary>A held button shrinks to 92 % about its middle, (cx, cy) in the piece's own units, as the menu's Level
+        /// crest does (every piece of one button about the same point, so it stays one piece).</summary>
+        static Affine Shrink(bool held, double cx, double cy) =>
+            held ? Affine.Translate(cx, cy) * Affine.ScaleBy(0.92, 0.92) * Affine.Translate(-cx, -cy) : Affine.Identity;
+        /// <summary>The same inside a drawing: the transform for a held button's group about (cx, cy).</summary>
+        static string ShrinkAttr(double cx, double cy) => $"transform=\"translate({F(cx)} {F(cy)}) scale(0.92) translate({F(-cx)} {F(-cy)})\"";
+
         void Header(List<ScreenPiece> list)
         {
-            list.Add(Piece("orb-back", Xml("orb-back"), 40, 40, 16, 15 + (_pressed == "back" ? 2 : 0)));
+            list.Add(Piece("orb-back", Xml("orb-back"), 40, 40, 16, 15, 1, Shrink(_pressed == "back", 20, 20)));
             _hits.Add("back", 16, 15, 40, 40, 8);
             var (lw, lh) = LetteringSize("Shop", 30);
             var s = new UiSvg(lw, lh);
@@ -365,7 +372,7 @@ namespace SquishSquad.Screens
                 Plaque(p, 0, 0, pw, 32, "vel");
                 Contain(p, cur == "gems" ? Gem(0) : Coin(0), -15, -6, 44, 44);
                 p.Text(text, 32, (32 - LH(PurseT)) / 2, PurseT);
-                list.Add(Piece("pill-" + cur, p, x, 19 + (_pressed == "pill-" + cur ? 2 : 0), 1, null, 20));
+                list.Add(Piece("pill-" + cur, p, x, 19, 1, Shrink(_pressed == "pill-" + cur, pw / 2, (32 + 3) / 2f), 20));
                 _hits.Add("pill-" + cur, x, 19, pw, 32);
                 x -= 14 + 9;
             }
@@ -408,7 +415,7 @@ namespace SquishSquad.Screens
                     s.Box(tw + 8 - bw, -8, bw, 20, new BoxStyle { Radius = 10, Background = "#ff5a2a", BorderWidth = 2, BorderColor = "#ffffff" });
                     s.Text(badges[k], tw + 8 - bw / 2 - W(badges[k], BadgeT) / 2, -8 + (20 - LH(BadgeT)) / 2, BadgeT);
                 }
-                list.Add(Piece("tab-" + k, s, x, 62 + (_pressed == "tab-" + k ? 2 : 0), 1, null, 12));
+                list.Add(Piece("tab-" + k, s, x, 62, 1, Shrink(_pressed == "tab-" + k, tw / 2, (36 + 3) / 2f), 12));
                 _hits.Add("tab-" + k, x, 62, tw, 36);
                 x += tw + 12;
             }
@@ -513,7 +520,14 @@ namespace SquishSquad.Screens
         /// <summary>The royal Btn with a Lettering label (or `content` drawn into its face).</summary>
         void GoldBtn(List<ScreenPiece> list, string id, string label, float x, float y, float w, float h, float size, bool glow, string variant = "gold", float opacity = 1, float radius = 14, Action<UiSvg> content = null)
         {
-            if (glow) BtnGlow(list, id, x, y, w, h, radius, _glow.GetValue());
+            // held: the button (its 3 dp lip in) and the glow round it shrink to 92 % about its middle
+            bool down = _pressed == id && opacity >= 1;
+            if (glow)
+            {
+                BtnGlow(list, id, x, y, w, h, radius, _glow.GetValue());
+                var g = list[list.Count - 1];
+                g.Transform = g.Transform * Shrink(down, 10 + w / 2, 10 + (h + 3) / 2);
+            }
             var s = new UiSvg(w, h);
             Plaque(s, 0, 0, w, h, variant, radius);
             if (content != null) content(s);
@@ -522,8 +536,7 @@ namespace SquishSquad.Screens
                 var (lw, lh) = LetteringSize(label, size);
                 Lettering(s, label, variant == "gold" ? "whiteB" : "white", size, (w - lw) / 2, (h - lh) / 2);
             }
-            bool down = _pressed == id && opacity >= 1;
-            list.Add(Piece("btn-" + id, s, x, y + (down ? 2 : 0), opacity, null, 8));
+            list.Add(Piece("btn-" + id, s, x, y, opacity, Shrink(down, w / 2, (h + 3) / 2), 8));
             if (opacity >= 1) _hits.Add(id, x, y, w, h);
         }
 
@@ -639,8 +652,8 @@ namespace SquishSquad.Screens
             // the arrows
             bool lOff = _at == 0, rOff = _at >= pages.Count - 1;
             float ay = 108 + 285 / 2f - 36;
-            list.Add(Piece("orb-left", Xml("orb-left"), 40, 40, 16, ay + (_pressed == "arrow-left" && !lOff ? 2 : 0), lOff ? 0.35f : 1));
-            list.Add(Piece("orb-right", Xml("orb-right"), 40, 40, SW - 56, ay + (_pressed == "arrow-right" && !rOff ? 2 : 0), rOff ? 0.35f : 1));
+            list.Add(Piece("orb-left", Xml("orb-left"), 40, 40, 16, ay, lOff ? 0.35f : 1, Shrink(_pressed == "arrow-left" && !lOff, 20, 20)));
+            list.Add(Piece("orb-right", Xml("orb-right"), 40, 40, SW - 56, ay, rOff ? 0.35f : 1, Shrink(_pressed == "arrow-right" && !rOff, 20, 20)));
             if (!lOff) _hits.Add("arrow-left", 16, ay, 40, 40, 8);
             if (!rOff) _hits.Add("arrow-right", SW - 56, ay, 40, 40, 8);
             // (no page dots: the user had them removed, 2026-11-20)
@@ -683,6 +696,11 @@ namespace SquishSquad.Screens
             var ys = Between(0, CARD_H, 8, 10, 112, nh, LH(oddsT), bh);
             var s = new UiSvg(160, CARD_H);
             Plaque(s, 0, 0, 160, CARD_H, "vel", 18, 3, 2, 4);
+            // held, the window (the app's Pressable: its backdrop and gold border, the art and the chip over it) shrinks
+            // to 92 % about its middle, as the buttons do
+            bool held = _pressed == $"art:{gk}:{size}";
+            float wcx = 8 + 144 / 2f, wcy = ys[0] + 112 / 2f;   // the window's middle (in the card)
+            if (held) s.Open(ShrinkAttr(wcx, wcy));
             // the backdrop (cover, inside the gold border)
             var clip = s.NewId("ct");
             s.Def($"<clipPath id=\"{clip}\"><path d=\"{UiSvg.RRect(10, ys[0] + 2, 140, 108, new[] { 10f, 10, 10, 10 })}\"/></clipPath>");
@@ -690,6 +708,7 @@ namespace SquishSquad.Screens
             Cover(s, Backdrop(gk), 10, ys[0] + 2, 140, 108);
             s.Close();
             s.Box(8, ys[0], 144, 112, new BoxStyle { Radius = 12, BorderWidth = 2, BorderColor = "#ffd76a" });
+            if (held) s.Close();
             Lettering(s, C.Name, "white", 13, (160 - nw) / 2, ys[1]);
             string odds = Ellipsize(C.Odds, oddsT, 144);
             TxtC(s, odds, 80, ys[2], oddsT);
@@ -698,14 +717,15 @@ namespace SquishSquad.Screens
             // the art, bobbing, and the size chip over it
             var a = new UiSvg(116, 100);
             Contain(a, Chest(gk, size + "-grow"), 0, 0, 116, 100);
-            list.Add(Piece($"art-{gk}-{size}", a, x + 22, y + ys[0] + 6 + _bob[ti].PingPong(0, -7), 1, null, 0));
+            float bob = _bob[ti].PingPong(0, -7);
+            list.Add(Piece($"art-{gk}-{size}", a, x + 22, y + ys[0] + 6 + bob, 1, Shrink(held, wcx - 22, wcy - ys[0] - 6 - bob), 0));
             var chipT = T(Black, 9, SIZE_INK[ti], 0.8f);
             string chip = ShopData.SIZE_NAME[ti].ToUpperInvariant();
             float cw = W(chip, chipT) + 14 + 2 * Bw(1.5f), ch = LH(chipT) + 4 + 2 * Bw(1.5f);
             var cs = new UiSvg(cw, ch);
             cs.Box(0, 0, cw, ch, new BoxStyle { Radius = 999, Gradient = SIZE_DOT[ti], GradientAngle = 135, BorderWidth = Bw(1.5f), BorderColor = "#ffffff" });
             cs.Text(chip, 7 + Bw(1.5f), 2 + Bw(1.5f), chipT);
-            list.Add(Piece($"chip-{gk}-{size}", cs, x + 8 + 2 + 5, y + ys[0] + 2 + 5, 1, null, 2));
+            list.Add(Piece($"chip-{gk}-{size}", cs, x + 8 + 2 + 5, y + ys[0] + 2 + 5, 1, Shrink(held, wcx - (8 + 2 + 5), wcy - ys[0] - (2 + 5)), 2));
             // OPEN · price
             bool gems = C.T.Cur == "gems";
             string price = Prof.Fmt(C.T.Price);

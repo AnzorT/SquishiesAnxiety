@@ -136,7 +136,7 @@ namespace SquishSquad.Screens
             var s = new UiSvg(at.W, at.H);
             Plaque(s, 0, 0, at.W, at.H, wood ? "vel" : "gold", radius);
             content(s, at.W, at.H);
-            list.Add(Piece("btn-" + id, s, at.X, at.Y + (_pressed == id ? 2 : 0), 1, null, 8));
+            list.Add(Piece("btn-" + id, s, at.X, at.Y, 1, Shrink(_pressed == id, at.W / 2, (at.H + 3) / 2), 8));   // (held: 92 %, its 3 dp lip in)
             _hits.Add(id, at.X, at.Y, at.W, at.H);
         }
 
@@ -426,6 +426,8 @@ namespace SquishSquad.Screens
                 bool done = doneToday ? i <= idx : i < idx, today = !doneToday && i == idx;
                 var look = DAY_LOOK[today ? "today" : done ? "done" : last ? "big" : "next"];
                 var rf = f["ring" + i]; var ff = f["face" + i];
+                bool dayHeld = _pressed == "day:" + i;
+                if (dayHeld) c.Open(ShrinkAttr(ox + rf.X + rf.W / 2, oy + rf.Y + rf.H / 2));   // (held: the tile shrinks to 92 %)
                 c.Box(ox + rf.X, oy + rf.Y, rf.W, rf.H, new BoxStyle { Radius = 14, Background = look.ring });
                 c.Box(ox + ff.X, oy + ff.Y, ff.W, ff.H, new BoxStyle { Radius = 12, Gradient = look.bg, BorderWidth = 2, BorderColor = "#ffffff" });
                 var fclip = c.NewId("df");
@@ -450,6 +452,7 @@ namespace SquishSquad.Screens
                     Check(c, ox + ff.X + ff.W / 2 - 11, oy + ff.Y + ff.H / 2 - 11, 22);
                 }
                 c.Close();
+                if (dayHeld) c.Close();
                 _hits.Add("day:" + i, x + ox + rf.X, y + oy + rf.Y, rf.W, rf.H);
             }
             if (doneToday)
@@ -829,9 +832,12 @@ namespace SquishSquad.Screens
             {
                 var r = nodes[i];
                 bool claimed = Prof.Truthy(Prof.Get(got, i.ToString())), reach = xp >= Prof.Num(r["xp"]), lockd = Prof.Truthy(Prof.Get(r, "prem")) && !prem, can = reach && !claimed && !lockd;
+                bool nodeHeld = _pressed == "pass:" + i;
+                if (nodeHeld) s.Open(ShrinkAttr(nx + 39, ny + 43.5));   // (held: the node shrinks to 92 %)
                 s.Box(nx, ny, 78, 87, new BoxStyle { Radius = 20, Background = can ? "#b86200" : Prof.Truthy(Prof.Get(r, "prem")) ? "#c47a00" : "#6a3aa8" });
                 s.Box(nx + 2, ny + 2, 74, 80, new BoxStyle { Radius = 18, Gradient = can ? new[] { "#fff6c4", "#ffd84a" } : Prof.Truthy(Prof.Get(r, "prem")) ? new[] { "#fff3d0", "#ffd98a" } : new[] { "#f6efff", "#dcc6ff" }, BorderWidth = Bw(2.5f), BorderColor = "#ffffff", Opacity = claimed ? 0.55f : 1 });
                 TxtC(s, RewardText(r), nx + 39, ny + 60, T(Kit.Display, 12.5f, Prof.Truthy(Prof.Get(r, "prem")) ? "#7a3d00" : "#45107a"));
+                if (nodeHeld) s.Close();
                 _hits.Add("pass:" + i, x + nx, y + ny, 78, 87);
                 nx += 88;
             }
@@ -876,7 +882,7 @@ namespace SquishSquad.Screens
             for (int pi = 0; pi < packSvgs.Count; pi++)
             {
                 float px = x0 + pi * 130, ty = py + rowH - packH[pi];
-                list.Add(Piece("pack-" + pi, packSvgs[pi], px, ty + (_pressed == "pack:" + pi ? 0 : 0), 1, null, 16));
+                list.Add(Piece("pack-" + pi, packSvgs[pi], px, ty, 1, Shrink(_pressed == "pack:" + pi, 120 / 2f, packH[pi] / 2), 16));
                 var p = packs[pi];
                 _hits.Add("pack:" + pi, px, ty, 120, packH[pi]);
             }
@@ -913,7 +919,7 @@ namespace SquishSquad.Screens
                     s.Box(cw + 4 - tw, -7, tw, LH(tagT), new BoxStyle { Radius = 999, Background = "#26a94e" });
                     s.Text(SWAP_TAGS[i], cw + 4 - tw + 4, -7, tagT);
                 }
-                list.Add(Piece("swap-" + i, s, sx, sy + (_pressed == "swap:" + i ? 2 : 0), 1, null, 12));
+                list.Add(Piece("swap-" + i, s, sx, sy, 1, Shrink(_pressed == "swap:" + i, cw / 2, 36 / 2f), 12));
                 _hits.Add("swap:" + i, sx, sy, cw, 36);
                 sx += cw + 10;
             }

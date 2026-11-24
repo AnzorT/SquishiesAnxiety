@@ -113,6 +113,8 @@ namespace SquishSquad.Menu
         static double[] Arr(float[] f) => Array.ConvertAll(f, v => (double)v);
 
         public void Press(string key, double now) { _pressed = key; _pressAt = now; }
+        /// <summary>The button held down (the back orb, an arrow, CHOOSE / SHOP): it shrinks while held (PageGeom.Shrink).</summary>
+        public HitKind Held;
         public void Release(double now) { if (_pressed != null) { _released = _pressed; _releaseAt = now; } _pressed = null; }
 
         /// <summary>A card tapped: it's the one looked at (popping in if it's another).</summary>
@@ -197,7 +199,7 @@ namespace SquishSquad.Menu
             var d = new List<PageDraw>();
             double t = now - OpenedAt, te = now - EndlessEpoch;
             d.Add(g.Screen("bg", L.bg));
-            d.Add(g.At("head", L.head));
+            g.Header(d, g.At("head", L.head), L.head, L.back, Held == HitKind.Back);
             // the rays (sqSpin 60 s linear) about their middle, at the page's middle (left: 50%, since 2026-11-20)
             double rw = L.rays.box[2], rh = L.rays.box[3], sh = Mid;
             d.Add(g.Pic("rays", L.rays, G.PgW / 2 - rw / 2, 170 - rh / 2, 1, PageGeom.About(rw / 2, rh / 2, Affine.Rotate(360 * Frac(te / 60000)))));
@@ -246,7 +248,11 @@ namespace SquishSquad.Menu
                 if (stg != null) d.Add(g.Pic("set", stg, x + w1 + 12 + w2 + 12, stg.box[1]));
             }
             var act = ActPic();
-            if (act != null) d.Add(Shifted("act", act, sh));
+            if (act != null)
+            {
+                d.Add(Shifted("act", act, sh));
+                if (Held == HitKind.Act) G.Shrink(d, d.Count - 1, act.box[0] + sh + act.box[2] / 2, act.box[1] + act.box[3] / 2);
+            }
 
             // the row
             int from = d.Count;
@@ -287,7 +293,9 @@ namespace SquishSquad.Menu
             if (meTag.HasValue) d.Add(meTag.Value);
             g.ClipTo(d, from, 0, 284, G.PgW, 393 - 284);
             d.Add(g.Pic("prev", L.prev, 10, 330, PrevOff ? 0.4 : 1));
+            if (Held == HitKind.Prev) g.Shrink(d, d.Count - 1, 10 + 17, 330 + 17);
             d.Add(g.Pic("next", L.next, G.PgW - 10 - 34, 330, NextOff ? 0.4 : 1));
+            if (Held == HitKind.Next) g.Shrink(d, d.Count - 1, G.PgW - 10 - 17, 330 + 17);
             // CHOOSE's toast (.sq-toast.r: at the bottom right, no motion, 2.4 s)
             if (_toast != null && now - _toastAt < 2400)
             {

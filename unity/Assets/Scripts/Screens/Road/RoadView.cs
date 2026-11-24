@@ -193,7 +193,7 @@ namespace SquishSquad.Screens
             float purseH = 2 + bw + 4 + Math.Max(LH(pT), 22 - 10) + 4 + bw + 2 + 3;
             float pursesW = coinW + 6 + gemW;
             float x = 16;
-            list.Add(Piece("orb-back", Xml("orb-back"), 40, 40, x, cy - 20 + (_pressed == "back" ? 2 : 0)));
+            list.Add(Piece("orb-back", Xml("orb-back"), 40, 40, x, cy - 20, 1, Shrink(_pressed == "back", 40, 40)));
             _hits.Add("back", x, cy - 20, 40, 40, 8);
             x += 40 + 12;
             var ts = new UiSvg(tw, th);
@@ -230,7 +230,7 @@ namespace SquishSquad.Screens
             if (allBtn != null)
             {
                 float bx = (W - allBtn.W) / 2, by = ry + colH + 12;
-                list.Add(Piece("all", allBtn.Svg(), allBtn.W, allBtn.H, bx, by + (_pressed == "all" ? 3 : 0), 1, null, 8));
+                list.Add(Piece("all", allBtn.Svg(), allBtn.W, allBtn.H, bx, by, 1, Shrink(_pressed == "all", allBtn.W, allBtn.H), 8));
                 if (!_busy) _hits.Add("all", bx, by, allBtn.W, allBtn.H);
             }
             if (_toast != null)
@@ -327,10 +327,14 @@ namespace SquishSquad.Screens
             {
                 var b = new CandyBtnArt("CLAIM", _busy ? "grey" : "gold", 5, 12, 4, 14);
                 float bx = x + COL / 2 - b.W / 2;
-                list.Add(Piece("claim-" + n.Lv, b.Svg(), b.W, b.H, bx, y + ay + (_pressed == "claim:" + n.Lv ? 3 : 0), 1, null, 8));
+                list.Add(Piece("claim-" + n.Lv, b.Svg(), b.W, b.H, bx, y + ay, 1, Shrink(_pressed == "claim:" + n.Lv, b.W, b.H), 8));
                 if (!_busy) _hits.Add("claim:" + n.Lv, bx, y + ay, b.W, b.H);
             }
         }
+
+        /// <summary>A held button shrinks to 92 % about the middle of its w x h box (lip and all), as the menu's Level
+        /// crest does.</summary>
+        static Affine Shrink(bool held, float w, float h) => held ? About(w, h, Affine.ScaleBy(0.92, 0.92)) : Affine.Identity;
     }
 
     /// <summary>squad/ui.js CandyBtn (Ringed: ring 2.5, border 3, lip) with a BtnText caption.</summary>

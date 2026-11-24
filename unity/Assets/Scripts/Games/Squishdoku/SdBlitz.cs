@@ -618,8 +618,10 @@ namespace SquishSquad.Games.Squishdoku
             // the left column
             var icon = Phase == "play" ? "pause" : "back";
             if (icon != _icon) { _icon = icon; _cribLip.Set(_xml($"crib-{icon}-lip"), 48, 48, 2); _cribFace.Set(_xml($"crib-{icon}-face"), 48, 52, 2); }
-            _cribLip.Transform = Affine.Translate(SdArt.CribX, CribY + 4);
-            _cribFace.Transform = Affine.Translate(SdArt.CribX, CribY + (_cribPress ? 3 : 0));
+            // (held: the whole crib button, lip and face, 48 x 52, shrinks to 0.92 about its centre)
+            var crib = Affine.Translate(SdArt.CribX, CribY) * Fx.Pressed(48, 52, _cribPress ? 1 : 0);
+            _cribLip.Transform = crib * Affine.Translate(0, 4);
+            _cribFace.Transform = crib;
             o.Add(_cribLip); o.Add(_cribFace);
             int top = Top;
             var key = $"{Idx}|{ClearedShown}|{top}";
