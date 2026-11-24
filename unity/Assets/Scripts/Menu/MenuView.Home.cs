@@ -7,11 +7,15 @@
 // round the door: #fffdf0, #ffe9a8 40 %, #ffc25e) fading in from 45 % of it. The house opens under the veil. Coming
 // back: the world out from 6.2 over 850 ms (1 - (1 - t)³) as the veil fades (gone at 55 %), the creature walks back
 // down facing us (1100 ms, fading in over the first 16 %), then the HUD comes back and it plays 'happy'.
-// Not here yet: the door's opening (main-menu.js doorOpen: the scene's door is in the house's picture) and develop's
-// "Heading home" screen between the walk and the flight (app/menu.js M.headingHome: night falls on the house, its rooms
+// The door swings open as it nears (doorOpen: the door's group squeezed to 0.18 of its width about its left edge and
+// skewed -6°, the warm doorway light coming on behind it), drawn here over the house's picture from main-menu-scene.js's
+// own door (its colour by the house's tier) and shut again on the way back.
+// Not here yet: develop's "Heading home" screen between the walk and the flight (app/menu.js M.headingHome: night falls on the house, its rooms
 // light up as the house loads, the wooden bar and a tip): the flight follows the walk at once.
 using System;
 using SquishSquad.Creatures;
+using SquishSquad.Vector;
+using SquishSquad.Vector.Gpu;
 using UnityEngine;
 
 namespace SquishSquad.Menu
@@ -20,6 +24,7 @@ namespace SquishSquad.Menu
     {
         const float TurnMs = 430, WalkMs = 1250, ZoomInMs = 900, ZoomOutMs = 850, WalkBackMs = 1100, DoorX = 500, DoorY = 282, PadY = 421, PathY = 300;
         float _homeT = -1; Action _onHome; SpriteRenderer _veil; Texture2D _veilTex;
+        GameObject _door; RenderTexture _doorRt; Mesh _doorMesh; float _doorDrawn = -1;
         static float EaseInOutCss(float x)   // CSS ease-in-out (cubic-bezier(.42,0,.58,1)): mmBob's timing
         {
             if (x <= 0 || x >= 1) return x;
@@ -57,6 +62,7 @@ namespace SquishSquad.Menu
                 float wt = Mathf.Clamp01((t - TurnMs) / WalkMs);
                 bool walking = t > TurnMs && t < TurnMs + WalkMs;
                 Stage(EIO(wt), wt > 0.84f ? Mathf.Max(0, 1 - (wt - 0.84f) / 0.16f) : 1, walking ? t - TurnMs : -1);
+                Door(Mathf.Clamp01((wt - 0.35f) / 0.45f));
                 float zt = Mathf.Clamp01((t - TurnMs - WalkMs) / ZoomInMs);
                 Zoom(1 + 5.2f * zt * zt * zt, zt > 0.45f ? Mathf.Min(1, (zt - 0.45f) / 0.5f) : 0);
                 if (zt >= 1) { Where = Place.House; var a = _onHome; _onHome = null; a?.Invoke(); }
@@ -68,8 +74,9 @@ namespace SquishSquad.Menu
             Zoom(1 + 5.2f * (1 - e), Mathf.Max(0, 1 - ot / 0.55f));
             float bt = Mathf.Clamp01((t - ZoomOutMs) / WalkBackMs);
             Stage(1 - EIO(bt), Mathf.Min(1, bt / 0.16f), t > ZoomOutMs && t < ZoomOutMs + WalkBackMs ? t - ZoomOutMs : -1);
+            Door(Mathf.Max(0, 1 - bt / 0.7f));
             if (bt < 1) return;
-            Where = Place.Home; Zoom(1, 0); Stage(0, 1, -1); Fade(1, ms);
+            Where = Place.Home; Zoom(1, 0); Stage(0, 1, -1); Door(0); Fade(1, ms);
             Creature?.Play("happy");
         }
 
@@ -96,6 +103,47 @@ namespace SquishSquad.Menu
             Creature.transform.localRotation = Quaternion.Euler(0, 0, -rot);
             Creature.transform.localScale = new Vector3(s, s, 1);
             Creature.SetOpacity(opacity);
+        }
+
+        // doorOpen(t): main-menu-scene.js's front door (the doorway, its light, the door's group) over the house's picture,
+        // the group turned as main-menu.js does it (transform-box fill-box, origin 0% 50%: scaleX(1 - 0.82 t)
+        // skewY(-6 t deg)), the light's opacity t; nothing drawn while it's shut (the picture has it)
+        void Door(float t)
+        {
+            t = Mathf.Round(t * 60) / 60;
+            if (t <= 0) { if (_door != null) _door.SetActive(false); _doorDrawn = 0; return; }
+            float x0 = 480, y0 = 244, w = 40, h = 60, k = _k;
+            if (_door == null)
+            {
+                int pw = Mathf.Max(8, Mathf.CeilToInt(w * k)), ph = Mathf.Max(8, Mathf.CeilToInt(h * k));
+                _doorRt = new RenderTexture(pw, ph, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4, name = "door", hideFlags = HideFlags.HideAndDontSave }; _doorRt.Create(); _made.Add(_doorRt);
+                _door = new GameObject("door"); _door.transform.SetParent(_world, false); _made.Add(_door);
+                _door.transform.localPosition = World(new Vector2(_ox + x0 * k, _oy + y0 * k));
+                _doorMesh = new Mesh { name = "door quad", hideFlags = HideFlags.HideAndDontSave }; _made.Add(_doorMesh);
+                float qw = pw, qh = ph;
+                _doorMesh.SetVertices(new[] { new Vector3(0, 0, 0), new Vector3(qw, 0, 0), new Vector3(qw, -qh, 0), new Vector3(0, -qh, 0) });
+                _doorMesh.SetUVs(0, new[] { new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0) });
+                _doorMesh.SetTriangles(new[] { 0, 1, 2, 0, 2, 3 }, 0);
+                _door.AddComponent<MeshFilter>().sharedMesh = _doorMesh;
+                var mr = _door.AddComponent<MeshRenderer>(); var mat = new Material(Resources.Load<Shader>("VectorShaders/VectorShow")) { mainTexture = _doorRt, hideFlags = HideFlags.HideAndDontSave }; _made.Add(mat);
+                mr.sharedMaterial = mat; mr.sortingOrder = SceneOrder + 1;
+            }
+            _door.SetActive(true);
+            if (t == _doorDrawn) return;
+            _doorDrawn = t;
+            // (main-menu-scene.js: the door's colour by the house's tier, L < 5, < 15, < 25, else; OL the outline)
+            int tier = Level < 5 ? 0 : Level < 15 ? 1 : Level < 25 ? 2 : 3;
+            string door = tier >= 3 ? "#7a2a3a" : tier == 0 ? "#8a6a52" : "#a0643a", OL = "#4a3a2e";
+            Color dc; ColorUtility.TryParseHtmlString(door, out dc); var dk = Color.Lerp(dc, Color.black, 0.25f); string seam = "#" + ColorUtility.ToHtmlStringRGB(dk).ToLowerInvariant();
+            string F(float v) => v.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+            string arch = "M488 300 V259 A12 12 0 0 1 512 259 V300Z";
+            var svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" + F(w) + "\" height=\"" + F(h) + "\" viewBox=\"" + F(x0) + " " + F(y0) + " " + F(w) + " " + F(h) + "\">"
+                + "<defs><radialGradient id=\"mmDoorL\" cx=\"0.5\" cy=\"0.7\" r=\"0.8\"><stop offset=\"0\" stop-color=\"#fffbe6\"/><stop offset=\"0.55\" stop-color=\"#ffe39a\"/><stop offset=\"1\" stop-color=\"#ffb84a\"/></radialGradient></defs>"
+                + "<path d=\"" + arch + "\" fill=\"#3a2418\"/><path d=\"" + arch + "\" fill=\"url(#mmDoorL)\" opacity=\"" + F(t) + "\"/>"
+                + "<g transform=\"translate(488 273.5) scale(" + F(1 - 0.82f * t) + " 1) skewY(" + F(-6 * t) + ") translate(-488 -273.5)\">"
+                + "<path d=\"" + arch + "\" fill=\"" + door + "\" stroke=\"" + OL + "\" stroke-width=\"1.1\"/><path d=\"M494 298 V262 M500 298 V256 M506 298 V262\" stroke=\"" + seam + "\" stroke-width=\"0.8\"/>"
+                + "<circle cx=\"500\" cy=\"263\" r=\"4.2\" fill=\"#fff4d0\" stroke=\"" + OL + "\" stroke-width=\"0.9\"/><circle cx=\"507\" cy=\"281\" r=\"1.6\" fill=\"#ffd66b\" stroke=\"#8a6a1a\" stroke-width=\"0.5\"/></g></svg>";
+            using (var vr = new VectorRenderer()) vr.Render(SvgScene.Compile(SvgMarkup.Parse(svg), _doorRt.width, _doorRt.height, Affine.Identity, null), _doorRt);
         }
 
         // the world scaled `k` about the door, the veil at `veil`

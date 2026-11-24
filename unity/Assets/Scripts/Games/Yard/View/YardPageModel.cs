@@ -122,16 +122,17 @@ namespace SquishSquad.Games.Yard.View
             });
         }
 
-        // the menu's toast (.mm-toast: top 60, centred, Fredoka 700 13px, padding 5px 18px, mmToast 2.4 s), as the Game
-        // Park draws it (the wood plaque look of .mm-p v-vel); only its text and fade are the page's here
+        // the menu's toast (main-menu.js toast(): .mm-toast mm-p tip v-gold, top 60, centred, max 70 % wide, Fredoka 700
+        // 13px, padding 5px 18px; mmToast 2.4 s: in from 8 px up over 10 %, out over the last 15 %), its gold plaque
+        // drawn here
         PageDraw Toast(double now)
         {
-            double t = (now - ToastAt) / 2400, op = t < 0.1 ? t / 0.1 : t > 0.85 ? (1 - t) / 0.15 : 1;
-            var ts = PageText.White(13);
+            double t = (now - ToastAt) / 2400, op = t < 0.1 ? t / 0.1 : t > 0.85 ? (1 - t) / 0.15 : 1, dy = t < 0.1 ? -8 * (1 - t / 0.1) : 0;
+            var ts = PageText.OnGold(13);
             float w = (float)Math.Min(G.PgW * 0.7, PageText.Width(ToastText, ts) + 36), h = (float)PageText.Line(ts) + 10;
-            return G.Svg("toast:" + ToastText, G.PgW / 2 - w / 2, 60, w, h, (s, x, y) =>
+            return G.Svg("toast:" + ToastText, G.PgW / 2 - w / 2, 60 + dy, w, h, (s, x, y) =>
             {
-                s.Box(x, y, w, h, new BoxStyle { Gradient = new[] { "#8a5a34", "#6b4426" }, Radius = 999, BorderWidth = 2, BorderColor = "#ffd76a", Shadows = new[] { new Shadow("rgba(40,16,4,0.45)", 0, 3, 0) } });
+                s.Box(x, y, w, h, new BoxStyle { Gradient = new[] { "#fff3b8", "#ffd45a", "#f0a828" }, Radius = 999, BorderWidth = 2, BorderColor = PageText.Ink, Shadows = new[] { new Shadow(PageText.Ink, 0, 3, 0) } });
                 s.Text(ToastText, x, y + 5, ts, w, 0.5f);
             }, 6, Math.Max(0, Math.Min(1, op)));
         }

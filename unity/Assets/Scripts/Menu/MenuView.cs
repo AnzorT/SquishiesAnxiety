@@ -96,7 +96,7 @@ namespace SquishSquad.Menu
                 _sceneSr = Picture("scene", _world, tex, Snap(pos, s), s, SceneOrder);
                 // its vignette, faded out while the Game Park is beside the house (menu.js vignette(): opacity .45s ease)
                 if (!string.IsNullOrEmpty(_layout.scene.vignette))
-                    _vignette = Picture("vignette", _world, Load(_layout.scene.vignette), Snap(pos, s), s, SceneOrder + 1);
+                    _vignette = Picture("vignette", _world, Load(_layout.scene.vignette), Snap(pos, s), s, SceneOrder + 2);   // (over the door as it opens: MenuView.Home.cs)
             }
 
             // 2. the creature and its name plate (they stand in the scene), 3. the weather, 4. the HUD
