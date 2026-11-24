@@ -62,6 +62,15 @@ namespace SquishSquad.Creatures
 
         public void Play(string move) => _rig?.Play(move);
 
+        /// <summary>Its colour times `tint`, saturated by `sat` (white, 1: as drawn): the game intro's night light (menu.js
+        /// light(): CSS brightness / saturate / a little sepia on the stage).</summary>
+        public void SetTint(Color tint, float sat)
+        {
+            if (_show == null) return;
+            _show.SetColor("_Tint", tint);
+            _show.SetFloat("_Sat", sat);
+        }
+
         Mesh _mesh; float _qk, _clip = -1; int _pad;
         /// <summary>Cuts the picture off below a line `frac` of the box down from its top (the beach's wading: the
         /// page's clip-path inset(0 0 ins px 0)); a negative frac shows it all.</summary>

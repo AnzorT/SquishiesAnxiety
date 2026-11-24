@@ -36,6 +36,7 @@ static partial class Program
         string mode = args.Length > 0 ? args[0] : "shots";
         if (mode == "emu") return await Emu.Run();
         if (mode == "menu") return MenuShots.Run(args[1]);
+        if (mode == "intro") return IntroShots.Run(args[1]);
         return Shots(args.Length > 1 ? args[1] : "auth-shots", args.Skip(2).ToArray());
     }
 

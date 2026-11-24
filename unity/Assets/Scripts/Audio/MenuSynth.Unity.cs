@@ -21,10 +21,13 @@ namespace SquishSquad.Audio
         static readonly Dictionary<string, int> Turn = new Dictionary<string, int>();
         static readonly List<AudioSource> Sources = new List<AudioSource>();
 
+        /// <summary>intro.js tone(): a made-up tone (Tone), played now.</summary>
+        public static void PlayTone(double f, double dur, string type, double vol) => Play(Tone(f, dur, type, vol));
+
         /// <summary>menu.js sfx(n): plays YardGames.SFX[n] (unknown names: nothing, as the page's try / if).</summary>
         public static void Play(string name)
         {
-            if (Muted || !Sounds.ContainsKey(name)) return;
+            if (Muted || !(Sounds.ContainsKey(name) || Extra.ContainsKey(name))) return;
             if (FollowEffectsSwitch && !Sfx.EffectsOn) return;
             var host = UnityAudio.Instance;
             if (host == null) return;

@@ -37,7 +37,36 @@ namespace SquishSquad.Audio
             { "whoosh", r => r.Noise(0.3, 0.1, 900) },
             { "tap", r => r.Tone(760, 0, 0.05, "sine", 0.1) },
             { "win", r => { double[] f = { 523, 659, 784, 1046 }; for (int i = 0; i < f.Length; i++) r.Tone(f[i], 0, 0.18, "triangle", 0.14, i * 0.1); } },
+            // the game intro's (webgame/app/intro.js: its own tiny synth, tone / chime / sweep, the same envelope)
+            { "intro-land", r => r.Tone(160, 70, 0.25, "sine", 0.12) },
+            { "intro-open", r => { r.Tone(300, 900, 0.22, "sine", 0.09); r.Tone(Note.G5, 0, 0.5, "sine", 0.05, 0.06); r.Tone(Note.C6, 0, 0.6, "sine", 0.04, 0.14); } },
+            { "intro-press", r => r.Tone(300, 140, 0.18, "sine", 0.05) },
+            { "intro-squish0", r => r.Tone(Note.E5, 0, 0.25, "triangle", 0.03) },
+            { "intro-squish1", r => r.Tone(Note.E5 * 1.12, 0, 0.25, "triangle", 0.03) },
+            { "intro-squish2", r => r.Tone(Note.E5 * 1.24, 0, 0.25, "triangle", 0.03) },
+            { "intro-chime0", r => Chime(r, Note.C5) },
+            { "intro-chime1", r => Chime(r, Note.E5) },
+            { "intro-chime2", r => Chime(r, Note.G5) },
+            { "intro-rest0", r => Chime(r, Note.C6 / 2) },
+            { "intro-rest1", r => Chime(r, Note.E6 / 2) },
+            { "intro-rest2", r => Chime(r, Note.G6 / 2) },
+            { "intro-dawn", r => { Chime(r, Note.C5); Chime(r, Note.G5, 0.14); Chime(r, Note.C6, 0.28); Chime(r, Note.E6, 0.42); } },
+            { "intro-start", r => Chime(r, Note.G5) },
         };
+
+        static class Note { public const double C5 = 523.25, E5 = 659.25, G5 = 783.99, C6 = 1046.5, E6 = 1318.5, G6 = 1568; }
+        /// <summary>intro.js chime: the note, its octave (triangle) and its twelfth, fading over 1.4, 0.8 and 0.4 s.</summary>
+        static void Chime(Render r, double f, double at = 0) { r.Tone(f, 0, 1.4, "sine", 0.07, at); r.Tone(f * 2, 0, 0.8, "triangle", 0.025, at); r.Tone(f * 3.01, 0, 0.4, "sine", 0.012, at); }
+
+        /// <summary>A tone made up on the spot (the intro's peeks and its logo's thuds: one per pitch), cached by name;
+        /// returns the name to play it by.</summary>
+        public static string Tone(double f, double dur, string type, double vol)
+        {
+            string name = "tone-" + f.ToString("0", System.Globalization.CultureInfo.InvariantCulture) + "-" + type;
+            if (!Extra.ContainsKey(name)) Extra[name] = r => r.Tone(f, 0, dur, type, vol);
+            return name;
+        }
+        static readonly Dictionary<string, Action<Render>> Extra = new Dictionary<string, Action<Render>>();
 
         /// <summary>One sound's samples (mono, Rate), mixed as Web Audio sums its nodes.</summary>
         public sealed class Render
@@ -165,7 +194,7 @@ namespace SquishSquad.Audio
 
         public static Render Rendered(string name, int variant = 0)
         {
-            if (!Sounds.TryGetValue(name, out var make)) return null;
+            if (!Sounds.TryGetValue(name, out var make) && !Extra.TryGetValue(name, out make)) return null;
             int seed = 1 + variant * 7919;
             foreach (var ch in name) seed = seed * 31 + ch;
             var r = new Render(seed);

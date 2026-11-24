@@ -129,6 +129,7 @@ namespace SquishSquad.Menu
         void Rebuild()
         {
             ClosePage();   // (the Characters page / Level Pass, if open)
+            if (_view != null && _view.IntroOn) IntroEnded();   // (the screen turned mid-intro: it ends there)
             _view?.Dispose();
             _w = Screen.width; _h = Screen.height;
             FitCamera(_cam, _w, _h);
@@ -295,8 +296,28 @@ namespace SquishSquad.Menu
         // the streak's DAILY CHALLENGES opens the daily sheet. Checked once, when the signed-in player's profile is in.
         bool _dailyChecked;
 
+        // The game intro (webgame/app/intro.js, App.js introPending): the first time the menu shows in a launch, before
+        // the daily spin, the streak and the level-up card; the music waits for its third squish of Mittens (Music.Held).
+        static bool _introStarted;
+        bool _introRunning;
+
+        void StartIntro()
+        {
+            if (_introStarted || _view == null || _game != null || _page != null || _view.Where != MenuView.Place.Home) return;
+            _introStarted = true;
+            _introRunning = true;
+            _view.StartIntro(NowMs, MenuState.Season, SquishSquad.Audio.Music.Release, IntroEnded);
+        }
+
+        void IntroEnded()
+        {
+            _introRunning = false;
+            SquishSquad.Audio.Music.Release();
+        }
+
         void CheckDaily()
         {
+            if (!_introStarted || _introRunning) return;
             if (_dailyChecked || _game != null || _page != null || _view == null || _view.Where != MenuView.Place.Home) return;
             var p = CharactersPageLink.Get();
             if (p?.Profile == null) return;
@@ -457,6 +478,7 @@ namespace SquishSquad.Menu
 
         void Update()
         {
+            StartIntro();
             CheckDaily();
             if (_game != null) return;   // (the game reads its own touches)
             if (Screen.width != _w || Screen.height != _h) Rebuild();
@@ -495,6 +517,13 @@ namespace SquishSquad.Menu
             }
             var page = new Vector2(pos.x, _h - pos.y);   // the page's pixels: y down
             float dpPx = _h / _layout.reference.dp[1];
+            // the intro takes every touch; Android's back skips it
+            if (_view.IntroOn)
+            {
+                if (Input.GetKeyDown(KeyCode.Escape)) _view.FinishIntro(NowMs);
+                else _view.IntroPointer(down, up, page, NowMs);
+                return;
+            }
             // a page open over the menu (the Characters page, the Level Pass) takes the touches and Android's back
             if (_page != null) { _page.Input(down, held, up, page, NowMs, Input.GetKeyDown(KeyCode.Escape), Input.mouseScrollDelta.y); return; }
 

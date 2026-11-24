@@ -1,0 +1,468 @@
+{
+ "canvas": {
+  "size": [
+   2630,
+   1174
+  ],
+  "frameAt": [
+   145,
+   47
+  ]
+ },
+ "weathers": {
+  "sunny": [
+   {
+    "name": "night",
+    "res": "Intro/sunny/night.jpg"
+   },
+   {
+    "name": "lit1",
+    "res": "Intro/sunny/lit1.jpg"
+   },
+   {
+    "name": "lit2",
+    "res": "Intro/sunny/lit2.jpg"
+   },
+   {
+    "name": "lit3",
+    "res": "Intro/sunny/lit3.jpg"
+   },
+   {
+    "name": "lit6",
+    "res": "Intro/sunny/lit6.jpg"
+   },
+   {
+    "name": "dawn1",
+    "res": "Intro/sunny/dawn1.jpg"
+   },
+   {
+    "name": "dawn2",
+    "res": "Intro/sunny/dawn2.jpg"
+   },
+   {
+    "name": "dawn3",
+    "res": "Intro/sunny/dawn3.jpg"
+   },
+   {
+    "name": "morning",
+    "res": "Intro/sunny/morning.jpg"
+   }
+  ],
+  "rainy": [
+   {
+    "name": "night",
+    "res": "Intro/rainy/night.jpg"
+   },
+   {
+    "name": "lit1",
+    "res": "Intro/rainy/lit1.jpg"
+   },
+   {
+    "name": "lit2",
+    "res": "Intro/rainy/lit2.jpg"
+   },
+   {
+    "name": "lit3",
+    "res": "Intro/rainy/lit3.jpg"
+   },
+   {
+    "name": "lit6",
+    "res": "Intro/rainy/lit6.jpg"
+   },
+   {
+    "name": "dawn1",
+    "res": "Intro/rainy/dawn1.jpg"
+   },
+   {
+    "name": "dawn2",
+    "res": "Intro/rainy/dawn2.jpg"
+   },
+   {
+    "name": "dawn3",
+    "res": "Intro/rainy/dawn3.jpg"
+   },
+   {
+    "name": "morning",
+    "res": "Intro/rainy/morning.jpg"
+   }
+  ],
+  "snowy": [
+   {
+    "name": "night",
+    "res": "Intro/snowy/night.jpg"
+   },
+   {
+    "name": "lit1",
+    "res": "Intro/snowy/lit1.jpg"
+   },
+   {
+    "name": "lit2",
+    "res": "Intro/snowy/lit2.jpg"
+   },
+   {
+    "name": "lit3",
+    "res": "Intro/snowy/lit3.jpg"
+   },
+   {
+    "name": "lit6",
+    "res": "Intro/snowy/lit6.jpg"
+   },
+   {
+    "name": "dawn1",
+    "res": "Intro/snowy/dawn1.jpg"
+   },
+   {
+    "name": "dawn2",
+    "res": "Intro/snowy/dawn2.jpg"
+   },
+   {
+    "name": "dawn3",
+    "res": "Intro/snowy/dawn3.jpg"
+   },
+   {
+    "name": "morning",
+    "res": "Intro/snowy/morning.jpg"
+   }
+  ]
+ },
+ "overlay": {
+  "captions": {
+   "house": {
+    "res": "Intro/cap/house",
+    "at": [
+     253.6306,
+     6.9139
+    ],
+    "size": [
+     948,
+     166
+    ],
+    "box": [
+     265.7266,
+     14,
+     320.0468,
+     34
+    ]
+   },
+   "box": {
+    "res": "Intro/cap/box",
+    "at": [
+     250.3556,
+     6.9139
+    ],
+    "size": [
+     965,
+     166
+    ],
+    "box": [
+     262.6094,
+     14,
+     326.2813,
+     34
+    ]
+   },
+   "squish0": {
+    "res": "Intro/cap/squish0",
+    "at": [
+     228.8861,
+     6.9139
+    ],
+    "size": [
+     1083,
+     166
+    ],
+    "box": [
+     241.1484,
+     14,
+     369.2031,
+     34
+    ]
+   },
+   "squish1": {
+    "res": "Intro/cap/squish1",
+    "at": [
+     246.3528,
+     5.4583
+    ],
+    "size": [
+     986,
+     170
+    ],
+    "box": [
+     258.5469,
+     14,
+     334.4062,
+     34
+    ]
+   },
+   "squish2": {
+    "res": "Intro/cap/squish2",
+    "at": [
+     259.4528,
+     5.4583
+    ],
+    "size": [
+     915,
+     170
+    ],
+    "box": [
+     271.6641,
+     14,
+     308.1719,
+     34
+    ]
+   },
+   "squish3": {
+    "res": "Intro/cap/squish3",
+    "at": [
+     253.9944,
+     5.4583
+    ],
+    "size": [
+     945,
+     170
+    ],
+    "box": [
+     266.1094,
+     14,
+     319.2813,
+     34
+    ]
+   }
+  },
+  "skip": {
+   "res": "Intro/skip",
+   "at": [
+    753.25,
+    8.3694
+   ],
+   "size": [
+    257,
+    146
+   ],
+   "box": [
+    764.1563,
+    14,
+    71.3437,
+    30
+   ]
+  },
+  "tap": {
+   "res": "Intro/tap",
+   "at": [
+    326.0444,
+    347.15
+   ],
+   "size": [
+    541,
+    126
+   ],
+   "box": [
+    343.5078,
+    362,
+    164.4844,
+    25
+   ]
+  }
+ },
+ "logo": [
+  {
+   "res": "Intro/logo/0",
+   "at": [
+    121.175,
+    41.1194
+   ],
+   "size": [
+    156,
+    217
+   ],
+   "box": [
+    112.9531,
+    4,
+    72.7969,
+    124
+   ]
+  },
+  {
+   "res": "Intro/logo/1",
+   "at": [
+    167.025,
+    41.1194
+   ],
+   "size": [
+    209,
+    217
+   ],
+   "box": [
+    159.4375,
+    4,
+    92.0938,
+    124
+   ]
+  },
+  {
+   "res": "Intro/logo/2",
+   "at": [
+    233.9806,
+    42.2111
+   ],
+   "size": [
+    180,
+    214
+   ],
+   "box": [
+    225.25,
+    4,
+    83.5,
+    124
+   ]
+  },
+  {
+   "res": "Intro/logo/3",
+   "at": [
+    292.2028,
+    42.2111
+   ],
+   "size": [
+    83,
+    212
+   ],
+   "box": [
+    282.5469,
+    4,
+    48.2969,
+    124
+   ]
+  },
+  {
+   "res": "Intro/logo/4",
+   "at": [
+    312.9444,
+    41.1194
+   ],
+   "size": [
+    156,
+    217
+   ],
+   "box": [
+    304.6406,
+    4,
+    72.7969,
+    124
+   ]
+  },
+  {
+   "res": "Intro/logo/5",
+   "at": [
+    360.25,
+    42.2111
+   ],
+   "size": [
+    173,
+    212
+   ],
+   "box": [
+    351.1406,
+    4,
+    81.5,
+    124
+   ]
+  },
+  {
+   "res": "Intro/logo/6",
+   "at": [
+    434.8472,
+    41.1194
+   ],
+   "size": [
+    156,
+    217
+   ],
+   "box": [
+    426.9375,
+    4,
+    72.7969,
+    124
+   ]
+  },
+  {
+   "res": "Intro/logo/7",
+   "at": [
+    481.0611,
+    41.1194
+   ],
+   "size": [
+    209,
+    217
+   ],
+   "box": [
+    473.4375,
+    4,
+    92.0937,
+    124
+   ]
+  },
+  {
+   "res": "Intro/logo/8",
+   "at": [
+    548.0167,
+    42.2111
+   ],
+   "size": [
+    180,
+    214
+   ],
+   "box": [
+    539.3438,
+    4,
+    83.5,
+    124
+   ]
+  },
+  {
+   "res": "Intro/logo/9",
+   "at": [
+    604.4194,
+    42.2111
+   ],
+   "size": [
+    197,
+    214
+   ],
+   "box": [
+    596.5469,
+    4,
+    86.3906,
+    124
+   ]
+  },
+  {
+   "res": "Intro/logo/10",
+   "at": [
+    665.9167,
+    42.2111
+   ],
+   "size": [
+    178,
+    212
+   ],
+   "box": [
+    656.75,
+    4,
+    81.8907,
+    124
+   ]
+  }
+ ],
+ "peek": {
+  "biscuit": "Intro/peek/biscuit",
+  "berri": "Intro/peek/berri",
+  "nibbles": "Intro/peek/nibbles",
+  "appy": "Intro/peek/appy",
+  "peachy": "Intro/peek/peachy",
+  "scoop": "Intro/peek/scoop",
+  "truffle": "Intro/peek/truffle",
+  "boba": "Intro/peek/boba",
+  "bao": "Intro/peek/bao"
+ }
+}

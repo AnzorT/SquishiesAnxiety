@@ -28,7 +28,20 @@
   };
   Node.prototype.removeChild = function (n) { var i = this.childNodes.indexOf(n); if (i >= 0) { this.childNodes.splice(i, 1); n.parentNode = null; } return n; };
   Node.prototype.replaceChild = function (n, old) { this.insertBefore(n, old); return this.removeChild(old); };
+  // (ChildNode.after / before: develop's rive-rig.js setLight puts a light group after its part's group)
+  Node.prototype.after = function () { var p = this.parentNode; if (!p) return; var ref = this.nextSibling; for (var i = 0; i < arguments.length; i++) { var n = arguments[i]; if (typeof n === 'string') n = new Text(n); p.insertBefore(n, ref); } };
+  Node.prototype.before = function () { var p = this.parentNode; if (!p) return; for (var i = 0; i < arguments.length; i++) { var n = arguments[i]; if (typeof n === 'string') n = new Text(n); p.insertBefore(n, this); } };
   Node.prototype.remove = function () { if (this.parentNode) this.parentNode.removeChild(this); };
+  // (develop's rive-rig.js litTick: whether a part is drawn after the body) DOCUMENT_POSITION_* bits
+  Node.prototype.compareDocumentPosition = function (other) {
+    if (other === this) return 0;
+    var a = [], b = [], n = this; while (n) { a.unshift(n); n = n.parentNode; } n = other; while (n) { b.unshift(n); n = n.parentNode; }
+    if (a[0] !== b[0]) return 1 | 32;
+    var i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i++;
+    if (i === a.length) return 16 | 4;   // other is inside this: contained by, following
+    if (i === b.length) return 8 | 2;    // other holds this: contains, preceding
+    var p = a[i - 1]; return p.childNodes.indexOf(b[i]) > p.childNodes.indexOf(a[i]) ? 4 : 2;
+  };
   Node.prototype.contains = function (n) { while (n) { if (n === this) return true; n = n.parentNode; } return false; };
   Node.prototype.hasChildNodes = function () { return this.childNodes.length > 0; };
 

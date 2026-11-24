@@ -93,7 +93,7 @@ namespace SquishSquad.Menu
                 var tex = LoadJpeg(st.res);
                 float s = _k * _layout.scene.unitsPerPx;
                 var pos = new Vector2(_ox + _layout.scene.originUnits[0] * _k, _oy + _layout.scene.originUnits[1] * _k);
-                Picture("scene", _world, tex, Snap(pos, s), s, SceneOrder);
+                _sceneSr = Picture("scene", _world, tex, Snap(pos, s), s, SceneOrder);
                 // its vignette, faded out while the Game Park is beside the house (menu.js vignette(): opacity .45s ease)
                 if (!string.IsNullOrEmpty(_layout.scene.vignette))
                     _vignette = Picture("vignette", _world, Load(_layout.scene.vignette), Snap(pos, s), s, SceneOrder + 1);
@@ -180,6 +180,7 @@ namespace SquishSquad.Menu
             }
             foreach (var p in _pieces) p.Tick(ms);
             TickTrip(ms);
+            TickIntro(ms);
             TickHud(ms);
             TickClip();
             if (Carousel != null)
