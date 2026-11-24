@@ -65,11 +65,22 @@ namespace SquishSquad.Ui
             }
             _renderer ??= new VectorRenderer();
             var root = SvgMarkup.Parse(markup);
-            var scene = SvgScene.Compile(root, w * PxPerDp, h * PxPerDp, Affine.Translate(margin * PxPerDp, margin * PxPerDp), Size);
+            // an <svg> with no viewBox is in the piece's own units (dp), as if its viewBox were its box; without this its
+            // units were the texture's px, so it came out PxPerDp times too small in the top-left corner (the intro's
+            // box, shadow, ring, sparks and peeking squad)
+            var outer = Affine.Translate(margin * PxPerDp, margin * PxPerDp);
+            if (!HasViewBox(root)) outer = outer * Affine.ScaleBy(PxPerDp, PxPerDp);
+            var scene = SvgScene.Compile(root, w * PxPerDp, h * PxPerDp, outer, Size);
             foreach (var href in Hrefs(root)) if (!_renderer.Images.ContainsKey(href)) { var t = Picture(href); if (t != null) _renderer.Images[href] = (t, Vector2.one); }
             _renderer.Render(scene, _rt);
             _tex = _rt;
             Quad(-margin, -margin, w + 2 * margin, h + 2 * margin);
+        }
+
+        static bool HasViewBox(SvgNode root)
+        {
+            foreach (var c in root.Children) if (c.Tag == "svg") return !string.IsNullOrWhiteSpace(c["viewBox"]);
+            return false;
         }
 
         /// <summary>Shows a picture (straight alpha) filling the box w x h dp.</summary>
