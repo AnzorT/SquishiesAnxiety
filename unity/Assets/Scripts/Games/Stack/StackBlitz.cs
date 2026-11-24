@@ -130,8 +130,8 @@ namespace SquishSquad.Games.Stack
                 A.Droop.StopAnimation();
                 if (now) A.Droop.SetValue(on ? 1 : 0);
                 else Animated.Timing(A.Droop, Timing(on ? 1 : 0, on ? 520 : 200, Easing.Out(Easing.Quad))).Start();
-                if (on) { int rr = r; Later(r * 120, () => { var B = _anims[rr]; if (!B.Swaying) { B.Swaying = true; B.Sway.Mount(); } }); }
-                else if (A.Swaying) { A.Swaying = false; A.Sway.Unmount(); }
+                if (on) { int rr = r; Later(r * 120, () => { var B = _anims[rr]; LoopOf(ref B.SwayLoop, B.Sway, SWAY_MS, true); }); }
+                else LoopOf(ref A.SwayLoop, A.Sway, SWAY_MS, false);
             }
         }
 

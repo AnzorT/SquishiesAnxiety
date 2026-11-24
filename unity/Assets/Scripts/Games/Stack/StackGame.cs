@@ -3,14 +3,17 @@
 // bottom left; the counter, MOVES n / par and the tier, at the top in the middle with the cushions under it; RESTART and
 // HINT side by side at the bottom right. The two side columns are 200 dp each, so the cushions sit in the middle).
 //   intro  the level's number and what's in it          deal  the squishies drop onto their cushions
-//   play   tap a cushion to lift its top squishy, tap another to put it there; or drag it. A big one dropped on a
-//          smaller one squashes it flat and boings home (no move counted). No clock and no UNDO (the user, 2026-11-16):
-//          RESTART and HINT.
-//   won    the result card 1500 ms later: MENU / REPLAY / NEXT
+//   play   tap a cushion to lift its top squishy, tap another to put it there; or drag it. Lifted, it stretches up and
+//          dangles from its top (dragged, it swings against the way it's moved, then like a pendulum); the one under it
+//          springs up, relieved. Dropped, it lands with a squash that runs down the tower to the cushion, and a puff of
+//          dust. A big one dropped on a smaller one flattens it like a pancake (dizzy stars, a red flash, TOO BIG!),
+//          boings off shaking its head "nope" and arcs home (no move counted). No clock and no UNDO (the user,
+//          2026-11-16): RESTART and HINT (two hops).
+//   won    a bounce wave up each tower with a sparkle off each one; the result card 1500 ms later: MENU / REPLAY / NEXT
 //   The back orb (or Escape, Android's back) while playing pauses: the pause card (RESUME / QUIT). The first HINT of a
 //   level asks first (the hint card: it costs a star, and an ad without Remove Ads).
-// Not ported yet: develop's squishy moves of 2026-11-17 (SQUISH_STACK.md "Moves": the squash on landing, the stretch when
-// lifted, the dangle, the pancake, the nope, the win's wave, the dizzy stars): the moves are the fork's.
+// The moves are develop's of 2026-11-17 (SQUISH_STACK.md "Moves"): each a phase 0 → 1 read through keyframes, a path
+// one timing per axis (PathTiming), as Game.js's pieceAnims.
 // Every motion is the app's: the same Animated timings, springs and easings (SquishSquad.Anim is React Native's
 // Animated in C#), the same geometry. The pieces: Resources/Stack (tools/unity/export-stack.mjs) and StackArt; the
 // cards: StackCards on Ui/Cards.
@@ -111,6 +114,10 @@ namespace SquishSquad.Games.Stack
             _rug = Piece("rug", 30);
             _colGlow = Piece("column glow", 31);
             _bannerPiece = Piece("banner", 200);
+            // TOO BIG!'s quick red flash over the play area (zIndex 110), the dizzy stars over it (120)
+            _flashPiece = Piece("too big flash", 150);
+            _flashPiece.Visible = false;
+            for (int i = 0; i < 3; i++) { _dizzyPieces[i] = Piece("dizzy star " + i, 160); _dizzyPieces[i].Visible = false; }
             _cardPieces = new CardPieces(transform, 300);
             _bumps = new AnimatedValue[4];
             for (int i = 0; i < 4; i++) _bumps[i] = new AnimatedValue(0);
@@ -191,19 +198,136 @@ namespace SquishSquad.Games.Stack
             return m;
         }
 
-        // ---- a squishy's motion values (Game.js anims) ---------------------------------------------------------------
+        // ---- how the squishies move (develop's Game.js, 2026-11-17, the user's list: SQUISH_STACK.md "Moves") -------------
+        // Every move is one timing: a phase 0 → 1 read through keyframes (every list starts and ends at rest), or a place
+        // reached along a path whose turns are worked into the timing's easing (PathTiming).
+        static Interpolator Kf(double[] at, double[] v) => Fx.Lerp(at, v);
+        // landing: squashed flat, a springy wobble back up (LdA how hard: a soft landing is about half)
+        static readonly double[] LAND_AT = { 0, 0.1, 0.3, 0.5, 0.7, 1 };
+        static readonly Interpolator LandX = Kf(LAND_AT, new[] { 0, 0.26, -0.1, 0.06, -0.02, 0 }), LandY = Kf(LAND_AT, new[] { 0, -0.28, 0.12, -0.05, 0.02, 0 });
+        const double LAND_MS = 420;
+        // lifted: stretched up tall, then settling
+        static readonly double[] PICK_AT = { 0, 0.25, 0.5, 0.75, 1 };
+        static readonly Interpolator PickX = Kf(PICK_AT, new[] { 1, 0.8, 1.08, 0.97, 1 }), PickY = Kf(PICK_AT, new[] { 1, 1.26, 0.92, 1.03, 1 });
+        const double PICK_MS = 360;
+        // the one under a lifted squishy, relieved of its weight: springs up a little (hop in its heights)
+        static readonly double[] REL_AT = { 0, 0.2, 0.45, 0.7, 0.85, 1 };
+        static readonly Interpolator RelHop = Kf(REL_AT, new[] { 0, 0.04, -0.16, 0, -0.03, 0 }), RelX = Kf(REL_AT, new[] { 1, 1.08, 0.92, 1.04, 0.99, 1 }), RelY = Kf(REL_AT, new[] { 1, 0.9, 1.14, 0.96, 1.01, 1 });
+        const double RELIEF_MS = 440;
+        // squashed by one landing on it: flat and bulging sideways, then springing back (RipA how hard: less further down)
+        static readonly double[] RIP_AT = { 0, 0.14, 0.36, 0.56, 0.76, 1 };
+        static readonly Interpolator RipX = Kf(RIP_AT, new[] { 0, 0.34, -0.1, 0.06, -0.02, 0 }), RipY = Kf(RIP_AT, new[] { 0, -0.32, 0.1, -0.05, 0.02, 0 });
+        const double RIPPLE_MS = 460, RIPPLE_STEP = 60;
+        // too big: the small one flattened like a pancake, held, then springing back
+        static readonly double[] PAN_AT = { 0, 0.06, 0.55, 0.7, 0.82, 0.92, 1 };
+        static readonly Interpolator PanX = Kf(PAN_AT, new[] { 1, 1.75, 1.66, 0.84, 1.1, 0.97, 1 }), PanY = Kf(PAN_AT, new[] { 1, 0.3, 0.34, 1.22, 0.92, 1.03, 1 });
+        const double PANCAKE_MS = 950;
+        // "nope": a shake of the head (degrees, from its feet)
+        static readonly Interpolator Nope = Kf(new[] { 0, 0.12, 0.3, 0.48, 0.66, 0.84, 1 }, new[] { 0.0, 13, -13, 10, -6, 3, 0 });
+        const double NOPE_MS = 560;
+        // the win: a squash, a stretch up and a squash again (the wave runs up each tower); the hop is WaveH of its height
+        static readonly double[] WAVE_AT = { 0, 0.18, 0.32, 0.55, 0.75, 0.88, 1 };
+        static readonly Interpolator WaveHop = Kf(WAVE_AT, new[] { 0, 0, -0.26, -1, 0, -0.1, 0 }), WaveX = Kf(WAVE_AT, new[] { 1, 1.18, 0.86, 0.96, 1.2, 0.97, 1 }), WaveY = Kf(WAVE_AT, new[] { 1, 0.82, 1.18, 1.04, 0.8, 1.03, 1 });
+        const double WAVE_MS = 620, WAVE_STEP = 85;
+        // the hint: two hops
+        static readonly Interpolator HintHop = Kf(new[] { 0, 0.23, 0.5, 0.73, 1 }, new[] { 0, -0.28, 0, -0.28, 0 });
+        const double HINT_MS = 760;
+        // stuck squishies (Blitz's mistake): drooped (sunk and wide), swaying slowly (a loop)
+        const double DROOP_X = 1.07, DROOP_Y = 0.86, SWAY_MS = 2000;
+        // lifted and hovering: a gentle dangle from its top (a loop); dragged: a swing from how fast it's moved
+        const double HOVER_MS = 1150;
+        static readonly Interpolator Swing1 = Fx.Lerp(KeyLoop.PHASE, KeyLoop.SWING);
+        // the cushions' bump: one timing whose easing wobbles back to 0
+        static readonly Func<double, double> BUMP_EASE = Curve(new[] { (0.0, 0.0), (0.16, 1.0), (0.4, -0.35), (0.6, 0.15), (0.8, -0.05), (1.0, 0.0) });
+        static Func<double, double> Curve((double t, double v)[] K) => t =>
+        {
+            int i = 1;
+            while (i < K.Length - 1 && t > K[i].t) i++;
+            var (t0, a) = K[i - 1]; var (t1, b) = K[i];
+            return a + (b - a) * (t1 > t0 ? Math.Min(1, Math.Max(0, (t - t0) / (t1 - t0))) : 1);
+        };
+        // eased progress that waits `d` of its time first
+        static Func<double, double> After(double d, Func<double, double> ease = null) => t => t <= d ? 0 : (ease ?? (u => u))((t - d) / (1 - d));
+
+        // ---- a squishy's motion values (Game.js pieceAnims) ------------------------------------------------------------
         sealed class PieceAnims
         {
             public AnimatedValue X = new AnimatedValue(0), Y = new AnimatedValue(0), O = new AnimatedValue(0), Wx = new AnimatedValue(1), Wy = new AnimatedValue(1),
-                Sq = new AnimatedValue(0), Hop = new AnimatedValue(0), Rot = new AnimatedValue(0);
-            // Blitz's mistake (develop's sad): drooped (sunk and wide, DROOP) and swaying slowly from its feet (5°, SWAY_MS)
-            public AnimatedValue Droop = new AnimatedValue(0);
-            public KeyLoop Sway = new KeyLoop(2000, KeyLoop.PHASE, KeyLoop.SWING);
-            public bool Swaying;
+                Ld = new AnimatedValue(1), LdA = new AnimatedValue(1), Pk = new AnimatedValue(1), Rel = new AnimatedValue(1), Rip = new AnimatedValue(1), RipA = new AnimatedValue(0),
+                Pan = new AnimatedValue(1), No = new AnimatedValue(1), Wave = new AnimatedValue(1), WaveH = new AnimatedValue(0.4), Hint = new AnimatedValue(1),
+                Droop = new AnimatedValue(0), Sway = new AnimatedValue(0), Hov = new AnimatedValue(0), Swing = new AnimatedValue(0);
             public (double x, double y)? Tgt;
+            public (double x, double y) At;
             public double Wgt = -1;
-            public int Tok;
-            public CompositeAnimation Wig;
+            public int Tok, SwingT = -1;
+            public CompositeAnimation HovLoop, SwayLoop;
+
+            static double Dev(Interpolator k, double ph, double amp) => 1 + k.Evaluate(ph) * amp;
+            public double Sx => Dev(LandX, Ld.GetValue(), LdA.GetValue()) * PickX.Evaluate(Pk.GetValue()) * RelX.Evaluate(Rel.GetValue()) * Dev(RipX, Rip.GetValue(), RipA.GetValue())
+                * PanX.Evaluate(Pan.GetValue()) * WaveX.Evaluate(Wave.GetValue()) * (1 + (DROOP_X - 1) * Droop.GetValue());
+            public double Sy => Dev(LandY, Ld.GetValue(), LdA.GetValue()) * PickY.Evaluate(Pk.GetValue()) * RelY.Evaluate(Rel.GetValue()) * Dev(RipY, Rip.GetValue(), RipA.GetValue())
+                * PanY.Evaluate(Pan.GetValue()) * WaveY.Evaluate(Wave.GetValue()) * (1 + (DROOP_Y - 1) * Droop.GetValue());
+            /// <summary>Of its height.</summary>
+            public double Lift => RelHop.Evaluate(Rel.GetValue()) + WaveHop.Evaluate(Wave.GetValue()) * WaveH.GetValue() + HintHop.Evaluate(Hint.GetValue());
+            /// <summary>Degrees, from its feet: the nope and the sad sway.</summary>
+            public double RotFeet => Nope.Evaluate(No.GetValue()) + Swing1.Evaluate(Sway.GetValue()) * 5;
+            /// <summary>Degrees, from its top: the drag's swing and the hover's dangle.</summary>
+            public double RotTop => Swing.GetValue() + Swing1.Evaluate(Hov.GetValue()) * 6;
+        }
+
+        // ---- TOO BIG!: the red flash and the dizzy stars (Game.js Dizzy: three stars on a tilted ring, one loop, fading
+        // out at the end of its 1250 ms; gone at 1300) ------------------------------------------------------------------
+        readonly AnimatedValue _flash = new AnimatedValue(0), _dizzyLife = new AnimatedValue(0);
+        UiPiece _flashPiece;
+        readonly UiPiece[] _dizzyPieces = new UiPiece[3];
+        KeyLoop _dizzySpin;
+        (float x, float y, float w)? _dizzy;
+        int _dizzyKey;
+        const string DIZZY_STAR = "M12 2 L14.6 8.6 L21.6 9.2 L16.3 13.8 L18 20.8 L12 17 L6 20.8 L7.7 13.8 L2.4 9.2 L9.4 8.6 Z";
+
+        void ShowDizzy(float x, float y, float w)
+        {
+            _dizzy = (x, y, w);
+            int key = ++_dizzyKey;
+            _dizzySpin?.Unmount();
+            _dizzySpin = new KeyLoop(760, KeyLoop.PHASE, KeyLoop.PHASE);
+            _dizzySpin.Mount();
+            _dizzyLife.SetValue(0);
+            Animated.Timing(_dizzyLife, Timing(1, 1250, Easing.Linear)).Start();
+            float size = Math.Max(12, w * 0.2f);
+            var star = new UiSvg(size, size).Raw($"<svg x=\"0\" y=\"0\" width=\"{UiSvg.F(size)}\" height=\"{UiSvg.F(size)}\" viewBox=\"0 0 24 24\"><path d=\"{DIZZY_STAR}\" fill=\"#ffe045\" stroke=\"#b86200\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/></svg>").Markup;
+            foreach (var d in _dizzyPieces) d.SetSvg(star, size, size, 2);
+            Later(1300, () => { if (_dizzyKey != key) return; _dizzy = null; _dizzySpin?.Unmount(); _dizzySpin = null; });
+        }
+
+        void DrawTooBig(float ax, float ay)
+        {
+            double f = _flash.GetValue();
+            float fo = (float)Piecewise(f, new[] { 0, 0.18, 1 }, new[] { 0.0, 0.32, 0 });
+            _flashPiece.Visible = fo > 0.001f;
+            if (_flashPiece.Visible)
+            {
+                _flashPiece.SetSvg(new UiSvg(_g.W, _g.H).Box(0, 0, _g.W, _g.H, new BoxStyle { Background = "#ff2d55", Radius = 24 }).Markup, _g.W, _g.H);
+                _flashPiece.Transform = Affine.Translate(ax, ay);
+                _flashPiece.Opacity = fo;
+            }
+            for (int i = 0; i < 3; i++) _dizzyPieces[i].Visible = _dizzy.HasValue;
+            if (!_dizzy.HasValue) return;
+            var (x, y, w) = _dizzy.Value;
+            float size = Math.Max(12, w * 0.2f);
+            double life = _dizzyLife.GetValue(), spin = _dizzySpin?.Value ?? 0;
+            float op = (float)Piecewise(life, new[] { 0, 0.08, 0.8, 1 }, new[] { 0.0, 1, 1, 0 });
+            for (int i = 0; i < 3; i++)
+            {
+                double o = i / 3.0;
+                var ang = Array.ConvertAll(KeyLoop.PHASE, q => 2 * Math.PI * (q + o));
+                double tx = Fx.Lerp(KeyLoop.PHASE, Array.ConvertAll(ang, q => Math.Cos(q) * w * 0.34)).Evaluate(spin);
+                double ty = Fx.Lerp(KeyLoop.PHASE, Array.ConvertAll(ang, q => Math.Sin(q) * w * 0.1)).Evaluate(spin);
+                double k = Fx.Lerp(KeyLoop.PHASE, Array.ConvertAll(ang, q => 0.75 + 0.3 * Math.Sin(q))).Evaluate(spin);
+                var cc = Affine.Translate(size / 2.0, size / 2.0); var cci = Affine.Translate(-size / 2.0, -size / 2.0);
+                _dizzyPieces[i].Transform = Affine.Translate(ax + x - size / 2, ay + y - size / 2) * cc * Affine.Translate(tx, ty) * Affine.ScaleBy(k, k) * cci;
+                _dizzyPieces[i].Opacity = op;
+            }
         }
 
         // ---- state ----------------------------------------------------------------------------------------------------
@@ -243,6 +367,7 @@ namespace SquishSquad.Games.Stack
                 }
                 if (A.Tgt.HasValue && Math.Abs(A.Tgt.Value.x - s.X) < 0.5 && Math.Abs(A.Tgt.Value.y - s.Y) < 0.5) continue;
                 A.Tgt = (s.X, s.Y);
+                A.At = (s.X, s.Y);
                 A.Tok += 1;
                 Animated.Parallel(Animated.Spring(A.X, Spring(s.X, 7, 120)), Animated.Spring(A.Y, Spring(s.Y, 7, 120))).Start();
             }
@@ -250,41 +375,99 @@ namespace SquishSquad.Games.Stack
 
         struct Step { public double X, Y, Ms; public Func<double, double> Ex, Ey; }
 
-        // one step after another; `done` only if nothing else moved it meanwhile
+        // One timing taking `v` from `from` through `keys` ((t 0…1, value, easing?), the last at t = 1) in `ms` (Game.js
+        // pathTiming: a path with turns is still one animation). Null when there's nowhere to go.
+        static CompositeAnimation PathTiming(AnimatedValue v, double from, List<(double t, double v, Func<double, double> e)> keys, double ms)
+        {
+            var pts = new List<(double t, double v, Func<double, double> e)> { (0, from, null) };
+            pts.AddRange(keys);
+            double far = from;
+            foreach (var q in pts) if (Math.Abs(q.v - from) > Math.Abs(far - from)) far = q.v;
+            if (Math.Abs(far - from) < 0.5)
+            {
+                double end = keys[keys.Count - 1].v;
+                return Math.Abs(end - from) < 0.01 ? null : Animated.Timing(v, Timing(end, ms));
+            }
+            double span = far - from;
+            Func<double, double> easing = t =>
+            {
+                int i = 1;
+                while (i < pts.Count - 1 && t > pts[i].t) i++;
+                var (t0, a, _) = pts[i - 1];
+                var (t1, b, e) = pts[i];
+                double u = t1 > t0 ? Math.Min(1, Math.Max(0, (t - t0) / (t1 - t0))) : 1;
+                return (a + (b - a) * (e ?? Easing.InOut(Easing.Quad))(u) - from) / span;
+            };
+            return Animated.Timing(v, Timing(far, ms, easing));
+        }
+
+        // steps one after another, as ONE timing per axis; `done` only if nothing else moved it meanwhile
         void Fly(int r, Step[] steps, Action done)
+        {
+            double total = 0; foreach (var st in steps) total += st.Ms;
+            double t = 0;
+            var kx = new List<(double, double, Func<double, double>)>();
+            var ky = new List<(double, double, Func<double, double>)>();
+            foreach (var st in steps) { t += st.Ms; kx.Add((t / total, st.X, st.Ex)); ky.Add((t / total, st.Y, st.Ey)); }
+            FlyKeys(r, kx, ky, total, done);
+        }
+        // the same with each axis's own keys: an arc's x and y turn at different times
+        void FlyKeys(int r, List<(double t, double v, Func<double, double> e)> kx, List<(double t, double v, Func<double, double> e)> ky, double ms, Action done)
         {
             var A = _anims[r];
             int tok = ++A.Tok;
-            var last = steps[steps.Length - 1];
-            A.Tgt = (last.X, last.Y);
-            var seq = new CompositeAnimation[steps.Length];
-            for (int i = 0; i < steps.Length; i++)
-            {
-                var s = steps[i];
-                seq[i] = Animated.Parallel(
-                    Animated.Timing(A.X, Timing(s.X, s.Ms, s.Ex ?? Easing.InOut(Easing.Quad))),
-                    Animated.Timing(A.Y, Timing(s.Y, s.Ms, s.Ey ?? Easing.InOut(Easing.Quad))));
-            }
-            Animated.Sequence(seq).Start(res => { if (res.Finished && A.Tok == tok && done != null) done(); });
+            var end = (kx[kx.Count - 1].v, ky[ky.Count - 1].v);
+            var from = A.At;
+            A.Tgt = end;
+            A.At = end;
+            var list = new List<CompositeAnimation>();
+            var ax = PathTiming(A.X, from.x, kx, ms); if (ax != null) list.Add(ax);
+            var ay = PathTiming(A.Y, from.y, ky, ms); if (ay != null) list.Add(ay);
+            Animated.Parallel(list).Start(res => { if (res.Finished && A.Tok == tok && done != null) done(); });
         }
 
-        void Wiggle(int r, bool on)
+        // one go of a phase 0 → 1, after `delay` ms (worked into the timing)
+        static void Play(AnimatedValue v, double ms, double delay = 0)
+        {
+            v.SetValue(0);
+            Animated.Timing(v, Timing(1, ms + delay, After(delay / (ms + delay)))).Start();
+        }
+
+        // a loop of a phase (the hover dangle, the sad sway), or stopped and back at rest
+        static void LoopOf(ref CompositeAnimation loop, AnimatedValue v, double ms, bool on)
+        {
+            loop?.Stop();
+            loop = null;
+            if (!on) { Animated.Timing(v, Timing(0, 160)).Start(); return; }
+            v.SetValue(0);
+            loop = Animated.Loop(Animated.Timing(v, Timing(1, ms, Easing.Linear)), -1);
+            loop.Start();
+        }
+
+        // lifted: a gentle dangle from its top while it hovers (off: back still, and any swing let go)
+        void Hover(int r, bool on)
         {
             var A = _anims[r];
-            A.Wig?.Stop();
-            A.Wig = null;
-            if (!on) { Animated.Spring(A.Rot, Spring(0, 4, 160)).Start(); return; }
-            A.Wig = Animated.Loop(Animated.Sequence(
-                Animated.Timing(A.Rot, Timing(1, 260, Easing.InOut(Easing.Sin))),
-                Animated.Timing(A.Rot, Timing(-1, 260, Easing.InOut(Easing.Sin)))));
-            A.Wig.Start();
+            LoopOf(ref A.HovLoop, A.Hov, HOVER_MS, on);
+            if (!on) Animated.Spring(A.Swing, Spring(0, 2.6, 70)).Start();
+        }
+        // dragged: it swings from its top against the way it's moved, by how fast (let go, it swings back and forth like a
+        // pendulum and settles)
+        void SwingOf(int r, double vx)
+        {
+            var A = _anims[r];
+            double deg = Math.Max(-30, Math.Min(30, vx * 22));
+            Animated.Spring(A.Swing, Spring(deg, 5, 120)).Start();
+            if (A.SwingT >= 0) _anim.ClearTimeout(A.SwingT);
+            A.SwingT = _anim.SetTimeout(() => Animated.Spring(A.Swing, Spring(0, 2.4, 60)).Start(), 90);
         }
 
+        // a cushion's bump (k: how hard; negative springs it up), one timing whose easing wobbles back to 0
         void Bump(int p, double k = 1)
         {
             var B = _bumps[p];
             B.SetValue(0);
-            Animated.Sequence(Animated.Timing(B, Timing(k, 80, Easing.Out(Easing.Quad))), Animated.Spring(B, Spring(0, 3.5, 170))).Start();
+            Animated.Timing(B, Timing(k, 420, BUMP_EASE)).Start();
         }
 
         void PickUp(int r, int p)
@@ -300,12 +483,22 @@ namespace SquishSquad.Games.Stack
                 A.Wgt = 1;
                 Animated.Parallel(Animated.Spring(A.Wx, Spring(1, 5, 140)), Animated.Spring(A.Wy, Spring(1, 5, 140))).Start();
             }
+            // stretched up tall as it's lifted
+            Play(A.Pk, PICK_MS);
+            // the one under it springs up, relieved of the weight (or, from the cushion, the cushion does)
+            var st = Engine.StackOf(_pos, p);
+            int at = Array.IndexOf(st, r);
+            if (at > 0) Play(_anims[st[at - 1]].Rel, RELIEF_MS);
+            else Bump(p, -0.7);
             A.Tgt = (XOf(r, p), HoverY(r));
+            var from = A.At;
+            A.At = A.Tgt.Value;
             A.Tok += 1;
-            Animated.Parallel(
-                Animated.Timing(A.X, Timing(A.Tgt.Value.x, 150, Easing.Out(Easing.Quad))),
-                Animated.Timing(A.Y, Timing(A.Tgt.Value.y, 200, Easing.Out(Easing.Back(1.6))))).Start();
-            Wiggle(r, true);
+            var list = new List<CompositeAnimation>();
+            var ax = PathTiming(A.X, from.x, new List<(double, double, Func<double, double>)> { (1, A.Tgt.Value.x, Easing.Out(Easing.Quad)) }, 160); if (ax != null) list.Add(ax);
+            var ay = PathTiming(A.Y, from.y, new List<(double, double, Func<double, double>)> { (1, A.Tgt.Value.y, Easing.Out(Easing.Back(1.6))) }, 220); if (ay != null) list.Add(ay);
+            Animated.Parallel(list).Start();
+            Hover(r, true);
             Settle();   // the stack under it stands up a little
             Hud();
         }
@@ -315,16 +508,25 @@ namespace SquishSquad.Games.Stack
             if (_held.HasValue && _held.Value.r == r) return;
             Settle();   // the ones under it squish down a little
             var A = _anims[r];
-            A.Sq.SetValue(0);
-            Animated.Sequence(Animated.Timing(A.Sq, Timing(soft ? 0.6 : 1, 70)), Animated.Spring(A.Sq, Spring(0, 3.5, 170))).Start();
+            A.LdA.SetValue(soft ? 0.5 : 1);
+            Play(A.Ld, LAND_MS);
             int p = _pos[r];
             var st = Engine.StackOf(_pos, p);
-            if (st.Length > 0 && st[0] == r) { Bump(p, soft ? 0.6 : 1); Snd.Play("st_cushion", rate: RateOf(r)); }
+            int below = Array.IndexOf(st, r);
+            if (below == 0) { Bump(p, soft ? 0.6 : 1); Snd.Play("st_cushion", rate: RateOf(r)); }
             else Snd.Play("st_land", rate: RateOf(r));
             if (soft) return;
             Snd.Place();
-            var ls = SpotsOf(_pos)[r];
-            Spray("dust", Cx(p), ls.Y + _g.Bh[r] * 0.98, 0.8);
+            // the one under it squashes flat and bulges, and the squash runs down the tower, smaller at each level, to the
+            // cushion; a puff of dust off the cushion
+            for (int j = below - 1, k = 0; j >= 0; j--, k++)
+            {
+                var U = _anims[st[j]];
+                U.RipA.SetValue(0.95 * Math.Pow(0.62, k));
+                Play(U.Rip, RIPPLE_MS, k * RIPPLE_STEP);
+            }
+            if (below > 0) Later(below * RIPPLE_STEP, () => Bump(p, Math.Max(0.35, 0.8 * Math.Pow(0.62, below))));
+            Later(below * RIPPLE_STEP, () => Spray("puff", Cx(p), _g.Surface - _g.CushH * 0.1, Math.Max(0.8, _g.CushW / 110)));
             if (_phase == "play" && Engine.Same(_pos, _puzzle.Goal)) Win();
         }
 
@@ -333,7 +535,7 @@ namespace SquishSquad.Games.Stack
         {
             if (!_held.HasValue) return;
             var (r, from) = _held.Value;
-            Wiggle(r, false);
+            Hover(r, false);
             _dragCol = -1;
             _held = null;
             if (p == from || p < 0)
@@ -343,7 +545,7 @@ namespace SquishSquad.Games.Stack
                 Hud();
                 return;
             }
-            if (Engine.CanMove(_pos, from, p) < 0) { BounceOff(r, from, p); Hud(); return; }
+            if (Engine.CanMove(_pos, from, p) < 0) { BounceOff(r, from, p, dragged); Hud(); return; }
             var next = (int[])_pos.Clone();
             next[r] = p;
             _pos = next;
@@ -355,36 +557,48 @@ namespace SquishSquad.Games.Stack
             Hud();
         }
 
-        // Too big for cushion p: it lands on the small one's head, squashes it flat, and boings home. No move counted.
-        void BounceOff(int r, int from, int p)
+        // Too big for cushion p: it lands on the small one's head and flattens it like a pancake (dizzy stars, a quick red
+        // flash), boings off, shakes its head "nope" and arcs back home. No move counted.
+        void BounceOff(int r, int from, int p, bool dragged = false)
         {
             int t = Engine.TopOf(_pos, p);
             var ts = SpotsOf(_pos)[t];
-            float sit = ts.Y + _g.Bh[t] * (1 - ts.Sy) + _g.Bh[t] * 0.42f - _g.Bh[r];
+            float sit = ts.Y + _g.Bh[t] * 0.66f - _g.Bh[r];   // on the flattened one (PANCAKE leaves it a third as tall)
             float dx = Math.Abs(Cx(p) - Cx(from));
             _top = r;
-            Fly(r, new[] { new Step { X = XOf(r, p), Y = HoverY(r), Ms = 110 + dx * 0.45 }, new Step { X = XOf(r, p), Y = sit, Ms = 140, Ey = GRAVITY } }, () =>
+            // (let go from a drag: straight down from where it was dropped; from a tap: over from its hover, then down)
+            var there = dragged
+                ? new[] { new Step { X = XOf(r, p), Y = sit, Ms = 190, Ex = Easing.Out(Easing.Quad), Ey = GRAVITY } }
+                : new[] { new Step { X = XOf(r, p), Y = HoverY(r), Ms = 110 + dx * 0.45 }, new Step { X = XOf(r, p), Y = sit, Ms = 140, Ey = GRAVITY } };
+            Fly(r, there, () =>
             {
                 var T = _anims[t];
-                T.Sq.SetValue(0);
-                Animated.Sequence(Animated.Timing(T.Sq, Timing(1.7, 80)), Animated.Timing(T.Sq, Timing(1.55, 180)), Animated.Spring(T.Sq, Spring(0, 3, 140))).Start();
+                var A = _anims[r];
+                Play(T.Pan, PANCAKE_MS);
+                ShowDizzy(Cx(p), ts.Y + _g.Bh[t] * 0.62f, _g.Bw[t]);
+                _flash.SetValue(0);
+                Animated.Timing(_flash, Timing(1, 340, Easing.Linear)).Start();
                 Snd.Play("st_ouch");
                 Snd.Wrong();
-                Spray("angry", Cx(p), ts.Y + _g.Bh[t] * 0.5, 1);
+                Spray("angry", Cx(p), ts.Y + _g.Bh[t] * 0.6, 1);
                 Say("TOO BIG!", small: true, ink: "#8e1030", hold: 380, sub: _spec.Lv <= 3 ? "Big ones never sit on smaller ones" : null);
                 if (_blitz) BlitzMistake();
-                int tok = _anims[r].Tok;
-                Later(260, () =>
+                // the big one: squashed on landing, then boing, up and away in an arc, shaking its head, and home
+                A.LdA.SetValue(1);
+                Play(A.Ld, LAND_MS);
+                int tok = A.Tok;
+                Later(200, () =>
                 {
-                    if (_anims[r].Tok != tok || (_held.HasValue && _held.Value.r == r)) return;
+                    if (A.Tok != tok || (_held.HasValue && _held.Value.r == r)) return;
                     Snd.Play("st_bounce");
-                    var s = SpotsOf(_pos)[r];
-                    Fly(r, new[]
-                    {
-                        new Step { X = XOf(r, p), Y = HoverY(r) - 24, Ms = 220, Ey = Easing.Out(Easing.Quad) },
-                        new Step { X = s.X, Y = HoverY(r) - 10, Ms = 130 + dx * 0.45 },
-                        new Step { X = s.X, Y = s.Y, Ms = 170, Ey = GRAVITY },
-                    }, () => Land(r, true));
+                    Play(A.Pk, PICK_MS);
+                    Play(A.No, NOPE_MS, 60);
+                    var home = SpotsOf(_pos)[r];
+                    // (not so high that it leaves the play area for the counter over it)
+                    double peak = Math.Max(-_g.Bh[r] * 0.05, Math.Min(sit, HoverY(r)) - _g.Bh[r] * 0.22);
+                    double ms = 520 + dx * 0.4;
+                    FlyKeys(r, new List<(double, double, Func<double, double>)> { (0.15, XOf(r, p), null), (1, home.X, Easing.InOut(Easing.Sin)) },
+                        new List<(double, double, Func<double, double>)> { (0.45, peak, Easing.Out(Easing.Quad)), (1, home.Y, GRAVITY) }, ms, () => Land(r, true));
                 });
             });
         }
@@ -393,7 +607,7 @@ namespace SquishSquad.Games.Stack
         void Restart()
         {
             if (_phase != "play" || _paused) return;
-            if (_held.HasValue) { Wiggle(_held.Value.r, false); _held = null; }
+            if (_held.HasValue) { Hover(_held.Value.r, false); _held = null; }
             _pos = (int[])_puzzle.Start.Clone();
             _moves = 0;
             _glow = null;
@@ -451,14 +665,7 @@ namespace SquishSquad.Games.Stack
             Snd.Play("st_hint");
             Spray("spark", Cx(to), _g.Surface - 4, 1);
             _glow = (from, to);
-            var A = _anims[r];
-            var hops = new List<CompositeAnimation>();
-            for (int i = 0; i < 2; i++)
-            {
-                hops.Add(Animated.Timing(A.Hop, Timing(-_g.Bh[r] * 0.28, 170, Easing.Out(Easing.Quad))));
-                hops.Add(Animated.Timing(A.Hop, Timing(0, 200, Easing.Bounce)));
-            }
-            Animated.Sequence(hops).Start();
+            Play(_anims[r].Hint, HINT_MS);
             Later(2800, () => { if (_glow.HasValue && _glow.Value.from == from && _glow.Value.to == to) { _glow = null; Hud(); } });
             Hud();
         }
@@ -477,17 +684,18 @@ namespace SquishSquad.Games.Stack
                 Later(650, () => Spray("confetti", _g.W * 0.25, _g.H * 0.5, 1));
                 Later(800, () => Spray("confetti", _g.W * 0.75, _g.H * 0.5, 1));
             }
-            int i = 0;
+            // a bounce wave up each tower, bottom to top, a sparkle off each one as it jumps (over before the result card)
+            var ws = SpotsOf(_pos);
             for (int p = 0; p < _spec.K; p++)
             {
                 var st = Engine.StackOf(_pos, p);
-                for (int j = st.Length - 1; j >= 0; j--)
+                for (int j = 0; j < st.Length; j++)
                 {
-                    int r = st[j];
-                    double d = 150 + i++ * 70;
-                    Later(d, () => Animated.Sequence(
-                        Animated.Timing(_anims[r].Hop, Timing(-_g.Bh[r] * 0.3, 170, Easing.Out(Easing.Quad))),
-                        Animated.Timing(_anims[r].Hop, Timing(0, 220, Easing.Bounce))).Start());
+                    int r = st[j], pp = p;
+                    double d = 120 + j * WAVE_STEP + p * 45;
+                    _anims[r].WaveH.SetValue(j == st.Length - 1 ? 0.42 : 0.1);
+                    Play(_anims[r].Wave, WAVE_MS, d);
+                    Later(d + WAVE_MS * 0.45, () => Spray("spark", Cx(pp), ws[r].Y + _g.Bh[r] * 0.1, Math.Max(0.7, _g.Bw[r] / 90)));
                 }
             }
             // Blitz: one more cleared; on to the next puzzle
@@ -663,11 +871,14 @@ namespace SquishSquad.Games.Stack
             for (int r = 0; r < _anims.Length; r++)
             {
                 var A = _anims[r];
-                A.Wig?.Stop(); A.Wig = null; A.Tok += 1;
-                A.Rot.SetValue(0); A.Sq.SetValue(0); A.Hop.SetValue(0); A.O.SetValue(0);
+                A.Tok += 1;
+                A.HovLoop?.Stop(); A.HovLoop = null; A.SwayLoop?.Stop(); A.SwayLoop = null;
+                foreach (var v in new[] { A.Ld, A.Pk, A.Rel, A.Rip, A.Pan, A.No, A.Wave, A.Hint }) { v.StopAnimation(); v.SetValue(1); }
+                foreach (var v in new[] { A.Droop, A.Sway, A.Hov, A.Swing, A.O }) { v.StopAnimation(); v.SetValue(0); }
                 A.Wx.SetValue(m[r].Sx); A.Wy.SetValue(m[r].Sy); A.Wgt = m[r].Sy;
                 A.X.SetValue(m[r].X); A.Y.SetValue(m[r].Y - _g.H * 0.6);
                 A.Tgt = (m[r].X, m[r].Y);
+                A.At = (m[r].X, m[r].Y - _g.H * 0.6);
             }
             _phase = "intro";
             if (_blitz && BlitzIntro()) { Hud(); return; }
@@ -923,21 +1134,15 @@ namespace SquishSquad.Games.Stack
             {
                 var A = _anims[r];
                 float w = _g.Bw[r], h = _g.Bh[r];
-                double wy = A.Wy.GetValue(), wx = A.Wx.GetValue(), sq = A.Sq.GetValue();
+                // Game.js Piece: squished by the ones on it (wx, wy, from its feet), its own squash, stretch, hops and sways
+                // (from its feet), and dangling from its top while it's lifted
+                double wy = A.Wy.GetValue(), wx = A.Wx.GetValue();
                 double wT = Lerp3(wy, 0, 1, h / 2.0, 0);
-                double sqX = Piecewise(sq, new[] { -1.0, 0, 1 }, new[] { 0.9, 1, 1.22 }), sqY = Piecewise(sq, new[] { -1.0, 0, 1 }, new[] { 1.12, 1, 0.74 });
-                double sqT = Piecewise(sq, new[] { -1.0, 0, 1 }, new[] { -0.06 * h, 0, 0.13 * h });
-                double rot = Piecewise(A.Rot.GetValue(), new[] { -1.0, 1 }, new[] { -6.0, 6 });
                 var c = Affine.Translate(w / 2.0, h / 2.0); var ci = Affine.Translate(-w / 2.0, -h / 2.0);
                 var m = Affine.Translate(ax + A.X.GetValue(), ay + A.Y.GetValue())
                         * c * Affine.Translate(0, wT) * Affine.ScaleBy(wx, wy) * ci
-                        * c * Affine.Translate(0, A.Hop.GetValue()) * Affine.Translate(0, sqT) * Affine.ScaleBy(sqX, sqY) * Affine.Rotate(rot) * ci;
-                double dr = A.Droop.GetValue();
-                if (dr != 0 || A.Swaying)
-                {
-                    var feet = Affine.Translate(w / 2.0, h); var feetI = Affine.Translate(-w / 2.0, -h);
-                    m = m * feet * Affine.Rotate(A.Swaying ? 5 * A.Sway.Value : 0) * Affine.ScaleBy(1 + 0.07 * dr, 1 - 0.14 * dr) * feetI;
-                }
+                        * c * Affine.Translate(0, h / 2.0) * Affine.Translate(0, A.Lift * h) * Affine.Rotate(A.RotFeet) * Affine.ScaleBy(A.Sx, A.Sy) * Affine.Translate(0, -h / 2.0) * ci
+                        * c * Affine.Translate(0, -h / 2.0) * Affine.Rotate(A.RotTop) * Affine.Translate(0, h / 2.0) * ci;
                 _pieces[r].Transform = m;
                 _pieces[r].Opacity = (float)A.O.GetValue();
                 _pieces[r].Order = 40 + (r == _top ? 99 : zOf.TryGetValue(r, out var z) ? z : 10);
@@ -970,6 +1175,7 @@ namespace SquishSquad.Games.Stack
                 }
             }
             for (int p = _spec.K; p < 4; p++) if (_haloOn[p]) { _haloOn[p] = false; _haloLoop[p].Unmount(); }
+            DrawTooBig(ax, ay);
             _colGlow.Visible = _dragCol >= 0;
             if (_dragCol >= 0) _colGlow.Transform = Affine.Translate(ax + _g.ColW * _dragCol + 4, ay);
             // the banner: over the area's top, scaled and turned about its centre
@@ -996,7 +1202,7 @@ namespace SquishSquad.Games.Stack
         }
 
         // ---- touch: tap a cushion to lift its top one, tap another to put it there; or drag it ------------------------
-        sealed class Touch { public float X0, Y0; public bool Moved, Picked, Dead; public int Col = -1; }
+        sealed class Touch { public float X0, Y0; public bool Moved, Picked, Dead; public int Col = -1; public double Lt = -1, Lx; }
         Touch _touch;
         Btn _pressed;
         bool _backDown, _cardDown;
@@ -1070,8 +1276,14 @@ namespace SquishSquad.Games.Stack
                 float bw = _g.Bw[h.r], bh = _g.Bh[h.r];
                 A.Tok += 1; A.Tgt = null;
                 A.X.StopAnimation(); A.Y.StopAnimation();
-                A.X.SetValue(Math.Max(0, Math.Min(_g.W - bw, ax - bw / 2)));
-                A.Y.SetValue(Math.Max(-bh * 0.3, Math.Min(_g.Surface - bh, y - bh * 0.85)));
+                double nx = Math.Max(0, Math.Min(_g.W - bw, ax - bw / 2)), ny = Math.Max(-bh * 0.3, Math.Min(_g.Surface - bh, y - bh * 0.85));
+                A.X.SetValue(nx);
+                A.Y.SetValue(ny);
+                A.At = (nx, ny);
+                // the swing: from how fast it's moved sideways (dp a ms), every few frames
+                double now = _anim.Now;
+                if (T.Lt < 0) { T.Lt = now; T.Lx = nx; LoopOf(ref A.HovLoop, A.Hov, HOVER_MS, false); }
+                else if (now - T.Lt >= 40) { SwingOf(h.r, (nx - T.Lx) / (now - T.Lt)); T.Lt = now; T.Lx = nx; }
                 int col = Col(ax);
                 if (col != T.Col) { T.Col = col; _dragCol = col; }
                 return;
