@@ -1,7 +1,7 @@
 // Squish Hop's cards over the game (src/hop/Cards.js), built from the shared card pieces (SquishSquad.Ui.Cards):
 //   Result  the win: the title pops, the stars pop in one by one (STEP 480 ms apart), the coins count up, the XP bar
 //           fills, LEVEL n!, "LEVEL n+1 UNLOCKED · ROOM" (or NEXT: ...) pops, the buttons slide in
-//   Stuck   nowhere left to hop: the title and the hopper's sad head pop, the head rocks; UNDO / RETRY
+//   Stuck   nowhere left to hop: the title and the hopper's sad head pop, the head rocks; RETRY
 //   Pause   RESUME / RESTART / LEVELS
 //   Hint    the hint costs an ad (free with Remove Ads) and one star
 // Every delay is the app's. (How to play, RulesCard, is the level map's, not the level's: not here.)

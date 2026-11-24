@@ -6,12 +6,12 @@
 //   intro      every later board drops in at once with BOARD n and its chips (its size, its clock); its clock starts
 //              760 ms later
 //   play       a hop that leaves no full clear (the solver checks after every hop), getting stuck, or the clock running
-//              out stops the run (held): the hopper wobbles, the save card 1000 ms later (the clock: 900): SAVE IT once
+//              out stops the run (held): the hopper droops, looks about and sways sadly, the save card 1000 ms later (the clock: 900): SAVE IT once
 //              with a rewarded ad (free with Remove Ads), SAVE FOR gems (each save twice the last, functions/squad.js
 //              blitzSave), END RUN. Saved: the hops since the last spot a full clear was possible from are taken back
 //              (stuck: at least one), the clock running on; after the clock, from where it stood with the board's clock
 //              started again
-//   won        the ★: the happy hops, CLEARED goes up 300 ms later, the next board at 1100
+//   won        the ★: the happy jumps (900 ms), CLEARED goes up 300 ms later, the next board at 1100
 //   over       END RUN: GAME OVER, the boards cleared and what they paid (Blitz.AfterBlitz), confetti for a new best;
 //              PLAY AGAIN (a new run, its own seed) / QUIT
 //   The back button while playing pauses (the shared pause card: RESUME / QUIT). Leaving or starting over in the middle of
@@ -184,8 +184,6 @@ namespace SquishSquad.Games.Hop
         }
 
         // ---- a mistake or the clock, the save, GAME OVER -------------------------------------------------------------------
-        // (Unity's hopper has no droop, look and sad sway yet: it wobbles, as when stuck)
-        void Sadden() => Wobble(new[] { -0.8, 0.8, -0.5, 0 }, 800);
 
         void BlitzMistake(string why)
         {
@@ -258,8 +256,7 @@ namespace SquishSquad.Games.Hop
             Snd.Play("sd_revive");
             _lastSecond = -1;
             _warn = false;
-            _player.Rot.StopAnimation();
-            Timing(_player.Rot, 0, 160, Easing.Out(Easing.Back(2))).Start();
+            CheerUp();
             G.Over = false;
             G.Queue = new List<Action>();
             if (_failReason != "time")
@@ -447,7 +444,7 @@ namespace SquishSquad.Games.Hop
             RefreshSave();
             if (_warn && _warnLoop == null) { _warnLoop = new KeyLoop(500, KeyLoop.PHASE, TRI); _warnLoop.Mount(); }
             else if (!_warn && _warnLoop != null) { _warnLoop.Unmount(); _warnLoop = null; }
-            // the glass: 10 in from the column's sides, padding 12 x 8, gap 8, centred down the column; the chip (ui.js Chip,
+            // the glass: 10 in from the column's sides, padding 12 x 8, gap 8, marginTop 6, centred down the column; the chip (ui.js Chip,
             // wrapping inside the glass) over the TimerBar (124 wide: wider than the glass's inside, so it hangs out evenly)
             if (_glassL == null)
             {
@@ -457,8 +454,10 @@ namespace SquishSquad.Games.Hop
                 var lines = CardArt.Wrap(rule, ct, inner - 22);
                 float lh = UiSvg.LineBox(ct), tw = 0;
                 foreach (var l in lines) tw = Math.Max(tw, UiSvg.BoxWidth(l, ct));
-                float cw = Math.Min(inner, tw + 22), ch = lines.Count * lh + 6 + 4;
-                float gh = 2 + 8 + ch + 8 + SdArt.BarH + 8 + 2, gy = (H - gh) / 2;
+                // (a chip whose text wraps takes the glass's whole inside, as Chrome sizes a wrapping box)
+                float cw = lines.Count > 1 ? inner : Math.Min(inner, tw + 22), ch = lines.Count * lh + 6 + 4;
+                // centred down the column under its marginTop 6
+                float gh = 2 + 8 + ch + 8 + SdArt.BarH + 8 + 2, gy = (H - gh - 6) / 2 + 6;
                 var g = new UiSvg(gw, gh);
                 g.Box(0, 0, gw, gh, new BoxStyle { Background = "rgba(91,58,41,0.75)", Radius = 20, BorderWidth = 2, BorderColor = "rgba(255,255,255,0.9)" });
                 float cx = (gw - cw) / 2, cy = 2 + 8;

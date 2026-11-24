@@ -228,8 +228,8 @@ namespace SquishSquad.Games.Hop
             return w;
         }
 
-        /// <summary>Pieces.js GoalStar's drawing: the ★ `size` across and, while friends are still out, how many are
-        /// left (a chip at its top right). Drawn in a size x size box.</summary>
+        /// <summary>Pieces.js GoalStar's drawing: the ★ `size` across and, while cushions are still to clear, how many
+        /// are left (a chip at its top right). Drawn in a size x size box.</summary>
         public static string GoalStar(double size, int left)
         {
             var s = new UiSvg((float)size, (float)size);

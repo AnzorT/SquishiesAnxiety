@@ -189,6 +189,8 @@ namespace SquishSquad.Ui.Cards
         static readonly Dictionary<string, Kind> KINDS = new Dictionary<string, Kind>
         {
             ["dust"] = new Kind { Count = 7, Life = 420, Size = new[] { 5.0, 10 }, Dist = new[] { 14.0, 30 }, Up = new[] { -4.0, 6 }, Colors = new[] { "#ffffff", "#fff6fb" }, Shape = "dot", SpreadY = 0.25, Fall = 0 },
+            // Squish Hop's landing: a bigger puff fanning out low along the cushion, round the squishy's feet
+            ["puff"] = new Kind { Count = 10, Life = 460, Size = new[] { 6.0, 12 }, Dist = new[] { 28.0, 50 }, Up = new[] { -1.0, 5 }, Colors = new[] { "#ffffff", "#fdf3ff", "#efe4ff" }, Shape = "dot", SpreadY = 0.16, Fall = 3 },
             ["pop"] = new Kind { Count = 10, Life = 420, Size = new[] { 4.0, 7 }, Dist = new[] { 26.0, 40 }, Up = new[] { 0.0, 0 }, Colors = new[] { "#ff8fd0", "#ffffff", "#ffe066", "#9ce8ff" }, Shape = "dot", SpreadY = 1, Fall = 0 },
             ["spark"] = new Kind { Count = 8, Life = 560, Size = new[] { 5.0, 9 }, Dist = new[] { 22.0, 46 }, Up = new[] { -6.0, 6 }, Colors = new[] { "#fff3a0", "#ffffff", "#ffd1f5", "#c9f5ff" }, Shape = "star", SpreadY = 1, Fall = 10 },
             ["poof"] = new Kind { Count = 9, Life = 500, Size = new[] { 7.0, 14 }, Dist = new[] { 16.0, 34 }, Up = new[] { -8.0, 2 }, Colors = new[] { "#e6dcf0", "#ffffff", "#d6c8e8" }, Shape = "dot", SpreadY = 1, Fall = -6 },

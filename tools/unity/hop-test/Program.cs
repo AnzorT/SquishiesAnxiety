@@ -1,6 +1,7 @@
 // dotnet run -c Release --project tools/unity/hop-test -- <capture dir> [scene ...]   (capture.mjs: the app's shots)
 // dotnet run -c Release --project tools/unity/hop-test -- cards <capture dir>          (cards.mjs: the cards alone)
 // dotnet run -c Release --project tools/unity/hop-test -- blitzflow                     (BLITZ MODE's run, BlitzFlow.cs)
+// dotnet run -c Release --project tools/unity/hop-test -- blitzshots <capture dir>      (blitz.mjs: develop's Blitz run)
 // Builds the Squish Hop level from the Unity code (Games/Hop/HopLevel: the port of src/hop/Game.js) for each scene the
 // app was captured in, runs its clock frame by frame as capture.mjs ran the page's (16 ms frames; the same taps at the
 // same moments, at the same spots), draws the whole screen at each shot (every layer as Unity shows it: an SVG drawn
@@ -36,6 +37,7 @@ static class Program
         HopLevel.PixelSnap = 2.8125f;   // the reference phone
         if (args[0] == "cards") return HopCardsTest.Run(args[1]);
         if (args[0] == "blitzflow") return HopBlitzFlow.Run(LoadCast());
+        if (args[0] == "blitzshots") return BlitzShots(args[1]);
         if (args[0] == "stuck")
         {
             // the shortest way to get stuck on a level (for capture.mjs's STUCK! scene): hops as U R D L
@@ -98,12 +100,49 @@ static class Program
                 level.Update();
                 var svg = Screen(level);
                 File.WriteAllText(Path.Combine(dir, $"{name}-{e.shot}-unity.svg"), svg);
-                var (t, b, h) = Compare(svg, app, Path.Combine(dir, $"{name}-{e.shot}-unity.png"), Path.Combine(dir, $"{name}-{e.shot}-diff.png"));
+                var (t, b, h) = Compare(svg, app, Path.Combine(dir, $"{name}-{e.shot}-unity.png"), Path.Combine(dir, $"{name}-{e.shot}-diff.png"), level.LeftW, level.LeftW + level.AreaW);
                 Console.WriteLine($"{name,-10} {e.shot,6} ms: {t,5:0.00} % of the screen differs visibly (board {b:0.00} %, HUD {h:0.00} %)");
                 all.Add(($"{name}-{e.shot}", t, b, h));
             }
         }
         if (all.Count > 0) Console.WriteLine($"mean: {all.Average(a => a.total):0.00} % (board {all.Average(a => a.board):0.00} %, HUD {all.Average(a => a.hud):0.00} %), worst {all.Max(a => a.total):0.00} %");
+        return 0;
+    }
+
+    // blitz.mjs's run from the Unity code: the same seed, the countdown lined up with the app's (T0: when its timers are
+    // set), the same hops and taps at the same moments, the screen compared at each shot
+    static int BlitzShots(string dir)
+    {
+        OutDir = Path.GetFullPath(dir);
+        var j = JsonDocument.Parse(File.ReadAllText(Path.Combine(dir, "blitz.json"))).RootElement;
+        int seed = j.GetProperty("seed").GetInt32();
+        var tk = new Ticker(0);
+        var level = new HopLevel(832, 384, 1, LoadCast(), Player(), tk, true, run => seed);
+        void Run(double to) { while (tk.Now < to) { tk.Tick(Math.Min(tk.Now + 16, to)); level.Update(); } }
+        Run(16);
+        double t0 = Math.Max(0, level.CountdownAt);
+        var events = new List<(double at, Action act, double shot)>();
+        foreach (var st in j.GetProperty("steps").EnumerateArray())
+        {
+            double at = st.GetProperty("at").GetDouble();
+            if (st.TryGetProperty("dir", out var d)) { int dd = d.GetInt32(); events.Add((at, () => level.HopDir(dd), -1)); }
+            else { var tp = st.GetProperty("tap"); float x = (float)tp[0].GetDouble(), y = (float)tp[1].GetDouble(); events.Add((at, () => { level.Down(x, y); level.Up(x, y); }, -1)); }
+        }
+        foreach (var sh in j.GetProperty("shots").EnumerateArray()) events.Add((sh.GetDouble(), null, sh.GetDouble()));
+        var all = new List<double>();
+        foreach (var e in events.OrderBy(e => e.at).ThenBy(e => e.act == null ? 1 : 0))
+        {
+            Run(t0 + e.at);
+            if (e.act != null) { e.act(); level.Update(); continue; }
+            var app = Path.Combine(dir, $"blitz-{e.shot}.png");
+            if (!File.Exists(app)) continue;
+            level.Update();
+            var svg = Screen(level);
+            var (t, b, h) = Compare(svg, app, Path.Combine(dir, $"blitz-{e.shot}-unity.png"), Path.Combine(dir, $"blitz-{e.shot}-diff.png"), level.LeftW, level.LeftW + level.AreaW);
+            Console.WriteLine($"blitz {e.shot,6} ms: {t,5:0.00} % of the screen differs visibly (board {b:0.00} %, HUD {h:0.00} %)");
+            all.Add(t);
+        }
+        if (all.Count > 0) Console.WriteLine($"mean: {all.Average():0.00} %, worst {all.Max():0.00} %");
         return 0;
     }
 
@@ -205,12 +244,12 @@ static class Program
             return (x / s + B.W / 2.0, Y + B.H / 2.0);
         }
         int n = l.GridN, last = (n + 1) * (n + 1) - 1;
-        var a = Back(l.Grid[0] - HopLevel.LeftW, l.Grid[1]);
-        var b = Back(l.Grid[last * 2] - HopLevel.LeftW, l.Grid[last * 2 + 1]);
+        var a = Back(l.Grid[0] - level.LeftW, l.Grid[1]);
+        var b = Back(l.Grid[last * 2] - level.LeftW, l.Grid[last * 2 + 1]);
         for (int y = 0; y < H; y++)
             for (int x = 0; x < W; x++)
             {
-                var (u, v) = Back((x + 0.5) / k - HopLevel.LeftW, (y + 0.5) / k);
+                var (u, v) = Back((x + 0.5) / k - level.LeftW, (y + 0.5) / k);
                 double tx = (u - a.u) / (b.u - a.u) * tw - 0.5, ty = (v - a.v) / (b.v - a.v) * th - 0.5;
                 if (double.IsNaN(tx) || tx < -1 || ty < -1 || tx > tw || ty > th) continue;
                 int x0 = (int)Math.Floor(tx), y0 = (int)Math.Floor(ty);
@@ -267,7 +306,8 @@ static class Program
         Png.Write(outPng, W, H, ReferenceRaster.Resolve(ReferenceRaster.Render(scene, W, H, 2), 2, W, H));
     }
 
-    public static (double total, double board, double hud) Compare(string svg, string appPng, string outPng, string diffPng)
+    /// <summary>`x0` … `x1`: the board's area (the HUD columns either side).</summary>
+    public static (double total, double board, double hud) Compare(string svg, string appPng, string outPng, string diffPng, double x0 = 250, double x1 = 682)
     {
         var (W, H, reference) = Png.Read(appPng);
         ReferenceRaster.LoadImage = Load;
@@ -282,7 +322,7 @@ static class Program
             {
                 int i = (y * W + x) * 4;
                 int d = Math.Max(Math.Abs(reference[i] - ours[i]), Math.Max(Math.Abs(reference[i + 1] - ours[i + 1]), Math.Abs(reference[i + 2] - ours[i + 2])));
-                bool v = d > 24, board = x >= 250 * k && x < 682 * k;
+                bool v = d > 24, board = x >= x0 * k && x < x1 * k;
                 if (v) vis++;
                 if (board) { nB++; if (v) visB++; }
                 byte g = (byte)(ours[i] * 0.3 + 150);
