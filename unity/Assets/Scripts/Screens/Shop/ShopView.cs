@@ -1,11 +1,12 @@
 // src/screens/ShopScreen.js, its royal branch (REDESIGN_V7-V9, landscape), as pure C#: on the wood, in the Stage's
-// 393-tall units, the header (the back orb, "Shop", the coin and gem pills: tap one for Gems), the four tabs across the
-// top (Daily, Chests, Deals, Gems; their red badges: the free / ad chests waiting, today's streak gift, 2X) and the tab:
+// 393-tall units, the header (the back orb, "Shop", the coin and gem pills: tap one for Gems), the five tabs across the
+// top (Daily, Chests, Deals, Special offers, Gems; their red badges: the free / ad chests waiting, today's streak gift,
+// 2X) and the tab:
 //   Daily   (royal/ShopChestsRoyal.js ShopDailyRoyal): today's free chest (or its countdown), the Rare chest for a video
 //           (FREE with Remove Ads; Unity has no ads yet, so WATCH only says so) and the daily deal (no Lucky meter since 2026-11-16)
 //   Chests  (ShopChestsRoyal): a page per group (today's HOT ones, the season, the rest), the chests it can fill (each holds only its own rarity), OPEN for the
 //           price; the arrows, a swipe (no dots); the Rainbow line
-//   Deals, Gems: ShopDeals.cs
+//   Deals, Special offers, Gems: ShopDeals.cs
 // and over it the sheets (ShopSheets.cs: a chest's, the odds, not enough coins / gems) and the toasts. Every move goes
 // to the server (OnSquad: the `squad` Cloud Function, ShopWrites); a chest's move hands the host the chest to open
 // (OnOpenChest: the treasure vault and the smash, Screens/Chests). The profile listener brings the result in
@@ -97,6 +98,8 @@ namespace SquishSquad.Screens
             ("daily", "Daily", "M4 6h16v14H4Z M4 10h16 M8 3v4 M16 3v4 M9 15l2 2 4-4"),
             ("chests", "Chests", "M4 10h16v9H4Z M4 10l2-5h12l2 5 M12 10v4"),
             ("deals", "Deals", "M3 12V4h8l10 10-8 8Z M7.5 7.5h.01"),
+            // (2026-11-16, the user: the bundles moved here out of Deals)
+            ("special", "Special offers", "M4 11h16v10H4Z M3 7h18v4H3Z M12 7v14 M12 7C10 3 6 3 6 5.5S12 7 12 7 M12 7c2-4 6-4 6-1.5S12 7 12 7"),
             ("gems", "Gems", "M6 3h12l4 6-10 12L2 9Z M2 9h20 M9 3l3 6 3-6"),
         };
 
@@ -143,7 +146,7 @@ namespace SquishSquad.Screens
             if (!_down) return;
             x /= K; y /= K;
             if (_sheet != null) return;
-            if (!_dragging && Math.Abs(x - _downX) > 8 && _downY > 108 && (Tab == "chests" || Tab == "deals")) { _dragging = true; _pressed = null; StopPaging(); }
+            if (!_dragging && Math.Abs(x - _downX) > 8 && _downY > 108 && (Tab == "chests" || Tab == "deals" || Tab == "special")) { _dragging = true; _pressed = null; StopPaging(); }
             if (!_dragging) return;
             if (Tab == "chests") _pageX = Math.Max(0, Math.Min(Pages.Count - 1, _drag0 - (x - _downX) / SW));
             else ScrollDeals(_drag0 - (x - _downX));
@@ -170,7 +173,7 @@ namespace SquishSquad.Screens
 
         public void Wheel(float x, float y, float dy)
         {
-            if (Tab == "deals" && _sheet == null) ScrollDeals(_scrollX + dy);
+            if ((Tab == "deals" || Tab == "special") && _sheet == null) ScrollDeals(_scrollX + dy);
             else if (_sheet != null) SheetWheel(dy);
         }
 
@@ -329,7 +332,8 @@ namespace SquishSquad.Screens
             {
                 if (Tab == "daily") Daily(list);
                 else if (Tab == "chests") Chests(list);
-                else if (Tab == "deals") Deals(list);
+                else if (Tab == "deals") Deals(list, "deals");
+                else if (Tab == "special") Deals(list, "special");
                 else if (Tab == "gems") Gems(list);
             }
             SheetPieces(list);
@@ -376,31 +380,37 @@ namespace SquishSquad.Screens
             bool streakWaiting = Prof.Str(Prof.Get(Prof.Map(Prof.Get(_profile, "shopStreak")), "last")) != _day;
             var first = Prof.Map(Prof.Get(_profile, "gemFirst"));
             bool doubleLeft = _offers == null || ShopData.Packs(_offers).Any(p => !Prof.Truthy(Prof.Get(first, Prof.Str(Prof.Get(p, "product")))));
-            return new Dictionary<string, string> { ["daily"] = chest > 0 ? chest.ToString() : "", ["chests"] = "", ["deals"] = streakWaiting ? "1" : "", ["gems"] = doubleLeft ? "2X" : "" };
+            return new Dictionary<string, string> { ["daily"] = chest > 0 ? chest.ToString() : "", ["chests"] = "", ["deals"] = streakWaiting ? "1" : "", ["special"] = "", ["gems"] = doubleLeft ? "2X" : "" };
         }
 
+        // rTabs / rTab: a row centred under the title, gap 12; each tab at least 112 wide, its icon and name (gap 7) in
+        // paddingHorizontal 12 (five since Special offers, 2026-11-16: a little narrower, Special offers as wide as its
+        // name, to fit a 16:9 phone)
         void Tabs(List<ScreenPiece> list)
         {
             var badges = Badges();
-            float total = 4 * 124 + 3 * 14, x = (SW - total) / 2;
-            foreach (var (k, label, d) in R_TABS)
+            var widths = R_TABS.Select(t => Math.Max(112, 12 + 18 + 7 + W(t.label, t.k == Tab ? TabOn : TabOff) + 12)).ToArray();
+            float total = widths.Sum() + 12 * (widths.Length - 1), x = (SW - total) / 2;
+            for (int i = 0; i < R_TABS.Length; i++)
             {
+                var (k, label, d) = R_TABS[i];
+                float tw = widths[i];
                 bool on = k == Tab;
-                var s = new UiSvg(124, 36);
-                Plaque(s, 0, 0, 124, 36, on ? "gold" : "vel", 16);
+                var s = new UiSvg(tw, 36);
+                Plaque(s, 0, 0, tw, 36, on ? "gold" : "vel", 16);
                 var lt = on ? TabOn : TabOff;
-                float lw = W(label, lt), cw = 18 + 7 + lw, cx = (124 - cw) / 2;
+                float lw = W(label, lt), cw = 18 + 7 + lw, cx = (tw - cw) / 2;
                 Icon(s, d, cx, 9, 18, on ? INK : CREAM, 2.4f, !on);
                 s.Text(label, cx + 25, (36 - LH(lt)) / 2, lt);
                 if (badges[k] != "")
                 {
                     float bw = Math.Max(20, W(badges[k], BadgeT) + 14);
-                    s.Box(124 + 8 - bw, -8, bw, 20, new BoxStyle { Radius = 10, Background = "#ff5a2a", BorderWidth = 2, BorderColor = "#ffffff" });
-                    s.Text(badges[k], 124 + 8 - bw / 2 - W(badges[k], BadgeT) / 2, -8 + (20 - LH(BadgeT)) / 2, BadgeT);
+                    s.Box(tw + 8 - bw, -8, bw, 20, new BoxStyle { Radius = 10, Background = "#ff5a2a", BorderWidth = 2, BorderColor = "#ffffff" });
+                    s.Text(badges[k], tw + 8 - bw / 2 - W(badges[k], BadgeT) / 2, -8 + (20 - LH(BadgeT)) / 2, BadgeT);
                 }
                 list.Add(Piece("tab-" + k, s, x, 62 + (_pressed == "tab-" + k ? 2 : 0), 1, null, 12));
-                _hits.Add("tab-" + k, x, 62, 124, 36);
-                x += 124 + 14;
+                _hits.Add("tab-" + k, x, 62, tw, 36);
+                x += tw + 12;
             }
         }
 

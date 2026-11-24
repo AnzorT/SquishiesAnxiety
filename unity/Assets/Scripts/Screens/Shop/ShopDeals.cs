@@ -1,13 +1,14 @@
-// The Shop's Deals and Gems tabs, landscape (src/screens/ShopDeals.js DealsTab / GemsTab `wide`, in the royal Shop:
-// RoyalShop's buttons are plaques, its headings Lettering), from config/offers (the design's defaults when it's
-// missing: ShopData):
-//   Deals  a row that scrolls sideways (a drag or the wheel), each card in a 330 x 262 column: Remove Ads (the TV
-//          wobbling, its rays turning, the shine sweeping, the twinkles, BEST DEAL ribbon), the 7-day streak (the
-//          flame flickering with the count on it, the seven days, CLAIM DAY n or the time to the next gift), the gem jar,
-//          "Special offers", the bundles (their pods, the burst badge, the one-time timer), the season pass (until it
-//          ends); a thank-you line once ads are off
-//   Gems   the 2X first-buy ribbon, every pack side by side (its gem pile, 2X on its first buy, its price), the gem →
-//          coin swaps in a row under them
+// The Shop's Deals, Special offers and Gems tabs, landscape (src/screens/ShopDeals.js DealsTab / GemsTab; the buttons
+// are the wood look's gold plaques), from config/offers (the design's defaults when it's missing: ShopData):
+//   Deals    a row that scrolls sideways (a drag or the wheel), each card in a 330 x 262 column: Remove Ads (the TV
+//            wobbling, its rays turning, the shine sweeping, the twinkles, BEST DEAL ribbon), the 7-day streak (the
+//            flame flickering with the count on it, the seven days, CLAIM DAY n or the time to the next gift), the gem
+//            jar, the season pass (until it ends); a thank-you line once ads are off
+//   Special  offers (DealsTab part 'special', 2026-11-16, the user: the bundles get a tab of their own): the same row,
+//            the bundles only (their pods: mountains of gems and coins, the chest; the burst badge, the one-time
+//            timer); "No special offers right now." once every one is bought or gone
+//   Gems     the 2X first-buy ribbon, every pack side by side (its gem pile, 2X on its first buy, its price), the gem →
+//            coin swaps in a row under them
 // Buying with real money: OnBuyProduct is the hook (the menu sets it to Backend/Billing, Google Play; without it, a note).
 // The streak's and the pass's claims are squad moves (streakClaim / passClaim); a chest prize opens in the smash.
 using System;
@@ -37,7 +38,7 @@ namespace SquishSquad.Screens
             _loops.Clear();
             _spins.Clear();
             _shown = 1;
-            if (Tab != "deals" && Tab != "gems") return;
+            if (Tab != "deals" && Tab != "special" && Tab != "gems") return;
             // one part more a frame (useProgressive(…, 1, 1)); each part's loops start as it's built
             void Next() { _shown++; _t.RequestAnimationFrame(() => { if (_shown < 12) Next(); }); }
             _t.RequestAnimationFrame(Next);
@@ -156,8 +157,9 @@ namespace SquishSquad.Screens
             list.Add(new ScreenPiece { Id = id, Svg = s.Markup, W = tw.Value.w, H = tw.Value.h, Opacity = op, Margin = 0, Transform = m });
         }
 
-        // ---- Deals ----------------------------------------------------------------------------------------------------------
-        void Deals(List<ScreenPiece> list)
+        // ---- Deals / Special offers ------------------------------------------------------------------------------------------
+        /// <summary>DealsTab: `part` 'deals' (everything but the bundles) or 'special' (the bundles only, no streak).</summary>
+        void Deals(List<ScreenPiece> list, string part)
         {
             var offers = ShopData.OfferList(_offers);
             double now = NowMs;
@@ -170,35 +172,32 @@ namespace SquishSquad.Screens
                 .Where(o => !(Prof.Truthy(Prof.Get(o, "once")) && Prof.Truthy(Prof.Get(bought, Prof.Str(o["id"])))))
                 .Where(o => !(Prof.Truthy(Prof.Get(o, "once")) && Prof.Truthy(Prof.Get(o, "windowHours")) && Prof.Truthy(Prof.Get(seen, Prof.Str(o["id"]))) && now > Prof.Num(Prof.Get(seen, Prof.Str(o["id"]))) + Prof.Num(Prof.Get(o, "windowHours")) * 3600e3))
                 .Where(o => !(Prof.Str(o["kind"]) == "pass" && passEnds > 0 && now > passEnds))
+                .Where(o => (part == "special") == (Prof.Str(o["kind"]) == "bundle"))
                 .OrderBy(o => Prof.Num(Prof.Get(o, "order"))).ToList();
             foreach (var o in shown.Where(o => Prof.Truthy(Prof.Get(o, "once")) && Prof.Truthy(Prof.Get(o, "windowHours")) && !Prof.Truthy(Prof.Get(seen, Prof.Str(o["id"])))))
                 if (_seenSent.Add(Prof.Str(o["id"]))) OnSeenOffer?.Invoke(Prof.Str(o["id"]), now);
             var first = shown.Where(o => Prof.Num(Prof.Get(o, "order")) < 0).ToList();
             var rest = shown.Where(o => Prof.Num(Prof.Get(o, "order")) >= 0).ToList();
-            var bundles = rest.Where(o => Prof.Str(o["kind"]) == "bundle").ToList();
+            int streakN = part == "special" ? 0 : 1;
+            if (part == "special" && shown.Count == 0) { SpecialNone(list); _scrollMax = 0; _scrollX = 0; return; }
             // the row's parts, built one a frame: (kind, offer, index)
             var parts = new List<(string kind, IDictionary<string, object> o, int i)>();
             for (int i = 0; i < first.Count; i++) parts.Add(("offer", first[i], i));
-            parts.Add(("streak", null, 0));
-            for (int i = 0; i < rest.Count; i++)
-            {
-                if (Prof.Str(rest[i]["kind"]) == "bundle" && bundles.Count > 0 && rest[i] == bundles[0]) parts.Add(("heading", null, 0));
-                parts.Add(("offer", rest[i], i));
-            }
-            if (adsFree && shown.Any(o => Prof.Str(o["kind"]) == "noads")) parts.Add(("owned", null, 0));
-            int total = first.Count + 1 + rest.Count;
+            if (streakN > 0) parts.Add(("streak", null, 0));
+            for (int i = 0; i < rest.Count; i++) parts.Add(("offer", rest[i], i));
+            if (part != "special" && adsFree && shown.Any(o => Prof.Str(o["kind"]) == "noads")) parts.Add(("owned", null, 0));
+            int total = first.Count + streakN + rest.Count;
             int builtN = Math.Min(_shown, total);
-            // widths: a column 330, the heading 120; gap 18; padding 24 each side
+            // widths: a column 330; gap 18; padding 24 each side
             var widths = new List<float>();
             int count = 0;
             var built = new List<(string kind, IDictionary<string, object> o, int i)>();
             foreach (var p in parts)
             {
-                if (p.kind != "heading" && p.kind != "owned") { if (count >= builtN) break; count++; }
-                else if (p.kind == "heading" && count >= builtN) break;
+                if (p.kind != "owned") { if (count >= builtN) break; count++; }
                 if (p.kind == "offer" && Prof.Str(p.o["kind"]) == "noads" && adsFree) continue;
                 built.Add(p);
-                widths.Add(p.kind == "heading" ? 120 : COL_W);
+                widths.Add(COL_W);
             }
             float content = 48 + widths.Sum() + 18 * Math.Max(0, widths.Count - 1);
             float viewW = SW;
@@ -215,14 +214,13 @@ namespace SquishSquad.Screens
                 if (x + w > -20 && x < SW + 20)
                 {
                     if (p.kind == "streak") Streak(list, x, y);
-                    else if (p.kind == "heading") Heading(list, x, y + COL_H / 2, "Special offers", "Limited bundles");
                     else if (p.kind == "owned") NoAdsOwned(list, x, y);
                     else
                     {
                         var kind = Prof.Str(p.o["kind"]);
                         if (kind == "noads") NoAds(list, p.o, x, y);
                         else if (kind == "jar") Jar(list, p.o, x, y);
-                        else if (kind == "bundle") Bundle(list, p.o, p.i, x, y, Prof.Num(Prof.Get(seen, Prof.Str(p.o["id"])), SeenHere(Prof.Str(p.o["id"]), now)));
+                        else if (kind == "bundle") Bundle(list, p.o, p.i, x, y, Prof.Num(Prof.Get(seen, Prof.Str(p.o["id"])), TabAtMs));
                         else if (kind == "pass") PassCard(list, pass, x, y, now, passEnds);
                     }
                 }
@@ -231,9 +229,11 @@ namespace SquishSquad.Screens
         }
 
         readonly HashSet<string> _seenSent = new HashSet<string>();
-        readonly Dictionary<string, double> _seenHere = new Dictionary<string, double>();
-        /// <summary>`seen[id] || now`: until the profile has the offer's first sight, the time it was first drawn here.</summary>
-        double SeenHere(string id, double now) { if (!_seenHere.TryGetValue(id, out var t)) _seenHere[id] = t = now; return t; }
+        /// <summary>When the tab was built (its clock time): `seen[id] || now` until the profile has the offer's first
+        /// sight (DealsTab's `now`, its render's), and when its Countdowns started ticking.</summary>
+        double TabAtMs => NowMs - (_t.Now - _tabAt);
+        /// <summary>Countdown's `now`: its clock, moved on a second at a time from when it was built (setInterval 1000).</summary>
+        double CountdownNow => TabAtMs + Math.Floor((NowMs - TabAtMs) / 1000) * 1000;
 
         static double PassEnds(IDictionary<string, object> pass)
         {
@@ -242,18 +242,17 @@ namespace SquishSquad.Screens
             return (DateTime.Parse(e, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal) - new DateTime(1970, 1, 1)).TotalMilliseconds;
         }
 
-        void Heading(List<ScreenPiece> list, float x, float cy, string title, string note)
+        /// <summary>specialNone: the Special offers tab with every bundle bought or gone, two lines in the middle of the
+        /// page under the tabs (gap 4).</summary>
+        void SpecialNone(List<ScreenPiece> list)
         {
-            var words = title.Split(' ');
-            var nt = T(Black, 11, "#eadcff");
-            float h = 0;
-            var sizes = words.Select(wd => LetteringSize(wd, 22)).ToList();
-            h = sizes.Sum(z => z.h) + (note != null ? 4 + LH(nt) : 0);
-            var s = new UiSvg(120, h);
-            float y = 0;
-            for (int i = 0; i < words.Length; i++) { Lettering(s, words[i], "gold", 22, (120 - sizes[i].w) / 2, y); y += sizes[i].h; }
-            if (note != null) TxtC(s, note, 60, y + 4, nt);
-            list.Add(Piece("heading", s, x, cy - h / 2, 1, null, 8));
+            var t = T(Kit.Display, 18, CREAM, 0, 0, new[] { new Shadow("rgba(107,68,38,0.8)", 0, 1.5f, 1) });
+            string a = "No special offers right now.", b = "Check back soon!";
+            float h = LH(t) * 2 + 4, w = Math.Max(W(a, t), W(b, t));
+            var s = new UiSvg(w, h);
+            TxtC(s, a, w / 2, 0, t);
+            TxtC(s, b, w / 2, LH(t) + 4, t);
+            list.Add(Piece("special-none", s, (SW - w) / 2, 108 + (SH - 108 - h) / 2, 1, null, 4));
         }
 
         static readonly TextStyle PerkT = T(Black, 12, "#ffffff", 0, 0, new[] { new Shadow("rgba(110,0,40,0.55)", 0, 1, 1) });
@@ -626,7 +625,7 @@ namespace SquishSquad.Screens
             var podT = T(Kit.Display, 15, "#000");
             var plusT = T(Kit.Display, 20, "#ffffff", 0, 0, new[] { new Shadow("rgba(40,0,70,0.45)", 0, 1.5f, 1) });
             string name = Prof.Str(Prof.Get(o, "name")) ?? "";
-            string timerText = timer > 0 ? "One time only · " + ShopData.Hms(timer - NowMs) : null;
+            string timerText = timer > 0 ? "One time only · " + ShopData.Hms(timer - CountdownNow) : null;
             // the card's natural height (not stretched to the column)
             var root = new FlexNode("card").Width(COL_W - 11).Padding(14).Gap(12);
             if (tag != null) root.Padding(YGEdge.Top, 20);
@@ -635,20 +634,23 @@ namespace SquishSquad.Screens
             hc.Add(FlexX.Txt("name", name, nameT));
             if (timerText != null) hc.Add(new FlexNode("timer").Row().AlignItems(YGAlign.Center).Gap(4).Margin(YGEdge.Top, 4).PadH(8).PadV(2).AlignSelf(YGAlign.FlexStart)).With(FlexX.Box("clock", 12, 12), FlexX.Txt("timerText", timerText, timerT));
             var pods = root.Add(new FlexNode("pods").Row().AlignItems(YGAlign.Center).Gap(2));
-            var podList = new List<(string id, string img, float iw, float ih, string amt, string ink, bool wide)>();
-            if (gems > 0) podList.Add(("gems", Gem(index + 1), 44, 44, Prof.Fmt(gems), "#5a22c8", false));
-            if (coins > 0) podList.Add(("coins", Coin(index + 2), 42, 42, Prof.Fmt(coins), "#b86200", false));
+            // the gems and the coins as mountains (`rows`; 2026-11-16, the user: "add mountains of golds and gems" to the special
+            // offers), the chest as its picture
+            var podList = new List<(string id, string img, float iw, float ih, string amt, string ink, bool wide, int rows, int start, string twinkle)>();
+            if (gems > 0) podList.Add(("gems", null, 0, 0, Prof.Fmt(gems), "#5a22c8", false, gems >= 2000 ? 4 : 3, index + 1, "#d9c4ff"));
+            if (coins > 0) podList.Add(("coins", null, 0, 0, Prof.Fmt(coins), "#b86200", false, coins >= 20000 ? 4 : 3, index + 2, "#fff3a0"));
             if (chests.Count > 0)
             {
                 string sz = ShopData.ShownSize(chests[0]);
-                podList.Add(("chest", Chest(hot[0], sz + "-grow"), 76, 62, $"{(chests.Count > 1 ? $"{chests.Count}× " : "")}{ShopData.SIZE_NAME[ShopData.SizeI(sz)]} chest{(chests.Count > 1 ? "s" : "")}", "#45107a", true));
+                podList.Add(("chest", Chest(hot[0], sz + "-grow"), 76, 62, $"{(chests.Count > 1 ? $"{chests.Count}× " : "")}{ShopData.SIZE_NAME[ShopData.SizeI(sz)]} chest{(chests.Count > 1 ? "s" : "")}", "#45107a", true, 0, 0, null));
             }
             for (int i = 0; i < podList.Count; i++)
             {
                 if (i > 0) pods.Add(FlexX.Txt("plus" + i, "+", plusT));
                 var p = podList[i];
                 var pn = pods.Add(new FlexNode("pod-" + p.id).Flex(p.wide ? 1.35f : 1).MinW(0).AlignItems(YGAlign.Center).Gap(2).Padding(YGEdge.Top, 6).Padding(YGEdge.Bottom, 7).PadH(3).Border(2));
-                pn.Add(new FlexNode("podArt-" + p.id).Height(56).AlignSelf(YGAlign.Stretch));
+                // (podArtTall: a mountain's as tall as the chest pod's picture and two-line name, so the row doesn't grow)
+                pn.Add(new FlexNode("podArt-" + p.id).Height(p.rows > 0 ? 70 : 56).AlignSelf(YGAlign.Stretch));
                 pn.Add(FlexX.Para("podAmt-" + p.id, new TextFlow(p.amt, T(Kit.Display, 15, p.ink), 0.5f)));
             }
             root.Add(new FlexNode("btn").Height(50));
@@ -659,6 +661,7 @@ namespace SquishSquad.Screens
             var s = new UiSvg(COL_W, cardH);
             var pad = Card(s, 0, 0, COL_W, cardH, look.rim, look.bg, new[] { 0f, 0.5f, 1 }, 0.1f, 0, 0.9f, 1);
             float ox = pad.X, oy = pad.Y;
+            var mountains = new List<(string id, bool gems, int rows, int start, string twinkle, float cx, float bottom)>();
             var clip = ClipTo(s, pad);
             s.Open($"clip-path=\"url(#{clip})\"");
             s.Box(pad.Right + 60 - 220, pad.Y - 80, 220, 220, new BoxStyle { Radius = 110, Background = "rgba(255,255,255,0.14)" });
@@ -680,16 +683,32 @@ namespace SquishSquad.Screens
                 var pf = f["pod-" + p.id];
                 s.Box(ox + pf.X, oy + pf.Y, pf.W, pf.H, new BoxStyle { Radius = 18, Background = "rgba(255,255,255,0.92)", BorderWidth = 2, BorderColor = "#ffffff" });
                 var af = f["podArt-" + p.id];
-                float gs = p.wide ? 96 : 70, acx = ox + af.X + af.W / 2, acy = oy + af.Y + af.H / 2;
+                // the glow (a mountain's 90, its top 10 over the art's: centred on the 70 tall art all the same)
+                float gs = p.rows > 0 ? 90 : p.wide ? 96 : 70, acx = ox + af.X + af.W / 2, acy = oy + af.Y + af.H / 2;
                 var gid = s.NewId("pg");
                 s.Def($"<radialGradient id=\"{gid}\" cx=\"50%\" cy=\"50%\" r=\"50%\"><stop offset=\"0\" stop-color=\"#fff6c4\" stop-opacity=\"0.9\"/><stop offset=\"0.55\" stop-color=\"#fff6c4\" stop-opacity=\"0.36\"/><stop offset=\"1\" stop-color=\"#fff6c4\" stop-opacity=\"0\"/></radialGradient>");
                 s.Raw($"<circle cx=\"{F(acx)}\" cy=\"{F(acy)}\" r=\"{F(gs / 2)}\" fill=\"url(#{gid})\"/>");
-                Contain(s, p.img, acx - p.iw / 2, acy - p.ih / 2, p.iw, p.ih);
+                if (p.rows > 0) mountains.Add((p.id, p.id == "gems", p.rows, p.start, p.twinkle, acx, oy + af.Y + af.H));
+                else Contain(s, p.img, acx - p.iw / 2, acy - p.ih / 2, p.iw, p.ih);
                 var at = f["podAmt-" + p.id];
                 new TextFlow(p.amt, T(Kit.Display, 15, p.ink), 0.5f).Draw(s, ox + at.X, oy + at.Y, at.W);
             }
+            // the mountains, at the foot of their art, centred
+            foreach (var m in mountains)
+            {
+                var (mw, mh) = MountainSize(m.rows);
+                Mountain(s, m.gems, m.rows, m.start, m.cx - mw / 2, m.bottom - mh);
+            }
             float ty = 0;   // (the tag sits over the card's top edge)
             list.Add(Piece("bundle-" + index, s, x, y + ty, 1, null, 8));
+            foreach (var m in mountains)
+            {
+                var (mw, mh) = MountainSize(m.rows);
+                float mx = x + m.cx - mw / 2, my = y + ty + m.bottom - mh;
+                float size = m.rows >= 4 ? 24 : 26, h = (float)Math.Round(size * 0.64), v = (float)Math.Round(size * 0.52);
+                Twinkle(list, $"bundle-{index}-{m.id}-tw1", mx + mw / 2 + h * 0.7f, my - 4, 11, m.twinkle, 1.8, 0, 0, 0);
+                Twinkle(list, $"bundle-{index}-{m.id}-tw2", mx + 1, my + v * (m.rows - 2), 8, "#ffffff", 2.4, 0.7, 0, 0);
+            }
             Fx(list, "bundle-" + index, x, y + ty, pad, 0, 0, "#ffffff", 3600, index * 500, 0.35f, false);
             var bf = f["btn"];
             string was = Prof.Str(Prof.Get(o, "was"));
@@ -713,6 +732,34 @@ namespace SquishSquad.Screens
                 list.Add(Piece("tag-" + index, tg, x + (COL_W - tw) / 2, y + ty - 12, 1, null, 4));
             }
             if (off.Length > 0 && off[0] != "") Burst(list, "burst-" + index, x + COL_W + 8 - 74, y + ty - 14, 74, off[0], off.Length > 1 ? off[1] : null, new[] { "#fff36b", "#ffb000" }, "#a3001f");
+        }
+
+        // Mountain: a mountain of coins or gems, rows of pieces heaped into a peak, one more piece in each row down, every
+        // piece a little turned (TILT), the rows above the base drooping at their ends so the heap is a rounded mound; the
+        // front row drawn last (nearest). `start`: where the six coins or gems start mixing through the heap.
+        static readonly float[] TILT = { -14, 9, -5, 12, -9, 4, 15, -11, 6, -3 };
+        static (float w, float h) MountainSize(int rows)
+        {
+            float size = rows >= 4 ? 24 : 26, h = (float)Math.Round(size * 0.64), v = (float)Math.Round(size * 0.52);
+            return ((rows - 1) * h + size, (rows - 1) * v + size + 4);
+        }
+        static void Mountain(UiSvg s, bool gems, int rows, int start, float x, float y)
+        {
+            float size = rows >= 4 ? 24 : 26, h = (float)Math.Round(size * 0.64), v = (float)Math.Round(size * 0.52);
+            float w = MountainSize(rows).w;
+            int n = 0;
+            for (int r = 0; r < rows; r++)
+                for (int c = 0; c <= r; c++)
+                {
+                    float ps = (float)Math.Round(size * (0.86 + 0.14 * r / Math.Max(1, rows - 1)));
+                    float off = (c - r / 2f) / Math.Max(1, (rows - 1) / 2f);
+                    float droop = r < rows - 1 ? off * off * v * 0.6f : 0;
+                    float px = x + w / 2 + (c - r / 2f) * h - ps / 2, py = y + r * v + (size - ps) + droop;
+                    s.Open($"transform=\"translate({F(px + ps / 2)} {F(py + ps / 2)}) rotate({F(TILT[n % TILT.Length])}) translate({F(-ps / 2)} {F(-ps / 2)})\"");
+                    s.Image(gems ? Gem(start + n) : Coin(start + n), 0, 0, ps, ps);
+                    s.Close();
+                    n++;
+                }
         }
 
         void Burst(List<ScreenPiece> list, string id, float x, float y, float size, string top, string bottom, string[] colors, string ink)
@@ -740,14 +787,15 @@ namespace SquishSquad.Screens
         void NoAdsOwned(List<ScreenPiece> list, float x, float y)
         {
             var t1 = T(Kit.Display, 16, "#17803a"); var t2 = T(Body, 11.5f, "#6a4a9a");
-            float h = Math.Max(26, LH(t1) + LH(t2)) + 24;
+            // (owned: padding 12 and a 2 border round the row; at the top of its column, as every card)
+            float h = Math.Max(26, LH(t1) + LH(t2)) + 28;
             var s = new UiSvg(COL_W, h);
             s.Box(0, 0, COL_W, h, new BoxStyle { Radius = 20, Background = "rgba(255,255,255,0.88)", BorderWidth = 2, BorderColor = "#ffffff" });
             Check(s, 14, (h - 26) / 2, 26);
             float ty = (h - LH(t1) - LH(t2)) / 2;
             s.Text("Ads are off", 14 + 26 + 10, ty, t1);
             s.Text("Thanks for supporting the squad!", 14 + 26 + 10, ty + LH(t1), t2);
-            list.Add(Piece("noads-owned", s, x, y + (COL_H - h) / 2, 1, null, 4));
+            list.Add(Piece("noads-owned", s, x, y, 1, null, 4));
         }
 
         void PassCard(List<ScreenPiece> list, IDictionary<string, object> pass, float x, float y, double now, double ends)
@@ -837,7 +885,10 @@ namespace SquishSquad.Screens
             float sy = py + rowH + 10;
             var lab = T(Kit.Display, 14, CREAM, 0, 0, new[] { new Shadow("rgba(107,68,38,0.8)", 0, 1.5f, 1) });
             var cT = T(Kit.Display, 14, "#5b3418"); var gT = T(Kit.Display, 13, "#5b3418"); var tagT = T(Black, 8.5f, "#ffffff");
-            var chips = ShopData.Swaps.Select((w, i) => (w, i, cw: 8 + 22 + 5 + W(Prof.Fmt(w.coins), cT) + 5 + (8 + 18 + 2 + W(Prof.Fmt(w.gems), gT) + 8 + 3) + 4 + 4)).ToList();
+            // a chip: border 2, paddingLeft 8, the coin, gap 5, the coins, gap 5, the price pill (its 1.5 border as Chrome
+            // draws it, Bw: 1), paddingRight 4, border 2
+            float pb = Bw(1.5f);
+            var chips = ShopData.Swaps.Select((w, i) => (w, i, cw: 8 + 22 + 5 + W(Prof.Fmt(w.coins), cT) + 5 + (8 + 18 + 2 + W(Prof.Fmt(w.gems), gT) + 8 + 2 * pb) + 4 + 4)).ToList();
             float total = W("Swap gems for coins", lab) + chips.Sum(c => c.cw + 10);
             float sx = (SW - total) / 2;
             var ls = new UiSvg(W("Swap gems for coins", lab), LH(lab));
@@ -849,17 +900,18 @@ namespace SquishSquad.Screens
                 var s = new UiSvg(cw, 36);
                 s.Box(0, 0, cw, 36, new BoxStyle { Radius = 999, Background = "#fff6e2", Borders = new[] { 2f, 2, 4, 2 }, BorderColor = "#6b4426" });
                 float cx = 2 + 8;
-                s.Image(Coin(i + 1), cx, (32 - 22) / 2 + 2, 22, 22); cx += 22 + 5;
+                s.Image(Coin(i + 1), cx, 2 + (30 - 22) / 2, 22, 22); cx += 22 + 5;
                 s.Text(Prof.Fmt(w.coins), cx, 2 + (30 - LH(cT)) / 2, cT); cx += W(Prof.Fmt(w.coins), cT) + 5;
-                float pw = 8 + 18 + 2 + W(Prof.Fmt(w.gems), gT) + 8 + 3;
+                float pw = 8 + 18 + 2 + W(Prof.Fmt(w.gems), gT) + 8 + 2 * pb;
                 s.Box(cx, 2 + (30 - 26) / 2, pw, 26, new BoxStyle { Radius = 999, Background = "#ffd24a", BorderWidth = Bw(1.5f), BorderColor = "#9c4d06" });
                 s.Image(Gem(0), cx + 1 + 8, 2 + (30 - 18) / 2, 18, 18);
                 s.Text(Prof.Fmt(w.gems), cx + 1 + 8 + 18 + 2, 2 + (30 - LH(gT)) / 2, gT);
                 if (SWAP_TAGS[i] != "")
                 {
                     float tw = W(SWAP_TAGS[i], tagT) + 8;
-                    s.Box(cw + 6 - tw - 0, -9, tw, LH(tagT), new BoxStyle { Radius = 999, Background = "#26a94e" });
-                    s.Text(SWAP_TAGS[i], cw + 6 - tw + 4, -9, tagT);
+                    // (right -6, top -9: from the padding box, inside the chip's 2 border)
+                    s.Box(cw + 4 - tw, -7, tw, LH(tagT), new BoxStyle { Radius = 999, Background = "#26a94e" });
+                    s.Text(SWAP_TAGS[i], cw + 4 - tw + 4, -7, tagT);
                 }
                 list.Add(Piece("swap-" + i, s, sx, sy + (_pressed == "swap:" + i ? 2 : 0), 1, null, 12));
                 _hits.Add("swap:" + i, sx, sy, cw, 36);

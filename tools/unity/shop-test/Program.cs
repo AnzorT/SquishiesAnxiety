@@ -88,8 +88,10 @@ static partial class Program
         return 0;
     }
 
-    /// <summary>Some views take their pieces each frame (what they show moves on the frame, as React renders it).</summary>
-    static void Frame(IScreenView v) { if (v is IFramed f) f.Frame(); }
+    /// <summary>Some views take their pieces each frame (what they show moves on the frame, as React renders it). The
+    /// Shop's too, as its host draws it: the Deals, Special offers and Gems cards' loops start the frame they're first
+    /// drawn (as each mounts in the app).</summary>
+    static void Frame(IScreenView v) { if (v is IFramed f) f.Frame(); else if (v is ShopView) v.Pieces(); }
 
     // ---- drawing and comparing (as tools/unity/screens-test) ------------------------------------------------------------
     static readonly Dictionary<string, (int, int, float[])> Images = new Dictionary<string, (int, int, float[])>();

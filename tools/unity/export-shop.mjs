@@ -212,7 +212,8 @@ await unstage();
 const orbs = await page.evaluate(() => window.__components('Orb').map((o) => o.props.icon + ':' + (o.props.size || 40)));
 await save('orb-close36', await page.evaluateHandle((i) => window.__components('Orb')[i].el, orbs.indexOf('close:36')));
 // Twinkle's ✦ (candy/Sparkles.js; no font of the app has it): Chrome draws it with the Text's own font and its glow
-// (textShadow 0 0 8 rgba(255,200,245,0.95)), at the device's density, for each size and colour the Deals tab uses
+// (textShadow 0 0 8 rgba(255,200,245,0.95)), at the device's density, for each size and colour the Deals and Special offers tabs use
+// (the last three: the Special offers' mountains of gems and coins, ShopDeals.js Mountain)
 await show('shop-deals');
 const tw = await page.evaluate(async (list) => {
   const el = window.__components('Twinkle')[0].el;
@@ -239,7 +240,7 @@ const tw = await page.evaluate(async (list) => {
     out[`${size}${color}`] = { w, h: lh, px: -M, py: -M, pw: c.width / k, ph: c.height / k, png: c.toDataURL('image/png') };
   }
   return out;
-}, [[14, '#fff3a0'], [10, '#ffffff'], [14, '#ffffff'], [10, '#fff3a0'], [12, '#ffffff'], [12, '#ffd84a'], [9, '#ffffff']]);
+}, [[14, '#fff3a0'], [10, '#ffffff'], [14, '#ffffff'], [10, '#fff3a0'], [12, '#ffffff'], [12, '#ffd84a'], [9, '#ffffff'], [11, '#d9c4ff'], [11, '#fff3a0'], [8, '#ffffff']]);
 const twinkle = {};
 let ti = 0;
 for (const [key, v] of Object.entries(tw)) {
