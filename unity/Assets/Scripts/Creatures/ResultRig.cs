@@ -1,12 +1,12 @@
 // A result card's character (Ui/Cards/TrioItem.cs, src/squishdoku/Trio.js): the creature's rig with the result page's
 // own states (tools/rig/result.html addStates: resWait, resWow → resHappy, resMiss → resSad, and its bigger particles),
 // without its floor shadow (the card draws its own). Two ways, as Rigs.For:
-//   live      the rig code in the JS engine (Creatures/LiveRig.cs, SQUISH_PUERTS): the states defined there once
-//             (Resources/Creatures/result-states, written by tools/unity/rig/record.mjs --clip result), each one
-//             played as the card asks, the card's arms and turns handed over every frame (ext), its particle bursts
+//   native    the rig itself (Creatures/NativeRig.cs), the page's states compiled in with it (tools/unity/rig/jsc.mjs
+//             takes them from result.html), each one played as the card asks, the card's arms and turns handed over
+//             every frame (ext), its particle bursts: every creature
 //   recorded  four clips per creature from the same code (record.mjs <key> --clip result): <key>-res-wait (a loop),
 //             -res-fill (the fill and the jump, arms and bursts in it), -res-happy (a loop of its happy moves), -res-miss
-//             (the sigh, then held). Only the creatures recorded have them.
+//             (the sigh, then held): the fallback if the native rig can't run.
 // Can(key) says whether a creature can be drawn either way; the card shows the stars when one of its three can't.
 using System;
 using System.Collections.Generic;
@@ -20,7 +20,7 @@ using UnityEngine;
 
 namespace SquishSquad.Creatures
 {
-    public sealed class ResultRig : IRigFrames, IDisposable
+    public sealed class ResultRig : IRigFrames, IRigTree, IDisposable
     {
         static readonly string[] Clips = { "wait", "fill", "happy", "miss" };
         // the rig's own floor shadow (result.html hides it: .ch ellipse[fill="#6a1b9a"])
@@ -34,41 +34,22 @@ namespace SquishSquad.Creatures
 
         ResultRig(IRigFrames live, Dictionary<string, RecordedRig> rec) { _live = live; _rec = rec; }
 
-        internal static bool LiveReady()
-        {
-#if SQUISH_PUERTS
-            return LiveRig.Ready();
-#else
-            return false;
-#endif
-        }
+        internal static bool LiveReady() => NativeRig.Ready();
 
-        /// <summary>Whether `key` can be drawn as a result character (live, or its four clips recorded).</summary>
+        /// <summary>Whether `key` can be drawn as a result character (native, or its four clips recorded).</summary>
         public static bool Can(string key)
         {
-#if SQUISH_PUERTS
-            if (LiveRig.Ready()) return true;
-#endif
+            if (NativeRig.Ready()) return true;
             foreach (var c in Clips) if (Resources.Load<TextAsset>("Creatures/" + key + "-res-" + c) == null) return false;
             return true;
         }
 
-        /// <summary>Squish Stack's forest walker (src/stack/ForestMap.js, rig/walk.html): the plain rig, live (turned,
+        /// <summary>Squish Stack's forest walker (src/stack/ForestMap.js, rig/walk.html): the plain rig, native (turned,
         /// walking its gait: Yaw, Gait) or its idle recording (standing; it slides along the road).</summary>
         public static ResultRig ForWalk(string key)
         {
-#if SQUISH_PUERTS
-            if (DefineStates() && LiveRig.Eval(WalkJs))
-            {
-                var live = LiveRig.Create(key);
-                if (live != null)
-                {
-                    LiveRig.Eval("window.__resCtl=window.__resCtl||{};__resCtl[" + live.Id.ToString(CultureInfo.InvariantCulture) + "]=window.__resLast;");
-                    live.Fidgets(false);
-                    return new ResultRig(live, null) { _key = key };
-                }
-            }
-#endif
+            var live = NativeRig.Create(key);
+            if (live != null) { live.Fidgets(false); return new ResultRig(live, null) { _key = key }; }
             var r = RecordedRig.Load(key);
             if (r == null) return null;
             var rr = new ResultRig(null, new Dictionary<string, RecordedRig> { ["idle"] = r }) { _key = key };
@@ -77,39 +58,21 @@ namespace SquishSquad.Creatures
         }
         string _key;
 
-        // walk.html step(): its own gait from the Squad House (HouseWalk.step) on the rig's ext, `w` its weight
-        const string WalkJs = "window.__walkStep=window.__walkStep||function(id,key,w,dt,spin){var c=window.__resCtl&&__resCtl[id],I=c&&c._I;if(!I)return;"
-            + "var S=(window.__walkS=window.__walkS||{}),s=S[id]||(S[id]={E:{},ws:{}});if(I.ext!==s.E)I.ext=s.E;for(var k in s.E)s.E[k]=0;"
-            + "if(w>0&&window.HouseWalk)try{HouseWalk.step(key,s.ws,s.E,w,dt,1,spin);}catch(e){}};";
-
-        /// <summary>The walker's turn (live: the rig's spinOff).</summary>
+        /// <summary>The walker's turn (native: the rig's spinOff).</summary>
         public void Yaw(double deg) { (_live as IHouseRig)?.Yaw(deg); }
 
-        /// <summary>The walker's gait this frame (live): weight 0..1, `dt` seconds, the way it walks (±90).</summary>
-        public void Gait(double w, double dt, double spin)
-        {
-#if SQUISH_PUERTS
-            if (_live is LiveRig l)
-                LiveRig.Eval("__walkStep(" + l.Id.ToString(CultureInfo.InvariantCulture) + "," + Q(_key) + "," + w.ToString("R", CultureInfo.InvariantCulture) + ","
-                    + dt.ToString("R", CultureInfo.InvariantCulture) + "," + spin.ToString("R", CultureInfo.InvariantCulture) + ")");
-#endif
-        }
+        /// <summary>The walker's gait this frame (native: walk.html step(), the Squad House's HouseWalk.step on the rig's
+        /// ext): weight 0..1, `dt` seconds, the way it walks (±90).</summary>
+        public void Gait(double w, double dt, double spin) { (_live as NativeRig)?.WalkStep(w, dt, spin); }
 
         public static ResultRig For(string key)
         {
-#if SQUISH_PUERTS
-            if (DefineStates())
+            var live = NativeRig.Create(key);
+            if (live != null)
             {
-                var live = LiveRig.Create(key);
-                if (live != null)
-                {
-                    // (its controller, for the bursts: the states' file keeps the last one RiveRig.mount made)
-                    LiveRig.Eval("window.__resCtl=window.__resCtl||{};__resCtl[" + live.Id.ToString(CultureInfo.InvariantCulture) + "]=window.__resLast;");
-                    live.Fidgets(false); live.Play("resWait");
-                    return new ResultRig(live, null);
-                }
+                live.Fidgets(false); live.Play("resWait");
+                return new ResultRig(live, null);
             }
-#endif
             var rec = new Dictionary<string, RecordedRig>();
             foreach (var c in Clips)
             {
@@ -122,19 +85,6 @@ namespace SquishSquad.Creatures
             rr.Clip("wait");
             return rr;
         }
-
-#if SQUISH_PUERTS
-        static bool _defined, _defineFailed;
-        static bool DefineStates()
-        {
-            if (_defined) return true;
-            if (_defineFailed) return false;
-            var js = Resources.Load<TextAsset>("Creatures/result-states")?.text;
-            _defined = js != null && LiveRig.Eval(js);
-            _defineFailed = !_defined;
-            return _defined;
-        }
-#endif
 
         /// <summary>The rig's state now (live), as TrioItem's CardCreature.State.</summary>
         public void State(string s) { if (_live != null) _live.Play(s); }
@@ -149,20 +99,32 @@ namespace SquishSquad.Creatures
         /// <summary>The card's moves on the rig this frame (live: rive-rig's ext).</summary>
         public void Ext(IDictionary<string, double> e) { (_live as IHouseRig)?.Ext(e); }
 
-        /// <summary>A particle burst (live): result.html burst(): RiveRig.emit at x, y (rig units) or the rig's own spot.</summary>
-        public void Emit(string kind, string at, double x, double y, int n)
-        {
-#if SQUISH_PUERTS
-            if (_live is LiveRig l)
-            {
-                string w = at != null ? "(I.W && I.W[" + Q(at) + "]) || [50, 50]" : "[" + x.ToString("R", CultureInfo.InvariantCulture) + "," + y.ToString("R", CultureInfo.InvariantCulture) + "]";
-                LiveRig.Eval("(function(){var c=window.__resCtl&&__resCtl[" + l.Id.ToString(CultureInfo.InvariantCulture) + "],I=c&&c._I;if(I&&RiveRig.emit)RiveRig.emit(I," + Q(kind) + "," + w + "," + (n > 0 ? n.ToString(CultureInfo.InvariantCulture) : "0") + ");})()");
-            }
-#endif
-        }
-        static string Q(string s) => "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+        /// <summary>A particle burst (native): result.html burst(): RiveRig.emit at x, y (rig units) or the rig's own spot.</summary>
+        public void Emit(string kind, string at, double x, double y, int n) { (_live as NativeRig)?.Emit(kind, at, x, y, n); }
 
         public void Play(string move) => State(move);
+
+        /// <summary>The native rig's frame as a node tree, its floor shadow taken out (as Shadow does to the markup:
+        /// an ellipse filled #6a1b9a with nothing in it); null for a recording (CreatureView reads its markup).</summary>
+        public SquishSquad.Vector.SvgNode TreeAt(float seconds)
+        {
+            if (!(_live is IRigTree rt)) return null;
+            var t = rt.TreeAt(seconds);
+            if (t != null) DropShadow(t);
+            return t;
+        }
+        static void DropShadow(SquishSquad.Vector.SvgNode n)
+        {
+            var k = n.Children;
+            for (int i = k.Count - 1; i >= 0; i--)
+            {
+                var c = k[i];
+                if (c.Tag == "ellipse" && c.Children.Count == 0 && c["fill"] == "#6a1b9a") k.RemoveAt(i);
+                else if (c.Children.Count > 0) DropShadow(c);
+            }
+        }
+        /// <summary>Whether frames come as trees (the native rig) rather than markup (a recording).</summary>
+        public bool Trees => _live is IRigTree;
 
         public string FrameAt(float seconds)
         {
@@ -206,7 +168,7 @@ namespace SquishSquad.Creatures
         {
             CardPieces.CanLive = ResultRig.Can;
             CardPieces.MakeLive = (parent, c) => new CardCreatureView(parent, c);
-            // Squish Stack's walker: live, or Mittens' idle recording
+            // Squish Stack's walker: native, or a recorded idle
             SquishSquad.Games.Shared.MapForest.LiveWalker = key => CardPieces.LiveCharacters && (ResultRig.LiveReady() || Resources.Load<TextAsset>("Creatures/" + key) != null);
         }
 
@@ -267,7 +229,7 @@ namespace SquishSquad.Creatures
 
         // the layer's transform (rig units → screen dp, y down) as the holder's position, turn and scale (world units are
         // screen pixels, y up; the view's box is `size` px for the 100 units). A squash and a turn, never a skew.
-        static void Place(Transform t, Affine m, int size)
+        internal static void Place(Transform t, Affine m, int size)
         {
             float k = UiPiece.PxPerDp, q = k * 100f / size;
             double a = m.A * q, b = -m.B * q, c = -m.C * q, d = m.D * q;   // the 2 x 2 on (px right, px up)

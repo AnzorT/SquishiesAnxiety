@@ -5,7 +5,7 @@
 // control back (its OnExit) the screen goes back to the map.
 //   var s = StackScreen.Create(parent[, screenW, screenH]); s.OnExit = ...;   then Init(nowMs) (Unity's Start does it)
 //   and, outside play mode (CI screenshots), Advance(nowMs).
-// BLITZ: not ported for Stack and Sort; OpenBlitz (if set) is called, else a note says so.
+// BLITZ: OpenBlitz (the menu opens the game's run over its hub: Stack, Sort, Hop), else a note says it isn't in Unity yet.
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;

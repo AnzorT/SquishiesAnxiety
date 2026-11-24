@@ -21,6 +21,7 @@
     <Compile Include="../../../unity/Assets/Scripts/Menu/CharactersLayout.cs" Condition="Exists('../../../unity/Assets/Scripts/Menu/CharactersLayout.cs')" />
     <Compile Include="../../../unity/Assets/Scripts/Menu/LevelPassLayout.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Menu/LevelPassModel.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Yard/View/YardPageModel.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Anim/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Audio/Snd.cs" />

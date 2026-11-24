@@ -17,6 +17,9 @@ namespace SquishSquad.Games.Squishdoku
         public double T, Cx, Cy, Tilt, C, Sn;
 
         public const double TILT = 38, DEPTH = 13;
+        /// <summary>board.js GUTTER: how far the board's widest (front) edge keeps from the sides of its area (2026-11-21:
+        /// it was 5, and on the phone the board ran into the goal panel and RESTART).</summary>
+        public const double GUTTER = 20;
         /// <summary>RoomBoard.js SDK_TILT: leaned back less than Squish Hop's, so the bigger boards keep big cells.</summary>
         public const double SDK_TILT = 30;
 
@@ -39,7 +42,7 @@ namespace SquishSquad.Games.Squishdoku
             double uw = 2 * front.X, uh = front.Y - back.Y;
             double top = Math.Max(0, floorY);
             double space = ah - top + ah * 0.06;
-            double T = Math.Max(26, Math.Floor(Math.Min(Math.Min((aw - 10) / uw, space / uh), maxT)));
+            double T = Math.Max(26, Math.Floor(Math.Min(Math.Min((aw - 2 * GUTTER) / uw, space / uh), maxT)));
             double bottom = Math.Min(ah - 8, top + (ah - top) / 2 + uh * T / 2);
             return new Board { W = w, H = h, T = T, Cx = aw / 2, Cy = bottom - front.Y * T, Tilt = tilt, C = c, Sn = sn };
         }
@@ -155,9 +158,18 @@ namespace SquishSquad.Games.Squishdoku
 
         public static double FloorLineOf(double height) => Math.Round(Math.Min(330, Math.Max(190, height * 0.32)));
 
-        public static Geo Geometry(string room, double width, double height)
+        /// <summary>`full` (develop's Room.js `full`): the whole room on screen, a level map's background (royal/WorldBg.js
+        /// RoomBackdrop): spanning the width, its bottom on the screen's when it's taller than the screen (the ceiling cut
+        /// off), else from the top with the floor repeated below.</summary>
+        public static Geo Geometry(string room, double width, double height, bool full = false)
         {
             var R = Of(room);
+            if (full)
+            {
+                double H = width / RATIO;
+                double top = Math.Min(0, height - H);
+                return new Geo { W = width, H = H, Left = 0, Top = top, FloorY = H * R.Floor + top };
+            }
             if (width > height)
             {
                 // landscape: the picture spans the width, raised so its floor line sits 30% down; the floor repeated below
@@ -189,10 +201,12 @@ namespace SquishSquad.Games.Squishdoku
 
         /// <summary>Room.js: the room filling a `width` x `height` screen as one SVG: its colour, the floor repeated below the
         /// picture, the picture's layers (the things over the floor cut off at the floor line), the time of day's tint.</summary>
-        public static string Svg(string room, string phase, double width, double height)
+        /// `full`: Geometry's; `clipW`: only the left `clipW` of it (a level map's room strip, its last picture cut short).
+        public static string Svg(string room, string phase, double width, double height, bool full = false, double clipW = 0)
         {
             var R = Of(room);
-            var g = Geometry(room, width, height);
+            var g = Geometry(room, width, height, full);
+            if (clipW > 0) width = Math.Min(width, clipW);
             var (under, bas, over) = Pictures(room, phase);
             string F(double v) => SquishSquad.Ui.UiSvg.F(v);
             var sb = new StringBuilder($"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{F(width)}\" height=\"{F(height)}\" viewBox=\"0 0 {F(width)} {F(height)}\">");

@@ -27,31 +27,6 @@ using SquishSquad.Vector;
 
 namespace SquishSquad.Games.Squishdoku
 {
-    /// <summary>game.js useClock: a clock that can pause; Frac (1 → 0) drives the timer bar.</summary>
-    public sealed class SdClock
-    {
-        readonly Ticker _tk;
-        public readonly AnimatedValue Frac = new AnimatedValue(1);
-        double _limit = 1, _used, _since;
-        bool _running;
-        CompositeAnimation _anim;
-        public SdClock(Ticker tk) { _tk = tk; }
-        public double Limit => _limit;
-        public bool Running => _running;
-        public double Elapsed => _used + (_running ? _tk.Now - _since : 0);
-        void Run()
-        {
-            _anim?.Stop();
-            Frac.SetValue(Math.Max(0, 1 - _used / _limit));
-            _anim = Animated.Timing(Frac, Fx.Timing(0, Math.Max(1, _limit - _used), Easing.Linear));
-            _anim.Start();
-        }
-        public void Start(double limit, double used = 0) { _limit = limit; _used = used; _since = _tk.Now; _running = true; Run(); }
-        public void Pause() { if (!_running) return; _used += _tk.Now - _since; _running = false; _anim?.Stop(); Frac.SetValue(Math.Max(0, 1 - _used / _limit)); }
-        public void Resume() { if (_running) return; _since = _tk.Now; _running = true; Run(); }
-        public void Reset() { _anim?.Stop(); _limit = 1; _used = 0; _since = 0; _running = false; Frac.SetValue(1); }
-    }
-
     public sealed class SdBlitz
     {
         static readonly System.Random SndRandom = new System.Random();   // (the sounds' own)
@@ -200,7 +175,7 @@ namespace SquishSquad.Games.Squishdoku
             int n = Puzzle.N;
             var geo = Rooms.Geometry(ROOM, W, H);
             var B = Squishdoku.Board.Layout(n, n, AreaW, H, geo.FloorY - 0, Squishdoku.Board.SDK_TILT, 80);
-            Board = new SdBoard(B, n, Puzzle.Regions, Puzzle.Solution, null, _pieces, _tk, () => Phase != "play", false, Effect)
+            Board = new SdBoard(B, n, Puzzle.Regions, Puzzle.Solution, null, _pieces, _tk, () => Phase != "play", () => false, Effect)
             {
                 OnTap = OnTap,
                 OnTapPiece = cell => { Snd.Play("sd_squeak", rate: 0.85 + SndRandom.NextDouble() * 0.35); Board.Wiggle(cell); },
@@ -275,21 +250,22 @@ namespace SquishSquad.Games.Squishdoku
         void StopInterval() { if (_interval >= 0) _tk.ClearTimeout(_interval); _interval = -1; }
 
         // ---- a mistake or the clock: save the run, or GAME OVER ------------------------------------------------------------
-        void Lose(string reason)
+        // (everyone on the board droops, nearest the wrong one first; the save card as the last ones do)
+        void Lose(string reason, int cell = -1)
         {
             _clk.Pause();
             _failReason = reason;
             _warn = false;
             _saveErr = null;
+            SetPhase("between");
             if (reason == "time")
             {
-                SetPhase("between");
                 _buddy.React("timeup");
                 Snd.Play("sd_timeUp");
                 Board.Shake();
-                Later(900, () => SetPhase("save"));
             }
-            else SetPhase("save");
+            double sad = Board.SadAll(cell, 100);
+            Later(Math.Max(reason == "time" ? 900 : 300, sad - 150), () => { if (Phase == "between") SetPhase("save"); });
         }
 
         void GoOn()
@@ -297,6 +273,7 @@ namespace SquishSquad.Games.Squishdoku
             _saving = false;
             _lastSecond = -1;
             Snd.Play("sd_revive");
+            Board.CheerUp();
             SetPhase("play");
             if (_failReason == "time") _clk.Start(Spec.Ms);
             else _clk.Resume();
@@ -385,18 +362,20 @@ namespace SquishSquad.Games.Squishdoku
                 for (int i = 0; i < 3; i++) { int k = i; Later(k * 300, () => TopBurst(W * (0.25 + 0.25 * k), H * 0.3)); }
         }
 
-        void BoardDone()
+        // `cell`: the last creature, where the win's ripple starts
+        void BoardDone(int cell)
         {
             _clk.Pause();
             SetPhase("between");
             int idx = Idx;
             _cleared = idx + 1;
             _buddy.React("solve");
-            Board.HopAll();
-            for (int r = 0; r < Puzzle.N; r++) Snd.Play("sd_hop", delay: r * 70, rate: 0.95 + r * 0.06);
+            var beats = Board.HopAll(cell, 240, true);
+            for (int i = 0; i < beats.Count; i++) Snd.Play("sd_hop", delay: beats[i], rate: 0.95 + i * 0.06);
+            double out_ = Math.Max(650, (beats.Count > 0 ? beats[beats.Count - 1] : 0) + 420);
             Later(300, () => { ClearedShown = idx + 1; _dirty = true; Snd.Play("sd_pip", rate: 0.9 + Math.Min(12, idx) * 0.05); });
-            Later(650, () => { Snd.Play("sd_blitzNext"); Board.Outro(); });
-            Later(1000, () => { Idx = idx + 1; _dirty = true; Effect(NewBoard); });
+            Later(out_, () => { Snd.Play("sd_blitzNext"); Board.Outro(); });
+            Later(out_ + 350, () => { Idx = idx + 1; _dirty = true; Effect(NewBoard); });
         }
 
         // ---- touches -----------------------------------------------------------------------------------------------------
@@ -412,7 +391,7 @@ namespace SquishSquad.Games.Squishdoku
                 _combo++;
                 if (_placed + 1 < n) _buddy.React("right", _combo);
                 _placed++;
-                if (_placed == n) BoardDone();
+                if (_placed == n) BoardDone(cell);
                 return;
             }
             _clk.Pause();
@@ -422,7 +401,8 @@ namespace SquishSquad.Games.Squishdoku
             Later(200, Snd.Wrong);
             _buddy.React("wrong");
             _combo = 0;
-            Later(1000, () => Lose("mistake"));
+            // (as the wrong creature drops away)
+            Later(900, () => Lose("mistake", cell));
         }
 
         // ---- pause, back, leaving --------------------------------------------------------------------------------------------

@@ -14,6 +14,8 @@
     <Compile Include="../../../unity/Assets/Scripts/Audio/Snd.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Ui/AdHook.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Games/Sort/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Sort/SortGame.cs;../../../unity/Assets/Scripts/Games/Sort/SortDoorPiece.cs;../../../unity/Assets/Scripts/Games/Sort/SortHub*.cs;../../../unity/Assets/Scripts/Games/Sort/SortScreen.cs" />
+    <!-- develop's Blitz runs show Squishdoku's save and GAME OVER cards, and save by its blitzSave -->
+    <Compile Include="../../../unity/Assets/Scripts/Games/Squishdoku/SdGeometry.cs;../../../unity/Assets/Scripts/Games/Squishdoku/SdArt.cs;../../../unity/Assets/Scripts/Games/Squishdoku/SdBlitzCards.cs;../../../unity/Assets/Scripts/Games/Squishdoku/SdSave.cs;../../../unity/Assets/Scripts/Games/Squishdoku/Engine.cs;../../../unity/Assets/Scripts/Games/Squishdoku/Js.cs;../../../unity/Assets/Scripts/Games/Squishdoku/LevelData.g.cs;../../../unity/Assets/Scripts/Games/Squishdoku/Levels.cs;../../../unity/Assets/Scripts/Games/Squishdoku/PlayerXp.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Backend/OfflineWallet.cs" />
     <Compile Include="../vector-test/ReferenceRaster.cs" />

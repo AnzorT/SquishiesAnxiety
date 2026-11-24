@@ -21,7 +21,12 @@
 //                             the switch (ToggleSwitch) in each state without its knob, and the knob
 //   rules-lip.xml, rules-face.xml   HOW TO PLAY (SdButton)
 //   hub.json                  where they are on the reference screen (dp)
-// node tools/unity/export-squishdoku.mjs [--hub-only]
+// The board's creatures in their three faces (src/squishdoku/bodies.js, made by tools/squishdoku/faces.mjs):
+//   bodies/<key>-<idle|happy|sad>.png   each whole body and all, cropped to one box so they lie right over each other
+//   bodies/<key>-red.png      the idle one as a flat #ff2e55 shape (hop/Pieces.js FacedSquishy's red flash: the idle
+//                             picture with tintColor)
+//   bodies.json               { key: height / width }
+// node tools/unity/export-squishdoku.mjs [--hub-only | --bodies-only]
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -30,7 +35,30 @@ import { openApp, snap, ROOT } from './ui/snap-page.mjs';
 const OUT = path.join(ROOT, 'unity', 'Assets', 'Resources', 'Squishdoku');
 fs.mkdirSync(path.join(OUT, 'rooms'), { recursive: true });
 const HUB_ONLY = process.argv.includes('--hub-only');
-if (!HUB_ONLY) {
+const BODIES_ONLY = process.argv.includes('--bodies-only');
+
+// ---- the board's creatures in their three faces, and the red flash's shape ----------------------------------------------
+{
+  const bodiesJs = fs.readFileSync(path.join(ROOT, 'src', 'squishdoku', 'bodies.js'), 'utf8');
+  const bodies = Object.fromEntries([...bodiesJs.matchAll(/(\w+): \{ idle: [^\n]*ar: ([\d.]+) \}/g)].map((m) => [m[1], +m[2]]));
+  fs.mkdirSync(path.join(OUT, 'bodies'), { recursive: true });
+  execFileSync('python3', ['-c', `
+import sys, os
+from PIL import Image
+src, dst = sys.argv[1], sys.argv[2]
+for key in sys.argv[3:]:
+    for face in ('idle', 'happy', 'sad'):
+        im = Image.open(os.path.join(src, key + '-' + face + '.webp')).convert('RGBA')
+        im.save(os.path.join(dst, key + '-' + face + '.png'), optimize=True)
+        if face == 'idle':
+            red = Image.new('RGBA', im.size, (0xff, 0x2e, 0x55, 255))
+            red.putalpha(im.getchannel('A'))
+            red.save(os.path.join(dst, key + '-red.png'), optimize=True)
+`, path.join(ROOT, 'assets', 'squishdoku', 'bodies'), path.join(OUT, 'bodies'), ...Object.keys(bodies)]);
+  fs.writeFileSync(path.join(OUT, 'bodies.json'), JSON.stringify(bodies, null, 1));
+  console.log(`bodies: ${Object.keys(bodies).length} creatures`);
+}
+if (!HUB_ONLY && !BODIES_ONLY) {
 
 // ---- the rooms' layers (only the rooms and layers src/hop/Room.js draws: base, under, over) -------------------------
 const roomArt = fs.readFileSync(path.join(ROOT, 'src', 'crib', 'roomArt.js'), 'utf8');
@@ -117,7 +145,7 @@ await browser.close();
 }
 
 // ---- the hub, the map, Blitz ------------------------------------------------------------------------------------------
-{
+if (!BODIES_ONLY) {
   // pictures (WebP and JPEG to PNG: Unity's tests read PNG; Unity reads either)
   const pics = [
     ['assets/royal/wood-bg.jpg', 'wood-bg'], ['assets/royal/levels-sunny.jpg', 'levels-sunny'], ['assets/royal/levels-rainy.jpg', 'levels-rainy'],

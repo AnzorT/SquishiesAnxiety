@@ -47,17 +47,58 @@ namespace SquishSquad.House.View
         }
 
         Affine Frame => Affine.ScaleBy(_k / UiPiece.PxPerDp, _k / UiPiece.PxPerDp);
-        double[] R(string id) { var a = _E.Obj("pieces").Arr(id); return a == null ? null : new[] { (double)a[0], (double)a[1], (double)a[2], (double)a[3] }; }
+        double[] Raw(string id) { var a = _E.Obj("pieces").Arr(id); return a == null ? null : new[] { (double)a[0], (double)a[1], (double)a[2], (double)a[3] }; }
+        // a piece's rect in the frame as the page's CSS anchors it (the export's are on the 852 x 393 box): the page's
+        // Renovate UI sits on the frame's edges (patches.mjs: the frame is the screen at the design's scale, menu.js
+        // houseBox), so on a wider or taller screen the Done / shop buttons go with its right edge, the toolbox (left 14,
+        // right 82, bottom 0: its wood box and tray's well stretch) and the toolbar (left 14) with its left and bottom
+        double[] R(string id)
+        {
+            var r = Raw(id); if (r == null) return null;
+            double mx = HouseFrame.MX, my = HouseFrame.MY;
+            if (id == "done" || id == "shop") { r[0] += mx; r[1] += my; }
+            else if (id == "rv-box" || id == "rv-well") { r[0] -= mx; r[2] += 2 * mx; r[1] += my; }
+            else if (id.StartsWith("label-")) { r[0] -= mx; r[1] += my; }
+            else if (id.StartsWith("rv-")) r[1] += my;
+            return r;
+        }
+        static double TbL => 14 - HouseFrame.MX;   // the toolbar's left (left 14 of the frame)
+        static double Bottom => 393 + HouseFrame.MY;   // the frame's bottom
 
         // a fixed piece by id (its SVG from Resources/House/edit), placed at frame (x, y), optionally turned about its centre
         // (`around`: a frame transform over it, a held button's shrink)
         UiPiece Fixed(string id, double x, double y, int order, double deg = 0, float op = 1, Affine? around = null)
         {
-            var r = R(id); if (r == null) return null;
+            var r = Raw(id); if (r == null) return null;
             if (!_p.TryGetValue(id, out var p)) { p = UiPiece.Create(_parent, "edit " + id, order); p.SetSvg(HouseRoomView.Res("edit/" + id), (float)r[2], (float)r[3], 14); _p[id] = p; }
             p.Visible = true; p.Opacity = op;
             p.Transform = Frame * (around ?? Affine.Identity) * Affine.Translate(x + r[2] / 2, y + r[3] / 2) * Affine.Rotate(deg) * Affine.Translate(-r[2] / 2, -r[3] / 2);
             _used.Add(id);
+            return p;
+        }
+        // a fixed piece drawn `extra` px wider (the toolbox's wood box and well on a wider frame): its left half, copies of
+        // the 26 px before its middle (the planks' period) and its right half moved over
+        UiPiece Stretched(string id, double x, double y, double extra, int order)
+        {
+            if (extra < 0.5) { _drawn.Remove(id + "+"); return Fixed(id, x, y, order); }
+            var r = Raw(id); if (r == null) return null;
+            string key = Math.Round(extra * 10).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (!_p.TryGetValue(id, out var p)) { p = UiPiece.Create(_parent, "edit " + id, order); _p[id] = p; }
+            if (!_drawn.TryGetValue(id + "+", out var k0) || k0 != key)
+            {
+                string orig = HouseRoomView.Res("edit/" + id); double w = r[2], h = r[3], cx = Math.Round(w / 2), P = 26, W2 = w + extra;
+                var sb = new StringBuilder();
+                sb.Append($"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{N(W2)}\" height=\"{N(h)}\" viewBox=\"0 0 {N(W2)} {N(h)}\" overflow=\"visible\"><defs>");
+                sb.Append($"<clipPath id=\"stL\"><rect x=\"-60\" y=\"-60\" width=\"{N(cx + 60)}\" height=\"{N(h + 120)}\"/></clipPath>");
+                sb.Append($"<clipPath id=\"stM\"><rect x=\"{N(cx - P)}\" y=\"-60\" width=\"{N(P)}\" height=\"{N(h + 120)}\"/></clipPath>");
+                sb.Append($"<clipPath id=\"stR\"><rect x=\"{N(cx)}\" y=\"-60\" width=\"{N(w - cx + 60)}\" height=\"{N(h + 120)}\"/></clipPath></defs>");
+                string inner = $"<svg x=\"0\" y=\"0\" width=\"{N(w)}\" height=\"{N(h)}\" overflow=\"visible\"" + orig.Substring(orig.IndexOf("<svg", StringComparison.Ordinal) + 4);
+                sb.Append("<g clip-path=\"url(#stL)\">").Append(inner).Append("</g>");
+                for (double o = P; o < extra + P; o += P) sb.Append($"<g transform=\"translate({N(Math.Min(o, extra))} 0)\"><g clip-path=\"url(#stM)\">").Append(inner).Append("</g></g>");
+                sb.Append($"<g transform=\"translate({N(extra)} 0)\"><g clip-path=\"url(#stR)\">").Append(inner).Append("</g></g></svg>");
+                p.SetSvg(sb.ToString(), (float)W2, (float)h, 14); _drawn[id + "+"] = key;
+            }
+            p.Visible = true; p.Opacity = 1; p.Transform = Frame * Affine.Translate(x, y); _used.Add(id);
             return p;
         }
         // a piece drawn here (UiSvg markup), redrawn when its key changes
@@ -101,7 +142,7 @@ namespace SquishSquad.House.View
             }
             if (!tb.On) return tb;
             // the row: padding 5 8 inside a 2.5 border, gap 7 (4 inside the size groups)
-            double x = 14 + 2.5 + 8; bool firstEl = true;
+            double x = TbL + 2.5 + 8; bool firstEl = true;
             void Add(string id, double w) { if (!firstEl) x += 7; firstEl = false; tb.Els.Add((id, x, w)); x += w; }
             void Sub(string id, double w) { tb.Els.Add((id, x, w)); x += w; }
             if (tb.Turn) Add("dir", 82);
@@ -118,7 +159,7 @@ namespace SquishSquad.House.View
             if (tb.Sign) Add("tb-write-on-the-sign", 36);
             if (tb.Lt) { Add("ltname", UiSvg.BoxWidth(tb.LtName, LabelSt) + 24); Add("tb-change-the-light", 36); Add("tb-move-the-light-back-to-the-middle", 36); }
             Add("tb-put-away-in-storage", 36);
-            tb.W = x + 8 + 2.5 - 14;
+            tb.W = x + 8 + 2.5 - TbL;
             return tb;
         }
 
@@ -142,8 +183,8 @@ namespace SquishSquad.House.View
             var tab = R("rv-tab"); double tx = tab[0] + _rvTab.At(now); var tk = HeldShrink("rv-tab", tx, tab[1] + ty, tab[2], tab[3]);   // (held: the tab and its arrow shrink about the tab's centre)
             Fixed("rv-tab", tx, tab[1] + ty, O + 2, 0, 1, tk);
             var ar = R("rv-arrow"); Fixed("rv-arrow", ar[0] + (tx - tab[0]), ar[1] + ty, O + 3, _rvRot.At(now), 1, tk);
-            var box = R("rv-box"); Fixed("rv-box", box[0], box[1] + ty, O);
-            var well = R("rv-well"); Fixed("rv-well", well[0], well[1] + ty, O + 1);
+            var box = R("rv-box"); Stretched("rv-box", box[0], box[1] + ty, 2 * HouseFrame.MX, O);
+            var well = R("rv-well"); Stretched("rv-well", well[0], well[1] + ty, 2 * HouseFrame.MX, O + 1);
             int h = _sim.ESel == null ? 0 : _sim.ESel == "__light" ? 2 : 1;
             var lb = R($"label-{cur}-{h}") != null ? $"label-{cur}-{h}" : $"label-{cur}-0";
             if (R(lb) != null) { var lr = R(lb); Fixed(lb, lr[0], lr[1] + ty, O + 2); }
@@ -151,7 +192,7 @@ namespace SquishSquad.House.View
             if (tabs != null) foreach (List<object> t in tabs)
                 {
                     string k = (string)t[0], id = $"tab-{k}{(cur == "beach" ? "-b" : "")}-{(k == ct ? "on" : "off")}";
-                    var tr = R(id); double tX = (double)t[1], tY = (double)t[2] + ty;
+                    var tr = R(id); double tX = (double)t[1] - HouseFrame.MX, tY = (double)t[2] + HouseFrame.MY + ty;
                     Fixed(id, tX, tY, k == ct ? O + 4 : O + 3, 0, 1, tr == null ? null : HeldShrink("tab:" + k, tX, tY, tr[2], tr[3]));
                 }
             DrawTray(well[0], well[1] + ty, well[2], well[3]);
@@ -248,10 +289,10 @@ namespace SquishSquad.House.View
             var tb = _tb;
             _tbBot.Set(tOpen ? 6 : (rvOpen ? 140 : 6), now); _tbCh.Set(tOpen ? 64 : 0, now); _tbRot.Set(tOpen ? 180 : 0, now);
             if (!tb.On) return;
-            double line = 393 - _tbBot.At(now), ch = _tbCh.At(now);
+            double line = Bottom - _tbBot.At(now), ch = _tbCh.At(now);
             // the tab (margin-left 44) sits on the clip box; the box shows while the clip box has any height
-            var t = R("tb-tab"); double tabY = line - ch - t[3] + 2.5; var tk = HeldShrink("tb-tab", 14 + 44, tabY, t[2], t[3]);   // (held: the tab and its arrow shrink about the tab's centre)
-            Fixed("tb-tab", 14 + 44, tabY, O + 21, 0, 1, tk); var ta = R("tb-arrow"); Fixed("tb-arrow", 14 + 44 + (t[2] - ta[2]) / 2, tabY + (t[3] - 2.5 - ta[3]) / 2, O + 22, _tbRot.At(now), 1, tk);
+            var t = R("tb-tab"); double tabY = line - ch - t[3] + 2.5; var tk = HeldShrink("tb-tab", TbL + 44, tabY, t[2], t[3]);   // (held: the tab and its arrow shrink about the tab's centre)
+            Fixed("tb-tab", TbL + 44, tabY, O + 21, 0, 1, tk); var ta = R("tb-arrow"); Fixed("tb-arrow", TbL + 44 + (t[2] - ta[2]) / 2, tabY + (t[3] - 2.5 - ta[3]) / 2, O + 22, _tbRot.At(now), 1, tk);
             if (ch < 1) { _tbTop = -1e9; return; }
             double top = line - ch; _tbTop = top;
             double bw = tb.W, bh = 51;
@@ -261,7 +302,7 @@ namespace SquishSquad.House.View
                 s.Box(0, 0, (float)bw, (float)bh, new BoxStyle { Gradient = new[] { "#ffe9a0", "#e2b14a", "#b8862a" }, GradientStops = new[] { 0f, 0.55f, 1f }, Radius = 12, BorderWidth = 2.5f, BorderColor = "#6b4426", Shadows = new[] { new Shadow("#6b4426", 0, 3, 0), new Shadow("rgba(60,30,10,0.3)", 0, 8, 14) } });
                 s.Box(2.5f, 2.5f, (float)bw - 5, 1.5f, new BoxStyle { Background = "rgba(255,255,255,0.6)", Radius = 1 });   // (the inset top light)
                 return s;
-            }, 14, top, O + 20);
+            }, TbL, top, O + 20);
             double y0 = top + 2.5 + 5;
             foreach (var (id, x, w) in tb.Els)
             {
@@ -337,14 +378,14 @@ namespace SquishSquad.House.View
             double ty = _rvTy.At(now);
             var tab = R("rv-tab"); if (tab != null && fx >= tab[0] + _rvTab.At(now) && fx <= tab[0] + _rvTab.At(now) + tab[2] && fy >= tab[1] + ty && fy <= tab[1] + ty + tab[3]) return "ui";
             var tabs = _E.Obj("tabs").Arr(_sim.S.Cur);
-            if (tabs != null) foreach (List<object> t in tabs) { double x = (double)t[1], y = (double)t[2] + ty, w = (double)t[3]; if (fx >= x && fx <= x + w && fy >= y && fy <= y + 29) return "ui"; }
+            if (tabs != null) foreach (List<object> t in tabs) { double x = (double)t[1] - HouseFrame.MX, y = (double)t[2] + HouseFrame.MY + ty, w = (double)t[3]; if (fx >= x && fx <= x + w && fy >= y && fy <= y + 29) return "ui"; }
             if (In(R("rv-well"), ty)) return "tray";
             if (In(R("rv-box"), ty)) return "ui";
             if (_tb != null && _tb.On)
             {
-                var t = R("tb-tab"); double line = 393 - _tbBot.At(now), ch = _tbCh.At(now), tabY = line - ch - t[3] + 2.5;
-                if (fx >= 58 && fx <= 58 + t[2] && fy >= tabY && fy <= tabY + t[3]) return "ui";
-                if (_tbTop > -1e8 && fy >= _tbTop && fy <= _tbTop + 51 && fx >= 14 && fx <= 14 + _tb.W)
+                var t = R("tb-tab"); double line = Bottom - _tbBot.At(now), ch = _tbCh.At(now), tabY = line - ch - t[3] + 2.5;
+                if (fx >= TbL + 44 && fx <= TbL + 44 + t[2] && fy >= tabY && fy <= tabY + t[3]) return "ui";
+                if (_tbTop > -1e8 && fy >= _tbTop && fy <= _tbTop + 51 && fx >= TbL && fx <= TbL + _tb.W)
                     return _slX > -1e8 && _tb.Spin && fx >= _slX && fx <= _slX + 136 ? "slider" : "ui";
             }
             return null;
@@ -361,10 +402,10 @@ namespace SquishSquad.House.View
             var tab = R("rv-tab"); double tx = tab[0] + _rvTab.At(now);
             if (fx >= tx && fx <= tx + tab[2] && fy >= tab[1] + ty && fy <= tab[1] + ty + tab[3]) return "rv-tab";
             var tabs = _E.Obj("tabs").Arr(_sim.S.Cur);
-            if (tabs != null) foreach (List<object> t in tabs) { double x = (double)t[1], y = (double)t[2] + ty, w = (double)t[3]; if (fx >= x && fx <= x + w && fy >= y && fy <= y + 29) return "tab:" + (string)t[0]; }
+            if (tabs != null) foreach (List<object> t in tabs) { double x = (double)t[1] - HouseFrame.MX, y = (double)t[2] + HouseFrame.MY + ty, w = (double)t[3]; if (fx >= x && fx <= x + w && fy >= y && fy <= y + 29) return "tab:" + (string)t[0]; }
             if (_tb == null || !_tb.On) return null;
-            var tt = R("tb-tab"); double line = 393 - _tbBot.At(now), ch = _tbCh.At(now), tabY = line - ch - tt[3] + 2.5;
-            if (fx >= 58 && fx <= 58 + tt[2] && fy >= tabY && fy <= tabY + tt[3]) return "tb-tab";
+            var tt = R("tb-tab"); double line = Bottom - _tbBot.At(now), ch = _tbCh.At(now), tabY = line - ch - tt[3] + 2.5;
+            if (fx >= TbL + 44 && fx <= TbL + 44 + tt[2] && fy >= tabY && fy <= tabY + tt[3]) return "tb-tab";
             if (_tbTop < -1e8 || fy < _tbTop || fy > _tbTop + 51) return null;
             foreach (var (id, x, w) in _tb.Els) if (fx >= x && fx <= x + w) return "el:" + id;
             return null;

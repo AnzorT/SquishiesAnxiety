@@ -96,7 +96,7 @@ namespace SquishSquad.Menu
                 _sceneSr = Picture("scene", _world, tex, Snap(pos, s), s, SceneOrder);
                 // its vignette, faded out while the Game Park is beside the house (menu.js vignette(): opacity .45s ease)
                 if (!string.IsNullOrEmpty(_layout.scene.vignette))
-                    _vignette = Picture("vignette", _world, Load(_layout.scene.vignette), Snap(pos, s), s, SceneOrder + 1);
+                    _vignette = Picture("vignette", _world, Load(_layout.scene.vignette), Snap(pos, s), s, SceneOrder + 2);   // (over the door as it opens: MenuView.Home.cs)
             }
 
             // 2. the creature and its name plate (they stand in the scene), 3. the weather, 4. the HUD
@@ -188,6 +188,7 @@ namespace SquishSquad.Menu
             }
             foreach (var p in _pieces) p.Tick(ms);
             TickTrip(ms);
+            TickHome(ms);
             TickIntro(ms);
             TickHud(ms);
             TickClip();
@@ -199,12 +200,13 @@ namespace SquishSquad.Menu
         }
 
         // ---- PLAY: the walk to the Game Park and back (webgame/app/menu.js enterPark / leavePark) ---------------------
-        public enum Place { Home, ToPark, Park, ToHome }
+        public enum Place { Home, ToPark, Park, ToHome, ToHouse, House, FromHouse }   // (the house's: MenuView.Home.cs)
         public Place Where { get; private set; } = Place.Home;
         float _tripStart = -1, _fadeFrom = 1, _fadeTo = 1, _fadeStart;
         Vector3 _creatureHome;
         IRigFrames _idle;
         RecordedRig _clip;
+        NativeRig _parkRig;
         RenderTexture _parkTex;
         GameObject _parkGo;   // hidden at home (menu.js leavePark removes the layer: its seam tree would show at the house's left edge)
         const float ParkPad = 160;   // menu.js PAD: where the creature stands in the park (the house's pad is at 500)
@@ -239,6 +241,8 @@ namespace SquishSquad.Menu
         void Clip(string name)
         {
             if (Creature == null || _creatureKey == null) return;
+            // the native rig walks it itself (native-host.js parkStart / parkStep: menu.js's turn, HouseWalk's gait, 'happy')
+            if (_idle is NativeRig nr && name.StartsWith("park-")) { nr.ParkStart(name == "park-enter"); _parkRig = nr; return; }
             _clip = RecordedRig.Load(_creatureKey + "-" + name);
             if (_clip == null) return;
             _clip.Loop = false;
@@ -273,9 +277,10 @@ namespace SquishSquad.Menu
             float a = CurrentFade(ms);
             foreach (var p in _pieces) if (p.Data.id != "creature") p.SetAlpha(a);
             _hudAlpha = a;
-            if (Where == Place.Home || Where == Place.Park) return;
+            if (Where != Place.ToPark && Where != Place.ToHome) return;
             bool enter = Where == Place.ToPark;
             float turn = enter ? 380 : 340, walk = enter ? 2300 : 2100, t = ms - _tripStart;
+            _parkRig?.ParkStep(t);
             float X0 = _ox + 500 * _k, X1 = _ox + ParkPad * _k;
             float wt = Mathf.Clamp01((t - turn) / walk), cam, scr;
             if (enter) { scr = X0 + (X1 - X0) * EOUT(wt); cam = _w * EIOC(Mathf.Clamp01((wt - 0.06f) / 0.94f)); }
@@ -284,6 +289,7 @@ namespace SquishSquad.Menu
             if (Creature != null) Creature.transform.localPosition = _creatureHome + new Vector3(scr - X0 - cam, 0, 0);
             if (t < 2 * turn + walk) return;
             // arrived
+            _parkRig?.ParkStep(2 * turn + walk); _parkRig = null;   // (its last step: 'happy')
             if (enter) { Where = Place.Park; ShowGames(_tripStart + 2 * turn + walk, false); }
             else
             {

@@ -254,9 +254,11 @@ namespace SquishSquad.Menu
             bool online = p?.Fb != null && p.Uid != null;
             double coins = prof.TryGetValue("coins", out var cO) ? System.Convert.ToDouble(cO) : 0;
             var roster = LevelPassPage.Roster;
-            var owned = roster != null ? CharactersPageLink.Squad(roster.roster, roster.demo, p).Item1 : null;
+            var squad = roster != null ? CharactersPageLink.Squad(roster.roster, roster.demo, p) : (null, null);
+            var owned = squad.Item1;
             BeforeGame();
             var s = SquishSquad.House.View.HouseScreen.Create(transform, json, lv, owned);
+            s.PlayerKey = squad.Item2;   // (the yard games are played by the menu's creature)
             // (offline, the dev menu: the offline wallet's coins; before, 0, so every BUY in the Catalog was refused)
             // (signed in: the profile's coins as they are now: the feed may bring new ones while the house is open)
             double Live() { var q = CharactersPageLink.Get()?.Profile; return q != null && q.TryGetValue("coins", out var v) && v != null ? System.Convert.ToDouble(v) : coins; }
@@ -277,7 +279,7 @@ namespace SquishSquad.Menu
                 if (data == last) return; last = data;
                 if (p?.Fb != null && p.Uid != null) _ = p.Fb.Data.SaveHouse(p.Uid, data); else PlayerPrefs.SetString(HouseKey, data);
             };
-            s.OnExit = () => AfterGame();
+            s.OnExit = () => { AfterGame(); _view.BackFromHouse(NowMs); };   // (out of the door and down the path)
             _game = s;
         }
         const string HouseKey = "squish.house6";
@@ -359,6 +361,7 @@ namespace SquishSquad.Menu
             {
                 case SquishSquad.Games.Stack.StackGame g: g.OnExit = () => Back(hub); break;
                 case SquishSquad.Games.Sort.SortGame g: g.OnExit = () => Back(hub); break;
+                case SquishSquad.Games.Hop.HopGame g: g.OnExit = () => Back(hub); break;
             }
             _game = run;
         }
@@ -420,6 +423,7 @@ namespace SquishSquad.Menu
             var s = SquishSquad.Games.Hop.HopScreen.Create(transform);
             s.OnLevel = lv => MenuState.HopLevel = lv;
             s.OnExit = AfterGame;
+            s.OpenBlitz = _ => OpenBlitzOver(s, () => SquishSquad.Games.Hop.HopGame.CreateBlitz(transform));
             _game = s;
         }
 
@@ -568,7 +572,7 @@ namespace SquishSquad.Menu
             if (tap == "trophies") { OpenAchievements(); return; }
             if (tap == "settings") { OpenSettings(); return; }
             if (tap == "shop") { OpenShop("daily"); return; }
-            if (tap == "home") { OpenHouse(); return; }
+            if (tap == "home") { if (!_view.GoHome(NowMs, OpenHouse)) OpenHouse(); return; }   // (the walk to the door and the flight in first: MenuView.Home.cs)
             Tapped?.Invoke(tap);
             if (Tapped == null) ShowToast(tap.ToUpperInvariant() + " isn't in the Unity version yet");
         }

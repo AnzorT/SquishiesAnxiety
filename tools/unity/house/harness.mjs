@@ -103,7 +103,7 @@ export async function openHouse(browser, fixture = {}, opts = {}) {
   const cdp = await ctx.newCDPSession(page);
   await cdp.send('Animation.enable');
   await cdp.send('Animation.setPlaybackRate', { playbackRate: 0 });
-  const q = new URLSearchParams({ screen: 'house', room: opts.room || fixture.room || 'living' });
+  const q = new URLSearchParams({ screen: opts.screen || 'house', room: opts.room || fixture.room || 'living' });
   await page.goto(pathToFileURL(path.join(WORK, 'App.dc.html')).href + '?' + q);
   const H = {
     page, ctx, errs, cdp,

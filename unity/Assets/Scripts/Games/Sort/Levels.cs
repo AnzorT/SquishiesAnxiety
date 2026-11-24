@@ -64,7 +64,11 @@ namespace SquishSquad.Games.Sort
     public sealed class BlitzRecord
     {
         // null: stored as null (the JS keeps the stored null; arithmetic
-        // reads it as 0)
+        // reads it as 0). Top: the most rounds cleared in one run (the endless
+        // Blitz, 2026-11-17), Runs: how many runs; Reached / BestMs / Wins
+        // were the ten-round runs'
+        public double? Top;
+        public double? Runs;
         public double? Reached;
         public double? BestMs;
         public double? Wins;
@@ -73,7 +77,6 @@ namespace SquishSquad.Games.Sort
     public sealed class SortRecord
     {
         public ThemeRecord Fridge;
-        public ThemeRecord Cupboard;
         public double Plays;
         public double Wins;
         public bool Seen;
@@ -83,7 +86,6 @@ namespace SquishSquad.Games.Sort
         public ThemeRecord Of(string theme)
         {
             if (theme == "fridge") return Fridge;
-            if (theme == "cupboard") return Cupboard;
             throw new ArgumentException("not a Squish Sort theme: " + theme, nameof(theme));
         }
     }
@@ -100,6 +102,8 @@ namespace SquishSquad.Games.Sort
         public List<int> LevelUps = new List<int>();
         public double Stars;
         public bool Unlocked;
+        // afterBlitz: the run is the player's new record
+        public bool NewTop;
     }
 
     public static class Levels
@@ -257,39 +261,68 @@ namespace SquishSquad.Games.Sort
 
         // --- Blitz -------------------------------------------------------------------
 
-        static readonly int[] BLITZ_LEVELS = { 2, 5, 8, 11, 14, 17, 20, 24, 28, 33 };
-        public static readonly int BLITZ_ROUNDS = BLITZ_LEVELS.Length;
-        public const int BLITZ_MS = 5 * 60 * 1000;
-        public const int BLITZ_COINS = 800;
-        public const int BLITZ_XP = 200;
+        // BLITZ MODE (2026-11-17, the user: "its unlimited and it should behave
+        // like the others, 1 fail means you failed it all"): round after round
+        // with no end, each on its own clock (only while you sort). A mistake,
+        // or the round's clock running out, stops the run: GAME OVER unless
+        // it's saved (an ad once a run, or gems). Every round cleared pays;
+        // the record is the most rounds cleared in one run (sort.blitz.top).
 
-        public static string BlitzTheme(int i) => i % 2 != 0 ? "cupboard" : "fridge";
+        // the rounds climb as the first Blitz's ten did, on through the XXL
+        // fridge to the very very large one; then its eight-shelf levels in
+        // turn, for good
+        static readonly int[] BLITZ_RAMP = { 2, 5, 8, 11, 14, 17, 20, 24, 28, 33, 36, 39, 42 };
+        static readonly int[] BLITZ_LAST = { 46, 47, 48, 49, 50 };
+        // a round's clock: a third more than the level's 3-star time, in whole
+        // seconds; past the climb each one 3% shorter than the last, down to
+        // three quarters
+        public const double BLITZ_PAR = 1.33;
 
-        // round i (0-9) at the Blitz skill: a Regular level's spec, plus its
-        // round (past the ten: level 1's spec, as the JS's undefined level)
+        // Round `i` of a run (0 = the first) at the Blitz skill: that Regular
+        // level's spec, its round, and its own clock (LimitMs). (A round before
+        // the first: level 1's spec, as the JS's undefined level.)
         public static LevelSpec BlitzSpec(int i, double skill = 0)
         {
-            double lv = i >= 0 && i < BLITZ_LEVELS.Length ? BLITZ_LEVELS[i] : double.NaN;
+            int past = Math.Max(0, i - BLITZ_RAMP.Length + 1);
+            double lv = i < BLITZ_RAMP.Length ? (i >= 0 ? BLITZ_RAMP[i] : double.NaN) : BLITZ_LAST[(i - BLITZ_RAMP.Length) % BLITZ_LAST.Length];
             var s = LevelSpec(lv, skill);
             s.Round = i + 1;
+            s.LimitMs = (int)(Math.Ceiling(s.ParMs * BLITZ_PAR / 1000 * Math.Max(0.75, 1 - 0.03 * past)) * 1000);
             return s;
         }
 
-        // The fields to write after a Blitz run ends (won or not), and what it
-        // paid. `ms` is read only on a win.
-        public static SortOutcome AfterBlitz(IDictionary<string, object> profile, bool won, double reached, double ms = 0)
+        // coins for a round cleared: twice what the same level pays Regular
+        // with 1 star (as Squishdoku's Blitz boards)
+        public static double BlitzCoins(LevelSpec spec) => 2 * CoinsFor(spec, 1);
+
+        // What `cleared` rounds pay: their coins, and the player's XP
+        // (config/levels `xp.blitz.sort` is the XP for ten rounds)
+        public static (double coins, double xp) BlitzPrize(double cleared, double skill = 0)
+        {
+            double coins = 0;
+            for (int i = 0; i < cleared; i++) coins += BlitzCoins(BlitzSpec(i, skill));
+            return (coins, JsMath.Round(PlayerXp.BlitzSort / 10 * cleared));
+        }
+
+        // The fields to write when a Blitz run is over (`cleared`: the rounds
+        // it cleared), and what it paid. The skill moves up after a run of 10
+        // or more, down after one of under 5.
+        public static SortOutcome AfterBlitz(IDictionary<string, object> profile, double cleared)
         {
             var rec = Record(profile);
             var o = new SortOutcome();
-            o.Update["sort.bSkill"] = ClampSkill(rec.BSkill + (won ? 0.4 : reached >= 6 ? 0 : -0.3));
-            o.Update["sort.blitz.reached"] = JsMath.Max(rec.Blitz.Reached ?? 0, reached);
-            if (!won) return o;
-            o.Update["sort.blitz.wins"] = (rec.Blitz.Wins ?? 0) + 1;
-            double best = rec.Blitz.BestMs ?? 0;
-            if (best == 0 || double.IsNaN(best) || ms < best) o.Update["sort.blitz.bestMs"] = ms;
-            double xp = PlayerXp.BlitzSort;
+            o.Update["sort.bSkill"] = ClampSkill(rec.BSkill + (cleared >= 10 ? 0.4 : cleared < 5 ? -0.3 : 0));
+            double runs = rec.Blitz.Runs ?? 0;
+            o.Update["sort.blitz.runs"] = (double.IsNaN(runs) || runs == 0 ? 0 : runs) + 1;
+            o.Update["sort.seen"] = true;
+            double top = rec.Blitz.Top ?? 0;
+            o.NewTop = cleared > top;
+            if (o.NewTop) o.Update["sort.blitz.top"] = cleared;
+            if (cleared == 0 || double.IsNaN(cleared)) { o.NewTop = false; return o; }
+            // the skill the run's rounds were dealt at (BlitzSpec), so the coins match what was played
+            var (coins, xp) = BlitzPrize(cleared, rec.BSkill);
             Apply(o, PlayerXp.AddXp(profile, xp));
-            o.Coins = BLITZ_COINS;
+            o.Coins = coins;
             return o;
         }
 
@@ -303,7 +336,8 @@ namespace SquishSquad.Games.Sort
 
         // --- the profile's record ----------------------------------------------------
 
-        public static readonly IReadOnlyList<string> THEME_KEYS = new[] { "fridge", "cupboard" };
+        // (only the fridge since 2026-11-17: "delete the toy cupboard")
+        public static readonly IReadOnlyList<string> THEME_KEYS = new[] { "fridge" };
 
         static ThemeRecord Of(IDictionary<string, object> s, string k)
         {
@@ -332,12 +366,11 @@ namespace SquishSquad.Games.Sort
             return new SortRecord
             {
                 Fridge = Of(s, "fridge"),
-                Cupboard = Of(s, "cupboard"),
                 Plays = JsMath.OrNum(JsMath.Get(s, "plays"), 0),
                 Wins = JsMath.OrNum(JsMath.Get(s, "wins"), 0),
                 Seen = JsMath.Truthy(JsMath.Get(s, "seen")),
                 BSkill = JsMath.OrNum(JsMath.Get(s, "bSkill"), 0),
-                Blitz = new BlitzRecord { Reached = BlitzField(b, "reached"), BestMs = BlitzField(b, "bestMs"), Wins = BlitzField(b, "wins") },
+                Blitz = new BlitzRecord { Top = BlitzField(b, "top"), Runs = BlitzField(b, "runs"), Reached = BlitzField(b, "reached"), BestMs = BlitzField(b, "bestMs"), Wins = BlitzField(b, "wins") },
             };
         }
 

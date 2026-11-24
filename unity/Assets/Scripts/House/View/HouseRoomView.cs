@@ -95,6 +95,7 @@ namespace SquishSquad.House.View
                 var q = Quad("piece " + idx, Render(lp.Svg, lp.Region, k), (float)(lp.Region[2] * k), (float)(lp.Region[3] * k), OrderOf(lp.Z, idx % 2));
                 Pieces.Add(new Piece { Quad = q, Region = lp.Region, Box = lp.Box, Z = lp.Z, Index = idx, Toy = lp.Index, Kind = lp.Kind, Id = lp.Id, Renderer = _lastRenderer });
             }
+            DiscoFind(L.Base, k);
             SetCamera(CamK);
             if (_itemsOp < 1) ItemsOpacity(_itemsOp);
             // (the night is the frame's: inset 0, a gradient over the whole frame, so stretched to it)
@@ -158,12 +159,13 @@ namespace SquishSquad.House.View
 
         // HouseFlat's picture of a 3D floor as a texture; its tiles read back from the GPU (they aren't imported readable)
         // (kept: the room is drawn again on every change of a piece, the floor's picture takes a moment to make)
-        static string _flatKey; static Texture2D _flatTex;
+        // (by href: a light-up floor has one per moment)
+        static readonly Dictionary<string, Texture2D> _flats = new Dictionary<string, Texture2D>();
         static Texture2D FlatPicture(string href)
         {
-            if (href == _flatKey && _flatTex != null) return _flatTex;
+            if (_flats.TryGetValue(href, out var have) && have != null) return have;
             if (!HouseFlat.Specs.TryGetValue(href, out var spec)) return null;
-            if (_flatTex != null) Destroy(_flatTex);
+            if (_flats.Count >= 8) { foreach (var t in _flats.Values) if (t != null) Destroy(t); _flats.Clear(); }
             var (w, h, rgba) = HouseFlat.Render(spec, url =>
             {
                 var t = Resources.Load<Texture2D>("House/pics/" + url); if (t == null) return (0, 0, null);
@@ -180,7 +182,7 @@ namespace SquishSquad.House.View
             var cs = new Color32[w * h];
             for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) { int i = (y * w + x) * 4; cs[(h - 1 - y) * w + x] = new Color32((byte)(rgba[i] * 255 + 0.5f), (byte)(rgba[i + 1] * 255 + 0.5f), (byte)(rgba[i + 2] * 255 + 0.5f), (byte)(rgba[i + 3] * 255 + 0.5f)); }
             o.SetPixels32(cs); o.Apply(false, true);
-            _flatKey = href; _flatTex = o;
+            _flats[href] = o;
             return o;
         }
 
@@ -229,6 +231,7 @@ namespace SquishSquad.House.View
             _quad.SetUVs(0, new[] { Uv(fx0, fy0), Uv(fx1, fy0), Uv(fx1, fy1), Uv(fx0, fy1) });
             // a piece's quad: its corners (frame px at camK 1) scaled by k about (426, 393), the box's (426, 343)
             Vector3 V(double gx, double gy) { double fx = 426 + k * (gx - 426), fy = 393 + k * (gy - 393); return new Vector3((float)(fx * _k), (float)(-fy * _k), 0); }
+            foreach (var d in _disco) { var r = d.Region; d.Quad.SetVertices(new[] { V(r[0], r[1]), V(r[0] + r[2], r[1]), V(r[0] + r[2], r[1] + r[3]), V(r[0], r[1] + r[3]) }); d.Quad.RecalculateBounds(); }
             foreach (var p in Pieces)
             {
                 if (p.Quad == null) continue;
@@ -246,9 +249,55 @@ namespace SquishSquad.House.View
             }
         }
 
+        // ---- the light-up dance floors (app/menu.js SquishDisco, patches.mjs rt.flatFx, 2026-11-21) ----
+        // Over the floor, a copy of the room's picture where the floor is (the room's SVG with the plane's tile at moment
+        // k, only the floor's region: what's drawn over the floor, its shading and trims, comes with it), one per moment
+        // 1..3, shown during its slot of the loop (D / 4 s each, no fade: step-end); moment 0 is the room's own. Made one a
+        // frame once the room is drawn (each plane's picture takes a moment); the time stands still while the house does
+        // (sq-hfz: under the Catalog, the map).
+        sealed class Disco { public Mesh Quad; public MeshRenderer R; public double[] Region; public int K; }
+        readonly List<Disco> _disco = new List<Disco>();
+        string _discoSvg, _discoHref; double[] _discoRegion; int _discoNext; double _discoMs, _discoLoop;
+        static bool _discoRead;
+        void DiscoFind(string baseSvg, float k)
+        {
+            _discoSvg = null; _disco.Clear();
+            if (!_discoRead) { _discoRead = true; HouseFlat.LoadDisco(Res("disco")); }
+            var m = System.Text.RegularExpressions.Regex.Match(baseSvg, "href=\"(flat:[^\"|@]+\\|[^\"]*)\"");
+            if (!m.Success || HouseFlat.Moment(m.Groups[1].Value, 1) == null || !HouseFlat.Specs.TryGetValue(m.Groups[1].Value, out var s)) return;
+            var id = m.Groups[1].Value.Substring(5, m.Groups[1].Value.IndexOf('|') - 5);
+            _discoLoop = HouseFlat.Disco[id].D * 1000;
+            // the floor's region (frame px at camK 1): the plane's box inside its clip (the template's: the box at room
+            // (-220, -230), its clip-path 'M46 630 A600 300 0 0 1 1246 630 Z'), the room box at BoxTop, within View
+            double x0 = Math.Max(s.X0, 46) - 220, x1 = Math.Min(s.X1, 1246) - 220, y0 = Math.Max(s.Y0, 330) - 230 + HouseFrame.BoxTop, y1 = Math.Min(s.Y1, 630) - 230 + HouseFrame.BoxTop;
+            x0 = Math.Floor(Math.Max(x0, View[0])); y0 = Math.Floor(Math.Max(y0, View[1])); x1 = Math.Ceiling(Math.Min(x1, View[0] + View[2])); y1 = Math.Ceiling(Math.Min(y1, View[1] + View[3]));
+            if (x1 <= x0 || y1 <= y0) return;
+            _discoSvg = baseSvg; _discoHref = m.Groups[1].Value; _discoRegion = new[] { x0, y0, x1 - x0, y1 - y0 }; _discoNext = 1;
+        }
+        /// <summary>The light-up floor's clock: `ms` more of it (0 while the house stands still); makes the next moment's
+        /// copy if one is missing and shows the moment due.</summary>
+        public void DiscoTick(double ms)
+        {
+            if (_discoSvg == null) return;
+            if (_discoNext >= 1 && _discoNext < HouseFlat.DK)
+            {
+                int k = _discoNext++;
+                var h = HouseFlat.Moment(_discoHref, k); var r = _discoRegion;
+                var svg = _discoSvg.Replace("href=\"" + _discoHref + "\"", "href=\"" + h + "\"");
+                // (the root's viewBox only: the region)
+                svg = new System.Text.RegularExpressions.Regex("viewBox=\"[^\"]*\"").Replace(svg, "viewBox=\"" + string.Join(" ", Array.ConvertAll(r, v => v.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "\"", 1);
+                var q = Quad("disco " + k, Render(svg, r, _k), (float)(r[2] * _k), (float)(r[3] * _k), SortingOrder + 1);
+                _disco.Add(new Disco { Quad = q, R = _lastRenderer, Region = r, K = k });
+                SetCamera(CamK);
+            }
+            _discoMs = (_discoMs + ms) % Math.Max(1, _discoLoop);
+            int due = (int)Math.Floor(_discoMs / (_discoLoop / HouseFlat.DK)) % HouseFlat.DK;
+            foreach (var d in _disco) if (d.R != null) d.R.enabled = d.K == due;
+        }
+
         void Clear()
         {
-            Pieces.Clear();
+            Pieces.Clear(); _disco.Clear();
             foreach (var o in _made) if (o != null) { if (o is RenderTexture rt) rt.Release(); Destroy(o); }
             _made.Clear();
         }

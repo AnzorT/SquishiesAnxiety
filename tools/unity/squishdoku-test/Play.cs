@@ -1,5 +1,5 @@
 // The level (capture.mjs's scenario) from the Unity code: SdLevel on a Ticker stepped as the page's virtual clock was
-// (16 ms frames; a pause, a second, RESTART: T0), the same taps at the same moments, the screen drawn at each moment
+// (16 ms frames; the clock run out, RETRY: T0), the same taps at the same moments, the screen drawn at each moment
 // the app's was shot and compared with it. The buddy is left out (the app's is the creature's live rig, Unity's its still
 // for now), and the left-out rectangle is reported.
 using System;
@@ -19,6 +19,7 @@ static class PlayTest
     {
         var doc = JsonDocument.Parse(File.ReadAllText(Program.Res("Squishdoku/squishdoku.json"))).RootElement;
         var list = new List<SdCreature>();
+        SdCreature.Bodies = SdCreature.ParseBodies(File.ReadAllText(Program.Res("Squishdoku/bodies.json")));
         foreach (var a in doc.GetProperty("artList").EnumerateArray())
             list.Add(new SdCreature(a.GetProperty("key").GetString(), "Stack/art/" + a.GetProperty("file").GetString(), (float)a.GetProperty("ar").GetDouble()));
         return list.ToArray();
@@ -44,15 +45,16 @@ static class PlayTest
                 if (Environment.GetEnvironmentVariable("SD_DEBUG") != null && level.Phase != lastPhase) { lastPhase = level.Phase; Console.WriteLine($"  {tk.Now - t0,8} ms: {lastPhase}"); }
             }
         }
-        // played for a while, paused, a second, RESTART
+        // played for a while, the clock run out at once (RegularGame's window.__sdk.timeUp), its card up for a moment,
+        // RETRY
         RunTo(4000);
-        level.Pause();
+        level.TimeUpNow();
         double p = tk.Now;
-        RunTo(p + sc.GetProperty("pauseFor").GetDouble());
+        RunTo(p + sc.GetProperty("retryAfter").GetDouble());
         level.Layers();
-        CardButton restart = null;
-        foreach (var c in level.Cards) foreach (var b in c.Buttons) if (b.Look.Label == "RESTART") restart = b;
-        var at = restart.Face.Transform.Apply(new SquishSquad.Vector.Vec2(restart.W / 2, restart.H / 2));
+        CardButton retry = null;
+        foreach (var c in level.Cards) foreach (var b in c.Buttons) if (b.Look.Label == "RETRY") retry = b;
+        var at = retry.Face.Transform.Apply(new SquishSquad.Vector.Vec2(retry.W / 2, retry.H / 2));
         level.Down((float)at.X, (float)at.Y);
         level.Up((float)at.X, (float)at.Y);
         double T0 = tk.Now; t0 = T0;

@@ -66,6 +66,8 @@ namespace SquishSquad.House.View
             return s;
         }
         List<string> _ownedKeys;
+        /// <summary>The menu's creature (the one in use): it plays the yard games.</summary>
+        public string PlayerKey;
         const string MoviesKey = "squish.house.movies";
 
         double Now => Time.unscaledTimeAsDouble * 1000;
@@ -261,7 +263,11 @@ namespace SquishSquad.House.View
             Save();
             PlayerPrefs.DeleteKey(YardNewKey);   // (games.js yardSeen: the NEW badge goes once the games are seen)
             _camera.enabled = false; if (_yardBtn != null) _yardBtn.Visible = false; if (_yardNew != null) _yardNew.Visible = false;
-            _yard = SquishSquad.Games.Yard.View.YardScreen.Create(transform.parent, _ownedKeys, null);
+            // (the games page: a game open once a toy of it is bought here, its tap otherwise saying which; the menu's
+            // creature plays: games.js yardLocked / yardNeed, main-menu.js playGame's cre())
+            var S = _room.Save;
+            _yard = SquishSquad.Games.Yard.View.YardScreen.Create(transform.parent, _ownedKeys, null, PlayerKey,
+                g => !HouseYard.Locked(g, S.H.Obj("owned"), S.D), g => HouseYard.NeedText(g, S.D));
             _yard.OnExit = () => { _yard = null; if (_camera != null) _camera.enabled = true; };
         }
 
@@ -287,6 +293,7 @@ namespace SquishSquad.House.View
             bool frozen = _sim.Shop || _sim.Map;
             if (frozen) _sim.Freeze(now); else _sim.Tick(now);
             if (_dirty) { _dirty = false; _room.Draw(852 * _k, 393 * _k); }
+            _room.DiscoTick(frozen ? 0 : Time.unscaledDeltaTime * 1000.0);   // (the light-up floor: paused while frozen)
             // the beach's sea pieces bob (bTick's translate)
             if (_sim.S.Cur == "beach" && !_sim.Edit) foreach (var p in _room.Pieces) if ((p.Kind == "item" || p.Kind == "front") && p.Id != null) p.Dy = _sim.BBob.TryGetValue(p.Id, out var bob) ? bob : 0;
             double k = _cam.K(now);

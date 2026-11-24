@@ -1,4 +1,4 @@
-// A Squish Sort level as the app plays it (Expo web, src/web/Preview.js "game-sort"), on a virtual clock: the page's
+// A Squish Sort level as the app plays it on develop (Expo web, src/web/Preview.js "game-sort"), on a virtual clock: the page's
 // clock is replaced by tools/unity/rig/virtual-clock.js just before the level opens, then stepped 16 ms a frame (the
 // last step landing on each moment), so the Unity code (Program.cs) can run the same frames. Writes the level's board
 // (read from SortGame's hooks: the deal Math.random made), the sizes the app worked out, and a screenshot at each
@@ -20,9 +20,12 @@ const taps = tapsArg.split(/\s+/).filter(Boolean).map((s) => {
   return { ms: +ms, from: p(a), to: b ? p(b) : null };
 });
 fs.mkdirSync(out, { recursive: true });
-const { browser, page, errors } = await openApp('http://localhost:8081/?phone=1&preview=1&card=game-sort');
+const HOST = process.env.SORT_HOST || 'http://localhost:8081';
+const { browser, page, errors } = await openApp(`${HOST}/?phone=1&preview=1&card=game-sort`);
+// (the rigs' page kept from loading: the squishies' stills stand in, as in Unity)
+await page.route('**/android_asset/rig/**', (r) => r.abort());
 await page.waitForTimeout(6000);
-await page.mouse.click(600, theme === 'cupboard' ? 310 : 160);   // the hub's PLAY on the fridge's / cupboard's card
+await page.mouse.click(218, 180);   // develop's hub: REGULAR MODE (the fridge only; `theme` is kept for old captures)
 await page.waitForTimeout(3000);
 const clock = fs.readFileSync(path.join(ROOT, 'tools', 'unity', 'rig', 'virtual-clock.js'), 'utf8');
 await page.evaluate(clock);
@@ -59,7 +62,7 @@ const readState = () => page.evaluate(() => {
   const spec = memos.find((m) => m && m.peekMs != null);
   const tg = memos.find((m) => m && m.perRow != null);
   const g = memos.find((m) => m && m.bodyW != null);
-  return { board, spec, tg, g, theme: game.memoizedProps.theme };
+  return { board, spec, tg, g, theme: game.memoizedProps.theme || 'fridge' };
 });
 const state = await readState();
 // every board the level deals (NEXT, REPLAY and RETRY deal again), in order

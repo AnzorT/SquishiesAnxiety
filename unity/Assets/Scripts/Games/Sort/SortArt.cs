@@ -740,28 +740,17 @@ namespace SquishSquad.Games.Sort
         }
 
         // ---- the tray (landscape: a column at the right) ----------------------------------------------------------------
-        /// <summary>The tray in the play area's coordinates (its own box: tw x th at tx, ty; the label pokes 10 dp above).</summary>
-        public static string Tray(SortThemeLook t, TrayGeo tg, int cap)
+        /// <summary>The tray in the play area's coordinates (its own box: tw x th at tx, ty): the same glass as the HUD's
+        /// panel with a soft spot under each place (develop: no COUNTER label since 2026-11-17).</summary>
+        public static string Tray(TrayGeo tg, int cap)
         {
             var s = new UiSvg(tg.Tw, tg.Th);
-            s.Box(0, 0, tg.Tw, tg.Th, new BoxStyle { Background = t.TrayRing, Radius = 24 });
-            float x = 2.5f, y = 2.5f, w = tg.Tw - 5, h = tg.Th - 2.5f - 7;
-            Clip(s, x, y, w, h, R4(21.5f), 3);
-            Grad(s, x + 3, y + 3, w - 6, h - 6, t.TrayColors, new[] { 0, 0.6f, 1 });
-            float px = x + 3, py = y + 3, pw = w - 6;
-            s.Box(px + 14, py + 3, pw - 28, 8, new BoxStyle { Background = "rgba(255,255,255,0.6)", Radius = 4 });
+            s.Box(0, 0, tg.Tw, tg.Th, new BoxStyle { Background = "rgba(91,58,41,0.75)", Radius = 20, BorderWidth = 2, BorderColor = "rgba(255,255,255,0.9)" });
             for (int j = 0; j < cap; j++)
             {
                 var (cx, cy) = TrayCenter(tg, j);
-                s.Box(px + cx - tg.Tx - 2.5f - tg.Cell * 0.36f, py + cy - tg.Ty - 2.5f + tg.Cell * 0.22f, tg.Cell * 0.72f, tg.Cell * 0.2f, new BoxStyle { Background = "rgba(69,16,122,0.1)", Radius = 999 });
+                s.Box(cx - tg.Tx - tg.Cell * 0.36f, cy - tg.Ty + tg.Cell * 0.22f, tg.Cell * 0.72f, tg.Cell * 0.2f, new BoxStyle { Background = "rgba(255,255,255,0.13)", Radius = 999 });
             }
-            s.Close();
-            s.Box(x, y, w, h, new BoxStyle { Radius = 21.5f, BorderWidth = 3, BorderColor = "#ffffff" });
-            var lt = T(Display, 10, "#ffffff", 1);
-            float lw = UiSvg.BoxWidth(t.TrayLabel, lt) + 20 + 4, lh = UiSvg.LineBox(lt) + 2 + 4;
-            float lx = (tg.Tw - lw) / 2;
-            s.Box(lx, -10, lw, lh, new BoxStyle { Background = t.TrayRing, Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
-            s.Text(t.TrayLabel, lx + 2 + 10, -10 + 2 + 1, lt);
             return s.Markup;
         }
 
@@ -843,159 +832,93 @@ namespace SquishSquad.Games.Sort
             return (mk, y);
         }
 
-        // ---- the HUD's left column (Game.js topEl in landscape: wLeft 236 dp) --------------------------------------------
-        public const float LeftW = 236;
+        // ---- the HUD's left column (develop's Game.js topEl, 2026-11-17, the user: "make sure the screens of squish sort
+        // matches the other game's screen": Squish Hop's top bar and glass; the column 240 wide, padding 8 / 10, gap 8) ----
+        public const float LeftW = 240;
         public sealed class Hud
         {
-            public string Theme, ModelName, BarLabel;
-            public bool BarRed, ShowBar;
-            public string[] BarColors;
-            public int Lv, Tier, Hearts;
-            /// <summary>Blitz (Game.js `blitz`): BLITZ ⚡ · the model, ROUND n/10, the revive chip in the hearts' place
-            /// and the pips' row (Ui/Blitz Pips, drawn by the level) between the top bar and the bar.</summary>
-            public bool Blitz, Revived;
-            public int Round, Rounds = 10;
+            public string ModelName, BarLabel;
+            public int Tier;
+            /// <summary>The glass bar's icon: the eye while you look (peek, deal), else the clock.</summary>
+            public bool Eye;
+            /// <summary>Blitz: "Blitz Mode" with no tier chip; on the glass the rounds cleared and the best run (gold NEW
+            /// BEST once beaten) and the rule (1 MISTAKE = GAME OVER) in the hearts' place.</summary>
+            public bool Blitz, BestBeaten;
+            public int Cleared, Best;
         }
 
-        // the revive chip (squishdoku/ui.js Chip: 9 x 3 padding, a 2 dp white border, Fredoka 11.5 letter-spaced 0.5)
-        static readonly TextStyle ChipText = T(Display, 11.5f, "#ffffff", 0.5f);
-        static float ChipH => UiSvg.LineBox(ChipText) + 6 + 4;
-        // the top bar's second line: the hearts' pill (38 tall) or, in Blitz, the revive chip
-        static float Line2H(Hud d) => d.Blitz ? ChipH : 38;
-        /// <summary>Blitz: the pips' row's top (Game.js styles.pips: marginTop 8 under the top bar, the column's gap 4).</summary>
-        public static float PipsY(Hud d) => 6 + (6 + Math.Max(40, TitleBoxH()) + 6 + Line2H(d)) + 4 + 8;
-        /// <summary>Characters Blitz's HUD has that its fonts don't (the title's ⚡, Chrome's colour emoji; the revive chip's
-        /// ♥), by "ch|size": the picture Chrome draws (export-sort.mjs: Resources/Sort/blitz.json, img/blitz-n), its box's
-        /// width (the advance Chrome gave it) and height, and its top below the text's. Without one, the fallback outline.</summary>
-        public static readonly Dictionary<string, (string href, float w, float h, float dy)> Rasters = new Dictionary<string, (string, float, float, float)>();
-
-        static bool RasterOf(char ch, TextStyle t, out (string href, float w, float h, float dy) r) =>
-            Rasters.TryGetValue(ch + "|" + t.Size.ToString(CultureInfo.InvariantCulture), out r);
-
-        /// <summary>A line's width with those characters at Chrome's advance.</summary>
-        static float WidthR(string text, TextStyle t)
+        const float TitleH = 40.890625f;
+        // the top bar: the back button (48 x 52) beside the title box (RoomTitle, the tier chip's row -2 under it)
+        static float BarH0(bool blitz) => blitz ? 52 : TitleH - 2 + 15;
+        /// <summary>The back button's top (CribButton, 48 x 52 at x 10).</summary>
+        public static float BackY(bool blitz) => 8 + (BarH0(blitz) - 52) / 2;
+        static float GlassY(bool blitz) => 8 + BarH0(blitz) + 8 + 4;
+        // the glass's inside: 10 in from x 10 + its 2 dp border, 206 wide (230 - 4 - 20), 9 dp down; its rows 8 apart
+        const float InX = 10 + 2 + 10, InW = LeftW - 10 - 4 - 20;
+        static readonly TextStyle PillText = T(Display, 12, "#b86200", 0.5f);
+        static float PillH => UiSvg.LineBox(PillText) + 2 + 4;
+        static float ChipH => UiSvg.LineBox(SquishSquad.Games.Squishdoku.SdArt.ChipText) + 6 + 4;
+        /// <summary>Where the hearts (26 dp, 30 apart) and the bar's row (the 20 dp icon, the 186 dp TimerBar 6 after it,
+        /// 212 wide: wider than the glass's inside, so it hangs out evenly) are.</summary>
+        public static (float heartsX, float heartsY, float barX, float barY) HudLayout(Hud d)
         {
-            float w = 0; int a = 0;
-            for (int i = 0; i <= text.Length; i++)
-            {
-                if (i < text.Length && !RasterOf(text[i], t, out _)) continue;
-                if (i > a) w += UiSvg.BoxWidth(text.Substring(a, i - a), t);
-                if (i < text.Length) { RasterOf(text[i], t, out var r); w += r.w; }
-                a = i + 1;
-            }
-            return w;
+            float y = GlassY(d.Blitz) + 2 + 9;
+            float heartsY = y;
+            y += d.Blitz ? PillH + 8 + ChipH : 26;
+            return (InX + (InW - 86) / 2, heartsY, InX + (InW - 212) / 2 + 26, y + 8);
         }
+        public const float BarW = 186;
 
-        /// <summary>A line of text with those characters as Chrome's pictures of them, where Chrome put them.</summary>
-        static void TextR(UiSvg s, string text, float x, float y, TextStyle t)
-        {
-            int a = 0;
-            for (int i = 0; i <= text.Length; i++)
-            {
-                if (i < text.Length && !RasterOf(text[i], t, out _)) continue;
-                if (i > a) { var run = text.Substring(a, i - a); if (run.Trim().Length > 0) s.Text(run, x, y, t); x += UiSvg.BoxWidth(run, t); }
-                if (i < text.Length)
-                {
-                    RasterOf(text[i], t, out var r);
-                    s.Raw($"<image href=\"{r.href}\" x=\"{F(x)}\" y=\"{F(y + r.dy)}\" width=\"{F(r.w)}\" height=\"{F(r.h)}\" preserveAspectRatio=\"none\"/>");
-                    x += r.w;
-                }
-                a = i + 1;
-            }
-        }
-
-        static readonly TextStyle LevelText = new TextStyle { Font = Display, Size = 18, Color = "#ffffff", Shadows = new[] { new Shadow(INK, 0, 2.5f, 1) } };
-        static readonly TextStyle ChallengeText = T(Display, 10, "#ffffff", 0.6f);
-
-        /// <summary>A line cut to `w` with "…" as Chrome does (numberOfLines 1).</summary>
-        static string Ellipsis(string text, TextStyle t, float w)
-        {
-            if (UiSvg.BoxWidth(text, t) <= w + 0.01f) return text;
-            for (int n = text.Length - 1; n > 0; n--) { var c = text.Substring(0, n) + "…"; if (UiSvg.BoxWidth(c, t) <= w + 0.01f) return c; }
-            return "…";
-        }
-
-        static string EllipsisR(string text, TextStyle t, float w)
-        {
-            if (WidthR(text, t) <= w + 0.01f) return text;
-            for (int n = text.Length - 1; n > 0; n--) { var c = text.Substring(0, n) + "…"; if (WidthR(c, t) <= w + 0.01f) return c; }
-            return "…";
-        }
-
-        /// <summary>The top bar's lines (not the back orb, a piece of its own) as laid out at 236 x 384: returns where
-        /// the hearts and the bar row are, for the pieces that move (the hearts pop, the bar's fill slides).</summary>
-        public static (float heartsX, float heartsY, float barY, float trackX, float trackW) HudLayout(Hud d)
-        {
-            float line1 = Math.Max(40, TitleBoxH());
-            float heartsY = 6 + 6 + line1 + 6;
-            float hudH = 6 + line1 + 6 + Line2H(d);
-            float barY = d.Blitz ? PipsY(d) + 17 + 4 + 6 : 6 + hudH + 4 + 6;
-            var bl = T(Display, 13, INK, 0.6f);
-            float lw = Math.Max(64, UiSvg.BoxWidth(d.BarLabel ?? " ", bl));
-            float trackX = 16 + lw + 8;
-            return (12, heartsY, barY, trackX, LeftW - 16 - trackX);
-        }
-
-        static float TitleBoxH() => UiSvg.LineBox(T(Display, 13, "#000", 1)) + Math.Max(UiSvg.LineBox(LevelText), UiSvg.LineBox(ChallengeText) + 2 + 4);
-
-        /// <summary>The top bar's title, the hearts' pill, the bar's label and empty track (236 x 384).</summary>
+        /// <summary>The column without the back button, the hearts and the TimerBar (pieces of their own), its title
+        /// running on past the column as on the phone (LeftW + 200 x `h`).</summary>
         public static string LeftColumn(Hud d, float h)
         {
-            var s = new UiSvg(LeftW, h);
-            float line1 = Math.Max(40, TitleBoxH());
-            float tx = 12 + 40 + 10, tw = LeftW - 12 - tx;
-            float ty = 12 + (line1 - TitleBoxH()) / 2;
-            var tn = T(Display, 13, SortModels.THEMES[d.Theme].Ring, 1);
-            var title = d.Blitz ? "BLITZ ⚡ · " + d.ModelName.ToUpperInvariant() : d.ModelName.ToUpperInvariant();
-            if (d.Blitz) TextR(s, EllipsisR(title, tn, tw), tx, ty, tn);
-            else s.Text(Ellipsis(title, tn, tw), tx, ty, tn);
-            float ry = ty + UiSvg.LineBox(tn);
-            float rowH = Math.Max(UiSvg.LineBox(LevelText), UiSvg.LineBox(ChallengeText) + 6);
-            var lvl = d.Blitz ? $"ROUND {d.Round}/{d.Rounds}" : "LEVEL " + d.Lv;
-            var tier = Levels.TIER_NAMES[d.Tier];
-            float chipW = UiSvg.BoxWidth(tier, ChallengeText) + 14 + 4, chipH = UiSvg.LineBox(ChallengeText) + 2 + 4;
-            // (numberOfLines 1: a line too long for the row beside its chip shrinks and ends in "…", as ROUND 10/10 does)
-            float lvlW = Math.Min(UiSvg.BoxWidth(lvl, LevelText), tw - 6 - chipW);
-            s.Text(Ellipsis(lvl, LevelText, lvlW), tx, ry + (rowH - UiSvg.LineBox(LevelText)) / 2, LevelText);
-            float chipX = tx + lvlW + 6;
-            float cy = ry + (rowH - chipH) / 2;
-            s.Box(chipX, cy, chipW, chipH, new BoxStyle { Background = Levels.TIER_COLORS[d.Tier], Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
-            s.Text(tier, chipX + 2 + 7, cy + 2 + 1, ChallengeText);
-            // the hearts' pill on the wrapped line (the hearts are pieces of their own)
+            var s = new UiSvg(LeftW + 200, h);
+            float ty = 8 + (BarH0(d.Blitz) - (d.Blitz ? TitleH : BarH0(d.Blitz))) / 2;
+            SquishSquad.Games.Squishdoku.SdArt.RoomTitle(s, d.Blitz ? "Blitz Mode" : d.ModelName, 66, ty);
+            if (!d.Blitz)
+            {
+                var tt = T(Display, 9.5f, "#ffffff", 0.6f);
+                var tier = Levels.TIER_NAMES[d.Tier];
+                float chipW = UiSvg.BoxWidth(tier, tt) + 2 * 6 + 2 * 2;
+                s.Box(66, ty + TitleH - 2, chipW, 15, new BoxStyle { Background = Levels.TIER_COLORS[d.Tier], Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
+                s.Text(tier, 66 + 2 + 6, ty + TitleH - 2 + 2, tt);
+            }
             var L = HudLayout(d);
+            float gy = GlassY(d.Blitz), gh = L.barY + SquishSquad.Games.Squishdoku.SdArt.BarH + 9 + 2 - gy;
+            s.Box(10, gy, LeftW - 10, gh, new BoxStyle { Background = "rgba(91,58,41,0.75)", Radius = 20, BorderWidth = 2, BorderColor = "rgba(255,255,255,0.9)" });
             if (d.Blitz)
             {
-                // Game.js: <Chip bg={revived ? '#b9a6cc' : '#ffb02e'} color="#ffffff">
-                var label = d.Revived ? "REVIVE USED" : "♥ 1 REVIVE";
-                float cw = WidthR(label, ChipText) + 18 + 4;
-                s.Box(12, L.heartsY, cw, ChipH, new BoxStyle { Background = d.Revived ? "#b9a6cc" : "#ffb02e", Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
-                TextR(s, label, 12 + 2 + 9, L.heartsY + 2 + 3, ChipText);
+                // the pills (Squish Hop's), centred, 6 apart; then the rule's chip (ui.js Chip)
+                var a = $"CLEARED {d.Cleared}";
+                var b = $"{(d.BestBeaten ? "NEW BEST" : "BEST")} {d.Best}";
+                var bt = T(Display, 12, d.BestBeaten ? "#ffffff" : "#5b3a29", 0.5f);
+                float aw = UiSvg.BoxWidth(a, PillText) + 16 + 4, bw = UiSvg.BoxWidth(b, bt) + 16 + 4;
+                float x = InX + (InW - aw - 6 - bw) / 2;
+                s.Box(x, L.heartsY, aw, PillH, new BoxStyle { Background = "#ffffff", Radius = 999, BorderWidth = 2, BorderColor = "#ffd23a" });
+                s.Text(a, x + 2 + 8, L.heartsY + 2 + 1, PillText);
+                x += aw + 6;
+                s.Box(x, L.heartsY, bw, PillH, new BoxStyle { Background = d.BestBeaten ? "#ffb02e" : "#ffffff", Radius = 999, BorderWidth = 2, BorderColor = d.BestBeaten ? "#ffffff" : "#ffe6b8" });
+                s.Text(b, x + 2 + 8, L.heartsY + 2 + 1, bt);
+                var ct = SquishSquad.Games.Squishdoku.SdArt.ChipText;
+                const string rule = "1 MISTAKE = GAME OVER";
+                float cw = UiSvg.BoxWidth(rule, ct) + 18 + 4, cy = L.heartsY + PillH + 8;
+                s.Box(InX + (InW - cw) / 2, cy, cw, ChipH, new BoxStyle { Background = "#e01e4a", Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
+                s.Text(rule, InX + (InW - cw) / 2 + 2 + 9, cy + 2 + 3, ct);
             }
-            else s.Box(12, L.heartsY, 3 * 24 + 2 * 3 + 16 + 4, 38, new BoxStyle { Background = "rgba(255,255,255,0.8)", Radius = 999, BorderWidth = 2, BorderColor = "#ffffff" });
-            // the bar row: 30 tall, centred
-            var bl = T(Display, 13, d.BarRed ? "#e01e4a" : INK, 0.6f);
-            if (!string.IsNullOrEmpty(d.BarLabel)) s.Text(d.BarLabel, 16, L.barY + (30 - UiSvg.LineBox(bl)) / 2, bl);
-            if (d.ShowBar) s.Box(L.trackX, L.barY + 8, L.trackW, 14, new BoxStyle { Background = "rgba(69,16,122,0.18)", Radius = 7, BorderWidth = 2, BorderColor = "#ffffff" });
+            // the bar's icon (Game.js BarIcon, 20 dp): an eye while you look, a clock while you sort
+            float ix = L.barX - 26, iy = L.barY + (SquishSquad.Games.Squishdoku.SdArt.BarH - 20) / 2;
+            s.Raw(Svg(ix, iy, 20, 20, "0 0 24 24", d.Eye
+                ? "<path d=\"M2 12 C5 6.5 8.5 4.5 12 4.5 C15.5 4.5 19 6.5 22 12 C19 17.5 15.5 19.5 12 19.5 C8.5 19.5 5 17.5 2 12 Z\" fill=\"#ffffff\"/><ellipse cx=\"12\" cy=\"12\" rx=\"4.2\" ry=\"4.2\" fill=\"#5b3a29\"/><ellipse cx=\"13.4\" cy=\"10.6\" rx=\"1.3\" ry=\"1.3\" fill=\"#ffffff\"/>"
+                : "<ellipse cx=\"12\" cy=\"13\" rx=\"9\" ry=\"9\" fill=\"#ffffff\"/><path d=\"M12 8 V13 L15.5 15\" stroke=\"#5b3a29\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" fill=\"none\"/><path d=\"M9 2.5 H15\" stroke=\"#ffffff\" stroke-width=\"2.6\" stroke-linecap=\"round\"/>"));
             return s.Markup;
         }
 
-        /// <summary>The bar's fill (the track's inside: its gradient across and its shine), slid `shift` dp left and
-        /// clipped by the track (trackW x 14).</summary>
-        public static string BarFill(float trackW, string[] colors, float shift)
-        {
-            var s = new UiSvg(trackW, 14);
-            Clip(s, 0, 0, trackW, 14, R4(7), 2);
-            float x = 2 - shift, w = trackW - 4;
-            GradAcross(s, x, 2, w, 10, colors);
-            s.Box(x + 4, 2 + 1.5f, w - 8, 3, new BoxStyle { Background = "rgba(255,255,255,0.6)", Radius = 2 });
-            s.Close();
-            return s.Markup;
-        }
-
-        /// <summary>A heart of the HUD (24 x 24): the empty one under, the full one (its own piece) over it.</summary>
+        /// <summary>A heart of the HUD (components/Hearts.js Heart, `size` dp): the empty one (`empty` its fill) under, the
+        /// full one (its own piece) over it.</summary>
         const string HUD_HEART_D = "M12 21 C5 15.5 2 12 2 7.8 C2 4.6 4.4 2.5 7.2 2.5 C9.2 2.5 11 3.6 12 5.4 C13 3.6 14.8 2.5 16.8 2.5 C19.6 2.5 22 4.6 22 7.8 C22 12 19 15.5 12 21 Z";
-        public static string HeartEmpty() => new UiSvg(24, 24).Raw(Svg(0, 0, 24, 24, "0 0 24 24", $"<path d=\"{HUD_HEART_D}\" fill=\"rgba(69,16,122,0.22)\" stroke=\"#ffffff\" stroke-width=\"2\"/>")).Markup;
-        public static string HeartFull() => new UiSvg(24, 24).Raw(Svg(0, 0, 24, 24, "0 0 24 24",
+        public static string HeartEmpty(float size, string empty) => new UiSvg(size, size).Raw(Svg(0, 0, size, size, "0 0 24 24", $"<path d=\"{HUD_HEART_D}\" fill=\"{empty}\" stroke=\"#ffffff\" stroke-width=\"2\"/>")).Markup;
+        public static string HeartFull(float size) => new UiSvg(size, size).Raw(Svg(0, 0, size, size, "0 0 24 24",
             $"<path d=\"{HUD_HEART_D}\" fill=\"#ff4d7d\" stroke=\"#ffffff\" stroke-width=\"2\"/><path d=\"M6.5 7 C7 5.6 8.2 5 9.2 5.2\" stroke=\"#ffd6e4\" stroke-width=\"1.6\" stroke-linecap=\"round\" fill=\"none\"/>")).Markup;
     }
 }

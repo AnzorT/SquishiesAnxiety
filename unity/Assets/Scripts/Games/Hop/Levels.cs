@@ -81,6 +81,10 @@ namespace SquishSquad.Games.Hop
         public bool Beats;
         public int Cushions;
         public List<string> Twists;
+        // BLITZ MODE's boards (Blitz.BlitzSpec): its grid ("5×4"), its clock and what it pays
+        public bool Blitz;
+        public string Size;
+        public int Ms, Coins;
     }
 
     // record(): the profile's `hop` record
@@ -91,12 +95,14 @@ namespace SquishSquad.Games.Hop
         public double Plays;
         public double Wins;
         public bool Seen;
+        // BLITZ MODE (2026-11-16): the most boards cleared in one run, and how many runs (as stored: any JSON value)
+        public object BlitzTop = 0.0, BlitzRuns = 0.0;
     }
 
     // afterLevel()'s `result`
     public sealed class HopResult
     {
-        public int Left;
+        public int Takebacks;   // the RESTARTs and RETRYs on the way (every win is a full clear now)
         public bool Hinted;
     }
 
@@ -142,7 +148,7 @@ namespace SquishSquad.Games.Hop
         // what each twist is called on the map and in the banner that brings it in, in levels.js order
         public static readonly TwistInfo[] TWIST_LIST =
         {
-            new TwistInfo { Key = "friends", Name = "FRIENDS", Text = "FRIENDS!", Sub = "The ★ opens when everyone is with you" },
+            new TwistInfo { Key = "friends", Name = "FRIENDS", Text = "FRIENDS!", Sub = "Hop onto each friend to pick them up on your way" },
             new TwistInfo { Key = "arrows", Name = "ARROWS", Text = "ARROWS!", Sub = "Hop off an arrow cushion the way it points" },
             new TwistInfo { Key = "bubbles", Name = "BUBBLES", Text = "BUBBLES!", Sub = "Land on a bubble and it bounces you one further" },
             new TwistInfo { Key = "piles", Name = "PILES", Text = "PILES!", Sub = "Two cushions on top of each other take two hops" },
@@ -232,8 +238,9 @@ namespace SquishSquad.Games.Hop
 
         // --- scoring ---------------------------------------------------------------------------------------------
 
-        // 3: every cushion cleared before the ★; 2: up to 3 left; 1: more left. A hint takes one off, never the last.
-        public static int StarsFor(int left, bool hinted) { return Engine.StarsFor(left, hinted); }
+        // Every win clears every cushion (the ★ only opens then: the user, 2026-11-16), so the stars are for how cleanly:
+        // 3 with no RESTART or RETRY, 2 with up to 3, 1 with more. A hint takes one off, never the last.
+        public static int StarsFor(int takebacks, bool hinted) { return Engine.StarsFor(takebacks, hinted); }
 
         static readonly double[] STAR_MULT = { 0, 1, 1.5, 2 };
 
@@ -271,6 +278,9 @@ namespace SquishSquad.Games.Hop
                 Plays = Js.TryGet(s, "plays", out v) && Js.Truthy(v) ? Js.ToNumber(v) : 0,
                 Wins = Js.TryGet(s, "wins", out v) && Js.Truthy(v) ? Js.ToNumber(v) : 0,
                 Seen = Js.TryGet(s, "seen", out v) && Js.Truthy(v),
+                // blitz: { top: 0, runs: 0, ...(s.blitz || {}) }
+                BlitzTop = Js.TryGet(s, "blitz", out v) && Js.Truthy(v) && v is IDictionary<string, object> b && Js.TryGet(b, "top", out var t) ? t : 0.0,
+                BlitzRuns = Js.TryGet(s, "blitz", out v) && Js.Truthy(v) && v is IDictionary<string, object> b2 && Js.TryGet(b2, "runs", out var r) ? r : 0.0,
             };
         }
 
@@ -304,7 +314,7 @@ namespace SquishSquad.Games.Hop
         public static AfterLevelResult AfterLevel(IDictionary<string, object> profile, LevelSpec spec, HopResult result)
         {
             var rec = Record(profile);
-            int stars = StarsFor(result.Left, result.Hinted);
+            int stars = StarsFor(result.Takebacks, result.Hinted);
             var update = new Dictionary<string, object>
             {
                 { "hop.plays", rec.Plays + 1 },

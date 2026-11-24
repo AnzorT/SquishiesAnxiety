@@ -22,6 +22,7 @@ namespace SquishSquad.Games.Hop
         Ticker _anim;
         CardPieces _cardPieces;
         int _startLv;
+        bool _blitz;
         float _screenW, _screenH;
         bool _started;
         readonly Dictionary<HopLayer, (Component piece, int version)> _pieces = new Dictionary<HopLayer, (Component, int)>();
@@ -36,6 +37,16 @@ namespace SquishSquad.Games.Hop
             var g = go.AddComponent<HopGame>();
             g._startLv = Mathf.Clamp(startLv, 1, Levels.LEVELS);
             g._screenW = screenW; g._screenH = screenH;
+            return g;
+        }
+
+        /// <summary>Squish Hop's Blitz run (the hub's BLITZ MODE, HopBlitz.cs): call Init (or let Unity's Start) as for a
+        /// level.</summary>
+        public static HopGame CreateBlitz(Transform parent, float screenW = 0, float screenH = 0)
+        {
+            var g = Create(parent, 1, screenW, screenH);
+            g._blitz = true;
+            g.gameObject.name = "Squish Hop Blitz";
             return g;
         }
 
@@ -54,7 +65,7 @@ namespace SquishSquad.Games.Hop
             _cardPieces = new CardPieces(transform, HopLevel.CardOrder);
             // (src/stack/roster.js castOf, which Hop uses: out (config/roster), no Heroes, no season-pass creature)
             var cast = _cast.FindAll(c => SquishSquad.Screens.RosterConfig.InGames(c.Key));
-            _level = new HopLevel(w, h, _startLv, cast.Count >= 8 ? cast : _cast, Profile, _anim) { OnExit = Leave };
+            _level = new HopLevel(w, h, _startLv, cast.Count >= 8 ? cast : _cast, Profile, _anim, _blitz) { OnExit = Leave };
             Draw();
         }
 
@@ -114,7 +125,7 @@ namespace SquishSquad.Games.Hop
             _gone.Clear();
             foreach (var l in _pieces.Keys) if (!_seen.Contains(l)) _gone.Add(l);
             foreach (var l in _gone) { Kill(_pieces[l].piece.gameObject); _pieces.Remove(l); }
-            _cardPieces.Sync(_level.Cards);
+            _cardPieces.Sync(_level.AllCards);
         }
 
         static bool Fits(Component c, HopLayer l) => c is UiPiece ? l.Markup != null || (l.Grid == null && l.Clip == null && l.TileW == 0) : l.Markup == null && (l.Grid != null || l.Clip != null || l.TileW > 0);

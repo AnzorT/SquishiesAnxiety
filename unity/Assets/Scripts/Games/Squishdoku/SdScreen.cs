@@ -75,6 +75,10 @@ namespace SquishSquad.Games.Squishdoku
         bool _bonesUp;
         string _bonesKind;
         int _goGen;
+        // royal/WorldBg.js useRoomUnder (2026-11-20, the user: flickering): the map's room stays up, at full opacity, under
+        // a level that has just started until 900 ms after the level is built, then goes (the level covers it)
+        bool _roomUnder;
+        int _underTimer = -1;
 
         SdHub _hub;
         SdMap _map;
@@ -102,6 +106,8 @@ namespace SquishSquad.Games.Squishdoku
             _slideA.Start();
             string was = View;
             View = next;
+            _tk.ClearTimeout(_underTimer);
+            _roomUnder = next == "play";
             // what goes: the hub and a level or a run (their ViewSlot is keyed by the view); the map unless a level is
             // opened from it (KeptView)
             if (was == "hub") { _hub?.Unmount(); _hub = null; }
@@ -141,6 +147,7 @@ namespace SquishSquad.Games.Squishdoku
                 case "play":
                     _level = new SdLevel(W, H, _playLv, _head, _cast, _buddy, _xml, _tk);
                     _level.OnExit = unlocked => AsInput(() => LeaveLevel(unlocked));
+                    Effect(() => _underTimer = _tk.SetTimeout(() => _roomUnder = false, 900));
                     break;
                 case "blitz":
                     _blitz = new SdBlitz(W, H, _cast, _buddy, _xml, _tk) { AdsFree = AdsFree, AdReady = AdReady, ShowAd = ShowAd, Save = Save };
@@ -194,7 +201,7 @@ namespace SquishSquad.Games.Squishdoku
             Snd.Play("sd_boardOut");
         });
 
-        // ---- placeholders (Skeleton.js ViewBones, tone "sky") ----------------------------------------------------------------
+        // ---- placeholders (Skeleton.js ViewBones, tone "wood") ---------------------------------------------------------------
         // the one shine every bone shares: 1.4 s a pass, across in the first 70% (ease in-out quad), resting off to the right
         CompositeAnimation _sweepA;
         readonly AnimatedValue _sweep = new AnimatedValue(0);
@@ -203,33 +210,11 @@ namespace SquishSquad.Games.Squishdoku
 
         static readonly double[] SWEEP_AT = { 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 1 };
 
+        // develop's ViewBones (wood, sideways: Games/Shared/ViewSwitch Bones.Layout) in the view's slot under `top`
         List<(float x, float y, float w, float h, float r)> Bones(string kind, float top, float h)
         {
             var o = new List<(float, float, float, float, float)>();
-            float cw = W - 32;
-            if (kind == "map")
-            {
-                float y = top + 40;
-                foreach (var x in new[] { 0.62f, 0.3f, 0.5f, 0.72f, 0.4f, 0.58f }) { o.Add((W * (x - 0.09f), y, 62, 62, 31)); y += 62 + 34; }
-            }
-            else if (kind == "game")
-            {
-                float y = top + 14;
-                // a row: 44, 40%, 70 spread across (space-between), centred on the tallest
-                o.Add((16, y, 44, 44, 22)); o.Add((Card.Snap(16 + 44 + (cw - 44 - cw * 0.4f - 70) / 2), y + 4, cw * 0.4f, 36, 18)); o.Add((16 + cw - 70, y + 4, 70, 36, 18));
-                y += 44 + 14;
-                // the board's bone: h={undefined} takes Bone's default height, 14 (its aspectRatio loses to it)
-                o.Add((16, y, cw, 14, 7));
-                y += 14 + 14;
-                float g = (cw - 4 * 64) / 3;
-                for (int i = 0; i < 4; i++) o.Add((16 + i * (64 + g), y, 64, 64, 18));
-            }
-            else
-            {
-                float y = top + 14 + 24;
-                (float w, float h, float r, float mt)[] col = { (cw * 0.62f, 40, 20, 0), (cw * 0.74f, 12, 6, 0), (cw, 128, 26, 10), (cw, 128, 26, 0), (cw * 0.46f, 46, 23, 0) };
-                foreach (var b in col) { y += b.mt; o.Add((Card.Snap(16 + (cw - b.w) / 2), y, b.w, b.h, b.r)); y += b.h + 14; }
-            }
+            foreach (var b in SquishSquad.Games.Shared.Bones.Layout(kind, W, h - top)) o.Add((b.X, top + b.Y, b.W, b.H, b.R));
             return o;
         }
 
@@ -244,14 +229,15 @@ namespace SquishSquad.Games.Squishdoku
             foreach (var b in Bones(kind, top, H))
             {
                 if (b.y > H) continue;
-                s.Box(b.x, b.y, b.w, b.h, new BoxStyle { Background = "rgba(255,255,255,0.5)", Radius = b.r });
+                // (tone 'wood': a soft brown on the warm page, its shine dimmed to a fifth)
+                s.Box(b.x, b.y, b.w, b.h, new BoxStyle { Background = "rgba(107,68,38,0.22)", Radius = b.r });
                 var clip = s.NewId("bn");
                 s.Def($"<clipPath id=\"{clip}\"><path d=\"{UiSvg.RRect(b.x, b.y, b.w, b.h, new[] { b.r, b.r, b.r, b.r })}\"/></clipPath>");
                 s.Open($"clip-path=\"url(#{clip})\"");
                 // the band: 90 wide, 10 over the bone's top and bottom, skewed -14° about its centre
                 double bh = b.h + 20, cx = b.x + at + 45, cy = b.y - 10 + bh / 2;
                 s.Open($"transform=\"translate({UiSvg.F(cx)} {UiSvg.F(cy)}) skewX(-14) translate({UiSvg.F(-cx)} {UiSvg.F(-cy)})\"");
-                s.Box((float)(b.x + at), b.y - 10, 90, (float)bh, new BoxStyle { Gradient = new[] { "rgba(255,255,255,0)", "rgba(255,255,255,0.75)", "rgba(255,255,255,0)" }, GradientAngle = 90 });
+                s.Box((float)(b.x + at), b.y - 10, 90, (float)bh, new BoxStyle { Gradient = new[] { "rgba(255,255,255,0)", "rgba(255,255,255,0.75)", "rgba(255,255,255,0)" }, GradientAngle = 90, Opacity = 0.2f });
                 s.Close();
                 s.Close();
             }
@@ -260,6 +246,8 @@ namespace SquishSquad.Games.Squishdoku
 
         // ---- the top bar (hub and map) ------------------------------------------------------------------------------------
         readonly SdLayer _wood, _world, _orb, _title, _pill, _bonesL;
+        readonly Dictionary<int, SdLayer> _roomTiles = new Dictionary<int, SdLayer>();
+        readonly Dictionary<int, string> _roomKeys = new Dictionary<int, string>();
         static readonly TextStyle TitleText = new TextStyle { Font = SdArt.Display, Size = 22, LetterSpacing = 1.5f, Color = "#ffffff", Shadows = new[] { new Shadow(SdArt.INK, 0, 2.5f, 1) } };
         static readonly TextStyle PillText = new TextStyle { Font = SdArt.Display, Size = 13, Color = "#ffffff" };
         string _pillKey;
@@ -307,7 +295,25 @@ namespace SquishSquad.Games.Squishdoku
             // the wood page (the room covers it in a level or a run)
             Cover(_wood, "Squishdoku/wood-bg", 2340, 1080);
             o.Add(_wood);
-            if (View == "map")
+            bool under = View == "play" && _roomUnder;
+            if ((View == "map" || under) && _map != null)
+            {
+                // develop (2026-11-17): the chapter's room behind the map (royal/WorldBg.js RoomBackdrop: Room.js `full`,
+                // by day, a picture a screen wide repeated along the page), moved by the map's scroll, faded with it
+                float sx = _map.ScrollX;
+                for (int i = 0; i * W < _map.PageW; i++)
+                {
+                    float x = i * W, w = Math.Min(W, _map.PageW - x);
+                    if (x + w < sx - W || x > sx + 2 * W) continue;
+                    if (!_roomTiles.TryGetValue(i, out var t)) _roomTiles[i] = t = new SdLayer("room " + i);
+                    string room = _map.Room;
+                    if (!_roomKeys.TryGetValue(i, out var k) || k != room + w) { _roomKeys[i] = room + w; t.Set(Rooms.Svg(room, "day", W, H, true, w), w, H, 0); }
+                    t.Transform = Affine.Translate(x - sx, 0);
+                    t.Opacity = under ? 1 : viewOp;
+                    o.Add(t);
+                }
+            }
+            else if (View == "map")
             {
                 Cover(_world, "Squishdoku/levels-" + Season(Today()), 2340, 1080);
                 _world.Opacity = viewOp;

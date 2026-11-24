@@ -178,8 +178,33 @@ namespace SquishSquad.Vector
                 i += 2;
                 while (i < n && char.IsDigit(s[i])) i++;
             }
-            v = (float)double.Parse(s.Substring(start, i - start), System.Globalization.CultureInfo.InvariantCulture);
+            v = (float)Decimal(s, start, i);
             return true;
+        }
+
+        static readonly double[] Pow10 = { 1, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22 };
+        // the number in s[a..b): up to 15 digits and no exponent as digits / 10^k (one correctly rounded division: the
+        // same double as double.Parse, with no substring), else double.Parse
+        static double Decimal(string s, int a, int b)
+        {
+            int i = a; bool neg = false;
+            if (s[i] == '+' || s[i] == '-') { neg = s[i] == '-'; i++; }
+            long m = 0; int digits = 0, frac = -1;
+            for (; i < b; i++)
+            {
+                char c = s[i];
+                if (c == '.') { frac = 0; continue; }
+                if (c < '0' || c > '9') { digits = 99; break; }
+                if (m != 0 || c != '0') digits++;
+                m = m * 10 + (c - '0');
+                if (frac >= 0) frac++;
+            }
+            if (digits <= 15 && (frac < 0 || frac <= 22))
+            {
+                double v = frac > 0 ? m / Pow10[frac] : m;
+                return neg ? -v : v;
+            }
+            return double.Parse(s.Substring(a, b - a), System.Globalization.CultureInfo.InvariantCulture);
         }
     }
 }

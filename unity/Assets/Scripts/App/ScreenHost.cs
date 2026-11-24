@@ -1,6 +1,7 @@
 // Puts a ported screen's pieces (Ui/Screens: a list of ScreenPiece, rebuilt whenever something changes) on screen:
 // one UiPiece per piece id, redrawn only when its SVG changes (a piece that only moves or fades costs nothing), in list
-// order; a "mittens" slot becomes the live creature (CreatureView with the recorded idle, as on the menu). Also the
+// order; a "mittens" slot becomes the live creature (CreatureView with the native rig's idle, as on the menu), a slot
+// with a LiveCreature its creature on the native rig (the chest unlock's hero: Creatures/HeroCreature.cs). Also the
 // screen's pointer in dp (y down), shared by the start-up screens.
 using System;
 using System.Collections.Generic;
@@ -34,6 +35,7 @@ namespace SquishSquad.App
             {
                 var p = list[i];
                 int order = 1 + i * 2;
+                if (p.Slot && p.Live != null) { PlaceLive(p, order); used.Add(p.Id); continue; }
                 if (p.Slot) { PlaceCreature(p, order); used.Add(p.Id); continue; }
                 if (!_pieces.TryGetValue(p.Id, out var piece)) _pieces[p.Id] = piece = UiPiece.Create(_root, p.Id, order);
                 piece.Order = order;
@@ -46,6 +48,16 @@ namespace SquishSquad.App
             }
             foreach (var kv in _pieces) if (!used.Contains(kv.Key)) kv.Value.Visible = false;
             if (_creature != null) _creature.gameObject.SetActive(used.Contains("mittens"));
+            foreach (var kv in _live) if (!used.Contains(kv.Key)) kv.Value.Hide();
+        }
+
+        // a live creature slot (the chest unlock's hero): its rig made once per creature, synced every frame
+        readonly Dictionary<string, HeroCreature> _live = new Dictionary<string, HeroCreature>();
+        void PlaceLive(ScreenPiece p, int order)
+        {
+            if (_live.TryGetValue(p.Id, out var h) && h.Key != p.Live.Key) { h.Destroy(); _live.Remove(p.Id); h = null; }
+            if (h == null) _live[p.Id] = h = new HeroCreature(_root, p.Live.Key);
+            h.Sync(p.Live, p.Transform, p.Opacity, order);
         }
 
         // the creature in its box (dp -> page px), made again if its box changes
@@ -72,6 +84,8 @@ namespace SquishSquad.App
 
         public void Dispose()
         {
+            foreach (var h in _live.Values) h.Destroy();
+            _live.Clear();
             if (_root != null)
             {
                 if (Application.isPlaying) UnityEngine.Object.Destroy(_root.gameObject);

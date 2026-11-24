@@ -5,7 +5,9 @@
 // into a picture (RoomCompose puts it in the room as <image href="flat:..">): each pixel of the picture is traced back
 // onto the plane (the projection inverted) and the tile read there, from a mip level for its distance (the browser
 // filters the far rows the same way). The tile itself is the export's picture of the floor's tile (SMIL stripped:
-// 2026-11-21, patches.mjs rnFlat, the floor is a still; SquishDisco's light-up moments are app/menu.js's).
+// 2026-11-21, patches.mjs rnFlat, the floor is a still). The light-up floors (app/menu.js SquishDisco, DISCO) show
+// their tile's animation as DK = 4 moments instead (tools/unity/house/export-disco.mjs: disco.json and their
+// pictures): the floor is moment 0, and a copy of the plane per other moment is switched on in turn (HouseRoomView).
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -21,6 +23,40 @@ namespace SquishSquad.House
             public double L, T, W, H, Ox, Oy, Angle, D, Px, Py;   // the plane's box, its transform-origin, rotateX (deg), perspective and its origin
             public double X0, Y0, X1, Y1;                         // the picture's box in the container
             public List<Layer> Layers = new List<Layer>(); public string Bg = "#08080a";
+            public Spec With(List<Layer> layers) { var o = (Spec)MemberwiseClone(); o.Layers = layers; return o; }
+        }
+
+        /// <summary>A light-up floor (menu.js SquishDisco): its loop's length (s: each moment shows D / DK of it, step-end)
+        /// and per tile layer its DK moments' pictures (null: a layer that doesn't move).</summary>
+        public sealed class DiscoFloor { public double D; public List<string[]> Layers = new List<string[]>(); }
+        public const int DK = 4;
+        /// <summary>The light-up floors by id (disco.json; HouseRoomView reads it).</summary>
+        public static readonly Dictionary<string, DiscoFloor> Disco = new Dictionary<string, DiscoFloor>();
+        public static void LoadDisco(string json)
+        {
+            if (string.IsNullOrEmpty(json) || !(HouseJson.Parse(json) is JObj o)) return;
+            foreach (var id in o.Keys)
+            {
+                if (!(o[id] is JObj f)) continue;
+                var d = new DiscoFloor { D = f.Num("D") };
+                foreach (var l in f.Arr("layers") ?? new List<object>()) d.Layers.Add(l is List<object> ls ? ls.ConvertAll(x => x as string).ToArray() : null);
+                Disco[id] = d;
+            }
+        }
+        /// <summary>The floor's picture at moment k (its tile's layers swapped for that moment's), as an href RoomCompose's
+        /// would be ("flat:&lt;id&gt;@k|.."), its plane registered; null when the plane isn't a light-up floor's.</summary>
+        public static string Moment(string href, int k)
+        {
+            int bar = href.IndexOf('|'); if (bar < 5 || !Specs.TryGetValue(href, out var s)) return null;
+            var id = href.Substring(5, bar - 5); if (!Disco.TryGetValue(id, out var d)) return null;
+            var h = "flat:" + id + "@" + k + href.Substring(bar);
+            if (!Specs.ContainsKey(h))
+            {
+                var ls = new List<Layer>();
+                for (int i = 0; i < s.Layers.Count; i++) { var l = s.Layers[i]; var m = i < d.Layers.Count ? d.Layers[i] : null; ls.Add(new Layer { Url = m != null && k < m.Length && m[k] != null ? m[k] : l.Url, X = l.X, Y = l.Y, W = l.W, H = l.H, Rep = l.Rep }); }
+                Specs[h] = s.With(ls);
+            }
+            return h;
         }
         /// <summary>A renovated floor's tile layers and colour (floorRoom), by the floor's id: RoomModel puts them here as it
         /// gives the room `flat:&lt;id&gt;` for the plane's background.</summary>
@@ -53,12 +89,13 @@ namespace SquishSquad.House
             return u >= 0 && u <= s.W && v >= 0 && v <= s.H;
         }
 
-        /// <summary>The bounding box of the plane as drawn (the container's px).</summary>
-        public static void Bounds(Spec s)
+        /// <summary>The bounding box of the plane as drawn, inside the container (pw x ph: the plane's sides reach far past
+        /// it, its overflow is hidden).</summary>
+        public static void Bounds(Spec s, double pw, double ph)
         {
             double x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
             foreach (var (u, v) in new[] { (0.0, 0.0), (s.W, 0.0), (s.W, s.H), (0.0, s.H) }) { var p = Project(s, u, v); x0 = Math.Min(x0, p.x); y0 = Math.Min(y0, p.y); x1 = Math.Max(x1, p.x); y1 = Math.Max(y1, p.y); }
-            s.X0 = Math.Floor(x0); s.Y0 = Math.Floor(y0); s.X1 = Math.Ceiling(x1); s.Y1 = Math.Ceiling(y1);
+            s.X0 = Math.Max(0, Math.Floor(x0)); s.Y0 = Math.Max(0, Math.Floor(y0)); s.X1 = Math.Min(pw, Math.Ceiling(x1)); s.Y1 = Math.Min(ph, Math.Ceiling(y1));
         }
 
         sealed class Mip { public int W, H; public float[] Px; }
@@ -111,20 +148,31 @@ namespace SquishSquad.House
             var mips = new List<List<Mip>>();
             foreach (var l in s.Layers) { var t = tile(l.Url); mips.Add(t.rgba != null ? Pyramid(t.w, t.h, t.rgba) : null); }
             var bg = Hex(s.Bg); var o = new float[4];
-            // 2 x 2 samples a pixel (the far rows' fine lines don't shimmer into moiré), the mip level for the texel rate
-            const int SS = 2;
+            // 2 x 2 samples a pixel (the far rows' fine lines don't shimmer into moiré), the mip level for the texel rate;
+            // a sample row's depth, plane row and level are the row's (the plane only turns about x)
+            const int SS = 2; var acc = new float[W * 4]; var cov = new float[W];
+            double a0 = Rad(s.Angle), ca = Math.Cos(a0), sa = Math.Sin(a0), A = s.T + s.Oy - s.Py, X0 = s.L + s.Ox - s.Px;
+            var lev = new int[s.Layers.Count];
             for (int py = 0; py < H; py++)
             {
-                for (int px = 0; px < W; px++)
+                Array.Clear(acc, 0, acc.Length); Array.Clear(cov, 0, cov.Length);
+                for (int sy = 0; sy < SS; sy++)
                 {
-                    float r = 0, g = 0, b = 0, a = 0;
-                    for (int sy = 0; sy < SS; sy++) for (int sx = 0; sx < SS; sx++)
+                    double y = s.Y0 + (py + (sy + 0.5) / SS) / K, dy = y - s.Py, den = s.D * ca + dy * sa;
+                    if (Math.Abs(den) < 1e-9) continue;
+                    double Y = s.D * (dy - A) / den, k = s.D / (s.D - Y * sa), v = Y + s.Oy;
+                    if (k <= 0 || v < 0 || v > s.H) continue;
+                    double dy2 = dy + 1 / K, Y2 = s.D * (dy2 - A) / (s.D * ca + dy2 * sa), dv = Math.Abs(Y2 - Y), du = 1 / (k * K);
+                    for (int li = 0; li < s.Layers.Count; li++)
                     {
-                        double x = s.X0 + (px + (sx + 0.5) / SS) / K, y = s.Y0 + (py + (sy + 0.5) / SS) / K;
-                        if (!Unproject(s, x, y, out var u, out var v, out var k)) continue;
-                        // plane px per picture px: across 1 / (k K), down that over the slant (the next row's v)
-                        Unproject(s, x, y + 1 / K, out _, out var v2, out _);
-                        double du = 1 / (k * K), dv = Math.Abs(v2 - v);
+                        var M = mips[li]; if (M == null) continue; var l = s.Layers[li];
+                        double texels = Math.Sqrt(du * M[0].W / l.W * dv * M[0].H / l.H) / SS;
+                        lev[li] = Math.Max(0, Math.Min(M.Count - 1, (int)Math.Round(Math.Log(Math.Max(1, texels), 2))));
+                    }
+                    for (int px = 0; px < W; px++) for (int sx = 0; sx < SS; sx++)
+                    {
+                        double x = s.X0 + (px + (sx + 0.5) / SS) / K, u = (x - s.Px) / k - X0 + s.Ox;
+                        if (u < 0 || u > s.W) continue;
                         // the layers, the top one last over the others, over the floor's colour
                         float cr = bg.r, cg = bg.g, cb = bg.b;
                         for (int li = s.Layers.Count - 1; li >= 0; li--)
@@ -132,16 +180,17 @@ namespace SquishSquad.House
                             var l = s.Layers[li]; var M = mips[li]; if (M == null) continue;
                             double lu = (u - l.X) / l.W, lv = (v - l.Y) / l.H;
                             if (!l.Rep && (lu < 0 || lu > 1 || lv < 0 || lv > 1)) continue;
-                            double texels = Math.Sqrt(du * M[0].W / l.W * dv * M[0].H / l.H) / SS;
-                            int lev = Math.Max(0, Math.Min(M.Count - 1, (int)Math.Round(Math.Log(Math.Max(1, texels), 2))));
-                            Sample(M[lev], lu - Math.Floor(lu), lv - Math.Floor(lv), l.Rep, o);
+                            Sample(M[lev[li]], lu - Math.Floor(lu), lv - Math.Floor(lv), l.Rep, o);
                             cr = o[0] + cr * (1 - o[3]); cg = o[1] + cg * (1 - o[3]); cb = o[2] + cb * (1 - o[3]);
                         }
-                        r += cr; g += cg; b += cb; a += 1;
+                        acc[px * 4] += cr; acc[px * 4 + 1] += cg; acc[px * 4 + 2] += cb; cov[px] += 1;
                     }
-                    int i = (py * W + px) * 4; const float n = SS * SS;
-                    if (a > 0) { outp[i] = r / a; outp[i + 1] = g / a; outp[i + 2] = b / a; }
-                    outp[i + 3] = a / n;
+                }
+                for (int px = 0; px < W; px++)
+                {
+                    int i2 = (py * W + px) * 4; float a = cov[px];
+                    if (a > 0) { outp[i2] = acc[px * 4] / a; outp[i2 + 1] = acc[px * 4 + 1] / a; outp[i2 + 2] = acc[px * 4 + 2] / a; }
+                    outp[i2 + 3] = a / (SS * SS);
                 }
             }
             return (W, H, outp);

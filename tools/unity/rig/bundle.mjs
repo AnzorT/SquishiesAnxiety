@@ -1,6 +1,8 @@
-// Bundles the creature rig code for the live host inside Unity (Creatures/LiveRig.cs, PuerTS): the browser stand-in
-// (dom-shim.js), the host's side (live-host.js), the virtual clock and the app's rig scripts in the order parity.mjs loads them, and the creature art
-// they fetch() (export/tripo/<key>/<key>-front.svg: the Tripo creatures' outlines; the built-in pets need none).
+// Bundles the creature rig's files: the creature art the rig fetch()es (export/tripo/<key>/<key>-front.svg: the Tripo
+// creatures' outlines; the built-in pets need none; the roster CSVs), which the native rig in Unity reads
+// (Creatures/NativeRig.cs), and the rig scripts as text in the page's order (the browser stand-in, live-host.js, the
+// virtual clock, the app's rig scripts, the house's drawing code), which the house tools read (house/export-map.mjs,
+// draw-check.mjs, walk-trace.mjs). Unity runs the rig compiled to C# (jsc.mjs), not these scripts.
 //
 //   node tools/unity/rig/bundle.mjs
 //

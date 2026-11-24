@@ -297,7 +297,7 @@ namespace SquishSquad.Vector
             }
             double x0 = Math.Max(x, ix), y0 = Math.Max(y, iy), x1 = Math.Min(x + w, ix + iw), y1 = Math.Min(y + h, iy + ih);
             if (x1 <= x0 || y1 <= y0) return;
-            var poly = new List<Vec2> { m.Apply(new Vec2(x0, y0)), m.Apply(new Vec2(x1, y0)), m.Apply(new Vec2(x1, y1)), m.Apply(new Vec2(x0, y1)) };
+            var poly = Vec2Pool.Get(4); poly.Add(m.Apply(new Vec2(x0, y0))); poly.Add(m.Apply(new Vec2(x1, y0))); poly.Add(m.Apply(new Vec2(x1, y1))); poly.Add(m.Apply(new Vec2(x0, y1)));
             var shape = new Shape { Rule = FillRule.NonZero };
             shape.Polygons.Add(poly);
             var paint = new Paint { Kind = PaintKind.Image, Image = href, BoundingBoxUnits = false, UserToImage = Affine.ScaleBy(1 / iw, 1 / ih) * Affine.Translate(-ix, -iy) };

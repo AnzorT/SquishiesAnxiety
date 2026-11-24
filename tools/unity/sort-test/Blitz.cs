@@ -1,4 +1,4 @@
-// dotnet run -c Release --project tools/unity/sort-test -- blitz <capture dir>   (blitz.mjs's output)
+// dotnet run -c Release --project tools/unity/sort-test -- blitz <capture dir>   (blitz.mjs's output: develop's run)
 // Plays the captured Blitz run with the Unity code (SortLevel.Blitz on the boards the app dealt, the tumble's random
 // numbers it drew, the win card's creatures it picked; Preview.js's player with Remove Ads and nothing saved), the clock
 // stepped 16 ms a frame as blitz.mjs stepped the page's, the same taps at the same moments, and compares each moment's
@@ -27,13 +27,11 @@ static class BlitzTest
         level.MakeBoardHook = _ => boards[Math.Min(dealt++, boards.Count - 1)];
         var q = new Queue<double>(js.GetProperty("randoms").EnumerateArray().Select(e => e.GetDouble()));
         level.Random = () => q.Count > 0 ? q.Dequeue() : 0.5;
-        if (js.TryGetProperty("uris", out var u) && u.ValueKind == JsonValueKind.Array)
-        {
-            var pics = u.EnumerateArray().Select(e => e.ValueKind == JsonValueKind.String ? Program.Uri(e.GetString()) : null).ToArray();
-            level.PickCreatures = (_, k) => pics;
-        }
         level.Start();
         level.Update();
+        // the app's T0 is when its countdown's timers were set: line Unity's up with it
+        while (level.CountdownAt < 0 && tk.Now < 2000) { tk.Tick(tk.Now + 16); level.Update(); }
+        double off = Math.Max(0, level.CountdownAt);
         string bg = File.ReadAllText(Program.Res("Sort/bg.xml"));
         var only = Environment.GetEnvironmentVariable("ONLY");
         foreach (var e in js.GetProperty("events").EnumerateArray())
@@ -41,7 +39,7 @@ static class BlitzTest
             double ms = e.GetProperty("ms").GetDouble();
             // (DT: draw the shots that much earlier or later, to see whether a difference is a frame's timing)
             var dt = Environment.GetEnvironmentVariable("DT");
-            double at = ms + (dt != null && e.GetProperty("kind").GetString() == "shot" ? double.Parse(dt) : 0);
+            double at = off + ms + (dt != null && e.GetProperty("kind").GetString() == "shot" ? double.Parse(dt) : 0);
             while (tk.Now < at) { tk.Tick(Math.Min(tk.Now + 16, at)); level.Update(); }
             if (e.GetProperty("kind").GetString() == "tap")
             {
@@ -54,7 +52,7 @@ static class BlitzTest
             var app = Path.Combine(dir, $"blitz-{ms}.png");
             if (!File.Exists(app) || (only != null && !only.Split(',').Contains(ms.ToString()))) continue;
             var (visible, total) = Render.Compare(bg, level.Layers, level.Cards, app, Path.Combine(dir, $"unity-{ms}.png"), Path.Combine(dir, $"diff-{ms}.png"));
-            Console.WriteLine($"{level.Phase,-7} r{level.Run.Idx + 1,-2} {ms,6} ms {e.GetProperty("name").GetString(),-22}: {visible,6} of {total} px differ visibly ({100.0 * visible / total:0.00} %)");
+            Console.WriteLine($"{level.Phase,-7} r{level.RoundIdx + 1,-2} {ms,6} ms {e.GetProperty("name").GetString(),-22}: {visible,6} of {total} px differ visibly ({100.0 * visible / total:0.00} %)");
         }
         return 0;
     }

@@ -60,7 +60,7 @@ static class CardsTest
                 card.Update();
                 var app = Path.Combine(dir, $"{name}-{ms}.png");
                 if (!File.Exists(app)) continue;
-                var (visible, total) = Render.Compare(bg, new SortLayer[0], new[] { card }, app, Path.Combine(dir, $"{name}-{ms}-unity.png"), Path.Combine(dir, $"{name}-{ms}-diff.png"));
+                var (visible, total) = Render.Compare(bg, new SortLayer[0], new SquishSquad.Ui.Blitz.ICardView[] { new SquishSquad.Ui.Blitz.CardView(card) }, app, Path.Combine(dir, $"{name}-{ms}-unity.png"), Path.Combine(dir, $"{name}-{ms}-diff.png"));
                 Console.WriteLine($"{name,-12} {ms,5} ms: {visible,6} of {total} px differ visibly ({100.0 * visible / total:0.00} %)");
             }
         }

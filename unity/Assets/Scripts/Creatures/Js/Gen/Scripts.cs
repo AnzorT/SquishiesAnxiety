@@ -1,0 +1,54 @@
+// The compiled scripts in the order the host runs them (tools/unity/rig/jsc.mjs). Generated: don't edit.
+namespace SquishSquad.Creatures.Js.Gen
+{
+    public static class Scripts
+    {
+        public static readonly (string name, System.Action run)[] All =
+        {
+            ("dom-shim.js", S_dom_shim_js.Run),
+            ("live-host.js", S_live_host_js.Run),
+            ("virtual-clock.js", S_virtual_clock_js.Run),
+            ("app/boot.js", S_app_boot_js.Run),
+            ("app/perf.js", S_app_perf_js.Run),
+            ("creatures-v2.js", S_creatures_v2_js.Run),
+            ("squad-store.js", S_squad_store_js.Run),
+            ("rive-rig.js", S_rive_rig_js.Run),
+            ("snack-3d.js", S_snack_3d_js.Run),
+            ("fruit-3d.js", S_fruit_3d_js.Run),
+            ("rive-generic.js", S_rive_generic_js.Run),
+            ("pet-defs.js", S_pet_defs_js.Run),
+            ("pet2-defs.js", S_pet2_defs_js.Run),
+            ("mittens-moves.js", S_mittens_moves_js.Run),
+            ("house-moves.js", S_house_moves_js.Run),
+            ("house-moves-c.js", S_house_moves_c_js.Run),
+            ("house-bed-c.js", S_house_bed_c_js.Run),
+            ("house-water-c.js", S_house_water_c_js.Run),
+            ("house-play-c.js", S_house_play_c_js.Run),
+            ("house-b-c.js", S_house_b_c_js.Run),
+            ("house-cx.js", S_house_cx_js.Run),
+            ("house-cx-c.js", S_house_cx_c_js.Run),
+            ("house-walk.js", S_house_walk_js.Run),
+            ("house-walk-c.js", S_house_walk_c_js.Run),
+            ("house-idle.js", S_house_idle_js.Run),
+            ("house-idle-c.js", S_house_idle_c_js.Run),
+            ("snack2-house.js", S_snack2_house_js.Run),
+            ("pet2-house.js", S_pet2_house_js.Run),
+            ("fruit-house.js", S_fruit_house_js.Run),
+            ("pet-anims.js", S_pet_anims_js.Run),
+            ("pet-pokes.js", S_pet_pokes_js.Run),
+            ("pet-eats.js", S_pet_eats_js.Run),
+            ("snack-anims.js", S_snack_anims_js.Run),
+            ("snack-pokes.js", S_snack_pokes_js.Run),
+            ("snack-eats.js", S_snack_eats_js.Run),
+            ("snack2-anims.js", S_snack2_anims_js.Run),
+            ("ocean-anims.js", S_ocean_anims_js.Run),
+            ("pet2-anims.js", S_pet2_anims_js.Run),
+            ("fruit-anims.js", S_fruit_anims_js.Run),
+            ("whip-spin.js", S_whip_spin_js.Run),
+            ("app/look-lines.js", S_app_look_lines_js.Run),
+            ("app/rig-look.js", S_app_rig_look_js.Run),
+            ("result-states.js", S_result_states_js.Run),
+            ("native-host.js", S_native_host_js.Run),
+        };
+    }
+}

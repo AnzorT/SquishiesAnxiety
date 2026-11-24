@@ -51,11 +51,26 @@ namespace SquishSquad.Games.Squishdoku
         }
     }
 
-    /// <summary>A creature the board stands up: its cut-out (Resources path) and its height / width.</summary>
+    /// <summary>A creature the board stands up: its cut-out (Resources path) and its height / width; and, when it has
+    /// them (src/squishdoku/bodies.js, Resources/Squishdoku/bodies), its whole body in three faces: `Body` + "-idle",
+    /// "-happy", "-sad" (and "-red", the red flash's shape), `BodyAr` their height / width.</summary>
     public sealed class SdCreature
     {
+        /// <summary>Resources/Squishdoku/bodies.json: each creature with faces, its height / width (set by the host).</summary>
+        public static System.Collections.Generic.IDictionary<string, float> Bodies = new System.Collections.Generic.Dictionary<string, float>();
         public string Key, Picture;
         public float Ar;
+        public string Body => Bodies.ContainsKey(Key) ? "Squishdoku/bodies/" + Key : null;
+        public float BodyAr => Bodies.TryGetValue(Key, out var ar) ? ar : Ar;
         public SdCreature(string key, string picture, float ar) { Key = key; Picture = picture; Ar = ar; }
+
+        /// <summary>bodies.json's { key: ar } (flat: one number per key).</summary>
+        public static System.Collections.Generic.Dictionary<string, float> ParseBodies(string json)
+        {
+            var o = new System.Collections.Generic.Dictionary<string, float>();
+            foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(json ?? "", "\"(\\w+)\"\\s*:\\s*([0-9.]+)"))
+                o[m.Groups[1].Value] = float.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture);
+            return o;
+        }
     }
 }

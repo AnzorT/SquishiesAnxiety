@@ -7,6 +7,8 @@
 //   bg.xml       the page behind the game (PageBg) and back.xml, the back orb, cut out of the app's level screen
 //                (Expo web on http://localhost:8081, src/web/Preview.js's "game-sort") as SVG (tools/unity/ui/snap.js)
 //   img/<hash>.png  pictures those pieces show
+//   mode-regular.png, mode-blitz.png   the hub's mode panels' pictures (assets/sort/mode-*.jpg; the panels are
+//                Squishdoku's, Games/Shared/ModeHub)
 //   blitz.json   the characters Blitz's HUD has that its fonts don't (the title's ⚡, Chrome's colour emoji, and the
 //                revive chip's ♥), each as Chrome draws it (img/blitz-<n>.png) with the box Chrome gave it: SortArt draws
 //                the text around them and puts the pictures there
@@ -24,6 +26,14 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const require = createRequire(import.meta.url);
 const OUT = path.join(ROOT, 'unity', 'Assets', 'Resources', 'Sort');
 fs.mkdirSync(OUT, { recursive: true });
+
+// ---- the hub's mode pictures (JPEG to PNG: the tests read PNG) ------------------------------------------------------
+execFileSync('python3', ['-c', `
+import sys
+from PIL import Image
+for k in ('regular', 'blitz'):
+    Image.open(sys.argv[1] + '/mode-' + k + '.jpg').convert('RGB').save(sys.argv[2] + '/mode-' + k + '.png', optimize=True)
+`, path.join(ROOT, 'assets', 'sort'), OUT]);
 
 // ---- the clutter: props.js run as it is ------------------------------------------------------------------------
 const { transform } = require(path.join(ROOT, 'node_modules', 'sucrase'));

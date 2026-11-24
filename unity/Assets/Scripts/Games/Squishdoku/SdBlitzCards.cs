@@ -29,6 +29,8 @@ namespace SquishSquad.Games.Squishdoku
             public int Board = 1, Cleared, Gems, Price = 10;
             public bool AdUsed, AdReady, AdsFree, Saving;
             public string Error;
+            /// <summary>What went wrong, over the question (Squish Hop's: "That hop left cushions you can't clear."), or null.</summary>
+            public string Why;
         }
 
         public static BroadCard Save(float screenW, float screenH, SaveState s, Action onAd, Action onGems, Action onEnd)
@@ -36,6 +38,7 @@ namespace SquishSquad.Games.Squishdoku
             var c = new BroadCard(screenW, screenH) { Tint = BlitzCards.Tint, RetriggerOnHide = true };
             bool shortOf = s.Gems < s.Price;
             c.Add(new TitleItem(new CardArt.Title(s.Reason == "time" ? "TIME'S UP!" : "OOPS!", 34, "pink")) { Pop = new PopIn(40) });
+            if (s.Why != null) c.Add(new TextItem(s.Why, BlitzCards.SmallText));
             c.Add(new TextItem($"Save your run and keep going on {s.Unit} {s.Board}?", BlitzCards.Body, 6));
             c.Add(new TextItem($"{s.Cleared} {s.Unit}{(s.Cleared == 1 ? "" : "s")} cleared so far", BlitzCards.SmallText));
             c.Add(new ButtonRowItem(10, 10, true, SaveRow(s, onAd, onGems, onEnd)));

@@ -120,7 +120,9 @@ static class FlowTest
         // the clock
         var t = new Game(12);
         t.Run(900 + t.L.Spec.LimitMs + 300);
-        Check(t.L.Phase == "timeup" && t.CardCount() == 1, "the clock runs out: TIME'S UP");
+        Check(t.L.Phase == "out" && t.CardCount() == 0, "the clock runs out: the board locks, everyone droops");
+        t.Run(500);
+        Check(t.L.Phase == "timeup" && t.CardCount() == 1, "TIME'S UP once they have (500 ms on an empty board)");
         t.Press("MAP");
         Check(t.Left, "MAP leaves");
 

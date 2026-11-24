@@ -30,6 +30,9 @@ namespace SquishSquad.Games.Hop
     {
         public const double DefaultXpPerLevel = 100, DefaultGames = 1, DefaultReplay = 0.5;
         static double xpPerLevel = DefaultXpPerLevel, games = DefaultGames, replay = DefaultReplay;
+        // config/levels `xp.blitz.hop`: the XP for ten Blitz boards (functions/squad.js levelsOf: 200 by default)
+        public const double DefaultBlitzHop = 200;
+        public static double BlitzHop { get; private set; } = DefaultBlitzHop;
 
         static double PosNum(object v, double d)
         {
@@ -40,7 +43,7 @@ namespace SquishSquad.Games.Hop
 
         public static void SetLevelsConfig(IDictionary<string, object> cfg)
         {
-            if (cfg == null) { xpPerLevel = DefaultXpPerLevel; games = DefaultGames; replay = DefaultReplay; return; }
+            if (cfg == null) { xpPerLevel = DefaultXpPerLevel; games = DefaultGames; replay = DefaultReplay; BlitzHop = DefaultBlitzHop; return; }
             object v;
             xpPerLevel = PosNum(Js.TryGet(cfg, "xpPerLevel", out v) ? v : null, DefaultXpPerLevel);
             var x = Js.TryGet(cfg, "xp", out v) ? v as IDictionary<string, object> : null;
@@ -48,6 +51,8 @@ namespace SquishSquad.Games.Hop
             object r;
             if (Js.TryGet(x, "replay", out r) && Js.IsNumber(r) && Js.AsDouble(r) >= 0 && Js.AsDouble(r) <= 1) replay = Js.AsDouble(r);
             else replay = DefaultReplay;
+            var b = Js.TryGet(x, "blitz", out v) ? v as IDictionary<string, object> : null;
+            BlitzHop = PosNum(Js.TryGet(b, "hop", out v) ? v : null, DefaultBlitzHop);
         }
 
         public static double XpToNext(double L) { return xpPerLevel * (Math.Max(1, Math.Floor(L)) + 1); }

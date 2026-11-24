@@ -16,6 +16,7 @@ using SquishSquad.House;
 static partial class Program
 {
     public static string PixRoom;
+    public static int DiscoK = -1;   // pixels --disco k: the light-up floor at moment k
     public static readonly string Repo = FindRepo();
     public static readonly string Res = Path.Combine(Repo, "unity/Assets/Resources/House");
     public static readonly string Cap = Path.Combine(Repo, "tools/unity/house/captures");
@@ -43,7 +44,7 @@ static partial class Program
             case "layers": return LayerCheck.Run(args[1], args[2]);
             case "compose": return ComposeOnly(args[1], args[2]);
             case "rt": return DebugRt(args[1], args[2]);
-            case "pixels": PixRoom = args.Length > 2 && !args[2].StartsWith("--") ? args[2] : null; return Pixels(only, args.Contains("--keep"));
+            case "pixels": PixRoom = args.Length > 2 && !args[2].StartsWith("--") ? args[2] : null; { int di = Array.IndexOf(args, "--disco"); if (di > 0 && di + 1 < args.Length) DiscoK = int.Parse(args[di + 1]); } return Pixels(only, args.Contains("--keep"));
             default: Console.WriteLine("commands: save | markup | pixels [fixture]"); return 2;
         }
     }

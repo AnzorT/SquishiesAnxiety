@@ -1,5 +1,5 @@
 // node tools/unity/export-pages.mjs, then:
-//   dotnet run -c Release --project tools/unity/pages-test [-- lp|ch]
+//   dotnet run -c Release --project tools/unity/pages-test [-- lp|ch|yd]
 // Runs the Unity pages' own code (unity/Assets/Scripts/Menu/LevelPassModel.cs, CharactersModel.cs: what they show for
 // the test player, where every piece goes, every motion) for the moments the exporter screenshotted in the app, and
 // writes what they would draw (draws.json; the texts Unity draws with the app's fonts rasterised here by the
@@ -41,6 +41,7 @@ static partial class Program
             jobs.AddRange(Shapes(sw, sh));
             which = "";
         }
+        if (which.Contains("yd")) jobs.AddRange(YardScenes());
         if (which.Contains("lp")) jobs.AddRange(LevelPassScenes());
         if (which.Contains("ch") && File.Exists(Res("Characters/characters.json"))) jobs.AddRange(CharactersScenes());
         var json = Path.Combine(_out, "draws.json");

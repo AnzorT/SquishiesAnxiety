@@ -65,8 +65,6 @@ namespace SquishSquad.Games.Sort
             return g;
         }
 
-        /// <summary>Blitz: the run (set before Init: AdsFree, AdReady, ShowAd, Sound); null on a Regular level.</summary>
-        public Ui.Blitz.BlitzRun Run => _level?.Run;
         public SortLevel Level => _level;
         /// <summary>Blitz: called with the level made, before it starts (to set Run's hooks).</summary>
         public Action<SortLevel> OnBlitzMade;
@@ -100,12 +98,10 @@ namespace SquishSquad.Games.Sort
         [Serializable] sealed class PropsJson { public string[] fridge, cupboard; }
         [Serializable] sealed class PoolJson { public PoolItem[] fridge, cupboard; }
         [Serializable] sealed class PoolItem { public string id, file; }
-        [Serializable] sealed class BlitzJson { public RasterItem[] rasters; }
-        [Serializable] sealed class RasterItem { public string ch, file; public float size, w, h, dy; }
 
         static SortData LoadData()
         {
-            var d = new SortData { BackXml = Text("Sort/back") };
+            var d = new SortData { BackXml = Text("Sort/back"), BackLipXml = Text("Hop/back-lip"), BackTopXml = Text("Hop/back-top"), PauseTopXml = Text("Hop/pause-top") };
             var props = JsonUtility.FromJson<PropsJson>(Text("Sort/props"));
             d.Props["fridge"] = new List<string>(props.fridge);
             d.Props["cupboard"] = new List<string>(props.cupboard);
@@ -116,11 +112,6 @@ namespace SquishSquad.Games.Sort
                 foreach (var p in list) l.Add(new PoolEntry(p.id, "Stack/art/" + p.file));
                 d.Pools[k] = l;
             }
-            // Blitz's HUD: the characters Chrome draws from a fallback font (SortArt.Rasters)
-            var bj = Resources.Load<TextAsset>("Sort/blitz");
-            if (bj != null)
-                foreach (var r in JsonUtility.FromJson<BlitzJson>(bj.text).rasters)
-                    SortArt.Rasters[r.ch + "|" + r.size.ToString(System.Globalization.CultureInfo.InvariantCulture)] = (r.file, r.w, r.h, r.dy);
             return d;
         }
 

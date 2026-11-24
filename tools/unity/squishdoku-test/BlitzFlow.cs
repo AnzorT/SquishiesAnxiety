@@ -42,22 +42,22 @@ static class BlitzFlowTest
         for (int r = 1; r < g.Puzzle.N; r++) Right(r);
         Check(g.Phase == "between" && g.Cleared == 1, "the last right creature clears the board");
         Run(320); Check(g.ClearedShown == 1, "CLEARED goes up 300 ms later");
-        Run(720); Check(g.Idx == 1 && g.Phase == "intro", "the next board is up at 1000 ms, cascading in (no countdown)");
+        Run(1100); Check(g.Idx == 1 && g.Phase == "intro", "the next board is up 350 ms after the win's last jump (~1360 ms), cascading in (no countdown)");
         Run(900); Check(g.Phase == "play", "and its clock starts once its given creature has dropped in");
         double left = g.ClockLeft;
         Wrong(1);
         Check(g.Phase == "between" && !g.ClockRunning, "a wrong creature stops the clock");
-        Run(1020); Check(g.Phase == "save" && open() == 1, "the save card 1000 ms later");
+        Run(1300); Check(g.Phase == "save" && open() == 1, "the save card once everyone has drooped (~1270 ms)");
         g.Press("SAVE IT");
         Run(50);
         Check(g.Phase == "play" && g.AdUsed && Math.Abs(g.ClockLeft - left) < 200, "SAVE IT (FREE, Remove Ads): the run goes on, the board's clock running on");
-        Wrong(2); Run(1020);
+        Wrong(2); Run(1300);
         bool adButton = false; foreach (var c in g.Cards) if (c.Visible) foreach (var b in c.Buttons) if (b.Look.Label.Contains("SAVE IT")) adButton = true;
         Check(g.Phase == "save" && !adButton, "another mistake: the save card again, without the ad (once a run)");
         g.Press("SAVE FOR");
         Run(50);
         Check(g.Phase == "play" && g.GemSaves == 1 && Levels.BlitzSaveGems(1) == 20 && (double)SdLevel.Profile["gems"] == 590, "SAVE FOR 10 gems: saved, 600 → 590 gems, the next save 20");
-        Wrong(3); Run(1020);
+        Wrong(3); Run(1300);
         g.Press("END RUN");
         Run(50);
         var rec = Levels.Record(SdLevel.Profile);
@@ -79,7 +79,7 @@ static class BlitzFlowTest
         g.Press("RESUME"); Run(50);
         Check(g.Phase == "play", "RESUME");
         SdLevel.Profile["gems"] = 5.0;
-        Wrong(1); Run(1020);
+        Wrong(1); Run(1300);
         bool note = false, gemsOff = false;
         foreach (var c in g.Cards) if (c.Visible) foreach (var b in c.Buttons) if (b.Look.Label == "SAVE FOR") { gemsOff = !b.Enabled; }
         foreach (var c in g.Cards) if (c.Visible) foreach (var l in c.Layers()) if (l.Name == "note") note = true;

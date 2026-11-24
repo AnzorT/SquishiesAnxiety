@@ -19,8 +19,8 @@
 //   there to be an animation where all the cards come together and them bam comes out the character"): the copy that
 //   unlocks its creature opens the reveal on its copies fanning out into a ring round a count, the new one flying up
 //   from the chest, the ring spinning in white-hot into one shaking stack, BAM (a flash, shockwaves, sparks) and the
-//   creature popping out, then UNLOCKED!, the full bar and COLLECT. The app brings the creature out as its live rig;
-//   here it's its still (HeroRig says where the live one would stand).
+//   creature popping out, then UNLOCKED!, the full bar and COLLECT. The creature comes out as its live rig (a "heroRig"
+//   slot: Creatures/HeroCreature.cs, host.html's popAt), its still only if the rig can't run.
 // The page's CSS animations and transitions are ported with their keyframes and timing functions, each started when
 // the page's would be: at the end of the frame that set it off (where Chrome picks up the style change).
 // The server has rolled the chest: Start(group, size, null) puts it up while the answer is on its way (a first tap
@@ -1127,6 +1127,9 @@ namespace SquishSquad.Screens
         /// then. The live one (a CreatureView playing its recorded rig, Resources/Creatures) belongs there, popping out of
         /// the burst (popAt: it grows out of the light turning once, hops, lands with a squash and cheers); its still is
         /// drawn there meanwhile (heroImg, unPop), as the app shows it while its rig isn't ready.</summary>
+        /// <summary>Whether a creature can come out live (Creatures/HeroCreature.cs: the native rig runs); else its still.</summary>
+        public static Func<string, bool> LiveHero;
+
         public (string key, float feetX, float feetY, float w, float h)? HeroRig
         {
             get
@@ -1165,6 +1168,13 @@ namespace SquishSquad.Screens
             }
             // its still (#heroImg, 96 % x 66 % from 14 % down, feet at the bottom): unPop 0.9 s cubic-bezier(0.2, 0.9, 0.3,
             // 1.2) about its feet, then c2Bob 2.4 s
+            if (LiveHero != null && LiveHero(rw.Key))
+            {
+                // the live one on its rig (host.html heroBox: feet at 80 % of its place, as big as fits 96 % x 66 %)
+                list.Add(new ScreenPiece { Id = "heroRig", Slot = true, W = cw, H = ch, Opacity = fade, Transform = shake,
+                    Live = new LiveCreature { Key = rw.Key, Ms = bm, Fx = x + cw / 2, Fy = y + ch * 0.8f, W = cw * 0.96f, H = ch * 0.66f, Cy = (float)M.Cy } });
+            }
+            else
             {
                 float iw = cw * 0.96f, ih = ch * 0.66f, ix = x + cw * 0.02f, iy = y + ch * 0.14f;
                 var at = new[] { 0, 0.35, 0.7, 0.85, 1 };

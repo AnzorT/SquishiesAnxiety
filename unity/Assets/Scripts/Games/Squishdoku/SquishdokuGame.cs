@@ -186,6 +186,8 @@ namespace SquishSquad.Games.Squishdoku
             var raw = JsonUtility.FromJson<Raw>(text);
             _all = new Dictionary<string, SdCreature>();
             foreach (var a in raw.artList) _all[a.key] = new SdCreature(a.key, "Stack/art/" + a.file, a.ar);
+            // the board's creatures in their three faces (export-squishdoku.mjs)
+            SdCreature.Bodies = SdCreature.ParseBodies(Resources.Load<TextAsset>("Squishdoku/bodies")?.text);
             return _all;
         }
     }

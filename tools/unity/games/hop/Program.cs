@@ -34,6 +34,7 @@ namespace HopTest
             Run("search", SearchArea);
             Run("levels", LevelsArea);
             Run("profile", ProfileArea);
+            Run("blitz", BlitzArea);
             Run("board", BoardArea);
             Console.WriteLine();
             foreach (var r in report) Console.WriteLine(r);
@@ -417,7 +418,11 @@ namespace HopTest
                 var p = Decode(r.GetProperty("profile")) as IDictionary<string, object>;
                 string at = $"profile {i++} {Clip(Show(p))}";
                 var rec = Levels.Record(p);
-                Check(at + " record", r.GetProperty("out"), O("lv", rec.Lv, "best", rec.Best, "plays", rec.Plays, "wins", rec.Wins, "seen", rec.Seen));
+                // (blitz: { top: 0, runs: 0, ...stored }: the stored map's other keys as they are)
+                var blitz = new Dictionary<string, object> { ["top"] = rec.BlitzTop, ["runs"] = rec.BlitzRuns };
+                if (p != null && p.TryGetValue("hop", out var hv) && hv is IDictionary<string, object> hd && hd.TryGetValue("blitz", out var bv) && bv is IDictionary<string, object> bd)
+                    foreach (var kv in bd) blitz[kv.Key] = kv.Value;
+                Check(at + " record", r.GetProperty("out"), O("lv", rec.Lv, "best", rec.Best, "plays", rec.Plays, "wins", rec.Wins, "seen", rec.Seen, "blitz", blitz));
                 Check(at + " starsOf", r.GetProperty("starsOf"), Levels.StarsOf(rec));
                 Check(at + " doneOf", r.GetProperty("doneOf"), Levels.DoneOf(rec));
                 Check(at + " afterStuck", r.GetProperty("afterStuck"), Levels.AfterStuck(p));
@@ -428,12 +433,46 @@ namespace HopTest
                 int pi = I(a.GetProperty("profile"));
                 int lv = I(a.GetProperty("lv"));
                 var res = a.GetProperty("result");
-                var hr = new HopResult { Left = I(res.GetProperty("left")), Hinted = res.TryGetProperty("hinted", out var h) && Js.Truthy(Decode(h)) };
+                var hr = new HopResult { Takebacks = res.TryGetProperty("takebacks", out var tb) ? I(tb) : 0, Hinted = res.TryGetProperty("hinted", out var h) && Js.Truthy(Decode(h)) };
                 var o = Levels.AfterLevel(profiles[pi], Levels.LevelSpec(lv), hr);
                 Check($"afterLevel(profile {pi} {Clip(Show(profiles[pi]))}, {lv}, {res}) config {a.GetProperty("config")}", a.GetProperty("out"),
                     O("update", o.Update, "coins", o.Coins, "xp", o.Xp, "before", T(o.Before), "after", T(o.After), "levelUps", o.LevelUps, "stars", o.Stars, "unlocked", o.Unlocked));
             }
+            foreach (var a in root.GetProperty("blitzes").EnumerateArray())
+            {
+                PlayerXp.SetLevelsConfig(Decode(a.GetProperty("config")) as IDictionary<string, object>);
+                int pi = I(a.GetProperty("profile")), cleared = I(a.GetProperty("cleared"));
+                var o = Blitz.AfterBlitz(profiles[pi], cleared);
+                // (the JS's key order: a run that cleared none returns its own literal)
+                var outO = cleared == 0 ? O("update", o.Update, "coins", o.Coins, "xp", o.Xp, "levelUps", o.LevelUps, "newTop", o.NewTop)
+                    : O("update", o.Update, "coins", o.Coins, "newTop", o.NewTop, "xp", o.Xp, "before", T(o.Before), "after", T(o.After), "levelUps", o.LevelUps);
+                Check($"afterBlitz(profile {pi} {Clip(Show(profiles[pi]))}, {cleared}) config {a.GetProperty("config")}", a.GetProperty("out"), outO);
+                var (coins, xp) = Blitz.BlitzPrize(cleared);
+                Check($"blitzPrize({cleared}) config {a.GetProperty("config")}", a.GetProperty("prize"), O("coins", coins, "xp", xp));
+            }
             PlayerXp.SetLevelsConfig(null);
+        }
+
+        static void BlitzArea(JsonElement root)
+        {
+            foreach (var c in root.GetProperty("shapes").EnumerateArray())
+            {
+                var s = Blitz.ShapeOf(I(c.GetProperty("i")));
+                Check($"blitzShape({c.GetProperty("i")})", c.GetProperty("out"), O("w", s.W, "h", s.H, "fill", s.Fill, "F", s.F, "A", s.A, "past", s.Past));
+            }
+            foreach (var c in root.GetProperty("clocks").EnumerateArray())
+                Check($"blitzMs({c.GetProperty("hops")}, {c.GetProperty("past")})", c.GetProperty("out"), Blitz.BlitzMs(I(c.GetProperty("hops")), I(c.GetProperty("past"))));
+            foreach (var c in root.GetProperty("seeds").EnumerateArray())
+            {
+                var r = Blitz.Seeded(I(c.GetProperty("seed")));
+                Check($"seeded({c.GetProperty("seed")})", c.GetProperty("out"), Enumerable.Range(0, 6).Select(_ => (object)r()).ToList());
+            }
+            foreach (var c in root.GetProperty("specs").EnumerateArray())
+            {
+                var s = Blitz.BlitzSpec(I(c.GetProperty("i")), I(c.GetProperty("seed")));
+                Check($"blitzSpec({c.GetProperty("i")}, {c.GetProperty("seed")})", c.GetProperty("out"),
+                    O("lv", s.Lv, "map", s.Map, "tier", s.Tier, "sol", s.Sol, "cushions", s.Cushions, "twists", s.Twists, "size", s.Size, "ms", s.Ms, "coins", s.Coins));
+            }
         }
 
         static double? Opt(JsonElement e, string k) { return Has(e, k, out var v) ? D(v) : (double?)null; }

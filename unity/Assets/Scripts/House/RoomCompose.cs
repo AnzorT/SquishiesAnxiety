@@ -71,7 +71,7 @@ namespace SquishSquad.House
             // the dance room's 3D floor: a plane turned rotateX under the parent's perspective, drawn as its picture
             if (persp != null && st.TryGetValue("transform", out var tr3) && tr3.StartsWith("rotateX(") && st.TryGetValue("background", out var fb) && fb.StartsWith("flat:"))
             {
-                Flat(fb.Substring(5).Trim(), st, left, top, w, h, P(tr3), persp, sb); return;
+                Flat(fb.Substring(5).Trim(), st, left, top, w, h, P(tr3), persp, pw, ph, sb); return;
             }
             if (st.TryGetValue("transform", out var tr) && tr != "none")
             {
@@ -115,13 +115,13 @@ namespace SquishSquad.House
 
         // rnFlat's plane: its box (left, top, w, h in the perspective box's px), transform-origin, rotateX (deg), the
         // perspective -> HouseFlat's picture, placed over the part of the box it covers
-        void Flat(string floorId, Dictionary<string, string> st, double left, double top, double w, double h, double angle, double[] persp, StringBuilder sb)
+        void Flat(string floorId, Dictionary<string, string> st, double left, double top, double w, double h, double angle, double[] persp, double pw, double ph, StringBuilder sb)
         {
             double ox = w / 2, oy = h / 2;
             if (st.TryGetValue("transform-origin", out var org)) { var p = org.Split(' '); ox = Pos(p[0], w); oy = p.Length > 1 ? Pos(p[1], h) : h / 2; }
             if (!HouseFlat.Floors.TryGetValue(floorId, out var fl)) { Notes.Add("the dance floor " + floorId + " has no layers"); return; }
             var s = new HouseFlat.Spec { L = left, T = top, W = w, H = h, Ox = ox, Oy = oy, Angle = angle, D = persp[0], Px = persp[1], Py = persp[2], Layers = fl.layers, Bg = fl.bg };
-            HouseFlat.Bounds(s);
+            HouseFlat.Bounds(s, pw, ph);
             var href = "flat:" + floorId + "|" + string.Join(",", Array.ConvertAll(new[] { left, top, w, h, ox, oy, angle, persp[0], persp[1], persp[2] }, N));
             HouseFlat.Specs[href] = s;
             sb.Append("<image href=\"").Append(href).Append("\" x=\"").Append(N(s.X0)).Append("\" y=\"").Append(N(s.Y0)).Append("\" width=\"").Append(N(s.X1 - s.X0)).Append("\" height=\"").Append(N(s.Y1 - s.Y0)).Append("\" preserveAspectRatio=\"none\"/>");

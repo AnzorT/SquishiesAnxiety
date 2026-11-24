@@ -71,7 +71,7 @@ namespace SquishSquad.House
         public double Speed = 1, NeedRate = 1;
         public Func<double> Rand = () => Shared.NextDouble();
         /// <summary>fidg(c): whether his rig is in one of its idle fidgets (it holds off wandering; goTo stops it with
-        /// PlayIdle). The rig's answer (LiveRig); false without one.</summary>
+        /// PlayIdle). The rig's answer (NativeRig); false without one.</summary>
         public Func<HouseCreature, bool> Fidg = c => false;
         public Action<HouseCreature> PlayIdle;
         static readonly Random Shared = new Random();

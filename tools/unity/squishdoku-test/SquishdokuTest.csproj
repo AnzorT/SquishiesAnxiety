@@ -14,6 +14,7 @@
     <Compile Include="../../../unity/Assets/Scripts/Audio/Snd.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Ui/AdHook.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Games/Squishdoku/*.cs" Exclude="../../../unity/Assets/Scripts/Games/Squishdoku/SquishdokuGame.cs;../../../unity/Assets/Scripts/Games/Squishdoku/SquishdokuScreen.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Shared/ViewSwitch.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Backend/OfflineWallet.cs" />
     <Compile Include="../vector-test/ReferenceRaster.cs" />

@@ -207,14 +207,15 @@ static class Program
         var d = Obj("update", new Dictionary<string, object>(o.Update), "coins", o.Coins, "xp", o.Xp, "levelUps", ups);
         if (won) { d["before"] = LevelTree(o.Before); d["after"] = LevelTree(o.After); }
         if (level) { d["stars"] = o.Stars; d["unlocked"] = o.Unlocked; }
+        else d["newTop"] = o.NewTop;
         return d;
     }
 
     static object RecordTree(SortRecord r)
     {
         Func<ThemeRecord, object> t = x => Obj("lv", x.Lv, "best", x.Best, "skill", x.Skill);
-        return Obj("fridge", t(r.Fridge), "cupboard", t(r.Cupboard), "plays", r.Plays, "wins", r.Wins, "seen", r.Seen, "bSkill", r.BSkill,
-            "blitz", Obj("reached", r.Blitz.Reached, "bestMs", r.Blitz.BestMs, "wins", r.Blitz.Wins));
+        return Obj("fridge", t(r.Fridge), "plays", r.Plays, "wins", r.Wins, "seen", r.Seen, "bSkill", r.BSkill,
+            "blitz", Obj("top", r.Blitz.Top, "runs", r.Blitz.Runs, "reached", r.Blitz.Reached, "bestMs", r.Blitz.BestMs, "wins", r.Blitz.Wins));
     }
 
     static List<object> Strings(IEnumerable<string> l)
@@ -372,11 +373,10 @@ static class Program
             var starts = new List<object>();
             foreach (var s in Levels.MODEL_STARTS) starts.Add(s);
             var got = Obj("LEVELS", Levels.LEVELS, "LEVEL_LIST", list, "MODEL_STARTS", starts, "TIER_NAMES", Strings(Levels.TIER_NAMES), "TIER_COLORS", Strings(Levels.TIER_COLORS), "HEARTS", Levels.HEARTS,
-                "SKILL_MIN", Levels.SKILL_MIN, "SKILL_MAX", Levels.SKILL_MAX, "BLITZ_ROUNDS", Levels.BLITZ_ROUNDS, "BLITZ_MS", Levels.BLITZ_MS, "BLITZ_COINS", Levels.BLITZ_COINS, "BLITZ_XP", Levels.BLITZ_XP,
+                "SKILL_MIN", Levels.SKILL_MIN, "SKILL_MAX", Levels.SKILL_MAX,
                 "THEME_KEYS", Strings(Levels.THEME_KEYS), "KINDS", Props.Kinds, "SIZE_NAMES", Strings(Models.SIZE_NAMES), "MODEL_COUNT", Models.MODEL_COUNT);
             return Diff(k, got, "constants");
         });
-        Check("constants", "BLITZ_XP is the default config's", () => PlayerXp.DefaultBlitzSort == Levels.BLITZ_XP ? null : "differs");
         foreach (var c in root.GetProperty("levelSpecs").EnumerateArray())
             Check("levelSpec", c.GetProperty("lv").GetRawText() + "@" + c.GetProperty("skill").GetRawText(), () =>
             {
@@ -393,8 +393,8 @@ static class Program
                 var s = skill == null ? Levels.BlitzSpec(i) : Levels.BlitzSpec(i, skill.Value);
                 return Diff(c.GetProperty("out"), SpecTree(s), "spec");
             });
-        foreach (var c in root.GetProperty("blitzThemes").EnumerateArray())
-            Check("blitzTheme", c.GetProperty("i").GetRawText(), () => Diff(c.GetProperty("out"), Levels.BlitzTheme(c.GetProperty("i").GetInt32()), "theme"));
+        foreach (var c in root.GetProperty("blitzCoins").EnumerateArray())
+            Check("blitzCoins", c.GetRawText(), () => Diff(c.GetProperty("out"), Levels.BlitzCoins(Levels.BlitzSpec(c.GetProperty("i").GetInt32(), c.GetProperty("skill").GetDouble())), "coins"));
         foreach (var c in root.GetProperty("skillShifts").EnumerateArray())
             Check("skillShift", c.GetProperty("skill").GetRawText(), () => Diff(c.GetProperty("out"), Levels.SkillShift(c.GetProperty("skill").GetDouble()), "shift"));
         foreach (var c in root.GetProperty("nextSkills").EnumerateArray())
@@ -438,8 +438,8 @@ static class Program
                 var p = (IDictionary<string, object>)ToObj(c.GetProperty("profile"));
                 var rec = Levels.Record(p);
                 return Diff(c.GetProperty("out"), RecordTree(rec), "record")
-                    ?? Diff(c.GetProperty("starsIn"), new List<object> { Levels.StarsIn(rec, "fridge"), Levels.StarsIn(rec, "cupboard") }, "starsIn")
-                    ?? Diff(c.GetProperty("doneIn"), new List<object> { Levels.DoneIn(rec, "fridge"), Levels.DoneIn(rec, "cupboard") }, "doneIn");
+                    ?? Diff(c.GetProperty("starsIn"), new List<object> { Levels.StarsIn(rec, "fridge") }, "starsIn")
+                    ?? Diff(c.GetProperty("doneIn"), new List<object> { Levels.DoneIn(rec, "fridge") }, "doneIn");
             });
         }
         foreach (var c in root.GetProperty("afterLevels").EnumerateArray())
@@ -461,9 +461,20 @@ static class Program
                 PlayerXp.SetLevelsConfig(configs[c.GetProperty("config").GetInt32()]);
                 try
                 {
-                    bool won = c.GetProperty("won").GetBoolean();
-                    var o = Levels.AfterBlitz(profiles[c.GetProperty("profile").GetInt32()], won, c.GetProperty("reached").GetDouble(), c.GetProperty("ms").GetDouble());
-                    return Diff(c.GetProperty("out"), OutcomeTree(o, false, won), "out");
+                    double cleared = c.GetProperty("cleared").GetDouble();
+                    var o = Levels.AfterBlitz(profiles[c.GetProperty("profile").GetInt32()], cleared);
+                    return Diff(c.GetProperty("out"), OutcomeTree(o, false, cleared > 0), "out");
+                }
+                finally { PlayerXp.SetLevelsConfig(null); }
+            });
+        foreach (var c in root.GetProperty("prizes").EnumerateArray())
+            Check("blitzPrize", c.GetRawText(), () =>
+            {
+                PlayerXp.SetLevelsConfig(configs[c.GetProperty("config").GetInt32()]);
+                try
+                {
+                    var (coins, xp) = Levels.BlitzPrize(c.GetProperty("cleared").GetDouble(), c.GetProperty("skill").GetDouble());
+                    return Diff(c.GetProperty("out"), Obj("coins", coins, "xp", xp), "prize");
                 }
                 finally { PlayerXp.SetLevelsConfig(null); }
             });

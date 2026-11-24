@@ -136,6 +136,7 @@ namespace SquishSquad.Ui.Cards
         public TrioItem(string[] keys, int stars, double t0, double step, bool live, Action<bool> onGo, bool stampRoom = false)
         {
             MarginTop = 2; MarginBottom = stampRoom ? 30 : 4;
+            _stamp = stampRoom;
             _stars = stars; _t0 = t0; _step = step; _live = live; _onGo = onGo;
             for (int i = 0; i < 3; i++)
             {
@@ -146,9 +147,28 @@ namespace SquishSquad.Ui.Cards
 
         public override bool IsStatic => false;
 
+        // Overlays.js Stamp (Squishdoku's perfect solve): "PERFECT!" slamming down like a stamp across the characters'
+        // feet (trioStamp: its bottom 28 dp under the trio), 260 ms (ease in, cubic) from a little before the coins: in
+        // from 3.2 times its size and -30°, to -9°
+        bool _stamp;
+        CardLayer _stampL;
+        readonly AnimatedValue _stampT = new AnimatedValue(0);
+        static readonly TextStyle StampText = CardArt.Style(CardArt.Display, 22, "#e01e4a", 2);
+        static readonly Interpolator StampOp = Fx.Lerp(new[] { 0, 0.3, 1 }, new[] { 0.0, 1, 1 }), StampScale = Fx.Lerp(new[] { 0.0, 1 }, new[] { 3.2, 1 }), StampDeg = Fx.Lerp(new[] { 0.0, 1 }, new[] { -30.0, -9 });
+
         public override void Measure(float colW)
         {
             W = TW; H = TH;
+            if (_stamp && _stampL == null)
+            {
+                const float b = 3.5f;
+                float tw = UiSvg.Width("PERFECT!", StampText), th = UiSvg.LineBox(StampText);
+                float sw = tw + 2 * 10 + 2 * b, sh = th + 2 * 1 + 2 * b;
+                var s = new UiSvg(sw, sh);
+                s.Box(0, 0, sw, sh, new BoxStyle { Background = "rgba(255,255,255,0.92)", Radius = 10, BorderWidth = b, BorderColor = "#e01e4a" });
+                s.Text("PERFECT!", b + 10, b + 1, StampText);
+                (_stampL = new CardLayer("trio stamp")).Set(s.Markup, sw, sh, 4);
+            }
             foreach (var o in _one)
             {
                 if (o.Earned)
@@ -183,6 +203,7 @@ namespace SquishSquad.Ui.Cards
             Layers.Clear();
             foreach (var o in _one) if (o.Rays != null) Layers.Add(o.Rays);
             foreach (var o in _one) Layers.Add(o.Shape);
+            if (_stampL != null) Layers.Add(_stampL);
             if (!_on) return;
             foreach (var o in _one)
             {
@@ -207,6 +228,7 @@ namespace SquishSquad.Ui.Cards
                 if (o.Earned) o.Spin.Mount();
             }
             _shapes.SetValue(0);
+            _stampT.SetValue(0);
             _shapesA = Animated.Timing(_shapes, Fx.Timing(1, 260, null, SHAPES_MS));
             _shapesA.Start();
             _timers.Add(_tk.SetTimeout(() => { if (_live) MakeRigs(); }, MOUNT_MS));
@@ -257,6 +279,7 @@ namespace SquishSquad.Ui.Cards
                 _timers.Add(_tk.SetTimeout(() => Snd.Play(earned ? "sd_star" + n : "sd_starEmpty"), _t0 + i * _step));
             }
             if (_stars == 3) _timers.Add(_tk.SetTimeout(() => Snd.Play("sd_perfect"), _t0 + 3 * _step));
+            if (_stamp) Animated.Timing(_stampT, Fx.Timing(1, 260, Easing.In(Easing.Cubic), _t0 + 3 * _step - 120)).Start();
             // the gold rays behind each earned one, as its colour fills in
             for (int i = 0; i < _stars; i++) Animated.Timing(_one[i].Glow, Fx.Timing(1, 520, null, _t0 + i * _step + 320)).Start();
             if (!ok)
@@ -425,6 +448,13 @@ namespace SquishSquad.Ui.Cards
                 else if (all) Go(true);
             }
             float shapes = (float)_shapes.GetValue();
+            if (_stampL != null)
+            {
+                double t = _stampT.GetValue(), sc = StampScale.Evaluate(t);
+                float sw = _stampL.W, sh = _stampL.H;
+                _stampL.Transform = m * Affine.Translate((TW - sw) / 2, TH + 28 - sh) * Fx.About(sw, sh, Affine.ScaleBy(sc, sc) * Affine.Rotate(StampDeg.Evaluate(t)));
+                _stampL.Opacity = op * (float)StampOp.Evaluate(t);
+            }
             foreach (var o in _one)
             {
                 float fx = (float)(TW * AT[o.I]);
