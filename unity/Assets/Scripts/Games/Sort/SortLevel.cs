@@ -91,6 +91,14 @@ namespace SquishSquad.Games.Sort
         public IDictionary<string, object> Profile;
         /// <summary>Tests: the board for a spec instead of a fresh random deal.</summary>
         public Func<LevelSpec, BoardData> MakeBoardHook;
+
+        // (src/sort/themes.js poolOf: only the squishies that are out, config/roster: Screens/RosterConfig; every one,
+        // should none be)
+        static List<PoolEntry> OutPool(List<PoolEntry> pool)
+        {
+            var l = pool.FindAll(p => SquishSquad.Screens.RosterConfig.IdOut(p.Id));
+            return l.Count > 0 ? l : pool;
+        }
         public Func<double> Random = new System.Random().NextDouble;
 
         string _theme;   // (Blitz: the round's, fridge and cupboard taking turns)
@@ -595,7 +603,7 @@ namespace SquishSquad.Games.Sort
             var rec = Levels.Record(Profile);
             if (_blitz) { _theme = Levels.BlitzTheme(_run.Idx); Spec = Levels.BlitzSpec(_run.Idx, rec.BSkill); }
             else Spec = Levels.LevelSpec(_lv, rec.Of(_theme).Skill);
-            Board = MakeBoardHook != null ? MakeBoardHook(Spec) : Sort.Board.MakeBoard(Spec, _data.Pools[_theme], Random, Props.Kinds);
+            Board = MakeBoardHook != null ? MakeBoardHook(Spec) : Sort.Board.MakeBoard(Spec, OutPool(_data.Pools[_theme]), Random, Props.Kinds);
             _m = SortModels.ModelOf(_theme, Spec.Model);
             _tg = TrayWide(AreaW, AreaH, Board.TrayCap);
             _g = Geometry(AreaW - _tg.Tw - 20, AreaH, Spec.Rows, Spec.Cols, _m, 0);

@@ -120,6 +120,10 @@ namespace SquishSquad.Menu
         int NClaim() { int c = 0; foreach (var r in _rows) if (r.Claimable && !_pend.ContainsKey(r.L)) c++; return c; }
 
         // ---- the day's chest group (functions/squad.js prizeGroup -> lineup(day)[0]) ---------------------------------
+        /// <summary>Whether a group is out (Unity: config/roster's switches, Screens/RosterConfig; LevelPassPage sets it).
+        /// Null (tools/unity/pages-test): the export's own flag.</summary>
+        public static Func<string, bool> GroupIsOut;
+
         public static string LineupFirst(LevelPassLayout l, string day)
         {
             // dayNumber: the day's number from 'YYYY-MM-DD' (UTC midnight / 864e5)
@@ -135,7 +139,8 @@ namespace SquishSquad.Menu
                 int j = (int)Math.Floor(Rnd() * (i + 1));
                 (keys[i], keys[j]) = (keys[j], keys[i]);
             }
-            foreach (var k in keys) { var g = Array.Find(l.groups, x => x.key == k); if (g != null && g.@out) return k; }
+            // (out: config/roster's switches as read, through GroupIsOut; the export's own flag without it)
+            foreach (var k in keys) { var g = Array.Find(l.groups, x => x.key == k); if (g != null && (GroupIsOut?.Invoke(g.key) ?? g.@out)) return k; }
             return keys.Count > 0 ? keys[0] : "snack";
         }
 

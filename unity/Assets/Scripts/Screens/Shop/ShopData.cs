@@ -56,6 +56,7 @@ namespace SquishSquad.Screens
                 var t = Roster.ReadText?.Invoke("Shop/shop") ?? throw new InvalidOperationException("Resources/Shop/shop.json is missing: run node tools/unity/export-shop.mjs");
                 _j = Prof.Map(Json.Parse(t));
                 Load();
+                ApplyRoster(RosterConfig.Doc);   // (config/roster's switches over the defaults: RETIRED, at least)
                 return _j;
             }
         }
@@ -101,6 +102,9 @@ namespace SquishSquad.Screens
             LuckMax = j.ContainsKey("luckMax") ? Prof.Num(j["luckMax"]) : 0; AdChests = Prof.Num(j["adChests"]); FreeMs = Prof.Num(j["freeMs"]);
             StartGems = Prof.Num(Prof.Map(j["start"])["gems"]);
             RainbowMode = (string)j["rainbow"]; SetRewards = Prof.Truthy(j["setRewards"]);
+            // (functions/squad.js's defaults; config/roster, once read, overrides them: RosterConfig)
+            _hiddenDefault = Hidden; _copiesDefault = Copies; _rainbowDefault = RainbowMode; _setRewardsDefault = SetRewards;
+            ByKey = All.GroupBy(c => c.Key).ToDictionary(g => g.Key, g => g.First());
             Swaps = Prof.List(j["swaps"]).Select(Prof.Map).Select(m => (Prof.Num(m["coins"]), Prof.Num(m["gems"]))).ToList();
             ChestNames = Prof.Map(j["chestNames"]).ToDictionary(kv => kv.Key, kv => Prof.List(kv.Value).Select(x => (string)x).ToArray());
             Products = Prof.Map(j["products"]).ToDictionary(kv => kv.Key, kv => { var m = Prof.Map(kv.Value); return ((string)m["base"], Prof.Num(m["usd"])); });
@@ -109,6 +113,51 @@ namespace SquishSquad.Screens
         }
 
         public static void Ensure() { var _ = J; }
+
+        // ---- config/roster (App.js rosterCfg: RosterConfig reads it) -----------------------------------------------------
+        public static Dictionary<string, SquadCreature> ByKey;
+        static string[] _hiddenDefault; static double[] _copiesDefault; static string _rainbowDefault; static bool _setRewardsDefault;
+        // functions/squad.js RETIRED: out of the design (Prickle, id 15), never out again (one owned stays the player's)
+        static readonly string[] RETIRED = { "15" };
+
+        /// <summary>The roster's switches from config/roster (null: none yet, the defaults): what's not out (hiddenOf),
+        /// the copies a creature needs (copiesOf), the Rainbow creatures' way (rainbowOf), set rewards (setRewardsOf).</summary>
+        internal static void ApplyRoster(IDictionary<string, object> cfg)
+        {
+            Ensure();
+            Hidden = HiddenOf(cfg);
+            RainbowMode = cfg != null && cfg.TryGetValue("rainbow", out var rb) && (rb as string == "chest" || rb as string == "shop") ? (string)rb : _rainbowDefault;
+            SetRewards = RainbowMode == "chest" ? false : cfg != null && cfg.TryGetValue("setRewards", out var sr) && sr is bool b ? b : _setRewardsDefault;
+            Copies = CopiesOf(cfg);
+        }
+
+        // hiddenOf: the admin's switch per group ({ groups: { snack: true, ... } }: only the groups switched on are out;
+        // `hidden` can still hide single creatures), else the older `hidden` list of groups and ids, else HIDDEN; and
+        // RETIRED always
+        static string[] HiddenOf(IDictionary<string, object> cfg)
+        {
+            static string S(object o) => o is string s ? s : o is double d ? Prof.JsStr(d) : Convert.ToString(o, CultureInfo.InvariantCulture);
+            var keys = Groups.Select(g => g.key).ToList();
+            List<string> h;
+            object hl = null;
+            if (cfg != null && cfg.TryGetValue("groups", out var gs) && gs is IDictionary<string, object> on)
+            {
+                h = keys.Where(k => !(on.TryGetValue(k, out var v) && v is bool t && t)).ToList();
+                if (cfg.TryGetValue("hidden", out hl) && hl is IList<object> one) h.AddRange(one.Select(S).Where(x => !keys.Contains(x)));
+            }
+            else if (cfg != null && cfg.TryGetValue("hidden", out hl) && hl is IList<object> list) h = list.Select(S).ToList();
+            else h = _hiddenDefault.ToList();
+            return h.Concat(RETIRED).Distinct().ToArray();
+        }
+
+        // copiesOf: 4 counts (an old list of 5: its 5th ignored), each a whole number 1..99, else the defaults
+        static double[] CopiesOf(IDictionary<string, object> cfg)
+        {
+            if (cfg == null || !cfg.TryGetValue("copies", out var c) || !(c is IList<object> l)) return _copiesDefault;
+            int n = _copiesDefault.Length;
+            bool ok = (l.Count == n || l.Count == n + 1) && l.All(x => x is double d && d == Math.Floor(d) && d >= 1 && d <= 99);
+            return ok ? l.Take(n).Select(x => (double)x).ToArray() : _copiesDefault;
+        }
 
         // ---- names ----------------------------------------------------------------------------------------------------
         public static readonly string[] SIZE_NAME = { "Common", "Rare", "Epic", "Legendary", "Rainbow" };

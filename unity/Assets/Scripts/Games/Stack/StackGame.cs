@@ -686,13 +686,22 @@ namespace SquishSquad.Games.Stack
         {
             var want = new List<string>();
             for (int i = 0; i < 3; i++) want.Add(i < _who.Length ? _who[i]?.Key : null);
-            return GameCards.TrioOf(want, _layout.art.Keys);
+            return GameCards.TrioOf(want, CastKeys());
+        }
+
+        // the squishies Stack may use (src/stack/roster.js castOf): out (config/roster), never the Masked or Elemental
+        // Heroes, no season-pass creature (all of them, should that leave too few for a level)
+        List<string> CastKeys(int atLeast = 3)
+        {
+            var keys = new List<string>();
+            foreach (var k in _layout.art.Keys) if (SquishSquad.Screens.RosterConfig.InGames(k)) keys.Add(k);
+            return keys.Count >= atLeast ? keys : new List<string>(_layout.art.Keys);
         }
 
         // `n` different squishies, in a random order (roster.js pickCast; the player's own first once the profile is real)
         Squishy[] PickCast(int n)
         {
-            var keys = new List<string>(_layout.art.Keys);
+            var keys = CastKeys(n);
             var rand = new System.Random();
             for (int i = keys.Count - 1; i > 0; i--) { int j = rand.Next(i + 1); (keys[i], keys[j]) = (keys[j], keys[i]); }
             var who = new Squishy[n];

@@ -52,9 +52,14 @@ namespace SquishSquad.Games.Squishdoku
             float w = (_screenW > 0 ? _screenW : Screen.width) / UiPiece.PxPerDp, h = (_screenH > 0 ? _screenH : Screen.height) / UiPiece.PxPerDp;
             SeedProfile();
             var art = SdArtList.Load();
+            // (src/squishdoku/roster.js rosterOf: out (config/roster), never the Masked or Elemental Heroes; the player's
+            // own, else any of those; else, should none be, every one)
+            var fit = new Dictionary<string, SdCreature>();
+            foreach (var kv in art) if (SquishSquad.Screens.RosterConfig.InGames(kv.Key, pass: true)) fit[kv.Key] = kv.Value;
+            if (fit.Count == 0) fit = art;
             var cast = new List<SdCreature>();
-            foreach (var k in SquishdokuGame.Owned) if (art.TryGetValue(k, out var c)) cast.Add(c);
-            if (cast.Count == 0) cast.AddRange(art.Values);
+            foreach (var k in SquishdokuGame.Owned) if (fit.TryGetValue(k, out var c)) cast.Add(c);
+            if (cast.Count == 0) cast.AddRange(fit.Values);
             art.TryGetValue(SquishdokuGame.BuddyKey, out var buddy);
             _screen = new SdScreen(w, h, cast.ToArray(), buddy, Xml, HeadOf, _tk) { AdsFree = AdsFree, Save = true };
             _screen.OnExit = Leave;

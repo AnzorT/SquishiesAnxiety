@@ -46,6 +46,8 @@ namespace SquishSquad.Menu
         {
             UiFont.ReadJson ??= n => Resources.Load<TextAsset>("Fonts/" + n)?.text;
             UiFont.ParseJson ??= j => JsonUtility.FromJson<UiFontData>(j);
+            // a chest prize's group: today's first HOT group that's out (config/roster, as the Shop's)
+            LevelPassModel.GroupIsOut ??= k => SquishSquad.Screens.ShopData.GroupOut(k, SquishSquad.Screens.RosterConfig.Hidden);
             return Layout == null ? null : new LevelPassPage(parent, w, h, nowMs, order);
         }
 

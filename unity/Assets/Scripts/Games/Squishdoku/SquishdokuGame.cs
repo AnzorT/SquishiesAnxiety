@@ -64,9 +64,14 @@ namespace SquishSquad.Games.Squishdoku
             Card.LoadXml ??= name => Resources.Load<TextAsset>("Cards/" + name)?.text ?? throw new InvalidOperationException("Resources/Cards/" + name + ".xml is missing: run node tools/unity/export-cards.mjs");
             float w = (_screenW > 0 ? _screenW : Screen.width) / UiPiece.PxPerDp, h = (_screenH > 0 ? _screenH : Screen.height) / UiPiece.PxPerDp;
             var art = SdArtList.Load();
+            // (src/squishdoku/roster.js rosterOf: out (config/roster), never the Masked or Elemental Heroes; the player's
+            // own, else any of those; else, should none be, every one)
+            var fit = new Dictionary<string, SdCreature>();
+            foreach (var kv in art) if (SquishSquad.Screens.RosterConfig.InGames(kv.Key, pass: true)) fit[kv.Key] = kv.Value;
+            if (fit.Count == 0) fit = art;
             var cast = new List<SdCreature>();
-            foreach (var k in Owned) if (art.TryGetValue(k, out var c)) cast.Add(c);
-            if (cast.Count == 0) cast.AddRange(art.Values);
+            foreach (var k in Owned) if (fit.TryGetValue(k, out var c)) cast.Add(c);
+            if (cast.Count == 0) cast.AddRange(fit.Values);
             art.TryGetValue(BuddyKey, out var buddy);
             _level = new SdLevel(w, h, _startLv, HeadStart, cast.ToArray(), buddy, Xml, _tk);
             _level.OnExit = unlocked => { Unlocked = unlocked; Leave(); };

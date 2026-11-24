@@ -22,7 +22,8 @@ namespace SquishSquad.Menu
         {
             UiFont.ReadJson ??= n => Resources.Load<TextAsset>("Fonts/" + n)?.text;
             UiFont.ParseJson ??= j => JsonUtility.FromJson<UiFontData>(j);
-            var l = LevelPassPage.Roster;
+            // only the creatures that are out (config/roster, Screens/RosterConfig), as the app's page shows them
+            var l = LevelPassPage.Roster?.Only(c => SquishSquad.Screens.RosterConfig.IdOut(c.id.ToString(System.Globalization.CultureInfo.InvariantCulture)));
             return l == null ? null : new CharactersPage(l, parent, w, h, nowMs, order);
         }
 

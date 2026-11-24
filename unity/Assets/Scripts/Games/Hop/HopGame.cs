@@ -52,7 +52,9 @@ namespace SquishSquad.Games.Hop
             HopLevel.PixelSnap = UiPiece.PxPerDp;
             float w = (_screenW > 0 ? _screenW : Screen.width) / UiPiece.PxPerDp, h = (_screenH > 0 ? _screenH : Screen.height) / UiPiece.PxPerDp;
             _cardPieces = new CardPieces(transform, HopLevel.CardOrder);
-            _level = new HopLevel(w, h, _startLv, _cast, Profile, _anim) { OnExit = Leave };
+            // (src/stack/roster.js castOf, which Hop uses: out (config/roster), no Heroes, no season-pass creature)
+            var cast = _cast.FindAll(c => SquishSquad.Screens.RosterConfig.InGames(c.Key));
+            _level = new HopLevel(w, h, _startLv, cast.Count >= 8 ? cast : _cast, Profile, _anim) { OnExit = Leave };
             Draw();
         }
 

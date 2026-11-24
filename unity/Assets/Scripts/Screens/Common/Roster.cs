@@ -41,12 +41,12 @@ namespace SquishSquad.Screens
         public static string[] SetIds(string set) { Load(); return _setIds.TryGetValue(set, out var l) ? l : new string[0]; }
         public static string TierOf(string id) { Load(); var c = ById(id); return c == null ? null : _rarity[c.Rar]; }
 
-        /// <summary>App.js `counted`: the roster without what isn't out yet (functions/squad.js HIDDEN: the Masked and
-        /// Elemental Heroes; RETIRED: Prickle), unless the player owns it.</summary>
+        /// <summary>App.js `counted`: the roster without what isn't out yet (config/roster, RosterConfig: by default the
+        /// Masked and Elemental Heroes, and Prickle, retired), unless the player owns it.</summary>
         public static List<Creature> Counted(IDictionary<string, object> profile)
         {
             Load();
-            return _all.Where(c => !(c.Set == "heroes" || c.Set == "elemental" || c.Id == "15") || Prof.Owns(profile, c.Id)).ToList();
+            return _all.Where(c => RosterConfig.IsOut(c.Set, c.Id) || Prof.Owns(profile, c.Id)).ToList();
         }
 
         // ---- pictures ------------------------------------------------------------------------------------------------

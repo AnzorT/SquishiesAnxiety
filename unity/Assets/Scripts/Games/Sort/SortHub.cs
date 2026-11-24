@@ -36,7 +36,13 @@ namespace SquishSquad.Games.Sort
             SortSave.Record(new Dictionary<string, object> { { "sort.seen", true } });   // SortScreen.js
         }
 
-        public static List<string> Pool(string theme) => HubsData.Arts(theme == "cupboard" ? HubsData.Current.sortPools.cupboard : HubsData.Current.sortPools.fridge);
+        // (src/sort/themes.js poolOf: only the ones that are out, config/roster; the cut-outs are named by key)
+        public static List<string> Pool(string theme)
+        {
+            var files = theme == "cupboard" ? HubsData.Current.sortPools.cupboard : HubsData.Current.sortPools.fridge;
+            var outs = files == null ? null : System.Array.FindAll(files, f => SquishSquad.Screens.RosterConfig.KeyOut(f));
+            return HubsData.Arts(outs != null && outs.Length > 0 ? outs : files);
+        }
         static string ShelvesOf(int n) => $"{n} {(n > 1 ? "SHELVES" : "SHELF")}";
 
         public override LevelMap NewMap(float w, float top, float h)

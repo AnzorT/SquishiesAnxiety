@@ -145,6 +145,7 @@ namespace SquishSquad.App
                     _menuFresh = true;
                     if (_fb != null && _user != null) _ = LevelsConfig.Load(_fb);   // the XP curve (config/levels)
                     if (_fb != null && _user != null) _ = Menu.Weather.Load(_fb);   // today's weather (config/weather)
+                    if (_fb != null && _user != null) _ = Screens.RosterConfig.Load(_fb);   // which groups are out (config/roster)
                     break;
             }
         }
