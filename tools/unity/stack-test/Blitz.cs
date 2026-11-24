@@ -140,7 +140,7 @@ static class BlitzTest
         typeof(StackGame).GetMethod("Back", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(g, null);
         Run(500);
         Check(!g.Run.Paused && g.Phase == "play", "Android's back resumes");
-        Run(Levels.BLITZ_MS - 5000);
+        Run(4 * 60 * 1000 - 5000);   // (the run's 4:00 clock, StackBlitz RUN_MS)
         Check(g.Phase == "play", "the clock froze while paused (10 s): still playing 3:55 later");
         Run(5000);
         Check(g.Phase == "lost" && g.Run.CardName == "fail" && g.Run.FailReason == "time", "then it runs out: BACK TO PUZZLE 1! (the clock)");

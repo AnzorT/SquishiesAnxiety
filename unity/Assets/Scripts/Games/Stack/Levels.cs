@@ -14,11 +14,11 @@ using System.Globalization;
 
 namespace SquishSquad.Games.Stack
 {
-    // levelSpec() / blitzSpec(): { lv, round, band, n, k, tier, baseTier, start, goal, par, clock, news }
+    // levelSpec() / blitzSpec(): { lv, round, band, n, k, tier, baseTier, start, goal, par, news, past }
     public sealed class LevelSpec
     {
         public int Lv;
-        public int? Round; // Blitz only (1-10)
+        public int? Round; // Blitz only (1, 2, …: the run's puzzle)
         public int Band;
         public int N;
         public int K;
@@ -27,8 +27,8 @@ namespace SquishSquad.Games.Stack
         public string Start; // "tower" or "scrambled"
         public string Goal; // "star" or "picture"
         public int[] Par; // [lo, hi]
-        public bool Clock;
-        public string News; // "picture", "clock", "cushion" or null
+        public string News; // "picture", "cushion" or null
+        public int Past;    // Blitz: how far beyond the climb it is
     }
 
     // LEVEL_LIST's entries: { band, n, k, tier }
@@ -42,6 +42,10 @@ namespace SquishSquad.Games.Stack
 
     public sealed class BlitzRecord
     {
+        // top: the most puzzles cleared in one run (the endless Blitz, 2026-11-16); runs: how many runs; reached /
+        // bestMs / wins were the ten-puzzle runs'
+        public double Top;
+        public double Runs;
         public double Reached;
         public double BestMs;
         public double Wins;
@@ -72,6 +76,8 @@ namespace SquishSquad.Games.Stack
         public List<int> LevelUps;
         public int Stars;
         public bool Unlocked;
+        /// <summary>afterBlitz: the run is the player's new record.</summary>
+        public bool NewTop;
     }
 
     public static class Levels
@@ -120,8 +126,9 @@ namespace SquishSquad.Games.Stack
         static readonly int[] TOWERS = { 1, 4, 22, 29 };
         // the goal card's first level (before it, every goal is one ★ cushion)
         public const int PICTURE_FROM = 9;
-        // "for a certain level it will start a timer" (the user, 2026-10-24)
-        public const int CLOCK_FROM = 15;
+        // No clock any more (the user, 2026-11-16: "no need for timer here, also not in blitz"). From 2026-10-24 every
+        // level from 15 had one; those levels keep the +4 coins it added (CoinsFor), so the pay stays the same.
+        public const int LATE_FROM = 15;
 
         // Level `lv` (1-50; anything else is clamped, 0 / NaN is 1) at a skill.
         public static LevelSpec LevelSpec(double lv, double skill = 0)
@@ -136,7 +143,6 @@ namespace SquishSquad.Games.Stack
             bool picture = !tower && L >= PICTURE_FROM && (tier >= 2 || (tier == 1 && L % 2 == 1));
             string news = null;
             if (L == PICTURE_FROM) news = "picture";
-            else if (L == CLOCK_FROM) news = "clock";
             else if (L > 1 && b.K > levelList[L - 2].K) news = "cushion";
             return new LevelSpec
             {
@@ -149,18 +155,8 @@ namespace SquishSquad.Games.Stack
                 Start = tower ? "tower" : "scrambled",
                 Goal = tower ? "star" : picture ? "picture" : "star",
                 Par = (int[])band.Par[tier].Clone(),
-                Clock = L >= CLOCK_FROM,
                 News = news,
             };
-        }
-
-        // The clock for a puzzle whose best answer is `par` moves, in ms (0: no clock): generous, but it runs out
-        // (thinking time up front, then a few seconds a move).
-        public static int LimitFor(LevelSpec spec, int par)
-        {
-            if (!spec.Clock) return 0;
-            double s = 20 + par * (spec.Tier >= 2 ? 3 : 3.6);
-            return (int)(Math.Ceiling(s / 5) * 5 * 1000);
         }
 
         // --- adaptive difficulty -------------------------------------------------------
@@ -194,7 +190,7 @@ namespace SquishSquad.Games.Stack
 
         public static double CoinsFor(LevelSpec spec, double par, int stars)
         {
-            double b = 6 + 2 * spec.N + 0.6 * par + (spec.Goal == "picture" ? 3 : 0) + (spec.Clock ? 4 : 0);
+            double b = 6 + 2 * spec.N + 0.6 * par + (spec.Goal == "picture" ? 3 : 0) + (spec.Lv >= LATE_FROM && spec.Round == null ? 4 : 0);
             return Js.Round(b * STAR_MULT[stars] * (1 + 0.15 * spec.Tier));
         }
 
@@ -204,8 +200,10 @@ namespace SquishSquad.Games.Stack
 
         // --- Blitz -----------------------------------------------------------------------
         //
-        // Ten puzzles in a row on one clock. They grow from 3 squishies on 3 cushions to 7 on 4, all scrambled, some
-        // with a goal card.
+        // BLITZ MODE (2026-11-16, the user: "the same thing" as Squishdoku's): a run goes on puzzle after puzzle, with no
+        // clock, until a mistake (a big one dropped on a smaller one) ends it: GAME OVER, unless the player saves it, with
+        // a rewarded ad (once a run) or with gems (functions/squad.js blitzSave: 10, then 20, 40 …). Every puzzle cleared
+        // pays. The record is the most puzzles cleared in one run (`stack.blitz.top`). No hints; RESTART works.
 
         sealed class BlitzDef
         {
@@ -214,7 +212,8 @@ namespace SquishSquad.Games.Stack
             public string Goal;
         }
 
-        static readonly BlitzDef[] BLITZ =
+        // the climb: from 3 squishies on 3 cushions to 7 on 4, all scrambled, some with a goal card
+        static readonly BlitzDef[] BLITZ_RAMP =
         {
             new BlitzDef { N = 3, K = 3, Tier = 0, Par = new[] { 4, 6 } },
             new BlitzDef { N = 3, K = 3, Tier = 0, Par = new[] { 5, 7 } },
@@ -227,19 +226,22 @@ namespace SquishSquad.Games.Stack
             new BlitzDef { N = 6, K = 4, Tier = 2, Par = new[] { 11, 13 }, Goal = "picture" },
             new BlitzDef { N = 7, K = 4, Tier = 3, Par = new[] { 13, 16 } },
         };
+        // past the climb: 7 on 4 for five puzzles, then 8 on 4 for good, every other one with a goal card
+        static readonly BlitzDef[] BLITZ_PAST =
+        {
+            new BlitzDef { N = 7, K = 4, Tier = 3, Par = new[] { 13, 16 } },
+            new BlitzDef { N = 8, K = 4, Tier = 2, Par = new[] { 15, 19 } },
+        };
+        /// <summary>Coins for each puzzle cleared, by its squishies.</summary>
+        public static readonly IReadOnlyDictionary<int, int> BLITZ_COINS = new Dictionary<int, int> { { 3, 30 }, { 4, 45 }, { 5, 60 }, { 6, 80 }, { 7, 100 }, { 8, 120 } };
 
-        public static readonly int BLITZ_ROUNDS = BLITZ.Length;
-        // the best answers add up to about 93 moves: some 2.6 s a move
-        public const int BLITZ_MS = 4 * 60 * 1000;
-        public const int BLITZ_COINS = 800;
-        // a won run's XP: config/levels `xp.blitz.stack` (this by default: StackXp.Rules.BlitzStack)
-        public const int BLITZ_XP = 200;
-
-        // Puzzle i (0-9) at the Blitz skill, as a level spec (Engine.MakePuzzle): a skill step moves its par range 2
-        // moves either way.
+        // Puzzle i of a run (0 = the first) at the Blitz skill, as a level spec (Engine.MakePuzzle): a skill step moves
+        // its par range 2 moves either way. `Past`: how far beyond the climb it is.
         public static LevelSpec BlitzSpec(int i, double skill = 0)
         {
-            var b = BLITZ[i];
+            int past = Math.Max(0, i - BLITZ_RAMP.Length + 1);
+            var b = i < BLITZ_RAMP.Length ? BLITZ_RAMP[i] : BLITZ_PAST[past <= 5 ? 0 : 1];
+            string goal = i < BLITZ_RAMP.Length ? b.Goal ?? "star" : i % 2 != 0 ? "picture" : "star";
             int shift = SkillShift(skill);
             return new LevelSpec
             {
@@ -251,30 +253,40 @@ namespace SquishSquad.Games.Stack
                 Tier = Math.Max(0, Math.Min(3, b.Tier + shift)),
                 BaseTier = b.Tier,
                 Start = "scrambled",
-                Goal = b.Goal ?? "star",
+                Goal = goal,
                 Par = new[] { Math.Max(2, b.Par[0] + 2 * shift), b.Par[1] + 2 * shift },
-                Clock = false,
                 News = null,
+                Past = past,
             };
         }
 
-        // The fields to write after a Blitz run ends (won or not), and what it paid. `ms` matters only for a win.
-        public static StackOutcome AfterBlitz(IDictionary<string, object> profile, bool won, double reached, double ms)
+        /// <summary>What `cleared` puzzles pay: their coins, and the player's XP (config/levels `xp.blitz.stack` is the XP
+        /// for ten puzzles: 20 a puzzle by default).</summary>
+        public static (double coins, double xp) BlitzPrize(int cleared, double skill = 0)
+        {
+            double coins = 0;
+            for (int i = 0; i < cleared; i++) coins += BLITZ_COINS[BlitzSpec(i, skill).N];
+            return (coins, Js.Round(StackXp.Rules.BlitzStack / 10 * cleared));
+        }
+
+        // The fields to write when a Blitz run is over (`cleared`: the puzzles it cleared), and what it paid. The skill
+        // moves up after a run of 10 or more, down after one of under 5.
+        public static StackOutcome AfterBlitz(IDictionary<string, object> profile, int cleared)
         {
             var rec = Record(profile);
             var update = new Dictionary<string, object>
             {
-                { "stack.bSkill", ClampSkill(rec.BSkill + (won ? 0.4 : reached >= 6 ? 0 : -0.3)) },
-                { "stack.blitz.reached", Math.Max(rec.Blitz.Reached, reached) },
+                { "stack.bSkill", ClampSkill(rec.BSkill + (cleared >= 10 ? 0.4 : cleared < 5 ? -0.3 : 0)) },
+                { "stack.blitz.runs", (rec.Blitz.Runs == 0 || double.IsNaN(rec.Blitz.Runs) ? 0 : rec.Blitz.Runs) + 1 },
+                { "stack.seen", true },
             };
-            if (!won) return new StackOutcome { Update = update, Coins = 0, Xp = 0, LevelUps = new List<int>() };
-            update["stack.blitz.wins"] = rec.Blitz.Wins + 1;
-            if (rec.Blitz.BestMs == 0 || double.IsNaN(rec.Blitz.BestMs) || ms < rec.Blitz.BestMs) update["stack.blitz.bestMs"] = ms;
-            double xp;
-            PlayerLevel before, after;
-            List<int> ups;
-            StackXp.AddXp(profile, StackXp.Rules.BlitzStack, out xp, out before, out after, out ups);
-            return new StackOutcome { Update = update, Coins = BLITZ_COINS, Xp = xp, Before = before, After = after, LevelUps = ups };
+            bool newTop = cleared > rec.Blitz.Top;
+            if (newTop) update["stack.blitz.top"] = (double)cleared;
+            if (cleared == 0) return new StackOutcome { Update = update, Coins = 0, Xp = 0, LevelUps = new List<int>(), NewTop = false };
+            // the skill the run's puzzles were dealt at (BlitzSpec), so the coins match what was played
+            var prize = BlitzPrize(cleared, rec.BSkill);
+            StackXp.AddXp(profile, prize.xp, out var xp, out var before, out var after, out var ups);
+            return new StackOutcome { Update = update, Coins = prize.coins, Xp = xp, Before = before, After = after, LevelUps = ups, NewTop = newTop };
         }
 
         // --- the profile's record -----------------------------------------------------------
@@ -287,7 +299,9 @@ namespace SquishSquad.Games.Stack
             if (sb != null)
             {
                 object v;
-                // { reached: 0, bestMs: 0, wins: 0, ...s.blitz }: a null that's there stays null (it counts as 0)
+                // { top: 0, runs: 0, reached: 0, bestMs: 0, wins: 0, ...s.blitz }: a null that's there stays null (it counts as 0)
+                if (sb.TryGetValue("top", out v)) blitz.Top = Js.ToNum(v);
+                if (sb.TryGetValue("runs", out v)) blitz.Runs = Js.ToNum(v);
                 if (sb.TryGetValue("reached", out v)) blitz.Reached = Js.ToNum(v);
                 if (sb.TryGetValue("bestMs", out v)) blitz.BestMs = Js.ToNum(v);
                 if (sb.TryGetValue("wins", out v)) blitz.Wins = Js.ToNum(v);

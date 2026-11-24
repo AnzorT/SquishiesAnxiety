@@ -87,14 +87,10 @@ static class Program
         Check("consts", "TIER_NAMES", c["TIER_NAMES"], Levels.TIER_NAMES);
         Check("consts", "TIER_COLORS", c["TIER_COLORS"], Levels.TIER_COLORS);
         Check("consts", "PICTURE_FROM", c["PICTURE_FROM"], Levels.PICTURE_FROM);
-        Check("consts", "CLOCK_FROM", c["CLOCK_FROM"], Levels.CLOCK_FROM);
+        Check("consts", "LATE_FROM", c["LATE_FROM"], Levels.LATE_FROM);
         Check("consts", "SKILL_MIN", c["SKILL_MIN"], Levels.SKILL_MIN);
         Check("consts", "SKILL_MAX", c["SKILL_MAX"], Levels.SKILL_MAX);
-        Check("consts", "BLITZ_ROUNDS", c["BLITZ_ROUNDS"], Levels.BLITZ_ROUNDS);
-        Check("consts", "BLITZ_MS", c["BLITZ_MS"], Levels.BLITZ_MS);
-        Check("consts", "BLITZ_COINS", c["BLITZ_COINS"], Levels.BLITZ_COINS);
-        Check("consts", "BLITZ_XP", c["BLITZ_XP"], Levels.BLITZ_XP);
-        Check("consts", "default BlitzStack", c["BLITZ_XP"], new XpRules().BlitzStack);
+        Check("consts", "BLITZ_COINS", c["BLITZ_COINS"], Levels.BLITZ_COINS.ToDictionary(kv => kv.Key.ToString(System.Globalization.CultureInfo.InvariantCulture), kv => (object)kv.Value));
         foreach (var s in L(c["skillShift"]).Select(D)) Check("skillShift", "skillShift(" + Num(s["skill"]) + ")", s["out"], Levels.SkillShift(Num(s["skill"])));
     }
 
@@ -203,7 +199,7 @@ static class Program
         Start = (string)s["start"],
         Goal = (string)s["goal"],
         Par = s["par"] == null ? null : Ints(s["par"]),
-        Clock = s.ContainsKey("clock") && (bool)s["clock"],
+        Past = s.ContainsKey("past") ? (int)Num(s["past"]) : 0,
         News = s.ContainsKey("news") ? (string)s["news"] : null,
     };
 
@@ -240,9 +236,9 @@ static class Program
         var d = new Dictionary<string, object>
         {
             { "lv", s.Lv }, { "band", s.Band }, { "n", s.N }, { "k", s.K }, { "tier", s.Tier }, { "baseTier", s.BaseTier },
-            { "start", s.Start }, { "goal", s.Goal }, { "par", s.Par }, { "clock", s.Clock }, { "news", s.News },
+            { "start", s.Start }, { "goal", s.Goal }, { "par", s.Par }, { "news", s.News },
         };
-        if (s.Round.HasValue) d["round"] = s.Round.Value;
+        if (s.Round.HasValue) { d["round"] = s.Round.Value; d["past"] = s.Past; }
         return d;
     }
 
@@ -253,11 +249,6 @@ static class Program
             double lv = Num(c["lv"]);
             var spec = c["skill"] == null ? Levels.LevelSpec(lv) : Levels.LevelSpec(lv, Num(c["skill"]));
             Check("levelSpec", $"levelSpec({lv}, {c["skill"] ?? "-"})", c["spec"], SpecOut(spec));
-        }
-        foreach (var c in L(fx["limits"]).Select(D))
-        {
-            var spec = Levels.LevelSpec(Num(c["lv"]), Num(c["skill"]));
-            Check("limitFor", $"limitFor(lv {Num(c["lv"])} skill {Num(c["skill"])}, {Num(c["par"])})", c["limit"], Levels.LimitFor(spec, (int)Num(c["par"])));
         }
         foreach (var c in L(fx["blitzSpecs"]).Select(D))
         {
@@ -292,7 +283,7 @@ static class Program
     static Dictionary<string, object> OutcomeOut(StackOutcome o, bool level) => new Dictionary<string, object>
     {
         { "update", o.Update }, { "coins", o.Coins }, { "xp", o.Xp }, { "before", LevelOut(o.Before) }, { "after", LevelOut(o.After) },
-        { "levelUps", o.LevelUps }, { "stars", level ? (object)o.Stars : null }, { "unlocked", level ? (object)o.Unlocked : null },
+        { "levelUps", o.LevelUps }, { "stars", level ? (object)o.Stars : null }, { "unlocked", level ? (object)o.Unlocked : null }, { "newTop", level ? null : (object)o.NewTop },
     };
 
     static void RunProfiles(List<object> configs)
@@ -311,7 +302,7 @@ static class Program
                 {
                     { "lv", rec.Lv }, { "best", rec.Best }, { "skill", rec.Skill }, { "plays", rec.Plays }, { "wins", rec.Wins }, { "seen", rec.Seen },
                     { "bSkill", rec.BSkill },
-                    { "blitz", new Dictionary<string, object> { { "reached", rec.Blitz.Reached }, { "bestMs", rec.Blitz.BestMs }, { "wins", rec.Blitz.Wins } } },
+                    { "blitz", new Dictionary<string, object> { { "top", rec.Blitz.Top }, { "runs", rec.Blitz.Runs }, { "reached", rec.Blitz.Reached }, { "bestMs", rec.Blitz.BestMs }, { "wins", rec.Blitz.Wins } } },
                 });
                 Check("starsOf/doneOf", label, new List<object> { c["starsOf"], c["doneOf"] }, new List<object> { Levels.StarsOf(rec), Levels.DoneOf(rec) });
                 Check("pxpOf", label, c["pxp"], StackXp.PxpOf(profile));
@@ -322,10 +313,15 @@ static class Program
                     var o = Levels.AfterLevel(profile, spec, (int)Num(t["par"]), (bool)t["won"], Num(t["moves"]), (bool)t["hinted"]);
                     Check("afterLevel", $"{label} lv {lv} blitz {t["blitz"]} par {Num(t["par"])} won {t["won"]} moves {Num(t["moves"])} hinted {t["hinted"]}", t["out"], OutcomeOut(o, true));
                 }
+                foreach (var t in L(c["prizes"]).Select(D))
+                {
+                    var (coins, xp) = Levels.BlitzPrize((int)Num(t["cleared"]), Num(t["skill"]));
+                    Check("blitzPrize", $"{label} cleared {Num(t["cleared"])}", t["out"], new Dictionary<string, object> { { "coins", coins }, { "xp", xp } });
+                }
                 foreach (var t in L(c["blitzes"]).Select(D))
                 {
-                    var o = Levels.AfterBlitz(profile, (bool)t["won"], Num(t["reached"]), Num(t["ms"]));
-                    Check("afterBlitz", $"{label} won {t["won"]} reached {Num(t["reached"])} ms {Num(t["ms"])}", t["out"], OutcomeOut(o, false));
+                    var o = Levels.AfterBlitz(profile, (int)Num(t["cleared"]));
+                    Check("afterBlitz", $"{label} cleared {Num(t["cleared"])}", t["out"], OutcomeOut(o, false));
                 }
                 foreach (var t in L(c["adds"]).Select(D))
                 {

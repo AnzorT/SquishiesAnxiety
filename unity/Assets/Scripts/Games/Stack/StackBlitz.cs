@@ -1,5 +1,5 @@
 // Squish Stack's BLITZ as src/stack/Game.js plays it with `blitz` (the same StackGame, these are its Blitz branches):
-// ten puzzles (Levels.BlitzSpec at the player's Blitz skill) on one 4:00 clock (Levels.BLITZ_MS), no HINT.
+// ten puzzles (Levels.BlitzSpec at the player's Blitz skill) on one 4:00 clock (RUN_MS), no HINT.
 //   countdown  the run opens with 3, 2, 1, GO! (700 ms apart from 200, Ui/Blitz Countdown over the cushions): the first
 //              puzzle drops in on GO, its clock starts once it's dealt
 //   intro      every later puzzle: PUZZLE n and its chips, dealt 1250 ms later; the run's clock goes on where it was
@@ -28,6 +28,11 @@ namespace SquishSquad.Games.Stack
 {
     public sealed partial class StackGame
     {
+        // The run's shape until Blitz is develop's endless one (puzzle after puzzle, no clock, GAME OVER on a mistake
+        // unless saved by an ad or gems: UNITY_SYNC_DEVELOP.md): ten puzzles on a 4:00 clock, as before. The pay is
+        // develop's (Levels.AfterBlitz: coins for every puzzle cleared).
+        const int RUN_ROUNDS = 10, RUN_MS = 4 * 60 * 1000;
+
         /// <summary>Squish Stack's Blitz run (the hub's BLITZ GO): call Init (or let Unity's Start) as for a level.</summary>
         public static StackGame CreateBlitz(Transform parent, float screenW = 0, float screenH = 0)
         {
@@ -98,15 +103,15 @@ namespace SquishSquad.Games.Stack
         {
             _clk = new StackClock(_anim);
             _countdown = new Countdown();
-            _pips = new Pips(Levels.BLITZ_ROUNDS, small: true);
+            _pips = new Pips(RUN_ROUNDS, small: true);
             _pips.Mount();
             _barPiece = Piece("clock bar", 11);
-            _bSecs = Levels.BLITZ_MS / 1000;
+            _bSecs = RUN_MS / 1000;
             _runTk = new Ticker(_anim.Now);
             Ticker.Default = _runTk;   // (BlitzRun times its own steps on the Ticker it's made with)
             _run = new BlitzRun(W, H, "puzzle", new BlitzRun.Timings { MistakeMs = 1000, NextMs = 1300, WinMs = 1000 }) { AdsFree = AdsFree, AdReady = () => AdReady };
             Ticker.Default = _anim;
-            _run.Best = () => (int)Levels.Record(Profile).Blitz.Reached;
+            _run.Best = () => (int)Levels.Record(Profile).Blitz.Top;
             _run.OnNext = i => NewPuzzle();
             _run.OnLost = BlitzLost;
             _run.OnWon = BlitzWon;
@@ -145,8 +150,8 @@ namespace SquishSquad.Games.Stack
             else
             {
                 _runStarted = true;
-                _bSecs = Levels.BLITZ_MS / 1000;
-                _clk.Start(Levels.BLITZ_MS);
+                _bSecs = RUN_MS / 1000;
+                _clk.Start(RUN_MS);
             }
             Effect(StartInterval);
             Hud();
@@ -194,8 +199,8 @@ namespace SquishSquad.Games.Stack
             StopInterval();
             _glow = null;
             if (_held.HasValue) Drop(_held.Value.from);
-            var outc = Levels.AfterBlitz(Profile, false, reached, 0);
-            if (Save) { StackSave.Record(outc.Update); Apply(outc.Update); }
+            var outc = Levels.AfterBlitz(Profile, Math.Max(0, reached - 1));   // (the puzzles cleared before the one lost)
+            if (Save) { StackSave.Paid(outc, Profile); Apply(outc.Update); }
             Hud();
         }
 
@@ -203,13 +208,13 @@ namespace SquishSquad.Games.Stack
         {
             double ms = _clk.Elapsed;
             var rec = Levels.Record(Profile);
-            var outc = Levels.AfterBlitz(Profile, true, Levels.BLITZ_ROUNDS, ms);
+            var outc = Levels.AfterBlitz(Profile, RUN_ROUNDS);
             if (Save) { StackSave.Paid(outc, Profile); Apply(outc.Update); }
             Hud();
             return new BlitzCards.WinResult
             {
                 Ms = ms, Coins = outc.Coins, Xp = outc.Xp,
-                NewBest = rec.Blitz.BestMs == 0 || double.IsNaN(rec.Blitz.BestMs) || ms < rec.Blitz.BestMs,
+                NewBest = outc.NewTop,
                 LevelUps = outc.LevelUps?.Count ?? 0,
                 Before = outc.Before != null ? new XpLevel(outc.Before.Level, outc.Before.Into, outc.Before.Need) : (XpLevel?)null,
                 After = outc.After != null ? new XpLevel(outc.After.Level, outc.After.Into, outc.After.Need) : default,
@@ -270,9 +275,9 @@ namespace SquishSquad.Games.Stack
         {
             var d = new StackArt.BlitzHud
             {
-                Round = _spec.Round ?? 1, Rounds = Levels.BLITZ_ROUNDS, Tier = _spec.Tier, K = _spec.K, Star = _puzzle.Star,
+                Round = _spec.Round ?? 1, Rounds = RUN_ROUNDS, Tier = _spec.Tier, K = _spec.K, Star = _puzzle.Star,
                 Who = _who, Goal = _puzzle.Goal, Revived = _run.Revived,
-                ClockText = Levels.Clock((_runStarted ? _bSecs : Levels.BLITZ_MS / 1000) * 1000.0),
+                ClockText = Levels.Clock((_runStarted ? _bSecs : RUN_MS / 1000) * 1000.0),
                 ClockRed = _phase == "play" && _bSecs <= 15,
             };
             _left.SetSvg(StackArt.BlitzLeftColumn(d, H, out _bar, out _down), LeftW, H, 4);

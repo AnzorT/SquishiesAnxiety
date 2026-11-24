@@ -117,8 +117,8 @@ namespace SquishSquad.Games.Stack
                 new[] { $"Level {Math.Min((int)rec.Lv, Levels.LEVELS)} of {Levels.LEVELS} · ★ {(int)Levels.StarsOf(rec)}", "Fewest moves for 3 stars" }, 300,
                 () => _screen.Go("map"), done / Levels.LEVELS);
             _blitz = new ModeCard("hub blitz", "blitz", "BLITZ ⚡",
-                new[] { $"{Levels.BLITZ_ROUNDS} puzzles · {Levels.Clock(Levels.BLITZ_MS)}", "Big on small = back to puzzle 1",
-                    b.Reached > 0 ? $"Best: puzzle {b.Reached}{(b.Wins > 0 ? $" · {b.Wins} win{(b.Wins > 1 ? "s" : "")}" : "")}" : "No runs yet" }, 420,
+                new[] { "10 puzzles · 4:00", "Big on small = back to puzzle 1",
+                    b.Top > 0 ? $"Best: {b.Top} cleared" : "No runs yet" }, 420,
                 () => _screen.OnBlitz?.Invoke(null));
             col2.Add(_regular.Build());
             col2.Add(_blitz.Build());

@@ -489,7 +489,7 @@ namespace SquishSquad.Games.Stack
             Snd.Play("sd_solve");
             Snd.Win();
             // (Blitz keeps its confetti for the end of the run)
-            if (!_blitz || _run.Idx == Levels.BLITZ_ROUNDS - 1)
+            if (!_blitz || _run.Idx == RUN_ROUNDS - 1)
             {
                 Later(250, () => { Snd.Play("sd_confetti"); Spray("confetti", _g.W / 2, _g.H * 0.35, 1.2); });
                 Later(650, () => Spray("confetti", _g.W * 0.25, _g.H * 0.5, 1));
@@ -557,7 +557,6 @@ namespace SquishSquad.Games.Stack
             if (_blitz) { PressCard("RESUME"); return; }   // (the run's pause card resumes: BlitzResumed)
             _paused = false;
             Close(ref _pause);
-            if (_spec.Clock && _clockPaused >= 0) { _clockStart += _anim.Now - _clockPaused; _clockPaused = -1; }
             Hud();
         }
 
@@ -609,7 +608,6 @@ namespace SquishSquad.Games.Stack
         {
             _phase = "play";
             if (_blitz) { BlitzStartPlay(); return; }
-            if (_spec.Clock) { _clockStart = _anim.Now; _clockPaused = -1; }
             Hud();
         }
 
@@ -669,7 +667,7 @@ namespace SquishSquad.Games.Stack
             _spec = _blitz ? Levels.BlitzSpec(_run.Idx, rec.BSkill) : Levels.LevelSpec(_lv, rec.Skill);
             _puzzle = PuzzleSource != null ? PuzzleSource(_spec) : Engine.MakePuzzle(_spec);
             _who = CastSource != null ? CastSource(_spec.N) : PickCast(_spec.N);
-            _limit = Levels.LimitFor(_spec, _puzzle.Par);
+            _limit = 0;   // (no clock any more: the user, 2026-11-16, levels.js)
             _g = Geom(W - LeftW - RightW, H, _spec.N, _spec.K, _who);
             BuildBoard();
             _held = null; _top = -1; _dragCol = -1; _glow = null;
@@ -693,7 +691,6 @@ namespace SquishSquad.Games.Stack
             var chips = new List<string> { Levels.TIER_NAMES[_spec.Tier] };
             if (_spec.Goal == "picture") chips.Add("GOAL CARD");
             if (_spec.K == 4) chips.Add("4 CUSHIONS");
-            if (_spec.Clock) chips.Add("⏱ " + Levels.Clock(_limit));
             Say(_blitz ? "PUZZLE " + _spec.Round : "LEVEL " + _spec.Lv, chips: chips.ToArray(), hold: 900);
             Snd.Play("sd_boardIn");
             Hud();
@@ -815,9 +812,9 @@ namespace SquishSquad.Games.Stack
             {
                 Lv = _spec.Lv, Tier = _spec.Tier, Moves = _moves, Par = _puzzle.Par, Stars = can, K = _spec.K, Star = _puzzle.Star,
                 Who = _who, Goal = _puzzle.Goal,
-                TipText = _spec.Clock ? null : TipFor(),
-                ClockText = _spec.Clock ? Levels.Clock(_secs * 1000.0) : null,
-                ClockFrac = _spec.Clock && _limit > 0 ? (float)Math.Max(0, 1 - Elapsed / _limit) : 1,
+                TipText = TipFor(),
+                ClockText = null,
+                ClockFrac = 1,
                 ClockRed = _phase == "play" && _secs <= 10,
             };
             _left.SetSvg(StackArt.LeftColumn(d, H), LeftW, H, 4);
@@ -889,7 +886,7 @@ namespace SquishSquad.Games.Stack
             if (!_started) return;
             TickAll(Time.unscaledTimeAsDouble * 1000);
             HandleInput();
-            if (_spec != null && !_blitz && _spec.Clock && _phase == "play" && !_paused)
+            if (_spec != null && !_blitz && _limit > 0 && _phase == "play" && !_paused)
             {
                 double ms = _limit - Elapsed;
                 int s = Math.Max(0, (int)Math.Ceiling(ms / 1000));

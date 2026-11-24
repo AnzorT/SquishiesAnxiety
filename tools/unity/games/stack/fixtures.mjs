@@ -138,7 +138,9 @@ for (let lv = 1; lv <= L.LEVELS; lv++) {
     for (let r = 0; r < 4; r++) puzzles.push(puzzleCase(L.levelSpec(lv, skill), seed++ * 7919, `level ${lv} skill ${skill}`));
   }
 }
-for (let i = 0; i < L.BLITZ_ROUNDS; i++) {
+// the endless Blitz (develop, 2026-11-16): the climb, then 7-on-4 and 8-on-4 for good
+const BLITZ_N = 22;
+for (let i = 0; i < BLITZ_N; i++) {
   for (let skill = -2; skill <= 2; skill++) {
     for (let r = 0; r < 4; r++) puzzles.push(puzzleCase(L.blitzSpec(i, skill), seed++ * 7919, `blitz ${i} skill ${skill}`));
   }
@@ -167,10 +169,8 @@ for (const lv of LVS) {
   for (const skill of SKILLS) specs.push({ lv, skill, spec: L.levelSpec(lv, skill) });
 }
 const PARS = [0, 1, 3, 5, 7, 9, 13, 15, 17, 22, 26, 28, 33, 40];
-const limits = [];
-for (let lv = 1; lv <= L.LEVELS; lv++) for (const skill of [-2, 0, 2]) for (const par of PARS) limits.push({ lv, skill, par, limit: L.limitFor(L.levelSpec(lv, skill), par) });
 const blitzSpecs = [];
-for (let i = 0; i < L.BLITZ_ROUNDS; i++) {
+for (let i = 0; i < BLITZ_N; i++) {
   blitzSpecs.push({ i, skill: null, spec: L.blitzSpec(i) });
   for (const skill of SKILLS) blitzSpecs.push({ i, skill, spec: L.blitzSpec(i, skill) });
 }
@@ -195,7 +195,7 @@ for (let lv = 1; lv <= L.LEVELS; lv++) {
     for (const stars of [0, 1, 2, 2.5, 3]) xps.push({ lv, skill, blitz: null, stars, out: L.xpFor(s, stars) });
   }
 }
-for (let i = 0; i < L.BLITZ_ROUNDS; i++) {
+for (let i = 0; i < BLITZ_N; i++) {
   const s = L.blitzSpec(i, 0);
   for (const par of [3, 9, 16]) for (let stars = 0; stars <= 3; stars++) coins.push({ lv: 0, skill: 0, blitz: i, par, stars, out: L.coinsFor(s, par, stars) });
   for (let stars = 0; stars <= 3; stars++) xps.push({ lv: 0, skill: 0, blitz: i, stars, out: L.xpFor(s, stars) });
@@ -237,7 +237,9 @@ function randProfile() {
   s.bSkill = maybe(0.6, pickOf([0, -2, -0.3, 0.4, 1.6, 2, null, Math.round((G() * 4 - 2) * 100) / 100]));
   if (G() < 0.6) {
     const b = {};
-    if (G() < 0.7) b.reached = pickOf([0, 1, 4, 6, 9, 10, null]);
+    if (G() < 0.7) b.top = pickOf([0, 1, 4, 6, 9, 10, 17, null]);
+    if (G() < 0.5) b.runs = pickOf([0, 1, 3, 12, null]);
+    if (G() < 0.4) b.reached = pickOf([0, 1, 4, 6, 9, 10, null]);
     if (G() < 0.6) b.bestMs = pickOf([0, 90000, 150000, 199999, 240000, null]);
     if (G() < 0.6) b.wins = pickOf([0, 1, 2, 7, null]);
     s.blitz = b;
@@ -246,7 +248,7 @@ function randProfile() {
   p.stack = s;
   return p;
 }
-const recOut = (rec) => ({ ...rec, blitz: { reached: Number(rec.blitz.reached), bestMs: Number(rec.blitz.bestMs), wins: Number(rec.blitz.wins) } });
+const recOut = (rec) => ({ ...rec, blitz: { top: Number(rec.blitz.top), runs: Number(rec.blitz.runs), reached: Number(rec.blitz.reached), bestMs: Number(rec.blitz.bestMs), wins: Number(rec.blitz.wins) } });
 const lvlOut = (o) => ({
   update: o.update,
   coins: o.coins,
@@ -256,6 +258,7 @@ const lvlOut = (o) => ({
   levelUps: o.levelUps,
   stars: o.stars === undefined ? null : o.stars,
   unlocked: o.unlocked === undefined ? null : o.unlocked,
+  newTop: o.newTop === undefined ? null : o.newTop,
 });
 const profiles = [];
 for (const cfg of CONFIGS) {
@@ -269,7 +272,7 @@ for (const cfg of CONFIGS) {
     const levels = [];
     for (let t = 0; t < 6; t++) {
       const blitz = G() < 0.1;
-      const lv = blitz ? int(L.BLITZ_ROUNDS) : int(3) === 0 && typeof rec.lv === 'number' ? Math.min(50, Math.max(1, Math.floor(rec.lv))) : 1 + int(L.LEVELS);
+      const lv = blitz ? int(BLITZ_N) : int(3) === 0 && typeof rec.lv === 'number' ? Math.min(50, Math.max(1, Math.floor(rec.lv))) : 1 + int(L.LEVELS);
       const skill = pickOf([-2, -1, 0, 0, 1.2, 2]);
       const spec = blitz ? L.blitzSpec(lv, skill) : L.levelSpec(lv, skill);
       const par = Math.max(1, (spec.par ? spec.par[0] : 7) + int(5) - 1);
@@ -280,17 +283,16 @@ for (const cfg of CONFIGS) {
     }
     const blitzes = [];
     for (let t = 0; t < 3; t++) {
-      const won = G() < 0.5;
-      const reached = won ? 10 : int(11);
-      const ms = pickOf([1000, 90000, 150000, 150000, 200000, 239999, 60000.5]);
-      blitzes.push({ won, reached, ms, out: lvlOut(L.afterBlitz(profile, { won, reached, ms })) });
+      const cleared = pickOf([0, 0, 1, 3, 4, 5, 9, 10, 11, 16, 25]);
+      blitzes.push({ cleared, out: lvlOut(L.afterBlitz(profile, { cleared })) });
     }
     const adds = [];
     for (const n of [0, 1, 12, 49.5, 50.5, -3, 100, 333, 2500]) {
       const a = addXp(profile, n);
       adds.push({ n, out: { xp: a.xp, before: a.before, after: a.after, levelUps: a.levelUps } });
     }
-    cases.push({ profile, record: recOut(rec), starsOf: L.starsOf(rec), doneOf: L.doneOf(rec), pxp: pxpOf(profile), levels, blitzes, adds });
+    const prizes = [0, 1, 5, 10, 11, 16, 17, 30].map((cleared) => ({ cleared, skill: rec.bSkill, out: L.blitzPrize(cleared, rec.bSkill) }));
+    cases.push({ prizes, profile, record: recOut(rec), starsOf: L.starsOf(rec), doneOf: L.doneOf(rec), pxp: pxpOf(profile), levels, blitzes, adds });
   }
   profiles.push({ cfg, rules, cases });
 }
@@ -308,13 +310,10 @@ const consts = {
   TIER_NAMES: L.TIER_NAMES,
   TIER_COLORS: L.TIER_COLORS,
   PICTURE_FROM: L.PICTURE_FROM,
-  CLOCK_FROM: L.CLOCK_FROM,
+  LATE_FROM: L.LATE_FROM,
   SKILL_MIN: L.SKILL_MIN,
   SKILL_MAX: L.SKILL_MAX,
-  BLITZ_ROUNDS: L.BLITZ_ROUNDS,
-  BLITZ_MS: L.BLITZ_MS,
   BLITZ_COINS: L.BLITZ_COINS,
-  BLITZ_XP: L.BLITZ_XP,
   skillShift: SKILLS.map((s) => ({ skill: s, out: L.skillShift(s) })),
 };
 
@@ -330,14 +329,14 @@ for (const [n, k] of [[8, 4], [7, 4], [6, 5], [7, 3]]) {
   timing.push({ n, k, goals, runs, jsMs: ms });
 }
 
-const out = { consts, basics, sames, solves, puzzles, specs, limits, blitzSpecs, nextSkills, twoStars, starsFor, coins, xps, profiles, clocks, timing };
+const out = { consts, basics, sames, solves, puzzles, specs, blitzSpecs, nextSkills, twoStars, starsFor, coins, xps, profiles, clocks, timing };
 mkdirSync(join(here, 'fixtures'), { recursive: true });
 const file = join(here, 'fixtures', 'stack.json');
 writeFileSync(file, JSON.stringify(out));
 const count = (a) => a.length;
 console.log(
   `wrote ${file}: ${count(basics)} positions, ${count(sames)} same, ${count(solves)} solves, ${count(puzzles)} puzzles, ` +
-    `${count(specs)} levelSpecs, ${count(limits)} limits, ${count(blitzSpecs)} blitzSpecs, ${count(nextSkills)} nextSkill, ` +
+    `${count(specs)} levelSpecs, ${count(blitzSpecs)} blitzSpecs, ${count(nextSkills)} nextSkill, ` +
     `${count(starsFor)} starsFor, ${count(coins)} coins, ${count(xps)} xp, ${profiles.reduce((a, p) => a + p.cases.length, 0)} profiles, ${count(clocks)} clocks`,
 );
 console.log(`JS solve(): ${timing.map((t) => `${t.n}x${t.k} ${t.jsMs.toFixed(2)} ms`).join(', ')}`);
