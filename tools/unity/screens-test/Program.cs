@@ -65,6 +65,7 @@ static partial class Program
             if (only.Length > 0 && !only.Contains(name)) continue;
             var t = new Ticker(0);
             Ticker.Default = t;
+            SpinAnswer = Prof.Map(Prof.Get(shot, "spin"));
             var view = Make((string)shot["preview"], Prof.Map(Prof.Get(shot, "profile")), t);
             if (view == null) { Console.WriteLine($"{name}: no Unity view for {shot["preview"]}"); continue; }
             if (Environment.GetEnvironmentVariable("DUMP") != null && view.GetType().GetProperty("Frames")?.GetValue(view) is Dictionary<string, Frame> fr)

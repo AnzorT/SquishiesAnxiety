@@ -38,4 +38,6 @@ export const SHOTS = [
   // the Daily Spin: waiting; SPIN at 1000 (the whirl ramps up, the "server" answers at 1800: 500 coins, slice 6, then
   // the 4.5 s landing), the prize card popping in, settled
   { name: 'spin', preview: 'scr-spin', at: [1000, 1300, 1700, 2400, 3500, 5000, 6200, 6500, 7200], taps: [[1000, 216, 189]] },
+  // the Mystery Box slice (2026-11-17): today's chest on the wheel, the card's MYSTERY BOX and Open
+  { name: 'spin-chest', preview: 'scr-spin', spin: { index: 3, kind: 'chest', amount: 1, size: 'common', jackpot: false, chest: { group: 'pet', size: 'common', final: 'common', id: '43', rar: 0, isNew: false, copies: 2, need: 5, coins: 0, dupeCoins: 0 } }, at: [4000, 7200], taps: [[1000, 216, 189]] },
 ];

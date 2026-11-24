@@ -66,10 +66,10 @@ far sits 36 pu off; the Level Pass's track and panel don't fade in over its firs
 
 | | develop | Unity before |
 |---|---|---|
-| ⬜ | Each chest holds only its own rarity; no Lucky meter; a group only sells the chests it can fill; Avo and Duchess Legendary; new Rainbow line | Lucky meter, odds, every size, old texts (the server already pays the new way) |
+| ✅ | Each chest holds only its own rarity; no Lucky meter; a group only sells the chests it can fill; Avo and Duchess Legendary; new Rainbow line | Lucky meter, odds, every size, old texts (the server already pays the new way) — done (`Screens/Shop`, `export-shop.mjs`); the Shop remembers its page; no page dots |
 | ⬜ | Vault: the group's own backdrop, bigger chest, HP by rarity in five bars, the v6 reveal (three columns), **a copy that unlocks a creature: copies gather in a ring, BAM, the live creature** | old vault room with torches and banners, old reveal, no unlock |
-| ⬜ | Vault loader without a progress bar (the coin runs to the X, the screen zooms) | `vault-fill` bar |
-| ⬜ | Daily Spin remodel: the 150-coin slice is a Common MYSTERY BOX chest that opens into a smash; wood, gold and jewel wheel; prizes and lights turn with it; a flapper pointer | old wheel, upright prizes, coins 150 |
+| ✅ | Vault loader without a progress bar (the coin runs to the X, the screen zooms) | `vault-fill` bar — `shop-test vault` 1.8–2.3 % |
+| ✅ | Daily Spin remodel: the 150-coin slice is a Common MYSTERY BOX chest that opens into a smash; wood, gold and jewel wheel; prizes and lights turn with it; a flapper pointer | old wheel, upright prizes, coins 150 — `Screens/Spin`, `screens-test spin` 1.1–2.0 %, `spin-chest` 1.3 % |
 
 ## The house
 
