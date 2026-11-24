@@ -71,6 +71,21 @@ namespace SquishSquad.Creatures
             _show.SetFloat("_Sat", sat);
         }
 
+        /// <summary>The whole picture's opacity.</summary>
+        public void SetOpacity(float o) { if (_show != null) _show.SetFloat("_Opacity", Mathf.Clamp01(o)); if (_mr != null) _mr.forceRenderingOff = o <= 0; }
+
+        /// <summary>Grey above a line `frac` of the box down from its top (2: all grey, negative: none): the result card's
+        /// characters filling with colour from their feet up (tools/rig/result.html setFill).</summary>
+        public void GreyAbove(float frac)
+        {
+            if (_show == null) return;
+            float v = frac < 0 ? 2 : frac >= 1.5f ? -1 : 1 - (_pad + frac * _size) / _rtSize;
+            _show.SetFloat("_GreyV", v);
+        }
+
+        /// <summary>Its sorting order (it draws among the UiPieces of a screen).</summary>
+        public int Order { get => _mr != null ? _mr.sortingOrder : 0; set { if (_mr != null) _mr.sortingOrder = value; } }
+
         Mesh _mesh; float _qk, _clip = -1; int _pad;
         /// <summary>Cuts the picture off below a line `frac` of the box down from its top (the beach's wading: the
         /// page's clip-path inset(0 0 ins px 0)); a negative frac shows it all.</summary>

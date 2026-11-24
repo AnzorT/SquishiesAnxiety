@@ -44,6 +44,20 @@ namespace SquishSquad.Creatures
 
         LiveRig(double id) { _id = id; }
 
+        /// <summary>Its id in the engine (live-host.js mount's).</summary>
+        public double Id => _id;
+
+        /// <summary>Whether the engine runs (started now if it wasn't).</summary>
+        public static bool Ready() => Boot();
+
+        /// <summary>Runs `js` in the engine (the result card's states, Creatures/ResultRig.cs); false when it can't.</summary>
+        public static bool Eval(string js)
+        {
+            if (!Boot()) return false;
+            try { _env.Eval(js, "eval"); return true; }
+            catch (Exception e) { Debug.LogWarning("[LiveRig] eval: " + e.Message); return false; }
+        }
+
         /// <summary>The creature mounted in the engine, or null when the engine or the creature failed (the caller falls
         /// back to its recording).</summary>
         /// <summary>The engine for the house's runtime drawings (House/HouseDraw.Eval): started on first use.</summary>

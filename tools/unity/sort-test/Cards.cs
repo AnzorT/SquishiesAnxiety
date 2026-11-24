@@ -4,6 +4,7 @@
 // screen (the page behind, then every card layer) with the reference rasteriser, and compares it with the app's picture
 // of the same moment.
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using SquishSquad.Anim;
@@ -21,12 +22,14 @@ static class CardsTest
         switch (name)
         {
             case "sort-result":
+            case "sort-result-stars":
                 var res = new SortCards.Result
                 {
                     Stars = 2, Coins = 90, Xp = 40, Mistakes = 0, Ms = 83000, LevelUps = 1, Unlocked = true,
                     Before = new XpLevel(6, 560, 700), After = new XpLevel(7, 40, 800),
                 };
-                return SortCards.ResultCard(W, H, res, false, Noop, Noop, Noop);
+                // Preview.js KEYS: the first three cut-outs (stack/art.js), or ?keys=none: the stars
+                return SortCards.ResultCard(W, H, res, false, Noop, Noop, Noop, name == "sort-result" ? new[] { "acorn", "aeroswift", "aurora" } : null);
             case "sort-fail": return SortCards.FailCard(W, H, "hearts", null, Noop, Noop);
             case "sort-pause": return SortCards.PauseCard(W, H, Noop, Noop);
         }
@@ -35,6 +38,12 @@ static class CardsTest
 
     public static int Run(string dir)
     {
+        // the result's three characters as their grey stills (no live creatures here: the app's moments before they draw)
+        TrioItem.Stills = true;
+        var ars = new Dictionary<string, float>();
+        foreach (var a in JsonDocument.Parse(File.ReadAllText(Program.Res("Stack/stack.json"))).RootElement.GetProperty("artList").EnumerateArray())
+            ars[a.GetProperty("key").GetString()] = a.GetProperty("ar").GetSingle();
+        TrioItem.ArOf = k => ars.TryGetValue(k, out var v) ? v : 1;
         string bg = File.ReadAllText(Program.Res("Sort/bg.xml"));
         var list = JsonDocument.Parse(File.ReadAllText(Path.Combine(dir, "cards.json"))).RootElement;
         foreach (var c in list.EnumerateArray())

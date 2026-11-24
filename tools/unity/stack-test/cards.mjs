@@ -11,18 +11,21 @@ const [out, ...only] = process.argv.slice(2);
 fs.mkdirSync(out, { recursive: true });
 // moments while it moves, and one where it has settled (none while a star's gold sparks fly, 440-2040 ms: they are random,
 // and the page only starts a burst once React has rendered it, after the stepping)
+// (the result: its three live characters, of which only the moments before they draw can be compared: 300 ms, the row
+// empty, and 640 ms, their grey stills faded in; and with ?keys=none the stars, the app's fallback)
 const CARDS = [
-  ['stack-result', [300, 2300, 7200]],
+  ['stack-result', [300, 640]],
+  ['stack-result-stars', [300, 2300, 7200], 'stack-result', '&keys=none'],
   ['stack-hint', [150, 2000]],
 ];
 const clock = fs.readFileSync(path.join(ROOT, 'tools', 'unity', 'rig', 'virtual-clock.js'), 'utf8');
-for (const [card, times] of CARDS) {
+for (const [card, times, preview = card, query = ''] of CARDS) {
   if (only.length && !only.includes(card)) continue;
   // a fresh page for each card: nothing on it yet, then the virtual clock, then the card
-  const { browser, page, errors } = await openApp('http://localhost:8081/?phone=1&preview=1&card=none');
+  const { browser, page, errors } = await openApp(`http://localhost:8081/?phone=1&preview=1&card=none${query}`);
   await page.waitForTimeout(5000);
   await page.evaluate(clock);
-  await page.evaluate((c) => window.__preview(c), card);
+  await page.evaluate((c) => window.__preview(c), preview);
   await page.waitForTimeout(1500);   // React commits (twice for the result) at virtual time 0
   for (const ms of times) {
     await page.evaluate((ms) => {

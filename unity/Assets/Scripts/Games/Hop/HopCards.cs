@@ -34,10 +34,11 @@ namespace SquishSquad.Games.Hop
             public bool Hinted, Unlocked;
         }
 
-        /// <summary>The win (the shared card, src/hop/Cards.js RESULT_TITLES). `last`: level 100, no NEXT.</summary>
-        public static Card ResultCard(float screenW, float screenH, Result res, bool last, Action onNext, Action onReplay, Action onHub) =>
+        /// <summary>The win (the shared card, src/hop/Cards.js RESULT_TITLES). `last`: level 100, no NEXT; `keys`:
+        /// its three characters (Trio.js trioOf).</summary>
+        public static Card ResultCard(float screenW, float screenH, Result res, bool last, Action onNext, Action onReplay, Action onHub, string[] keys = null) =>
             GameCards.ResultCard(screenW, screenH, new GameCards.Result { Stars = res.Stars, Coins = res.Coins, Xp = res.Xp, Before = res.Before, After = res.After, LevelUps = res.LevelUps },
-                RESULT_TITLES, last, onHub, onReplay, onNext);
+                RESULT_TITLES, last, onHub, onReplay, onNext, keys: keys);
 
         /// <summary>Nowhere left to hop (a column card). `who`: the hopper, shown whole (SadSquishy: its cut-out, the app's
         /// live rig crying over it once drawn; Unity shows the cut-out, as the app does while the rig loads), or null;

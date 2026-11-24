@@ -26,10 +26,11 @@ namespace SquishSquad.Games.Sort
             public bool Unlocked;
         }
 
-        /// <summary>The win (the shared card). `last`: level 50, no NEXT.</summary>
-        public static Card ResultCard(float screenW, float screenH, Result res, bool last, Action onNext, Action onReplay, Action onHub) =>
+        /// <summary>The win (the shared card). `last`: level 50, no NEXT; `keys`: its three
+        /// characters (Trio.js trioOf).</summary>
+        public static Card ResultCard(float screenW, float screenH, Result res, bool last, Action onNext, Action onReplay, Action onHub, string[] keys = null) =>
             GameCards.ResultCard(screenW, screenH, new GameCards.Result { Stars = res.Stars, Coins = res.Coins, Xp = res.Xp, Before = res.Before, After = res.After, LevelUps = res.LevelUps },
-                RESULT_TITLES, last, onHub, onReplay, onNext);
+                RESULT_TITLES, last, onHub, onReplay, onNext, keys: keys);
 
         /// <summary>Out of hearts (`reason` "hearts") or of time ("time"); `picture`: the first squishy (its head), or null.</summary>
         public static Card FailCard(float screenW, float screenH, string reason, string picture, Action onRetry, Action onHub)

@@ -22,7 +22,9 @@ static class CardsTest
         var res = new SdCards.Result { Stars = 2, Perfect = false, Ms = 83000, Mistakes = 1, LevelCoins = 90, Xp = 40, LevelUps = 1, Unlocked = true, Before = before, After = new XpLevel(7, 40, 800) };
         switch (name)
         {
-            case "sd-result": return SdCards.ResultCard(W, H, res, new string[3], false, Noop, Noop, Noop);
+            // Preview.js KEYS: the first three cut-outs (stack/art.js), or ?keys=none: the score creatures
+            case "sd-result": return SdCards.ResultCard(W, H, res, new string[3], false, Noop, Noop, Noop, new[] { "acorn", "aeroswift", "aurora" });
+            case "sd-result-stars": return SdCards.ResultCard(W, H, res, new string[3], false, Noop, Noop, Noop);
             case "sd-perfect":
                 var best = new SdCards.Result { Stars = 3, Perfect = true, Ms = 83000, Mistakes = 0, LevelCoins = 270, Xp = 40, LevelUps = 1, Unlocked = true, Before = before, After = new XpLevel(7, 40, 800) };
                 return SdCards.ResultCard(W, H, best, new string[3], false, Noop, Noop, Noop);
@@ -40,6 +42,12 @@ static class CardsTest
 
     public static int Run(string dir)
     {
+        // the result's three characters as their grey stills (no live creatures here: the app's moments before they draw)
+        TrioItem.Stills = true;
+        var ars = new Dictionary<string, float>();
+        foreach (var a in JsonDocument.Parse(File.ReadAllText(Program.Res("Stack/stack.json"))).RootElement.GetProperty("artList").EnumerateArray())
+            ars[a.GetProperty("key").GetString()] = a.GetProperty("ar").GetSingle();
+        TrioItem.ArOf = k => ars.TryGetValue(k, out var v) ? v : 1;
         var bg = new SdLayer("page").Set(File.ReadAllText(Program.Res("Stack/bg.xml")), 832, 384, 0);
         var mirrors = new Dictionary<CardLayer, SdLayer>();
         var list = JsonDocument.Parse(File.ReadAllText(Path.Combine(dir, "cards.json"))).RootElement;

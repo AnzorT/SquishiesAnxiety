@@ -1,5 +1,8 @@
 // Shows cards in Unity: each CardLayer of each card on screen as a UiPiece (its texture drawn again only when its
-// markup changes), placed and faded every frame, stacked in the cards' paint order from `order` up.
+// markup changes), placed and faded every frame, stacked in the cards' paint order from `order` up. A layer that stands
+// for a live character (the result card's three, TrioItem: CardLayer.Creature) is a CreatureView instead, playing what
+// the card asks (Creatures/ResultRig.cs CardCreatureView, through `MakeLive` / `CanLive`, so the cards don't need the
+// creature code). `LiveCharacters` is the switch: off, the result cards show their stars.
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,10 +16,23 @@ namespace SquishSquad.Ui.Cards
         readonly HashSet<CardLayer> _seen = new HashSet<CardLayer>();
         readonly List<CardLayer> _gone = new List<CardLayer>();
 
+        /// <summary>The result cards' live characters on (when every one of a card's three can be drawn: ResultRig.Can).</summary>
+        public static bool LiveCharacters = true;
+
+        /// <summary>A live character on screen (Creatures/ResultRig.cs): made for a layer, then synced every frame.</summary>
+        public interface ILive { void Sync(CardLayer layer, int order); void Destroy(); }
+        /// <summary>Set by the creature code: makes a layer's live character under `parent`; whether a creature can be
+        /// drawn live.</summary>
+        public static System.Func<Transform, CardCreature, ILive> MakeLive;
+        public static System.Func<string, bool> CanLive;
+        readonly Dictionary<CardLayer, ILive> _live = new Dictionary<CardLayer, ILive>();
+
         public CardPieces(Transform parent, int order)
         {
             _parent = parent;
             _order = order;
+            TrioItem.LiveFor ??= keys => LiveCharacters && MakeLive != null && CanLive != null && System.Array.TrueForAll(keys, k => CanLive(k));
+            if (!_arsLoaded) LoadArs();
             Card.LoadXml ??= name => Resources.Load<TextAsset>("Cards/" + name)?.text
                 ?? throw new System.InvalidOperationException("Resources/Cards/" + name + ".xml is missing: run node tools/unity/export-cards.mjs");
         }
@@ -32,6 +48,13 @@ namespace SquishSquad.Ui.Cards
                 foreach (var l in c.Layers())
                 {
                     _seen.Add(l);
+                    if (l.Creature != null)
+                    {
+                        if (!_live.TryGetValue(l, out var live)) _live[l] = live = MakeLive?.Invoke(_parent, l.Creature);
+                        if (live == null) l.Creature.Failed = true; else live.Sync(l, _order + i);
+                        i++;
+                        continue;
+                    }
                     if (!_pieces.TryGetValue(l, out var e)) e = (UiPiece.Create(_parent, "card " + l.Name, 0), -1);
                     if (e.version != l.Version)
                     {
@@ -53,6 +76,27 @@ namespace SquishSquad.Ui.Cards
                 Kill(_pieces[l].piece.gameObject);
                 _pieces.Remove(l);
             }
+            _gone.Clear();
+            foreach (var l in _live.Keys) if (!_seen.Contains(l)) _gone.Add(l);
+            foreach (var l in _gone)
+            {
+                _live[l]?.Destroy();
+                _live.Remove(l);
+            }
+        }
+
+        static bool _arsLoaded;
+        [System.Serializable] sealed class ArtList { public Art[] artList; }
+        [System.Serializable] sealed class Art { public string key; public float ar; }
+        // the cut-outs' height / width (Resources/Stack/stack.json, stack/art.js): the result's grey shapes
+        static void LoadArs()
+        {
+            _arsLoaded = true;
+            var text = Resources.Load<TextAsset>("Stack/stack")?.text;
+            if (text == null) return;
+            var d = new Dictionary<string, float>();
+            foreach (var a in JsonUtility.FromJson<ArtList>(text).artList) d[a.key] = a.ar;
+            TrioItem.ArOf = k => d.TryGetValue(k, out var v) ? v : 1;
         }
 
         public void Clear() => Sync(new Card[0]);

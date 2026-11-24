@@ -340,7 +340,7 @@ namespace SquishSquad.Games.Sort
                 After = outc.After != null ? new XpLevel(outc.After.Level, outc.After.Into, outc.After.Need) : default,
             };
             var spec = Spec;
-            Later(1500, () => _result = Open(SortCards.ResultCard(_sw, _sh, res, _lv >= Levels.LEVELS, Next, Replay, Leave), 0));
+            Later(1500, () => _result = Open(SortCards.ResultCard(_sw, _sh, res, _lv >= Levels.LEVELS, Next, Replay, Leave, Trio()), 0));
         }
 
         void Mistake()
@@ -641,6 +641,18 @@ namespace SquishSquad.Games.Sort
             // (the app waits for any picture still downloading; Unity's are all here)
             Later(bigger ? 1800 : 1300, Deal);
             if (!_blitz) OnLevel?.Invoke(_lv);
+        }
+
+        // the result card's three: the board's first three that have a home, topped up from the theme's pool (Game.js
+        // trio; a piece's cut-out "Stack/art/<key>" names its rig)
+        string[] Trio()
+        {
+            static string KeyOf(string uri) => uri == null ? null : uri.Substring(uri.LastIndexOf('/') + 1);
+            var want = new List<string>();
+            foreach (var p in Board.Pieces) if (p.Home != null && want.Count < 3) want.Add(KeyOf(p.Uri));
+            var pool = new List<string>();
+            if (_data.Pools.TryGetValue(_theme, out var l)) foreach (var e in l) pool.Add(KeyOf(e.Uri));
+            return GameCards.TrioOf(want, pool);
         }
 
         void Next() { _lv = Math.Min(Levels.LEVELS, _lv + 1); Replay(); }

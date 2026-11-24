@@ -34,15 +34,16 @@ namespace SquishSquad.Games.Squishdoku
         public static readonly string[] RESULT_TITLES = { "SOLVED!", "NICE ONE!", "SQUISHTASTIC!" };
 
         /// <summary>The solve, on the shared card: the three score creatures (`pictures`: Resources paths, or null) and on a
-        /// perfect solve PERFECT's stamp and ×3 coins; MAP / REPLAY / NEXT ▶. `last`: no NEXT.</summary>
-        public static Card ResultCard(float screenW, float screenH, Result res, string[] pictures, bool last, Action onNext, Action onReplay, Action onMap)
+        /// perfect solve PERFECT's stamp and ×3 coins; MAP / REPLAY / NEXT ▶. `last`: no NEXT; `keys`: the score creatures' rigs
+        /// (the live characters in their place, RegularGame.js keys).</summary>
+        public static Card ResultCard(float screenW, float screenH, Result res, string[] pictures, bool last, Action onNext, Action onReplay, Action onMap, string[] keys = null)
         {
             double cAt = CoinsAt(res);
             return GameCards.ResultCard(screenW, screenH,
                 new GameCards.Result { Stars = res.Stars, Perfect = res.Perfect, Coins = res.LevelCoins, Xp = res.Xp, Before = res.Before, After = res.After, LevelUps = res.LevelUps },
                 RESULT_TITLES, last, onMap, onReplay, onNext, "MAP", "PERFECT SQUISH!",
                 score: new SlotsItem(res.Stars, pictures, res.Perfect), scoreTop: res.Perfect, coinsAt: cAt, buttonsAt: 420 + 2 * STEP + 300,
-                reward: at => new RewardItem(res.LevelCoins, res.Xp, at, res.Perfect));
+                reward: at => new RewardItem(res.LevelCoins, res.Xp, at, res.Perfect), keys: keys);
         }
 
         /// <summary>The clock ran out, or (`hearts`, their number) the hearts were all lost. `picture`: the first score

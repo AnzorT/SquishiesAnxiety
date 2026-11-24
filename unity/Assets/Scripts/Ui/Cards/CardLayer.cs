@@ -20,6 +20,9 @@ namespace SquishSquad.Ui.Cards
         public Affine Transform = Affine.Identity;
         public float Opacity = 1;
         public bool Visible = true;
+        /// <summary>A live character this layer stands for (the result card's three, TrioItem): the host draws the creature
+        /// (Transform maps its rig's 0-100 box to the screen) instead of the markup.</summary>
+        public CardCreature Creature;
 
         public CardLayer(string name) { Name = name; }
 

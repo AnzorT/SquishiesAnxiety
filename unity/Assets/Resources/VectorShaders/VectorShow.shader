@@ -1,9 +1,11 @@
 // Shows a picture on a quad in the scene: a rendered piece (premultiplied colour in a RenderTexture, _Straight 0) or a
 // picture with straight alpha (_Straight 1), at _Opacity; its colour times _Tint and saturated by _Sat (both 1: as is;
-// the game intro's night light on Mittens, CSS brightness / saturate).
+// the game intro's night light on Mittens, CSS brightness / saturate); grey above _GreyV (the texture's v, 0 at the
+// bottom; 2: none): the result card's characters filling with colour from their feet up (tools/rig/result.html: CSS
+// grayscale(1) brightness(1.12) above the colour's edge).
 Shader "Hidden/SquishSquad/VectorShow"
 {
-    Properties { _MainTex ("Picture", 2D) = "black" {} _Opacity ("Opacity", Float) = 1 _Straight ("Straight alpha", Float) = 0 _Tint ("Tint", Color) = (1,1,1,1) _Sat ("Saturation", Float) = 1 }
+    Properties { _MainTex ("Picture", 2D) = "black" {} _Opacity ("Opacity", Float) = 1 _Straight ("Straight alpha", Float) = 0 _Tint ("Tint", Color) = (1,1,1,1) _Sat ("Saturation", Float) = 1 _GreyV ("Grey above v", Float) = 2 }
     SubShader
     {
         Tags { "Queue" = "Transparent" "RenderType" = "Transparent" "IgnoreProjector" = "True" }
@@ -16,7 +18,7 @@ Shader "Hidden/SquishSquad/VectorShow"
             #pragma fragment frag
             #include "UnityCG.cginc"
             sampler2D _MainTex;
-            float _Opacity, _Straight, _Sat;
+            float _Opacity, _Straight, _Sat, _GreyV;
             fixed4 _Tint;
             struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };
             v2f vert (appdata_base v) { v2f o; o.pos = UnityObjectToClipPos(v.vertex); o.uv = v.texcoord.xy; return o; }
@@ -26,6 +28,7 @@ Shader "Hidden/SquishSquad/VectorShow"
                 if (_Straight > 0.5) c.rgb *= c.a;
                 float l = dot(c.rgb, float3(0.2126, 0.7152, 0.0722));
                 c.rgb = lerp(float3(l, l, l), c.rgb, _Sat) * _Tint.rgb;
+                if (i.uv.y > _GreyV) c.rgb = min(float3(l, l, l) * 1.12, c.aaa);
                 return c * _Opacity;
             }
             ENDCG

@@ -69,8 +69,9 @@ namespace SquishSquad.Ui.Cards
             Visible = Shown = true;
             _empty = false;
             Layout();
-            foreach (var i in Items) i.Mount();
-            foreach (var i in Items) i.Trigger();
+            _went = false;
+            foreach (var i in Items) if (!i.Waits) i.Mount();
+            foreach (var i in Items) if (!i.Waits) i.Trigger();
             _anim?.Stop();
             _t.SetValue(0);
             _anim = Animated.Spring(_t, Fx.Spring(1, 6.5, 90));
@@ -99,6 +100,16 @@ namespace SquishSquad.Ui.Cards
                 Shown = false;
                 if (!_empty) foreach (var i in Items) i.Unmount();
             });
+        }
+
+        bool _went;
+        /// <summary>The run starts (Overlays.js ResultCard `go`: the live characters are drawn, or can't be): the items that
+        /// wait for it (`Waits`: the coins, the XP; their delays `after(ms)`) start now, their delays from this moment.</summary>
+        public void Go()
+        {
+            if (!Visible || _went) return;
+            _went = true;
+            foreach (var i in Items) if (i.Waits) { i.Unmount(); i.Mount(); i.Trigger(); }
         }
 
         // ---- layout -------------------------------------------------------------------------------------------------
@@ -238,6 +249,9 @@ namespace SquishSquad.Ui.Cards
         public SlideIn Slide;
         /// <summary>In a `column` card (Overlays.js useCompact): stars, score creatures and the XP bar drawn smaller.</summary>
         public bool Compact;
+        /// <summary>Starts with the card's run (Card.Go), not as the card opens: hidden until then (ResultCard's `after(ms)`
+        /// while the characters load).</summary>
+        public bool Waits;
 
         /// <summary>Drawn on the card itself (it never moves on it).</summary>
         public virtual bool IsStatic => Pop == null && Slide == null;

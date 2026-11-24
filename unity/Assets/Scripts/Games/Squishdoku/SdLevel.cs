@@ -391,7 +391,10 @@ namespace SquishSquad.Games.Squishdoku
         {
             var pics = new string[3];
             for (int i = 0; i < 3; i++) pics[i] = _score[i]?.Picture;
-            _resultCard = OpenCard(SdCards.ResultCard(W, H, res, pics, _lv >= Levels.LevelCount, Next, Restart, Exit), 2);
+            // the score creatures' rigs: the live characters in their place (RegularGame.js keys, roster.js keyOfUri)
+            var keys = new string[3];
+            for (int i = 0; i < 3; i++) keys[i] = _score[i]?.Key;
+            _resultCard = OpenCard(SdCards.ResultCard(W, H, res, pics, _lv >= Levels.LevelCount, Next, Restart, Exit, keys), 2);
         }
 
         /// <summary>Opens a card as the game would, with src/web/Preview.js's sample data for the result (tests).</summary>

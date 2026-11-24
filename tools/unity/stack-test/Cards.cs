@@ -25,12 +25,14 @@ static class CardsTest
         switch (name)
         {
             case "stack-result":
+            case "stack-result-stars":
                 var res = new StackCards.Result
                 {
                     Stars = 2, Coins = 90, Xp = 40, Moves = 9, Par = 7, LevelUps = 1, Unlocked = true, Hinted = false,
                     Before = new XpLevel(6, 560, 700), After = new XpLevel(7, 40, 800),
                 };
-                return StackCards.ResultCard(W, H, res, false, Noop, Noop, Noop);
+                // Preview.js KEYS: the first three cut-outs (stack/art.js), or ?keys=none: the stars
+                return StackCards.ResultCard(W, H, res, false, Noop, Noop, Noop, name == "stack-result" ? new[] { "acorn", "aeroswift", "aurora" } : null);
             case "stack-fail": return StackCards.FailCard(W, H, null, Noop, Noop);
             case "stack-pause": return StackCards.PauseCard(W, H, Noop, Noop);
             case "stack-hint": return StackCards.HintCard(W, H, true, false, Noop, Noop);
@@ -41,6 +43,12 @@ static class CardsTest
     public static int Run(string dir, Func<string, string> res)
     {
         Fx.LikeWeb = true;
+        // the result's three characters as their grey stills (no live creatures here: the app's moments before they draw)
+        TrioItem.Stills = true;
+        var ars = new Dictionary<string, float>();
+        foreach (var a in JsonDocument.Parse(File.ReadAllText(res("Stack/stack.json"))).RootElement.GetProperty("artList").EnumerateArray())
+            ars[a.GetProperty("key").GetString()] = a.GetProperty("ar").GetSingle();
+        TrioItem.ArOf = k => ars.TryGetValue(k, out var v) ? v : 1;
         Card.LoadXml = n => File.ReadAllText(res("Cards/" + n + ".xml"));
         string bg = File.ReadAllText(res("Stack/bg.xml"));
         var list = JsonDocument.Parse(File.ReadAllText(Path.Combine(dir, "cards.json"))).RootElement;

@@ -11,8 +11,11 @@ const [out, ...only] = process.argv.slice(2);
 fs.mkdirSync(out, { recursive: true });
 // moments while it moves, and where it has settled (the result's gold sparks fly 480-3260 ms)
 const CARDS = [
-  ['sd-result', [300, 1000, 2400, 7500]],
-  ['sd-perfect', [2300, 2700, 7500]],
+  // (the result: its three live characters, of which only the moments before they draw can be compared: 300 ms, the
+  // row empty, and 640 ms, their grey stills faded in; and with ?keys=none the app's fallback)
+  ['sd-result', [300, 640]],
+  ['sd-result-stars', [300, 1000, 2400, 7500], 'sd-result', '&keys=none'],
+  ['sd-perfect', [2300, 2700, 7500], 'sd-perfect', '&keys=none'],
   ['sd-timeup', [400, 3600]],
   ['sd-hearts', [3600]],
   ['sd-pause', [150, 2000]],
@@ -22,13 +25,13 @@ const CARDS = [
   ['sd-blitzwin', [500, 1500, 2600, 7500]],
 ];
 const clock = fs.readFileSync(path.join(ROOT, 'tools', 'unity', 'rig', 'virtual-clock.js'), 'utf8');
-for (const [card, times] of CARDS) {
+for (const [card, times, preview = card, query = ''] of CARDS) {
   if (only.length && !only.includes(card)) continue;
-  const { browser, page, errors } = await openApp('http://localhost:8081/?phone=1&preview=1&card=none');
+  const { browser, page, errors } = await openApp(`http://localhost:8081/?phone=1&preview=1&card=none${query}`);
   await page.waitForTimeout(5000);
   await page.evaluate(clock);
   await page.evaluate(() => { Math.random = () => 0.5; });
-  await page.evaluate((c) => window.__preview(c), card);
+  await page.evaluate((c) => window.__preview(c), preview);
   await page.waitForTimeout(1500); // React commits (twice for the result) at virtual time 0
   for (const ms of times) {
     await page.evaluate(async (ms) => {

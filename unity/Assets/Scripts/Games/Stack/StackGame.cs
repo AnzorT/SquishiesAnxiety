@@ -521,7 +521,7 @@ namespace SquishSquad.Games.Stack
                 Moves = _moves, Par = _puzzle.Par, Hinted = _hinted,
             };
             int lv = _spec.Lv, tier = _spec.Tier;
-            Later(1500, () => _result = Open(StackCards.ResultCard(W, H, res, _lv >= Levels.LEVELS, Next, Replay, Leave), RESULT));
+            Later(1500, () => _result = Open(StackCards.ResultCard(W, H, res, _lv >= Levels.LEVELS, Next, Replay, Leave, Trio()), RESULT));
             Hud();
         }
 
@@ -701,6 +701,14 @@ namespace SquishSquad.Games.Stack
             Later(1250, Deal);
         }
 
+        // the result card's three: from the level's stack (Game.js trio)
+        string[] Trio()
+        {
+            var want = new List<string>();
+            for (int i = 0; i < 3; i++) want.Add(i < _who.Length ? _who[i]?.Key : null);
+            return GameCards.TrioOf(want, _layout.art.Keys);
+        }
+
         // `n` different squishies, in a random order (roster.js pickCast; the player's own first once the profile is real)
         Squishy[] PickCast(int n)
         {
@@ -870,7 +878,7 @@ namespace SquishSquad.Games.Stack
                         Stars = 2, Coins = 90, Xp = 40, Moves = 9, Par = 7, LevelUps = 1, Unlocked = true,
                         Before = new XpLevel(6, 560, 700), After = new XpLevel(7, 40, 800),
                     };
-                    _result = Open(StackCards.ResultCard(W, H, res, false, Next, Replay, Leave), RESULT);
+                    _result = Open(StackCards.ResultCard(W, H, res, false, Next, Replay, Leave, Trio()), RESULT);
                     break;
             }
             Hud();

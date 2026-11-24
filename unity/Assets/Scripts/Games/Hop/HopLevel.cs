@@ -93,6 +93,15 @@ namespace SquishSquad.Games.Hop
 
         static double JsRound(double v) => Math.Floor(v + 0.5);
 
+        // the result card's three (Game.js trio): a friend, the hopper in the middle, the other friend
+        string[] Trio()
+        {
+            var want = new List<string> { _friends != null && _friends.Count > 0 ? _friends[0].Key : null, _hopper?.Key, _friends != null && _friends.Count > 1 ? _friends[1].Key : null };
+            var pool = new List<string>();
+            foreach (var c in _cast) pool.Add(c.Key);
+            return GameCards.TrioOf(want, pool);
+        }
+
         // src/hop/Room.js roomGeometry, landscape: the picture spans the width, raised so its floor line sits 30 % down
         const double RATIO = 1704.0 / 786;
         (double W, double H, double top, double floorY) RoomGeom()
@@ -763,7 +772,7 @@ namespace SquishSquad.Games.Hop
             _result = res;
             if (res == null) { Close(ref _resultCard, true); return; }
             Close(ref _resultCard, true);
-            _resultCard = Open(HopCards.ResultCard(W, H, res, _lv >= Levels.LEVELS, () => GoTo(_lv + 1), () => GoTo(_lv), Leave), RESULT);
+            _resultCard = Open(HopCards.ResultCard(W, H, res, _lv >= Levels.LEVELS, () => GoTo(_lv + 1), () => GoTo(_lv), Leave, Trio()), RESULT);
         }
 
         void SetStuck(bool on)

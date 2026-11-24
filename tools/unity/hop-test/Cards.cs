@@ -4,6 +4,7 @@
 // screen (the page behind, then every card layer where it is) with the reference rasteriser, and compares it with the
 // app's picture of the same moment.
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -22,12 +23,14 @@ static class HopCardsTest
         switch (name)
         {
             case "hop-result":
+            case "hop-result-stars":
                 var res = new HopCards.Result
                 {
                     Stars = 3, Coins = 90, Xp = 40, Hops = 14, Left = 2, LevelUps = 1, Unlocked = true, Hinted = false,   // (Preview.js: stars 3)
                     Before = new XpLevel(6, 560, 700), After = new XpLevel(7, 40, 800),
                 };
-                return HopCards.ResultCard(W, H, res, false, Noop, Noop, Noop);
+                // Preview.js KEYS: the first three cut-outs (stack/art.js), or ?keys=none: the stars
+                return HopCards.ResultCard(W, H, res, false, Noop, Noop, Noop, name == "hop-result" ? new[] { "acorn", "aeroswift", "aurora" } : null);
             case "hop-stuck": return HopCards.StuckCard(W, H, null, true, Noop);   // (the app shows CAST[0], Acorn: not drawn here)
             case "hop-pause": return HopCards.PauseCard(W, H, Noop, Noop);
             case "hop-hint": return HopCards.HintCard(W, H, true, false, Noop, Noop);
@@ -37,6 +40,12 @@ static class HopCardsTest
 
     public static int Run(string dir)
     {
+        // the result's three characters as their grey stills (no live creatures here: the app's moments before they draw)
+        TrioItem.Stills = true;
+        var ars = new Dictionary<string, float>();
+        foreach (var a in JsonDocument.Parse(File.ReadAllText(Program.Res("Stack/stack.json"))).RootElement.GetProperty("artList").EnumerateArray())
+            ars[a.GetProperty("key").GetString()] = a.GetProperty("ar").GetSingle();
+        TrioItem.ArOf = k => ars.TryGetValue(k, out var v) ? v : 1;
         // the page behind (GameBackground), as Squish Stack's exporter cut it
         string bg = File.ReadAllText(Program.Res("Stack/bg.xml"));
         var list = JsonDocument.Parse(File.ReadAllText(Path.Combine(dir, "cards.json"))).RootElement;
