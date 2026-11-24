@@ -9,8 +9,8 @@
 // cracks, the flash) is an SVG group; what the page composites on its canvases is done with groups: 'source-atop' on the
 // layer is clipped to the chest's hull, 'destination-out' holes are a mask, a chunk or shard is the layer at that moment
 // clipped to its polygon (the dark side: a colour matrix), covered() samples the hull minus the holes.
-// Not as the page: 'lighter' particles blend as normal ones; the page draws its canvas at 1.5x the CSS size (the phone
-// scales it up), Unity at the screen's; no sounds.
+// The page's own changes to it (host.html): the chest's size (fitStage, Resize) and its HP by rarity (rarityHp, TierHp).
+// Not as the page: 'lighter' particles blend as normal ones; no sounds.
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -113,13 +113,35 @@ namespace SquishSquad.Screens
             Resize(w, h);
         }
 
-        public void Resize(double w, double h)
+        // The chest's size (host.html fitStage, 2026-11-16, the user: the chests "are too small"; BIG 2026-11-21: "make
+        // the chest 50% bigger than what it is now"). Portrait keeps the engine's own sizing (from y `top` down to
+        // `ground` of the height). Sideways the chest stands FOOT over the screen's bottom (just over the hint, on the
+        // room's rug) and its tallest model (a Rainbow, ~TALL units) would reach the HUD's bottom (`hud`, +4); that fit
+        // times BIG, so the tallest chests reach up behind the name plate and the HP bar.
+        const double TALL = 225, FOOT = 50, BIG = 1.5;
+        public void Resize(double w, double h, double hud = 0, double insetBottom = 0)
         {
             Wc = w; Hc = h;
-            Gx = w / 2; Gy = h * _ground;
-            S = Math.Max(0.6, Math.Min(w / 290, (Gy - _top) / 238));
+            Gx = w / 2;
+            if (w > h)
+            {
+                double top = hud > 0 ? hud + 4 : 104;
+                Gy = h - insetBottom - FOOT;
+                S = Math.Max(0.6, Math.Min(w / 290, BIG * (Gy - top) / TALL));
+            }
+            else
+            {
+                Gy = h * _ground;
+                S = Math.Max(0.6, Math.Min(w / 290, (Gy - _top) / 238));
+            }
             _layerKey = null;
         }
+
+        /// <summary>THE CHEST HP by rarity (host.html rarityHp; the user, 2026-11-17: one tap = 1 HP, the same in every
+        /// group), in place of the design's own (6 to 14), or null for the design's. With more HP than the design gave
+        /// it, a chest punches a hole on a share of the hits that shrinks to match (Chunk), so it still ends up with
+        /// about the design's holes.</summary>
+        public double[] TierHp;
 
         void At(double t, Action fn) => _q.Add((t, fn));
 
@@ -130,6 +152,8 @@ namespace SquishSquad.Screens
         {
             Group = group; Tier = tier;
             var m = ChestModels.Model(group, tier, Random);
+            if (m.Hp0 == 0) m.Hp0 = m.Hp;
+            m.Hp = TierHp != null ? TierHp[Math.Max(0, Math.Min(4, tier))] : m.Hp0;
             Ch = new Chest { M = m };
             Ch.Lean = Random() < 0.5 ? -1 : 1;
             Ch.Seed = Random() * 100;
@@ -422,6 +446,8 @@ namespace SquishSquad.Screens
 
         void Chunk(double x, double y, double P)
         {
+            // (TierHp: a hole on hp0 / hp of the hits that would punch one)
+            if (Ch.M.Hp0 > 0 && Ch.M.Hp > Ch.M.Hp0 && Random() > Ch.M.Hp0 / Ch.M.Hp) return;
             var c = Ch; var M = c.M.M;
             double R = Rnd(M.HoleR[0], M.HoleR[1]) * Math.Sqrt(c.M.Sc);
             var poly = HolePoly(x, y, R, M.Jag);
@@ -460,9 +486,11 @@ namespace SquishSquad.Screens
         void TearPart(ChestPart p, double hx, double hy, double P, bool launch)
         {
             var c = Ch; if (c.Torn.Contains(p.Id)) return;
-            var cv = new Canvas2D(_defs);
+            // (the part's own defs, its gradients and its lettering's glyphs, go with its snapshot: the frame's are new each frame)
+            var pd = new StringBuilder();
+            var cv = new Canvas2D(pd);
             ChestModels.DrawPart(cv, p, c.Warp, Time, c.Ang.TryGetValue(p.Id, out var a) ? a : 0);
-            var s = Crop(PartBox(p), false, cv.Markup);
+            var s = Crop(PartBox(p), false, $"<defs>{pd}</defs>{cv.Markup}");
             c.Torn.Add(p.Id);
             _layerKey = null;
             if (s == null) return;

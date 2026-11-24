@@ -49,7 +49,7 @@ export const SHOTS = [
   // the sparks), Pip popping out (its still, where the app's live rig would be), UNLOCKED! and the full bar, settled
   { name: 'smash-unlock', page: 'smash', result: { group: 'ocean', size: 'common', final: 'common', id: '6', rar: 0, isNew: true, copies: 5, need: 5, coins: 0, dupeCoins: 0 }, taps: hits(600, 15), at: [5020, 5320, 5620, 6020, 6520, 7120, 7520, 7740, 7860, 8120, 8920, 10720] },
   // a creature that comes whole: NEW SQUISHY! (a Rainbow Sky & Stars chest, Aurora: the biggest chest, 50 HP)
-  { name: 'smash-new', page: 'smash', result: { group: 'sky', size: 'rainbow', final: 'rainbow', id: '53', rar: 4, isNew: true, copies: 0, need: 0, coins: 0, dupeCoins: 0 }, taps: hits(600, 50, 100), at: [300, 3000, 9700, 12000] },
+  { name: 'smash-new', page: 'smash', result: { group: 'sky', size: 'rainbow', final: 'rainbow', id: '53', rar: 4, isNew: true, copies: 0, need: 0, coins: 0, dupeCoins: 0 }, taps: hits(600, 50, 100), at: [300, 3000, 5900, 7900, 9700] },
   // a duplicate (a Rare Forest Friends chest, Hoot, owned already): its coins, no bar
-  { name: 'smash-dupe', page: 'smash', result: { group: 'forest', size: 'rare', final: 'rare', id: '23', rar: 1, isNew: false, copies: 0, need: 0, coins: 0, dupeCoins: 84 }, taps: hits(600, 20, 120), at: [300, 3200, 5400, 7000] },
+  { name: 'smash-dupe', page: 'smash', result: { group: 'forest', size: 'rare', final: 'rare', id: '23', rar: 1, isNew: false, copies: 0, need: 0, coins: 0, dupeCoins: 84 }, taps: hits(600, 20, 120), at: [300, 2000, 3260, 5300, 6800] },
 ];

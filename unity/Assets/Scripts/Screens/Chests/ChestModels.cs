@@ -43,6 +43,8 @@ namespace SquishSquad.Screens
     {
         public string Name, Mat, Ko;
         public double Hp, W, H, Sc, PieN;
+        /// <summary>The design's own HP (Hp is the one a chest loads with: ChestEngine.TierHp).</summary>
+        public double Hp0;
         public bool Ring;
         public List<double[]> Rows;
         public string[] Loot;
