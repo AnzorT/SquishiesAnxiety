@@ -201,7 +201,7 @@ namespace SquishSquad.Games.Squishdoku
             Snd.Play("sd_boardOut");
         });
 
-        // ---- placeholders (Skeleton.js ViewBones, tone "sky") ----------------------------------------------------------------
+        // ---- placeholders (Skeleton.js ViewBones, tone "wood") ---------------------------------------------------------------
         // the one shine every bone shares: 1.4 s a pass, across in the first 70% (ease in-out quad), resting off to the right
         CompositeAnimation _sweepA;
         readonly AnimatedValue _sweep = new AnimatedValue(0);
@@ -210,33 +210,11 @@ namespace SquishSquad.Games.Squishdoku
 
         static readonly double[] SWEEP_AT = { 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 1 };
 
+        // develop's ViewBones (wood, sideways: Games/Shared/ViewSwitch Bones.Layout) in the view's slot under `top`
         List<(float x, float y, float w, float h, float r)> Bones(string kind, float top, float h)
         {
             var o = new List<(float, float, float, float, float)>();
-            float cw = W - 32;
-            if (kind == "map")
-            {
-                float y = top + 40;
-                foreach (var x in new[] { 0.62f, 0.3f, 0.5f, 0.72f, 0.4f, 0.58f }) { o.Add((W * (x - 0.09f), y, 62, 62, 31)); y += 62 + 34; }
-            }
-            else if (kind == "game")
-            {
-                float y = top + 14;
-                // a row: 44, 40%, 70 spread across (space-between), centred on the tallest
-                o.Add((16, y, 44, 44, 22)); o.Add((Card.Snap(16 + 44 + (cw - 44 - cw * 0.4f - 70) / 2), y + 4, cw * 0.4f, 36, 18)); o.Add((16 + cw - 70, y + 4, 70, 36, 18));
-                y += 44 + 14;
-                // the board's bone: h={undefined} takes Bone's default height, 14 (its aspectRatio loses to it)
-                o.Add((16, y, cw, 14, 7));
-                y += 14 + 14;
-                float g = (cw - 4 * 64) / 3;
-                for (int i = 0; i < 4; i++) o.Add((16 + i * (64 + g), y, 64, 64, 18));
-            }
-            else
-            {
-                float y = top + 14 + 24;
-                (float w, float h, float r, float mt)[] col = { (cw * 0.62f, 40, 20, 0), (cw * 0.74f, 12, 6, 0), (cw, 128, 26, 10), (cw, 128, 26, 0), (cw * 0.46f, 46, 23, 0) };
-                foreach (var b in col) { y += b.mt; o.Add((Card.Snap(16 + (cw - b.w) / 2), y, b.w, b.h, b.r)); y += b.h + 14; }
-            }
+            foreach (var b in SquishSquad.Games.Shared.Bones.Layout(kind, W, h - top)) o.Add((b.X, top + b.Y, b.W, b.H, b.R));
             return o;
         }
 
@@ -251,14 +229,15 @@ namespace SquishSquad.Games.Squishdoku
             foreach (var b in Bones(kind, top, H))
             {
                 if (b.y > H) continue;
-                s.Box(b.x, b.y, b.w, b.h, new BoxStyle { Background = "rgba(255,255,255,0.5)", Radius = b.r });
+                // (tone 'wood': a soft brown on the warm page, its shine dimmed to a fifth)
+                s.Box(b.x, b.y, b.w, b.h, new BoxStyle { Background = "rgba(107,68,38,0.22)", Radius = b.r });
                 var clip = s.NewId("bn");
                 s.Def($"<clipPath id=\"{clip}\"><path d=\"{UiSvg.RRect(b.x, b.y, b.w, b.h, new[] { b.r, b.r, b.r, b.r })}\"/></clipPath>");
                 s.Open($"clip-path=\"url(#{clip})\"");
                 // the band: 90 wide, 10 over the bone's top and bottom, skewed -14° about its centre
                 double bh = b.h + 20, cx = b.x + at + 45, cy = b.y - 10 + bh / 2;
                 s.Open($"transform=\"translate({UiSvg.F(cx)} {UiSvg.F(cy)}) skewX(-14) translate({UiSvg.F(-cx)} {UiSvg.F(-cy)})\"");
-                s.Box((float)(b.x + at), b.y - 10, 90, (float)bh, new BoxStyle { Gradient = new[] { "rgba(255,255,255,0)", "rgba(255,255,255,0.75)", "rgba(255,255,255,0)" }, GradientAngle = 90 });
+                s.Box((float)(b.x + at), b.y - 10, 90, (float)bh, new BoxStyle { Gradient = new[] { "rgba(255,255,255,0)", "rgba(255,255,255,0.75)", "rgba(255,255,255,0)" }, GradientAngle = 90, Opacity = 0.2f });
                 s.Close();
                 s.Close();
             }

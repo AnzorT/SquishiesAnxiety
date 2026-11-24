@@ -4,8 +4,9 @@
 //                its place. The new view is built two frames later (two requestAnimationFrames), placeholders first.
 //   Reveal       swaps the placeholders for the built content: the content fades in over 160 ms (ease-out quad) while
 //                the placeholders over it fade out, then they go
-//   Bones        the placeholders (ViewBones): soft blocks in the shape of what's coming ("hub", "map", "game"), a white
-//                shine sweeping across them all together, one 1.4 s pass (one loop for every bone on screen)
+//   Bones        the placeholders (ViewBones): soft brown blocks in the wood look, sideways, in the shape of what's
+//                coming ("hub", "map", "game"; develop, 2026-11-20), a dimmed white shine sweeping across them all
+//                together, one 1.4 s pass (one loop for every bone on screen)
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
@@ -111,30 +112,49 @@ namespace SquishSquad.Games.Shared
 
         public struct Box { public float X, Y, W, H, R; public Box(float x, float y, float w, float h, float r) { X = x; Y = y; W = w; H = h; R = r; } }
 
-        /// <summary>The kind's bones in its view's box (w x h).</summary>
+        /// <summary>The kind's bones in its view's box (w x h): develop's ViewBones, in the wood look and sideways like the
+        /// game's screens (2026-11-20: they were the old design's portrait shapes in translucent white, which flashed white
+        /// circles on the wood as a level map opened). 'map' a row of level stones across the middle, 'game' a column, the
+        /// board, a column, 'hub' two big cards side by side with a bar under them.</summary>
         public static List<Box> Layout(string kind, float w, float h)
         {
             var l = new List<Box>();
             if (kind == "map")
             {
-                var xs = new[] { 0.62f, 0.3f, 0.5f, 0.72f, 0.4f, 0.58f };
-                for (int i = 0; i < xs.Length; i++) l.Add(new Box(w * (xs[i] - 0.09f), 40 + i * (62 + 34), 62, 62, 31));
+                // mapRow: seven 58 dp stones, every other one 26 lower, spaced evenly (paddingH 30, paddingBottom 40), centred down
+                float inner = w - 60, gap = (inner - 7 * 58) / 8, ch = h - 40;
+                for (int i = 0; i < 7; i++)
+                {
+                    float mt = i % 2 == 1 ? 26 : 0;
+                    l.Add(new Box(30 + gap + i * (58 + gap), (ch - (58 + mt)) / 2 + mt, 58, 58, 29));
+                }
                 return l;
             }
-            float cw = w - 32;
             if (kind == "game")
             {
-                float mid = cw * 0.4f, extra = (cw - (44 + mid + 70) - 20) / 2;
-                l.Add(new Box(16, 14, 44, 44, 22));
-                l.Add(new Box(16 + 44 + 10 + extra, 14 + 4, mid, 36, 18));
-                l.Add(new Box(16 + cw - 70, 14 + 4, 70, 36, 18));
-                l.Add(new Box(16, 14 + 44 + 14, cw, cw, 24));
+                // gameRow: paddingH 18, gap 18, centred down: a 170 dp column (120, 30 at 60 %), the board (86 % of the height,
+                // square), a 170 dp column (110, 44, 44), each column's gap 12
+                float board = h * 0.86f, x = 18;
+                float ly = (h - (120 + 12 + 30)) / 2;
+                l.Add(new Box(x, ly, 170, 120, 20));
+                l.Add(new Box(x + (170 - 102) / 2, ly + 132, 102, 30, 15));
+                x += 170 + 18;
+                l.Add(new Box(x, (h - board) / 2, board, board, 24));
+                x += board + 18;
+                float ry = (h - (110 + 12 + 44 + 12 + 44)) / 2;
+                l.Add(new Box(x, ry, 170, 110, 20));
+                l.Add(new Box(x, ry + 122, 170, 44, 20));
+                l.Add(new Box(x, ry + 178, 170, 44, 20));
                 return l;
             }
-            // hub: centred, paddingTop 24, gap 14
-            float y = 24;
-            void Add(float bw, float bh, float r, float mt = 0) { y += mt; l.Add(new Box(16 + (cw - bw) / 2, y, bw, bh, r)); y += bh + 14; }
-            Add(cw * 0.62f, 40, 20); Add(cw * 0.74f, 12, 6); Add(cw, 128, 26, 10); Add(cw, 128, 26); Add(cw * 0.46f, 46, 23);
+            // hub: paddingH 22, paddingTop 8, paddingBottom 18, gap 14: two cards side by side (gap 16) filling the height
+            // above the bar, then the bar centred: 56 % x 52 and 20 % x 44, 16 apart
+            float cw = w - 44, barH = 52, cardH = h - 8 - 18 - 14 - barH, card = (cw - 16) / 2;
+            l.Add(new Box(22, 8, card, cardH, 26));
+            l.Add(new Box(22 + card + 16, 8, card, cardH, 26));
+            float b1 = cw * 0.56f, b2 = cw * 0.2f, bx = 22 + (cw - b1 - 16 - b2) / 2, by = 8 + cardH + 14;
+            l.Add(new Box(bx, by, b1, 52, 22));
+            l.Add(new Box(bx + b1 + 16, by + 4, b2, 44, 22));
             return l;
         }
 
@@ -148,14 +168,15 @@ namespace SquishSquad.Games.Shared
             foreach (var b in Layout(kind, w, h))
             {
                 if (b.Y > h) continue;
-                s.Box(b.X, b.Y, b.W, b.H, new BoxStyle { Background = "rgba(255,255,255,0.5)", Radius = b.R });
+                // (tone 'wood': a soft brown on the warm page, its shine dimmed to a fifth)
+                s.Box(b.X, b.Y, b.W, b.H, new BoxStyle { Background = "rgba(107,68,38,0.22)", Radius = b.R });
                 double x0 = b.X + bx;
                 if (x0 > b.X + b.W + 40 || x0 + BAND < b.X - 40) continue;
                 var clip = s.NewId("bc");
                 s.Def($"<clipPath id=\"{clip}\"><path d=\"{UiSvg.RRect(b.X, b.Y, b.W, b.H, new[] { b.R, b.R, b.R, b.R })}\"/></clipPath>");
                 double cx = x0 + BAND / 2, cy = b.Y + b.H / 2;
                 s.Open($"clip-path=\"url(#{clip})\"");
-                s.Raw($"<g transform=\"translate({UiSvg.F(cx)} {UiSvg.F(cy)}) skewX(-14) translate({UiSvg.F(-cx)} {UiSvg.F(-cy)})\"><rect x=\"{UiSvg.F(x0)}\" y=\"{UiSvg.F(b.Y - 10)}\" width=\"{UiSvg.F(BAND)}\" height=\"{UiSvg.F(b.H + 20)}\" fill=\"url(#{id})\"/></g>");
+                s.Raw($"<g transform=\"translate({UiSvg.F(cx)} {UiSvg.F(cy)}) skewX(-14) translate({UiSvg.F(-cx)} {UiSvg.F(-cy)})\"><rect x=\"{UiSvg.F(x0)}\" y=\"{UiSvg.F(b.Y - 10)}\" width=\"{UiSvg.F(BAND)}\" height=\"{UiSvg.F(b.H + 20)}\" fill=\"url(#{id})\" opacity=\"0.2\"/></g>");
                 s.Close();
             }
             return s.Markup;

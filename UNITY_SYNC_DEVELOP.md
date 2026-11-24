@@ -37,7 +37,7 @@ far sits 36 pu off; the Level Pass's track and panel don't fade in over its firs
 | ⬜ | Squish Time's loading beat: wood, the creature, "Getting ready" with hopping dots, then "I AM READY!" | missing (straight into Squish Time) |
 | ⬜ | Squish Time sky as native pieces (puffs without the solid core) | the old `hud/sky` |
 | ✅ | Settings: no "Replay tutorial" | still there |
-| ⬜ | Screen placeholders in the wood look, sideways | translucent white, portrait shapes |
+| 🔧 | Screen placeholders in the wood look, sideways | translucent white, portrait shapes — the games' view placeholders done (`Games/Shared/ViewSwitch` Bones, used by GameScreen for Stack / Sort / Hop and by `SdScreen` for Squishdoku: Skeleton.js ViewBones' develop layouts, tone "wood" rgba(107,68,38,0.22), the shine at a fifth; `maps-test` hop-map as the map slides in: the stones where the app has them). Left: the whole-screen ScreenBones (the warm page or wood with the back orb's and title's spots) for screens opened over the menu, which Unity doesn't show (its screens build at once) |
 
 ## The mini-games' cards (all four games, Regular and Blitz)
 
