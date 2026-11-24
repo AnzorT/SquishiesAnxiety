@@ -28,7 +28,7 @@ import { execFileSync } from 'node:child_process';
 import { PNG } from 'pngjs';
 import { build } from '../../webgame/build.mjs';
 import { record as sdkRecord, LEVELS as SDK_LEVELS } from '../../src/squishdoku/levels.js';
-import { record as sortRecord } from '../../src/sort/levels.js';
+import { LEVELS as SORT_LEVELS, record as sortRecord } from '../../src/sort/levels.js';
 import { LEVELS as STACK_LEVELS, record as stackRecord, starsOf as stackStars } from '../../src/stack/levels.js';
 import { LEVELS as HOP_LEVELS, record as hopRecord, starsOf as hopStars } from '../../src/hop/levels.js';
 
@@ -55,7 +55,7 @@ function appGames() {
   const stars = n => (n ? ` · ★ ${n}` : '');
   return [
     { id: 'squishdoku', name: 'Squishdoku', item: `${SDK_LEVELS} puzzle levels`, best: `Level ${Math.min(sdk.lv, SDK_LEVELS)} / ${SDK_LEVELS}`, color: '#3fc4ec' },
-    { id: 'sort', name: 'Squish Sort', item: 'Fridge & cupboard', best: `Fridge ${srt.fridge.lv} · Cupboard ${srt.cupboard.lv}`, color: '#ff9a3c' },
+    { id: 'sort', name: 'Squish Sort', item: 'Fridge memory', best: `Level ${srt.fridge.lv} / ${SORT_LEVELS}`, color: '#ff9a3c' },
     { id: 'stack', name: 'Squish Stack', item: 'Tower puzzles', best: `Level ${stk.lv} / ${STACK_LEVELS}${stars(stackStars(stk))}`, color: '#9b6bff' },
     { id: 'hop', name: 'Squish Hop', item: 'Cushion hopping', best: `Level ${hop.lv} / ${HOP_LEVELS}${stars(hopStars(hop))}`, color: '#2fc6a8' },
   ];
@@ -193,6 +193,8 @@ fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
 fs.mkdirSync(SHOTS, { recursive: true });
 fs.mkdirSync(CLIPS, { recursive: true });
+// (only the clips the park still plays: since 2026-11-21 the four mini-games show posters, so none of theirs)
+for (const f of fs.readdirSync(CLIPS)) if (/\.mp4(\.meta)?$/.test(f)) fs.rmSync(path.join(CLIPS, f));
 
 const appList = appGames();
 const browser = await chromium.launch({ args: ['--allow-file-access-from-files', '--autoplay-policy=no-user-gesture-required'] });
@@ -206,7 +208,9 @@ const geo = await page.evaluate(() => {
   const games = [...document.querySelectorAll('.sq-slot')].map(s => ({ lock: s.querySelector('.sq-gc').classList.contains('lock'), squish: !!s.querySelector('.sq-sqz'), jpg: (s.querySelector('img[data-fb]') || {}).getAttribute ? s.querySelector('img[data-fb]').getAttribute('src') : null }));
   return { k, pgW: parseFloat(pg.style.width), carL: parseFloat(car.style.left), CW: parseFloat(slot.style.width), games, sel: window.SquishMenu._x && window.SquishMenu._x.cre ? (window.SquishMenu._x.cre() || {}).key : null };
 });
-const G = [{ id: 'squish', name: 'Squish Time' }, ...appList].map((g, i) => ({ id: g.id, name: g.name, open: !geo.games[i].lock, squishArt: geo.games[i].squish, clip: !!geo.games[i].jpg }));
+const G = [{ id: 'squish', name: 'Squish Time' }, ...appList].map((g, i) => ({ id: g.id, name: g.name, open: !geo.games[i].lock, squishArt: geo.games[i].squish, clip: /^app\/previews\//.test(geo.games[i].jpg || ''), poster: /^app\/art\/park\//.test(geo.games[i].jpg || '') }));
+// (since 2026-11-21 the four mini-games show a still poster, app/art/park/<id>.jpg, with the game's name drawn in: it is
+// part of the card's picture, so those cards have no clip)
 if (geo.games.length !== G.length) throw new Error(`the carousel has ${geo.games.length} games, expected ${G.length}`);
 console.log('page:', JSON.stringify({ k: geo.k, pgW: geo.pgW, carL: geo.carL, CW: geo.CW, creature: geo.sel }), G.map(g => g.id + (g.open ? '' : ' (locked)')).join(', '));
 
@@ -324,7 +328,7 @@ const carT = 56, carH = PX.h / u - carT, cx = carL + (pgW - carL) / 2, cy = carT
 const expect = {
   car: [carL, carT, pgW - carL, carH],
   slot: [cx - CW / 2, cy - 175, CW, 318],
-  rays: [cx - 280, cy - 294, 560, 560],
+  rays: [cx - 246, cy - 260, 492, 492],   // (492 px since the 2026-11-20 perf round, was 560)
   halo: [cx - 160, cy - 174, 320, 320],
   arrowL: [carL + 10, cy - 20, 40, 40],
   arrowR: [pgW - 12 - 40, cy - 20, 40, 40],

@@ -328,7 +328,7 @@ namespace SquishSquad.Menu
 
             // the rays and the halo behind the middle card
             double ro = _rays.At(now), lo = _halo.At(now);
-            if (ro > 0) o.Add(Pic("rays", L.rays, Cx - 280, Cy - 294, ro));
+            if (ro > 0) o.Add(Pic("rays", L.rays, Cx - 246, Cy - 260, ro));   // (.sq-rays 492 px since 2026-11-20, was 560)
             if (lo > 0) o.Add(Pic("halo", L.halo, Cx - 160, Cy - 174, lo));
 
             // the cards, lowest z first (z 50 - |d|; DOM order among equals)
