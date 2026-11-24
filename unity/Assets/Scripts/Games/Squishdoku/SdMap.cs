@@ -31,6 +31,11 @@ namespace SquishSquad.Games.Squishdoku
         int? _justUnlocked;
         int _chapter, _from, _count;
         float _contentW;
+        const float RowAt = 0.75f;
+        /// <summary>The chapter's room behind the map (develop's LevelMap.js spans: one room, the length of the page) and
+        /// how long the page is.</summary>
+        public string Room => Levels.RoomOfChapter(_chapter);
+        public float PageW => Math.Max(_contentW, W);
         (float x, float y)[] _points;
         int[] _order;
         int _built;
@@ -126,9 +131,10 @@ namespace SquishSquad.Games.Squishdoku
             Unmount();
             _from = (_chapter - 1) * Levels.Chapter;
             _count = Math.Min(Levels.Chapter, Levels.LevelCount - _from);
-            float amp = Math.Min(24, MapH * 0.075f);
+            // (develop: the row on the floor of the chapter's room behind the map, royal/WorldBg.js ROW_ON_FLOOR)
+            float amp = Math.Min(RowAt > 0.6 ? 14 : 24, MapH * 0.075f);
             _points = new (float, float)[_count];
-            for (int i = 0; i < _count; i++) _points[i] = (FIRST_X + i * GAP_X, (float)(MapH * 0.5 - 10 + Math.Sin((_from + i) * 1.05) * amp));
+            for (int i = 0; i < _count; i++) _points[i] = (FIRST_X + i * GAP_X, (float)(MapH * RowAt - 10 + Math.Sin((_from + i) * 1.05) * amp));
             _contentW = _points[_count - 1].x + 190;
             var order = new List<int>();
             for (int i = 0; i < _count; i++) order.Add(i);

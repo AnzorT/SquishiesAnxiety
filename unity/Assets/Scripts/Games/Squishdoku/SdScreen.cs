@@ -260,6 +260,8 @@ namespace SquishSquad.Games.Squishdoku
 
         // ---- the top bar (hub and map) ------------------------------------------------------------------------------------
         readonly SdLayer _wood, _world, _orb, _title, _pill, _bonesL;
+        readonly Dictionary<int, SdLayer> _roomTiles = new Dictionary<int, SdLayer>();
+        readonly Dictionary<int, string> _roomKeys = new Dictionary<int, string>();
         static readonly TextStyle TitleText = new TextStyle { Font = SdArt.Display, Size = 22, LetterSpacing = 1.5f, Color = "#ffffff", Shadows = new[] { new Shadow(SdArt.INK, 0, 2.5f, 1) } };
         static readonly TextStyle PillText = new TextStyle { Font = SdArt.Display, Size = 13, Color = "#ffffff" };
         string _pillKey;
@@ -307,7 +309,24 @@ namespace SquishSquad.Games.Squishdoku
             // the wood page (the room covers it in a level or a run)
             Cover(_wood, "Squishdoku/wood-bg", 2340, 1080);
             o.Add(_wood);
-            if (View == "map")
+            if (View == "map" && _map != null)
+            {
+                // develop (2026-11-17): the chapter's room behind the map (royal/WorldBg.js RoomBackdrop: Room.js `full`,
+                // by day, a picture a screen wide repeated along the page), moved by the map's scroll, faded with it
+                float sx = _map.ScrollX;
+                for (int i = 0; i * W < _map.PageW; i++)
+                {
+                    float x = i * W, w = Math.Min(W, _map.PageW - x);
+                    if (x + w < sx - W || x > sx + 2 * W) continue;
+                    if (!_roomTiles.TryGetValue(i, out var t)) _roomTiles[i] = t = new SdLayer("room " + i);
+                    string room = _map.Room;
+                    if (!_roomKeys.TryGetValue(i, out var k) || k != room + w) { _roomKeys[i] = room + w; t.Set(Rooms.Svg(room, "day", W, H, true, w), w, H, 0); }
+                    t.Transform = Affine.Translate(x - sx, 0);
+                    t.Opacity = viewOp;
+                    o.Add(t);
+                }
+            }
+            else if (View == "map")
             {
                 Cover(_world, "Squishdoku/levels-" + Season(Today()), 2340, 1080);
                 _world.Opacity = viewOp;
