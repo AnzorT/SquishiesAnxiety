@@ -4,7 +4,9 @@
 // the shape's user space, objectBoundingBox units and the inverse gradientTransform folded in). Output premultiplied.
 Shader "Hidden/SquishSquad/VectorCover"
 {
-    Properties { _Ramp ("Ramp", 2D) = "white" {} _Img ("Image", 2D) = "white" {} }
+    // (_Ramp isn't a property: it comes as a global from VectorRenderer's command buffer, and a property declared here
+    //  would be the material's own default instead: every gradient white. _Img comes in each draw's property block.)
+    Properties { _Img ("Image", 2D) = "white" {} }
     SubShader
     {
         Tags { "Queue" = "Transparent" "RenderType" = "Transparent" }

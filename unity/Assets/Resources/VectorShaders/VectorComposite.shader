@@ -2,7 +2,8 @@
 // alpha of _Mask, zero outside _MaskRect), premultiplied "over". Drawn as a full-target quad in output pixels.
 Shader "Hidden/SquishSquad/VectorComposite"
 {
-    Properties { _MainTex ("Layer", 2D) = "black" {} _Clip ("Clip", 2D) = "white" {} _Mask ("Mask", 2D) = "white" {} }
+    // (no Properties: _MainTex, _Clip and _Mask come as globals from VectorRenderer's command buffer, and a property
+    //  declared here would be the material's own default instead: every layer black)
     SubShader
     {
         Tags { "Queue" = "Transparent" "RenderType" = "Transparent" }

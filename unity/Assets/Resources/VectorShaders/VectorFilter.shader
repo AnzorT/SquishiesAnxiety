@@ -2,7 +2,8 @@
 // ToLinear and ToSrgb is premultiplied linearRGB, the SVG default for filters. VectorRenderer chains the passes.
 Shader "Hidden/SquishSquad/VectorFilter"
 {
-    Properties { _MainTex ("In", 2D) = "black" {} _SecondTex ("In2", 2D) = "black" {} }
+    // (no Properties: _MainTex and _SecondTex come as globals from VectorRenderer's command buffer, and a property
+    //  declared here would be the material's own default instead: every filter result black)
     SubShader
     {
         Tags { "Queue" = "Transparent" "RenderType" = "Transparent" }

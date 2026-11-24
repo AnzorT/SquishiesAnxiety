@@ -64,6 +64,13 @@ namespace SquishSquad.Vector.Gpu
             _verts.Clear(); _usedSubs = 0; _tempSeq = 0;
             _rampPaints.Clear(); _rampRow.Clear();
             _cb.Clear();
+            // CommandBuffer.DrawMesh checks the submesh index against the mesh as it is while recording ("submeshIndex
+            // out of range. Clamped to …") and keeps the clamped one, but this frame's submeshes are only uploaded after
+            // recording (UploadMesh). So the mesh gets enough (empty) submeshes first: else a new renderer's first frame
+            // draws every stencil and cover with submesh 0, the full-target quad, and each picture comes out as a box of
+            // its last paint.
+            int need = 1 + SubsNeeded(scene.Root.Children);
+            if (_mesh.subMeshCount < need) _mesh.subMeshCount = need;
             _fullQuad = Quad(new Box { X0 = 0, Y0 = 0, X1 = _w, Y1 = _h });
             var proj = GL.GetGPUProjectionMatrix(Matrix4x4.Ortho(0, _w, _h, 0, -1, 1), true);
             _cb.SetGlobalMatrix(PxToClip, proj);
@@ -448,6 +455,23 @@ namespace SquishSquad.Vector.Gpu
         }
 
         // ---- geometry: one mesh per frame, a submesh per fan set and per quad ----------------------------------------
+        // at most this many submeshes for these nodes: a fan set and a cover quad per shape (fills and clip shapes)
+        static int SubsNeeded(List<RenderNode> nodes)
+        {
+            int n = 0;
+            foreach (var node in nodes)
+            {
+                if (node is FillNode) n += 2;
+                else if (node is LayerNode l)
+                {
+                    n += SubsNeeded(l.Children);
+                    if (l.Clip != null) n += 2 * l.Clip.Count;
+                    if (l.Mask != null) n += SubsNeeded(l.Mask.Children);
+                }
+            }
+            return n;
+        }
+
         List<int> NextSub()
         {
             if (_usedSubs == _subs.Count) _subs.Add(new List<int>(256));
