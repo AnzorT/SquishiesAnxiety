@@ -13,13 +13,14 @@ apart from `Haptics.Android.cs`' `Handheld` (missing from that package, not from
   switches now drive `Sfx` (they only saved to PlayerPrefs before), and the music follows the app's stage.
   Not done: the chest box's own hit sounds (synthesized in the app's web page), the house's sounds (task 1).
 - **Effects**: Sort and Stack now have the dust, sparks, poofs, angry puffs and confetti (Hop and Squishdoku had them).
-- **Live creature animations**: `Creatures/LiveRig.cs` runs the app's rig code in PuerTS, on the browser stand-in, from
-  `Resources/Rig` (`node tools/unity/rig/bundle.mjs`). `Rigs.For(key)` picks live, else the recording. Checked off
-  Unity with PuerTS 3.0.4 on .NET (`tools/unity/rig/live-test`): Mittens and Lumi animate, and the live frames have the
-  recording's elements. QuickJS: ~14 ms per creature frame on this machine (V8 crashes in this sandbox).
-  **To turn it on**: add PuerTS 3.x for Unity (core + V8) to `Packages/manifest.json` (openupm:
-  `com.tencent.puerts.core`, `com.tencent.puerts.v8`; this session couldn't reach openupm to pin the version), then add
-  `SQUISH_PUERTS` to Player Settings → Scripting Define Symbols (`SQUISH_PUERTS_QUICKJS` too for QuickJS).
+- **Live creature animations, native**: the app's rig code (rive-rig.js, rive-generic.js, the defs and move files, the
+  result page's states, the browser stand-in) compiled to C# by `tools/unity/rig/jsc.mjs` (`Creatures/Js`, its own
+  assembly `SquishSquad.Rig`) and run by `Creatures/NativeRig.cs` on Unity's clock: every creature and every move,
+  no JS engine, no recordings (the PuerTS plan and `LiveRig.cs` are gone, and so are the Mittens recordings).
+  `Rigs.For` gives it to the menu (idle, fidgets, the Game Park walk, MY HOUSE's turn, the intro's surprised / look /
+  dance and its squishes), the result cards (all three characters for every creature: the stars fallback only if
+  the rig can't start), Squish Stack's road walker, the house and the yard. `tools/unity/rig-test/run.mjs --all`
+  checks it against the JS rig frame by frame (118 creatures x 13 scenarios; see unity/README.md).
 - **Purchases**: `Plugins/Android/PlayBilling.androidlib` (the app's Play Billing module, ported) and `Backend/Billing.cs`
   (products, price levels from config/pricing and config/offers, store prices, verifyPurchase, the sync of held
   purchases), wired to the shop.
@@ -34,7 +35,7 @@ apart from `Haptics.Android.cs`' `Handheld` (missing from that package, not from
 
 - **The menu's creature and name plate**: the menu shows the player's chosen creature (profile.lobby.sel) with its own
   plate: every roster creature's plate is exported (`node tools/unity/export-menu.mjs --names`: its rarity's plaque,
-  stars and lettering, 118 plates, 5.6 MB). A creature the menu can't animate (no recording, the live rig off) or
+  stars and lettering, 118 plates, 5.6 MB). A creature the menu can't animate (the native rig didn't start) or
   without a plate (prickle isn't in the prototype's roster) is shown as Mittens, with Mittens' plate.
 
 ## Left
@@ -47,7 +48,14 @@ apart from `Haptics.Android.cs`' `Handheld` (missing from that package, not from
 ## Testing and release
 
 - Add the Unity license secrets in GitHub, so CI builds and sends screenshots.
-- Test on the PC and on the Galaxy A15: fix what breaks and measure the FPS (the live rig's cost first).
+- Test on the PC and on the Galaxy A15: fix what breaks and measure the FPS (the native rig's cost first: on this PC
+  ~2 ms a frame for one creature with its markup, ~3.5-5 ms for a result card's three, ~1.5 MB allocated per creature
+  frame; `NativeRig.LastFrameMs` reports it in the app; the scripts' start-up runs on a worker thread at launch). If
+  the A15 is short, the next steps are typed numeric locals and direct calls in `jsc.mjs`, and stepping a card's
+  three at 30 fps.
+- Still on stills, not live rigs: Squish Sort's and Squish Hop's play screens (tools/rig/sort.html / hop.html stages:
+  their page scripts could be compiled with `jsc.mjs` the same way), the chest unlock's creature after BAM
+  (`ChestSmashView.HeroRig`), and the house's runtime drawings (`House/HouseDraw.Eval`: draw-host.js, the same way).
 - Check a purchase with a Play test account and a rewarded ad on the phone.
 - In the Firebase console, add the Unity app's Android ID (`com.plushcrush.unity`), or switch Unity to the existing
   app's ID when it replaces the old app. Google Play billing needs the Unity app in the Play Console with the same
