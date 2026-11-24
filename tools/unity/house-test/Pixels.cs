@@ -33,17 +33,22 @@ static partial class Program
     {
         var d = Data(); var tpl = Template(); var outDir = Path.Combine(Repo, "tools/unity/house-test/out"); Directory.CreateDirectory(outDir);
         ReferenceRaster.LoadImage = href => LoadPng(href);
+        // --disco k: the light-up floor at moment k (HouseFlat.Disco, disco.json) against tools/unity/house/disco-capture.mjs's
+        // <room>-<day|night>-d<k>.png (develop's SquishDisco showing that moment)
+        if (DiscoK >= 0) HouseFlat.LoadDisco(File.ReadAllText(Path.Combine(Res, "disco.json")));
         var rows = new List<string>(); double worst = 0, sum = 0; int n = 0;
         foreach (var (fx, rk, night, cap, hs, vals, m) in Rooms(d, only))
         {
             var name = $"{fx}-{rk}-{(night ? "night" : "day")}";
             if (PixRoom != null && PixRoom != rk) continue;
-            var refPng = Path.Combine(Cap, fx, name.Substring(fx.Length + 1) + ".png");
+            var refPng = Path.Combine(Cap, fx, name.Substring(fx.Length + 1) + (DiscoK >= 0 ? "-d" + DiscoK : "") + ".png");
+            if (DiscoK >= 0) name += "-d" + DiscoK;
             if (vals == null || !File.Exists(refPng)) { Console.WriteLine(name + ": skipped"); continue; }
             var sw = Stopwatch.StartNew();
             var comp = Composer(d);
             var fence = vals.Obj("rt")?.Str("fenceHtml");
             var svg = comp.Compose(tpl.Render(vals), fence);
+            if (DiscoK > 0) { var fm = System.Text.RegularExpressions.Regex.Match(svg, "href=\"(flat:[^\"]+)\""); var mh = fm.Success ? HouseFlat.Moment(fm.Groups[1].Value, DiscoK) : null; if (mh != null) svg = svg.Replace(fm.Value, "href=\"" + mh + "\""); }
             var root = SvgMarkup.Parse(svg);
             PatternExpand.Expanded = PatternExpand.Tiles = PatternExpand.Capped = 0;
             PatternExpand.Expand(root);

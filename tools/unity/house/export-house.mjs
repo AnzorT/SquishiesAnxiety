@@ -13,6 +13,7 @@
 //                    boxes), house4 renders (type|angle|colour|state -> box, gradients, legacy paths), gradients
 //   shells.json      room shells (X.shell output) by the shell's own key
 //   tex.json         renovated surfaces (walls, floors, ceilings, fences, ground, yard lights) -> their pictures
+//   disco.json       the light-up dance floors' four moments (export-disco.mjs)
 //   pics/<hash>.xml  each picture as SVG (SMIL removed), or pics/<hash>.png when it uses what the vector renderer can't
 //                    draw yet (text, blend modes): rendered by Chrome at PNG_K px per room unit
 // and tools/unity/house/captures/<fixture>/ (gitignored): saved.json (the save after load), <room>-<day|night>.json (the
@@ -23,6 +24,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { openHouse, launch, buildWeb, REPO, WORK } from './harness.mjs';
 import { loadFixtures } from './fixtures.mjs';
+import { exportDisco } from './export-disco.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(REPO, 'unity/Assets/Resources/House');
@@ -235,6 +237,8 @@ async function main() {
       fs.writeFileSync(path.join(OUT, 'pics', name + '.png'), buf); np++; bp += buf.length; p.why.forEach(w => whyN[w] = (whyN[w] || 0) + 1);
     }
   }
+  // the light-up dance floors' four moments (menu.js SquishDisco): their pictures next to these, disco.json
+  await exportDisco(b);
   await b.close();
   const picIndex = {}; for (const [name, p] of pics) picIndex[name] = { kind: p.kind, why: p.why || [], vb: p.svg ? ((/viewBox="([^"]+)"/.exec(p.svg) || [])[1] || '') : '', pngK: p.kind === 'png' ? PNG_K : 0 };
   fs.writeFileSync(path.join(OUT, 'catalog.json'), JSON.stringify(tables.rows));

@@ -292,6 +292,7 @@ namespace SquishSquad.House.View
             bool frozen = _sim.Shop || _sim.Map;
             if (frozen) _sim.Freeze(now); else _sim.Tick(now);
             if (_dirty) { _dirty = false; _room.Draw(852 * _k, 393 * _k); }
+            _room.DiscoTick(frozen ? 0 : Time.unscaledDeltaTime * 1000.0);   // (the light-up floor: paused while frozen)
             // the beach's sea pieces bob (bTick's translate)
             if (_sim.S.Cur == "beach" && !_sim.Edit) foreach (var p in _room.Pieces) if ((p.Kind == "item" || p.Kind == "front") && p.Id != null) p.Dy = _sim.BBob.TryGetValue(p.Id, out var bob) ? bob : 0;
             double k = _cam.K(now);

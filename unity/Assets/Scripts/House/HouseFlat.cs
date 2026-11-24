@@ -5,7 +5,9 @@
 // into a picture (RoomCompose puts it in the room as <image href="flat:..">): each pixel of the picture is traced back
 // onto the plane (the projection inverted) and the tile read there, from a mip level for its distance (the browser
 // filters the far rows the same way). The tile itself is the export's picture of the floor's tile (SMIL stripped:
-// 2026-11-21, patches.mjs rnFlat, the floor is a still; SquishDisco's light-up moments are app/menu.js's).
+// 2026-11-21, patches.mjs rnFlat, the floor is a still). The light-up floors (app/menu.js SquishDisco, DISCO) show
+// their tile's animation as DK = 4 moments instead (tools/unity/house/export-disco.mjs: disco.json and their
+// pictures): the floor is moment 0, and a copy of the plane per other moment is switched on in turn (HouseRoomView).
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -21,6 +23,40 @@ namespace SquishSquad.House
             public double L, T, W, H, Ox, Oy, Angle, D, Px, Py;   // the plane's box, its transform-origin, rotateX (deg), perspective and its origin
             public double X0, Y0, X1, Y1;                         // the picture's box in the container
             public List<Layer> Layers = new List<Layer>(); public string Bg = "#08080a";
+            public Spec With(List<Layer> layers) { var o = (Spec)MemberwiseClone(); o.Layers = layers; return o; }
+        }
+
+        /// <summary>A light-up floor (menu.js SquishDisco): its loop's length (s: each moment shows D / DK of it, step-end)
+        /// and per tile layer its DK moments' pictures (null: a layer that doesn't move).</summary>
+        public sealed class DiscoFloor { public double D; public List<string[]> Layers = new List<string[]>(); }
+        public const int DK = 4;
+        /// <summary>The light-up floors by id (disco.json; HouseRoomView reads it).</summary>
+        public static readonly Dictionary<string, DiscoFloor> Disco = new Dictionary<string, DiscoFloor>();
+        public static void LoadDisco(string json)
+        {
+            if (string.IsNullOrEmpty(json) || !(HouseJson.Parse(json) is JObj o)) return;
+            foreach (var id in o.Keys)
+            {
+                if (!(o[id] is JObj f)) continue;
+                var d = new DiscoFloor { D = f.Num("D") };
+                foreach (var l in f.Arr("layers") ?? new List<object>()) d.Layers.Add(l is List<object> ls ? ls.ConvertAll(x => x as string).ToArray() : null);
+                Disco[id] = d;
+            }
+        }
+        /// <summary>The floor's picture at moment k (its tile's layers swapped for that moment's), as an href RoomCompose's
+        /// would be ("flat:&lt;id&gt;@k|.."), its plane registered; null when the plane isn't a light-up floor's.</summary>
+        public static string Moment(string href, int k)
+        {
+            int bar = href.IndexOf('|'); if (bar < 5 || !Specs.TryGetValue(href, out var s)) return null;
+            var id = href.Substring(5, bar - 5); if (!Disco.TryGetValue(id, out var d)) return null;
+            var h = "flat:" + id + "@" + k + href.Substring(bar);
+            if (!Specs.ContainsKey(h))
+            {
+                var ls = new List<Layer>();
+                for (int i = 0; i < s.Layers.Count; i++) { var l = s.Layers[i]; var m = i < d.Layers.Count ? d.Layers[i] : null; ls.Add(new Layer { Url = m != null && k < m.Length && m[k] != null ? m[k] : l.Url, X = l.X, Y = l.Y, W = l.W, H = l.H, Rep = l.Rep }); }
+                Specs[h] = s.With(ls);
+            }
+            return h;
         }
         /// <summary>A renovated floor's tile layers and colour (floorRoom), by the floor's id: RoomModel puts them here as it
         /// gives the room `flat:&lt;id&gt;` for the plane's background.</summary>

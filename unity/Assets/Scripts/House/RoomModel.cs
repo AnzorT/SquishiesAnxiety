@@ -101,7 +101,9 @@ namespace SquishSquad.House
               if (FR != null)
               {
                   var ls = new List<HouseFlat.Layer>();
-                  foreach (var lo in FR.Arr("layers") ?? new List<object>()) if (lo is JObj l) ls.Add(new HouseFlat.Layer { Url = l.Str("url"), X = l.Num("x"), Y = l.Num("y"), W = l.Num("w"), H = l.Num("h"), Rep = l.Truthy("rep") });
+                  // (a light-up floor: its tile's moment 0, as SquishDisco gives the floor frames[i][0])
+                  HouseFlat.Disco.TryGetValue(f, out var dz);
+                  foreach (var lo in FR.Arr("layers") ?? new List<object>()) if (lo is JObj l) { var m0 = dz != null && ls.Count < dz.Layers.Count ? dz.Layers[ls.Count] : null; ls.Add(new HouseFlat.Layer { Url = m0?[0] ?? l.Str("url"), X = l.Num("x"), Y = l.Num("y"), W = l.Num("w"), H = l.Num("h"), Rep = l.Truthy("rep") }); }
                   HouseFlat.Floors[f] = (ls, FR.Str("bg") ?? "#08080a");
               } }
             o["wallS"] = ws != "" ? ws : (w != null ? T(w, "wall") : GIF);
