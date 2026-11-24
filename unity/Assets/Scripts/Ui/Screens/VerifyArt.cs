@@ -1,6 +1,9 @@
-// src/screens/VerifyEmailScreen.js from the Unity code, sideways: Mittens and "Check your email" on the left, the card
-// on the right ("We sent a link to <email>. …", the note, the gold "I've verified" button, "Send it again" and "Log
-// out"). VerifyModel is what its buttons do, with the app's notes word for word.
+// src/screens/VerifyEmailScreen.js (develop, 2026-11-20: the sign-in screen's look, src/screens/auth/kit.js) from the
+// Unity code: the house behind, Mittens and the logo along the top where they stood on the sign-in screen (so only the
+// panel changes after registering), and a wood panel: the mail icon and "Check your email" in gold lettering, "We sent
+// a link to <email>. …", the note's line (always there, so nothing moves: a red pill, or the green "Sent again"), the
+// gold I'VE VERIFIED button (its light sweeping across) and two wood buttons, Send it again and Log out. VerifyModel is
+// what its buttons do, with the app's notes word for word.
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -28,6 +31,8 @@ namespace SquishSquad.Ui.Screens
         public string Email = "";
         public bool Busy;
         public string Note = "";
+        /// <summary>The note is a problem (a red pill), not "Sent again" (green).</summary>
+        public bool NoteBad => !string.IsNullOrEmpty(Note) && !Note.StartsWith("Sent again", StringComparison.Ordinal);
 
         /// <summary>"I've verified": true once Firebase says the address is confirmed (onVerified).</summary>
         public async Task<bool> Check(IVerifyBackend fb)
@@ -68,48 +73,63 @@ namespace SquishSquad.Ui.Screens
     public sealed class VerifyUi
     {
         public string Pressed;
-        public double DotsMs;
+        public double DotsMs, GlintMs;
+        public double NoteT = 1;        // the note fading up when it changes (useFadeUp)
+        public bool CreatureShown;
     }
 
     public sealed class VerifyArt
     {
-        const string INK = "#5b3418", RIM = "#6b4426";
-        static float B25 => FlexNode.Bw(2.5f);
-        static readonly TextStyle TitleStyle = new TextStyle
-        {
-            Font = AuthArt.Display, Size = 34, LineHeight = 40, Color = "#ffffff",
-            Shadows = new[] { new Shadow(RIM, 0, 4, 0), new Shadow(RIM, 2.5f, 0, 0), new Shadow(RIM, -2.5f, 0, 0), new Shadow(RIM, 0, -2.5f, 0) },
-        };
-        static readonly TextStyle TextSt = new TextStyle { Font = AuthArt.Heavy, Size = 14, LineHeight = 20, Color = INK };
-        static readonly TextStyle EmailSt = new TextStyle { Font = AuthArt.Black, Size = 14, LineHeight = 20, Color = "#c25e00" };
-        static readonly TextStyle NoteSt = new TextStyle { Font = AuthArt.Heavy, Size = 12.5f, LineHeight = 17, Color = "#d0345a" };
-        static readonly TextStyle LinkSt = new TextStyle { Font = AuthArt.Black, Size = 13, Color = "#8a3a0e" };
-        static readonly TextStyle BtnSt = AuthArt.BtnStyle(20, AuthArt.GOLD_RING);
+        const string MAIL = "M3.5 6.5h17v11h-17Z M4 7l8 6.2L20 7";
+        static readonly Shadow[] SoftInk = { new Shadow("rgba(80,40,12,0.75)", 0, 1, 0) };
+        static readonly TextStyle TextSt = new TextStyle { Font = AuthArt.Heavy, Size = 14.5f, LineHeight = 20, Color = AuthArt.CREAM, Shadows = SoftInk };
+        static readonly TextStyle EmailSt = new TextStyle { Font = AuthArt.Black, Size = 14.5f, LineHeight = 20, Color = AuthArt.GOLD_TXT, Shadows = SoftInk };
+        static readonly TextStyle SentSt = new TextStyle { Font = AuthArt.Black, Size = 12.5f, LineHeight = 16, Color = "#d6ffb8", Shadows = new[] { new Shadow("rgba(40,60,10,0.8)", 0, 1, 0) } };
+        static readonly TextStyle LinkSt = SquishSquad.Screens.Kit.Ink(15);
         const string Title = "Check your email";
+        const string Label = "I\u2019VE\u2002VERIFIED";   // (an en space between the words: the thick outline closed up a plain one)
 
         public readonly float W, H;
-        public VerifyArt(float w, float h) { W = w; H = h; }
+        readonly AuthSizes Z;
+        public VerifyArt(float w, float h) { W = w; H = h; Z = AuthSizes.For(w, h); }
+        float TitleSize => Z.H < 376 ? 21 : 23;
 
         TextFlow Body(string email) => new TextFlow(TextSt, 0.5f, new Run("We sent a link to ", TextSt), new Run(email ?? "", EmailSt), new Run(". Tap it to confirm it's really you, then come back here.", TextSt));
+        static TextFlow NoteFlow(VerifyModel m) => new TextFlow(m.Note, m.NoteBad ? AuthArt.ErrorText : SentSt, 0.5f);
 
         public Dictionary<string, Frame> Layout(VerifyModel m)
         {
-            var root = new FlexNode("root");
-            var col = root.Add(new FlexNode("col").Flex(1).Justify(YGJustify.Center).PadH(22).Gap(30).Row().AlignItems(YGAlign.Center));
-            var side = col.Add(new FlexNode("side").AlignItems(YGAlign.Center).Gap(6));
-            side.Add(new FlexNode("mittens").Size(180, 180).AlignSelf(YGAlign.Center));
-            side.Add(FlexNode.Leaf("title", new TextFlow(Title, TitleStyle).Measure).AlignSelf(YGAlign.Center));
-            var lip = col.Add(new FlexNode("lip").Padding(YGEdge.Bottom, 5).Width(400));
-            var card = lip.Add(new FlexNode("card").Gap(14).Padding(18).Border(2.5f));
-            card.Add(FlexNode.Leaf("text", Body(m.Email).Measure));
-            if (!string.IsNullOrEmpty(m.Note)) card.Add(FlexNode.Leaf("note", new TextFlow(m.Note, NoteSt, 0.5f).Measure));
-            var ring = card.Add(new FlexNode("btn-ring").AlignSelf(YGAlign.Stretch).Padding(2.5f).Padding(YGEdge.Bottom, 7.5f));
-            var face = ring.Add(new FlexNode("btn-face").Border(3).PadV(10).PadH(14).Row().AlignItems(YGAlign.Center).Justify(YGJustify.Center).Gap(5));
-            if (m.Busy) face.Add(new FlexNode("dots").Row().Gap(5).Padding(YGEdge.Top, 7).Height(26).With(new FlexNode("dot0").Size(14, 16), new FlexNode("dot1").Size(14, 16), new FlexNode("dot2").Size(14, 16)));
-            else face.Add(FlexNode.Leaf("label", new TextFlow("I've verified", BtnSt).Measure));
-            var row = card.Add(new FlexNode("links").Row().Justify(YGJustify.SpaceBetween).PadH(6));
-            row.Add(FlexNode.Leaf("resend", new TextFlow("Send it again", LinkSt).Measure));
-            row.Add(FlexNode.Leaf("logout", new TextFlow("Log out", LinkSt).Measure));
+            var z = Z;
+            var root = new FlexNode("root").AlignItems(YGAlign.Center).Padding(YGEdge.Top, z.Top).Padding(YGEdge.Bottom, z.Top);
+            var header = root.Add(new FlexNode("header").Row().AlignItems(YGAlign.Center).Justify(YGJustify.Center).Gap(6).Height(z.Head));
+            header.Add(new FlexNode("mittens").Size(z.Head, z.Head));
+            header.Add(new FlexNode("logo").Size(z.LogoW, z.LogoW / (981f / 133)));
+            var area = root.Add(new FlexNode("area").Flex(1).AlignSelf(YGAlign.Stretch).AlignItems(YGAlign.Center).Justify(YGJustify.Center));
+            float cardW = Math.Min(z.CardW, z.H < 376 ? 470 : 500);
+            var card = area.Add(new FlexNode("card").Width(cardW).PadH(z.PadH).Padding(YGEdge.Top, z.PadT).Padding(YGEdge.Bottom, z.PadB).Gap(z.Gap));
+            var title = card.Add(new FlexNode("title").Row().AlignItems(YGAlign.Center).Justify(YGJustify.Center).Gap(8));
+            title.Add(new FlexNode("mail").Size(26, 26));
+            var (tw, th) = SquishSquad.Screens.Kit.LetteringSize(Title, TitleSize);
+            title.Add(new FlexNode("title-t").Size(tw, th));
+            card.Add(FlexNode.Leaf("text", Body(m.Email).Measure).PadH(6));
+            var note = card.Add(new FlexNode("note-row").AlignItems(YGAlign.Center).Justify(YGJustify.Center).Margin(YGEdge.Top, -3).Margin(YGEdge.Bottom, -3));
+            Facebook.Yoga.YGNodeStyleAPI.YGNodeStyleSetMinHeight(note.Node, 20);
+            if (!string.IsNullOrEmpty(m.Note))
+            {
+                var nw = note.Add(new FlexNode("note"));
+                if (m.NoteBad) { nw.PadH(12).PadV(2).Border(1.6f).Justify(YGJustify.Center); Facebook.Yoga.YGNodeStyleAPI.YGNodeStyleSetMinHeight(nw.Node, 20); }
+                nw.Add(FlexNode.Leaf("note-t", NoteFlow(m).Measure));
+            }
+            var btn = card.Add(new FlexNode("btn-ring").Height(z.Btn).AlignItems(YGAlign.Center).Justify(YGJustify.Center));
+            if (m.Busy) btn.Add(new FlexNode("dots").Row().AlignItems(YGAlign.FlexEnd).Gap(6).Height(20).With(new FlexNode("dot0").Size(10, 10), new FlexNode("dot1").Size(10, 10), new FlexNode("dot2").Size(10, 10)));
+            else { var (lw, lh) = SquishSquad.Screens.Kit.LetteringSize(Label, z.BtnFont); btn.Add(new FlexNode("label").Size(lw, lh)); }
+            var links = card.Add(new FlexNode("links").Row().Gap(12));
+            foreach (var (id, text) in new[] { ("resend", "Send it again"), ("logout", "Log out") })
+            {
+                var l = links.Add(new FlexNode(id).Flex(1).Height(z.Social).Row().AlignItems(YGAlign.Center).Justify(YGJustify.Center).Gap(8));
+                l.Add(new FlexNode(id + "-icon").Size(17, 17));
+                l.Add(FlexNode.Leaf(id + "-t", new TextFlow(text, LinkSt).Measure));
+            }
             root.Layout(W, H);
             var f = new Dictionary<string, Frame>();
             root.Walk(n => f[n.Name] = n.Frame);
@@ -118,35 +138,54 @@ namespace SquishSquad.Ui.Screens
 
         public List<ScreenPiece> Pieces(VerifyModel m, VerifyUi ui, Dictionary<string, Frame> f)
         {
-            var list = new List<ScreenPiece> { new ScreenPiece { Id = "bg", Svg = IntroArt.Svg(W, H), W = W, H = H, Margin = 0 } };
-            var mf = f["mittens"];
-            list.Add(new ScreenPiece { Id = "mittens", Slot = true, W = mf.W, H = mf.H, Transform = Affine.Translate(mf.X, mf.Y) });
-            void Add(string id, UiSvg s, Frame at, float op = 1, Affine? extra = null) =>
-                list.Add(new ScreenPiece { Id = id, Svg = s.Markup, W = s.W, H = s.H, Opacity = op, Transform = Affine.Translate(Screens.Pieces.Snap(at.X), Screens.Pieces.Snap(at.Y)) * (extra ?? Affine.Identity) });
-            var tf = f["title"];
-            Add("title", new UiSvg(tf.W, tf.H).Text(Title, 0, 0, TitleStyle), tf);
-            var lf = f["lip"]; var cf = f["card"];
-            Add("card", new UiSvg(lf.W, lf.H).Box(0, 0, lf.W, lf.H, new BoxStyle { Radius = 28, Background = RIM })
-                .Box(cf.X - lf.X, cf.Y - lf.Y, cf.W, cf.H, new BoxStyle { Radius = 28, Background = "#fff6e2", BorderWidth = B25, BorderColor = RIM }), lf);
+            var z = Z;
+            var list = new List<ScreenPiece>();
+            AuthArt.Backdrop(list, W, H);
+            AuthArt.Header(list, f["mittens"], f["logo"], ui.CreatureShown);
+            void Add(string id, UiSvg s, Frame at, float op = 1, Affine? extra = null, float margin = 6) =>
+                list.Add(new ScreenPiece { Id = id, Svg = s.Markup, W = s.W, H = s.H, Opacity = op, Margin = margin, Transform = Affine.Translate(Screens.Pieces.Snap(at.X), Screens.Pieces.Snap(at.Y)) * (extra ?? Affine.Identity) });
+            var cf = f["card"];
+            Add("card", AuthArt.PlaqueSvg(cf.W, cf.H, "vel", 22, 3.5f, 2, 4), new Frame(cf.X - 2, cf.Y - 2, 0, 0), 1, null, 2);
+            var mf = f["mail"];
+            { var s = new UiSvg(26, 28); SquishSquad.Screens.Kit.Icon(s, MAIL, 0, 0, 26, AuthArt.GOLD_TXT, 2.4f); Add("mail", s, mf); }
+            var tf = f["title-t"];
+            { var s = new UiSvg(tf.W, tf.H); SquishSquad.Screens.Kit.Lettering(s, Title, "gold", TitleSize, 0, 0); Add("title", s, tf); }
             var xf = f["text"];
-            { var s = new UiSvg(xf.W, xf.H); Body(m.Email).Draw(s, 0, 0, xf.W); Add("text", s, xf); }
-            if (f.TryGetValue("note", out var nf) && !string.IsNullOrEmpty(m.Note)) { var s = new UiSvg(nf.W, nf.H); new TextFlow(m.Note, NoteSt, 0.5f).Draw(s, 0, 0, nf.W); Add("note", s, nf); }
-            var press = ui.Pressed == "check" ? Affine.Translate(0, 3) : Affine.Identity;
-            var rf = f["btn-ring"]; var ff = f["btn-face"];
-            Add("btn", AuthArt.CandyBody(rf.W, rf.H, ff.X - rf.X, ff.Y - rf.Y, ff.W, ff.H, AuthArt.GOLD, new[] { 0f, 0.5f, 1f }, AuthArt.GOLD_RING), rf, 1, press);
-            if (f.TryGetValue("label", out var lb)) Add("label", new UiSvg(lb.W, lb.H).Text("I've verified", 0, 0, BtnSt), lb, 1, press);
+            { var s = new UiSvg(xf.W, xf.H); Body(m.Email).Draw(s, 6, 0, xf.W - 12); Add("text", s, xf); }
+            if (f.TryGetValue("note", out var nf) && !string.IsNullOrEmpty(m.Note))
+            {
+                var s = new UiSvg(nf.W, nf.H);
+                if (m.NoteBad) AuthArt.ErrorPill(s, nf.W, nf.H);
+                var nt = f["note-t"];
+                NoteFlow(m).Draw(s, nt.X - nf.X, nt.Y - nf.Y, nt.W);
+                double t = ui.NoteT;
+                Add("note", s, nf, (float)t, Affine.Translate(0, 6 * (1 - t)));
+            }
+            var press = ui.Pressed == "check" ? Affine.Translate(0, 2) : Affine.Identity;
+            var rf = f["btn-ring"];
+            Add("btn", AuthArt.PlaqueSvg(rf.W, rf.H, "gold", 15), new Frame(rf.X - 1.6f, rf.Y - 1.6f, 0, 0), 1, press, 2);
+            if (!m.Busy) Add("glint", AuthArt.GlintSvg(rf.W, rf.H, ui.GlintMs), rf, 1, press, 0);
+            if (f.TryGetValue("label", out var lb)) { var s = new UiSvg(lb.W, lb.H); SquishSquad.Screens.Kit.Lettering(s, Label, "whiteB", z.BtnFont, 0, 0); Add("label", s, lb, 1, press); }
             for (int i = 0; i < 3; i++)
-                if (f.TryGetValue("dot" + i, out var df)) { var (svg, tr, op) = AuthArt.HopDot(i, ui.DotsMs, 14); Add("dot" + i, svg, df, op, press * tr); }
-            var a = f["resend"]; Add("resend", new UiSvg(a.W, a.H).Text("Send it again", 0, 0, LinkSt), a);
-            var b = f["logout"]; Add("logout", new UiSvg(b.W, b.H).Text("Log out", 0, 0, LinkSt), b);
+                if (f.TryGetValue("dot" + i, out var df)) { var (svg, tr) = AuthArt.Dot(i, ui.DotsMs, 10); Add("dot" + i, svg, df, 1, press * tr); }
+            foreach (var (id, text, icon) in new[] { ("resend", "Send it again", "M4 12a8 8 0 1 0 2.3-5.7 M4 4v4h4"), ("logout", "Log out", "M14 5h5v14h-5 M10 8l-4 4 4 4 M6 12h10") })
+            {
+                var lf = f[id];
+                var s = AuthArt.PlaqueSvg(lf.W, lf.H, "vel", 14);
+                var ic = f[id + "-icon"];
+                SquishSquad.Screens.Kit.Icon(s, icon, ic.X - lf.X + 1.6f, ic.Y - lf.Y + 1.6f, 17, "#ffffff", 2.4f);
+                var lt = f[id + "-t"];
+                s.Text(text, lt.X - lf.X + 1.6f, lt.Y - lf.Y + 1.6f, LinkSt);
+                Add(id, s, new Frame(lf.X - 1.6f, lf.Y - 1.6f, 0, 0), 1, ui.Pressed == id ? Affine.Translate(0, 2) : Affine.Identity, 2);
+            }
             return list;
         }
 
         public string HitTest(Dictionary<string, Frame> f, float x, float y)
         {
             if (f["btn-ring"].Contains(x, y)) return "check";
-            if (f["resend"].Inset(8).Contains(x, y)) return "resend";
-            if (f["logout"].Inset(8).Contains(x, y)) return "logout";
+            if (f["resend"].Inset(4).Contains(x, y)) return "resend";
+            if (f["logout"].Inset(4).Contains(x, y)) return "logout";
             return null;
         }
     }

@@ -31,8 +31,12 @@ namespace SquishSquad.App
             return v;
         }
 
+        double _openedAt, _noteAt = -1e9;
+        string _noteSeen = "";
+
         void Start()
         {
+            _openedAt = Time.unscaledTimeAsDouble * 1000;
             UiPiece.PxPerDp = Screen.height / 384f;
             _host = new ScreenHost(transform, "pieces");
         }
@@ -47,7 +51,7 @@ namespace SquishSquad.App
             var f = _art.Layout(Model);
             var p = ScreenHost.Read();
             if (p.Down && !AppFlow.InDevPanel(p.Dp)) _down = _art.HitTest(f, p.Dp.x, p.Dp.y) ?? "";
-            if (_down != null && p.Held) _ui.Pressed = _down == "check" && !Model.Busy && _art.HitTest(f, p.Dp.x, p.Dp.y) == "check" ? "check" : null;
+            if (_down != null && p.Held) _ui.Pressed = _down != "" && !(_down == "check" && Model.Busy) && _art.HitTest(f, p.Dp.x, p.Dp.y) == _down ? _down : null;
             if (_down != null && p.Up)
             {
                 var hit = _art.HitTest(f, p.Dp.x, p.Dp.y);
@@ -56,7 +60,13 @@ namespace SquishSquad.App
                 _ui.Pressed = null;
             }
             _ui.DotsMs = Model.Busy ? now - _busyAt : 0;
-            var key = $"{w}|{Model.Busy}|{Model.Note}|{_ui.Pressed}|{_ui.DotsMs:0}";
+            _ui.GlintMs = now - _openedAt;
+            _ui.CreatureShown = _host.Creature != null && _host.Creature.gameObject.activeSelf;
+            // useFadeUp: a new note fades up 6 dp (260 ms, out quad)
+            if (Model.Note != _noteSeen) { _noteSeen = Model.Note; _noteAt = now; }
+            double nt = Math.Min(1, (now - _noteAt) / 260);
+            _ui.NoteT = 1 - (1 - nt) * (1 - nt);
+            var key = $"{w}|{Model.Busy}|{Model.Note}|{_ui.Pressed}|{_ui.DotsMs:0}|{Math.Floor(_ui.GlintMs / 16)}|{_ui.CreatureShown}|{_ui.NoteT:0.000}";
             if (key == _shownKey) return;
             _shownKey = key;
             _host.Show(_art.Pieces(Model, _ui, f));

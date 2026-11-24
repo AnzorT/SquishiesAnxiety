@@ -39,6 +39,7 @@ namespace SquishSquad.App
 
         void Awake()
         {
+            AuthModel.SkipEmailVerify = Debug.isDebugBuild;   // (the editor and development builds)
             // the menu's pages (Characters, the Level Pass) read the signed-in player from here
             SquishSquad.Menu.CharactersPageLink.Source = () =>
                 _offline || _fb == null || _user == null || _profile == null || string.IsNullOrEmpty(_user.Uid)
@@ -98,7 +99,8 @@ namespace SquishSquad.App
             _feed.Failed += e => Debug.LogWarning("[Firebase] profile: " + e.Message);
         }
 
-        string StageNow() => AppStage.Of(_splashDone, _authChecked, _user, _verifiedNow, _offline);
+        // (developer mode, the editor and development builds: the email check is skipped, as develop's SKIP_EMAIL_VERIFY)
+        string StageNow() => AppStage.Of(_splashDone, _authChecked, _user, _verifiedNow || AuthModel.SkipEmailVerify, _offline);
 
         void Update()
         {

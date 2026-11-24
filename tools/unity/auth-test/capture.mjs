@@ -1,5 +1,5 @@
-// The app's start-up screens as they look (Expo web on http://localhost:8081, src/web/Preview.js's "splash", "auth"
-// and "verify"; `npx expo start --web --port 8081`): a screenshot of each state Program.cs rebuilds from the Unity code,
+// The app's start-up screens as they look (Expo web on http://localhost:8081, src/web/Preview.js's "auth" and
+// "verify"; `npx expo start --web --port 8081`): a screenshot of each state Program.cs rebuilds from the Unity code,
 // and the boxes of what's on screen (for finding where a layout differs).  node capture.mjs <out dir>
 // No account is touched: only the screens' own checks run (an empty form says "Enter your email and password.").
 import fs from 'node:fs';
@@ -27,13 +27,16 @@ async function shot(page, name) {
 
 // clicks the last element with exactly this text (ShadowText draws its copies first)
 const tap = (page, text) => page.getByText(text, { exact: true }).last().click();
+// the gold button: its lettering is a drawing (no text to find): one gap (9 dp) above "Keep me signed in"'s row (22),
+// half its height (42) up, in the middle of the screen
+const submit = async (page) => { const b = await page.getByText('Keep me signed in', { exact: true }).last().boundingBox(); await page.mouse.click(416, b.y + b.height / 2 - 11 - 9 - 21); };
 const blur = (page) => page.evaluate(() => document.activeElement && document.activeElement.blur());
 
 {
   const { browser, page } = await openApp(URL('auth'));
   await page.waitForTimeout(6000);
   await shot(page, 'login');
-  await tap(page, 'Log in');                       // the tab is first, the button's label last
+  await submit(page);                              // (LOG IN: an empty form)
   await page.waitForTimeout(800);
   await shot(page, 'login-error');                 // "Enter your email and password."
   await page.locator('input').nth(0).fill('mia.squish@example.com');
@@ -51,14 +54,14 @@ const blur = (page) => page.evaluate(() => document.activeElement && document.ac
   await page.locator('input').nth(0).fill('Captain');
   await page.locator('input').nth(1).fill('9');
   await blur(page);
-  await tap(page, 'Create my squad');
+  await submit(page);
   await page.waitForTimeout(800);
   await shot(page, 'register-blocked');            // under 13: the parent line
   await tap(page, 'Log in');
   await page.waitForTimeout(400);
   await tap(page, 'Register');
   await page.waitForTimeout(1200);
-  await tap(page, 'Create my squad');
+  await submit(page);
   await page.waitForTimeout(800);
   await shot(page, 'register-error');              // "Enter your age."
   await browser.close();
@@ -69,10 +72,4 @@ const blur = (page) => page.evaluate(() => document.activeElement && document.ac
   await shot(page, 'verify');
   await browser.close();
 }
-{
-  // the splash settled: the bar at 90 % while the app is still starting
-  const { browser, page } = await openApp(URL('splash'));
-  await page.waitForTimeout(7000);
-  await shot(page, 'splash');
-  await browser.close();
-}
+// (develop has no splash screen: the launch colour, then the game intro on the menu)

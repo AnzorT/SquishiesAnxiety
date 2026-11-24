@@ -1,12 +1,17 @@
-// src/screens/AuthScreen.js drawn from the Unity code, sideways (the phone's landscape, `wide`): Mittens, the title and
-// the line under it on the left, the card on the right: the Log in / Register switch with its gold pill, the squad name
-// and age row (register), email and password side by side, the error line, the gold button beside "Keep me signed in",
-// OR, and the Google / Facebook / TikTok row; or, for an age under 13, the parent line. Laid out by Yoga from the
-// StyleSheet's numbers (each FlexNode below is one of the component's Views or Texts), drawn the way the UI exporter
-// writes what Chrome paints (UiSvg). The logos and the tick are the app's own SVG drawings.
+// src/screens/AuthScreen.js (develop, 2026-11-20: remodelled in the game's wood and gold, src/screens/auth/kit.js),
+// drawn from the Unity code. The front door of the same game: the Main Menu's house softened behind (assets/auth/
+// house-bg.jpg, "cover"), along the top Mittens (the live creature in its slot; the app's still, assets/auth/mittens.png,
+// until it's drawn) beside the plush SQUISH SQUAD logo, and under them one wood panel (royal Plaque "vel"): the Log in |
+// Register switch (a gold pill springing across a dark inset track), email and password side by side (to register the
+// squad name and the age join the row), the gold button the panel's whole width (Btn: its light sweeping across every
+// 3.4 s) with "Keep me signed in" under it, then OR (or the error in its place) and the Google / Facebook / TikTok
+// pearl plaques. An age under 13: "Ask a grown-up!" and the parent line. Sizes follow the phone's height (useAuthSizes:
+// 360, 384, 412). Laid out by Yoga (FlexNode), drawn the way the UI exporter writes what Chrome paints (UiSvg), the
+// royal pieces from Screens/Kit.
 using System;
 using System.Collections.Generic;
 using Facebook.Yoga;
+using SquishSquad.Screens;
 using SquishSquad.Vector;
 
 namespace SquishSquad.Ui.Screens
@@ -19,376 +24,430 @@ namespace SquishSquad.Ui.Screens
         public double PillX;            // ModeSwitch's x: 0 log in, 1 register (overshoots on its bezier)
         public double LabelT = 1;       // useFadeUp: 0..1
         public string Pressed;          // the button held down ("submit", "google", ...)
-        public double DotsMs;           // HopDots' clock while submitting
-        public float ScrollY;           // the card column scrolled (when it's taller than the screen)
+        public double DotsMs;           // the waiting dots' clock while submitting
+        public double GlintMs;          // the button's light sweep's clock (its 3.4 s loop)
+        public bool CreatureShown;      // the live creature is in its slot (the still goes)
+        public float ScrollY;           // (kept: the panel always fits now)
         /// <summary>Frames to draw at instead of the layout's (LayoutAnimation in between two layouts).</summary>
         public Dictionary<string, Frame> FramesOverride;
         public Dictionary<string, float> Fade;   // pieces fading in / out with LayoutAnimation (id -> opacity)
     }
 
+    /// <summary>kit.js useAuthSizes: the screen's sizes for its height (360, 384, 412 dp: small, the test phone, tall).</summary>
+    public sealed class AuthSizes
+    {
+        public float W, H, Top, Head, LogoW, CardW, PadH, PadT, PadB, Gap, Track, Input, Font, Btn, BtnFont, Social;
+        public static AuthSizes For(float w, float h)
+        {
+            float W = Math.Max(w, h), H = Math.Min(w, h);
+            int t = H < 376 ? 0 : H < 400 ? 1 : 2;
+            float P(float a, float b, float c) => t == 0 ? a : t == 1 ? b : c;
+            return new AuthSizes
+            {
+                W = W, H = H, Top = P(6, 9, 10), Head = P(52, 58, 64), LogoW = P(262, 296, 324), CardW = Math.Min(P(450, 470, 490), W - 28),
+                PadH = P(14, 16, 18), PadT = P(10, 12, 14), PadB = P(12, 14, 16), Gap = P(7, 9, 11), Track = P(30, 34, 36), Input = P(36, 40, 42),
+                Font = P(14, 15, 15), Btn = P(38, 42, 46), BtnFont = P(17, 19, 20), Social = P(32, 36, 38),
+            };
+        }
+    }
+
     public sealed class AuthArt
     {
-        // REDESIGN_V8's wood colours (AuthScreen.js)
-        public const string PURPLE = "#6b4426", LABEL = "#8a5a34", INK = "#5b3418", LINE = "#ecd3ae", FOCUS = "#e08a2c";
+        public const string Display = "Fredoka_700Bold", Black = "Nunito_900Black", Heavy = "Nunito_800ExtraBold";
+        public const string INK = "#6b4426", CREAM = "#fff6e2", GOLD_TXT = "#ffd650", ROOT_BG = "#94a280";
+        const string PLACEHOLDER = "rgba(255,236,200,0.55)", INSET = "rgba(60,30,10,0.42)", INSET_ON = "rgba(60,30,10,0.55)", RIM = "rgba(255,236,170,0.55)";
+        public const string HOUSE = "Auth/house-bg", LOGO = "Auth/logo", MITTENS = "Auth/mittens";
+        const float LOGO_RATIO = 981f / 133, TRACK_PAD = 3;
+        // (kept for VerifyArt until it's remodelled too: the old candy button's colours)
         public const string GOLD_RING = "#9c4d06";
         public static readonly string[] GOLD = { "#fff7b0", "#ffd23a", "#ff9c0a" };
-        const float GAP = 8, INPUT_H = 48;   // the card's gap in landscape (cardWide)
-        static float B25 => FlexNode.Bw(2.5f);   // borderWidth 2.5, as drawn
-
-        public const string Display = "Fredoka_700Bold", Black = "Nunito_900Black", Heavy = "Nunito_800ExtraBold";
 
         public readonly float W, H;
-        public AuthArt(float w, float h) { W = w; H = h; }
+        public readonly AuthSizes Z;
+        public AuthArt(float w, float h) { W = w; H = h; Z = AuthSizes.For(w, h); }
 
-        static TextStyle T(string font, float size, string color, float ls = 0, float lh = 0) => new TextStyle { Font = font, Size = size, Color = color, LetterSpacing = ls, LineHeight = lh };
-        public static readonly TextStyle TitleStyle = new TextStyle
-        {
-            Font = Display, Size = 38, LineHeight = 44, Color = "#ffffff",
-            Shadows = new[] { new Shadow(PURPLE, 0, 4, 0), new Shadow(PURPLE, 2.5f, 0, 0), new Shadow(PURPLE, -2.5f, 0, 0), new Shadow(PURPLE, 0, -2.5f, 0) },
-        };
-        static readonly TextStyle SubStyle = T(Heavy, 13.5f, PURPLE);
-        static readonly TextStyle TabStyle = T(Display, 16, INK);
-        static readonly TextStyle LabelStyle = T(Black, 11, LABEL, 1, 16);
-        static readonly TextStyle InputStyle = T(Heavy, 15, INK);
-        static readonly TextStyle EyeStyle = T(Black, 12, FOCUS);
-        static readonly TextStyle ErrorStyle = T(Heavy, 12.5f, "#c4204f", 0, 17);
-        static readonly TextStyle BlockedStyle = T(Heavy, 15, INK, 0, 22);
-        static readonly TextStyle KeepStyle = T(Heavy, 13, INK);
-        static readonly TextStyle OrStyle = T(Black, 10.5f, "#b48a5e", 1.2f);
-        static readonly TextStyle SocialStyle = T(Black, 11, INK);
-        public static TextStyle BtnStyle(float size, string ring) => new TextStyle
-        {
-            Font = Display, Size = size, Color = "#ffffff",
-            // outline3(ring, 2): [0, 2], [1, 0], [-1, 0]
-            Shadows = new[] { new Shadow(ring, 0, 2, 0), new Shadow(ring, 1, 0, 0), new Shadow(ring, -1, 0, 0) },
-        };
-        static readonly TextStyle SubmitText = BtnStyle(18, GOLD_RING);
+        static TextStyle T(string font, float size, string color, float ls = 0, float lh = 0, Shadow[] sh = null) => new TextStyle { Font = font, Size = size, Color = color, LetterSpacing = ls, LineHeight = lh, Shadows = sh };
+        static readonly Shadow[] SoftInk = { new Shadow("rgba(80,40,12,0.75)", 0, 1, 0) };
+        public static readonly TextStyle LabelStyle = T(Black, 10.5f, CREAM, 1.2f, 13, SoftInk);
+        static readonly TextStyle EyeStyle = T(Black, 12, GOLD_TXT);
+        static readonly TextStyle TabOn = T(Display, 16, INK);
+        static readonly TextStyle TabOff = Kit.Ink(16);
+        static readonly TextStyle KeepStyle = Kit.Ink(14);
+        static readonly TextStyle OrStyle = T(Black, 10.5f, CREAM, 1.5f);
+        static readonly TextStyle ErrStyle = T(Black, 12, "#ffffff", 0, 15);
+        static readonly TextStyle SocialStyle = T(Display, 15, INK);
+        public static readonly TextStyle BlockedStyle = T(Heavy, 15, CREAM, 0, 21, SoftInk);
+        static TextStyle InputStyle(float size) => T(Heavy, size, "#ffffff");
+        static TextStyle PlaceholderStyle(float size) => T(Heavy, size, PLACEHOLDER);
 
-        public const string Sub = "Log in or make an account to save your squad.";
+        public const string BlockedTitle = "Ask a grown-up!";
         public const string BlockedText = "This game needs a parent or guardian to help set up an account. Ask them to continue!";
         static readonly (string id, string label, string logo)[] Socials = { ("google", "Google", GoogleLogo), ("facebook", "Facebook", FacebookLogo), ("tiktok", "TikTok", TikTokLogo) };
 
-        // the fields: id, label, placeholder, the model's value, password
         public static readonly string[] FieldIds = { "nick", "age", "email", "pass" };
 
         static FlexNode Txt(string name, TextFlow flow) => FlexNode.Leaf(name, flow.Measure);
         static FlexNode Txt(string name, string text, TextStyle st) => Txt(name, new TextFlow(text, st));
 
         // ---- layout --------------------------------------------------------------------------------------------
-        /// <summary>Every node's frame (dp, on screen) for this state. `ScrollMax` tells how far the card column scrolls.</summary>
+        /// <summary>Every node's frame (dp, on screen) for this state (the panel always fits: no scrolling).</summary>
         public Dictionary<string, Frame> Layout(AuthModel m, out float scrollMax)
         {
-            // <IntroBackground><KeyboardAvoidingView style={[flex, wideRow]}>
-            var root = new FlexNode("root").Row();
-            var hero = root.Add(new FlexNode("hero").WidthPct(34).AlignItems(YGAlign.Center).Justify(YGJustify.Center).PadH(12));
-            hero.Add(new FlexNode("mittens").Size(132, 132).Margin(YGEdge.Bottom, -6));
-            hero.Add(Txt("title", "Squish Squad", TitleStyle));
-            hero.Add(Txt("sub", new TextFlow(Sub, SubStyle, 0.5f)).AlignSelf(YGAlign.Center).Margin(YGEdge.Top, 6).Margin(YGEdge.Bottom, 12));
-            var scroll = root.Add(new FlexNode("scroll").Flex(1));
-            root.Layout(W, H);
-            var frames = new Dictionary<string, Frame>();
-            root.Walk(n => frames[n.Name] = n.Frame);
-            var sf = frames["scroll"];
-
-            // the ScrollView's content: flexGrow 1, centred, padding 10 / 26 right / 4 left (scrollContent + scrollWide)
-            var content = new FlexNode("content").Width(sf.W).Justify(YGJustify.Center)
-                .Padding(YGEdge.Top, 10).Padding(YGEdge.Bottom, 10).Padding(YGEdge.Left, 4).Padding(YGEdge.Right, 26);
-            Facebook.Yoga.YGNodeStyleAPI.YGNodeStyleSetMinHeight(content.Node, sf.H);
-            var lip = content.Add(new FlexNode("lip").Padding(YGEdge.Bottom, 5));
-            var card = lip.Add(new FlexNode("card").Border(2.5f).Padding(YGEdge.Top, 10).PadH(16).Padding(YGEdge.Bottom, 12).Gap(GAP));
-            var track = card.Add(new FlexNode("track").Row().Padding(4));
-            track.Add(new FlexNode("tab-login").Flex(1).AlignItems(YGAlign.Center).PadV(9)).Add(Txt("tab-login-t", "Log in", TabStyle));
-            track.Add(new FlexNode("tab-register").Flex(1).AlignItems(YGAlign.Center).PadV(9)).Add(Txt("tab-register-t", "Register", TabStyle));
+            scrollMax = 0;
+            var z = Z;
+            bool reg = m.Register;
+            // col: the screen's height, the header along the top, the panel centred under it
+            var root = new FlexNode("root").AlignItems(YGAlign.Center).Padding(YGEdge.Top, z.Top).Padding(YGEdge.Bottom, z.Top);
+            var header = root.Add(new FlexNode("header").Row().AlignItems(YGAlign.Center).Justify(YGJustify.Center).Gap(6).Height(z.Head));
+            header.Add(new FlexNode("mittens").Size(z.Head, z.Head));
+            header.Add(new FlexNode("logo").Size(z.LogoW, z.LogoW / LOGO_RATIO));
+            var area = root.Add(new FlexNode("area").Flex(1).AlignSelf(YGAlign.Stretch).AlignItems(YGAlign.Center).Justify(YGJustify.Center));
+            var card = area.Add(new FlexNode("card").Width(z.CardW).PadH(z.PadH).Padding(YGEdge.Top, z.PadT).Padding(YGEdge.Bottom, z.PadB).Gap(z.Gap));
+            // ModeSwitch
+            var track = card.Add(new FlexNode("track").Row().Height(z.Track).Padding(TRACK_PAD).Border(1.5f));
+            track.Add(new FlexNode("tab-login").Flex(1).AlignItems(YGAlign.Center).Justify(YGJustify.Center)).Add(Txt("tab-login-t", "Log in", reg ? TabOff : TabOn));
+            track.Add(new FlexNode("tab-register").Flex(1).AlignItems(YGAlign.Center).Justify(YGJustify.Center)).Add(Txt("tab-register-t", "Register", reg ? TabOn : TabOff));
             if (m.Blocked)
-                card.Add(Txt("blocked", new TextFlow(BlockedText, BlockedStyle, 0.5f)).PadV(8));
+            {
+                var b = card.Add(new FlexNode("blocked").AlignItems(YGAlign.Center).Gap(6).PadV(14).PadH(24));
+                var (lw, lh) = Kit.LetteringSize(BlockedTitle, 20);
+                b.Add(new FlexNode("blocked-title").Size(lw, lh));
+                b.Add(Txt("blocked-t", new TextFlow(BlockedText, BlockedStyle, 0.5f)));
+            }
             else
             {
-                if (m.Register)
+                var row = card.Add(new FlexNode("row-cred").Row().Gap(reg ? 6 : 8));
+                if (reg)
                 {
-                    var reg = card.Add(new FlexNode("row-reg").Row().Gap(10));
-                    reg.Add(Field("nick", "SQUAD NAME").Flex(1));
-                    reg.Add(Field("age", "AGE").Width(84));
+                    row.Add(Field("nick", "SQUAD NAME", z)).Flex(0.8f);
+                    row.Add(Field("age", "AGE", z)).Width(56);
                 }
-                var cred = card.Add(new FlexNode("row-cred").Row().Gap(10));
-                cred.Add(Field("email", "EMAIL").Flex(1));
-                cred.Add(Field("pass", "PASSWORD").Flex(1));
-                if (!string.IsNullOrEmpty(m.Error))
-                    card.Add(Txt("error", new TextFlow(m.Error, ErrorStyle)).PadH(11).PadV(8));
-                var sub = card.Add(new FlexNode("submit-row").Row().AlignItems(YGAlign.Center).Gap(14));
-                // TutTarget (flex 1) > CandyBtn (alignSelf stretch) > Ringed: the ring with its lip > the face
-                var tut = sub.Add(new FlexNode("submit").Flex(1));
-                var ring = tut.Add(new FlexNode("submit-ring").AlignSelf(YGAlign.Stretch).Padding(2.5f).Padding(YGEdge.Bottom, 7.5f));
-                var face = ring.Add(new FlexNode("submit-face").Border(3).PadV(8).PadH(14).Row().AlignItems(YGAlign.Center).Justify(YGJustify.Center).Gap(5));
-                if (m.Submitting) face.Add(new FlexNode("dots").Row().Gap(5).Padding(YGEdge.Top, 7).Height(26).With(new FlexNode("dot0").Size(14, 16), new FlexNode("dot1").Size(14, 16), new FlexNode("dot2").Size(14, 16)));
-                else face.Add(Txt("label", m.ButtonLabel, SubmitText));
-                var keep = sub.Add(new FlexNode("keep").Row().AlignItems(YGAlign.Center).Gap(8).AlignSelf(YGAlign.FlexStart));
-                keep.Add(new FlexNode("keep-box").Size(20, 20));
+                var em = row.Add(Field("email", "EMAIL", z)); em.Flex(reg ? 1.1f : 1);
+                var pw = row.Add(Field("pass", "PASSWORD", z)); pw.Flex(reg ? 1.05f : 1);
+                // the gold button, the panel's width
+                var btn = card.Add(new FlexNode("submit-ring").Height(z.Btn).AlignItems(YGAlign.Center).Justify(YGJustify.Center));
+                if (m.Submitting) btn.Add(new FlexNode("dots").Row().AlignItems(YGAlign.FlexEnd).Gap(6).Height(20).With(new FlexNode("dot0").Size(10, 10), new FlexNode("dot1").Size(10, 10), new FlexNode("dot2").Size(10, 10)));
+                else { var (lw, lh) = Kit.LetteringSize(m.ButtonLabel, z.BtnFont); btn.Add(new FlexNode("label").Size(lw, lh)); }
+                var keep = card.Add(new FlexNode("keep").Row().AlignItems(YGAlign.Center).Gap(8).AlignSelf(YGAlign.Center));
+                keep.Add(new FlexNode("keep-box").Size(22, 22));
                 keep.Add(Txt("keep-t", "Keep me signed in", KeepStyle));
-                var or = card.Add(new FlexNode("or").Row().AlignItems(YGAlign.Center).Gap(10).Margin(YGEdge.Top, 2));
-                or.Add(new FlexNode("or-l1").Flex(1).Height(2));
-                or.Add(Txt("or-t", "OR", OrStyle));
-                or.Add(new FlexNode("or-l2").Flex(1).Height(2));
-                var socials = card.Add(new FlexNode("socials").Row().Gap(7));
+                var or = card.Add(new FlexNode("or").Row().Height(20).AlignItems(YGAlign.Center).Justify(YGJustify.Center).Gap(10));
+                if (!string.IsNullOrEmpty(m.Error))
+                {
+                    var err = or.Add(new FlexNode("error").PadH(12).PadV(2).Border(1.6f).Justify(YGJustify.Center));
+                    Facebook.Yoga.YGNodeStyleAPI.YGNodeStyleSetMinHeight(err.Node, 20);
+                    err.Add(Txt("error-t", new TextFlow(m.Error, ErrStyle, 0.5f)));
+                }
+                else
+                {
+                    or.Add(new FlexNode("or-l1").Flex(1).Height(1.5f));
+                    or.Add(Txt("or-t", "OR", OrStyle));
+                    or.Add(new FlexNode("or-l2").Flex(1).Height(1.5f));
+                }
+                var socials = card.Add(new FlexNode("socials").Row().Gap(12));
+                float ls = (float)Math.Round(z.Social * 0.62);
                 foreach (var (id, label, _) in Socials)
                 {
-                    var s = socials.Add(new FlexNode("s-" + id).Flex(1).Row().AlignItems(YGAlign.Center).Justify(YGJustify.Center).Gap(6)
-                        .Padding(YGEdge.Top, 6).Padding(YGEdge.Bottom, 5).Border(2.5f).Border(YGEdge.Bottom, 4));
-                    s.Add(new FlexNode("s-" + id + "-logo").Size(26, 26));
+                    var s = socials.Add(new FlexNode("s-" + id).Flex(1).Height(z.Social).Row().AlignItems(YGAlign.Center).Justify(YGJustify.Center).Gap(8));
+                    s.Add(new FlexNode("s-" + id + "-logo").Size(ls, ls));
                     s.Add(Txt("s-" + id + "-t", label, SocialStyle));
                 }
             }
-            content.Layout(sf.W, float.NaN);
-            float ch = content.Frame.H;
-            scrollMax = Math.Max(0, ch - sf.H);
-            content.Offset(sf.X, sf.Y);
-            content.Walk(n => frames[n.Name] = n.Frame);
+            root.Layout(W, H);
+            var frames = new Dictionary<string, Frame>();
+            root.Walk(n => frames[n.Name] = n.Frame);
             return frames;
         }
 
-        static FlexNode Field(string id, string label)
+        static FlexNode Field(string id, string label, AuthSizes z)
         {
             var f = new FlexNode("f-" + id);
-            f.Add(Txt("f-" + id + "-label", label, LabelStyle).Margin(YGEdge.Bottom, 4));
-            f.Add(new FlexNode("f-" + id + "-input").Height(INPUT_H));
+            f.Add(Txt("f-" + id + "-label", label, LabelStyle).Margin(YGEdge.Bottom, 3).Margin(YGEdge.Left, 2));
+            f.Add(new FlexNode("f-" + id + "-input").Height(z.Input));
             return f;
         }
 
         // ---- drawing -------------------------------------------------------------------------------------------
         public static string Value(AuthModel m, string id) => id == "nick" ? m.Nickname : id == "age" ? m.Age : id == "email" ? m.Email : m.Password;
-        static string Placeholder(string id) => id == "nick" ? "Captain Squish" : id == "age" ? "13+" : id == "email" ? "you@example.com" : "At least 6 characters";
+        /// <summary>The fields' hints (to register the password shares its row with three more fields: a shorter one).</summary>
+        public static string Placeholder(string id, bool register) => id == "nick" ? "Squishy" : id == "age" ? "13+" : id == "email" ? "you@mail.com" : register ? "6+ chars" : "6+ characters";
 
         public List<ScreenPiece> Pieces(AuthModel m, AuthUi ui, Dictionary<string, Frame> layout)
         {
             var f = ui.FramesOverride ?? layout;
+            var z = Z;
             var list = new List<ScreenPiece>();
-            float sy = -ui.ScrollY;
             bool Has(string k) => f.ContainsKey(k);
-            Frame Fr(string k) { var r = f[k]; return r; }
-            Frame Sc(string k) { var r = f[k]; r.Y += sy; return r; }   // in the scrolled column
+            Frame Fr(string k) => f[k];
             float Fade(string id) => ui.Fade != null && ui.Fade.TryGetValue(id, out var o) ? o : 1;
-            ScreenPiece Add(string id, UiSvg svg, Frame at, float opacity = 1, Affine? extra = null)
+            ScreenPiece Add(string id, UiSvg svg, Frame at, float opacity = 1, Affine? extra = null, float margin = 6)
             {
-                var p = new ScreenPiece { Id = id, Svg = svg.Markup, W = svg.W, H = svg.H, Opacity = opacity * Fade(id) };
+                var p = new ScreenPiece { Id = id, Svg = svg.Markup, W = svg.W, H = svg.H, Opacity = opacity * Fade(id), Margin = margin };
                 p.Transform = Affine.Translate(Screens.Pieces.Snap(at.X), Screens.Pieces.Snap(at.Y)) * (extra ?? Affine.Identity);
                 list.Add(p);
                 return p;
             }
 
-            list.Add(new ScreenPiece { Id = "bg", Svg = IntroArt.Svg(W, H), W = W, H = H, Margin = 0 });
-            var mf = Fr("mittens");
-            list.Add(new ScreenPiece { Id = "mittens", Slot = true, W = mf.W, H = mf.H, Transform = Affine.Translate(mf.X, mf.Y) });
-            var tf = Fr("title");
-            Add("title", new UiSvg(tf.W, tf.H).Text("Squish Squad", 0, 0, TitleStyle), tf);
-            var subf = Fr("sub");
-            { var s = new UiSvg(subf.W, subf.H); new TextFlow(Sub, SubStyle, 0.5f).Draw(s, 0, 0, subf.W); Add("sub", s, subf); }
+            Backdrop(list, W, H);
+            Header(list, Fr("mittens"), Fr("logo"), ui.CreatureShown);
 
-            // the card: the lip (the brown under it) and the cream card in its brown outline
-            var lf = Sc("lip"); var cf = Sc("card");
+            // the panel: Settings' wood plaque (radius 22, rim 3.5, ring 2, lip 4)
+            var cf = Fr("card");
             {
-                var s = new UiSvg(lf.W, lf.H);
-                s.Box(0, 0, lf.W, lf.H, new BoxStyle { Radius = 26, Background = PURPLE });
-                s.Box(cf.X - lf.X, cf.Y - lf.Y, cf.W, cf.H, new BoxStyle { Radius = 26, Background = "#fff6e2", BorderWidth = B25, BorderColor = PURPLE });
-                Add("card", s, lf);
+                const float ring = 2, lip = 4;
+                var s = new UiSvg(cf.W + 2 * ring, cf.H + 2 * ring + lip);
+                Kit.Plaque(s, ring, ring, cf.W, cf.H, "vel", 22, 3.5f, ring, lip);
+                Add("card", s, new Frame(cf.X - ring, cf.Y - ring, s.W, s.H), 1, null, 2);
             }
-            // Log in | Register: the track, the pill under the chosen side, the labels
-            var trf = Sc("track");
-            Add("track", new UiSvg(trf.W, trf.H).Box(0, 0, trf.W, trf.H, new BoxStyle { Radius = 999, Background = "#f3dfbd" }), trf);
-            float half = (trf.W - 8) / 2;
+            // Log in | Register: the dark inset track, the gold pill (a gold plaque) springing across, the labels
+            var trf = Fr("track");
+            Add("track", new UiSvg(trf.W, trf.H).Box(0, 0, trf.W, trf.H, new BoxStyle { Radius = 999, Background = INSET, BorderWidth = FlexNode.Bw(1.5f), BorderColor = RIM }), trf);
             {
-                float ph = trf.H - 8;
-                var s = new UiSvg(half, ph);
-                s.Box(-2, -2, half + 4, ph + 7, new BoxStyle { Radius = 999, Background = GOLD_RING });
-                s.Box(0, 0, half, ph, new BoxStyle { Radius = 999, Gradient = GOLD, GradientStops = new[] { 0f, 0.55f, 1f } });
-                Add("pill", s, new Frame(trf.X + 4, trf.Y + 4, half, ph), 1, Affine.Translate(ui.PillX * half, 0));
+                float half = (trf.W - 2 * TRACK_PAD) / 2, ph = trf.H - 2 * 1.5f - 2 * 1.5f;
+                const float ring = 1.4f, lip = 2.5f;
+                var s = new UiSvg(half + 2 * ring, ph + 2 * ring + lip);
+                Kit.Plaque(s, ring, ring, half, ph, "gold", 999, 2, ring, lip);
+                Add("pill", s, new Frame(trf.X + 1.5f + 1.5f - ring, trf.Y + 1.5f + 1.5f - ring, s.W, s.H), 1, Affine.Translate(ui.PillX * half, 0));
             }
-            foreach (var (id, label, reg) in new[] { ("tab-login", "Log in", false), ("tab-register", "Register", true) })
+            foreach (var (id, label, isReg) in new[] { ("tab-login", "Log in", false), ("tab-register", "Register", true) })
             {
-                var tt = Sc(id + "-t");
-                var st = T(Display, 16, m.Register == reg ? INK : LABEL);
-                Add(id, new UiSvg(tt.W, tt.H).Text(label, 0, 0, st), tt);
+                var tt = Fr(id + "-t");
+                Add(id, new UiSvg(tt.W, tt.H).Text(label, 0, 0, m.Register == isReg ? TabOn : TabOff), tt);
             }
 
             if (Has("blocked"))
             {
-                var bf = Sc("blocked");
-                var s = new UiSvg(bf.W, bf.H);
-                new TextFlow(BlockedText, BlockedStyle, 0.5f).Draw(s, 0, 8, bf.W);
-                Add("blocked", s, bf);
+                var bt = Fr("blocked-title");
+                var s = new UiSvg(bt.W, bt.H);
+                Kit.Lettering(s, BlockedTitle, "gold", 20, 0, 0);
+                Add("blocked-title", s, bt);
+                var bf = Fr("blocked-t");
+                var s2 = new UiSvg(bf.W, bf.H);
+                new TextFlow(BlockedText, BlockedStyle, 0.5f).Draw(s2, 0, 0, bf.W);
+                Add("blocked", s2, bf);
                 return list;
             }
 
             foreach (var id in FieldIds)
             {
                 if (!Has("f-" + id)) continue;
-                var lab = Sc("f-" + id + "-label");
+                var lab = Fr("f-" + id + "-label");
                 string label = id == "nick" ? "SQUAD NAME" : id == "age" ? "AGE" : id == "email" ? "EMAIL" : "PASSWORD";
                 Add("f-" + id + "-label", new UiSvg(lab.W, lab.H).Text(label, 0, 0, LabelStyle), lab);
-                var inf = Sc("f-" + id + "-input");
-                var (box, caretX) = Input(id, Value(m, id), inf.W, ui.Focus == id, id == "pass" && !m.ShowPass, id == "pass");
+                var inf = Fr("f-" + id + "-input");
+                var (box, caretX) = Input(id, Value(m, id), inf.W, inf.H, z.Font, ui.Focus == id, id == "pass" && !m.ShowPass, id == "pass", m.Register);
                 Add("f-" + id + "-input", box, inf);
                 if (id == "pass")
                 {
-                    // Show / Hide inside the input's right end (right 12, centred)
+                    // Show / Hide inside the input's right end (right 11, centred)
                     string eye = m.ShowPass ? "Hide" : "Show";
                     float ew = UiSvg.BoxWidth(eye, EyeStyle), eh = UiSvg.LineBox(EyeStyle);
-                    var ef = new Frame(inf.Right - 12 - ew, inf.Y + (inf.H - eh) / 2, ew, eh);
+                    var ef = new Frame(inf.Right - 11 - ew, inf.Y + (inf.H - eh) / 2, ew, eh);
                     Add("eye", new UiSvg(ew, eh).Text(eye, 0, 0, EyeStyle), ef);
                     f["eye"] = ef;   // (for the tap)
                 }
                 if (ui.Focus == id && ui.CaretOn)
                 {
-                    float lh = UiSvg.LineBox(InputStyle);
-                    Add("caret", new UiSvg(1.5f, lh).Box(0, 0, 1.5f, lh, new BoxStyle { Background = INK }), new Frame(inf.X + caretX, inf.Y + (INPUT_H - lh) / 2, 1.5f, lh));
+                    float lh = UiSvg.LineBox(InputStyle(z.Font));
+                    Add("caret", new UiSvg(1.5f, lh).Box(0, 0, 1.5f, lh, new BoxStyle { Background = GOLD_TXT }), new Frame(inf.X + caretX, inf.Y + (inf.H - lh) / 2, 1.5f, lh));
                 }
             }
 
-            if (Has("error"))
+            // the gold button (Btn: a gold plaque, radius 15; it sinks 2 while held), its light sweeping across
+            var press = ui.Pressed == "submit" ? Affine.Translate(0, 2) : Affine.Identity;
+            var rf = Fr("submit-ring");
             {
-                var ef = Sc("error");
-                var s = new UiSvg(ef.W, ef.H);
-                s.Box(0, 0, ef.W, ef.H, new BoxStyle { Radius = 12, Background = "#ffe6ee" });
-                new TextFlow(m.Error, ErrorStyle).Draw(s, 11, 8, ef.W - 22);
-                Add("error", s, ef);
+                const float ring = 1.6f, lip = 3;
+                var s = new UiSvg(rf.W + 2 * ring, rf.H + 2 * ring + lip);
+                Kit.Plaque(s, ring, ring, rf.W, rf.H, "gold", 15, 2.5f, ring, lip);
+                Add("submit", s, new Frame(rf.X - ring, rf.Y - ring, s.W, s.H), 1, press, 2);
+                if (!m.Submitting) Add("glint", Glint(rf.W, rf.H, ui.GlintMs), rf, 1, press, 0);
             }
-
-            // the gold button (CandyBtn kind gold, padV 8, lip 5): it moves down 3 while held
-            var press = ui.Pressed == "submit" ? Affine.Translate(0, 3) : Affine.Identity;
-            var rf = Sc("submit-ring"); var ff = Sc("submit-face");
-            Add("submit", CandyBody(rf.W, rf.H, ff.X - rf.X, ff.Y - rf.Y, ff.W, ff.H, GOLD, new[] { 0f, 0.5f, 1f }, GOLD_RING), rf, 1, press);
             if (Has("label"))
             {
-                var lb = Sc("label");
+                var lb = Fr("label");
+                var s = new UiSvg(lb.W, lb.H);
+                Kit.Lettering(s, m.ButtonLabel, "whiteB", z.BtnFont, 0, 0);
                 // useFadeUp: opacity t, translateY 6 -> 0
                 double t = ui.LabelT;
-                Add("label", new UiSvg(lb.W, lb.H).Text(m.ButtonLabel, 0, 0, SubmitText), lb, (float)t, Affine.Translate(0, 6 * (1 - t)) * press);
+                Add("label", s, lb, (float)t, press * Affine.Translate(0, 6 * (1 - t)));
             }
             for (int i = 0; i < 3; i++)
             {
                 if (!Has("dot" + i)) continue;
-                var df = Sc("dot" + i);
-                var (svg, tr, op) = HopDot(i, ui.DotsMs, 14);
-                Add("dot" + i, svg, df, op, press * tr);
+                var df = Fr("dot" + i);
+                var (svg, tr) = Dot(i, ui.DotsMs, 10);
+                Add("dot" + i, svg, df, 1, press * tr);
             }
-            // Keep me signed in
-            var kb = Sc("keep-box");
+            // Keep me signed in: a gold tick box
+            var kb = Fr("keep-box");
             Add("keep-box", KeepBox(m.Keep), kb);
-            var kt = Sc("keep-t");
+            var kt = Fr("keep-t");
             Add("keep-t", new UiSvg(kt.W, kt.H).Text("Keep me signed in", 0, 0, KeepStyle), kt);
-            // OR
-            foreach (var l in new[] { "or-l1", "or-l2" }) { var lf2 = Sc(l); Add(l, new UiSvg(lf2.W, lf2.H).Box(0, 0, lf2.W, lf2.H, new BoxStyle { Radius = 1, Background = LINE }), lf2); }
-            var ot = Sc("or-t");
-            Add("or-t", new UiSvg(ot.W, ot.H).Text("OR", 0, 0, OrStyle), ot);
-            // the social buttons: they move down 2 while held
+            // OR, or the error in its place
+            if (Has("error"))
+            {
+                var ef = Fr("error");
+                var s = new UiSvg(ef.W, ef.H);
+                s.Box(0, 0, ef.W, ef.H, new BoxStyle { Radius = 10, Background = "#d9412c", BorderWidth = FlexNode.Bw(1.6f), BorderColor = "#5a1a08" });
+                var et = Fr("error-t");
+                new TextFlow(m.Error, ErrStyle, 0.5f).Draw(s, et.X - ef.X, et.Y - ef.Y, et.W);
+                Add("error", s, ef);
+            }
+            else
+            {
+                foreach (var l in new[] { "or-l1", "or-l2" }) { var lf2 = Fr(l); Add(l, new UiSvg(lf2.W, lf2.H).Box(0, 0, lf2.W, lf2.H, new BoxStyle { Radius = 1, Background = "rgba(255,236,170,0.45)" }), lf2); }
+                var ot = Fr("or-t");
+                Add("or-t", new UiSvg(ot.W, ot.H).Text("OR", 0, 0, OrStyle), ot);
+            }
+            // Google / Facebook / TikTok: pearl plaques (radius 14), sinking 2 while held
             foreach (var (id, label, logo) in Socials)
             {
-                var sf = Sc("s-" + id);
-                var s = new UiSvg(sf.W, sf.H);
-                s.Box(0, 0, sf.W, sf.H, new BoxStyle { Radius = 16, Background = "#ffffff", Borders = new[] { B25, B25, 4f, B25 }, BorderColor = LINE });
-                var lg = Sc("s-" + id + "-logo");
-                s.Drawing(logo, lg.X - sf.X, lg.Y - sf.Y, 26, 26, "0 0 24 24");
-                var lt = Sc("s-" + id + "-t");
-                s.Text(label, lt.X - sf.X, lt.Y - sf.Y, SocialStyle);
-                Add("s-" + id, s, sf, 1, ui.Pressed == id ? Affine.Translate(0, 2) : Affine.Identity);
+                var sf = Fr("s-" + id);
+                const float ring = 1.6f, lip = 3;
+                var s = new UiSvg(sf.W + 2 * ring, sf.H + 2 * ring + lip);
+                Kit.Plaque(s, ring, ring, sf.W, sf.H, "pearl", 14, 2.5f, ring, lip);
+                var lg = Fr("s-" + id + "-logo");
+                s.Drawing(logo, lg.X - sf.X + ring, lg.Y - sf.Y + ring, lg.W, lg.H, "0 0 24 24");
+                var lt = Fr("s-" + id + "-t");
+                s.Text(label, lt.X - sf.X + ring, lt.Y - sf.Y + ring, SocialStyle);
+                Add("s-" + id, s, new Frame(sf.X - ring, sf.Y - ring, s.W, s.H), 1, ui.Pressed == id ? Affine.Translate(0, 2) : Affine.Identity, 2);
             }
             return list;
         }
 
-        // ---- pieces shared with the other intro screens -----------------------------------------------------------
+        // ---- pieces ---------------------------------------------------------------------------------------------------
 
-        /// <summary>The input (white, rounded, its border orange while focused) with its text or placeholder, the text
-        /// scrolled so its end shows. Returns the caret's x in the box.</summary>
-        public static (UiSvg svg, float caretX) Input(string id, string value, float w, bool focus, bool secure, bool eye)
+        /// <summary>kit.js AuthBg: the house, "cover", over its average colour (the sign-in screens' one full-screen picture).</summary>
+        public static void Backdrop(List<ScreenPiece> list, float w, float h)
         {
-            var s = new UiSvg(w, INPUT_H);
-            s.Box(0, 0, w, INPUT_H, new BoxStyle { Radius = 16, Background = "#ffffff", BorderWidth = B25, BorderColor = focus ? FOCUS : LINE });
-            float x0 = B25 + 14, x1 = w - B25 - (eye ? 64 : 14);
-            string shown = string.IsNullOrEmpty(value) ? Placeholder(id) : secure ? new string('•', value.Length) : value;
-            var st = string.IsNullOrEmpty(value) ? T(Heavy, 15, "#b9976e") : InputStyle;
+            var s = new UiSvg(w, h);
+            s.Box(0, 0, w, h, new BoxStyle { Background = ROOT_BG });
+            s.Image(HOUSE, 0, 0, w, h, "xMidYMid slice");
+            list.Add(new ScreenPiece { Id = "bg", Svg = s.Markup, W = w, H = h, Margin = 0 });
+        }
+
+        /// <summary>kit.js AuthHeader: Mittens on a soft floor shadow (the app's still until the live creature is drawn in its
+        /// slot), the SQUISH SQUAD logo beside it.</summary>
+        public static void Header(List<ScreenPiece> list, Frame mf, Frame lf, bool creatureShown)
+        {
+            var s = new UiSvg(mf.W, mf.H);
+            float hf = mf.H * 0.12f;
+            s.Box(mf.W * 0.2f, mf.H - 1 - hf, mf.W * 0.6f, hf, new BoxStyle { Radius = 999, Background = "rgba(40,20,6,0.28)" });
+            if (!creatureShown) s.Image(MITTENS, 0, 0, mf.W, mf.H, "xMidYMid meet");
+            list.Add(new ScreenPiece { Id = "mittens-still", Svg = s.Markup, W = mf.W, H = mf.H, Margin = 0, Transform = Affine.Translate(Screens.Pieces.Snap(mf.X), Screens.Pieces.Snap(mf.Y)) });
+            list.Add(new ScreenPiece { Id = "mittens", Slot = true, W = mf.W, H = mf.H, Transform = Affine.Translate(mf.X, mf.Y) });
+            list.Add(new ScreenPiece { Id = "logo", Svg = new UiSvg(lf.W, lf.H).Image(LOGO, 0, 0, lf.W, lf.H).Markup, W = lf.W, H = lf.H, Margin = 0, Transform = Affine.Translate(Screens.Pieces.Snap(lf.X), Screens.Pieces.Snap(lf.Y)) });
+        }
+
+        /// <summary>A royal plaque as a piece: its box `at` (the ring and the lip drawn round it).</summary>
+        public static UiSvg PlaqueSvg(float w, float h, string variant, float radius, float rim = 2.5f, float ring = 1.6f, float lip = 3)
+        {
+            var s = new UiSvg(w + 2 * ring, h + 2 * ring + lip);
+            Kit.Plaque(s, ring, ring, w, h, variant, radius, rim, ring, lip);
+            return s;
+        }
+
+        /// <summary>kit.js ErrorPill: white on red (#d9412c, a 1.6 dp dark rim, radius 10, 12 x 2 in).</summary>
+        public static void ErrorPill(UiSvg s, float w, float h)
+            => s.Box(0, 0, w, h, new BoxStyle { Radius = 10, Background = "#d9412c", BorderWidth = FlexNode.Bw(1.6f), BorderColor = "#5a1a08" });
+        public static readonly TextStyle ErrorText = new TextStyle { Font = Black, Size = 12, Color = "#ffffff", LineHeight = 15 };
+
+        /// <summary>Btn's light sweep (see Glint).</summary>
+        public static UiSvg GlintSvg(float w, float h, double ms) => Glint(w, h, ms);
+
+        /// <summary>kit.js Field's input: Settings' dark inset (radius 12, 12 dp in, a 1.5 dp rim; while typed in, a 2 dp gold
+        /// rim and a darker inset), its text white or its hint, scrolled so its end shows. Returns the caret's x.</summary>
+        public static (UiSvg svg, float caretX) Input(string id, string value, float w, float h, float font, bool focus, bool secure, bool eye, bool register)
+        {
+            var s = new UiSvg(w, h);
+            float bw = FlexNode.Bw(focus ? 2 : 1.5f);
+            s.Box(0, 0, w, h, new BoxStyle { Radius = 12, Background = focus ? INSET_ON : INSET, BorderWidth = bw, BorderColor = focus ? GOLD_TXT : RIM });
+            float x0 = bw + 12, x1 = w - bw - (eye ? 50 : 12);
+            string shown = string.IsNullOrEmpty(value) ? Placeholder(id, register) : secure ? new string('•', value.Length) : value;
+            var st = string.IsNullOrEmpty(value) ? PlaceholderStyle(font) : InputStyle(font);
             float tw = UiSvg.Width(shown, st);
-            float scroll = string.IsNullOrEmpty(value) ? 0 : Math.Max(0, tw + 1.5f - (x1 - x0));
+            // (scrolled so its end shows while it's typed in; at rest a TextInput shows its start)
+            float scroll = string.IsNullOrEmpty(value) || !focus ? 0 : Math.Max(0, tw + 1.5f - (x1 - x0));
             float lh = UiSvg.LineBox(st);
-            float top = (INPUT_H - lh) / 2;
             var clip = s.NewId("ic");
-            s.Def($"<clipPath id=\"{clip}\"><rect x=\"{UiSvg.F(x0)}\" y=\"{UiSvg.F(B25)}\" width=\"{UiSvg.F(Math.Max(0, x1 - x0))}\" height=\"{UiSvg.F(INPUT_H - 2 * B25)}\"/></clipPath>");
-            s.Open($"clip-path=\"url(#{clip})\"").Text(shown, x0 - scroll, top, st).Close();
+            s.Def($"<clipPath id=\"{clip}\"><rect x=\"{UiSvg.F(x0)}\" y=\"{UiSvg.F(bw)}\" width=\"{UiSvg.F(Math.Max(0, x1 - x0))}\" height=\"{UiSvg.F(h - 2 * bw)}\"/></clipPath>");
+            s.Open($"clip-path=\"url(#{clip})\"").Text(shown, x0 - scroll, (h - lh) / 2, st).Close();
             float caret = string.IsNullOrEmpty(value) ? x0 : x0 + tw - scroll;
             return (s, caret);
         }
 
-        /// <summary>CandyBtn's Ringed look: the ring colour round it with a deeper lip, a white 3 dp rim, the gradient face
-        /// and its shine (left / right 9 %, top 2, 42 % tall, white 45 %).</summary>
-        public static UiSvg CandyBody(float w, float h, float fx, float fy, float fw, float fh, string[] colors, float[] stops, string ring)
-        {
-            var s = new UiSvg(w, h);
-            s.Box(0, 0, w, h, new BoxStyle { Radius = 1001.5f, Background = ring });
-            // the face: its gradient over the padding box, under the white border
-            s.Box(fx + 3, fy + 3, fw - 6, fh - 6, new BoxStyle { Radius = 996, Gradient = colors, GradientStops = stops });
-            s.Box(fx, fy, fw, fh, new BoxStyle { Radius = 999, BorderWidth = FlexNode.Bw(3), BorderColor = "#ffffff" });
-            float pw = fw - 6, ph = fh - 6;
-            s.Box(fx + 3 + pw * 0.09f, fy + 3 + 2, pw * 0.82f, ph * 0.42f, new BoxStyle { Radius = 999, Background = "rgba(255,255,255,0.45)" });
-            return s;
-        }
-
         static UiSvg KeepBox(bool on)
         {
-            var s = new UiSvg(20, 20);
+            var s = new UiSvg(22, 22);
             if (on)
             {
-                s.Box(0, 0, 20, 20, new BoxStyle { Radius = 7, Background = "#ffffff" });
-                s.Box(B25, B25, 20 - 2 * B25, 20 - 2 * B25, new BoxStyle { Radius = 7 - B25, Gradient = new[] { "#ffd23a", "#ff9c0a" } });
-                s.Box(0, 0, 20, 20, new BoxStyle { Radius = 7, BorderWidth = B25, BorderColor = FOCUS });
-                s.Drawing(Tick, 4, 4, 12, 12, "0 0 12 12");
+                s.Box(0, 0, 22, 22, new BoxStyle { Radius = 7, Gradient = new[] { "#fff1b0", "#ffd650", "#f6a524" }, GradientStops = new[] { 0f, 0.45f, 1 }, BorderWidth = FlexNode.Bw(1.6f), BorderColor = INK });
+                Kit.Icon(s, "M5 12.5l4.5 4.5L19 7.5", 3.5f, 3.5f, 15, INK, 3.6f, false);
             }
-            else s.Box(0, 0, 20, 20, new BoxStyle { Radius = 7, Background = "#ffffff", BorderWidth = B25, BorderColor = FOCUS });
+            else s.Box(0, 0, 22, 22, new BoxStyle { Radius = 7, Background = INSET, BorderWidth = FlexNode.Bw(1.6f), BorderColor = "rgba(255,236,170,0.7)" });
             return s;
         }
 
-        // HopDots: one ball (pink, gold, blue) on its 1 s loop, `delay` 0 / 150 / 300 ms in
-        static readonly double[] HopIn = { 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.85, 0.92, 1 };
-        static readonly double[] HopUp = { 0, 0.44, 0.75, 0.94, 1, 0.94, 0.75, 0.44, 0, 0, 0, 0 };
-        static readonly (string[] colors, float[] stops, string ring)[] DotKinds =
+        // royal/parts.js Glint: a soft white band (26 % of the button's width, skewed -18°) sweeping across between 1.9 and
+        // 2.9 s of a 3.4 s loop (ease-in-out in 8 steps), clipped to the button (radius 18)
+        const double GLINT_MS = 3400, GLINT_A = 1900 / GLINT_MS, GLINT_B = 2900 / GLINT_MS;
+        static readonly double[] GLINT_AT, GLINT_K;
+        static AuthArt()
         {
-            (new[] { "#ffe2c8", "#ff9a4a", "#e0601c" }, new[] { 0f, 0.55f, 1f }, "#8a3a0e"),
-            (new[] { "#fff7b0", "#ffd23a", "#ff9c0a" }, new[] { 0f, 0.5f, 1f }, "#9c4d06"),
-            (new[] { "#b0fbff", "#3fd7f6", "#1695d6" }, new[] { 0f, 0.55f, 1f }, "#0c5a9c"),
-        };
+            GLINT_AT = new double[11]; GLINT_K = new double[11];
+            GLINT_AT[0] = 0; GLINT_K[0] = 0; GLINT_AT[10] = 1; GLINT_K[10] = 1;
+            for (int i = 0; i <= 8; i++)
+            {
+                double s = i / 8.0;
+                GLINT_AT[i + 1] = GLINT_A + (GLINT_B - GLINT_A) * s;
+                GLINT_K[i + 1] = s < 0.5 ? 2 * s * s : 1 - 2 * (1 - s) * (1 - s);
+            }
+        }
+        static UiSvg Glint(float w, float h, double ms)
+        {
+            double p = (ms % GLINT_MS) / GLINT_MS, k = Interp(p, GLINT_AT, GLINT_K);
+            float x = (float)(-w * 0.5 + w * 1.8 * k), bw = w * 0.26f;
+            var s = new UiSvg(w, h);
+            var clip = s.NewId("gc");
+            s.Def($"<clipPath id=\"{clip}\"><path d=\"{UiSvg.RRect(0, 0, w, h, new[] { 18f, 18, 18, 18 })}\"/></clipPath>");
+            var g = s.NewId("gg");
+            s.Def($"<linearGradient id=\"{g}\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.5\" stop-color=\"#ffffff\" stop-opacity=\"0.8\"/><stop offset=\"1\" stop-color=\"#ffffff\" stop-opacity=\"0\"/></linearGradient>");
+            // skewX(-18°) about the band's centre (RN's default origin), the band 10 dp past the top and bottom
+            float cx = x + bw / 2, cy = h / 2;
+            s.Raw($"<g clip-path=\"url(#{clip})\"><rect x=\"{UiSvg.F(x)}\" y=\"-10\" width=\"{UiSvg.F(bw)}\" height=\"{UiSvg.F(h + 20)}\" fill=\"url(#{g})\" transform=\"translate({UiSvg.F(cx)} {UiSvg.F(cy)}) skewX(-18) translate({UiSvg.F(-cx)} {UiSvg.F(-cy)})\"/></g>");
+            return s;
+        }
 
         static double Interp(double p, double[] xs, double[] ys)
         {
-            for (int i = 0; i < xs.Length - 1; i++) if (p <= xs[i + 1]) return ys[i] + (ys[i + 1] - ys[i]) * (p - xs[i]) / (xs[i + 1] - xs[i]);
+            for (int i = 0; i < xs.Length - 1; i++) if (p <= xs[i + 1]) return xs[i + 1] == xs[i] ? ys[i + 1] : ys[i] + (ys[i + 1] - ys[i]) * (p - xs[i]) / (xs[i + 1] - xs[i]);
             return ys[ys.Length - 1];
         }
 
-        public static (UiSvg svg, Affine tr, float opacity) HopDot(int i, double ms, float size)
+        /// <summary>kit.js Dots: three white dots (a 1.6 dp brown rim) hopping in turn (a 900 ms loop; dot i lifts 0.7 of its
+        /// size over [0.18 i, 0.18 i + 0.32] of it).</summary>
+        public static (UiSvg svg, Affine tr) Dot(int i, double ms, float size)
         {
-            var (colors, stops, ring) = DotKinds[i];
-            double t = ms - i * 150;
-            double p = t < 0 ? 0 : (t % 1000) / 1000;
-            float hop = size / 2;
-            double ty = -Interp(p, HopIn, HopUp) * hop;
-            double sx = Interp(p, new[] { 0, 0.8, 0.85, 0.92, 1 }, new[] { 1, 1, 1.18, 1, 1 });
-            double sy = Interp(p, new[] { 0, 0.8, 0.85, 0.92, 1 }, new[] { 1, 1, 0.8, 1, 1 });
-            double op = Interp(p, new[] { 0, 0.4, 0.8, 1 }, new[] { 0.65, 1, 0.65, 0.65 });
-            float r = size / 2, rw = Math.Max(1, size / 12);
-            var s = new UiSvg(size, size + 2);
-            s.Box(0, 2, size, size, new BoxStyle { Radius = r, Background = ring });   // the lip (top 2)
-            s.Box(0, 0, size, size, new BoxStyle { Radius = r, Background = ring });
-            s.Box(rw, rw, size - 2 * rw, size - 2 * rw, new BoxStyle { Radius = r, Background = "#ffffff" });
-            float fi = 2 * rw, fs = size - 4 * rw;
-            s.Box(fi, fi, fs, fs, new BoxStyle { Radius = r, Gradient = colors, GradientStops = stops });
-            s.Box(fi, fi, fs, fs * 0.44f, new BoxStyle { Radius = 999, Gradient = new[] { "rgba(255,255,255,0.85)", "rgba(255,255,255,0.1)" } });
-            // transform about the ball's centre (RN's default origin)
-            float cx = size / 2, cy = (size + 2) / 2;
-            var tr = Affine.Translate(0, ty) * Affine.Translate(cx, cy) * Affine.ScaleBy(sx, sy) * Affine.Translate(-cx, -cy);
-            return (s, tr, (float)op);
+            double p = (ms % 900) / 900, st = i * 0.18;
+            double ty = Interp(p, new[] { 0, st, st + 0.16, st + 0.32, 1 }, new[] { 0.0, 0, -size * 0.7, 0, 0 });
+            var s = new UiSvg(size, size);
+            s.Box(0, 0, size, size, new BoxStyle { Radius = size / 2, Background = "#ffffff", BorderWidth = FlexNode.Bw(1.6f), BorderColor = "#6a2c00" });
+            return (s, Affine.Translate(0, ty));
         }
+
+        // (the old candy pieces VerifyArt still draws until it's remodelled)
+        public static TextStyle BtnStyle(float size, string ring) => new TextStyle
+        {
+            Font = Display, Size = size, Color = "#ffffff",
+            Shadows = new[] { new Shadow(ring, 0, 2, 0), new Shadow(ring, 1, 0, 0), new Shadow(ring, -1, 0, 0) },
+        };
 
         // ---- taps ----------------------------------------------------------------------------------------------------
         /// <summary>What a tap at (x, y) dp hits: a tab, a field, the eye, the button, the box, a social button.</summary>
         public string HitTest(Dictionary<string, Frame> f, AuthUi ui, float x, float y)
         {
-            float sy = ui.ScrollY;
-            bool In(string k, float slop = 0) => f.TryGetValue(k, out var r) && r.Inset(slop).Contains(x, y + sy);
+            bool In(string k, float slop = 0) => f.TryGetValue(k, out var r) && r.Inset(slop).Contains(x, y);
             if (f.ContainsKey("eye") && f["eye"].Inset(8).Contains(x, y)) return "eye";
             foreach (var id in FieldIds) if (In("f-" + id + "-input")) return id;
             if (In("tab-login")) return "tab-login";
@@ -399,8 +458,7 @@ namespace SquishSquad.Ui.Screens
             return null;
         }
 
-        // ---- the app's own drawings (AuthScreen.js) ------------------------------------------------------------------
-        public const string Tick = "<path d=\"M2.5 6.2 L5 8.6 L9.6 3.4\" stroke=\"#ffffff\" stroke-width=\"2.2\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>";
+        // ---- the app's own drawings (auth/Socials.js) --------------------------------------------------------------
         const string GoogleLogo =
             "<path d=\"M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z\" fill=\"#4285F4\"/>" +
             "<path d=\"M12 22c2.7 0 5-.9 6.6-2.5l-3.2-2.5c-.9.6-2 1-3.4 1a5.9 5.9 0 0 1-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z\" fill=\"#34A853\"/>" +

@@ -52,9 +52,8 @@ static partial class Program
             ("login-shown", () => Auth(m => { m.Error = "Enter your email and password."; m.Email = "mia.squish@example.com"; m.Password = "secret12"; m.ShowPass = true; })),
             ("register", () => Auth(m => { Typed(m); m.Register = true; })),
             ("register-blocked", () => Auth(m => { m.Register = true; m.Blocked = true; })),
-            ("register-error", () => Auth(m => { Typed(m); m.Register = true; m.Error = "Enter your age."; })),
+            ("register-error", () => Auth(m => { Typed(m); m.Register = true; m.Nickname = "Captain"; m.Error = "Enter your age."; })),   // (capture.mjs typed it before the age)
             ("verify", Verify),
-            ("splash", Splash),
         };
         Console.WriteLine($"Yoga rounding: {(FlexNode.PointScale > 0 ? FlexNode.PointScale + " px per dp" : "off")}");
         int worst = 0;
@@ -113,6 +112,13 @@ static partial class Program
     {
         if (Images.TryGetValue(href, out var c)) return c;
         var f = Res(href + ".png");
+        if (!File.Exists(f) && File.Exists(Res(href + ".jpg")))
+        {
+            // (a JPEG, as the sign-in screens' house: made a PNG once with Pillow, the reference rasteriser reads PNGs)
+            f = Path.Combine(Path.GetTempPath(), "auth-test-" + href.Replace('/', '_') + ".png");
+            if (!File.Exists(f))
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("python3", $"-c \"from PIL import Image; Image.open('{Res(href + ".jpg")}').convert('RGBA').save('{f}')\"") { UseShellExecute = false })!.WaitForExit();
+        }
         if (!File.Exists(f)) return (0, 0, null);
         var (w, h, rgba) = Png.Read(f);
         var px = new float[w * h * 4];

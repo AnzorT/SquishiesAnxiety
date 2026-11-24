@@ -57,8 +57,11 @@ namespace SquishSquad.App
 
         double Now => Time.unscaledTimeAsDouble * 1000;
 
+        double _openedAt;
+
         void Start()
         {
+            _openedAt = Now;
             UiPiece.PxPerDp = Screen.height / 384f;
             _ticker = new Ticker(Now);
             _host = new ScreenHost(transform, "pieces");
@@ -85,6 +88,8 @@ namespace SquishSquad.App
             _ui.Focus = _entry.Field;
             _ui.CaretOn = _entry.CaretOn;
             _ui.DotsMs = Model.Submitting ? now - _submitAt : 0;
+            _ui.GlintMs = now - _openedAt;
+            _ui.CreatureShown = _host.Creature != null && _host.Creature.gameObject.activeSelf;
             if (_animStart >= 0)
             {
                 double t = Math.Min(1, (now - _animStart) / SwapMs);
@@ -131,7 +136,7 @@ namespace SquishSquad.App
             sb.Append('|').Append(Model.Age).Append('|').Append(Model.Nickname).Append('|').Append(Model.Email).Append('|').Append(Model.Password).Append('|').Append(Model.Keep)
               .Append('|').Append(_ui.Focus).Append(_ui.CaretOn).Append('|').Append(_ui.Pressed).Append('|').Append(_ui.ScrollY.ToString("0.00"))
               .Append('|').Append(_ui.PillX.ToString("0.0000")).Append('|').Append(_ui.LabelT.ToString("0.0000")).Append('|').Append(_ui.DotsMs.ToString("0"))
-              .Append('|').Append(_animStart);
+              .Append('|').Append(_animStart).Append('|').Append(Math.Floor(_ui.GlintMs / 16)).Append(_ui.CreatureShown);
             var key = sb.ToString();
             if (key == _shownKey && _animStart < 0) return;
             _shownKey = key;
@@ -145,7 +150,7 @@ namespace SquishSquad.App
         {
             var kind = id == "email" ? TextEntry.Kind.Email : id == "age" ? TextEntry.Kind.Number : id == "pass" && !Model.ShowPass ? TextEntry.Kind.Password : TextEntry.Kind.Text;
             int max = id == "nick" ? AuthModel.NicknameMax : id == "age" ? AuthModel.AgeMax : 0;
-            string ph = id == "nick" ? "Captain Squish" : id == "age" ? "13+" : id == "email" ? "you@example.com" : "At least 6 characters";
+            string ph = AuthArt.Placeholder(id, Model.Register);
             _entry.Focus(id, AuthArt.Value(Model, id), kind, max, ph);
         }
 

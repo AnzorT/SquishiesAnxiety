@@ -34,6 +34,10 @@ namespace SquishSquad.Ui.Screens
         // AuthScreen.js MIN_SIGNUP_AGE: under 13, registration stops on the device, before anything is sent
         public const int MinSignupAge = 13;
         public const int NicknameMax = 10, AgeMax = 3;   // the fields' maxLength
+        /// <summary>Developer mode (develop's src/webDebug.js SKIP_EMAIL_VERIFY, 2026-11-21, the user: "when we run developer
+        /// mode, ignore the 2-step authentication we do to new registers"): a new email account plays at once, no email
+        /// sent, no verify screen. Set by the app (AppFlow: the editor and development builds); off in a release.</summary>
+        public static bool SkipEmailVerify;
 
         public bool Register;          // mode === 'register'
         public string Age = "", Nickname = "", Email = "", Password = "";
@@ -42,7 +46,7 @@ namespace SquishSquad.Ui.Screens
         /// <summary>Bumped when the button's label changes (useFadeUp plays).</summary>
         public int LabelChanges;
 
-        public string ButtonLabel => Register ? "Create my squad" : "Log in";
+        public string ButtonLabel => Register ? "CREATE MY SQUAD" : "LOG IN";   // (develop: the menu's lettering, capitals)
 
         /// <summary>switchMode: the register row opens or closes, the error goes, the age is asked again.</summary>
         public bool SwitchMode(bool register)
@@ -82,7 +86,7 @@ namespace SquishSquad.Ui.Screens
                     await fb.CreateUserProfile(uid, email, age, Nickname);
                     // the link that proves the address is real (the verify screen waits for it); a failed send can be
                     // retried there
-                    try { await fb.SendVerification(); } catch (Exception) { }
+                    if (!SkipEmailVerify) { try { await fb.SendVerification(); } catch (Exception) { } }   // (developer mode: no email)
                 }
                 catch (Exception e)
                 {

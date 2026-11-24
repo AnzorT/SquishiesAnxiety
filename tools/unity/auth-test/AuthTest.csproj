@@ -16,6 +16,11 @@
     <Compile Include="../../../unity/Assets/Scripts/Ui/UiSvg.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Ui/Screens/**/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Menu/HudArt.cs" />
+    <!-- (the sign-in screens are built from the royal kit, Screens/Common/Kit.cs: the Screens code as screens-test has it) -->
+    <Compile Include="../../../unity/Assets/Scripts/Screens/**/*.cs" Exclude="../../../unity/Assets/Scripts/Screens/**/*Screen.cs;../../../unity/Assets/Scripts/Screens/**/*Host.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/Cards/CardArt.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Sort/PlayerXp.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Sort/JsMath.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Anim/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Audio/Snd.cs" />
