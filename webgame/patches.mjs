@@ -553,6 +553,12 @@ export const PATCHES = [
   },
   {
     file: 'main-menu-scene.js',
+    why: '2026-11-24 (the user: the big front apple tree had its right side hidden under the tree to its right): the nearer tree (its foot lower on the screen, y 372) is drawn after the farther one (y 330), so it\'s in front. (Each tree\'s shape comes from its own seed: the order changes nothing else.)',
+    find: 'g += tree(92, 372, 1.55, st, 9, { fruit: true }) + tree(178, 330, 0.95, st, 10) + ',
+    replace: 'g += tree(178, 330, 0.95, st, 10) + tree(92, 372, 1.55, st, 9, { fruit: true }) + ',
+  },
+  {
+    file: 'main-menu-scene.js',
     why: 'the front-left bush stood where that road runs: it moves to the roadside, below it',
     find: 'g += bush(40, 420, 1.4, st, 21) + ',
     replace: 'g += bush(40, 466, 1.4, st, 21) + ',
