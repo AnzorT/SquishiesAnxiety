@@ -206,6 +206,7 @@ namespace SquishSquad.Menu
         IRigFrames _idle;
         RecordedRig _clip;
         RenderTexture _parkTex;
+        GameObject _parkGo;   // hidden at home (menu.js leavePark removes the layer: its seam tree would show at the house's left edge)
         const float ParkPad = 160;   // menu.js PAD: where the creature stands in the park (the house's pad is at 500)
         const float FadeMs = 300;
 
@@ -284,7 +285,13 @@ namespace SquishSquad.Menu
             if (t < 2 * turn + walk) return;
             // arrived
             if (enter) { Where = Place.Park; ShowGames(_tripStart + 2 * turn + walk, false); }
-            else { Where = Place.Home; _world.localPosition = Vector3.zero; if (Creature != null) Creature.transform.localPosition = _creatureHome; Fade(1, ms); Vignette(true, ms); }
+            else
+            {
+                Where = Place.Home; _world.localPosition = Vector3.zero; if (Creature != null) Creature.transform.localPosition = _creatureHome; Fade(1, ms); Vignette(true, ms);
+                // the park's picture reaches past its edge over the house's: back home it goes, or its tree cuts the
+                // house's leftmost one (menu.js leavePark removes it; kept here, drawn, for the next PLAY)
+                if (_parkGo != null) _parkGo.SetActive(false);
+            }
             // the clip ends in 'happy'; back to the idle loop once it has played
         }
 
@@ -316,7 +323,7 @@ namespace SquishSquad.Menu
         // the park's SVG, drawn once by the vector renderer into a texture placed one screen to the left of the house
         void EnsurePark()
         {
-            if (_parkTex != null) return;
+            if (_parkTex != null) { if (_parkGo != null) _parkGo.SetActive(true); return; }
             var st = _layout.ParkFor(Season, Level);
             if (st == null) return;
             var asset = Resources.Load<TextAsset>(MenuLayout.Root + st.res);
@@ -338,6 +345,7 @@ namespace SquishSquad.Menu
             msaa.Release(); Kill(msaa);
             _made.Add(_parkTex);
             var go = new GameObject("park");
+            _parkGo = go;
             go.transform.SetParent(_world, false);
             go.transform.localPosition = World(new Vector2(-_w - padX, -padY));
             var mesh = new Mesh { name = "park quad" };
