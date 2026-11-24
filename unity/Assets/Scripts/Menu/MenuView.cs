@@ -180,6 +180,7 @@ namespace SquishSquad.Menu
             }
             foreach (var p in _pieces) p.Tick(ms);
             TickTrip(ms);
+            TickHome(ms);
             TickIntro(ms);
             TickHud(ms);
             TickClip();
@@ -191,7 +192,7 @@ namespace SquishSquad.Menu
         }
 
         // ---- PLAY: the walk to the Game Park and back (webgame/app/menu.js enterPark / leavePark) ---------------------
-        public enum Place { Home, ToPark, Park, ToHome }
+        public enum Place { Home, ToPark, Park, ToHome, ToHouse, House, FromHouse }   // (the house's: MenuView.Home.cs)
         public Place Where { get; private set; } = Place.Home;
         float _tripStart = -1, _fadeFrom = 1, _fadeTo = 1, _fadeStart;
         Vector3 _creatureHome;
@@ -264,7 +265,7 @@ namespace SquishSquad.Menu
             float a = CurrentFade(ms);
             foreach (var p in _pieces) if (p.Data.id != "creature") p.SetAlpha(a);
             _hudAlpha = a;
-            if (Where == Place.Home || Where == Place.Park) return;
+            if (Where != Place.ToPark && Where != Place.ToHome) return;
             bool enter = Where == Place.ToPark;
             float turn = enter ? 380 : 340, walk = enter ? 2300 : 2100, t = ms - _tripStart;
             float X0 = _ox + 500 * _k, X1 = _ox + ParkPad * _k;

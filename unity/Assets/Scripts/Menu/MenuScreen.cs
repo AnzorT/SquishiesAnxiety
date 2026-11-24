@@ -279,7 +279,7 @@ namespace SquishSquad.Menu
                 if (data == last) return; last = data;
                 if (p?.Fb != null && p.Uid != null) _ = p.Fb.Data.SaveHouse(p.Uid, data); else PlayerPrefs.SetString(HouseKey, data);
             };
-            s.OnExit = () => AfterGame();
+            s.OnExit = () => { AfterGame(); _view.BackFromHouse(NowMs); };   // (out of the door and down the path)
             _game = s;
         }
         const string HouseKey = "squish.house6";
@@ -564,7 +564,7 @@ namespace SquishSquad.Menu
             if (tap == "trophies") { OpenAchievements(); return; }
             if (tap == "settings") { OpenSettings(); return; }
             if (tap == "shop") { OpenShop("daily"); return; }
-            if (tap == "home") { OpenHouse(); return; }
+            if (tap == "home") { if (!_view.GoHome(NowMs, OpenHouse)) OpenHouse(); return; }   // (the walk to the door and the flight in first: MenuView.Home.cs)
             Tapped?.Invoke(tap);
             if (Tapped == null) ShowToast(tap.ToUpperInvariant() + " isn't in the Unity version yet");
         }

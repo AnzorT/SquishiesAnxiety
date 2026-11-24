@@ -4,6 +4,7 @@
 //
 //   node tools/unity/rig/record.mjs mittens [--seconds 8] [--fps 30] [--moves idle]
 //   node tools/unity/rig/record.mjs mittens --clip park-enter --seconds 4    (PLAY's walk to the Game Park; park-leave)
+//   node tools/unity/rig/record.mjs mittens --clip home-enter --seconds 1.8   (MY HOUSE: the turn before the walk to the door)
 //   node tools/unity/rig/record.mjs mittens --clip result [--fps 24]    (the result card's character: four clips)
 //
 // --clip result: the result card's character (tools/rig/result.html, src/squishdoku/Trio.js) as Creatures/ResultRig.cs
@@ -141,7 +142,22 @@ if (CLIP === 'result') {
   }
   process.exit(0);
 }
-if (CLIP === 'park-enter' || CLIP === 'park-leave') {
+if (CLIP === 'home-enter') {
+  // main-menu.js goHome, the creature's part: it turns its back to us (spinOff + 180 over 430 ms, tween's ease-in-out
+  // quad) in its idle and keeps it while it walks up the path to the door (the walk's bob and the path are the stage's:
+  // Menu/MenuView.cs). Coming back (back()) it faces us at once and plays 'happy' at the end.
+  run(`(() => {
+    const I = ctl._I, EIO = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    let ph = 0;
+    window.__clipStep = function (now) { if (ph === 0) { ctl.play('idle'); ph = 1; } I.spinOff = 180 * EIO(Math.min(1, now / 430)); };
+  })()`, 'clip');
+  const total = Math.round(SECONDS * FPS);
+  for (let f = 0; f < total; f++) {
+    next += step;
+    while (t + 16 <= next) { run(`__clipStep(${t}); __clock.frame(16)`, 'frame'); t += 16; }
+    grab();
+  }
+} else if (CLIP === 'park-enter' || CLIP === 'park-leave') {
   // webgame/app/menu.js enterPark / leavePark, the creature's part: turn (spinOff), walk with HouseWalk's gait, turn
   // back, then 'happy'. The same calls, frame by frame at 16 ms; a frame kept every 1000 / FPS ms.
   run(`(() => {
