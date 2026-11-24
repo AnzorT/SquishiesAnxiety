@@ -219,7 +219,9 @@ namespace SquishSquad.Games.Hop
         {
             if (j < 0) return "edge";
             if (life[j] <= 0) return "gone";
-            if (j == lv.Goal && got != lv.All) return "locked";
+            // the ★: shut until every other cushion is cleared (the user, 2026-11-16; `life` already has the cushion being
+            // hopped off, and any bubbles bounced over, taken off)
+            if (j == lv.Goal && (got != lv.All || LeftOf(lv, life) > 0)) return "locked";
             if ((lv.Need[j] & ~got) != 0) return "order";
             if (lv.Beat[j] >= 0 && (hops + 1) % 3 != lv.Beat[j]) return "beat";
             return "";
@@ -459,7 +461,7 @@ namespace SquishSquad.Games.Hop
                     for (;;)
                     {
                         j = nb4[at * 4 + d];
-                        if (j < 0 || life[j] <= 0 || (j == goal && g != all) || (need[j] & ~g) != 0 || (beat[j] >= 0 && (h + 1) % 3 != beat[j]))
+                        if (j < 0 || life[j] <= 0 || (j == goal && (g != all || Remaining != 0)) || (need[j] & ~g) != 0 || (beat[j] >= 0 && (h + 1) % 3 != beat[j]))
                         {
                             okMove = false;
                             break;
@@ -528,11 +530,12 @@ namespace SquishSquad.Games.Hop
             return new ReplayResult { Ok = true, Steps = steps, St = st };
         }
 
-        // Stars for a finished level: 3 for every cushion cleared, 2 for up to 3 left, else 1; a hint takes one off
-        // (never below 1).
-        public static int StarsFor(int left, bool hinted)
+        // Stars for a finished level. Every win is a full clear now (the ★ only opens after it), so the stars count the
+        // take-backs on the way (the user, 2026-11-16): 3 with no UNDO or RESTART, 2 with up to 3, else 1; a hint takes
+        // one off (never below 1).
+        public static int StarsFor(int takebacks, bool hinted)
         {
-            int s = left == 0 ? 3 : left <= 3 ? 2 : 1;
+            int s = takebacks == 0 ? 3 : takebacks <= 3 ? 2 : 1;
             return Math.Max(1, s - (hinted ? 1 : 0));
         }
 

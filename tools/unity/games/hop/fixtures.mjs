@@ -14,6 +14,7 @@ import { DIRS, DCH, ARROWS, BEATS, parse, leftOf, newState, blockOf, tryMove, mo
 import LEVEL_DATA from '../../../../src/hop/levelData.js';
 import * as L from '../../../../src/hop/levels.js';
 import * as BG from '../../../../src/hop/board.js';
+import * as BZ from '../../../../src/hop/blitz.js';
 import { setLevelsConfig } from '../../../../src/playerXp.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -258,6 +259,7 @@ const timing = [];
     { lv: 250, best: { 100: 1 } }, { lv: 14, best: { x: 2, 10: 1, 2: 3, 13: 2.5, 14: 1 }, plays: 20, wins: 13 },
     { lv: 37, best: { 37: 3, 36: 0, 5: null }, plays: 40, wins: 36, seen: true },
     { lv: 90, best: { 90: 1, 1: 2 }, plays: 1e6, wins: 999999 }, { best: { 1: 3 } }, { lv: 2, best: null, plays: null },
+    { lv: 4, blitz: { top: 7, runs: 3 } }, { blitz: { top: 0 } }, { blitz: null, seen: true }, { lv: 9, blitz: { runs: 12, reached: 4 } },
   ];
   const xpsP = [
     {}, { pxp: 0 }, { pxp: 50 }, { pxp: 99 }, { pxp: 199.5 }, { pxp: 1234 }, { pxp: -20 }, { pxp: 1e7 },
@@ -272,7 +274,8 @@ const timing = [];
   }));
   profiles.push({ hop: 5 }, { hop: 'x', pxp: 10 }, { hop: { lv: NaN } }); // odd hop values
   const configs = [null, { xpPerLevel: 150, xp: { games: 1.5, replay: 0.3 } }, { xpPerLevel: -5, xp: { games: 0, replay: 2 } }];
-  const results = [{ left: 0, hinted: false }, { left: 0, hinted: true }, { left: 2 }, { left: 3, hinted: 1 }, { left: 7, hinted: false }, { left: 1, hinted: true }];
+  // (develop, 2026-11-16: the stars count the take-backs, RESTARTs and RETRYs)
+  const results = [{ takebacks: 0, hinted: false }, { takebacks: 0, hinted: true }, { takebacks: 2 }, { takebacks: 3, hinted: 1 }, { takebacks: 7, hinted: false }, { takebacks: 1, hinted: true }, { hinted: false }];
   const records = profiles.map((p) => {
     const rec = L.record(p);
     return { profile: p, out: rec, starsOf: L.starsOf(rec), doneOf: L.doneOf(rec), afterStuck: L.afterStuck(p) };
@@ -292,8 +295,34 @@ const timing = [];
       });
     });
   });
+  // BLITZ MODE: afterBlitz and blitzPrize
+  const blitzes = [];
+  const bcfgs = [...configs, { xp: { blitz: { hop: 350 } } }, { xp: { blitz: { hop: -3 } } }];
+  bcfgs.forEach((cfg, ci) => {
+    setLevelsConfig(cfg);
+    profiles.forEach((p, pi) => {
+      if (pi % 4 && ci) return;
+      for (const cleared of [0, 1, 4, 12, 13, 20]) if ((pi + cleared) % 3 === 0 || !ci) blitzes.push({ config: cfg, profile: pi, cleared, out: L.afterBlitz(p, { cleared }), prize: L.blitzPrize(cleared) });
+    });
+  });
   setLevelsConfig(null);
-  write('profile', { profiles, records, after }, records.length * 4 + after.length);
+  write('profile', { profiles, records, after, blitzes }, records.length * 4 + after.length + blitzes.length);
+}
+
+// ---- blitz.js: the boards, their clocks and shapes ---------------------------------------------------------------------
+{
+  const shapes = [];
+  for (let i = 0; i < 30; i++) shapes.push({ i, out: BZ.blitzShape(i) });
+  const clocks = [];
+  for (const hops of [0, 3, 8, 15, 29]) for (const past of [0, 1, 5, 8, 9, 30]) clocks.push({ hops, past, out: BZ.blitzMs(hops, past) });
+  const seeds = [];
+  for (const s of [1, 12345, -7, 2147483000]) { const r = BZ.seeded(s); seeds.push({ seed: s, out: Array.from({ length: 6 }, () => r()) }); }
+  const specs = [];
+  for (const seed of [1, 99, 424242, 987654321]) for (let i = 0; i < 22; i++) {
+    const s = BZ.blitzSpec(i, seed);
+    specs.push({ i, seed, out: { lv: s.lv, map: s.map, tier: s.tier, sol: s.sol, cushions: s.cushions, twists: s.twists, size: s.size, ms: s.ms, coins: s.coins } });
+  }
+  write('blitz', { shapes, clocks, seeds, specs }, shapes.length + clocks.length + seeds.length + specs.length);
 }
 
 // ---- board.js geometry -------------------------------------------------------------------------------------------------

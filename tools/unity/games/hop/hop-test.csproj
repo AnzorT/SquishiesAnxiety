@@ -14,7 +14,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- the rules only (the screens and their drawing need Unity and the UI) -->
-    <Compile Include="../../../../unity/Assets/Scripts/Games/Hop/BoardGeometry.cs;../../../../unity/Assets/Scripts/Games/Hop/Engine.cs;../../../../unity/Assets/Scripts/Games/Hop/HopRoster.cs;../../../../unity/Assets/Scripts/Games/Hop/Js.cs;../../../../unity/Assets/Scripts/Games/Hop/LevelData.g.cs;../../../../unity/Assets/Scripts/Games/Hop/Levels.cs;../../../../unity/Assets/Scripts/Games/Hop/PlayerXp.cs" />
+    <Compile Include="../../../../unity/Assets/Scripts/Games/Hop/BoardGeometry.cs;../../../../unity/Assets/Scripts/Games/Hop/Blitz.cs;../../../../unity/Assets/Scripts/Games/Hop/Engine.cs;../../../../unity/Assets/Scripts/Games/Hop/HopRoster.cs;../../../../unity/Assets/Scripts/Games/Hop/Js.cs;../../../../unity/Assets/Scripts/Games/Hop/LevelData.g.cs;../../../../unity/Assets/Scripts/Games/Hop/Levels.cs;../../../../unity/Assets/Scripts/Games/Hop/PlayerXp.cs" />
     <Compile Include="*.cs" />
   </ItemGroup>
 </Project>

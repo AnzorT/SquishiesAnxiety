@@ -147,6 +147,8 @@ namespace SquishSquad.Games.Hop
             public List<HopState> Hist = new List<HopState>();
             public List<int> Moves = new List<int>();
             public bool Hinted, Busy, Over, Won, Feasible = true;
+            // the RESTARTs and RETRYs on this level (the stars: develop, 2026-11-16)
+            public int Takebacks;
             public List<Action> Queue = new List<Action>();
             public int Shown;
             public int[] Life;
@@ -454,6 +456,7 @@ namespace SquishSquad.Games.Hop
         void Restart()
         {
             if (G.St.Hops == 0 && !G.Over) return;
+            G.Takebacks += 1;
             _fresh = false;
             NewRound();
         }
@@ -564,7 +567,7 @@ namespace SquishSquad.Games.Hop
                 Animated.Sequence(Timing(_player.Hp, 1, 340, Easing.Linear), Animated.Timing(_player.Hp, new TimingConfig { ToValue = 0, Duration = 0, UseNativeDriver = true }), Timing(_player.Hp, 1, 340, Easing.Linear)).Start();
             });
             int left = Engine.LeftOf(_board, G.St.Life);
-            var outc = Levels.AfterLevel(Profile, _spec, new HopResult { Left = left, Hinted = G.Hinted });
+            var outc = Levels.AfterLevel(Profile, _spec, new HopResult { Takebacks = G.Takebacks, Hinted = G.Hinted });
             HopSave.Paid(outc, Profile);   // (signed in: saveHop)
             Apply(outc.Update);
             var res = new HopCards.Result
@@ -623,7 +626,7 @@ namespace SquishSquad.Games.Hop
             G.St = Engine.NewState(_board);
             G.Hist = new List<HopState>();
             G.Moves = new List<int>();
-            if (forget) G.Hinted = false;
+            if (forget) { G.Hinted = false; G.Takebacks = 0; }
             G.Over = false;
             G.Won = false;
             G.Busy = false;
@@ -733,6 +736,7 @@ namespace SquishSquad.Games.Hop
             HopSave.Record(stuck);
             Apply(stuck);
             SetStuck(false);
+            G.Takebacks += 1;
             _fresh = false;
             NewRound();
         }
