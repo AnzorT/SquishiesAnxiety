@@ -136,14 +136,19 @@ namespace SquishSquad.Games.Sort
             _tx = new AnimatedValue(0), _ty = new AnimatedValue(0), _sq = new AnimatedValue(0), _peekBar = new AnimatedValue(1), _clutterIn = new AnimatedValue(0);
         readonly AnimatedValue _hoverX = new AnimatedValue(0), _hoverY = new AnimatedValue(0), _hoverO = new AnimatedValue(0);
 
-        sealed class InsideAnim { public AnimatedValue X = new AnimatedValue(0), Y = new AnimatedValue(0), S = new AnimatedValue(0); }
+        // (Hop and Sq: the win's wave behind the shutting doors, squashed and stretched about their feet)
+        sealed class InsideAnim { public AnimatedValue X = new AnimatedValue(0), Y = new AnimatedValue(0), S = new AnimatedValue(0), Hop = new AnimatedValue(0), Sq = new AnimatedValue(0); }
         sealed class PieceAnim
         {
             public AnimatedValue X = new AnimatedValue(0), Y = new AnimatedValue(0), S = new AnimatedValue(1), O = new AnimatedValue(0), Lift = new AnimatedValue(0),
                 Shake = new AnimatedValue(0), Hop = new AnimatedValue(0), Tick = new AnimatedValue(0);
+            // develop's stills' own moves (Game.js Piece): squashed (-1 … 1), tilted and spun (degrees) about its feet, a
+            // sweat drop running down (0 → 1)
+            public AnimatedValue Sq = new AnimatedValue(0), Tilt = new AnimatedValue(0), Spin = new AnimatedValue(0), Sweat = new AnimatedValue(0);
             // Game.js Piece's loops: the mixed-up wobble (1550 ms keyframes) and the selected pulse (840 ms up and down)
-            public KeyLoop Wob = new KeyLoop(1550, WOB_AT, WOB_VALUES), Pulse = new KeyLoop(840, KeyLoop.PHASE, KeyLoop.UP_DOWN);
-            public bool WobOn, PulseOn;
+            public KeyLoop Wob = new KeyLoop(1550, WOB_AT, WOB_VALUES), Pulse = new KeyLoop(840, KeyLoop.PHASE, KeyLoop.UP_DOWN),
+                Wig = new KeyLoop(330, KeyLoop.PHASE, KeyLoop.SWING), Sway = new KeyLoop(2600, KeyLoop.PHASE, KeyLoop.SWING);
+            public bool WobOn, PulseOn, WigOn, SwayOn;
         }
         static readonly double[] WOB_AT = { 0, 0.084, 0.168, 0.252, 0.335, 0.377, 0.419, 1 };
         static readonly double[] WOB_VALUES = { 0, 0.71, 1, 0, -1, -0.5, 0, 0 };
@@ -187,6 +192,10 @@ namespace SquishSquad.Games.Sort
         int _peekLeft, _left;
         KeyLoop _warnLoop;
         bool _paused, _showInside = true, _foodMoved;
+        // Game.js winning: the round is sorted; the ones at home wave inside, under the shutting doors
+        bool _winning;
+        // Game.js SHUT_AT / SHUT_MS: the win's doors start to swing shut, and take this long
+        const double SHUT_AT = 350, SHUT_MS = 650;
         Dictionary<int, int> _insideNow = new Dictionary<int, int>();
         readonly List<int> _timers = new List<int>();
         int _interval = -1;
@@ -294,22 +303,96 @@ namespace SquishSquad.Games.Sort
             _hoverO.SetValue(0);
             Snd.Play(reason == "time" ? "sd_timeUp" : "sd_blitzFail");
             Snd.Wrong();
-            // show where they all belonged
+            // show where they all belonged: the ones not home hop there, the impostors still in the tray are found out and
+            // spin away; then everyone droops, and the card
+            var sadList = new List<(int k, double delay)>();
+            double last = 0;
+            int n = 0;
             for (int k = 0; k < Board.Pieces.Count; k++)
             {
                 if (_play.Gone.Contains(k)) continue;
-                var A = _anims[k];
+                NextTurn(k);
                 var p = Board.Pieces[k];
                 if (p.Home == null)
-                    Animated.Parallel(Animated.Timing(A.O, Timing(0, 300)), Animated.Timing(A.S, Timing(0.2, 300))).Start();
-                else if (!_play.Locked.Contains(k)) { int kk = k; int home = p.Home.Value; Later(200 + k * 70, () => Fly(kk, Place.Slot(home), hop: 30)); }
+                {
+                    var c = SpotOf(_play.At[k]);
+                    CaughtStill(k, AwayDir(c.x + _P / 2), c.y, 150 + n++ * 110);
+                    continue;
+                }
+                if (_play.Locked.Contains(k)) { sadList.Add((k, 350 + sadList.Count * 50)); continue; }
+                int kk = k; int home = p.Home.Value;
+                double d = 200 + k * 70;
+                Later(d, () => Fly(kk, Place.Slot(home), hop: 30));
+                sadList.Add((k, d + 480));
+                last = Math.Max(last, d + 480);
             }
+            Droop(sadList);
             var outc = Levels.AfterLevel(Profile, _theme, Spec, false, _mistakes, null);
             SortSave.Record(outc.Update);   // (signed in: saveSort)
             Apply(outc.Update);
             var uri = Board.Pieces.Count > 0 ? Board.Pieces[0].Uri : null;
-            Later(1700, () => _fail = Open(SortCards.FailCard(_sw, _sh, reason, uri, Replay, Leave), 1));
+            Later(Math.Max(1900, last + 1000), () => _fail = Open(SortCards.FailCard(_sw, _sh, reason, uri, Replay, Leave), 1));
         }
+
+        // A loss: everyone droops (`list`: who, when), a deflating sigh, then a slow sad sway.
+        bool _sad;
+        void Droop(List<(int k, double delay)> list)
+        {
+            if (list.Count == 0) return;
+            double first = double.MaxValue;
+            foreach (var (k, delay) in list)
+            {
+                var A = _anims[k];
+                Later(delay, () => Animated.Timing(A.Sq, Timing(0.24, 520, Easing.Out(Easing.Quad))).Start());
+                first = Math.Min(first, delay);
+            }
+            Later(first, () => _sad = true);
+        }
+
+        // ---- the stills' own moves (develop's Game.js; the rigs do these on their page) ------------------------------
+        // A piece's turn: a later step of one of its moves is dropped once the player has picked it up again.
+        readonly Dictionary<int, int> _turns = new Dictionary<int, int>();
+        int TurnOf(int k) => _turns.TryGetValue(k, out var t) ? t : 0;
+        void NextTurn(int k) => _turns[k] = TurnOf(k) + 1;
+        void LaterFor(int k, double ms, Action fn) { int t = TurnOf(k); Later(ms, () => { if (TurnOf(k) == t) fn(); }); }
+
+        // a sweat drop running down
+        void Sweat(PieceAnim A)
+        {
+            A.Sweat.SetValue(0);
+            Animated.Timing(A.Sweat, Timing(1, 900, Easing.In(Easing.Quad))).Start();
+        }
+
+        // an impostor found out: a guilty jump, then a spin away off the nearer side, smaller and smaller (`y0`: where it
+        // stands, its still's top)
+        void CaughtStill(int k, int dir, double y0, double delay = 0)
+        {
+            var A = _anims[k];
+            double PP = _P, W = AreaW;
+            LaterFor(k, delay, () =>
+            {
+                Sweat(A);
+                Animated.Sequence(
+                    Animated.Timing(A.Sq, Timing(0.35, 70)),
+                    Animated.Parallel(
+                        Animated.Timing(A.Hop, Timing(-PP * 0.5, 230, Easing.Out(Easing.Quad))),
+                        Animated.Timing(A.Sq, Timing(-0.45, 160)))).Start();
+            });
+            LaterFor(k, delay + 320, () =>
+            {
+                var ease = Easing.In(Easing.Quad);
+                Animated.Parallel(
+                    Animated.Timing(A.X, Timing(dir < 0 ? -PP * 1.6 : W + PP * 0.6, 720, ease)),
+                    Animated.Timing(A.Y, Timing(y0 - PP * 0.9, 720, Easing.Out(Easing.Quad))),
+                    Animated.Timing(A.Spin, Timing(dir * 900, 720, ease)),
+                    Animated.Timing(A.S, Timing(0.45, 720)),
+                    Animated.Timing(A.O, Timing(0, 720, Easing.In(Easing.Cubic))),
+                    Animated.Timing(A.Sq, Timing(0, 300))).Start();
+            });
+        }
+
+        // which side a squishy at `x` (the play area's) spins away to: the nearer one
+        int AwayDir(double x) => x < AreaW / 2 ? -1 : 1;
 
         void Win()
         {
@@ -317,31 +400,56 @@ namespace SquishSquad.Games.Sort
             _clk.Pause();
             _selected = null;
             _hoverO.SetValue(0);
-            // impostors still in the tray: poof
+            _winning = true;
+            // impostors still in the tray: found out, a guilty jump and a spin away
+            int n = 0;
             for (int k = 0; k < Board.Pieces.Count; k++)
             {
                 if (Board.Pieces[k].Home != null || _play.Gone.Contains(k)) continue;
-                var A = _anims[k];
-                var pc = TrayCenter(_tg, _play.At[k].I);
-                Spray("poof", pc.x, pc.y, 1);
-                Animated.Parallel(Animated.Timing(A.O, Timing(0, 260)), Animated.Timing(A.S, Timing(0.1, 260))).Start();
+                var c = SpotOf(_play.At[k]);
+                int dir = AwayDir(c.x + _P / 2);
+                double delay = 100 + n++ * 110;
+                NextTurn(k);
+                CaughtStill(k, dir, c.y, delay);
             }
             Snd.Play("sd_solve");
             Snd.Win();
-            Later(250, () => { Snd.Play("sd_confetti"); Spray("confetti", _g.Ix + _g.W / 2, _g.Iy + _g.H * 0.3, 1.2); });
-            Later(650, () => Spray("confetti", _g.Ix + _g.W * 0.25, _g.Iy + _g.H * 0.5, 1));
-            Later(800, () => Spray("confetti", _g.Ix + _g.W * 0.75, _g.Iy + _g.H * 0.5, 1));
-            // a hop wave along the shelves, the lamp flashing
+            // a bounce wave along the shelves, column by column (each row a little behind), as the doors swing shut over
+            // it (the stills: the inside ones, at home under the doors)
+            var G = _g;
+            double WaveAt(int home) => 150 + (home % G.Cols) * 70 + (home / G.Cols) * 40;
             for (int k = 0; k < Board.Pieces.Count; k++)
             {
                 var p = Board.Pieces[k];
                 if (p.Home == null) continue;
-                var A = _anims[k];
-                Later(150 + p.Home.Value * 60, () => Animated.Sequence(
-                    Animated.Timing(A.Hop, Timing(-_g.S * 0.28, 170, Easing.Out(Easing.Quad))),
-                    Animated.Timing(A.Hop, Timing(0, 200, Easing.Bounce))).Start());
+                var at = InsideXY(p.Home.Value);
+                var I = _ins[k];
+                I.X.SetValue(at.x); I.Y.SetValue(at.y); I.S.SetValue(1); I.Hop.SetValue(0); I.Sq.SetValue(0);
+                Later(WaveAt(p.Home.Value), () => Animated.Sequence(
+                    Animated.Timing(I.Sq, Timing(0.3, 70)),
+                    Animated.Parallel(
+                        Animated.Timing(I.Hop, Timing(-G.S * 0.42, 170, Easing.Out(Easing.Quad))),
+                        Animated.Timing(I.Sq, Timing(-0.4, 120))),
+                    Animated.Parallel(
+                        Animated.Timing(I.Hop, Timing(0, 170, Easing.In(Easing.Quad))),
+                        Animated.Timing(I.Sq, Timing(0, 170))),
+                    Animated.Timing(I.Sq, Timing(0.3, 60)),
+                    Animated.Spring(I.Sq, Spring(0, 3.5, 170))).Start());
             }
             Animated.Sequence(Array.ConvertAll(new[] { 0.4, 1, 0.5, 1 }, v => Animated.Timing(_light, Timing(v, 110)))).Start();
+            Later(250, () => { Snd.Play("sd_confetti"); Spray("confetti", G.Ix + G.W / 2, G.Iy + G.H * 0.3, 1.2); });
+            // the doors swing shut over the wave, the lamp going out; shut: a thud, a squash and two bursts
+            Later(SHUT_AT, () => Animated.Parallel(
+                Animated.Timing(_door, Timing(0, SHUT_MS, Easing.In(Easing.Quad))),
+                Animated.Timing(_light, Timing(0, SHUT_MS))).Start(r =>
+                {
+                    if (!r.Finished || !Alive) return;
+                    Snd.Play("fs_doorClose");
+                    Snd.Place();
+                    Animated.Sequence(Animated.Timing(_sq, Timing(0.45, 60)), Animated.Spring(_sq, Spring(0, 4, 180))).Start();
+                    Spray("confetti", G.Ix + G.W * 0.25, G.Iy + G.H * 0.4, 1);
+                    Spray("confetti", G.Ix + G.W * 0.75, G.Iy + G.H * 0.4, 1);
+                }));
             // Blitz: one more cleared; on to the next round
             if (_blitz) { BlitzCleared(); return; }
             double ms = _clk.Elapsed();
@@ -355,7 +463,7 @@ namespace SquishSquad.Games.Sort
                 After = outc.After != null ? new XpLevel(outc.After.Level, outc.After.Into, outc.After.Need) : default,
             };
             var spec = Spec;
-            Later(1500, () => _result = Open(SortCards.ResultCard(_sw, _sh, res, _lv >= Levels.LEVELS, Next, Replay, Leave, Trio()), 0));
+            Later(1700, () => _result = Open(SortCards.ResultCard(_sw, _sh, res, _lv >= Levels.LEVELS, Next, Replay, Leave, Trio()), 0));
         }
 
         void Mistake()
@@ -377,39 +485,92 @@ namespace SquishSquad.Games.Sort
             _selected = null;
             _hoverO.SetValue(0);
             var A = _anims[k];
+            // where it is: under the finger if it was dragged, else still in its spot
+            var here = (x: A.X.GetValue(), y: A.Y.GetValue());
+            NextTurn(k);
             if (r.Outcome == Sort.Board.Lock)
             {
+                // squashed into its spot, a happy hop, sparkles
+                Fly(k, r.State.At[k], bounce: 5);
+                JoyStill(k);
+                if (target.IsSlot) { var sc = SlotCenter(_g, target.I); Spray("spark", sc.x, sc.y, 1.1); }
                 Snd.Play("fs_snap");
                 Snd.Place();
-                Fly(k, r.State.At[k], bounce: 5);
-                if (target.IsSlot) { var sc = SlotCenter(_g, target.I); Spray("spark", sc.x, sc.y, 1.1); }
                 A.Tick.SetValue(0);
                 Animated.Sequence(Animated.Spring(A.Tick, Spring(1, 4, 160))).Start();
-                if (r.Bumped.HasValue) { int b = r.Bumped.Value; var st = r.State; Later(120, () => { Snd.Play("fs_drop"); Fly(b, st.At[b], hop: 26); }); }
-                if (Sort.Board.Solved(Board, r.State)) Later(450, Win);
+                if (r.Bumped.HasValue)
+                {
+                    int b = r.Bumped.Value; var st = r.State;
+                    NextTurn(b);
+                    Later(120, () => { Fly(b, st.At[b], hop: 26); LaterFor(b, 380, () => Squash(_anims[b], 0.35)); Snd.Play("fs_drop"); });
+                }
+                // (once the last one's happy hop is down)
+                if (Sort.Board.Solved(Board, r.State)) Later(700, Win);
             }
             else if (r.Outcome == Sort.Board.Wrong)
             {
+                // onto the wrong spot, a shake of the head (no!) with a sweat drop, and one big bounce back to the tray
                 Snd.Play("fs_wrong");
                 var at = CenterOf(k);
                 Spray("angry", at.x, at.y, 1);
-                Fly(k, from, hop: 22);
-                A.Shake.SetValue(0);
-                Animated.Sequence(Array.ConvertAll(new double[] { 10, -9, 7, -5, 3, 0 }, v => Animated.Timing(A.Shake, Timing(v, 50)))).Start();
+                NopeStill(k, target, from);
                 Mistake();
             }
             else if (r.Outcome == Sort.Board.Impostor)
             {
+                // found out: a guilty jump, then it spins away
                 Snd.Play("fs_impostor");
-                var ic = CenterOf(k);
-                Later(380, () => Spray("poof", ic.x, ic.y, 1.2));
                 Say("IMPOSTOR!", ink: "#8e1030", small: true, hold: 500, sub: "It was never inside!");
-                Animated.Sequence(
-                    Animated.Timing(A.S, Timing(1.3, 160)),
-                    Animated.Parallel(Animated.Timing(A.S, Timing(0, 260, Easing.In(Easing.Back(2)))), Animated.Timing(A.O, Timing(0, 260)))).Start();
+                CaughtStill(k, AwayDir(here.x + _P / 2), here.y);
+                Later(380, () => Spray("poof", here.x + _P / 2, here.y + _P / 2, 1.2));
                 Mistake();
             }
-            else { Fly(k, r.State.At[k]); Snd.Play("fs_drop"); }
+            else
+            {
+                // back to the tray (or where it was), landing with a squash
+                Fly(k, r.State.At[k]);
+                LaterFor(k, 220, () => Squash(A, 0.3));
+                Snd.Play("fs_drop");
+            }
+        }
+
+        // squashed flat, then springing back with a wobble
+        static void Squash(PieceAnim A, double hard = 0.5) =>
+            Animated.Sequence(Animated.Timing(A.Sq, Timing(hard, 60, Easing.Out(Easing.Quad))), Animated.Spring(A.Sq, Spring(0, 3.5, 170))).Start();
+
+        // the right spot: squashed in as it lands, a happy hop, squashed again
+        void JoyStill(int k)
+        {
+            var A = _anims[k];
+            double S = _g.S;
+            LaterFor(k, 170, () => Squash(A, 0.6));
+            LaterFor(k, 330, () => Animated.Parallel(
+                Animated.Sequence(
+                    Animated.Timing(A.Hop, Timing(-S * 0.3, 180, Easing.Out(Easing.Quad))),
+                    Animated.Timing(A.Hop, Timing(0, 180, Easing.In(Easing.Quad)))),
+                Animated.Sequence(
+                    Animated.Timing(A.Sq, Timing(-0.45, 120)),
+                    Animated.Timing(A.Sq, Timing(0, 240)))).Start(r => { if (r.Finished) Squash(A, 0.45); }));
+        }
+
+        // a wrong spot: onto it, a shake of the head with a sweat drop, then one big bounce back to `back`
+        void NopeStill(int k, Place at, Place back)
+        {
+            var A = _anims[k];
+            Fly(k, at, bounce: 8);
+            LaterFor(k, 160, () =>
+            {
+                Squash(A, 0.35);
+                Sweat(A);
+                A.Tilt.SetValue(0);
+                Animated.Sequence(Array.ConvertAll(new double[] { 14, -14, 12, -9, 5, 0 }, v => Animated.Timing(A.Tilt, Timing(v, 80, Easing.InOut(Easing.Quad))))).Start();
+            });
+            LaterFor(k, 760, () =>
+            {
+                Fly(k, back, hop: _P * 0.75);
+                Animated.Sequence(Animated.Timing(A.Sq, Timing(-0.4, 140)), Animated.Timing(A.Sq, Timing(0, 220))).Start();
+            });
+            LaterFor(k, 1140, () => { Squash(A, 0.45); Snd.Play("fs_drop"); });
         }
 
         // ---- the timeline -----------------------------------------------------------------------------------------
@@ -453,6 +614,7 @@ namespace SquishSquad.Games.Sort
                 var A = _anims[k];
                 var a = Board.After[k];
                 A.Lift.SetValue(0); A.Hop.SetValue(0); A.Shake.SetValue(0); A.Tick.SetValue(0);
+                A.Sq.SetValue(0); A.Tilt.SetValue(0); A.Spin.SetValue(0); A.Sweat.SetValue(0);
                 if (a.IsSlot)
                 {
                     var to0 = SpotOf(a);
@@ -467,9 +629,11 @@ namespace SquishSquad.Games.Sort
                 double delay = n * 85;
                 n += 1;
                 var place = a;
+                int kk = k;
                 Later(delay, () =>
                 {
                     var to = SpotOf(place);
+                    LaterFor(kk, 560, () => Squash(A, 0.35));
                     Animated.Parallel(
                         Animated.Timing(A.O, Timing(1, 90)),
                         Animated.Timing(A.X, Timing(to.x, 560, Easing.Out(Easing.Quad))),
@@ -616,7 +780,7 @@ namespace SquishSquad.Games.Sort
             _g = Geometry(AreaW - _tg.Tw - 20, AreaH, Spec.Rows, Spec.Cols, _m, 0);
             _P = JsRound(_g.S * 0.8); _Q = JsRound(_g.S * 0.74);
             _trayScale = Math.Min(1, _tg.Cell * 0.94f / _P);
-            if (_anims != null) foreach (var A in _anims) { A.Wob.Unmount(); A.Pulse.Unmount(); }
+            if (_anims != null) foreach (var A in _anims) { A.Wob.Unmount(); A.Pulse.Unmount(); A.Wig.Unmount(); A.Sway.Unmount(); }
             _ins = new InsideAnim[Board.Pieces.Count];
             _anims = new PieceAnim[Board.Pieces.Count];
             for (int k = 0; k < _ins.Length; k++) { _ins[k] = new InsideAnim(); _anims[k] = new PieceAnim(); }
@@ -630,6 +794,9 @@ namespace SquishSquad.Games.Sort
             _play = Sort.Board.StartState(Board);
             _showInside = true;
             _foodMoved = false;
+            _winning = false;
+            _sad = false;
+            _turns.Clear();
             _clutterIn.SetValue(0);
             _insideNow = new Dictionary<int, int>(Board.Start);
             _door.SetValue(1); _light.SetValue(1);
@@ -835,11 +1002,18 @@ namespace SquishSquad.Games.Sort
             {
                 if (Math.Sqrt((x - T.X0) * (x - T.X0) + (y - T.Y0) * (y - T.Y0)) < 9) return;
                 T.Moved = true;
-                Snd.Play("fs_pick");
-                Snd.Tap();
+                // picked up to drag: stretched tall and lifted
+                var A = _anims[k];
+                NextTurn(k);
                 _dragK = k;
                 _selected = null;
-                Animated.Parallel(Animated.Spring(_anims[k].S, Spring(1.06, 6, 160)), Animated.Timing(_anims[k].Lift, Timing(1, 120))).Start();
+                Snd.Play("fs_pick");
+                Snd.Tap();
+                A.Tilt.SetValue(0); A.Sweat.SetValue(0); A.Hop.SetValue(0);
+                Animated.Parallel(
+                    Animated.Spring(A.S, Spring(1.06, 6, 160)),
+                    Animated.Timing(A.Lift, Timing(1, 120)),
+                    Animated.Sequence(Animated.Timing(A.Sq, Timing(-0.5, 90, Easing.Out(Easing.Quad))), Animated.Spring(A.Sq, Spring(-0.25, 4, 160)))).Start();
             }
             // held a little above the finger, so it can be seen
             _anims[k].X.SetValue(x - _P / 2);
@@ -906,6 +1080,9 @@ namespace SquishSquad.Games.Sort
             double i0 = input[i - 1], i1 = input[i];
             return output[i - 1] + (v - i0) / (i1 - i0) * (output[i] - output[i - 1]);
         }
+
+        // a squash -1 … 1 as its widths and heights (Game.js: scaleX 0.84 / 1 / 1.22, scaleY 1.2 / 1 / 0.78)
+        static readonly double[] SQ_IN = { -1, 0, 1 }, SQ_X = { 0.84, 1, 1.22 }, SQ_Y = { 1.2, 1, 0.78 };
 
         static Affine About(double w, double h, Affine m) => Affine.Translate(w / 2, h / 2) * m * Affine.Translate(-w / 2, -h / 2);
 
@@ -981,23 +1158,27 @@ namespace SquishSquad.Games.Sort
             double pop = Lerp(_pop.GetValue(), new[] { 0.0, 1 }, new[] { 0.6, 1 });
             wrapM = wrapM * Affine.ScaleBy(pop, pop);
             var wrap = area * Affine.Translate(_g.Bx, _g.By) * About(wrapW, wrapH, wrapM);
-            var body = L("body"); SetM(body, _deal.ToString(), () => SortArt.Body(_m, _g), _g.BodyW, _g.BodyH + _g.Feet, 4); body.Transform = wrap;
+            // (develop's realistic fridge: the shelves are part of the inside, under the lamp's glow and the clutter)
+            var body = L("body"); SetM(body, _deal.ToString(), () => SortArt.Body(_m, _g), _g.BodyW, _g.BodyH + _g.Feet, SortArt.BodyMargin(_g)); body.Transform = wrap;
             var inside = wrap * Affine.Translate(SortArt.InsideX, SortArt.InsideY(_g));
             float hd = _g.H + _g.Crisper;
             var ib = L("inside back"); SetM(ib, _deal.ToString(), () => SortArt.InsideBack(_m, _g), _g.W, hd, 1); ib.Transform = inside;
             var lamp = L("lamp"); SetM(lamp, _deal.ToString(), () => SortArt.Lamp(_m, _g), _g.W, hd, 1); lamp.Transform = inside; lamp.Opacity = (float)_light.GetValue();
-            var inf = L("inside front"); SetM(inf, _deal.ToString(), () => SortArt.InsideFront(_m, _g), _g.W, hd, 1); inf.Transform = inside;
             var cl = L("clutter");
             SetM(cl, $"{_deal}|{_foodMoved}", () => SortArt.Clutter(_m, _g, _foodMoved ? Board.FoodAfter : Board.FoodBefore, _Q, _data.Props[_theme]), _g.W, hd, 1);
             cl.Transform = inside; cl.Opacity = (float)_clutterIn.GetValue();
-            if (_showInside)
+            // the deal's squishies inside (and the win's wave behind the shutting doors: squashed and stretched about their
+            // feet)
+            if (_showInside || _winning)
                 foreach (var kv in Board.Start)
                 {
                     int k = kv.Value;
+                    var I = _ins[k];
                     var p = L("inside " + k);
                     p.SetPicture(Board.Pieces[k].Uri, _P, _P);
-                    double s = _ins[k].S.GetValue();
-                    p.Transform = inside * Affine.Translate(_ins[k].X.GetValue(), _ins[k].Y.GetValue()) * About(_P, _P, Affine.ScaleBy(s, s));
+                    double s = I.S.GetValue(), q = I.Sq.GetValue();
+                    var feet = Affine.Translate(0, _P / 2) * Affine.ScaleBy(Lerp(q, SQ_IN, SQ_X), Lerp(q, SQ_IN, SQ_Y)) * Affine.Translate(0, -_P / 2);
+                    p.Transform = inside * Affine.Translate(I.X.GetValue(), I.Y.GetValue() + I.Hop.GetValue()) * About(_P, _P, Affine.ScaleBy(s, s) * feet);
                     p.Visible = p.Picture != null;
                 }
             // the doors: the front until the door has turned 90°, then its inside
@@ -1022,7 +1203,8 @@ namespace SquishSquad.Games.Sort
                 var order = new List<int>();
                 for (int k = 0; k < Board.Pieces.Count; k++) if (!(k == _dragK || k == _selected)) order.Add(k);
                 for (int k = 0; k < Board.Pieces.Count; k++) if (k == _dragK || k == _selected) order.Add(k);
-                foreach (var k in order) DrawPiece(k, area);
+                // (at the win, only the impostors: the rest wave inside, under the doors)
+                foreach (var k in order) if (!(_winning && Board.Pieces[k].Home != null)) DrawPiece(k, area);
             }
             if (_bannerOn)
             {
@@ -1074,10 +1256,13 @@ namespace SquishSquad.Games.Sort
             bool mixed = Phase == "place" && !_play.Gone.Contains(k) && _play.At[k].IsSlot && !_play.Locked.Contains(k);
             bool selected = _selected == k, locked = _play.Locked.Contains(k);
             double lift = A.Lift.GetValue() + Lerp(A.Pulse.Value, new[] { 0.0, 1 }, new[] { 0, 0.35 });
-            double rot = Lerp(A.Wob.Value, new[] { -1.0, 1 }, new[] { -9.0, 9 });
+            double rot = A.Wob.Value * 9 + A.Wig.Value * 7 + A.Sway.Value * 3 + A.Tilt.GetValue();
             double s = A.S.GetValue() * Lerp(lift, new[] { 0, 1.35 }, new[] { 1, 1.16 });
+            double q = A.Sq.GetValue();
+            // squashed, stretched and tilted about its feet, then spun about its middle (Game.js Piece)
+            var feet = Affine.Translate(0, _P / 2) * Affine.Rotate(rot) * Affine.ScaleBy(Lerp(q, SQ_IN, SQ_X), Lerp(q, SQ_IN, SQ_Y)) * Affine.Translate(0, -_P / 2) * Affine.Rotate(A.Spin.GetValue());
             var m = area * Affine.Translate(A.X.GetValue() + A.Shake.GetValue(), A.Y.GetValue() + A.Hop.GetValue() + Lerp(lift, new[] { 0, 1.35 }, new[] { 0.0, -11 }))
-                    * About(_P, _P, Affine.ScaleBy(s, s) * Affine.Rotate(rot));
+                    * About(_P, _P, Affine.ScaleBy(s, s) * feet);
             float op = (float)A.O.GetValue();
             // a soft floor shadow, smaller while lifted
             float sw = _P * 0.74f, sh = _P * 0.14f;
@@ -1086,6 +1271,16 @@ namespace SquishSquad.Games.Sort
             sd.Opacity = op * (float)Lerp(lift, new[] { 0, 1.35 }, new[] { 1, 0.5 });
             if (selected) { var r = L("selected " + k); SetM(r, _P.ToString(), () => SortArt.SelRing(_P), _P, _P, 2); r.Transform = m; r.Opacity = op; }
             var img = L("squishy " + k); img.SetPicture(pc.Uri, _P, _P); img.Transform = m; img.Opacity = op; img.Visible = pc.Uri != null;
+            // a sweat drop running down the side of its head (a square round but for one corner, turned so that corner
+            // points up)
+            double sw8 = A.Sweat.GetValue();
+            if (sw8 > 0 && sw8 < 1)
+            {
+                float d = _P * 0.16f;
+                var dr = L("sweat " + k); SetM(dr, _P.ToString(), () => SortArt.SweatDrop(d), d, d, 2);
+                dr.Transform = m * Affine.Translate(_P - _P * 0.1f - d, _P * 0.06f + sw8 * _P * 0.3) * About(d, d, Affine.Rotate(45));
+                dr.Opacity = op * (float)Lerp(sw8, new[] { 0, 0.12, 0.7, 1 }, new[] { 0.0, 1, 1, 0 });
+            }
             if (mixed) { var h = L("huh " + k); SetM(h, "", SortArt.Huh, 22, 22, 2); h.Transform = m * Affine.Translate(_P + 2 - 22, -4); h.Opacity = op; }
             if (locked)
             {
@@ -1107,6 +1302,10 @@ namespace SquishSquad.Games.Sort
                 bool sel = inPlay && _selected == k;
                 if (mixed != A.WobOn) { A.WobOn = mixed; if (mixed) A.Wob.Mount(); else A.Wob.Unmount(); }
                 if (sel != A.PulseOn) { A.PulseOn = sel; if (sel) A.Pulse.Mount(); else A.Pulse.Unmount(); }
+                // develop: a wiggle while held (picked or dragged), a slow sad sway once lost
+                bool held = inPlay && (_selected == k || _dragK == k), sad = inPlay && _sad && !_play.Gone.Contains(k);
+                if (held != A.WigOn) { A.WigOn = held; if (held) A.Wig.Mount(); else A.Wig.Unmount(); }
+                if (sad != A.SwayOn) { A.SwayOn = sad; if (sad) A.Sway.Mount(); else A.Sway.Unmount(); }
             }
         }
 

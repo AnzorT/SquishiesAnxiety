@@ -116,7 +116,8 @@ namespace SquishSquad.Games.Sort
                 var (dx, dy, dw, dh, hinge) = SortArt.DoorBox(c.M, c.G, i);
                 s.Raw(Nest.Svg(SortArt.DoorFront(c.M, i, hinge, dw, dh), "d" + i, dx * c.K, dy * c.K, $"scale({k})"));
             }
-            return new MapIcon($"{theme}|{model}|{rows}|{cols}", s.Markup, c.W, c.H);
+            // (the floor shadow spills past the body's box)
+            return new MapIcon($"{theme}|{model}|{rows}|{cols}", s.Markup, c.W, c.H) { Margin = (float)Math.Ceiling(SortArt.BodyMargin(c.G) * c.K + 2) };
         }
 
         /// <summary>Its layers (prefix `name`) at `at` (its box's top-left on screen): open by `door`, `uris` inside.</summary>
@@ -125,12 +126,11 @@ namespace SquishSquad.Games.Sort
             var g = G;
             string key = $"{_theme}|{_model}|{_rows}|{g.Cols}";
             var mini = at * Affine.ScaleBy(K, K);
-            var body = f.L(name + " body"); body.Set(key, () => SortArt.Body(M, g), g.BodyW, g.BodyH + g.Feet, 4); body.Transform = mini; body.Opacity = opacity;
+            var body = f.L(name + " body"); body.Set(key, () => SortArt.Body(M, g), g.BodyW, g.BodyH + g.Feet, SortArt.BodyMargin(g)); body.Transform = mini; body.Opacity = opacity;
             var inside = mini * Affine.Translate(SortArt.InsideX, SortArt.InsideY(g));
             float hd = g.H + g.Crisper;
             var ib = f.L(name + " inside back"); ib.Set(key, () => SortArt.InsideBack(M, g), g.W, hd, 1); ib.Transform = inside; ib.Opacity = opacity;
             var lamp = f.L(name + " lamp"); lamp.Set(key, () => SortArt.Lamp(M, g), g.W, hd, 1); lamp.Transform = inside; lamp.Opacity = opacity;
-            var inf = f.L(name + " inside front"); inf.Set(key, () => SortArt.InsideFront(M, g), g.W, hd, 1); inf.Transform = inside; inf.Opacity = opacity;
             int C = g.Cols;
             var spots = new[] { 0, C - 1, C + 1 };
             for (int i = 0; i < Math.Min(3, uris.Count); i++)

@@ -3,7 +3,8 @@
 // (Levels.BlitzSpec: Regular levels from further up the map at the Blitz skill, then the very very large fridge's
 // eight-shelf levels for good), each round on its own clock (BlitzSpec's LimitMs: a third more than its 3-star time,
 // 3 % shorter a round past the climb, down to three quarters), running only while sorting.
-//   a round sorted   the hop wave; CLEARED goes up 300 ms later; the next round 1700 ms after
+//   a round sorted   the bounce wave inside as the doors swing shut over it; CLEARED goes up 300 ms later; the next
+//                    round 1700 ms after
 //   a mistake / the clock out   the run stops ("held"); 800 ms later (the clock: 900) the save card: SAVE IT (a rewarded
 //                    ad, once a run; free with Remove Ads), SAVE FOR <gem> n (squad.blitzSave, twice the last), END RUN.
 //                    Saved after a mistake the round's clock runs on; after the clock ran out it starts again
@@ -12,7 +13,7 @@
 //   pause            the back orb (or Android's back) while sorting: the shared pause card (RESUME / QUIT)
 // The cards are Squishdoku's (Overlays.js BlitzSaveCard / BlitzOverCard, unit "round": Games/Squishdoku/SdBlitzCards).
 // The HUD is SortLevel's (develop's: "Blitz Mode", CLEARED / BEST and the rule on the glass, the pause icon while
-// sorting). Not ported yet: the droop at GAME OVER. This file is SortLevel's Blitz half. Open it with SortLevel.Blitz(...)
+// sorting). At GAME OVER everyone droops (SortLevel.Droop). This file is SortLevel's Blitz half. Open it with SortLevel.Blitz(...)
 // (SortGame.CreateBlitz in Unity). No UnityEngine here.
 using System;
 using System.Collections.Generic;
@@ -180,6 +181,10 @@ namespace SquishSquad.Games.Sort
             _hoverO.SetValue(0);
             _blitzCard = null;
             CloseB(ref _saveCard);
+            // everyone droops where they are
+            var sadList = new List<(int k, double delay)>();
+            for (int k = 0; k < Board.Pieces.Count; k++) if (!_play.Gone.Contains(k)) sadList.Add((k, 150 + sadList.Count * 60));
+            Droop(sadList);
             int top = (int)(Levels.Record(Profile).Blitz.Top ?? 0);
             var outc = PayOut();
             var res = new SdBlitzCards.OverResult

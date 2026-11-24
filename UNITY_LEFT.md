@@ -28,16 +28,14 @@ lists what isn't, so it can be picked up item by item with Claude Code.
 
 ---
 
-## 1. Squish Sort: the realistic fridges (biggest)
+## 1. Squish Sort: the realistic fridges (biggest) ✅ done 2026-11-24
 
 - **App:** `src/sort/Container.js` and `src/sort/models.js` (about 1,470 changed lines; all SVG). The fridge is drawn
   on the map (the fridge pictures) and on the play screen.
-- **Unity now:** still the old flat fridge. The HUD, hub, kitchen room and rules are already done.
-- **Unity code:** `unity/Assets/Scripts/Games/Sort/` (SortLevel, SortArt), exporter `tools/unity/export-sort.mjs`,
-  test `tools/unity/sort-test`.
-- **Done when:** `sort-test` level screens drop from 9–17 % to about 1–3 %.
-- **Also in Sort:** when a Blitz round is won, the doors swing shut over the bounce wave (`src/sort/Game.js`, the
-  `win` / `close` calls). Unity keeps the doors open with the ✓s.
+- **Unity now:** develop's seven fridges (`Games/Sort/SortModels.cs`, `SortArt.Fridge.cs`), on the map and in play.
+  `sort-test` levels 1, 6, 12, 19, 26, 33, 42 (every fridge): 1.5–2.3 %; `sort-test blitz` about 2 %.
+- **Also done:** the win as develop: the doors swing shut over the bounce wave, the impostors spin away, and the
+  stills' other moves (happy hop, head shake with a sweat drop, droop and sway on a loss, the GAME OVER droop).
 
 ## 2. Yard games (big)
 
