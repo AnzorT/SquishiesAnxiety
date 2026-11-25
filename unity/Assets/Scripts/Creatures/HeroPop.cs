@@ -37,6 +37,9 @@ namespace SquishSquad.Creatures
 
         /// <summary>popAt(lc.Ms): moves the rig (its moves, arms, spin, the landing's dust and sparkles) and returns where
         /// it's drawn: rig units -> the slot's screen dp (before the screen's shake).</summary>
+        /// <summary>Called once, as it lands (host.html: SND.land()).</summary>
+        public Action Landed;
+
         public Affine Step(LiveCreature lc, IHeroRig rig)
         {
             // popAt(t): grow (340 ms), hop (300), set (420)
@@ -56,6 +59,7 @@ namespace SquishSquad.Creatures
                 if (t >= land && !_landed)
                 {
                     _landed = true;
+                    Landed?.Invoke();
                     rig.Emit("unDust", _bb[0], _bb[1] - 2);
                     rig.Emit("unSpark", _bb[0], _bb[4] + 4);
                     rig.Play("happy");

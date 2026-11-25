@@ -6,7 +6,7 @@
 //   otherwise  from the menu: the back orb; DAILY CHALLENGES
 // Motion: the flame flickers from its base, the button breathes, today's tile pulses, the tiles pop in one after
 // another as the screen opens, the jackpot tile's shine sweeps across.
-// Not ported: the sounds. The squishy (`mascot`) isn't on the landscape screen; its name is in the line.
+// The squishy (`mascot`) isn't on the landscape screen; its name is in the line.
 using System;
 using System.Collections.Generic;
 using System.Linq;

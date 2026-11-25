@@ -6,7 +6,7 @@
 // taller than the panel (it is, by about 16 dp, on the reference phone); the scrim closes it.
 // The rules and the rows: Progression (src/progression.js), read again every minute. Claims go through OnClaim /
 // OnClaimChest (the host writes them: DailyWrites).
-// Not ported: the sound; the scroll's fling (a drag scrolls it, no momentum).
+// Not ported: the scroll's fling (a drag scrolls it, no momentum).
 using System;
 using System.Collections.Generic;
 using System.Linq;

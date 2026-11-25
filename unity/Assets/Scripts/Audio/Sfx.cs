@@ -125,6 +125,7 @@ namespace SquishSquad.Audio
             Snd.PlayFn = (n, d, r) => Play(n, d, r);
             Snd.LoopFn = (n, v, r) => new LoopWrap(Loop(n, v, r));
             Snd.PreloadFn = Preload;
+            Snd.SynthFn = SynthPlayer.Play;
             Snd.BudgetFn = SetBudget;
             Snd.HapticFn = k =>
             {

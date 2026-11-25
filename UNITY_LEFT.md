@@ -33,10 +33,11 @@ lists what isn't, so it can be picked up item by item with Claude Code.
      each of the seven yard games (intro poster, how-to sheet, play, result card), MY HOUSE ("Heading home" while
      the house loads), a chest upgrade and unlock (the glow), Squish Time (the loading beat, the sky), the intro on a
      rainy / snowy day, opening each game from the Game Park (the stand-in; the log's "opened in N ms"), and MY HOUSE:
-     the map, the beach, a sign written in Renovate (Aa, typing on the phone's keyboard). Watch for: the rigs' timing, Sort's doors clipping the rigs, the frame rate with many rigs on the
+     the map, the beach, a sign written in Renovate (Aa, typing on the phone's keyboard), and the chest's sounds on
+     the phone (each tap's crack and thump, the bounces, the upgrade's rise and poof, the burst; the unlock's bells,
+     whoosh, chord, rush, BAM and the creature's landing): how soon a tap's sound comes. Watch for: the rigs' timing, Sort's doors clipping the rigs, the frame rate with many rigs on the
      screen. Fix what's off.
-  2. **Item 5, what's left:** the Mittens fallback, sounds (the chest's hit and unlock).
-  3. **Item 6:** ask the user to decide (Android back over the Catalog, a new player's starter furniture, the tutorial). **Item 7** is the user's (the A15 test, deploying `functions/`, the release
+  2. **Item 6:** ask the user to decide (Android back over the Catalog, a new player's starter furniture, the tutorial). **Item 7** is the user's (the A15 test, deploying `functions/`, the release
      setup).
 - **Known failures that are older than this work:** `rig-test --all` stops about 110 runs in with a C# stack
   overflow, and Bunbun's park walks differ at 0.000 % (item 4, "Found on the way").
@@ -148,8 +149,7 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   canvas's own pixels, not the vault behind, as a canvas does); `Vector/SvgScene.cs` reads both (`FillNode` /
   `LayerNode.Additive`, an isolated group is a layer), `VectorRenderer` draws them with additive copies of
   VectorCover / VectorComposite (`Blend One [_DstBlend]`), and the reference rasteriser adds too. `shop-test smash-up`:
-  1.0–1.7 % at every moment (it was 1.2–17.4 %). Not seen in the Editor yet. **Left:** the page's hit and unlock
-  sounds (`Screens/Chests/ChestSmashView.cs`).
+  1.0–1.7 % at every moment (it was 1.2–17.4 %). Not seen in the Editor yet.
 - [x] **Squish Time's loading moment** (2026-11-25): `Games/Squish/SquishLoading.cs` (LoadingScreen.js: wood, the warm
   halo, the creature's still moving as CreatureThumbnail's 'ready' mood, "Getting ready" with the three hopping dots
   while its card is fetched, "I AM READY!" popping in with the 'ready' sound, the eased fade), over the screen as
@@ -171,9 +171,23 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   and both sides play develop's games: the endless Blitz (`afterBlitz(profile, { cleared })` / `AfterBlitz(P, cleared)`
   for Stack, Sort and now Hop, paid on every run's end as payOut), Hop's stars by `takebacks`, Sort's fridge only.
   Against the emulators (`tools/unity/backend/start-emulators.sh`): 142 passed, 0 failed.
-- [ ] **Menu fallback to Mittens** (`Menu/MenuView.cs`, commit 93a81bb): every creature animates now, so this almost
-  never kicks in. Keep it as a safety net or remove it.
-- [ ] **Sounds and haptics** in the ported screens (see `UNITY_TODO.md`).
+- [x] **No Mittens fallback in the menu** (2026-11-25, the user: remove it): `Menu/MenuView.cs` no longer swaps in
+  Mittens when the player's creature can't be animated. Its rig runs for every creature now; if one ever can't start
+  (or fails), the menu shows that creature's own still (`Characters/still/<key>`, at Mittens' scale with its feet
+  where his are) and its own name plate, hidden through the intro's night like the live one. Not seen in the Editor.
+- [x] **The chest's sounds** (2026-11-25): the pages synthesize them (chest-sfx.js for the smash, host.html's SND for
+  the unlock), so Unity does too: `Audio/WebSynth.cs` is a small offline Web Audio (oscillators, noise, biquads,
+  the gain ramps, the WaveShaper bus, the room's convolver, Chrome's own DynamicsCompressor)
+  and `Audio/ChestSounds.cs` the two pages' recipes on it (every material, accent and voice; each chest's own `sfx`
+  from models.json, now in `ChestMat.Sfx`). `ChestEngine` plays the hit, bounce, charge, poof and burst where
+  chest-models.js does; `ChestSmashView` the unlock's card, fly, full, gather (stopped at the BAM or by a tap) and
+  bam; `HeroPop.Landed` the landing. `Snd.Synth` renders off the main thread and `Audio/SynthPlayer.cs` plays the
+  clip, off with "Sound effects". `tools/unity/sound-test` (its `web.mjs`: the pages' own scripts in Chrome's
+  OfflineAudioContext): every sound within ~0.5 dB of Chrome's over its first 300 ms, the peaks alike; a hit renders
+  in ~12 ms, a KO in ~40 ms on the desktop (the room's spectra made ahead as the smash opens: watch the delay on the
+  A15). The chest page has no haptics. Not heard in Unity yet.
+- [x] **Sounds and haptics** in the other ported screens (see `UNITY_TODO.md`); the stale "Not ported: sounds" notes
+  at the top of the game and screen files are corrected. **Left:** the house's own sounds (with the house, item 1).
 
 ## 6. Decide
 

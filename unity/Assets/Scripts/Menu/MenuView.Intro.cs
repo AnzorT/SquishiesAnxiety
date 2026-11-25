@@ -185,6 +185,7 @@ namespace SquishSquad.Menu
             _intro = it;
             Fade(0, nowMs);   // the menu's HUD goes (x.fade(false))
             if (Creature != null) { Creature.gameObject.SetActive(false); Creature.SetTint(NightTint(0).c, NightTint(0).sat); }
+            _pieces.Find(x => x.Data.id == "creature")?.HideStill(true);   // (a still, when its rig can't start: hidden too)
             TickIntro(nowMs);
         }
 
@@ -267,6 +268,7 @@ namespace SquishSquad.Menu
             _sceneSr.enabled = true;
             if (_vignette != null) _vignette.enabled = true;
             foreach (var b in _birds) b.T.gameObject.SetActive(true);
+            _pieces.Find(x => x.Data.id == "creature")?.HideStill(false);
             if (Creature != null)
             {
                 Creature.gameObject.SetActive(true);

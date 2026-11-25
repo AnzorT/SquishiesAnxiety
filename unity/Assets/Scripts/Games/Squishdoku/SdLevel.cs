@@ -14,7 +14,7 @@
 //   paused   the top bar's pause (or Android's back): the board is hidden, the clock frozen (RESUME / QUIT)
 // Every motion is the app's (SquishSquad.Anim is React Native's Animated; the same timings, springs, easings, delays).
 // No UnityEngine here: SquishdokuGame shows the layers and feeds the touches; tools/unity/squishdoku-test runs it as is.
-// Not ported: sounds, haptics, the buddy's live rig (its still hops and shakes instead). Profile is kept in memory
+// Sounds and haptics through Audio/Snd.cs. Not ported: the buddy's live rig (its still hops and shakes instead). Profile is kept in memory
 // (signed in: a copy of the account's, and each outcome is saved there too: SdSave). Blitz is SdBlitz; the hub and the
 // map SdHub, SdMap (SdScreen hosts them all).
 using System;

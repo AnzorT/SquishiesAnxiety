@@ -100,6 +100,8 @@ namespace SquishSquad.Screens
         {
             W = w; H = h; _t = ticker;
             S = new ChestEngine(w, h, 0.73, 178) { TierHp = HP };
+            // (its sounds' room made ahead, off the main thread, where they play: not in the tests)
+            if (Audio.Snd.SynthFn != null) System.Threading.Tasks.Task.Run(Audio.ChestSounds.Warm);
             if (random != null) S.Random = random;
             // (sized for the HUD as it stands once painted: the page's stage measures it again after the first paint)
             S.Resize(w, h, HudBottom());
@@ -260,7 +262,7 @@ namespace SquishSquad.Screens
                 if (_mg != null && !_mg.Bammed)
                 {
                     double t = _t.Now - _mg.T0;
-                    if (t < _mg.Bam - 60) { _mg.Quiet = true; _mg.T0 -= _mg.Bam - t; }
+                    if (t < _mg.Bam - 60) { _mg.Quiet = true; StopSnd(_mg); _mg.T0 -= _mg.Bam - t; }
                     return;
                 }
                 _collectDown = InCollect(x, y); return;
@@ -959,6 +961,7 @@ namespace SquishSquad.Screens
         {
             public Reward Rw; public int N, Count; public double T0, NewAt, NewEnd, Gather, Charge, Bam;
             public bool Flew, Full, Gathering, Bammed, Side, Quiet, Done;
+            public Audio.ISndLoop Snd;   // (the gather's rush: stopped at the BAM)
             public double Cx, Cy, Mw, Mh, Rx, Ry, Wd, Ht;
             public readonly List<Mc> Cards = new List<Mc>();
             public double CountOp, CountSc = 1, CountPop = -1e9, GlowOp, GlowSc = 0.4, BurstAt, SideAt;
@@ -966,6 +969,7 @@ namespace SquishSquad.Screens
             public readonly List<Bit> Bits = new List<Bit>();
         }
         Mg _mg;
+        static void StopSnd(Mg m) { m.Snd?.Stop(); m.Snd = null; }
         static double Clamp(double v, double a, double b) => Math.Max(a, Math.Min(b, v));
         static double SM(double x) { x = Clamp(x, 0, 1); return x * x * (3 - 2 * x); }
         static double OutQ(double u) => 1 - (1 - u) * (1 - u);
@@ -1015,17 +1019,22 @@ namespace SquishSquad.Screens
                 double cu = t >= M.Charge ? (t - M.Charge) / CHARGE : 0, amp = cu != 0 ? 1.5 + 6 * cu : 0;
                 double jx = (Rnd() - 0.5) * 2 * amp, jy = (Rnd() - 0.5) * 2 * amp, jr = (Rnd() - 0.5) * 8 * cu;
                 foreach (var c in M.Cards) CardAt(c, t, jx, jy, jr);
-                if (!M.Flew && t >= M.NewAt) M.Flew = true;
+                if (!M.Flew && t >= M.NewAt) { M.Flew = true; if (!M.Quiet) Audio.Snd.Synth(Audio.ChestSounds.Fly); }
                 // the new one in: the count full, a ping where it landed
                 if (!M.Full && t >= M.NewEnd)
                 {
                     M.Full = true; M.Count = M.N; M.CountPop = now;
+                    if (!M.Quiet) Audio.Snd.Synth(Audio.ChestSounds.Full);
                     var (x, y, _) = Slot(M.N - 1);
                     M.Pings.Add((x, y, now));
                     var ping = M.Pings[M.Pings.Count - 1];
                     _t.SetTimeout(() => M.Pings.Remove(ping), 700);
                 }
-                if (!M.Gathering && t >= M.Gather) M.Gathering = true;
+                if (!M.Gathering && t >= M.Gather)
+                {
+                    M.Gathering = true;
+                    if (!M.Quiet) M.Snd = Audio.Snd.Synth(() => Audio.ChestSounds.Gather((GATHER + CHARGE) / 1000));
+                }
                 // the count over the middle, fading as they gather into it
                 double gu = t < M.Gather ? 0 : Clamp((t - M.Gather) / (GATHER * 0.35), 0, 1);
                 M.CountOp = M.Count > 0 ? 1 - gu : 0; M.CountSc = 1 + 0.4 * gu;
@@ -1071,7 +1080,15 @@ namespace SquishSquad.Screens
                 }
                 if (u >= 1)
                 {
-                    if (!c.Landed) { c.Landed = true; if (!c.IsNew) { M.Count++; M.CountPop = _t.Now; } }
+                    if (!c.Landed)
+                    {
+                        c.Landed = true;
+                        if (!c.IsNew)
+                        {
+                            M.Count++; M.CountPop = _t.Now;
+                            if (!M.Quiet) { int i = M.Count - 1; Audio.Snd.Synth(() => Audio.ChestSounds.Card(i)); }
+                        }
+                    }
                     y += Math.Sin(t / 140 + c.J) * 2.5 * Clamp((t - c.End) / 300, 0, 1);
                 }
             }
@@ -1101,6 +1118,7 @@ namespace SquishSquad.Screens
         {
             var M = _mg;
             M.Bammed = true; M.BurstAt = _t.Now;
+            StopSnd(M); Audio.Snd.Synth(Audio.ChestSounds.Bam);
             M.CountOp = 0;
             var cols = new[] { "#ffe27a", "#fff6c4", "#ffffff", "#ffb52e", M.Rw.RarBg ?? "#ffd84a" };
             const int n = 30;

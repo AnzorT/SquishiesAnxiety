@@ -45,7 +45,7 @@ namespace SquishSquad.Creatures
                 _rig.FrameAt(0);
                 var b = RigHost.RestBox(_rig.Id);
                 if (b == null) return;
-                _pop = new HeroPop(b);
+                _pop = new HeroPop(b) { Landed = () => Audio.Snd.Synth(Audio.ChestSounds.Land) };
                 _size = Mathf.Clamp(Mathf.RoundToInt(100 * (float)_pop.Fit(lc) * 1.12f * UiPiece.PxPerDp), 32, 1024);
                 _holder = new GameObject("hero creature " + _key);
                 _holder.transform.SetParent(_parent, false);
