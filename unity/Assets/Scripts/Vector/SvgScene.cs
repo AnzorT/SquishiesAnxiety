@@ -215,6 +215,8 @@ namespace SquishSquad.Vector
         {
             public readonly List<(string d, double x, double y, double scale)> Glyphs = new List<(string d, double x, double y, double scale)>();
             public Box Box = Box.Empty;
+            /// <summary>The line scaled across (textLength with lengthAdjust spacingAndGlyphs): each glyph's width too.</summary>
+            public double XScale = 1;
         }
 
         /// <summary>A &lt;text&gt; element's glyphs, or null to leave it out. The renderer has no fonts of its own: the host
@@ -235,7 +237,7 @@ namespace SquishSquad.Vector
             {
                 var path = new SvgNode { Tag = "path" };
                 path.Attrs.Add(new KeyValuePair<string, string>("d", g.d));
-                var o = Geometry.Flatten(path, m * Affine.Translate(g.x, g.y) * Affine.ScaleBy(g.scale, -g.scale), Tolerance, out _);
+                var o = Geometry.Flatten(path, m * Affine.Translate(g.x, g.y) * Affine.ScaleBy(g.scale * run.XScale, -g.scale), Tolerance, out _);
                 if (!o.IsEmpty) outlines.Add(o);
             }
             void Fills()

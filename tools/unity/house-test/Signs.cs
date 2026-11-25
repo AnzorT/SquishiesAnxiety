@@ -25,6 +25,7 @@ static partial class Program
         var opts = new System.Text.Json.JsonSerializerOptions { IncludeFields = true };
         UiFont.ReadJson = n => File.ReadAllText(Path.Combine(Repo, "unity/Assets/Resources/Fonts", n + ".json"));
         UiFont.ParseJson = j => System.Text.Json.JsonSerializer.Deserialize<UiFontData>(j, opts);
+        SvgText.Install();   // (<text> in the house's drawings, as Unity draws it)
         // the drawing code, as Unity runs it
         string work = Path.Combine(Repo, "webgame/test/out/unity-webgame");
         if (!RigHost.Boot(p => { var f = Path.Combine(work, p); return File.Exists(f) ? File.ReadAllText(f) : null; })) { Console.WriteLine("the rig didn't start: " + string.Join("; ", RigHost.BootErrors)); return 2; }
@@ -116,6 +117,10 @@ static partial class Program
     {
         Directory.CreateDirectory(outDir);
         string work = Path.Combine(Repo, "webgame/test/out/unity-webgame");
+        var opts = new System.Text.Json.JsonSerializerOptions { IncludeFields = true };
+        UiFont.ReadJson = n => File.ReadAllText(Path.Combine(Repo, "unity/Assets/Resources/Fonts", n + ".json"));
+        UiFont.ParseJson = j => System.Text.Json.JsonSerializer.Deserialize<UiFontData>(j, opts);
+        SvgText.Install();
         if (!RigHost.Boot(p => { var f = Path.Combine(work, p); return File.Exists(f) ? File.ReadAllText(f) : null; })) return 2;
         for (int i = 0; i < 20; i++) RigHost.Frame(40);
         HouseDraw.Eval = RigHost.HouseEval;

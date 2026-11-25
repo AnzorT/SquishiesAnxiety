@@ -14,6 +14,9 @@ FONTS = {
     'Nunito_700Bold': 'nunito/700Bold', 'Nunito_600SemiBold': 'nunito/600SemiBold', 'Nunito_800ExtraBold': 'nunito/800ExtraBold',
     'Nunito_900Black': 'nunito/900Black', 'Nunito_400Regular': 'nunito/400Regular',
     'Baloo2_500Medium': 'baloo-2/500Medium', 'Baloo2_700Bold': 'baloo-2/700Bold', 'Baloo2_800ExtraBold': 'baloo-2/800ExtraBold',
+    # CSS `cursive` as Android draws it (the house's handwritten signs: 'Brush Script MT', 'Segoe Script', ..., cursive):
+    # Dancing Script (npm install --no-save @expo-google-fonts/dancing-script)
+    'DancingScript_400Regular': 'dancing-script/400Regular', 'DancingScript_700Bold': 'dancing-script/700Bold',
 }
 # printable ASCII, Latin-1 letters and the punctuation the app writes (· • … – — ’ “ ” × ★ ♥ ← → etc.)
 CHARS = [chr(c) for c in range(0x20, 0x7f)] + [chr(c) for c in range(0xa0, 0x180)] + list('·•…–—‘’“”×÷★☆♥←→↑↓✓✔✕✖⏱▶◀⚡✨')

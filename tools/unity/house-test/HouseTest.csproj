@@ -20,6 +20,7 @@
     <!-- the sign editor's panel (House/SignPanel.cs: the UI kit's text and boxes) -->
     <Compile Include="../../../unity/Assets/Scripts/Ui/UiFont.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Ui/UiSvg.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/SvgText.cs" />
     <!-- the house's runtime drawings on the compiled realm (signframes: RigHost.HouseEval, as Unity's HouseDraw.Eval) -->
     <Compile Include="../../../unity/Assets/Scripts/Creatures/Js/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Creatures/Js/Gen/*.cs" />
