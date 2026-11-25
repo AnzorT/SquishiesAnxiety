@@ -69,6 +69,10 @@ namespace SquishSquad.Games.Yard.View
         static readonly Func<double, double> EaseOut = SquishSquad.Anim.Easing.Bezier(0, 0, 0.58, 1), Pop = SquishSquad.Anim.Easing.Bezier(0.2, 1.4, 0.4, 1), StarPop = SquishSquad.Anim.Easing.Bezier(0.2, 1.6, 0.4, 1), Ease = SquishSquad.Anim.Easing.Bezier(0.25, 0.1, 0.25, 1);
 
         double Cq => G.Cq;
+        // a border width as Chrome lays it out: whole px from 1 up (0.85cqh = 3.24 -> 3; Ui/Screens/Flex.cs Bw), so the box's
+        // inside is as wide as the page's (a how-to line that just fits there fits here)
+        static double Bw(double w) => w >= 1 ? Math.Floor(w) : w;
+        double B85 => Bw(0.85 * Cq);
         TextStyle T(string font, double cq, string color, double lh = 0, double ls = 0) => new TextStyle { Font = font, Size = (float)(cq * Cq), Color = color, LineHeight = lh > 0 ? (float)(cq * Cq * lh) : 0, LetterSpacing = (float)ls };
         static float Lh(TextStyle t) => t.LineHeight > 0 ? t.LineHeight : UiSvg.LineBox(t);
 
@@ -120,7 +124,7 @@ namespace SquishSquad.Games.Yard.View
         // the app's orange back orb (games.js BACK), 10cqh, its ‹ glyph
         void Orb(UiSvg s, double x, double y)
         {
-            double d = 10 * Cq, b = 0.7 * Cq;
+            double d = 10 * Cq, b = Bw(0.7 * Cq);
             s.Box((float)x, (float)y, (float)d, (float)d, new BoxStyle
             {
                 Gradient = new[] { "#ffc58a", "#ff9a4a", "#e0601c" }, GradientStops = new[] { 0f, 0.55f, 1f }, Radius = 999,
@@ -336,7 +340,7 @@ namespace SquishSquad.Games.Yard.View
         BoxStyle Card() => new BoxStyle
         {
             Gradient = new[] { "#fffaf0", "#fff1dc", "#f6e2c4" }, GradientStops = new[] { 0f, 0.55f, 1f }, Radius = (float)(8 * Cq),
-            BorderWidth = (float)(0.85 * Cq), BorderColor = "#ffffff",
+            BorderWidth = (float)B85, BorderColor = "#ffffff",
             Shadows = new[] { new Shadow(BROWN, 0, 0, 0, (float)(0.85 * Cq)), new Shadow(BROWN, 0, (float)(2.2 * Cq), 0, (float)(0.85 * Cq)), new Shadow("rgba(40,16,4,0.35)", 0, (float)(5 * Cq), (float)(12 * Cq)) },
         };
 
@@ -348,10 +352,10 @@ namespace SquishSquad.Games.Yard.View
             s.Box((float)x, (float)y, (float)w, (float)h, new BoxStyle
             {
                 Gradient = gold ? new[] { "#fff7b0", "#ffd23a", "#ff9c0a" } : new[] { "#ffffff", "#fff6e8", "#f3dfbd" }, GradientStops = new[] { 0f, 0.5f, 1f },
-                Radius = 999, BorderWidth = (float)(0.85 * Cq), BorderColor = "#ffffff",
+                Radius = 999, BorderWidth = (float)B85, BorderColor = "#ffffff",
                 Shadows = new[] { new Shadow(ring, 0, 0, 0, (float)(0.75 * Cq)), new Shadow(ring, 0, (float)(1.5 * Cq), 0, (float)(0.75 * Cq)) },
             });
-            double b = 0.85 * Cq, iw = w - 2 * b, ih = h - 2 * b;
+            double b = B85, iw = w - 2 * b, ih = h - 2 * b;
             s.Box((float)(x + b + iw * 0.08), (float)(y + b + 0.5 * Cq), (float)(iw * 0.84), (float)(ih * 0.42), new BoxStyle { Background = "rgba(255,255,255,0.45)", Radius = 999 });
             var t = T(Fred, fontCq, gold ? "#ffffff" : BROWN, 1, 0.03 * fontCq * Cq);
             if (gold)
@@ -363,7 +367,7 @@ namespace SquishSquad.Games.Yard.View
             string L = (label ?? "").ToUpperInvariant();
             s.Text(L, (float)(x + b), (float)(y + b + (ih - Lh(t)) / 2), t, (float)iw, 0.5f);
         }
-        double BtnW(string label, double fontCq, double padX) { var t = T(Fred, fontCq, "#fff", 1, 0.03 * fontCq * Cq); return UiSvg.BoxWidth((label ?? "").ToUpperInvariant(), t) + 2 * padX * Cq + 2 * 0.85 * Cq; }
+        double BtnW(string label, double fontCq, double padX) { var t = T(Fred, fontCq, "#fff", 1, 0.03 * fontCq * Cq); return UiSvg.BoxWidth((label ?? "").ToUpperInvariant(), t) + 2 * padX * Cq + 2 * B85; }
 
         // ygPop .35s cubic-bezier(.2,1.4,.4,1): scale 0.7 -> 1, opacity 0 -> 1
         (double k, double op) PopAt(double now) { double p = Math.Min(1, Math.Max(0, (now - _cardAt) / 350)), e = Pop(p); return (0.7 + 0.3 * e, Math.Min(1, e)); }
@@ -376,7 +380,7 @@ namespace SquishSquad.Games.Yard.View
             o.Add(Svg("iback", bx, by, d, d, s => { Orb(s, 0, 0); return s; }, 12, 1, Press("iback", bx + d / 2, by + d / 2)));
             Hits.Add(("iback", bx, by, d, d));
             double w = G.FW * 0.43, x = G.FX + G.FW - 3 * Cq - w, y = G.FY + 3 * Cq, h = G.FH - 6 * Cq;
-            double b = 0.85 * Cq, padT = 3 * Cq, padB = 4 * Cq, padX = 5 * Cq, cw = w - 2 * b - 2 * padX;
+            double b = B85, padT = 3 * Cq, padB = 4 * Cq, padX = 5 * Cq, cw = w - 2 * b - 2 * padX;
             // the column's parts and their heights
             double titleH = 6.4 * 1.42 * Cq;
             var ht = T(Nun8, 3.4, INK, 1.32);
@@ -385,7 +389,7 @@ namespace SquishSquad.Games.Yard.View
             foreach (var r in I.How) { var l = Wrap(r, ht, textW); rules.Add(l); listH += Math.Max(l.Count * lh, disc - 0.4 * Cq); }
             if (rules.Count > 1) listH += (rules.Count - 1) * 1.6 * Cq;
             var ot = T(Nun8, 3.2, BROWN, 1);
-            double optH = I.Opts.Count > 0 ? 3.2 * Cq + 2 * 1.6 * Cq + 2 * 0.6 * Cq : 0;
+            double optH = I.Opts.Count > 0 ? 3.2 * Cq + 2 * 1.6 * Cq + 2 * Bw(0.6 * Cq) : 0;
             double goH = 5.6 * Cq + 2 * 2.8 * Cq + 2 * b;
             var bt = T(Nun8, 3.2, "#9a6a3a", 1);
             double total = titleH + 2.2 * Cq + listH + 0.6 * Cq + (optH > 0 ? 1.4 * Cq + optH + 0.2 * Cq : 0) + 3 * Cq + goH + 1.8 * Cq + Lh(bt);
@@ -395,9 +399,9 @@ namespace SquishSquad.Games.Yard.View
             var opts = new List<(double x, double w)>();
             if (optH > 0)
             {
-                yy += 1.4 * Cq; double tot = -2 * Cq; foreach (var op in I.Opts) tot += UiSvg.BoxWidth(op.label, ot) + 2 * 3.4 * Cq + 2 * 0.6 * Cq + 2 * Cq;
+                yy += 1.4 * Cq; double tot = -2 * Cq; foreach (var op in I.Opts) tot += UiSvg.BoxWidth(op.label, ot) + 2 * 3.4 * Cq + 2 * Bw(0.6 * Cq) + 2 * Cq;
                 double ox = b + padX + (cw - tot) / 2;
-                for (int i = 0; i < I.Opts.Count; i++) { double ow = UiSvg.BoxWidth(I.Opts[i].label, ot) + 2 * 3.4 * Cq + 2 * 0.6 * Cq; opts.Add((ox, ow)); Hits.Add(("opt:" + i, x + ox, y + yy, ow, optH)); ox += ow + 2 * Cq; }
+                for (int i = 0; i < I.Opts.Count; i++) { double ow = UiSvg.BoxWidth(I.Opts[i].label, ot) + 2 * 3.4 * Cq + 2 * Bw(0.6 * Cq); opts.Add((ox, ow)); Hits.Add(("opt:" + i, x + ox, y + yy, ow, optH)); ox += ow + 2 * Cq; }
                 yy += optH + 0.2 * Cq;
             }
             double goY = yy + 3 * Cq, goX = b + padX;
@@ -412,7 +416,7 @@ namespace SquishSquad.Games.Yard.View
                 for (int i = 0; i < rules.Count; i++)
                 {
                     double dx = b + padX, dy = ly - 0.4 * Cq;
-                    s.Box((float)dx, (float)dy, (float)disc, (float)disc, new BoxStyle { Background = "#ff8a3d", Radius = 999, BorderWidth = (float)(0.7 * Cq), BorderColor = "#ffffff", Shadows = new[] { new Shadow("#e0601c", 0, 0, 0, (float)(0.35 * Cq)) } });
+                    s.Box((float)dx, (float)dy, (float)disc, (float)disc, new BoxStyle { Background = "#ff8a3d", Radius = 999, BorderWidth = (float)Bw(0.7 * Cq), BorderColor = "#ffffff", Shadows = new[] { new Shadow("#e0601c", 0, 0, 0, (float)(0.35 * Cq)) } });
                     var nt = T(Fred, 3.6, "#ffffff", 1);
                     s.Text((i + 1).ToString(CultureInfo.InvariantCulture), (float)dx, (float)(dy + (disc - Lh(nt)) / 2), nt, (float)disc, 0.5f);
                     for (int j = 0; j < rules[i].Count; j++) s.Text(rules[i][j], (float)(dx + disc + 2.2 * Cq), (float)(ly + j * lh), ht);
@@ -425,7 +429,7 @@ namespace SquishSquad.Games.Yard.View
                     s.Box((float)ox, (float)oy, (float)ow, (float)optH, new BoxStyle
                     {
                         Background = on ? null : "#fff6e8", Gradient = on ? new[] { "#fff7b0", "#ffd23a", "#ff9c0a" } : null, GradientStops = on ? new[] { 0f, 0.5f, 1f } : null,
-                        Radius = 999, BorderWidth = (float)(0.6 * Cq), BorderColor = "#ffffff", Shadows = new[] { new Shadow(on ? "#9c4d06" : BROWN, 0, 0, 0, (float)(0.4 * Cq)) },
+                        Radius = 999, BorderWidth = (float)Bw(0.6 * Cq), BorderColor = "#ffffff", Shadows = new[] { new Shadow(on ? "#9c4d06" : BROWN, 0, 0, 0, (float)(0.4 * Cq)) },
                     });
                     s.Text(I.Opts[i].label, (float)ox, (float)(oy + (optH - Lh(ot)) / 2), T(Nun8, 3.2, on ? "#7a3a04" : BROWN, 1), (float)ow, 0.5f);
                     if (held == "opt:" + i) s.Close();
@@ -443,7 +447,7 @@ namespace SquishSquad.Games.Yard.View
         {
             var R = u.Res ?? new YardUi.Result();
             o.Add(Svg("dim", G.FX, G.FY, G.FW, G.FH, s => s.Box(0, 0, (float)G.FW, (float)G.FH, new BoxStyle { Background = "rgba(50,24,6,0.55)", Radius = 26 }), 0));
-            double b = 0.85 * Cq, padT = 3.6 * Cq, padB = 4.6 * Cq, padX = 6 * Cq;
+            double b = B85, padT = 3.6 * Cq, padB = 4.6 * Cq, padX = 6 * Cq;
             // the parts: the title (8.4cqh lettering, 1.42 high), the stars (11cqh, gap 2cqh; margin 2 / 1cqh), the score
             // (12cqh / 1), the sub (3.6cqh / 1.3, margin-top 1cqh), the coins (4.6cqh, the coin 6.6cqh; margin 2.4 / 3.6cqh),
             // the buttons (5cqh, padding 2.6 / 6cqh, gap 3cqh)
