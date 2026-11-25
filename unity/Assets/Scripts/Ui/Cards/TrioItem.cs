@@ -2,7 +2,8 @@
 // that is grayed and once they are filled their color changes and they jump from joy, not a fast jump, a slow one and
 // they show happy animations"), and what the app's page does with them (tools/rig/result.html, through
 // hop/RigStage.js): they pop in grey; at T0 + i × STEP an earned one fills with colour from its feet up, jumps slowly
-// for joy and then keeps playing happy moves, with the gold rays behind it; a missed one sighs and stays grey.
+// for joy and then keeps playing happy moves, with a gold glow breathing behind it (Unity's own since 2026-11-25: the
+// app has turning rays there); a missed one sighs and stays grey.
 //
 // The page's part is here, move for move (the body's lift, squash and tilt about its feet, the pop in, the fill's edge,
 // the floor shadow, the arms and turns it hands the rig as `ext`); the rig itself (its face, its own states resWait /
@@ -174,7 +175,7 @@ namespace SquishSquad.Ui.Cards
                 if (o.Earned)
                 {
                     int S = (int)Math.Floor(o.W * 1.9 + 0.5);
-                    (o.Rays ??= new CardLayer("trio rays")).Set(CardArt.Rays(S, opacity: 0.55f, color: "#ffe45c"), S, S, 1);
+                    (o.Rays ??= new CardLayer("trio rays")).Set(CardArt.Glow(S, opacity: 0.55f, color: "#ffe45c"), S, S, 1);   // (a breathing glow, not the app's turning rays)
                 }
                 // its cut-out as a soft grey shape (tintColor #dccfbf), or in colour once it's earned and the rigs can't play
                 float w = (float)Math.Min(o.W, o.H / o.Ar), h = w * o.Ar;
@@ -461,8 +462,8 @@ namespace SquishSquad.Ui.Cards
                 if (o.Rays != null)
                 {
                     float S = o.Rays.W, g = (float)o.Glow.GetValue(), sc = (float)GlowScale.Evaluate(g);
-                    o.Rays.Transform = m * Affine.Translate(fx - S / 2, TH - 4 - o.H * 0.48f - S / 2) * Fx.About(S, S, Affine.ScaleBy(sc, sc) * Affine.Rotate(o.Spin.Degrees));
-                    o.Rays.Opacity = op * g;
+                    o.Rays.Transform = m * Affine.Translate(fx - S / 2, TH - 4 - o.H * 0.48f - S / 2) * Fx.About(S, S, Affine.ScaleBy(sc, sc)) * o.Spin.BreathLocal(S, S);
+                    o.Rays.Opacity = op * g * o.Spin.BreathOpacity;
                 }
                 // the shapes stay when the characters can't come; the earned ones' colour pictures show from their moment
                 o.Shape.Transform = m * Affine.Translate(fx - o.Shape.W / 2, TH - 4 - o.Shape.H);

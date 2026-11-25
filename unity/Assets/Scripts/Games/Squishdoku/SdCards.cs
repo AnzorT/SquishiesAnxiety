@@ -134,7 +134,7 @@ namespace SquishSquad.Games.Squishdoku
                     var s = _slots[i];
                     s.Ghost ??= new CardLayer("ghost");
                     s.Ghost.Set(SdArt.Head(s.S, Pic(i), "rgba(255,255,255,0.7)", "rgba(230,200,160,0.35)", true), s.S, s.S, 2);
-                    if (s.Earned) (s.Rays ??= new CardLayer("rays")).Set(CardArt.Rays(s.S * 1.9f, opacity: 0.6f, color: "#ffe45c", fadeSize: Fx.LikeWeb ? _slots[0].S * 1.9f : 0), s.S * 1.9f, s.S * 1.9f, 1);
+                    if (s.Earned) (s.Rays ??= new CardLayer("rays")).Set(CardArt.Glow(s.S * 1.9f, opacity: 0.6f, color: "#ffe45c", fadeSize: Fx.LikeWeb ? _slots[0].S * 1.9f : 0), s.S * 1.9f, s.S * 1.9f, 1);   // (a breathing glow, not the app's turning rays)
                     s.Head ??= new CardLayer("head");
                     s.Head.Set(s.Earned ? SdArt.Head(s.S, Pic(i), "#ffd23a", "#fffbe6") : SdArt.Head(s.S, Pic(i), "#cfc3dd", "#efe9f5", true), s.S, s.S, 2);
                 }
@@ -227,8 +227,8 @@ namespace SquishSquad.Games.Squishdoku
                     {
                         float r = s.S * 1.9f;
                         var (rx, ry) = ToWhole(X + s.Bx + s.Box / 2, Y + s.By + s.Box / 2);
-                        s.Rays.Transform = box * Affine.Translate(s.Box / 2 + rx, s.Box / 2 + ry) * Fx.About(r, r, Affine.Rotate(s.Spin.Degrees));
-                        s.Rays.Opacity = opacity * Clamp01(t);
+                        s.Rays.Transform = box * Affine.Translate(s.Box / 2 + rx, s.Box / 2 + ry) * s.Spin.BreathLocal(r, r);
+                        s.Rays.Opacity = opacity * Clamp01(t) * s.Spin.BreathOpacity;
                     }
                     double sc = s.Scale.Evaluate(t);
                     s.Head.Transform = box * Affine.Translate(o, o) * Fx.About(s.S, s.S, Affine.ScaleBy(sc, sc) * Affine.Rotate(s.Rotate.Evaluate(t)));

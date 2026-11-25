@@ -1,4 +1,7 @@
 // dotnet run -c Release --project tools/unity/hop-test -- cards <capture dir>   (cards.mjs writes the app's pictures)
+// dotnet run -c Release --project tools/unity/hop-test -- cardframes <out dir> [card] [to ms] [every]
+//   the card as Unity plays it, frame by frame (every `every`-th 16 ms frame, 1040 x 480 px), the loops running, for a
+//   video (the characters as their stills, as in `cards`)
 // Builds each Squish Hop card from the Unity code (Games/Hop/HopCards.cs on Ui/Cards) with Preview.js's sample data,
 // runs its clock frame by frame as cards.mjs ran the page's (16 ms frames, the last landing on the moment), draws the
 // screen (the page behind, then every card layer where it is) with the reference rasteriser, and compares it with the
@@ -38,7 +41,32 @@ static class HopCardsTest
         throw new ArgumentException(name);
     }
 
-    public static int Run(string dir)
+    public static int Frames(string dir, string name, double to, int every)
+    {
+        Directory.CreateDirectory(dir);
+        Setup();
+        string bg = File.ReadAllText(Program.Res("Stack/bg.xml"));
+        var tk = new Ticker(0);
+        Ticker.Default = tk;
+        var card = Build(name);
+        card.Show();
+        int f = 0, n = 0;
+        for (double ms = 0; ms <= to; ms += 16)
+        {
+            tk.Tick(ms);
+            card.Update();
+            if (n++ % every != 0) continue;
+            var sb = new StringBuilder("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"832\" height=\"384\" viewBox=\"0 0 832 384\">");
+            sb.Append(Program.Nest(bg, "bg-"));
+            int k = 0;
+            foreach (var l in card.Layers()) Program.Card(sb, l, ref k);
+            Program.Render(sb.Append("</svg>").ToString(), Path.Combine(dir, $"frame-{f++:0000}.png"), 1040, 480);
+        }
+        Console.WriteLine($"{f} frames, one every {every * 16} ms, in {dir}");
+        return 0;
+    }
+
+    static void Setup()
     {
         // the result's three characters as their grey stills (no live creatures here: the app's moments before they draw)
         TrioItem.Stills = true;
@@ -46,6 +74,11 @@ static class HopCardsTest
         foreach (var a in JsonDocument.Parse(File.ReadAllText(Program.Res("Stack/stack.json"))).RootElement.GetProperty("artList").EnumerateArray())
             ars[a.GetProperty("key").GetString()] = a.GetProperty("ar").GetSingle();
         TrioItem.ArOf = k => ars.TryGetValue(k, out var v) ? v : 1;
+    }
+
+    public static int Run(string dir)
+    {
+        Setup();
         // the page behind (GameBackground), as Squish Stack's exporter cut it
         string bg = File.ReadAllText(Program.Res("Stack/bg.xml"));
         var list = JsonDocument.Parse(File.ReadAllText(Path.Combine(dir, "cards.json"))).RootElement;

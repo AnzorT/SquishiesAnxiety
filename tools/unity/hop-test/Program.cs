@@ -36,6 +36,7 @@ static class Program
         Fx.LikeWeb = true;
         HopLevel.PixelSnap = 2.8125f;   // the reference phone
         if (args[0] == "cards") return HopCardsTest.Run(args[1]);
+        if (args[0] == "cardframes") { Fx.LikeWeb = false; return HopCardsTest.Frames(args[1], args.Length > 2 ? args[2] : "hop-result", args.Length > 3 ? double.Parse(args[3], System.Globalization.CultureInfo.InvariantCulture) : 6000, args.Length > 4 ? int.Parse(args[4]) : 3); }
         if (args[0] == "blitzflow") return HopBlitzFlow.Run(LoadCast());
         if (args[0] == "blitzshots") return BlitzShots(args[1]);
         if (args[0] == "stuck")
@@ -301,6 +302,14 @@ static class Program
     public static void Render(string svg, string outPng)
     {
         const int W = 2340, H = 1080;
+        ReferenceRaster.LoadImage = Load;
+        var scene = SvgScene.Compile(SvgMarkup.Parse(svg), W, H, Affine.Identity, href => { var i = Load(href); return i.Item3 == null ? ((int, int)?)null : (i.Item1, i.Item2); });
+        Png.Write(outPng, W, H, ReferenceRaster.Resolve(ReferenceRaster.Render(scene, W, H, 2), 2, W, H));
+    }
+
+    /// <summary>Draws `svg` at w x h px into `outPng`.</summary>
+    public static void Render(string svg, string outPng, int W, int H)
+    {
         ReferenceRaster.LoadImage = Load;
         var scene = SvgScene.Compile(SvgMarkup.Parse(svg), W, H, Affine.Identity, href => { var i = Load(href); return i.Item3 == null ? ((int, int)?)null : (i.Item1, i.Item2); });
         Png.Write(outPng, W, H, ReferenceRaster.Resolve(ReferenceRaster.Render(scene, W, H, 2), 2, W, H));

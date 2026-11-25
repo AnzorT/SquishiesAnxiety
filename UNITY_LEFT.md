@@ -18,7 +18,10 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   - **Unity's own look, on purpose** (the user, 2026-11-25: "we are focusing now only on unity"): the chest reveal has
     a soft breathing glow behind the card instead of the app's turning light beams. The reveal's pixel tests
     (`shop-test smash*`) differ from the app there from now on. The same beams on the Characters screen and the
-    "Gathering your squad" loading screen are unchanged (the user: the chest reveal for now)
+    "Gathering your squad" loading screen are unchanged (the user: the chest reveal for now). The result cards too
+    (the user: "also do the change in the cards animation"): the gold rays turning behind each earned character
+    (`TrioItem`), and behind the earned stars (`Card.cs` Stars, `SdCards`), are a breathing gold glow
+    (`CardArt.Glow`, `Spin.Breath`: 3.5 s a breath). The cards' pixel tests differ there from now on
 - **Not checked yet:** none of it has been seen in the Unity Editor or on a device. Checked offline only: the pixel
   tests and a compile of every script in `unity/Assets/Scripts` against Unity 2021.3's reference assemblies
   (NuGet `UnityEngine.Modules`, with `UNITY_5_3_OR_NEWER` defined): it builds.
