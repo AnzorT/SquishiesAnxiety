@@ -2,6 +2,7 @@
   <!-- Checks the Unity app's house port (unity/Assets/Scripts/House) against the house page, outside Unity.
        Usage: see Program.cs. The page's answers come from tools/unity/house/export-house.mjs (captures). -->
   <PropertyGroup>
+    <NoWarn>$(NoWarn);CS0162;CS0164;CS0168;CS0219;CS8321;CS1998</NoWarn>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>9</LangVersion>
@@ -16,6 +17,14 @@
     <Compile Include="../../../unity/Assets/Scripts/Anim/JsMath.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Vector/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Backend/**/*.cs" Exclude="../../../unity/Assets/Scripts/Backend/Unity/**" />
+    <!-- the sign editor's panel (House/SignPanel.cs: the UI kit's text and boxes) -->
+    <Compile Include="../../../unity/Assets/Scripts/Ui/UiFont.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/UiSvg.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Ui/SvgText.cs" />
+    <!-- the house's runtime drawings on the compiled realm (signframes: RigHost.HouseEval, as Unity's HouseDraw.Eval) -->
+    <Compile Include="../../../unity/Assets/Scripts/Creatures/Js/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Creatures/Js/Gen/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Creatures/RigTree.cs" />
     <Compile Include="../vector-test/ReferenceRaster.cs" />
     <Compile Include="../vector-test/Png.cs" />
     <Compile Include="*.cs" />

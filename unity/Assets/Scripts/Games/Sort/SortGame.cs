@@ -10,7 +10,7 @@
 // The squishies in play are the app's live rigs once a deal's are drawn (SortLevel.Rigs.cs): tools/rig/sort.html runs
 // in the rig's realm (Creatures/RigStage), on the rig's clock (stopped while paused), and Creatures/StageView draws its
 // squishies where the level's layers say the page sits.
-// Not ported: the effects' bursts, sounds, haptics. Profile is kept in memory
+// Its sounds and haptics are SortLevel's / SortBlitz's (through Audio/Snd.cs). Profile is kept in memory
 // (signed in: a copy of the account's, and each outcome is saved there too: SortSave).
 using System;
 using System.Collections.Generic;

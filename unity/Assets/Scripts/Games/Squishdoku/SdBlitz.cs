@@ -13,7 +13,7 @@
 //   over       GAME OVER: the boards cleared pay out (Levels.AfterBlitz), PLAY AGAIN or QUIT
 //   paused     the top bar's pause (or Android's back): the board hidden, the clock frozen (RESUME / START OVER / QUIT)
 // Every motion and delay is the app's. No UnityEngine here: SquishdokuScreen shows the layers and feeds the touches;
-// tools/unity/squishdoku-test runs it as is. Not ported: sounds, haptics, the rewarded ad (ShowAd), the buddy's live rig.
+// tools/unity/squishdoku-test runs it as is. Sounds and haptics through Audio/Snd.cs; the rewarded ad is Ui/AdHook's. Not ported: the buddy's live rig.
 // The profile is SdLevel.Profile, in memory; signed in, the run's pay is saved to the account too and a gem save is the
 // server's (SdSave: saveSquishdoku, squad.blitzSave; offline SpendGems takes the gems off the in-memory profile).
 using System;

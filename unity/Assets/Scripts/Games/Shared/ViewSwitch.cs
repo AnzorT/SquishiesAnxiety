@@ -147,6 +147,14 @@ namespace SquishSquad.Games.Shared
                 l.Add(new Box(x, ry + 178, 170, 44, 20));
                 return l;
             }
+            if (kind == "list")
+            {
+                // bonesCol (paddingH 22, paddingTop 8, gap 14): a 64 dp bar, then a row of five 150 dp blocks (gap 16)
+                float lw = w - 44, bw = (lw - 4 * 16) / 5;
+                l.Add(new Box(22, 8, lw, 64, 20));
+                for (int i = 0; i < 5; i++) l.Add(new Box(22 + i * (bw + 16), 8 + 64 + 14, bw, 150, 20));
+                return l;
+            }
             // hub: paddingH 22, paddingTop 8, paddingBottom 18, gap 14: two cards side by side (gap 16) filling the height
             // above the bar, then the bar centred: 56 % x 52 and 20 % x 44, 16 apart
             float cw = w - 44, barH = 52, cardH = h - 8 - 18 - 14 - barH, card = (cw - 16) / 2;
@@ -159,13 +167,16 @@ namespace SquishSquad.Games.Shared
         }
 
         /// <summary>The bones as one SVG (w x h), each with the shine where the sweep has it now.</summary>
-        public static string Markup(string kind, float w, float h, float winW)
+        public static string Markup(string kind, float w, float h, float winW) => Markup(Layout(kind, w, h), w, h, winW);
+
+        /// <summary>These bones as one SVG (w x h), each with the shine where the sweep has it now.</summary>
+        public static string Markup(List<Box> boxes, float w, float h, float winW)
         {
             var s = new UiSvg(w, h);
             double bx = BandX(winW);
             var id = s.NewId("shine");
             s.Def($"<linearGradient id=\"{id}\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#ffffff\" stop-opacity=\"0\"/><stop offset=\"0.5\" stop-color=\"#ffffff\" stop-opacity=\"0.75\"/><stop offset=\"1\" stop-color=\"#ffffff\" stop-opacity=\"0\"/></linearGradient>");
-            foreach (var b in Layout(kind, w, h))
+            foreach (var b in boxes)
             {
                 if (b.Y > h) continue;
                 // (tone 'wood': a soft brown on the warm page, its shine dimmed to a fifth)

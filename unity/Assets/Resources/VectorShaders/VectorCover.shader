@@ -6,12 +6,13 @@ Shader "Hidden/SquishSquad/VectorCover"
 {
     // (_Ramp isn't a property: it comes as a global from VectorRenderer's command buffer, and a property declared here
     //  would be the material's own default instead: every gradient white. _Img comes in each draw's property block.)
-    Properties { _Img ("Image", 2D) = "white" {} }
+    // (_DstBlend: OneMinusSrcAlpha (10), premultiplied "over"; VectorRenderer's additive copy sets One (1): plus-lighter)
+    Properties { _Img ("Image", 2D) = "white" {} _DstBlend ("Dst blend", Float) = 10 }
     SubShader
     {
         Tags { "Queue" = "Transparent" "RenderType" = "Transparent" }
         Cull Off ZWrite Off ZTest Always
-        Blend One OneMinusSrcAlpha
+        Blend One [_DstBlend]
         Stencil { Ref 0 Comp NotEqual Pass Zero }
         Pass
         {

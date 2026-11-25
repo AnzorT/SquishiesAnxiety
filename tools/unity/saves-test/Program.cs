@@ -67,19 +67,21 @@ static class Program
         S("stack.win", ("lv", 3.0), ("par", 6.0), ("moves", 6.0), ("hinted", false)),
         S("stack.lose", ("lv", 4.0), ("par", 8.0)),
         S("stack.win", ("lv", 2.0), ("par", 5.0), ("moves", 7.0), ("hinted", true)),
-        S("stack.blitzLose", ("reached", 4.0)),
-        S("stack.blitzWin", ("ms", 123456.0)),
-        S("stack.blitzWin", ("ms", 150000.5)),
+        S("stack.blitz", ("cleared", 4.0)),
+        S("stack.blitz", ("cleared", 12.0)),
+        S("stack.blitz", ("cleared", 0.0)),
         S("sort.seen"),
         S("sort.win", ("theme", "fridge"), ("lv", 2.0), ("mistakes", 0.0), ("ms", 30000.0)),
-        S("sort.lose", ("theme", "cupboard"), ("lv", 1.0), ("mistakes", 3.0)),
-        S("sort.win", ("theme", "cupboard"), ("lv", 1.0), ("mistakes", 1.0), ("ms", 61234.0)),
-        S("sort.blitzWin", ("ms", 200000.0)),
-        S("sort.blitzLose", ("reached", 7.0)),
+        S("sort.lose", ("theme", "fridge"), ("lv", 3.0), ("mistakes", 3.0)),
+        S("sort.win", ("theme", "fridge"), ("lv", 1.0), ("mistakes", 1.0), ("ms", 61234.0)),
+        S("sort.blitz", ("cleared", 11.0)),
+        S("sort.blitz", ("cleared", 3.0)),
         S("hop.seen"),
-        S("hop.win", ("lv", 2.0), ("left", 0.0), ("hinted", false)),
+        S("hop.win", ("lv", 2.0), ("takebacks", 0.0), ("hinted", false)),
         S("hop.stuck"),
-        S("hop.win", ("lv", 1.0), ("left", 3.0), ("hinted", true)),
+        S("hop.win", ("lv", 1.0), ("takebacks", 2.0), ("hinted", true)),
+        S("hop.blitz", ("cleared", 5.0)),
+        S("hop.blitz", ("cleared", 0.0)),
         S("sdk.head", ("on", true)),
         S("sdk.win", ("lv", 4.0), ("head", true), ("stars", 3.0), ("perfect", true), ("ms", 40000.0), ("mistakes", 0.0)),
         S("sdk.lose", ("lv", 5.0), ("head", true)),
@@ -210,20 +212,13 @@ static class Program
                 Apply(P, o.Update);
                 return Out(o.Update);
             }
-            // StackBlitz: BlitzWon() / BlitzLost()
-            case "stack.blitzWin":
+            // StackBlitz: PayOut() (the run over, or left in the middle)
+            case "stack.blitz":
             {
-                var o = St.Levels.AfterBlitz(P, true, St.Levels.BLITZ_ROUNDS, N(a, "ms"));
+                var o = St.Levels.AfterBlitz(P, (int)N(a, "cleared"));
                 St.StackSave.Paid(o, P);
                 Apply(P, o.Update);
                 return Out(o.Update, o.Coins, o.Xp, o.LevelUps);
-            }
-            case "stack.blitzLose":
-            {
-                var o = St.Levels.AfterBlitz(P, false, N(a, "reached"), 0);
-                St.StackSave.Record(o.Update);
-                Apply(P, o.Update);
-                return Out(o.Update);
             }
 
             case "sort.seen":
@@ -250,20 +245,13 @@ static class Program
                 Apply(P, o.Update);
                 return Out(o.Update);
             }
-            // SortBlitz: RunWon() / RunLost()
-            case "sort.blitzWin":
+            // SortBlitz: PayOut() (the run over, or left in the middle)
+            case "sort.blitz":
             {
-                var o = So.Levels.AfterBlitz(P, true, So.Levels.BLITZ_ROUNDS, N(a, "ms"));
+                var o = So.Levels.AfterBlitz(P, N(a, "cleared"));
                 So.SortSave.Paid(o, P);
                 Apply(P, o.Update);
                 return Out(o.Update, o.Coins, o.Xp, o.LevelUps);
-            }
-            case "sort.blitzLose":
-            {
-                var o = So.Levels.AfterBlitz(P, false, N(a, "reached"));
-                So.SortSave.Record(o.Update);
-                Apply(P, o.Update);
-                return Out(o.Update);
             }
 
             case "hop.seen":
@@ -274,7 +262,7 @@ static class Program
             // HopLevel: the win, Retry()
             case "hop.win":
             {
-                var o = Ho.Levels.AfterLevel(P, Ho.Levels.LevelSpec(N(a, "lv")), new Ho.HopResult { Left = (int)N(a, "left"), Hinted = B(a, "hinted") });
+                var o = Ho.Levels.AfterLevel(P, Ho.Levels.LevelSpec(N(a, "lv")), new Ho.HopResult { Takebacks = (int)N(a, "takebacks"), Hinted = B(a, "hinted") });
                 Ho.HopSave.Paid(o, P);
                 Apply(P, o.Update);
                 return Out(o.Update, o.Coins, o.Xp, o.LevelUps);
@@ -285,6 +273,14 @@ static class Program
                 Ho.HopSave.Record(u);
                 Apply(P, u);
                 return Out(u);
+            }
+            // HopBlitz: PayOut() (the run over, or left in the middle)
+            case "hop.blitz":
+            {
+                var o = Ho.Blitz.AfterBlitz(P, (int)N(a, "cleared"));
+                Ho.HopSave.Paid(o, P);
+                Apply(P, o.Update);
+                return Out(o.Update, o.Coins, o.Xp, o.LevelUps);
             }
 
             // SquishdokuScreen: OnHeadChanged

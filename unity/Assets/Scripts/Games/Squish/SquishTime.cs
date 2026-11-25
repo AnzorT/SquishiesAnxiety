@@ -15,6 +15,9 @@
 // settings (poke strength 1-5, push in / pop out; the sound, vibration and FPS switches: the creature's squish loop,
 // the coin ding, the release pop and the squish haptics, as SquishScreen.js). Not ported: the ×2/×3/×4 boosts (they're rewarded ads: the panel is shown,
 // a tap says so), the ad behind ACCEPT PUNISHMENT (it closes the card, as with Remove Ads), the tutorial's coach marks.
+// It opens under the loading beat (LoadingScreen.js, SquishLoading.cs: "Getting ready" while the creature's card is
+// fetched, "I AM READY!", the fade), as App.js shows LoadingScreen over the stage being built; the sky is
+// SkyBackground.js's pieces drawn for the screen's size (SquishSky.cs).
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -51,6 +54,8 @@ namespace SquishSquad.Games.Squish
         SquishLayout _L;
         string _creatureId;
         SquishSounds _snd;      // the creature's squish loop, the coin ding, the release pop (SquishScreen.js)
+        SquishLoading _load;    // the loading beat over the screen while it opens (null once it has faded)
+        SquishSquad.App.ScreenHost _loadHost;
         SquishHaptics _hap;
         double _coinMultiplier = 1;
 
@@ -136,6 +141,9 @@ namespace SquishSquad.Games.Squish
             _setHintGone = tutorial;
 
             BuildHud(atlas, crown);
+            // the loading beat: quick when the card is here, the dots while it's fetched
+            _load = new SquishLoading(_key, _w, _h, !fetch, nowMs) { OnReady = () => Snd.Play("ready") };
+            _loadHost = new SquishSquad.App.ScreenHost(transform, "Loading") { BaseOrder = 400 };
             if (fetch) FetchCard(_creatureId);
             Advance(nowMs);
         }
@@ -175,6 +183,12 @@ namespace SquishSquad.Games.Squish
         // it's here (or offline) Mittens' card stands in
         async void FetchCard(string id)
         {
+            try { await FetchCardOnce(id); }
+            finally { _load?.ModelReady(); }   // (the loading beat goes on either way, as preloadCreatureModel's catch)
+        }
+
+        async Task FetchCardOnce(string id)
+        {
             if (!Online) { Debug.LogWarning($"[SquishTime] no card for '{_key}' offline: showing Mittens'"); return; }
             try
             {
@@ -210,8 +224,7 @@ namespace SquishSquad.Games.Squish
         void BuildHud(Texture2D atlas, Texture2D crown)
         {
             // the sky (SkyBackground), stretched to the screen
-            _sky = Piece("sky", -100, X("sky"), new HudBox(0, 0, 832, 384), 0);
-            _sky.Transform = Affine.ScaleBy(_w / 832, _h / 384);
+            _sky = Piece("sky", -100, SquishSky.Svg(_w, _h), new HudBox(0, 0, _w, _h), 0);
             _stage = new SquishStage(transform, atlas, crown, -50);
             // the stage's hints (the hands with their pulsing rings, the captions)
             for (int i = 0; i < 2; i++)
@@ -310,6 +323,12 @@ namespace SquishSquad.Games.Squish
             _stage.Draw(_toy, _L.Stage, UiPiece.PxPerDp);
             PlaceHud();
             foreach (var p in GetComponentsInChildren<UiPiece>(true)) p.Apply();
+            if (_load != null)
+            {
+                _load.Tick(nowMs);
+                if (_load.Done) { _loadHost.Dispose(); _loadHost = null; _load = null; }
+                else _loadHost.Show(_load.Pieces());
+            }
         }
 
         void PlaceHud()
@@ -456,6 +475,7 @@ namespace SquishSquad.Games.Squish
                 else Exit();
                 return;
             }
+            if (_load != null) return;   // (the loading beat covers the screen)
             // the touches as dp points (the mouse is one finger)
             var pts = new List<Vector2>();
             bool anyBegan = false, allUp;

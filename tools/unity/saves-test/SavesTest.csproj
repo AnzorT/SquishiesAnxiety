@@ -15,7 +15,7 @@
     <!-- each game's outcomes (Levels.AfterLevel / AfterBlitz…) and its save hook -->
     <Compile Include="../../../unity/Assets/Scripts/Games/Stack/Levels.cs;../../../unity/Assets/Scripts/Games/Stack/StackXp.cs;../../../unity/Assets/Scripts/Games/Stack/Js.cs;../../../unity/Assets/Scripts/Games/Stack/StackSave.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Games/Sort/Levels.cs;../../../unity/Assets/Scripts/Games/Sort/PlayerXp.cs;../../../unity/Assets/Scripts/Games/Sort/JsMath.cs;../../../unity/Assets/Scripts/Games/Sort/SortSave.cs" />
-    <Compile Include="../../../unity/Assets/Scripts/Games/Hop/Levels.cs;../../../unity/Assets/Scripts/Games/Hop/PlayerXp.cs;../../../unity/Assets/Scripts/Games/Hop/Js.cs;../../../unity/Assets/Scripts/Games/Hop/LevelData.g.cs;../../../unity/Assets/Scripts/Games/Hop/Engine.cs;../../../unity/Assets/Scripts/Games/Hop/HopSave.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Games/Hop/Levels.cs;../../../unity/Assets/Scripts/Games/Hop/PlayerXp.cs;../../../unity/Assets/Scripts/Games/Hop/Js.cs;../../../unity/Assets/Scripts/Games/Hop/LevelData.g.cs;../../../unity/Assets/Scripts/Games/Hop/Engine.cs;../../../unity/Assets/Scripts/Games/Hop/Blitz.cs;../../../unity/Assets/Scripts/Games/Hop/HopSave.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Games/Squishdoku/Levels.cs;../../../unity/Assets/Scripts/Games/Squishdoku/PlayerXp.cs;../../../unity/Assets/Scripts/Games/Squishdoku/Js.cs;../../../unity/Assets/Scripts/Games/Squishdoku/LevelData.g.cs;../../../unity/Assets/Scripts/Games/Squishdoku/SdSave.cs" />
     <Compile Include="Program.cs" />
   </ItemGroup>

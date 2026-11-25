@@ -9,7 +9,7 @@ namespace SquishSquad.Creatures.Js.Gen
 
         public static void Run()
         {
-Call(Named(boot_262 => Fn((V _self1, int _argc2, V _a4, V _a5, V _a6, V _a7, V[] _rest3) => {
+Call(Named(boot_277 => Fn((V _self1, int _argc2, V _a4, V _a5, V _a6, V _a7, V[] _rest3) => {
 V R_8 = default;
 V STATES_9 = default;
 V REST_10 = default;
@@ -128,190 +128,190 @@ i_82++;
 if (Truthy(cur_81)) {
 Invoke(W_80, "push", cur_81);
 }
-return Invoke(W_80, "filter", Fn((V _self72, int _argc90, V w_96, V _a93, V _a94, V _a95, V[] _rest91) => {
+return Invoke(W_80, "filter", Fn((V _arrowThis97, int _argc90, V w_96, V _a93, V _a94, V _a95, V[] _rest91) => {
 return (((System.Math.Abs(ToNum(Get(w_96, "net"))) >= 300D) && ((ToNum(Get(w_96, "t1")) - ToNum(Get(w_96, "t0"))) <= 3000D)) ? V.True : V.False);
 }, 1, "", true));
 return default;
 }, 1, "windows", false);
-dirsFor_22 = Fn((V _self97, int _argc98, V mode_104, V i_105, V _a102, V _a103, V[] _rest99) => {
-if (_self97.IsNullish) _self97 = GlobalV;
-if (SEqN(mode_104, 2D)) {
-return (SEqN(i_105, 0D) ? Arr(((V)(1D)), ((V)((-1D)))) : Arr(((V)((NumTruthy((ToNum(i_105) % 2D)) ? (-1D) : 1D)))));
+dirsFor_22 = Fn((V _self98, int _argc99, V mode_105, V i_106, V _a103, V _a104, V[] _rest100) => {
+if (_self98.IsNullish) _self98 = GlobalV;
+if (SEqN(mode_105, 2D)) {
+return (SEqN(i_106, 0D) ? Arr(((V)(1D)), ((V)((-1D)))) : Arr(((V)((NumTruthy((ToNum(i_106) % 2D)) ? (-1D) : 1D)))));
 }
-return Arr(((V)((LtN(mode_104, 0D) ? (-1D) : 1D))));
+return Arr(((V)((LtN(mode_105, 0D) ? (-1D) : 1D))));
 return default;
 }, 2, "dirsFor", false);
-splice_23 = Fn((V _self106, int _argc107, V st_113, V w_114, V dirs_115, V _a112, V[] _rest108) => {
-V t0_116 = default;
-V t1_117 = default;
-V L_118 = default;
-V sv_119 = default;
-V tl_120 = default;
-V Wc_121 = default;
-V Wk_122 = default;
-V Wt_123 = default;
-double dl_124 = 0;
-V M_125 = default;
-V k_126 = default;
-V chans_127 = default;
-V @out_128 = default;
-if (_self106.IsNullish) _self106 = GlobalV;
-{ V _t129 = w_114;
-if (_t129.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t129));
-{ V _t130 = Get(_t129, "t0");
-t0_116 = _t130; }
-{ V _t131 = Get(_t129, "t1");
-t1_117 = _t131; } }
-L_118 = (Get(st_113, "loop") is var _t132 && Truthy(_t132) ? _t132 : Get(st_113, "dur"));
-sv_119 = Fn((V _self106, int _argc133, V c_139, V t_140, V _a137, V _a138, V[] _rest134) => {
-return (Truthy(GetK(Get(st_113, "k"), c_139)) ? Call(kv_11, V.Undef, GetK(Get(st_113, "k"), c_139), t_140) : Call(rv_13, V.Undef, c_139));
+splice_23 = Fn((V _self107, int _argc108, V st_114, V w_115, V dirs_116, V _a113, V[] _rest109) => {
+V t0_117 = default;
+V t1_118 = default;
+V L_119 = default;
+V sv_120 = default;
+V tl_121 = default;
+V Wc_122 = default;
+V Wk_123 = default;
+V Wt_124 = default;
+double dl_125 = 0;
+V M_126 = default;
+V k_127 = default;
+V chans_128 = default;
+V @out_129 = default;
+if (_self107.IsNullish) _self107 = GlobalV;
+{ V _t130 = w_115;
+if (_t130.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t130));
+{ V _t131 = Get(_t130, "t0");
+t0_117 = _t131; }
+{ V _t132 = Get(_t130, "t1");
+t1_118 = _t132; } }
+L_119 = (Get(st_114, "loop") is var _t133 && Truthy(_t133) ? _t133 : Get(st_114, "dur"));
+sv_120 = Fn((V _arrowThis142, int _argc134, V c_140, V t_141, V _a138, V _a139, V[] _rest135) => {
+return (Truthy(GetK(Get(st_114, "k"), c_140)) ? Call(kv_11, V.Undef, GetK(Get(st_114, "k"), c_140), t_141) : Call(rv_13, V.Undef, c_140));
 }, 2, "", true);
-tl_120 = Call(TL_17, V.Undef);
-Invoke(dirs_115, "forEach", Fn((V _self106, int _argc141, V d_147, V _a144, V _a145, V _a146, V[] _rest142) => {
-return Call(whip_18, V.Undef, tl_120, d_147);
+tl_121 = Call(TL_17, V.Undef);
+Invoke(dirs_116, "forEach", Fn((V _arrowThis150, int _argc143, V d_149, V _a146, V _a147, V _a148, V[] _rest144) => {
+return Call(whip_18, V.Undef, tl_121, d_149);
 }, 1, "", true));
-Wc_121 = Get(tl_120, "t");
-Wk_122 = Get(tl_120, "k");
-Wt_123 = Add(Wc_121, ((V)(300D)));
+Wc_122 = Get(tl_121, "t");
+Wk_123 = Get(tl_121, "k");
+Wt_124 = Add(Wc_122, ((V)(300D)));
 {
-double dl_148 = 0;
-dl_148 = (ToNum(Wt_123) - (ToNum(t1_117) - ToNum(t0_116)));
-Wt_123 = Add(Wt_123, ((V)(((System.Math.Ceiling((dl_148 / 250D)) * 250D) - dl_148))));
+double dl_151 = 0;
+dl_151 = (ToNum(Wt_124) - (ToNum(t1_118) - ToNum(t0_117)));
+Wt_124 = Add(Wt_124, ((V)(((System.Math.Ceiling((dl_151 / 250D)) * 250D) - dl_151))));
 }
-dl_124 = (ToNum(Wt_123) - (ToNum(t1_117) - ToNum(t0_116)));
-M_125 = Fn((V _self106, int _argc149, V t_155, V _a152, V _a153, V _a154, V[] _rest150) => {
-return (Lt(t_155, t0_116) ? t_155 : (Le(t_155, t1_117) ? Add(t0_116, ((V)((((ToNum(t_155) - ToNum(t0_116)) * ToNum(Wt_123)) / Max(1D, (ToNum(t1_117) - ToNum(t0_116))))))) : Add(t_155, ((V)(dl_124)))));
+dl_125 = (ToNum(Wt_124) - (ToNum(t1_118) - ToNum(t0_117)));
+M_126 = Fn((V _arrowThis159, int _argc152, V t_158, V _a155, V _a156, V _a157, V[] _rest153) => {
+return (Lt(t_158, t0_117) ? t_158 : (Le(t_158, t1_118) ? Add(t0_117, ((V)((((ToNum(t_158) - ToNum(t0_117)) * ToNum(Wt_124)) / Max(1D, (ToNum(t1_118) - ToNum(t0_117))))))) : Add(t_158, ((V)(dl_125)))));
 }, 1, "", true);
-k_126 = NewObj(0).V;
-chans_127 = New(G("Set"), new ArrBuilder().Spread(Object_keys(Get(st_113, "k"))).Spread(Object_keys(Wk_122)).Spread(Invoke(Object_keys(NEUTRAL_19), "filter", Fn((V _self106, int _argc156, V c_162, V _a159, V _a160, V _a161, V[] _rest157) => {
-return GetK(Get(st_113, "k"), c_162);
+k_127 = NewObj(0).V;
+chans_128 = New(G("Set"), new ArrBuilder().Spread(Object_keys(Get(st_114, "k"))).Spread(Object_keys(Wk_123)).Spread(Invoke(Object_keys(NEUTRAL_19), "filter", Fn((V _arrowThis167, int _argc160, V c_166, V _a163, V _a164, V _a165, V[] _rest161) => {
+return GetK(Get(st_114, "k"), c_166);
 }, 1, "", true))).V);
-Invoke(chans_127, "forEach", Fn((V _self106, int _argc163, V c_169, V _a166, V _a167, V _a168, V[] _rest164) => {
-V K_170 = default;
-K_170 = GetK(Get(st_113, "k"), c_169);
-if (Truthy(((GetK(Wk_122, c_169) is var _t171 && Truthy(_t171) ? _t171 : (!GetK(NEUTRAL_19, c_169).IsNullish ? V.True : V.False)) is var _t172 && Truthy(_t172) ? _t172 : GetK(HOLD_20, c_169)))) {
-V v0_173 = default;
-V v1_174 = default;
-V N_175 = default;
-v0_173 = Call(sv_119, V.Undef, c_169, t0_116);
-v1_174 = Call(sv_119, V.Undef, c_169, t1_117);
-N_175 = Arr();
-if (Truthy(K_170)) {
-Invoke(K_170, "forEach", Fn((V _self106, int _argc176, V q_182, V _a179, V _a180, V _a181, V[] _rest177) => {
-if (Lt(GetIdx(q_182, 0D), t0_116)) {
-Invoke(N_175, "push", Invoke(q_182, "slice"));
+Invoke(chans_128, "forEach", Fn((V _arrowThis175, int _argc168, V c_174, V _a171, V _a172, V _a173, V[] _rest169) => {
+V K_176 = default;
+K_176 = GetK(Get(st_114, "k"), c_174);
+if (Truthy(((GetK(Wk_123, c_174) is var _t177 && Truthy(_t177) ? _t177 : (!GetK(NEUTRAL_19, c_174).IsNullish ? V.True : V.False)) is var _t178 && Truthy(_t178) ? _t178 : GetK(HOLD_20, c_174)))) {
+V v0_179 = default;
+V v1_180 = default;
+V N_181 = default;
+v0_179 = Call(sv_120, V.Undef, c_174, t0_117);
+v1_180 = Call(sv_120, V.Undef, c_174, t1_118);
+N_181 = Arr();
+if (Truthy(K_176)) {
+Invoke(K_176, "forEach", Fn((V _arrowThis189, int _argc182, V q_188, V _a185, V _a186, V _a187, V[] _rest183) => {
+if (Lt(GetIdx(q_188, 0D), t0_117)) {
+Invoke(N_181, "push", Invoke(q_188, "slice"));
 }
 return default;
 }, 1, "", true));
 } else {
-Invoke(N_175, "push", Arr(((V)(0D)), Call(rv_13, V.Undef, c_169)));
+Invoke(N_181, "push", Arr(((V)(0D)), Call(rv_13, V.Undef, c_174)));
 }
-Invoke(N_175, "push", Arr(t0_116, v0_173, ((V)("l"))));
-if (Truthy(GetK(Wk_122, c_169))) {
-V off_183 = default;
-off_183 = (SEqS(c_169, "spin") ? v0_173 : ((V)(0D)));
-Invoke(GetK(Wk_122, c_169), "forEach", Fn((V _self106, int _argc184, V q_190, V _a187, V _a188, V _a189, V[] _rest185) => {
-if (GtN(GetIdx(q_190, 0D), 0D)) {
-Invoke(N_175, "push", Arr(Add(t0_116, GetIdx(q_190, 0D)), Add(GetIdx(q_190, 1D), off_183), GetIdx(q_190, 2D)));
-}
-return default;
-}, 1, "", true));
-if (SEqS(c_169, "spin")) {
-Invoke(N_175, "push", Arr(Add(Add(t0_116, Wc_121), ((V)(1D))), Add(v0_173, ((V)((360D * Round(((ToNum(v1_174) - ToNum(v0_173)) / 360D)))))), ((V)("l"))));
-}
-} else {
-if (!GetK(NEUTRAL_19, c_169).IsNullish) {
-Invoke(N_175, "push", Arr(Add(t0_116, ((V)(230D))), GetK(NEUTRAL_19, c_169), ((V)("io"))), Arr(Add(t0_116, Wc_121), GetK(NEUTRAL_19, c_169), ((V)("l"))));
-} else {
-Invoke(N_175, "push", Arr(Add(t0_116, Wc_121), v0_173, ((V)("l"))));
-}
-}
-Invoke(N_175, "push", Arr(Add(t0_116, Wt_123), v1_174, ((V)("io"))));
-if (Truthy(K_170)) {
-Invoke(K_170, "forEach", Fn((V _self106, int _argc191, V q_197, V _a194, V _a195, V _a196, V[] _rest192) => {
-if (Gt(GetIdx(q_197, 0D), t1_117)) {
-Invoke(N_175, "push", Arr(Add(GetIdx(q_197, 0D), ((V)(dl_124))), GetIdx(q_197, 1D), GetIdx(q_197, 2D)));
+Invoke(N_181, "push", Arr(t0_117, v0_179, ((V)("l"))));
+if (Truthy(GetK(Wk_123, c_174))) {
+V off_190 = default;
+off_190 = (SEqS(c_174, "spin") ? v0_179 : ((V)(0D)));
+Invoke(GetK(Wk_123, c_174), "forEach", Fn((V _arrowThis198, int _argc191, V q_197, V _a194, V _a195, V _a196, V[] _rest192) => {
+if (GtN(GetIdx(q_197, 0D), 0D)) {
+Invoke(N_181, "push", Arr(Add(t0_117, GetIdx(q_197, 0D)), Add(GetIdx(q_197, 1D), off_190), GetIdx(q_197, 2D)));
 }
 return default;
 }, 1, "", true));
-} else {
-Invoke(N_175, "push", Arr(Add(L_118, ((V)(dl_124))), Call(rv_13, V.Undef, c_169), ((V)("l"))));
+if (SEqS(c_174, "spin")) {
+Invoke(N_181, "push", Arr(Add(Add(t0_117, Wc_122), ((V)(1D))), Add(v0_179, ((V)((360D * Round(((ToNum(v1_180) - ToNum(v0_179)) / 360D)))))), ((V)("l"))));
 }
-SetK(k_126, c_169, N_175);
 } else {
-SetK(k_126, c_169, Invoke(K_170, "map", Fn((V _self106, int _argc198, V q_204, V _a201, V _a202, V _a203, V[] _rest199) => {
-return Arr(Call(M_125, V.Undef, GetIdx(q_204, 0D)), GetIdx(q_204, 1D), GetIdx(q_204, 2D));
+if (!GetK(NEUTRAL_19, c_174).IsNullish) {
+Invoke(N_181, "push", Arr(Add(t0_117, ((V)(230D))), GetK(NEUTRAL_19, c_174), ((V)("io"))), Arr(Add(t0_117, Wc_122), GetK(NEUTRAL_19, c_174), ((V)("l"))));
+} else {
+Invoke(N_181, "push", Arr(Add(t0_117, Wc_122), v0_179, ((V)("l"))));
+}
+}
+Invoke(N_181, "push", Arr(Add(t0_117, Wt_124), v1_180, ((V)("io"))));
+if (Truthy(K_176)) {
+Invoke(K_176, "forEach", Fn((V _arrowThis206, int _argc199, V q_205, V _a202, V _a203, V _a204, V[] _rest200) => {
+if (Gt(GetIdx(q_205, 0D), t1_118)) {
+Invoke(N_181, "push", Arr(Add(GetIdx(q_205, 0D), ((V)(dl_125))), GetIdx(q_205, 1D), GetIdx(q_205, 2D)));
+}
+return default;
+}, 1, "", true));
+} else {
+Invoke(N_181, "push", Arr(Add(L_119, ((V)(dl_125))), Call(rv_13, V.Undef, c_174), ((V)("l"))));
+}
+SetK(k_127, c_174, N_181);
+} else {
+SetK(k_127, c_174, Invoke(K_176, "map", Fn((V _arrowThis214, int _argc207, V q_213, V _a210, V _a211, V _a212, V[] _rest208) => {
+return Arr(Call(M_126, V.Undef, GetIdx(q_213, 0D)), GetIdx(q_213, 1D), GetIdx(q_213, 2D));
 }, 1, "", true)));
 }
 return default;
 }, 1, "", true));
-@out_128 = Object_assign(NewObj(0).V, st_113, NewObj(1).Put("k", k_126).V);
-if (Truthy(Get(st_113, "loop"))) {
-Set(@out_128, "loop", Add(Get(st_113, "loop"), ((V)(dl_124))));
+@out_129 = Object_assign(NewObj(0).V, st_114, NewObj(1).Put("k", k_127).V);
+if (Truthy(Get(st_114, "loop"))) {
+Set(@out_129, "loop", Add(Get(st_114, "loop"), ((V)(dl_125))));
 } else {
-Set(@out_128, "dur", Add(Get(st_113, "dur"), ((V)(dl_124))));
+Set(@out_129, "dur", Add(Get(st_114, "dur"), ((V)(dl_125))));
 }
-if (Truthy(Get(st_113, "ev"))) {
-Set(@out_128, "ev", Invoke(Get(st_113, "ev"), "map", Fn((V _self106, int _argc205, V e_211, V _a208, V _a209, V _a210, V[] _rest206) => {
-return new ArrBuilder().Add(Call(M_125, V.Undef, GetIdx(e_211, 0D))).Spread(Invoke(e_211, "slice", ((V)(1D)))).V;
+if (Truthy(Get(st_114, "ev"))) {
+Set(@out_129, "ev", Invoke(Get(st_114, "ev"), "map", Fn((V _arrowThis222, int _argc215, V e_221, V _a218, V _a219, V _a220, V[] _rest216) => {
+return new ArrBuilder().Add(Call(M_126, V.Undef, GetIdx(e_221, 0D))).Spread(Invoke(e_221, "slice", ((V)(1D)))).V;
 }, 1, "", true)));
 }
-if (Truthy(Get(st_113, "emit"))) {
-Set(@out_128, "emit", Invoke(Get(st_113, "emit"), "map", Fn((V _self106, int _argc212, V e_218, V _a215, V _a216, V _a217, V[] _rest213) => {
-return new ArrBuilder().Add(Call(M_125, V.Undef, GetIdx(e_218, 0D))).Add((GeN(GetIdx(e_218, 1D), 100000000D) ? GetIdx(e_218, 1D) : Call(M_125, V.Undef, GetIdx(e_218, 1D)))).Spread(Invoke(e_218, "slice", ((V)(2D)))).V;
+if (Truthy(Get(st_114, "emit"))) {
+Set(@out_129, "emit", Invoke(Get(st_114, "emit"), "map", Fn((V _arrowThis230, int _argc223, V e_229, V _a226, V _a227, V _a228, V[] _rest224) => {
+return new ArrBuilder().Add(Call(M_126, V.Undef, GetIdx(e_229, 0D))).Add((GeN(GetIdx(e_229, 1D), 100000000D) ? GetIdx(e_229, 1D) : Call(M_126, V.Undef, GetIdx(e_229, 1D)))).Spread(Invoke(e_229, "slice", ((V)(2D)))).V;
 }, 1, "", true)));
 }
-if (Truthy(Get(st_113, "fx"))) {
-V f_219 = default;
-V Mi_220 = default;
-f_219 = Get(st_113, "fx");
-Mi_220 = Fn((V _self106, int _argc221, V t_227, V _a224, V _a225, V _a226, V[] _rest222) => {
-return (Lt(t_227, t0_116) ? t_227 : (Le(t_227, Add(t0_116, Wt_123)) ? Add(t0_116, ((V)((((ToNum(t_227) - ToNum(t0_116)) * (ToNum(t1_117) - ToNum(t0_116))) / ToNum(Wt_123))))) : ((V)((ToNum(t_227) - dl_124)))));
+if (Truthy(Get(st_114, "fx"))) {
+V f_231 = default;
+V Mi_232 = default;
+f_231 = Get(st_114, "fx");
+Mi_232 = Fn((V _arrowThis240, int _argc233, V t_239, V _a236, V _a237, V _a238, V[] _rest234) => {
+return (Lt(t_239, t0_117) ? t_239 : (Le(t_239, Add(t0_117, Wt_124)) ? Add(t0_117, ((V)((((ToNum(t_239) - ToNum(t0_117)) * (ToNum(t1_118) - ToNum(t0_117))) / ToNum(Wt_124))))) : ((V)((ToNum(t_239) - dl_125)))));
 }, 1, "", true);
-Set(@out_128, "fx", Fn((V _self106, int _argc228, V I_234, V tt_235, V _a232, V _a233, V[] _rest229) => {
-return Call(f_219, V.Undef, I_234, Call(Mi_220, V.Undef, tt_235));
+Set(@out_129, "fx", Fn((V _arrowThis249, int _argc241, V I_247, V tt_248, V _a245, V _a246, V[] _rest242) => {
+return Call(f_231, V.Undef, I_247, Call(Mi_232, V.Undef, tt_248));
 }, 2, "", true));
 }
-return @out_128;
+return @out_129;
 return default;
 }, 3, "splice", false);
-convert_24 = Fn((V _self236, int _argc237, V st_243, V key_244, V _a241, V _a242, V[] _rest238) => {
-V mode_245 = default;
-V W_246 = default;
-V @out_247 = default;
-if (_self236.IsNullish) _self236 = GlobalV;
-if (Truthy(((((!(Truthy(st_243)) ? V.True : V.False) is var _t248 && Truthy(_t248) ? _t248 : Get(st_243, "__whip")) is var _t249 && Truthy(_t249) ? _t249 : (!(Truthy(Get(st_243, "k"))) ? V.True : V.False)) is var _t251 && Truthy(_t251) ? _t251 : (!(Truthy((Get(st_243, "loop") is var _t250 && Truthy(_t250) ? _t250 : Get(st_243, "dur")))) ? V.True : V.False)))) {
-return st_243;
+convert_24 = Fn((V _self250, int _argc251, V st_257, V key_258, V _a255, V _a256, V[] _rest252) => {
+V mode_259 = default;
+V W_260 = default;
+V @out_261 = default;
+if (_self250.IsNullish) _self250 = GlobalV;
+if (Truthy(((((!(Truthy(st_257)) ? V.True : V.False) is var _t262 && Truthy(_t262) ? _t262 : Get(st_257, "__whip")) is var _t263 && Truthy(_t263) ? _t263 : (!(Truthy(Get(st_257, "k"))) ? V.True : V.False)) is var _t265 && Truthy(_t265) ? _t265 : (!(Truthy((Get(st_257, "loop") is var _t264 && Truthy(_t264) ? _t264 : Get(st_257, "dur")))) ? V.True : V.False)))) {
+return st_257;
 }
-mode_245 = GetK(PLAN_12, key_244);
-if (!(Truthy(mode_245))) {
-return st_243;
+mode_259 = GetK(PLAN_12, key_258);
+if (!(Truthy(mode_259))) {
+return st_257;
 }
-W_246 = Call(windows_21, V.Undef, Get(Get(st_243, "k"), "spin"));
-if (!(Truthy(Get(W_246, "length")))) {
-return st_243;
+W_260 = Call(windows_21, V.Undef, Get(Get(st_257, "k"), "spin"));
+if (!(Truthy(Get(W_260, "length")))) {
+return st_257;
 }
-@out_247 = st_243;
+@out_261 = st_257;
 {
-double i_252 = 0;
-i_252 = (ToNum(Get(W_246, "length")) - 1D);
+double i_266 = 0;
+i_266 = (ToNum(Get(W_260, "length")) - 1D);
 while (true) {
-if (!((i_252 >= 0D))) break;
-@out_247 = Call(splice_23, V.Undef, @out_247, GetIdx(W_246, i_252), Call(dirsFor_22, V.Undef, mode_245, ((V)(i_252))));
-i_252--;
+if (!((i_266 >= 0D))) break;
+@out_261 = Call(splice_23, V.Undef, @out_261, GetIdx(W_260, i_266), Call(dirsFor_22, V.Undef, mode_259, ((V)(i_266))));
+i_266--;
 }
 }
-Set(@out_247, "__whip", Get(W_246, "length"));
-Set(@out_247, "whip", ((V)(1D)));
-Set(@out_247, "whipDirs", Invoke(W_246, "map", Fn((V _self236, int _argc254, V __260, V i_261, V _a258, V _a259, V[] _rest255) => {
-return Call(dirsFor_22, V.Undef, mode_245, i_261);
+Set(@out_261, "__whip", Get(W_260, "length"));
+Set(@out_261, "whip", ((V)(1D)));
+Set(@out_261, "whipDirs", Invoke(W_260, "map", Fn((V _arrowThis276, int _argc268, V __274, V i_275, V _a272, V _a273, V[] _rest269) => {
+return Call(dirsFor_22, V.Undef, mode_259, i_275);
 }, 2, "", true)));
-return @out_247;
+return @out_261;
 return default;
 }, 2, "convert", false);
 R_8 = Get(G("window"), "RiveRig");
 if (((((!(Truthy(R_8)) || !(Truthy(Get(R_8, "STATES")))) || !(Truthy(Get(Get(R_8, "STATES"), "dance")))) || !(Truthy(Get(R_8, "REST")))) || !(Truthy(Get(R_8, "kv"))))) {
-Call(G("setTimeout"), V.Undef, boot_262.v, ((V)(25D)));
+Call(G("setTimeout"), V.Undef, boot_277.v, ((V)(25D)));
 return default;
 }
 if (Truthy(Get(R_8, "whipV"))) {
@@ -323,47 +323,47 @@ REST_10 = Get(R_8, "REST");
 kv_11 = Get(R_8, "kv");
 PLAN_12 = NewObj(45).Put("bean", ((V)(1D))).Put("clover", ((V)((-1D)))).Put("duchess", ((V)(2D))).Put("mimi", ((V)(2D))).Put("mittens", ((V)(1D))).Put("nibbles", ((V)(1D))).Put("pico", ((V)(2D))).Put("poppy", ((V)(2D))).Put("puddles", ((V)(1D))).Put("quill", ((V)((-1D)))).Put("ribbit", ((V)(2D))).Put("tilly", ((V)((-1D)))).Put("waffles", ((V)((-1D)))).Put("zippy", ((V)(2D))).Put("boba", ((V)(1D))).Put("bunbun", ((V)(2D))).Put("chefbun", ((V)(2D))).Put("choco", ((V)(1D))).Put("churro", ((V)(2D))).Put("corny", ((V)(1D))).Put("dunkie", ((V)(1D))).Put("flossie", ((V)((-1D)))).Put("frankie", ((V)(2D))).Put("khinki", ((V)((-1D)))).Put("maki", ((V)(2D))).Put("mallow", ((V)((-1D)))).Put("noodle", ((V)(1D))).Put("nori", ((V)((-1D)))).Put("peppi", ((V)(2D))).Put("scoop", ((V)(2D))).Put("toco", ((V)((-1D)))).Put("appy", ((V)(2D))).Put("avo", ((V)(2D))).Put("berri", ((V)(2D))).Put("bing", ((V)(2D))).Put("clemmy", ((V)(1D))).Put("grana", ((V)(2D))).Put("lemmy", ((V)(1D))).Put("mangie", ((V)((-1D)))).Put("nana", ((V)((-1D)))).Put("perry", ((V)(1D))).Put("pitaya", ((V)(1D))).Put("plummy", ((V)(2D))).Put("razzy", ((V)((-1D)))).Put("tutti", ((V)((-1D)))).V;
 Set(R_8, "WHIP_PLAN", PLAN_12);
-rv_13 = Fn((V _self1, int _argc263, V c_269, V _a266, V _a267, V _a268, V[] _rest264) => {
-return (!GetK(REST_10, c_269).IsNullish ? GetK(REST_10, c_269) : ((V)(0D)));
+rv_13 = Fn((V _arrowThis285, int _argc278, V c_284, V _a281, V _a282, V _a283, V[] _rest279) => {
+return (!GetK(REST_10, c_284).IsNullish ? GetK(REST_10, c_284) : ((V)(0D)));
 }, 1, "", true);
-S_14 = Fn((V _self1, int _argc270, V s_276, V _a273, V _a274, V _a275, V[] _rest271) => {
-return (LtN(s_276, 0D) ? NewObj(5).Put("arm", ((V)("armL"))).Put("hx", ((V)("hLx"))).Put("hy", ((V)("hLy"))).Put("hz", ((V)("hLz"))).Put("foot", ((V)("footL"))).V : NewObj(5).Put("arm", ((V)("armR"))).Put("hx", ((V)("hRx"))).Put("hy", ((V)("hRy"))).Put("hz", ((V)("hRz"))).Put("foot", ((V)("footR"))).V);
+S_14 = Fn((V _arrowThis293, int _argc286, V s_292, V _a289, V _a290, V _a291, V[] _rest287) => {
+return (LtN(s_292, 0D) ? NewObj(5).Put("arm", ((V)("armL"))).Put("hx", ((V)("hLx"))).Put("hy", ((V)("hLy"))).Put("hz", ((V)("hLz"))).Put("foot", ((V)("footL"))).V : NewObj(5).Put("arm", ((V)("armR"))).Put("hx", ((V)("hRx"))).Put("hy", ((V)("hRy"))).Put("hz", ((V)("hRz"))).Put("foot", ((V)("footR"))).V);
 }, 1, "", true);
-hand_15 = Fn((V _self1, int _argc277, V s_283, V inX_284, V y_285, V z_286, V[] _rest278) => {
-V k_287 = default;
-k_287 = Call(S_14, V.Undef, s_283);
-return NewObj(3).PutK(Get(k_287, "hx"), (LtN(s_283, 0D) ? inX_284 : ((V)((-ToNum(inX_284)))))).PutK(Get(k_287, "hy"), y_285).PutK(Get(k_287, "hz"), z_286).V;
+hand_15 = Fn((V _arrowThis304, int _argc294, V s_300, V inX_301, V y_302, V z_303, V[] _rest295) => {
+V k_305 = default;
+k_305 = Call(S_14, V.Undef, s_300);
+return NewObj(3).PutK(Get(k_305, "hx"), (LtN(s_300, 0D) ? inX_301 : ((V)((-ToNum(inX_301)))))).PutK(Get(k_305, "hy"), y_302).PutK(Get(k_305, "hz"), z_303).V;
 return default;
 }, 4, "", true);
-o_16 = Fn((V _self1, int _argc288, V _a290, V _a291, V _a292, V _a293, V[] _rest289) => {
-V a_294 = default;
-a_294 = RestArgs(0, _argc288, _a290, _a291, _a292, _a293, _rest289);
-return InvokeSpread(G("Object"), "assign", new ArrBuilder().Add(NewObj(0).V).Spread(a_294).V);
+o_16 = Fn((V _arrowThis313, int _argc306, V _a308, V _a309, V _a310, V _a311, V[] _rest307) => {
+V a_312 = default;
+a_312 = RestArgs(0, _argc306, _a308, _a309, _a310, _a311, _rest307);
+return InvokeSpread(G("Object"), "assign", new ArrBuilder().Add(NewObj(0).V).Spread(a_312).V);
 }, 1, "", true);
 NEUTRAL_19 = NewObj(15).Put("lift", ((V)(0D))).Put("pitch", ((V)(0D))).Put("bend", ((V)(0D))).Put("twist", ((V)(0D))).Put("ly", ((V)(0D))).Put("winkL", ((V)(0D))).Put("winkR", ((V)(0D))).Put("wide", ((V)(0D))).Put("frown", ((V)(0D))).Put("tongue", ((V)(0D))).Put("puff", ((V)(0D))).Put("sit", ((V)(0D))).Put("split", ((V)(0D))).Put("ume", ((V)(0D))).Put("flop", ((V)(0D))).V;
 HOLD_20 = NewObj(1).Put("x", ((V)(1D))).V;
 Set(R_8, "whipConvert", convert_24);
-Invoke(Object_keys(PLAN_12), "forEach", Fn((V _self1, int _argc295, V key_301, V _a298, V _a299, V _a300, V[] _rest296) => {
-V nm_302 = default;
-V val_303 = default;
-V D_304 = default;
-nm_302 = ((V)(JsStrBuf.Begin().S("dance@").V(key_301).End()));
-val_303 = (Call(convert_24, V.Undef, (GetK(STATES_9, nm_302) is var _t305 && Truthy(_t305) ? _t305 : (SEqS(key_301, "mittens") ? Get(STATES_9, "dance") : V.Null)), key_301) is var _t306 && Truthy(_t306) ? _t306 : V.Undef);
-D_304 = NewObj(3).Put("configurable", (true ? V.True : V.False)).Put("get", Fn((V _self307, int _argc308, V _a310, V _a311, V _a312, V _a313, V[] _rest309) => {
-if (_self307.IsNullish) _self307 = GlobalV;
-return val_303;
+Invoke(Object_keys(PLAN_12), "forEach", Fn((V _arrowThis321, int _argc314, V key_320, V _a317, V _a318, V _a319, V[] _rest315) => {
+V nm_322 = default;
+V val_323 = default;
+V D_324 = default;
+nm_322 = ((V)(JsStrBuf.Begin().S("dance@").V(key_320).End()));
+val_323 = (Call(convert_24, V.Undef, (GetK(STATES_9, nm_322) is var _t325 && Truthy(_t325) ? _t325 : (SEqS(key_320, "mittens") ? Get(STATES_9, "dance") : V.Null)), key_320) is var _t326 && Truthy(_t326) ? _t326 : V.Undef);
+D_324 = NewObj(3).Put("configurable", (true ? V.True : V.False)).Put("get", Fn((V _self327, int _argc328, V _a330, V _a331, V _a332, V _a333, V[] _rest329) => {
+if (_self327.IsNullish) _self327 = GlobalV;
+return val_323;
 return default;
-}, 0, "get", false)).Put("set", Fn((V _self314, int _argc315, V v_321, V _a318, V _a319, V _a320, V[] _rest316) => {
-if (_self314.IsNullish) _self314 = GlobalV;
-val_303 = Call(convert_24, V.Undef, v_321, key_301);
-if (Truthy(((!(Truthy(Get(D_304, "enumerable"))) ? V.True : V.False) is var _t322 && !Truthy(_t322) ? _t322 : val_303))) {
-Set(D_304, "enumerable", (true ? V.True : V.False));
-Object_defineProperty(STATES_9, nm_302, D_304);
+}, 0, "get", false)).Put("set", Fn((V _self334, int _argc335, V v_341, V _a338, V _a339, V _a340, V[] _rest336) => {
+if (_self334.IsNullish) _self334 = GlobalV;
+val_323 = Call(convert_24, V.Undef, v_341, key_320);
+if (Truthy(((!(Truthy(Get(D_324, "enumerable"))) ? V.True : V.False) is var _t342 && !Truthy(_t342) ? _t342 : val_323))) {
+Set(D_324, "enumerable", (true ? V.True : V.False));
+Object_defineProperty(STATES_9, nm_322, D_324);
 }
 return default;
 }, 1, "set", false)).V;
-Set(D_304, "enumerable", (!(!(Truthy(val_303))) ? V.True : V.False));
-Object_defineProperty(STATES_9, nm_302, D_304);
+Set(D_324, "enumerable", (!(!(Truthy(val_323))) ? V.True : V.False));
+Object_defineProperty(STATES_9, nm_322, D_324);
 return default;
 }, 1, "", true));
 return default;

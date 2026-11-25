@@ -14,7 +14,7 @@
 //   next hop and lights its arrow key (going back to the last spot a full clear still had, if needed). The back button
 //   pauses.
 // No UnityEngine here: HopGame shows its layers (HopLayer) and cards in Unity, tools/unity/hop-test draws them.
-// Not ported: sounds, haptics, ads (Unity has none: a hint is free, as with Remove Ads), the board moving when the
+// Sounds and haptics through Audio/Snd.cs, ads through Ui/AdHook. Not ported: the board moving when the
 // screen's layout changes mid-level. Profile is kept in memory (signed in: a copy of the account's, and each outcome is
 // saved there too: HopSave).
 using System;

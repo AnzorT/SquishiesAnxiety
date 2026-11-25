@@ -47,16 +47,11 @@ const STEPS = {
     saveStack(uid, out.update, 0);
     return { update: out.update };
   },
-  // Blitz: the run won (win(), the last puzzle) / over (endRun)
-  'stack.blitzWin': (p, a) => {
-    const out = stack.afterBlitz(p, { won: true, reached: stack.BLITZ_ROUNDS, ms: a.ms });
+  // Blitz: payOut() (the run over, or left in the middle): what the cleared puzzles paid
+  'stack.blitz': (p, a) => {
+    const out = stack.afterBlitz(p, { cleared: a.cleared });
     saveStack(uid, out.update, out.coins, out.xp, p);
     return said(out);
-  },
-  'stack.blitzLose': (p, a) => {
-    const out = stack.afterBlitz(p, { won: false, reached: a.reached });
-    saveStack(uid, out.update, 0);
-    return { update: out.update };
   },
 
   'sort.seen': (p) => {
@@ -76,25 +71,20 @@ const STEPS = {
     saveSort(uid, out.update, 0);
     return { update: out.update };
   },
-  'sort.blitzWin': (p, a) => {
-    const out = sort.afterBlitz(p, { won: true, reached: sort.BLITZ_ROUNDS, ms: a.ms });
+  'sort.blitz': (p, a) => {
+    const out = sort.afterBlitz(p, { cleared: a.cleared });
     saveSort(uid, out.update, out.coins, out.xp, p);
     return said(out);
   },
-  'sort.blitzLose': (p, a) => {
-    const out = sort.afterBlitz(p, { won: false, reached: a.reached });
-    saveSort(uid, out.update, 0);
-    return { update: out.update };
-  },
 
-  // HopScreen.js: the first visit; Game.js win(), retry() after getting stuck
+  // HopScreen.js: the first visit; Game.js win(), retry() after getting stuck, payOut() (Blitz)
   'hop.seen': (p) => {
     if (hop.record(p).seen) return { update: {} };
     saveHop(uid, { 'hop.seen': true }, 0);
     return { update: { 'hop.seen': true } };
   },
   'hop.win': (p, a) => {
-    const out = hop.afterLevel(p, hop.levelSpec(a.lv), { left: a.left, hinted: a.hinted });
+    const out = hop.afterLevel(p, hop.levelSpec(a.lv), { takebacks: a.takebacks, hinted: a.hinted });
     saveHop(uid, out.update, out.coins, out.xp, p);
     return said(out);
   },
@@ -102,6 +92,12 @@ const STEPS = {
     const update = hop.afterStuck(p);
     saveHop(uid, update, 0);
     return { update };
+  },
+
+  'hop.blitz': (p, a) => {
+    const out = hop.afterBlitz(p, { cleared: a.cleared });
+    saveHop(uid, out.update, out.coins, out.xp, p);
+    return said(out);
   },
 
   // SquishdokuScreen.js toggleHead; RegularGame.js solved() / timeUp() (and outOfHearts); BlitzGame.js settle(),

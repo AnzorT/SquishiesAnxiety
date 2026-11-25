@@ -31,7 +31,7 @@ namespace SquishSquad.Menu
         readonly List<BirdView> _birds = new List<BirdView>();
         MenuLayout.Weather _weather;
         float _w, _h;
-        string _creatureKey;   // (Mittens when the chosen one can't be animated yet: Build)
+        string _creatureKey;   // the player's creature (its own still, never Mittens', when it can't be animated: Build)
 
         // the current screen's geometry
         float _k, _ox, _oy;          // scene: px per viewBox unit and where viewBox (0, 0) lands
@@ -100,17 +100,10 @@ namespace SquishSquad.Menu
             }
 
             // 2. the creature and its name plate (they stand in the scene), 3. the weather, 4. the HUD
-            // the creature: live or recorded when it can be (else the exported still, Mittens'); its name plate with it
+            // the creature: live when its rig runs, else its own still (never another creature in its place: the user,
+            // 2026-11-25, no Mittens fallback); its name plate with it
             var rig = _creatureKey != null ? Rigs.For(_creatureKey) : null;
-            // one the menu can't animate yet (no recording, the live rig off) is Mittens, moving: his recording, plate and
-            // clips, so PLAY's walk and the intro (which hides him, drops the box, pops him out) have a creature to move,
-            // not a still of him that stays put
-            if (rig == null && _creatureKey != null && _creatureKey != "mittens")
-            {
-                var mittens = Rigs.For("mittens");
-                if (mittens != null) { rig = mittens; _creatureKey = "mittens"; }
-            }
-            string plateKey = rig != null ? _creatureKey : "mittens";
+            string plateKey = _creatureKey ?? "mittens";
             int order = WorldOrder;
             foreach (var p in _layout.hud) if (p.world) _pieces.Add(new PieceView(this, p.id == "name" ? PlateFor(p, plateKey) : p, order++));
             BuildWeather();
@@ -122,6 +115,12 @@ namespace SquishSquad.Menu
             if (_creatureKey != null)
             {
                 var piece = _pieces.Find(x => x.Data.id == "creature");
+                // (the exported still is Mittens: any other creature's still is its own, for when its rig can't start or fails)
+                if (piece != null && _creatureKey != "mittens")
+                {
+                    var still = LoadStill(_creatureKey);
+                    if (still != null) piece.SetStill(this, still);
+                }
                 if (piece != null && rig != null)
                 {
                     Creature = CreatureView.Create(_world, rig, piece.Hit, piece.Order);
@@ -426,6 +425,18 @@ namespace SquishSquad.Menu
             return tex;
         }
 
+        // a creature's still (Resources/Characters/still/<key>.png.bytes, the Characters screen's cut-out), or null
+        Texture2D LoadStill(string key)
+        {
+            var bytes = Resources.Load<TextAsset>("Characters/still/" + key + ".png");
+            if (bytes == null) { Debug.LogWarning("[Menu] no still for " + key); return null; }
+            var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false) { name = "still " + key, filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            bool ok = tex.LoadImage(bytes.bytes, true);
+            Resources.UnloadAsset(bytes);
+            _made.Add(tex);
+            return ok ? tex : null;
+        }
+
         Texture2D Load(string res)
         {
             var tex = Resources.Load<Texture2D>(MenuLayout.Root + res);
@@ -504,7 +515,24 @@ namespace SquishSquad.Menu
 
             // a live creature draws itself (CreatureView): no still, no placeholder breath
             public void UseLive() { _live = true; _art.enabled = false; }
-            public void UseStill() { _live = false; _art.enabled = true; }
+            public void UseStill() { _live = false; _art.enabled = !_stillHidden; }
+            bool _stillHidden;
+            /// <summary>Hides the still (the intro's night, while the box hasn't dropped); the live creature hides itself.</summary>
+            public void HideStill(bool hide) { _stillHidden = hide; if (!_live) _art.enabled = !hide; }
+
+            // The exported creature picture is Mittens, 423 px tall in it (its feet at 424 px, its shadow under) where his
+            // Characters still is 355 px: another creature's still at the same scale, its feet where his are, centred.
+            const float StillK = 423f / 355f, StillFeet = 424f;
+            public void SetStill(MenuView v, Texture2D tex)
+            {
+                var p = Data;
+                var at = v.Map(p, new Vector2(p.rect[0], p.rect[1]));
+                float k = StillK * _scale, w = tex.width * k, h = tex.height * k;
+                var topLeft = new Vector2(at.x + p.rect[2] * _scale / 2 - w / 2, at.y + StillFeet * _scale - h);
+                _art.sprite = v.MakeSprite(tex);
+                _art.transform.localPosition = World(Snap(topLeft, k) - PivotPx);
+                _art.transform.localScale = new Vector3(k, k, 1f);
+            }
 
             // the HUD's fade (menu.js x.fade): every picture of the piece at this opacity
             public void SetAlpha(float a)

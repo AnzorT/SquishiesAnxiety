@@ -10,7 +10,7 @@
 // layer is clipped to the chest's hull, 'destination-out' holes are a mask, a chunk or shard is the layer at that moment
 // clipped to its polygon (the dark side: a colour matrix), covered() samples the hull minus the holes.
 // The page's own changes to it (host.html): the chest's size (fitStage, Resize) and its HP by rarity (rarityHp, TierHp).
-// Not as the page: 'lighter' particles blend as normal ones; no sounds.
+// Its sounds are chest-sfx.js's, synthesized the same way (Audio/ChestSounds.cs on Audio/WebSynth.cs), through Snd.Synth.
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -101,6 +101,9 @@ namespace SquishSquad.Screens
         public object Open;
         Charge _charge;
         public bool Busy;
+        /// <summary>The page's `sound` (its sounds, chest-sfx.js, on WebSynth: Audio/ChestSounds.cs).</summary>
+        public bool Sound = true;
+        void Sfx(Func<float[]> render) { if (Sound) Audio.Snd.Synth(render); }
         int? _upTo;
 
         // the canvas: its CSS size, the ground line and the scale
@@ -230,6 +233,7 @@ namespace SquishSquad.Screens
             for (int i = 0; i < 3; i++) { var p = Np("dust"); p.X = wx + Rnd(-8, 8); p.Y = wy + Rnd(-8, 8); p.Vx = Rnd(-60, 60) - nx * 40; p.Vy = Rnd(-60, 10); p.S = Rnd(10, 18); p.C = M.Dust; p.A = 0.7; p.Life = Rnd(0.6, 0.9); p.G = 0; p.Drag = 3; Add(p); }
             Debris(wx, wy, (int)Math.Round(5 + 4 * P), P, Math.Atan2(-ny, -nx));
             if (M.Spark != null) for (int i = 0; i < 9; i++) Spark(wx, wy, 250, 520, 0.25, 0.45, 120, M.Spark);
+            { bool heavy = final || P > 1.2; string g = Group; int lv = Tier; var sx = M.Sfx; Sfx(() => Audio.ChestSounds.Hit("poke", heavy, g, lv, d, final, sx)); }
             On?.Invoke("hp", new Dictionary<string, object> { ["hp"] = Hp, ["max"] = m.Hp });
             if (final) Ko(x, y);
         }
@@ -531,6 +535,7 @@ namespace SquishSquad.Screens
             for (int i = 0; i < 12; i++) { var p = Np("dust"); p.X = cx + Rnd(-30, 30); p.Y = cy + Rnd(-30, 30); p.Vx = Rnd(-140, 140); p.Vy = Rnd(-160, 40); p.S = Rnd(18, 30); p.C = M.Dust; p.A = 0.8; p.Life = Rnd(0.8, 1.3); p.G = -10; p.Drag = 2.6; Add(p); }
             Debris(cx, cy, 34, 1.6, null);
             if (M.Spark != null) for (int i = 0; i < 26; i++) Spark(cx, cy, 300, 640, 0.3, 0.55, 160, M.Spark);
+            { string g = Group; int lv = Tier; var sx = M.Sfx; Sfx(() => Audio.ChestSounds.Burst(lv, g, sx)); }
             At(Time + 0.32, Reveal);
         }
 
@@ -576,6 +581,7 @@ namespace SquishSquad.Screens
             var beams = new List<(double, double, double, double, double)>();
             for (int j = 0; j < n; j++) { double a = (j + Rnd(-0.3, 0.3)) / n * TAU, w = Rnd(0.04, 0.1), l = Rnd(0.8, 1.25), at = Rnd(0.06, 0.85), f = Rnd(0, TAU); beams.Add((a, w, l, at, f)); }
             _charge = new Charge { I = i, K = 0, Rate = 1 / dur, C = ChestModels.TIER[i].Fx, Rb = ChestModels.TIER[i].Rb, Fin = fin, Beams = beams };
+            { double cd = dur / Ts; Sfx(() => Audio.ChestSounds.Charge(cd)); }
             On?.Invoke("charge", new Dictionary<string, object> { ["tier"] = i });
         }
 
@@ -630,7 +636,7 @@ namespace SquishSquad.Screens
                         }
                     });
                 }
-            _sflash = (0.75 + i * 0.06) * P; _sfc = "#ffffff"; _shake = (8 + i * 4) * P;
+            _sflash = (0.75 + i * 0.06) * P; _sfc = "#ffffff"; _shake = (8 + i * 4) * P; Sfx(() => Audio.ChestSounds.Poof(i));
             On?.Invoke("step", new Dictionary<string, object> { ["tier"] = i, ["hp"] = Hp, ["max"] = m.Hp, ["name"] = m.Name });
         }
 
@@ -711,7 +717,12 @@ namespace SquishSquad.Screens
                     s.Y = s.Gz - e;
                     if (s.Vy > 110)
                     {
-                        if (s.Vy > 260 && T - _lastB > 0.07) _lastB = T;
+                        if (s.Vy > 260 && T - _lastB > 0.07)
+                        {
+                            _lastB = T;
+                            double bv = Math.Min(1300, s.Vy * 1.3); string g = Group; int lv = Tier; var sx = M.Sfx;
+                            Sfx(() => Audio.ChestSounds.Bounce(bv, g, lv, sx));
+                        }
                         if (s.Vy > 300) for (int k = 0; k < 2; k++) { var p = Np("dust"); p.X = s.X + Rnd(-hw, hw); p.Y = s.Gz - 2; p.Vx = Rnd(-80, 80); p.Vy = -Rnd(10, 40); p.S = Rnd(10, 16); p.C = M.Dust; p.A = 0.6; p.Life = 0.6; p.G = -10; p.Drag = 3; Add(p); }
                         s.Vy = -s.Vy * M.Rest; s.Vx *= 0.55; s.Vr *= 0.45; s.Vf *= 0.5;
                     }

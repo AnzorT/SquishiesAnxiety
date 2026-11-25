@@ -100,6 +100,8 @@ namespace SquishSquad.Screens
         {
             W = w; H = h; _t = ticker;
             S = new ChestEngine(w, h, 0.73, 178) { TierHp = HP };
+            // (its sounds' room made ahead, off the main thread, where they play: not in the tests)
+            if (Audio.Snd.SynthFn != null) System.Threading.Tasks.Task.Run(Audio.ChestSounds.Warm);
             if (random != null) S.Random = random;
             // (sized for the HUD as it stands once painted: the page's stage measures it again after the first paint)
             S.Resize(w, h, HudBottom());
@@ -260,7 +262,7 @@ namespace SquishSquad.Screens
                 if (_mg != null && !_mg.Bammed)
                 {
                     double t = _t.Now - _mg.T0;
-                    if (t < _mg.Bam - 60) { _mg.Quiet = true; _mg.T0 -= _mg.Bam - t; }
+                    if (t < _mg.Bam - 60) { _mg.Quiet = true; StopSnd(_mg); _mg.T0 -= _mg.Bam - t; }
                     return;
                 }
                 _collectDown = InCollect(x, y); return;
@@ -704,20 +706,13 @@ namespace SquishSquad.Screens
             bg.Def($"<radialGradient id=\"{g}\" gradientUnits=\"userSpaceOnUse\" cx=\"{F(cx)}\" cy=\"{F(cy)}\" r=\"{F(far)}\"><stop offset=\"0\" stop-color=\"rgba(255,184,90,0.5)\"/><stop offset=\"0.7\" stop-color=\"rgba(34,22,14,0.92)\"/></radialGradient>");
             bg.Raw($"<rect x=\"0\" y=\"0\" width=\"{F(W)}\" height=\"{F(H)}\" fill=\"url(#{g})\"/>");
             list.Add(Piece("reveal-bg", bg, 0, 0, fade, null, 0));
-            // the rays turning behind the card (14 s a turn), in the middle of the screen
-            var rays = new UiSvg(820, 820);
-            var mk = rays.NewId("rm");
-            rays.Def($"<radialGradient id=\"{mk}g\" gradientUnits=\"userSpaceOnUse\" cx=\"410\" cy=\"410\" r=\"{F(410 * Math.Sqrt(2))}\"><stop offset=\"0.15\" stop-color=\"#fff\"/><stop offset=\"0.62\" stop-color=\"#fff\" stop-opacity=\"0\"/></radialGradient><mask id=\"{mk}\"><rect x=\"0\" y=\"0\" width=\"820\" height=\"820\" fill=\"url(#{mk}g)\"/></mask>");
-            var d = new StringBuilder();
-            for (int i = 0; i < 18; i++)
-            {
-                double a0 = (i * 20 - 90) * Math.PI / 180, a1 = (i * 20 + 8 - 90) * Math.PI / 180, R = 600;
-                d.Append($"M410 410 L{F(410 + R * Math.Cos(a0))} {F(410 + R * Math.Sin(a0))} L{F(410 + R * Math.Cos(a1))} {F(410 + R * Math.Sin(a1))} Z ");
-            }
-            var rc = rays.NewId("rc");
-            rays.Def($"<clipPath id=\"{rc}\"><circle cx=\"410\" cy=\"410\" r=\"410\"/></clipPath>");
-            rays.Raw($"<g mask=\"url(#{mk})\" clip-path=\"url(#{rc})\"><path d=\"{d}\" fill=\"rgba(255,230,140,0.32)\"/></g>");
-            list.Add(Piece("rays", rays, W / 2 - 410, H / 2 - 410, fade, About(820, 820, Affine.Rotate(ms / 14000 * 360 % 360)), 0));
+            // the glow behind the card, in the middle of the screen: a warm disc breathing brighter and bigger and back
+            // (3.2 s a breath). Unity's own (2026-11-25, the user: a soft pulsing glow in place of the page's #rays
+            // turning 14 s a turn; the app keeps its rays). Drawn once: only its scale and opacity move.
+            _glowMarkup ??= GlowMarkup();
+            double breath = 0.5 - 0.5 * Math.Cos(ms / 3200 * 2 * Math.PI);
+            double gs = 0.94 + 0.1 * breath;
+            list.Add(Piece("reveal-glow", _glowMarkup, GLOW * 2, GLOW * 2, W / 2 - GLOW, H / 2 - GLOW, fade * (float)(0.72 + 0.28 * breath), About(GLOW * 2, GLOW * 2, Affine.ScaleBy(gs, gs)), 0));
 
             // the middle (#rvMain): the card (or the unlocked creature's place) and, under it, its rarity and line
             float cw = CW, ch = CardH(cw), col1 = 20, colM = col1 + SideW + 22, colE = colM + cw + 22;
@@ -966,6 +961,7 @@ namespace SquishSquad.Screens
         {
             public Reward Rw; public int N, Count; public double T0, NewAt, NewEnd, Gather, Charge, Bam;
             public bool Flew, Full, Gathering, Bammed, Side, Quiet, Done;
+            public Audio.ISndLoop Snd;   // (the gather's rush: stopped at the BAM)
             public double Cx, Cy, Mw, Mh, Rx, Ry, Wd, Ht;
             public readonly List<Mc> Cards = new List<Mc>();
             public double CountOp, CountSc = 1, CountPop = -1e9, GlowOp, GlowSc = 0.4, BurstAt, SideAt;
@@ -973,6 +969,7 @@ namespace SquishSquad.Screens
             public readonly List<Bit> Bits = new List<Bit>();
         }
         Mg _mg;
+        static void StopSnd(Mg m) { m.Snd?.Stop(); m.Snd = null; }
         static double Clamp(double v, double a, double b) => Math.Max(a, Math.Min(b, v));
         static double SM(double x) { x = Clamp(x, 0, 1); return x * x * (3 - 2 * x); }
         static double OutQ(double u) => 1 - (1 - u) * (1 - u);
@@ -1022,17 +1019,22 @@ namespace SquishSquad.Screens
                 double cu = t >= M.Charge ? (t - M.Charge) / CHARGE : 0, amp = cu != 0 ? 1.5 + 6 * cu : 0;
                 double jx = (Rnd() - 0.5) * 2 * amp, jy = (Rnd() - 0.5) * 2 * amp, jr = (Rnd() - 0.5) * 8 * cu;
                 foreach (var c in M.Cards) CardAt(c, t, jx, jy, jr);
-                if (!M.Flew && t >= M.NewAt) M.Flew = true;
+                if (!M.Flew && t >= M.NewAt) { M.Flew = true; if (!M.Quiet) Audio.Snd.Synth(Audio.ChestSounds.Fly); }
                 // the new one in: the count full, a ping where it landed
                 if (!M.Full && t >= M.NewEnd)
                 {
                     M.Full = true; M.Count = M.N; M.CountPop = now;
+                    if (!M.Quiet) Audio.Snd.Synth(Audio.ChestSounds.Full);
                     var (x, y, _) = Slot(M.N - 1);
                     M.Pings.Add((x, y, now));
                     var ping = M.Pings[M.Pings.Count - 1];
                     _t.SetTimeout(() => M.Pings.Remove(ping), 700);
                 }
-                if (!M.Gathering && t >= M.Gather) M.Gathering = true;
+                if (!M.Gathering && t >= M.Gather)
+                {
+                    M.Gathering = true;
+                    if (!M.Quiet) M.Snd = Audio.Snd.Synth(() => Audio.ChestSounds.Gather((GATHER + CHARGE) / 1000));
+                }
                 // the count over the middle, fading as they gather into it
                 double gu = t < M.Gather ? 0 : Clamp((t - M.Gather) / (GATHER * 0.35), 0, 1);
                 M.CountOp = M.Count > 0 ? 1 - gu : 0; M.CountSc = 1 + 0.4 * gu;
@@ -1078,7 +1080,15 @@ namespace SquishSquad.Screens
                 }
                 if (u >= 1)
                 {
-                    if (!c.Landed) { c.Landed = true; if (!c.IsNew) { M.Count++; M.CountPop = _t.Now; } }
+                    if (!c.Landed)
+                    {
+                        c.Landed = true;
+                        if (!c.IsNew)
+                        {
+                            M.Count++; M.CountPop = _t.Now;
+                            if (!M.Quiet) { int i = M.Count - 1; Audio.Snd.Synth(() => Audio.ChestSounds.Card(i)); }
+                        }
+                    }
                     y += Math.Sin(t / 140 + c.J) * 2.5 * Clamp((t - c.End) / 300, 0, 1);
                 }
             }
@@ -1108,6 +1118,7 @@ namespace SquishSquad.Screens
         {
             var M = _mg;
             M.Bammed = true; M.BurstAt = _t.Now;
+            StopSnd(M); Audio.Snd.Synth(Audio.ChestSounds.Bam);
             M.CountOp = 0;
             var cols = new[] { "#ffe27a", "#fff6c4", "#ffffff", "#ffb52e", M.Rw.RarBg ?? "#ffd84a" };
             const int n = 30;
@@ -1127,6 +1138,18 @@ namespace SquishSquad.Screens
         /// then. The live one (a CreatureView playing its recorded rig, Resources/Creatures) belongs there, popping out of
         /// the burst (popAt: it grows out of the light turning once, hops, lands with a squash and cheers); its still is
         /// drawn there meanwhile (heroImg, unPop), as the app shows it while its rig isn't ready.</summary>
+        // the reveal's glow (in place of the page's rays): its radius, dp, and its picture (made once)
+        const float GLOW = 300;
+        static string _glowMarkup;
+        static string GlowMarkup()
+        {
+            var s = new UiSvg(GLOW * 2, GLOW * 2);
+            var id = s.NewId("rg");
+            s.Def($"<radialGradient id=\"{id}\" cx=\"0.5\" cy=\"0.5\" r=\"0.5\"><stop offset=\"0\" stop-color=\"rgba(255,244,200,0.62)\"/><stop offset=\"0.35\" stop-color=\"rgba(255,222,130,0.36)\"/><stop offset=\"0.7\" stop-color=\"rgba(255,200,100,0.12)\"/><stop offset=\"1\" stop-color=\"rgba(255,200,100,0)\"/></radialGradient>");
+            s.Raw($"<circle cx=\"{F(GLOW)}\" cy=\"{F(GLOW)}\" r=\"{F(GLOW)}\" fill=\"url(#{id})\"/>");
+            return s.Markup;
+        }
+
         /// <summary>Whether a creature can come out live (Creatures/HeroCreature.cs: the native rig runs); else its still.</summary>
         public static Func<string, bool> LiveHero;
 

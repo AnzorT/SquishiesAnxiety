@@ -42,11 +42,30 @@ static class Program
             if (markup != null && (tree == null || !RigTree.Same(tree, SvgMarkup.Parse(markup), out where))) { TreeBad++; if (TreeBad < 4) Console.Error.WriteLine("[tree] differs from the parsed markup: " + where); }
             return markup;
         }, 1, "svgOf", false));
+        if (args.Length > 0 && args[0] == "house") return House(args[1], args[2]);
         int rc = args.Length > 0 && args[0] == "bench" ? Bench(args) : Run(args[1], args[2]);
         foreach (var e in hostErrors) Console.Error.WriteLine("[host error] " + e);
         if (TreeChecks > 0) Console.Error.WriteLine($"direct trees: {TreeChecks - TreeBad}/{TreeChecks} the same as the parsed markup");
         if (TreeBad > 0) rc = Math.Max(rc, 3);
         return rc;
+    }
+
+    // house.mjs: each call through RigHost.HouseEval (as House/HouseDraw.cs's Eval in Unity), the clock moved as
+    // draw-server.mjs moves it first; the answers as a JSON array
+    static int House(string callsFile, string outFile)
+    {
+        for (int i = 0; i < 20; i++) RigHost.Frame(40);
+        int errs = 0;
+        RigHost.HouseError = (n, e) => { if (errs++ < 3) Console.Error.WriteLine($"[house] {n}: {(e is JsThrow ? e.Message : e.ToString().Substring(0, Math.Min(1500, e.ToString().Length)))}"); };
+        var calls = (JsArray)Rt.Invoke(Rt.G("JSON"), "parse", File.ReadAllText(callsFile)).O;
+        var outs = new List<string>();
+        var sw = Stopwatch.StartNew();
+        for (int i = 0; i < calls.Count; i++) outs.Add(RigHost.HouseEval(Rt.ToStr(calls.At(i))));
+        Console.Error.WriteLine($"{calls.Count} house calls in {sw.ElapsedMilliseconds} ms");
+        var sb = new StringBuilder("[");
+        for (int i = 0; i < outs.Count; i++) { if (i > 0) sb.Append(','); sb.Append(outs[i] == null ? "null" : Rt.ToStr(Rt.Invoke(Rt.G("JSON"), "stringify", outs[i]))); }
+        File.WriteAllText(outFile, sb.Append(']').ToString(), new UTF8Encoding(false));
+        return 0;
     }
 
     static int Run(string listFile, string outFile)

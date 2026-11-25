@@ -518,8 +518,9 @@ namespace SquishSquad.Creatures.Js
                 }
                 yield break;
             }
-            if (v.O is JsMap m) { foreach (var e in m.Entries()) yield return e; yield break; }
+            // (a Set first: JsSet is a JsMap, whose iteration is its [key, value] entries; a Set's is its values)
             if (v.O is JsSet st) { foreach (var e in st.Values()) yield return e; yield break; }
+            if (v.O is JsMap m) { foreach (var e in m.Entries()) yield return e; yield break; }
             if (v.O is JsTypedArray ta) { for (int i = 0; i < ta.Length; i++) yield return ta.GetAt(i); yield break; }
             if (v.O is JsIterator it) { while (it.Next(out var x)) yield return x; yield break; }
             throw TypeErr(ToStrSafe(v) + " is not iterable");

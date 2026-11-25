@@ -11,7 +11,9 @@ apart from `Haptics.Android.cs`' `Handheld` (missing from that package, not from
   sound budgets, the menu and the Game Park, the shop, chests, spin, road, streak, settings, achievements. The game
   code reaches the sound through `Audio/Snd.cs` (no UnityEngine, so the test harnesses still compile). Settings'
   switches now drive `Sfx` (they only saved to PlayerPrefs before), and the music follows the app's stage.
-  Not done: the chest box's own hit sounds (synthesized in the app's web page), the house's sounds (task 1).
+  The chest box's own sounds (synthesized in the app's web pages) are synthesized the same way in Unity
+  (`Audio/WebSynth.cs`, `Audio/ChestSounds.cs`, played by `Audio/SynthPlayer.cs`). Not done: the house's sounds
+  (task 1).
 - **Effects**: Sort and Stack now have the dust, sparks, poofs, angry puffs and confetti (Hop and Squishdoku had them).
 - **Live creature animations, native**: the app's rig code (rive-rig.js, rive-generic.js, the defs and move files, the
   result page's states, the browser stand-in) compiled to C# by `tools/unity/rig/jsc.mjs` (`Creatures/Js`, its own

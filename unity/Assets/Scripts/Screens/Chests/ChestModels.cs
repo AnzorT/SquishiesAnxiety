@@ -37,6 +37,8 @@ namespace SquishSquad.Screens
         public double[] HoleR;
         public string Jag, Edge, Crack, Deb, Deb2, Dust, Spark, Glow, DropC;
         public string[] Chips, Cav;
+        /// <summary>Its sound (chest-sfx.js: the material, pitch and accents).</summary>
+        public Audio.ChestSounds.Spec Sfx;
     }
 
     public sealed class ChestModel
@@ -85,13 +87,17 @@ namespace SquishSquad.Screens
         {
             double N(string k, double d = 0) => Prof.Num(Prof.Get(m, k), d);
             string S(string k) => Prof.Get(m, k) as string;
-            string[] A(string k) => Prof.List(Prof.Get(m, k))?.Select(x => x as string).ToArray();
+            string[] A(string k) => A2(Prof.Get(m, k));
+            string[] A2(object v) => Prof.List(v)?.Select(x => x as string).ToArray();
             return new ChestMat
             {
                 Soft = N("soft"), Lean = N("lean"), Sag = N("sag"), DentK = N("dentK"), DentShade = N("dentShade"), HoleFrom = N("holeFrom"), HoleP = N("holeP"),
                 HoleR = Prof.List(Prof.Get(m, "holeR"))?.Select(Prof.D).ToArray() ?? new[] { 15.0, 22 }, Jag = S("jag"), Edge = S("edge"), EdgeW = N("edgeW", 6), Crack = S("crack"),
                 Chips = A("chips"), Deb = S("deb"), Deb2 = S("deb2"), Dust = S("dust"), Mass = N("mass", 1), Rest = N("rest"), Flutter = N("flutter"), Spark = S("spark"),
                 Cav = A("cav"), Glow = S("glow"), DropC = S("dropC"),
+                Sfx = Prof.Get(m, "sfx") is IDictionary<string, object> x
+                    ? new Audio.ChestSounds.Spec { M = Prof.Get(x, "m") as string ?? "wood", P = Prof.Num(Prof.Get(x, "p"), 1), X = A2(Prof.Get(x, "x")) }
+                    : null,
             };
         }
 

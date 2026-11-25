@@ -2,7 +2,9 @@
 // (Resources/Fonts through UiFont: advances, kerning and letter-spacing as Chrome lays out a line), each character's
 // glyph outline at its pen position. One line per element: its text with whitespace collapsed (xml:space default), at
 // its first x / y (plus dx / dy), moved for text-anchor. That's what the exported art writes (the Game Park's "GAME
-// PARK" sign and popcorn "POP!", the house's level, the rigs' "z"s): no tspans placed on their own, no textLength.
+// PARK" sign and popcorn "POP!", the house's level, the rigs' "z"s): no tspans placed on their own. textLength with
+// lengthAdjust="spacingAndGlyphs" (the house's handwritten signs) squeezes or stretches the line to it; CSS `cursive`
+// and the script faces before it are Dancing Script, as Android draws `cursive`.
 using System;
 using System.Globalization;
 using System.Text;
@@ -26,11 +28,18 @@ namespace SquishSquad.Ui
             if (size <= 0) return null;
             float x = First(n["x"]) + First(n["dx"]), y = First(n["y"]) + First(n["dy"]);
             var xs = f.Layout(text, size, ls, out float width);
+            // textLength (lengthAdjust spacingAndGlyphs): the line scaled across to it
+            double sx = 1;
+            if (n["textLength"] != null && (n["lengthAdjust"] ?? "spacing").Trim() == "spacingAndGlyphs" && width > 0)
+            {
+                float tl = Px(n["textLength"], width);
+                if (tl > 0) { sx = tl / width; for (int i = 0; i < xs.Length; i++) xs[i] = (float)(xs[i] * sx); width = tl; }
+            }
             var anchor = (Inherited(n, "text-anchor") ?? "start").Trim();
             if (anchor == "middle") x -= width / 2;
             else if (anchor == "end") x -= width;
 
-            var run = new SvgScene.GlyphRun();
+            var run = new SvgScene.GlyphRun { XScale = sx };
             var cps = UiFont.CodePoints(text);
             for (int i = 0; i < cps.Count; i++)
             {
@@ -53,11 +62,14 @@ namespace SquishSquad.Ui
             {
                 var p = part.Trim().Trim('\'', '"');
                 if (p.StartsWith("Fredoka") || p.StartsWith("Nunito") || p.StartsWith("Baloo")) { fam = p; break; }
+                // a handwritten face (none of them on a phone) or `cursive` itself: Android's cursive, Dancing Script
+                if (p == "cursive" || p.StartsWith("Dancing Script") || p.Contains("Script") || p.Contains("Handwriting") || p.Contains("Brush")) { fam = "DancingScript"; break; }
             }
             var wv = (weight ?? "").Trim();
             int w = wv == "bold" || wv == "bolder" ? 700 : int.TryParse(wv, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n) ? n : 400;
             if (fam.StartsWith("Nunito"))
                 return w >= 900 ? "Nunito_900Black" : w >= 800 ? "Nunito_800ExtraBold" : w >= 700 ? "Nunito_700Bold" : w >= 600 ? "Nunito_600SemiBold" : "Nunito_400Regular";
+            if (fam == "DancingScript") return w >= 600 ? "DancingScript_700Bold" : "DancingScript_400Regular";
             if (fam.StartsWith("Baloo"))
                 return w >= 800 ? "Baloo2_800ExtraBold" : w >= 700 ? "Baloo2_700Bold" : "Baloo2_500Medium";
             return w >= 700 ? "Fredoka_700Bold" : w >= 600 ? "Fredoka_600SemiBold" : "Fredoka_500Medium";

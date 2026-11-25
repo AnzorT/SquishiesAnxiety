@@ -7,6 +7,7 @@
 //   pixels   the same rooms drawn from the C# room (RoomSvg, pictures from Resources/House/pics) by the reference
 //            rasteriser vs Chrome's screenshot (creatures and HUD hidden); writes out/<fixture>-<room>-<day|night>-*.png
 //   chrome   the stage-2 pieces (camera, doors, drawer, toast) against the page's numbers
+//   signframes <dir>  a sign written in Renovate, frame by frame, for a video (Signs.cs)
 // The page's answers: node tools/unity/house/fixtures.mjs && node tools/unity/house/export-house.mjs
 using System;
 using System.IO;
@@ -43,6 +44,9 @@ static partial class Program
             case "layers": return LayerCheck.Run(args[1], args[2]);
             case "compose": return ComposeOnly(args[1], args[2]);
             case "rt": return DebugRt(args[1], args[2]);
+            case "roompics": return RoomPics(args[1], args.Length > 2 ? args[2] : "fresh-lv1", args.Skip(3).ToArray());
+            case "housepics": return HousePics(args.Length > 1 ? args[1] : Path.Combine(Repo, "tools/unity/house-test/out/pics"));
+            case "signframes": return SignFrames(args.Length > 1 ? args[1] : Path.Combine(Repo, "tools/unity/house-test/out/signs"));
             case "pixels": PixRoom = args.Length > 2 && !args[2].StartsWith("--") ? args[2] : null; { int di = Array.IndexOf(args, "--disco"); if (di > 0 && di + 1 < args.Length) DiscoK = int.Parse(args[di + 1]); } return Pixels(only, args.Contains("--keep"));
             default: Console.WriteLine("commands: save | markup | pixels [fixture]"); return 2;
         }

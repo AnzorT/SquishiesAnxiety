@@ -12,7 +12,7 @@ namespace SquishSquad.Vector.Gpu
 {
     public sealed class VectorRenderer : IDisposable
     {
-        readonly Material _stencil, _cover, _composite, _filter;
+        readonly Material _stencil, _cover, _composite, _filter, _coverAdd, _compositeAdd;
         readonly CommandBuffer _cb = new CommandBuffer { name = "SquishSquad.Vector" };
         readonly Mesh _mesh;
         readonly List<Vector3> _verts = new List<Vector3>(8192);
@@ -42,6 +42,11 @@ namespace SquishSquad.Vector.Gpu
                 return new Material(sh) { hideFlags = HideFlags.HideAndDontSave };
             }
             _stencil = Load("VectorStencil"); _cover = Load("VectorCover"); _composite = Load("VectorComposite"); _filter = Load("VectorFilter");
+            // plus-lighter (FillNode / LayerNode.Additive): the same shaders blending One One (their _DstBlend)
+            _coverAdd = new Material(_cover) { hideFlags = HideFlags.HideAndDontSave };
+            _coverAdd.SetFloat("_DstBlend", (float)BlendMode.One);
+            _compositeAdd = new Material(_composite) { hideFlags = HideFlags.HideAndDontSave };
+            _compositeAdd.SetFloat("_DstBlend", (float)BlendMode.One);
             _mesh = new Mesh { name = "VectorShapes", indexFormat = IndexFormat.UInt32, hideFlags = HideFlags.HideAndDontSave };
             _mesh.MarkDynamic();
             _ramp = new Texture2D(256, RampRows, TextureFormat.RGBA32, false, true) { name = "gradient ramps", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, hideFlags = HideFlags.HideAndDontSave };
@@ -54,7 +59,7 @@ namespace SquishSquad.Vector.Gpu
             if (_disposed) return;
             _disposed = true;
             _cb.Release();
-            Kill(_mesh); Kill(_stencil); Kill(_cover); Kill(_composite); Kill(_filter); Kill(_ramp);
+            Kill(_mesh); Kill(_stencil); Kill(_cover); Kill(_composite); Kill(_filter); Kill(_coverAdd); Kill(_compositeAdd); Kill(_ramp);
             foreach (var t in _noise.Values) Kill(t);
             _noise.Clear();
         }
@@ -102,10 +107,10 @@ namespace SquishSquad.Vector.Gpu
         {
             var props = PaintProps(f.Paint, f.Opacity, f.UserToPx, f.UserBox);
             if (props == null) return;
-            Shape(f.Shape, props);
+            Shape(f.Shape, props, f.Additive);
         }
 
-        void Shape(Shape s, MaterialPropertyBlock props)
+        void Shape(Shape s, MaterialPropertyBlock props, bool additive = false)
         {
             int fan = Fans(s);
             if (fan < 0) return;
@@ -113,7 +118,7 @@ namespace SquishSquad.Vector.Gpu
             int cover = Quad(new Box { X0 = b.X0 - 1, Y0 = b.Y0 - 1, X1 = b.X1 + 1, Y1 = b.Y1 + 1 });
             int pass = s.Rule == FillRule.NonZero ? 0 : s.Rule == FillRule.EvenOdd ? 1 : 2;
             _cb.DrawMesh(_mesh, Matrix4x4.identity, _stencil, fan, pass);
-            _cb.DrawMesh(_mesh, Matrix4x4.identity, _cover, cover, 0, props);
+            _cb.DrawMesh(_mesh, Matrix4x4.identity, additive ? _coverAdd : _cover, cover, 0, props);
         }
 
         int Temp(bool msaa, RenderTextureFormat fmt)
@@ -160,7 +165,7 @@ namespace SquishSquad.Vector.Gpu
             _cb.SetGlobalTexture(MainTex, result);
             if (clip >= 0) _cb.SetGlobalTexture(ClipTex, clip);
             if (mask >= 0) _cb.SetGlobalTexture(MaskTex, mask);
-            _cb.DrawMesh(_mesh, Matrix4x4.identity, _composite, _fullQuad, 0, p);
+            _cb.DrawMesh(_mesh, Matrix4x4.identity, l.Additive ? _compositeAdd : _composite, _fullQuad, 0, p);
             foreach (var t in temps) _cb.ReleaseTemporaryRT(t);
         }
 

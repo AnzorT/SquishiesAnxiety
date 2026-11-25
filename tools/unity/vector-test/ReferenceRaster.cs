@@ -102,7 +102,7 @@ static class ReferenceRaster
                         float pa = px[o + 3] * w;
                         r += px[o] * pa; g += px[o + 1] * pa; bl += px[o + 2] * pa; a += pa;
                     }
-                    if (a > 0) Over(b, X, Y, r / a, g / a, bl / a, a * f.Opacity);
+                    if (a > 0) Paint(b, f.Additive, X, Y, r / a, g / a, bl / a, a * f.Opacity);
                 }
             return;
         }
@@ -112,7 +112,7 @@ static class ReferenceRaster
                 if (!cov[y * bw + x]) continue;
                 int X = bx0 + x, Y = by0 + y;
                 RGBA col = solid ? f.Paint.Color : f.Paint.At(f.Paint.ParamAt(inv.Apply(new Vec2((X + 0.5) / ss, (Y + 0.5) / ss)), f.UserBox));
-                Over(b, X, Y, col.R, col.G, col.B, col.A * f.Opacity);
+                Paint(b, f.Additive, X, Y, col.R, col.G, col.B, col.A * f.Opacity);
             }
     }
 
@@ -123,6 +123,20 @@ static class ReferenceRaster
         if (e < 0) return false;
         // on the edge: top edge (horizontal, pointing right in this winding) or left edge (pointing up)
         return (a.Y == b.Y && b.X > a.X) || b.Y < a.Y;
+    }
+
+    static void Paint(Buffer b, bool additive, int x, int y, float r, float g, float bl, float a)
+    {
+        if (additive) Add(b, x, y, r, g, bl, a); else Over(b, x, y, r, g, bl, a);
+    }
+
+    // plus-lighter (canvas 'lighter'): the premultiplied colour added, each channel at most 1
+    static void Add(Buffer b, int x, int y, float r, float g, float bl, float a)
+    {
+        if (a <= 0) return;
+        int i = (y * b.W + x) * 4;
+        b.P[i] = Math.Min(1, b.P[i] + r * a); b.P[i + 1] = Math.Min(1, b.P[i + 1] + g * a);
+        b.P[i + 2] = Math.Min(1, b.P[i + 2] + bl * a); b.P[i + 3] = Math.Min(1, b.P[i + 3] + a);
     }
 
     static void Over(Buffer b, int x, int y, float r, float g, float bl, float a)
@@ -171,6 +185,12 @@ static class ReferenceRaster
             int j = i * 4;
             float a = lb.P[j + 3] * k;
             if (a <= 0) continue;
+            if (l.Additive)
+            {
+                into.P[j] = Math.Min(1, lb.P[j] * k + into.P[j]); into.P[j + 1] = Math.Min(1, lb.P[j + 1] * k + into.P[j + 1]);
+                into.P[j + 2] = Math.Min(1, lb.P[j + 2] * k + into.P[j + 2]); into.P[j + 3] = Math.Min(1, a + into.P[j + 3]);
+                continue;
+            }
             float inv = 1 - a;
             into.P[j] = lb.P[j] * k + into.P[j] * inv; into.P[j + 1] = lb.P[j + 1] * k + into.P[j + 1] * inv;
             into.P[j + 2] = lb.P[j + 2] * k + into.P[j + 2] * inv; into.P[j + 3] = a + into.P[j + 3] * inv;

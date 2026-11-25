@@ -11,7 +11,7 @@
 // to the server (OnSquad: the `squad` Cloud Function, ShopWrites); a chest's move hands the host the chest to open
 // (OnOpenChest: the treasure vault and the smash, Screens/Chests). The profile listener brings the result in
 // (SetProfile). The tab contents' timers and countdowns follow the clock (`now`).
-// Not ported: the sounds, the tutorial's targets, the rewards flying into the pills (the pills count up instead).
+// Not ported: the tutorial's targets, the rewards flying into the pills (the pills count up instead).
 using System;
 using System.Collections.Generic;
 using System.Linq;

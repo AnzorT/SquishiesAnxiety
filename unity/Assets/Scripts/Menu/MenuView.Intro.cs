@@ -10,6 +10,8 @@
 //   - the box, the ring, the sparks, bursts and puffs, the squad peeking out are drawn here (UiPiece, the scene's units)
 //   - the captions, Skip, TAP TO START and the logo's letters are the app's pictures (the overlay: 852 x 393 units scaled
 //     to the screen's height)
+//   - the rain or snow of a rainy / snowy day (IntroRain.cs): on the frame over the house, under the captions, from the
+//     night into the morning, fading with the rest at the end
 //   - Mittens: the menu's creature, the recorded moves (surprised, look, dance), lit for the night (menu.js light():
 //     brightness / saturate / a little sepia: CreatureView.SetTint)
 using System;
@@ -87,6 +89,7 @@ namespace SquishSquad.Menu
             public SpriteRenderer PicA, PicB, Black;
             public UiPiece BoxBack, BoxFront, Shadow, Ring, Fx;
             public readonly List<UiPiece> Peeks = new List<UiPiece>();
+            public readonly List<(UiPiece p, IntroRain.Layer l)> Rain = new List<(UiPiece, IntroRain.Layer)>();
             public readonly Dictionary<string, SpriteRenderer> Caps = new Dictionary<string, SpriteRenderer>();
             public SpriteRenderer Skip, Tap;
             public readonly List<(Transform pivot, SpriteRenderer sr)> Letters = new List<(Transform, SpriteRenderer)>();
@@ -153,6 +156,13 @@ namespace SquishSquad.Menu
             it.Ring = UiPiece.Create(_world, "intro ring", co + 3);
             it.Fx = UiPiece.Create(_world, "intro fx", co + 4);
             for (int i = 0; i < IPEEK.Length; i++) { var p = UiPiece.Create(_world, "intro peek " + i, SceneOrder + 3); p.Visible = false; it.Peeks.Add(p); }
+            // the rain or snow (rainBuild): on the frame, in front of the world, under the overlay's pictures (52+)
+            foreach (var l in IntroRain.Layers(_w / UiPiece.PxPerDp, _h / UiPiece.PxPerDp, weather))
+            {
+                var p = UiPiece.Create(_root, "intro rain", 51);
+                p.SetSvg(l.Svg, l.W, l.H, 4);
+                it.Rain.Add((p, l));
+            }
             // the overlay's pictures
             var ov = J["overlay"] as IDictionary<string, object>;
             foreach (var kv in (IDictionary<string, object>)ov["captions"]) it.Caps[kv.Key] = OverlayPic("intro cap " + kv.Key, (IDictionary<string, object>)kv.Value, 52, true);
@@ -175,6 +185,7 @@ namespace SquishSquad.Menu
             _intro = it;
             Fade(0, nowMs);   // the menu's HUD goes (x.fade(false))
             if (Creature != null) { Creature.gameObject.SetActive(false); Creature.SetTint(NightTint(0).c, NightTint(0).sat); }
+            _pieces.Find(x => x.Data.id == "creature")?.HideStill(true);   // (a still, when its rig can't start: hidden too)
             TickIntro(nowMs);
         }
 
@@ -257,6 +268,7 @@ namespace SquishSquad.Menu
             _sceneSr.enabled = true;
             if (_vignette != null) _vignette.enabled = true;
             foreach (var b in _birds) b.T.gameObject.SetActive(true);
+            _pieces.Find(x => x.Data.id == "creature")?.HideStill(false);
             if (Creature != null)
             {
                 Creature.gameObject.SetActive(true);
@@ -277,6 +289,7 @@ namespace SquishSquad.Menu
             double t = nowMs - it.T0;
             float P = UiPiece.PxPerDp;
             var S = Affine.Translate(_ox / P, _oy / P) * Affine.ScaleBy(_k / P, _k / P);   // scene units -> dp
+            foreach (var (p, l) in it.Rain) { var (x, y) = l.At(t); p.Transform = Affine.Translate(x, y); }
             if (it.Finished)
             {
                 // the intro's layers fade away over the menu (.7 s ease), then go
@@ -284,6 +297,7 @@ namespace SquishSquad.Menu
                 SetAlpha(it.PicA, (float)f); SetAlpha(it.PicB, Mathf.Min(it.PicB.color.a, (float)f));
                 foreach (var p in new[] { it.BoxBack, it.BoxFront, it.Shadow, it.Ring, it.Fx }) p.Opacity = Math.Min(p.Opacity, (float)f);
                 foreach (var p in it.Peeks) p.Opacity = (float)f;
+                foreach (var (p, _) in it.Rain) p.Opacity = (float)f;
                 foreach (var c in it.Caps.Values) SetAlpha(c, Mathf.Min(c.color.a, (float)f));
                 SetAlpha(it.Skip, Mathf.Min(it.Skip.color.a, (float)f)); SetAlpha(it.Tap, Mathf.Min(it.Tap.color.a, (float)f));
                 foreach (var l in it.Letters) SetAlpha(l.sr, Mathf.Min(l.sr.color.a, (float)f));
@@ -360,6 +374,7 @@ namespace SquishSquad.Menu
             _intro = null;
             foreach (var p in new[] { it.BoxBack, it.BoxFront, it.Shadow, it.Ring, it.Fx }) if (p != null) Kill(p.gameObject);
             foreach (var p in it.Peeks) Kill(p.gameObject);
+            foreach (var (p, _) in it.Rain) Kill(p.gameObject);
             foreach (var c in it.Caps.Values) Kill(c.gameObject);
             foreach (var l in it.Letters) Kill(l.pivot.gameObject);
             Kill(it.Skip.gameObject); Kill(it.Tap.gameObject); Kill(it.Black.gameObject); Kill(it.PicA.gameObject); Kill(it.PicB.gameObject);

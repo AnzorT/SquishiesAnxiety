@@ -3,6 +3,12 @@ using System.Collections.Generic;
 // (frame rate, level and season, sign out). Signed in (App/AppFlow.cs), the HUD shows the player's coins, gems, level
 // and XP (SetPlayer) and the house is the player's level's; offline / signed out (the dev menu) it keeps the exported
 // numbers and the dev panel's level.
+// A game opened from the Game Park comes up under ScreenBones (develop's App.js WhenScreenReady + ScreenBones.js): the
+// stand-in is drawn the frame the game is asked for, the game is built the next frame under it, then the stand-in fades
+// out over it (160 ms); how long the build took is logged ("[Menu] Squish Stack opened in N ms").
+using System;
+using System.Collections;
+using SquishSquad.Games.Shared;
 using SquishSquad.Games.Stack;
 using SquishSquad.Ui;
 using SquishSquad.Audio;
@@ -403,48 +409,81 @@ namespace SquishSquad.Menu
             _game = s;
         }
 
-        // each game opens on its hub (Hop: its map), as the app's game screens do
-        void OpenStack()
+        // each game opens on its hub, as the app's game screens do, under the stand-in (App.js: `hub` on the warm page,
+        // Squishdoku on the wood; Hop's `hub` too: App.js still asks for `map`, from before Hop had a hub, which put a row
+        // of level stones before the hub's cards)
+        void OpenStack() => OpenUnder("Squish Stack", "hub", "page", () =>
         {
-            BeforeGame();
-            SeedGameProfiles();
             var s = SquishSquad.Games.Stack.StackScreen.Create(transform);
             s.OnExit = AfterGame;
             s.OpenBlitz = _ => OpenBlitzOver(s, () => SquishSquad.Games.Stack.StackGame.CreateBlitz(transform));
-            _game = s;
-        }
+            return s;
+        });
 
-        void OpenSort()
+        void OpenSort() => OpenUnder("Squish Sort", "hub", "page", () =>
         {
-            BeforeGame();
-            SeedGameProfiles();
             var s = SquishSquad.Games.Sort.SortScreen.Create(transform);
             s.OnLevel = (theme, lv) => { if (theme == "fridge") MenuState.SortLevel = lv; };
             s.OnExit = AfterGame;
             s.OpenBlitz = _ => OpenBlitzOver(s, () => SquishSquad.Games.Sort.SortGame.CreateBlitz(transform));
-            _game = s;
-        }
+            return s;
+        });
 
-        void OpenSquishdoku()
+        void OpenSquishdoku() => OpenUnder("Squishdoku", "hub", "wood", () =>
         {
-            BeforeGame();
-            SeedGameProfiles();
             var s = SquishSquad.Games.Squishdoku.SquishdokuScreen.Create(transform);
             s.AdsFree = SquishSquad.Ui.AdHook.AdsFree(CharactersPageLink.Get()?.Profile);   // (Remove Ads; the save card's ad)
             s.OnExit = AfterGame;
-            _game = s;
-        }
+            return s;
+        });
 
-        void OpenHop()
+        void OpenHop() => OpenUnder("Squish Hop", "hub", "page", () =>
         {
-            BeforeGame();
-            SeedGameProfiles();
             var s = SquishSquad.Games.Hop.HopScreen.Create(transform);
             s.OnLevel = lv => MenuState.HopLevel = lv;
             s.OnExit = AfterGame;
             s.OpenBlitz = _ => OpenBlitzOver(s, () => SquishSquad.Games.Hop.HopGame.CreateBlitz(transform));
-            _game = s;
+            return s;
+        });
+
+        // ---- the stand-in while a game is built (ScreenBones) -------------------------------------------------------------
+        ScreenBones _bones;
+        SquishSquad.App.ScreenHost _bonesHost;
+
+        void OpenUnder(string name, string kind, string bg, Func<MonoBehaviour> make)
+        {
+            BeforeGame();
+            float pdp = UiPiece.PxPerDp;
+            float wdp = _w / pdp, hdp = _h / pdp;
+            _bones = new ScreenBones(kind, bg == "wood" ? SquishSquad.Screens.Kit.WoodBg(wdp, hdp) : SquishSquad.Screens.Kit.PageBg(wdp, hdp), wdp, hdp);
+            Bones.Mount();
+            _bonesHost ??= new SquishSquad.App.ScreenHost(transform, "Screen bones") { BaseOrder = 20000 };   // (over every game piece)
+            _bonesHost.Shown = true;
+            _bonesHost.Show(BonePieces());
+            StartCoroutine(BuildUnder(name, make));
         }
+
+        IEnumerator BuildUnder(string name, Func<MonoBehaviour> make)
+        {
+            yield return null;   // the stand-in is on screen
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            SeedGameProfiles();
+            _game = make();
+            yield return null;   // the game's Start: its build
+            Debug.Log($"[Menu] {name} opened in {sw.ElapsedMilliseconds} ms (built under the stand-in)");
+            _bones?.Reveal(NowMs);
+        }
+
+        void TickBones()
+        {
+            if (_bones == null) return;
+            double now = NowMs;
+            if (_bones.Done(now)) { _bonesHost.Shown = false; Bones.Unmount(); _bones = null; return; }
+            _bonesHost.Show(BonePieces());
+        }
+
+        List<SquishSquad.Ui.Screens.ScreenPiece> BonePieces() => _bones.Pieces(NowMs).ConvertAll(p =>
+            new SquishSquad.Ui.Screens.ScreenPiece { Id = p.Id, Svg = p.Svg, W = p.W, H = p.H, Margin = 0, Opacity = p.Opacity, Transform = p.Transform });
 
         // PLAY on a card, 420 ms after the tap (menu.js playAt -> x.playGame)
         void PlayGame(int i)
@@ -511,7 +550,8 @@ namespace SquishSquad.Menu
         {
             StartIntro();
             CheckDaily();
-            if (_game != null) return;   // (the game reads its own touches)
+            TickBones();
+            if (_game != null || _bones != null) return;   // (the game reads its own touches; the stand-in covers the menu)
             if (Screen.width != _w || Screen.height != _h) Rebuild();
             _view.Tick((Time.unscaledTime - _t0) * 1000f);
             TickPage();   // (the Characters page / Level Pass over the menu, if open)

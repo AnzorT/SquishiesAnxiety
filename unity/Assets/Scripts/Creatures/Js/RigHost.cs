@@ -50,6 +50,36 @@ namespace SquishSquad.Creatures.Js
         }
         public static bool Booted => _booted;
 
+        /// <summary>House/HouseDraw.cs's Eval on the compiled realm (the house's drawing scripts and
+        /// tools/unity/house/draw-host.js are in it, after the rig's): the calls it makes, `__house.f(args)` or
+        /// `String(__house.f(args))`, args JSON literals (strings, numbers, null). Its value as a string (JS String()),
+        /// null on an error or an expression of another shape. (The realm's one clock is NativeRig's.)</summary>
+        /// <summary>A house call that threw (the call, the error): Unity logs it.</summary>
+        public static Action<string, Exception> HouseError;
+
+        public static string HouseEval(string js)
+        {
+            if (!_booted || js == null) return null;
+            string e = js.Trim();
+            if (e.StartsWith("String(") && e.EndsWith(")")) e = e.Substring(7, e.Length - 8).Trim();
+            const string pre = "__house.";
+            if (!e.StartsWith(pre) || !e.EndsWith(")")) return null;
+            int open = e.IndexOf('(');
+            if (open < 0) return null;
+            string name = e.Substring(pre.Length, open - pre.Length), args = e.Substring(open + 1, e.Length - open - 2);
+            foreach (var ch in name) if (!char.IsLetterOrDigit(ch) && ch != '_') return null;
+            try
+            {
+                var host = Rt.G("__house");
+                if (host.IsNullish) return null;
+                var list = Rt.Invoke(Rt.G("JSON"), "parse", "[" + args + "]");
+                var r = Rt.InvokeSpread(host, name, list);
+                Rt.RunMicrotasks();
+                return Rt.ToStr(r);
+            }
+            catch (Exception ex) { HouseError?.Invoke(name, ex); return null; }
+        }
+
         public static V Live => _live;
         public static int Mount(string key) { var id = Rt.Invoke(_live, "mount", key); Rt.RunMicrotasks(); return (int)Rt.ToNum(id); }
         public static void Play(int id, string move) { Rt.Invoke(_live, "play", id, move); Rt.RunMicrotasks(); }

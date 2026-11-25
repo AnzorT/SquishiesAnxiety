@@ -47,6 +47,10 @@ namespace SquishSquad.Creatures
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Prewarm()
         {
+            // the house's runtime drawings (House/HouseDraw.cs): the house's scripts are in the same compiled realm; the
+            // first call waits for the boot
+            SquishSquad.House.HouseDraw.Eval ??= js => Boot() ? RigHost.HouseEval(js) : null;
+            RigHost.HouseError ??= (n, e) => Debug.LogWarning("[HouseDraw] " + n + ": " + (e is JsThrow ? e.Message : e.ToString()));
             if (_boot != null || RigHost.Booted) return;
             LoadFiles();
             // the yard games' saved bests, for the realm's localStorage (tools/unity/rig/yard-host.js reads them as a file

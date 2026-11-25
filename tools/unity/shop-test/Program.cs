@@ -6,6 +6,8 @@
 //       moments of a virtual clock) rebuilt from the Unity code on the same clock, frames 16 ms apart; at each moment
 //       shot, its pieces drawn with the reference rasteriser (tools/unity/vector-test) and compared with Chrome's
 //       screenshot: the share of pixels that differ visibly (any channel > 24), outside the shot's masks.
+//   dotnet run -c Release --project tools/unity/shop-test -- unlockframes <shots dir> <out dir> [from] [to] [every]
+//       the chest unlock frame by frame with its creature live after the BAM (Unlock.cs), for a video
 //   dotnet run --project tools/unity/shop-test -- emu
 //       the `squad` moves these screens call, through the Unity Backend client against the Firebase Local Emulator
 //       Suite (tools/unity/backend/start-emulators.sh; 127.0.0.1 only).
@@ -36,6 +38,7 @@ static partial class Program
         Roster.ReadText = n => File.Exists(Res(n + ".json")) ? File.ReadAllText(Res(n + ".json")) : File.Exists(Res(n + ".xml")) ? File.ReadAllText(Res(n + ".xml")) : null;
         string mode = args.Length > 0 ? args[0] : "shots";
         if (mode == "emu") return await Emu.Run();
+        if (mode == "unlockframes") return UnlockFrames(args[1], args[2], args.Length > 3 ? double.Parse(args[3], System.Globalization.CultureInfo.InvariantCulture) : 4800, args.Length > 4 ? double.Parse(args[4], System.Globalization.CultureInfo.InvariantCulture) : 10400, args.Length > 5 ? int.Parse(args[5]) : 2);
         return Shots(args.Length > 1 ? args[1] : "shop-shots", args.Skip(2).ToArray());
     }
 

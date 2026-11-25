@@ -3,12 +3,14 @@
 Shader "Hidden/SquishSquad/VectorComposite"
 {
     // (no Properties: _MainTex, _Clip and _Mask come as globals from VectorRenderer's command buffer, and a property
-    //  declared here would be the material's own default instead: every layer black)
+    //  declared here would be the material's own default instead: every layer black. _DstBlend is a plain number:
+    //  OneMinusSrcAlpha (10), "over"; VectorRenderer's additive copy sets One (1): plus-lighter)
+    Properties { _DstBlend ("Dst blend", Float) = 10 }
     SubShader
     {
         Tags { "Queue" = "Transparent" "RenderType" = "Transparent" }
         Cull Off ZWrite Off ZTest Always
-        Blend One OneMinusSrcAlpha
+        Blend One [_DstBlend]
         Pass
         {
             CGPROGRAM

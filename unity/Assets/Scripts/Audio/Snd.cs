@@ -18,6 +18,9 @@ namespace SquishSquad.Audio
         public static Action<string, double, double?> PlayFn;
         public static Func<string, double, double, ISndLoop> LoopFn;
         public static Action<IEnumerable<string>> PreloadFn;
+        /// <summary>Plays a made-up sound: `render` (run off the main thread) makes its samples (mono,
+        /// ChestSounds.Rate Hz; null: nothing); the handle stops it.</summary>
+        public static Func<Func<float[]>, ISndLoop> SynthFn;
         public static Action<int> BudgetFn;
         /// <summary>"tap", "place", "wrong", "win", "tick", "light", "medium", "heavy", "success", "warning", "error", "selection".</summary>
         public static Action<string> HapticFn;
@@ -28,6 +31,9 @@ namespace SquishSquad.Audio
         public static void Play(string name, double delay = 0, double? rate = null) => PlayFn?.Invoke(name, delay, rate);
         public static ISndLoop Loop(string name, double volume = 1, double rate = 1) => LoopFn?.Invoke(name, volume, rate);
         public static void Preload(IEnumerable<string> names) => PreloadFn?.Invoke(names);
+        /// <summary>A synthesized sound (Audio/ChestSounds.cs), with Settings' "Sound effects" switch; null where none
+        /// plays (the tests, the switch off).</summary>
+        public static ISndLoop Synth(Func<float[]> render) => SynthFn?.Invoke(render);
         /// <summary>A screen's sound budget on open; 0 on its close (the app's setBudget(null)).</summary>
         public static void Budget(int n) => BudgetFn?.Invoke(n);
 

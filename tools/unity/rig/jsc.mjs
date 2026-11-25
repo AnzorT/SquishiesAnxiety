@@ -58,14 +58,32 @@ export function scriptList(test) {
     // the bridge Unity talks to them through (Creatures/RigStage.cs)
     ...STAGE_PAGES.map((p) => [p + '-stage.js', null]),
     ['stage-host.js', path.join(HERE, 'stage-host.js')],
+    // the house's drawings at runtime (House/HouseDraw.cs's Eval): the Squad House page's scripts from house4.js on
+    // (the pieces, movies, club fx, vacuum bot, TV sound, the beach) and tools/unity/house/draw-host.js with the page's
+    // own methods and constants copied in, as tools/unity/rig/bundle.mjs bundles them (taken from its scripts.bytes)
+    ...houseScripts().map((n) => [n, null]),
   ];
   if (test) list.push(['scenarios.js', path.join(REPO, 'tools/unity/rig-test/scenarios.js')]);
   return list;
 }
 
-// A script's source: its file, or one taken from a page (the result card's states, a stage page's script)
+// The house's scripts as bundle.mjs bundled them (unity/Assets/Resources/Rig/scripts.bytes, from house4.js to
+// house-draw.js): name -> source
+let _house = null;
+function houseBundle() {
+  if (_house) return _house;
+  const zlib = require('node:zlib');
+  const all = JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(REPO, 'unity/Assets/Resources/Rig/scripts.bytes'))));
+  const i = all.findIndex((x) => x[0] === 'house4.js');
+  _house = new Map(i < 0 ? [] : all.slice(i));
+  return _house;
+}
+export function houseScripts() { return [...houseBundle().keys()]; }
+
+// A script's source: its file, or one taken from a page (the result card's states, a stage page's script, the house's)
 export function scriptSource(name, file) {
   if (file) return fs.readFileSync(file, 'utf8');
+  if (houseBundle().has(name)) return houseBundle().get(name);
   if (name === 'result-states.js') return resultStates();
   const m = name.match(/^(\w+)-stage\.js$/);
   if (m) return stagePage(m[1]);
@@ -554,7 +572,9 @@ ${body.join('\n')}
     const lam = new Set(simpleNames.filter(Boolean));
     const pdecl = Object.values(p.scope.bindings).filter((b) => b.kind === 'param' && !lam.has(this.nameOf(b))).map((b) => `V ${this.nameOf(b)} = default;`);
     pro.unshift(...pdecl);
-    const sig = [self, argc, ...slots.map((s, i) => simpleNames[i] || s), rest];
+    // (an arrow's `this` is its parent's: its own this-parameter gets a name of its own, never read, so it doesn't
+    // shadow the parent's, or the global object's at the top level)
+    const sig = [arrow ? this.tmp('arrowThis') : self, argc, ...slots.map((s, i) => simpleNames[i] || s), rest];
     let body;
     if (n.body.type === 'BlockStatement') {
       const bp = p.get('body');

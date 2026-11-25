@@ -6,7 +6,8 @@
 // bottom 6 or 140 px, sliding 0.75 s, its height 64 / 0 over 0.45 s) and the ceiling light's dashed handle in the room.
 // The fixed pieces are the page's own (tools/unity/house/export-edit.mjs); what changes with the piece (the toolbar's
 // box and labels, the slider's track and fill, the tray's cards) is drawn here from the page's styles. Logic:
-// House/HouseEdit.cs. The sign editor (Aa) comes with the signs (not yet: its button says so).
+// House/HouseEdit.cs. The sign editor (Aa: the page's sgx panel, under the top in the middle): WRITE YOUR SIGN and the
+// sign's name, the text (typed with the phone's keyboard, or the computer's in the Editor), its presets, Done.
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -198,6 +199,7 @@ namespace SquishSquad.House.View
             DrawTray(well[0], well[1] + ty, well[2], well[3]);
             DrawToolbar(now, tOpen, open);
             DrawLightHandle();
+            DrawSign(now);
             foreach (var kv in _p) if (!_used.Contains(kv.Key)) kv.Value.Visible = false;
         }
 
@@ -374,6 +376,7 @@ namespace SquishSquad.House.View
         {
             if (!_sim.Edit) return null;
             bool In(double[] r, double dy = 0) => r != null && fx >= r[0] && fx <= r[0] + r[2] && fy >= r[1] + dy && fy <= r[1] + dy + r[3];
+            if (SignHit(fx, fy) != null) return "ui";
             if (In(R("done")) || In(R("shop"))) return "ui";
             double ty = _rvTy.At(now);
             var tab = R("rv-tab"); if (tab != null && fx >= tab[0] + _rvTab.At(now) && fx <= tab[0] + _rvTab.At(now) + tab[2] && fy >= tab[1] + ty && fy <= tab[1] + ty + tab[3]) return "ui";
@@ -396,6 +399,7 @@ namespace SquishSquad.House.View
         string UiHit(double fx, double fy, double now)
         {
             bool In(double[] r) => r != null && fx >= r[0] && fx <= r[0] + r[2] && fy >= r[1] && fy <= r[1] + r[3];
+            var sg = SignHit(fx, fy); if (sg != null) return sg;
             if (In(R("done"))) return "done";
             if (In(R("shop"))) return "shop";
             double ty = _rvTy.At(now);
@@ -416,14 +420,21 @@ namespace SquishSquad.House.View
         {
             string hit = UiHit(fx, fy, now);
             if (hit == null) return;
-            if (hit == "done") { _sim.DoneEdit(now); return; }
+            if (hit.StartsWith("sg"))
+            {
+                if (hit == "sg-input") StartTyping();
+                else if (hit == "sg-done") { StopTyping(); _sim.SignDone(); }
+                else if (hit.StartsWith("sg-pre:")) { var ed = _sim.Sign(); int i = int.Parse(hit.Substring(7)); if (ed != null && i < ed.Presets.Count) { _sim.SignSet(ed.Presets[i]); if (_kb != null) _kb.text = ed.Presets[i]; } }
+                return;   // (the panel's own background does nothing)
+            }
+            if (hit == "done") { StopTyping(); _sim.DoneEdit(now); return; }
             if (hit == "shop") { _sim.OpenCat(); return; }
             if (hit == "rv-tab") { bool open = _sim.ROpen != false; _sim.ROpen = !open; _sim.Bumped(); return; }
             if (hit.StartsWith("tab:")) { _sim.RTab = hit.Substring(4); _sim.ROpen = true; _scroll = 0; _sim.Bumped(); return; }
             if (hit == "tb-tab") { bool tOpen = _sim.ROpen == false && _sim.TbC != _sim.ESel; if (tOpen) _sim.TbC = _sim.ESel; else { _sim.TbC = null; _sim.ROpen = false; } _sim.Bumped(); return; }
             switch (hit.Substring(3))
             {
-                case "tb-confirm-placement": _sim.ESel = null; _sim.TxE = null; _sim.Bumped(); break;
+                case "tb-confirm-placement": _sim.ESel = null; _sim.TxE = null; StopTyping(); _sim.Bumped(); break;
                 case "tb-rotate": _sim.EditRot(now); break;
                 case "tb-make-smaller": if (_tb.Lt) _sim.LightSize(-1); else _sim.EditSize(-1); break;
                 case "tb-make-bigger": if (_tb.Lt) _sim.LightSize(1); else _sim.EditSize(1); break;
@@ -431,12 +442,74 @@ namespace SquishSquad.House.View
                 case "tb-width-bigger": _sim.EditSize(1, "sw"); break;
                 case "tb-height-smaller": _sim.EditSize(-1, "sh"); break;
                 case "tb-height-bigger": _sim.EditSize(1, "sh"); break;
-                case "tb-write-on-the-sign": Toast?.Invoke("Writing on signs isn't in the Unity version yet"); break;
+                case "tb-write-on-the-sign": _sim.SignToggle(); if (_sim.TxE == null) StopTyping(); break;
                 case "tb-change-the-light": _sim.RTab = "light"; _sim.ROpen = true; _sim.Bumped(); break;
                 case "tb-move-the-light-back-to-the-middle": _sim.LightMid(); break;
-                case "tb-put-away-in-storage": _sim.TxE = null; if (_tb.Lt) _sim.LightStore(); else _sim.EditStore(now); break;
+                case "tb-put-away-in-storage": _sim.TxE = null; StopTyping(); if (_tb.Lt) _sim.LightStore(); else _sim.EditStore(now); break;
             }
         }
+
+        // ---- the sign editor (House/SignPanel.cs: the page's sgx panel) ----
+        static double SgX => SignPanel.X;
+        const double SgW = SignPanel.W, SgY = SignPanel.Y;
+        List<(string id, double x, double y, double w, double h)> _sgEls = new List<(string, double, double, double, double)>();
+        double _sgH = -1;
+        bool _typing; TouchScreenKeyboard _kb;
+
+        void DrawSign(double now)
+        {
+            var ed = _sim.Sign();
+            if (ed == null) { _sgH = -1; if (_typing) StopTyping(); return; }
+            // what was typed since the last frame
+            if (_typing)
+            {
+                if (_kb != null)
+                {
+                    if (_kb.text != ed.Val) { _sim.SignSet(_kb.text); ed = _sim.Sign(); if (ed == null) return; }
+                    if (_kb.status != TouchScreenKeyboard.Status.Visible) StopTyping();
+                }
+                else
+                {
+                    string v = ed.Val;
+                    foreach (char c in Input.inputString)
+                    {
+                        if (c == '\b') { if (v.Length > 0) v = v.Substring(0, v.Length - 1); }
+                        else if (c == '\n' || c == '\r') { StopTyping(); break; }
+                        else if (!char.IsControl(c)) v += c;
+                    }
+                    if (v != ed.Val) { _sim.SignSet(v); ed = _sim.Sign(); if (ed == null) return; }
+                }
+            }
+            (_sgEls, _sgH) = SignPanel.Layout(ed);
+            bool caret = _typing && _kb == null && ((long)(now / 530)) % 2 == 0;
+            string held = _held != null && _held.StartsWith("sg") ? _held : null;
+            var key = ed.Val + "|" + ed.Style + "|" + string.Join("/", ed.Presets) + "|" + caret + "|" + held + "|" + _typing;
+            var p = Drawn("sign", key, () => SignPanel.Draw(ed, _typing, caret, held), SgX, SgY, O + 40);
+            // tilted -1° about its centre
+            p.Transform = Frame * Affine.Translate(SgX + SgW / 2, SgY + _sgH / 2) * Affine.Rotate(-1) * Affine.Translate(-SgW / 2, -_sgH / 2);
+        }
+
+        // what a point (frame px) on the panel is: "sg-input", "sg-pre:<i>", "sg-done", "sg" (the panel), or null
+        string SignHit(double fx, double fy)
+        {
+            if (_sgH < 0 || _sim.Sign() == null) return null;
+            double x = fx - SgX, y = fy - SgY;
+            if (x < -3 || x > SgW + 3 || y < -3 || y > _sgH + 3) return null;
+            foreach (var (id, ex, ey, w, h) in _sgEls) if (x >= ex - 2 && x <= ex + w + 2 && y >= ey - 2 && y <= ey + h + 2) return id;
+            return "sg";
+        }
+
+        void StartTyping()
+        {
+            var ed = _sim.Sign(); if (ed == null) return;
+            _typing = true;
+            if (TouchScreenKeyboard.isSupported)
+            {
+                _kb = TouchScreenKeyboard.Open(ed.Val, TouchScreenKeyboardType.Default, false, false, false, false, "Type a message", ed.Max);
+                if (_kb != null) _kb.characterLimit = ed.Max;
+            }
+        }
+        void StopTyping() { _typing = false; if (_kb != null) { _kb.active = false; _kb = null; } }
 
         // ---- held controls (like the menu's Level crest): the held one is drawn shrunk to 92 % about its centre ----
         string _down, _held;   // the control the press began on (UiHit's id, or "card:<tray id>"); it while the finger is still on it

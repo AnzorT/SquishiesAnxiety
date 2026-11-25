@@ -45,6 +45,39 @@ namespace SquishSquad.House
         /// <summary>The edit UI's own state changed (rOpen, rTab, tbC, eSel): the room and UI redraw.</summary>
         public void Bumped() => Bump();
 
+        // ---- the sign being written (the page's sgx: Aa on a sign's toolbar) ----
+        public static readonly string[] SIGNP = { "DANCE!", "PARTY TIME", "SQUAD", "BOOGIE", "DJ BOOTH", "SHOWTIME" };
+        /// <summary>The sign editor's content: the text now, the sign's name, its presets, how long the text may be.</summary>
+        public sealed class SignEd { public string Val, Style; public List<string> Presets; public int Max; }
+        /// <summary>The editor for the sign being written (txE, the selected piece), or null.</summary>
+        public SignEd Sign()
+        {
+            if (TxE == null || ESel != TxE) return null;
+            var te = FindItem(TxE); var D = Cat(te); if (te == null || D == null) return null;
+            var r0 = S.RowOf(D);
+            // a renovation sign (its row's texts: rnTexts): up to 26 letters, its own presets
+            if (r0 != null && r0["texts"] is List<object> rtx)
+            {
+                string def = r0.Str("txt0") ?? (r0.Str("spec") == "rsign" ? "DANCE!" : "Home Sweet Home");
+                return new SignEd { Val = te["txt"] as string ?? def, Style = r0.Str("name") ?? "", Presets = rtx.ConvertAll(o => o as string ?? ""), Max = 26 };
+            }
+            // a House3D sign (its catalog entry's sign style): up to 16, the club's presets
+            if (D.Truthy("sign")) return new SignEd { Val = te["txt"] as string ?? D.Str("txt") ?? "", Style = D.Str("n") ?? "", Presets = new List<string>(SIGNP), Max = 16 };
+            return null;
+        }
+        /// <summary>The sign's text (set: the piece redraws with it and the house is saved).</summary>
+        public void SignSet(string v)
+        {
+            var ed = Sign(); var te = TxE != null ? FindItem(TxE) : null; if (ed == null || te == null) return;
+            v = v ?? ""; if (v.Length > ed.Max) v = v.Substring(0, ed.Max);
+            if ((te["txt"] as string) == v) return;
+            te["txt"] = v; SaveNow(); Bump();
+        }
+        /// <summary>Aa: the editor for the selected sign opens, or closes (the toolbox drawer closes with it).</summary>
+        public void SignToggle() { TxE = TxE == ESel ? null : ESel; ROpen = false; Bump(); }
+        /// <summary>The editor's Done.</summary>
+        public void SignDone() { TxE = null; Bump(); }
+
         // ---- starting and ending ----
         /// <summary>startEdit</summary>
         public void StartEdit() { Edit = true; Sel = null; ESel = null; RTab = "furn"; ROpen = false; Bump(); }

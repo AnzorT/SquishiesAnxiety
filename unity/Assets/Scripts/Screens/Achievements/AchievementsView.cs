@@ -7,7 +7,7 @@
 //   details  the current badge's title (gold when done), how to unlock it, its progress; "N OF M" under it
 // Swipe sideways (more than 36 dp), tap an arrow or a side badge. Opens on the first achievement not done.
 // The whole screen is in the design's 393-tall units, scaled to the phone (royal Stage).
-// Not ported: the swoosh sound; a creature badge's mood motion (CreatureThumbnail's 'cycle' / 'idle': here its still).
+// Not ported: a creature badge's mood motion (CreatureThumbnail's 'cycle' / 'idle': here its still).
 using System;
 using System.Collections.Generic;
 using System.Linq;
