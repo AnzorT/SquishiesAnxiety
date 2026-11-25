@@ -10,7 +10,7 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <ImplicitUsings>disable</ImplicitUsings>
     <InvariantGlobalization>true</InvariantGlobalization>
-    <NoWarn>CS8632;CS0162;CS0414</NoWarn>
+    <NoWarn>CS8632;CS0162;CS0414;CS0164;CS0168;CS0219;CS8321;CS1998</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../../unity/Assets/Scripts/Screens/**/*.cs" Exclude="../../../unity/Assets/Scripts/Screens/**/*Screen.cs;../../../unity/Assets/Scripts/Screens/**/*Host.cs" />
@@ -26,6 +26,11 @@
     <Compile Include="../../../unity/Assets/Scripts/Ui/AdHook.cs" />
     <Compile Include="../../../unity/Assets/Scripts/ThirdParty/Yoga/**/*.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Backend/**/*.cs" Exclude="../../../unity/Assets/Scripts/Backend/Unity/**" />
+    <!-- the chest unlock's live creature (unlockframes): the native rig (Creatures/Js, its Gen) and HeroPop -->
+    <Compile Include="../../../unity/Assets/Scripts/Creatures/Js/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Creatures/Js/Gen/*.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Creatures/RigTree.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Creatures/HeroPop.cs" />
     <Compile Include="../vector-test/ReferenceRaster.cs" />
     <Compile Include="../vector-test/Png.cs" />
     <Compile Include="*.cs" />

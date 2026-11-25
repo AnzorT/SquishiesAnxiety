@@ -24,10 +24,9 @@ lists what isn't, so it can be picked up item by item with Claude Code.
      snowy day. Watch for: the rigs' timing, Sort's doors clipping the rigs, the frame rate with many rigs on the
      screen. Fix what's off.
   2. **Item 5, what's left:** the whole-screen placeholder, the Mittens fallback, sounds (the chest's hit and unlock).
-  3. **Item 8:** the chest unlock's creature after BAM as the live rig.
-  4. **Item 4's "Also":** compile `draw-host.js` for `HouseDraw.Eval` the way the stage pages are compiled. After
+  3. **Item 4's "Also":** compile `draw-host.js` for `HouseDraw.Eval` the way the stage pages are compiled. After
      that, Renovate's signs (item 3).
-  5. **Item 6:** ask the user to decide. **Item 7** is the user's (the A15 test, deploying `functions/`, the release
+  4. **Item 6:** ask the user to decide. **Item 7** is the user's (the A15 test, deploying `functions/`, the release
      setup).
 - **Known failures that are older than this work:** `rig-test --all` stops about 110 runs in with a C# stack
   overflow, and Bunbun's park walks differ at 0.000 % (item 4, "Found on the way").
@@ -172,6 +171,9 @@ lists what isn't, so it can be picked up item by item with Claude Code.
 - [x] **The game intro's rain / snow** (2026-11-25): `Menu/IntroRain.cs` (intro.js rainBuild), on the frame over the
   house, under the captions, from the night into the morning; `auth-test rain` 0.10 % (capture-intro.mjs
   `WEATHER=rainy|snowy`). Left there: a run in the Editor for timing and placement.
-- [ ] **The chest unlock's creature after BAM** is its still; the app shows the live rig (`ChestSmashView.HeroRig`).
+- [x] **The chest unlock's creature after BAM** comes out live on its native rig: done on 2026-11-24 (1aeeaa3,
+  `Creatures/HeroCreature.cs`); the screen table still said otherwise. 2026-11-25: its motion (popAt: the grow out of
+  the burst, the spin, the hop, the landing's dust and sparkles, 'happy') moved into `Creatures/HeroPop.cs` (no
+  UnityEngine), which `shop-test unlockframes` uses to draw the whole unlock frame by frame with the rig.
 - [x] **Blitz cards' unit** (board / round / puzzle): the code already said the right word per game (`StackBlitz`
   puzzle, `SortBlitz` round, `HopBlitz` board); its row in `UNITY_SYNC_DEVELOP.md` is ✅ now.
