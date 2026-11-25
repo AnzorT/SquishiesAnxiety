@@ -20,7 +20,8 @@ lists what isn't, so it can be picked up item by item with Claude Code.
     (`shop-test smash*`) differ from the app there from now on. The same beams on the Characters screen and the
     "Gathering your squad" loading screen are unchanged (the user: the chest reveal for now)
   - the house's runtime drawings on the compiled realm (`HouseDraw.Eval`: the beach, the house map, pieces the export
-    didn't have) and Renovate's signs (their text, the Aa editor) (items 3 and 4)
+    didn't have), Renovate's signs (their text, the Aa editor; handwritten signs in Dancing Script, as Android draws
+    `cursive`) and a shell's own wall text (none in the current app) (items 3 and 4)
   - the whole-screen stand-in a game opens under (`Games/Shared/ScreenBones.cs`, MenuScreen OpenUnder), every game
     on its hub's shape, the title's spot centred where the hubs' title is, and the build time logged (item 5)
 - **Not checked yet:** none of it has been seen in the Unity Editor or on a device. Checked offline only: the pixel
