@@ -7,11 +7,15 @@
 //   the same Init / Advance / OnExit (QUIT, DONE, the back orb outside sorting); `Run` hooks ads and sounds.
 // The art: Resources/Sort (tools/unity/export-sort.mjs): the page, the back orb, the clutter, the squishies each
 // container draws from (their cut-outs are Resources/Stack/art); the rest is SortArt's.
+// The squishies in play are the app's live rigs once a deal's are drawn (SortLevel.Rigs.cs): tools/rig/sort.html runs
+// in the rig's realm (Creatures/RigStage), on the rig's clock (stopped while paused), and Creatures/StageView draws its
+// squishies where the level's layers say the page sits.
 // Not ported: the effects' bursts, sounds, haptics. Profile is kept in memory
 // (signed in: a copy of the account's, and each outcome is saved there too: SortSave).
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
+using SquishSquad.Creatures;
 using SquishSquad.Ui;
 using SquishSquad.Ui.Cards;
 using SquishSquad.Vector;
@@ -40,6 +44,8 @@ namespace SquishSquad.Games.Sort
         readonly Dictionary<SortLayer, int> _versions = new Dictionary<SortLayer, int>();
         readonly HashSet<SortLayer> _seen = new HashSet<SortLayer>();
         readonly List<SortLayer> _gone = new List<SortLayer>();
+        RigStage _stage;
+        StageView _stageView;
         static SortData _data;
         static readonly Dictionary<string, Texture2D> _textures = new Dictionary<string, Texture2D>();
 
@@ -89,6 +95,15 @@ namespace SquishSquad.Games.Sort
             else _level = new SortLevel(_theme, _startLv, W, H, _data, Profile);
             _level.OnExit = Leave;
             _level.OnLevel = lv => OnLevel?.Invoke(lv);
+            // the rig page (its squishies over the play area): the level's calls go to it; what it posted before is old
+            if (Application.isPlaying && NativeRig.Ready())
+            {
+                _stage = new RigStage("sort");
+                _stage.Messages();
+                _stage.Size(_level.StageW, _level.StageH);
+                _level.Rig = (fn, args) => { try { _stage.Call(fn, args); } catch (Exception e) { Debug.LogWarning("[SortGame] rig " + fn + ": " + e.Message); } };
+                _stageView = new StageView(transform, _stage, 0);
+            }
             _level.Start();
             Draw();
         }
@@ -131,7 +146,33 @@ namespace SquishSquad.Games.Sort
             Ticker.Default = _anim;
             _anim.Tick(Time.unscaledTimeAsDouble * 1000);
             HandleInput();
+            Stage();
             Draw();
+        }
+
+        // the rig page's clock (held while paused) and what it says: it's up (this deal's squishies go), it has drawn them
+        void Stage()
+        {
+            if (_stage == null || _level == null) return;
+            if (!_level.Paused && !NativeRig.Tick()) return;
+            try
+            {
+                foreach (var m in _stage.Messages())
+                {
+                    var type = m.TryGetValue("type", out var t) ? t as string : null;
+                    if (type == "ready") _level.RigReady();
+                    else if (type == "cast") _level.RigCast(m.TryGetValue("tag", out var tag) ? tag as string : null, m.TryGetValue("ok", out var ok) && ok is bool b && b);
+                    else if (type == "error") Debug.LogWarning("[SortGame] rig page: " + (m.TryGetValue("message", out var msg) ? msg : "?"));
+                }
+            }
+            catch (Exception e) { Debug.LogWarning("[SortGame] rig messages: " + e.Message); }
+        }
+
+        void OnDestroy()
+        {
+            _stageView?.Clear();
+            // (the page lets its squishies go: their rigs leave the realm)
+            try { _stage?.Call("cast", new List<object>(), ""); } catch (Exception) { }
         }
 
         void OnApplicationPause(bool paused) { if (paused) _level?.Pause(); }
@@ -147,6 +188,12 @@ namespace SquishSquad.Games.Sort
             {
                 _seen.Add(l);
                 order++;
+                if (l.RigsHere)
+                {
+                    // the rig page's squishies, over the play area (its dp onto the screen's), stacked as the page stacks them
+                    if (_stageView != null) order = _stageView.Draw(Affine.Translate(SortLevel.AreaX, 0), order);
+                    continue;
+                }
                 bool changed = !_versions.TryGetValue(l, out var v) || v != l.Version;
                 _versions[l] = l.Version;
                 if (l.Door != null)

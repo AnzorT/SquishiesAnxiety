@@ -54,9 +54,46 @@ export function scriptList(test) {
     // the games)
     ['yard-host.js', path.join(HERE, 'yard-host.js')],
     ...YARD_SCRIPTS.map((s) => [s, path.join(WORK, s)]),
+    // the mini-games' rig stages (tools/rig/sort.html, hop.html: each page's own script, taken from it below), then
+    // the bridge Unity talks to them through (Creatures/RigStage.cs)
+    ...STAGE_PAGES.map((p) => [p + '-stage.js', null]),
+    ['stage-host.js', path.join(HERE, 'stage-host.js')],
   ];
   if (test) list.push(['scenarios.js', path.join(REPO, 'tools/unity/rig-test/scenarios.js')]);
   return list;
+}
+
+// A script's source: its file, or one taken from a page (the result card's states, a stage page's script)
+export function scriptSource(name, file) {
+  if (file) return fs.readFileSync(file, 'utf8');
+  if (name === 'result-states.js') return resultStates();
+  const m = name.match(/^(\w+)-stage\.js$/);
+  if (m) return stagePage(m[1]);
+  throw new Error('no source for ' + name);
+}
+
+// tools/rig/<page>.html's own script (the last one, the stage: `window.<page>Stage`), run as the page runs it but in
+// the rig's one realm: with a `window` of its own over the global one (its innerWidth / innerHeight the play area's,
+// its __rigPause, its stage and posted messages kept apart from the other page's) and a fresh <div id="board"> (the
+// page's body). The page's first script (fetch over XHR, the frame pause) is the WebView's: the realm has its clock.
+export const STAGE_PAGES = ['sort', 'hop'];
+export function stagePage(page) {
+  const html = fs.readFileSync(path.join(REPO, 'tools/rig', page + '.html'), 'utf8').replace(/\r\n/g, '\n');
+  const body = html.match(/<div id="board"><\/div>\s*<script>\n([\s\S]*?)<\/script>\s*<\/body>/);
+  if (!body) throw new Error(`tools/rig/${page}.html: no stage script after #board`);
+  // the page's one CSS rule that changes a rig's measured box: its own floor shadow hidden (sort.html), which the
+  // stand-in's getBBox then leaves out as Chrome does (dom-shim.js __cssHidden)
+  const hideShadow = /\.ch ellipse\[fill="#6a1b9a"\]\s*\{\s*display:\s*none;?\s*\}/.test(html);
+  return `// tools/rig/${page}.html's stage script (taken from the page by tools/unity/rig/jsc.mjs), in a window of its own\n`
+    + `(function (G) {\n`
+    + `  var d = G.document, old = d.getElementById('board'); if (old) old.removeAttribute('id');\n`
+    + `  var b = d.createElement('div'); b.setAttribute('id', 'board'); d.body.appendChild(b);\n`
+    + (hideShadow ? `  var hid = G.__cssHidden; G.__cssHidden = function (el) { if (el.localName === 'ellipse' && el.getAttribute('fill') === '#6a1b9a') for (var p = el.parentNode; p; p = p.parentNode) if (p === b) return true; return hid ? hid(el) : false; };\n` : '')
+    + `  var W = Object.create(G); W.innerWidth = 400; W.innerHeight = 300; W.__rigPause = function () {};\n`
+    + `  (G.__stages || (G.__stages = {}))[${JSON.stringify(page)}] = { win: W, board: b };\n`
+    + `  (function (window) {\n${body[1]}\n  })(W);\n`
+    + `  b.removeAttribute('id');\n`
+    + `})(typeof globalThis !== 'undefined' ? globalThis : this);\n`;
 }
 
 // tools/rig/result.html's addStates, as record.mjs --clip result takes it from the page: the result card's states
@@ -931,7 +968,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const classes = [];
   let total = 0;
   for (const [name, file] of scriptList(test)) {
-    const src = file ? fs.readFileSync(file, 'utf8') : resultStates();
+    const src = scriptSource(name, file);
     const t0 = Date.now();
     const { cls, code } = compileScript(name, src);
     const out = path.join(outDir, cls + '.cs');

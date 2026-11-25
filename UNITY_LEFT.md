@@ -64,14 +64,27 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   editor with its presets) only toasts in Unity, and a sign's own text isn't drawn (`RoomCompose`: HTML text,
   `sh.texts`). Both need the house's runtime drawing (`HouseDraw.Eval`, see item 4's "Also").
 
-## 4. Sort and Hop: animated creatures on the play screens
+## 4. Sort and Hop: animated creatures on the play screens ✅ done 2026-11-24 (but the "Also")
 
-- **Unity now:** the creatures there are still pictures (cut-outs).
-- **To do:** compile the app's stage pages (`tools/rig/sort.html` / `tools/rig/hop.html`) with `tools/unity/rig/jsc.mjs` the
-  way the menu rig is, wire the game events (place, correct, wrong, win, lose, hop, bump...) to the rig, and check it
-  visually in Unity. Squish Stack's road walker (`NativeRig.WalkStep`) is the example to follow.
-- **Also:** the house's drawings made at runtime (`HouseDraw.Eval`) have nothing behind them yet. `draw-host.js`
-  could be compiled the same way.
+- **Unity now:** the app's own stage pages run in the rig's realm: `jsc.mjs` takes each page's script out of
+  `tools/rig/sort.html` / `hop.html` (STAGE_PAGES, in a `window` of its own with its own `#board`) and
+  `tools/unity/rig/stage-host.js` is the bridge; `Creatures/RigStage.cs` makes the calls and reads each squishy back,
+  `Creatures/StageView.cs` draws them (CreatureView got `Place`: any 2D box, cut to a band). The games make the app's
+  calls: `Games/Sort/SortLevel.Rigs.cs`, `Games/Hop/HopLevel.Rigs.cs` (and their call sites, as Game.js), and
+  `SortGame` / `HopGame` step the page's clock and draw it. The stand-in learned what the pages need (`dom-shim.js`:
+  `svg.getElementById`, getBBox leaving out `display: none` children, the sort page's CSS rule through `__cssHidden`).
+- **Tests:** `tools/unity/stage-test`: `capture.mjs` + scenes (the page in Chromium vs compiled: sort-rest 3.6 % of
+  the squishies' pixels, hop-rest's boxes equal but Mittens' design), `sortlevel` / `hoplevel` (real levels on the
+  compiled pages: the rigs take over and stand exactly where the stills / cut-outs stand).
+- **Left:** see them in the Editor and on a device (timing, the doors' clip, how many rigs a frame the A15 can draw).
+  Mittens on the Hop page is the web build's design (as Unity's menu), not the app page's design-v6 copy.
+- **Found on the way (older than this work):** `node tools/unity/rig-test/run.mjs --all` (run with
+  `DOTNET_ROLL_FORWARD=Major` where only .NET 10 is installed) stops about 110 runs in with a stack overflow in the C#
+  side (deep in rive-generic.js, from a promise), right after Bunbun's park walks, whose outline point lists differ
+  from the JS's at 0.000 % of pixels; both happen the same with the stand-in before this work. Bunbun and Jelli alone
+  run clean.
+- **Also (open):** the house's drawings made at runtime (`HouseDraw.Eval`) have nothing behind them yet.
+  `draw-host.js` could be compiled the same way; Renovate's signs wait for it (item 3).
 
 ## 5. Small items
 

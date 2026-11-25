@@ -59,6 +59,9 @@ namespace SquishSquad.Creatures.Js.Gen
             ("yg-slide.js", S_yg_slide_js.Run),
             ("yg-corn.js", S_yg_corn_js.Run),
             ("yg-pong.js", S_yg_pong_js.Run),
+            ("sort-stage.js", S_sort_stage_js.Run),
+            ("hop-stage.js", S_hop_stage_js.Run),
+            ("stage-host.js", S_stage_host_js.Run),
         };
     }
 }

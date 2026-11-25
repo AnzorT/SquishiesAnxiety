@@ -58,7 +58,7 @@ namespace SquishSquad.Games.Sort
             _clk.Pause();
             StopInterval();
             Phase = "held";
-            _selected = null;
+            SetSelected(null);
             _hoverO.SetValue(0);
             _failReason = reason;
             _saveErr = null;
@@ -177,7 +177,7 @@ namespace SquishSquad.Games.Sort
             Phase = "lost";
             _clk.Pause();
             StopInterval();
-            _selected = null;
+            SetSelected(null);
             _hoverO.SetValue(0);
             _blitzCard = null;
             CloseB(ref _saveCard);

@@ -64,9 +64,11 @@ namespace SquishSquad.Games.Hop
         const double STUCK_CARD_MS = 1400;   // stuck: when the STUCK card comes up, once the sway has begun
         const double CHEER_MS = 1050;  // the friends cheering in the goal card
 
-        public HopLevel(float screenW, float screenH, int startLv, IList<HopSquishy> cast, IDictionary<string, object> profile, Ticker ticker, bool blitz = false, Func<int, int> seedOf = null)
+        /// <summary>`rig`: the rig page's calls (HopLevel.Rigs.cs), from the first board on.</summary>
+        public HopLevel(float screenW, float screenH, int startLv, IList<HopSquishy> cast, IDictionary<string, object> profile, Ticker ticker, bool blitz = false, Func<int, int> seedOf = null, Action<string, object[]> rig = null)
         {
             W = screenW; H = screenH;
+            Rig = rig;
             _blitz = blitz;
             if (seedOf != null) SeedOf = seedOf;
             _tk = ticker;
@@ -240,7 +242,8 @@ namespace SquishSquad.Games.Hop
                     if (bub != null)
                     {
                         Timing(bub, 0, 220, Easing.Out(Easing.Quad)).Start();
-                        Spray("poof", q.X, q.Y - q.S * 0.45, q.S / 60);
+                        // (a rig pops it with its own bubbles round its feet: this layer is over the rig's face)
+                        if (!RigsOn) Spray("poof", q.X, q.Y - q.S * 0.45, q.S / 60);
                         Snd.Play("tap");
                     }
                     else { Spray("pop", q.X, q.Y - q.S * 0.1, q.S / 60); Snd.Play("fs_pop"); }
@@ -324,6 +327,7 @@ namespace SquishSquad.Games.Hop
         void Sadden()
         {
             SetMood("sad");
+            R("stuck", "p");
             _player.Droop.SetValue(0);
             Timing(_player.Droop, 1, 420, Easing.Out(Easing.Quad)).Start();
             Play(_player.Look, LOOK_MS);
@@ -331,6 +335,7 @@ namespace SquishSquad.Games.Hop
         void CheerUp()
         {
             SetMood(null);
+            R("unstuck", "p");
             _player.Look.StopAnimation();
             _player.Look.SetValue(0);
             Timing(_player.Droop, 0, 160, Easing.Out(Easing.Back(2))).Start();
@@ -349,6 +354,7 @@ namespace SquishSquad.Games.Hop
             Snd.Tap();
             G.Busy = true;
             // squished against the edge, then a shake of the head (which plays on after the next hop may start)
+            R("bump", "p", Engine.DIRS[d][0] * B.T * 0.16, Engine.DIRS[d][1] * B.T * 0.1, true);
             Nudge(d, 0.16, 200, 0, () => { G.Busy = false; Drain(); }, true);
             Play(_player.No, NO_MS);
             // what said no shakes (it was a line of text before, 2026-11-17): the goal card for the ★ still shut or a friend
@@ -373,6 +379,7 @@ namespace SquishSquad.Games.Hop
             Snd.Play("st_lift");
             Snd.Tap();
             SetCell(prev.Cur, nxt.Life[prev.Cur]);
+            R("hop", "p", Legs(m, nxt), (double)d);
             // onto each cell in turn; a bubble pops as it boings you on
             void Step(int k)
             {
@@ -389,9 +396,9 @@ namespace SquishSquad.Games.Hop
             }
             void Landed()
             {
-                // a puff of dust off the cushion it lands on
+                // a puff of dust off the cushion it lands on (a rig puffs its own, round its feet: this layer is over it)
                 var q = BoardGeometry.StandOn(B, nxt.Cur, nxt.Life[nxt.Cur] == 2 ? HopArt.PILE_TOP : 0);
-                Spray("puff", q.X, q.Y, q.S / 60);
+                if (!RigsOn) Spray("puff", q.X, q.Y, q.S / 60);
                 foreach (var c in m.Cells)
                     if ((nxt.Got & _board.Fbit[c]) != 0 && (prev.Got & _board.Fbit[c]) == 0) Collect(c);
                 if (nxt.Done) { Win(); return; }
@@ -465,6 +472,7 @@ namespace SquishSquad.Games.Hop
             Spray("pop", q.X, q.Y - fh * (q.S / B.T) * 0.9, q.S / 60);
             a.Hap.SetValue(0);
             a.LiftH.SetValue(B.T * 0.5);
+            R("pickup", "f" + k, to.x, to.y + to.size / 2, HAP_MS);
             var anims = new List<CompositeAnimation> { Timing(a.Hap, 1, HAP_MS, Easing.Linear), Timing(a.Shadow, 0, HAP_MS * 0.45, SHADOW_GO) };
             var p = PoseAt(_fw, fh, to.x, to.y + to.size / 2, to.size / _fw);
             anims.Add(Timing(a.X, p.x, HAP_MS, FLY)); anims.Add(Timing(a.Y, p.y, HAP_MS, FLY)); anims.Add(Timing(a.K, p.k, HAP_MS, FLY));
@@ -499,9 +507,11 @@ namespace SquishSquad.Games.Hop
                 a.Shadow.SetValue(1);
                 if ((G.Shown & _board.Fbit[cell]) != 0) a.O.SetValue(0);
                 Animated.Parallel(Timing(a.K, p.k, 300, Easing.Out(Easing.Back(1.6))), Timing(a.Y, p.y, 300, Easing.Out(Easing.Back(1.6))), Timing(a.O, 1, 200)).Start();
+                R("restore", "f" + k, RigAt(cell, 1, _board.Life[cell]));
             }
             G.Shown &= target.Got;
             _shown = G.Shown;
+            R("hop", "p", new List<object> { With(RigAt(target.Cur, 2, target.Life[target.Cur]), "ms", ms, "h", B.T * 0.5 * (BoardGeometry.StandOn(B, target.Cur).S / B.T)) }, -1.0);
             MoveTo(_player, _pw, _ph, target.Cur, ms, target.Life[target.Cur], 0.5, done);
         }
 
@@ -593,6 +603,8 @@ namespace SquishSquad.Games.Hop
             int key = _glowKey;
             Later(3200, () => { if (_glowKey == key) SetGlow(-1); });
             Nudge(d, 0.1, 360, back > 0 ? 320 : 0);
+            int hd = d;
+            Later(back > 0 ? 320 : 0, () => R("bump", "p", Engine.DIRS[hd][0] * B.T * 0.1, Engine.DIRS[hd][1] * B.T * 0.06, false));
         }
 
         // ---- the end of a level ------------------------------------------------------------------------------------------
@@ -620,6 +632,7 @@ namespace SquishSquad.Games.Hop
                 double ms = _blitz ? BLITZ_JOY_MS : JOY_MS;
                 _player.LiftH.SetValue(B.T * 0.55);
                 Play(_player.Joy, ms);
+                R("win", "p", ms);
                 Later(ms * 0.26, () => Spray("spark", q.X, q.Y - B.T * 0.15, q.S / 60));
                 Later(ms * 0.57, () => Spray("spark", q.X, q.Y - B.T * 0.15, q.S / 60));
                 Later(ms * 0.8, () => Spray("gold", q.X, q.Y - _ph * (q.S / B.T) * 0.6 - B.T * 0.77, q.S / 60));
@@ -772,6 +785,11 @@ namespace SquishSquad.Games.Hop
                 _slotPop[k].SetValue(1);
             }
             Snd.Play("sd_boardIn");
+            // the rigs: everyone in place, then the hopper drops in and the friends pop up as the cut-outs do
+            SendCast();
+            R("enter", "p", RigAt(_board.Start, 2, _board.Life[_board.Start]), 260.0, false);
+            for (int k = 0; k < _board.Friends.Length && k < _friends.Count; k++)
+                if (_friends[k] != null) R("enter", "f" + k, RigAt(_board.Friends[k], 1, _board.Life[_board.Friends[k]]), 320.0 + k * 90, true);
         }
 
         // ---- moving on, pausing and leaving ------------------------------------------------------------------------------
@@ -1323,14 +1341,18 @@ namespace SquishSquad.Games.Hop
                 _starLayer.Opacity = (float)(1 - gone);
                 _starLayer.Order = O_Z + ZOf(_board.Goal, 0) * 40 + 20;
             }
+            bool rigs = RigsOn;
             for (int k = 0; k < nf; k++)
             {
                 var c = _friends[k];
                 PlacePiece(_fShadow[k], _fPic[k], _friendA[k], c, _fw, c.BodyH(_fw), _fBreathe[k], _fPeek[k], ZOf(_board.Friends[k], 1), 11 + k);
+                _fShadow[k].Visible = _fPic[k].Visible = !rigs;
                 if (_chips[k] != null) _chips[k].Visible = (G.St.Got & _board.Fbit[_board.Friends[k]]) == 0;
             }
             if (_hopper != null) PlacePiece(_pShadow, _pPic, _player, _hopper, _pw, _ph, _pBreathe, null, _playerZ, 18, _sway, _mood == "sad" ? _sweat : null);
-            _sweat.Visible = _mood == "sad" && _hopper != null;
+            if (_pShadow != null) _pShadow.Visible = !rigs;
+            if (_pPic != null) _pPic.Visible = !rigs;
+            _sweat.Visible = _mood == "sad" && _hopper != null && !rigs;
 
             // the banner: over the area's top, scaled and turned about its centre
             double bt = _bannerT.GetValue();
@@ -1624,6 +1646,7 @@ namespace SquishSquad.Games.Hop
             {
                 Snd.Play("sd_squeak");
                 Play(_player.Wig, 380);
+                R("giggle", "p");
                 return;
             }
             if (j < 0) return;

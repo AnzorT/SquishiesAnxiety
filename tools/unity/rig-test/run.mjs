@@ -12,7 +12,7 @@ import vm from 'node:vm';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { scriptList, resultStates } from '../rig/jsc.mjs';
+import { scriptList, scriptSource } from '../rig/jsc.mjs';
 
 const require = createRequire(import.meta.url);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -33,7 +33,7 @@ function jsRealm() {
   const run = (code, filename) => vm.runInContext(code, ctx, { filename });
   const errors = [];
   for (const [name, file] of scriptList(true)) {
-    const src = file ? fs.readFileSync(file, 'utf8') : resultStates();
+    const src = scriptSource(name, file);
     try { run(src, name); } catch (e) { errors.push(name + ': ' + e.message); if (['dom-shim.js', 'live-host.js', 'virtual-clock.js', 'native-host.js', 'scenarios.js'].includes(name)) throw e; }
     if (name === 'live-host.js') {
       ctx.__rf = (p) => { const f = path.join(WORK, p); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : null; };

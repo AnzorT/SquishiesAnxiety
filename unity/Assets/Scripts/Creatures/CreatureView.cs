@@ -74,7 +74,7 @@ namespace SquishSquad.Creatures
         }
 
         /// <summary>The whole picture's opacity.</summary>
-        public void SetOpacity(float o) { if (_show != null) _show.SetFloat("_Opacity", Mathf.Clamp01(o)); if (_mr != null) _mr.forceRenderingOff = o <= 0; }
+        public void SetOpacity(float o) { _opacity = o; if (_show != null) _show.SetFloat("_Opacity", Mathf.Clamp01(o)); if (_mr != null) _mr.forceRenderingOff = o <= 0; }
 
         /// <summary>Grey above a line `frac` of the box down from its top (2: all grey, negative: none): the result card's
         /// characters filling with colour from their feet up (tools/rig/result.html setFill).</summary>
@@ -100,18 +100,66 @@ namespace SquishSquad.Creatures
             _mesh.RecalculateBounds();
         }
 
+        /// <summary>Puts the picture where `box` says: its box (0..the width given to Create, y down) onto the parent's dp
+        /// (y down), any 2D transform (a squash under a tilt included), the quad cut to the band clipL ≤ x ≤ clipR (dp)
+        /// when given (a rig stage's clip-path inset: Squish Sort's doors shutting).</summary>
+        public void Place(Affine box, float pxPerDp, double clipL = double.NegativeInfinity, double clipR = double.PositiveInfinity)
+        {
+            if (_mesh == null) return;
+            transform.localPosition = Vector3.zero; transform.localRotation = Quaternion.identity; transform.localScale = Vector3.one;
+            double a = -_pad * _qk, b = (_rtSize - _pad) * _qk;
+            _poly.Clear();
+            void Corner(double x, double y, float u, float v) { var p = box.Apply(new Vec2(x, y)); _poly.Add((p.X, p.Y, u, v)); }
+            Corner(a, a, 0, 1); Corner(b, a, 1, 1); Corner(b, b, 1, 0); Corner(a, b, 0, 0);
+            if (!double.IsNegativeInfinity(clipL)) Cut(clipL, 1);
+            if (!double.IsPositiveInfinity(clipR)) Cut(clipR, -1);
+            _placed = true;
+            if (_poly.Count < 3) { _mr.forceRenderingOff = true; return; }
+            _pv.Clear(); _puv.Clear(); _pt.Clear();
+            foreach (var (x, y, u, v) in _poly) { _pv.Add(new Vector3((float)(x * pxPerDp), (float)(-y * pxPerDp), 0)); _puv.Add(new Vector2(u, v)); }
+            for (int i = 1; i + 1 < _poly.Count; i++) { _pt.Add(0); _pt.Add(i); _pt.Add(i + 1); }
+            _mesh.Clear();
+            _mesh.SetVertices(_pv); _mesh.SetUVs(0, _puv); _mesh.SetTriangles(_pt, 0);
+            _mesh.RecalculateBounds();
+            _mr.forceRenderingOff = _opacity <= 0;
+        }
+        readonly System.Collections.Generic.List<(double x, double y, float u, float v)> _poly = new System.Collections.Generic.List<(double, double, float, float)>(8), _cut = new System.Collections.Generic.List<(double, double, float, float)>(8);
+        readonly System.Collections.Generic.List<Vector3> _pv = new System.Collections.Generic.List<Vector3>(8);
+        readonly System.Collections.Generic.List<Vector2> _puv = new System.Collections.Generic.List<Vector2>(8);
+        readonly System.Collections.Generic.List<int> _pt = new System.Collections.Generic.List<int>(18);
+        bool _placed; float _opacity = 1;
+        // the polygon kept on one side of the line x = at (side 1: x ≥ at, -1: x ≤ at), its uv carried along
+        void Cut(double at, int side)
+        {
+            _cut.Clear();
+            for (int i = 0; i < _poly.Count; i++)
+            {
+                var p = _poly[i]; var q = _poly[(i + 1) % _poly.Count];
+                bool pin = side * (p.x - at) >= 0, qin = side * (q.x - at) >= 0;
+                if (pin) _cut.Add(p);
+                if (pin != qin)
+                {
+                    double t = (at - p.x) / (q.x - p.x);
+                    _cut.Add((at, p.y + (q.y - p.y) * t, (float)(p.u + (q.u - p.u) * t), (float)(p.v + (q.v - p.v) * t)));
+                }
+            }
+            _poly.Clear(); _poly.AddRange(_cut);
+        }
+
         /// <summary>Switches to other frames (a recorded clip), from their start.</summary>
         public void SetFrames(IRigFrames rig) { _rig = rig; _last = null; _t0 = Time.realtimeSinceStartup; }
         public float Seconds => Time.realtimeSinceStartup - _t0;
 
         /// <summary>Called once if drawing fails, so the owner can show the creature's still instead.</summary>
         public System.Action<System.Exception> Failed;
-        bool _failed, _reported;
+        bool _failed, _reported, _drawn;
 
         /// <summary>Draws the frame for time t now (CI screenshots call this outside play mode).</summary>
         public void RenderAt(float t)
         {
             if (_failed) return;
+            // (a rig stage's squishy that didn't draw since: the picture stays)
+            if (_rig is IRigDirty dirty && !dirty.Dirty && _drawn) return;
             try
             {
                 int pad = (_rtSize - _size) / 2;
@@ -123,6 +171,7 @@ namespace SquishSquad.Creatures
                 {
                     using (Vec2Pool.Lend(_pool)) { scene = SvgScene.Compile(tree, _size, _size, Affine.Translate(pad, pad)); _renderer.Render(scene, _rt); }
                     _pool.Recycle();
+                    _drawn = true;
                 }
                 else
                 {

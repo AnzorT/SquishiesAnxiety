@@ -2,10 +2,14 @@
 // (an SVG drawn once into a texture by UiPiece, a picture, or a picture cut to a box, repeated, or laid on the board's
 // plane in perspective by HopMesh), placed every frame; its cards are the shared ones (Ui/Cards, CardPieces). Touches
 // and the mouse go to the level as the app's PanResponder and buttons take them; Escape is Android's back.
-// The art: Resources/Hop (tools/unity/export-hop.mjs), the squishies' cut-outs Resources/Stack/art.
+// The art: Resources/Hop (tools/unity/export-hop.mjs), the squishies' cut-outs Resources/Stack/art. The characters are
+// the app's live rigs once a board's are drawn (HopLevel.Rigs.cs): tools/rig/hop.html runs in the rig's realm
+// (Creatures/RigStage) over the whole screen, on the rig's clock (held while paused), drawn by Creatures/StageView.
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
+using SquishSquad.Creatures;
+using SquishSquad.Vector;
 using SquishSquad.Ui;
 using SquishSquad.Ui.Cards;
 using UnityEngine;
@@ -29,6 +33,8 @@ namespace SquishSquad.Games.Hop
         readonly HashSet<HopLayer> _seen = new HashSet<HopLayer>();
         readonly List<HopLayer> _gone = new List<HopLayer>();
         static List<HopSquishy> _cast;
+        RigStage _stage;
+        StageView _stageView;
 
         public static HopGame Create(Transform parent, int startLv, float screenW = 0, float screenH = 0)
         {
@@ -65,7 +71,18 @@ namespace SquishSquad.Games.Hop
             _cardPieces = new CardPieces(transform, HopLevel.CardOrder);
             // (src/stack/roster.js castOf, which Hop uses: out (config/roster), no Heroes, no season-pass creature)
             var cast = _cast.FindAll(c => SquishSquad.Screens.RosterConfig.InGames(c.Key));
-            _level = new HopLevel(w, h, _startLv, cast.Count >= 8 ? cast : _cast, Profile, _anim, _blitz) { OnExit = Leave };
+            // the rig page (the characters over the whole screen): the level's calls go to it from the first board on;
+            // what it posted before is old
+            Action<string, object[]> rig = null;
+            if (Application.isPlaying && NativeRig.Ready())
+            {
+                _stage = new RigStage("hop");
+                _stage.Messages();
+                _stage.Size(w, h);
+                _stageView = new StageView(transform, _stage, 0.45);
+                rig = (fn, args) => { try { _stage.Call(fn, args); } catch (Exception e) { Debug.LogWarning("[HopGame] rig " + fn + ": " + e.Message); } };
+            }
+            _level = new HopLevel(w, h, _startLv, cast.Count >= 8 ? cast : _cast, Profile, _anim, _blitz, null, rig) { OnExit = Leave };
             Draw();
         }
 
@@ -84,7 +101,33 @@ namespace SquishSquad.Games.Hop
             if (!_started) return;
             _anim.Tick(Time.unscaledTimeAsDouble * 1000);
             HandleInput();
+            Stage();
             if (_level != null) Draw();
+        }
+
+        // the rig page's clock (held while paused) and what it says: it's up (the board goes to it), it has drawn a cast
+        void Stage()
+        {
+            if (_stage == null || _level == null) return;
+            if (!_level.Paused && !NativeRig.Tick()) return;
+            try
+            {
+                foreach (var m in _stage.Messages())
+                {
+                    var type = m.TryGetValue("type", out var t) ? t as string : null;
+                    if (type == "ready") _level.RigReady();
+                    else if (type == "cast") _level.RigCast(m.TryGetValue("tag", out var tag) ? tag as string : null, m.TryGetValue("ok", out var ok) && ok is bool b && b);
+                    else if (type == "error") Debug.LogWarning("[HopGame] rig page: " + (m.TryGetValue("message", out var msg) ? msg : "?"));
+                }
+            }
+            catch (Exception e) { Debug.LogWarning("[HopGame] rig messages: " + e.Message); }
+        }
+
+        void OnDestroy()
+        {
+            _stageView?.Clear();
+            // (the page lets its characters go: their rigs leave the realm)
+            try { _stage?.Call("cast", new List<object>(), ""); } catch (Exception) { }
         }
 
         void OnApplicationPause(bool paused) { if (paused) _level?.AppPaused(); }
@@ -122,6 +165,8 @@ namespace SquishSquad.Games.Hop
                     m.Apply();
                 }
             }
+            // the characters' rigs, over the board (the page is the screen, in dp)
+            _stageView?.Draw(Affine.Identity, _level.RigOrder, _level.RigsShown);
             _gone.Clear();
             foreach (var l in _pieces.Keys) if (!_seen.Contains(l)) _gone.Add(l);
             foreach (var l in _gone) { Kill(_pieces[l].piece.gameObject); _pieces.Remove(l); }

@@ -28,6 +28,8 @@ input on the Unity code, draws it with the reference rasteriser and diffs the pi
 | Games | `export-<game>.mjs` | `stack-test`, `sort-test`, `hop-test`, `squishdoku-test`, `maps-test`, `squish-test` |
 | Achievements, settings, spin, streak, daily | `export-screens.mjs` | `screens-test` (+ `-- emu`) |
 | Yard games (the app's own, compiled with the rig) | `yard-test/capture.mjs` (also the coin) | `yard-test` (`smoke`, `shots`) |
+| Sort / Hop live rigs (the app's stage pages, compiled with the rig) | `stage-test/capture.mjs` (scenes.mjs) | `stage-test` (scenes, `sortlevel`, `hoplevel`) |
+| MY HOUSE's "Heading home" night | `heading-test/capture.mjs` | `heading-test` |
 | Game rules | | `games/<game>` (vs the JS on the same inputs) |
 | Fonts, text | `ui/fonts.py` | `ui/TextTest` |
 | Animations (RN's Animated) | | `anim` |
@@ -121,6 +123,12 @@ hands each frame to `CreatureView` as a node tree read straight from the rig's e
   `Games/Yard/View/YardScreen.cs`. `dotnet run -c Release --project tools/unity/yard-test -- smoke hoop` plays one off
   Unity; `-- shots <dir> hoop` draws its intro, game and results and compares them with
   `node tools/unity/yard-test/capture.mjs <dir>`'s (the app's, which also exports the results card's coin).
+- So are Squish Sort's and Squish Hop's rig stages (`STAGE_PAGES` in `jsc.mjs`: the last script of `tools/rig/sort.html`
+  and `hop.html`, each in a `window` of its own with its own `#board`, then `tools/unity/rig/stage-host.js`): the games
+  call them through `Creatures/RigStage.cs` as src/hop/RigStage.js does, and `Creatures/StageView.cs` draws what they
+  placed. `node tools/unity/stage-test/scenes.mjs && node tools/unity/stage-test/capture.mjs <dir>` shoots the app's
+  pages, `dotnet run -c Release --project tools/unity/stage-test -- <dir>` replays the scenes on the compiled ones;
+  `-- sortlevel <dir> [lv]` and `-- hoplevel [lv]` play real levels on them.
 - `node tools/unity/rig/record.mjs <key> [--clip ...]` still records frames (the fallback `RecordedRig` plays them if
   the native rig can't start; none ship now).
 

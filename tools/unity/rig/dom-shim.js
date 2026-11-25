@@ -175,6 +175,8 @@
   Element.prototype.querySelectorAll = function (sel) { var s = parseSelectors(sel), out = []; walk(this, function (e) { if (matchesList(e, s)) out.push(e); }); return out; };
   Element.prototype.querySelector = function (sel) { var s = parseSelectors(sel), hit = null; walk(this, function (e) { if (!hit && matchesList(e, s)) hit = e; }); return hit; };
   Element.prototype.getElementsByTagName = function (t) { return this.querySelectorAll(t); };
+  // (an <svg> element's own: the stage pages' grain bake looks its filters up on the rig's svg)
+  Element.prototype.getElementById = function (id) { var hit = null; walk(this, function (e) { if (!hit && e.getAttribute('id') === id) hit = e; }); return hit; };
   Element.prototype.getContext = function (kind) { return kind === '2d' && this.localName === 'canvas' ? (this._ctx = this._ctx || new Ctx2D(this)) : null; };
   Element.prototype.toDataURL = function () { var id = 'shim-canvas:' + this.__id; CANVASES[id] = this; return id; };
   Object.defineProperty(Element.prototype, 'width', { get: function () { return +(this.getAttribute('width') || (this.localName === 'canvas' ? 300 : 0)); }, set: function (v) { this.setAttribute('width', v); } });
@@ -484,6 +486,8 @@
       for (var c = 0; c < el.childNodes.length; c++) {
         var ch = el.childNodes[c];
         if (ch.nodeType !== 1 || /^(defs|clipPath|mask|linearGradient|radialGradient|pattern|filter|style|title|desc|metadata|script|symbol|marker)$/.test(ch.localName)) continue;
+        // (not rendered, not counted: display none inline, as an attribute, or by a page's CSS rule: __cssHidden)
+        if (ch.style.display === 'none' || ch.getAttribute('display') === 'none' || (root.__cssHidden && root.__cssHidden(ch))) continue;
         var cb = boxOf(ch);
         if (cb) u = unite(u, mapRect(parseTransform(ch.getAttribute('transform')), cb));
       }
