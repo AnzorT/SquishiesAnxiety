@@ -4,8 +4,9 @@
 // a background colour or radial-gradient becomes a rect with a gradient, and every picture (<image href="name">) is
 // inlined from Resources/House/pics (its ids prefixed so pictures don't share gradients), or kept as an image when it
 // ships as PNG; a box's clip-path: path(...) clips its children. The dance room's CSS-3D floor (rt.flatOn: a rotateX
-// plane under a parent's perspective) is a picture HouseFlat draws (<image href="flat:..">). Not drawn yet: HTML text
-// (sh.texts, signs): Notes says so.
+// plane under a parent's perspective) is a picture HouseFlat draws (<image href="flat:..">). The shell's HTML text
+// (sh.texts: the doors' name plates, the neon wall art's words, the backyard's BEACH gate) is SVG text (TextBox): the
+// page's box translate(-50%, -78%) with line-height 1 put on the baseline, its text-shadow glows as blurred copies.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -58,6 +59,7 @@ namespace SquishSquad.House
             var st = Style(d["style"]);
             if (st.TryGetValue("visibility", out var vis) && vis == "hidden") return;
             if (st.TryGetValue("opacity", out var op) && P(op) == 0) return;
+            if (TextBox(d, st, sb)) return;
             double left = 0, top = 0, w = pw, h = ph;
             bool inset0 = st.TryGetValue("inset", out var ins);
             if (inset0) { var v = ins.Split(' '); double t0 = P(v[0]); left = t0; top = t0; w = pw - 2 * t0; h = ph - 2 * t0; }
@@ -111,6 +113,50 @@ namespace SquishSquad.House
             }
             if (clipped) sb.Append("</g>");
             sb.Append("</g>");
+        }
+
+        // ---- the shell's HTML text (RoomModel's texts: Squad House v6.dc.html's sc-for texts) ----
+        // <div style="left:x; top:y; transform:translate(-50%,-78%); font-family:'Fredoka',sans-serif; font-weight:700;
+        // font-size:sz; line-height:1; color:f; text-shadow:sh; white-space:nowrap; letter-spacing:0.02em">t</div>
+        // as SVG text: centred on x; the box (one line, line-height 1) from y - 0.78 sz, its baseline where Chrome puts it
+        // in a 1-sz line of Fredoka (ascent 974 / 1000, descent 236: half-leading -0.105 sz), so y + 0.089 sz
+        bool TextBox(Dom d, Dictionary<string, string> st, StringBuilder sb)
+        {
+            if (!st.TryGetValue("font-size", out var fsz) || d.Children.Count == 0) return false;
+            foreach (var c in d.Children) if (c.Tag != "#text") return false;
+            var text = d.Inner().Trim();
+            if (text.Length == 0) return true;
+            double sz = P(fsz), x = st.TryGetValue("left", out var l) ? P(l) : 0, y = st.TryGetValue("top", out var t) ? P(t) : 0;
+            string col = st.TryGetValue("color", out var cc) ? cc.Trim() : "#000";
+            string fam = st.TryGetValue("font-family", out var ff) ? ff.Replace("\"", "'") : "'Fredoka',sans-serif";
+            string fw = st.TryGetValue("font-weight", out var w) ? w.Trim() : "400";
+            double ls = 0; if (st.TryGetValue("letter-spacing", out var lsv)) ls = lsv.Trim().EndsWith("em") ? P(lsv) * sz : P(lsv);
+            bool tr = st.TryGetValue("transform", out var tf) && tf.Replace(" ", "").StartsWith("translate(-50%,-78%)");
+            double bx = x, by = tr ? y + 0.089 * sz : y + 0.869 * sz;
+            string anchor = tr ? "middle" : "start";
+            string Txt(string fill, string extra) => $"<text x=\"{N(bx)}\" y=\"{N(by)}\" text-anchor=\"{anchor}\" font-family=\"{Esc(fam)}\" font-weight=\"{Esc(fw)}\" font-size=\"{N(sz)}\" letter-spacing=\"{N(ls)}\" fill=\"{Esc(fill)}\"{extra}>{Esc(text)}</text>";
+            // text-shadow: "none", or "dx dy blur colour, ..." (the neon's three glows): blurred copies under the text,
+            // the last one first (CSS paints the first shadow on top)
+            if (st.TryGetValue("text-shadow", out var shs) && shs.Trim() != "none")
+            {
+                var parts = Regex.Split(shs, @",(?![^(]*\))");
+                for (int i = parts.Length - 1; i >= 0; i--)
+                {
+                    var m = Regex.Match(parts[i].Trim(), @"^(-?[\d.]+)(?:px)?\s+(-?[\d.]+)(?:px)?\s+([\d.]+)(?:px)?\s+(.+)$");
+                    if (!m.Success) { Notes.Add("text-shadow not drawn: " + parts[i]); continue; }
+                    double dx = P(m.Groups[1].Value), dy = P(m.Groups[2].Value), blur = P(m.Groups[3].Value);
+                    string sc = m.Groups[4].Value.Trim();
+                    if (blur > 0)
+                    {
+                        var fid = "ts" + (picN++);
+                        sb.Append("<defs><filter id=\"").Append(fid).Append("\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\"><feGaussianBlur stdDeviation=\"").Append(N(blur / 2)).Append("\"/></filter></defs>");
+                        sb.Append("<g transform=\"translate(").Append(N(dx)).Append(' ').Append(N(dy)).Append(")\" filter=\"url(#").Append(fid).Append(")\">").Append(Txt(sc, "")).Append("</g>");
+                    }
+                    else sb.Append("<g transform=\"translate(").Append(N(dx)).Append(' ').Append(N(dy)).Append(")\">").Append(Txt(sc, "")).Append("</g>");
+                }
+            }
+            sb.Append(Txt(col, ""));
+            return true;
         }
 
         // rnFlat's plane: its box (left, top, w, h in the perspective box's px), transform-origin, rotateX (deg), the

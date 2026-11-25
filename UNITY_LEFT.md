@@ -105,7 +105,10 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   SignToggle / SignDone, `HouseEditView` DrawSign): WRITE YOUR SIGN and the sign's name, the text (the phone's
   keyboard, TouchScreenKeyboard; the computer's in the Editor), the sign's presets (a renovation sign's row `texts`, up
   to 26 letters; a House3D sign's SIGNP, up to 16), Done; the text saved on the piece (`txt`) and the piece redrawn.
-  Not drawn yet: a shell's own HTML text (`sh.texts`), which no room's shell has by default. `house-test signframes`
+  A shell's own HTML text (`sh.texts`) is drawn too (2026-11-25, `RoomCompose.TextBox`: the page's box put on its
+  baseline, text-shadow glows as blurred copies); the current app writes none (the doors' plates are off, the neon wall
+  art became a renovation piece), so it only shows if the page turns them back on (`house-test roompics` with
+  `ROOM_TEXTS=1` draws two test texts). `house-test signframes`
   draws a sign being written. Not seen in the Editor yet.
 
 ## 4. Sort and Hop: animated creatures on the play screens ✅ done 2026-11-24 (but the "Also")

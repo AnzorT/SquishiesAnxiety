@@ -204,8 +204,18 @@ static partial class Program
             if (hs.Cur != rk) hs.EnterRoom(rk);
             var nk = rk == "beach" ? "bedroom" : rk; hs.H.Obj("night")?.Remove(nk);
             var vals = new RoomModel(hs).Build(rk);
+            // ROOM_TEXTS=1: two test texts in the shell's text layer (it is empty in every room of the current app: the doors'
+            // plates are off, the neon art is a renovation piece now), the neon one glowing as RoomModel writes it
+            if (Environment.GetEnvironmentVariable("ROOM_TEXTS") == "1")
+            {
+                var L = vals.Arr("texts") ?? new List<object>(); vals["texts"] = L;
+                L.Add(new JObj { ["id"] = "tA", ["x"] = 560.0, ["y"] = 62.0, ["t"] = "SQUAD", ["sz"] = 36.0, ["f"] = "#eafffb", ["sh"] = "0 0 2px #4fe0d0, 0 0 10px #4fe0d0, 0 0 22px #4fe0d0" });
+                L.Add(new JObj { ["id"] = "tB", ["x"] = 300.0, ["y"] = 70.0, ["t"] = "Lv 15 · Dance Club", ["sz"] = 8.8, ["f"] = "#b23a2e", ["sh"] = "none" });
+            }
+            var tx = vals.Arr("texts"); if (tx != null && tx.Count > 0) Console.WriteLine($"  {rk}: {tx.Count} texts: " + string.Join(" | ", tx.Select(o => ((JObj)o).Str("t"))));
             var comp = Composer(d); var files = comp.PicSvg; comp.PicSvg = n => HouseDraw.Pics.TryGetValue(n, out var rt) ? rt : files(n);
             var root = SvgMarkup.Parse(comp.Compose(tpl.Render(vals), vals.Obj("rt")?.Str("fenceHtml")));
+            if (comp.Notes.Count > 0) Console.WriteLine("  notes: " + string.Join("; ", comp.Notes.Distinct().Take(6)));
             PatternExpand.Expand(root);
             var scene = SvgScene.Compile(root, 852 * k0, 393 * k0, Affine.Identity, href => { var p = LoadPng(href); return p.px == null ? ((int, int)?)null : (p.w, p.h); });
             Png.Write(Path.Combine(outDir, $"{fixture}-{rk}.png"), PW, PH, ReferenceRaster.Resolve(ReferenceRaster.Render(scene, PW, PH, SS), SS, PW, PH));
