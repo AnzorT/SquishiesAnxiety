@@ -4,6 +4,8 @@
 //   dotnet run -c Release --project tools/unity/auth-test -- rain <dir> [ms]
 //       the same on a rainy and a snowy day (capture-intro.mjs with WEATHER=rainy / snowy) with the rain or snow over it
 //       (Menu/IntroRain.cs, its layers at `ms` into their loops: capture-intro.mjs's RAIN_MS)
+//   dotnet run -c Release --project tools/unity/auth-test -- rainframes <dir> <rainy|snowy> [fps] [ms]
+//       that night with its rain or snow falling, frame by frame (<dir>/frame-NNNN.png at 1040 x 480 px), for a video
 using System;
 using System.IO;
 using SquishSquad.Menu;
@@ -15,12 +17,26 @@ static class IntroShots
 
     public static int Rain(string dir, double ms) { Shot(dir, "rainy", ms); Shot(dir, "snowy", ms); return 0; }
 
-    static int Shot(string dir, string weather, double rainMs)
+    public static int RainFrames(string dir, string weather, int fps, double ms)
+    {
+        Directory.CreateDirectory(dir);
+        int f = 0;
+        for (double t = 0; t < ms; t += 1000.0 / fps)
+        {
+            var svg = Scene(dir, weather, t);
+            Png.Write(Path.Combine(dir, $"frame-{f++:0000}.png"), 1040, 480, Program.Draw(svg, 1040, 480));
+        }
+        Console.WriteLine($"{f} frames at {fps} fps in {dir}");
+        return 0;
+    }
+
+    // the day's night picture, the box landed and still, its rain or snow at `rainMs` (none if < 0)
+    static string Scene(string dir, string weather, double rainMs)
     {
         const float W = 832, H = 384, P = 2.8125f;
         // the night picture (a JPEG in the app: made a PNG with Pillow for the reference rasteriser)
         var png = Path.Combine(dir, $"night-{weather}.png");
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("python3", $"-c \"from PIL import Image; Image.open('{Program.Res($"Intro/{weather}/night.jpg.bytes")}').convert('RGBA').save('{png}')\"") { UseShellExecute = false })!.WaitForExit();
+        if (!File.Exists(png)) System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("python3", $"-c \"from PIL import Image; Image.open('{Program.Res($"Intro/{weather}/night.jpg.bytes")}').convert('RGBA').save('{png}')\"") { UseShellExecute = false })!.WaitForExit();
         var (pw, ph, _) = Program.LoadImage(png.Substring(0, png.Length - 4));
         // the canvas's frame at (145, 47) device px (intro.json canvas.frameAt)
         float s0 = Math.Max(W / 1000f, H / 460f), ox = (W - 1000 * s0) / 2, oy = H - 460 * s0;
@@ -39,6 +55,14 @@ static class IntroShots
             svg += $"<g transform=\"translate({F(x)} {F(y)})\" id=\"rain{ri++}\">{l.Svg.Substring(a, b - a)}</g>";
         }
         svg += "</svg>";
+        return svg;
+    }
+
+    static int Shot(string dir, string weather, double rainMs)
+    {
+        var svg = Scene(dir, weather, rainMs);
+        const float W = 832, H = 384;
+        float s0 = Math.Max(W / 1000f, H / 460f), ox = (W - 1000 * s0) / 2, oy = H - 460 * s0;
         string name = weather == "sunny" ? "box" : "box-" + weather;
         File.WriteAllText(Path.Combine(dir, name + ".unity.svg"), svg);
         var (pct, _) = Program.Compare(svg, Path.Combine(dir, name + ".png"), Path.Combine(dir, name + ".unity.png"), Path.Combine(dir, name + ".diff.png"), null);
