@@ -179,20 +179,6 @@ namespace SquishSquad.Ui.Cards
         }
         public void Unmount() { _loop?.Stop(); _loop = null; }
         public double Degrees => Deg.Evaluate(_spin.GetValue());
-
-        /// <summary>The glow's breath in place of the turn (Unity's own, 2026-11-25): 0 → 1 → 0, eased, a whole number of
-        /// breaths of about 3.2 s per loop (3.5 s for the 14 s loop), so it never jumps.</summary>
-        public double Breath
-        {
-            get
-            {
-                double n = Math.Max(1, Math.Round(_ms / 3200));
-                return 0.5 - 0.5 * Math.Cos(2 * Math.PI * n * _spin.GetValue());
-            }
-        }
-        /// <summary>The glow's transform about the centre of its w x h box, and its opacity's factor.</summary>
-        public Affine BreathLocal(float w, float h) { double b = Breath, k = 0.94 + 0.1 * b; return Fx.About(w, h, Affine.ScaleBy(k, k)); }
-        public float BreathOpacity => (float)(0.72 + 0.28 * Breath);
     }
 
     /// <summary>fx.js Burst: one particle burst (dust, sparks, gold...) round (x, y), each particle its own

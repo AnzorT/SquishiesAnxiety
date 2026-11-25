@@ -433,7 +433,7 @@ namespace SquishSquad.Ui.Cards
                 {
                     if (first == 0) first = s.S * 1.8f;
                     s.Rays ??= new CardLayer("rays");
-                    s.Rays.Set(CardArt.Glow(s.S * 1.8f, opacity: 0.6f, color: "#ffe45c", fadeSize: Fx.LikeWeb ? first : 0), s.S * 1.8f, s.S * 1.8f, 1);   // (a breathing glow, not the app's turning rays)
+                    s.Rays.Set(CardArt.Rays(s.S * 1.8f, opacity: 0.6f, color: "#ffe45c", fadeSize: Fx.LikeWeb ? first : 0), s.S * 1.8f, s.S * 1.8f, 1);
                     Layers.Add(s.Rays);
                 }
                 s.Star ??= new CardLayer("star");
@@ -495,12 +495,11 @@ namespace SquishSquad.Ui.Cards
                 var box = row * Affine.Translate(s.Bx, s.By);
                 if (s.Rays != null)
                 {
-                    // RaysSpin sits in a 0 x 0 view at the star's centre: its top-left there; Unity's glow breathes about
-                    // its own centre where the app's rays turn
+                    // RaysSpin sits in a 0 x 0 view at the star's centre: its top-left there, turning about its own centre
                     float r = s.S * 1.8f;
                     var (rx, ry) = ToWhole(X + s.Bx + s.Box / 2, Y + s.By + s.Box / 2);
-                    s.Rays.Transform = box * Affine.Translate(s.Box / 2 + rx, s.Box / 2 + ry) * s.Spin.BreathLocal(r, r);
-                    s.Rays.Opacity = opacity * Clamp01(t) * s.Spin.BreathOpacity;
+                    s.Rays.Transform = box * Affine.Translate(s.Box / 2 + rx, s.Box / 2 + ry) * Fx.About(r, r, Affine.Rotate(s.Spin.Degrees));
+                    s.Rays.Opacity = opacity * Clamp01(t);
                 }
                 double sc = s.Scale.Evaluate(t);
                 var (dx, dy) = ToWhole(X + s.Bx + 10, Y + s.By + 10);

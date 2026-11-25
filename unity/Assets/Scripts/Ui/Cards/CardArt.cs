@@ -137,17 +137,6 @@ namespace SquishSquad.Ui.Cards
             return s.Markup;
         }
 
-        /// <summary>Unity's own (2026-11-25, the user: a soft pulsing glow in place of the turning rays, as the chest
-        /// reveal's): a warm disc fading out by `fadeEnd` of its radius, drawn once; Spin.Breath moves it.</summary>
-        public static string Glow(float size, float opacity = 0.45f, float fadeEnd = 0.65f, string color = "#ffffff", float fadeSize = 0)
-        {
-            double c = size / 2.0, fc = fadeSize > 0 ? fadeSize / 2.0 : c;
-            var s = new UiSvg(size, size);
-            s.Def($"<radialGradient id=\"glowFade\" cx=\"{F(c)}\" cy=\"{F(c)}\" r=\"{F(fc)}\" gradientUnits=\"userSpaceOnUse\"><stop offset=\"0\" stop-color=\"{color}\" stop-opacity=\"{F(opacity)}\"/><stop offset=\"{F(fadeEnd * 0.5)}\" stop-color=\"{color}\" stop-opacity=\"{F(opacity * 0.6)}\"/><stop offset=\"{F(fadeEnd)}\" stop-color=\"{color}\" stop-opacity=\"0\"/></radialGradient>");
-            s.Raw($"<circle cx=\"{F(c)}\" cy=\"{F(c)}\" r=\"{F(c)}\" fill=\"url(#glowFade)\"/>");
-            return s.Markup;
-        }
-
         static double JsRound(double v) => Math.Floor(v + 0.5);
 
         // ---- ui.js Head: a creature's still in a sticker circle -----------------------------------------------------------
