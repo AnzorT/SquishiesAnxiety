@@ -37,6 +37,7 @@ static partial class Program
         if (mode == "emu") return await Emu.Run();
         if (mode == "menu") return MenuShots.Run(args[1]);
         if (mode == "intro") return IntroShots.Run(args[1]);
+        if (mode == "rain") return IntroShots.Rain(args[1], args.Length > 2 ? double.Parse(args[2], System.Globalization.CultureInfo.InvariantCulture) : 1234);
         return Shots(args.Length > 1 ? args[1] : "auth-shots", args.Skip(2).ToArray());
     }
 
