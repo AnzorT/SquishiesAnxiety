@@ -19,6 +19,8 @@ lists what isn't, so it can be picked up item by item with Claude Code.
     a soft breathing glow behind the card instead of the app's turning light beams. The reveal's pixel tests
     (`shop-test smash*`) differ from the app there from now on. The same beams on the Characters screen and the
     "Gathering your squad" loading screen are unchanged (the user: the chest reveal for now)
+  - the house's runtime drawings on the compiled realm (`HouseDraw.Eval`: the beach, the house map, pieces the export
+    didn't have) and Renovate's signs (their text, the Aa editor) (items 3 and 4)
   - the whole-screen stand-in a game opens under (`Games/Shared/ScreenBones.cs`, MenuScreen OpenUnder), every game
     on its hub's shape, the title's spot centred where the hubs' title is, and the build time logged (item 5)
 - **Not checked yet:** none of it has been seen in the Unity Editor or on a device. Checked offline only: the pixel
@@ -29,12 +31,11 @@ lists what isn't, so it can be picked up item by item with Claude Code.
      doors), Squish Hop (a level: the rigs take over once the page has drawn the cast, then hop, bump, stuck, win),
      each of the seven yard games (intro poster, how-to sheet, play, result card), MY HOUSE ("Heading home" while
      the house loads), a chest upgrade and unlock (the glow), Squish Time (the loading beat, the sky), the intro on a
-     rainy / snowy day, and opening each game from the Game Park (the stand-in; the log's "opened in N ms"). Watch for: the rigs' timing, Sort's doors clipping the rigs, the frame rate with many rigs on the
+     rainy / snowy day, opening each game from the Game Park (the stand-in; the log's "opened in N ms"), and MY HOUSE:
+     the map, the beach, a sign written in Renovate (Aa, typing on the phone's keyboard). Watch for: the rigs' timing, Sort's doors clipping the rigs, the frame rate with many rigs on the
      screen. Fix what's off.
   2. **Item 5, what's left:** the Mittens fallback, sounds (the chest's hit and unlock).
-  3. **Item 4's "Also":** compile `draw-host.js` for `HouseDraw.Eval` the way the stage pages are compiled. After
-     that, Renovate's signs (item 3).
-  4. **Item 6:** ask the user to decide. **Item 7** is the user's (the A15 test, deploying `functions/`, the release
+  3. **Item 6:** ask the user to decide. **Item 7** is the user's (the A15 test, deploying `functions/`, the release
      setup).
 - **Known failures that are older than this work:** `rig-test --all` stops about 110 runs in with a C# stack
   overflow, and Bunbun's park walks differ at 0.000 % (item 4, "Found on the way").
@@ -99,11 +100,13 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   lettering and a tip (no bar since the user's ruling). Unity: `Menu/MenuView.Heading.cs` with the night made by
   `Menu/HeadingNight.cs` (Unity-free); `MenuScreen` loads the house under it. Test: `tools/unity/heading-test`
   (`capture.mjs` holds the app's night with every room lit; lv12: 1.04 %).
-- **Renovate:** checked 2026-11-24. Re-exporting its pieces from develop's build (`export-edit.mjs`) changes nothing but
-  the text pictures' anti-aliasing, and develop's house-page changes since the port (tray stills, yard toys out of the
-  tray, the veil) are in. What still differs is **signs**: the toolbar's "Aa" (writing on a sign: the page's sign
-  editor with its presets) only toasts in Unity, and a sign's own text isn't drawn (`RoomCompose`: HTML text,
-  `sh.texts`). Both need the house's runtime drawing (`HouseDraw.Eval`, see item 4's "Also").
+- **Renovate:** ✅ signs done 2026-11-25. The house's runtime drawings now run in Unity (item 4's "Also"), so a sign's
+  saved text is drawn, and **Aa** opens the sign editor (`House/SignPanel.cs`, `HouseEdit` Sign / SignSet /
+  SignToggle / SignDone, `HouseEditView` DrawSign): WRITE YOUR SIGN and the sign's name, the text (the phone's
+  keyboard, TouchScreenKeyboard; the computer's in the Editor), the sign's presets (a renovation sign's row `texts`, up
+  to 26 letters; a House3D sign's SIGNP, up to 16), Done; the text saved on the piece (`txt`) and the piece redrawn.
+  Not drawn yet: a shell's own HTML text (`sh.texts`), which no room's shell has by default. `house-test signframes`
+  draws a sign being written. Not seen in the Editor yet.
 
 ## 4. Sort and Hop: animated creatures on the play screens ✅ done 2026-11-24 (but the "Also")
 
@@ -124,8 +127,15 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   side (deep in rive-generic.js, from a promise), right after Bunbun's park walks, whose outline point lists differ
   from the JS's at 0.000 % of pixels; both happen the same with the stand-in before this work. Bunbun and Jelli alone
   run clean.
-- **Also (open):** the house's drawings made at runtime (`HouseDraw.Eval`) have nothing behind them yet.
-  `draw-host.js` could be compiled the same way; Renovate's signs wait for it (item 3).
+- **Also:** ✅ done 2026-11-25. The house's drawings made at runtime run on the compiled realm: the Squad House page's
+  drawing scripts (house4.js on) and `tools/unity/house/draw-host.js` are compiled with the rig (`jsc.mjs`
+  houseScripts: +13.8 MB of C#, 20.8 MB in all), `RigHost.HouseEval` takes HouseDraw's calls and NativeRig wires it
+  as `HouseDraw.Eval`. Before, Unity had none: the beach wasn't drawn, the house map didn't open ("The map needs the
+  drawing engine"), and a piece, shell or surface the export didn't have couldn't be drawn. `rig-test house.mjs`: 148 /
+  148 calls answer as the JS (every exported variant and render, shells, textures, the beach in every season by day
+  and night, the map). Two compiler fixes on the way (a Set's spread, an arrow's `this`); `rig-test` 1680/1680 still.
+  `house-test housepics` draws the map and the beach with it. Watch on the A15: a runtime piece costs ~0.1 s to draw
+  (once, then kept), the first call boots the house's part of the realm.
 
 ## 5. Small items
 
