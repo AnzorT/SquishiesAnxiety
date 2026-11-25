@@ -13,6 +13,8 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   - Squish Time's loading beat (`SquishLoading.cs`) and sky (`SquishSky.cs`): `loading-test` mean 1.4 %, sky 0.00 %
     (item 5)
   - the game intro's rain and snow (`Menu/IntroRain.cs`): `auth-test rain` 0.10 % rainy and snowy (item 8)
+  - the chest unlock's creature after BAM was already live (1aeeaa3); its motion is now `Creatures/HeroPop.cs`
+    (Unity-free), and `shop-test unlockframes` draws the whole unlock frame by frame with the rig (item 8)
 - **Not checked yet:** none of it has been seen in the Unity Editor or on a device. Checked offline only: the pixel
   tests and a compile of every script in `unity/Assets/Scripts` against Unity 2021.3's reference assemblies
   (NuGet `UnityEngine.Modules`, with `UNITY_5_3_OR_NEWER` defined): it builds.
