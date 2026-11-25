@@ -19,6 +19,8 @@ lists what isn't, so it can be picked up item by item with Claude Code.
     a soft breathing glow behind the card instead of the app's turning light beams. The reveal's pixel tests
     (`shop-test smash*`) differ from the app there from now on. The same beams on the Characters screen and the
     "Gathering your squad" loading screen are unchanged (the user: the chest reveal for now)
+  - the whole-screen stand-in a game opens under (`Games/Shared/ScreenBones.cs`, MenuScreen OpenUnder), every game
+    on its hub's shape, the title's spot centred where the hubs' title is, and the build time logged (item 5)
 - **Not checked yet:** none of it has been seen in the Unity Editor or on a device. Checked offline only: the pixel
   tests and a compile of every script in `unity/Assets/Scripts` against Unity 2021.3's reference assemblies
   (NuGet `UnityEngine.Modules`, with `UNITY_5_3_OR_NEWER` defined): it builds.
@@ -26,8 +28,8 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   1. **Press Play in the Editor and go through what changed:** Squish Sort (the map's fridges, a level, the win's
      doors), Squish Hop (a level: the rigs take over once the page has drawn the cast, then hop, bump, stuck, win),
      each of the seven yard games (intro poster, how-to sheet, play, result card), MY HOUSE ("Heading home" while
-     the house loads), a chest upgrade (the glow), Squish Time (the loading beat, the sky) and the intro on a rainy /
-     snowy day. Watch for: the rigs' timing, Sort's doors clipping the rigs, the frame rate with many rigs on the
+     the house loads), a chest upgrade and unlock (the glow), Squish Time (the loading beat, the sky), the intro on a
+     rainy / snowy day, and opening each game from the Game Park (the stand-in; the log's "opened in N ms"). Watch for: the rigs' timing, Sort's doors clipping the rigs, the frame rate with many rigs on the
      screen. Fix what's off.
   2. **Item 5, what's left:** the Mittens fallback, sounds (the chest's hit and unlock).
   3. **Item 4's "Also":** compile `draw-host.js` for `HouseDraw.Eval` the way the stage pages are compiled. After
