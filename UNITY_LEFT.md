@@ -15,6 +15,10 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   - the game intro's rain and snow (`Menu/IntroRain.cs`): `auth-test rain` 0.10 % rainy and snowy (item 8)
   - the chest unlock's creature after BAM was already live (1aeeaa3); its motion is now `Creatures/HeroPop.cs`
     (Unity-free), and `shop-test unlockframes` draws the whole unlock frame by frame with the rig (item 8)
+  - **Unity's own look, on purpose** (the user, 2026-11-25: "we are focusing now only on unity"): the chest reveal has
+    a soft breathing glow behind the card instead of the app's turning light beams. The reveal's pixel tests
+    (`shop-test smash*`) differ from the app there from now on. The same beams on the Characters screen and the
+    "Gathering your squad" loading screen are unchanged (the user: the chest reveal for now)
 - **Not checked yet:** none of it has been seen in the Unity Editor or on a device. Checked offline only: the pixel
   tests and a compile of every script in `unity/Assets/Scripts` against Unity 2021.3's reference assemblies
   (NuGet `UnityEngine.Modules`, with `UNITY_5_3_OR_NEWER` defined): it builds.
