@@ -16,7 +16,7 @@ lists what isn't, so it can be picked up item by item with Claude Code.
      each of the seven yard games (intro poster, how-to sheet, play, result card), and MY HOUSE ("Heading home" while
      the house loads). Watch for: the rigs' timing, Sort's doors clipping the rigs, the frame rate with many rigs on
      the screen. Fix what's off.
-  2. **Item 5, the small items.** The quickest is `saves-test` not building. Then the chest smash's additive glow,
+  2. **Item 5, the small items.** (`saves-test` is done.) Then the chest smash's additive glow,
      Squish Time's loading moment and sky, the whole-screen placeholder, the Mittens fallback, and sounds.
   3. **Item 4's "Also":** compile `draw-host.js` for `HouseDraw.Eval` the way the stage pages are compiled. After
      that, Renovate's signs (item 3).
@@ -118,9 +118,10 @@ lists what isn't, so it can be picked up item by item with Claude Code.
 - [ ] **Squish Time sky:** draw it as native pieces (puffs without the solid core) instead of the old `hud/sky`.
 - [ ] **Whole-screen placeholder:** the warm page / wood with the back orb's and title's spots for screens opened
   over the menu (`src/components/Skeleton.js` ScreenBones). Unity builds its screens at once, so it never shows one.
-- [ ] **`tools/unity/saves-test` doesn't build:** `HopSave.cs` uses `AfterBlitzResult` from `Games/Hop/Blitz.cs`,
-  which the test project doesn't include. Add it (and anything else it needs) to `SavesTest.csproj` and fix the
-  calls to the new Blitz API.
+- [x] **`tools/unity/saves-test` builds and passes again** (2026-11-25): `SavesTest.csproj` takes `Games/Hop/Blitz.cs`,
+  and both sides play develop's games: the endless Blitz (`afterBlitz(profile, { cleared })` / `AfterBlitz(P, cleared)`
+  for Stack, Sort and now Hop, paid on every run's end as payOut), Hop's stars by `takebacks`, Sort's fridge only.
+  Against the emulators (`tools/unity/backend/start-emulators.sh`): 142 passed, 0 failed.
 - [ ] **Menu fallback to Mittens** (`Menu/MenuView.cs`, commit 93a81bb): every creature animates now, so this almost
   never kicks in. Keep it as a safety net or remove it.
 - [ ] **Sounds and haptics** in the ported screens (see `UNITY_TODO.md`).
