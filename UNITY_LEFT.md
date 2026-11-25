@@ -3,28 +3,39 @@
 The goal: the Unity app (`unity/`) matches the React Native app on `develop` exactly. Most of it is done. This file
 lists what isn't, so it can be picked up item by item with Claude Code.
 
-## Where it stopped (2026-11-25): continue from here
+## Where it stopped (2026-11-25, second session): continue from here
 
-- **Done:** items 1–4 below (commits 6a1d8b3, 7705f86, c265b47, a73b319, 5301a53, all pushed). Also pushed: the
-  texture `.meta` files the Editor rewrote when it re-imported the art with `Editor/ProjectSetup.cs`'s import rules
-  (no GUID changes).
-- **Not checked yet:** none of items 1–4 has been seen in the Unity Editor or on a device. They were checked offline
-  only: the pixel tests (numbers in each item) and an offline compile of the scripts with `dotnet`.
+- **Done and pushed** (branch `ccr-5d87b564-vqdyo7`, on top of `develop` at af7a904; merge it into `develop`):
+  - items 1–4 below (first session: 6a1d8b3, 7705f86, c265b47, a73b319, 5301a53)
+  - `saves-test` builds and passes again: 142 / 142 against the emulators (item 5)
+  - the chest smash's upgrade glow is additive, as the page's canvas 'lighter': `smash-up` 1.0–1.7 % (was up to
+    17.4 %); the other smash shots unchanged or better (item 5)
+  - Squish Time's loading beat (`SquishLoading.cs`) and sky (`SquishSky.cs`): `loading-test` mean 1.4 %, sky 0.00 %
+    (item 5)
+  - the game intro's rain and snow (`Menu/IntroRain.cs`): `auth-test rain` 0.10 % rainy and snowy (item 8)
+- **Not checked yet:** none of it has been seen in the Unity Editor or on a device. Checked offline only: the pixel
+  tests and a compile of every script in `unity/Assets/Scripts` against Unity 2021.3's reference assemblies
+  (NuGet `UnityEngine.Modules`, with `UNITY_5_3_OR_NEWER` defined): it builds.
 - **Next, in this order:**
   1. **Press Play in the Editor and go through what changed:** Squish Sort (the map's fridges, a level, the win's
      doors), Squish Hop (a level: the rigs take over once the page has drawn the cast, then hop, bump, stuck, win),
-     each of the seven yard games (intro poster, how-to sheet, play, result card), and MY HOUSE ("Heading home" while
-     the house loads). Watch for: the rigs' timing, Sort's doors clipping the rigs, the frame rate with many rigs on
-     the screen. Fix what's off.
-  2. **Item 5, the small items.** (`saves-test`, the chest smash's glow, Squish Time's loading beat and sky are done; check
-     them in the Editor.) Then the whole-screen placeholder, the Mittens fallback, and sounds.
-  3. **Item 4's "Also":** compile `draw-host.js` for `HouseDraw.Eval` the way the stage pages are compiled. After
+     each of the seven yard games (intro poster, how-to sheet, play, result card), MY HOUSE ("Heading home" while
+     the house loads), a chest upgrade (the glow), Squish Time (the loading beat, the sky) and the intro on a rainy /
+     snowy day. Watch for: the rigs' timing, Sort's doors clipping the rigs, the frame rate with many rigs on the
+     screen. Fix what's off.
+  2. **Item 5, what's left:** the whole-screen placeholder, the Mittens fallback, sounds (the chest's hit and unlock).
+  3. **Item 8:** the chest unlock's creature after BAM as the live rig.
+  4. **Item 4's "Also":** compile `draw-host.js` for `HouseDraw.Eval` the way the stage pages are compiled. After
      that, Renovate's signs (item 3).
-  4. **Item 6:** ask the user to decide. **Item 7** is the user's (the A15 test, deploying `functions/`).
+  5. **Item 6:** ask the user to decide. **Item 7** is the user's (the A15 test, deploying `functions/`, the release
+     setup).
 - **Known failures that are older than this work:** `rig-test --all` stops about 110 runs in with a C# stack
   overflow, and Bunbun's park walks differ at 0.000 % (item 4, "Found on the way").
-- **This machine has only .NET 10:** run the tests with `DOTNET_ROLL_FORWARD=Major`, or build them with
-  `-p:TargetFramework=net10.0`.
+- **.NET:** the tests target .NET 8 (`apt-get install dotnet-sdk-8.0` on Ubuntu). Where only .NET 10 is installed,
+  run them with `DOTNET_ROLL_FORWARD=Major`, or build them with `-p:TargetFramework=net10.0`.
+- **What the tests need running:** the Expo web app (`npx expo start --web --port 8081`), the built web game
+  (`node webgame/build.mjs --out webgame/test/out/unity-webgame`), and for `saves-test` / `shop-test emu` the
+  emulators (`WORK=<scratch> tools/unity/backend/start-emulators.sh`).
 
 ## Read first
 
@@ -150,3 +161,17 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   frame; the biggest part is small `[x, y]` point arrays).
 - [ ] **Deploy the server functions for `develop`** (`functions/`). Until then the daily spin pays 150 coins and
   chests roll the old way.
+- [ ] **Release setup** (`UNITY_TODO.md`): the real AdMob ids (`App/Ads.cs` has Google's test ids), the Unity license
+  secrets in GitHub for CI, the Unity app's Android id in Firebase (`com.plushcrush.unity`) or the old app's id, the
+  app and its products in the Play Console, a test purchase and a rewarded ad on the phone.
+- [ ] **New-player tutorial** (`UNITY_TODO.md`): check whether develop's app still has one (Settings has no "Replay
+  tutorial" now); if it does, port it.
+
+## 8. From the screen table (`UNITY_SYNC_DEVELOP.md`)
+
+- [x] **The game intro's rain / snow** (2026-11-25): `Menu/IntroRain.cs` (intro.js rainBuild), on the frame over the
+  house, under the captions, from the night into the morning; `auth-test rain` 0.10 % (capture-intro.mjs
+  `WEATHER=rainy|snowy`). Left there: a run in the Editor for timing and placement.
+- [ ] **The chest unlock's creature after BAM** is its still; the app shows the live rig (`ChestSmashView.HeroRig`).
+- [x] **Blitz cards' unit** (board / round / puzzle): the code already said the right word per game (`StackBlitz`
+  puzzle, `SortBlitz` round, `HopBlitz` board); its row in `UNITY_SYNC_DEVELOP.md` is ✅ now.
