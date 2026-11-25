@@ -17,6 +17,8 @@ using SquishSquad.Vector;
 
 static partial class Program
 {
+    static double Env(string k, double d) => double.TryParse(Environment.GetEnvironmentVariable(k), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : d;
+
     static int SignFrames(string outDir)
     {
         Directory.CreateDirectory(outDir);
@@ -38,6 +40,8 @@ static partial class Program
         hs.H.Obj("night").Remove("living");
         var sign = ((List<object>)hs.H.Obj("rooms")["living"]).Cast<JObj>().First(it => it.Str("id") == "i29");
         sign["t"] = "R:LIV-105";
+        // (for the video: on the back wall's right, where the editor doesn't cover it, and bigger)
+        sign["x"] = Env("SIGN_X", 655); sign["e"] = Env("SIGN_E", 120); sign["sz"] = Env("SIGN_SZ", 2.6);
         var row = d.Row("LIV-105");
         var presets = ((List<object>)row["texts"]).Select(o => (string)o).ToList();
         // the script: (the text, the panel shown, typing, the part held)
@@ -47,9 +51,9 @@ static partial class Program
         Hold(start, false, false, 8);                     // the room, the sign as it is
         Hold(start, true, false, 8);                      // Aa: the editor opens
         Hold(start, true, true, 4, "sg-input");           // the text box tapped
-        for (int k = start.Length; k >= 0; k -= 3) Hold(start.Substring(0, Math.Max(0, k)), true, true, 1);   // cleared
+        foreach (var t in new[] { "Home Sweet", "Home", "" }) Hold(t, true, true, 2);   // cleared
         const string typed = "Squish Squad";
-        for (int k = 1; k <= typed.Length; k++) Hold(typed.Substring(0, k), true, true, 2);
+        foreach (var t in new[] { "Squ", "Squish", "Squish Sq", typed }) Hold(t, true, true, 4);   // typed
         Hold(typed, true, true, 10);
         int wi = presets.IndexOf("Welcome Home");
         Hold(typed, true, false, 2, "sg-pre:" + wi);      // a preset tapped
@@ -57,8 +61,9 @@ static partial class Program
         Hold("Welcome Home", true, false, 2, "sg-done");  // Done
         Hold("Welcome Home", false, false, 12);
 
-        const int PW = 1040, PH = 480, SS = 2;
+        const int PW = 1040, PH = 480; int SS = (int)Env("SIGN_SS", 1);
         double k0 = PW / 852.0;
+        if (Environment.GetEnvironmentVariable("SIGN_ONE") == "1") steps = steps.Take(1).ToList();
         ReferenceRaster.LoadImage = href => LoadPng(href);
         var rooms = new Dictionary<string, ReferenceRaster.Buffer>();
         int f = 0;
