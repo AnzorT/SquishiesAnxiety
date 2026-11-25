@@ -1,7 +1,9 @@
 // A creature frame's SVG as something a renderer draws: a tree of filled shapes (polygons and a fill rule, see
 // Outline.cs, each with its paint and opacity) and layers (group opacity, clip paths, masks, filters), in output pixels. The rules are SVG's:
 // inherited fill / stroke properties, opacity on the element, a group with opacity, clip-path, mask or filter drawn
-// as one layer, clip paths in the user space of the element that uses them.
+// as one layer, clip paths in the user space of the element that uses them. Also `mix-blend-mode: plus-lighter`
+// (canvas's 'lighter', Screens/Chests/Canvas2D.cs): every node the element draws into its parent adds onto it; and
+// `isolation: isolate`: the element is a layer of its own.
 using System;
 using System.Collections.Generic;
 
@@ -14,6 +16,7 @@ namespace SquishSquad.Vector
         public Shape Shape;
         public Paint Paint;
         public float Opacity = 1;
+        public bool Additive;         // plus-lighter: added onto what's under it (premultiplied), not drawn over it
         public Box UserBox;           // the shape's box in its user space (objectBoundingBox gradients)
         public Affine UserToPx;       // its user space to output px (gradients are evaluated in user space)
     }
@@ -22,6 +25,7 @@ namespace SquishSquad.Vector
     {
         public readonly List<RenderNode> Children = new List<RenderNode>();
         public float Opacity = 1;
+        public bool Additive;           // plus-lighter: composited by adding onto the layer below, not over it
         public List<Shape> Clip;        // the clip's coverage (the union of these shapes), or null
         public LayerNode Mask;          // drawn on its own: its luminance x alpha multiplies this layer
         public Box MaskRegionPx = Box.Empty;
@@ -133,8 +137,13 @@ namespace SquishSquad.Vector
             // a layer for a group with opacity, and for anything clipped, masked or filtered; a lone shape's opacity
             // folds into its paint unless it has both a fill and a stroke (then they'd show through each other)
             bool bothPainted = isShape && Resolve(st.Fill, st.Color).Kind != PaintKind.None && Resolve(st.Stroke, st.Color).Kind != PaintKind.None && st.StrokeWidth > 0;
-            bool layer = clip != null || mask != null || filter != null || (opacity < 1 && (!isShape || bothPainted));
+            // (isolation: isolate, a group of its own: what plus-lighter inside it adds onto stays inside it)
+            bool layer = clip != null || mask != null || filter != null || (opacity < 1 && (!isShape || bothPainted)) || n.Prop("isolation") == "isolate";
 
+            // plus-lighter (canvas 'lighter'): each node this element puts into its parent adds onto it, as canvas adds
+            // each draw; the nodes inside a layer of its own blend normally there
+            bool additive = n.Prop("mix-blend-mode") == "plus-lighter";
+            int first = into.Count;
             var list = into;
             LayerNode L = null;
             if (layer)
@@ -178,7 +187,17 @@ namespace SquishSquad.Vector
             }
             else return;   // unknown elements
 
-            if (L == null) return;
+            if (L == null)
+            {
+                if (additive)
+                    for (int i = first; i < into.Count; i++)
+                    {
+                        if (into[i] is FillNode fn) fn.Additive = true;
+                        else if (into[i] is LayerNode ln) ln.Additive = true;
+                    }
+                return;
+            }
+            L.Additive = additive;
             if (L.Children.Count == 0) return;
             L.UserBox = UserBoxOf(L.Children, m);
             if (clip != null && Ids.TryGetValue(clip, out var cp)) L.Clip = ClipCoverage(cp, m, L.UserBox);

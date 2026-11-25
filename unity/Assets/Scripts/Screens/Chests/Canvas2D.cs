@@ -4,8 +4,10 @@
 // shadowBlur (a blurred copy under the stroke or fill), line dashes, text (the fonts' own outlines), and drawImage of a
 // layer recorded earlier (an SVG group). A path is kept in the canvas's device space, as canvas keeps it, and drawn back
 // in the user space of the fill or stroke (so line widths and gradients are where canvas puts them).
-// Not as canvas: globalCompositeOperation 'lighter' (additive) draws as 'source-over'; a conic gradient is drawn as
-// 72 thin wedges of its colours. The engine does its compositing ('source-atop', 'destination-out') with groups and
+// globalCompositeOperation 'lighter' (additive) wraps the draw in mix-blend-mode: plus-lighter (Vector/SvgScene.cs:
+// it adds onto what's under it, as canvas does), and the canvas's markup is then an isolated group (isolation: isolate,
+// a layer of its own), so the draws add onto the canvas's own pixels, not onto the page behind it, as a canvas does. Not as canvas: a conic gradient is drawn as 72 thin wedges of its
+// colours. The engine does its compositing ('source-atop', 'destination-out') with groups and
 // masks itself (ChestEngine.cs).
 using System;
 using System.Collections.Generic;
@@ -57,8 +59,9 @@ namespace SquishSquad.Screens
         /// <summary>`defs`: shared defs (gradients, clips) of the frame this canvas draws into.</summary>
         public Canvas2D(StringBuilder defs = null) { Defs = defs ?? new StringBuilder(); _pre = "cv" + (_n++) + "-"; }
 
-        public string Markup => _body.ToString();
-        public void Clear() { _body.Clear(); _sub.Clear(); _closed.Clear(); _cur = null; _s = new St(); _stack.Clear(); }
+        bool _lighter;   // a 'lighter' draw was recorded: the markup is isolated
+        public string Markup => _lighter ? $"<g style=\"isolation:isolate\">{_body}</g>" : _body.ToString();
+        public void Clear() { _lighter = false; _body.Clear(); _sub.Clear(); _closed.Clear(); _cur = null; _s = new St(); _stack.Clear(); }
         string Id(string k) => _pre + k + (_ids++);
         static string F(double v) => UiSvg.F(v);
 
@@ -171,6 +174,7 @@ namespace SquishSquad.Screens
         {
             var sb = new StringBuilder();
             int open = 0;
+            if (_s.Comp == "lighter") { _lighter = true; sb.Append("<g style=\"mix-blend-mode:plus-lighter\">"); open++; }
             foreach (var c in _s.Clips) { sb.Append($"<g clip-path=\"url(#{c})\">"); open++; }
             if (_s.Alpha < 0.999) { sb.Append($"<g opacity=\"{F(Math.Max(0, _s.Alpha))}\">"); open++; }
             sb.Append(el);

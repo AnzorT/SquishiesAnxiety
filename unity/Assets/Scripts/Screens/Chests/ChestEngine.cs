@@ -10,7 +10,7 @@
 // layer is clipped to the chest's hull, 'destination-out' holes are a mask, a chunk or shard is the layer at that moment
 // clipped to its polygon (the dark side: a colour matrix), covered() samples the hull minus the holes.
 // The page's own changes to it (host.html): the chest's size (fitStage, Resize) and its HP by rarity (rarityHp, TierHp).
-// Not as the page: 'lighter' particles blend as normal ones; no sounds.
+// Not as the page: no sounds.
 using System;
 using System.Collections.Generic;
 using System.Linq;

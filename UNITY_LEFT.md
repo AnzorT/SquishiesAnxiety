@@ -16,7 +16,7 @@ lists what isn't, so it can be picked up item by item with Claude Code.
      each of the seven yard games (intro poster, how-to sheet, play, result card), and MY HOUSE ("Heading home" while
      the house loads). Watch for: the rigs' timing, Sort's doors clipping the rigs, the frame rate with many rigs on
      the screen. Fix what's off.
-  2. **Item 5, the small items.** (`saves-test` is done.) Then the chest smash's additive glow,
+  2. **Item 5, the small items.** (`saves-test` and the chest smash's glow are done; check the glow in the Editor.) Then
      Squish Time's loading moment and sky, the whole-screen placeholder, the Mittens fallback, and sounds.
   3. **Item 4's "Also":** compile `draw-host.js` for `HouseDraw.Eval` the way the stage pages are compiled. After
      that, Renovate's signs (item 3).
@@ -111,8 +111,13 @@ lists what isn't, so it can be picked up item by item with Claude Code.
 
 ## 5. Small items
 
-- [ ] **Chest smash:** the upgrade's glow beams need additive blending (now normal; up to 17 % off in `shop-test
-  smash-up`). Also add the page's hit and unlock sounds. Code: `Screens/Chests/ChestSmashView.cs`.
+- [x] **Chest smash's additive glow** (2026-11-25): canvas `'lighter'` draws are now added, not laid over:
+  `Canvas2D` wraps them in `mix-blend-mode: plus-lighter` and the canvas in `isolation: isolate` (so they add onto the
+  canvas's own pixels, not the vault behind, as a canvas does); `Vector/SvgScene.cs` reads both (`FillNode` /
+  `LayerNode.Additive`, an isolated group is a layer), `VectorRenderer` draws them with additive copies of
+  VectorCover / VectorComposite (`Blend One [_DstBlend]`), and the reference rasteriser adds too. `shop-test smash-up`:
+  1.0–1.7 % at every moment (it was 1.2–17.4 %). Not seen in the Editor yet. **Left:** the page's hit and unlock
+  sounds (`Screens/Chests/ChestSmashView.cs`).
 - [ ] **Squish Time's loading moment:** wood, the creature, "Getting ready" with three hopping gold dots, then
   "I AM READY!" and a fade (`src/screens/LoadingScreen.js`). Unity goes straight into Squish Time.
 - [ ] **Squish Time sky:** draw it as native pieces (puffs without the solid core) instead of the old `hud/sky`.
