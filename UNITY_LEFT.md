@@ -147,7 +147,8 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   game is asked for (`hub` on the warm page, Squishdoku on the wood; Hop `hub` too, though App.js still asks for
   `map` from before Hop had a hub), builds the game
   under it the next frame, then fades it out in 160 ms, and logs the build ("[Menu] Squish Stack opened in N ms": read
-  it on the A15). `loading-test bones`: the background, header and bars as the app's; the app's two hub cards are
+  it on the A15). The header's spots where the hubs have them (the user): the circle on the back orb, the title's
+  bar centred (the app's sits next to the orb). `loading-test bones`: the background and bars as the app's; the app's two hub cards are
   14 dp bars (Bone's default height when `h` is undefined), Unity draws them as full cards like its in-game bones.
   `maps-test bonesframes` draws a game opening frame by frame. Not seen in the Editor yet.
 - [x] **`tools/unity/saves-test` builds and passes again** (2026-11-25): `SavesTest.csproj` takes `Games/Hop/Blitz.cs`,
