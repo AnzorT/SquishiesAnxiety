@@ -30,6 +30,7 @@ input on the Unity code, draws it with the reference rasteriser and diffs the pi
 | Yard games (the app's own, compiled with the rig) | `yard-test/capture.mjs` (also the coin) | `yard-test` (`smoke`, `shots`) |
 | Sort / Hop live rigs (the app's stage pages, compiled with the rig) | `stage-test/capture.mjs` (scenes.mjs) | `stage-test` (scenes, `sortlevel`, `hoplevel`) |
 | MY HOUSE's "Heading home" night | `heading-test/capture.mjs` | `heading-test` |
+| Squish Time's loading beat and sky | `loading-test/capture.mjs` | `loading-test` (`frames`: the beat as a picture sequence) |
 | Game rules | | `games/<game>` (vs the JS on the same inputs) |
 | Fonts, text | `ui/fonts.py` | `ui/TextTest` |
 | Animations (RN's Animated) | | `anim` |

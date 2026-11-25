@@ -28,13 +28,16 @@ namespace SquishSquad.App
 
         public bool Shown { get => _root.gameObject.activeSelf; set => _root.gameObject.SetActive(value); }
 
+        /// <summary>Added to every piece's sorting order (a screen shown over another's pieces: Squish Time's loading beat).</summary>
+        public int BaseOrder;
+
         public void Show(List<ScreenPiece> list)
         {
             var used = new HashSet<string>();
             for (int i = 0; i < list.Count; i++)
             {
                 var p = list[i];
-                int order = 1 + i * 2;
+                int order = BaseOrder + 1 + i * 2;
                 if (p.Slot && p.Live != null) { PlaceLive(p, order); used.Add(p.Id); continue; }
                 if (p.Slot) { PlaceCreature(p, order); used.Add(p.Id); continue; }
                 if (!_pieces.TryGetValue(p.Id, out var piece)) _pieces[p.Id] = piece = UiPiece.Create(_root, p.Id, order);

@@ -16,8 +16,8 @@ lists what isn't, so it can be picked up item by item with Claude Code.
      each of the seven yard games (intro poster, how-to sheet, play, result card), and MY HOUSE ("Heading home" while
      the house loads). Watch for: the rigs' timing, Sort's doors clipping the rigs, the frame rate with many rigs on
      the screen. Fix what's off.
-  2. **Item 5, the small items.** (`saves-test` and the chest smash's glow are done; check the glow in the Editor.) Then
-     Squish Time's loading moment and sky, the whole-screen placeholder, the Mittens fallback, and sounds.
+  2. **Item 5, the small items.** (`saves-test`, the chest smash's glow, Squish Time's loading beat and sky are done; check
+     them in the Editor.) Then the whole-screen placeholder, the Mittens fallback, and sounds.
   3. **Item 4's "Also":** compile `draw-host.js` for `HouseDraw.Eval` the way the stage pages are compiled. After
      that, Renovate's signs (item 3).
   4. **Item 6:** ask the user to decide. **Item 7** is the user's (the A15 test, deploying `functions/`).
@@ -118,9 +118,14 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   VectorCover / VectorComposite (`Blend One [_DstBlend]`), and the reference rasteriser adds too. `shop-test smash-up`:
   1.0–1.7 % at every moment (it was 1.2–17.4 %). Not seen in the Editor yet. **Left:** the page's hit and unlock
   sounds (`Screens/Chests/ChestSmashView.cs`).
-- [ ] **Squish Time's loading moment:** wood, the creature, "Getting ready" with three hopping gold dots, then
-  "I AM READY!" and a fade (`src/screens/LoadingScreen.js`). Unity goes straight into Squish Time.
-- [ ] **Squish Time sky:** draw it as native pieces (puffs without the solid core) instead of the old `hud/sky`.
+- [x] **Squish Time's loading moment** (2026-11-25): `Games/Squish/SquishLoading.cs` (LoadingScreen.js: wood, the warm
+  halo, the creature's still moving as CreatureThumbnail's 'ready' mood, "Getting ready" with the three hopping dots
+  while its card is fetched, "I AM READY!" popping in with the 'ready' sound, the eased fade), over the screen as
+  `SquishTime` opens (a `ScreenHost` above the HUD; touches wait for it). `loading-test` (`capture.mjs`: the page on the
+  virtual clock): 0.4–2.0 %, 6.4 % at one moment of the fade's steepest part.
+- [x] **Squish Time sky** (2026-11-25): `Games/Squish/SquishSky.cs`, SkyBackground.js's pieces for the screen's size
+  (gradient, the two glows sized from the screen, the puffs solid to 52 %, the dot grid), not the stretched `hud/sky`.
+  `loading-test` sky: 0.00 %.
 - [ ] **Whole-screen placeholder:** the warm page / wood with the back orb's and title's spots for screens opened
   over the menu (`src/components/Skeleton.js` ScreenBones). Unity builds its screens at once, so it never shows one.
 - [x] **`tools/unity/saves-test` builds and passes again** (2026-11-25): `SavesTest.csproj` takes `Games/Hop/Blitz.cs`,

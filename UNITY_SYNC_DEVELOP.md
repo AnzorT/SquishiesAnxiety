@@ -34,8 +34,8 @@ far sits 36 pu off; the Level Pass's track and panel don't fade in over its firs
 | ✅ | Menu → Game Park: the house's vignette fades out (0.45 s, a second vignette-free picture cross-faded in) so the house meets the park's art with no seam | the vignette is baked into the house JPEG and never fades: the darker house meets the brighter park (**the "cut" between two pictures**) |
 | ✅ | Characters' loading screen "Gathering your squad": **no progress bar** (the band, 46 px, holds only the tip), rays 714 px | bar, knob and 0-100 % |
 | ✅ | Characters: the spotlight (rays, platform, creature, CHOOSE) at the page's middle on every screen | fixed at the A15's x |
-| ⬜ | Squish Time's loading beat: wood, the creature, "Getting ready" with hopping dots, then "I AM READY!" | missing (straight into Squish Time) |
-| ⬜ | Squish Time sky as native pieces (puffs without the solid core) | the old `hud/sky` |
+| ✅ | Squish Time's loading beat: wood, the creature, "Getting ready" with hopping dots, then "I AM READY!" | missing (straight into Squish Time) — `Games/Squish/SquishLoading.cs` over SquishTime as it opens (quick when the card is here, the dots while it's fetched); `loading-test` mean 1.4 % (0.4–2.0 %, 6.4 % mid-fade). Not seen in the Editor yet |
+| ✅ | Squish Time sky as native pieces (puffs without the solid core) | the old `hud/sky` — `Games/Squish/SquishSky.cs` for the screen's size; `loading-test` sky 0.00 % |
 | ✅ | Settings: no "Replay tutorial" | still there |
 | 🔧 | Screen placeholders in the wood look, sideways | translucent white, portrait shapes — the games' view placeholders done (`Games/Shared/ViewSwitch` Bones, used by GameScreen for Stack / Sort / Hop and by `SdScreen` for Squishdoku: Skeleton.js ViewBones' develop layouts, tone "wood" rgba(107,68,38,0.22), the shine at a fifth; `maps-test` hop-map as the map slides in: the stones where the app has them). Left: the whole-screen ScreenBones (the warm page or wood with the back orb's and title's spots) for screens opened over the menu, which Unity doesn't show (its screens build at once) |
 
