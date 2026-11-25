@@ -35,7 +35,7 @@ lists what isn't, so it can be picked up item by item with Claude Code.
      the map, the beach, a sign written in Renovate (Aa, typing on the phone's keyboard). Watch for: the rigs' timing, Sort's doors clipping the rigs, the frame rate with many rigs on the
      screen. Fix what's off.
   2. **Item 5, what's left:** the Mittens fallback, sounds (the chest's hit and unlock).
-  3. **Item 6:** ask the user to decide. **Item 7** is the user's (the A15 test, deploying `functions/`, the release
+  3. **Item 6:** ask the user to decide (Android back over the Catalog, a new player's starter furniture, the tutorial). **Item 7** is the user's (the A15 test, deploying `functions/`, the release
      setup).
 - **Known failures that are older than this work:** `rig-test --all` stops about 110 runs in with a C# stack
   overflow, and Bunbun's park walks differ at 0.000 % (item 4, "Found on the way").
@@ -176,6 +176,13 @@ lists what isn't, so it can be picked up item by item with Claude Code.
 - [ ] **Android back over the house's Catalog:** the app leaves the house at once (`webgame/app/bridge.js` clicks
   `.mm-hback`). Unity closes the detail, then the Catalog, then Renovate, one step at a time. Pick one; it's the ❓ row
   in `UNITY_SYNC_DEVELOP.md`.
+- [ ] **A new player's living room has no starter furniture** (checked 2026-11-25, app and Unity the same:
+  `house-test roompics <dir> fresh-lv1` vs the app's page on a fresh profile): the page's RSTART (a couch, a centre
+  table, the TV) never lands, because the save's window migration (WSTART: LIV-012) fills `rooms.living` before
+  unlockRooms runs `rnStart`, which only seeds an empty room. Keep it as the app has it, or seed the starters in Unity
+  (a small change in `HouseSave.RnStart` / the order in Load).
+- [ ] **The new-player tutorial** (`UNITY_TODO.md`): check whether develop's app still has one (Settings has no
+  "Replay tutorial" now); if it does, port it.
 
 ## 7. Outside the code
 
@@ -188,8 +195,6 @@ lists what isn't, so it can be picked up item by item with Claude Code.
 - [ ] **Release setup** (`UNITY_TODO.md`): the real AdMob ids (`App/Ads.cs` has Google's test ids), the Unity license
   secrets in GitHub for CI, the Unity app's Android id in Firebase (`com.plushcrush.unity`) or the old app's id, the
   app and its products in the Play Console, a test purchase and a rewarded ad on the phone.
-- [ ] **New-player tutorial** (`UNITY_TODO.md`): check whether develop's app still has one (Settings has no "Replay
-  tutorial" now); if it does, port it.
 
 ## 8. From the screen table (`UNITY_SYNC_DEVELOP.md`)
 
