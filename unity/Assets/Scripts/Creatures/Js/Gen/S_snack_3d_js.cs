@@ -75,5183 +75,5183 @@ return default;
 NS_8 = ((V)("http://www.w3.org/2000/svg"));
 TAU_9 = (System.Math.PI * 2D);
 D2R_10 = (System.Math.PI / 180D);
-r2_11 = Fn((V _self1, int _argc50, V v_56, V _a53, V _a54, V _a55, V[] _rest51) => {
+r2_11 = Fn((V _arrowThis57, int _argc50, V v_56, V _a53, V _a54, V _a55, V[] _rest51) => {
 return ((V)((Round((ToNum(v_56) * 100D)) / 100D)));
 }, 1, "", true);
-clamp_12 = Fn((V _self1, int _argc57, V v_63, V a_64, V b_65, V _a62, V[] _rest58) => {
-return (Lt(v_63, a_64) ? a_64 : (Gt(v_63, b_65) ? b_65 : v_63));
+clamp_12 = Fn((V _arrowThis67, int _argc58, V v_64, V a_65, V b_66, V _a63, V[] _rest59) => {
+return (Lt(v_64, a_65) ? a_65 : (Gt(v_64, b_66) ? b_66 : v_64));
 }, 3, "", true);
-SM_13 = Fn((V _self1, int _argc66, V t_72, V _a69, V _a70, V _a71, V[] _rest67) => {
-t_72 = Call(clamp_12, V.Undef, t_72, ((V)(0D)), ((V)(1D)));
-return ((V)(((ToNum(t_72) * ToNum(t_72)) * (3D - (2D * ToNum(t_72))))));
+SM_13 = Fn((V _arrowThis75, int _argc68, V t_74, V _a71, V _a72, V _a73, V[] _rest69) => {
+t_74 = Call(clamp_12, V.Undef, t_74, ((V)(0D)), ((V)(1D)));
+return ((V)(((ToNum(t_74) * ToNum(t_74)) * (3D - (2D * ToNum(t_74))))));
 return default;
 }, 1, "", true);
-el_14 = Fn((V _self1, int _argc73, V tag_79, V a_80, V par_81, V before_82, V[] _rest74) => {
-V e_83 = default;
-e_83 = Invoke(G("document"), "createElementNS", NS_8, tag_79);
+el_14 = Fn((V _arrowThis86, int _argc76, V tag_82, V a_83, V par_84, V before_85, V[] _rest77) => {
+V e_87 = default;
+e_87 = Invoke(G("document"), "createElementNS", NS_8, tag_82);
 {
-foreach (V _k84 in ForInKeys(a_80)) {
-V k_85 = default;
-k_85 = _k84;
-Invoke(e_83, "setAttribute", k_85, GetK(a_80, k_85));
+foreach (V _k88 in ForInKeys(a_83)) {
+V k_89 = default;
+k_89 = _k88;
+Invoke(e_87, "setAttribute", k_89, GetK(a_83, k_89));
 }
 }
-if (Truthy(par_81)) {
-if (Truthy(before_82)) {
-Invoke(par_81, "insertBefore", e_83, before_82);
+if (Truthy(par_84)) {
+if (Truthy(before_85)) {
+Invoke(par_84, "insertBefore", e_87, before_85);
 } else {
-Invoke(par_81, "appendChild", e_83);
+Invoke(par_84, "appendChild", e_87);
 }
 }
-return e_83;
+return e_87;
 return default;
 }, 4, "", true);
-pt_15 = Fn((V _self1, int _argc86, V p_92, V _a89, V _a90, V _a91, V[] _rest87) => {
-return ((V)(JsStrBuf.Begin().V(Call(r2_11, V.Undef, GetIdx(p_92, 0D))).S(" ").V(Call(r2_11, V.Undef, GetIdx(p_92, 1D))).End()));
+pt_15 = Fn((V _arrowThis97, int _argc90, V p_96, V _a93, V _a94, V _a95, V[] _rest91) => {
+return ((V)(JsStrBuf.Begin().V(Call(r2_11, V.Undef, GetIdx(p_96, 0D))).S(" ").V(Call(r2_11, V.Undef, GetIdx(p_96, 1D))).End()));
 }, 1, "", true);
-polyD_16 = Fn((V _self1, int _argc93, V Q_99, V _a96, V _a97, V _a98, V[] _rest94) => {
-return ((V)((GtN(Get(Q_99, "length"), 2D) ? JsStrBuf.Begin().S("M").V(Invoke(Invoke(Q_99, "map", pt_15), "join", ((V)("L")))).S("Z").End() : "")));
+polyD_16 = Fn((V _arrowThis105, int _argc98, V Q_104, V _a101, V _a102, V _a103, V[] _rest99) => {
+return ((V)((GtN(Get(Q_104, "length"), 2D) ? JsStrBuf.Begin().S("M").V(Invoke(Invoke(Q_104, "map", pt_15), "join", ((V)("L")))).S("Z").End() : "")));
 }, 1, "", true);
-area_17 = Fn((V _self1, int _argc100, V Q_106, V _a103, V _a104, V _a105, V[] _rest101) => {
-double a_107 = 0;
-a_107 = 0D;
+area_17 = Fn((V _arrowThis113, int _argc106, V Q_112, V _a109, V _a110, V _a111, V[] _rest107) => {
+double a_114 = 0;
+a_114 = 0D;
 {
-double i_108 = 0;
-i_108 = 0D;
+double i_115 = 0;
+i_115 = 0D;
 while (true) {
-if (!(Lt(((V)(i_108)), Get(Q_106, "length")))) break;
-V p_110 = default;
-V q_111 = default;
-p_110 = GetIdx(Q_106, i_108);
-q_111 = GetIdx(Q_106, ((i_108 + 1D) % ToNum(Get(Q_106, "length"))));
-a_107 = (a_107 + ((ToNum(GetIdx(p_110, 0D)) * ToNum(GetIdx(q_111, 1D))) - (ToNum(GetIdx(q_111, 0D)) * ToNum(GetIdx(p_110, 1D)))));
-i_108++;
+if (!(Lt(((V)(i_115)), Get(Q_112, "length")))) break;
+V p_117 = default;
+V q_118 = default;
+p_117 = GetIdx(Q_112, i_115);
+q_118 = GetIdx(Q_112, ((i_115 + 1D) % ToNum(Get(Q_112, "length"))));
+a_114 = (a_114 + ((ToNum(GetIdx(p_117, 0D)) * ToNum(GetIdx(q_118, 1D))) - (ToNum(GetIdx(q_118, 0D)) * ToNum(GetIdx(p_117, 1D)))));
+i_115++;
 }
 }
-return ((V)((a_107 / 2D)));
+return ((V)((a_114 / 2D)));
 return default;
 }, 1, "", true);
-polyW_18 = Fn((V _self1, int _argc112, V Q_118, V _a115, V _a116, V _a117, V[] _rest113) => {
-V a_119 = default;
-if (LtN(Get(Q_118, "length"), 3D)) {
+polyW_18 = Fn((V _arrowThis126, int _argc119, V Q_125, V _a122, V _a123, V _a124, V[] _rest120) => {
+V a_127 = default;
+if (LtN(Get(Q_125, "length"), 3D)) {
 return ((V)(""));
 }
-a_119 = Call(area_17, V.Undef, Q_118);
-if ((System.Math.Abs(ToNum(a_119)) < 0.02)) {
+a_127 = Call(area_17, V.Undef, Q_125);
+if ((System.Math.Abs(ToNum(a_127)) < 0.02)) {
 return ((V)(""));
 }
-return Call(polyD_16, V.Undef, (GtN(a_119, 0D) ? Invoke(Invoke(Q_118, "slice"), "reverse") : Q_118));
+return Call(polyD_16, V.Undef, (GtN(a_127, 0D) ? Invoke(Invoke(Q_125, "slice"), "reverse") : Q_125));
 return default;
 }, 1, "", true);
-circD_19 = Fn((V _self1, int _argc120, V c_126, V r_127, V _a124, V _a125, V[] _rest121) => {
-return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(c_126, 0D)) - ToNum(r_127)))))).S(" ").V(Call(r2_11, V.Undef, GetIdx(c_126, 1D))).S("a").V(Call(r2_11, V.Undef, r_127)).S(" ").V(Call(r2_11, V.Undef, r_127)).S(" 0 1 0 ").V(Call(r2_11, V.Undef, ((V)((2D * ToNum(r_127)))))).S(" 0a").V(Call(r2_11, V.Undef, r_127)).S(" ").V(Call(r2_11, V.Undef, r_127)).S(" 0 1 0 ").V(Call(r2_11, V.Undef, ((V)(((-2D) * ToNum(r_127)))))).S(" 0Z").End()));
+circD_19 = Fn((V _arrowThis136, int _argc128, V c_134, V r_135, V _a132, V _a133, V[] _rest129) => {
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(c_134, 0D)) - ToNum(r_135)))))).S(" ").V(Call(r2_11, V.Undef, GetIdx(c_134, 1D))).S("a").V(Call(r2_11, V.Undef, r_135)).S(" ").V(Call(r2_11, V.Undef, r_135)).S(" 0 1 0 ").V(Call(r2_11, V.Undef, ((V)((2D * ToNum(r_135)))))).S(" 0a").V(Call(r2_11, V.Undef, r_135)).S(" ").V(Call(r2_11, V.Undef, r_135)).S(" 0 1 0 ").V(Call(r2_11, V.Undef, ((V)(((-2D) * ToNum(r_135)))))).S(" 0Z").End()));
 }, 2, "", true);
-ellD_20 = Fn((V _self1, int _argc128, V c_134, V rx_135, V ry_136, V a_137, V[] _rest129) => {
-V o_138 = default;
-double ca_139 = 0;
-double sa_140 = 0;
-o_138 = Arr();
-ca_139 = FdLibm.Cos(ToNum((a_137 is var _t141 && Truthy(_t141) ? _t141 : ((V)(0D)))));
-sa_140 = FdLibm.Sin(ToNum((a_137 is var _t142 && Truthy(_t142) ? _t142 : ((V)(0D)))));
+ellD_20 = Fn((V _arrowThis147, int _argc137, V c_143, V rx_144, V ry_145, V a_146, V[] _rest138) => {
+V o_148 = default;
+double ca_149 = 0;
+double sa_150 = 0;
+o_148 = Arr();
+ca_149 = FdLibm.Cos(ToNum((a_146 is var _t151 && Truthy(_t151) ? _t151 : ((V)(0D)))));
+sa_150 = FdLibm.Sin(ToNum((a_146 is var _t152 && Truthy(_t152) ? _t152 : ((V)(0D)))));
 {
-double k_143 = 0;
-k_143 = 0D;
+double k_153 = 0;
+k_153 = 0D;
 while (true) {
-if (!((k_143 < 16D))) break;
-double f_145 = 0;
-double x_146 = 0;
-double y_147 = 0;
-f_145 = ((k_143 / 16D) * TAU_9);
-x_146 = (ToNum(rx_135) * FdLibm.Cos(f_145));
-y_147 = (ToNum(ry_136) * FdLibm.Sin(f_145));
-Invoke(o_138, "push", Arr(((V)((ToNum(Add(GetIdx(c_134, 0D), ((V)((x_146 * ca_139))))) - (y_147 * sa_140)))), Add(Add(GetIdx(c_134, 1D), ((V)((x_146 * sa_140)))), ((V)((y_147 * ca_139))))));
-k_143++;
+if (!((k_153 < 16D))) break;
+double f_155 = 0;
+double x_156 = 0;
+double y_157 = 0;
+f_155 = ((k_153 / 16D) * TAU_9);
+x_156 = (ToNum(rx_144) * FdLibm.Cos(f_155));
+y_157 = (ToNum(ry_145) * FdLibm.Sin(f_155));
+Invoke(o_148, "push", Arr(((V)((ToNum(Add(GetIdx(c_143, 0D), ((V)((x_156 * ca_149))))) - (y_157 * sa_150)))), Add(Add(GetIdx(c_143, 1D), ((V)((x_156 * sa_150)))), ((V)((y_157 * ca_149))))));
+k_153++;
 }
 }
-return Call(polyW_18, V.Undef, o_138);
+return Call(polyW_18, V.Undef, o_148);
 return default;
 }, 4, "", true);
-runs_21 = Fn((V _self1, int _argc148, V pts_154, V ok_155, V _a152, V _a153, V[] _rest149) => {
-JsStrBuf d_156 = null;
-V pen_157 = default;
-d_156 = new JsStrBuf("");
-pen_157 = (false ? V.True : V.False);
+runs_21 = Fn((V _arrowThis166, int _argc158, V pts_164, V ok_165, V _a162, V _a163, V[] _rest159) => {
+JsStrBuf d_167 = null;
+V pen_168 = default;
+d_167 = new JsStrBuf("");
+pen_168 = (false ? V.True : V.False);
 {
-double i_158 = 0;
-i_158 = 0D;
+double i_169 = 0;
+i_169 = 0D;
 while (true) {
-if (!(Lt(((V)(i_158)), Get(pts_154, "length")))) break;
-if (Truthy(GetIdx(ok_155, i_158))) {
-d_156.S((Truthy(pen_157) ? "L" : "M")).V(Call(pt_15, V.Undef, GetIdx(pts_154, i_158)));
-pen_157 = (true ? V.True : V.False);
+if (!(Lt(((V)(i_169)), Get(pts_164, "length")))) break;
+if (Truthy(GetIdx(ok_165, i_169))) {
+d_167.S((Truthy(pen_168) ? "L" : "M")).V(Call(pt_15, V.Undef, GetIdx(pts_164, i_169)));
+pen_168 = (true ? V.True : V.False);
 } else {
-pen_157 = (false ? V.True : V.False);
+pen_168 = (false ? V.True : V.False);
 }
-i_158++;
+i_169++;
 }
 }
-return ((V)(d_156.Str));
+return ((V)(d_167.Str));
 return default;
 }, 2, "", true);
-rnd_22 = Fn((V _self1, int _argc160, V s_166, V _a163, V _a164, V _a165, V[] _rest161) => {
-double v_167 = 0;
-v_167 = (FdLibm.Sin(((ToNum(s_166) * 127.1) + 311.7)) * 43758.5453);
-return ((V)((v_167 - System.Math.Floor(v_167))));
+rnd_22 = Fn((V _arrowThis178, int _argc171, V s_177, V _a174, V _a175, V _a176, V[] _rest172) => {
+double v_179 = 0;
+v_179 = (FdLibm.Sin(((ToNum(s_177) * 127.1) + 311.7)) * 43758.5453);
+return ((V)((v_179 - System.Math.Floor(v_179))));
 return default;
 }, 1, "", true);
-subs_23 = Fn((V _self1, int _argc168, V segs_174, V n_175, V _a172, V _a173, V[] _rest169) => {
-V @out_176 = default;
-V cur_177 = default;
-V p_178 = default;
-@out_176 = Arr();
-cur_177 = V.Null;
-p_178 = Arr(((V)(0D)), ((V)(0D)));
+subs_23 = Fn((V _arrowThis188, int _argc180, V segs_186, V n_187, V _a184, V _a185, V[] _rest181) => {
+V @out_189 = default;
+V cur_190 = default;
+V p_191 = default;
+@out_189 = Arr();
+cur_190 = V.Null;
+p_191 = Arr(((V)(0D)), ((V)(0D)));
 {
-foreach (V _k179 in new JsIter(segs_174)) {
-V g_180 = default;
-g_180 = _k179;
-V c_181 = default;
-c_181 = Get(g_180, "c");
-if (SEqS(c_181, "M")) {
-cur_177 = Arr(GetIdx(Get(g_180, "p"), 0D));
-Invoke(@out_176, "push", cur_177);
-p_178 = GetIdx(Get(g_180, "p"), 0D);
+foreach (V _k192 in new JsIter(segs_186)) {
+V g_193 = default;
+g_193 = _k192;
+V c_194 = default;
+c_194 = Get(g_193, "c");
+if (SEqS(c_194, "M")) {
+cur_190 = Arr(GetIdx(Get(g_193, "p"), 0D));
+Invoke(@out_189, "push", cur_190);
+p_191 = GetIdx(Get(g_193, "p"), 0D);
 } else {
-if (SEqS(c_181, "Z")) {
-if (Truthy(cur_177)) {
-Set(cur_177, "closed", ((V)(1D)));
+if (SEqS(c_194, "Z")) {
+if (Truthy(cur_190)) {
+Set(cur_190, "closed", ((V)(1D)));
 }
 } else {
-if (!(Truthy(cur_177))) {
+if (!(Truthy(cur_190))) {
 continue;
 } else {
-if ((SEqS(c_181, "L") || SEqS(c_181, "T"))) {
-Invoke(cur_177, "push", GetIdx(Get(g_180, "p"), 0D));
-p_178 = GetIdx(Get(g_180, "p"), 0D);
+if ((SEqS(c_194, "L") || SEqS(c_194, "T"))) {
+Invoke(cur_190, "push", GetIdx(Get(g_193, "p"), 0D));
+p_191 = GetIdx(Get(g_193, "p"), 0D);
 } else {
-if ((SEqS(c_181, "Q") || SEqS(c_181, "S"))) {
-V a_182 = default;
-V b_183 = default;
-a_182 = GetIdx(Get(g_180, "p"), 0D);
-b_183 = GetIdx(Get(g_180, "p"), 1D);
+if ((SEqS(c_194, "Q") || SEqS(c_194, "S"))) {
+V a_195 = default;
+V b_196 = default;
+a_195 = GetIdx(Get(g_193, "p"), 0D);
+b_196 = GetIdx(Get(g_193, "p"), 1D);
 {
-double k_184 = 0;
-k_184 = 1D;
+double k_197 = 0;
+k_197 = 1D;
 while (true) {
-if (!(Le(((V)(k_184)), n_175))) break;
-double t_186 = 0;
-double u_187 = 0;
-t_186 = (k_184 / ToNum(n_175));
-u_187 = (1D - t_186);
-Invoke(cur_177, "push", Arr(((V)(((((u_187 * u_187) * ToNum(GetIdx(p_178, 0D))) + (((2D * u_187) * t_186) * ToNum(GetIdx(a_182, 0D)))) + ((t_186 * t_186) * ToNum(GetIdx(b_183, 0D)))))), ((V)(((((u_187 * u_187) * ToNum(GetIdx(p_178, 1D))) + (((2D * u_187) * t_186) * ToNum(GetIdx(a_182, 1D)))) + ((t_186 * t_186) * ToNum(GetIdx(b_183, 1D))))))));
-k_184++;
+if (!(Le(((V)(k_197)), n_187))) break;
+double t_199 = 0;
+double u_200 = 0;
+t_199 = (k_197 / ToNum(n_187));
+u_200 = (1D - t_199);
+Invoke(cur_190, "push", Arr(((V)(((((u_200 * u_200) * ToNum(GetIdx(p_191, 0D))) + (((2D * u_200) * t_199) * ToNum(GetIdx(a_195, 0D)))) + ((t_199 * t_199) * ToNum(GetIdx(b_196, 0D)))))), ((V)(((((u_200 * u_200) * ToNum(GetIdx(p_191, 1D))) + (((2D * u_200) * t_199) * ToNum(GetIdx(a_195, 1D)))) + ((t_199 * t_199) * ToNum(GetIdx(b_196, 1D))))))));
+k_197++;
 }
 }
-p_178 = b_183;
+p_191 = b_196;
 } else {
-if (SEqS(c_181, "C")) {
-V a_188 = default;
-V b_189 = default;
-V e_190 = default;
-a_188 = GetIdx(Get(g_180, "p"), 0D);
-b_189 = GetIdx(Get(g_180, "p"), 1D);
-e_190 = GetIdx(Get(g_180, "p"), 2D);
+if (SEqS(c_194, "C")) {
+V a_201 = default;
+V b_202 = default;
+V e_203 = default;
+a_201 = GetIdx(Get(g_193, "p"), 0D);
+b_202 = GetIdx(Get(g_193, "p"), 1D);
+e_203 = GetIdx(Get(g_193, "p"), 2D);
 {
-double k_191 = 0;
-k_191 = 1D;
+double k_204 = 0;
+k_204 = 1D;
 while (true) {
-if (!(Le(((V)(k_191)), n_175))) break;
-double t_193 = 0;
-double u_194 = 0;
-t_193 = (k_191 / ToNum(n_175));
-u_194 = (1D - t_193);
-Invoke(cur_177, "push", Arr(((V)(((((((u_194 * u_194) * u_194) * ToNum(GetIdx(p_178, 0D))) + ((((3D * u_194) * u_194) * t_193) * ToNum(GetIdx(a_188, 0D)))) + ((((3D * u_194) * t_193) * t_193) * ToNum(GetIdx(b_189, 0D)))) + (((t_193 * t_193) * t_193) * ToNum(GetIdx(e_190, 0D)))))), ((V)(((((((u_194 * u_194) * u_194) * ToNum(GetIdx(p_178, 1D))) + ((((3D * u_194) * u_194) * t_193) * ToNum(GetIdx(a_188, 1D)))) + ((((3D * u_194) * t_193) * t_193) * ToNum(GetIdx(b_189, 1D)))) + (((t_193 * t_193) * t_193) * ToNum(GetIdx(e_190, 1D))))))));
-k_191++;
+if (!(Le(((V)(k_204)), n_187))) break;
+double t_206 = 0;
+double u_207 = 0;
+t_206 = (k_204 / ToNum(n_187));
+u_207 = (1D - t_206);
+Invoke(cur_190, "push", Arr(((V)(((((((u_207 * u_207) * u_207) * ToNum(GetIdx(p_191, 0D))) + ((((3D * u_207) * u_207) * t_206) * ToNum(GetIdx(a_201, 0D)))) + ((((3D * u_207) * t_206) * t_206) * ToNum(GetIdx(b_202, 0D)))) + (((t_206 * t_206) * t_206) * ToNum(GetIdx(e_203, 0D)))))), ((V)(((((((u_207 * u_207) * u_207) * ToNum(GetIdx(p_191, 1D))) + ((((3D * u_207) * u_207) * t_206) * ToNum(GetIdx(a_201, 1D)))) + ((((3D * u_207) * t_206) * t_206) * ToNum(GetIdx(b_202, 1D)))) + (((t_206 * t_206) * t_206) * ToNum(GetIdx(e_203, 1D))))))));
+k_204++;
 }
 }
-p_178 = e_190;
-}
-}
-}
+p_191 = e_203;
 }
 }
 }
 }
 }
-return @out_176;
+}
+}
+}
+return @out_189;
 return default;
 }, 2, "", true);
 DA_24 = Arr(((V)("fill")), ((V)("stroke")), ((V)("stroke-width")), ((V)("opacity")), ((V)("stroke-linecap")), ((V)("stroke-linejoin")), ((V)("fill-opacity")), ((V)("stroke-opacity")));
-inh_25 = Fn((V _self1, int _argc195, V e_201, V k_202, V _a199, V _a200, V[] _rest196) => {
+inh_25 = Fn((V _arrowThis216, int _argc208, V e_214, V k_215, V _a212, V _a213, V[] _rest209) => {
 {
-V n_203 = default;
-n_203 = e_201;
+V n_217 = default;
+n_217 = e_214;
 while (true) {
-if (!(Truthy((n_203 is var _t205 && !Truthy(_t205) ? _t205 : Get(n_203, "getAttribute"))))) break;
-V v_206 = default;
-if (Truthy(((SEqS(Get(n_203, "tagName"), "g") ? V.True : V.False) is var _t207 && !Truthy(_t207) ? _t207 : Invoke(n_203, "hasAttribute", ((V)("filter")))))) {
+if (!(Truthy((n_217 is var _t219 && !Truthy(_t219) ? _t219 : Get(n_217, "getAttribute"))))) break;
+V v_220 = default;
+if (Truthy(((SEqS(Get(n_217, "tagName"), "g") ? V.True : V.False) is var _t221 && !Truthy(_t221) ? _t221 : Invoke(n_217, "hasAttribute", ((V)("filter")))))) {
 break;
 }
-v_206 = Invoke(n_203, "getAttribute", k_202);
-if ((!v_206.IsNullish && !(Truthy((((SEqS(k_202, "opacity") && !SEq(n_203, e_201)) ? V.True : V.False) is var _t208 && !Truthy(_t208) ? _t208 : Invoke(n_203, "hasAttribute", ((V)("data-k")))))))) {
-return v_206;
+v_220 = Invoke(n_217, "getAttribute", k_215);
+if ((!v_220.IsNullish && !(Truthy((((SEqS(k_215, "opacity") && !SEq(n_217, e_214)) ? V.True : V.False) is var _t222 && !Truthy(_t222) ? _t222 : Invoke(n_217, "hasAttribute", ((V)("data-k")))))))) {
+return v_220;
 }
-n_203 = Get(n_203, "parentNode");
+n_217 = Get(n_217, "parentNode");
 }
 }
 return V.Null;
 return default;
 }, 2, "", true);
-decD_26 = Fn((V _self1, int _argc209, V o_215, V f_216, V _a213, V _a214, V[] _rest210) => {
-return (Invoke(Invoke(Get(o_215, "L"), "map", Fn((V _self1, int _argc217, V L_223, V _a220, V _a221, V _a222, V[] _rest218) => {
-return ((V)((GtN(Get(L_223, "length"), 1D) ? JsStrBuf.Begin().S("M").V(Invoke(Invoke(L_223, "map", Fn((V _self1, int _argc224, V p_230, V _a227, V _a228, V _a229, V[] _rest225) => {
-return Call(pt_15, V.Undef, Call(f_216, V.Undef, GetIdx(p_230, 0D), GetIdx(p_230, 1D)));
-}, 1, "", true)), "join", ((V)("L")))).S((Truthy(Get(L_223, "closed")) ? "Z" : "")).End() : "")));
-}, 1, "", true)), "join", ((V)(""))) is var _t231 && Truthy(_t231) ? _t231 : ((V)("M0 0")));
+decD_26 = Fn((V _arrowThis231, int _argc223, V o_229, V f_230, V _a227, V _a228, V[] _rest224) => {
+return (Invoke(Invoke(Get(o_229, "L"), "map", Fn((V _arrowThis239, int _argc232, V L_238, V _a235, V _a236, V _a237, V[] _rest233) => {
+return ((V)((GtN(Get(L_238, "length"), 1D) ? JsStrBuf.Begin().S("M").V(Invoke(Invoke(L_238, "map", Fn((V _arrowThis247, int _argc240, V p_246, V _a243, V _a244, V _a245, V[] _rest241) => {
+return Call(pt_15, V.Undef, Call(f_230, V.Undef, GetIdx(p_246, 0D), GetIdx(p_246, 1D)));
+}, 1, "", true)), "join", ((V)("L")))).S((Truthy(Get(L_238, "closed")) ? "Z" : "")).End() : "")));
+}, 1, "", true)), "join", ((V)(""))) is var _t248 && Truthy(_t248) ? _t248 : ((V)("M0 0")));
 }, 2, "", true);
-LV_27 = Call(Fn((V _self1, int _argc232, V v_238, V _a235, V _a236, V _a237, V[] _rest233) => {
-double L_239 = 0;
-L_239 = Hypot(ToNum(GetIdx(v_238, 0D)), ToNum(GetIdx(v_238, 1D)), ToNum(GetIdx(v_238, 2D)));
-return Invoke(v_238, "map", Fn((V _self1, int _argc240, V c_246, V _a243, V _a244, V _a245, V[] _rest241) => {
-return ((V)((ToNum(c_246) / L_239)));
+LV_27 = Call(Fn((V _arrowThis256, int _argc249, V v_255, V _a252, V _a253, V _a254, V[] _rest250) => {
+double L_257 = 0;
+L_257 = Hypot(ToNum(GetIdx(v_255, 0D)), ToNum(GetIdx(v_255, 1D)), ToNum(GetIdx(v_255, 2D)));
+return Invoke(v_255, "map", Fn((V _arrowThis265, int _argc258, V c_264, V _a261, V _a262, V _a263, V[] _rest259) => {
+return ((V)((ToNum(c_264) / L_257)));
 }, 1, "", true));
 return default;
 }, 1, "", true), V.Undef, Arr(((V)((-0.5))), ((V)((-0.55))), ((V)(0.67))));
-pal_28 = Fn((V _self1, int _argc247, V dark_253, V mid_254, V light_255, V n_256, V[] _rest248) => {
-V hx_257 = default;
-V A_258 = default;
-V M_259 = default;
-V L_260 = default;
-hx_257 = Fn((V _self1, int _argc261, V c_267, V _a264, V _a265, V _a266, V[] _rest262) => {
-return Invoke(Arr(((V)(1D)), ((V)(3D)), ((V)(5D))), "map", Fn((V _self1, int _argc268, V i_274, V _a271, V _a272, V _a273, V[] _rest269) => {
-return ((V)(ParseInt(Invoke(c_267, "slice", i_274, Add(i_274, ((V)(2D)))), ((V)(16D)))));
+pal_28 = Fn((V _arrowThis276, int _argc266, V dark_272, V mid_273, V light_274, V n_275, V[] _rest267) => {
+V hx_277 = default;
+V A_278 = default;
+V M_279 = default;
+V L_280 = default;
+hx_277 = Fn((V _arrowThis288, int _argc281, V c_287, V _a284, V _a285, V _a286, V[] _rest282) => {
+return Invoke(Arr(((V)(1D)), ((V)(3D)), ((V)(5D))), "map", Fn((V _arrowThis296, int _argc289, V i_295, V _a292, V _a293, V _a294, V[] _rest290) => {
+return ((V)(ParseInt(Invoke(c_287, "slice", i_295, Add(i_295, ((V)(2D)))), ((V)(16D)))));
 }, 1, "", true));
 }, 1, "", true);
-A_258 = Call(hx_257, V.Undef, dark_253);
-M_259 = Call(hx_257, V.Undef, mid_254);
-L_260 = Call(hx_257, V.Undef, light_255);
-return Array_from(NewObj(1).Put("length", Add(n_256, ((V)(1D)))).V, Fn((V _self1, int _argc275, V __281, V i_282, V _a279, V _a280, V[] _rest276) => {
-double t_283 = 0;
-V a_284 = default;
-V b_285 = default;
-double u_286 = 0;
-t_283 = (ToNum(i_282) / ToNum(n_256));
-a_284 = ((t_283 < 0.5) ? A_258 : M_259);
-b_285 = ((t_283 < 0.5) ? M_259 : L_260);
-u_286 = ((t_283 < 0.5) ? (t_283 / 0.5) : ((t_283 - 0.5) / 0.5));
-return ((V)(JsStrBuf.Begin().S("#").V(Invoke(Invoke(a_284, "map", Fn((V _self1, int _argc287, V v_293, V k_294, V _a291, V _a292, V[] _rest288) => {
-return Invoke(Invoke(((V)(Round(ToNum(Add(v_293, ((V)(((ToNum(GetK(b_285, k_294)) - ToNum(v_293)) * u_286)))))))), "toString", ((V)(16D))), "padStart", ((V)(2D)), ((V)("0")));
+A_278 = Call(hx_277, V.Undef, dark_272);
+M_279 = Call(hx_277, V.Undef, mid_273);
+L_280 = Call(hx_277, V.Undef, light_274);
+return Array_from(NewObj(1).Put("length", Add(n_275, ((V)(1D)))).V, Fn((V _arrowThis305, int _argc297, V __303, V i_304, V _a301, V _a302, V[] _rest298) => {
+double t_306 = 0;
+V a_307 = default;
+V b_308 = default;
+double u_309 = 0;
+t_306 = (ToNum(i_304) / ToNum(n_275));
+a_307 = ((t_306 < 0.5) ? A_278 : M_279);
+b_308 = ((t_306 < 0.5) ? M_279 : L_280);
+u_309 = ((t_306 < 0.5) ? (t_306 / 0.5) : ((t_306 - 0.5) / 0.5));
+return ((V)(JsStrBuf.Begin().S("#").V(Invoke(Invoke(a_307, "map", Fn((V _arrowThis318, int _argc310, V v_316, V k_317, V _a314, V _a315, V[] _rest311) => {
+return Invoke(Invoke(((V)(Round(ToNum(Add(v_316, ((V)(((ToNum(GetK(b_308, k_317)) - ToNum(v_316)) * u_309)))))))), "toString", ((V)(16D))), "padStart", ((V)(2D)), ((V)("0")));
 }, 2, "", true)), "join", ((V)("")))).End()));
 return default;
 }, 2, "", true));
 return default;
 }, 4, "", true);
-pleatSet_29 = Fn((V _self1, int _argc295, V sp_301, V par_302, V linePar_303, V _a300, V[] _rest296) => {
-V F_304 = default;
-double H_305 = 0;
-F_304 = Arr();
-H_305 = (TAU_9 / (2D * ToNum(Get(sp_301, "N"))));
+pleatSet_29 = Fn((V _arrowThis328, int _argc319, V sp_325, V par_326, V linePar_327, V _a324, V[] _rest320) => {
+V F_329 = default;
+double H_330 = 0;
+F_329 = Arr();
+H_330 = (TAU_9 / (2D * ToNum(Get(sp_325, "N"))));
 {
-double k_306 = 0;
-k_306 = 0D;
+double k_331 = 0;
+k_331 = 0D;
 while (true) {
-if (!(Lt(((V)(k_306)), Get(sp_301, "N")))) break;
-V fg_308 = default;
-double j_309 = 0;
-fg_308 = Add((Get(sp_301, "ph") is var _t310 && Truthy(_t310) ? _t310 : ((V)(0D))), ((V)(((k_306 * TAU_9) / ToNum(Get(sp_301, "N"))))));
-j_309 = ((ToNum(Call(rnd_22, V.Undef, ((V)((k_306 * 1.7))))) - 0.5) * ToNum((Get(sp_301, "jit") is var _t311 && Truthy(_t311) ? _t311 : ((V)(0D)))));
+if (!(Lt(((V)(k_331)), Get(sp_325, "N")))) break;
+V fg_333 = default;
+double j_334 = 0;
+fg_333 = Add((Get(sp_325, "ph") is var _t335 && Truthy(_t335) ? _t335 : ((V)(0D))), ((V)(((k_331 * TAU_9) / ToNum(Get(sp_325, "N"))))));
+j_334 = ((ToNum(Call(rnd_22, V.Undef, ((V)((k_331 * 1.7))))) - 0.5) * ToNum((Get(sp_325, "jit") is var _t336 && Truthy(_t336) ? _t336 : ((V)(0D)))));
 {
-double side_312 = 0;
-side_312 = 0D;
+double side_337 = 0;
+side_337 = 0D;
 while (true) {
-if (!((side_312 < 2D))) break;
-Invoke(F_304, "push", NewObj(7).Put("side", ((V)(side_312))).Put("fa", (NumTruthy(side_312) ? Add(fg_308, ((V)(H_305))) : fg_308)).Put("fb", (NumTruthy(side_312) ? Add(fg_308, ((V)((2D * H_305)))) : Add(fg_308, ((V)(H_305))))).Put("yge", Add(Get(sp_301, "yG"), ((V)((j_309 * 0.5))))).Put("yre", Add(Get(sp_301, "yR"), ((V)(j_309)))).Put("id", ((V)(JsStrBuf.Begin().S("p").N(k_306).S("_").N(side_312).End()))).Put("e", Call(el_14, V.Undef, ((V)("path")), NewObj(0).V, par_302)).V);
-side_312++;
+if (!((side_337 < 2D))) break;
+Invoke(F_329, "push", NewObj(7).Put("side", ((V)(side_337))).Put("fa", (NumTruthy(side_337) ? Add(fg_333, ((V)(H_330))) : fg_333)).Put("fb", (NumTruthy(side_337) ? Add(fg_333, ((V)((2D * H_330)))) : Add(fg_333, ((V)(H_330))))).Put("yge", Add(Get(sp_325, "yG"), ((V)((j_334 * 0.5))))).Put("yre", Add(Get(sp_325, "yR"), ((V)(j_334)))).Put("id", ((V)(JsStrBuf.Begin().S("p").N(k_331).S("_").N(side_337).End()))).Put("e", Call(el_14, V.Undef, ((V)("path")), NewObj(0).V, par_326)).V);
+side_337++;
 }
 }
-k_306++;
+k_331++;
 }
 }
-return NewObj(6).Put("sp", sp_301).Put("F", F_304).Put("H", ((V)(H_305))).Put("par", par_302).Put("ln", Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", Get(sp_301, "lc")).Put("stroke-width", Get(sp_301, "lw")).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.75))).V, (linePar_303 is var _t314 && Truthy(_t314) ? _t314 : Get(par_302, "parentNode")))).Put("PAL", Call(pal_28, V.Undef, GetIdx(Get(sp_301, "cols"), 0D), GetIdx(Get(sp_301, "cols"), 1D), GetIdx(Get(sp_301, "cols"), 2D), ((V)(24D)))).V;
+return NewObj(6).Put("sp", sp_325).Put("F", F_329).Put("H", ((V)(H_330))).Put("par", par_326).Put("ln", Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", Get(sp_325, "lc")).Put("stroke-width", Get(sp_325, "lw")).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.75))).V, (linePar_327 is var _t339 && Truthy(_t339) ? _t339 : Get(par_326, "parentNode")))).Put("PAL", Call(pal_28, V.Undef, GetIdx(Get(sp_325, "cols"), 0D), GetIdx(Get(sp_325, "cols"), 1D), GetIdx(Get(sp_325, "cols"), 2D), ((V)(24D)))).V;
 return default;
 }, 3, "", true);
-pleatDraw_30 = Fn((V _self1, int _argc315, V D_321, V PS_322, V proj_323, V Z_324, V[] _rest316) => {
-V sp_326 = default;
-V F_327 = default;
-V H_328 = default;
-V rT_329 = default;
-V y0_330 = default;
-V yR_331 = default;
-V tw_332 = default;
-V dep_333 = default;
-V U_334 = default;
-V TW_335 = default;
-V P3d_336 = default;
-JsStrBuf gl_337 = null;
-JsStrBuf lob_338 = null;
-V L_339 = default;
-V xt_325 = default;
-xt_325 = (_argc315 > 4 ? _rest316[0] : V.Undef);
-{ V _t340 = PS_322;
-if (_t340.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t340));
-{ V _t341 = Get(_t340, "sp");
-sp_326 = _t341; }
-{ V _t342 = Get(_t340, "F");
-F_327 = _t342; }
-{ V _t343 = Get(_t340, "H");
-H_328 = _t343; } }
-{ V _t344 = sp_326;
-if (_t344.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t344));
-{ V _t345 = Get(_t344, "rT");
-rT_329 = _t345; }
-{ V _t346 = Get(_t344, "y0");
-y0_330 = _t346; }
-{ V _t347 = Get(_t344, "yR");
-yR_331 = _t347; }
-{ V _t348 = Get(_t344, "tw");
-tw_332 = _t348; }
-{ V _t349 = Get(_t344, "dep");
-dep_333 = _t349; } }
-U_334 = Fn((V _self1, int _argc350, V y_356, V _a353, V _a354, V _a355, V[] _rest351) => {
-return Call(clamp_12, V.Undef, ((V)(((ToNum(y_356) - ToNum(y0_330)) / (ToNum(yR_331) - ToNum(y0_330))))), ((V)(0D)), ((V)(1D)));
+pleatDraw_30 = Fn((V _arrowThis351, int _argc340, V D_346, V PS_347, V proj_348, V Z_349, V[] _rest341) => {
+V sp_352 = default;
+V F_353 = default;
+V H_354 = default;
+V rT_355 = default;
+V y0_356 = default;
+V yR_357 = default;
+V tw_358 = default;
+V dep_359 = default;
+V U_360 = default;
+V TW_361 = default;
+V P3d_362 = default;
+JsStrBuf gl_363 = null;
+JsStrBuf lob_364 = null;
+V L_365 = default;
+V xt_350 = default;
+xt_350 = (_argc340 > 4 ? _rest341[0] : V.Undef);
+{ V _t366 = PS_347;
+if (_t366.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t366));
+{ V _t367 = Get(_t366, "sp");
+sp_352 = _t367; }
+{ V _t368 = Get(_t366, "F");
+F_353 = _t368; }
+{ V _t369 = Get(_t366, "H");
+H_354 = _t369; } }
+{ V _t370 = sp_352;
+if (_t370.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t370));
+{ V _t371 = Get(_t370, "rT");
+rT_355 = _t371; }
+{ V _t372 = Get(_t370, "y0");
+y0_356 = _t372; }
+{ V _t373 = Get(_t370, "yR");
+yR_357 = _t373; }
+{ V _t374 = Get(_t370, "tw");
+tw_358 = _t374; }
+{ V _t375 = Get(_t370, "dep");
+dep_359 = _t375; } }
+U_360 = Fn((V _arrowThis383, int _argc376, V y_382, V _a379, V _a380, V _a381, V[] _rest377) => {
+return Call(clamp_12, V.Undef, ((V)(((ToNum(y_382) - ToNum(y0_356)) / (ToNum(yR_357) - ToNum(y0_356))))), ((V)(0D)), ((V)(1D)));
 }, 1, "", true);
-TW_335 = Fn((V _self1, int _argc357, V u_363, V _a360, V _a361, V _a362, V[] _rest358) => {
-return Add(Call(tw_332, V.Undef, u_363), ((V)((ToNum(xt_325) * (1D - ToNum(u_363))))));
+TW_361 = Fn((V _arrowThis391, int _argc384, V u_390, V _a387, V _a388, V _a389, V[] _rest385) => {
+return Add(Call(tw_358, V.Undef, u_390), ((V)((ToNum(xt_350) * (1D - ToNum(u_390))))));
 }, 1, "", true);
-P3d_336 = Fn((V _self1, int _argc364, V f_370, V y_371, V ridge_372, V _a369, V[] _rest365) => {
-V u_373 = default;
-V ff_374 = default;
-V r_375 = default;
-u_373 = Call(U_334, V.Undef, y_371);
-ff_374 = Add(f_370, Call(TW_335, V.Undef, u_373));
-r_375 = Add(Call(rT_329, V.Undef, y_371), (Truthy(ridge_372) ? Call(dep_333, V.Undef, u_373) : ((V)((-0.25)))));
-return Call(proj_323, V.Undef, ((V)((50D + (ToNum(r_375) * FdLibm.Sin(ToNum(ff_374)))))), y_371, ((V)((ToNum(r_375) * FdLibm.Cos(ToNum(ff_374))))));
+P3d_362 = Fn((V _arrowThis401, int _argc392, V f_398, V y_399, V ridge_400, V _a397, V[] _rest393) => {
+V u_402 = default;
+V ff_403 = default;
+V r_404 = default;
+u_402 = Call(U_360, V.Undef, y_399);
+ff_403 = Add(f_398, Call(TW_361, V.Undef, u_402));
+r_404 = Add(Call(rT_355, V.Undef, y_399), (Truthy(ridge_400) ? Call(dep_359, V.Undef, u_402) : ((V)((-0.25)))));
+return Call(proj_348, V.Undef, ((V)((50D + (ToNum(r_404) * FdLibm.Sin(ToNum(ff_403)))))), y_399, ((V)((ToNum(r_404) * FdLibm.Cos(ToNum(ff_403))))));
 return default;
 }, 3, "", true);
-gl_337 = new JsStrBuf("");
-lob_338 = new JsStrBuf("");
-L_339 = Arr();
-Invoke(F_327, "forEach", Fn((V _self1, int _argc376, V o_382, V _a379, V _a380, V _a381, V[] _rest377) => {
-double um_383 = 0;
-V ym_384 = default;
-V fm_385 = default;
-V rm_386 = default;
-double be_387 = 0;
-V az_388 = default;
-double g_389 = 0;
-V n_390 = default;
-V m_391 = default;
-V fz_392 = default;
-V p0_393 = default;
-V p1_394 = default;
-double sx_395 = 0;
-double sy_396 = 0;
-V ln_397 = default;
-double b_398 = 0;
-V ra_399 = default;
-V rb_400 = default;
-V ea_401 = default;
-V eb_402 = default;
-V A_403 = default;
-V B_404 = default;
-V lo_405 = default;
-V c_406 = default;
-um_383 = 0.45;
-ym_384 = Add(y0_330, ((V)(((ToNum(yR_331) - ToNum(y0_330)) * um_383))));
-fm_385 = Add(((V)((ToNum(Add(Get(o_382, "fa"), Get(o_382, "fb"))) / 2D))), Call(TW_335, V.Undef, ((V)(um_383))));
-rm_386 = Call(rT_329, V.Undef, ym_384);
-be_387 = (FdLibm.Atan2(ToNum(Add(Call(dep_333, V.Undef, ((V)(um_383))), ((V)(0.25)))), (ToNum(rm_386) * ToNum(H_328))) * (Truthy(Get(o_382, "side")) ? 1D : (-1D)));
-az_388 = Add(fm_385, ((V)(be_387)));
-g_389 = FdLibm.Atan(((ToNum(Call(rT_329, V.Undef, Add(ym_384, ((V)(1D))))) - ToNum(Call(rT_329, V.Undef, ((V)((ToNum(ym_384) - 1D)))))) / 2D));
-n_390 = Arr(((V)((FdLibm.Sin(ToNum(az_388)) * FdLibm.Cos(g_389)))), ((V)((-FdLibm.Sin(g_389)))), ((V)((FdLibm.Cos(ToNum(az_388)) * FdLibm.Cos(g_389)))));
-m_391 = Arr(((V)((50D + (ToNum(rm_386) * FdLibm.Sin(ToNum(fm_385)))))), ym_384, ((V)((ToNum(rm_386) * FdLibm.Cos(ToNum(fm_385))))));
-fz_392 = Invoke(D_321, "facing", GetIdx(m_391, 0D), GetIdx(m_391, 1D), GetIdx(m_391, 2D), GetIdx(n_390, 0D), GetIdx(n_390, 1D), GetIdx(n_390, 2D));
-if (LeN(fz_392, 0.02)) {
-if (!SEqN(Get(o_382, "on"), 0D)) {
-Set(o_382, "on", ((V)(0D)));
-Invoke(Get(o_382, "e"), "setAttribute", ((V)("d")), ((V)("M0 0")));
+gl_363 = new JsStrBuf("");
+lob_364 = new JsStrBuf("");
+L_365 = Arr();
+Invoke(F_353, "forEach", Fn((V _arrowThis412, int _argc405, V o_411, V _a408, V _a409, V _a410, V[] _rest406) => {
+double um_413 = 0;
+V ym_414 = default;
+V fm_415 = default;
+V rm_416 = default;
+double be_417 = 0;
+V az_418 = default;
+double g_419 = 0;
+V n_420 = default;
+V m_421 = default;
+V fz_422 = default;
+V p0_423 = default;
+V p1_424 = default;
+double sx_425 = 0;
+double sy_426 = 0;
+V ln_427 = default;
+double b_428 = 0;
+V ra_429 = default;
+V rb_430 = default;
+V ea_431 = default;
+V eb_432 = default;
+V A_433 = default;
+V B_434 = default;
+V lo_435 = default;
+V c_436 = default;
+um_413 = 0.45;
+ym_414 = Add(y0_356, ((V)(((ToNum(yR_357) - ToNum(y0_356)) * um_413))));
+fm_415 = Add(((V)((ToNum(Add(Get(o_411, "fa"), Get(o_411, "fb"))) / 2D))), Call(TW_361, V.Undef, ((V)(um_413))));
+rm_416 = Call(rT_355, V.Undef, ym_414);
+be_417 = (FdLibm.Atan2(ToNum(Add(Call(dep_359, V.Undef, ((V)(um_413))), ((V)(0.25)))), (ToNum(rm_416) * ToNum(H_354))) * (Truthy(Get(o_411, "side")) ? 1D : (-1D)));
+az_418 = Add(fm_415, ((V)(be_417)));
+g_419 = FdLibm.Atan(((ToNum(Call(rT_355, V.Undef, Add(ym_414, ((V)(1D))))) - ToNum(Call(rT_355, V.Undef, ((V)((ToNum(ym_414) - 1D)))))) / 2D));
+n_420 = Arr(((V)((FdLibm.Sin(ToNum(az_418)) * FdLibm.Cos(g_419)))), ((V)((-FdLibm.Sin(g_419)))), ((V)((FdLibm.Cos(ToNum(az_418)) * FdLibm.Cos(g_419)))));
+m_421 = Arr(((V)((50D + (ToNum(rm_416) * FdLibm.Sin(ToNum(fm_415)))))), ym_414, ((V)((ToNum(rm_416) * FdLibm.Cos(ToNum(fm_415))))));
+fz_422 = Invoke(D_346, "facing", GetIdx(m_421, 0D), GetIdx(m_421, 1D), GetIdx(m_421, 2D), GetIdx(n_420, 0D), GetIdx(n_420, 1D), GetIdx(n_420, 2D));
+if (LeN(fz_422, 0.02)) {
+if (!SEqN(Get(o_411, "on"), 0D)) {
+Set(o_411, "on", ((V)(0D)));
+Invoke(Get(o_411, "e"), "setAttribute", ((V)("d")), ((V)("M0 0")));
 }
 return default;
 }
-Set(o_382, "on", ((V)(1D)));
-p0_393 = Call(proj_323, V.Undef, GetIdx(m_391, 0D), GetIdx(m_391, 1D), GetIdx(m_391, 2D));
-p1_394 = Call(proj_323, V.Undef, Add(GetIdx(m_391, 0D), GetIdx(n_390, 0D)), Add(GetIdx(m_391, 1D), GetIdx(n_390, 1D)), Add(GetIdx(m_391, 2D), GetIdx(n_390, 2D)));
-sx_395 = ((ToNum(GetIdx(p1_394, 0D)) - ToNum(GetIdx(p0_393, 0D))) / ToNum(Get(D_321, "kS")));
-sy_396 = ((ToNum(GetIdx(p1_394, 1D)) - ToNum(GetIdx(p0_393, 1D))) / ToNum(Get(D_321, "kS")));
-ln_397 = (((V)(Hypot(sx_395, sy_396, ToNum(fz_392)))) is var _t407 && Truthy(_t407) ? _t407 : ((V)(1D)));
-b_398 = ((((sx_395 * ToNum(GetIdx(LV_27, 0D))) + (sy_396 * ToNum(GetIdx(LV_27, 1D)))) + (ToNum(fz_392) * ToNum(GetIdx(LV_27, 2D)))) / ToNum(ln_397));
-ra_399 = (SEqN(Get(o_382, "side"), 1D) ? V.True : V.False);
-rb_400 = (SEqN(Get(o_382, "side"), 0D) ? V.True : V.False);
-ea_401 = (Truthy(ra_399) ? Get(o_382, "yre") : Get(o_382, "yge"));
-eb_402 = (Truthy(rb_400) ? Get(o_382, "yre") : Get(o_382, "yge"));
-A_403 = Arr();
-B_404 = Arr();
-lo_405 = Arr();
+Set(o_411, "on", ((V)(1D)));
+p0_423 = Call(proj_348, V.Undef, GetIdx(m_421, 0D), GetIdx(m_421, 1D), GetIdx(m_421, 2D));
+p1_424 = Call(proj_348, V.Undef, Add(GetIdx(m_421, 0D), GetIdx(n_420, 0D)), Add(GetIdx(m_421, 1D), GetIdx(n_420, 1D)), Add(GetIdx(m_421, 2D), GetIdx(n_420, 2D)));
+sx_425 = ((ToNum(GetIdx(p1_424, 0D)) - ToNum(GetIdx(p0_423, 0D))) / ToNum(Get(D_346, "kS")));
+sy_426 = ((ToNum(GetIdx(p1_424, 1D)) - ToNum(GetIdx(p0_423, 1D))) / ToNum(Get(D_346, "kS")));
+ln_427 = (((V)(Hypot(sx_425, sy_426, ToNum(fz_422)))) is var _t437 && Truthy(_t437) ? _t437 : ((V)(1D)));
+b_428 = ((((sx_425 * ToNum(GetIdx(LV_27, 0D))) + (sy_426 * ToNum(GetIdx(LV_27, 1D)))) + (ToNum(fz_422) * ToNum(GetIdx(LV_27, 2D)))) / ToNum(ln_427));
+ra_429 = (SEqN(Get(o_411, "side"), 1D) ? V.True : V.False);
+rb_430 = (SEqN(Get(o_411, "side"), 0D) ? V.True : V.False);
+ea_431 = (Truthy(ra_429) ? Get(o_411, "yre") : Get(o_411, "yge"));
+eb_432 = (Truthy(rb_430) ? Get(o_411, "yre") : Get(o_411, "yge"));
+A_433 = Arr();
+B_434 = Arr();
+lo_435 = Arr();
 {
-double i_408 = 0;
-i_408 = 0D;
+double i_438 = 0;
+i_438 = 0D;
 while (true) {
-if (!((i_408 <= 10D))) break;
-Invoke(A_403, "push", Call(P3d_336, V.Undef, Get(o_382, "fa"), Add(y0_330, ((V)((((ToNum(ea_401) - ToNum(y0_330)) * i_408) / 10D)))), ra_399));
-Invoke(B_404, "push", Call(P3d_336, V.Undef, Get(o_382, "fb"), Add(y0_330, ((V)((((ToNum(eb_402) - ToNum(y0_330)) * i_408) / 10D)))), rb_400));
-i_408++;
+if (!((i_438 <= 10D))) break;
+Invoke(A_433, "push", Call(P3d_362, V.Undef, Get(o_411, "fa"), Add(y0_356, ((V)((((ToNum(ea_431) - ToNum(y0_356)) * i_438) / 10D)))), ra_429));
+Invoke(B_434, "push", Call(P3d_362, V.Undef, Get(o_411, "fb"), Add(y0_356, ((V)((((ToNum(eb_432) - ToNum(y0_356)) * i_438) / 10D)))), rb_430));
+i_438++;
 }
 }
 {
-double i_410 = 0;
-i_410 = 1D;
+double i_440 = 0;
+i_440 = 1D;
 while (true) {
-if (!((i_410 <= 5D))) break;
-double t_412 = 0;
-V f_413 = default;
-double s_414 = 0;
-V y_415 = default;
-V u_416 = default;
-double r_417 = 0;
-V ff_418 = default;
-t_412 = (i_410 / 6D);
-f_413 = Add(Get(o_382, "fa"), ((V)(((ToNum(Get(o_382, "fb")) - ToNum(Get(o_382, "fa"))) * t_412))));
-s_414 = FdLibm.Sin((((Truthy(Get(o_382, "side")) ? (1D - t_412) : t_412) * System.Math.PI) / 2D));
-y_415 = Add(Get(o_382, "yge"), ((V)(((ToNum(Get(o_382, "yre")) - ToNum(Get(o_382, "yge"))) * s_414))));
-u_416 = Call(U_334, V.Undef, y_415);
-r_417 = ((ToNum(Call(rT_329, V.Undef, y_415)) - 0.25) + (ToNum(Add(Call(dep_333, V.Undef, u_416), ((V)(0.25)))) * s_414));
-ff_418 = Add(f_413, Call(TW_335, V.Undef, u_416));
-Invoke(lo_405, "push", Call(proj_323, V.Undef, ((V)((50D + (r_417 * FdLibm.Sin(ToNum(ff_418)))))), y_415, ((V)((r_417 * FdLibm.Cos(ToNum(ff_418)))))));
-i_410++;
+if (!((i_440 <= 5D))) break;
+double t_442 = 0;
+V f_443 = default;
+double s_444 = 0;
+V y_445 = default;
+V u_446 = default;
+double r_447 = 0;
+V ff_448 = default;
+t_442 = (i_440 / 6D);
+f_443 = Add(Get(o_411, "fa"), ((V)(((ToNum(Get(o_411, "fb")) - ToNum(Get(o_411, "fa"))) * t_442))));
+s_444 = FdLibm.Sin((((Truthy(Get(o_411, "side")) ? (1D - t_442) : t_442) * System.Math.PI) / 2D));
+y_445 = Add(Get(o_411, "yge"), ((V)(((ToNum(Get(o_411, "yre")) - ToNum(Get(o_411, "yge"))) * s_444))));
+u_446 = Call(U_360, V.Undef, y_445);
+r_447 = ((ToNum(Call(rT_355, V.Undef, y_445)) - 0.25) + (ToNum(Add(Call(dep_359, V.Undef, u_446), ((V)(0.25)))) * s_444));
+ff_448 = Add(f_443, Call(TW_361, V.Undef, u_446));
+Invoke(lo_435, "push", Call(proj_348, V.Undef, ((V)((50D + (r_447 * FdLibm.Sin(ToNum(ff_448)))))), y_445, ((V)((r_447 * FdLibm.Cos(ToNum(ff_448)))))));
+i_440++;
 }
 }
-Invoke(Get(o_382, "e"), "setAttribute", ((V)("d")), Call(polyD_16, V.Undef, Invoke(A_403, "concat", lo_405, Invoke(Invoke(B_404, "slice"), "reverse"))));
-c_406 = GetIdx(Get(PS_322, "PAL"), Round((ToNum(Call(clamp_12, V.Undef, ((V)((0.3 + (0.95 * b_398)))), ((V)(0D)), ((V)(1D)))) * 24D)));
-if (!SEq(Get(o_382, "c"), c_406)) {
-Set(o_382, "c", c_406);
-Invoke(Get(o_382, "e"), "setAttribute", ((V)("fill")), c_406);
+Invoke(Get(o_411, "e"), "setAttribute", ((V)("d")), Call(polyD_16, V.Undef, Invoke(A_433, "concat", lo_435, Invoke(Invoke(B_434, "slice"), "reverse"))));
+c_436 = GetIdx(Get(PS_347, "PAL"), Round((ToNum(Call(clamp_12, V.Undef, ((V)((0.3 + (0.95 * b_428)))), ((V)(0D)), ((V)(1D)))) * 24D)));
+if (!SEq(Get(o_411, "c"), c_436)) {
+Set(o_411, "c", c_436);
+Invoke(Get(o_411, "e"), "setAttribute", ((V)("fill")), c_436);
 }
-if (!(Truthy(Get(o_382, "side")))) {
-gl_337.S("M").V(Invoke(Invoke(A_403, "map", pt_15), "join", ((V)("L"))));
+if (!(Truthy(Get(o_411, "side")))) {
+gl_363.S("M").V(Invoke(Invoke(A_433, "map", pt_15), "join", ((V)("L"))));
 }
-if (Truthy(Get(sp_326, "lobe"))) {
-lob_338.S("M").V(Invoke(Invoke(lo_405, "map", Fn((V _self1, int _argc419, V p_425, V _a422, V _a423, V _a424, V[] _rest420) => {
-return Call(pt_15, V.Undef, Arr(GetIdx(p_425, 0D), Add(GetIdx(p_425, 1D), ((V)((0.7 * ToNum(Get(D_321, "kS"))))))));
+if (Truthy(Get(sp_352, "lobe"))) {
+lob_364.S("M").V(Invoke(Invoke(lo_435, "map", Fn((V _arrowThis456, int _argc449, V p_455, V _a452, V _a453, V _a454, V[] _rest450) => {
+return Call(pt_15, V.Undef, Arr(GetIdx(p_455, 0D), Add(GetIdx(p_455, 1D), ((V)((0.7 * ToNum(Get(D_346, "kS"))))))));
 }, 1, "", true)), "join", ((V)("L"))));
 }
-Invoke(L_339, "push", NewObj(3).Put("id", Get(o_382, "id")).Put("e", Get(o_382, "e")).Put("z", Call(Z_324, V.Undef, GetIdx(m_391, 0D), GetIdx(m_391, 1D), GetIdx(m_391, 2D))).V);
+Invoke(L_365, "push", NewObj(3).Put("id", Get(o_411, "id")).Put("e", Get(o_411, "e")).Put("z", Call(Z_349, V.Undef, GetIdx(m_421, 0D), GetIdx(m_421, 1D), GetIdx(m_421, 2D))).V);
 return default;
 }, 1, "", true));
-Invoke(L_339, "sort", Fn((V _self1, int _argc426, V a_432, V b_433, V _a430, V _a431, V[] _rest427) => {
-return ((V)((ToNum(Get(a_432, "z")) - ToNum(Get(b_433, "z")))));
+Invoke(L_365, "sort", Fn((V _arrowThis465, int _argc457, V a_463, V b_464, V _a461, V _a462, V[] _rest458) => {
+return ((V)((ToNum(Get(a_463, "z")) - ToNum(Get(b_464, "z")))));
 }, 2, "", true));
-Invoke(SN_43, "order", Get(PS_322, "par"), L_339);
-Invoke(Get(PS_322, "ln"), "setAttribute", ((V)("d")), (((V)(gl_337.Str)) is var _t434 && Truthy(_t434) ? _t434 : ((V)("M0 0"))));
-return ((V)(lob_338.Str));
+Invoke(SN_43, "order", Get(PS_347, "par"), L_365);
+Invoke(Get(PS_347, "ln"), "setAttribute", ((V)("d")), (((V)(gl_363.Str)) is var _t466 && Truthy(_t466) ? _t466 : ((V)("M0 0"))));
+return ((V)(lob_364.Str));
 return default;
 }, 5, "", true);
-SA_31 = Fn((V _self1, int _argc435, V e_441, V k_442, V v_443, V _a440, V[] _rest436) => {
-if (!SEq(GetK(e_441, ((V)(JsStrBuf.Begin().S("_").V(k_442).End()))), v_443)) {
-SetK(e_441, ((V)(JsStrBuf.Begin().S("_").V(k_442).End())), v_443);
-Invoke(e_441, "setAttribute", k_442, v_443);
+SA_31 = Fn((V _arrowThis476, int _argc467, V e_473, V k_474, V v_475, V _a472, V[] _rest468) => {
+if (!SEq(GetK(e_473, ((V)(JsStrBuf.Begin().S("_").V(k_474).End()))), v_475)) {
+SetK(e_473, ((V)(JsStrBuf.Begin().S("_").V(k_474).End())), v_475);
+Invoke(e_473, "setAttribute", k_474, v_475);
 }
 return default;
 }, 3, "", true);
-longSet_32 = Fn((V _self1, int _argc444, V S_450, V sp_451, V par_452, V linePar_453, V[] _rest445) => {
-V F_454 = default;
-double H_455 = 0;
-V u_456 = default;
-V LG_457 = default;
-V lg_458 = default;
-F_454 = Arr();
-H_455 = (TAU_9 / (2D * ToNum(Get(sp_451, "N"))));
-u_456 = Get(S_450, "u");
-LG_457 = Fn((V _self1, int _argc459, V id_465, V a_466, V _a463, V _a464, V[] _rest460) => {
-return Call(el_14, V.Undef, ((V)("linearGradient")), Object_assign(NewObj(6).Put("id", Add(id_465, u_456)).Put("gradientUnits", ((V)("userSpaceOnUse"))).Put("x1", ((V)(50D))).Put("y1", Get(sp_451, "y0")).Put("x2", ((V)(50D))).Put("y2", Get(sp_451, "y1")).V, (a_466 is var _t467 && Truthy(_t467) ? _t467 : NewObj(0).V)), Get(S_450, "df"));
+longSet_32 = Fn((V _arrowThis487, int _argc477, V S_483, V sp_484, V par_485, V linePar_486, V[] _rest478) => {
+V F_488 = default;
+double H_489 = 0;
+V u_490 = default;
+V LG_491 = default;
+V lg_492 = default;
+F_488 = Arr();
+H_489 = (TAU_9 / (2D * ToNum(Get(sp_484, "N"))));
+u_490 = Get(S_483, "u");
+LG_491 = Fn((V _arrowThis501, int _argc493, V id_499, V a_500, V _a497, V _a498, V[] _rest494) => {
+return Call(el_14, V.Undef, ((V)("linearGradient")), Object_assign(NewObj(6).Put("id", Add(id_499, u_490)).Put("gradientUnits", ((V)("userSpaceOnUse"))).Put("x1", ((V)(50D))).Put("y1", Get(sp_484, "y0")).Put("x2", ((V)(50D))).Put("y2", Get(sp_484, "y1")).V, (a_500 is var _t502 && Truthy(_t502) ? _t502 : NewObj(0).V)), Get(S_483, "df"));
 }, 2, "", true);
 {
-double k_468 = 0;
-k_468 = 0D;
+double k_503 = 0;
+k_503 = 0D;
 while (true) {
-if (!(Lt(((V)(k_468)), Get(sp_451, "N")))) break;
-V fg_470 = default;
-fg_470 = Add((Get(sp_451, "ph") is var _t471 && Truthy(_t471) ? _t471 : ((V)(0D))), ((V)(((k_468 * TAU_9) / ToNum(Get(sp_451, "N"))))));
+if (!(Lt(((V)(k_503)), Get(sp_484, "N")))) break;
+V fg_505 = default;
+fg_505 = Add((Get(sp_484, "ph") is var _t506 && Truthy(_t506) ? _t506 : ((V)(0D))), ((V)(((k_503 * TAU_9) / ToNum(Get(sp_484, "N"))))));
 {
-double side_472 = 0;
-side_472 = 0D;
+double side_507 = 0;
+side_507 = 0D;
 while (true) {
-if (!((side_472 < 2D))) break;
-V g_474 = default;
-g_474 = Call(LG_457, V.Undef, ((V)(JsStrBuf.Begin().S("lp").N(k_468).S("_").N(side_472).End())));
-Invoke(F_454, "push", NewObj(7).Put("side", ((V)(side_472))).Put("fa", (NumTruthy(side_472) ? Add(fg_470, ((V)(H_455))) : fg_470)).Put("fb", (NumTruthy(side_472) ? Add(fg_470, ((V)((2D * H_455)))) : Add(fg_470, ((V)(H_455))))).Put("id", ((V)(JsStrBuf.Begin().S("p").N(k_468).S("_").N(side_472).End()))).Put("g", g_474).Put("st", Invoke(Get(sp_451, "SY"), "map", Fn((V _self1, int _argc475, V _a477, V _a478, V _a479, V _a480, V[] _rest476) => {
-return Call(el_14, V.Undef, ((V)("stop")), NewObj(2).Put("offset", ((V)(0D))).Put("stop-color", GetIdx(Get(sp_451, "cols"), 1D)).V, g_474);
-}, 0, "", true))).Put("e", Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#lp").N(k_468).S("_").N(side_472).V(u_456).S(")").End()))).V, par_452)).V);
-side_472++;
+if (!((side_507 < 2D))) break;
+V g_509 = default;
+g_509 = Call(LG_491, V.Undef, ((V)(JsStrBuf.Begin().S("lp").N(k_503).S("_").N(side_507).End())));
+Invoke(F_488, "push", NewObj(7).Put("side", ((V)(side_507))).Put("fa", (NumTruthy(side_507) ? Add(fg_505, ((V)(H_489))) : fg_505)).Put("fb", (NumTruthy(side_507) ? Add(fg_505, ((V)((2D * H_489)))) : Add(fg_505, ((V)(H_489))))).Put("id", ((V)(JsStrBuf.Begin().S("p").N(k_503).S("_").N(side_507).End()))).Put("g", g_509).Put("st", Invoke(Get(sp_484, "SY"), "map", Fn((V _arrowThis516, int _argc510, V _a512, V _a513, V _a514, V _a515, V[] _rest511) => {
+return Call(el_14, V.Undef, ((V)("stop")), NewObj(2).Put("offset", ((V)(0D))).Put("stop-color", GetIdx(Get(sp_484, "cols"), 1D)).V, g_509);
+}, 0, "", true))).Put("e", Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", ((V)(JsStrBuf.Begin().S("url(#lp").N(k_503).S("_").N(side_507).V(u_490).S(")").End()))).V, par_485)).V);
+side_507++;
 }
 }
-k_468++;
+k_503++;
 }
 }
-lg_458 = Call(LG_457, V.Undef, ((V)("lpl")));
-Invoke(Get(sp_451, "LS"), "forEach", Fn((V _self1, int _argc481, V _a483, V _a484, V _a485, V _a486, V[] _rest482) => {
-V o_489 = default;
-V op_491 = default;
-{ V _t487 = ListOf(_a483);
-{ V _t488 = GetIdx(_t487, 0D);
-o_489 = _t488; }
-{ V _t490 = GetIdx(_t487, 1D);
-op_491 = _t490; }
+lg_492 = Call(LG_491, V.Undef, ((V)("lpl")));
+Invoke(Get(sp_484, "LS"), "forEach", Fn((V _arrowThis528, int _argc517, V _a519, V _a520, V _a521, V _a522, V[] _rest518) => {
+V o_525 = default;
+V op_527 = default;
+{ V _t523 = ListOf(_a519);
+{ V _t524 = GetIdx(_t523, 0D);
+o_525 = _t524; }
+{ V _t526 = GetIdx(_t523, 1D);
+op_527 = _t526; }
 }
-return Call(el_14, V.Undef, ((V)("stop")), NewObj(3).Put("offset", o_489).Put("stop-color", Get(sp_451, "lc")).Put("stop-opacity", op_491).V, lg_458);
+return Call(el_14, V.Undef, ((V)("stop")), NewObj(3).Put("offset", o_525).Put("stop-color", Get(sp_484, "lc")).Put("stop-opacity", op_527).V, lg_492);
 }, 1, "", true));
-return NewObj(8).Put("sp", sp_451).Put("F", F_454).Put("H", ((V)(H_455))).Put("par", par_452).Put("lg", lg_458).Put("YS", Array_from(NewObj(1).Put("length", Add(Get(sp_451, "NY"), ((V)(1D)))).V, Fn((V _self1, int _argc492, V __498, V i_499, V _a496, V _a497, V[] _rest493) => {
-return Add(Get(sp_451, "y0"), ((V)((((ToNum(Get(sp_451, "y1")) - ToNum(Get(sp_451, "y0"))) * ToNum(i_499)) / ToNum(Get(sp_451, "NY"))))));
-}, 2, "", true))).Put("ln", Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)(JsStrBuf.Begin().S("url(#lpl").V(u_456).S(")").End()))).Put("stroke-width", Get(sp_451, "lw")).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V, (linePar_453 is var _t500 && Truthy(_t500) ? _t500 : Get(par_452, "parentNode")))).Put("PAL", Call(pal_28, V.Undef, GetIdx(Get(sp_451, "cols"), 0D), GetIdx(Get(sp_451, "cols"), 1D), GetIdx(Get(sp_451, "cols"), 2D), ((V)(24D)))).V;
+return NewObj(8).Put("sp", sp_484).Put("F", F_488).Put("H", ((V)(H_489))).Put("par", par_485).Put("lg", lg_492).Put("YS", Array_from(NewObj(1).Put("length", Add(Get(sp_484, "NY"), ((V)(1D)))).V, Fn((V _arrowThis537, int _argc529, V __535, V i_536, V _a533, V _a534, V[] _rest530) => {
+return Add(Get(sp_484, "y0"), ((V)((((ToNum(Get(sp_484, "y1")) - ToNum(Get(sp_484, "y0"))) * ToNum(i_536)) / ToNum(Get(sp_484, "NY"))))));
+}, 2, "", true))).Put("ln", Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)(JsStrBuf.Begin().S("url(#lpl").V(u_490).S(")").End()))).Put("stroke-width", Get(sp_484, "lw")).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V, (linePar_486 is var _t538 && Truthy(_t538) ? _t538 : Get(par_485, "parentNode")))).Put("PAL", Call(pal_28, V.Undef, GetIdx(Get(sp_484, "cols"), 0D), GetIdx(Get(sp_484, "cols"), 1D), GetIdx(Get(sp_484, "cols"), 2D), ((V)(24D)))).V;
 return default;
 }, 4, "", true);
-longDraw_33 = Fn((V _self1, int _argc501, V D_507, V PS_508, V proj_509, V Z_510, V[] _rest502) => {
-V sp_512 = default;
-V F_513 = default;
-V H_514 = default;
-V YS_515 = default;
-V rT_516 = default;
-V dep_517 = default;
-V SY_518 = default;
-V r3_519 = default;
-V gT_520 = default;
-V X3_521 = default;
-JsStrBuf gl_522 = null;
-V L_523 = default;
-V t0_524 = default;
-V t1_525 = default;
-V TW_511 = default;
-TW_511 = (_argc501 > 4 ? _rest502[0] : V.Undef);
-{ V _t526 = PS_508;
-if (_t526.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t526));
-{ V _t527 = Get(_t526, "sp");
-sp_512 = _t527; }
-{ V _t528 = Get(_t526, "F");
-F_513 = _t528; }
-{ V _t529 = Get(_t526, "H");
-H_514 = _t529; }
-{ V _t530 = Get(_t526, "YS");
-YS_515 = _t530; } }
-{ V _t531 = sp_512;
-if (_t531.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t531));
-{ V _t532 = Get(_t531, "rT");
-rT_516 = _t532; }
-{ V _t533 = Get(_t531, "dep");
-dep_517 = _t533; }
-{ V _t534 = Get(_t531, "SY");
-SY_518 = _t534; } }
-r3_519 = Fn((V _self1, int _argc535, V v_541, V _a538, V _a539, V _a540, V[] _rest536) => {
-return ((V)((Round((ToNum(v_541) * 1000D)) / 1000D)));
+longDraw_33 = Fn((V _arrowThis550, int _argc539, V D_545, V PS_546, V proj_547, V Z_548, V[] _rest540) => {
+V sp_551 = default;
+V F_552 = default;
+V H_553 = default;
+V YS_554 = default;
+V rT_555 = default;
+V dep_556 = default;
+V SY_557 = default;
+V r3_558 = default;
+V gT_559 = default;
+V X3_560 = default;
+JsStrBuf gl_561 = null;
+V L_562 = default;
+V t0_563 = default;
+V t1_564 = default;
+V TW_549 = default;
+TW_549 = (_argc539 > 4 ? _rest540[0] : V.Undef);
+{ V _t565 = PS_546;
+if (_t565.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t565));
+{ V _t566 = Get(_t565, "sp");
+sp_551 = _t566; }
+{ V _t567 = Get(_t565, "F");
+F_552 = _t567; }
+{ V _t568 = Get(_t565, "H");
+H_553 = _t568; }
+{ V _t569 = Get(_t565, "YS");
+YS_554 = _t569; } }
+{ V _t570 = sp_551;
+if (_t570.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t570));
+{ V _t571 = Get(_t570, "rT");
+rT_555 = _t571; }
+{ V _t572 = Get(_t570, "dep");
+dep_556 = _t572; }
+{ V _t573 = Get(_t570, "SY");
+SY_557 = _t573; } }
+r3_558 = Fn((V _arrowThis581, int _argc574, V v_580, V _a577, V _a578, V _a579, V[] _rest575) => {
+return ((V)((Round((ToNum(v_580) * 1000D)) / 1000D)));
 }, 1, "", true);
-gT_520 = Fn((V _self1, int _argc542, V y_548, V _a545, V _a546, V _a547, V[] _rest543) => {
-return ((V)(FdLibm.Atan(((ToNum(Call(rT_516, V.Undef, Add(y_548, ((V)(1D))))) - ToNum(Call(rT_516, V.Undef, ((V)((ToNum(y_548) - 1D)))))) / 2D))));
+gT_559 = Fn((V _arrowThis589, int _argc582, V y_588, V _a585, V _a586, V _a587, V[] _rest583) => {
+return ((V)(FdLibm.Atan(((ToNum(Call(rT_555, V.Undef, Add(y_588, ((V)(1D))))) - ToNum(Call(rT_555, V.Undef, ((V)((ToNum(y_588) - 1D)))))) / 2D))));
 }, 1, "", true);
-X3_521 = Fn((V _self1, int _argc549, V f_555, V y_556, V ridge_557, V _a554, V[] _rest550) => {
-V ff_558 = default;
-V r_559 = default;
-ff_558 = Add(f_555, Call(TW_511, V.Undef, y_556));
-r_559 = Add(Call(rT_516, V.Undef, y_556), (Truthy(ridge_557) ? Call(dep_517, V.Undef, y_556) : ((V)((-0.25)))));
-return Arr(((V)((50D + (ToNum(r_559) * FdLibm.Sin(ToNum(ff_558)))))), y_556, ((V)((ToNum(r_559) * FdLibm.Cos(ToNum(ff_558))))));
+X3_560 = Fn((V _arrowThis599, int _argc590, V f_596, V y_597, V ridge_598, V _a595, V[] _rest591) => {
+V ff_600 = default;
+V r_601 = default;
+ff_600 = Add(f_596, Call(TW_549, V.Undef, y_597));
+r_601 = Add(Call(rT_555, V.Undef, y_597), (Truthy(ridge_598) ? Call(dep_556, V.Undef, y_597) : ((V)((-0.25)))));
+return Arr(((V)((50D + (ToNum(r_601) * FdLibm.Sin(ToNum(ff_600)))))), y_597, ((V)((ToNum(r_601) * FdLibm.Cos(ToNum(ff_600))))));
 return default;
 }, 3, "", true);
-gl_522 = new JsStrBuf("");
-L_523 = Arr();
-Invoke(F_513, "forEach", Fn((V _self1, int _argc560, V o_566, V _a563, V _a564, V _a565, V[] _rest561) => {
-V vis_567 = default;
-V zs_568 = default;
-V C_569 = default;
-V ra_570 = default;
-V A3_571 = default;
-V A_572 = default;
-V B_573 = default;
-V a_574 = default;
-V bq_575 = default;
-double vx_576 = 0;
-double vy_577 = 0;
-V vv_578 = default;
-double of_579 = 0;
-vis_567 = (false ? V.True : V.False);
-zs_568 = ((V)(0D));
-C_569 = Invoke(SY_518, "map", Fn((V _self1, int _argc580, V y_586, V _a583, V _a584, V _a585, V[] _rest581) => {
-V fm_587 = default;
-V rm_588 = default;
-double be_589 = 0;
-V az_590 = default;
-V g_591 = default;
-V n_592 = default;
-V m_593 = default;
-V fz_594 = default;
-V p0_595 = default;
-V p1_596 = default;
-double sx_597 = 0;
-double sy_598 = 0;
-V ln_599 = default;
-double b_600 = 0;
-fm_587 = Add(((V)((ToNum(Add(Get(o_566, "fa"), Get(o_566, "fb"))) / 2D))), Call(TW_511, V.Undef, y_586));
-rm_588 = Call(rT_516, V.Undef, y_586);
-be_589 = (FdLibm.Atan2(ToNum(Add(Call(dep_517, V.Undef, y_586), ((V)(0.25)))), (ToNum(rm_588) * ToNum(H_514))) * (Truthy(Get(o_566, "side")) ? 1D : (-1D)));
-az_590 = Add(fm_587, ((V)(be_589)));
-g_591 = Call(gT_520, V.Undef, y_586);
-n_592 = Arr(((V)((FdLibm.Sin(ToNum(az_590)) * FdLibm.Cos(ToNum(g_591))))), ((V)((-FdLibm.Sin(ToNum(g_591))))), ((V)((FdLibm.Cos(ToNum(az_590)) * FdLibm.Cos(ToNum(g_591))))));
-m_593 = Arr(((V)((50D + (ToNum(rm_588) * FdLibm.Sin(ToNum(fm_587)))))), y_586, ((V)((ToNum(rm_588) * FdLibm.Cos(ToNum(fm_587))))));
-fz_594 = Invoke(D_507, "facing", GetIdx(m_593, 0D), GetIdx(m_593, 1D), GetIdx(m_593, 2D), GetIdx(n_592, 0D), GetIdx(n_592, 1D), GetIdx(n_592, 2D));
-if (GtN(fz_594, 0.02)) {
-vis_567 = (true ? V.True : V.False);
+gl_561 = new JsStrBuf("");
+L_562 = Arr();
+Invoke(F_552, "forEach", Fn((V _arrowThis609, int _argc602, V o_608, V _a605, V _a606, V _a607, V[] _rest603) => {
+V vis_610 = default;
+V zs_611 = default;
+V C_612 = default;
+V ra_613 = default;
+V A3_614 = default;
+V A_615 = default;
+V B_616 = default;
+V a_617 = default;
+V bq_618 = default;
+double vx_619 = 0;
+double vy_620 = 0;
+V vv_621 = default;
+double of_622 = 0;
+vis_610 = (false ? V.True : V.False);
+zs_611 = ((V)(0D));
+C_612 = Invoke(SY_557, "map", Fn((V _arrowThis630, int _argc623, V y_629, V _a626, V _a627, V _a628, V[] _rest624) => {
+V fm_631 = default;
+V rm_632 = default;
+double be_633 = 0;
+V az_634 = default;
+V g_635 = default;
+V n_636 = default;
+V m_637 = default;
+V fz_638 = default;
+V p0_639 = default;
+V p1_640 = default;
+double sx_641 = 0;
+double sy_642 = 0;
+V ln_643 = default;
+double b_644 = 0;
+fm_631 = Add(((V)((ToNum(Add(Get(o_608, "fa"), Get(o_608, "fb"))) / 2D))), Call(TW_549, V.Undef, y_629));
+rm_632 = Call(rT_555, V.Undef, y_629);
+be_633 = (FdLibm.Atan2(ToNum(Add(Call(dep_556, V.Undef, y_629), ((V)(0.25)))), (ToNum(rm_632) * ToNum(H_553))) * (Truthy(Get(o_608, "side")) ? 1D : (-1D)));
+az_634 = Add(fm_631, ((V)(be_633)));
+g_635 = Call(gT_559, V.Undef, y_629);
+n_636 = Arr(((V)((FdLibm.Sin(ToNum(az_634)) * FdLibm.Cos(ToNum(g_635))))), ((V)((-FdLibm.Sin(ToNum(g_635))))), ((V)((FdLibm.Cos(ToNum(az_634)) * FdLibm.Cos(ToNum(g_635))))));
+m_637 = Arr(((V)((50D + (ToNum(rm_632) * FdLibm.Sin(ToNum(fm_631)))))), y_629, ((V)((ToNum(rm_632) * FdLibm.Cos(ToNum(fm_631))))));
+fz_638 = Invoke(D_545, "facing", GetIdx(m_637, 0D), GetIdx(m_637, 1D), GetIdx(m_637, 2D), GetIdx(n_636, 0D), GetIdx(n_636, 1D), GetIdx(n_636, 2D));
+if (GtN(fz_638, 0.02)) {
+vis_610 = (true ? V.True : V.False);
 }
-zs_568 = Add(zs_568, Call(Z_510, V.Undef, GetIdx(m_593, 0D), GetIdx(m_593, 1D), GetIdx(m_593, 2D)));
-p0_595 = Call(proj_509, V.Undef, GetIdx(m_593, 0D), GetIdx(m_593, 1D), GetIdx(m_593, 2D));
-p1_596 = Call(proj_509, V.Undef, Add(GetIdx(m_593, 0D), GetIdx(n_592, 0D)), Add(GetIdx(m_593, 1D), GetIdx(n_592, 1D)), Add(GetIdx(m_593, 2D), GetIdx(n_592, 2D)));
-sx_597 = ((ToNum(GetIdx(p1_596, 0D)) - ToNum(GetIdx(p0_595, 0D))) / ToNum(Get(D_507, "kS")));
-sy_598 = ((ToNum(GetIdx(p1_596, 1D)) - ToNum(GetIdx(p0_595, 1D))) / ToNum(Get(D_507, "kS")));
-ln_599 = (((V)(Hypot(sx_597, sy_598, ToNum(fz_594)))) is var _t601 && Truthy(_t601) ? _t601 : ((V)(1D)));
-b_600 = ((((sx_597 * ToNum(GetIdx(LV_27, 0D))) + (sy_598 * ToNum(GetIdx(LV_27, 1D)))) + (ToNum(fz_594) * ToNum(GetIdx(LV_27, 2D)))) / ToNum(ln_599));
-return NewObj(2).Put("p", p0_595).Put("c", GetIdx(Get(PS_508, "PAL"), Round((ToNum(Call(clamp_12, V.Undef, ((V)((0.3 + (0.95 * b_600)))), ((V)(0D)), ((V)(1D)))) * 24D)))).V;
+zs_611 = Add(zs_611, Call(Z_548, V.Undef, GetIdx(m_637, 0D), GetIdx(m_637, 1D), GetIdx(m_637, 2D)));
+p0_639 = Call(proj_547, V.Undef, GetIdx(m_637, 0D), GetIdx(m_637, 1D), GetIdx(m_637, 2D));
+p1_640 = Call(proj_547, V.Undef, Add(GetIdx(m_637, 0D), GetIdx(n_636, 0D)), Add(GetIdx(m_637, 1D), GetIdx(n_636, 1D)), Add(GetIdx(m_637, 2D), GetIdx(n_636, 2D)));
+sx_641 = ((ToNum(GetIdx(p1_640, 0D)) - ToNum(GetIdx(p0_639, 0D))) / ToNum(Get(D_545, "kS")));
+sy_642 = ((ToNum(GetIdx(p1_640, 1D)) - ToNum(GetIdx(p0_639, 1D))) / ToNum(Get(D_545, "kS")));
+ln_643 = (((V)(Hypot(sx_641, sy_642, ToNum(fz_638)))) is var _t645 && Truthy(_t645) ? _t645 : ((V)(1D)));
+b_644 = ((((sx_641 * ToNum(GetIdx(LV_27, 0D))) + (sy_642 * ToNum(GetIdx(LV_27, 1D)))) + (ToNum(fz_638) * ToNum(GetIdx(LV_27, 2D)))) / ToNum(ln_643));
+return NewObj(2).Put("p", p0_639).Put("c", GetIdx(Get(PS_546, "PAL"), Round((ToNum(Call(clamp_12, V.Undef, ((V)((0.3 + (0.95 * b_644)))), ((V)(0D)), ((V)(1D)))) * 24D)))).V;
 return default;
 }, 1, "", true));
-if (!(Truthy(vis_567))) {
-if (!SEqN(Get(o_566, "on"), 0D)) {
-Set(o_566, "on", ((V)(0D)));
-Invoke(Get(o_566, "e"), "setAttribute", ((V)("d")), ((V)("M0 0")));
+if (!(Truthy(vis_610))) {
+if (!SEqN(Get(o_608, "on"), 0D)) {
+Set(o_608, "on", ((V)(0D)));
+Invoke(Get(o_608, "e"), "setAttribute", ((V)("d")), ((V)("M0 0")));
 }
 return default;
 }
-Set(o_566, "on", ((V)(1D)));
-ra_570 = (SEqN(Get(o_566, "side"), 1D) ? V.True : V.False);
-A3_571 = Invoke(YS_515, "map", Fn((V _self1, int _argc602, V y_608, V _a605, V _a606, V _a607, V[] _rest603) => {
-return Call(X3_521, V.Undef, Get(o_566, "fa"), y_608, ra_570);
+Set(o_608, "on", ((V)(1D)));
+ra_613 = (SEqN(Get(o_608, "side"), 1D) ? V.True : V.False);
+A3_614 = Invoke(YS_554, "map", Fn((V _arrowThis653, int _argc646, V y_652, V _a649, V _a650, V _a651, V[] _rest647) => {
+return Call(X3_560, V.Undef, Get(o_608, "fa"), y_652, ra_613);
 }, 1, "", true));
-A_572 = Invoke(A3_571, "map", Fn((V _self1, int _argc609, V p_615, V _a612, V _a613, V _a614, V[] _rest610) => {
-return Call(proj_509, V.Undef, GetIdx(p_615, 0D), GetIdx(p_615, 1D), GetIdx(p_615, 2D));
+A_615 = Invoke(A3_614, "map", Fn((V _arrowThis661, int _argc654, V p_660, V _a657, V _a658, V _a659, V[] _rest655) => {
+return Call(proj_547, V.Undef, GetIdx(p_660, 0D), GetIdx(p_660, 1D), GetIdx(p_660, 2D));
 }, 1, "", true));
-B_573 = Invoke(YS_515, "map", Fn((V _self1, int _argc616, V y_622, V _a619, V _a620, V _a621, V[] _rest617) => {
-V p_623 = default;
-p_623 = Call(X3_521, V.Undef, Get(o_566, "fb"), y_622, (!(Truthy(ra_570)) ? V.True : V.False));
-return Call(proj_509, V.Undef, GetIdx(p_623, 0D), GetIdx(p_623, 1D), GetIdx(p_623, 2D));
+B_616 = Invoke(YS_554, "map", Fn((V _arrowThis669, int _argc662, V y_668, V _a665, V _a666, V _a667, V[] _rest663) => {
+V p_670 = default;
+p_670 = Call(X3_560, V.Undef, Get(o_608, "fb"), y_668, (!(Truthy(ra_613)) ? V.True : V.False));
+return Call(proj_547, V.Undef, GetIdx(p_670, 0D), GetIdx(p_670, 1D), GetIdx(p_670, 2D));
 return default;
 }, 1, "", true));
-Invoke(Get(o_566, "e"), "setAttribute", ((V)("d")), Call(polyD_16, V.Undef, Invoke(A_572, "concat", Invoke(B_573, "reverse"))));
-a_574 = Get(GetIdx(C_569, 0D), "p");
-bq_575 = Get(GetIdx(C_569, (ToNum(Get(C_569, "length")) - 1D)), "p");
-vx_576 = (ToNum(GetIdx(bq_575, 0D)) - ToNum(GetIdx(a_574, 0D)));
-vy_577 = (ToNum(GetIdx(bq_575, 1D)) - ToNum(GetIdx(a_574, 1D)));
-vv_578 = (((V)(((vx_576 * vx_576) + (vy_577 * vy_577)))) is var _t624 && Truthy(_t624) ? _t624 : ((V)(1D)));
-Call(SA_31, V.Undef, Get(o_566, "g"), ((V)("x1")), Call(r3_519, V.Undef, GetIdx(a_574, 0D)));
-Call(SA_31, V.Undef, Get(o_566, "g"), ((V)("y1")), Call(r3_519, V.Undef, GetIdx(a_574, 1D)));
-Call(SA_31, V.Undef, Get(o_566, "g"), ((V)("x2")), Call(r3_519, V.Undef, GetIdx(bq_575, 0D)));
-Call(SA_31, V.Undef, Get(o_566, "g"), ((V)("y2")), Call(r3_519, V.Undef, GetIdx(bq_575, 1D)));
-of_579 = 0D;
-Invoke(C_569, "forEach", Fn((V _self1, int _argc625, V s_631, V i_632, V _a629, V _a630, V[] _rest626) => {
-of_579 = Max(of_579, ToNum(Call(clamp_12, V.Undef, ((V)(((((ToNum(GetIdx(Get(s_631, "p"), 0D)) - ToNum(GetIdx(a_574, 0D))) * vx_576) + ((ToNum(GetIdx(Get(s_631, "p"), 1D)) - ToNum(GetIdx(a_574, 1D))) * vy_577)) / ToNum(vv_578)))), ((V)(0D)), ((V)(1D)))));
-Call(SA_31, V.Undef, GetK(Get(o_566, "st"), i_632), ((V)("offset")), Call(r3_519, V.Undef, ((V)(of_579))));
-Call(SA_31, V.Undef, GetK(Get(o_566, "st"), i_632), ((V)("stop-color")), Get(s_631, "c"));
+Invoke(Get(o_608, "e"), "setAttribute", ((V)("d")), Call(polyD_16, V.Undef, Invoke(A_615, "concat", Invoke(B_616, "reverse"))));
+a_617 = Get(GetIdx(C_612, 0D), "p");
+bq_618 = Get(GetIdx(C_612, (ToNum(Get(C_612, "length")) - 1D)), "p");
+vx_619 = (ToNum(GetIdx(bq_618, 0D)) - ToNum(GetIdx(a_617, 0D)));
+vy_620 = (ToNum(GetIdx(bq_618, 1D)) - ToNum(GetIdx(a_617, 1D)));
+vv_621 = (((V)(((vx_619 * vx_619) + (vy_620 * vy_620)))) is var _t671 && Truthy(_t671) ? _t671 : ((V)(1D)));
+Call(SA_31, V.Undef, Get(o_608, "g"), ((V)("x1")), Call(r3_558, V.Undef, GetIdx(a_617, 0D)));
+Call(SA_31, V.Undef, Get(o_608, "g"), ((V)("y1")), Call(r3_558, V.Undef, GetIdx(a_617, 1D)));
+Call(SA_31, V.Undef, Get(o_608, "g"), ((V)("x2")), Call(r3_558, V.Undef, GetIdx(bq_618, 0D)));
+Call(SA_31, V.Undef, Get(o_608, "g"), ((V)("y2")), Call(r3_558, V.Undef, GetIdx(bq_618, 1D)));
+of_622 = 0D;
+Invoke(C_612, "forEach", Fn((V _arrowThis680, int _argc672, V s_678, V i_679, V _a676, V _a677, V[] _rest673) => {
+of_622 = Max(of_622, ToNum(Call(clamp_12, V.Undef, ((V)(((((ToNum(GetIdx(Get(s_678, "p"), 0D)) - ToNum(GetIdx(a_617, 0D))) * vx_619) + ((ToNum(GetIdx(Get(s_678, "p"), 1D)) - ToNum(GetIdx(a_617, 1D))) * vy_620)) / ToNum(vv_621)))), ((V)(0D)), ((V)(1D)))));
+Call(SA_31, V.Undef, GetK(Get(o_608, "st"), i_679), ((V)("offset")), Call(r3_558, V.Undef, ((V)(of_622))));
+Call(SA_31, V.Undef, GetK(Get(o_608, "st"), i_679), ((V)("stop-color")), Get(s_678, "c"));
 return default;
 }, 2, "", true));
-if (!(Truthy(Get(o_566, "side")))) {
-gl_522.V(Call(runs_21, V.Undef, A_572, Invoke(A3_571, "map", Fn((V _self1, int _argc633, V p_639, V i_640, V _a637, V _a638, V[] _rest634) => {
-V ff_641 = default;
-V g_642 = default;
-ff_641 = Add(Get(o_566, "fa"), Call(TW_511, V.Undef, GetK(YS_515, i_640)));
-g_642 = Call(gT_520, V.Undef, GetK(YS_515, i_640));
-return (GtN(Invoke(D_507, "facing", GetIdx(p_639, 0D), GetIdx(p_639, 1D), GetIdx(p_639, 2D), ((V)((FdLibm.Sin(ToNum(ff_641)) * FdLibm.Cos(ToNum(g_642))))), ((V)((-FdLibm.Sin(ToNum(g_642))))), ((V)((FdLibm.Cos(ToNum(ff_641)) * FdLibm.Cos(ToNum(g_642)))))), 0.05) ? V.True : V.False);
+if (!(Truthy(Get(o_608, "side")))) {
+gl_561.V(Call(runs_21, V.Undef, A_615, Invoke(A3_614, "map", Fn((V _arrowThis689, int _argc681, V p_687, V i_688, V _a685, V _a686, V[] _rest682) => {
+V ff_690 = default;
+V g_691 = default;
+ff_690 = Add(Get(o_608, "fa"), Call(TW_549, V.Undef, GetK(YS_554, i_688)));
+g_691 = Call(gT_559, V.Undef, GetK(YS_554, i_688));
+return (GtN(Invoke(D_545, "facing", GetIdx(p_687, 0D), GetIdx(p_687, 1D), GetIdx(p_687, 2D), ((V)((FdLibm.Sin(ToNum(ff_690)) * FdLibm.Cos(ToNum(g_691))))), ((V)((-FdLibm.Sin(ToNum(g_691))))), ((V)((FdLibm.Cos(ToNum(ff_690)) * FdLibm.Cos(ToNum(g_691)))))), 0.05) ? V.True : V.False);
 return default;
 }, 2, "", true))));
 }
-Invoke(L_523, "push", NewObj(3).Put("id", Get(o_566, "id")).Put("e", Get(o_566, "e")).Put("z", ((V)((ToNum(zs_568) / ToNum(Get(SY_518, "length")))))).V);
+Invoke(L_562, "push", NewObj(3).Put("id", Get(o_608, "id")).Put("e", Get(o_608, "e")).Put("z", ((V)((ToNum(zs_611) / ToNum(Get(SY_557, "length")))))).V);
 return default;
 }, 1, "", true));
-Invoke(L_523, "sort", Fn((V _self1, int _argc643, V a_649, V b_650, V _a647, V _a648, V[] _rest644) => {
-return ((V)((ToNum(Get(a_649, "z")) - ToNum(Get(b_650, "z")))));
+Invoke(L_562, "sort", Fn((V _arrowThis700, int _argc692, V a_698, V b_699, V _a696, V _a697, V[] _rest693) => {
+return ((V)((ToNum(Get(a_698, "z")) - ToNum(Get(b_699, "z")))));
 }, 2, "", true));
-Invoke(SN_43, "order", Get(PS_508, "par"), L_523);
-Invoke(Get(PS_508, "ln"), "setAttribute", ((V)("d")), (((V)(gl_522.Str)) is var _t651 && Truthy(_t651) ? _t651 : ((V)("M0 0"))));
-t0_524 = Call(proj_509, V.Undef, ((V)(50D)), Get(sp_512, "y0"), ((V)(0D)));
-t1_525 = Call(proj_509, V.Undef, ((V)(50D)), Get(sp_512, "y1"), ((V)(0D)));
-Call(SA_31, V.Undef, Get(PS_508, "lg"), ((V)("x1")), Call(r3_519, V.Undef, GetIdx(t0_524, 0D)));
-Call(SA_31, V.Undef, Get(PS_508, "lg"), ((V)("y1")), Call(r3_519, V.Undef, GetIdx(t0_524, 1D)));
-Call(SA_31, V.Undef, Get(PS_508, "lg"), ((V)("x2")), Call(r3_519, V.Undef, GetIdx(t1_525, 0D)));
-Call(SA_31, V.Undef, Get(PS_508, "lg"), ((V)("y2")), Call(r3_519, V.Undef, GetIdx(t1_525, 1D)));
+Invoke(SN_43, "order", Get(PS_546, "par"), L_562);
+Invoke(Get(PS_546, "ln"), "setAttribute", ((V)("d")), (((V)(gl_561.Str)) is var _t701 && Truthy(_t701) ? _t701 : ((V)("M0 0"))));
+t0_563 = Call(proj_547, V.Undef, ((V)(50D)), Get(sp_551, "y0"), ((V)(0D)));
+t1_564 = Call(proj_547, V.Undef, ((V)(50D)), Get(sp_551, "y1"), ((V)(0D)));
+Call(SA_31, V.Undef, Get(PS_546, "lg"), ((V)("x1")), Call(r3_558, V.Undef, GetIdx(t0_563, 0D)));
+Call(SA_31, V.Undef, Get(PS_546, "lg"), ((V)("y1")), Call(r3_558, V.Undef, GetIdx(t0_563, 1D)));
+Call(SA_31, V.Undef, Get(PS_546, "lg"), ((V)("x2")), Call(r3_558, V.Undef, GetIdx(t1_564, 0D)));
+Call(SA_31, V.Undef, Get(PS_546, "lg"), ((V)("y2")), Call(r3_558, V.Undef, GetIdx(t1_564, 1D)));
 return default;
 }, 5, "", true);
-resample_34 = Fn((V _self1, int _argc652, V Q_658, V n_659, V _a656, V _a657, V[] _rest653) => {
-V L_660 = default;
-V tot_661 = default;
-V @out_662 = default;
-double j_663 = 0;
-L_660 = Arr(((V)(0D)));
+resample_34 = Fn((V _arrowThis710, int _argc702, V Q_708, V n_709, V _a706, V _a707, V[] _rest703) => {
+V L_711 = default;
+V tot_712 = default;
+V @out_713 = default;
+double j_714 = 0;
+L_711 = Arr(((V)(0D)));
 {
-double i_664 = 0;
-i_664 = 1D;
+double i_715 = 0;
+i_715 = 1D;
 while (true) {
-if (!(Le(((V)(i_664)), Get(Q_658, "length")))) break;
-V a_666 = default;
-V b_667 = default;
-a_666 = GetIdx(Q_658, (i_664 - 1D));
-b_667 = GetIdx(Q_658, (i_664 % ToNum(Get(Q_658, "length"))));
-Invoke(L_660, "push", Add(GetIdx(L_660, (i_664 - 1D)), ((V)(Hypot((ToNum(GetIdx(b_667, 0D)) - ToNum(GetIdx(a_666, 0D))), (ToNum(GetIdx(b_667, 1D)) - ToNum(GetIdx(a_666, 1D))))))));
-i_664++;
+if (!(Le(((V)(i_715)), Get(Q_708, "length")))) break;
+V a_717 = default;
+V b_718 = default;
+a_717 = GetIdx(Q_708, (i_715 - 1D));
+b_718 = GetIdx(Q_708, (i_715 % ToNum(Get(Q_708, "length"))));
+Invoke(L_711, "push", Add(GetIdx(L_711, (i_715 - 1D)), ((V)(Hypot((ToNum(GetIdx(b_718, 0D)) - ToNum(GetIdx(a_717, 0D))), (ToNum(GetIdx(b_718, 1D)) - ToNum(GetIdx(a_717, 1D))))))));
+i_715++;
 }
 }
-tot_661 = GetIdx(L_660, (ToNum(Get(L_660, "length")) - 1D));
-@out_662 = Arr();
-j_663 = 0D;
+tot_712 = GetIdx(L_711, (ToNum(Get(L_711, "length")) - 1D));
+@out_713 = Arr();
+j_714 = 0D;
 {
-double k_668 = 0;
-k_668 = 0D;
+double k_719 = 0;
+k_719 = 0D;
 while (true) {
-if (!(Lt(((V)(k_668)), n_659))) break;
-double s_670 = 0;
-V a_671 = default;
-V b_672 = default;
-double u_673 = 0;
-s_670 = ((ToNum(tot_661) * k_668) / ToNum(n_659));
-while (LtN(GetIdx(L_660, (j_663 + 1D)), s_670)) {
-j_663++;
+if (!(Lt(((V)(k_719)), n_709))) break;
+double s_721 = 0;
+V a_722 = default;
+V b_723 = default;
+double u_724 = 0;
+s_721 = ((ToNum(tot_712) * k_719) / ToNum(n_709));
+while (LtN(GetIdx(L_711, (j_714 + 1D)), s_721)) {
+j_714++;
 }
-a_671 = GetIdx(Q_658, j_663);
-b_672 = GetIdx(Q_658, ((j_663 + 1D) % ToNum(Get(Q_658, "length"))));
-u_673 = ((s_670 - ToNum(GetIdx(L_660, j_663))) / ToNum((((V)((ToNum(GetIdx(L_660, (j_663 + 1D))) - ToNum(GetIdx(L_660, j_663))))) is var _t674 && Truthy(_t674) ? _t674 : ((V)(1D)))));
-Invoke(@out_662, "push", Arr(Add(GetIdx(a_671, 0D), ((V)(((ToNum(GetIdx(b_672, 0D)) - ToNum(GetIdx(a_671, 0D))) * u_673)))), Add(GetIdx(a_671, 1D), ((V)(((ToNum(GetIdx(b_672, 1D)) - ToNum(GetIdx(a_671, 1D))) * u_673))))));
-k_668++;
+a_722 = GetIdx(Q_708, j_714);
+b_723 = GetIdx(Q_708, ((j_714 + 1D) % ToNum(Get(Q_708, "length"))));
+u_724 = ((s_721 - ToNum(GetIdx(L_711, j_714))) / ToNum((((V)((ToNum(GetIdx(L_711, (j_714 + 1D))) - ToNum(GetIdx(L_711, j_714))))) is var _t725 && Truthy(_t725) ? _t725 : ((V)(1D)))));
+Invoke(@out_713, "push", Arr(Add(GetIdx(a_722, 0D), ((V)(((ToNum(GetIdx(b_723, 0D)) - ToNum(GetIdx(a_722, 0D))) * u_724)))), Add(GetIdx(a_722, 1D), ((V)(((ToNum(GetIdx(b_723, 1D)) - ToNum(GetIdx(a_722, 1D))) * u_724))))));
+k_719++;
 }
 }
-return @out_662;
+return @out_713;
 return default;
 }, 2, "", true);
-inside_35 = Fn((V _self1, int _argc675, V O_681, V x_682, V y_683, V _a680, V[] _rest676) => {
-V c_684 = default;
-c_684 = (false ? V.True : V.False);
+inside_35 = Fn((V _arrowThis735, int _argc726, V O_732, V x_733, V y_734, V _a731, V[] _rest727) => {
+V c_736 = default;
+c_736 = (false ? V.True : V.False);
 {
-double i_685 = 0;
-double j_686 = 0;
-i_685 = 0D;
-j_686 = (ToNum(Get(O_681, "length")) - 1D);
+double i_737 = 0;
+double j_738 = 0;
+i_737 = 0D;
+j_738 = (ToNum(Get(O_732, "length")) - 1D);
 while (true) {
-if (!(Lt(((V)(i_685)), Get(O_681, "length")))) break;
-V a_688 = default;
-V b_689 = default;
-a_688 = GetIdx(O_681, i_685);
-b_689 = GetIdx(O_681, j_686);
-if ((!SEq((Gt(GetIdx(a_688, 1D), y_683) ? V.True : V.False), (Gt(GetIdx(b_689, 1D), y_683) ? V.True : V.False)) && Lt(x_682, Add(((V)((((ToNum(GetIdx(b_689, 0D)) - ToNum(GetIdx(a_688, 0D))) * (ToNum(y_683) - ToNum(GetIdx(a_688, 1D)))) / (ToNum(GetIdx(b_689, 1D)) - ToNum(GetIdx(a_688, 1D)))))), GetIdx(a_688, 0D))))) {
-c_684 = (!(Truthy(c_684)) ? V.True : V.False);
+if (!(Lt(((V)(i_737)), Get(O_732, "length")))) break;
+V a_740 = default;
+V b_741 = default;
+a_740 = GetIdx(O_732, i_737);
+b_741 = GetIdx(O_732, j_738);
+if ((!SEq((Gt(GetIdx(a_740, 1D), y_734) ? V.True : V.False), (Gt(GetIdx(b_741, 1D), y_734) ? V.True : V.False)) && Lt(x_733, Add(((V)((((ToNum(GetIdx(b_741, 0D)) - ToNum(GetIdx(a_740, 0D))) * (ToNum(y_734) - ToNum(GetIdx(a_740, 1D)))) / (ToNum(GetIdx(b_741, 1D)) - ToNum(GetIdx(a_740, 1D)))))), GetIdx(a_740, 0D))))) {
+c_736 = (!(Truthy(c_736)) ? V.True : V.False);
 }
-j_686 = i_685++;
+j_738 = i_737++;
 }
 }
-return c_684;
+return c_736;
 return default;
 }, 3, "", true);
-segDist_36 = Fn((V _self1, int _argc690, V O_696, V x_697, V y_698, V _a695, V[] _rest691) => {
-double m_699 = 0;
-m_699 = 1000000000D;
+segDist_36 = Fn((V _arrowThis751, int _argc742, V O_748, V x_749, V y_750, V _a747, V[] _rest743) => {
+double m_752 = 0;
+m_752 = 1000000000D;
 {
-double i_700 = 0;
-i_700 = 0D;
+double i_753 = 0;
+i_753 = 0D;
 while (true) {
-if (!(Lt(((V)(i_700)), Get(O_696, "length")))) break;
-V a_702 = default;
-V b_703 = default;
-double vx_704 = 0;
-double vy_705 = 0;
-V L_706 = default;
-V t_707 = default;
-double dx_708 = 0;
-double dy_709 = 0;
-double d_710 = 0;
-a_702 = GetIdx(O_696, i_700);
-b_703 = GetIdx(O_696, ((i_700 + 1D) % ToNum(Get(O_696, "length"))));
-vx_704 = (ToNum(GetIdx(b_703, 0D)) - ToNum(GetIdx(a_702, 0D)));
-vy_705 = (ToNum(GetIdx(b_703, 1D)) - ToNum(GetIdx(a_702, 1D)));
-L_706 = (((V)(((vx_704 * vx_704) + (vy_705 * vy_705)))) is var _t711 && Truthy(_t711) ? _t711 : ((V)(1D)));
-t_707 = Call(clamp_12, V.Undef, ((V)(((((ToNum(x_697) - ToNum(GetIdx(a_702, 0D))) * vx_704) + ((ToNum(y_698) - ToNum(GetIdx(a_702, 1D))) * vy_705)) / ToNum(L_706)))), ((V)(0D)), ((V)(1D)));
-dx_708 = (ToNum(Add(GetIdx(a_702, 0D), ((V)((vx_704 * ToNum(t_707)))))) - ToNum(x_697));
-dy_709 = (ToNum(Add(GetIdx(a_702, 1D), ((V)((vy_705 * ToNum(t_707)))))) - ToNum(y_698));
-d_710 = ((dx_708 * dx_708) + (dy_709 * dy_709));
-if ((d_710 < m_699)) {
-m_699 = d_710;
+if (!(Lt(((V)(i_753)), Get(O_748, "length")))) break;
+V a_755 = default;
+V b_756 = default;
+double vx_757 = 0;
+double vy_758 = 0;
+V L_759 = default;
+V t_760 = default;
+double dx_761 = 0;
+double dy_762 = 0;
+double d_763 = 0;
+a_755 = GetIdx(O_748, i_753);
+b_756 = GetIdx(O_748, ((i_753 + 1D) % ToNum(Get(O_748, "length"))));
+vx_757 = (ToNum(GetIdx(b_756, 0D)) - ToNum(GetIdx(a_755, 0D)));
+vy_758 = (ToNum(GetIdx(b_756, 1D)) - ToNum(GetIdx(a_755, 1D)));
+L_759 = (((V)(((vx_757 * vx_757) + (vy_758 * vy_758)))) is var _t764 && Truthy(_t764) ? _t764 : ((V)(1D)));
+t_760 = Call(clamp_12, V.Undef, ((V)(((((ToNum(x_749) - ToNum(GetIdx(a_755, 0D))) * vx_757) + ((ToNum(y_750) - ToNum(GetIdx(a_755, 1D))) * vy_758)) / ToNum(L_759)))), ((V)(0D)), ((V)(1D)));
+dx_761 = (ToNum(Add(GetIdx(a_755, 0D), ((V)((vx_757 * ToNum(t_760)))))) - ToNum(x_749));
+dy_762 = (ToNum(Add(GetIdx(a_755, 1D), ((V)((vy_758 * ToNum(t_760)))))) - ToNum(y_750));
+d_763 = ((dx_761 * dx_761) + (dy_762 * dy_762));
+if ((d_763 < m_752)) {
+m_752 = d_763;
 }
-i_700++;
+i_753++;
 }
 }
-return ((V)(System.Math.Sqrt(m_699)));
+return ((V)(System.Math.Sqrt(m_752)));
 return default;
 }, 3, "", true);
-sdist_37 = Fn((V _self1, int _argc712, V O_718, V x_719, V y_720, V _a717, V[] _rest713) => {
-return ((V)(((Truthy(Call(inside_35, V.Undef, O_718, x_719, y_720)) ? 1D : (-1D)) * ToNum(Call(segDist_36, V.Undef, O_718, x_719, y_720)))));
+sdist_37 = Fn((V _arrowThis774, int _argc765, V O_771, V x_772, V y_773, V _a770, V[] _rest766) => {
+return ((V)(((Truthy(Call(inside_35, V.Undef, O_771, x_772, y_773)) ? 1D : (-1D)) * ToNum(Call(segDist_36, V.Undef, O_771, x_772, y_773)))));
 }, 3, "", true);
-halfW_38 = Fn((V _self1, int _argc721, V O_727, V y_728, V _a725, V _a726, V[] _rest722) => {
-V lo_729 = default;
-V hi_730 = default;
-lo_729 = ((V)(1000000000D));
-hi_730 = ((V)((-1000000000D)));
+halfW_38 = Fn((V _arrowThis783, int _argc775, V O_781, V y_782, V _a779, V _a780, V[] _rest776) => {
+V lo_784 = default;
+V hi_785 = default;
+lo_784 = ((V)(1000000000D));
+hi_785 = ((V)((-1000000000D)));
 {
-double i_731 = 0;
-i_731 = 0D;
+double i_786 = 0;
+i_786 = 0D;
 while (true) {
-if (!(Lt(((V)(i_731)), Get(O_727, "length")))) break;
-V a_733 = default;
-V b_734 = default;
-a_733 = GetIdx(O_727, i_731);
-b_734 = GetIdx(O_727, ((i_731 + 1D) % ToNum(Get(O_727, "length"))));
-if (((((ToNum(GetIdx(a_733, 1D)) - ToNum(y_728)) * (ToNum(GetIdx(b_734, 1D)) - ToNum(y_728))) <= 0D) && !SEq(GetIdx(a_733, 1D), GetIdx(b_734, 1D)))) {
-V x_735 = default;
-x_735 = Add(GetIdx(a_733, 0D), ((V)((((ToNum(GetIdx(b_734, 0D)) - ToNum(GetIdx(a_733, 0D))) * (ToNum(y_728) - ToNum(GetIdx(a_733, 1D)))) / (ToNum(GetIdx(b_734, 1D)) - ToNum(GetIdx(a_733, 1D)))))));
-if (Lt(x_735, lo_729)) {
-lo_729 = x_735;
+if (!(Lt(((V)(i_786)), Get(O_781, "length")))) break;
+V a_788 = default;
+V b_789 = default;
+a_788 = GetIdx(O_781, i_786);
+b_789 = GetIdx(O_781, ((i_786 + 1D) % ToNum(Get(O_781, "length"))));
+if (((((ToNum(GetIdx(a_788, 1D)) - ToNum(y_782)) * (ToNum(GetIdx(b_789, 1D)) - ToNum(y_782))) <= 0D) && !SEq(GetIdx(a_788, 1D), GetIdx(b_789, 1D)))) {
+V x_790 = default;
+x_790 = Add(GetIdx(a_788, 0D), ((V)((((ToNum(GetIdx(b_789, 0D)) - ToNum(GetIdx(a_788, 0D))) * (ToNum(y_782) - ToNum(GetIdx(a_788, 1D)))) / (ToNum(GetIdx(b_789, 1D)) - ToNum(GetIdx(a_788, 1D)))))));
+if (Lt(x_790, lo_784)) {
+lo_784 = x_790;
 }
-if (Gt(x_735, hi_730)) {
-hi_730 = x_735;
-}
-}
-i_731++;
+if (Gt(x_790, hi_785)) {
+hi_785 = x_790;
 }
 }
-return ((V)((Lt(hi_730, lo_729) ? 0D : ((ToNum(hi_730) - ToNum(lo_729)) / 2D))));
+i_786++;
+}
+}
+return ((V)((Lt(hi_785, lo_784) ? 0D : ((ToNum(hi_785) - ToNum(lo_784)) / 2D))));
 return default;
 }, 2, "", true);
-offset_39 = Fn((V _self1, int _argc736, V O_742, V b_743, V _a740, V _a741, V[] _rest737) => {
-V n_744 = default;
-if (!(Truthy(b_743))) {
-return O_742;
+offset_39 = Fn((V _arrowThis799, int _argc791, V O_797, V b_798, V _a795, V _a796, V[] _rest792) => {
+V n_800 = default;
+if (!(Truthy(b_798))) {
+return O_797;
 }
-n_744 = Get(O_742, "length");
-return Invoke(O_742, "map", Fn((V _self1, int _argc745, V p_751, V i_752, V _a749, V _a750, V[] _rest746) => {
-V a_753 = default;
-V c_754 = default;
-double tx_755 = 0;
-double ty_756 = 0;
-V L_757 = default;
-double nx_758 = 0;
-double ny_759 = 0;
-a_753 = GetIdx(O_742, (ToNum(Add(((V)((ToNum(i_752) - 1D))), n_744)) % ToNum(n_744)));
-c_754 = GetIdx(O_742, (ToNum(Add(i_752, ((V)(1D)))) % ToNum(n_744)));
-tx_755 = (ToNum(GetIdx(c_754, 0D)) - ToNum(GetIdx(a_753, 0D)));
-ty_756 = (ToNum(GetIdx(c_754, 1D)) - ToNum(GetIdx(a_753, 1D)));
-L_757 = (((V)(Hypot(tx_755, ty_756))) is var _t760 && Truthy(_t760) ? _t760 : ((V)(1D)));
-nx_758 = ((-ty_756) / ToNum(L_757));
-ny_759 = (tx_755 / ToNum(L_757));
-if (!(Truthy(Call(inside_35, V.Undef, O_742, Add(GetIdx(p_751, 0D), ((V)((nx_758 * 0.4)))), Add(GetIdx(p_751, 1D), ((V)((ny_759 * 0.4)))))))) {
-nx_758 = (-nx_758);
-ny_759 = (-ny_759);
+n_800 = Get(O_797, "length");
+return Invoke(O_797, "map", Fn((V _arrowThis809, int _argc801, V p_807, V i_808, V _a805, V _a806, V[] _rest802) => {
+V a_810 = default;
+V c_811 = default;
+double tx_812 = 0;
+double ty_813 = 0;
+V L_814 = default;
+double nx_815 = 0;
+double ny_816 = 0;
+a_810 = GetIdx(O_797, (ToNum(Add(((V)((ToNum(i_808) - 1D))), n_800)) % ToNum(n_800)));
+c_811 = GetIdx(O_797, (ToNum(Add(i_808, ((V)(1D)))) % ToNum(n_800)));
+tx_812 = (ToNum(GetIdx(c_811, 0D)) - ToNum(GetIdx(a_810, 0D)));
+ty_813 = (ToNum(GetIdx(c_811, 1D)) - ToNum(GetIdx(a_810, 1D)));
+L_814 = (((V)(Hypot(tx_812, ty_813))) is var _t817 && Truthy(_t817) ? _t817 : ((V)(1D)));
+nx_815 = ((-ty_813) / ToNum(L_814));
+ny_816 = (tx_812 / ToNum(L_814));
+if (!(Truthy(Call(inside_35, V.Undef, O_797, Add(GetIdx(p_807, 0D), ((V)((nx_815 * 0.4)))), Add(GetIdx(p_807, 1D), ((V)((ny_816 * 0.4)))))))) {
+nx_815 = (-nx_815);
+ny_816 = (-ny_816);
 }
-return Arr(Add(GetIdx(p_751, 0D), ((V)((nx_758 * ToNum(b_743))))), Add(GetIdx(p_751, 1D), ((V)((ny_759 * ToNum(b_743))))));
+return Arr(Add(GetIdx(p_807, 0D), ((V)((nx_815 * ToNum(b_798))))), Add(GetIdx(p_807, 1D), ((V)((ny_816 * ToNum(b_798))))));
 return default;
 }, 2, "", true));
 return default;
 }, 2, "", true);
-pillowRings_40 = Fn((V _self1, int _argc761, V O_767, V T_768, V b_769, V K_770, V[] _rest762) => {
-V R_771 = default;
-R_771 = Arr();
+pillowRings_40 = Fn((V _arrowThis828, int _argc818, V O_824, V T_825, V b_826, V K_827, V[] _rest819) => {
+V R_829 = default;
+R_829 = Arr();
 {
-double k_772 = 0;
-k_772 = 0D;
+double k_830 = 0;
+k_830 = 0D;
 while (true) {
-if (!(Le(((V)(k_772)), K_770))) break;
-double th_774 = 0;
-th_774 = (((k_772 / ToNum(K_770)) * System.Math.PI) / 2D);
-Invoke(R_771, "push", NewObj(2).Put("z", ((V)((ToNum(T_768) * FdLibm.Sin(th_774))))).Put("Q", Call(offset_39, V.Undef, O_767, ((V)((ToNum(b_769) * (1D - FdLibm.Cos(th_774))))))).V);
-k_772++;
+if (!(Le(((V)(k_830)), K_827))) break;
+double th_832 = 0;
+th_832 = (((k_830 / ToNum(K_827)) * System.Math.PI) / 2D);
+Invoke(R_829, "push", NewObj(2).Put("z", ((V)((ToNum(T_825) * FdLibm.Sin(th_832))))).Put("Q", Call(offset_39, V.Undef, O_824, ((V)((ToNum(b_826) * (1D - FdLibm.Cos(th_832))))))).V);
+k_830++;
 }
 }
-return R_771;
+return R_829;
 return default;
 }, 4, "", true);
-pillowZ_41 = Fn((V _self1, int _argc775, V O_781, V T_782, V b_783, V _a780, V[] _rest776) => {
-return Fn((V _self1, int _argc784, V x_790, V y_791, V _a788, V _a789, V[] _rest785) => {
-V d_792 = default;
-double u_793 = 0;
-d_792 = Call(sdist_37, V.Undef, O_781, x_790, y_791);
-if (LeN(d_792, 0D)) {
+pillowZ_41 = Fn((V _arrowThis842, int _argc833, V O_839, V T_840, V b_841, V _a838, V[] _rest834) => {
+return Fn((V _arrowThis851, int _argc843, V x_849, V y_850, V _a847, V _a848, V[] _rest844) => {
+V d_852 = default;
+double u_853 = 0;
+d_852 = Call(sdist_37, V.Undef, O_839, x_849, y_850);
+if (LeN(d_852, 0D)) {
 return ((V)(0D));
 }
-u_793 = Min(1D, (ToNum(d_792) / ToNum(b_783)));
-return ((V)((ToNum(T_782) * System.Math.Sqrt((1D - ((1D - u_793) * (1D - u_793)))))));
+u_853 = Min(1D, (ToNum(d_852) / ToNum(b_841)));
+return ((V)((ToNum(T_840) * System.Math.Sqrt((1D - ((1D - u_853) * (1D - u_853)))))));
 return default;
 }, 2, "", true);
 }, 3, "", true);
 MODELS_42 = NewObj(0).V;
 SN_43 = Set(G("window"), "SN3D", NewObj(2).Put("MODELS", MODELS_42).Put("h", NewObj(25).Put("el", el_14).Put("pt", pt_15).Put("polyD", polyD_16).Put("polyW", polyW_18).Put("circD", circD_19).Put("ellD", ellD_20).Put("runs", runs_21).Put("resample", resample_34).Put("inside", inside_35).Put("sdist", sdist_37).Put("halfW", halfW_38).Put("offset", offset_39).Put("pillowRings", pillowRings_40).Put("pillowZ", pillowZ_41).Put("clamp", clamp_12).Put("SM", SM_13).Put("r2", r2_11).Put("rnd", rnd_22).Put("subs", subs_23).Put("decD", decD_26).Put("pal", pal_28).Put("pleatSet", pleatSet_29).Put("pleatDraw", pleatDraw_30).Put("longSet", longSet_32).Put("longDraw", longDraw_33).V).V);
-Set(SN_43, "setup", Fn((V _self1, int _argc794, V c_800, V _a797, V _a798, V _a799, V[] _rest795) => {
+Set(SN_43, "setup", Fn((V _arrowThis861, int _argc854, V c_860, V _a857, V _a858, V _a859, V[] _rest855) => {
 try {
-Invoke(SN_43, "setup0", c_800);
-} catch (System.Exception _ex801) {
-V e_802 = default;
-e_802 = Caught(_ex801);
-Invoke(Set(G("window"), "__SNERR", (Get(G("window"), "__SNERR") is var _t804 && Truthy(_t804) ? _t804 : Arr())), "push", ((V)(JsStrBuf.Begin().S("setup ").V(Get(c_800, "key")).S(" ").V((e_802 is var _t803 && !Truthy(_t803) ? _t803 : Get(e_802, "message"))).End())));
-Invoke(G("console"), "error", ((V)("SN3D setup")), Get(c_800, "key"), (e_802 is var _t805 && !Truthy(_t805) ? _t805 : Get(e_802, "stack")));
+Invoke(SN_43, "setup0", c_860);
+} catch (System.Exception _ex862) {
+V e_863 = default;
+e_863 = Caught(_ex862);
+Invoke(Set(G("window"), "__SNERR", (Get(G("window"), "__SNERR") is var _t865 && Truthy(_t865) ? _t865 : Arr())), "push", ((V)(JsStrBuf.Begin().S("setup ").V(Get(c_860, "key")).S(" ").V((e_863 is var _t864 && !Truthy(_t864) ? _t864 : Get(e_863, "message"))).End())));
+Invoke(G("console"), "error", ((V)("SN3D setup")), Get(c_860, "key"), (e_863 is var _t866 && !Truthy(_t866) ? _t866 : Get(e_863, "stack")));
 }
 return default;
 }, 1, "", true));
-Set(SN_43, "setup0", Fn((V _self1, int _argc806, V c_812, V _a809, V _a810, V _a811, V[] _rest807) => {
-V I_813 = default;
-V key_814 = default;
-V art_815 = default;
-V items_816 = default;
-V headA_817 = default;
-V H_818 = default;
-V M_819 = default;
-V sk_820 = default;
-V par_821 = default;
-V df_822 = default;
-V dOf_823 = default;
-V fOf_824 = default;
-V sOf_825 = default;
-V S_826 = default;
-V B_827 = default;
-{ V _t828 = c_812;
-if (_t828.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t828));
-{ V _t829 = Get(_t828, "I");
-I_813 = _t829; }
-{ V _t830 = Get(_t828, "key");
-key_814 = _t830; }
-{ V _t831 = Get(_t828, "art");
-art_815 = _t831; }
-{ V _t832 = Get(_t828, "items");
-items_816 = _t832; }
-{ V _t833 = Get(_t828, "headA");
-headA_817 = _t833; }
-{ V _t834 = Get(_t828, "H");
-H_818 = _t834; } }
-M_819 = GetK(MODELS_42, key_814);
-if ((!(Truthy(M_819)) || !(Truthy(headA_817)))) {
+Set(SN_43, "setup0", Fn((V _arrowThis874, int _argc867, V c_873, V _a870, V _a871, V _a872, V[] _rest868) => {
+V I_875 = default;
+V key_876 = default;
+V art_877 = default;
+V items_878 = default;
+V headA_879 = default;
+V H_880 = default;
+V M_881 = default;
+V sk_882 = default;
+V par_883 = default;
+V df_884 = default;
+V dOf_885 = default;
+V fOf_886 = default;
+V sOf_887 = default;
+V S_888 = default;
+V B_889 = default;
+{ V _t890 = c_873;
+if (_t890.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t890));
+{ V _t891 = Get(_t890, "I");
+I_875 = _t891; }
+{ V _t892 = Get(_t890, "key");
+key_876 = _t892; }
+{ V _t893 = Get(_t890, "art");
+art_877 = _t893; }
+{ V _t894 = Get(_t890, "items");
+items_878 = _t894; }
+{ V _t895 = Get(_t890, "headA");
+headA_879 = _t895; }
+{ V _t896 = Get(_t890, "H");
+H_880 = _t896; } }
+M_881 = GetK(MODELS_42, key_876);
+if ((!(Truthy(M_881)) || !(Truthy(headA_879)))) {
 return default;
 }
-sk_820 = Get(headA_817, "q");
-par_821 = Get(Get(sk_820, "e"), "parentNode");
-df_822 = (Invoke(art_815, "querySelector", ((V)("defs"))) is var _t835 && Truthy(_t835) ? _t835 : Invoke(art_815, "insertBefore", Call(el_14, V.Undef, ((V)("defs")), NewObj(0).V), Get(art_815, "firstChild")));
-dOf_823 = Fn((V _self1, int _argc836, V q_842, V _a839, V _a840, V _a841, V[] _rest837) => {
-return (Invoke(Get(q_842, "e"), "getAttribute", ((V)("d"))) is var _t843 && Truthy(_t843) ? _t843 : ((V)("")));
+sk_882 = Get(headA_879, "q");
+par_883 = Get(Get(sk_882, "e"), "parentNode");
+df_884 = (Invoke(art_877, "querySelector", ((V)("defs"))) is var _t897 && Truthy(_t897) ? _t897 : Invoke(art_877, "insertBefore", Call(el_14, V.Undef, ((V)("defs")), NewObj(0).V), Get(art_877, "firstChild")));
+dOf_885 = Fn((V _arrowThis905, int _argc898, V q_904, V _a901, V _a902, V _a903, V[] _rest899) => {
+return (Invoke(Get(q_904, "e"), "getAttribute", ((V)("d"))) is var _t906 && Truthy(_t906) ? _t906 : ((V)("")));
 }, 1, "", true);
-fOf_824 = Fn((V _self1, int _argc844, V q_850, V _a847, V _a848, V _a849, V[] _rest845) => {
-return ((Invoke(Get(q_850, "e"), "getAttribute", ((V)("fill"))) is var _t853 && Truthy(_t853) ? _t853 : ((Get(Get(q_850, "e"), "parentNode") is var _t851 && !Truthy(_t851) ? _t851 : Get(Get(Get(q_850, "e"), "parentNode"), "getAttribute")) is var _t852 && !Truthy(_t852) ? _t852 : Invoke(Get(Get(q_850, "e"), "parentNode"), "getAttribute", ((V)("fill"))))) is var _t854 && Truthy(_t854) ? _t854 : ((V)("")));
+fOf_886 = Fn((V _arrowThis914, int _argc907, V q_913, V _a910, V _a911, V _a912, V[] _rest908) => {
+return ((Invoke(Get(q_913, "e"), "getAttribute", ((V)("fill"))) is var _t917 && Truthy(_t917) ? _t917 : ((Get(Get(q_913, "e"), "parentNode") is var _t915 && !Truthy(_t915) ? _t915 : Get(Get(Get(q_913, "e"), "parentNode"), "getAttribute")) is var _t916 && !Truthy(_t916) ? _t916 : Invoke(Get(Get(q_913, "e"), "parentNode"), "getAttribute", ((V)("fill"))))) is var _t918 && Truthy(_t918) ? _t918 : ((V)("")));
 }, 1, "", true);
-sOf_825 = Fn((V _self1, int _argc855, V q_861, V _a858, V _a859, V _a860, V[] _rest856) => {
-return ((Invoke(Get(q_861, "e"), "getAttribute", ((V)("stroke"))) is var _t864 && Truthy(_t864) ? _t864 : ((Get(Get(q_861, "e"), "parentNode") is var _t862 && !Truthy(_t862) ? _t862 : Get(Get(Get(q_861, "e"), "parentNode"), "getAttribute")) is var _t863 && !Truthy(_t863) ? _t863 : Invoke(Get(Get(q_861, "e"), "parentNode"), "getAttribute", ((V)("stroke"))))) is var _t865 && Truthy(_t865) ? _t865 : ((V)("")));
+sOf_887 = Fn((V _arrowThis926, int _argc919, V q_925, V _a922, V _a923, V _a924, V[] _rest920) => {
+return ((Invoke(Get(q_925, "e"), "getAttribute", ((V)("stroke"))) is var _t929 && Truthy(_t929) ? _t929 : ((Get(Get(q_925, "e"), "parentNode") is var _t927 && !Truthy(_t927) ? _t927 : Get(Get(Get(q_925, "e"), "parentNode"), "getAttribute")) is var _t928 && !Truthy(_t928) ? _t928 : Invoke(Get(Get(q_925, "e"), "parentNode"), "getAttribute", ((V)("stroke"))))) is var _t930 && Truthy(_t930) ? _t930 : ((V)("")));
 }, 1, "", true);
-S_826 = NewObj(25).Put("I", I_813).Put("key", key_814).Put("art", art_815).Put("items", items_816).Put("headA", headA_817).Put("H", H_818).Put("sk", sk_820).Put("par", par_821).Put("df", df_822).Put("u", Get(I_813, "u")).Put("HX", Get(headA_817, "cx")).Put("HY", Get(headA_817, "cy")).Put("d", dOf_823).Put("f", fOf_824).Put("s", sOf_825).Put("el", el_14).Put("hide", Fn((V _self1, int _argc866, V pred_872, V _a869, V _a870, V _a871, V[] _rest867) => {
-return Invoke(items_816, "filter", Fn((V _self1, int _argc873, V q_879, V _a876, V _a877, V _a878, V[] _rest874) => {
-if (((SEq(q_879, sk_820) || SEqS(Get(q_879, "role"), "xHide")) || !(Truthy(Call(pred_872, V.Undef, q_879))))) {
+S_888 = NewObj(25).Put("I", I_875).Put("key", key_876).Put("art", art_877).Put("items", items_878).Put("headA", headA_879).Put("H", H_880).Put("sk", sk_882).Put("par", par_883).Put("df", df_884).Put("u", Get(I_875, "u")).Put("HX", Get(headA_879, "cx")).Put("HY", Get(headA_879, "cy")).Put("d", dOf_885).Put("f", fOf_886).Put("s", sOf_887).Put("el", el_14).Put("hide", Fn((V _arrowThis938, int _argc931, V pred_937, V _a934, V _a935, V _a936, V[] _rest932) => {
+return Invoke(items_878, "filter", Fn((V _arrowThis946, int _argc939, V q_945, V _a942, V _a943, V _a944, V[] _rest940) => {
+if (((SEq(q_945, sk_882) || SEqS(Get(q_945, "role"), "xHide")) || !(Truthy(Call(pred_937, V.Undef, q_945))))) {
 return (false ? V.True : V.False);
 }
-Set(q_879, "role", ((V)("xHide")));
-Set(Get(Get(q_879, "e"), "style"), "display", ((V)("none")));
+Set(q_945, "role", ((V)("xHide")));
+Set(Get(Get(q_945, "e"), "style"), "display", ((V)("none")));
 return (true ? V.True : V.False);
 return default;
 }, 1, "", true));
-}, 1, "hide", true)).Put("path", Fn((V _self1, int _argc880, V a_886, V p_887, V before_888, V _a885, V[] _rest881) => {
-return Call(el_14, V.Undef, ((V)("path")), a_886, (p_887 is var _t889 && Truthy(_t889) ? _t889 : Get(S_826, "LG")), before_888);
-}, 3, "path", true)).Put("g", Fn((V _self1, int _argc890, V p_896, V before_897, V _a894, V _a895, V[] _rest891) => {
-return Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, (p_896 is var _t898 && Truthy(_t898) ? _t898 : Get(S_826, "LG")), before_897);
-}, 2, "g", true)).Put("outline", Fn((V _self1, int _argc899, V q_905, V n_906, V _a903, V _a904, V[] _rest900) => {
-return Call(resample_34, V.Undef, Invoke(Invoke(H_818, "flat", Get(q_905, "segs"), ((V)(8D))), "filter", Fn((V _self1, int _argc907, V p_913, V i_914, V A_915, V _a912, V[] _rest908) => {
-return ((!(Truthy(i_914)) || (Hypot((ToNum(GetIdx(p_913, 0D)) - ToNum(GetIdx(GetIdx(A_915, (ToNum(i_914) - 1D)), 0D))), (ToNum(GetIdx(p_913, 1D)) - ToNum(GetIdx(GetIdx(A_915, (ToNum(i_914) - 1D)), 1D)))) > 0.01)) ? V.True : V.False);
-}, 3, "", true)), (n_906 is var _t916 && Truthy(_t916) ? _t916 : ((V)(64D))));
-}, 2, "outline", true)).Put("rgrad", Fn((V _self1, int _argc917, V id_923, V st_924, V o_925, V _a922, V[] _rest918) => {
-V g_926 = default;
-g_926 = Call(el_14, V.Undef, ((V)("radialGradient")), Object_assign(NewObj(4).Put("id", Add(id_923, Get(I_813, "u"))).Put("cx", ((V)("38%"))).Put("cy", ((V)("30%"))).Put("r", ((V)("75%"))).V, (o_925 is var _t927 && Truthy(_t927) ? _t927 : NewObj(0).V)), df_822);
-Invoke(st_924, "forEach", Fn((V _self1, int _argc928, V _a930, V _a931, V _a932, V _a933, V[] _rest929) => {
-V of_936 = default;
-V cl_938 = default;
-V op_940 = default;
-{ V _t934 = ListOf(_a930);
-{ V _t935 = GetIdx(_t934, 0D);
-of_936 = _t935; }
-{ V _t937 = GetIdx(_t934, 1D);
-cl_938 = _t937; }
-{ V _t939 = GetIdx(_t934, 2D);
-op_940 = _t939; }
+}, 1, "hide", true)).Put("path", Fn((V _arrowThis956, int _argc947, V a_953, V p_954, V before_955, V _a952, V[] _rest948) => {
+return Call(el_14, V.Undef, ((V)("path")), a_953, (p_954 is var _t957 && Truthy(_t957) ? _t957 : Get(S_888, "LG")), before_955);
+}, 3, "path", true)).Put("g", Fn((V _arrowThis966, int _argc958, V p_964, V before_965, V _a962, V _a963, V[] _rest959) => {
+return Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, (p_964 is var _t967 && Truthy(_t967) ? _t967 : Get(S_888, "LG")), before_965);
+}, 2, "g", true)).Put("outline", Fn((V _arrowThis976, int _argc968, V q_974, V n_975, V _a972, V _a973, V[] _rest969) => {
+return Call(resample_34, V.Undef, Invoke(Invoke(H_880, "flat", Get(q_974, "segs"), ((V)(8D))), "filter", Fn((V _arrowThis986, int _argc977, V p_983, V i_984, V A_985, V _a982, V[] _rest978) => {
+return ((!(Truthy(i_984)) || (Hypot((ToNum(GetIdx(p_983, 0D)) - ToNum(GetIdx(GetIdx(A_985, (ToNum(i_984) - 1D)), 0D))), (ToNum(GetIdx(p_983, 1D)) - ToNum(GetIdx(GetIdx(A_985, (ToNum(i_984) - 1D)), 1D)))) > 0.01)) ? V.True : V.False);
+}, 3, "", true)), (n_975 is var _t987 && Truthy(_t987) ? _t987 : ((V)(64D))));
+}, 2, "outline", true)).Put("rgrad", Fn((V _arrowThis997, int _argc988, V id_994, V st_995, V o_996, V _a993, V[] _rest989) => {
+V g_998 = default;
+g_998 = Call(el_14, V.Undef, ((V)("radialGradient")), Object_assign(NewObj(4).Put("id", Add(id_994, Get(I_875, "u"))).Put("cx", ((V)("38%"))).Put("cy", ((V)("30%"))).Put("r", ((V)("75%"))).V, (o_996 is var _t999 && Truthy(_t999) ? _t999 : NewObj(0).V)), df_884);
+Invoke(st_995, "forEach", Fn((V _arrowThis1013, int _argc1000, V _a1002, V _a1003, V _a1004, V _a1005, V[] _rest1001) => {
+V of_1008 = default;
+V cl_1010 = default;
+V op_1012 = default;
+{ V _t1006 = ListOf(_a1002);
+{ V _t1007 = GetIdx(_t1006, 0D);
+of_1008 = _t1007; }
+{ V _t1009 = GetIdx(_t1006, 1D);
+cl_1010 = _t1009; }
+{ V _t1011 = GetIdx(_t1006, 2D);
+op_1012 = _t1011; }
 }
-return Call(el_14, V.Undef, ((V)("stop")), (!op_940.IsNullish ? NewObj(3).Put("offset", of_936).Put("stop-color", cl_938).Put("stop-opacity", op_940).V : NewObj(2).Put("offset", of_936).Put("stop-color", cl_938).V), g_926);
+return Call(el_14, V.Undef, ((V)("stop")), (!op_1012.IsNullish ? NewObj(3).Put("offset", of_1008).Put("stop-color", cl_1010).Put("stop-opacity", op_1012).V : NewObj(2).Put("offset", of_1008).Put("stop-color", cl_1010).V), g_998);
 }, 1, "", true));
-return ((V)(JsStrBuf.Begin().S("url(#").V(id_923).V(Get(I_813, "u")).S(")").End()));
+return ((V)(JsStrBuf.Begin().S("url(#").V(id_994).V(Get(I_875, "u")).S(")").End()));
 return default;
-}, 3, "rgrad", true)).Put("lgrad", Fn((V _self1, int _argc941, V id_947, V st_948, V o_949, V _a946, V[] _rest942) => {
-V g_950 = default;
-g_950 = Call(el_14, V.Undef, ((V)("linearGradient")), Object_assign(NewObj(5).Put("id", Add(id_947, Get(I_813, "u"))).Put("x1", ((V)(0D))).Put("y1", ((V)(0D))).Put("x2", ((V)(1D))).Put("y2", ((V)(0D))).V, (o_949 is var _t951 && Truthy(_t951) ? _t951 : NewObj(0).V)), df_822);
-Invoke(st_948, "forEach", Fn((V _self1, int _argc952, V _a954, V _a955, V _a956, V _a957, V[] _rest953) => {
-V of_960 = default;
-V cl_962 = default;
-V op_964 = default;
-{ V _t958 = ListOf(_a954);
-{ V _t959 = GetIdx(_t958, 0D);
-of_960 = _t959; }
-{ V _t961 = GetIdx(_t958, 1D);
-cl_962 = _t961; }
-{ V _t963 = GetIdx(_t958, 2D);
-op_964 = _t963; }
+}, 3, "rgrad", true)).Put("lgrad", Fn((V _arrowThis1023, int _argc1014, V id_1020, V st_1021, V o_1022, V _a1019, V[] _rest1015) => {
+V g_1024 = default;
+g_1024 = Call(el_14, V.Undef, ((V)("linearGradient")), Object_assign(NewObj(5).Put("id", Add(id_1020, Get(I_875, "u"))).Put("x1", ((V)(0D))).Put("y1", ((V)(0D))).Put("x2", ((V)(1D))).Put("y2", ((V)(0D))).V, (o_1022 is var _t1025 && Truthy(_t1025) ? _t1025 : NewObj(0).V)), df_884);
+Invoke(st_1021, "forEach", Fn((V _arrowThis1039, int _argc1026, V _a1028, V _a1029, V _a1030, V _a1031, V[] _rest1027) => {
+V of_1034 = default;
+V cl_1036 = default;
+V op_1038 = default;
+{ V _t1032 = ListOf(_a1028);
+{ V _t1033 = GetIdx(_t1032, 0D);
+of_1034 = _t1033; }
+{ V _t1035 = GetIdx(_t1032, 1D);
+cl_1036 = _t1035; }
+{ V _t1037 = GetIdx(_t1032, 2D);
+op_1038 = _t1037; }
 }
-return Call(el_14, V.Undef, ((V)("stop")), (!op_964.IsNullish ? NewObj(3).Put("offset", of_960).Put("stop-color", cl_962).Put("stop-opacity", op_964).V : NewObj(2).Put("offset", of_960).Put("stop-color", cl_962).V), g_950);
+return Call(el_14, V.Undef, ((V)("stop")), (!op_1038.IsNullish ? NewObj(3).Put("offset", of_1034).Put("stop-color", cl_1036).Put("stop-opacity", op_1038).V : NewObj(2).Put("offset", of_1034).Put("stop-color", cl_1036).V), g_1024);
 }, 1, "", true));
-return ((V)(JsStrBuf.Begin().S("url(#").V(id_947).V(Get(I_813, "u")).S(")").End()));
+return ((V)(JsStrBuf.Begin().S("url(#").V(id_1020).V(Get(I_875, "u")).S(")").End()));
 return default;
-}, 3, "lgrad", true)).Put("clip", Fn((V _self1, int _argc965, V id_971, V _a968, V _a969, V _a970, V[] _rest966) => {
-V cp_972 = default;
-cp_972 = Call(el_14, V.Undef, ((V)("clipPath")), NewObj(1).Put("id", Add(id_971, Get(I_813, "u"))).V, df_822);
-return NewObj(2).Put("p", Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("d", ((V)("M0 0"))).V, cp_972)).Put("url", ((V)(JsStrBuf.Begin().S("url(#").V(id_971).V(Get(I_813, "u")).S(")").End()))).V;
+}, 3, "lgrad", true)).Put("clip", Fn((V _arrowThis1047, int _argc1040, V id_1046, V _a1043, V _a1044, V _a1045, V[] _rest1041) => {
+V cp_1048 = default;
+cp_1048 = Call(el_14, V.Undef, ((V)("clipPath")), NewObj(1).Put("id", Add(id_1046, Get(I_875, "u"))).V, df_884);
+return NewObj(2).Put("p", Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("d", ((V)("M0 0"))).V, cp_1048)).Put("url", ((V)(JsStrBuf.Begin().S("url(#").V(id_1046).V(Get(I_875, "u")).S(")").End()))).V;
 return default;
-}, 1, "clip", true)).Put("dk", Fn((V _self1, int _argc973, V q_979, V k_980, V _a977, V _a978, V[] _rest974) => {
-return (!(!(Truthy((Get(Get(q_979, "e"), "closest") is var _t981 && !Truthy(_t981) ? _t981 : Invoke(Get(q_979, "e"), "closest", ((V)((Truthy(k_980) ? JsStrBuf.Begin().S("[data-k=\"").V(k_980).S("\"]").End() : "[data-k]")))))))) ? V.True : V.False);
-}, 2, "dk", true)).Put("decals", Fn((V _self1, int _argc982, V pred_988, V par_989, V _a986, V _a987, V[] _rest983) => {
-return Invoke(Invoke(S_826, "hide", pred_988), "map", Fn((V _self1, int _argc990, V q_996, V _a993, V _a994, V _a995, V[] _rest991) => {
-V a_997 = default;
-a_997 = NewObj(0).V;
-Invoke(DA_24, "forEach", Fn((V _self1, int _argc998, V k_1004, V _a1001, V _a1002, V _a1003, V[] _rest999) => {
-V v_1005 = default;
-v_1005 = Call(inh_25, V.Undef, Get(q_996, "e"), k_1004);
-if (!v_1005.IsNullish) {
-SetK(a_997, k_1004, v_1005);
+}, 1, "clip", true)).Put("dk", Fn((V _arrowThis1057, int _argc1049, V q_1055, V k_1056, V _a1053, V _a1054, V[] _rest1050) => {
+return (!(!(Truthy((Get(Get(q_1055, "e"), "closest") is var _t1058 && !Truthy(_t1058) ? _t1058 : Invoke(Get(q_1055, "e"), "closest", ((V)((Truthy(k_1056) ? JsStrBuf.Begin().S("[data-k=\"").V(k_1056).S("\"]").End() : "[data-k]")))))))) ? V.True : V.False);
+}, 2, "dk", true)).Put("decals", Fn((V _arrowThis1067, int _argc1059, V pred_1065, V par_1066, V _a1063, V _a1064, V[] _rest1060) => {
+return Invoke(Invoke(S_888, "hide", pred_1065), "map", Fn((V _arrowThis1075, int _argc1068, V q_1074, V _a1071, V _a1072, V _a1073, V[] _rest1069) => {
+V a_1076 = default;
+a_1076 = NewObj(0).V;
+Invoke(DA_24, "forEach", Fn((V _arrowThis1084, int _argc1077, V k_1083, V _a1080, V _a1081, V _a1082, V[] _rest1078) => {
+V v_1085 = default;
+v_1085 = Call(inh_25, V.Undef, Get(q_1074, "e"), k_1083);
+if (!v_1085.IsNullish) {
+SetK(a_1076, k_1083, v_1085);
 }
 return default;
 }, 1, "", true));
-if (Get(a_997, "fill").IsNullish) {
-Set(a_997, "fill", ((V)("#000")));
+if (Get(a_1076, "fill").IsNullish) {
+Set(a_1076, "fill", ((V)("#000")));
 }
-return NewObj(3).Put("e", Call(el_14, V.Undef, ((V)("path")), a_997, (par_989 is var _t1006 && Truthy(_t1006) ? _t1006 : Get(S_826, "LG")))).Put("L", Call(subs_23, V.Undef, Get(q_996, "segs"), ((V)(6D)))).Put("q", q_996).V;
+return NewObj(3).Put("e", Call(el_14, V.Undef, ((V)("path")), a_1076, (par_1066 is var _t1086 && Truthy(_t1086) ? _t1086 : Get(S_888, "LG")))).Put("L", Call(subs_23, V.Undef, Get(q_1074, "segs"), ((V)(6D)))).Put("q", q_1074).V;
 return default;
 }, 1, "", true));
 }, 2, "decals", true)).V;
-Set(S_826, "gB", Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, par_821, Get(sk_820, "e")));
-Set(S_826, "LG", Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, par_821, Get(Get(sk_820, "e"), "nextSibling")));
-B_827 = Set(I_813, "bk", Object_assign(NewObj(10).Put("kind", key_814).Put("sn", ((V)(1D))).Put("bodyG", Get(c_812, "bodyG")).Put("d", ((V)(""))).Put("ya", ((V)(30D))).Put("yb", ((V)(90D))).Put("rx", ((V)(30D))).Put("rT", Fn((V _self1, int _argc1007, V _a1009, V _a1010, V _a1011, V _a1012, V[] _rest1008) => {
+Set(S_888, "gB", Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, par_883, Get(sk_882, "e")));
+Set(S_888, "LG", Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, par_883, Get(Get(sk_882, "e"), "nextSibling")));
+B_889 = Set(I_875, "bk", Object_assign(NewObj(10).Put("kind", key_876).Put("sn", ((V)(1D))).Put("bodyG", Get(c_873, "bodyG")).Put("d", ((V)(""))).Put("ya", ((V)(30D))).Put("yb", ((V)(90D))).Put("rx", ((V)(30D))).Put("rT", Fn((V _arrowThis1093, int _argc1087, V _a1089, V _a1090, V _a1091, V _a1092, V[] _rest1088) => {
 return ((V)(20D));
-}, 0, "rT", true)).Put("S", S_826).Put("M", M_819).V, (Invoke(M_819, "setup", S_826) is var _t1013 && Truthy(_t1013) ? _t1013 : NewObj(0).V)));
-if (Truthy(Get(B_827, "zE"))) {
-Set(I_813, "zE", Get(B_827, "zE"));
+}, 0, "rT", true)).Put("S", S_888).Put("M", M_881).V, (Invoke(M_881, "setup", S_888) is var _t1094 && Truthy(_t1094) ? _t1094 : NewObj(0).V)));
+if (Truthy(Get(B_889, "zE"))) {
+Set(I_875, "zE", Get(B_889, "zE"));
 }
 return default;
 }, 1, "", true));
-Set(SN_43, "draw", Fn((V _self1, int _argc1014, V c_1020, V _a1017, V _a1018, V _a1019, V[] _rest1015) => {
+Set(SN_43, "draw", Fn((V _arrowThis1102, int _argc1095, V c_1101, V _a1098, V _a1099, V _a1100, V[] _rest1096) => {
 try {
-Invoke(SN_43, "draw0", c_1020);
-} catch (System.Exception _ex1021) {
-V e_1022 = default;
-e_1022 = Caught(_ex1021);
+Invoke(SN_43, "draw0", c_1101);
+} catch (System.Exception _ex1103) {
+V e_1104 = default;
+e_1104 = Caught(_ex1103);
 if (!(Truthy(Get(SN_43, "err")))) {
 Set(SN_43, "err", ((V)(1D)));
-Invoke(Set(G("window"), "__SNERR", (Get(G("window"), "__SNERR") is var _t1025 && Truthy(_t1025) ? _t1025 : Arr())), "push", ((V)(JsStrBuf.Begin().S("draw ").V((Get(Get(c_1020, "I"), "bk") is var _t1023 && !Truthy(_t1023) ? _t1023 : Get(Get(Get(c_1020, "I"), "bk"), "kind"))).S(" ").V((e_1022 is var _t1024 && !Truthy(_t1024) ? _t1024 : Get(e_1022, "message"))).End())));
-Invoke(G("console"), "error", ((V)("SN3D draw")), (Get(Get(c_1020, "I"), "bk") is var _t1026 && !Truthy(_t1026) ? _t1026 : Get(Get(Get(c_1020, "I"), "bk"), "kind")), (e_1022 is var _t1027 && !Truthy(_t1027) ? _t1027 : Get(e_1022, "stack")));
+Invoke(Set(G("window"), "__SNERR", (Get(G("window"), "__SNERR") is var _t1107 && Truthy(_t1107) ? _t1107 : Arr())), "push", ((V)(JsStrBuf.Begin().S("draw ").V((Get(Get(c_1101, "I"), "bk") is var _t1105 && !Truthy(_t1105) ? _t1105 : Get(Get(Get(c_1101, "I"), "bk"), "kind"))).S(" ").V((e_1104 is var _t1106 && !Truthy(_t1106) ? _t1106 : Get(e_1104, "message"))).End())));
+Invoke(G("console"), "error", ((V)("SN3D draw")), (Get(Get(c_1101, "I"), "bk") is var _t1108 && !Truthy(_t1108) ? _t1108 : Get(Get(Get(c_1101, "I"), "bk"), "kind")), (e_1104 is var _t1109 && !Truthy(_t1109) ? _t1109 : Get(e_1104, "stack")));
 }
 }
 return default;
 }, 1, "", true));
-Set(SN_43, "draw0", Fn((V _self1, int _argc1028, V c_1034, V _a1031, V _a1032, V _a1033, V[] _rest1029) => {
-V I_1035 = default;
-V P_1036 = default;
-V now_1037 = default;
-V sph_1038 = default;
-V sphZ_1039 = default;
-V glob_1040 = default;
-V H_1041 = default;
-V HY_1042 = default;
-V B_1043 = default;
-V M_1044 = default;
-V dt_1045 = default;
-double ts_1046 = 0;
-double tg_1047 = 0;
-double ly_1048 = 0;
-V Q_1049 = default;
-V g0_1050 = default;
-V g1_1051 = default;
-V D_1052 = default;
-{ V _t1053 = c_1034;
-if (_t1053.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t1053));
-{ V _t1054 = Get(_t1053, "I");
-I_1035 = _t1054; }
-{ V _t1055 = Get(_t1053, "P");
-P_1036 = _t1055; }
-{ V _t1056 = Get(_t1053, "now");
-now_1037 = _t1056; }
-{ V _t1057 = Get(_t1053, "sph");
-sph_1038 = _t1057; }
-{ V _t1058 = Get(_t1053, "sphZ");
-sphZ_1039 = _t1058; }
-{ V _t1059 = Get(_t1053, "glob");
-glob_1040 = _t1059; }
-{ V _t1060 = Get(_t1053, "H");
-H_1041 = _t1060; }
-{ V _t1061 = Get(_t1053, "HY");
-HY_1042 = _t1061; } }
-B_1043 = Get(I_1035, "bk");
-M_1044 = (B_1043 is var _t1062 && !Truthy(_t1062) ? _t1062 : Get(B_1043, "M"));
-if (!(Truthy(M_1044))) {
+Set(SN_43, "draw0", Fn((V _arrowThis1117, int _argc1110, V c_1116, V _a1113, V _a1114, V _a1115, V[] _rest1111) => {
+V I_1118 = default;
+V P_1119 = default;
+V now_1120 = default;
+V sph_1121 = default;
+V sphZ_1122 = default;
+V glob_1123 = default;
+V H_1124 = default;
+V HY_1125 = default;
+V B_1126 = default;
+V M_1127 = default;
+V dt_1128 = default;
+double ts_1129 = 0;
+double tg_1130 = 0;
+double ly_1131 = 0;
+V Q_1132 = default;
+V g0_1133 = default;
+V g1_1134 = default;
+V D_1135 = default;
+{ V _t1136 = c_1116;
+if (_t1136.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t1136));
+{ V _t1137 = Get(_t1136, "I");
+I_1118 = _t1137; }
+{ V _t1138 = Get(_t1136, "P");
+P_1119 = _t1138; }
+{ V _t1139 = Get(_t1136, "now");
+now_1120 = _t1139; }
+{ V _t1140 = Get(_t1136, "sph");
+sph_1121 = _t1140; }
+{ V _t1141 = Get(_t1136, "sphZ");
+sphZ_1122 = _t1141; }
+{ V _t1142 = Get(_t1136, "glob");
+glob_1123 = _t1142; }
+{ V _t1143 = Get(_t1136, "H");
+H_1124 = _t1143; }
+{ V _t1144 = Get(_t1136, "HY");
+HY_1125 = _t1144; } }
+B_1126 = Get(I_1118, "bk");
+M_1127 = (B_1126 is var _t1145 && !Truthy(_t1145) ? _t1145 : Get(B_1126, "M"));
+if (!(Truthy(M_1127))) {
 return default;
 }
-dt_1045 = (Get(c_1034, "dtS") is var _t1063 && Truthy(_t1063) ? _t1063 : ((V)(0.016)));
-ts_1046 = (ToNum(now_1037) / 1000D);
-tg_1047 = ((((ToNum(Get(P_1036, "x")) * 1.4) + (ToNum(Get(P_1036, "tilt")) * 0.5)) + (ToNum(Get(P_1036, "lean")) * 1.5)) + (ToNum(Get(P_1036, "turn")) * 12D));
-ly_1048 = (ToNum(Get(P_1036, "lift")) - (ToNum(Get(c_1034, "sq")) * 8D));
-Q_1049 = (Get(B_1043, "__q") is var _t1064 && Truthy(_t1064) ? _t1064 : Set(B_1043, "__q", NewObj(4).Put("p", ((V)(tg_1047))).Put("v", ((V)(0D))).Put("l", ((V)(ly_1048))).Put("lv", ((V)(0D))).V));
-OpSet(Q_1049, "v", 0, ((V)(((((tg_1047 - ToNum(Get(Q_1049, "p"))) * 120D) - (ToNum(Get(Q_1049, "v")) * 7D)) * ToNum(dt_1045)))));
-OpSet(Q_1049, "p", 0, ((V)((ToNum(Get(Q_1049, "v")) * ToNum(dt_1045)))));
-OpSet(Q_1049, "lv", 0, ((V)(((((ly_1048 - ToNum(Get(Q_1049, "l"))) * 140D) - (ToNum(Get(Q_1049, "lv")) * 7.5)) * ToNum(dt_1045)))));
-OpSet(Q_1049, "l", 0, ((V)((ToNum(Get(Q_1049, "lv")) * ToNum(dt_1045)))));
-g0_1050 = Call(glob_1040, V.Undef, ((V)(40D)), HY_1042);
-g1_1051 = Call(glob_1040, V.Undef, ((V)(60D)), HY_1042);
-D_1052 = Object_assign(NewObj(0).V, c_1034, NewObj(12).Put("B", B_1043).Put("ts", ((V)(ts_1046))).Put("P3", sph_1038).Put("Z3", sphZ_1039).Put("kS", ((V)((Hypot((ToNum(GetIdx(g1_1051, 0D)) - ToNum(GetIdx(g0_1050, 0D))), (ToNum(GetIdx(g1_1051, 1D)) - ToNum(GetIdx(g0_1050, 1D)))) / 20D)))).Put("ox", Call(clamp_12, V.Undef, ((V)((ToNum(Get(Q_1049, "p")) - tg_1047))), ((V)((-12D))), ((V)(12D)))).Put("oy", Call(clamp_12, V.Undef, ((V)((ToNum(Get(Q_1049, "l")) - ly_1048))), ((V)((-6D))), ((V)(6D)))).Put("front", ((V)((ToNum(Get(c_1034, "cyh")) * ToNum(Get(c_1034, "cp")))))).Put("bv", Fn((V _self1, int _argc1065, V k_1071, V _a1068, V _a1069, V _a1070, V[] _rest1066) => {
-double v_1072 = 0;
-v_1072 = ToNum(GetK(P_1036, k_1071));
-return ((V)(((v_1072 == v_1072) ? v_1072 : 0D)));
+dt_1128 = (Get(c_1116, "dtS") is var _t1146 && Truthy(_t1146) ? _t1146 : ((V)(0.016)));
+ts_1129 = (ToNum(now_1120) / 1000D);
+tg_1130 = ((((ToNum(Get(P_1119, "x")) * 1.4) + (ToNum(Get(P_1119, "tilt")) * 0.5)) + (ToNum(Get(P_1119, "lean")) * 1.5)) + (ToNum(Get(P_1119, "turn")) * 12D));
+ly_1131 = (ToNum(Get(P_1119, "lift")) - (ToNum(Get(c_1116, "sq")) * 8D));
+Q_1132 = (Get(B_1126, "__q") is var _t1147 && Truthy(_t1147) ? _t1147 : Set(B_1126, "__q", NewObj(4).Put("p", ((V)(tg_1130))).Put("v", ((V)(0D))).Put("l", ((V)(ly_1131))).Put("lv", ((V)(0D))).V));
+OpSet(Q_1132, "v", 0, ((V)(((((tg_1130 - ToNum(Get(Q_1132, "p"))) * 120D) - (ToNum(Get(Q_1132, "v")) * 7D)) * ToNum(dt_1128)))));
+OpSet(Q_1132, "p", 0, ((V)((ToNum(Get(Q_1132, "v")) * ToNum(dt_1128)))));
+OpSet(Q_1132, "lv", 0, ((V)(((((ly_1131 - ToNum(Get(Q_1132, "l"))) * 140D) - (ToNum(Get(Q_1132, "lv")) * 7.5)) * ToNum(dt_1128)))));
+OpSet(Q_1132, "l", 0, ((V)((ToNum(Get(Q_1132, "lv")) * ToNum(dt_1128)))));
+g0_1133 = Call(glob_1123, V.Undef, ((V)(40D)), HY_1125);
+g1_1134 = Call(glob_1123, V.Undef, ((V)(60D)), HY_1125);
+D_1135 = Object_assign(NewObj(0).V, c_1116, NewObj(12).Put("B", B_1126).Put("ts", ((V)(ts_1129))).Put("P3", sph_1121).Put("Z3", sphZ_1122).Put("kS", ((V)((Hypot((ToNum(GetIdx(g1_1134, 0D)) - ToNum(GetIdx(g0_1133, 0D))), (ToNum(GetIdx(g1_1134, 1D)) - ToNum(GetIdx(g0_1133, 1D)))) / 20D)))).Put("ox", Call(clamp_12, V.Undef, ((V)((ToNum(Get(Q_1132, "p")) - tg_1130))), ((V)((-12D))), ((V)(12D)))).Put("oy", Call(clamp_12, V.Undef, ((V)((ToNum(Get(Q_1132, "l")) - ly_1131))), ((V)((-6D))), ((V)(6D)))).Put("front", ((V)((ToNum(Get(c_1116, "cyh")) * ToNum(Get(c_1116, "cp")))))).Put("bv", Fn((V _arrowThis1155, int _argc1148, V k_1154, V _a1151, V _a1152, V _a1153, V[] _rest1149) => {
+double v_1156 = 0;
+v_1156 = ToNum(GetK(P_1119, k_1154));
+return ((V)(((v_1156 == v_1156) ? v_1156 : 0D)));
 return default;
-}, 1, "bv", true)).Put("hull", Fn((V _self1, int _argc1073, V pts_1079, V _a1076, V _a1077, V _a1078, V[] _rest1074) => {
-return Call(polyD_16, V.Undef, Invoke(H_1041, "hull", pts_1079));
-}, 1, "hull", true)).Put("set", Fn((V _self1, int _argc1080, V e_1086, V a_1087, V v_1088, V _a1085, V[] _rest1081) => {
-return Invoke(e_1086, "setAttribute", a_1087, v_1088);
-}, 3, "set", true)).Put("facing", Fn((V _self1, int _argc1089, V x_1095, V y_1096, V z_1097, V nx_1098, V[] _rest1090) => {
-V ny_1099 = default;
-V nz_1100 = default;
-ny_1099 = (_argc1089 > 4 ? _rest1090[0] : V.Undef);
-nz_1100 = (_argc1089 > 5 ? _rest1090[1] : V.Undef);
-return ((V)((ToNum(Call(sphZ_1039, V.Undef, Add(x_1095, nx_1098), Add(y_1096, ny_1099), Add(z_1097, nz_1100))) - ToNum(Call(sphZ_1039, V.Undef, x_1095, y_1096, z_1097)))));
+}, 1, "bv", true)).Put("hull", Fn((V _arrowThis1164, int _argc1157, V pts_1163, V _a1160, V _a1161, V _a1162, V[] _rest1158) => {
+return Call(polyD_16, V.Undef, Invoke(H_1124, "hull", pts_1163));
+}, 1, "hull", true)).Put("set", Fn((V _arrowThis1174, int _argc1165, V e_1171, V a_1172, V v_1173, V _a1170, V[] _rest1166) => {
+return Invoke(e_1171, "setAttribute", a_1172, v_1173);
+}, 3, "set", true)).Put("facing", Fn((V _arrowThis1187, int _argc1175, V x_1181, V y_1182, V z_1183, V nx_1184, V[] _rest1176) => {
+V ny_1185 = default;
+V nz_1186 = default;
+ny_1185 = (_argc1175 > 4 ? _rest1176[0] : V.Undef);
+nz_1186 = (_argc1175 > 5 ? _rest1176[1] : V.Undef);
+return ((V)((ToNum(Call(sphZ_1122, V.Undef, Add(x_1181, nx_1184), Add(y_1182, ny_1185), Add(z_1183, nz_1186))) - ToNum(Call(sphZ_1122, V.Undef, x_1181, y_1182, z_1183)))));
 }, 6, "facing", true)).V);
-Invoke(M_1044, "draw", B_1043, D_1052);
+Invoke(M_1127, "draw", B_1126, D_1135);
 return default;
 }, 1, "", true));
-Set(SN_43, "order", Fn((V _self1, int _argc1101, V g_1107, V list_1108, V key_1109, V _a1106, V[] _rest1102) => {
-V k_1110 = default;
-k_1110 = Invoke(Invoke(list_1108, "map", Fn((V _self1, int _argc1111, V o_1117, V _a1114, V _a1115, V _a1116, V[] _rest1112) => {
-return Get(o_1117, "id");
+Set(SN_43, "order", Fn((V _arrowThis1197, int _argc1188, V g_1194, V list_1195, V key_1196, V _a1193, V[] _rest1189) => {
+V k_1198 = default;
+k_1198 = Invoke(Invoke(list_1195, "map", Fn((V _arrowThis1206, int _argc1199, V o_1205, V _a1202, V _a1203, V _a1204, V[] _rest1200) => {
+return Get(o_1205, "id");
 }, 1, "", true)), "join", ((V)(",")));
-if (SEq(Get(g_1107, "__ok"), k_1110)) {
+if (SEq(Get(g_1194, "__ok"), k_1198)) {
 return default;
 }
-Set(g_1107, "__ok", k_1110);
-Invoke(list_1108, "forEach", Fn((V _self1, int _argc1118, V o_1124, V _a1121, V _a1122, V _a1123, V[] _rest1119) => {
-return Invoke(g_1107, "appendChild", Get(o_1124, "e"));
+Set(g_1194, "__ok", k_1198);
+Invoke(list_1195, "forEach", Fn((V _arrowThis1214, int _argc1207, V o_1213, V _a1210, V _a1211, V _a1212, V[] _rest1208) => {
+return Invoke(g_1194, "appendChild", Get(o_1213, "e"));
 }, 1, "", true));
 return default;
 }, 3, "", true));
-sphereHull_44 = Fn((V _self1, int _argc1125, V D_1131, V c_1132, V r_1133, V n_1134, V[] _rest1126) => {
-V o_1135 = default;
-o_1135 = Arr();
-n_1134 = (n_1134 is var _t1136 && Truthy(_t1136) ? _t1136 : ((V)(8D)));
+sphereHull_44 = Fn((V _arrowThis1225, int _argc1215, V D_1221, V c_1222, V r_1223, V n_1224, V[] _rest1216) => {
+V o_1226 = default;
+o_1226 = Arr();
+n_1224 = (n_1224 is var _t1227 && Truthy(_t1227) ? _t1227 : ((V)(8D)));
 {
-double i_1137 = 0;
-i_1137 = 0D;
+double i_1228 = 0;
+i_1228 = 0D;
 while (true) {
-if (!(Le(((V)(i_1137)), n_1134))) break;
-double th_1139 = 0;
-double cr_1140 = 0;
-V y_1141 = default;
-th_1139 = (((-System.Math.PI) / 2D) + ((System.Math.PI * i_1137) / ToNum(n_1134)));
-cr_1140 = FdLibm.Cos(th_1139);
-y_1141 = Add(GetIdx(c_1132, 1D), ((V)((ToNum(r_1133) * FdLibm.Sin(th_1139)))));
-if ((cr_1140 < 0.01)) {
-Invoke(o_1135, "push", Invoke(D_1131, "P3", GetIdx(c_1132, 0D), y_1141, GetIdx(c_1132, 2D)));
-goto _cont1138;
+if (!(Le(((V)(i_1228)), n_1224))) break;
+double th_1230 = 0;
+double cr_1231 = 0;
+V y_1232 = default;
+th_1230 = (((-System.Math.PI) / 2D) + ((System.Math.PI * i_1228) / ToNum(n_1224)));
+cr_1231 = FdLibm.Cos(th_1230);
+y_1232 = Add(GetIdx(c_1222, 1D), ((V)((ToNum(r_1223) * FdLibm.Sin(th_1230)))));
+if ((cr_1231 < 0.01)) {
+Invoke(o_1226, "push", Invoke(D_1221, "P3", GetIdx(c_1222, 0D), y_1232, GetIdx(c_1222, 2D)));
+goto _cont1229;
 }
 {
-double k_1142 = 0;
-k_1142 = 0D;
+double k_1233 = 0;
+k_1233 = 0D;
 while (true) {
-if (!((k_1142 < (2D * ToNum(n_1134))))) break;
-double f_1144 = 0;
-f_1144 = ((k_1142 / (2D * ToNum(n_1134))) * TAU_9);
-Invoke(o_1135, "push", Invoke(D_1131, "P3", Add(GetIdx(c_1132, 0D), ((V)(((ToNum(r_1133) * cr_1140) * FdLibm.Sin(f_1144))))), y_1141, Add(GetIdx(c_1132, 2D), ((V)(((ToNum(r_1133) * cr_1140) * FdLibm.Cos(f_1144)))))));
-k_1142++;
+if (!((k_1233 < (2D * ToNum(n_1224))))) break;
+double f_1235 = 0;
+f_1235 = ((k_1233 / (2D * ToNum(n_1224))) * TAU_9);
+Invoke(o_1226, "push", Invoke(D_1221, "P3", Add(GetIdx(c_1222, 0D), ((V)(((ToNum(r_1223) * cr_1231) * FdLibm.Sin(f_1235))))), y_1232, Add(GetIdx(c_1222, 2D), ((V)(((ToNum(r_1223) * cr_1231) * FdLibm.Cos(f_1235)))))));
+k_1233++;
 }
 }
-_cont1138: ;
-i_1137++;
+_cont1229: ;
+i_1228++;
 }
 }
-return o_1135;
+return o_1226;
 return default;
 }, 4, "", true);
 Set(Get(SN_43, "h"), "sphereHull", sphereHull_44);
-tubeD_45 = Fn((V _self1, int _argc1145, V D_1151, V C_1152, V R_1153, V _a1150, V[] _rest1146) => {
-JsStrBuf d_1154 = null;
-V SP_1155 = default;
-d_1154 = new JsStrBuf("");
-SP_1155 = Invoke(C_1152, "map", Fn((V _self1, int _argc1156, V c_1162, V i_1163, V _a1160, V _a1161, V[] _rest1157) => {
-return Call(sphereHull_44, V.Undef, D_1151, c_1162, GetK(R_1153, i_1163), ((V)(5D)));
+tubeD_45 = Fn((V _arrowThis1245, int _argc1236, V D_1242, V C_1243, V R_1244, V _a1241, V[] _rest1237) => {
+JsStrBuf d_1246 = null;
+V SP_1247 = default;
+d_1246 = new JsStrBuf("");
+SP_1247 = Invoke(C_1243, "map", Fn((V _arrowThis1256, int _argc1248, V c_1254, V i_1255, V _a1252, V _a1253, V[] _rest1249) => {
+return Call(sphereHull_44, V.Undef, D_1242, c_1254, GetK(R_1244, i_1255), ((V)(5D)));
 }, 2, "", true));
 {
-double i_1164 = 0;
-i_1164 = 0D;
+double i_1257 = 0;
+i_1257 = 0D;
 while (true) {
-if (!((i_1164 < (ToNum(Get(C_1152, "length")) - 1D)))) break;
-d_1154.V(Call(polyW_18, V.Undef, Invoke(Get(D_1151, "H"), "hull", Invoke(GetIdx(SP_1155, i_1164), "concat", GetIdx(SP_1155, (i_1164 + 1D))))));
-i_1164++;
+if (!((i_1257 < (ToNum(Get(C_1243, "length")) - 1D)))) break;
+d_1246.V(Call(polyW_18, V.Undef, Invoke(Get(D_1242, "H"), "hull", Invoke(GetIdx(SP_1247, i_1257), "concat", GetIdx(SP_1247, (i_1257 + 1D))))));
+i_1257++;
 }
 }
-return ((V)(d_1154.Str));
+return ((V)(d_1246.Str));
 return default;
 }, 3, "", true);
 Set(Get(SN_43, "h"), "tubeD", tubeD_45);
-pillowHull_46 = Fn((V _self1, int _argc1166, V D_1172, V rings_1173, V z0_1174, V sg_1175, V[] _rest1167) => {
-V o_1177 = default;
-V extra_1176 = default;
-extra_1176 = (_argc1166 > 4 ? _rest1167[0] : V.Undef);
-o_1177 = (Truthy(extra_1176) ? Invoke(extra_1176, "slice") : Arr());
-Invoke(rings_1173, "forEach", Fn((V _self1, int _argc1178, V R_1184, V _a1181, V _a1182, V _a1183, V[] _rest1179) => {
-return Invoke(Get(R_1184, "Q"), "forEach", Fn((V _self1, int _argc1185, V p_1191, V _a1188, V _a1189, V _a1190, V[] _rest1186) => {
-return Invoke(o_1177, "push", Invoke(D_1172, "P3", GetIdx(p_1191, 0D), GetIdx(p_1191, 1D), Add(z0_1174, ((V)((ToNum(sg_1175) * ToNum(Get(R_1184, "z"))))))));
+pillowHull_46 = Fn((V _arrowThis1270, int _argc1259, V D_1265, V rings_1266, V z0_1267, V sg_1268, V[] _rest1260) => {
+V o_1271 = default;
+V extra_1269 = default;
+extra_1269 = (_argc1259 > 4 ? _rest1260[0] : V.Undef);
+o_1271 = (Truthy(extra_1269) ? Invoke(extra_1269, "slice") : Arr());
+Invoke(rings_1266, "forEach", Fn((V _arrowThis1279, int _argc1272, V R_1278, V _a1275, V _a1276, V _a1277, V[] _rest1273) => {
+return Invoke(Get(R_1278, "Q"), "forEach", Fn((V _arrowThis1287, int _argc1280, V p_1286, V _a1283, V _a1284, V _a1285, V[] _rest1281) => {
+return Invoke(o_1271, "push", Invoke(D_1265, "P3", GetIdx(p_1286, 0D), GetIdx(p_1286, 1D), Add(z0_1267, ((V)((ToNum(sg_1268) * ToNum(Get(R_1278, "z"))))))));
 }, 1, "", true));
 }, 1, "", true));
-return o_1177;
+return o_1271;
 return default;
 }, 5, "", true);
 Set(Get(SN_43, "h"), "pillowHull", pillowHull_46);
-Set(Get(SN_43, "h"), "frontArc", Fn((V _self1, int _argc1192, V D_1198, V r_1199, V y_1200, V n_1201, V[] _rest1193) => {
-V v_1202 = default;
-V i0_1203 = default;
-V o_1204 = default;
-v_1202 = Arr();
+Set(Get(SN_43, "h"), "frontArc", Fn((V _arrowThis1298, int _argc1288, V D_1294, V r_1295, V y_1296, V n_1297, V[] _rest1289) => {
+V v_1299 = default;
+V i0_1300 = default;
+V o_1301 = default;
+v_1299 = Arr();
 {
-double k_1205 = 0;
-k_1205 = 0D;
+double k_1302 = 0;
+k_1302 = 0D;
 while (true) {
-if (!(Lt(((V)(k_1205)), n_1201))) break;
-double f_1207 = 0;
-f_1207 = ((k_1205 / ToNum(n_1201)) * TAU_9);
-Invoke(v_1202, "push", (GtN(Invoke(D_1198, "facing", ((V)((50D + (ToNum(r_1199) * FdLibm.Sin(f_1207))))), y_1200, ((V)((ToNum(r_1199) * FdLibm.Cos(f_1207)))), ((V)(FdLibm.Sin(f_1207))), ((V)(0D)), ((V)(FdLibm.Cos(f_1207)))), (-0.002)) ? V.True : V.False));
-k_1205++;
+if (!(Lt(((V)(k_1302)), n_1297))) break;
+double f_1304 = 0;
+f_1304 = ((k_1302 / ToNum(n_1297)) * TAU_9);
+Invoke(v_1299, "push", (GtN(Invoke(D_1294, "facing", ((V)((50D + (ToNum(r_1295) * FdLibm.Sin(f_1304))))), y_1296, ((V)((ToNum(r_1295) * FdLibm.Cos(f_1304)))), ((V)(FdLibm.Sin(f_1304))), ((V)(0D)), ((V)(FdLibm.Cos(f_1304)))), (-0.002)) ? V.True : V.False));
+k_1302++;
 }
 }
-i0_1203 = Invoke(v_1202, "findIndex", Fn((V _self1, int _argc1208, V o_1214, V k_1215, V _a1212, V _a1213, V[] _rest1209) => {
-return (o_1214 is var _t1216 && !Truthy(_t1216) ? _t1216 : (!(Truthy(GetIdx(v_1202, (ToNum(Add(((V)((ToNum(k_1215) - 1D))), n_1201)) % ToNum(n_1201))))) ? V.True : V.False));
+i0_1300 = Invoke(v_1299, "findIndex", Fn((V _arrowThis1313, int _argc1305, V o_1311, V k_1312, V _a1309, V _a1310, V[] _rest1306) => {
+return (o_1311 is var _t1314 && !Truthy(_t1314) ? _t1314 : (!(Truthy(GetIdx(v_1299, (ToNum(Add(((V)((ToNum(k_1312) - 1D))), n_1297)) % ToNum(n_1297))))) ? V.True : V.False));
 }, 2, "", true));
-if (LtN(i0_1203, 0D)) {
-i0_1203 = ((V)(0D));
+if (LtN(i0_1300, 0D)) {
+i0_1300 = ((V)(0D));
 }
-o_1204 = Arr();
+o_1301 = Arr();
 {
-double j_1217 = 0;
-j_1217 = 0D;
+double j_1315 = 0;
+j_1315 = 0D;
 while (true) {
-if (!(Le(((V)(j_1217)), n_1201))) break;
-double k_1219 = 0;
-k_1219 = (ToNum(Add(i0_1203, ((V)(j_1217)))) % ToNum(n_1201));
-if (!(Truthy(GetIdx(v_1202, k_1219)))) {
+if (!(Le(((V)(j_1315)), n_1297))) break;
+double k_1317 = 0;
+k_1317 = (ToNum(Add(i0_1300, ((V)(j_1315)))) % ToNum(n_1297));
+if (!(Truthy(GetIdx(v_1299, k_1317)))) {
 break;
 }
-Invoke(o_1204, "push", ((V)(((ToNum(Add(i0_1203, ((V)(j_1217)))) / ToNum(n_1201)) * TAU_9))));
-j_1217++;
+Invoke(o_1301, "push", ((V)(((ToNum(Add(i0_1300, ((V)(j_1315)))) / ToNum(n_1297)) * TAU_9))));
+j_1315++;
 }
 }
-return o_1204;
+return o_1301;
 return default;
 }, 4, "", true));
-Set(MODELS_42, "corny", NewObj(2).Put("setup", Fn((V _self1220, int _argc1221, V S_1227, V _a1224, V _a1225, V _a1226, V[] _rest1222) => {
-V sk_1228 = default;
-V O_1229 = default;
-V rT_1230 = default;
-double EL_1231 = 0;
-V red_1232 = default;
-V RF_1233 = default;
-V pk_1234 = default;
-V PF_1235 = default;
-V popF_1236 = default;
-V sh_1237 = default;
-V st_1238 = default;
-V bed_1239 = default;
-V cl_1240 = default;
-V KG_1241 = default;
-V rim_1242 = default;
-V rimL_1243 = default;
-V K_1244 = default;
-V add_1245 = default;
-if (_self1220.IsNullish) _self1220 = GlobalV;
-{ V _t1246 = S_1227;
-if (_t1246.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t1246));
-{ V _t1247 = Get(_t1246, "sk");
-sk_1228 = _t1247; } }
-O_1229 = Invoke(S_1227, "outline", sk_1228, ((V)(64D)));
-rT_1230 = Fn((V _self1220, int _argc1248, V y_1254, V _a1251, V _a1252, V _a1253, V[] _rest1249) => {
-return Call(halfW_38, V.Undef, O_1229, Call(clamp_12, V.Undef, y_1254, ((V)(41.2)), ((V)(86.8))));
+Set(MODELS_42, "corny", NewObj(2).Put("setup", Fn((V _self1318, int _argc1319, V S_1325, V _a1322, V _a1323, V _a1324, V[] _rest1320) => {
+V sk_1326 = default;
+V O_1327 = default;
+V rT_1328 = default;
+double EL_1329 = 0;
+V red_1330 = default;
+V RF_1331 = default;
+V pk_1332 = default;
+V PF_1333 = default;
+V popF_1334 = default;
+V sh_1335 = default;
+V st_1336 = default;
+V bed_1337 = default;
+V cl_1338 = default;
+V KG_1339 = default;
+V rim_1340 = default;
+V rimL_1341 = default;
+V K_1342 = default;
+V add_1343 = default;
+if (_self1318.IsNullish) _self1318 = GlobalV;
+{ V _t1344 = S_1325;
+if (_t1344.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t1344));
+{ V _t1345 = Get(_t1344, "sk");
+sk_1326 = _t1345; } }
+O_1327 = Invoke(S_1325, "outline", sk_1326, ((V)(64D)));
+rT_1328 = Fn((V _arrowThis1353, int _argc1346, V y_1352, V _a1349, V _a1350, V _a1351, V[] _rest1347) => {
+return Call(halfW_38, V.Undef, O_1327, Call(clamp_12, V.Undef, y_1352, ((V)(41.2)), ((V)(86.8))));
 }, 1, "", true);
-EL_1231 = 0.11;
-red_1232 = Get((Invoke(Get(S_1227, "items"), "find", Fn((V _self1220, int _argc1255, V q_1261, V _a1258, V _a1259, V _a1260, V[] _rest1256) => {
-return (Get(q_1261, "inBody") is var _t1262 && !Truthy(_t1262) ? _t1262 : Invoke(NewRegExp(RX0, "^M15\\.00 41", ""), "test", Invoke(S_1227, "d", q_1261)));
-}, 1, "", true)) is var _t1263 && Truthy(_t1263) ? _t1263 : NewObj(0).V), "e");
-RF_1233 = (Truthy(red_1232) ? Invoke(red_1232, "getAttribute", ((V)("fill"))) : ((V)("#f0464e")));
-pk_1234 = Invoke(S_1227, "hide", Fn((V _self1220, int _argc1264, V q_1270, V _a1267, V _a1268, V _a1269, V[] _rest1265) => {
-return (((Get(q_1270, "inBody") is var _t1271 && !Truthy(_t1271) ? _t1271 : Get(Get(q_1270, "e"), "parentNode")) is var _t1272 && !Truthy(_t1272) ? _t1272 : Get(Get(Get(q_1270, "e"), "parentNode"), "getAttribute")) is var _t1274 && !Truthy(_t1274) ? _t1274 : Invoke(NewRegExp(RX1, "translate", ""), "test", (Invoke(Get(Get(q_1270, "e"), "parentNode"), "getAttribute", ((V)("transform"))) is var _t1273 && Truthy(_t1273) ? _t1273 : ((V)("")))));
+EL_1329 = 0.11;
+red_1330 = Get((Invoke(Get(S_1325, "items"), "find", Fn((V _arrowThis1361, int _argc1354, V q_1360, V _a1357, V _a1358, V _a1359, V[] _rest1355) => {
+return (Get(q_1360, "inBody") is var _t1362 && !Truthy(_t1362) ? _t1362 : Invoke(NewRegExp(RX0, "^M15\\.00 41", ""), "test", Invoke(S_1325, "d", q_1360)));
+}, 1, "", true)) is var _t1363 && Truthy(_t1363) ? _t1363 : NewObj(0).V), "e");
+RF_1331 = (Truthy(red_1330) ? Invoke(red_1330, "getAttribute", ((V)("fill"))) : ((V)("#f0464e")));
+pk_1332 = Invoke(S_1325, "hide", Fn((V _arrowThis1371, int _argc1364, V q_1370, V _a1367, V _a1368, V _a1369, V[] _rest1365) => {
+return (((Get(q_1370, "inBody") is var _t1372 && !Truthy(_t1372) ? _t1372 : Get(Get(q_1370, "e"), "parentNode")) is var _t1373 && !Truthy(_t1373) ? _t1373 : Get(Get(Get(q_1370, "e"), "parentNode"), "getAttribute")) is var _t1375 && !Truthy(_t1375) ? _t1375 : Invoke(NewRegExp(RX1, "translate", ""), "test", (Invoke(Get(Get(q_1370, "e"), "parentNode"), "getAttribute", ((V)("transform"))) is var _t1374 && Truthy(_t1374) ? _t1374 : ((V)("")))));
 }, 1, "", true));
-PF_1235 = Get((Invoke(pk_1234, "find", Fn((V _self1220, int _argc1275, V q_1281, V _a1278, V _a1279, V _a1280, V[] _rest1276) => {
-return Invoke(NewRegExp(RX2, "^url", ""), "test", Invoke(S_1227, "f", q_1281));
-}, 1, "", true)) is var _t1282 && Truthy(_t1282) ? _t1282 : NewObj(0).V), "e");
-popF_1236 = (Truthy(PF_1235) ? Invoke(PF_1235, "getAttribute", ((V)("fill"))) : ((V)("#fff2c8")));
-Invoke(S_1227, "hide", Fn((V _self1220, int _argc1283, V q_1289, V _a1286, V _a1287, V _a1288, V[] _rest1284) => {
-return (Get(q_1289, "inBody") is var _t1290 && !Truthy(_t1290) ? _t1290 : Invoke(NewRegExp(RX3, "^(M15\\.00 41|M33\\.90 41|M57\\.00 41|M75\\.90 41|M13\\.5 39\\.5|M15 40\\.6)", ""), "test", Invoke(S_1227, "d", q_1289)));
+PF_1333 = Get((Invoke(pk_1332, "find", Fn((V _arrowThis1383, int _argc1376, V q_1382, V _a1379, V _a1380, V _a1381, V[] _rest1377) => {
+return Invoke(NewRegExp(RX2, "^url", ""), "test", Invoke(S_1325, "f", q_1382));
+}, 1, "", true)) is var _t1384 && Truthy(_t1384) ? _t1384 : NewObj(0).V), "e");
+popF_1334 = (Truthy(PF_1333) ? Invoke(PF_1333, "getAttribute", ((V)("fill"))) : ((V)("#fff2c8")));
+Invoke(S_1325, "hide", Fn((V _arrowThis1392, int _argc1385, V q_1391, V _a1388, V _a1389, V _a1390, V[] _rest1386) => {
+return (Get(q_1391, "inBody") is var _t1393 && !Truthy(_t1393) ? _t1393 : Invoke(NewRegExp(RX3, "^(M15\\.00 41|M33\\.90 41|M57\\.00 41|M75\\.90 41|M13\\.5 39\\.5|M15 40\\.6)", ""), "test", Invoke(S_1325, "d", q_1391)));
 }, 1, "", true));
-sh_1237 = Invoke(S_1227, "path", NewObj(1).Put("fill", Invoke(S_1227, "lgrad", ((V)("cnsh")), Arr(Arr(((V)(0D)), ((V)("#7a2a22")), ((V)(0.34))), Arr(((V)(0.14)), ((V)("#7a2a22")), ((V)(0.08))), Arr(((V)(0.3)), ((V)("#ffffff")), ((V)(0.32))), Arr(((V)(0.46)), ((V)("#ffffff")), ((V)(0D))), Arr(((V)(0.76)), ((V)("#5a1a14")), ((V)(0.05))), Arr(((V)(1D)), ((V)("#5a1a14")), ((V)(0.4)))))).V);
-st_1238 = Invoke(S_1227, "path", NewObj(1).Put("fill", RF_1233).V);
-bed_1239 = Invoke(S_1227, "path", NewObj(1).Put("fill", Invoke(S_1227, "rgrad", ((V)("cnbd")), Arr(Arr(((V)(0D)), ((V)("#fff3c4"))), Arr(((V)(0.7)), ((V)("#f4d27a"))), Arr(((V)(1D)), ((V)("#d9a848")))), NewObj(3).Put("cx", ((V)("50%"))).Put("cy", ((V)("40%"))).Put("r", ((V)("60%"))).V)).V);
-cl_1240 = Invoke(S_1227, "clip", ((V)("cnc")));
-KG_1241 = Invoke(S_1227, "g");
-Invoke(KG_1241, "setAttribute", ((V)("clip-path")), Get(cl_1240, "url"));
-rim_1242 = Invoke(S_1227, "path", NewObj(1).Put("fill", RF_1233).V);
-rimL_1243 = Invoke(S_1227, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffd0d0"))).Put("stroke-width", ((V)(0.9))).Put("opacity", ((V)(0.8))).Put("stroke-linecap", ((V)("round"))).V);
-K_1244 = Arr();
-add_1245 = Fn((V _self1220, int _argc1291, V rho_1297, V n_1298, V y_1299, V s_1300, V[] _rest1292) => {
-V ph_1301 = default;
-ph_1301 = (_argc1291 > 4 ? _rest1292[0] : V.Undef);
+sh_1335 = Invoke(S_1325, "path", NewObj(1).Put("fill", Invoke(S_1325, "lgrad", ((V)("cnsh")), Arr(Arr(((V)(0D)), ((V)("#7a2a22")), ((V)(0.34))), Arr(((V)(0.14)), ((V)("#7a2a22")), ((V)(0.08))), Arr(((V)(0.3)), ((V)("#ffffff")), ((V)(0.32))), Arr(((V)(0.46)), ((V)("#ffffff")), ((V)(0D))), Arr(((V)(0.76)), ((V)("#5a1a14")), ((V)(0.05))), Arr(((V)(1D)), ((V)("#5a1a14")), ((V)(0.4)))))).V);
+st_1336 = Invoke(S_1325, "path", NewObj(1).Put("fill", RF_1331).V);
+bed_1337 = Invoke(S_1325, "path", NewObj(1).Put("fill", Invoke(S_1325, "rgrad", ((V)("cnbd")), Arr(Arr(((V)(0D)), ((V)("#fff3c4"))), Arr(((V)(0.7)), ((V)("#f4d27a"))), Arr(((V)(1D)), ((V)("#d9a848")))), NewObj(3).Put("cx", ((V)("50%"))).Put("cy", ((V)("40%"))).Put("r", ((V)("60%"))).V)).V);
+cl_1338 = Invoke(S_1325, "clip", ((V)("cnc")));
+KG_1339 = Invoke(S_1325, "g");
+Invoke(KG_1339, "setAttribute", ((V)("clip-path")), Get(cl_1338, "url"));
+rim_1340 = Invoke(S_1325, "path", NewObj(1).Put("fill", RF_1331).V);
+rimL_1341 = Invoke(S_1325, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffd0d0"))).Put("stroke-width", ((V)(0.9))).Put("opacity", ((V)(0.8))).Put("stroke-linecap", ((V)("round"))).V);
+K_1342 = Arr();
+add_1343 = Fn((V _arrowThis1405, int _argc1394, V rho_1400, V n_1401, V y_1402, V s_1403, V[] _rest1395) => {
+V ph_1404 = default;
+ph_1404 = (_argc1394 > 4 ? _rest1395[0] : V.Undef);
 {
-double i_1302 = 0;
-i_1302 = 0D;
+double i_1406 = 0;
+i_1406 = 0D;
 while (true) {
-if (!(Lt(((V)(i_1302)), n_1298))) break;
-V a_1304 = default;
-V id_1305 = default;
-a_1304 = Add(ph_1301, ((V)(((i_1302 / ToNum(n_1298)) * TAU_9))));
-id_1305 = Get(K_1244, "length");
-Invoke(K_1244, "push", NewObj(7).Put("id", id_1305).Put("x", ((V)((50D + (ToNum(rho_1297) * FdLibm.Sin(ToNum(a_1304))))))).Put("z", ((V)((ToNum(rho_1297) * FdLibm.Cos(ToNum(a_1304)))))).Put("y", Add(y_1299, ((V)(((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(id_1305) * 2.3) + 1D))))) - 0.5) * 2.8))))).Put("s", ((V)((ToNum(s_1300) * (0.9 + (ToNum(Call(rnd_22, V.Undef, id_1305)) * 0.25)))))).Put("hk", ((V)((6D + (ToNum(Call(rnd_22, V.Undef, Add(id_1305, ((V)(9D))))) * 10D))))).Put("B", Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D)), ((V)(3D)), ((V)(4D))), "map", Fn((V _self1220, int _argc1306, V j_1312, V _a1309, V _a1310, V _a1311, V[] _rest1307) => {
-double aa_1313 = 0;
-double dd_1314 = 0;
-aa_1313 = ((ToNum(j_1312) * 1.257) + (ToNum(Call(rnd_22, V.Undef, Add(((V)((ToNum(id_1305) * 7D))), j_1312))) * 0.6));
-dd_1314 = (1.7 + (ToNum(Call(rnd_22, V.Undef, Add(((V)((ToNum(id_1305) * 5D))), j_1312))) * 0.9));
-return Arr(((V)((FdLibm.Cos(aa_1313) * dd_1314))), ((V)((FdLibm.Sin(aa_1313) * dd_1314))), ((V)((2.5 + (ToNum(Call(rnd_22, V.Undef, Add(((V)((ToNum(id_1305) * 3D))), j_1312))) * 1D)))));
+if (!(Lt(((V)(i_1406)), n_1401))) break;
+V a_1408 = default;
+V id_1409 = default;
+a_1408 = Add(ph_1404, ((V)(((i_1406 / ToNum(n_1401)) * TAU_9))));
+id_1409 = Get(K_1342, "length");
+Invoke(K_1342, "push", NewObj(7).Put("id", id_1409).Put("x", ((V)((50D + (ToNum(rho_1400) * FdLibm.Sin(ToNum(a_1408))))))).Put("z", ((V)((ToNum(rho_1400) * FdLibm.Cos(ToNum(a_1408)))))).Put("y", Add(y_1402, ((V)(((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(id_1409) * 2.3) + 1D))))) - 0.5) * 2.8))))).Put("s", ((V)((ToNum(s_1403) * (0.9 + (ToNum(Call(rnd_22, V.Undef, id_1409)) * 0.25)))))).Put("hk", ((V)((6D + (ToNum(Call(rnd_22, V.Undef, Add(id_1409, ((V)(9D))))) * 10D))))).Put("B", Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D)), ((V)(3D)), ((V)(4D))), "map", Fn((V _arrowThis1417, int _argc1410, V j_1416, V _a1413, V _a1414, V _a1415, V[] _rest1411) => {
+double aa_1418 = 0;
+double dd_1419 = 0;
+aa_1418 = ((ToNum(j_1416) * 1.257) + (ToNum(Call(rnd_22, V.Undef, Add(((V)((ToNum(id_1409) * 7D))), j_1416))) * 0.6));
+dd_1419 = (1.7 + (ToNum(Call(rnd_22, V.Undef, Add(((V)((ToNum(id_1409) * 5D))), j_1416))) * 0.9));
+return Arr(((V)((FdLibm.Cos(aa_1418) * dd_1419))), ((V)((FdLibm.Sin(aa_1418) * dd_1419))), ((V)((2.5 + (ToNum(Call(rnd_22, V.Undef, Add(((V)((ToNum(id_1409) * 3D))), j_1416))) * 1D)))));
 return default;
 }, 1, "", true))).V);
-i_1302++;
+i_1406++;
 }
 }
 return default;
 }, 5, "", true);
-Invoke(Arr(Arr(((V)(0D)), ((V)(1D)), ((V)(12.5)), ((V)(1.8)), ((V)(0D))), Arr(((V)(6.5)), ((V)(5D)), ((V)(16.5)), ((V)(1.75)), ((V)(0.4))), Arr(((V)(13D)), ((V)(9D)), ((V)(21D)), ((V)(1.75)), ((V)(0.1))), Arr(((V)(19.5)), ((V)(12D)), ((V)(25.5)), ((V)(1.7)), ((V)(0.35))), Arr(((V)(25.5)), ((V)(15D)), ((V)(30D)), ((V)(1.7)), ((V)(0.05))), Arr(((V)(30.5)), ((V)(18D)), ((V)(34.2)), ((V)(1.65)), ((V)(0.25))), Arr(((V)(34.5)), ((V)(21D)), ((V)(38D)), ((V)(1.6)), ((V)(0.15))), Arr(((V)(36.8)), ((V)(12D)), ((V)(38.8)), ((V)(1.5)), ((V)(0.3)))), "forEach", Fn((V _self1220, int _argc1315, V a_1321, V _a1318, V _a1319, V _a1320, V[] _rest1316) => {
-return CallSpread(add_1245, V.Undef, new ArrBuilder().Spread(a_1321).V);
+Invoke(Arr(Arr(((V)(0D)), ((V)(1D)), ((V)(12.5)), ((V)(1.8)), ((V)(0D))), Arr(((V)(6.5)), ((V)(5D)), ((V)(16.5)), ((V)(1.75)), ((V)(0.4))), Arr(((V)(13D)), ((V)(9D)), ((V)(21D)), ((V)(1.75)), ((V)(0.1))), Arr(((V)(19.5)), ((V)(12D)), ((V)(25.5)), ((V)(1.7)), ((V)(0.35))), Arr(((V)(25.5)), ((V)(15D)), ((V)(30D)), ((V)(1.7)), ((V)(0.05))), Arr(((V)(30.5)), ((V)(18D)), ((V)(34.2)), ((V)(1.65)), ((V)(0.25))), Arr(((V)(34.5)), ((V)(21D)), ((V)(38D)), ((V)(1.6)), ((V)(0.15))), Arr(((V)(36.8)), ((V)(12D)), ((V)(38.8)), ((V)(1.5)), ((V)(0.3)))), "forEach", Fn((V _arrowThis1427, int _argc1420, V a_1426, V _a1423, V _a1424, V _a1425, V[] _rest1421) => {
+return CallSpread(add_1343, V.Undef, new ArrBuilder().Spread(a_1426).V);
 }, 1, "", true));
-Invoke(K_1244, "forEach", Fn((V _self1220, int _argc1322, V k_1328, V _a1325, V _a1326, V _a1327, V[] _rest1323) => {
-Set(k_1328, "g", Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, KG_1241));
-Set(k_1328, "e", Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", popF_1236).V, Get(k_1328, "g")));
-Set(k_1328, "dot", Call(el_14, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)("#d89a3a"))).Put("opacity", ((V)(0.8))).V, Get(k_1328, "g")));
-Set(k_1328, "id", ((V)(JsStrBuf.Begin().S("k").V(Get(k_1328, "id")).End())));
+Invoke(K_1342, "forEach", Fn((V _arrowThis1435, int _argc1428, V k_1434, V _a1431, V _a1432, V _a1433, V[] _rest1429) => {
+Set(k_1434, "g", Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, KG_1339));
+Set(k_1434, "e", Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", popF_1334).V, Get(k_1434, "g")));
+Set(k_1434, "dot", Call(el_14, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)("#d89a3a"))).Put("opacity", ((V)(0.8))).V, Get(k_1434, "g")));
+Set(k_1434, "id", ((V)(JsStrBuf.Begin().S("k").V(Get(k_1434, "id")).End())));
 return default;
 }, 1, "", true));
-return NewObj(15).Put("O", O_1229).Put("rT", rT_1230).Put("EL", ((V)(EL_1231))).Put("K", K_1244).Put("KG", KG_1241).Put("cl", cl_1240).Put("sh", sh_1237).Put("st", st_1238).Put("bed", bed_1239).Put("rim", rim_1242).Put("rimL", rimL_1243).Put("rx", ((V)(35D))).Put("ya", ((V)(44D))).Put("yb", ((V)(86D))).Put("zE", Fn((V _self1220, int _argc1329, V dx_1335, V dy_1336, V _a1333, V _a1334, V[] _rest1330) => {
-V r_1337 = default;
-r_1337 = Call(rT_1230, V.Undef, Add(Get(S_1227, "HY"), dy_1336));
-return ((V)((System.Math.Sqrt(Max(0D, ((ToNum(r_1337) * ToNum(r_1337)) - (ToNum(dx_1335) * ToNum(dx_1335))))) + 0.3)));
+return NewObj(15).Put("O", O_1327).Put("rT", rT_1328).Put("EL", ((V)(EL_1329))).Put("K", K_1342).Put("KG", KG_1339).Put("cl", cl_1338).Put("sh", sh_1335).Put("st", st_1336).Put("bed", bed_1337).Put("rim", rim_1340).Put("rimL", rimL_1341).Put("rx", ((V)(35D))).Put("ya", ((V)(44D))).Put("yb", ((V)(86D))).Put("zE", Fn((V _arrowThis1444, int _argc1436, V dx_1442, V dy_1443, V _a1440, V _a1441, V[] _rest1437) => {
+V r_1445 = default;
+r_1445 = Call(rT_1328, V.Undef, Add(Get(S_1325, "HY"), dy_1443));
+return ((V)((System.Math.Sqrt(Max(0D, ((ToNum(r_1445) * ToNum(r_1445)) - (ToNum(dx_1442) * ToNum(dx_1442))))) + 0.3)));
 return default;
 }, 2, "zE", true)).V;
 return default;
-}, 1, "setup", false)).Put("draw", Fn((V _self1338, int _argc1339, V B_1345, V D_1346, V _a1343, V _a1344, V[] _rest1340) => {
-V P3_1347 = default;
-V Z3_1348 = default;
-V set_1349 = default;
-V EL_1350 = default;
-V rT_1351 = default;
-V pop_1352 = default;
-V fz_1353 = default;
-V PE_1354 = default;
-V hp_1355 = default;
-V vis_1356 = default;
-JsStrBuf sd_1357 = null;
-V ring_1358 = default;
-V FR_1359 = default;
-V FRb_1360 = default;
-V FRl_1361 = default;
-V L_1362 = default;
-if (_self1338.IsNullish) _self1338 = GlobalV;
-{ V _t1363 = D_1346;
-if (_t1363.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t1363));
-{ V _t1364 = Get(_t1363, "P3");
-P3_1347 = _t1364; }
-{ V _t1365 = Get(_t1363, "Z3");
-Z3_1348 = _t1365; }
-{ V _t1366 = Get(_t1363, "set");
-set_1349 = _t1366; } }
-EL_1350 = Get(B_1345, "EL");
-rT_1351 = Get(B_1345, "rT");
-pop_1352 = Call(clamp_12, V.Undef, Invoke(D_1346, "bv", ((V)("pop"))), ((V)(0D)), ((V)(1.6)));
-fz_1353 = Call(clamp_12, V.Undef, Invoke(D_1346, "bv", ((V)("cfz"))), ((V)(0D)), ((V)(1D)));
-PE_1354 = Fn((V _self1338, int _argc1367, V x_1373, V y_1374, V z_1375, V _a1372, V[] _rest1368) => {
-V p_1376 = default;
-p_1376 = Call(P3_1347, V.Undef, x_1373, y_1374, z_1375);
-return Arr(GetIdx(p_1376, 0D), Add(GetIdx(p_1376, 1D), ((V)((ToNum(EL_1350) * ToNum(Call(Z3_1348, V.Undef, x_1373, y_1374, z_1375)))))));
+}, 1, "setup", false)).Put("draw", Fn((V _self1446, int _argc1447, V B_1453, V D_1454, V _a1451, V _a1452, V[] _rest1448) => {
+V P3_1455 = default;
+V Z3_1456 = default;
+V set_1457 = default;
+V EL_1458 = default;
+V rT_1459 = default;
+V pop_1460 = default;
+V fz_1461 = default;
+V PE_1462 = default;
+V hp_1463 = default;
+V vis_1464 = default;
+JsStrBuf sd_1465 = null;
+V ring_1466 = default;
+V FR_1467 = default;
+V FRb_1468 = default;
+V FRl_1469 = default;
+V L_1470 = default;
+if (_self1446.IsNullish) _self1446 = GlobalV;
+{ V _t1471 = D_1454;
+if (_t1471.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t1471));
+{ V _t1472 = Get(_t1471, "P3");
+P3_1455 = _t1472; }
+{ V _t1473 = Get(_t1471, "Z3");
+Z3_1456 = _t1473; }
+{ V _t1474 = Get(_t1471, "set");
+set_1457 = _t1474; } }
+EL_1458 = Get(B_1453, "EL");
+rT_1459 = Get(B_1453, "rT");
+pop_1460 = Call(clamp_12, V.Undef, Invoke(D_1454, "bv", ((V)("pop"))), ((V)(0D)), ((V)(1.6)));
+fz_1461 = Call(clamp_12, V.Undef, Invoke(D_1454, "bv", ((V)("cfz"))), ((V)(0D)), ((V)(1D)));
+PE_1462 = Fn((V _arrowThis1484, int _argc1475, V x_1481, V y_1482, V z_1483, V _a1480, V[] _rest1476) => {
+V p_1485 = default;
+p_1485 = Call(P3_1455, V.Undef, x_1481, y_1482, z_1483);
+return Arr(GetIdx(p_1485, 0D), Add(GetIdx(p_1485, 1D), ((V)((ToNum(EL_1458) * ToNum(Call(Z3_1456, V.Undef, x_1481, y_1482, z_1483)))))));
 return default;
 }, 3, "", true);
-hp_1355 = Arr();
+hp_1463 = Arr();
 {
-double i_1377 = 0;
-i_1377 = 0D;
+double i_1486 = 0;
+i_1486 = 0D;
 while (true) {
-if (!((i_1377 <= 14D))) break;
-double y_1379 = 0;
-V r_1380 = default;
-y_1379 = (41.5 + ((45.5 * i_1377) / 14D));
-r_1380 = Call(rT_1351, V.Undef, ((V)(y_1379)));
+if (!((i_1486 <= 14D))) break;
+double y_1488 = 0;
+V r_1489 = default;
+y_1488 = (41.5 + ((45.5 * i_1486) / 14D));
+r_1489 = Call(rT_1459, V.Undef, ((V)(y_1488)));
 {
-double k_1381 = 0;
-k_1381 = 0D;
+double k_1490 = 0;
+k_1490 = 0D;
 while (true) {
-if (!((k_1381 < 24D))) break;
-double f_1383 = 0;
-f_1383 = ((k_1381 / 24D) * TAU_9);
-Invoke(hp_1355, "push", Call(PE_1354, V.Undef, ((V)((50D + (ToNum(r_1380) * FdLibm.Sin(f_1383))))), ((V)(y_1379)), ((V)((ToNum(r_1380) * FdLibm.Cos(f_1383))))));
-k_1381++;
+if (!((k_1490 < 24D))) break;
+double f_1492 = 0;
+f_1492 = ((k_1490 / 24D) * TAU_9);
+Invoke(hp_1463, "push", Call(PE_1462, V.Undef, ((V)((50D + (ToNum(r_1489) * FdLibm.Sin(f_1492))))), ((V)(y_1488)), ((V)((ToNum(r_1489) * FdLibm.Cos(f_1492))))));
+k_1490++;
 }
 }
-i_1377++;
+i_1486++;
 }
 }
 {
-double k_1384 = 0;
-k_1384 = 0D;
+double k_1493 = 0;
+k_1493 = 0D;
 while (true) {
-if (!((k_1384 < 32D))) break;
-double f_1386 = 0;
-f_1386 = ((k_1384 / 32D) * TAU_9);
-Invoke(hp_1355, "push", Call(PE_1354, V.Undef, ((V)((50D + (35.6 * FdLibm.Sin(f_1386))))), ((V)(39.8)), ((V)((35.6 * FdLibm.Cos(f_1386))))));
-k_1384++;
+if (!((k_1493 < 32D))) break;
+double f_1495 = 0;
+f_1495 = ((k_1493 / 32D) * TAU_9);
+Invoke(hp_1463, "push", Call(PE_1462, V.Undef, ((V)((50D + (35.6 * FdLibm.Sin(f_1495))))), ((V)(39.8)), ((V)((35.6 * FdLibm.Cos(f_1495))))));
+k_1493++;
 }
 }
-Set(B_1345, "d", Invoke(D_1346, "hull", hp_1355));
-Call(set_1349, V.Undef, Get(B_1345, "sh"), ((V)("d")), Get(B_1345, "d"));
-vis_1356 = Fn((V _self1338, int _argc1387, V f_1393, V y_1394, V _a1391, V _a1392, V[] _rest1388) => {
-V r_1395 = default;
-r_1395 = Call(rT_1351, V.Undef, y_1394);
-return (GtN(Invoke(D_1346, "facing", ((V)((50D + (ToNum(r_1395) * FdLibm.Sin(ToNum(f_1393)))))), y_1394, ((V)((ToNum(r_1395) * FdLibm.Cos(ToNum(f_1393))))), ((V)(FdLibm.Sin(ToNum(f_1393)))), ((V)(0D)), ((V)(FdLibm.Cos(ToNum(f_1393))))), 0.004) ? V.True : V.False);
+Set(B_1453, "d", Invoke(D_1454, "hull", hp_1463));
+Call(set_1457, V.Undef, Get(B_1453, "sh"), ((V)("d")), Get(B_1453, "d"));
+vis_1464 = Fn((V _arrowThis1504, int _argc1496, V f_1502, V y_1503, V _a1500, V _a1501, V[] _rest1497) => {
+V r_1505 = default;
+r_1505 = Call(rT_1459, V.Undef, y_1503);
+return (GtN(Invoke(D_1454, "facing", ((V)((50D + (ToNum(r_1505) * FdLibm.Sin(ToNum(f_1502)))))), y_1503, ((V)((ToNum(r_1505) * FdLibm.Cos(ToNum(f_1502))))), ((V)(FdLibm.Sin(ToNum(f_1502)))), ((V)(0D)), ((V)(FdLibm.Cos(ToNum(f_1502))))), 0.004) ? V.True : V.False);
 return default;
 }, 2, "", true);
-sd_1357 = new JsStrBuf("");
+sd_1465 = new JsStrBuf("");
 {
-double s_1396 = 0;
-s_1396 = 0D;
+double s_1506 = 0;
+s_1506 = 0D;
 while (true) {
-if (!((s_1396 < 8D))) break;
-double fc_1398 = 0;
-double fa_1399 = 0;
-double fb_1400 = 0;
-V F_1401 = default;
-V Q_1402 = default;
-V ys_1403 = default;
-fc_1398 = (((s_1396 + 0.5) * TAU_9) / 8D);
-fa_1399 = (fc_1398 - (TAU_9 / 32D));
-fb_1400 = (fc_1398 + (TAU_9 / 32D));
-F_1401 = Arr();
+if (!((s_1506 < 8D))) break;
+double fc_1508 = 0;
+double fa_1509 = 0;
+double fb_1510 = 0;
+V F_1511 = default;
+V Q_1512 = default;
+V ys_1513 = default;
+fc_1508 = (((s_1506 + 0.5) * TAU_9) / 8D);
+fa_1509 = (fc_1508 - (TAU_9 / 32D));
+fb_1510 = (fc_1508 + (TAU_9 / 32D));
+F_1511 = Arr();
 {
-double j_1404 = 0;
-j_1404 = 0D;
+double j_1514 = 0;
+j_1514 = 0D;
 while (true) {
-if (!((j_1404 <= 12D))) break;
-double f_1406 = 0;
-f_1406 = (fa_1399 + (((fb_1400 - fa_1399) * j_1404) / 12D));
-if (Truthy(Call(vis_1356, V.Undef, ((V)(f_1406)), ((V)(62D))))) {
-Invoke(F_1401, "push", ((V)(f_1406)));
+if (!((j_1514 <= 12D))) break;
+double f_1516 = 0;
+f_1516 = (fa_1509 + (((fb_1510 - fa_1509) * j_1514) / 12D));
+if (Truthy(Call(vis_1464, V.Undef, ((V)(f_1516)), ((V)(62D))))) {
+Invoke(F_1511, "push", ((V)(f_1516)));
 }
-j_1404++;
+j_1514++;
 }
 }
-if (LtN(Get(F_1401, "length"), 2D)) {
-goto _cont1397;
+if (LtN(Get(F_1511, "length"), 2D)) {
+goto _cont1507;
 }
-Q_1402 = Arr();
-ys_1403 = Arr(((V)(44.5)), ((V)(52D)), ((V)(60D)), ((V)(68D)), ((V)(76D)), ((V)(82D)), ((V)(85D)), ((V)(86.8)));
-Invoke(F_1401, "forEach", Fn((V _self1338, int _argc1407, V f_1413, V _a1410, V _a1411, V _a1412, V[] _rest1408) => {
-return Invoke(Q_1402, "push", Call(PE_1354, V.Undef, ((V)((50D + (ToNum(Call(rT_1351, V.Undef, ((V)(44.5)))) * FdLibm.Sin(ToNum(f_1413)))))), ((V)(44.5)), ((V)((ToNum(Call(rT_1351, V.Undef, ((V)(44.5)))) * FdLibm.Cos(ToNum(f_1413)))))));
+Q_1512 = Arr();
+ys_1513 = Arr(((V)(44.5)), ((V)(52D)), ((V)(60D)), ((V)(68D)), ((V)(76D)), ((V)(82D)), ((V)(85D)), ((V)(86.8)));
+Invoke(F_1511, "forEach", Fn((V _arrowThis1524, int _argc1517, V f_1523, V _a1520, V _a1521, V _a1522, V[] _rest1518) => {
+return Invoke(Q_1512, "push", Call(PE_1462, V.Undef, ((V)((50D + (ToNum(Call(rT_1459, V.Undef, ((V)(44.5)))) * FdLibm.Sin(ToNum(f_1523)))))), ((V)(44.5)), ((V)((ToNum(Call(rT_1459, V.Undef, ((V)(44.5)))) * FdLibm.Cos(ToNum(f_1523)))))));
 }, 1, "", true));
-Invoke(ys_1403, "forEach", Fn((V _self1338, int _argc1414, V y_1420, V _a1417, V _a1418, V _a1419, V[] _rest1415) => {
-V f_1421 = default;
-V r_1422 = default;
-f_1421 = GetIdx(F_1401, (ToNum(Get(F_1401, "length")) - 1D));
-r_1422 = Call(rT_1351, V.Undef, y_1420);
-Invoke(Q_1402, "push", Call(PE_1354, V.Undef, ((V)((50D + (ToNum(r_1422) * FdLibm.Sin(ToNum(f_1421)))))), y_1420, ((V)((ToNum(r_1422) * FdLibm.Cos(ToNum(f_1421)))))));
+Invoke(ys_1513, "forEach", Fn((V _arrowThis1532, int _argc1525, V y_1531, V _a1528, V _a1529, V _a1530, V[] _rest1526) => {
+V f_1533 = default;
+V r_1534 = default;
+f_1533 = GetIdx(F_1511, (ToNum(Get(F_1511, "length")) - 1D));
+r_1534 = Call(rT_1459, V.Undef, y_1531);
+Invoke(Q_1512, "push", Call(PE_1462, V.Undef, ((V)((50D + (ToNum(r_1534) * FdLibm.Sin(ToNum(f_1533)))))), y_1531, ((V)((ToNum(r_1534) * FdLibm.Cos(ToNum(f_1533)))))));
 return default;
 }, 1, "", true));
-Invoke(Invoke(Invoke(F_1401, "slice"), "reverse"), "forEach", Fn((V _self1338, int _argc1423, V f_1429, V _a1426, V _a1427, V _a1428, V[] _rest1424) => {
-V r_1430 = default;
-r_1430 = Call(rT_1351, V.Undef, ((V)(86.8)));
-Invoke(Q_1402, "push", Call(PE_1354, V.Undef, ((V)((50D + (ToNum(r_1430) * FdLibm.Sin(ToNum(f_1429)))))), ((V)(86.8)), ((V)((ToNum(r_1430) * FdLibm.Cos(ToNum(f_1429)))))));
+Invoke(Invoke(Invoke(F_1511, "slice"), "reverse"), "forEach", Fn((V _arrowThis1542, int _argc1535, V f_1541, V _a1538, V _a1539, V _a1540, V[] _rest1536) => {
+V r_1543 = default;
+r_1543 = Call(rT_1459, V.Undef, ((V)(86.8)));
+Invoke(Q_1512, "push", Call(PE_1462, V.Undef, ((V)((50D + (ToNum(r_1543) * FdLibm.Sin(ToNum(f_1541)))))), ((V)(86.8)), ((V)((ToNum(r_1543) * FdLibm.Cos(ToNum(f_1541)))))));
 return default;
 }, 1, "", true));
-Invoke(Invoke(Invoke(ys_1403, "slice"), "reverse"), "forEach", Fn((V _self1338, int _argc1431, V y_1437, V _a1434, V _a1435, V _a1436, V[] _rest1432) => {
-V f_1438 = default;
-V r_1439 = default;
-f_1438 = GetIdx(F_1401, 0D);
-r_1439 = Call(rT_1351, V.Undef, y_1437);
-Invoke(Q_1402, "push", Call(PE_1354, V.Undef, ((V)((50D + (ToNum(r_1439) * FdLibm.Sin(ToNum(f_1438)))))), y_1437, ((V)((ToNum(r_1439) * FdLibm.Cos(ToNum(f_1438)))))));
+Invoke(Invoke(Invoke(ys_1513, "slice"), "reverse"), "forEach", Fn((V _arrowThis1551, int _argc1544, V y_1550, V _a1547, V _a1548, V _a1549, V[] _rest1545) => {
+V f_1552 = default;
+V r_1553 = default;
+f_1552 = GetIdx(F_1511, 0D);
+r_1553 = Call(rT_1459, V.Undef, y_1550);
+Invoke(Q_1512, "push", Call(PE_1462, V.Undef, ((V)((50D + (ToNum(r_1553) * FdLibm.Sin(ToNum(f_1552)))))), y_1550, ((V)((ToNum(r_1553) * FdLibm.Cos(ToNum(f_1552)))))));
 return default;
 }, 1, "", true));
-sd_1357.V(Call(polyW_18, V.Undef, Q_1402));
-_cont1397: ;
-s_1396++;
+sd_1465.V(Call(polyW_18, V.Undef, Q_1512));
+_cont1507: ;
+s_1506++;
 }
 }
-Call(set_1349, V.Undef, Get(B_1345, "st"), ((V)("d")), (((V)(sd_1357.Str)) is var _t1440 && Truthy(_t1440) ? _t1440 : ((V)("M0 0"))));
-ring_1358 = Fn((V _self1338, int _argc1441, V r_1447, V y_1448, V _a1445, V _a1446, V[] _rest1442) => {
-V o_1449 = default;
-o_1449 = Arr();
+Call(set_1457, V.Undef, Get(B_1453, "st"), ((V)("d")), (((V)(sd_1465.Str)) is var _t1554 && Truthy(_t1554) ? _t1554 : ((V)("M0 0"))));
+ring_1466 = Fn((V _arrowThis1563, int _argc1555, V r_1561, V y_1562, V _a1559, V _a1560, V[] _rest1556) => {
+V o_1564 = default;
+o_1564 = Arr();
 {
-double k_1450 = 0;
-k_1450 = 0D;
+double k_1565 = 0;
+k_1565 = 0D;
 while (true) {
-if (!((k_1450 < 40D))) break;
-double f_1452 = 0;
-f_1452 = ((k_1450 / 40D) * TAU_9);
-Invoke(o_1449, "push", Call(PE_1354, V.Undef, ((V)((50D + (ToNum(r_1447) * FdLibm.Sin(f_1452))))), y_1448, ((V)((ToNum(r_1447) * FdLibm.Cos(f_1452))))));
-k_1450++;
+if (!((k_1565 < 40D))) break;
+double f_1567 = 0;
+f_1567 = ((k_1565 / 40D) * TAU_9);
+Invoke(o_1564, "push", Call(PE_1462, V.Undef, ((V)((50D + (ToNum(r_1561) * FdLibm.Sin(f_1567))))), y_1562, ((V)((ToNum(r_1561) * FdLibm.Cos(f_1567))))));
+k_1565++;
 }
 }
-return o_1449;
+return o_1564;
 return default;
 }, 2, "", true);
-Call(set_1349, V.Undef, Get(B_1345, "bed"), ((V)("d")), Call(polyW_18, V.Undef, Call(ring_1358, V.Undef, ((V)(34.2)), ((V)(40.6)))));
-FR_1359 = Arr();
-FRb_1360 = Arr();
-FRl_1361 = Arr();
-Invoke(Invoke(Get(SN_43, "h"), "frontArc", D_1346, ((V)(36D)), ((V)(41D)), ((V)(60D))), "forEach", Fn((V _self1338, int _argc1453, V f_1459, V _a1456, V _a1457, V _a1458, V[] _rest1454) => {
-Invoke(FR_1359, "push", Call(PE_1354, V.Undef, ((V)((50D + (36.8 * FdLibm.Sin(ToNum(f_1459)))))), ((V)(39.2)), ((V)((36.8 * FdLibm.Cos(ToNum(f_1459)))))));
-Invoke(FRb_1360, "push", Call(PE_1354, V.Undef, ((V)((50D + (36.1 * FdLibm.Sin(ToNum(f_1459)))))), ((V)(44.2)), ((V)((36.1 * FdLibm.Cos(ToNum(f_1459)))))));
-Invoke(FRl_1361, "push", Call(PE_1354, V.Undef, ((V)((50D + (36.3 * FdLibm.Sin(ToNum(f_1459)))))), ((V)(40.5)), ((V)((36.3 * FdLibm.Cos(ToNum(f_1459)))))));
+Call(set_1457, V.Undef, Get(B_1453, "bed"), ((V)("d")), Call(polyW_18, V.Undef, Call(ring_1466, V.Undef, ((V)(34.2)), ((V)(40.6)))));
+FR_1467 = Arr();
+FRb_1468 = Arr();
+FRl_1469 = Arr();
+Invoke(Invoke(Get(SN_43, "h"), "frontArc", D_1454, ((V)(36D)), ((V)(41D)), ((V)(60D))), "forEach", Fn((V _arrowThis1575, int _argc1568, V f_1574, V _a1571, V _a1572, V _a1573, V[] _rest1569) => {
+Invoke(FR_1467, "push", Call(PE_1462, V.Undef, ((V)((50D + (36.8 * FdLibm.Sin(ToNum(f_1574)))))), ((V)(39.2)), ((V)((36.8 * FdLibm.Cos(ToNum(f_1574)))))));
+Invoke(FRb_1468, "push", Call(PE_1462, V.Undef, ((V)((50D + (36.1 * FdLibm.Sin(ToNum(f_1574)))))), ((V)(44.2)), ((V)((36.1 * FdLibm.Cos(ToNum(f_1574)))))));
+Invoke(FRl_1469, "push", Call(PE_1462, V.Undef, ((V)((50D + (36.3 * FdLibm.Sin(ToNum(f_1574)))))), ((V)(40.5)), ((V)((36.3 * FdLibm.Cos(ToNum(f_1574)))))));
 return default;
 }, 1, "", true));
-Call(set_1349, V.Undef, Get(B_1345, "rim"), ((V)("d")), (Call(polyW_18, V.Undef, Invoke(FR_1359, "concat", Invoke(Invoke(FRb_1360, "slice"), "reverse"))) is var _t1460 && Truthy(_t1460) ? _t1460 : ((V)("M0 0"))));
-Call(set_1349, V.Undef, Get(B_1345, "rimL"), ((V)("d")), (Call(runs_21, V.Undef, FRl_1361, Invoke(FRl_1361, "map", Fn((V _self1338, int _argc1461, V _a1463, V _a1464, V _a1465, V _a1466, V[] _rest1462) => {
+Call(set_1457, V.Undef, Get(B_1453, "rim"), ((V)("d")), (Call(polyW_18, V.Undef, Invoke(FR_1467, "concat", Invoke(Invoke(FRb_1468, "slice"), "reverse"))) is var _t1576 && Truthy(_t1576) ? _t1576 : ((V)("M0 0"))));
+Call(set_1457, V.Undef, Get(B_1453, "rimL"), ((V)("d")), (Call(runs_21, V.Undef, FRl_1469, Invoke(FRl_1469, "map", Fn((V _arrowThis1583, int _argc1577, V _a1579, V _a1580, V _a1581, V _a1582, V[] _rest1578) => {
 return (true ? V.True : V.False);
-}, 0, "", true))) is var _t1467 && Truthy(_t1467) ? _t1467 : ((V)("M0 0"))));
-if (GtN(Get(FR_1359, "length"), 2D)) {
-V a_1468 = default;
-V z_1469 = default;
-V L_1470 = default;
-a_1468 = GetIdx(FR_1359, 0D);
-z_1469 = GetIdx(FR_1359, (ToNum(Get(FR_1359, "length")) - 1D));
-L_1470 = (Lt(GetIdx(a_1468, 0D), GetIdx(z_1469, 0D)) ? FR_1359 : Invoke(Invoke(FR_1359, "slice"), "reverse"));
-Call(set_1349, V.Undef, Get(Get(B_1345, "cl"), "p"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(GetIdx(L_1470, 0D), 0D)) - 40D))))).S(" ").V(Call(r2_11, V.Undef, Add(GetIdx(GetIdx(L_1470, 0D), 1D), ((V)(0.6))))).S("L").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(GetIdx(L_1470, 0D), 0D)) - 40D))))).S(" -200L").V(Call(r2_11, V.Undef, Add(GetIdx(GetIdx(L_1470, (ToNum(Get(L_1470, "length")) - 1D)), 0D), ((V)(40D))))).S(" -200L").V(Call(r2_11, V.Undef, Add(GetIdx(GetIdx(L_1470, (ToNum(Get(L_1470, "length")) - 1D)), 0D), ((V)(40D))))).S(" ").V(Call(r2_11, V.Undef, Add(GetIdx(GetIdx(L_1470, (ToNum(Get(L_1470, "length")) - 1D)), 1D), ((V)(0.6))))).V(Invoke(Invoke(Invoke(Invoke(L_1470, "slice"), "reverse"), "map", Fn((V _self1338, int _argc1471, V p_1477, V _a1474, V _a1475, V _a1476, V[] _rest1472) => {
-return ((V)(JsStrBuf.Begin().S("L").V(Call(r2_11, V.Undef, GetIdx(p_1477, 0D))).S(" ").V(Call(r2_11, V.Undef, Add(GetIdx(p_1477, 1D), ((V)(0.6))))).End()));
+}, 0, "", true))) is var _t1584 && Truthy(_t1584) ? _t1584 : ((V)("M0 0"))));
+if (GtN(Get(FR_1467, "length"), 2D)) {
+V a_1585 = default;
+V z_1586 = default;
+V L_1587 = default;
+a_1585 = GetIdx(FR_1467, 0D);
+z_1586 = GetIdx(FR_1467, (ToNum(Get(FR_1467, "length")) - 1D));
+L_1587 = (Lt(GetIdx(a_1585, 0D), GetIdx(z_1586, 0D)) ? FR_1467 : Invoke(Invoke(FR_1467, "slice"), "reverse"));
+Call(set_1457, V.Undef, Get(Get(B_1453, "cl"), "p"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(GetIdx(L_1587, 0D), 0D)) - 40D))))).S(" ").V(Call(r2_11, V.Undef, Add(GetIdx(GetIdx(L_1587, 0D), 1D), ((V)(0.6))))).S("L").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(GetIdx(L_1587, 0D), 0D)) - 40D))))).S(" -200L").V(Call(r2_11, V.Undef, Add(GetIdx(GetIdx(L_1587, (ToNum(Get(L_1587, "length")) - 1D)), 0D), ((V)(40D))))).S(" -200L").V(Call(r2_11, V.Undef, Add(GetIdx(GetIdx(L_1587, (ToNum(Get(L_1587, "length")) - 1D)), 0D), ((V)(40D))))).S(" ").V(Call(r2_11, V.Undef, Add(GetIdx(GetIdx(L_1587, (ToNum(Get(L_1587, "length")) - 1D)), 1D), ((V)(0.6))))).V(Invoke(Invoke(Invoke(Invoke(L_1587, "slice"), "reverse"), "map", Fn((V _arrowThis1595, int _argc1588, V p_1594, V _a1591, V _a1592, V _a1593, V[] _rest1589) => {
+return ((V)(JsStrBuf.Begin().S("L").V(Call(r2_11, V.Undef, GetIdx(p_1594, 0D))).S(" ").V(Call(r2_11, V.Undef, Add(GetIdx(p_1594, 1D), ((V)(0.6))))).End()));
 }, 1, "", true)), "join", ((V)("")))).S("Z").End())));
 }
-L_1362 = Invoke(Invoke(Get(B_1345, "K"), "map", Fn((V _self1338, int _argc1486, V k_1492, V _a1489, V _a1490, V _a1491, V[] _rest1487) => {
-V hgt_1493 = default;
-double jp_1494 = 0;
-V x_1495 = default;
-double y_1496 = 0;
-V C_1497 = default;
-double s_1498 = 0;
-JsStrBuf d_1499 = null;
-hgt_1493 = Call(clamp_12, V.Undef, ((V)(((41D - ToNum(Get(k_1492, "y"))) / 28D))), ((V)(0D)), ((V)(1D)));
-jp_1494 = (((ToNum(pop_1352) * ToNum(Get(k_1492, "hk"))) * (0.6 + (0.4 * FdLibm.Sin(ToNum(Add(((V)((ToNum(Get(D_1346, "ts")) * 9D))), Get(k_1492, "hk"))))))) + ((ToNum(fz_1353) * FdLibm.Sin(((ToNum(Get(D_1346, "ts")) * 37D) + (ToNum(Get(k_1492, "hk")) * 3D)))) * 0.6));
-x_1495 = Add(Add(Get(k_1492, "x"), ((V)(((ToNum(Get(D_1346, "ox")) * 0.25) * ToNum(hgt_1493))))), ((V)(((ToNum(fz_1353) * FdLibm.Sin(ToNum(Add(((V)((ToNum(Get(D_1346, "ts")) * 41D))), Get(k_1492, "hk"))))) * 0.5))));
-y_1496 = ((ToNum(Get(k_1492, "y")) - ((ToNum(Get(D_1346, "oy")) * 0.3) * ToNum(hgt_1493))) - Max(0D, jp_1494));
-C_1497 = Call(PE_1354, V.Undef, x_1495, ((V)(y_1496)), Get(k_1492, "z"));
-s_1498 = (ToNum(Get(k_1492, "s")) * ToNum(Get(D_1346, "kS")));
-d_1499 = new JsStrBuf("");
-Invoke(Get(k_1492, "B"), "forEach", Fn((V _self1338, int _argc1500, V b_1506, V _a1503, V _a1504, V _a1505, V[] _rest1501) => {
-d_1499.V(Call(circD_19, V.Undef, Arr(Add(GetIdx(C_1497, 0D), ((V)(((ToNum(GetIdx(b_1506, 0D)) * s_1498) * 0.55)))), Add(GetIdx(C_1497, 1D), ((V)(((ToNum(GetIdx(b_1506, 1D)) * s_1498) * 0.55))))), ((V)(((ToNum(GetIdx(b_1506, 2D)) * s_1498) * 0.55)))));
+L_1470 = Invoke(Invoke(Get(B_1453, "K"), "map", Fn((V _arrowThis1612, int _argc1605, V k_1611, V _a1608, V _a1609, V _a1610, V[] _rest1606) => {
+V hgt_1613 = default;
+double jp_1614 = 0;
+V x_1615 = default;
+double y_1616 = 0;
+V C_1617 = default;
+double s_1618 = 0;
+JsStrBuf d_1619 = null;
+hgt_1613 = Call(clamp_12, V.Undef, ((V)(((41D - ToNum(Get(k_1611, "y"))) / 28D))), ((V)(0D)), ((V)(1D)));
+jp_1614 = (((ToNum(pop_1460) * ToNum(Get(k_1611, "hk"))) * (0.6 + (0.4 * FdLibm.Sin(ToNum(Add(((V)((ToNum(Get(D_1454, "ts")) * 9D))), Get(k_1611, "hk"))))))) + ((ToNum(fz_1461) * FdLibm.Sin(((ToNum(Get(D_1454, "ts")) * 37D) + (ToNum(Get(k_1611, "hk")) * 3D)))) * 0.6));
+x_1615 = Add(Add(Get(k_1611, "x"), ((V)(((ToNum(Get(D_1454, "ox")) * 0.25) * ToNum(hgt_1613))))), ((V)(((ToNum(fz_1461) * FdLibm.Sin(ToNum(Add(((V)((ToNum(Get(D_1454, "ts")) * 41D))), Get(k_1611, "hk"))))) * 0.5))));
+y_1616 = ((ToNum(Get(k_1611, "y")) - ((ToNum(Get(D_1454, "oy")) * 0.3) * ToNum(hgt_1613))) - Max(0D, jp_1614));
+C_1617 = Call(PE_1462, V.Undef, x_1615, ((V)(y_1616)), Get(k_1611, "z"));
+s_1618 = (ToNum(Get(k_1611, "s")) * ToNum(Get(D_1454, "kS")));
+d_1619 = new JsStrBuf("");
+Invoke(Get(k_1611, "B"), "forEach", Fn((V _arrowThis1627, int _argc1620, V b_1626, V _a1623, V _a1624, V _a1625, V[] _rest1621) => {
+d_1619.V(Call(circD_19, V.Undef, Arr(Add(GetIdx(C_1617, 0D), ((V)(((ToNum(GetIdx(b_1626, 0D)) * s_1618) * 0.55)))), Add(GetIdx(C_1617, 1D), ((V)(((ToNum(GetIdx(b_1626, 1D)) * s_1618) * 0.55))))), ((V)(((ToNum(GetIdx(b_1626, 2D)) * s_1618) * 0.55)))));
 return default;
 }, 1, "", true));
-Call(set_1349, V.Undef, Get(k_1492, "e"), ((V)("d")), ((V)(d_1499.Str)));
-Call(set_1349, V.Undef, Get(k_1492, "dot"), ((V)("d")), Call(circD_19, V.Undef, Arr(Add(GetIdx(C_1497, 0D), ((V)(((ToNum(GetIdx(GetIdx(Get(k_1492, "B"), 1D), 0D)) * s_1498) * 0.3)))), Add(GetIdx(C_1497, 1D), ((V)((0.7 * s_1498))))), ((V)(((0.85 * s_1498) * 0.55)))));
-return NewObj(3).Put("id", Get(k_1492, "id")).Put("e", Get(k_1492, "g")).Put("z", Call(Z3_1348, V.Undef, x_1495, ((V)(y_1496)), Get(k_1492, "z"))).V;
+Call(set_1457, V.Undef, Get(k_1611, "e"), ((V)("d")), ((V)(d_1619.Str)));
+Call(set_1457, V.Undef, Get(k_1611, "dot"), ((V)("d")), Call(circD_19, V.Undef, Arr(Add(GetIdx(C_1617, 0D), ((V)(((ToNum(GetIdx(GetIdx(Get(k_1611, "B"), 1D), 0D)) * s_1618) * 0.3)))), Add(GetIdx(C_1617, 1D), ((V)((0.7 * s_1618))))), ((V)(((0.85 * s_1618) * 0.55)))));
+return NewObj(3).Put("id", Get(k_1611, "id")).Put("e", Get(k_1611, "g")).Put("z", Call(Z3_1456, V.Undef, x_1615, ((V)(y_1616)), Get(k_1611, "z"))).V;
 return default;
-}, 1, "", true)), "sort", Fn((V _self1338, int _argc1478, V a_1484, V b_1485, V _a1482, V _a1483, V[] _rest1479) => {
-return ((V)((ToNum(Get(a_1484, "z")) - ToNum(Get(b_1485, "z")))));
+}, 1, "", true)), "sort", Fn((V _arrowThis1604, int _argc1596, V a_1602, V b_1603, V _a1600, V _a1601, V[] _rest1597) => {
+return ((V)((ToNum(Get(a_1602, "z")) - ToNum(Get(b_1603, "z")))));
 }, 2, "", true));
-Invoke(SN_43, "order", Get(B_1345, "KG"), L_1362);
+Invoke(SN_43, "order", Get(B_1453, "KG"), L_1470);
 return default;
 }, 2, "draw", false)).V);
-Set(MODELS_42, "nori", NewObj(2).Put("setup", Fn((V _self1507, int _argc1508, V S_1514, V _a1511, V _a1512, V _a1513, V[] _rest1509) => {
-V sk_1515 = default;
-V O_1516 = default;
-double T_1517 = 0;
-double b_1518 = 0;
-V rings_1519 = default;
-V zF_1520 = default;
-V GG_1521 = default;
-V DC_1522 = default;
-V BG_1523 = default;
-V SG_1524 = default;
-V swq_1525 = default;
-V sh_1526 = default;
-V SW_1527 = default;
-V TOP_1528 = default;
-V BK_1529 = default;
-double n_1530 = 0;
-V bkg_1531 = default;
-V FL_1532 = default;
-V SAL_1533 = default;
-V shd_1534 = default;
-V FK_1535 = default;
-if (_self1507.IsNullish) _self1507 = GlobalV;
-{ V _t1536 = S_1514;
-if (_t1536.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t1536));
-{ V _t1537 = Get(_t1536, "sk");
-sk_1515 = _t1537; } }
-O_1516 = Invoke(S_1514, "outline", sk_1515, ((V)(64D)));
-T_1517 = 10.5;
-b_1518 = 8D;
-rings_1519 = Call(pillowRings_40, V.Undef, O_1516, ((V)(T_1517)), ((V)(b_1518)), ((V)(4D)));
-zF_1520 = Call(pillowZ_41, V.Undef, O_1516, ((V)(T_1517)), ((V)(b_1518)));
-Invoke(S_1514, "hide", Fn((V _self1507, int _argc1538, V q_1544, V _a1541, V _a1542, V _a1543, V[] _rest1539) => {
-return (Get(q_1544, "inBody") is var _t1549 && !Truthy(_t1549) ? _t1549 : (((Invoke(S_1514, "dk", q_1544, ((V)("sal"))) is var _t1546 && Truthy(_t1546) ? _t1546 : ((SEqS(Get(q_1544, "tag"), "circle") ? V.True : V.False) is var _t1545 && !Truthy(_t1545) ? _t1545 : Invoke(NewRegExp(RX2, "^url", ""), "test", Invoke(S_1514, "f", q_1544)))) is var _t1547 && Truthy(_t1547) ? _t1547 : (SEqS(Invoke(S_1514, "f", q_1544), "#5aa04a") ? V.True : V.False)) is var _t1548 && Truthy(_t1548) ? _t1548 : (SEqS(Invoke(S_1514, "s", q_1544), "#ffd0da") ? V.True : V.False)));
+Set(MODELS_42, "nori", NewObj(2).Put("setup", Fn((V _self1628, int _argc1629, V S_1635, V _a1632, V _a1633, V _a1634, V[] _rest1630) => {
+V sk_1636 = default;
+V O_1637 = default;
+double T_1638 = 0;
+double b_1639 = 0;
+V rings_1640 = default;
+V zF_1641 = default;
+V GG_1642 = default;
+V DC_1643 = default;
+V BG_1644 = default;
+V SG_1645 = default;
+V swq_1646 = default;
+V sh_1647 = default;
+V SW_1648 = default;
+V TOP_1649 = default;
+V BK_1650 = default;
+double n_1651 = 0;
+V bkg_1652 = default;
+V FL_1653 = default;
+V SAL_1654 = default;
+V shd_1655 = default;
+V FK_1656 = default;
+if (_self1628.IsNullish) _self1628 = GlobalV;
+{ V _t1657 = S_1635;
+if (_t1657.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t1657));
+{ V _t1658 = Get(_t1657, "sk");
+sk_1636 = _t1658; } }
+O_1637 = Invoke(S_1635, "outline", sk_1636, ((V)(64D)));
+T_1638 = 10.5;
+b_1639 = 8D;
+rings_1640 = Call(pillowRings_40, V.Undef, O_1637, ((V)(T_1638)), ((V)(b_1639)), ((V)(4D)));
+zF_1641 = Call(pillowZ_41, V.Undef, O_1637, ((V)(T_1638)), ((V)(b_1639)));
+Invoke(S_1635, "hide", Fn((V _arrowThis1666, int _argc1659, V q_1665, V _a1662, V _a1663, V _a1664, V[] _rest1660) => {
+return (Get(q_1665, "inBody") is var _t1671 && !Truthy(_t1671) ? _t1671 : (((Invoke(S_1635, "dk", q_1665, ((V)("sal"))) is var _t1668 && Truthy(_t1668) ? _t1668 : ((SEqS(Get(q_1665, "tag"), "circle") ? V.True : V.False) is var _t1667 && !Truthy(_t1667) ? _t1667 : Invoke(NewRegExp(RX2, "^url", ""), "test", Invoke(S_1635, "f", q_1665)))) is var _t1669 && Truthy(_t1669) ? _t1669 : (SEqS(Invoke(S_1635, "f", q_1665), "#5aa04a") ? V.True : V.False)) is var _t1670 && Truthy(_t1670) ? _t1670 : (SEqS(Invoke(S_1635, "s", q_1665), "#ffd0da") ? V.True : V.False)));
 }, 1, "", true));
-GG_1521 = Invoke(S_1514, "g");
-DC_1522 = Invoke(S_1514, "decals", Fn((V _self1507, int _argc1550, V q_1556, V _a1553, V _a1554, V _a1555, V[] _rest1551) => {
-return (Get(q_1556, "inBody") is var _t1557 && !Truthy(_t1557) ? _t1557 : Invoke(S_1514, "dk", q_1556, ((V)("dc"))));
-}, 1, "", true), GG_1521);
-BG_1523 = Invoke(S_1514, "g");
-SG_1524 = Invoke(S_1514, "g");
-swq_1525 = Invoke(S_1514, "hide", Fn((V _self1507, int _argc1558, V q_1564, V _a1561, V _a1562, V _a1563, V[] _rest1559) => {
-return (Get(q_1564, "inBody") is var _t1565 && !Truthy(_t1565) ? _t1565 : Invoke(S_1514, "dk", q_1564, ((V)("sw"))));
+GG_1642 = Invoke(S_1635, "g");
+DC_1643 = Invoke(S_1635, "decals", Fn((V _arrowThis1679, int _argc1672, V q_1678, V _a1675, V _a1676, V _a1677, V[] _rest1673) => {
+return (Get(q_1678, "inBody") is var _t1680 && !Truthy(_t1680) ? _t1680 : Invoke(S_1635, "dk", q_1678, ((V)("dc"))));
+}, 1, "", true), GG_1642);
+BG_1644 = Invoke(S_1635, "g");
+SG_1645 = Invoke(S_1635, "g");
+swq_1646 = Invoke(S_1635, "hide", Fn((V _arrowThis1688, int _argc1681, V q_1687, V _a1684, V _a1685, V _a1686, V[] _rest1682) => {
+return (Get(q_1687, "inBody") is var _t1689 && !Truthy(_t1689) ? _t1689 : Invoke(S_1635, "dk", q_1687, ((V)("sw"))));
 }, 1, "", true));
-sh_1526 = Invoke(swq_1525, "find", Fn((V _self1507, int _argc1566, V q_1572, V _a1569, V _a1570, V _a1571, V[] _rest1567) => {
-return Invoke(NewRegExp(RX2, "^url", ""), "test", Invoke(S_1514, "f", q_1572));
+sh_1647 = Invoke(swq_1646, "find", Fn((V _arrowThis1697, int _argc1690, V q_1696, V _a1693, V _a1694, V _a1695, V[] _rest1691) => {
+return Invoke(NewRegExp(RX2, "^url", ""), "test", Invoke(S_1635, "f", q_1696));
 }, 1, "", true));
-SW_1527 = NewObj(5).Put("st", Invoke(S_1514, "path", NewObj(1).Put("fill", (Truthy(sh_1526) ? Invoke(S_1514, "f", sh_1526) : ((V)("#2b4232")))).V, SG_1524)).Put("rim", Invoke(S_1514, "path", NewObj(2).Put("fill", ((V)("#0f1c13"))).Put("opacity", ((V)(0.45))).V, SG_1524)).Put("fib", Invoke(S_1514, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#46644e"))).Put("stroke-width", ((V)(0.45))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.7))).V, SG_1524)).Put("shn", Invoke(S_1514, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#86a88c"))).Put("stroke-width", ((V)(1.3))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.45))).V, SG_1524)).Put("edge", Invoke(S_1514, "path", NewObj(6).Put("fill", ((V)("none"))).Put("stroke", ((V)("#122017"))).Put("stroke-width", ((V)(0.7))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).Put("opacity", ((V)(0.7))).V, SG_1524)).V;
-TOP_1528 = Arr();
-Invoke(Arr(Arr(Arr(((V)(31.5)), ((V)(65.5))), Arr(((V)(41D)), ((V)(64D))), Arr(((V)(50D)), ((V)(64.6)))), Arr(Arr(((V)(50D)), ((V)(64.6))), Arr(((V)(59D)), ((V)(64D))), Arr(((V)(68.5)), ((V)(65.5))))), "forEach", Fn((V _self1507, int _argc1573, V _a1575, V h_1579, V _a1577, V _a1578, V[] _rest1574) => {
-V p0_1582 = default;
-V c_1584 = default;
-V p1_1586 = default;
-{ V _t1580 = ListOf(_a1575);
-{ V _t1581 = GetIdx(_t1580, 0D);
-p0_1582 = _t1581; }
-{ V _t1583 = GetIdx(_t1580, 1D);
-c_1584 = _t1583; }
-{ V _t1585 = GetIdx(_t1580, 2D);
-p1_1586 = _t1585; }
+SW_1648 = NewObj(5).Put("st", Invoke(S_1635, "path", NewObj(1).Put("fill", (Truthy(sh_1647) ? Invoke(S_1635, "f", sh_1647) : ((V)("#2b4232")))).V, SG_1645)).Put("rim", Invoke(S_1635, "path", NewObj(2).Put("fill", ((V)("#0f1c13"))).Put("opacity", ((V)(0.45))).V, SG_1645)).Put("fib", Invoke(S_1635, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#46644e"))).Put("stroke-width", ((V)(0.45))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.7))).V, SG_1645)).Put("shn", Invoke(S_1635, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#86a88c"))).Put("stroke-width", ((V)(1.3))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.45))).V, SG_1645)).Put("edge", Invoke(S_1635, "path", NewObj(6).Put("fill", ((V)("none"))).Put("stroke", ((V)("#122017"))).Put("stroke-width", ((V)(0.7))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).Put("opacity", ((V)(0.7))).V, SG_1645)).V;
+TOP_1649 = Arr();
+Invoke(Arr(Arr(Arr(((V)(31.5)), ((V)(65.5))), Arr(((V)(41D)), ((V)(64D))), Arr(((V)(50D)), ((V)(64.6)))), Arr(Arr(((V)(50D)), ((V)(64.6))), Arr(((V)(59D)), ((V)(64D))), Arr(((V)(68.5)), ((V)(65.5))))), "forEach", Fn((V _arrowThis1712, int _argc1698, V _a1700, V h_1704, V _a1702, V _a1703, V[] _rest1699) => {
+V p0_1707 = default;
+V c_1709 = default;
+V p1_1711 = default;
+{ V _t1705 = ListOf(_a1700);
+{ V _t1706 = GetIdx(_t1705, 0D);
+p0_1707 = _t1706; }
+{ V _t1708 = GetIdx(_t1705, 1D);
+c_1709 = _t1708; }
+{ V _t1710 = GetIdx(_t1705, 2D);
+p1_1711 = _t1710; }
 }
 {
-double k_1587 = 0;
-k_1587 = (Truthy(h_1579) ? 1D : 0D);
+double k_1713 = 0;
+k_1713 = (Truthy(h_1704) ? 1D : 0D);
 while (true) {
-if (!((k_1587 <= 12D))) break;
-double t_1589 = 0;
-double u_1590 = 0;
-t_1589 = (k_1587 / 12D);
-u_1590 = (1D - t_1589);
-Invoke(TOP_1528, "push", Arr(((V)(((((u_1590 * u_1590) * ToNum(GetIdx(p0_1582, 0D))) + (((2D * u_1590) * t_1589) * ToNum(GetIdx(c_1584, 0D)))) + ((t_1589 * t_1589) * ToNum(GetIdx(p1_1586, 0D)))))), ((V)(((((u_1590 * u_1590) * ToNum(GetIdx(p0_1582, 1D))) + (((2D * u_1590) * t_1589) * ToNum(GetIdx(c_1584, 1D)))) + ((t_1589 * t_1589) * ToNum(GetIdx(p1_1586, 1D))))))));
-k_1587++;
+if (!((k_1713 <= 12D))) break;
+double t_1715 = 0;
+double u_1716 = 0;
+t_1715 = (k_1713 / 12D);
+u_1716 = (1D - t_1715);
+Invoke(TOP_1649, "push", Arr(((V)(((((u_1716 * u_1716) * ToNum(GetIdx(p0_1707, 0D))) + (((2D * u_1716) * t_1715) * ToNum(GetIdx(c_1709, 0D)))) + ((t_1715 * t_1715) * ToNum(GetIdx(p1_1711, 0D)))))), ((V)(((((u_1716 * u_1716) * ToNum(GetIdx(p0_1707, 1D))) + (((2D * u_1716) * t_1715) * ToNum(GetIdx(c_1709, 1D)))) + ((t_1715 * t_1715) * ToNum(GetIdx(p1_1711, 1D))))))));
+k_1713++;
 }
 }
 return default;
 }, 2, "", true));
-Set(SW_1527, "yt", Fn((V _self1507, int _argc1591, V x_1597, V _a1594, V _a1595, V _a1596, V[] _rest1592) => {
-if (Le(x_1597, GetIdx(GetIdx(TOP_1528, 0D), 0D))) {
-return GetIdx(GetIdx(TOP_1528, 0D), 1D);
+Set(SW_1648, "yt", Fn((V _arrowThis1724, int _argc1717, V x_1723, V _a1720, V _a1721, V _a1722, V[] _rest1718) => {
+if (Le(x_1723, GetIdx(GetIdx(TOP_1649, 0D), 0D))) {
+return GetIdx(GetIdx(TOP_1649, 0D), 1D);
 }
 {
-double k_1598 = 0;
-k_1598 = 1D;
+double k_1725 = 0;
+k_1725 = 1D;
 while (true) {
-if (!(Lt(((V)(k_1598)), Get(TOP_1528, "length")))) break;
-if (Le(x_1597, GetIdx(GetIdx(TOP_1528, k_1598), 0D))) {
-V a_1600 = default;
-V c_1601 = default;
-double t_1602 = 0;
-a_1600 = GetIdx(TOP_1528, (k_1598 - 1D));
-c_1601 = GetIdx(TOP_1528, k_1598);
-t_1602 = ((ToNum(x_1597) - ToNum(GetIdx(a_1600, 0D))) / ToNum((((V)((ToNum(GetIdx(c_1601, 0D)) - ToNum(GetIdx(a_1600, 0D))))) is var _t1603 && Truthy(_t1603) ? _t1603 : ((V)(1D)))));
-return Add(GetIdx(a_1600, 1D), ((V)(((ToNum(GetIdx(c_1601, 1D)) - ToNum(GetIdx(a_1600, 1D))) * t_1602))));
+if (!(Lt(((V)(k_1725)), Get(TOP_1649, "length")))) break;
+if (Le(x_1723, GetIdx(GetIdx(TOP_1649, k_1725), 0D))) {
+V a_1727 = default;
+V c_1728 = default;
+double t_1729 = 0;
+a_1727 = GetIdx(TOP_1649, (k_1725 - 1D));
+c_1728 = GetIdx(TOP_1649, k_1725);
+t_1729 = ((ToNum(x_1723) - ToNum(GetIdx(a_1727, 0D))) / ToNum((((V)((ToNum(GetIdx(c_1728, 0D)) - ToNum(GetIdx(a_1727, 0D))))) is var _t1730 && Truthy(_t1730) ? _t1730 : ((V)(1D)))));
+return Add(GetIdx(a_1727, 1D), ((V)(((ToNum(GetIdx(c_1728, 1D)) - ToNum(GetIdx(a_1727, 1D))) * t_1729))));
 }
-k_1598++;
+k_1725++;
 }
 }
-return GetIdx(GetIdx(TOP_1528, (ToNum(Get(TOP_1528, "length")) - 1D)), 1D);
+return GetIdx(GetIdx(TOP_1649, (ToNum(Get(TOP_1649, "length")) - 1D)), 1D);
 return default;
 }, 1, "", true));
-BK_1529 = Arr();
-n_1530 = 0D;
-while ((LtN(Get(BK_1529, "length"), 12D) && (n_1530 < 400D))) {
-double x_1604 = 0;
-double y_1605 = 0;
-n_1530++;
-x_1604 = (31D + (ToNum(Call(rnd_22, V.Undef, ((V)((n_1530 * 3.3))))) * 38D));
-y_1605 = (46D + (ToNum(Call(rnd_22, V.Undef, ((V)((n_1530 * 7.1))))) * 18D));
-if (Truthy(Invoke(BK_1529, "some", Fn((V _self1507, int _argc1606, V p_1612, V _a1609, V _a1610, V _a1611, V[] _rest1607) => {
-return ((Hypot((ToNum(GetIdx(p_1612, 0D)) - x_1604), (ToNum(GetIdx(p_1612, 1D)) - y_1605)) < 4.6) ? V.True : V.False);
+BK_1650 = Arr();
+n_1651 = 0D;
+while ((LtN(Get(BK_1650, "length"), 12D) && (n_1651 < 400D))) {
+double x_1731 = 0;
+double y_1732 = 0;
+n_1651++;
+x_1731 = (31D + (ToNum(Call(rnd_22, V.Undef, ((V)((n_1651 * 3.3))))) * 38D));
+y_1732 = (46D + (ToNum(Call(rnd_22, V.Undef, ((V)((n_1651 * 7.1))))) * 18D));
+if (Truthy(Invoke(BK_1650, "some", Fn((V _arrowThis1740, int _argc1733, V p_1739, V _a1736, V _a1737, V _a1738, V[] _rest1734) => {
+return ((Hypot((ToNum(GetIdx(p_1739, 0D)) - x_1731), (ToNum(GetIdx(p_1739, 1D)) - y_1732)) < 4.6) ? V.True : V.False);
 }, 1, "", true)))) {
 continue;
 }
-Invoke(BK_1529, "push", Arr(((V)(x_1604)), ((V)(y_1605)), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)((n_1530 * 1.9))))) * System.Math.PI)))));
+Invoke(BK_1650, "push", Arr(((V)(x_1731)), ((V)(y_1732)), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)((n_1651 * 1.9))))) * System.Math.PI)))));
 }
-bkg_1531 = Call(el_14, V.Undef, ((V)("path")), NewObj(3).Put("fill", ((V)("#ffffff"))).Put("stroke", ((V)("#ddd5c3"))).Put("stroke-width", ((V)(0.35))).V, BG_1523);
-FL_1532 = Arr(Arr(((V)(43.92)), ((V)(18.79)), ((V)(2.48)), ((V)("#f8b897")), ((V)(1D)), ((V)(2.64))), Arr(((V)(46.89)), ((V)(18.71)), ((V)(2.48)), ((V)("#e97c55")), ((V)(1D)), ((V)(2.64))), Arr(((V)(50.17)), ((V)(18.41)), ((V)(2.37)), ((V)("#e97c55")), ((V)(1D)), ((V)(1.22))), Arr(((V)(53.59)), ((V)(18.65)), ((V)(2.2)), ((V)("#ee8a62")), ((V)(1D)), ((V)(2.49))), Arr(((V)(57.12)), ((V)(18.06)), ((V)(2.28)), ((V)("#f39a72")), ((V)(1D)), ((V)(1.32))), Arr(((V)(45.78)), ((V)(15.18)), ((V)(2.06)), ((V)("#f39a72")), ((V)(1D)), ((V)((-1.95)))), Arr(((V)(48.98)), ((V)(15.41)), ((V)(1.85)), ((V)("#f8b897")), ((V)(0D)), ((V)((-0.96)))), Arr(((V)(52.94)), ((V)(15.17)), ((V)(2.03)), ((V)("#f6ad8a")), ((V)(1D)), ((V)((-1.24)))), Arr(((V)(56.3)), ((V)(15.08)), ((V)(2.16)), ((V)("#e97c55")), ((V)(1D)), ((V)((-0.89)))), Arr(((V)(47.11)), ((V)(12.8)), ((V)(1.62)), ((V)("#e97c55")), ((V)(0D)), ((V)(1.24))), Arr(((V)(51.35)), ((V)(12.56)), ((V)(1.67)), ((V)("#f8b897")), ((V)(0D)), ((V)(0.66))), Arr(((V)(54.4)), ((V)(12.22)), ((V)(1.92)), ((V)("#f39a72")), ((V)(1D)), ((V)(1.1))), Arr(((V)(50.85)), ((V)(10.35)), ((V)(1.53)), ((V)("#f8b897")), ((V)(0D)), ((V)(0D))));
-SAL_1533 = Invoke(S_1514, "g");
-shd_1534 = Invoke(S_1514, "path", NewObj(2).Put("fill", ((V)("#cfc6b2"))).Put("opacity", ((V)(0.4))).V, SAL_1533);
-FK_1535 = Invoke(FL_1532, "map", Fn((V _self1507, int _argc1613, V _a1615, V k_1619, V _a1617, V _a1618, V[] _rest1614) => {
-V g_1633 = default;
-V x_1622 = default;
-V y_1624 = default;
-V r_1626 = default;
-V c_1628 = default;
-V ft_1630 = default;
-V z_1632 = default;
-{ V _t1620 = ListOf(_a1615);
-{ V _t1621 = GetIdx(_t1620, 0D);
-x_1622 = _t1621; }
-{ V _t1623 = GetIdx(_t1620, 1D);
-y_1624 = _t1623; }
-{ V _t1625 = GetIdx(_t1620, 2D);
-r_1626 = _t1625; }
-{ V _t1627 = GetIdx(_t1620, 3D);
-c_1628 = _t1627; }
-{ V _t1629 = GetIdx(_t1620, 4D);
-ft_1630 = _t1629; }
-{ V _t1631 = GetIdx(_t1620, 5D);
-z_1632 = _t1631; }
+bkg_1652 = Call(el_14, V.Undef, ((V)("path")), NewObj(3).Put("fill", ((V)("#ffffff"))).Put("stroke", ((V)("#ddd5c3"))).Put("stroke-width", ((V)(0.35))).V, BG_1644);
+FL_1653 = Arr(Arr(((V)(43.92)), ((V)(18.79)), ((V)(2.48)), ((V)("#f8b897")), ((V)(1D)), ((V)(2.64))), Arr(((V)(46.89)), ((V)(18.71)), ((V)(2.48)), ((V)("#e97c55")), ((V)(1D)), ((V)(2.64))), Arr(((V)(50.17)), ((V)(18.41)), ((V)(2.37)), ((V)("#e97c55")), ((V)(1D)), ((V)(1.22))), Arr(((V)(53.59)), ((V)(18.65)), ((V)(2.2)), ((V)("#ee8a62")), ((V)(1D)), ((V)(2.49))), Arr(((V)(57.12)), ((V)(18.06)), ((V)(2.28)), ((V)("#f39a72")), ((V)(1D)), ((V)(1.32))), Arr(((V)(45.78)), ((V)(15.18)), ((V)(2.06)), ((V)("#f39a72")), ((V)(1D)), ((V)((-1.95)))), Arr(((V)(48.98)), ((V)(15.41)), ((V)(1.85)), ((V)("#f8b897")), ((V)(0D)), ((V)((-0.96)))), Arr(((V)(52.94)), ((V)(15.17)), ((V)(2.03)), ((V)("#f6ad8a")), ((V)(1D)), ((V)((-1.24)))), Arr(((V)(56.3)), ((V)(15.08)), ((V)(2.16)), ((V)("#e97c55")), ((V)(1D)), ((V)((-0.89)))), Arr(((V)(47.11)), ((V)(12.8)), ((V)(1.62)), ((V)("#e97c55")), ((V)(0D)), ((V)(1.24))), Arr(((V)(51.35)), ((V)(12.56)), ((V)(1.67)), ((V)("#f8b897")), ((V)(0D)), ((V)(0.66))), Arr(((V)(54.4)), ((V)(12.22)), ((V)(1.92)), ((V)("#f39a72")), ((V)(1D)), ((V)(1.1))), Arr(((V)(50.85)), ((V)(10.35)), ((V)(1.53)), ((V)("#f8b897")), ((V)(0D)), ((V)(0D))));
+SAL_1654 = Invoke(S_1635, "g");
+shd_1655 = Invoke(S_1635, "path", NewObj(2).Put("fill", ((V)("#cfc6b2"))).Put("opacity", ((V)(0.4))).V, SAL_1654);
+FK_1656 = Invoke(FL_1653, "map", Fn((V _arrowThis1761, int _argc1741, V _a1743, V k_1747, V _a1745, V _a1746, V[] _rest1742) => {
+V g_1762 = default;
+V x_1750 = default;
+V y_1752 = default;
+V r_1754 = default;
+V c_1756 = default;
+V ft_1758 = default;
+V z_1760 = default;
+{ V _t1748 = ListOf(_a1743);
+{ V _t1749 = GetIdx(_t1748, 0D);
+x_1750 = _t1749; }
+{ V _t1751 = GetIdx(_t1748, 1D);
+y_1752 = _t1751; }
+{ V _t1753 = GetIdx(_t1748, 2D);
+r_1754 = _t1753; }
+{ V _t1755 = GetIdx(_t1748, 3D);
+c_1756 = _t1755; }
+{ V _t1757 = GetIdx(_t1748, 4D);
+ft_1758 = _t1757; }
+{ V _t1759 = GetIdx(_t1748, 5D);
+z_1760 = _t1759; }
 }
-g_1633 = Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, SAL_1533);
-return NewObj(9).Put("k", k_1619).Put("x", x_1622).Put("y", y_1624).Put("r", r_1626).Put("z", z_1632).Put("rot", ((V)(((ToNum(Call(rnd_22, V.Undef, ((V)((ToNum(k_1619) * 3.1))))) - 0.5) * 1.3)))).Put("g", g_1633).Put("b", Call(el_14, V.Undef, ((V)("path")), NewObj(4).Put("fill", c_1628).Put("stroke", ((V)("#cf6a44"))).Put("stroke-width", ((V)(0.3))).Put("stroke-opacity", ((V)(0.5))).V, g_1633)).Put("f", (Truthy(ft_1630) ? Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffe6d8"))).Put("stroke-width", ((V)(0.42))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.8))).V, g_1633) : V.Null)).V;
+g_1762 = Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, SAL_1654);
+return NewObj(9).Put("k", k_1747).Put("x", x_1750).Put("y", y_1752).Put("r", r_1754).Put("z", z_1760).Put("rot", ((V)(((ToNum(Call(rnd_22, V.Undef, ((V)((ToNum(k_1747) * 3.1))))) - 0.5) * 1.3)))).Put("g", g_1762).Put("b", Call(el_14, V.Undef, ((V)("path")), NewObj(4).Put("fill", c_1756).Put("stroke", ((V)("#cf6a44"))).Put("stroke-width", ((V)(0.3))).Put("stroke-opacity", ((V)(0.5))).V, g_1762)).Put("f", (Truthy(ft_1758) ? Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffe6d8"))).Put("stroke-width", ((V)(0.42))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.8))).V, g_1762) : V.Null)).V;
 return default;
 }, 2, "", true));
-return NewObj(20).Put("O", O_1516).Put("T", ((V)(T_1517))).Put("b", ((V)(b_1518))).Put("rings", rings_1519).Put("zF", zF_1520).Put("DC", DC_1522).Put("SW", SW_1527).Put("BG", BG_1523).Put("bkg", bkg_1531).Put("BK", BK_1529).Put("SAL", SAL_1533).Put("shd", shd_1534).Put("FK", FK_1535).Put("slab", ((V)(1D))).Put("rx", ((V)(38D))).Put("ya", ((V)(20D))).Put("yb", ((V)(86D))).Put("rT", Fn((V _self1507, int _argc1634, V y_1640, V _a1637, V _a1638, V _a1639, V[] _rest1635) => {
-return Call(halfW_38, V.Undef, O_1516, y_1640);
-}, 1, "rT", true)).Put("zAt", Fn((V _self1507, int _argc1641, V x_1647, V y_1648, V _a1645, V _a1646, V[] _rest1642) => {
-return Call(zF_1520, V.Undef, x_1647, y_1648);
-}, 2, "zAt", true)).Put("zE", Fn((V _self1507, int _argc1649, V dx_1655, V dy_1656, V _a1653, V _a1654, V[] _rest1650) => {
-return Add(Call(zF_1520, V.Undef, Add(Get(S_1514, "HX"), dx_1655), Add(Get(S_1514, "HY"), dy_1656)), ((V)(0.3)));
+return NewObj(20).Put("O", O_1637).Put("T", ((V)(T_1638))).Put("b", ((V)(b_1639))).Put("rings", rings_1640).Put("zF", zF_1641).Put("DC", DC_1643).Put("SW", SW_1648).Put("BG", BG_1644).Put("bkg", bkg_1652).Put("BK", BK_1650).Put("SAL", SAL_1654).Put("shd", shd_1655).Put("FK", FK_1656).Put("slab", ((V)(1D))).Put("rx", ((V)(38D))).Put("ya", ((V)(20D))).Put("yb", ((V)(86D))).Put("rT", Fn((V _arrowThis1770, int _argc1763, V y_1769, V _a1766, V _a1767, V _a1768, V[] _rest1764) => {
+return Call(halfW_38, V.Undef, O_1637, y_1769);
+}, 1, "rT", true)).Put("zAt", Fn((V _arrowThis1779, int _argc1771, V x_1777, V y_1778, V _a1775, V _a1776, V[] _rest1772) => {
+return Call(zF_1641, V.Undef, x_1777, y_1778);
+}, 2, "zAt", true)).Put("zE", Fn((V _arrowThis1788, int _argc1780, V dx_1786, V dy_1787, V _a1784, V _a1785, V[] _rest1781) => {
+return Add(Call(zF_1641, V.Undef, Add(Get(S_1635, "HX"), dx_1786), Add(Get(S_1635, "HY"), dy_1787)), ((V)(0.3)));
 }, 2, "zE", true)).V;
 return default;
-}, 1, "setup", false)).Put("draw", Fn((V _self1657, int _argc1658, V B_1664, V D_1665, V _a1662, V _a1663, V[] _rest1659) => {
-V P3_1666 = default;
-V set_1667 = default;
-V zF_1668 = default;
-V umeV_1669 = default;
-double nw_1670 = 0;
-V fr_1671 = default;
-double s_1672 = 0;
-V S2_1673 = default;
-V W_1674 = default;
-double YB_1675 = 0;
-V xl_1676 = default;
-V xr_1677 = default;
-double NU_1678 = 0;
-double e_1679 = 0;
-V nrm_1680 = default;
-V line_1681 = default;
-V L_1682 = default;
-V lerp_1683 = default;
-JsStrBuf dS_1684 = null;
-JsStrBuf dR_1685 = null;
-V fr2_1686 = default;
-double ti_1687 = 0;
-JsStrBuf fd_1688 = null;
-V PS_1689 = default;
-V sj_1690 = default;
-V kS_1691 = default;
-V M2_1692 = default;
-V flk_1693 = default;
-V fatL_1694 = default;
-if (_self1657.IsNullish) _self1657 = GlobalV;
-{ V _t1695 = D_1665;
-if (_t1695.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t1695));
-{ V _t1696 = Get(_t1695, "P3");
-P3_1666 = _t1696; }
-{ V _t1697 = Get(_t1695, "set");
-set_1667 = _t1697; } }
-zF_1668 = Get(B_1664, "zF");
-umeV_1669 = Call(clamp_12, V.Undef, Invoke(D_1665, "bv", ((V)("ume"))), ((V)(0D)), ((V)(1.2)));
-nw_1670 = (ToNum(Call(clamp_12, V.Undef, Invoke(D_1665, "bv", ((V)("nwr"))), ((V)((-1D))), ((V)(1D)))) * 3D);
-Set(B_1664, "d", Invoke(D_1665, "hull", Call(pillowHull_46, V.Undef, D_1665, Get(B_1664, "rings"), ((V)(0D)), ((V)(1D)), Call(pillowHull_46, V.Undef, D_1665, Get(B_1664, "rings"), ((V)(0D)), ((V)((-1D)))))));
-fr_1671 = (GeN(Get(D_1665, "front"), 0D) ? V.True : V.False);
-s_1672 = (Truthy(fr_1671) ? 1D : (-1D));
-S2_1673 = Fn((V _self1657, int _argc1698, V x_1704, V y_1705, V dz_1706, V _a1703, V[] _rest1699) => {
-return Call(P3_1666, V.Undef, x_1704, y_1705, ((V)((s_1672 * ToNum(Add(Call(zF_1668, V.Undef, x_1704, y_1705), dz_1706))))));
+}, 1, "setup", false)).Put("draw", Fn((V _self1789, int _argc1790, V B_1796, V D_1797, V _a1794, V _a1795, V[] _rest1791) => {
+V P3_1798 = default;
+V set_1799 = default;
+V zF_1800 = default;
+V umeV_1801 = default;
+double nw_1802 = 0;
+V fr_1803 = default;
+double s_1804 = 0;
+V S2_1805 = default;
+V W_1806 = default;
+double YB_1807 = 0;
+V xl_1808 = default;
+V xr_1809 = default;
+double NU_1810 = 0;
+double e_1811 = 0;
+V nrm_1812 = default;
+V line_1813 = default;
+V L_1814 = default;
+V lerp_1815 = default;
+JsStrBuf dS_1816 = null;
+JsStrBuf dR_1817 = null;
+V fr2_1818 = default;
+double ti_1819 = 0;
+JsStrBuf fd_1820 = null;
+V PS_1821 = default;
+V sj_1822 = default;
+V kS_1823 = default;
+V M2_1824 = default;
+V flk_1825 = default;
+V fatL_1826 = default;
+if (_self1789.IsNullish) _self1789 = GlobalV;
+{ V _t1827 = D_1797;
+if (_t1827.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t1827));
+{ V _t1828 = Get(_t1827, "P3");
+P3_1798 = _t1828; }
+{ V _t1829 = Get(_t1827, "set");
+set_1799 = _t1829; } }
+zF_1800 = Get(B_1796, "zF");
+umeV_1801 = Call(clamp_12, V.Undef, Invoke(D_1797, "bv", ((V)("ume"))), ((V)(0D)), ((V)(1.2)));
+nw_1802 = (ToNum(Call(clamp_12, V.Undef, Invoke(D_1797, "bv", ((V)("nwr"))), ((V)((-1D))), ((V)(1D)))) * 3D);
+Set(B_1796, "d", Invoke(D_1797, "hull", Call(pillowHull_46, V.Undef, D_1797, Get(B_1796, "rings"), ((V)(0D)), ((V)(1D)), Call(pillowHull_46, V.Undef, D_1797, Get(B_1796, "rings"), ((V)(0D)), ((V)((-1D)))))));
+fr_1803 = (GeN(Get(D_1797, "front"), 0D) ? V.True : V.False);
+s_1804 = (Truthy(fr_1803) ? 1D : (-1D));
+S2_1805 = Fn((V _arrowThis1839, int _argc1830, V x_1836, V y_1837, V dz_1838, V _a1835, V[] _rest1831) => {
+return Call(P3_1798, V.Undef, x_1836, y_1837, ((V)((s_1804 * ToNum(Add(Call(zF_1800, V.Undef, x_1836, y_1837), dz_1838))))));
 }, 3, "", true);
-Invoke(Get(B_1664, "DC"), "forEach", Fn((V _self1657, int _argc1707, V o_1713, V _a1710, V _a1711, V _a1712, V[] _rest1708) => {
-return Call(set_1667, V.Undef, Get(o_1713, "e"), ((V)("d")), Call(decD_26, V.Undef, o_1713, Fn((V _self1657, int _argc1714, V x_1720, V y_1721, V _a1718, V _a1719, V[] _rest1715) => {
-return Call(S2_1673, V.Undef, x_1720, y_1721, ((V)(0.2)));
+Invoke(Get(B_1796, "DC"), "forEach", Fn((V _arrowThis1847, int _argc1840, V o_1846, V _a1843, V _a1844, V _a1845, V[] _rest1841) => {
+return Call(set_1799, V.Undef, Get(o_1846, "e"), ((V)("d")), Call(decD_26, V.Undef, o_1846, Fn((V _arrowThis1856, int _argc1848, V x_1854, V y_1855, V _a1852, V _a1853, V[] _rest1849) => {
+return Call(S2_1805, V.Undef, x_1854, y_1855, ((V)(0.2)));
 }, 2, "", true)));
 }, 1, "", true));
-Invoke(Get(B_1664, "BG"), "setAttribute", ((V)("opacity")), ((V)((Truthy(fr_1671) ? 0D : 1D))));
-if (!(Truthy(fr_1671))) {
-Call(set_1667, V.Undef, Get(B_1664, "bkg"), ((V)("d")), Invoke(Invoke(Get(B_1664, "BK"), "map", Fn((V _self1657, int _argc1722, V _a1724, V _a1725, V _a1726, V _a1727, V[] _rest1723) => {
-V x_1730 = default;
-V y_1732 = default;
-V a_1734 = default;
-{ V _t1728 = ListOf(_a1724);
-{ V _t1729 = GetIdx(_t1728, 0D);
-x_1730 = _t1729; }
-{ V _t1731 = GetIdx(_t1728, 1D);
-y_1732 = _t1731; }
-{ V _t1733 = GetIdx(_t1728, 2D);
-a_1734 = _t1733; }
+Invoke(Get(B_1796, "BG"), "setAttribute", ((V)("opacity")), ((V)((Truthy(fr_1803) ? 0D : 1D))));
+if (!(Truthy(fr_1803))) {
+Call(set_1799, V.Undef, Get(B_1796, "bkg"), ((V)("d")), Invoke(Invoke(Get(B_1796, "BK"), "map", Fn((V _arrowThis1870, int _argc1857, V _a1859, V _a1860, V _a1861, V _a1862, V[] _rest1858) => {
+V x_1865 = default;
+V y_1867 = default;
+V a_1869 = default;
+{ V _t1863 = ListOf(_a1859);
+{ V _t1864 = GetIdx(_t1863, 0D);
+x_1865 = _t1864; }
+{ V _t1866 = GetIdx(_t1863, 1D);
+y_1867 = _t1866; }
+{ V _t1868 = GetIdx(_t1863, 2D);
+a_1869 = _t1868; }
 }
-return Call(polyW_18, V.Undef, Array_from(NewObj(1).Put("length", ((V)(10D))).V, Fn((V _self1657, int _argc1735, V __1741, V k_1742, V _a1739, V _a1740, V[] _rest1736) => {
-double f_1743 = 0;
-f_1743 = ((ToNum(k_1742) / 10D) * TAU_9);
-return Call(S2_1673, V.Undef, ((V)((ToNum(Add(x_1730, ((V)(((1.65 * FdLibm.Cos(f_1743)) * FdLibm.Cos(ToNum(a_1734))))))) - ((0.8 * FdLibm.Sin(f_1743)) * FdLibm.Sin(ToNum(a_1734)))))), Add(Add(y_1732, ((V)(((1.65 * FdLibm.Cos(f_1743)) * FdLibm.Sin(ToNum(a_1734)))))), ((V)(((0.8 * FdLibm.Sin(f_1743)) * FdLibm.Cos(ToNum(a_1734)))))), ((V)(0.2)));
+return Call(polyW_18, V.Undef, Array_from(NewObj(1).Put("length", ((V)(10D))).V, Fn((V _arrowThis1879, int _argc1871, V __1877, V k_1878, V _a1875, V _a1876, V[] _rest1872) => {
+double f_1880 = 0;
+f_1880 = ((ToNum(k_1878) / 10D) * TAU_9);
+return Call(S2_1805, V.Undef, ((V)((ToNum(Add(x_1865, ((V)(((1.65 * FdLibm.Cos(f_1880)) * FdLibm.Cos(ToNum(a_1869))))))) - ((0.8 * FdLibm.Sin(f_1880)) * FdLibm.Sin(ToNum(a_1869)))))), Add(Add(y_1867, ((V)(((1.65 * FdLibm.Cos(f_1880)) * FdLibm.Sin(ToNum(a_1869)))))), ((V)(((0.8 * FdLibm.Sin(f_1880)) * FdLibm.Cos(ToNum(a_1869)))))), ((V)(0.2)));
 return default;
 }, 2, "", true)));
 }, 1, "", true)), "join", ((V)(""))));
 }
-W_1674 = Get(B_1664, "SW");
-YB_1675 = 87.5;
-xl_1676 = Fn((V _self1657, int _argc1744, V y_1750, V _a1747, V _a1748, V _a1749, V[] _rest1745) => {
-return ((V)((31.5 - ((2D * (ToNum(y_1750) - 65.5)) / 22D))));
+W_1806 = Get(B_1796, "SW");
+YB_1807 = 87.5;
+xl_1808 = Fn((V _arrowThis1888, int _argc1881, V y_1887, V _a1884, V _a1885, V _a1886, V[] _rest1882) => {
+return ((V)((31.5 - ((2D * (ToNum(y_1887) - 65.5)) / 22D))));
 }, 1, "", true);
-xr_1677 = Fn((V _self1657, int _argc1751, V y_1757, V _a1754, V _a1755, V _a1756, V[] _rest1752) => {
-return ((V)((68.5 + ((2D * (ToNum(y_1757) - 65.5)) / 22D))));
+xr_1809 = Fn((V _arrowThis1896, int _argc1889, V y_1895, V _a1892, V _a1893, V _a1894, V[] _rest1890) => {
+return ((V)((68.5 + ((2D * (ToNum(y_1895) - 65.5)) / 22D))));
 }, 1, "", true);
-NU_1678 = 16D;
-e_1679 = 0.25;
-nrm_1680 = Fn((V _self1657, int _argc1758, V x_1764, V y_1765, V z_1766, V _a1763, V[] _rest1759) => {
-double gx_1767 = 0;
-double gy_1768 = 0;
-double sg_1769 = 0;
-double L__1770 = 0;
-if ((System.Math.Abs(ToNum(z_1766)) < 0.05)) {
+NU_1810 = 16D;
+e_1811 = 0.25;
+nrm_1812 = Fn((V _arrowThis1906, int _argc1897, V x_1903, V y_1904, V z_1905, V _a1902, V[] _rest1898) => {
+double gx_1907 = 0;
+double gy_1908 = 0;
+double sg_1909 = 0;
+double L__1910 = 0;
+if ((System.Math.Abs(ToNum(z_1905)) < 0.05)) {
 return Arr(((V)(0D)), ((V)(1D)), ((V)(0D)));
 }
-gx_1767 = ((ToNum(Call(zF_1668, V.Undef, Add(x_1764, ((V)(e_1679))), y_1765)) - ToNum(Call(zF_1668, V.Undef, ((V)((ToNum(x_1764) - e_1679))), y_1765))) / (2D * e_1679));
-gy_1768 = ((ToNum(Call(zF_1668, V.Undef, x_1764, Add(y_1765, ((V)(e_1679))))) - ToNum(Call(zF_1668, V.Undef, x_1764, ((V)((ToNum(y_1765) - e_1679)))))) / (2D * e_1679));
-sg_1769 = (GtN(z_1766, 0D) ? 1D : (-1D));
-L__1770 = Hypot(gx_1767, gy_1768, 1D);
-return Arr(((V)((((-gx_1767) * sg_1769) / L__1770))), ((V)((((-gy_1768) * sg_1769) / L__1770))), ((V)((sg_1769 / L__1770))));
+gx_1907 = ((ToNum(Call(zF_1800, V.Undef, Add(x_1903, ((V)(e_1811))), y_1904)) - ToNum(Call(zF_1800, V.Undef, ((V)((ToNum(x_1903) - e_1811))), y_1904))) / (2D * e_1811));
+gy_1908 = ((ToNum(Call(zF_1800, V.Undef, x_1903, Add(y_1904, ((V)(e_1811))))) - ToNum(Call(zF_1800, V.Undef, x_1903, ((V)((ToNum(y_1904) - e_1811)))))) / (2D * e_1811));
+sg_1909 = (GtN(z_1905, 0D) ? 1D : (-1D));
+L__1910 = Hypot(gx_1907, gy_1908, 1D);
+return Arr(((V)((((-gx_1907) * sg_1909) / L__1910))), ((V)((((-gy_1908) * sg_1909) / L__1910))), ((V)((sg_1909 / L__1910))));
 return default;
 }, 3, "", true);
-line_1681 = Fn((V _self1657, int _argc1771, V u_1777, V _a1774, V _a1775, V _a1776, V[] _rest1772) => {
-V x0_1778 = default;
-V y0_1779 = default;
-V P_1780 = default;
-V Y_1781 = default;
-x0_1778 = Add(Call(xl_1676, V.Undef, ((V)(65D))), ((V)((ToNum(u_1777) * (ToNum(Call(xr_1677, V.Undef, ((V)(65D)))) - ToNum(Call(xl_1676, V.Undef, ((V)(65D)))))))));
-y0_1779 = Add(Invoke(W_1674, "yt", x0_1778), ((V)(nw_1670)));
-P_1780 = Arr();
-Y_1781 = Arr();
+line_1813 = Fn((V _arrowThis1918, int _argc1911, V u_1917, V _a1914, V _a1915, V _a1916, V[] _rest1912) => {
+V x0_1919 = default;
+V y0_1920 = default;
+V P_1921 = default;
+V Y_1922 = default;
+x0_1919 = Add(Call(xl_1808, V.Undef, ((V)(65D))), ((V)((ToNum(u_1917) * (ToNum(Call(xr_1809, V.Undef, ((V)(65D)))) - ToNum(Call(xl_1808, V.Undef, ((V)(65D)))))))));
+y0_1920 = Add(Invoke(W_1806, "yt", x0_1919), ((V)(nw_1802)));
+P_1921 = Arr();
+Y_1922 = Arr();
 {
-double j_1782 = 0;
-j_1782 = 0D;
+double j_1923 = 0;
+j_1923 = 0D;
 while (true) {
-if (!((j_1782 <= 6D))) break;
-Invoke(Y_1781, "push", Arr(Add(y0_1779, ((V)(((((YB_1675 - ToNum(Get(B_1664, "b"))) - ToNum(y0_1779)) * j_1782) / 6D)))), ((V)(1D))));
-j_1782++;
-}
-}
-{
-double j_1784 = 0;
-j_1784 = 1D;
-while (true) {
-if (!((j_1784 <= 6D))) break;
-Invoke(Y_1781, "push", Arr(((V)((YB_1675 - (ToNum(Get(B_1664, "b")) * (1D - FdLibm.Cos((((1D - (j_1784 / 6D)) * System.Math.PI) / 2D))))))), ((V)(1D))));
-j_1784++;
+if (!((j_1923 <= 6D))) break;
+Invoke(Y_1922, "push", Arr(Add(y0_1920, ((V)(((((YB_1807 - ToNum(Get(B_1796, "b"))) - ToNum(y0_1920)) * j_1923) / 6D)))), ((V)(1D))));
+j_1923++;
 }
 }
 {
-double j_1786 = 0;
-j_1786 = 1D;
+double j_1925 = 0;
+j_1925 = 1D;
 while (true) {
-if (!((j_1786 <= 6D))) break;
-Invoke(Y_1781, "push", Arr(((V)((YB_1675 - (ToNum(Get(B_1664, "b")) * (1D - FdLibm.Cos((((j_1786 / 6D) * System.Math.PI) / 2D))))))), ((V)((-1D)))));
-j_1786++;
+if (!((j_1925 <= 6D))) break;
+Invoke(Y_1922, "push", Arr(((V)((YB_1807 - (ToNum(Get(B_1796, "b")) * (1D - FdLibm.Cos((((1D - (j_1925 / 6D)) * System.Math.PI) / 2D))))))), ((V)(1D))));
+j_1925++;
 }
 }
 {
-double j_1788 = 0;
-j_1788 = 1D;
+double j_1927 = 0;
+j_1927 = 1D;
 while (true) {
-if (!((j_1788 <= 6D))) break;
-Invoke(Y_1781, "push", Arr(((V)(((YB_1675 - ToNum(Get(B_1664, "b"))) + (((ToNum(y0_1779) - (YB_1675 - ToNum(Get(B_1664, "b")))) * j_1788) / 6D)))), ((V)((-1D)))));
-j_1788++;
+if (!((j_1927 <= 6D))) break;
+Invoke(Y_1922, "push", Arr(((V)((YB_1807 - (ToNum(Get(B_1796, "b")) * (1D - FdLibm.Cos((((j_1927 / 6D) * System.Math.PI) / 2D))))))), ((V)((-1D)))));
+j_1927++;
 }
 }
-Invoke(Y_1781, "forEach", Fn((V _self1657, int _argc1790, V _a1792, V j_1796, V _a1794, V _a1795, V[] _rest1791) => {
-double yy_1802 = 0;
-V x_1803 = default;
-double z_1804 = 0;
-V n_1805 = default;
-V y_1799 = default;
-V sg_1801 = default;
-{ V _t1797 = ListOf(_a1792);
-{ V _t1798 = GetIdx(_t1797, 0D);
-y_1799 = _t1798; }
-{ V _t1800 = GetIdx(_t1797, 1D);
-sg_1801 = _t1800; }
+{
+double j_1929 = 0;
+j_1929 = 1D;
+while (true) {
+if (!((j_1929 <= 6D))) break;
+Invoke(Y_1922, "push", Arr(((V)(((YB_1807 - ToNum(Get(B_1796, "b"))) + (((ToNum(y0_1920) - (YB_1807 - ToNum(Get(B_1796, "b")))) * j_1929) / 6D)))), ((V)((-1D)))));
+j_1929++;
 }
-yy_1802 = Min(ToNum(y_1799), (YB_1675 - 0.02));
-x_1803 = Add(Call(xl_1676, V.Undef, ((V)(yy_1802))), ((V)((ToNum(u_1777) * (ToNum(Call(xr_1677, V.Undef, ((V)(yy_1802)))) - ToNum(Call(xl_1676, V.Undef, ((V)(yy_1802)))))))));
-z_1804 = (ToNum(sg_1801) * ToNum(Call(zF_1668, V.Undef, x_1803, ((V)(yy_1802)))));
-n_1805 = Call(nrm_1680, V.Undef, x_1803, ((V)(yy_1802)), ((V)(z_1804)));
-Invoke(P_1780, "push", NewObj(3).Put("p", Call(P3_1666, V.Undef, x_1803, ((V)(yy_1802)), ((V)(z_1804)))).Put("f", Invoke(D_1665, "facing", x_1803, ((V)(yy_1802)), ((V)(z_1804)), GetIdx(n_1805, 0D), GetIdx(n_1805, 1D), GetIdx(n_1805, 2D))).Put("rim", ((GtN(j_1796, 6D) && LtN(j_1796, 19D)) ? V.True : V.False)).V);
+}
+Invoke(Y_1922, "forEach", Fn((V _arrowThis1943, int _argc1931, V _a1933, V j_1937, V _a1935, V _a1936, V[] _rest1932) => {
+double yy_1944 = 0;
+V x_1945 = default;
+double z_1946 = 0;
+V n_1947 = default;
+V y_1940 = default;
+V sg_1942 = default;
+{ V _t1938 = ListOf(_a1933);
+{ V _t1939 = GetIdx(_t1938, 0D);
+y_1940 = _t1939; }
+{ V _t1941 = GetIdx(_t1938, 1D);
+sg_1942 = _t1941; }
+}
+yy_1944 = Min(ToNum(y_1940), (YB_1807 - 0.02));
+x_1945 = Add(Call(xl_1808, V.Undef, ((V)(yy_1944))), ((V)((ToNum(u_1917) * (ToNum(Call(xr_1809, V.Undef, ((V)(yy_1944)))) - ToNum(Call(xl_1808, V.Undef, ((V)(yy_1944)))))))));
+z_1946 = (ToNum(sg_1942) * ToNum(Call(zF_1800, V.Undef, x_1945, ((V)(yy_1944)))));
+n_1947 = Call(nrm_1812, V.Undef, x_1945, ((V)(yy_1944)), ((V)(z_1946)));
+Invoke(P_1921, "push", NewObj(3).Put("p", Call(P3_1798, V.Undef, x_1945, ((V)(yy_1944)), ((V)(z_1946)))).Put("f", Invoke(D_1797, "facing", x_1945, ((V)(yy_1944)), ((V)(z_1946)), GetIdx(n_1947, 0D), GetIdx(n_1947, 1D), GetIdx(n_1947, 2D))).Put("rim", ((GtN(j_1937, 6D) && LtN(j_1937, 19D)) ? V.True : V.False)).V);
 return default;
 }, 2, "", true));
-return P_1780;
+return P_1921;
 return default;
 }, 1, "", true);
-L_1682 = Arr();
-{
-double i_1806 = 0;
-i_1806 = 0D;
-while (true) {
-if (!((i_1806 <= NU_1678))) break;
-Invoke(L_1682, "push", Call(line_1681, V.Undef, ((V)((i_1806 / NU_1678)))));
-i_1806++;
-}
-}
-lerp_1683 = Fn((V _self1657, int _argc1808, V a_1814, V c_1815, V t_1816, V _a1813, V[] _rest1809) => {
-return Arr(Add(GetIdx(a_1814, 0D), ((V)(((ToNum(GetIdx(c_1815, 0D)) - ToNum(GetIdx(a_1814, 0D))) * ToNum(t_1816))))), Add(GetIdx(a_1814, 1D), ((V)(((ToNum(GetIdx(c_1815, 1D)) - ToNum(GetIdx(a_1814, 1D))) * ToNum(t_1816))))));
-}, 3, "", true);
-dS_1684 = new JsStrBuf("");
-dR_1685 = new JsStrBuf("");
-{
-double i_1817 = 0;
-i_1817 = 0D;
-while (true) {
-if (!((i_1817 < NU_1678))) break;
-V A_1819 = default;
-V C_1820 = default;
-V G_1821 = default;
-V n_1822 = default;
-double G0_1823 = 0;
-V j0_1824 = default;
-V j1_1825 = default;
-V side_1826 = default;
-V sa_1827 = default;
-V sc_1828 = default;
-V ra_1829 = default;
-V rc_1830 = default;
-A_1819 = GetIdx(L_1682, i_1817);
-C_1820 = GetIdx(L_1682, (i_1817 + 1D));
-G_1821 = Invoke(A_1819, "map", Fn((V _self1657, int _argc1831, V q_1837, V j_1838, V _a1835, V _a1836, V[] _rest1832) => {
-return ((V)((ToNum(Add(Get(q_1837, "f"), Get(GetK(C_1820, j_1838), "f"))) / 2D)));
-}, 2, "", true));
-n_1822 = Get(G_1821, "length");
-G0_1823 = 0.05;
-j0_1824 = Invoke(G_1821, "findIndex", Fn((V _self1657, int _argc1839, V g_1845, V _a1842, V _a1843, V _a1844, V[] _rest1840) => {
-return (GtN(g_1845, G0_1823) ? V.True : V.False);
-}, 1, "", true));
-if (LtN(j0_1824, 0D)) {
-goto _cont1818;
-}
-j1_1825 = j0_1824;
-while ((Lt(Add(j1_1825, ((V)(1D))), n_1822) && GtN(GetK(G_1821, Add(j1_1825, ((V)(1D)))), G0_1823))) {
-PostInc(ref j1_1825, 1D);
-}
-side_1826 = Fn((V _self1657, int _argc1846, V pick_1852, V rimOnly_1853, V _a1850, V _a1851, V[] _rest1847) => {
-V o_1854 = default;
-V a0_1855 = default;
-V a1_1856 = default;
-V cut_1857 = default;
-o_1854 = Arr();
-a0_1855 = j0_1824;
-a1_1856 = j1_1825;
-if (Truthy(rimOnly_1853)) {
-while ((Le(a0_1855, a1_1856) && !(Truthy(Get(GetK(A_1819, a0_1855), "rim"))))) {
-PostInc(ref a0_1855, 1D);
-}
-while ((Ge(a1_1856, a0_1855) && !(Truthy(Get(GetK(A_1819, a1_1856), "rim"))))) {
-PostInc(ref a1_1856, -1D);
-}
-if (Gt(a0_1855, a1_1856)) {
-return V.Null;
-}
-}
-cut_1857 = Fn((V _self1657, int _argc1858, V j_1864, V k_1865, V _a1862, V _a1863, V[] _rest1859) => {
-double t_1866 = 0;
-t_1866 = ((ToNum(GetK(G_1821, j_1864)) - G0_1823) / ToNum((((V)((ToNum(GetK(G_1821, j_1864)) - ToNum(GetK(G_1821, k_1865))))) is var _t1867 && Truthy(_t1867) ? _t1867 : ((V)(1D)))));
-return Call(lerp_1683, V.Undef, Get(GetK(pick_1852, j_1864), "p"), Get(GetK(pick_1852, k_1865), "p"), Call(clamp_12, V.Undef, ((V)(t_1866)), ((V)(0D)), ((V)(1D))));
-return default;
-}, 2, "", true);
-if ((!(Truthy(rimOnly_1853)) && GtN(j0_1824, 0D))) {
-Invoke(o_1854, "push", Call(cut_1857, V.Undef, j0_1824, ((V)((ToNum(j0_1824) - 1D)))));
-}
-{
-V j_1868 = default;
-j_1868 = a0_1855;
-while (true) {
-if (!(Le(j_1868, a1_1856))) break;
-Invoke(o_1854, "push", Get(GetK(pick_1852, j_1868), "p"));
-PostInc(ref j_1868, 1D);
-}
-}
-if ((!(Truthy(rimOnly_1853)) && LtN(j1_1825, (ToNum(n_1822) - 1D)))) {
-Invoke(o_1854, "push", Call(cut_1857, V.Undef, j1_1825, Add(j1_1825, ((V)(1D)))));
-}
-return o_1854;
-return default;
-}, 2, "", true);
-sa_1827 = Call(side_1826, V.Undef, A_1819);
-sc_1828 = Call(side_1826, V.Undef, C_1820);
-dS_1684.V(Call(polyW_18, V.Undef, Invoke(sa_1827, "concat", Invoke(Invoke(sc_1828, "slice"), "reverse"))));
-ra_1829 = Call(side_1826, V.Undef, A_1819, ((V)(1D)));
-rc_1830 = Call(side_1826, V.Undef, C_1820, ((V)(1D)));
-if (Truthy(((ra_1829 is var _t1870 && !Truthy(_t1870) ? _t1870 : rc_1830) is var _t1871 && !Truthy(_t1871) ? _t1871 : (GtN(Get(ra_1829, "length"), 1D) ? V.True : V.False)))) {
-dR_1685.V(Call(polyW_18, V.Undef, Invoke(ra_1829, "concat", Invoke(Invoke(rc_1830, "slice"), "reverse"))));
-}
-_cont1818: ;
-i_1817++;
-}
-}
-Call(set_1667, V.Undef, Get(W_1674, "st"), ((V)("d")), (((V)(dS_1684.Str)) is var _t1872 && Truthy(_t1872) ? _t1872 : ((V)("M0 0"))));
-Call(set_1667, V.Undef, Get(W_1674, "rim"), ((V)("d")), (((V)(dR_1685.Str)) is var _t1873 && Truthy(_t1873) ? _t1873 : ((V)("M0 0"))));
-fr2_1686 = (Ge(Get(GetIdx(GetIdx(L_1682, ((double)(ToInt32(NU_1678) >> (int)(ToUint32(1D) & 31)))), 0D), "f"), Get(GetIdx(GetIdx(L_1682, ((double)(ToInt32(NU_1678) >> (int)(ToUint32(1D) & 31)))), 24D), "f")) ? V.True : V.False);
-ti_1687 = (Truthy(fr2_1686) ? 0D : 24D);
-Call(set_1667, V.Undef, Get(W_1674, "edge"), ((V)("d")), (Call(runs_21, V.Undef, Invoke(L_1682, "map", Fn((V _self1657, int _argc1874, V P_1880, V _a1877, V _a1878, V _a1879, V[] _rest1875) => {
-return Get(GetIdx(P_1880, ti_1687), "p");
-}, 1, "", true)), Invoke(L_1682, "map", Fn((V _self1657, int _argc1881, V P_1887, V _a1884, V _a1885, V _a1886, V[] _rest1882) => {
-return (GtN(Get(GetIdx(P_1887, ti_1687), "f"), 0.05) ? V.True : V.False);
-}, 1, "", true))) is var _t1888 && Truthy(_t1888) ? _t1888 : ((V)("M0 0"))));
-fd_1688 = new JsStrBuf("");
-Invoke(Arr(((V)(0.084)), ((V)(0.216)), ((V)(0.354)), ((V)(0.495)), ((V)(0.641)), ((V)(0.781)), ((V)(0.916))), "forEach", Fn((V _self1657, int _argc1889, V u_1895, V _a1892, V _a1893, V _a1894, V[] _rest1890) => {
-V P_1896 = default;
-P_1896 = Call(line_1681, V.Undef, u_1895);
-fd_1688.V(Call(runs_21, V.Undef, Invoke(P_1896, "map", Fn((V _self1657, int _argc1897, V q_1903, V _a1900, V _a1901, V _a1902, V[] _rest1898) => {
-return Get(q_1903, "p");
-}, 1, "", true)), Invoke(P_1896, "map", Fn((V _self1657, int _argc1904, V q_1910, V j_1911, V _a1908, V _a1909, V[] _rest1905) => {
-return (((GtN(Get(q_1910, "f"), 0.08) && GtN(j_1911, 0D)) && LtN(j_1911, 24D)) ? V.True : V.False);
-}, 2, "", true))));
-return default;
-}, 1, "", true));
-Call(set_1667, V.Undef, Get(W_1674, "fib"), ((V)("d")), (((V)(fd_1688.Str)) is var _t1912 && Truthy(_t1912) ? _t1912 : ((V)("M0 0"))));
-PS_1689 = Call(line_1681, V.Undef, ((V)((Truthy(fr2_1686) ? 0.06 : 0.94))));
-sj_1690 = (Truthy(fr2_1686) ? Arr(((V)(1D)), ((V)(5D))) : Arr(((V)(19D)), ((V)(23D))));
-Call(set_1667, V.Undef, Get(W_1674, "shn"), ((V)("d")), (Call(runs_21, V.Undef, Invoke(PS_1689, "map", Fn((V _self1657, int _argc1913, V q_1919, V _a1916, V _a1917, V _a1918, V[] _rest1914) => {
-return Get(q_1919, "p");
-}, 1, "", true)), Invoke(PS_1689, "map", Fn((V _self1657, int _argc1920, V q_1926, V j_1927, V _a1924, V _a1925, V[] _rest1921) => {
-return (((GtN(Get(q_1926, "f"), 0.05) && Ge(j_1927, GetIdx(sj_1690, 0D))) && Le(j_1927, GetIdx(sj_1690, 1D))) ? V.True : V.False);
-}, 2, "", true))) is var _t1928 && Truthy(_t1928) ? _t1928 : ((V)("M0 0"))));
-kS_1691 = Get(D_1665, "kS");
-M2_1692 = Fn((V _self1657, int _argc1929, V a_1935, V c_1936, V _a1933, V _a1934, V[] _rest1930) => {
-return Arr(((V)((ToNum(Add(GetIdx(a_1935, 0D), GetIdx(c_1936, 0D))) / 2D))), ((V)((ToNum(Add(GetIdx(a_1935, 1D), GetIdx(c_1936, 1D))) / 2D))));
-}, 2, "", true);
-flk_1693 = Fn((V _self1657, int _argc1937, V o_1943, V C_1944, V r_1945, V _a1942, V[] _rest1938) => {
-V P_1946 = default;
-JsStrBuf d_1947 = null;
-P_1946 = Arr();
+L_1814 = Arr();
 {
 double i_1948 = 0;
 i_1948 = 0D;
 while (true) {
-if (!((i_1948 < 7D))) break;
-double a_1950 = 0;
-double rr_1951 = 0;
-double x_1952 = 0;
-double y_1953 = 0;
-a_1950 = ((i_1948 * TAU_9) / 7D);
-rr_1951 = (ToNum(r_1945) * (0.72 + (0.5 * ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(Get(o_1943, "k")) * 7D) + i_1948))))))));
-x_1952 = ((rr_1951 * FdLibm.Cos(a_1950)) * 1.32);
-y_1953 = ((rr_1951 * FdLibm.Sin(a_1950)) * 0.74);
-Invoke(P_1946, "push", Arr(((V)((ToNum(Add(GetIdx(C_1944, 0D), ((V)((x_1952 * FdLibm.Cos(ToNum(Get(o_1943, "rot")))))))) - (y_1953 * FdLibm.Sin(ToNum(Get(o_1943, "rot"))))))), Add(Add(GetIdx(C_1944, 1D), ((V)((x_1952 * FdLibm.Sin(ToNum(Get(o_1943, "rot"))))))), ((V)((y_1953 * FdLibm.Cos(ToNum(Get(o_1943, "rot")))))))));
+if (!((i_1948 <= NU_1810))) break;
+Invoke(L_1814, "push", Call(line_1813, V.Undef, ((V)((i_1948 / NU_1810)))));
 i_1948++;
 }
 }
-d_1947 = new JsStrBuf(JsStrBuf.Begin().S("M").V(Call(pt_15, V.Undef, Call(M2_1692, V.Undef, GetIdx(P_1946, 6D), GetIdx(P_1946, 0D)))).End());
+lerp_1815 = Fn((V _arrowThis1959, int _argc1950, V a_1956, V c_1957, V t_1958, V _a1955, V[] _rest1951) => {
+return Arr(Add(GetIdx(a_1956, 0D), ((V)(((ToNum(GetIdx(c_1957, 0D)) - ToNum(GetIdx(a_1956, 0D))) * ToNum(t_1958))))), Add(GetIdx(a_1956, 1D), ((V)(((ToNum(GetIdx(c_1957, 1D)) - ToNum(GetIdx(a_1956, 1D))) * ToNum(t_1958))))));
+}, 3, "", true);
+dS_1816 = new JsStrBuf("");
+dR_1817 = new JsStrBuf("");
 {
-double i_1954 = 0;
-i_1954 = 0D;
+double i_1960 = 0;
+i_1960 = 0D;
 while (true) {
-if (!((i_1954 < 7D))) break;
-d_1947.S("Q").V(Call(pt_15, V.Undef, GetIdx(P_1946, i_1954))).S(" ").V(Call(pt_15, V.Undef, Call(M2_1692, V.Undef, GetIdx(P_1946, i_1954), GetIdx(P_1946, ((i_1954 + 1D) % 7D)))));
-i_1954++;
+if (!((i_1960 < NU_1810))) break;
+V A_1962 = default;
+V C_1963 = default;
+V G_1964 = default;
+V n_1965 = default;
+double G0_1966 = 0;
+V j0_1967 = default;
+V j1_1968 = default;
+V side_1969 = default;
+V sa_1970 = default;
+V sc_1971 = default;
+V ra_1972 = default;
+V rc_1973 = default;
+A_1962 = GetIdx(L_1814, i_1960);
+C_1963 = GetIdx(L_1814, (i_1960 + 1D));
+G_1964 = Invoke(A_1962, "map", Fn((V _arrowThis1982, int _argc1974, V q_1980, V j_1981, V _a1978, V _a1979, V[] _rest1975) => {
+return ((V)((ToNum(Add(Get(q_1980, "f"), Get(GetK(C_1963, j_1981), "f"))) / 2D)));
+}, 2, "", true));
+n_1965 = Get(G_1964, "length");
+G0_1966 = 0.05;
+j0_1967 = Invoke(G_1964, "findIndex", Fn((V _arrowThis1990, int _argc1983, V g_1989, V _a1986, V _a1987, V _a1988, V[] _rest1984) => {
+return (GtN(g_1989, G0_1966) ? V.True : V.False);
+}, 1, "", true));
+if (LtN(j0_1967, 0D)) {
+goto _cont1961;
+}
+j1_1968 = j0_1967;
+while ((Lt(Add(j1_1968, ((V)(1D))), n_1965) && GtN(GetK(G_1964, Add(j1_1968, ((V)(1D)))), G0_1966))) {
+PostInc(ref j1_1968, 1D);
+}
+side_1969 = Fn((V _arrowThis1999, int _argc1991, V pick_1997, V rimOnly_1998, V _a1995, V _a1996, V[] _rest1992) => {
+V o_2000 = default;
+V a0_2001 = default;
+V a1_2002 = default;
+V cut_2003 = default;
+o_2000 = Arr();
+a0_2001 = j0_1967;
+a1_2002 = j1_1968;
+if (Truthy(rimOnly_1998)) {
+while ((Le(a0_2001, a1_2002) && !(Truthy(Get(GetK(A_1962, a0_2001), "rim"))))) {
+PostInc(ref a0_2001, 1D);
+}
+while ((Ge(a1_2002, a0_2001) && !(Truthy(Get(GetK(A_1962, a1_2002), "rim"))))) {
+PostInc(ref a1_2002, -1D);
+}
+if (Gt(a0_2001, a1_2002)) {
+return V.Null;
 }
 }
-return ((V)(string.Concat(d_1947.Str, "Z")));
+cut_2003 = Fn((V _arrowThis2012, int _argc2004, V j_2010, V k_2011, V _a2008, V _a2009, V[] _rest2005) => {
+double t_2013 = 0;
+t_2013 = ((ToNum(GetK(G_1964, j_2010)) - G0_1966) / ToNum((((V)((ToNum(GetK(G_1964, j_2010)) - ToNum(GetK(G_1964, k_2011))))) is var _t2014 && Truthy(_t2014) ? _t2014 : ((V)(1D)))));
+return Call(lerp_1815, V.Undef, Get(GetK(pick_1997, j_2010), "p"), Get(GetK(pick_1997, k_2011), "p"), Call(clamp_12, V.Undef, ((V)(t_2013)), ((V)(0D)), ((V)(1D))));
 return default;
-}, 3, "", true);
-fatL_1694 = Fn((V _self1657, int _argc1956, V o_1962, V C_1963, V r_1964, V _a1961, V[] _rest1957) => {
-V q_1965 = default;
-q_1965 = Fn((V _self1657, int _argc1966, V x_1972, V y_1973, V _a1970, V _a1971, V[] _rest1967) => {
-return Arr(((V)((ToNum(Add(GetIdx(C_1963, 0D), ((V)((ToNum(x_1972) * FdLibm.Cos(ToNum(Get(o_1962, "rot")))))))) - (ToNum(y_1973) * FdLibm.Sin(ToNum(Get(o_1962, "rot"))))))), Add(Add(GetIdx(C_1963, 1D), ((V)((ToNum(x_1972) * FdLibm.Sin(ToNum(Get(o_1962, "rot"))))))), ((V)((ToNum(y_1973) * FdLibm.Cos(ToNum(Get(o_1962, "rot"))))))));
 }, 2, "", true);
-return ((V)(JsStrBuf.Begin().S("M").V(Call(pt_15, V.Undef, Call(q_1965, V.Undef, ((V)(((-0.75) * ToNum(r_1964)))), ((V)(((-0.2) * ToNum(r_1964))))))).S("Q").V(Call(pt_15, V.Undef, Call(q_1965, V.Undef, ((V)(0D)), ((V)((0.12 * ToNum(r_1964))))))).S(" ").V(Call(pt_15, V.Undef, Call(q_1965, V.Undef, ((V)((0.72 * ToNum(r_1964)))), ((V)(((-0.14) * ToNum(r_1964))))))).S("M").V(Call(pt_15, V.Undef, Call(q_1965, V.Undef, ((V)(((-0.55) * ToNum(r_1964)))), ((V)((0.22 * ToNum(r_1964))))))).S("Q").V(Call(pt_15, V.Undef, Call(q_1965, V.Undef, ((V)(0D)), ((V)((0.5 * ToNum(r_1964))))))).S(" ").V(Call(pt_15, V.Undef, Call(q_1965, V.Undef, ((V)((0.5 * ToNum(r_1964)))), ((V)((0.26 * ToNum(r_1964))))))).End()));
+if ((!(Truthy(rimOnly_1998)) && GtN(j0_1967, 0D))) {
+Invoke(o_2000, "push", Call(cut_2003, V.Undef, j0_1967, ((V)((ToNum(j0_1967) - 1D)))));
+}
+{
+V j_2015 = default;
+j_2015 = a0_2001;
+while (true) {
+if (!(Le(j_2015, a1_2002))) break;
+Invoke(o_2000, "push", Get(GetK(pick_1997, j_2015), "p"));
+PostInc(ref j_2015, 1D);
+}
+}
+if ((!(Truthy(rimOnly_1998)) && LtN(j1_1968, (ToNum(n_1965) - 1D)))) {
+Invoke(o_2000, "push", Call(cut_2003, V.Undef, j1_1968, Add(j1_1968, ((V)(1D)))));
+}
+return o_2000;
+return default;
+}, 2, "", true);
+sa_1970 = Call(side_1969, V.Undef, A_1962);
+sc_1971 = Call(side_1969, V.Undef, C_1963);
+dS_1816.V(Call(polyW_18, V.Undef, Invoke(sa_1970, "concat", Invoke(Invoke(sc_1971, "slice"), "reverse"))));
+ra_1972 = Call(side_1969, V.Undef, A_1962, ((V)(1D)));
+rc_1973 = Call(side_1969, V.Undef, C_1963, ((V)(1D)));
+if (Truthy(((ra_1972 is var _t2017 && !Truthy(_t2017) ? _t2017 : rc_1973) is var _t2018 && !Truthy(_t2018) ? _t2018 : (GtN(Get(ra_1972, "length"), 1D) ? V.True : V.False)))) {
+dR_1817.V(Call(polyW_18, V.Undef, Invoke(ra_1972, "concat", Invoke(Invoke(rc_1973, "slice"), "reverse"))));
+}
+_cont1961: ;
+i_1960++;
+}
+}
+Call(set_1799, V.Undef, Get(W_1806, "st"), ((V)("d")), (((V)(dS_1816.Str)) is var _t2019 && Truthy(_t2019) ? _t2019 : ((V)("M0 0"))));
+Call(set_1799, V.Undef, Get(W_1806, "rim"), ((V)("d")), (((V)(dR_1817.Str)) is var _t2020 && Truthy(_t2020) ? _t2020 : ((V)("M0 0"))));
+fr2_1818 = (Ge(Get(GetIdx(GetIdx(L_1814, ((double)(ToInt32(NU_1810) >> (int)(ToUint32(1D) & 31)))), 0D), "f"), Get(GetIdx(GetIdx(L_1814, ((double)(ToInt32(NU_1810) >> (int)(ToUint32(1D) & 31)))), 24D), "f")) ? V.True : V.False);
+ti_1819 = (Truthy(fr2_1818) ? 0D : 24D);
+Call(set_1799, V.Undef, Get(W_1806, "edge"), ((V)("d")), (Call(runs_21, V.Undef, Invoke(L_1814, "map", Fn((V _arrowThis2028, int _argc2021, V P_2027, V _a2024, V _a2025, V _a2026, V[] _rest2022) => {
+return Get(GetIdx(P_2027, ti_1819), "p");
+}, 1, "", true)), Invoke(L_1814, "map", Fn((V _arrowThis2036, int _argc2029, V P_2035, V _a2032, V _a2033, V _a2034, V[] _rest2030) => {
+return (GtN(Get(GetIdx(P_2035, ti_1819), "f"), 0.05) ? V.True : V.False);
+}, 1, "", true))) is var _t2037 && Truthy(_t2037) ? _t2037 : ((V)("M0 0"))));
+fd_1820 = new JsStrBuf("");
+Invoke(Arr(((V)(0.084)), ((V)(0.216)), ((V)(0.354)), ((V)(0.495)), ((V)(0.641)), ((V)(0.781)), ((V)(0.916))), "forEach", Fn((V _arrowThis2045, int _argc2038, V u_2044, V _a2041, V _a2042, V _a2043, V[] _rest2039) => {
+V P_2046 = default;
+P_2046 = Call(line_1813, V.Undef, u_2044);
+fd_1820.V(Call(runs_21, V.Undef, Invoke(P_2046, "map", Fn((V _arrowThis2054, int _argc2047, V q_2053, V _a2050, V _a2051, V _a2052, V[] _rest2048) => {
+return Get(q_2053, "p");
+}, 1, "", true)), Invoke(P_2046, "map", Fn((V _arrowThis2063, int _argc2055, V q_2061, V j_2062, V _a2059, V _a2060, V[] _rest2056) => {
+return (((GtN(Get(q_2061, "f"), 0.08) && GtN(j_2062, 0D)) && LtN(j_2062, 24D)) ? V.True : V.False);
+}, 2, "", true))));
+return default;
+}, 1, "", true));
+Call(set_1799, V.Undef, Get(W_1806, "fib"), ((V)("d")), (((V)(fd_1820.Str)) is var _t2064 && Truthy(_t2064) ? _t2064 : ((V)("M0 0"))));
+PS_1821 = Call(line_1813, V.Undef, ((V)((Truthy(fr2_1818) ? 0.06 : 0.94))));
+sj_1822 = (Truthy(fr2_1818) ? Arr(((V)(1D)), ((V)(5D))) : Arr(((V)(19D)), ((V)(23D))));
+Call(set_1799, V.Undef, Get(W_1806, "shn"), ((V)("d")), (Call(runs_21, V.Undef, Invoke(PS_1821, "map", Fn((V _arrowThis2072, int _argc2065, V q_2071, V _a2068, V _a2069, V _a2070, V[] _rest2066) => {
+return Get(q_2071, "p");
+}, 1, "", true)), Invoke(PS_1821, "map", Fn((V _arrowThis2081, int _argc2073, V q_2079, V j_2080, V _a2077, V _a2078, V[] _rest2074) => {
+return (((GtN(Get(q_2079, "f"), 0.05) && Ge(j_2080, GetIdx(sj_1822, 0D))) && Le(j_2080, GetIdx(sj_1822, 1D))) ? V.True : V.False);
+}, 2, "", true))) is var _t2082 && Truthy(_t2082) ? _t2082 : ((V)("M0 0"))));
+kS_1823 = Get(D_1797, "kS");
+M2_1824 = Fn((V _arrowThis2091, int _argc2083, V a_2089, V c_2090, V _a2087, V _a2088, V[] _rest2084) => {
+return Arr(((V)((ToNum(Add(GetIdx(a_2089, 0D), GetIdx(c_2090, 0D))) / 2D))), ((V)((ToNum(Add(GetIdx(a_2089, 1D), GetIdx(c_2090, 1D))) / 2D))));
+}, 2, "", true);
+flk_1825 = Fn((V _arrowThis2101, int _argc2092, V o_2098, V C_2099, V r_2100, V _a2097, V[] _rest2093) => {
+V P_2102 = default;
+JsStrBuf d_2103 = null;
+P_2102 = Arr();
+{
+double i_2104 = 0;
+i_2104 = 0D;
+while (true) {
+if (!((i_2104 < 7D))) break;
+double a_2106 = 0;
+double rr_2107 = 0;
+double x_2108 = 0;
+double y_2109 = 0;
+a_2106 = ((i_2104 * TAU_9) / 7D);
+rr_2107 = (ToNum(r_2100) * (0.72 + (0.5 * ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(Get(o_2098, "k")) * 7D) + i_2104))))))));
+x_2108 = ((rr_2107 * FdLibm.Cos(a_2106)) * 1.32);
+y_2109 = ((rr_2107 * FdLibm.Sin(a_2106)) * 0.74);
+Invoke(P_2102, "push", Arr(((V)((ToNum(Add(GetIdx(C_2099, 0D), ((V)((x_2108 * FdLibm.Cos(ToNum(Get(o_2098, "rot")))))))) - (y_2109 * FdLibm.Sin(ToNum(Get(o_2098, "rot"))))))), Add(Add(GetIdx(C_2099, 1D), ((V)((x_2108 * FdLibm.Sin(ToNum(Get(o_2098, "rot"))))))), ((V)((y_2109 * FdLibm.Cos(ToNum(Get(o_2098, "rot")))))))));
+i_2104++;
+}
+}
+d_2103 = new JsStrBuf(JsStrBuf.Begin().S("M").V(Call(pt_15, V.Undef, Call(M2_1824, V.Undef, GetIdx(P_2102, 6D), GetIdx(P_2102, 0D)))).End());
+{
+double i_2110 = 0;
+i_2110 = 0D;
+while (true) {
+if (!((i_2110 < 7D))) break;
+d_2103.S("Q").V(Call(pt_15, V.Undef, GetIdx(P_2102, i_2110))).S(" ").V(Call(pt_15, V.Undef, Call(M2_1824, V.Undef, GetIdx(P_2102, i_2110), GetIdx(P_2102, ((i_2110 + 1D) % 7D)))));
+i_2110++;
+}
+}
+return ((V)(string.Concat(d_2103.Str, "Z")));
 return default;
 }, 3, "", true);
-Call(set_1667, V.Undef, Get(B_1664, "shd"), ((V)("d")), Call(ellD_20, V.Undef, Call(P3_1666, V.Undef, ((V)(50D)), ((V)(20D)), ((V)(0D))), ((V)((((8.6 * ToNum(kS_1691)) * Max(0.35, System.Math.Abs(ToNum(Get(D_1665, "front"))))) + (2.2 * ToNum(kS_1691))))), ((V)((1.7 * ToNum(kS_1691)))), ((V)(0D))));
-Invoke(SN_43, "order", Get(B_1664, "SAL"), Invoke(Invoke(Get(B_1664, "FK"), "map", Fn((V _self1657, int _argc1982, V o_1988, V _a1985, V _a1986, V _a1987, V[] _rest1983) => {
-double up_1989 = 0;
-V x_1990 = default;
-double y_1991 = 0;
-V C_1992 = default;
-double r_1993 = 0;
-up_1989 = (ToNum(umeV_1669) * (5D + (3D * ToNum(Call(rnd_22, V.Undef, ((V)((ToNum(Get(o_1988, "k")) * 5.3))))))));
-x_1990 = Add(Get(o_1988, "x"), ((V)((((ToNum(Get(o_1988, "x")) - 50D) * 0.18) * ToNum(umeV_1669)))));
-y_1991 = (ToNum(Get(o_1988, "y")) - up_1989);
-C_1992 = Call(P3_1666, V.Undef, x_1990, ((V)(y_1991)), Get(o_1988, "z"));
-r_1993 = (ToNum(Get(o_1988, "r")) * ToNum(kS_1691));
-Call(set_1667, V.Undef, Get(o_1988, "b"), ((V)("d")), Call(flk_1693, V.Undef, o_1988, C_1992, ((V)(r_1993))));
-if (Truthy(Get(o_1988, "f"))) {
-Call(set_1667, V.Undef, Get(o_1988, "f"), ((V)("d")), Call(fatL_1694, V.Undef, o_1988, C_1992, ((V)(r_1993))));
-}
-return NewObj(3).Put("id", ((V)(JsStrBuf.Begin().S("f").V(Get(o_1988, "k")).End()))).Put("e", Get(o_1988, "g")).Put("z", Invoke(D_1665, "Z3", x_1990, ((V)(y_1991)), Get(o_1988, "z"))).V;
+fatL_1826 = Fn((V _arrowThis2121, int _argc2112, V o_2118, V C_2119, V r_2120, V _a2117, V[] _rest2113) => {
+V q_2122 = default;
+q_2122 = Fn((V _arrowThis2131, int _argc2123, V x_2129, V y_2130, V _a2127, V _a2128, V[] _rest2124) => {
+return Arr(((V)((ToNum(Add(GetIdx(C_2119, 0D), ((V)((ToNum(x_2129) * FdLibm.Cos(ToNum(Get(o_2118, "rot")))))))) - (ToNum(y_2130) * FdLibm.Sin(ToNum(Get(o_2118, "rot"))))))), Add(Add(GetIdx(C_2119, 1D), ((V)((ToNum(x_2129) * FdLibm.Sin(ToNum(Get(o_2118, "rot"))))))), ((V)((ToNum(y_2130) * FdLibm.Cos(ToNum(Get(o_2118, "rot"))))))));
+}, 2, "", true);
+return ((V)(JsStrBuf.Begin().S("M").V(Call(pt_15, V.Undef, Call(q_2122, V.Undef, ((V)(((-0.75) * ToNum(r_2120)))), ((V)(((-0.2) * ToNum(r_2120))))))).S("Q").V(Call(pt_15, V.Undef, Call(q_2122, V.Undef, ((V)(0D)), ((V)((0.12 * ToNum(r_2120))))))).S(" ").V(Call(pt_15, V.Undef, Call(q_2122, V.Undef, ((V)((0.72 * ToNum(r_2120)))), ((V)(((-0.14) * ToNum(r_2120))))))).S("M").V(Call(pt_15, V.Undef, Call(q_2122, V.Undef, ((V)(((-0.55) * ToNum(r_2120)))), ((V)((0.22 * ToNum(r_2120))))))).S("Q").V(Call(pt_15, V.Undef, Call(q_2122, V.Undef, ((V)(0D)), ((V)((0.5 * ToNum(r_2120))))))).S(" ").V(Call(pt_15, V.Undef, Call(q_2122, V.Undef, ((V)((0.5 * ToNum(r_2120)))), ((V)((0.26 * ToNum(r_2120))))))).End()));
 return default;
-}, 1, "", true)), "sort", Fn((V _self1657, int _argc1974, V a_1980, V b_1981, V _a1978, V _a1979, V[] _rest1975) => {
-return ((V)((ToNum(Get(a_1980, "z")) - ToNum(Get(b_1981, "z")))));
+}, 3, "", true);
+Call(set_1799, V.Undef, Get(B_1796, "shd"), ((V)("d")), Call(ellD_20, V.Undef, Call(P3_1798, V.Undef, ((V)(50D)), ((V)(20D)), ((V)(0D))), ((V)((((8.6 * ToNum(kS_1823)) * Max(0.35, System.Math.Abs(ToNum(Get(D_1797, "front"))))) + (2.2 * ToNum(kS_1823))))), ((V)((1.7 * ToNum(kS_1823)))), ((V)(0D))));
+Invoke(SN_43, "order", Get(B_1796, "SAL"), Invoke(Invoke(Get(B_1796, "FK"), "map", Fn((V _arrowThis2148, int _argc2141, V o_2147, V _a2144, V _a2145, V _a2146, V[] _rest2142) => {
+double up_2149 = 0;
+V x_2150 = default;
+double y_2151 = 0;
+V C_2152 = default;
+double r_2153 = 0;
+up_2149 = (ToNum(umeV_1801) * (5D + (3D * ToNum(Call(rnd_22, V.Undef, ((V)((ToNum(Get(o_2147, "k")) * 5.3))))))));
+x_2150 = Add(Get(o_2147, "x"), ((V)((((ToNum(Get(o_2147, "x")) - 50D) * 0.18) * ToNum(umeV_1801)))));
+y_2151 = (ToNum(Get(o_2147, "y")) - up_2149);
+C_2152 = Call(P3_1798, V.Undef, x_2150, ((V)(y_2151)), Get(o_2147, "z"));
+r_2153 = (ToNum(Get(o_2147, "r")) * ToNum(kS_1823));
+Call(set_1799, V.Undef, Get(o_2147, "b"), ((V)("d")), Call(flk_1825, V.Undef, o_2147, C_2152, ((V)(r_2153))));
+if (Truthy(Get(o_2147, "f"))) {
+Call(set_1799, V.Undef, Get(o_2147, "f"), ((V)("d")), Call(fatL_1826, V.Undef, o_2147, C_2152, ((V)(r_2153))));
+}
+return NewObj(3).Put("id", ((V)(JsStrBuf.Begin().S("f").V(Get(o_2147, "k")).End()))).Put("e", Get(o_2147, "g")).Put("z", Invoke(D_1797, "Z3", x_2150, ((V)(y_2151)), Get(o_2147, "z"))).V;
+return default;
+}, 1, "", true)), "sort", Fn((V _arrowThis2140, int _argc2132, V a_2138, V b_2139, V _a2136, V _a2137, V[] _rest2133) => {
+return ((V)((ToNum(Get(a_2138, "z")) - ToNum(Get(b_2139, "z")))));
 }, 2, "", true)));
 return default;
 }, 2, "draw", false)).V);
-slabD_47 = Fn((V _self1, int _argc1994, V D_2000, V Q_2001, V zf_2002, V zb_2003, V[] _rest1995) => {
-V F_2005 = default;
-V K_2006 = default;
-V d_2007 = default;
-V W_2004 = default;
-W_2004 = (_argc1994 > 4 ? _rest1995[0] : V.Undef);
-W_2004 = (W_2004 is var _t2008 && Truthy(_t2008) ? _t2008 : Get(D_2000, "P3"));
-F_2005 = Invoke(Q_2001, "map", Fn((V _self1, int _argc2009, V p_2015, V _a2012, V _a2013, V _a2014, V[] _rest2010) => {
-return Call(W_2004, V.Undef, GetIdx(p_2015, 0D), GetIdx(p_2015, 1D), zf_2002);
+slabD_47 = Fn((V _arrowThis2165, int _argc2154, V D_2160, V Q_2161, V zf_2162, V zb_2163, V[] _rest2155) => {
+V F_2166 = default;
+V K_2167 = default;
+V d_2168 = default;
+V W_2164 = default;
+W_2164 = (_argc2154 > 4 ? _rest2155[0] : V.Undef);
+W_2164 = (W_2164 is var _t2169 && Truthy(_t2169) ? _t2169 : Get(D_2160, "P3"));
+F_2166 = Invoke(Q_2161, "map", Fn((V _arrowThis2177, int _argc2170, V p_2176, V _a2173, V _a2174, V _a2175, V[] _rest2171) => {
+return Call(W_2164, V.Undef, GetIdx(p_2176, 0D), GetIdx(p_2176, 1D), zf_2162);
 }, 1, "", true));
-K_2006 = Invoke(Q_2001, "map", Fn((V _self1, int _argc2016, V p_2022, V _a2019, V _a2020, V _a2021, V[] _rest2017) => {
-return Call(W_2004, V.Undef, GetIdx(p_2022, 0D), GetIdx(p_2022, 1D), zb_2003);
+K_2167 = Invoke(Q_2161, "map", Fn((V _arrowThis2185, int _argc2178, V p_2184, V _a2181, V _a2182, V _a2183, V[] _rest2179) => {
+return Call(W_2164, V.Undef, GetIdx(p_2184, 0D), GetIdx(p_2184, 1D), zb_2163);
 }, 1, "", true));
-d_2007 = Add(Call(polyW_18, V.Undef, F_2005), Call(polyW_18, V.Undef, K_2006));
+d_2168 = Add(Call(polyW_18, V.Undef, F_2166), Call(polyW_18, V.Undef, K_2167));
 {
-double i_2023 = 0;
-i_2023 = 0D;
+double i_2186 = 0;
+i_2186 = 0D;
 while (true) {
-if (!(Lt(((V)(i_2023)), Get(Q_2001, "length")))) break;
-double j_2025 = 0;
-j_2025 = ((i_2023 + 1D) % ToNum(Get(Q_2001, "length")));
-d_2007 = Add(d_2007, Call(polyW_18, V.Undef, Arr(GetIdx(F_2005, i_2023), GetIdx(F_2005, j_2025), GetIdx(K_2006, j_2025), GetIdx(K_2006, i_2023))));
-i_2023++;
+if (!(Lt(((V)(i_2186)), Get(Q_2161, "length")))) break;
+double j_2188 = 0;
+j_2188 = ((i_2186 + 1D) % ToNum(Get(Q_2161, "length")));
+d_2168 = Add(d_2168, Call(polyW_18, V.Undef, Arr(GetIdx(F_2166, i_2186), GetIdx(F_2166, j_2188), GetIdx(K_2167, j_2188), GetIdx(K_2167, i_2186))));
+i_2186++;
 }
 }
-return d_2007;
+return d_2168;
 return default;
 }, 5, "", true);
 Set(Get(SN_43, "h"), "slabD", slabD_47);
-PEf_48 = Fn((V _self1, int _argc2026, V D_2032, V EL_2033, V rT_2034, V _a2031, V[] _rest2027) => {
-return Fn((V _self1, int _argc2035, V x_2041, V y_2042, V z_2043, V _a2040, V[] _rest2036) => {
-V p_2044 = default;
-p_2044 = Invoke(D_2032, "P3", x_2041, y_2042, z_2043);
-return Arr(GetIdx(p_2044, 0D), Add(GetIdx(p_2044, 1D), ((V)((ToNum(EL_2033) * (ToNum(Invoke(D_2032, "Z3", x_2041, y_2042, z_2043)) - ToNum(Call(rT_2034, V.Undef, y_2042))))))));
+PEf_48 = Fn((V _arrowThis2198, int _argc2189, V D_2195, V EL_2196, V rT_2197, V _a2194, V[] _rest2190) => {
+return Fn((V _arrowThis2208, int _argc2199, V x_2205, V y_2206, V z_2207, V _a2204, V[] _rest2200) => {
+V p_2209 = default;
+p_2209 = Invoke(D_2195, "P3", x_2205, y_2206, z_2207);
+return Arr(GetIdx(p_2209, 0D), Add(GetIdx(p_2209, 1D), ((V)((ToNum(EL_2196) * (ToNum(Invoke(D_2195, "Z3", x_2205, y_2206, z_2207)) - ToNum(Call(rT_2197, V.Undef, y_2206))))))));
 return default;
 }, 3, "", true);
 }, 3, "", true);
-Set(MODELS_42, "toco", NewObj(2).Put("setup", Fn((V _self2045, int _argc2046, V S_2052, V _a2049, V _a2050, V _a2051, V[] _rest2047) => {
-V sk_2053 = default;
-V O_2054 = default;
-double th_2055 = 0;
-double W0_2056 = 0;
-V Wy_2057 = default;
-V lt_2058 = default;
-V mt_2059 = default;
-V LF_2060 = default;
-V MF_2061 = default;
-V SG_2062 = default;
-V back_2063 = default;
-V FG_2064 = default;
-V F_2065 = default;
-V add_2066 = default;
-V sp_2067 = default;
-V hl_2068 = default;
-if (_self2045.IsNullish) _self2045 = GlobalV;
-{ V _t2069 = S_2052;
-if (_t2069.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t2069));
-{ V _t2070 = Get(_t2069, "sk");
-sk_2053 = _t2070; } }
-O_2054 = Invoke(S_2052, "outline", sk_2053, ((V)(64D)));
-th_2055 = 1.5;
-W0_2056 = 9.5;
-Wy_2057 = Fn((V _self2045, int _argc2071, V y_2077, V _a2074, V _a2075, V _a2076, V[] _rest2072) => {
-return ((V)((W0_2056 * Pow(ToNum(Call(clamp_12, V.Undef, ((V)(((87.5 - ToNum(y_2077)) / 45.5))), ((V)(0D)), ((V)(1D)))), 0.85))));
+Set(MODELS_42, "toco", NewObj(2).Put("setup", Fn((V _self2210, int _argc2211, V S_2217, V _a2214, V _a2215, V _a2216, V[] _rest2212) => {
+V sk_2218 = default;
+V O_2219 = default;
+double th_2220 = 0;
+double W0_2221 = 0;
+V Wy_2222 = default;
+V lt_2223 = default;
+V mt_2224 = default;
+V LF_2225 = default;
+V MF_2226 = default;
+V SG_2227 = default;
+V back_2228 = default;
+V FG_2229 = default;
+V F_2230 = default;
+V add_2231 = default;
+V sp_2232 = default;
+V hl_2233 = default;
+if (_self2210.IsNullish) _self2210 = GlobalV;
+{ V _t2234 = S_2217;
+if (_t2234.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t2234));
+{ V _t2235 = Get(_t2234, "sk");
+sk_2218 = _t2235; } }
+O_2219 = Invoke(S_2217, "outline", sk_2218, ((V)(64D)));
+th_2220 = 1.5;
+W0_2221 = 9.5;
+Wy_2222 = Fn((V _arrowThis2243, int _argc2236, V y_2242, V _a2239, V _a2240, V _a2241, V[] _rest2237) => {
+return ((V)((W0_2221 * Pow(ToNum(Call(clamp_12, V.Undef, ((V)(((87.5 - ToNum(y_2242)) / 45.5))), ((V)(0D)), ((V)(1D)))), 0.85))));
 }, 1, "", true);
-lt_2058 = GetIdx(Invoke(S_2052, "hide", Fn((V _self2045, int _argc2078, V q_2084, V _a2081, V _a2082, V _a2083, V[] _rest2079) => {
-return (((Get(q_2084, "inBody") is var _t2085 && !Truthy(_t2085) ? _t2085 : Invoke(NewRegExp(RX2, "^url", ""), "test", Invoke(S_2052, "f", q_2084))) is var _t2086 && !Truthy(_t2086) ? _t2086 : (SEqS(Get(q_2084, "tag"), "path") ? V.True : V.False)) is var _t2087 && !Truthy(_t2087) ? _t2087 : Invoke(NewRegExp(RX4, "^M12\\.00 88", ""), "test", Invoke(S_2052, "d", q_2084)));
+lt_2223 = GetIdx(Invoke(S_2217, "hide", Fn((V _arrowThis2251, int _argc2244, V q_2250, V _a2247, V _a2248, V _a2249, V[] _rest2245) => {
+return (((Get(q_2250, "inBody") is var _t2252 && !Truthy(_t2252) ? _t2252 : Invoke(NewRegExp(RX2, "^url", ""), "test", Invoke(S_2217, "f", q_2250))) is var _t2253 && !Truthy(_t2253) ? _t2253 : (SEqS(Get(q_2250, "tag"), "path") ? V.True : V.False)) is var _t2254 && !Truthy(_t2254) ? _t2254 : Invoke(NewRegExp(RX4, "^M12\\.00 88", ""), "test", Invoke(S_2217, "d", q_2250)));
 }, 1, "", true)), 0D);
-mt_2059 = GetIdx(Invoke(S_2052, "hide", Fn((V _self2045, int _argc2088, V q_2094, V _a2091, V _a2092, V _a2093, V[] _rest2089) => {
-return (Get(q_2094, "inBody") is var _t2095 && !Truthy(_t2095) ? _t2095 : Invoke(NewRegExp(RX5, "^M11\\.50 88", ""), "test", Invoke(S_2052, "d", q_2094)));
+mt_2224 = GetIdx(Invoke(S_2217, "hide", Fn((V _arrowThis2262, int _argc2255, V q_2261, V _a2258, V _a2259, V _a2260, V[] _rest2256) => {
+return (Get(q_2261, "inBody") is var _t2263 && !Truthy(_t2263) ? _t2263 : Invoke(NewRegExp(RX5, "^M11\\.50 88", ""), "test", Invoke(S_2217, "d", q_2261)));
 }, 1, "", true)), 0D);
-Invoke(S_2052, "hide", Fn((V _self2045, int _argc2096, V q_2102, V _a2099, V _a2100, V _a2101, V[] _rest2097) => {
-return (Get(q_2102, "inBody") is var _t2103 && !Truthy(_t2103) ? _t2103 : ((((SEqS(Get(q_2102, "tag"), "rect") || SEqS(Invoke(S_2052, "s", q_2102), "#ffb02e")) || SEqS(Invoke(S_2052, "f", q_2102), "#d9952a")) || SEqS(Invoke(S_2052, "s", q_2102), "#fff6cf")) ? V.True : V.False));
+Invoke(S_2217, "hide", Fn((V _arrowThis2271, int _argc2264, V q_2270, V _a2267, V _a2268, V _a2269, V[] _rest2265) => {
+return (Get(q_2270, "inBody") is var _t2272 && !Truthy(_t2272) ? _t2272 : ((((SEqS(Get(q_2270, "tag"), "rect") || SEqS(Invoke(S_2217, "s", q_2270), "#ffb02e")) || SEqS(Invoke(S_2217, "f", q_2270), "#d9952a")) || SEqS(Invoke(S_2217, "s", q_2270), "#fff6cf")) ? V.True : V.False));
 }, 1, "", true));
-LF_2060 = (Truthy(lt_2058) ? Invoke(S_2052, "f", lt_2058) : ((V)("#86d24e")));
-MF_2061 = (Truthy(mt_2059) ? Invoke(S_2052, "f", mt_2059) : ((V)("#8a4526")));
-SG_2062 = Invoke(S_2052, "g", Get(S_2052, "par"), Get(sk_2053, "e"));
-Invoke(SG_2062, "appendChild", Get(sk_2053, "e"));
-back_2063 = Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", Invoke(S_2052, "f", sk_2053)).V, SG_2062, Get(sk_2053, "e"));
-FG_2064 = Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, SG_2062, Get(sk_2053, "e"));
-F_2065 = Arr();
-add_2066 = Fn((V _self2045, int _argc2104, V a_2110, V kind_2111, V dz_2112, V r_2113, V[] _rest2105) => {
-V id_2114 = default;
-id_2114 = (_argc2104 > 4 ? _rest2105[0] : V.Undef);
-return Invoke(F_2065, "push", NewObj(6).Put("a", a_2110).Put("kind", kind_2111).Put("dz", dz_2112).Put("r", r_2113).Put("id", Add(kind_2111, Get(F_2065, "length"))).Put("e", Call(el_14, V.Undef, ((V)("path")), (SEqS(kind_2111, "l") ? NewObj(4).Put("fill", LF_2060).Put("stroke", ((V)("#4d9a2a"))).Put("stroke-width", ((V)(0.45))).Put("stroke-opacity", ((V)(0.55))).V : (SEqS(kind_2111, "m") ? NewObj(1).Put("fill", MF_2061).V : (SEqS(kind_2111, "t") ? NewObj(1).Put("fill", ((V)("#ff5a4a"))).V : NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffb02e"))).Put("stroke-width", ((V)(1.5))).Put("stroke-linecap", ((V)("round"))).V))), FG_2064)).V);
+LF_2225 = (Truthy(lt_2223) ? Invoke(S_2217, "f", lt_2223) : ((V)("#86d24e")));
+MF_2226 = (Truthy(mt_2224) ? Invoke(S_2217, "f", mt_2224) : ((V)("#8a4526")));
+SG_2227 = Invoke(S_2217, "g", Get(S_2217, "par"), Get(sk_2218, "e"));
+Invoke(SG_2227, "appendChild", Get(sk_2218, "e"));
+back_2228 = Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", Invoke(S_2217, "f", sk_2218)).V, SG_2227, Get(sk_2218, "e"));
+FG_2229 = Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, SG_2227, Get(sk_2218, "e"));
+F_2230 = Arr();
+add_2231 = Fn((V _arrowThis2284, int _argc2273, V a_2279, V kind_2280, V dz_2281, V r_2282, V[] _rest2274) => {
+V id_2283 = default;
+id_2283 = (_argc2273 > 4 ? _rest2274[0] : V.Undef);
+return Invoke(F_2230, "push", NewObj(6).Put("a", a_2279).Put("kind", kind_2280).Put("dz", dz_2281).Put("r", r_2282).Put("id", Add(kind_2280, Get(F_2230, "length"))).Put("e", Call(el_14, V.Undef, ((V)("path")), (SEqS(kind_2280, "l") ? NewObj(4).Put("fill", LF_2225).Put("stroke", ((V)("#4d9a2a"))).Put("stroke-width", ((V)(0.45))).Put("stroke-opacity", ((V)(0.55))).V : (SEqS(kind_2280, "m") ? NewObj(1).Put("fill", MF_2226).V : (SEqS(kind_2280, "t") ? NewObj(1).Put("fill", ((V)("#ff5a4a"))).V : NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffb02e"))).Put("stroke-width", ((V)(1.5))).Put("stroke-linecap", ((V)("round"))).V))), FG_2229)).V);
 }, 5, "", true);
 {
-double i_2115 = 0;
-i_2115 = 0D;
+double i_2285 = 0;
+i_2285 = 0D;
 while (true) {
-if (!((i_2115 < 13D))) break;
-Call(add_2066, V.Undef, ((V)((0.08 + (i_2115 * 0.07)))), ((V)("m")), ((V)(((NumTruthy((i_2115 % 2D)) ? 1D : (-1D)) * 0.3))), ((V)(3.6)));
-i_2115++;
+if (!((i_2285 < 13D))) break;
+Call(add_2231, V.Undef, ((V)((0.08 + (i_2285 * 0.07)))), ((V)("m")), ((V)(((NumTruthy((i_2285 % 2D)) ? 1D : (-1D)) * 0.3))), ((V)(3.6)));
+i_2285++;
 }
 }
 {
-double i_2117 = 0;
-i_2117 = 0D;
+double i_2287 = 0;
+i_2287 = 0D;
 while (true) {
-if (!((i_2117 < 30D))) break;
-Call(add_2066, V.Undef, ((V)((0.025 + (i_2117 * 0.0328)))), ((V)("l")), GetIdx(Arr(((V)((-0.45))), ((V)(0.1)), ((V)(0.5)), ((V)((-0.1))), ((V)(0.35)), ((V)((-0.35)))), (i_2117 % 6D)), ((V)((3.3 + ((i_2117 % 3D) * 0.45)))));
-i_2117++;
+if (!((i_2287 < 30D))) break;
+Call(add_2231, V.Undef, ((V)((0.025 + (i_2287 * 0.0328)))), ((V)("l")), GetIdx(Arr(((V)((-0.45))), ((V)(0.1)), ((V)(0.5)), ((V)((-0.1))), ((V)(0.35)), ((V)((-0.35)))), (i_2287 % 6D)), ((V)((3.3 + ((i_2287 % 3D) * 0.45)))));
+i_2287++;
 }
 }
-Invoke(Arr(Arr(((V)(0.16)), ((V)(0.2))), Arr(((V)(0.36)), ((V)((-0.3)))), Arr(((V)(0.62)), ((V)(0.3))), Arr(((V)(0.84)), ((V)((-0.2))))), "forEach", Fn((V _self2045, int _argc2119, V _a2121, V _a2122, V _a2123, V _a2124, V[] _rest2120) => {
-V a_2127 = default;
-V dz_2129 = default;
-{ V _t2125 = ListOf(_a2121);
-{ V _t2126 = GetIdx(_t2125, 0D);
-a_2127 = _t2126; }
-{ V _t2128 = GetIdx(_t2125, 1D);
-dz_2129 = _t2128; }
+Invoke(Arr(Arr(((V)(0.16)), ((V)(0.2))), Arr(((V)(0.36)), ((V)((-0.3)))), Arr(((V)(0.62)), ((V)(0.3))), Arr(((V)(0.84)), ((V)((-0.2))))), "forEach", Fn((V _arrowThis2300, int _argc2289, V _a2291, V _a2292, V _a2293, V _a2294, V[] _rest2290) => {
+V a_2297 = default;
+V dz_2299 = default;
+{ V _t2295 = ListOf(_a2291);
+{ V _t2296 = GetIdx(_t2295, 0D);
+a_2297 = _t2296; }
+{ V _t2298 = GetIdx(_t2295, 1D);
+dz_2299 = _t2298; }
 }
-return Call(add_2066, V.Undef, a_2127, ((V)("t")), dz_2129, ((V)(2.7)));
+return Call(add_2231, V.Undef, a_2297, ((V)("t")), dz_2299, ((V)(2.7)));
 }, 1, "", true));
-Invoke(Arr(Arr(((V)(0.24)), ((V)(0.1))), Arr(((V)(0.5)), ((V)((-0.2)))), Arr(((V)(0.7)), ((V)(0.25))), Arr(((V)(0.92)), ((V)(0D)))), "forEach", Fn((V _self2045, int _argc2130, V _a2132, V _a2133, V _a2134, V _a2135, V[] _rest2131) => {
-V a_2138 = default;
-V dz_2140 = default;
-{ V _t2136 = ListOf(_a2132);
-{ V _t2137 = GetIdx(_t2136, 0D);
-a_2138 = _t2137; }
-{ V _t2139 = GetIdx(_t2136, 1D);
-dz_2140 = _t2139; }
+Invoke(Arr(Arr(((V)(0.24)), ((V)(0.1))), Arr(((V)(0.5)), ((V)((-0.2)))), Arr(((V)(0.7)), ((V)(0.25))), Arr(((V)(0.92)), ((V)(0D)))), "forEach", Fn((V _arrowThis2312, int _argc2301, V _a2303, V _a2304, V _a2305, V _a2306, V[] _rest2302) => {
+V a_2309 = default;
+V dz_2311 = default;
+{ V _t2307 = ListOf(_a2303);
+{ V _t2308 = GetIdx(_t2307, 0D);
+a_2309 = _t2308; }
+{ V _t2310 = GetIdx(_t2307, 1D);
+dz_2311 = _t2310; }
 }
-return Call(add_2066, V.Undef, a_2138, ((V)("c")), dz_2140, ((V)(2.4)));
+return Call(add_2231, V.Undef, a_2309, ((V)("c")), dz_2311, ((V)(2.4)));
 }, 1, "", true));
-sp_2067 = Invoke(S_2052, "path", NewObj(2).Put("fill", ((V)("#d9952a"))).Put("opacity", ((V)(0.5))).V);
-hl_2068 = Invoke(S_2052, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#fff6cf"))).Put("stroke-width", ((V)(1.2))).Put("opacity", ((V)(0.7))).Put("stroke-linecap", ((V)("round"))).V);
-return NewObj(16).Put("O", O_2054).Put("th", ((V)(th_2055))).Put("Wy", Wy_2057).Put("SG", SG_2062).Put("back", back_2063).Put("FG", FG_2064).Put("F", F_2065).Put("sp", sp_2067).Put("hl", hl_2068).Put("slab", ((V)(1D))).Put("rx", ((V)(38D))).Put("ya", ((V)(44D))).Put("yb", ((V)(86D))).Put("rT", Fn((V _self2045, int _argc2141, V y_2147, V _a2144, V _a2145, V _a2146, V[] _rest2142) => {
-return Call(halfW_38, V.Undef, O_2054, y_2147);
-}, 1, "rT", true)).Put("zAt", Fn((V _self2045, int _argc2148, V x_2154, V y_2155, V _a2152, V _a2153, V[] _rest2149) => {
-return Add(Call(Wy_2057, V.Undef, y_2155), ((V)(th_2055)));
-}, 2, "zAt", true)).Put("zE", Fn((V _self2045, int _argc2156, V dx_2162, V dy_2163, V _a2160, V _a2161, V[] _rest2157) => {
-return Add(Add(Call(Wy_2057, V.Undef, Add(Get(S_2052, "HY"), dy_2163)), ((V)(th_2055))), ((V)(0.3)));
+sp_2232 = Invoke(S_2217, "path", NewObj(2).Put("fill", ((V)("#d9952a"))).Put("opacity", ((V)(0.5))).V);
+hl_2233 = Invoke(S_2217, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#fff6cf"))).Put("stroke-width", ((V)(1.2))).Put("opacity", ((V)(0.7))).Put("stroke-linecap", ((V)("round"))).V);
+return NewObj(16).Put("O", O_2219).Put("th", ((V)(th_2220))).Put("Wy", Wy_2222).Put("SG", SG_2227).Put("back", back_2228).Put("FG", FG_2229).Put("F", F_2230).Put("sp", sp_2232).Put("hl", hl_2233).Put("slab", ((V)(1D))).Put("rx", ((V)(38D))).Put("ya", ((V)(44D))).Put("yb", ((V)(86D))).Put("rT", Fn((V _arrowThis2320, int _argc2313, V y_2319, V _a2316, V _a2317, V _a2318, V[] _rest2314) => {
+return Call(halfW_38, V.Undef, O_2219, y_2319);
+}, 1, "rT", true)).Put("zAt", Fn((V _arrowThis2329, int _argc2321, V x_2327, V y_2328, V _a2325, V _a2326, V[] _rest2322) => {
+return Add(Call(Wy_2222, V.Undef, y_2328), ((V)(th_2220)));
+}, 2, "zAt", true)).Put("zE", Fn((V _arrowThis2338, int _argc2330, V dx_2336, V dy_2337, V _a2334, V _a2335, V[] _rest2331) => {
+return Add(Add(Call(Wy_2222, V.Undef, Add(Get(S_2217, "HY"), dy_2337)), ((V)(th_2220))), ((V)(0.3)));
 }, 2, "zE", true)).V;
 return default;
-}, 1, "setup", false)).Put("draw", Fn((V _self2164, int _argc2165, V B_2171, V D_2172, V _a2169, V _a2170, V[] _rest2166) => {
-V P3_2173 = default;
-V Z3_2174 = default;
-V set_2175 = default;
-V snap_2176 = default;
-double k_2177 = 0;
-V W_2178 = default;
-V th_2179 = default;
-V fr_2180 = default;
-V sh_2181 = default;
-V L_2182 = default;
-double s_2183 = 0;
-V SP_2184 = default;
-V hp_2185 = default;
-if (_self2164.IsNullish) _self2164 = GlobalV;
-{ V _t2186 = D_2172;
-if (_t2186.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t2186));
-{ V _t2187 = Get(_t2186, "P3");
-P3_2173 = _t2187; }
-{ V _t2188 = Get(_t2186, "Z3");
-Z3_2174 = _t2188; }
-{ V _t2189 = Get(_t2186, "set");
-set_2175 = _t2189; } }
-snap_2176 = Call(clamp_12, V.Undef, Invoke(D_2172, "bv", ((V)("snap"))), ((V)((-0.8))), ((V)(1.6)));
-k_2177 = (1D + (ToNum(snap_2176) * 0.6));
-W_2178 = Fn((V _self2164, int _argc2190, V y_2196, V _a2193, V _a2194, V _a2195, V[] _rest2191) => {
-return ((V)((ToNum(Invoke(B_2171, "Wy", y_2196)) * k_2177)));
+}, 1, "setup", false)).Put("draw", Fn((V _self2339, int _argc2340, V B_2346, V D_2347, V _a2344, V _a2345, V[] _rest2341) => {
+V P3_2348 = default;
+V Z3_2349 = default;
+V set_2350 = default;
+V snap_2351 = default;
+double k_2352 = 0;
+V W_2353 = default;
+V th_2354 = default;
+V fr_2355 = default;
+V sh_2356 = default;
+V L_2357 = default;
+double s_2358 = 0;
+V SP_2359 = default;
+V hp_2360 = default;
+if (_self2339.IsNullish) _self2339 = GlobalV;
+{ V _t2361 = D_2347;
+if (_t2361.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t2361));
+{ V _t2362 = Get(_t2361, "P3");
+P3_2348 = _t2362; }
+{ V _t2363 = Get(_t2361, "Z3");
+Z3_2349 = _t2363; }
+{ V _t2364 = Get(_t2361, "set");
+set_2350 = _t2364; } }
+snap_2351 = Call(clamp_12, V.Undef, Invoke(D_2347, "bv", ((V)("snap"))), ((V)((-0.8))), ((V)(1.6)));
+k_2352 = (1D + (ToNum(snap_2351) * 0.6));
+W_2353 = Fn((V _arrowThis2372, int _argc2365, V y_2371, V _a2368, V _a2369, V _a2370, V[] _rest2366) => {
+return ((V)((ToNum(Invoke(B_2346, "Wy", y_2371)) * k_2352)));
 }, 1, "", true);
-th_2179 = Get(B_2171, "th");
-fr_2180 = (GeN(Get(D_2172, "front"), 0D) ? V.True : V.False);
-sh_2181 = Fn((V _self2164, int _argc2197, V sg_2203, V _a2200, V _a2201, V _a2202, V[] _rest2198) => {
-V o_2204 = default;
-o_2204 = Arr();
-Invoke(Get(B_2171, "O"), "forEach", Fn((V _self2164, int _argc2205, V p_2211, V _a2208, V _a2209, V _a2210, V[] _rest2206) => {
-V z_2212 = default;
-z_2212 = Call(W_2178, V.Undef, GetIdx(p_2211, 1D));
-Invoke(o_2204, "push", Call(P3_2173, V.Undef, GetIdx(p_2211, 0D), GetIdx(p_2211, 1D), ((V)((ToNum(sg_2203) * ToNum(z_2212))))));
-Invoke(o_2204, "push", Call(P3_2173, V.Undef, GetIdx(p_2211, 0D), GetIdx(p_2211, 1D), ((V)((ToNum(sg_2203) * ToNum(Add(z_2212, th_2179)))))));
+th_2354 = Get(B_2346, "th");
+fr_2355 = (GeN(Get(D_2347, "front"), 0D) ? V.True : V.False);
+sh_2356 = Fn((V _arrowThis2380, int _argc2373, V sg_2379, V _a2376, V _a2377, V _a2378, V[] _rest2374) => {
+V o_2381 = default;
+o_2381 = Arr();
+Invoke(Get(B_2346, "O"), "forEach", Fn((V _arrowThis2389, int _argc2382, V p_2388, V _a2385, V _a2386, V _a2387, V[] _rest2383) => {
+V z_2390 = default;
+z_2390 = Call(W_2353, V.Undef, GetIdx(p_2388, 1D));
+Invoke(o_2381, "push", Call(P3_2348, V.Undef, GetIdx(p_2388, 0D), GetIdx(p_2388, 1D), ((V)((ToNum(sg_2379) * ToNum(z_2390))))));
+Invoke(o_2381, "push", Call(P3_2348, V.Undef, GetIdx(p_2388, 0D), GetIdx(p_2388, 1D), ((V)((ToNum(sg_2379) * ToNum(Add(z_2390, th_2354)))))));
 return default;
 }, 1, "", true));
-return Invoke(D_2172, "hull", o_2204);
+return Invoke(D_2347, "hull", o_2381);
 return default;
 }, 1, "", true);
-Set(B_2171, "d", Call(sh_2181, V.Undef, ((V)(1D))));
-Call(set_2175, V.Undef, Get(B_2171, "back"), ((V)("d")), Call(sh_2181, V.Undef, ((V)((-1D)))));
-L_2182 = Invoke(Invoke(Get(B_2171, "F"), "map", Fn((V _self2164, int _argc2221, V o_2227, V i_2228, V _a2225, V _a2226, V[] _rest2222) => {
-double a_2229 = 0;
-double @out_2230 = 0;
-double wob_2231 = 0;
-double x_2232 = 0;
-double y_2233 = 0;
-double z_2234 = 0;
-V C_2235 = default;
-double r_2236 = 0;
-a_2229 = (System.Math.PI * (1D - ToNum(Get(o_2227, "a"))));
-@out_2230 = (SEqS(Get(o_2227, "kind"), "l") ? (1.8 + ((ToNum(Get(o_2227, "r")) - 3.3) * 1.4)) : (SEqS(Get(o_2227, "kind"), "m") ? 1.2 : (SEqS(Get(o_2227, "kind"), "t") ? 3.4 : 4.2)));
-wob_2231 = ((FdLibm.Sin(((ToNum(Get(D_2172, "ts")) * 3D) + (ToNum(i_2228) * 1.7))) * 0.4) + ((ToNum(snap_2176) * FdLibm.Sin(ToNum(Add(((V)((ToNum(Get(D_2172, "ts")) * 18D))), i_2228)))) * 0.8));
-x_2232 = ((50D + ((38D + @out_2230) * FdLibm.Cos(a_2229))) + (ToNum(Get(D_2172, "ox")) * 0.15));
-y_2233 = ((86D - (((44D + @out_2230) + wob_2231) * FdLibm.Sin(a_2229))) - (ToNum(Get(D_2172, "oy")) * 0.25));
-z_2234 = ((ToNum(Get(o_2227, "dz")) * ToNum(Call(W_2178, V.Undef, ((V)(y_2233))))) * 1.6);
-C_2235 = Call(P3_2173, V.Undef, ((V)(x_2232)), ((V)(y_2233)), ((V)(z_2234)));
-r_2236 = ((ToNum(Get(o_2227, "r")) * ToNum(Get(D_2172, "kS"))) * ToNum((SEqS(Get(o_2227, "kind"), "l") ? Add(((V)(1D)), Call(clamp_12, V.Undef, ((V)((ToNum(Call(W_2178, V.Undef, ((V)(y_2233)))) / 14D))), ((V)(0D)), ((V)(0.4)))) : ((V)(1D)))));
-if (SEqS(Get(o_2227, "kind"), "c")) {
-V t_2237 = default;
-t_2237 = Arr(((V)(FdLibm.Cos((a_2229 + 1.2)))), ((V)((-FdLibm.Sin((a_2229 + 1.2))))));
-Call(set_2175, V.Undef, Get(o_2227, "e"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(pt_15, V.Undef, Arr(((V)((ToNum(GetIdx(C_2235, 0D)) - (ToNum(GetIdx(t_2237, 0D)) * r_2236)))), ((V)((ToNum(GetIdx(C_2235, 1D)) - (ToNum(GetIdx(t_2237, 1D)) * r_2236))))))).S("L").V(Call(pt_15, V.Undef, Arr(Add(GetIdx(C_2235, 0D), ((V)((ToNum(GetIdx(t_2237, 0D)) * r_2236)))), Add(GetIdx(C_2235, 1D), ((V)((ToNum(GetIdx(t_2237, 1D)) * r_2236))))))).End())));
+Set(B_2346, "d", Call(sh_2356, V.Undef, ((V)(1D))));
+Call(set_2350, V.Undef, Get(B_2346, "back"), ((V)("d")), Call(sh_2356, V.Undef, ((V)((-1D)))));
+L_2357 = Invoke(Invoke(Get(B_2346, "F"), "map", Fn((V _arrowThis2408, int _argc2400, V o_2406, V i_2407, V _a2404, V _a2405, V[] _rest2401) => {
+double a_2409 = 0;
+double @out_2410 = 0;
+double wob_2411 = 0;
+double x_2412 = 0;
+double y_2413 = 0;
+double z_2414 = 0;
+V C_2415 = default;
+double r_2416 = 0;
+a_2409 = (System.Math.PI * (1D - ToNum(Get(o_2406, "a"))));
+@out_2410 = (SEqS(Get(o_2406, "kind"), "l") ? (1.8 + ((ToNum(Get(o_2406, "r")) - 3.3) * 1.4)) : (SEqS(Get(o_2406, "kind"), "m") ? 1.2 : (SEqS(Get(o_2406, "kind"), "t") ? 3.4 : 4.2)));
+wob_2411 = ((FdLibm.Sin(((ToNum(Get(D_2347, "ts")) * 3D) + (ToNum(i_2407) * 1.7))) * 0.4) + ((ToNum(snap_2351) * FdLibm.Sin(ToNum(Add(((V)((ToNum(Get(D_2347, "ts")) * 18D))), i_2407)))) * 0.8));
+x_2412 = ((50D + ((38D + @out_2410) * FdLibm.Cos(a_2409))) + (ToNum(Get(D_2347, "ox")) * 0.15));
+y_2413 = ((86D - (((44D + @out_2410) + wob_2411) * FdLibm.Sin(a_2409))) - (ToNum(Get(D_2347, "oy")) * 0.25));
+z_2414 = ((ToNum(Get(o_2406, "dz")) * ToNum(Call(W_2353, V.Undef, ((V)(y_2413))))) * 1.6);
+C_2415 = Call(P3_2348, V.Undef, ((V)(x_2412)), ((V)(y_2413)), ((V)(z_2414)));
+r_2416 = ((ToNum(Get(o_2406, "r")) * ToNum(Get(D_2347, "kS"))) * ToNum((SEqS(Get(o_2406, "kind"), "l") ? Add(((V)(1D)), Call(clamp_12, V.Undef, ((V)((ToNum(Call(W_2353, V.Undef, ((V)(y_2413)))) / 14D))), ((V)(0D)), ((V)(0.4)))) : ((V)(1D)))));
+if (SEqS(Get(o_2406, "kind"), "c")) {
+V t_2417 = default;
+t_2417 = Arr(((V)(FdLibm.Cos((a_2409 + 1.2)))), ((V)((-FdLibm.Sin((a_2409 + 1.2))))));
+Call(set_2350, V.Undef, Get(o_2406, "e"), ((V)("d")), ((V)(JsStrBuf.Begin().S("M").V(Call(pt_15, V.Undef, Arr(((V)((ToNum(GetIdx(C_2415, 0D)) - (ToNum(GetIdx(t_2417, 0D)) * r_2416)))), ((V)((ToNum(GetIdx(C_2415, 1D)) - (ToNum(GetIdx(t_2417, 1D)) * r_2416))))))).S("L").V(Call(pt_15, V.Undef, Arr(Add(GetIdx(C_2415, 0D), ((V)((ToNum(GetIdx(t_2417, 0D)) * r_2416)))), Add(GetIdx(C_2415, 1D), ((V)((ToNum(GetIdx(t_2417, 1D)) * r_2416))))))).End())));
 } else {
-if (SEqS(Get(o_2227, "kind"), "t")) {
-Call(set_2175, V.Undef, Get(o_2227, "e"), ((V)("d")), Call(ellD_20, V.Undef, C_2235, ((V)(r_2236)), ((V)((r_2236 * 0.9))), ((V)((-a_2229)))));
+if (SEqS(Get(o_2406, "kind"), "t")) {
+Call(set_2350, V.Undef, Get(o_2406, "e"), ((V)("d")), Call(ellD_20, V.Undef, C_2415, ((V)(r_2416)), ((V)((r_2416 * 0.9))), ((V)((-a_2409)))));
 } else {
-Call(set_2175, V.Undef, Get(o_2227, "e"), ((V)("d")), Call(circD_19, V.Undef, C_2235, ((V)(r_2236))));
+Call(set_2350, V.Undef, Get(o_2406, "e"), ((V)("d")), Call(circD_19, V.Undef, C_2415, ((V)(r_2416))));
 }
 }
-return NewObj(3).Put("id", Get(o_2227, "id")).Put("e", Get(o_2227, "e")).Put("z", Call(Z3_2174, V.Undef, ((V)(x_2232)), ((V)(y_2233)), ((V)(z_2234)))).V;
+return NewObj(3).Put("id", Get(o_2406, "id")).Put("e", Get(o_2406, "e")).Put("z", Call(Z3_2349, V.Undef, ((V)(x_2412)), ((V)(y_2413)), ((V)(z_2414)))).V;
 return default;
-}, 2, "", true)), "sort", Fn((V _self2164, int _argc2213, V a_2219, V b_2220, V _a2217, V _a2218, V[] _rest2214) => {
-return ((V)((ToNum(Get(a_2219, "z")) - ToNum(Get(b_2220, "z")))));
+}, 2, "", true)), "sort", Fn((V _arrowThis2399, int _argc2391, V a_2397, V b_2398, V _a2395, V _a2396, V[] _rest2392) => {
+return ((V)((ToNum(Get(a_2397, "z")) - ToNum(Get(b_2398, "z")))));
 }, 2, "", true));
-Invoke(SN_43, "order", Get(B_2171, "FG"), L_2182);
-s_2183 = (Truthy(fr_2180) ? 1D : (-1D));
-SP_2184 = Arr(Arr(((V)(24D)), ((V)(78D))), Arr(((V)(76D)), ((V)(79D))), Arr(((V)(31D)), ((V)(84D))), Arr(((V)(69D)), ((V)(84D))), Arr(((V)(22D)), ((V)(64D))), Arr(((V)(78D)), ((V)(63D))), Arr(((V)(36D)), ((V)(49D))), Arr(((V)(64D)), ((V)(48D))), Arr(((V)(45D)), ((V)(70D))), Arr(((V)(57D)), ((V)(77D))));
-Call(set_2175, V.Undef, Get(B_2171, "sp"), ((V)("d")), Invoke(Invoke(SP_2184, "map", Fn((V _self2164, int _argc2238, V _a2240, V _a2241, V _a2242, V _a2243, V[] _rest2239) => {
-V x_2246 = default;
-V y_2248 = default;
-{ V _t2244 = ListOf(_a2240);
-{ V _t2245 = GetIdx(_t2244, 0D);
-x_2246 = _t2245; }
-{ V _t2247 = GetIdx(_t2244, 1D);
-y_2248 = _t2247; }
+Invoke(SN_43, "order", Get(B_2346, "FG"), L_2357);
+s_2358 = (Truthy(fr_2355) ? 1D : (-1D));
+SP_2359 = Arr(Arr(((V)(24D)), ((V)(78D))), Arr(((V)(76D)), ((V)(79D))), Arr(((V)(31D)), ((V)(84D))), Arr(((V)(69D)), ((V)(84D))), Arr(((V)(22D)), ((V)(64D))), Arr(((V)(78D)), ((V)(63D))), Arr(((V)(36D)), ((V)(49D))), Arr(((V)(64D)), ((V)(48D))), Arr(((V)(45D)), ((V)(70D))), Arr(((V)(57D)), ((V)(77D))));
+Call(set_2350, V.Undef, Get(B_2346, "sp"), ((V)("d")), Invoke(Invoke(SP_2359, "map", Fn((V _arrowThis2429, int _argc2418, V _a2420, V _a2421, V _a2422, V _a2423, V[] _rest2419) => {
+V x_2426 = default;
+V y_2428 = default;
+{ V _t2424 = ListOf(_a2420);
+{ V _t2425 = GetIdx(_t2424, 0D);
+x_2426 = _t2425; }
+{ V _t2427 = GetIdx(_t2424, 1D);
+y_2428 = _t2427; }
 }
-return Call(circD_19, V.Undef, Call(P3_2173, V.Undef, x_2246, y_2248, ((V)((s_2183 * ToNum(Add(Add(Call(W_2178, V.Undef, y_2248), th_2179), ((V)(0.1)))))))), ((V)((0.8 * ToNum(Get(D_2172, "kS"))))));
+return Call(circD_19, V.Undef, Call(P3_2348, V.Undef, x_2426, y_2428, ((V)((s_2358 * ToNum(Add(Add(Call(W_2353, V.Undef, y_2428), th_2354), ((V)(0.1)))))))), ((V)((0.8 * ToNum(Get(D_2347, "kS"))))));
 }, 1, "", true)), "join", ((V)(""))));
-hp_2185 = Arr();
+hp_2360 = Arr();
 {
-double i_2249 = 0;
-i_2249 = 0D;
+double i_2430 = 0;
+i_2430 = 0D;
 while (true) {
-if (!((i_2249 <= 24D))) break;
-double a_2251 = 0;
-double x_2252 = 0;
-double y_2253 = 0;
-a_2251 = ((System.Math.PI * i_2249) / 24D);
-x_2252 = (50D + (33.5 * FdLibm.Cos(a_2251)));
-y_2253 = (86D - (39.5 * FdLibm.Sin(a_2251)));
-Invoke(hp_2185, "push", Call(P3_2173, V.Undef, ((V)(x_2252)), ((V)(y_2253)), ((V)((s_2183 * ToNum(Add(Add(Call(W_2178, V.Undef, ((V)(y_2253))), th_2179), ((V)(0.15)))))))));
-i_2249++;
+if (!((i_2430 <= 24D))) break;
+double a_2432 = 0;
+double x_2433 = 0;
+double y_2434 = 0;
+a_2432 = ((System.Math.PI * i_2430) / 24D);
+x_2433 = (50D + (33.5 * FdLibm.Cos(a_2432)));
+y_2434 = (86D - (39.5 * FdLibm.Sin(a_2432)));
+Invoke(hp_2360, "push", Call(P3_2348, V.Undef, ((V)(x_2433)), ((V)(y_2434)), ((V)((s_2358 * ToNum(Add(Add(Call(W_2353, V.Undef, ((V)(y_2434))), th_2354), ((V)(0.15)))))))));
+i_2430++;
 }
 }
-Call(set_2175, V.Undef, Get(B_2171, "hl"), ((V)("d")), Call(runs_21, V.Undef, hp_2185, Invoke(hp_2185, "map", Fn((V _self2164, int _argc2254, V _a2256, V _a2257, V _a2258, V _a2259, V[] _rest2255) => {
+Call(set_2350, V.Undef, Get(B_2346, "hl"), ((V)("d")), Call(runs_21, V.Undef, hp_2360, Invoke(hp_2360, "map", Fn((V _arrowThis2441, int _argc2435, V _a2437, V _a2438, V _a2439, V _a2440, V[] _rest2436) => {
 return (true ? V.True : V.False);
 }, 0, "", true))));
-Invoke(SN_43, "order", Get(B_2171, "SG"), (Truthy(fr_2180) ? Arr(NewObj(2).Put("id", ((V)("b"))).Put("e", Get(B_2171, "back")).V, NewObj(2).Put("id", ((V)("f"))).Put("e", Get(B_2171, "FG")).V, NewObj(2).Put("id", ((V)("s"))).Put("e", Get(Get(Get(B_2171, "S"), "sk"), "e")).V) : Arr(NewObj(2).Put("id", ((V)("s"))).Put("e", Get(Get(Get(B_2171, "S"), "sk"), "e")).V, NewObj(2).Put("id", ((V)("f"))).Put("e", Get(B_2171, "FG")).V, NewObj(2).Put("id", ((V)("b"))).Put("e", Get(B_2171, "back")).V)));
+Invoke(SN_43, "order", Get(B_2346, "SG"), (Truthy(fr_2355) ? Arr(NewObj(2).Put("id", ((V)("b"))).Put("e", Get(B_2346, "back")).V, NewObj(2).Put("id", ((V)("f"))).Put("e", Get(B_2346, "FG")).V, NewObj(2).Put("id", ((V)("s"))).Put("e", Get(Get(Get(B_2346, "S"), "sk"), "e")).V) : Arr(NewObj(2).Put("id", ((V)("s"))).Put("e", Get(Get(Get(B_2346, "S"), "sk"), "e")).V, NewObj(2).Put("id", ((V)("f"))).Put("e", Get(B_2346, "FG")).V, NewObj(2).Put("id", ((V)("b"))).Put("e", Get(B_2346, "back")).V)));
 return default;
 }, 2, "draw", false)).V);
-Set(MODELS_42, "churro", NewObj(2).Put("setup", Fn((V _self2260, int _argc2261, V S_2267, V _a2264, V _a2265, V _a2266, V[] _rest2262) => {
-V sk_2268 = default;
-V O_2269 = default;
-V rT_2270 = default;
-V ch_2271 = default;
-V CF_2272 = default;
-V sh_2273 = default;
-V gv_2274 = default;
-V cr_2275 = default;
-V sug_2276 = default;
-V dz_2277 = default;
-V dzh_2278 = default;
-V cap_2279 = default;
-V cg_2280 = default;
-V cg2_2281 = default;
-V SU_2282 = default;
-V DR_2283 = default;
-V yd_2284 = default;
-V DZ_2285 = default;
-V pre_2286 = default;
-if (_self2260.IsNullish) _self2260 = GlobalV;
-{ V _t2287 = S_2267;
-if (_t2287.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t2287));
-{ V _t2288 = Get(_t2287, "sk");
-sk_2268 = _t2288; } }
-O_2269 = Invoke(S_2267, "outline", sk_2268, ((V)(64D)));
-rT_2270 = Fn((V _self2260, int _argc2289, V y_2295, V _a2292, V _a2293, V _a2294, V[] _rest2290) => {
-return Call(halfW_38, V.Undef, O_2269, Call(clamp_12, V.Undef, y_2295, ((V)(12.2)), ((V)(86.8))));
+Set(MODELS_42, "churro", NewObj(2).Put("setup", Fn((V _self2442, int _argc2443, V S_2449, V _a2446, V _a2447, V _a2448, V[] _rest2444) => {
+V sk_2450 = default;
+V O_2451 = default;
+V rT_2452 = default;
+V ch_2453 = default;
+V CF_2454 = default;
+V sh_2455 = default;
+V gv_2456 = default;
+V cr_2457 = default;
+V sug_2458 = default;
+V dz_2459 = default;
+V dzh_2460 = default;
+V cap_2461 = default;
+V cg_2462 = default;
+V cg2_2463 = default;
+V SU_2464 = default;
+V DR_2465 = default;
+V yd_2466 = default;
+V DZ_2467 = default;
+V pre_2468 = default;
+if (_self2442.IsNullish) _self2442 = GlobalV;
+{ V _t2469 = S_2449;
+if (_t2469.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t2469));
+{ V _t2470 = Get(_t2469, "sk");
+sk_2450 = _t2470; } }
+O_2451 = Invoke(S_2449, "outline", sk_2450, ((V)(64D)));
+rT_2452 = Fn((V _arrowThis2478, int _argc2471, V y_2477, V _a2474, V _a2475, V _a2476, V[] _rest2472) => {
+return Call(halfW_38, V.Undef, O_2451, Call(clamp_12, V.Undef, y_2477, ((V)(12.2)), ((V)(86.8))));
 }, 1, "", true);
-ch_2271 = GetIdx(Invoke(S_2267, "hide", Fn((V _self2260, int _argc2296, V q_2302, V _a2299, V _a2300, V _a2301, V[] _rest2297) => {
-return (Get(q_2302, "inBody") is var _t2303 && !Truthy(_t2303) ? _t2303 : Invoke(NewRegExp(RX6, "^M29 \\d+ L29 22", ""), "test", Invoke(S_2267, "d", q_2302)));
+ch_2453 = GetIdx(Invoke(S_2449, "hide", Fn((V _arrowThis2486, int _argc2479, V q_2485, V _a2482, V _a2483, V _a2484, V[] _rest2480) => {
+return (Get(q_2485, "inBody") is var _t2487 && !Truthy(_t2487) ? _t2487 : Invoke(NewRegExp(RX6, "^M29 \\d+ L29 22", ""), "test", Invoke(S_2449, "d", q_2485)));
 }, 1, "", true)), 0D);
-CF_2272 = (Truthy(ch_2271) ? Invoke(S_2267, "f", ch_2271) : ((V)("#5e3620")));
-Invoke(S_2267, "hide", Fn((V _self2260, int _argc2304, V q_2310, V _a2307, V _a2308, V _a2309, V[] _rest2305) => {
-return (Get(q_2310, "inBody") is var _t2316 && !Truthy(_t2316) ? _t2316 : (((((Invoke(S_2267, "dk", q_2310, ((V)("dz"))) is var _t2311 && Truthy(_t2311) ? _t2311 : (SEqS(Invoke(S_2267, "s", q_2310), "#9a5420") ? V.True : V.False)) is var _t2312 && Truthy(_t2312) ? _t2312 : (SEqS(Invoke(S_2267, "s", q_2310), "#ffe8c0") ? V.True : V.False)) is var _t2313 && Truthy(_t2313) ? _t2313 : (SEqS(Invoke(S_2267, "s", q_2310), "#b8865e") ? V.True : V.False)) is var _t2314 && Truthy(_t2314) ? _t2314 : (SEqS(Invoke(S_2267, "s", q_2310), "#a87652") ? V.True : V.False)) is var _t2315 && Truthy(_t2315) ? _t2315 : ((SEqS(Get(q_2310, "tag"), "circle") && SEqS(Invoke(S_2267, "f", q_2310), "#ffffff")) ? V.True : V.False)));
+CF_2454 = (Truthy(ch_2453) ? Invoke(S_2449, "f", ch_2453) : ((V)("#5e3620")));
+Invoke(S_2449, "hide", Fn((V _arrowThis2495, int _argc2488, V q_2494, V _a2491, V _a2492, V _a2493, V[] _rest2489) => {
+return (Get(q_2494, "inBody") is var _t2501 && !Truthy(_t2501) ? _t2501 : (((((Invoke(S_2449, "dk", q_2494, ((V)("dz"))) is var _t2496 && Truthy(_t2496) ? _t2496 : (SEqS(Invoke(S_2449, "s", q_2494), "#9a5420") ? V.True : V.False)) is var _t2497 && Truthy(_t2497) ? _t2497 : (SEqS(Invoke(S_2449, "s", q_2494), "#ffe8c0") ? V.True : V.False)) is var _t2498 && Truthy(_t2498) ? _t2498 : (SEqS(Invoke(S_2449, "s", q_2494), "#b8865e") ? V.True : V.False)) is var _t2499 && Truthy(_t2499) ? _t2499 : (SEqS(Invoke(S_2449, "s", q_2494), "#a87652") ? V.True : V.False)) is var _t2500 && Truthy(_t2500) ? _t2500 : ((SEqS(Get(q_2494, "tag"), "circle") && SEqS(Invoke(S_2449, "f", q_2494), "#ffffff")) ? V.True : V.False)));
 }, 1, "", true));
-sh_2273 = Invoke(S_2267, "path", NewObj(1).Put("fill", Invoke(S_2267, "lgrad", ((V)("crsh")), Arr(Arr(((V)(0D)), ((V)("#6a3410")), ((V)(0.38))), Arr(((V)(0.16)), ((V)("#6a3410")), ((V)(0.08))), Arr(((V)(0.32)), ((V)("#fff2d0")), ((V)(0.34))), Arr(((V)(0.48)), ((V)("#fff2d0")), ((V)(0D))), Arr(((V)(0.78)), ((V)("#4a2008")), ((V)(0.06))), Arr(((V)(1D)), ((V)("#4a2008")), ((V)(0.42)))))).V);
-gv_2274 = Invoke(S_2267, "path", NewObj(6).Put("fill", ((V)("none"))).Put("stroke", ((V)("#9a5420"))).Put("stroke-width", ((V)(1.1))).Put("opacity", ((V)(0.55))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V);
-cr_2275 = Invoke(S_2267, "path", NewObj(6).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffe8c0"))).Put("stroke-width", ((V)(0.85))).Put("opacity", ((V)(0.6))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V);
-sug_2276 = Invoke(S_2267, "path", NewObj(2).Put("fill", ((V)("#ffffff"))).Put("opacity", ((V)(0.9))).V);
-dz_2277 = Invoke(S_2267, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#4e2c18"))).Put("stroke-width", ((V)(2.1))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V);
-dzh_2278 = Invoke(S_2267, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#9a6a48"))).Put("stroke-width", ((V)(0.6))).Put("opacity", ((V)(0.8))).Put("stroke-linecap", ((V)("round"))).V);
-cap_2279 = Invoke(S_2267, "path", NewObj(1).Put("fill", CF_2272).V);
-cg_2280 = Invoke(S_2267, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#b8865e"))).Put("stroke-width", ((V)(1.1))).Put("opacity", ((V)(0.7))).Put("stroke-linecap", ((V)("round"))).V);
-cg2_2281 = Invoke(S_2267, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#a87652"))).Put("stroke-width", ((V)(1.2))).Put("opacity", ((V)(0.55))).Put("stroke-linecap", ((V)("round"))).V);
-SU_2282 = Invoke(Array_from(NewObj(1).Put("length", ((V)(30D))).V, Fn((V _self2260, int _argc2328, V __2334, V i_2335, V _a2332, V _a2333, V[] _rest2329) => {
-return Arr(((V)((ToNum(Call(rnd_22, V.Undef, ((V)((ToNum(i_2335) * 3.1))))) * TAU_9))), ((V)((46D + (ToNum(Call(rnd_22, V.Undef, ((V)((ToNum(i_2335) * 7.7))))) * 38D)))));
-}, 2, "", true)), "filter", Fn((V _self2260, int _argc2317, V _a2319, V _a2320, V _a2321, V _a2322, V[] _rest2318) => {
-V f_2325 = default;
-V y_2327 = default;
-{ V _t2323 = ListOf(_a2319);
-{ V _t2324 = GetIdx(_t2323, 0D);
-f_2325 = _t2324; }
-{ V _t2326 = GetIdx(_t2323, 1D);
-y_2327 = _t2326; }
+sh_2455 = Invoke(S_2449, "path", NewObj(1).Put("fill", Invoke(S_2449, "lgrad", ((V)("crsh")), Arr(Arr(((V)(0D)), ((V)("#6a3410")), ((V)(0.38))), Arr(((V)(0.16)), ((V)("#6a3410")), ((V)(0.08))), Arr(((V)(0.32)), ((V)("#fff2d0")), ((V)(0.34))), Arr(((V)(0.48)), ((V)("#fff2d0")), ((V)(0D))), Arr(((V)(0.78)), ((V)("#4a2008")), ((V)(0.06))), Arr(((V)(1D)), ((V)("#4a2008")), ((V)(0.42)))))).V);
+gv_2456 = Invoke(S_2449, "path", NewObj(6).Put("fill", ((V)("none"))).Put("stroke", ((V)("#9a5420"))).Put("stroke-width", ((V)(1.1))).Put("opacity", ((V)(0.55))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V);
+cr_2457 = Invoke(S_2449, "path", NewObj(6).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffe8c0"))).Put("stroke-width", ((V)(0.85))).Put("opacity", ((V)(0.6))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V);
+sug_2458 = Invoke(S_2449, "path", NewObj(2).Put("fill", ((V)("#ffffff"))).Put("opacity", ((V)(0.9))).V);
+dz_2459 = Invoke(S_2449, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#4e2c18"))).Put("stroke-width", ((V)(2.1))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V);
+dzh_2460 = Invoke(S_2449, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#9a6a48"))).Put("stroke-width", ((V)(0.6))).Put("opacity", ((V)(0.8))).Put("stroke-linecap", ((V)("round"))).V);
+cap_2461 = Invoke(S_2449, "path", NewObj(1).Put("fill", CF_2454).V);
+cg_2462 = Invoke(S_2449, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#b8865e"))).Put("stroke-width", ((V)(1.1))).Put("opacity", ((V)(0.7))).Put("stroke-linecap", ((V)("round"))).V);
+cg2_2463 = Invoke(S_2449, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#a87652"))).Put("stroke-width", ((V)(1.2))).Put("opacity", ((V)(0.55))).Put("stroke-linecap", ((V)("round"))).V);
+SU_2464 = Invoke(Array_from(NewObj(1).Put("length", ((V)(30D))).V, Fn((V _arrowThis2522, int _argc2514, V __2520, V i_2521, V _a2518, V _a2519, V[] _rest2515) => {
+return Arr(((V)((ToNum(Call(rnd_22, V.Undef, ((V)((ToNum(i_2521) * 3.1))))) * TAU_9))), ((V)((46D + (ToNum(Call(rnd_22, V.Undef, ((V)((ToNum(i_2521) * 7.7))))) * 38D)))));
+}, 2, "", true)), "filter", Fn((V _arrowThis2513, int _argc2502, V _a2504, V _a2505, V _a2506, V _a2507, V[] _rest2503) => {
+V f_2510 = default;
+V y_2512 = default;
+{ V _t2508 = ListOf(_a2504);
+{ V _t2509 = GetIdx(_t2508, 0D);
+f_2510 = _t2509; }
+{ V _t2511 = GetIdx(_t2508, 1D);
+y_2512 = _t2511; }
 }
-return (!((((System.Math.Abs(FdLibm.Atan2(FdLibm.Sin(ToNum(f_2325)), FdLibm.Cos(ToNum(f_2325)))) < 0.62) && GtN(y_2327, 41D)) && LtN(y_2327, 64D))) ? V.True : V.False);
+return (!((((System.Math.Abs(FdLibm.Atan2(FdLibm.Sin(ToNum(f_2510)), FdLibm.Cos(ToNum(f_2510)))) < 0.62) && GtN(y_2512, 41D)) && LtN(y_2512, 64D))) ? V.True : V.False);
 }, 1, "", true));
-DR_2283 = Arr(Arr(((V)(0D)), ((V)(6.5)), ((V)(0.17))), Arr(((V)(0.5)), ((V)(2.2)), ((V)(0.13))), Arr(((V)((-0.5))), ((V)(2.4)), ((V)(0.13))), Arr(((V)(0.98)), ((V)(9.5)), ((V)(0.15))), Arr(((V)((-0.98))), ((V)(10.5)), ((V)(0.15))), Arr(((V)(1.75)), ((V)(7D)), ((V)(0.16))), Arr(((V)((-1.8))), ((V)(8.5)), ((V)(0.14))), Arr(((V)(2.5)), ((V)(10D)), ((V)(0.15))), Arr(((V)((-2.55))), ((V)(6.5)), ((V)(0.16))), Arr(((V)(3.14)), ((V)(9D)), ((V)(0.17))));
-yd_2284 = Fn((V _self2260, int _argc2336, V f_2342, V _a2339, V _a2340, V _a2341, V[] _rest2337) => {
-double y_2343 = 0;
-y_2343 = (37D + (1.2 * FdLibm.Sin(((5D * ToNum(f_2342)) + 0.7))));
-Invoke(DR_2283, "forEach", Fn((V _self2260, int _argc2344, V _a2346, V _a2347, V _a2348, V _a2349, V[] _rest2345) => {
-double d_2357 = 0;
-V c_2352 = default;
-V L_2354 = default;
-V w_2356 = default;
-{ V _t2350 = ListOf(_a2346);
-{ V _t2351 = GetIdx(_t2350, 0D);
-c_2352 = _t2351; }
-{ V _t2353 = GetIdx(_t2350, 1D);
-L_2354 = _t2353; }
-{ V _t2355 = GetIdx(_t2350, 2D);
-w_2356 = _t2355; }
+DR_2465 = Arr(Arr(((V)(0D)), ((V)(6.5)), ((V)(0.17))), Arr(((V)(0.5)), ((V)(2.2)), ((V)(0.13))), Arr(((V)((-0.5))), ((V)(2.4)), ((V)(0.13))), Arr(((V)(0.98)), ((V)(9.5)), ((V)(0.15))), Arr(((V)((-0.98))), ((V)(10.5)), ((V)(0.15))), Arr(((V)(1.75)), ((V)(7D)), ((V)(0.16))), Arr(((V)((-1.8))), ((V)(8.5)), ((V)(0.14))), Arr(((V)(2.5)), ((V)(10D)), ((V)(0.15))), Arr(((V)((-2.55))), ((V)(6.5)), ((V)(0.16))), Arr(((V)(3.14)), ((V)(9D)), ((V)(0.17))));
+yd_2466 = Fn((V _arrowThis2530, int _argc2523, V f_2529, V _a2526, V _a2527, V _a2528, V[] _rest2524) => {
+double y_2531 = 0;
+y_2531 = (37D + (1.2 * FdLibm.Sin(((5D * ToNum(f_2529)) + 0.7))));
+Invoke(DR_2465, "forEach", Fn((V _arrowThis2545, int _argc2532, V _a2534, V _a2535, V _a2536, V _a2537, V[] _rest2533) => {
+double d_2546 = 0;
+V c_2540 = default;
+V L_2542 = default;
+V w_2544 = default;
+{ V _t2538 = ListOf(_a2534);
+{ V _t2539 = GetIdx(_t2538, 0D);
+c_2540 = _t2539; }
+{ V _t2541 = GetIdx(_t2538, 1D);
+L_2542 = _t2541; }
+{ V _t2543 = GetIdx(_t2538, 2D);
+w_2544 = _t2543; }
 }
-d_2357 = (FdLibm.Atan2(FdLibm.Sin((ToNum(f_2342) - ToNum(c_2352))), FdLibm.Cos((ToNum(f_2342) - ToNum(c_2352)))) / ToNum(w_2356));
-if ((System.Math.Abs(d_2357) < 1D)) {
-y_2343 = Max(y_2343, (37D + (ToNum(L_2354) * System.Math.Sqrt((1D - (d_2357 * d_2357))))));
+d_2546 = (FdLibm.Atan2(FdLibm.Sin((ToNum(f_2529) - ToNum(c_2540))), FdLibm.Cos((ToNum(f_2529) - ToNum(c_2540)))) / ToNum(w_2544));
+if ((System.Math.Abs(d_2546) < 1D)) {
+y_2531 = Max(y_2531, (37D + (ToNum(L_2542) * System.Math.Sqrt((1D - (d_2546 * d_2546))))));
 }
 return default;
 }, 1, "", true));
-return ((V)(y_2343));
-return default;
-}, 1, "", true);
-DZ_2285 = Arr(Arr(((V)(67D)), ((V)(0.4)), ((V)(1.1))), Arr(((V)(75.2)), ((V)(2.3)), ((V)(4D))), Arr(((V)(83D)), ((V)(4.3)), ((V)(2.6))));
-pre_2286 = Fn((V _self2260, int _argc2358, V P_2364, V _a2361, V _a2362, V _a2363, V[] _rest2359) => {
-V c_2365 = default;
-c_2365 = Call(clamp_12, V.Undef, (((V)(ToNum(Get(P_2364, "cork")))) is var _t2366 && Truthy(_t2366) ? _t2366 : ((V)(0D))), ((V)((-1.2))), ((V)(1.2)));
-return (Truthy(c_2365) ? Object_assign(NewObj(0).V, P_2364, NewObj(2).Put("spin", Add((((V)(ToNum(Get(P_2364, "spin")))) is var _t2367 && Truthy(_t2367) ? _t2367 : ((V)(0D))), ((V)((ToNum(c_2365) * 17D))))).Put("hyaw", Add((((V)(ToNum(Get(P_2364, "hyaw")))) is var _t2368 && Truthy(_t2368) ? _t2368 : ((V)(0D))), ((V)((ToNum(c_2365) * 0.2))))).V) : P_2364);
+return ((V)(y_2531));
 return default;
 }, 1, "", true);
-return NewObj(19).Put("O", O_2269).Put("rT", rT_2270).Put("sh", sh_2273).Put("gv", gv_2274).Put("cr", cr_2275).Put("sug", sug_2276).Put("dz", dz_2277).Put("dzh", dzh_2278).Put("cap", cap_2279).Put("cg", cg_2280).Put("cg2", cg2_2281).Put("SU", SU_2282).Put("yd", yd_2284).Put("DZ", DZ_2285).Put("pre", pre_2286).Put("rx", ((V)(21D))).Put("ya", ((V)(22D))).Put("yb", ((V)(82D))).Put("zE", Fn((V _self2260, int _argc2369, V dx_2375, V dy_2376, V _a2373, V _a2374, V[] _rest2370) => {
-V r_2377 = default;
-r_2377 = Call(rT_2270, V.Undef, Add(Get(S_2267, "HY"), dy_2376));
-return ((V)((System.Math.Sqrt(Max(0D, ((ToNum(r_2377) * ToNum(r_2377)) - (ToNum(dx_2375) * ToNum(dx_2375))))) + 0.3)));
+DZ_2467 = Arr(Arr(((V)(67D)), ((V)(0.4)), ((V)(1.1))), Arr(((V)(75.2)), ((V)(2.3)), ((V)(4D))), Arr(((V)(83D)), ((V)(4.3)), ((V)(2.6))));
+pre_2468 = Fn((V _arrowThis2554, int _argc2547, V P_2553, V _a2550, V _a2551, V _a2552, V[] _rest2548) => {
+V c_2555 = default;
+c_2555 = Call(clamp_12, V.Undef, (((V)(ToNum(Get(P_2553, "cork")))) is var _t2556 && Truthy(_t2556) ? _t2556 : ((V)(0D))), ((V)((-1.2))), ((V)(1.2)));
+return (Truthy(c_2555) ? Object_assign(NewObj(0).V, P_2553, NewObj(2).Put("spin", Add((((V)(ToNum(Get(P_2553, "spin")))) is var _t2557 && Truthy(_t2557) ? _t2557 : ((V)(0D))), ((V)((ToNum(c_2555) * 17D))))).Put("hyaw", Add((((V)(ToNum(Get(P_2553, "hyaw")))) is var _t2558 && Truthy(_t2558) ? _t2558 : ((V)(0D))), ((V)((ToNum(c_2555) * 0.2))))).V) : P_2553);
+return default;
+}, 1, "", true);
+return NewObj(19).Put("O", O_2451).Put("rT", rT_2452).Put("sh", sh_2455).Put("gv", gv_2456).Put("cr", cr_2457).Put("sug", sug_2458).Put("dz", dz_2459).Put("dzh", dzh_2460).Put("cap", cap_2461).Put("cg", cg_2462).Put("cg2", cg2_2463).Put("SU", SU_2464).Put("yd", yd_2466).Put("DZ", DZ_2467).Put("pre", pre_2468).Put("rx", ((V)(21D))).Put("ya", ((V)(22D))).Put("yb", ((V)(82D))).Put("zE", Fn((V _arrowThis2567, int _argc2559, V dx_2565, V dy_2566, V _a2563, V _a2564, V[] _rest2560) => {
+V r_2568 = default;
+r_2568 = Call(rT_2452, V.Undef, Add(Get(S_2449, "HY"), dy_2566));
+return ((V)((System.Math.Sqrt(Max(0D, ((ToNum(r_2568) * ToNum(r_2568)) - (ToNum(dx_2565) * ToNum(dx_2565))))) + 0.3)));
 return default;
 }, 2, "zE", true)).V;
 return default;
-}, 1, "setup", false)).Put("draw", Fn((V _self2378, int _argc2379, V B_2385, V D_2386, V _a2383, V _a2384, V[] _rest2380) => {
-V P3_2387 = default;
-V set_2388 = default;
-V rT_2389 = default;
-V cork_2390 = default;
-V P_2391 = default;
-V vis_2392 = default;
-V hp_2393 = default;
-V fz_2394 = default;
-V tw_2395 = default;
-JsStrBuf gd_2396 = null;
-JsStrBuf cd_2397 = null;
-JsStrBuf zd_2398 = null;
-JsStrBuf zh_2399 = null;
-V A_2400 = default;
-if (_self2378.IsNullish) _self2378 = GlobalV;
-{ V _t2401 = D_2386;
-if (_t2401.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t2401));
-{ V _t2402 = Get(_t2401, "P3");
-P3_2387 = _t2402; }
-{ V _t2403 = Get(_t2401, "set");
-set_2388 = _t2403; } }
-rT_2389 = Get(B_2385, "rT");
-cork_2390 = Call(clamp_12, V.Undef, Invoke(D_2386, "bv", ((V)("cork"))), ((V)((-1.2))), ((V)(1.2)));
-P_2391 = Fn((V _self2378, int _argc2404, V f_2410, V y_2411, V k_2412, V _a2409, V[] _rest2405) => {
-double r_2413 = 0;
-r_2413 = (ToNum(Call(rT_2389, V.Undef, y_2411)) * ToNum((k_2412 is var _t2414 && Truthy(_t2414) ? _t2414 : ((V)(1D)))));
-return Call(P3_2387, V.Undef, ((V)((50D + (r_2413 * FdLibm.Sin(ToNum(f_2410)))))), y_2411, ((V)((r_2413 * FdLibm.Cos(ToNum(f_2410))))));
+}, 1, "setup", false)).Put("draw", Fn((V _self2569, int _argc2570, V B_2576, V D_2577, V _a2574, V _a2575, V[] _rest2571) => {
+V P3_2578 = default;
+V set_2579 = default;
+V rT_2580 = default;
+V cork_2581 = default;
+V P_2582 = default;
+V vis_2583 = default;
+V hp_2584 = default;
+V fz_2585 = default;
+V tw_2586 = default;
+JsStrBuf gd_2587 = null;
+JsStrBuf cd_2588 = null;
+JsStrBuf zd_2589 = null;
+JsStrBuf zh_2590 = null;
+V A_2591 = default;
+if (_self2569.IsNullish) _self2569 = GlobalV;
+{ V _t2592 = D_2577;
+if (_t2592.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t2592));
+{ V _t2593 = Get(_t2592, "P3");
+P3_2578 = _t2593; }
+{ V _t2594 = Get(_t2592, "set");
+set_2579 = _t2594; } }
+rT_2580 = Get(B_2576, "rT");
+cork_2581 = Call(clamp_12, V.Undef, Invoke(D_2577, "bv", ((V)("cork"))), ((V)((-1.2))), ((V)(1.2)));
+P_2582 = Fn((V _arrowThis2604, int _argc2595, V f_2601, V y_2602, V k_2603, V _a2600, V[] _rest2596) => {
+double r_2605 = 0;
+r_2605 = (ToNum(Call(rT_2580, V.Undef, y_2602)) * ToNum((k_2603 is var _t2606 && Truthy(_t2606) ? _t2606 : ((V)(1D)))));
+return Call(P3_2578, V.Undef, ((V)((50D + (r_2605 * FdLibm.Sin(ToNum(f_2601)))))), y_2602, ((V)((r_2605 * FdLibm.Cos(ToNum(f_2601))))));
 return default;
 }, 3, "", true);
-vis_2392 = Fn((V _self2378, int _argc2415, V f_2421, V y_2422, V _a2419, V _a2420, V[] _rest2416) => {
-V r_2423 = default;
-r_2423 = Call(rT_2389, V.Undef, y_2422);
-return (GtN(Invoke(D_2386, "facing", ((V)((50D + (ToNum(r_2423) * FdLibm.Sin(ToNum(f_2421)))))), y_2422, ((V)((ToNum(r_2423) * FdLibm.Cos(ToNum(f_2421))))), ((V)(FdLibm.Sin(ToNum(f_2421)))), ((V)(0D)), ((V)(FdLibm.Cos(ToNum(f_2421))))), 0.01) ? V.True : V.False);
+vis_2583 = Fn((V _arrowThis2615, int _argc2607, V f_2613, V y_2614, V _a2611, V _a2612, V[] _rest2608) => {
+V r_2616 = default;
+r_2616 = Call(rT_2580, V.Undef, y_2614);
+return (GtN(Invoke(D_2577, "facing", ((V)((50D + (ToNum(r_2616) * FdLibm.Sin(ToNum(f_2613)))))), y_2614, ((V)((ToNum(r_2616) * FdLibm.Cos(ToNum(f_2613))))), ((V)(FdLibm.Sin(ToNum(f_2613)))), ((V)(0D)), ((V)(FdLibm.Cos(ToNum(f_2613))))), 0.01) ? V.True : V.False);
 return default;
 }, 2, "", true);
-hp_2393 = Arr();
+hp_2584 = Arr();
 {
-double i_2424 = 0;
-i_2424 = 0D;
+double i_2617 = 0;
+i_2617 = 0D;
 while (true) {
-if (!((i_2424 <= 18D))) break;
-double y_2426 = 0;
-y_2426 = (12.2 + ((74.6 * i_2424) / 18D));
+if (!((i_2617 <= 18D))) break;
+double y_2619 = 0;
+y_2619 = (12.2 + ((74.6 * i_2617) / 18D));
 {
-double k_2427 = 0;
-k_2427 = 0D;
+double k_2620 = 0;
+k_2620 = 0D;
 while (true) {
-if (!((k_2427 < 24D))) break;
-Invoke(hp_2393, "push", Call(P_2391, V.Undef, ((V)(((k_2427 / 24D) * TAU_9))), ((V)(y_2426)), ((V)(1.02))));
-k_2427++;
+if (!((k_2620 < 24D))) break;
+Invoke(hp_2584, "push", Call(P_2582, V.Undef, ((V)(((k_2620 / 24D) * TAU_9))), ((V)(y_2619)), ((V)(1.02))));
+k_2620++;
 }
 }
-i_2424++;
+i_2617++;
 }
 }
-Set(B_2385, "d", Invoke(D_2386, "hull", hp_2393));
-Call(set_2388, V.Undef, Get(B_2385, "sh"), ((V)("d")), Get(B_2385, "d"));
-fz_2394 = Fn((V _self2378, int _argc2429, V f_2435, V y_2436, V _a2433, V _a2434, V[] _rest2430) => {
-return ((((System.Math.Abs(FdLibm.Atan2(FdLibm.Sin(ToNum(f_2435)), FdLibm.Cos(ToNum(f_2435)))) < 0.6) && GtN(y_2436, 40D)) && LtN(y_2436, 66D)) ? V.True : V.False);
+Set(B_2576, "d", Invoke(D_2577, "hull", hp_2584));
+Call(set_2579, V.Undef, Get(B_2576, "sh"), ((V)("d")), Get(B_2576, "d"));
+fz_2585 = Fn((V _arrowThis2630, int _argc2622, V f_2628, V y_2629, V _a2626, V _a2627, V[] _rest2623) => {
+return ((((System.Math.Abs(FdLibm.Atan2(FdLibm.Sin(ToNum(f_2628)), FdLibm.Cos(ToNum(f_2628)))) < 0.6) && GtN(y_2629, 40D)) && LtN(y_2629, 66D)) ? V.True : V.False);
 }, 2, "", true);
-tw_2395 = Fn((V _self2378, int _argc2437, V y_2443, V _a2440, V _a2441, V _a2442, V[] _rest2438) => {
-return ((V)((((ToNum(cork_2390) * 0.9) * (51D - ToNum(y_2443))) / 75D)));
+tw_2586 = Fn((V _arrowThis2638, int _argc2631, V y_2637, V _a2634, V _a2635, V _a2636, V[] _rest2632) => {
+return ((V)((((ToNum(cork_2581) * 0.9) * (51D - ToNum(y_2637))) / 75D)));
 }, 1, "", true);
-gd_2396 = new JsStrBuf("");
-cd_2397 = new JsStrBuf("");
+gd_2587 = new JsStrBuf("");
+cd_2588 = new JsStrBuf("");
 {
-double k_2444 = 0;
-k_2444 = 0D;
+double k_2639 = 0;
+k_2639 = 0D;
 while (true) {
-if (!((k_2444 < 8D))) break;
-V G_2446 = default;
-V Go_2447 = default;
-V C_2448 = default;
-V Co_2449 = default;
-G_2446 = Arr();
-Go_2447 = Arr();
-C_2448 = Arr();
-Co_2449 = Arr();
+if (!((k_2639 < 8D))) break;
+V G_2641 = default;
+V Go_2642 = default;
+V C_2643 = default;
+V Co_2644 = default;
+G_2641 = Arr();
+Go_2642 = Arr();
+C_2643 = Arr();
+Co_2644 = Arr();
 {
-double y_2450 = 0;
-y_2450 = 39D;
+double y_2645 = 0;
+y_2645 = 39D;
 while (true) {
-if (!((y_2450 <= 85D))) break;
-V fg_2452 = default;
-V fc_2453 = default;
-fg_2452 = Add(((V)((((k_2444 + 0.5) * TAU_9) / 8D))), Call(tw_2395, V.Undef, ((V)(y_2450))));
-fc_2453 = Add(((V)(((k_2444 * TAU_9) / 8D))), Call(tw_2395, V.Undef, ((V)(y_2450))));
-Invoke(G_2446, "push", Call(P_2391, V.Undef, fg_2452, ((V)(y_2450)), ((V)(0.985))));
-Invoke(Go_2447, "push", (Call(vis_2392, V.Undef, fg_2452, ((V)(y_2450))) is var _t2454 && !Truthy(_t2454) ? _t2454 : (!(Truthy(Call(fz_2394, V.Undef, fg_2452, ((V)(y_2450))))) ? V.True : V.False)));
-Invoke(C_2448, "push", Call(P_2391, V.Undef, fc_2453, ((V)(y_2450)), ((V)(1.01))));
-Invoke(Co_2449, "push", (Call(vis_2392, V.Undef, fc_2453, ((V)(y_2450))) is var _t2455 && !Truthy(_t2455) ? _t2455 : (!(Truthy(Call(fz_2394, V.Undef, fc_2453, ((V)(y_2450))))) ? V.True : V.False)));
-y_2450 = (y_2450 + 2D);
+if (!((y_2645 <= 85D))) break;
+V fg_2647 = default;
+V fc_2648 = default;
+fg_2647 = Add(((V)((((k_2639 + 0.5) * TAU_9) / 8D))), Call(tw_2586, V.Undef, ((V)(y_2645))));
+fc_2648 = Add(((V)(((k_2639 * TAU_9) / 8D))), Call(tw_2586, V.Undef, ((V)(y_2645))));
+Invoke(G_2641, "push", Call(P_2582, V.Undef, fg_2647, ((V)(y_2645)), ((V)(0.985))));
+Invoke(Go_2642, "push", (Call(vis_2583, V.Undef, fg_2647, ((V)(y_2645))) is var _t2649 && !Truthy(_t2649) ? _t2649 : (!(Truthy(Call(fz_2585, V.Undef, fg_2647, ((V)(y_2645))))) ? V.True : V.False)));
+Invoke(C_2643, "push", Call(P_2582, V.Undef, fc_2648, ((V)(y_2645)), ((V)(1.01))));
+Invoke(Co_2644, "push", (Call(vis_2583, V.Undef, fc_2648, ((V)(y_2645))) is var _t2650 && !Truthy(_t2650) ? _t2650 : (!(Truthy(Call(fz_2585, V.Undef, fc_2648, ((V)(y_2645))))) ? V.True : V.False)));
+y_2645 = (y_2645 + 2D);
 }
 }
-gd_2396.V(Call(runs_21, V.Undef, G_2446, Go_2447));
-cd_2397.V(Call(runs_21, V.Undef, C_2448, Co_2449));
-k_2444++;
+gd_2587.V(Call(runs_21, V.Undef, G_2641, Go_2642));
+cd_2588.V(Call(runs_21, V.Undef, C_2643, Co_2644));
+k_2639++;
 }
 }
-Call(set_2388, V.Undef, Get(B_2385, "gv"), ((V)("d")), (((V)(gd_2396.Str)) is var _t2456 && Truthy(_t2456) ? _t2456 : ((V)("M0 0"))));
-Call(set_2388, V.Undef, Get(B_2385, "cr"), ((V)("d")), (((V)(cd_2397.Str)) is var _t2457 && Truthy(_t2457) ? _t2457 : ((V)("M0 0"))));
-Call(set_2388, V.Undef, Get(B_2385, "sug"), ((V)("d")), (Invoke(Invoke(Invoke(Get(B_2385, "SU"), "filter", Fn((V _self2378, int _argc2469, V _a2471, V _a2472, V _a2473, V _a2474, V[] _rest2470) => {
-V f_2477 = default;
-V y_2479 = default;
-{ V _t2475 = ListOf(_a2471);
-{ V _t2476 = GetIdx(_t2475, 0D);
-f_2477 = _t2476; }
-{ V _t2478 = GetIdx(_t2475, 1D);
-y_2479 = _t2478; }
+Call(set_2579, V.Undef, Get(B_2576, "gv"), ((V)("d")), (((V)(gd_2587.Str)) is var _t2651 && Truthy(_t2651) ? _t2651 : ((V)("M0 0"))));
+Call(set_2579, V.Undef, Get(B_2576, "cr"), ((V)("d")), (((V)(cd_2588.Str)) is var _t2652 && Truthy(_t2652) ? _t2652 : ((V)("M0 0"))));
+Call(set_2579, V.Undef, Get(B_2576, "sug"), ((V)("d")), (Invoke(Invoke(Invoke(Get(B_2576, "SU"), "filter", Fn((V _arrowThis2676, int _argc2665, V _a2667, V _a2668, V _a2669, V _a2670, V[] _rest2666) => {
+V f_2673 = default;
+V y_2675 = default;
+{ V _t2671 = ListOf(_a2667);
+{ V _t2672 = GetIdx(_t2671, 0D);
+f_2673 = _t2672; }
+{ V _t2674 = GetIdx(_t2671, 1D);
+y_2675 = _t2674; }
 }
-return Call(vis_2392, V.Undef, Add(f_2477, Call(tw_2395, V.Undef, y_2479)), y_2479);
-}, 1, "", true)), "map", Fn((V _self2378, int _argc2458, V _a2460, V _a2461, V _a2462, V _a2463, V[] _rest2459) => {
-V f_2466 = default;
-V y_2468 = default;
-{ V _t2464 = ListOf(_a2460);
-{ V _t2465 = GetIdx(_t2464, 0D);
-f_2466 = _t2465; }
-{ V _t2467 = GetIdx(_t2464, 1D);
-y_2468 = _t2467; }
+return Call(vis_2583, V.Undef, Add(f_2673, Call(tw_2586, V.Undef, y_2675)), y_2675);
+}, 1, "", true)), "map", Fn((V _arrowThis2664, int _argc2653, V _a2655, V _a2656, V _a2657, V _a2658, V[] _rest2654) => {
+V f_2661 = default;
+V y_2663 = default;
+{ V _t2659 = ListOf(_a2655);
+{ V _t2660 = GetIdx(_t2659, 0D);
+f_2661 = _t2660; }
+{ V _t2662 = GetIdx(_t2659, 1D);
+y_2663 = _t2662; }
 }
-return Call(circD_19, V.Undef, Call(P_2391, V.Undef, Add(f_2466, Call(tw_2395, V.Undef, y_2468)), y_2468, ((V)(1.02))), ((V)((0.5 * ToNum(Get(D_2386, "kS"))))));
-}, 1, "", true)), "join", ((V)(""))) is var _t2480 && Truthy(_t2480) ? _t2480 : ((V)("M0 0"))));
-zd_2398 = new JsStrBuf("");
-zh_2399 = new JsStrBuf("");
-Invoke(Get(B_2385, "DZ"), "forEach", Fn((V _self2378, int _argc2481, V _a2483, V _a2484, V _a2485, V _a2486, V[] _rest2482) => {
-V Q_2494 = default;
-V ok_2495 = default;
-V Qh_2496 = default;
-V okh_2497 = default;
-V yc_2489 = default;
-V p1_2491 = default;
-V p2_2493 = default;
-{ V _t2487 = ListOf(_a2483);
-{ V _t2488 = GetIdx(_t2487, 0D);
-yc_2489 = _t2488; }
-{ V _t2490 = GetIdx(_t2487, 1D);
-p1_2491 = _t2490; }
-{ V _t2492 = GetIdx(_t2487, 2D);
-p2_2493 = _t2492; }
+return Call(circD_19, V.Undef, Call(P_2582, V.Undef, Add(f_2661, Call(tw_2586, V.Undef, y_2663)), y_2663, ((V)(1.02))), ((V)((0.5 * ToNum(Get(D_2577, "kS"))))));
+}, 1, "", true)), "join", ((V)(""))) is var _t2677 && Truthy(_t2677) ? _t2677 : ((V)("M0 0"))));
+zd_2589 = new JsStrBuf("");
+zh_2590 = new JsStrBuf("");
+Invoke(Get(B_2576, "DZ"), "forEach", Fn((V _arrowThis2691, int _argc2678, V _a2680, V _a2681, V _a2682, V _a2683, V[] _rest2679) => {
+V Q_2692 = default;
+V ok_2693 = default;
+V Qh_2694 = default;
+V okh_2695 = default;
+V yc_2686 = default;
+V p1_2688 = default;
+V p2_2690 = default;
+{ V _t2684 = ListOf(_a2680);
+{ V _t2685 = GetIdx(_t2684, 0D);
+yc_2686 = _t2685; }
+{ V _t2687 = GetIdx(_t2684, 1D);
+p1_2688 = _t2687; }
+{ V _t2689 = GetIdx(_t2684, 2D);
+p2_2690 = _t2689; }
 }
-Q_2494 = Arr();
-ok_2495 = Arr();
-Qh_2496 = Arr();
-okh_2497 = Arr();
+Q_2692 = Arr();
+ok_2693 = Arr();
+Qh_2694 = Arr();
+okh_2695 = Arr();
 {
-double k_2498 = 0;
-k_2498 = 0D;
+double k_2696 = 0;
+k_2696 = 0D;
 while (true) {
-if (!((k_2498 <= 96D))) break;
-double f_2500 = 0;
-V y_2501 = default;
-V ff_2502 = default;
-V v_2503 = default;
-f_2500 = ((k_2498 / 96D) * TAU_9);
-y_2501 = Add(Add(yc_2489, ((V)((2.3 * FdLibm.Sin(ToNum(Add(((V)((3D * f_2500))), p1_2491))))))), ((V)((0.5 * FdLibm.Sin(ToNum(Add(((V)((7D * f_2500))), p2_2493)))))));
-ff_2502 = Add(((V)(f_2500)), Call(tw_2395, V.Undef, y_2501));
-v_2503 = Call(vis_2392, V.Undef, ff_2502, y_2501);
-Invoke(Q_2494, "push", Call(P_2391, V.Undef, ff_2502, y_2501, ((V)(1.03))));
-Invoke(ok_2495, "push", v_2503);
-Invoke(Qh_2496, "push", Call(P_2391, V.Undef, ff_2502, ((V)((ToNum(y_2501) - 0.55))), ((V)(1.04))));
-Invoke(okh_2497, "push", (v_2503 is var _t2504 && !Truthy(_t2504) ? _t2504 : ((FdLibm.Cos(ToNum(Add(Add(((V)((f_2500 * 3D))), p1_2491), ((V)(0.6))))) > 0.1) ? V.True : V.False)));
-k_2498++;
+if (!((k_2696 <= 96D))) break;
+double f_2698 = 0;
+V y_2699 = default;
+V ff_2700 = default;
+V v_2701 = default;
+f_2698 = ((k_2696 / 96D) * TAU_9);
+y_2699 = Add(Add(yc_2686, ((V)((2.3 * FdLibm.Sin(ToNum(Add(((V)((3D * f_2698))), p1_2688))))))), ((V)((0.5 * FdLibm.Sin(ToNum(Add(((V)((7D * f_2698))), p2_2690)))))));
+ff_2700 = Add(((V)(f_2698)), Call(tw_2586, V.Undef, y_2699));
+v_2701 = Call(vis_2583, V.Undef, ff_2700, y_2699);
+Invoke(Q_2692, "push", Call(P_2582, V.Undef, ff_2700, y_2699, ((V)(1.03))));
+Invoke(ok_2693, "push", v_2701);
+Invoke(Qh_2694, "push", Call(P_2582, V.Undef, ff_2700, ((V)((ToNum(y_2699) - 0.55))), ((V)(1.04))));
+Invoke(okh_2695, "push", (v_2701 is var _t2702 && !Truthy(_t2702) ? _t2702 : ((FdLibm.Cos(ToNum(Add(Add(((V)((f_2698 * 3D))), p1_2688), ((V)(0.6))))) > 0.1) ? V.True : V.False)));
+k_2696++;
 }
 }
-zd_2398.V(Call(runs_21, V.Undef, Q_2494, ok_2495));
-zh_2399.V(Call(runs_21, V.Undef, Qh_2496, okh_2497));
+zd_2589.V(Call(runs_21, V.Undef, Q_2692, ok_2693));
+zh_2590.V(Call(runs_21, V.Undef, Qh_2694, okh_2695));
 return default;
 }, 1, "", true));
-Call(set_2388, V.Undef, Get(B_2385, "dz"), ((V)("d")), (((V)(zd_2398.Str)) is var _t2505 && Truthy(_t2505) ? _t2505 : ((V)("M0 0"))));
-Call(set_2388, V.Undef, Get(B_2385, "dzh"), ((V)("d")), (((V)(zh_2399.Str)) is var _t2506 && Truthy(_t2506) ? _t2506 : ((V)("M0 0"))));
-A_2400 = Invoke(Get(SN_43, "h"), "frontArc", D_2386, ((V)(21D)), ((V)(40D)), ((V)(160D)));
-if (GtN(Get(A_2400, "length"), 1D)) {
-V t2_2507 = default;
-V yd_2508 = default;
-V Q_2509 = default;
-V fb_2510 = default;
-V fa_2511 = default;
-t2_2507 = Call(tw_2395, V.Undef, ((V)(42D)));
-yd_2508 = Fn((V _self2378, int _argc2512, V f_2518, V _a2515, V _a2516, V _a2517, V[] _rest2513) => {
-return Invoke(B_2385, "yd", ((V)((ToNum(f_2518) - ToNum(t2_2507)))));
+Call(set_2579, V.Undef, Get(B_2576, "dz"), ((V)("d")), (((V)(zd_2589.Str)) is var _t2703 && Truthy(_t2703) ? _t2703 : ((V)("M0 0"))));
+Call(set_2579, V.Undef, Get(B_2576, "dzh"), ((V)("d")), (((V)(zh_2590.Str)) is var _t2704 && Truthy(_t2704) ? _t2704 : ((V)("M0 0"))));
+A_2591 = Invoke(Get(SN_43, "h"), "frontArc", D_2577, ((V)(21D)), ((V)(40D)), ((V)(160D)));
+if (GtN(Get(A_2591, "length"), 1D)) {
+V t2_2705 = default;
+V yd_2706 = default;
+V Q_2707 = default;
+V fb_2708 = default;
+V fa_2709 = default;
+t2_2705 = Call(tw_2586, V.Undef, ((V)(42D)));
+yd_2706 = Fn((V _arrowThis2717, int _argc2710, V f_2716, V _a2713, V _a2714, V _a2715, V[] _rest2711) => {
+return Invoke(B_2576, "yd", ((V)((ToNum(f_2716) - ToNum(t2_2705)))));
 }, 1, "", true);
-Q_2509 = Arr();
-Invoke(A_2400, "forEach", Fn((V _self2378, int _argc2519, V f_2525, V _a2522, V _a2523, V _a2524, V[] _rest2520) => {
-return Invoke(Q_2509, "push", Call(P_2391, V.Undef, f_2525, Call(yd_2508, V.Undef, f_2525), ((V)(1.035))));
+Q_2707 = Arr();
+Invoke(A_2591, "forEach", Fn((V _arrowThis2725, int _argc2718, V f_2724, V _a2721, V _a2722, V _a2723, V[] _rest2719) => {
+return Invoke(Q_2707, "push", Call(P_2582, V.Undef, f_2724, Call(yd_2706, V.Undef, f_2724), ((V)(1.035))));
 }, 1, "", true));
-fb_2510 = GetIdx(A_2400, (ToNum(Get(A_2400, "length")) - 1D));
-fa_2511 = GetIdx(A_2400, 0D);
+fb_2708 = GetIdx(A_2591, (ToNum(Get(A_2591, "length")) - 1D));
+fa_2709 = GetIdx(A_2591, 0D);
 {
-V y_2526 = default;
-y_2526 = Call(yd_2508, V.Undef, fb_2510);
+V y_2726 = default;
+y_2726 = Call(yd_2706, V.Undef, fb_2708);
 while (true) {
-if (!(GeN(y_2526, 13D))) break;
-Invoke(Q_2509, "push", Call(P_2391, V.Undef, fb_2510, y_2526, ((V)(1.035))));
-y_2526 = ((V)((ToNum(y_2526) - 2.5)));
+if (!(GeN(y_2726, 13D))) break;
+Invoke(Q_2707, "push", Call(P_2582, V.Undef, fb_2708, y_2726, ((V)(1.035))));
+y_2726 = ((V)((ToNum(y_2726) - 2.5)));
 }
 }
 {
-double i_2528 = 0;
-i_2528 = (ToNum(Get(A_2400, "length")) - 1D);
+double i_2728 = 0;
+i_2728 = (ToNum(Get(A_2591, "length")) - 1D);
 while (true) {
-if (!((i_2528 >= 0D))) break;
-Invoke(Q_2509, "push", Call(P_2391, V.Undef, GetIdx(A_2400, i_2528), ((V)(12.4)), ((V)(1.035))));
-i_2528 = (i_2528 - 4D);
+if (!((i_2728 >= 0D))) break;
+Invoke(Q_2707, "push", Call(P_2582, V.Undef, GetIdx(A_2591, i_2728), ((V)(12.4)), ((V)(1.035))));
+i_2728 = (i_2728 - 4D);
 }
 }
-Invoke(Q_2509, "push", Call(P_2391, V.Undef, GetIdx(A_2400, 0D), ((V)(12.4)), ((V)(1.035))));
+Invoke(Q_2707, "push", Call(P_2582, V.Undef, GetIdx(A_2591, 0D), ((V)(12.4)), ((V)(1.035))));
 {
-double y_2530 = 0;
-y_2530 = 13D;
+double y_2730 = 0;
+y_2730 = 13D;
 while (true) {
-if (!(Le(((V)(y_2530)), Call(yd_2508, V.Undef, fa_2511)))) break;
-Invoke(Q_2509, "push", Call(P_2391, V.Undef, fa_2511, ((V)(y_2530)), ((V)(1.035))));
-y_2530 = (y_2530 + 2.5);
+if (!(Le(((V)(y_2730)), Call(yd_2706, V.Undef, fa_2709)))) break;
+Invoke(Q_2707, "push", Call(P_2582, V.Undef, fa_2709, ((V)(y_2730)), ((V)(1.035))));
+y_2730 = (y_2730 + 2.5);
 }
 }
-Call(set_2388, V.Undef, Get(B_2385, "cap"), ((V)("d")), Call(polyW_18, V.Undef, Q_2509));
-Call(set_2388, V.Undef, Get(B_2385, "cg"), ((V)("d")), Call(runs_21, V.Undef, Invoke(A_2400, "map", Fn((V _self2378, int _argc2532, V f_2538, V _a2535, V _a2536, V _a2537, V[] _rest2533) => {
-return Call(P_2391, V.Undef, f_2538, ((V)(17D)), ((V)(1.04)));
-}, 1, "", true)), Invoke(A_2400, "map", Fn((V _self2378, int _argc2539, V f_2545, V _a2542, V _a2543, V _a2544, V[] _rest2540) => {
-return ((FdLibm.Cos(ToNum(Add(f_2545, Get(D_2386, "yh")))) > 0.35) ? V.True : V.False);
+Call(set_2579, V.Undef, Get(B_2576, "cap"), ((V)("d")), Call(polyW_18, V.Undef, Q_2707));
+Call(set_2579, V.Undef, Get(B_2576, "cg"), ((V)("d")), Call(runs_21, V.Undef, Invoke(A_2591, "map", Fn((V _arrowThis2739, int _argc2732, V f_2738, V _a2735, V _a2736, V _a2737, V[] _rest2733) => {
+return Call(P_2582, V.Undef, f_2738, ((V)(17D)), ((V)(1.04)));
+}, 1, "", true)), Invoke(A_2591, "map", Fn((V _arrowThis2747, int _argc2740, V f_2746, V _a2743, V _a2744, V _a2745, V[] _rest2741) => {
+return ((FdLibm.Cos(ToNum(Add(f_2746, Get(D_2577, "yh")))) > 0.35) ? V.True : V.False);
 }, 1, "", true))));
-Call(set_2388, V.Undef, Get(B_2385, "cg2"), ((V)("d")), Call(runs_21, V.Undef, Invoke(A_2400, "map", Fn((V _self2378, int _argc2546, V f_2552, V _a2549, V _a2550, V _a2551, V[] _rest2547) => {
-return Call(P_2391, V.Undef, f_2552, ((V)((22D + (ToNum(Add(Add(f_2552, Get(D_2386, "yh")), ((V)(0.9)))) * 8D)))), ((V)(1.045)));
-}, 1, "", true)), Invoke(A_2400, "map", Fn((V _self2378, int _argc2553, V f_2559, V _a2556, V _a2557, V _a2558, V[] _rest2554) => {
-return ((System.Math.Abs(ToNum(Add(Add(f_2559, Get(D_2386, "yh")), ((V)(0.85))))) < 0.16) ? V.True : V.False);
+Call(set_2579, V.Undef, Get(B_2576, "cg2"), ((V)("d")), Call(runs_21, V.Undef, Invoke(A_2591, "map", Fn((V _arrowThis2755, int _argc2748, V f_2754, V _a2751, V _a2752, V _a2753, V[] _rest2749) => {
+return Call(P_2582, V.Undef, f_2754, ((V)((22D + (ToNum(Add(Add(f_2754, Get(D_2577, "yh")), ((V)(0.9)))) * 8D)))), ((V)(1.045)));
+}, 1, "", true)), Invoke(A_2591, "map", Fn((V _arrowThis2763, int _argc2756, V f_2762, V _a2759, V _a2760, V _a2761, V[] _rest2757) => {
+return ((System.Math.Abs(ToNum(Add(Add(f_2762, Get(D_2577, "yh")), ((V)(0.85))))) < 0.16) ? V.True : V.False);
 }, 1, "", true))));
 }
 return default;
 }, 2, "draw", false)).V);
-tiltW_49 = Fn((V _self1, int _argc2560, V D_2566, V al_2567, V yc_2568, V zc_2569, V[] _rest2561) => {
-double ca_2570 = 0;
-double sa_2571 = 0;
-V HX_2572 = default;
-V cyh_2573 = default;
-V syh_2574 = default;
-V R_2575 = default;
-ca_2570 = FdLibm.Cos(ToNum(al_2567));
-sa_2571 = FdLibm.Sin(ToNum(al_2567));
-HX_2572 = Get(D_2566, "HX");
-cyh_2573 = Get(D_2566, "cyh");
-syh_2574 = Get(D_2566, "syh");
-R_2575 = Fn((V _self1, int _argc2576, V x_2582, V y_2583, V z_2584, V _a2581, V[] _rest2577) => {
-V cs_2585 = default;
-double dx_2586 = 0;
-double x1_2587 = 0;
-double z1_2588 = 0;
-double u_2589 = 0;
-double w_2590 = 0;
-cs_2585 = (Truthy(Get(D_2566, "yawH")) ? Invoke(D_2566, "yawH", y_2583) : Arr(cyh_2573, syh_2574));
-dx_2586 = (ToNum(x_2582) - ToNum(HX_2572));
-x1_2587 = ((dx_2586 * ToNum(GetIdx(cs_2585, 0D))) + (ToNum(z_2584) * ToNum(GetIdx(cs_2585, 1D))));
-z1_2588 = (((-dx_2586) * ToNum(GetIdx(cs_2585, 1D))) + (ToNum(z_2584) * ToNum(GetIdx(cs_2585, 0D))));
-u_2589 = (ToNum(y_2583) - ToNum(yc_2568));
-w_2590 = (z1_2588 - ToNum(zc_2569));
-return Arr(Add(HX_2572, ((V)(x1_2587))), Add(Add(yc_2568, ((V)((u_2589 * ca_2570)))), ((V)((w_2590 * sa_2571)))), ((V)(((ToNum(zc_2569) - (u_2589 * sa_2571)) + (w_2590 * ca_2570)))));
+tiltW_49 = Fn((V _arrowThis2774, int _argc2764, V D_2770, V al_2771, V yc_2772, V zc_2773, V[] _rest2765) => {
+double ca_2775 = 0;
+double sa_2776 = 0;
+V HX_2777 = default;
+V cyh_2778 = default;
+V syh_2779 = default;
+V R_2780 = default;
+ca_2775 = FdLibm.Cos(ToNum(al_2771));
+sa_2776 = FdLibm.Sin(ToNum(al_2771));
+HX_2777 = Get(D_2770, "HX");
+cyh_2778 = Get(D_2770, "cyh");
+syh_2779 = Get(D_2770, "syh");
+R_2780 = Fn((V _arrowThis2790, int _argc2781, V x_2787, V y_2788, V z_2789, V _a2786, V[] _rest2782) => {
+V cs_2791 = default;
+double dx_2792 = 0;
+double x1_2793 = 0;
+double z1_2794 = 0;
+double u_2795 = 0;
+double w_2796 = 0;
+cs_2791 = (Truthy(Get(D_2770, "yawH")) ? Invoke(D_2770, "yawH", y_2788) : Arr(cyh_2778, syh_2779));
+dx_2792 = (ToNum(x_2787) - ToNum(HX_2777));
+x1_2793 = ((dx_2792 * ToNum(GetIdx(cs_2791, 0D))) + (ToNum(z_2789) * ToNum(GetIdx(cs_2791, 1D))));
+z1_2794 = (((-dx_2792) * ToNum(GetIdx(cs_2791, 1D))) + (ToNum(z_2789) * ToNum(GetIdx(cs_2791, 0D))));
+u_2795 = (ToNum(y_2788) - ToNum(yc_2772));
+w_2796 = (z1_2794 - ToNum(zc_2773));
+return Arr(Add(HX_2777, ((V)(x1_2793))), Add(Add(yc_2772, ((V)((u_2795 * ca_2775)))), ((V)((w_2796 * sa_2776)))), ((V)(((ToNum(zc_2773) - (u_2795 * sa_2776)) + (w_2796 * ca_2775)))));
 return default;
 }, 3, "", true);
-return NewObj(3).Put("P", Fn((V _self1, int _argc2591, V x_2597, V y_2598, V z_2599, V _a2596, V[] _rest2592) => {
-V r_2600 = default;
-r_2600 = Call(R_2575, V.Undef, x_2597, y_2598, z_2599);
-return Invoke(D_2566, "headT", GetIdx(r_2600, 0D), GetIdx(r_2600, 1D));
+return NewObj(3).Put("P", Fn((V _arrowThis2806, int _argc2797, V x_2803, V y_2804, V z_2805, V _a2802, V[] _rest2798) => {
+V r_2807 = default;
+r_2807 = Call(R_2780, V.Undef, x_2803, y_2804, z_2805);
+return Invoke(D_2770, "headT", GetIdx(r_2807, 0D), GetIdx(r_2807, 1D));
 return default;
-}, 3, "P", true)).Put("Z", Fn((V _self1, int _argc2601, V x_2607, V y_2608, V z_2609, V _a2606, V[] _rest2602) => {
-return GetIdx(Call(R_2575, V.Undef, x_2607, y_2608, z_2609), 2D);
-}, 3, "Z", true)).Put("F", Fn((V _self1, int _argc2610, V x_2616, V y_2617, V z_2618, V nx_2619, V[] _rest2611) => {
-V ny_2620 = default;
-V nz_2621 = default;
-ny_2620 = (_argc2610 > 4 ? _rest2611[0] : V.Undef);
-nz_2621 = (_argc2610 > 5 ? _rest2611[1] : V.Undef);
-return ((V)((ToNum(GetIdx(Call(R_2575, V.Undef, Add(x_2616, nx_2619), Add(y_2617, ny_2620), Add(z_2618, nz_2621)), 2D)) - ToNum(GetIdx(Call(R_2575, V.Undef, x_2616, y_2617, z_2618), 2D)))));
+}, 3, "P", true)).Put("Z", Fn((V _arrowThis2817, int _argc2808, V x_2814, V y_2815, V z_2816, V _a2813, V[] _rest2809) => {
+return GetIdx(Call(R_2780, V.Undef, x_2814, y_2815, z_2816), 2D);
+}, 3, "Z", true)).Put("F", Fn((V _arrowThis2830, int _argc2818, V x_2824, V y_2825, V z_2826, V nx_2827, V[] _rest2819) => {
+V ny_2828 = default;
+V nz_2829 = default;
+ny_2828 = (_argc2818 > 4 ? _rest2819[0] : V.Undef);
+nz_2829 = (_argc2818 > 5 ? _rest2819[1] : V.Undef);
+return ((V)((ToNum(GetIdx(Call(R_2780, V.Undef, Add(x_2824, nx_2827), Add(y_2825, ny_2828), Add(z_2826, nz_2829)), 2D)) - ToNum(GetIdx(Call(R_2780, V.Undef, x_2824, y_2825, z_2826), 2D)))));
 }, 6, "F", true)).V;
 return default;
 }, 4, "", true);
 Set(Get(SN_43, "h"), "tiltW", tiltW_49);
-Set(MODELS_42, "frankie", NewObj(2).Put("setup", Fn((V _self2622, int _argc2623, V S_2629, V _a2626, V _a2627, V _a2628, V[] _rest2624) => {
-V sk_2630 = default;
-double T_2631 = 0;
-double b_2632 = 0;
-V rr_2633 = default;
-V O_2634 = default;
-V OF_2635 = default;
-V rings_2636 = default;
-V ringsF_2637 = default;
-V zF_2638 = default;
-V sau_2639 = default;
-V bi_2640 = default;
-V zz_2641 = default;
-V SG_2642 = default;
-V topY_2643 = default;
-V OFi_2644 = default;
-V back_2645 = default;
-V inB_2646 = default;
-V sg_2647 = default;
-V sp_2648 = default;
-V sh_2649 = default;
-V kc_2650 = default;
-V ms_2651 = default;
-V lip_2652 = default;
-V shn_2653 = default;
-if (_self2622.IsNullish) _self2622 = GlobalV;
-{ V _t2654 = S_2629;
-if (_t2654.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t2654));
-{ V _t2655 = Get(_t2654, "sk");
-sk_2630 = _t2655; } }
-T_2631 = 11D;
-b_2632 = 9.5;
-rr_2633 = Fn((V _self2622, int _argc2656, V y0_2662, V n_2663, V _a2660, V _a2661, V[] _rest2657) => {
-V Q_2664 = default;
-Q_2664 = Arr();
+Set(MODELS_42, "frankie", NewObj(2).Put("setup", Fn((V _self2831, int _argc2832, V S_2838, V _a2835, V _a2836, V _a2837, V[] _rest2833) => {
+V sk_2839 = default;
+double T_2840 = 0;
+double b_2841 = 0;
+V rr_2842 = default;
+V O_2843 = default;
+V OF_2844 = default;
+V rings_2845 = default;
+V ringsF_2846 = default;
+V zF_2847 = default;
+V sau_2848 = default;
+V bi_2849 = default;
+V zz_2850 = default;
+V SG_2851 = default;
+V topY_2852 = default;
+V OFi_2853 = default;
+V back_2854 = default;
+V inB_2855 = default;
+V sg_2856 = default;
+V sp_2857 = default;
+V sh_2858 = default;
+V kc_2859 = default;
+V ms_2860 = default;
+V lip_2861 = default;
+V shn_2862 = default;
+if (_self2831.IsNullish) _self2831 = GlobalV;
+{ V _t2863 = S_2838;
+if (_t2863.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t2863));
+{ V _t2864 = Get(_t2863, "sk");
+sk_2839 = _t2864; } }
+T_2840 = 11D;
+b_2841 = 9.5;
+rr_2842 = Fn((V _arrowThis2873, int _argc2865, V y0_2871, V n_2872, V _a2869, V _a2870, V[] _rest2866) => {
+V Q_2874 = default;
+Q_2874 = Arr();
 {
-double k_2665 = 0;
-k_2665 = 0D;
+double k_2875 = 0;
+k_2875 = 0D;
 while (true) {
-if (!((k_2665 < 72D))) break;
-double f_2667 = 0;
-double c_2668 = 0;
-double s_2669 = 0;
-double ax_2670 = 0;
-double ay_2671 = 0;
-f_2667 = ((k_2665 / 72D) * TAU_9);
-c_2668 = FdLibm.Cos(f_2667);
-s_2669 = FdLibm.Sin(f_2667);
-ax_2670 = 42D;
-ay_2671 = ((88D - ToNum(y0_2662)) / 2D);
-Invoke(Q_2664, "push", Arr(((V)((50D + ((ax_2670 * Sign(c_2668)) * Pow(System.Math.Abs(c_2668), (2D / ToNum(n_2663))))))), ((V)(((ToNum(Add(((V)(88D)), y0_2662)) / 2D) + ((ay_2671 * Sign(s_2669)) * Pow(System.Math.Abs(s_2669), (2D / ToNum(n_2663)))))))));
-k_2665++;
+if (!((k_2875 < 72D))) break;
+double f_2877 = 0;
+double c_2878 = 0;
+double s_2879 = 0;
+double ax_2880 = 0;
+double ay_2881 = 0;
+f_2877 = ((k_2875 / 72D) * TAU_9);
+c_2878 = FdLibm.Cos(f_2877);
+s_2879 = FdLibm.Sin(f_2877);
+ax_2880 = 42D;
+ay_2881 = ((88D - ToNum(y0_2871)) / 2D);
+Invoke(Q_2874, "push", Arr(((V)((50D + ((ax_2880 * Sign(c_2878)) * Pow(System.Math.Abs(c_2878), (2D / ToNum(n_2872))))))), ((V)(((ToNum(Add(((V)(88D)), y0_2871)) / 2D) + ((ay_2881 * Sign(s_2879)) * Pow(System.Math.Abs(s_2879), (2D / ToNum(n_2872)))))))));
+k_2875++;
 }
 }
-return Q_2664;
+return Q_2874;
 return default;
 }, 2, "", true);
-O_2634 = Call(rr_2633, V.Undef, ((V)(53D)), ((V)(2.8)));
-OF_2635 = Call(rr_2633, V.Undef, ((V)(43D)), ((V)(2.8)));
-rings_2636 = Call(pillowRings_40, V.Undef, O_2634, ((V)(T_2631)), ((V)(b_2632)), ((V)(5D)));
-ringsF_2637 = Call(pillowRings_40, V.Undef, OF_2635, ((V)(T_2631)), ((V)(b_2632)), ((V)(5D)));
-zF_2638 = Call(pillowZ_41, V.Undef, O_2634, ((V)(T_2631)), ((V)(b_2632)));
-sau_2639 = GetIdx(Invoke(S_2629, "hide", Fn((V _self2622, int _argc2672, V q_2678, V _a2675, V _a2676, V _a2677, V[] _rest2673) => {
-return (Get(q_2678, "inBody") is var _t2679 && !Truthy(_t2679) ? _t2679 : Invoke(NewRegExp(RX7, "^M14 41", ""), "test", Invoke(S_2629, "d", q_2678)));
+O_2843 = Call(rr_2842, V.Undef, ((V)(53D)), ((V)(2.8)));
+OF_2844 = Call(rr_2842, V.Undef, ((V)(43D)), ((V)(2.8)));
+rings_2845 = Call(pillowRings_40, V.Undef, O_2843, ((V)(T_2840)), ((V)(b_2841)), ((V)(5D)));
+ringsF_2846 = Call(pillowRings_40, V.Undef, OF_2844, ((V)(T_2840)), ((V)(b_2841)), ((V)(5D)));
+zF_2847 = Call(pillowZ_41, V.Undef, O_2843, ((V)(T_2840)), ((V)(b_2841)));
+sau_2848 = GetIdx(Invoke(S_2838, "hide", Fn((V _arrowThis2889, int _argc2882, V q_2888, V _a2885, V _a2886, V _a2887, V[] _rest2883) => {
+return (Get(q_2888, "inBody") is var _t2890 && !Truthy(_t2890) ? _t2890 : Invoke(NewRegExp(RX7, "^M14 41", ""), "test", Invoke(S_2838, "d", q_2888)));
 }, 1, "", true)), 0D);
-bi_2640 = GetIdx(Invoke(S_2629, "hide", Fn((V _self2622, int _argc2680, V q_2686, V _a2683, V _a2684, V _a2685, V[] _rest2681) => {
-return (Get(q_2686, "inBody") is var _t2687 && !Truthy(_t2687) ? _t2687 : Invoke(NewRegExp(RX8, "^M13 43", ""), "test", Invoke(S_2629, "d", q_2686)));
+bi_2849 = GetIdx(Invoke(S_2838, "hide", Fn((V _arrowThis2898, int _argc2891, V q_2897, V _a2894, V _a2895, V _a2896, V[] _rest2892) => {
+return (Get(q_2897, "inBody") is var _t2899 && !Truthy(_t2899) ? _t2899 : Invoke(NewRegExp(RX8, "^M13 43", ""), "test", Invoke(S_2838, "d", q_2897)));
 }, 1, "", true)), 0D);
-Invoke(S_2629, "hide", Fn((V _self2622, int _argc2688, V q_2694, V _a2691, V _a2692, V _a2693, V[] _rest2689) => {
-return (Get(q_2694, "inBody") is var _t2696 && !Truthy(_t2696) ? _t2696 : (Invoke(NewRegExp(RX9, "^M9 50 Q9 31|^M14 43\\.6|^M16 46 L20|^M16 56", ""), "test", Invoke(S_2629, "d", q_2694)) is var _t2695 && Truthy(_t2695) ? _t2695 : (SEqS(Invoke(S_2629, "s", q_2694), "#e8402e") ? V.True : V.False)));
+Invoke(S_2838, "hide", Fn((V _arrowThis2907, int _argc2900, V q_2906, V _a2903, V _a2904, V _a2905, V[] _rest2901) => {
+return (Get(q_2906, "inBody") is var _t2909 && !Truthy(_t2909) ? _t2909 : (Invoke(NewRegExp(RX9, "^M9 50 Q9 31|^M14 43\\.6|^M16 46 L20|^M16 56", ""), "test", Invoke(S_2838, "d", q_2906)) is var _t2908 && Truthy(_t2908) ? _t2908 : (SEqS(Invoke(S_2838, "s", q_2906), "#e8402e") ? V.True : V.False)));
 }, 1, "", true));
-Invoke(Get(sk_2630, "e"), "setAttribute", ((V)("fill")), Invoke(S_2629, "lgrad", ((V)("fkb")), Arr(Arr(((V)(0D)), ((V)("#c9782f"))), Arr(((V)(0.16)), ((V)("#d98f42"))), Arr(((V)(0.42)), ((V)("#eeb265"))), Arr(((V)(0.78)), ((V)("#f6cf92"))), Arr(((V)(1D)), ((V)("#eebd7c")))), NewObj(2).Put("x2", ((V)(0D))).Put("y2", ((V)(1D))).V));
-zz_2641 = Fn((V _self2622, int _argc2697, V y_2703, V _a2700, V _a2701, V _a2702, V[] _rest2698) => {
-return Call(SM_13, V.Undef, ((V)(((88D - ToNum(y_2703)) / 26D))));
+Invoke(Get(sk_2839, "e"), "setAttribute", ((V)("fill")), Invoke(S_2838, "lgrad", ((V)("fkb")), Arr(Arr(((V)(0D)), ((V)("#c9782f"))), Arr(((V)(0.16)), ((V)("#d98f42"))), Arr(((V)(0.42)), ((V)("#eeb265"))), Arr(((V)(0.78)), ((V)("#f6cf92"))), Arr(((V)(1D)), ((V)("#eebd7c")))), NewObj(2).Put("x2", ((V)(0D))).Put("y2", ((V)(1D))).V));
+zz_2850 = Fn((V _arrowThis2917, int _argc2910, V y_2916, V _a2913, V _a2914, V _a2915, V[] _rest2911) => {
+return Call(SM_13, V.Undef, ((V)(((88D - ToNum(y_2916)) / 26D))));
 }, 1, "", true);
-SG_2642 = Invoke(S_2629, "g", Get(S_2629, "par"), Get(sk_2630, "e"));
-Invoke(SG_2642, "appendChild", Get(sk_2630, "e"));
-topY_2643 = Fn((V _self2622, int _argc2704, V x_2710, V _a2707, V _a2708, V _a2709, V[] _rest2705) => {
-V m_2711 = default;
-m_2711 = ((V)(1000000000D));
+SG_2851 = Invoke(S_2838, "g", Get(S_2838, "par"), Get(sk_2839, "e"));
+Invoke(SG_2851, "appendChild", Get(sk_2839, "e"));
+topY_2852 = Fn((V _arrowThis2925, int _argc2918, V x_2924, V _a2921, V _a2922, V _a2923, V[] _rest2919) => {
+V m_2926 = default;
+m_2926 = ((V)(1000000000D));
 {
-double i_2712 = 0;
-i_2712 = 0D;
+double i_2927 = 0;
+i_2927 = 0D;
 while (true) {
-if (!(Lt(((V)(i_2712)), Get(O_2634, "length")))) break;
-V a_2714 = default;
-V c_2715 = default;
-a_2714 = GetIdx(O_2634, i_2712);
-c_2715 = GetIdx(O_2634, ((i_2712 + 1D) % ToNum(Get(O_2634, "length"))));
-if (((((ToNum(GetIdx(a_2714, 0D)) - ToNum(x_2710)) * (ToNum(GetIdx(c_2715, 0D)) - ToNum(x_2710))) <= 0D) && !SEq(GetIdx(a_2714, 0D), GetIdx(c_2715, 0D)))) {
-V y_2716 = default;
-y_2716 = Add(GetIdx(a_2714, 1D), ((V)((((ToNum(GetIdx(c_2715, 1D)) - ToNum(GetIdx(a_2714, 1D))) * (ToNum(x_2710) - ToNum(GetIdx(a_2714, 0D)))) / (ToNum(GetIdx(c_2715, 0D)) - ToNum(GetIdx(a_2714, 0D)))))));
-if (Lt(y_2716, m_2711)) {
-m_2711 = y_2716;
+if (!(Lt(((V)(i_2927)), Get(O_2843, "length")))) break;
+V a_2929 = default;
+V c_2930 = default;
+a_2929 = GetIdx(O_2843, i_2927);
+c_2930 = GetIdx(O_2843, ((i_2927 + 1D) % ToNum(Get(O_2843, "length"))));
+if (((((ToNum(GetIdx(a_2929, 0D)) - ToNum(x_2924)) * (ToNum(GetIdx(c_2930, 0D)) - ToNum(x_2924))) <= 0D) && !SEq(GetIdx(a_2929, 0D), GetIdx(c_2930, 0D)))) {
+V y_2931 = default;
+y_2931 = Add(GetIdx(a_2929, 1D), ((V)((((ToNum(GetIdx(c_2930, 1D)) - ToNum(GetIdx(a_2929, 1D))) * (ToNum(x_2924) - ToNum(GetIdx(a_2929, 0D)))) / (ToNum(GetIdx(c_2930, 0D)) - ToNum(GetIdx(a_2929, 0D)))))));
+if (Lt(y_2931, m_2926)) {
+m_2926 = y_2931;
 }
 }
-i_2712++;
+i_2927++;
 }
 }
-return m_2711;
+return m_2926;
 return default;
 }, 1, "", true);
-OFi_2644 = Invoke(Call(offset_39, V.Undef, OF_2635, ((V)(1.5))), "map", Fn((V _self2622, int _argc2717, V p_2723, V _a2720, V _a2721, V _a2722, V[] _rest2718) => {
-return Arr(GetIdx(p_2723, 0D), ((V)(Min(ToNum(GetIdx(p_2723, 1D)), 62D))));
+OFi_2853 = Invoke(Call(offset_39, V.Undef, OF_2844, ((V)(1.5))), "map", Fn((V _arrowThis2939, int _argc2932, V p_2938, V _a2935, V _a2936, V _a2937, V[] _rest2933) => {
+return Arr(GetIdx(p_2938, 0D), ((V)(Min(ToNum(GetIdx(p_2938, 1D)), 62D))));
 }, 1, "", true));
-back_2645 = Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", Invoke(S_2629, "lgrad", ((V)("fkf")), Arr(Arr(((V)(0D)), ((V)("#bf6c28"))), Arr(((V)(0.3)), ((V)("#d48a3e"))), Arr(((V)(1D)), ((V)("#e9ae63")))), NewObj(2).Put("x2", ((V)(0D))).Put("y2", ((V)(1D))).V)).V, SG_2642, Get(sk_2630, "e"));
-inB_2646 = Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", Invoke(S_2629, "rgrad", ((V)("fki")), Arr(Arr(((V)(0D)), ((V)("#fff8ea"))), Arr(((V)(0.6)), ((V)("#ffeccb"))), Arr(((V)(1D)), ((V)("#f2d29c")))), NewObj(1).Put("cy", ((V)("70%"))).V)).V, SG_2642, Get(sk_2630, "e"));
-sg_2647 = Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, SG_2642, Get(sk_2630, "e"));
-sp_2648 = Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", Invoke(S_2629, "lgrad", ((V)("fks")), Arr(Arr(((V)(0D)), ((V)("#f08660"))), Arr(((V)(0.38)), ((V)("#d85434"))), Arr(((V)(0.78)), ((V)("#b23d26"))), Arr(((V)(1D)), ((V)("#8c2c1c")))), NewObj(2).Put("x2", ((V)(0D))).Put("y2", ((V)(1D))).V)).V, sg_2647);
-sh_2649 = Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffd8c6"))).Put("stroke-width", ((V)(1.3))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.75))).V, sg_2647);
-kc_2650 = Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#e8402e"))).Put("stroke-width", ((V)(2.1))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V, sg_2647);
-ms_2651 = Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffd43b"))).Put("stroke-width", ((V)(1.8))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V, sg_2647);
-lip_2652 = Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#fff3dc"))).Put("stroke-width", ((V)(1.7))).Put("opacity", ((V)(0.85))).Put("stroke-linecap", ((V)("round"))).V, SG_2642);
-shn_2653 = Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#fff4dc"))).Put("stroke-width", ((V)(4D))).Put("opacity", ((V)(0.2))).Put("stroke-linecap", ((V)("round"))).V, SG_2642);
-return NewObj(30).Put("O", O_2634).Put("OF", OF_2635).Put("OFi", OFi_2644).Put("topY", topY_2643).Put("T", ((V)(T_2631))).Put("b", ((V)(b_2632))).Put("rings", rings_2636).Put("ringsF", ringsF_2637).Put("zF", zF_2638).Put("zz", zz_2641).Put("SG", SG_2642).Put("back", back_2645).Put("inB", inB_2646).Put("sg", sg_2647).Put("sp", sp_2648).Put("sh", sh_2649).Put("kc", kc_2650).Put("ms", ms_2651).Put("lip", lip_2652).Put("shn", shn_2653).Put("z0", ((V)(4D))).Put("AL", ((V)(0.45))).Put("YC", ((V)(70D))).Put("slab", ((V)(1D))).Put("rx", ((V)(41D))).Put("ya", ((V)(50D))).Put("yb", ((V)(87D))).Put("rT", Fn((V _self2622, int _argc2724, V y_2730, V _a2727, V _a2728, V _a2729, V[] _rest2725) => {
-return Call(halfW_38, V.Undef, O_2634, y_2730);
-}, 1, "rT", true)).Put("zAt", Fn((V _self2622, int _argc2731, V x_2737, V y_2738, V _a2735, V _a2736, V[] _rest2732) => {
-return Add(((V)((4D * ToNum(Call(zz_2641, V.Undef, y_2738))))), Call(zF_2638, V.Undef, x_2737, y_2738));
-}, 2, "zAt", true)).Put("zE", Fn((V _self2622, int _argc2739, V dx_2745, V dy_2746, V _a2743, V _a2744, V[] _rest2740) => {
-return Add(Add(((V)((4D * ToNum(Call(zz_2641, V.Undef, Add(Get(S_2629, "HY"), dy_2746)))))), Call(zF_2638, V.Undef, Add(Get(S_2629, "HX"), dx_2745), Add(Get(S_2629, "HY"), dy_2746))), ((V)(0.3)));
+back_2854 = Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", Invoke(S_2838, "lgrad", ((V)("fkf")), Arr(Arr(((V)(0D)), ((V)("#bf6c28"))), Arr(((V)(0.3)), ((V)("#d48a3e"))), Arr(((V)(1D)), ((V)("#e9ae63")))), NewObj(2).Put("x2", ((V)(0D))).Put("y2", ((V)(1D))).V)).V, SG_2851, Get(sk_2839, "e"));
+inB_2855 = Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", Invoke(S_2838, "rgrad", ((V)("fki")), Arr(Arr(((V)(0D)), ((V)("#fff8ea"))), Arr(((V)(0.6)), ((V)("#ffeccb"))), Arr(((V)(1D)), ((V)("#f2d29c")))), NewObj(1).Put("cy", ((V)("70%"))).V)).V, SG_2851, Get(sk_2839, "e"));
+sg_2856 = Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, SG_2851, Get(sk_2839, "e"));
+sp_2857 = Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", Invoke(S_2838, "lgrad", ((V)("fks")), Arr(Arr(((V)(0D)), ((V)("#f08660"))), Arr(((V)(0.38)), ((V)("#d85434"))), Arr(((V)(0.78)), ((V)("#b23d26"))), Arr(((V)(1D)), ((V)("#8c2c1c")))), NewObj(2).Put("x2", ((V)(0D))).Put("y2", ((V)(1D))).V)).V, sg_2856);
+sh_2858 = Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffd8c6"))).Put("stroke-width", ((V)(1.3))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.75))).V, sg_2856);
+kc_2859 = Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#e8402e"))).Put("stroke-width", ((V)(2.1))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V, sg_2856);
+ms_2860 = Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffd43b"))).Put("stroke-width", ((V)(1.8))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V, sg_2856);
+lip_2861 = Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#fff3dc"))).Put("stroke-width", ((V)(1.7))).Put("opacity", ((V)(0.85))).Put("stroke-linecap", ((V)("round"))).V, SG_2851);
+shn_2862 = Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#fff4dc"))).Put("stroke-width", ((V)(4D))).Put("opacity", ((V)(0.2))).Put("stroke-linecap", ((V)("round"))).V, SG_2851);
+return NewObj(30).Put("O", O_2843).Put("OF", OF_2844).Put("OFi", OFi_2853).Put("topY", topY_2852).Put("T", ((V)(T_2840))).Put("b", ((V)(b_2841))).Put("rings", rings_2845).Put("ringsF", ringsF_2846).Put("zF", zF_2847).Put("zz", zz_2850).Put("SG", SG_2851).Put("back", back_2854).Put("inB", inB_2855).Put("sg", sg_2856).Put("sp", sp_2857).Put("sh", sh_2858).Put("kc", kc_2859).Put("ms", ms_2860).Put("lip", lip_2861).Put("shn", shn_2862).Put("z0", ((V)(4D))).Put("AL", ((V)(0.45))).Put("YC", ((V)(70D))).Put("slab", ((V)(1D))).Put("rx", ((V)(41D))).Put("ya", ((V)(50D))).Put("yb", ((V)(87D))).Put("rT", Fn((V _arrowThis2947, int _argc2940, V y_2946, V _a2943, V _a2944, V _a2945, V[] _rest2941) => {
+return Call(halfW_38, V.Undef, O_2843, y_2946);
+}, 1, "rT", true)).Put("zAt", Fn((V _arrowThis2956, int _argc2948, V x_2954, V y_2955, V _a2952, V _a2953, V[] _rest2949) => {
+return Add(((V)((4D * ToNum(Call(zz_2850, V.Undef, y_2955))))), Call(zF_2847, V.Undef, x_2954, y_2955));
+}, 2, "zAt", true)).Put("zE", Fn((V _arrowThis2965, int _argc2957, V dx_2963, V dy_2964, V _a2961, V _a2962, V[] _rest2958) => {
+return Add(Add(((V)((4D * ToNum(Call(zz_2850, V.Undef, Add(Get(S_2838, "HY"), dy_2964)))))), Call(zF_2847, V.Undef, Add(Get(S_2838, "HX"), dx_2963), Add(Get(S_2838, "HY"), dy_2964))), ((V)(0.3)));
 }, 2, "zE", true)).V;
 return default;
-}, 1, "setup", false)).Put("draw", Fn((V _self2747, int _argc2748, V B_2754, V D_2755, V _a2752, V _a2753, V[] _rest2749) => {
-V set_2756 = default;
-double slip_2757 = 0;
-V hug_2758 = default;
-V z0_2759 = default;
-V zc_2760 = default;
-V W_2761 = default;
-V P_2762 = default;
-V zz_2763 = default;
-V fr_2764 = default;
-double s_2765 = 0;
-V half_2766 = default;
-double r_2767 = 0;
-double yS_2768 = 0;
-V sph_2769 = default;
-V line_2770 = default;
-V lp_2771 = default;
-V sn_2772 = default;
-V L_2773 = default;
-if (_self2747.IsNullish) _self2747 = GlobalV;
-{ V _t2774 = D_2755;
-if (_t2774.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t2774));
-{ V _t2775 = Get(_t2774, "set");
-set_2756 = _t2775; } }
-slip_2757 = (ToNum(Call(clamp_12, V.Undef, Invoke(D_2755, "bv", ((V)("slip"))), ((V)((-1.3))), ((V)(1.3)))) * 15D);
-hug_2758 = Call(clamp_12, V.Undef, Invoke(D_2755, "bv", ((V)("hug"))), ((V)((-1D))), ((V)(1.5)));
-z0_2759 = Add(Get(B_2754, "z0"), ((V)((ToNum(hug_2758) * 3D))));
-zc_2760 = Add(z0_2759, Get(B_2754, "T"));
-W_2761 = Call(tiltW_49, V.Undef, D_2755, Get(B_2754, "AL"), Get(B_2754, "YC"), zc_2760);
-P_2762 = Get(W_2761, "P");
-zz_2763 = Fn((V _self2747, int _argc2776, V y_2782, V _a2779, V _a2780, V _a2781, V[] _rest2777) => {
-return ((V)((ToNum(z0_2759) * ToNum(Invoke(B_2754, "zz", y_2782)))));
+}, 1, "setup", false)).Put("draw", Fn((V _self2966, int _argc2967, V B_2973, V D_2974, V _a2971, V _a2972, V[] _rest2968) => {
+V set_2975 = default;
+double slip_2976 = 0;
+V hug_2977 = default;
+V z0_2978 = default;
+V zc_2979 = default;
+V W_2980 = default;
+V P_2981 = default;
+V zz_2982 = default;
+V fr_2983 = default;
+double s_2984 = 0;
+V half_2985 = default;
+double r_2986 = 0;
+double yS_2987 = 0;
+V sph_2988 = default;
+V line_2989 = default;
+V lp_2990 = default;
+V sn_2991 = default;
+V L_2992 = default;
+if (_self2966.IsNullish) _self2966 = GlobalV;
+{ V _t2993 = D_2974;
+if (_t2993.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t2993));
+{ V _t2994 = Get(_t2993, "set");
+set_2975 = _t2994; } }
+slip_2976 = (ToNum(Call(clamp_12, V.Undef, Invoke(D_2974, "bv", ((V)("slip"))), ((V)((-1.3))), ((V)(1.3)))) * 15D);
+hug_2977 = Call(clamp_12, V.Undef, Invoke(D_2974, "bv", ((V)("hug"))), ((V)((-1D))), ((V)(1.5)));
+z0_2978 = Add(Get(B_2973, "z0"), ((V)((ToNum(hug_2977) * 3D))));
+zc_2979 = Add(z0_2978, Get(B_2973, "T"));
+W_2980 = Call(tiltW_49, V.Undef, D_2974, Get(B_2973, "AL"), Get(B_2973, "YC"), zc_2979);
+P_2981 = Get(W_2980, "P");
+zz_2982 = Fn((V _arrowThis3002, int _argc2995, V y_3001, V _a2998, V _a2999, V _a3000, V[] _rest2996) => {
+return ((V)((ToNum(z0_2978) * ToNum(Invoke(B_2973, "zz", y_3001)))));
 }, 1, "", true);
-fr_2764 = (GeN(Get(D_2755, "front"), 0D) ? V.True : V.False);
-s_2765 = (Truthy(fr_2764) ? 1D : (-1D));
-half_2766 = Fn((V _self2747, int _argc2783, V sg_2789, V RG_2790, V _a2787, V _a2788, V[] _rest2784) => {
-V o_2791 = default;
-o_2791 = Arr();
-Invoke(RG_2790, "forEach", Fn((V _self2747, int _argc2792, V R_2798, V _a2795, V _a2796, V _a2797, V[] _rest2793) => {
-return Invoke(Get(R_2798, "Q"), "forEach", Fn((V _self2747, int _argc2799, V p_2805, V _a2802, V _a2803, V _a2804, V[] _rest2800) => {
-return Invoke(o_2791, "push", Call(P_2762, V.Undef, GetIdx(p_2805, 0D), GetIdx(p_2805, 1D), ((V)((ToNum(sg_2789) * ToNum(Add(Call(zz_2763, V.Undef, GetIdx(p_2805, 1D)), Get(R_2798, "z"))))))));
+fr_2983 = (GeN(Get(D_2974, "front"), 0D) ? V.True : V.False);
+s_2984 = (Truthy(fr_2983) ? 1D : (-1D));
+half_2985 = Fn((V _arrowThis3011, int _argc3003, V sg_3009, V RG_3010, V _a3007, V _a3008, V[] _rest3004) => {
+V o_3012 = default;
+o_3012 = Arr();
+Invoke(RG_3010, "forEach", Fn((V _arrowThis3020, int _argc3013, V R_3019, V _a3016, V _a3017, V _a3018, V[] _rest3014) => {
+return Invoke(Get(R_3019, "Q"), "forEach", Fn((V _arrowThis3028, int _argc3021, V p_3027, V _a3024, V _a3025, V _a3026, V[] _rest3022) => {
+return Invoke(o_3012, "push", Call(P_2981, V.Undef, GetIdx(p_3027, 0D), GetIdx(p_3027, 1D), ((V)((ToNum(sg_3009) * ToNum(Add(Call(zz_2982, V.Undef, GetIdx(p_3027, 1D)), Get(R_3019, "z"))))))));
 }, 1, "", true));
 }, 1, "", true));
-return Invoke(D_2755, "hull", o_2791);
+return Invoke(D_2974, "hull", o_3012);
 return default;
 }, 2, "", true);
-Set(B_2754, "d", Call(half_2766, V.Undef, ((V)(1D)), (Truthy(fr_2764) ? Get(B_2754, "rings") : Get(B_2754, "ringsF"))));
-Call(set_2756, V.Undef, Get(B_2754, "back"), ((V)("d")), Call(half_2766, V.Undef, ((V)((-1D))), (Truthy(fr_2764) ? Get(B_2754, "ringsF") : Get(B_2754, "rings"))));
-Call(set_2756, V.Undef, Get(B_2754, "inB"), ((V)("d")), Call(polyW_18, V.Undef, Invoke(Get(B_2754, "OFi"), "map", Fn((V _self2747, int _argc2806, V p_2812, V _a2809, V _a2810, V _a2811, V[] _rest2807) => {
-return Call(P_2762, V.Undef, GetIdx(p_2812, 0D), GetIdx(p_2812, 1D), ((V)(((-s_2765) * (ToNum(Call(zz_2763, V.Undef, GetIdx(p_2812, 1D))) - 0.2)))));
+Set(B_2973, "d", Call(half_2985, V.Undef, ((V)(1D)), (Truthy(fr_2983) ? Get(B_2973, "rings") : Get(B_2973, "ringsF"))));
+Call(set_2975, V.Undef, Get(B_2973, "back"), ((V)("d")), Call(half_2985, V.Undef, ((V)((-1D))), (Truthy(fr_2983) ? Get(B_2973, "ringsF") : Get(B_2973, "rings"))));
+Call(set_2975, V.Undef, Get(B_2973, "inB"), ((V)("d")), Call(polyW_18, V.Undef, Invoke(Get(B_2973, "OFi"), "map", Fn((V _arrowThis3036, int _argc3029, V p_3035, V _a3032, V _a3033, V _a3034, V[] _rest3030) => {
+return Call(P_2981, V.Undef, GetIdx(p_3035, 0D), GetIdx(p_3035, 1D), ((V)(((-s_2984) * (ToNum(Call(zz_2982, V.Undef, GetIdx(p_3035, 1D))) - 0.2)))));
 }, 1, "", true))));
-r_2767 = (8.4 - (Max(0D, (-ToNum(hug_2758))) * 0.8));
-yS_2768 = (52.5 - (Max(0D, (-ToNum(hug_2758))) * 1.5));
-sph_2769 = Fn((V _self2747, int _argc2813, V c_2819, V _a2816, V _a2817, V _a2818, V[] _rest2814) => {
-V o_2820 = default;
-o_2820 = Arr();
+r_2986 = (8.4 - (Max(0D, (-ToNum(hug_2977))) * 0.8));
+yS_2987 = (52.5 - (Max(0D, (-ToNum(hug_2977))) * 1.5));
+sph_2988 = Fn((V _arrowThis3044, int _argc3037, V c_3043, V _a3040, V _a3041, V _a3042, V[] _rest3038) => {
+V o_3045 = default;
+o_3045 = Arr();
 {
-double i_2821 = 0;
-i_2821 = 0D;
+double i_3046 = 0;
+i_3046 = 0D;
 while (true) {
-if (!((i_2821 <= 6D))) break;
-double th_2823 = 0;
-double cr_2824 = 0;
-th_2823 = (((-System.Math.PI) / 2D) + ((System.Math.PI * i_2821) / 6D));
-cr_2824 = FdLibm.Cos(th_2823);
+if (!((i_3046 <= 6D))) break;
+double th_3048 = 0;
+double cr_3049 = 0;
+th_3048 = (((-System.Math.PI) / 2D) + ((System.Math.PI * i_3046) / 6D));
+cr_3049 = FdLibm.Cos(th_3048);
 {
-double k_2825 = 0;
-k_2825 = 0D;
+double k_3050 = 0;
+k_3050 = 0D;
 while (true) {
-if (!((k_2825 < 12D))) break;
-double f_2827 = 0;
-f_2827 = ((k_2825 / 12D) * TAU_9);
-Invoke(o_2820, "push", Call(P_2762, V.Undef, Add(GetIdx(c_2819, 0D), ((V)(((r_2767 * cr_2824) * FdLibm.Sin(f_2827))))), Add(GetIdx(c_2819, 1D), ((V)((r_2767 * FdLibm.Sin(th_2823))))), Add(GetIdx(c_2819, 2D), ((V)(((r_2767 * cr_2824) * FdLibm.Cos(f_2827)))))));
-k_2825++;
+if (!((k_3050 < 12D))) break;
+double f_3052 = 0;
+f_3052 = ((k_3050 / 12D) * TAU_9);
+Invoke(o_3045, "push", Call(P_2981, V.Undef, Add(GetIdx(c_3043, 0D), ((V)(((r_2986 * cr_3049) * FdLibm.Sin(f_3052))))), Add(GetIdx(c_3043, 1D), ((V)((r_2986 * FdLibm.Sin(th_3048))))), Add(GetIdx(c_3043, 2D), ((V)(((r_2986 * cr_3049) * FdLibm.Cos(f_3052)))))));
+k_3050++;
 }
 }
-i_2821++;
+i_3046++;
 }
 }
-return o_2820;
+return o_3045;
 return default;
 }, 1, "", true);
-Call(set_2756, V.Undef, Get(B_2754, "sp"), ((V)("d")), Invoke(D_2755, "hull", Invoke(Call(sph_2769, V.Undef, Arr(((V)((12D + slip_2757))), ((V)(yS_2768)), ((V)(0D)))), "concat", Call(sph_2769, V.Undef, Arr(((V)((88D + slip_2757))), ((V)(yS_2768)), ((V)(0D)))))));
-line_2770 = Fn((V _self2747, int _argc2828, V fn_2834, V x0_2835, V x1_2836, V st_2837, V[] _rest2829) => {
-V Q_2838 = default;
-V ok_2839 = default;
-Q_2838 = Arr();
-ok_2839 = Arr();
+Call(set_2975, V.Undef, Get(B_2973, "sp"), ((V)("d")), Invoke(D_2974, "hull", Invoke(Call(sph_2988, V.Undef, Arr(((V)((12D + slip_2976))), ((V)(yS_2987)), ((V)(0D)))), "concat", Call(sph_2988, V.Undef, Arr(((V)((88D + slip_2976))), ((V)(yS_2987)), ((V)(0D)))))));
+line_2989 = Fn((V _arrowThis3063, int _argc3053, V fn_3059, V x0_3060, V x1_3061, V st_3062, V[] _rest3054) => {
+V Q_3064 = default;
+V ok_3065 = default;
+Q_3064 = Arr();
+ok_3065 = Arr();
 {
-V x_2840 = default;
-x_2840 = x0_2835;
+V x_3066 = default;
+x_3066 = x0_3060;
 while (true) {
-if (!(Le(x_2840, x1_2836))) break;
-V ph_2842 = default;
-double ny_2843 = 0;
-double nz_2844 = 0;
-ph_2842 = Call(fn_2834, V.Undef, x_2840);
-ny_2843 = (-FdLibm.Cos(ToNum(ph_2842)));
-nz_2844 = FdLibm.Sin(ToNum(ph_2842));
-Invoke(Q_2838, "push", Call(P_2762, V.Undef, Add(x_2840, ((V)(slip_2757))), ((V)((yS_2768 + ((r_2767 * ny_2843) * 1.03)))), ((V)(((r_2767 * nz_2844) * 1.03)))));
-Invoke(ok_2839, "push", (GtN(Invoke(W_2761, "F", Add(x_2840, ((V)(slip_2757))), ((V)((yS_2768 + (r_2767 * ny_2843)))), ((V)((r_2767 * nz_2844))), ((V)(((ny_2843 * 0D) + 0D))), ((V)(ny_2843)), ((V)(nz_2844))), 0.02) ? V.True : V.False));
-x_2840 = Add(x_2840, st_2837);
+if (!(Le(x_3066, x1_3061))) break;
+V ph_3068 = default;
+double ny_3069 = 0;
+double nz_3070 = 0;
+ph_3068 = Call(fn_3059, V.Undef, x_3066);
+ny_3069 = (-FdLibm.Cos(ToNum(ph_3068)));
+nz_3070 = FdLibm.Sin(ToNum(ph_3068));
+Invoke(Q_3064, "push", Call(P_2981, V.Undef, Add(x_3066, ((V)(slip_2976))), ((V)((yS_2987 + ((r_2986 * ny_3069) * 1.03)))), ((V)(((r_2986 * nz_3070) * 1.03)))));
+Invoke(ok_3065, "push", (GtN(Invoke(W_2980, "F", Add(x_3066, ((V)(slip_2976))), ((V)((yS_2987 + (r_2986 * ny_3069)))), ((V)((r_2986 * nz_3070))), ((V)(((ny_3069 * 0D) + 0D))), ((V)(ny_3069)), ((V)(nz_3070))), 0.02) ? V.True : V.False));
+x_3066 = Add(x_3066, st_3062);
 }
 }
-return Call(runs_21, V.Undef, Q_2838, ok_2839);
+return Call(runs_21, V.Undef, Q_3064, ok_3065);
 return default;
 }, 4, "", true);
-Call(set_2756, V.Undef, Get(B_2754, "kc"), ((V)("d")), (Call(line_2770, V.Undef, Fn((V _self2747, int _argc2845, V x_2851, V _a2848, V _a2849, V _a2850, V[] _rest2846) => {
-return ((V)((0.32 + (0.24 * FdLibm.Sin(((ToNum(x_2851) - 15D) * 0.9))))));
-}, 1, "", true), ((V)(15D)), ((V)(85D)), ((V)(0.9))) is var _t2852 && Truthy(_t2852) ? _t2852 : ((V)("M0 0"))));
-Call(set_2756, V.Undef, Get(B_2754, "ms"), ((V)("d")), (Call(line_2770, V.Undef, Fn((V _self2747, int _argc2853, V x_2859, V _a2856, V _a2857, V _a2858, V[] _rest2854) => {
-double u_2860 = 0;
-double tri_2861 = 0;
-u_2860 = ((ToNum(x_2859) - 16D) / 4D);
-tri_2861 = ((System.Math.Abs(((((u_2860 % 2D) + 2D) % 2D) - 1D)) * 2D) - 1D);
-return ((V)(((-0.2) + (0.3 * tri_2861))));
+Call(set_2975, V.Undef, Get(B_2973, "kc"), ((V)("d")), (Call(line_2989, V.Undef, Fn((V _arrowThis3078, int _argc3071, V x_3077, V _a3074, V _a3075, V _a3076, V[] _rest3072) => {
+return ((V)((0.32 + (0.24 * FdLibm.Sin(((ToNum(x_3077) - 15D) * 0.9))))));
+}, 1, "", true), ((V)(15D)), ((V)(85D)), ((V)(0.9))) is var _t3079 && Truthy(_t3079) ? _t3079 : ((V)("M0 0"))));
+Call(set_2975, V.Undef, Get(B_2973, "ms"), ((V)("d")), (Call(line_2989, V.Undef, Fn((V _arrowThis3087, int _argc3080, V x_3086, V _a3083, V _a3084, V _a3085, V[] _rest3081) => {
+double u_3088 = 0;
+double tri_3089 = 0;
+u_3088 = ((ToNum(x_3086) - 16D) / 4D);
+tri_3089 = ((System.Math.Abs(((((u_3088 % 2D) + 2D) % 2D) - 1D)) * 2D) - 1D);
+return ((V)(((-0.2) + (0.3 * tri_3089))));
 return default;
-}, 1, "", true), ((V)(16D)), ((V)(84D)), ((V)(1D))) is var _t2862 && Truthy(_t2862) ? _t2862 : ((V)("M0 0"))));
-Call(set_2756, V.Undef, Get(B_2754, "sh"), ((V)("d")), (Call(line_2770, V.Undef, Fn((V _self2747, int _argc2863, V _a2865, V _a2866, V _a2867, V _a2868, V[] _rest2864) => {
+}, 1, "", true), ((V)(16D)), ((V)(84D)), ((V)(1D))) is var _t3090 && Truthy(_t3090) ? _t3090 : ((V)("M0 0"))));
+Call(set_2975, V.Undef, Get(B_2973, "sh"), ((V)("d")), (Call(line_2989, V.Undef, Fn((V _arrowThis3097, int _argc3091, V _a3093, V _a3094, V _a3095, V _a3096, V[] _rest3092) => {
 return ((V)(0.95));
-}, 0, "", true), ((V)(18D)), ((V)(82D)), ((V)(4D))) is var _t2869 && Truthy(_t2869) ? _t2869 : ((V)("M0 0"))));
-lp_2771 = Arr();
-sn_2772 = Arr();
+}, 0, "", true), ((V)(18D)), ((V)(82D)), ((V)(4D))) is var _t3098 && Truthy(_t3098) ? _t3098 : ((V)("M0 0"))));
+lp_2990 = Arr();
+sn_2991 = Arr();
 {
-double x_2870 = 0;
-x_2870 = 12D;
+double x_3099 = 0;
+x_3099 = 12D;
 while (true) {
-if (!((x_2870 <= 88D))) break;
-V ty_2872 = default;
-ty_2872 = Invoke(B_2754, "topY", ((V)(x_2870)));
-if (GtN(ty_2872, 72D)) {
-goto _cont2871;
+if (!((x_3099 <= 88D))) break;
+V ty_3101 = default;
+ty_3101 = Invoke(B_2973, "topY", ((V)(x_3099)));
+if (GtN(ty_3101, 72D)) {
+goto _cont3100;
 }
-Invoke(lp_2771, "push", Call(P_2762, V.Undef, ((V)(x_2870)), Add(ty_2872, ((V)(0.5))), ((V)((s_2765 * ToNum(Add(Call(zz_2763, V.Undef, Add(ty_2872, ((V)(0.5)))), ((V)(0.7)))))))));
-if (((x_2870 >= 24D) && (x_2870 <= 76D))) {
-Invoke(sn_2772, "push", Call(P_2762, V.Undef, ((V)(x_2870)), Add(ty_2872, ((V)(5.2))), ((V)((s_2765 * ToNum(Add(Call(zz_2763, V.Undef, Add(ty_2872, ((V)(5.2)))), ((V)((ToNum(Get(B_2754, "T")) * 0.9))))))))));
+Invoke(lp_2990, "push", Call(P_2981, V.Undef, ((V)(x_3099)), Add(ty_3101, ((V)(0.5))), ((V)((s_2984 * ToNum(Add(Call(zz_2982, V.Undef, Add(ty_3101, ((V)(0.5)))), ((V)(0.7)))))))));
+if (((x_3099 >= 24D) && (x_3099 <= 76D))) {
+Invoke(sn_2991, "push", Call(P_2981, V.Undef, ((V)(x_3099)), Add(ty_3101, ((V)(5.2))), ((V)((s_2984 * ToNum(Add(Call(zz_2982, V.Undef, Add(ty_3101, ((V)(5.2)))), ((V)((ToNum(Get(B_2973, "T")) * 0.9))))))))));
 }
-_cont2871: ;
-x_2870 = (x_2870 + 2D);
+_cont3100: ;
+x_3099 = (x_3099 + 2D);
 }
 }
-Call(set_2756, V.Undef, Get(B_2754, "lip"), ((V)("d")), Call(runs_21, V.Undef, lp_2771, Invoke(lp_2771, "map", Fn((V _self2747, int _argc2873, V _a2875, V _a2876, V _a2877, V _a2878, V[] _rest2874) => {
+Call(set_2975, V.Undef, Get(B_2973, "lip"), ((V)("d")), Call(runs_21, V.Undef, lp_2990, Invoke(lp_2990, "map", Fn((V _arrowThis3108, int _argc3102, V _a3104, V _a3105, V _a3106, V _a3107, V[] _rest3103) => {
 return (true ? V.True : V.False);
 }, 0, "", true))));
-Call(set_2756, V.Undef, Get(B_2754, "shn"), ((V)("d")), Call(runs_21, V.Undef, sn_2772, Invoke(sn_2772, "map", Fn((V _self2747, int _argc2879, V _a2881, V _a2882, V _a2883, V _a2884, V[] _rest2880) => {
+Call(set_2975, V.Undef, Get(B_2973, "shn"), ((V)("d")), Call(runs_21, V.Undef, sn_2991, Invoke(sn_2991, "map", Fn((V _arrowThis3115, int _argc3109, V _a3111, V _a3112, V _a3113, V _a3114, V[] _rest3110) => {
 return (true ? V.True : V.False);
 }, 0, "", true))));
-L_2773 = Invoke(Arr(NewObj(3).Put("id", ((V)("b"))).Put("e", Get(B_2754, "back")).Put("z", Invoke(W_2761, "Z", ((V)(50D)), ((V)(68D)), ((V)(((-ToNum(z0_2759)) - 6D))))).V, NewObj(3).Put("id", ((V)("i"))).Put("e", Get(B_2754, "inB")).Put("z", Add(Invoke(W_2761, "Z", ((V)(50D)), ((V)(68D)), ((V)(((-s_2765) * ToNum(z0_2759))))), ((V)((s_2765 * 0.01))))).V, NewObj(3).Put("id", ((V)("s"))).Put("e", Get(B_2754, "sg")).Put("z", Invoke(W_2761, "Z", ((V)((50D + slip_2757))), ((V)(yS_2768)), ((V)(0D)))).V, NewObj(3).Put("id", ((V)("f"))).Put("e", Get(Get(Get(B_2754, "S"), "sk"), "e")).Put("z", Invoke(W_2761, "Z", ((V)(50D)), ((V)(68D)), Add(z0_2759, ((V)(6D))))).V, NewObj(3).Put("id", ((V)("l"))).Put("e", Get(B_2754, "lip")).Put("z", Add(Invoke(W_2761, "Z", ((V)(50D)), ((V)(68D)), ((V)((s_2765 * ToNum(Add(z0_2759, ((V)(6D)))))))), ((V)(0.01)))).V, NewObj(3).Put("id", ((V)("h"))).Put("e", Get(B_2754, "shn")).Put("z", Add(Invoke(W_2761, "Z", ((V)(50D)), ((V)(68D)), ((V)((s_2765 * ToNum(Add(z0_2759, ((V)(6D)))))))), ((V)(0.02)))).V), "sort", Fn((V _self2747, int _argc2885, V a_2891, V b_2892, V _a2889, V _a2890, V[] _rest2886) => {
-return ((V)((ToNum(Get(a_2891, "z")) - ToNum(Get(b_2892, "z")))));
+L_2992 = Invoke(Arr(NewObj(3).Put("id", ((V)("b"))).Put("e", Get(B_2973, "back")).Put("z", Invoke(W_2980, "Z", ((V)(50D)), ((V)(68D)), ((V)(((-ToNum(z0_2978)) - 6D))))).V, NewObj(3).Put("id", ((V)("i"))).Put("e", Get(B_2973, "inB")).Put("z", Add(Invoke(W_2980, "Z", ((V)(50D)), ((V)(68D)), ((V)(((-s_2984) * ToNum(z0_2978))))), ((V)((s_2984 * 0.01))))).V, NewObj(3).Put("id", ((V)("s"))).Put("e", Get(B_2973, "sg")).Put("z", Invoke(W_2980, "Z", ((V)((50D + slip_2976))), ((V)(yS_2987)), ((V)(0D)))).V, NewObj(3).Put("id", ((V)("f"))).Put("e", Get(Get(Get(B_2973, "S"), "sk"), "e")).Put("z", Invoke(W_2980, "Z", ((V)(50D)), ((V)(68D)), Add(z0_2978, ((V)(6D))))).V, NewObj(3).Put("id", ((V)("l"))).Put("e", Get(B_2973, "lip")).Put("z", Add(Invoke(W_2980, "Z", ((V)(50D)), ((V)(68D)), ((V)((s_2984 * ToNum(Add(z0_2978, ((V)(6D)))))))), ((V)(0.01)))).V, NewObj(3).Put("id", ((V)("h"))).Put("e", Get(B_2973, "shn")).Put("z", Add(Invoke(W_2980, "Z", ((V)(50D)), ((V)(68D)), ((V)((s_2984 * ToNum(Add(z0_2978, ((V)(6D)))))))), ((V)(0.02)))).V), "sort", Fn((V _arrowThis3124, int _argc3116, V a_3122, V b_3123, V _a3120, V _a3121, V[] _rest3117) => {
+return ((V)((ToNum(Get(a_3122, "z")) - ToNum(Get(b_3123, "z")))));
 }, 2, "", true));
-Invoke(SN_43, "order", Get(B_2754, "SG"), L_2773);
+Invoke(SN_43, "order", Get(B_2973, "SG"), L_2992);
 return default;
 }, 2, "draw", false)).V);
-Set(MODELS_42, "peppi", NewObj(2).Put("setup", Fn((V _self2893, int _argc2894, V S_2900, V _a2897, V _a2898, V _a2899, V[] _rest2895) => {
-V sk_2901 = default;
-V O_2902 = default;
-double T_2903 = 0;
-double b_2904 = 0;
-V rings_2905 = default;
-V cheese_2906 = default;
-V cr_2907 = default;
-V CR_2908 = default;
-V face_2909 = default;
-V dec_2910 = default;
-V DC_2911 = default;
-V spots_2912 = default;
-V strings_2913 = default;
-V crust_2914 = default;
-V @char_2915 = default;
-V cl_2916 = default;
-if (_self2893.IsNullish) _self2893 = GlobalV;
-{ V _t2917 = S_2900;
-if (_t2917.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t2917));
-{ V _t2918 = Get(_t2917, "sk");
-sk_2901 = _t2918; } }
-O_2902 = Invoke(S_2900, "outline", sk_2901, ((V)(56D)));
-T_2903 = 2.3;
-b_2904 = 1.4;
-rings_2905 = Call(pillowRings_40, V.Undef, O_2902, ((V)(T_2903)), ((V)(b_2904)), ((V)(2D)));
-cheese_2906 = Invoke(S_2900, "f", sk_2901);
-cr_2907 = GetIdx(Invoke(S_2900, "hide", Fn((V _self2893, int _argc2919, V q_2925, V _a2922, V _a2923, V _a2924, V[] _rest2920) => {
-return (Get(q_2925, "inBody") is var _t2926 && !Truthy(_t2926) ? _t2926 : Invoke(NewRegExp(RX10, "^M6\\.5 75\\.5", ""), "test", Invoke(S_2900, "d", q_2925)));
+Set(MODELS_42, "peppi", NewObj(2).Put("setup", Fn((V _self3125, int _argc3126, V S_3132, V _a3129, V _a3130, V _a3131, V[] _rest3127) => {
+V sk_3133 = default;
+V O_3134 = default;
+double T_3135 = 0;
+double b_3136 = 0;
+V rings_3137 = default;
+V cheese_3138 = default;
+V cr_3139 = default;
+V CR_3140 = default;
+V face_3141 = default;
+V dec_3142 = default;
+V DC_3143 = default;
+V spots_3144 = default;
+V strings_3145 = default;
+V crust_3146 = default;
+V @char_3147 = default;
+V cl_3148 = default;
+if (_self3125.IsNullish) _self3125 = GlobalV;
+{ V _t3149 = S_3132;
+if (_t3149.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t3149));
+{ V _t3150 = Get(_t3149, "sk");
+sk_3133 = _t3150; } }
+O_3134 = Invoke(S_3132, "outline", sk_3133, ((V)(56D)));
+T_3135 = 2.3;
+b_3136 = 1.4;
+rings_3137 = Call(pillowRings_40, V.Undef, O_3134, ((V)(T_3135)), ((V)(b_3136)), ((V)(2D)));
+cheese_3138 = Invoke(S_3132, "f", sk_3133);
+cr_3139 = GetIdx(Invoke(S_3132, "hide", Fn((V _arrowThis3158, int _argc3151, V q_3157, V _a3154, V _a3155, V _a3156, V[] _rest3152) => {
+return (Get(q_3157, "inBody") is var _t3159 && !Truthy(_t3159) ? _t3159 : Invoke(NewRegExp(RX10, "^M6\\.5 75\\.5", ""), "test", Invoke(S_3132, "d", q_3157)));
 }, 1, "", true)), 0D);
-CR_2908 = (Truthy(cr_2907) ? Invoke(S_2900, "f", cr_2907) : ((V)("#eaa95c")));
-Invoke(S_2900, "hide", Fn((V _self2893, int _argc2927, V q_2933, V _a2930, V _a2931, V _a2932, V[] _rest2928) => {
-return (Get(q_2933, "inBody") is var _t2934 && !Truthy(_t2934) ? _t2934 : Invoke(NewRegExp(RX11, "^M18 80\\.5", ""), "test", Invoke(S_2900, "d", q_2933)));
+CR_3140 = (Truthy(cr_3139) ? Invoke(S_3132, "f", cr_3139) : ((V)("#eaa95c")));
+Invoke(S_3132, "hide", Fn((V _arrowThis3167, int _argc3160, V q_3166, V _a3163, V _a3164, V _a3165, V[] _rest3161) => {
+return (Get(q_3166, "inBody") is var _t3168 && !Truthy(_t3168) ? _t3168 : Invoke(NewRegExp(RX11, "^M18 80\\.5", ""), "test", Invoke(S_3132, "d", q_3166)));
 }, 1, "", true));
-Invoke(Get(sk_2901, "e"), "setAttribute", ((V)("fill")), Invoke(S_2900, "rgrad", ((V)("pzd")), Arr(Arr(((V)(0D)), ((V)("#ffe9bf"))), Arr(((V)(0.6)), ((V)("#f0c886"))), Arr(((V)(1D)), ((V)("#c99450"))))));
-face_2909 = Invoke(S_2900, "path", NewObj(1).Put("fill", cheese_2906).V);
-dec_2910 = Invoke(S_2900, "g");
-DC_2911 = Invoke(S_2900, "decals", Fn((V _self2893, int _argc2935, V q_2941, V _a2938, V _a2939, V _a2940, V[] _rest2936) => {
-return (Get(q_2941, "inBody") is var _t2942 && !Truthy(_t2942) ? _t2942 : Invoke(S_2900, "dk", q_2941, ((V)("tp"))));
-}, 1, "", true), dec_2910);
-spots_2912 = Invoke(S_2900, "path", NewObj(2).Put("fill", ((V)("#c98a44"))).Put("opacity", ((V)(0.4))).V);
-strings_2913 = Invoke(S_2900, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffd45c"))).Put("stroke-width", ((V)(1.6))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.95))).V);
-crust_2914 = Invoke(S_2900, "path", NewObj(1).Put("fill", CR_2908).V);
-@char_2915 = Invoke(S_2900, "path", NewObj(2).Put("fill", ((V)("#a8642a"))).Put("opacity", ((V)(0.4))).V);
-cl_2916 = Invoke(S_2900, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffeccc"))).Put("stroke-width", ((V)(1.3))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.8))).V);
-return NewObj(21).Put("O", O_2902).Put("T", ((V)(T_2903))).Put("b", ((V)(b_2904))).Put("rings", rings_2905).Put("face", face_2909).Put("dec", dec_2910).Put("DC", DC_2911).Put("spots", spots_2912).Put("strings", strings_2913).Put("crust", crust_2914).Put("char", @char_2915).Put("cl", cl_2916).Put("slab", ((V)(1D))).Put("rx", ((V)(41D))).Put("ya", ((V)(20D))).Put("yb", ((V)(78D))).Put("rT", Fn((V _self2893, int _argc2943, V y_2949, V _a2946, V _a2947, V _a2948, V[] _rest2944) => {
-return Call(halfW_38, V.Undef, O_2902, y_2949);
-}, 1, "rT", true)).Put("zAt", Fn((V _self2893, int _argc2950, V x_2956, V y_2957, V _a2954, V _a2955, V[] _rest2951) => {
-return ((V)((Truthy(Call(inside_35, V.Undef, O_2902, x_2956, y_2957)) ? T_2903 : 0D)));
-}, 2, "zAt", true)).Put("zE", Fn((V _self2893, int _argc2958, V _a2960, V _a2961, V _a2962, V _a2963, V[] _rest2959) => {
-return ((V)((T_2903 + 0.25)));
-}, 0, "zE", true)).Put("cheese", cheese_2906).Put("back", Invoke(S_2900, "rgrad", ((V)("pzb")), Arr(Arr(((V)(0D)), ((V)("#fff2d2"))), Arr(((V)(0.6)), ((V)("#f2d39a"))), Arr(((V)(1D)), ((V)("#d6a660")))))).V;
+Invoke(Get(sk_3133, "e"), "setAttribute", ((V)("fill")), Invoke(S_3132, "rgrad", ((V)("pzd")), Arr(Arr(((V)(0D)), ((V)("#ffe9bf"))), Arr(((V)(0.6)), ((V)("#f0c886"))), Arr(((V)(1D)), ((V)("#c99450"))))));
+face_3141 = Invoke(S_3132, "path", NewObj(1).Put("fill", cheese_3138).V);
+dec_3142 = Invoke(S_3132, "g");
+DC_3143 = Invoke(S_3132, "decals", Fn((V _arrowThis3176, int _argc3169, V q_3175, V _a3172, V _a3173, V _a3174, V[] _rest3170) => {
+return (Get(q_3175, "inBody") is var _t3177 && !Truthy(_t3177) ? _t3177 : Invoke(S_3132, "dk", q_3175, ((V)("tp"))));
+}, 1, "", true), dec_3142);
+spots_3144 = Invoke(S_3132, "path", NewObj(2).Put("fill", ((V)("#c98a44"))).Put("opacity", ((V)(0.4))).V);
+strings_3145 = Invoke(S_3132, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffd45c"))).Put("stroke-width", ((V)(1.6))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.95))).V);
+crust_3146 = Invoke(S_3132, "path", NewObj(1).Put("fill", CR_3140).V);
+@char_3147 = Invoke(S_3132, "path", NewObj(2).Put("fill", ((V)("#a8642a"))).Put("opacity", ((V)(0.4))).V);
+cl_3148 = Invoke(S_3132, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffeccc"))).Put("stroke-width", ((V)(1.3))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.8))).V);
+return NewObj(21).Put("O", O_3134).Put("T", ((V)(T_3135))).Put("b", ((V)(b_3136))).Put("rings", rings_3137).Put("face", face_3141).Put("dec", dec_3142).Put("DC", DC_3143).Put("spots", spots_3144).Put("strings", strings_3145).Put("crust", crust_3146).Put("char", @char_3147).Put("cl", cl_3148).Put("slab", ((V)(1D))).Put("rx", ((V)(41D))).Put("ya", ((V)(20D))).Put("yb", ((V)(78D))).Put("rT", Fn((V _arrowThis3185, int _argc3178, V y_3184, V _a3181, V _a3182, V _a3183, V[] _rest3179) => {
+return Call(halfW_38, V.Undef, O_3134, y_3184);
+}, 1, "rT", true)).Put("zAt", Fn((V _arrowThis3194, int _argc3186, V x_3192, V y_3193, V _a3190, V _a3191, V[] _rest3187) => {
+return ((V)((Truthy(Call(inside_35, V.Undef, O_3134, x_3192, y_3193)) ? T_3135 : 0D)));
+}, 2, "zAt", true)).Put("zE", Fn((V _arrowThis3201, int _argc3195, V _a3197, V _a3198, V _a3199, V _a3200, V[] _rest3196) => {
+return ((V)((T_3135 + 0.25)));
+}, 0, "zE", true)).Put("cheese", cheese_3138).Put("back", Invoke(S_3132, "rgrad", ((V)("pzb")), Arr(Arr(((V)(0D)), ((V)("#fff2d2"))), Arr(((V)(0.6)), ((V)("#f2d39a"))), Arr(((V)(1D)), ((V)("#d6a660")))))).V;
 return default;
-}, 1, "setup", false)).Put("draw", Fn((V _self2964, int _argc2965, V B_2971, V D_2972, V _a2969, V _a2970, V[] _rest2966) => {
-V P3_2973 = default;
-V set_2974 = default;
-V T_2975 = default;
-V pull_2976 = default;
-double flop_2977 = 0;
-V W_2978 = default;
-V all_2979 = default;
-V fr_2980 = default;
-double s_2981 = 0;
-V cir_2982 = default;
-V C_2983 = default;
-V R_2984 = default;
-V lp_2985 = default;
-JsStrBuf sd_2986 = null;
-if (_self2964.IsNullish) _self2964 = GlobalV;
-{ V _t2987 = D_2972;
-if (_t2987.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t2987));
-{ V _t2988 = Get(_t2987, "P3");
-P3_2973 = _t2988; }
-{ V _t2989 = Get(_t2987, "set");
-set_2974 = _t2989; } }
-T_2975 = Get(B_2971, "T");
-pull_2976 = Call(clamp_12, V.Undef, Invoke(D_2972, "bv", ((V)("pull"))), ((V)(0D)), ((V)(1.2)));
-flop_2977 = (ToNum(Call(clamp_12, V.Undef, Invoke(D_2972, "bv", ((V)("flop"))), ((V)((-1D))), ((V)(1D)))) * 10D);
-W_2978 = Fn((V _self2964, int _argc2990, V x_2996, V y_2997, V z_2998, V _a2995, V[] _rest2991) => {
-V u_2999 = default;
-u_2999 = Call(clamp_12, V.Undef, ((V)(((46D - ToNum(y_2997)) / 36D))), ((V)(0D)), ((V)(1D)));
-return Call(P3_2973, V.Undef, x_2996, Add(y_2997, ((V)((((System.Math.Abs(flop_2977) * ToNum(u_2999)) * ToNum(u_2999)) * 0.35)))), Add(z_2998, ((V)(((flop_2977 * ToNum(u_2999)) * ToNum(u_2999))))));
+}, 1, "setup", false)).Put("draw", Fn((V _self3202, int _argc3203, V B_3209, V D_3210, V _a3207, V _a3208, V[] _rest3204) => {
+V P3_3211 = default;
+V set_3212 = default;
+V T_3213 = default;
+V pull_3214 = default;
+double flop_3215 = 0;
+V W_3216 = default;
+V all_3217 = default;
+V fr_3218 = default;
+double s_3219 = 0;
+V cir_3220 = default;
+V C_3221 = default;
+V R_3222 = default;
+V lp_3223 = default;
+JsStrBuf sd_3224 = null;
+if (_self3202.IsNullish) _self3202 = GlobalV;
+{ V _t3225 = D_3210;
+if (_t3225.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t3225));
+{ V _t3226 = Get(_t3225, "P3");
+P3_3211 = _t3226; }
+{ V _t3227 = Get(_t3225, "set");
+set_3212 = _t3227; } }
+T_3213 = Get(B_3209, "T");
+pull_3214 = Call(clamp_12, V.Undef, Invoke(D_3210, "bv", ((V)("pull"))), ((V)(0D)), ((V)(1.2)));
+flop_3215 = (ToNum(Call(clamp_12, V.Undef, Invoke(D_3210, "bv", ((V)("flop"))), ((V)((-1D))), ((V)(1D)))) * 10D);
+W_3216 = Fn((V _arrowThis3237, int _argc3228, V x_3234, V y_3235, V z_3236, V _a3233, V[] _rest3229) => {
+V u_3238 = default;
+u_3238 = Call(clamp_12, V.Undef, ((V)(((46D - ToNum(y_3235)) / 36D))), ((V)(0D)), ((V)(1D)));
+return Call(P3_3211, V.Undef, x_3234, Add(y_3235, ((V)((((System.Math.Abs(flop_3215) * ToNum(u_3238)) * ToNum(u_3238)) * 0.35)))), Add(z_3236, ((V)(((flop_3215 * ToNum(u_3238)) * ToNum(u_3238))))));
 return default;
 }, 3, "", true);
-all_2979 = Arr();
-Invoke(Get(B_2971, "rings"), "forEach", Fn((V _self2964, int _argc3000, V R_3006, V _a3003, V _a3004, V _a3005, V[] _rest3001) => {
-return Invoke(Get(R_3006, "Q"), "forEach", Fn((V _self2964, int _argc3007, V p_3013, V _a3010, V _a3011, V _a3012, V[] _rest3008) => {
-Invoke(all_2979, "push", Call(W_2978, V.Undef, GetIdx(p_3013, 0D), GetIdx(p_3013, 1D), Get(R_3006, "z")));
-Invoke(all_2979, "push", Call(W_2978, V.Undef, GetIdx(p_3013, 0D), GetIdx(p_3013, 1D), ((V)((-ToNum(Get(R_3006, "z")))))));
+all_3217 = Arr();
+Invoke(Get(B_3209, "rings"), "forEach", Fn((V _arrowThis3246, int _argc3239, V R_3245, V _a3242, V _a3243, V _a3244, V[] _rest3240) => {
+return Invoke(Get(R_3245, "Q"), "forEach", Fn((V _arrowThis3254, int _argc3247, V p_3253, V _a3250, V _a3251, V _a3252, V[] _rest3248) => {
+Invoke(all_3217, "push", Call(W_3216, V.Undef, GetIdx(p_3253, 0D), GetIdx(p_3253, 1D), Get(R_3245, "z")));
+Invoke(all_3217, "push", Call(W_3216, V.Undef, GetIdx(p_3253, 0D), GetIdx(p_3253, 1D), ((V)((-ToNum(Get(R_3245, "z")))))));
 return default;
 }, 1, "", true));
 }, 1, "", true));
-Set(B_2971, "d", Invoke(D_2972, "hull", all_2979));
-fr_2980 = (GeN(Get(D_2972, "front"), 0D) ? V.True : V.False);
-s_2981 = (Truthy(fr_2980) ? 1D : (-1D));
-Call(set_2974, V.Undef, Get(B_2971, "face"), ((V)("d")), Call(polyW_18, V.Undef, Invoke(Get(GetIdx(Get(B_2971, "rings"), (ToNum(Get(Get(B_2971, "rings"), "length")) - 1D)), "Q"), "map", Fn((V _self2964, int _argc3014, V p_3020, V _a3017, V _a3018, V _a3019, V[] _rest3015) => {
-return Call(W_2978, V.Undef, GetIdx(p_3020, 0D), GetIdx(p_3020, 1D), ((V)((s_2981 * ToNum(T_2975)))));
+Set(B_3209, "d", Invoke(D_3210, "hull", all_3217));
+fr_3218 = (GeN(Get(D_3210, "front"), 0D) ? V.True : V.False);
+s_3219 = (Truthy(fr_3218) ? 1D : (-1D));
+Call(set_3212, V.Undef, Get(B_3209, "face"), ((V)("d")), Call(polyW_18, V.Undef, Invoke(Get(GetIdx(Get(B_3209, "rings"), (ToNum(Get(Get(B_3209, "rings"), "length")) - 1D)), "Q"), "map", Fn((V _arrowThis3262, int _argc3255, V p_3261, V _a3258, V _a3259, V _a3260, V[] _rest3256) => {
+return Call(W_3216, V.Undef, GetIdx(p_3261, 0D), GetIdx(p_3261, 1D), ((V)((s_3219 * ToNum(T_3213)))));
 }, 1, "", true))));
-Call(set_2974, V.Undef, Get(B_2971, "face"), ((V)("fill")), (Truthy(fr_2980) ? Get(B_2971, "cheese") : Get(B_2971, "back")));
-Invoke(Get(B_2971, "dec"), "setAttribute", ((V)("opacity")), ((V)((Truthy(fr_2980) ? 1D : 0D))));
-Call(set_2974, V.Undef, Get(B_2971, "spots"), ((V)("opacity")), ((V)((Truthy(fr_2980) ? 0D : 0.4))));
-cir_2982 = Fn((V _self2964, int _argc3021, V x_3027, V y_3028, V r_3029, V z_3030, V[] _rest3022) => {
-V n_3031 = default;
-n_3031 = (_argc3021 > 4 ? _rest3022[0] : V.Undef);
-return Call(polyW_18, V.Undef, Array_from(NewObj(1).Put("length", (n_3031 is var _t3032 && Truthy(_t3032) ? _t3032 : ((V)(14D)))).V, Fn((V _self2964, int _argc3033, V __3039, V k_3040, V _a3037, V _a3038, V[] _rest3034) => {
-return Call(W_2978, V.Undef, Add(x_3027, ((V)((ToNum(r_3029) * FdLibm.Cos(((ToNum(k_3040) / ToNum((n_3031 is var _t3041 && Truthy(_t3041) ? _t3041 : ((V)(14D))))) * TAU_9)))))), Add(y_3028, ((V)((ToNum(r_3029) * FdLibm.Sin(((ToNum(k_3040) / ToNum((n_3031 is var _t3042 && Truthy(_t3042) ? _t3042 : ((V)(14D))))) * TAU_9)))))), z_3030);
+Call(set_3212, V.Undef, Get(B_3209, "face"), ((V)("fill")), (Truthy(fr_3218) ? Get(B_3209, "cheese") : Get(B_3209, "back")));
+Invoke(Get(B_3209, "dec"), "setAttribute", ((V)("opacity")), ((V)((Truthy(fr_3218) ? 1D : 0D))));
+Call(set_3212, V.Undef, Get(B_3209, "spots"), ((V)("opacity")), ((V)((Truthy(fr_3218) ? 0D : 0.4))));
+cir_3220 = Fn((V _arrowThis3274, int _argc3263, V x_3269, V y_3270, V r_3271, V z_3272, V[] _rest3264) => {
+V n_3273 = default;
+n_3273 = (_argc3263 > 4 ? _rest3264[0] : V.Undef);
+return Call(polyW_18, V.Undef, Array_from(NewObj(1).Put("length", (n_3273 is var _t3275 && Truthy(_t3275) ? _t3275 : ((V)(14D)))).V, Fn((V _arrowThis3284, int _argc3276, V __3282, V k_3283, V _a3280, V _a3281, V[] _rest3277) => {
+return Call(W_3216, V.Undef, Add(x_3269, ((V)((ToNum(r_3271) * FdLibm.Cos(((ToNum(k_3283) / ToNum((n_3273 is var _t3285 && Truthy(_t3285) ? _t3285 : ((V)(14D))))) * TAU_9)))))), Add(y_3270, ((V)((ToNum(r_3271) * FdLibm.Sin(((ToNum(k_3283) / ToNum((n_3273 is var _t3286 && Truthy(_t3286) ? _t3286 : ((V)(14D))))) * TAU_9)))))), z_3272);
 }, 2, "", true)));
 }, 5, "", true);
-if (Truthy(fr_2980)) {
-Invoke(Get(B_2971, "DC"), "forEach", Fn((V _self2964, int _argc3043, V o_3049, V i_3050, V _a3047, V _a3048, V[] _rest3044) => {
-return Call(set_2974, V.Undef, Get(o_3049, "e"), ((V)("d")), Call(decD_26, V.Undef, o_3049, Fn((V _self2964, int _argc3051, V x_3057, V y_3058, V _a3055, V _a3056, V[] _rest3052) => {
-return Call(W_2978, V.Undef, x_3057, y_3058, Add(Add(T_2975, ((V)(0.15))), ((V)((ToNum(i_3050) * 0.004)))));
+if (Truthy(fr_3218)) {
+Invoke(Get(B_3209, "DC"), "forEach", Fn((V _arrowThis3295, int _argc3287, V o_3293, V i_3294, V _a3291, V _a3292, V[] _rest3288) => {
+return Call(set_3212, V.Undef, Get(o_3293, "e"), ((V)("d")), Call(decD_26, V.Undef, o_3293, Fn((V _arrowThis3304, int _argc3296, V x_3302, V y_3303, V _a3300, V _a3301, V[] _rest3297) => {
+return Call(W_3216, V.Undef, x_3302, y_3303, Add(Add(T_3213, ((V)(0.15))), ((V)((ToNum(i_3294) * 0.004)))));
 }, 2, "", true)));
 }, 2, "", true));
 } else {
-Call(set_2974, V.Undef, Get(B_2971, "spots"), ((V)("d")), Invoke(Invoke(Arr(Arr(((V)(44D)), ((V)(40D)), ((V)(1.4))), Arr(((V)(58D)), ((V)(46D)), ((V)(1.3))), Arr(((V)(50D)), ((V)(58D)), ((V)(1.5))), Arr(((V)(40D)), ((V)(62D)), ((V)(1.1))), Arr(((V)(62D)), ((V)(64D)), ((V)(1.2))), Arr(((V)(30D)), ((V)(66D)), ((V)(1D))), Arr(((V)(70D)), ((V)(60D)), ((V)(1.3)))), "map", Fn((V _self2964, int _argc3059, V _a3061, V _a3062, V _a3063, V _a3064, V[] _rest3060) => {
-V x_3067 = default;
-V y_3069 = default;
-V r_3071 = default;
-{ V _t3065 = ListOf(_a3061);
-{ V _t3066 = GetIdx(_t3065, 0D);
-x_3067 = _t3066; }
-{ V _t3068 = GetIdx(_t3065, 1D);
-y_3069 = _t3068; }
-{ V _t3070 = GetIdx(_t3065, 2D);
-r_3071 = _t3070; }
+Call(set_3212, V.Undef, Get(B_3209, "spots"), ((V)("d")), Invoke(Invoke(Arr(Arr(((V)(44D)), ((V)(40D)), ((V)(1.4))), Arr(((V)(58D)), ((V)(46D)), ((V)(1.3))), Arr(((V)(50D)), ((V)(58D)), ((V)(1.5))), Arr(((V)(40D)), ((V)(62D)), ((V)(1.1))), Arr(((V)(62D)), ((V)(64D)), ((V)(1.2))), Arr(((V)(30D)), ((V)(66D)), ((V)(1D))), Arr(((V)(70D)), ((V)(60D)), ((V)(1.3)))), "map", Fn((V _arrowThis3318, int _argc3305, V _a3307, V _a3308, V _a3309, V _a3310, V[] _rest3306) => {
+V x_3313 = default;
+V y_3315 = default;
+V r_3317 = default;
+{ V _t3311 = ListOf(_a3307);
+{ V _t3312 = GetIdx(_t3311, 0D);
+x_3313 = _t3312; }
+{ V _t3314 = GetIdx(_t3311, 1D);
+y_3315 = _t3314; }
+{ V _t3316 = GetIdx(_t3311, 2D);
+r_3317 = _t3316; }
 }
-return Call(cir_2982, V.Undef, x_3067, y_3069, r_3071, ((V)(((-ToNum(T_2975)) - 0.15))), ((V)(8D)));
+return Call(cir_3220, V.Undef, x_3313, y_3315, r_3317, ((V)(((-ToNum(T_3213)) - 0.15))), ((V)(8D)));
 }, 1, "", true)), "join", ((V)(""))));
 }
-C_2983 = Arr();
-R_2984 = Arr();
+C_3221 = Arr();
+R_3222 = Arr();
 {
-double i_3072 = 0;
-i_3072 = 0D;
+double i_3319 = 0;
+i_3319 = 0D;
 while (true) {
-if (!((i_3072 <= 10D))) break;
-double t_3074 = 0;
-double u_3075 = 0;
-double x_3076 = 0;
-double y_3077 = 0;
-t_3074 = (i_3072 / 10D);
-u_3075 = (1D - t_3074);
-x_3076 = ((((u_3075 * u_3075) * 7.5) + (((2D * u_3075) * t_3074) * 50D)) + ((t_3074 * t_3074) * 92.5));
-y_3077 = (((((u_3075 * u_3075) * 80D) + (((2D * u_3075) * t_3074) * 91.5)) + ((t_3074 * t_3074) * 80D)) + (ToNum(pull_2976) * 6D));
-Invoke(C_2983, "push", Arr(((V)(x_3076)), ((V)(y_3077)), ((V)(0D))));
-Invoke(R_2984, "push", ((V)((4.6 - (0.9 * Pow((System.Math.Abs((t_3074 - 0.5)) * 2D), 3D))))));
-i_3072++;
+if (!((i_3319 <= 10D))) break;
+double t_3321 = 0;
+double u_3322 = 0;
+double x_3323 = 0;
+double y_3324 = 0;
+t_3321 = (i_3319 / 10D);
+u_3322 = (1D - t_3321);
+x_3323 = ((((u_3322 * u_3322) * 7.5) + (((2D * u_3322) * t_3321) * 50D)) + ((t_3321 * t_3321) * 92.5));
+y_3324 = (((((u_3322 * u_3322) * 80D) + (((2D * u_3322) * t_3321) * 91.5)) + ((t_3321 * t_3321) * 80D)) + (ToNum(pull_3214) * 6D));
+Invoke(C_3221, "push", Arr(((V)(x_3323)), ((V)(y_3324)), ((V)(0D))));
+Invoke(R_3222, "push", ((V)((4.6 - (0.9 * Pow((System.Math.Abs((t_3321 - 0.5)) * 2D), 3D))))));
+i_3319++;
 }
 }
-Call(set_2974, V.Undef, Get(B_2971, "crust"), ((V)("d")), Call(tubeD_45, V.Undef, D_2972, C_2983, R_2984));
-lp_2985 = Invoke(Invoke(C_2983, "slice", ((V)(1D)), ((V)((-1D)))), "map", Fn((V _self2964, int _argc3078, V c_3084, V i_3085, V _a3082, V _a3083, V[] _rest3079) => {
-return Call(P3_2973, V.Undef, GetIdx(c_3084, 0D), ((V)((ToNum(GetIdx(c_3084, 1D)) - (ToNum(GetK(R_2984, Add(i_3085, ((V)(1D))))) * 0.72)))), ((V)(((s_2981 * ToNum(GetK(R_2984, Add(i_3085, ((V)(1D)))))) * 0.55))));
+Call(set_3212, V.Undef, Get(B_3209, "crust"), ((V)("d")), Call(tubeD_45, V.Undef, D_3210, C_3221, R_3222));
+lp_3223 = Invoke(Invoke(C_3221, "slice", ((V)(1D)), ((V)((-1D)))), "map", Fn((V _arrowThis3333, int _argc3325, V c_3331, V i_3332, V _a3329, V _a3330, V[] _rest3326) => {
+return Call(P3_3211, V.Undef, GetIdx(c_3331, 0D), ((V)((ToNum(GetIdx(c_3331, 1D)) - (ToNum(GetK(R_3222, Add(i_3332, ((V)(1D))))) * 0.72)))), ((V)(((s_3219 * ToNum(GetK(R_3222, Add(i_3332, ((V)(1D)))))) * 0.55))));
 }, 2, "", true));
-Call(set_2974, V.Undef, Get(B_2971, "cl"), ((V)("d")), Call(runs_21, V.Undef, lp_2985, Invoke(lp_2985, "map", Fn((V _self2964, int _argc3086, V _a3088, V _a3089, V _a3090, V _a3091, V[] _rest3087) => {
+Call(set_3212, V.Undef, Get(B_3209, "cl"), ((V)("d")), Call(runs_21, V.Undef, lp_3223, Invoke(lp_3223, "map", Fn((V _arrowThis3340, int _argc3334, V _a3336, V _a3337, V _a3338, V _a3339, V[] _rest3335) => {
 return (true ? V.True : V.False);
 }, 0, "", true))));
-Call(set_2974, V.Undef, Get(B_2971, "char"), ((V)("d")), Invoke(Invoke(Arr(Arr(((V)(1.6)), ((V)((-0.1))), ((V)(1.1))), Arr(((V)(3.2)), ((V)(0.25)), ((V)(0.8))), Arr(((V)(4.6)), ((V)((-0.2))), ((V)(1.2))), Arr(((V)(6.3)), ((V)(0.15)), ((V)(0.9))), Arr(((V)(7.7)), ((V)((-0.15))), ((V)(1D))), Arr(((V)(8.9)), ((V)(0.3)), ((V)(0.7)))), "map", Fn((V _self2964, int _argc3092, V _a3094, V _a3095, V _a3096, V _a3097, V[] _rest3093) => {
-double a_3105 = 0;
-double f_3106 = 0;
-V c_3107 = default;
-V rr_3108 = default;
-V i_3100 = default;
-V dy_3102 = default;
-V r_3104 = default;
-{ V _t3098 = ListOf(_a3094);
-{ V _t3099 = GetIdx(_t3098, 0D);
-i_3100 = _t3099; }
-{ V _t3101 = GetIdx(_t3098, 1D);
-dy_3102 = _t3101; }
-{ V _t3103 = GetIdx(_t3098, 2D);
-r_3104 = _t3103; }
+Call(set_3212, V.Undef, Get(B_3209, "char"), ((V)("d")), Invoke(Invoke(Arr(Arr(((V)(1.6)), ((V)((-0.1))), ((V)(1.1))), Arr(((V)(3.2)), ((V)(0.25)), ((V)(0.8))), Arr(((V)(4.6)), ((V)((-0.2))), ((V)(1.2))), Arr(((V)(6.3)), ((V)(0.15)), ((V)(0.9))), Arr(((V)(7.7)), ((V)((-0.15))), ((V)(1D))), Arr(((V)(8.9)), ((V)(0.3)), ((V)(0.7)))), "map", Fn((V _arrowThis3354, int _argc3341, V _a3343, V _a3344, V _a3345, V _a3346, V[] _rest3342) => {
+double a_3355 = 0;
+double f_3356 = 0;
+V c_3357 = default;
+V rr_3358 = default;
+V i_3349 = default;
+V dy_3351 = default;
+V r_3353 = default;
+{ V _t3347 = ListOf(_a3343);
+{ V _t3348 = GetIdx(_t3347, 0D);
+i_3349 = _t3348; }
+{ V _t3350 = GetIdx(_t3347, 1D);
+dy_3351 = _t3350; }
+{ V _t3352 = GetIdx(_t3347, 2D);
+r_3353 = _t3352; }
 }
-a_3105 = System.Math.Floor(ToNum(i_3100));
-f_3106 = (ToNum(i_3100) - a_3105);
-c_3107 = Arr(Add(GetIdx(GetIdx(C_2983, a_3105), 0D), ((V)(((ToNum(GetIdx(GetIdx(C_2983, (a_3105 + 1D)), 0D)) - ToNum(GetIdx(GetIdx(C_2983, a_3105), 0D))) * f_3106)))), Add(GetIdx(GetIdx(C_2983, a_3105), 1D), ((V)(((ToNum(GetIdx(GetIdx(C_2983, (a_3105 + 1D)), 1D)) - ToNum(GetIdx(GetIdx(C_2983, a_3105), 1D))) * f_3106)))));
-rr_3108 = GetIdx(R_2984, a_3105);
-return Call(ellD_20, V.Undef, Call(P3_2973, V.Undef, GetIdx(c_3107, 0D), Add(GetIdx(c_3107, 1D), ((V)((ToNum(dy_3102) * ToNum(rr_3108))))), ((V)(((s_2981 * ToNum(rr_3108)) * 0.82)))), ((V)((ToNum(r_3104) * ToNum(Get(D_2972, "kS"))))), ((V)(((ToNum(r_3104) * 0.65) * ToNum(Get(D_2972, "kS"))))), ((V)(0D)));
+a_3355 = System.Math.Floor(ToNum(i_3349));
+f_3356 = (ToNum(i_3349) - a_3355);
+c_3357 = Arr(Add(GetIdx(GetIdx(C_3221, a_3355), 0D), ((V)(((ToNum(GetIdx(GetIdx(C_3221, (a_3355 + 1D)), 0D)) - ToNum(GetIdx(GetIdx(C_3221, a_3355), 0D))) * f_3356)))), Add(GetIdx(GetIdx(C_3221, a_3355), 1D), ((V)(((ToNum(GetIdx(GetIdx(C_3221, (a_3355 + 1D)), 1D)) - ToNum(GetIdx(GetIdx(C_3221, a_3355), 1D))) * f_3356)))));
+rr_3358 = GetIdx(R_3222, a_3355);
+return Call(ellD_20, V.Undef, Call(P3_3211, V.Undef, GetIdx(c_3357, 0D), Add(GetIdx(c_3357, 1D), ((V)((ToNum(dy_3351) * ToNum(rr_3358))))), ((V)(((s_3219 * ToNum(rr_3358)) * 0.82)))), ((V)((ToNum(r_3353) * ToNum(Get(D_3210, "kS"))))), ((V)(((ToNum(r_3353) * 0.65) * ToNum(Get(D_3210, "kS"))))), ((V)(0D)));
 return default;
 }, 1, "", true)), "join", ((V)(""))));
-sd_2986 = new JsStrBuf("");
-if (GtN(pull_2976, 0.02)) {
-Invoke(Arr(((V)(20D)), ((V)(33D)), ((V)(47D)), ((V)(61D)), ((V)(75D))), "forEach", Fn((V _self2964, int _argc3109, V x_3115, V i_3116, V _a3113, V _a3114, V[] _rest3110) => {
-double yb_3117 = 0;
-V a_3118 = default;
-V b_3119 = default;
-V m_3120 = default;
-yb_3117 = (74D + ((1D - Pow(((ToNum(x_3115) - 50D) / 42D), 2D)) * 5D));
-a_3118 = Call(W_2978, V.Undef, x_3115, ((V)((yb_3117 - 1D))), ((V)((s_2981 * ToNum(Add(T_2975, ((V)(0.3))))))));
-b_3119 = Call(P3_2973, V.Undef, Add(x_3115, ((V)((FdLibm.Sin((ToNum(i_3116) * 2.1)) * 1.2)))), ((V)(((yb_3117 + 2D) + (ToNum(pull_2976) * 6D)))), ((V)((s_2981 * 1D))));
-m_3120 = Call(P3_2973, V.Undef, Add(x_3115, ((V)(((FdLibm.Sin(ToNum(Add(((V)((ToNum(Get(D_2972, "ts")) * 6D))), i_3116))) * 0.8) * ToNum(pull_2976))))), ((V)(((yb_3117 + 1D) + (ToNum(pull_2976) * 3D)))), ((V)((s_2981 * ToNum(Add(T_2975, ((V)(0.5))))))));
-sd_2986.S("M").V(Call(pt_15, V.Undef, a_3118)).S("Q").V(Call(pt_15, V.Undef, m_3120)).S(" ").V(Call(pt_15, V.Undef, b_3119));
+sd_3224 = new JsStrBuf("");
+if (GtN(pull_3214, 0.02)) {
+Invoke(Arr(((V)(20D)), ((V)(33D)), ((V)(47D)), ((V)(61D)), ((V)(75D))), "forEach", Fn((V _arrowThis3367, int _argc3359, V x_3365, V i_3366, V _a3363, V _a3364, V[] _rest3360) => {
+double yb_3368 = 0;
+V a_3369 = default;
+V b_3370 = default;
+V m_3371 = default;
+yb_3368 = (74D + ((1D - Pow(((ToNum(x_3365) - 50D) / 42D), 2D)) * 5D));
+a_3369 = Call(W_3216, V.Undef, x_3365, ((V)((yb_3368 - 1D))), ((V)((s_3219 * ToNum(Add(T_3213, ((V)(0.3))))))));
+b_3370 = Call(P3_3211, V.Undef, Add(x_3365, ((V)((FdLibm.Sin((ToNum(i_3366) * 2.1)) * 1.2)))), ((V)(((yb_3368 + 2D) + (ToNum(pull_3214) * 6D)))), ((V)((s_3219 * 1D))));
+m_3371 = Call(P3_3211, V.Undef, Add(x_3365, ((V)(((FdLibm.Sin(ToNum(Add(((V)((ToNum(Get(D_3210, "ts")) * 6D))), i_3366))) * 0.8) * ToNum(pull_3214))))), ((V)(((yb_3368 + 1D) + (ToNum(pull_3214) * 3D)))), ((V)((s_3219 * ToNum(Add(T_3213, ((V)(0.5))))))));
+sd_3224.S("M").V(Call(pt_15, V.Undef, a_3369)).S("Q").V(Call(pt_15, V.Undef, m_3371)).S(" ").V(Call(pt_15, V.Undef, b_3370));
 return default;
 }, 2, "", true));
 }
-Call(set_2974, V.Undef, Get(B_2971, "strings"), ((V)("d")), (((V)(sd_2986.Str)) is var _t3121 && Truthy(_t3121) ? _t3121 : ((V)("M0 0"))));
-Call(set_2974, V.Undef, Get(B_2971, "strings"), ((V)("stroke-width")), Call(r2_11, V.Undef, ((V)((0.6 + (ToNum(pull_2976) * 1.2))))));
+Call(set_3212, V.Undef, Get(B_3209, "strings"), ((V)("d")), (((V)(sd_3224.Str)) is var _t3372 && Truthy(_t3372) ? _t3372 : ((V)("M0 0"))));
+Call(set_3212, V.Undef, Get(B_3209, "strings"), ((V)("stroke-width")), Call(r2_11, V.Undef, ((V)((0.6 + (ToNum(pull_3214) * 1.2))))));
 return default;
 }, 2, "draw", false)).V);
-Set(MODELS_42, "sunny", NewObj(2).Put("setup", Fn((V _self3122, int _argc3123, V S_3129, V _a3126, V _a3127, V _a3128, V[] _rest3124) => {
-V sk_3130 = default;
-V O_3131 = default;
-V rT_3132 = default;
-double YK_3133 = 0;
-V crack_3134 = default;
-V spk_3135 = default;
-V open_3136 = default;
-V yolk_3137 = default;
-V capE_3138 = default;
-V capL_3139 = default;
-V SP_3140 = default;
-V OS_3141 = default;
-V roll_3142 = default;
-if (_self3122.IsNullish) _self3122 = GlobalV;
-{ V _t3143 = S_3129;
-if (_t3143.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t3143));
-{ V _t3144 = Get(_t3143, "sk");
-sk_3130 = _t3144; } }
-O_3131 = Invoke(S_3129, "outline", sk_3130, ((V)(72D)));
-rT_3132 = Fn((V _self3122, int _argc3145, V y_3151, V _a3148, V _a3149, V _a3150, V[] _rest3146) => {
-return Call(halfW_38, V.Undef, O_3131, Call(clamp_12, V.Undef, y_3151, ((V)(12.2)), ((V)(91.8))));
+Set(MODELS_42, "sunny", NewObj(2).Put("setup", Fn((V _self3373, int _argc3374, V S_3380, V _a3377, V _a3378, V _a3379, V[] _rest3375) => {
+V sk_3381 = default;
+V O_3382 = default;
+V rT_3383 = default;
+double YK_3384 = 0;
+V crack_3385 = default;
+V spk_3386 = default;
+V open_3387 = default;
+V yolk_3388 = default;
+V capE_3389 = default;
+V capL_3390 = default;
+V SP_3391 = default;
+V OS_3392 = default;
+V roll_3393 = default;
+if (_self3373.IsNullish) _self3373 = GlobalV;
+{ V _t3394 = S_3380;
+if (_t3394.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t3394));
+{ V _t3395 = Get(_t3394, "sk");
+sk_3381 = _t3395; } }
+O_3382 = Invoke(S_3380, "outline", sk_3381, ((V)(72D)));
+rT_3383 = Fn((V _arrowThis3403, int _argc3396, V y_3402, V _a3399, V _a3400, V _a3401, V[] _rest3397) => {
+return Call(halfW_38, V.Undef, O_3382, Call(clamp_12, V.Undef, y_3402, ((V)(12.2)), ((V)(91.8))));
 }, 1, "", true);
-YK_3133 = 31.8;
-Invoke(S_3129, "hide", Fn((V _self3122, int _argc3152, V q_3158, V _a3155, V _a3156, V _a3157, V[] _rest3153) => {
-return (Get(q_3158, "inBody") is var _t3159 && !Truthy(_t3159) ? _t3159 : ((SEqS(Invoke(S_3129, "s", q_3158), "#c9a87c") || SEqS(Invoke(S_3129, "f", q_3158), "#d8c09c")) ? V.True : V.False));
+YK_3384 = 31.8;
+Invoke(S_3380, "hide", Fn((V _arrowThis3411, int _argc3404, V q_3410, V _a3407, V _a3408, V _a3409, V[] _rest3405) => {
+return (Get(q_3410, "inBody") is var _t3412 && !Truthy(_t3412) ? _t3412 : ((SEqS(Invoke(S_3380, "s", q_3410), "#c9a87c") || SEqS(Invoke(S_3380, "f", q_3410), "#d8c09c")) ? V.True : V.False));
 }, 1, "", true));
-crack_3134 = Invoke(S_3129, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#c9a87c"))).Put("stroke-width", ((V)(0.9))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V);
-spk_3135 = Invoke(S_3129, "path", NewObj(2).Put("fill", ((V)("#d8c09c"))).Put("opacity", ((V)(0.55))).V);
-open_3136 = Invoke(S_3129, "path", NewObj(1).Put("fill", ((V)("#fffdf6"))).V);
-yolk_3137 = Invoke(S_3129, "path", NewObj(1).Put("fill", Invoke(S_3129, "rgrad", ((V)("sny")), Arr(Arr(((V)(0D)), ((V)("#fff3a8"))), Arr(((V)(0.6)), ((V)("#ffc42c"))), Arr(((V)(1D)), ((V)("#ef9410")))), NewObj(3).Put("cx", ((V)("42%"))).Put("cy", ((V)("35%"))).Put("r", ((V)("70%"))).V)).V);
-capE_3138 = Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", Invoke(S_3129, "f", sk_3130)).V, Get(S_3129, "gB"));
-capL_3139 = Call(el_14, V.Undef, ((V)("path")), NewObj(3).Put("fill", ((V)("none"))).Put("stroke", ((V)("#c9a87c"))).Put("stroke-width", ((V)(0.8))).V, Get(S_3129, "gB"));
-SP_3140 = Invoke(Array_from(NewObj(1).Put("length", ((V)(18D))).V, Fn((V _self3122, int _argc3171, V __3177, V i_3178, V _a3175, V _a3176, V[] _rest3172) => {
-return Arr(((V)((ToNum(Call(rnd_22, V.Undef, ((V)((ToNum(i_3178) * 3.7))))) * TAU_9))), ((V)((16D + (ToNum(Call(rnd_22, V.Undef, ((V)((ToNum(i_3178) * 5.9))))) * 72D)))));
-}, 2, "", true)), "filter", Fn((V _self3122, int _argc3160, V _a3162, V _a3163, V _a3164, V _a3165, V[] _rest3161) => {
-V f_3168 = default;
-V y_3170 = default;
-{ V _t3166 = ListOf(_a3162);
-{ V _t3167 = GetIdx(_t3166, 0D);
-f_3168 = _t3167; }
-{ V _t3169 = GetIdx(_t3166, 1D);
-y_3170 = _t3169; }
+crack_3385 = Invoke(S_3380, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#c9a87c"))).Put("stroke-width", ((V)(0.9))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).V);
+spk_3386 = Invoke(S_3380, "path", NewObj(2).Put("fill", ((V)("#d8c09c"))).Put("opacity", ((V)(0.55))).V);
+open_3387 = Invoke(S_3380, "path", NewObj(1).Put("fill", ((V)("#fffdf6"))).V);
+yolk_3388 = Invoke(S_3380, "path", NewObj(1).Put("fill", Invoke(S_3380, "rgrad", ((V)("sny")), Arr(Arr(((V)(0D)), ((V)("#fff3a8"))), Arr(((V)(0.6)), ((V)("#ffc42c"))), Arr(((V)(1D)), ((V)("#ef9410")))), NewObj(3).Put("cx", ((V)("42%"))).Put("cy", ((V)("35%"))).Put("r", ((V)("70%"))).V)).V);
+capE_3389 = Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", Invoke(S_3380, "f", sk_3381)).V, Get(S_3380, "gB"));
+capL_3390 = Call(el_14, V.Undef, ((V)("path")), NewObj(3).Put("fill", ((V)("none"))).Put("stroke", ((V)("#c9a87c"))).Put("stroke-width", ((V)(0.8))).V, Get(S_3380, "gB"));
+SP_3391 = Invoke(Array_from(NewObj(1).Put("length", ((V)(18D))).V, Fn((V _arrowThis3433, int _argc3425, V __3431, V i_3432, V _a3429, V _a3430, V[] _rest3426) => {
+return Arr(((V)((ToNum(Call(rnd_22, V.Undef, ((V)((ToNum(i_3432) * 3.7))))) * TAU_9))), ((V)((16D + (ToNum(Call(rnd_22, V.Undef, ((V)((ToNum(i_3432) * 5.9))))) * 72D)))));
+}, 2, "", true)), "filter", Fn((V _arrowThis3424, int _argc3413, V _a3415, V _a3416, V _a3417, V _a3418, V[] _rest3414) => {
+V f_3421 = default;
+V y_3423 = default;
+{ V _t3419 = ListOf(_a3415);
+{ V _t3420 = GetIdx(_t3419, 0D);
+f_3421 = _t3420; }
+{ V _t3422 = GetIdx(_t3419, 1D);
+y_3423 = _t3422; }
 }
-return (!((((System.Math.Abs(FdLibm.Atan2(FdLibm.Sin(ToNum(f_3168)), FdLibm.Cos(ToNum(f_3168)))) < 0.55) && GtN(y_3170, 50D)) && LtN(y_3170, 72D))) ? V.True : V.False);
+return (!((((System.Math.Abs(FdLibm.Atan2(FdLibm.Sin(ToNum(f_3421)), FdLibm.Cos(ToNum(f_3421)))) < 0.55) && GtN(y_3423, 50D)) && LtN(y_3423, 72D))) ? V.True : V.False);
 }, 1, "", true));
-OS_3141 = Invoke(O_3131, "filter", Fn((V _self3122, int _argc3179, V p_3185, V i_3186, V _a3183, V _a3184, V[] _rest3180) => {
-return (((ToNum(i_3186) % 2D) == 0D) ? V.True : V.False);
+OS_3392 = Invoke(O_3382, "filter", Fn((V _arrowThis3442, int _argc3434, V p_3440, V i_3441, V _a3438, V _a3439, V[] _rest3435) => {
+return (((ToNum(i_3441) % 2D) == 0D) ? V.True : V.False);
 }, 2, "", true));
-roll_3142 = Fn((V _self3122, int _argc3187, V a_3193, V P_3194, V G_3195, V sy_3196, V[] _rest3188) => {
-double c_3197 = 0;
-double s_3198 = 0;
-V lf_3199 = default;
-V px_3200 = default;
-V cx_3201 = default;
-double cy_3202 = 0;
-double my_3203 = 0;
-c_3197 = FdLibm.Cos(ToNum(a_3193));
-s_3198 = FdLibm.Sin(ToNum(a_3193));
-lf_3199 = (((V)(ToNum(Get(P_3194, "lift")))) is var _t3204 && Truthy(_t3204) ? _t3204 : ((V)(0D)));
-px_3200 = (((V)(ToNum(Get(P_3194, "x")))) is var _t3205 && Truthy(_t3205) ? _t3205 : ((V)(0D)));
-cx_3201 = Add(((V)(50D)), px_3200);
-cy_3202 = ((ToNum(G_3195) - ToNum(lf_3199)) - ((ToNum(G_3195) - 56D) * ToNum(sy_3196)));
-my_3203 = (-1000000000D);
-Invoke(OS_3141, "forEach", Fn((V _self3122, int _argc3206, V p_3212, V _a3209, V _a3210, V _a3211, V[] _rest3207) => {
-V gx_3213 = default;
-double gy_3214 = 0;
-double y_3215 = 0;
-gx_3213 = Add(GetIdx(p_3212, 0D), px_3200);
-gy_3214 = ((ToNum(G_3195) - ToNum(lf_3199)) - ((ToNum(G_3195) - ToNum(GetIdx(p_3212, 1D))) * ToNum(sy_3196)));
-y_3215 = ((cy_3202 + ((ToNum(gx_3213) - ToNum(cx_3201)) * s_3198)) + ((gy_3214 - cy_3202) * c_3197));
-if ((y_3215 > my_3203)) {
-my_3203 = y_3215;
+roll_3393 = Fn((V _arrowThis3453, int _argc3443, V a_3449, V P_3450, V G_3451, V sy_3452, V[] _rest3444) => {
+double c_3454 = 0;
+double s_3455 = 0;
+V lf_3456 = default;
+V px_3457 = default;
+V cx_3458 = default;
+double cy_3459 = 0;
+double my_3460 = 0;
+c_3454 = FdLibm.Cos(ToNum(a_3449));
+s_3455 = FdLibm.Sin(ToNum(a_3449));
+lf_3456 = (((V)(ToNum(Get(P_3450, "lift")))) is var _t3461 && Truthy(_t3461) ? _t3461 : ((V)(0D)));
+px_3457 = (((V)(ToNum(Get(P_3450, "x")))) is var _t3462 && Truthy(_t3462) ? _t3462 : ((V)(0D)));
+cx_3458 = Add(((V)(50D)), px_3457);
+cy_3459 = ((ToNum(G_3451) - ToNum(lf_3456)) - ((ToNum(G_3451) - 56D) * ToNum(sy_3452)));
+my_3460 = (-1000000000D);
+Invoke(OS_3392, "forEach", Fn((V _arrowThis3470, int _argc3463, V p_3469, V _a3466, V _a3467, V _a3468, V[] _rest3464) => {
+V gx_3471 = default;
+double gy_3472 = 0;
+double y_3473 = 0;
+gx_3471 = Add(GetIdx(p_3469, 0D), px_3457);
+gy_3472 = ((ToNum(G_3451) - ToNum(lf_3456)) - ((ToNum(G_3451) - ToNum(GetIdx(p_3469, 1D))) * ToNum(sy_3452)));
+y_3473 = ((cy_3459 + ((ToNum(gx_3471) - ToNum(cx_3458)) * s_3455)) + ((gy_3472 - cy_3459) * c_3454));
+if ((y_3473 > my_3460)) {
+my_3460 = y_3473;
 }
 return default;
 }, 1, "", true));
-return NewObj(5).Put("c", ((V)(c_3197))).Put("s", ((V)(s_3198))).Put("cx", cx_3201).Put("cy", ((V)(cy_3202))).Put("up", ((V)((my_3203 - (ToNum(G_3195) - ToNum(lf_3199)))))).V;
+return NewObj(5).Put("c", ((V)(c_3454))).Put("s", ((V)(s_3455))).Put("cx", cx_3458).Put("cy", ((V)(cy_3459))).Put("up", ((V)((my_3460 - (ToNum(G_3451) - ToNum(lf_3456)))))).V;
 return default;
 }, 4, "", true);
-return NewObj(15).Put("O", O_3131).Put("rT", rT_3132).Put("YK", ((V)(YK_3133))).Put("crack", crack_3134).Put("spk", spk_3135).Put("open", open_3136).Put("yolk", yolk_3137).Put("capE", capE_3138).Put("capL", capL_3139).Put("SP", SP_3140).Put("roll", roll_3142).Put("rx", ((V)(30D))).Put("ya", ((V)(30D))).Put("yb", ((V)(88D))).Put("zE", Fn((V _self3122, int _argc3216, V dx_3222, V dy_3223, V _a3220, V _a3221, V[] _rest3217) => {
-V r_3224 = default;
-r_3224 = Call(rT_3132, V.Undef, Add(Get(S_3129, "HY"), dy_3223));
-return ((V)((System.Math.Sqrt(Max(0D, ((ToNum(r_3224) * ToNum(r_3224)) - (ToNum(dx_3222) * ToNum(dx_3222))))) + 0.3)));
+return NewObj(15).Put("O", O_3382).Put("rT", rT_3383).Put("YK", ((V)(YK_3384))).Put("crack", crack_3385).Put("spk", spk_3386).Put("open", open_3387).Put("yolk", yolk_3388).Put("capE", capE_3389).Put("capL", capL_3390).Put("SP", SP_3391).Put("roll", roll_3393).Put("rx", ((V)(30D))).Put("ya", ((V)(30D))).Put("yb", ((V)(88D))).Put("zE", Fn((V _arrowThis3482, int _argc3474, V dx_3480, V dy_3481, V _a3478, V _a3479, V[] _rest3475) => {
+V r_3483 = default;
+r_3483 = Call(rT_3383, V.Undef, Add(Get(S_3380, "HY"), dy_3481));
+return ((V)((System.Math.Sqrt(Max(0D, ((ToNum(r_3483) * ToNum(r_3483)) - (ToNum(dx_3480) * ToNum(dx_3480))))) + 0.3)));
 return default;
 }, 2, "zE", true)).V;
 return default;
-}, 1, "setup", false)).Put("draw", Fn((V _self3225, int _argc3226, V B_3232, V D_3233, V _a3230, V _a3231, V[] _rest3227) => {
-V P3_3234 = default;
-V set_3235 = default;
-V rT_3236 = default;
-V YK_3237 = default;
-V cap_3238 = default;
-V wob_3239 = default;
-V ring_3240 = default;
-V y0_3241 = default;
-V hp_3242 = default;
-V rk_3243 = default;
-V CA_3244 = default;
-V cq_3245 = default;
-double EL_3246 = 0;
-V PE_3247 = default;
-double yr_3248 = 0;
-double yk_3249 = 0;
-double lift_3250 = 0;
-double tip_3251 = 0;
-double ct_3252 = 0;
-double st_3253 = 0;
-V pv_3254 = default;
-V cp_3255 = default;
-V cl_3256 = default;
-if (_self3225.IsNullish) _self3225 = GlobalV;
-{ V _t3257 = D_3233;
-if (_t3257.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t3257));
-{ V _t3258 = Get(_t3257, "P3");
-P3_3234 = _t3258; }
-{ V _t3259 = Get(_t3257, "set");
-set_3235 = _t3259; } }
-rT_3236 = Get(B_3232, "rT");
-YK_3237 = Get(B_3232, "YK");
-cap_3238 = Call(clamp_12, V.Undef, Invoke(D_3233, "bv", ((V)("cap"))), ((V)(0D)), ((V)(1.2)));
-wob_3239 = Call(clamp_12, V.Undef, Invoke(D_3233, "bv", ((V)("wob"))), ((V)(0D)), ((V)(1.6)));
-ring_3240 = Fn((V _self3225, int _argc3260, V r_3266, V y_3267, V n_3268, V _a3265, V[] _rest3261) => {
-return Array_from(NewObj(1).Put("length", n_3268).V, Fn((V _self3225, int _argc3269, V __3275, V k_3276, V _a3273, V _a3274, V[] _rest3270) => {
-double f_3277 = 0;
-f_3277 = ((ToNum(k_3276) / ToNum(n_3268)) * TAU_9);
-return Call(P3_3234, V.Undef, ((V)((50D + (ToNum(r_3266) * FdLibm.Sin(f_3277))))), y_3267, ((V)((ToNum(r_3266) * FdLibm.Cos(f_3277)))));
+}, 1, "setup", false)).Put("draw", Fn((V _self3484, int _argc3485, V B_3491, V D_3492, V _a3489, V _a3490, V[] _rest3486) => {
+V P3_3493 = default;
+V set_3494 = default;
+V rT_3495 = default;
+V YK_3496 = default;
+V cap_3497 = default;
+V wob_3498 = default;
+V ring_3499 = default;
+V y0_3500 = default;
+V hp_3501 = default;
+V rk_3502 = default;
+V CA_3503 = default;
+V cq_3504 = default;
+double EL_3505 = 0;
+V PE_3506 = default;
+double yr_3507 = 0;
+double yk_3508 = 0;
+double lift_3509 = 0;
+double tip_3510 = 0;
+double ct_3511 = 0;
+double st_3512 = 0;
+V pv_3513 = default;
+V cp_3514 = default;
+V cl_3515 = default;
+if (_self3484.IsNullish) _self3484 = GlobalV;
+{ V _t3516 = D_3492;
+if (_t3516.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t3516));
+{ V _t3517 = Get(_t3516, "P3");
+P3_3493 = _t3517; }
+{ V _t3518 = Get(_t3516, "set");
+set_3494 = _t3518; } }
+rT_3495 = Get(B_3491, "rT");
+YK_3496 = Get(B_3491, "YK");
+cap_3497 = Call(clamp_12, V.Undef, Invoke(D_3492, "bv", ((V)("cap"))), ((V)(0D)), ((V)(1.2)));
+wob_3498 = Call(clamp_12, V.Undef, Invoke(D_3492, "bv", ((V)("wob"))), ((V)(0D)), ((V)(1.6)));
+ring_3499 = Fn((V _arrowThis3528, int _argc3519, V r_3525, V y_3526, V n_3527, V _a3524, V[] _rest3520) => {
+return Array_from(NewObj(1).Put("length", n_3527).V, Fn((V _arrowThis3537, int _argc3529, V __3535, V k_3536, V _a3533, V _a3534, V[] _rest3530) => {
+double f_3538 = 0;
+f_3538 = ((ToNum(k_3536) / ToNum(n_3527)) * TAU_9);
+return Call(P3_3493, V.Undef, ((V)((50D + (ToNum(r_3525) * FdLibm.Sin(f_3538))))), y_3526, ((V)((ToNum(r_3525) * FdLibm.Cos(f_3538)))));
 return default;
 }, 2, "", true));
 }, 3, "", true);
-y0_3241 = (GtN(cap_3238, 0.02) ? YK_3237 : ((V)(12.2)));
-hp_3242 = Arr();
+y0_3500 = (GtN(cap_3497, 0.02) ? YK_3496 : ((V)(12.2)));
+hp_3501 = Arr();
 {
-double i_3278 = 0;
-i_3278 = 0D;
+double i_3539 = 0;
+i_3539 = 0D;
 while (true) {
-if (!((i_3278 <= 18D))) break;
-V y_3280 = default;
-y_3280 = Add(y0_3241, ((V)((((91.8 - ToNum(y0_3241)) * i_3278) / 18D))));
-InvokeSpread(hp_3242, "push", new ArrBuilder().Spread(Call(ring_3240, V.Undef, Call(rT_3236, V.Undef, y_3280), y_3280, ((V)(24D)))).V);
-i_3278++;
+if (!((i_3539 <= 18D))) break;
+V y_3541 = default;
+y_3541 = Add(y0_3500, ((V)((((91.8 - ToNum(y0_3500)) * i_3539) / 18D))));
+InvokeSpread(hp_3501, "push", new ArrBuilder().Spread(Call(ring_3499, V.Undef, Call(rT_3495, V.Undef, y_3541), y_3541, ((V)(24D)))).V);
+i_3539++;
 }
 }
-Set(B_3232, "d", Invoke(D_3233, "hull", hp_3242));
-Call(set_3235, V.Undef, Get(B_3232, "spk"), ((V)("d")), (Invoke(Invoke(Invoke(Get(B_3232, "SP"), "filter", Fn((V _self3225, int _argc3292, V _a3294, V _a3295, V _a3296, V _a3297, V[] _rest3293) => {
-V f_3300 = default;
-V y_3302 = default;
-{ V _t3298 = ListOf(_a3294);
-{ V _t3299 = GetIdx(_t3298, 0D);
-f_3300 = _t3299; }
-{ V _t3301 = GetIdx(_t3298, 1D);
-y_3302 = _t3301; }
+Set(B_3491, "d", Invoke(D_3492, "hull", hp_3501));
+Call(set_3494, V.Undef, Get(B_3491, "spk"), ((V)("d")), (Invoke(Invoke(Invoke(Get(B_3491, "SP"), "filter", Fn((V _arrowThis3565, int _argc3554, V _a3556, V _a3557, V _a3558, V _a3559, V[] _rest3555) => {
+V f_3562 = default;
+V y_3564 = default;
+{ V _t3560 = ListOf(_a3556);
+{ V _t3561 = GetIdx(_t3560, 0D);
+f_3562 = _t3561; }
+{ V _t3563 = GetIdx(_t3560, 1D);
+y_3564 = _t3563; }
 }
-return ((Gt(y_3302, Add(y0_3241, ((V)(1D)))) && GtN(Invoke(D_3233, "facing", ((V)((50D + (ToNum(Call(rT_3236, V.Undef, y_3302)) * FdLibm.Sin(ToNum(f_3300)))))), y_3302, ((V)((ToNum(Call(rT_3236, V.Undef, y_3302)) * FdLibm.Cos(ToNum(f_3300))))), ((V)(FdLibm.Sin(ToNum(f_3300)))), ((V)(0D)), ((V)(FdLibm.Cos(ToNum(f_3300))))), 0.05)) ? V.True : V.False);
-}, 1, "", true)), "map", Fn((V _self3225, int _argc3281, V _a3283, V _a3284, V _a3285, V _a3286, V[] _rest3282) => {
-V f_3289 = default;
-V y_3291 = default;
-{ V _t3287 = ListOf(_a3283);
-{ V _t3288 = GetIdx(_t3287, 0D);
-f_3289 = _t3288; }
-{ V _t3290 = GetIdx(_t3287, 1D);
-y_3291 = _t3290; }
-}
-return Call(circD_19, V.Undef, Call(P3_3234, V.Undef, ((V)((50D + (ToNum(Add(Call(rT_3236, V.Undef, y_3291), ((V)(0.1)))) * FdLibm.Sin(ToNum(f_3289)))))), y_3291, ((V)((ToNum(Add(Call(rT_3236, V.Undef, y_3291), ((V)(0.1)))) * FdLibm.Cos(ToNum(f_3289)))))), ((V)((0.75 * ToNum(Get(D_3233, "kS"))))));
-}, 1, "", true)), "join", ((V)(""))) is var _t3303 && Truthy(_t3303) ? _t3303 : ((V)("M0 0"))));
-rk_3243 = Call(rT_3236, V.Undef, YK_3237);
-CA_3244 = Invoke(Get(SN_43, "h"), "frontArc", D_3233, rk_3243, YK_3237, ((V)(72D)));
-cq_3245 = Invoke(CA_3244, "map", Fn((V _self3225, int _argc3304, V f_3310, V i_3311, V _a3308, V _a3309, V[] _rest3305) => {
-return Call(P3_3234, V.Undef, ((V)((50D + (ToNum(Add(rk_3243, ((V)(0.1)))) * FdLibm.Sin(ToNum(f_3310)))))), Add(YK_3237, ((V)((NumTruthy((ToNum(i_3311) % 2D)) ? (-1.6) : 1.4)))), ((V)((ToNum(Add(rk_3243, ((V)(0.1)))) * FdLibm.Cos(ToNum(f_3310))))));
-}, 2, "", true));
-if (LeN(cap_3238, 0.02)) {
-Call(set_3235, V.Undef, Get(B_3232, "crack"), ((V)("d")), (Call(runs_21, V.Undef, cq_3245, Invoke(cq_3245, "map", Fn((V _self3225, int _argc3312, V _a3314, V _a3315, V _a3316, V _a3317, V[] _rest3313) => {
-return (true ? V.True : V.False);
-}, 0, "", true))) is var _t3318 && Truthy(_t3318) ? _t3318 : ((V)("M0 0"))));
-Invoke(Arr(((V)("open")), ((V)("yolk")), ((V)("capE")), ((V)("capL"))), "forEach", Fn((V _self3225, int _argc3319, V k_3325, V _a3322, V _a3323, V _a3324, V[] _rest3320) => {
-return Call(set_3235, V.Undef, GetK(B_3232, k_3325), ((V)("d")), ((V)("M0 0")));
-}, 1, "", true));
-return default;
-}
-Call(set_3235, V.Undef, Get(B_3232, "crack"), ((V)("d")), ((V)("M0 0")));
-EL_3246 = 0.22;
-PE_3247 = Fn((V _self3225, int _argc3326, V x_3332, V y_3333, V z_3334, V _a3331, V[] _rest3327) => {
-V p_3335 = default;
-p_3335 = Call(P3_3234, V.Undef, x_3332, y_3333, z_3334);
-return Arr(GetIdx(p_3335, 0D), Add(GetIdx(p_3335, 1D), ((V)((EL_3246 * (ToNum(Invoke(D_3233, "Z3", x_3332, y_3333, z_3334)) - ToNum(rk_3243)))))));
-return default;
-}, 3, "", true);
-Call(set_3235, V.Undef, Get(B_3232, "open"), ((V)("d")), Call(polyW_18, V.Undef, Array_from(NewObj(1).Put("length", ((V)(36D))).V, Fn((V _self3225, int _argc3336, V __3342, V k_3343, V _a3340, V _a3341, V[] _rest3337) => {
-double f_3344 = 0;
-f_3344 = ((ToNum(k_3343) / 36D) * TAU_9);
-return Call(PE_3247, V.Undef, ((V)((50D + (ToNum(rk_3243) * FdLibm.Sin(f_3344))))), YK_3237, ((V)((ToNum(rk_3243) * FdLibm.Cos(f_3344)))));
-return default;
-}, 2, "", true))));
-yr_3248 = ((ToNum(rk_3243) * 0.62) * (1D + ((ToNum(wob_3239) * 0.06) * FdLibm.Sin((ToNum(Get(D_3233, "ts")) * 15D)))));
-yk_3249 = ((ToNum(YK_3237) - 1.2) - ((ToNum(wob_3239) * 0.6) * FdLibm.Sin((ToNum(Get(D_3233, "ts")) * 17D))));
-Call(set_3235, V.Undef, Get(B_3232, "yolk"), ((V)("d")), Call(polyW_18, V.Undef, Array_from(NewObj(1).Put("length", ((V)(30D))).V, Fn((V _self3225, int _argc3345, V __3351, V k_3352, V _a3349, V _a3350, V[] _rest3346) => {
-double f_3353 = 0;
-f_3353 = ((ToNum(k_3352) / 30D) * TAU_9);
-return Call(PE_3247, V.Undef, ((V)((50D + (yr_3248 * FdLibm.Sin(f_3353))))), ((V)(yk_3249)), ((V)((yr_3248 * FdLibm.Cos(f_3353)))));
-return default;
-}, 2, "", true))));
-lift_3250 = (ToNum(cap_3238) * 11D);
-tip_3251 = (((ToNum(cap_3238) * 58D) * System.Math.PI) / 180D);
-ct_3252 = FdLibm.Cos(tip_3251);
-st_3253 = FdLibm.Sin(tip_3251);
-pv_3254 = Arr(((V)(50D)), YK_3237, ((V)((-ToNum(rk_3243)))));
-cp_3255 = Arr();
-{
-double i_3354 = 0;
-i_3354 = 0D;
-while (true) {
-if (!((i_3354 <= 8D))) break;
-double y_3356 = 0;
-V r_3357 = default;
-y_3356 = (12.2 + (((ToNum(YK_3237) - 12.2) * i_3354) / 8D));
-r_3357 = Call(rT_3236, V.Undef, ((V)(y_3356)));
-{
-double k_3358 = 0;
-k_3358 = 0D;
-while (true) {
-if (!((k_3358 < 20D))) break;
-double f_3360 = 0;
-double x_3361 = 0;
-double z_3362 = 0;
-double vy_3363 = 0;
-double vz_3364 = 0;
-f_3360 = ((k_3358 / 20D) * TAU_9);
-x_3361 = (50D + (ToNum(r_3357) * FdLibm.Sin(f_3360)));
-z_3362 = (ToNum(r_3357) * FdLibm.Cos(f_3360));
-vy_3363 = (y_3356 - ToNum(GetIdx(pv_3254, 1D)));
-vz_3364 = (z_3362 - ToNum(GetIdx(pv_3254, 2D)));
-Invoke(cp_3255, "push", Call(P3_3234, V.Undef, ((V)(x_3361)), ((V)(((ToNum(Add(GetIdx(pv_3254, 1D), ((V)((vy_3363 * ct_3252))))) - (vz_3364 * st_3253)) - lift_3250))), Add(Add(GetIdx(pv_3254, 2D), ((V)((vy_3363 * st_3253)))), ((V)((vz_3364 * ct_3252))))));
-k_3358++;
-}
-}
-i_3354++;
-}
-}
-Call(set_3235, V.Undef, Get(B_3232, "capE"), ((V)("d")), Invoke(D_3233, "hull", cp_3255));
-cl_3256 = Arr();
-{
-double k_3365 = 0;
-k_3365 = 0D;
-while (true) {
-if (!((k_3365 <= 24D))) break;
-double f_3367 = 0;
-double x_3368 = 0;
-double z_3369 = 0;
-double vz_3370 = 0;
-f_3367 = (((-System.Math.PI) / 2D) + ((System.Math.PI * k_3365) / 24D));
-x_3368 = (50D + (ToNum(rk_3243) * FdLibm.Sin(f_3367)));
-z_3369 = (ToNum(rk_3243) * FdLibm.Cos(f_3367));
-vz_3370 = (z_3369 - ToNum(GetIdx(pv_3254, 2D)));
-Invoke(cl_3256, "push", Call(P3_3234, V.Undef, ((V)(x_3368)), ((V)(((ToNum(GetIdx(pv_3254, 1D)) - (vz_3370 * st_3253)) - lift_3250))), Add(GetIdx(pv_3254, 2D), ((V)((vz_3370 * ct_3252))))));
-k_3365++;
-}
-}
-Call(set_3235, V.Undef, Get(B_3232, "capL"), ((V)("d")), Call(runs_21, V.Undef, cl_3256, Invoke(cl_3256, "map", Fn((V _self3225, int _argc3371, V _a3373, V _a3374, V _a3375, V _a3376, V[] _rest3372) => {
-return (true ? V.True : V.False);
-}, 0, "", true))));
-return default;
-}, 2, "draw", false)).V);
-Set(MODELS_42, "khinki", NewObj(2).Put("setup", Fn((V _self3377, int _argc3378, V S_3384, V _a3381, V _a3382, V _a3383, V[] _rest3379) => {
-V sk_3385 = default;
-V O_3386 = default;
-V rT_3387 = default;
-V KN_3388 = default;
-V kn_3389 = default;
-V KF_3390 = default;
-double Y0_3391 = 0;
-double Y1_3392 = 0;
-V tw_3393 = default;
-V xw_3394 = default;
-V dep_3395 = default;
-V PG_3396 = default;
-V LN_3397 = default;
-V knob_3398 = default;
-V KG_3399 = default;
-V KL_3400 = default;
-V pep_3401 = default;
-V cone_3402 = default;
-V kp_3403 = default;
-V PE_3404 = default;
-double LC_3405 = 0;
-V limb_3406 = default;
-if (_self3377.IsNullish) _self3377 = GlobalV;
-{ V _t3407 = S_3384;
-if (_t3407.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t3407));
-{ V _t3408 = Get(_t3407, "sk");
-sk_3385 = _t3408; } }
-O_3386 = Invoke(S_3384, "outline", sk_3385, ((V)(80D)));
-rT_3387 = Fn((V _self3377, int _argc3409, V y_3415, V _a3412, V _a3413, V _a3414, V[] _rest3410) => {
-return Call(halfW_38, V.Undef, O_3386, Call(clamp_12, V.Undef, y_3415, ((V)(27.6)), ((V)(90.2))));
-}, 1, "", true);
-KN_3388 = Fn((V _self3377, int _argc3416, V y_3422, V _a3419, V _a3420, V _a3421, V[] _rest3417) => {
-return ((V)((GeN(y_3422, 20.5) ? (6.9 - ((28.5 - ToNum(y_3422)) * 0.16)) : (5.62 * System.Math.Sqrt(Max(0D, (1D - Pow(((20.5 - ToNum(y_3422)) / 3.6), 2D))))))));
-}, 1, "", true);
-kn_3389 = GetIdx(Invoke(S_3384, "hide", Fn((V _self3377, int _argc3423, V q_3429, V _a3426, V _a3427, V _a3428, V[] _rest3424) => {
-return (Get(q_3429, "inBody") is var _t3430 && !Truthy(_t3430) ? _t3430 : Invoke(NewRegExp(RX12, "^url\\(#k", ""), "test", Invoke(S_3384, "f", q_3429)));
-}, 1, "", true)), 0D);
-KF_3390 = (Truthy(kn_3389) ? Invoke(S_3384, "f", kn_3389) : ((V)("#e3c895")));
-Invoke(S_3384, "hide", Fn((V _self3377, int _argc3431, V q_3437, V _a3434, V _a3435, V _a3436, V[] _rest3432) => {
-return (Get(q_3437, "inBody") is var _t3438 && !Truthy(_t3438) ? _t3438 : Invoke(S_3384, "dk", q_3437));
-}, 1, "", true));
-Y0_3391 = 28.2;
-Y1_3392 = 90D;
-tw_3393 = Fn((V _self3377, int _argc3439, V y_3445, V _a3442, V _a3443, V _a3444, V[] _rest3440) => {
-return ((V)((0.55 * Pow((1D - ToNum(Call(clamp_12, V.Undef, ((V)(((ToNum(y_3445) - Y0_3391) / 30.8))), ((V)(0D)), ((V)(1D))))), 2D))));
-}, 1, "", true);
-xw_3394 = Fn((V _self3377, int _argc3446, V y_3452, V _a3449, V _a3450, V _a3451, V[] _rest3447) => {
-return ((V)(Pow((1D - ToNum(Call(clamp_12, V.Undef, ((V)(((ToNum(y_3452) - Y0_3391) / 44D))), ((V)(0D)), ((V)(1D))))), 2D)));
-}, 1, "", true);
-dep_3395 = Fn((V _self3377, int _argc3453, V y_3459, V _a3456, V _a3457, V _a3458, V[] _rest3454) => {
-return ((V)((LeN(y_3459, 59D) ? (0.8 + (3D * Pow((1D - ToNum(Call(clamp_12, V.Undef, ((V)(((ToNum(y_3459) - Y0_3391) / 30.8))), ((V)(0D)), ((V)(1D))))), 0.8))) : (LeN(y_3459, 81D) ? (0.8 + (0.55 * FdLibm.Sin(((((ToNum(y_3459) - 59D) / 22D) * System.Math.PI) / 2D)))) : (0.4 + (0.95 * FdLibm.Cos(((ToNum(Call(clamp_12, V.Undef, ((V)(((ToNum(y_3459) - 81D) / 9D))), ((V)(0D)), ((V)(1D)))) * System.Math.PI) / 2D))))))));
-}, 1, "", true);
-PG_3396 = Invoke(S_3384, "g");
-LN_3397 = Invoke(S_3384, "g");
-knob_3398 = Invoke(S_3384, "path", NewObj(1).Put("fill", KF_3390).V);
-KG_3399 = Invoke(S_3384, "g");
-KL_3400 = Invoke(S_3384, "g");
-pep_3401 = Invoke(S_3384, "path", NewObj(1).Put("fill", ((V)("#3e3028"))).V);
-cone_3402 = Call(longSet_32, V.Undef, S_3384, NewObj(13).Put("N", ((V)(18D))).Put("ph", ((V)(((-TAU_9) / 36D)))).Put("rT", rT_3387).Put("y0", ((V)(Y0_3391))).Put("y1", ((V)(Y1_3392))).Put("NY", ((V)(24D))).Put("SY", Arr(((V)(28.2)), ((V)(36D)), ((V)(45D)), ((V)(56D)), ((V)(68D)), ((V)(79D)), ((V)(89.6)))).Put("tw", tw_3393).Put("dep", dep_3395).Put("cols", Arr(((V)("#b08c56")), ((V)("#ead6ac")), ((V)("#fdf3dc")))).Put("lc", ((V)("#a68552"))).Put("lw", ((V)(0.6))).Put("LS", Arr(Arr(((V)(0D)), ((V)(0.8))), Arr(((V)(0.45)), ((V)(0.55))), Arr(((V)(0.8)), ((V)(0.34))), Arr(((V)(1D)), ((V)(0.2))))).V, PG_3396, LN_3397);
-kp_3403 = Call(pleatSet_29, V.Undef, NewObj(11).Put("N", ((V)(7D))).Put("rT", KN_3388).Put("y0", ((V)(18.2))).Put("yG", ((V)(28.8))).Put("yR", ((V)(28.8))).Put("ph", ((V)(0.3))).Put("tw", Fn((V _self3377, int _argc3460, V u_3466, V _a3463, V _a3464, V _a3465, V[] _rest3461) => {
-return ((V)((1.25 * (1D - ToNum(u_3466)))));
-}, 1, "tw", true)).Put("dep", Fn((V _self3377, int _argc3467, V _a3469, V _a3470, V _a3471, V _a3472, V[] _rest3468) => {
-return ((V)(1D));
-}, 0, "dep", true)).Put("cols", Arr(((V)("#a8844e")), ((V)("#e2c896")), ((V)("#fff6e2")))).Put("lc", ((V)("#9c7a48"))).Put("lw", ((V)(0.55))).V, KG_3399, KL_3400);
-PE_3404 = Invoke(Array_from(NewObj(1).Put("length", ((V)(26D))).V, Fn((V _self3377, int _argc3492, V __3498, V i_3499, V _a3496, V _a3497, V[] _rest3493) => {
-return Arr(((V)((ToNum(Call(rnd_22, V.Undef, ((V)((ToNum(i_3499) * 4.1))))) * TAU_9))), ((V)((31D + (ToNum(Call(rnd_22, V.Undef, ((V)((ToNum(i_3499) * 2.3))))) * 22D)))));
-}, 2, "", true)), "concat", Invoke(Invoke(Array_from(NewObj(1).Put("length", ((V)(30D))).V, Fn((V _self3377, int _argc3484, V __3490, V i_3491, V _a3488, V _a3489, V[] _rest3485) => {
-return Arr(((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3491) * 3.7) + 9D))))) * TAU_9))), ((V)((58D + (ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3491) * 1.9) + 4D))))) * 29D)))));
-}, 2, "", true)), "filter", Fn((V _self3377, int _argc3473, V _a3475, V _a3476, V _a3477, V _a3478, V[] _rest3474) => {
-V f_3481 = default;
-V y_3483 = default;
-{ V _t3479 = ListOf(_a3475);
-{ V _t3480 = GetIdx(_t3479, 0D);
-f_3481 = _t3480; }
-{ V _t3482 = GetIdx(_t3479, 1D);
-y_3483 = _t3482; }
-}
-return (!((LtN(y_3483, 84D) && (System.Math.Abs(FdLibm.Atan2(FdLibm.Sin(ToNum(f_3481)), FdLibm.Cos(ToNum(f_3481)))) < 0.75))) ? V.True : V.False);
-}, 1, "", true)), "slice", ((V)(0D)), ((V)(14D))));
-LC_3405 = 0D;
-limb_3406 = Fn((V _self3377, int _argc3500, V q_3506, V kind_3507, V c_3508, V ax_3509, V[] _rest3501) => {
-V ar_3513 = default;
-double N_3514 = 0;
-double H_3515 = 0;
-double ph_3516 = 0;
-double th0_3517 = 0;
-double th1_3518 = 0;
-double NS_3519 = 0;
-double BE_3520 = 0;
-V S3_3521 = default;
-V P2_3522 = default;
-V NV_3523 = default;
-V BR_3524 = default;
-V TH_3525 = default;
-JsStrBuf dL_3526 = null;
-JsStrBuf dD_3527 = null;
-JsStrBuf dG_3528 = null;
-V E_3510 = default;
-V R_3511 = default;
-V glob_3512 = default;
-E_3510 = (_argc3500 > 4 ? _rest3501[0] : V.Undef);
-R_3511 = (_argc3500 > 5 ? _rest3501[1] : V.Undef);
-glob_3512 = (_argc3500 > 6 ? _rest3501[2] : V.Undef);
-ar_3513 = (SEqS(kind_3507, "arm") ? V.True : V.False);
-if (!(Truthy(Get(q_3506, "dec")))) {
-V u_3529 = default;
-V gr_3530 = default;
-V fd_3531 = default;
-u_3529 = ((V)(JsStrBuf.Begin().S("kl").N(LC_3405++).V(Get(S_3384, "u")).End()));
-gr_3530 = Fn((V _self3377, int _argc3532, V n_3538, V col_3539, V st_3540, V _a3537, V[] _rest3533) => {
-V g_3541 = default;
-g_3541 = Call(el_14, V.Undef, ((V)("linearGradient")), NewObj(6).Put("id", Add(n_3538, u_3529)).Put("gradientUnits", ((V)("userSpaceOnUse"))).Put("x1", ((V)(0D))).Put("y1", ((V)(0D))).Put("x2", ((V)(0D))).Put("y2", ((V)(1D))).V, Get(S_3384, "df"));
-Invoke(st_3540, "forEach", Fn((V _self3377, int _argc3542, V _a3544, V _a3545, V _a3546, V _a3547, V[] _rest3543) => {
-V o_3550 = default;
-V op_3552 = default;
+return ((Gt(y_3564, Add(y0_3500, ((V)(1D)))) && GtN(Invoke(D_3492, "facing", ((V)((50D + (ToNum(Call(rT_3495, V.Undef, y_3564)) * FdLibm.Sin(ToNum(f_3562)))))), y_3564, ((V)((ToNum(Call(rT_3495, V.Undef, y_3564)) * FdLibm.Cos(ToNum(f_3562))))), ((V)(FdLibm.Sin(ToNum(f_3562)))), ((V)(0D)), ((V)(FdLibm.Cos(ToNum(f_3562))))), 0.05)) ? V.True : V.False);
+}, 1, "", true)), "map", Fn((V _arrowThis3553, int _argc3542, V _a3544, V _a3545, V _a3546, V _a3547, V[] _rest3543) => {
+V f_3550 = default;
+V y_3552 = default;
 { V _t3548 = ListOf(_a3544);
 { V _t3549 = GetIdx(_t3548, 0D);
-o_3550 = _t3549; }
+f_3550 = _t3549; }
 { V _t3551 = GetIdx(_t3548, 1D);
-op_3552 = _t3551; }
+y_3552 = _t3551; }
 }
-return Call(el_14, V.Undef, ((V)("stop")), NewObj(3).Put("offset", o_3550).Put("stop-color", col_3539).Put("stop-opacity", op_3552).V, g_3541);
-}, 1, "", true));
-return g_3541;
-return default;
-}, 3, "", true);
-fd_3531 = (Truthy(ar_3513) ? Arr(Arr(((V)(0D)), ((V)(1D))), Arr(((V)(0.45)), ((V)(0.85))), Arr(((V)(0.92)), ((V)(0D)))) : Arr(Arr(((V)(0D)), ((V)(1D))), Arr(((V)(1D)), ((V)(1D)))));
-Set(q_3506, "dGr", Arr(Call(gr_3530, V.Undef, ((V)("d")), ((V)("#8a6436")), fd_3531), Call(gr_3530, V.Undef, ((V)("l")), ((V)("#fffaf0")), fd_3531), Call(gr_3530, V.Undef, ((V)("g")), ((V)("#a68552")), fd_3531)));
-Set(q_3506, "dec", Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, Get(Get(q_3506, "e"), "parentNode"), Get(Get(q_3506, "e"), "nextSibling")));
-Set(q_3506, "dD", Call(el_14, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#d").V(u_3529).S(")").End()))).Put("opacity", ((V)(0.2))).V, Get(q_3506, "dec")));
-Set(q_3506, "dL", Call(el_14, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#l").V(u_3529).S(")").End()))).Put("opacity", ((V)(0.45))).V, Get(q_3506, "dec")));
-Set(q_3506, "dG", Call(el_14, V.Undef, ((V)("path")), NewObj(6).Put("fill", ((V)("none"))).Put("stroke", ((V)(JsStrBuf.Begin().S("url(#g").V(u_3529).S(")").End()))).Put("stroke-width", ((V)(0.42))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).Put("opacity", ((V)(0.7))).V, Get(q_3506, "dec")));
-}
-N_3514 = (Truthy(ar_3513) ? 8D : 10D);
-H_3515 = (System.Math.PI / N_3514);
-ph_3516 = (Truthy(ar_3513) ? 0D : H_3515);
-th0_3517 = (Truthy(ar_3513) ? 0.04 : 0.14);
-th1_3518 = (Truthy(ar_3513) ? 0.84 : 0.9);
-NS_3519 = 8D;
-BE_3520 = 0.38;
-{
-V r0_3553 = default;
-V t0_3554 = default;
-r0_3553 = Call(glob_3512, V.Undef, ((V)((ToNum(GetIdx(c_3508, 0D)) - ToNum(GetIdx(GetIdx(ax_3509, 1D), 0D))))), ((V)((ToNum(GetIdx(c_3508, 1D)) - ToNum(GetIdx(GetIdx(ax_3509, 1D), 1D))))));
-t0_3554 = Call(glob_3512, V.Undef, Add(GetIdx(c_3508, 0D), GetIdx(GetIdx(ax_3509, 1D), 0D)), Add(GetIdx(c_3508, 1D), GetIdx(GetIdx(ax_3509, 1D), 1D)));
-Invoke(Get(q_3506, "dGr"), "forEach", Fn((V _self3377, int _argc3555, V g_3561, V _a3558, V _a3559, V _a3560, V[] _rest3556) => {
-Call(SA_31, V.Undef, g_3561, ((V)("x1")), Call(r2_11, V.Undef, GetIdx(r0_3553, 0D)));
-Call(SA_31, V.Undef, g_3561, ((V)("y1")), Call(r2_11, V.Undef, GetIdx(r0_3553, 1D)));
-Call(SA_31, V.Undef, g_3561, ((V)("x2")), Call(r2_11, V.Undef, GetIdx(t0_3554, 0D)));
-Call(SA_31, V.Undef, g_3561, ((V)("y2")), Call(r2_11, V.Undef, GetIdx(t0_3554, 1D)));
-return default;
-}, 1, "", true));
-}
-S3_3521 = Fn((V _self3377, int _argc3562, V th_3568, V f_3569, V _a3566, V _a3567, V[] _rest3563) => {
-return Arr(((V)((FdLibm.Sin(ToNum(th_3568)) * FdLibm.Sin(ToNum(f_3569))))), ((V)((-FdLibm.Cos(ToNum(th_3568))))), ((V)((FdLibm.Sin(ToNum(th_3568)) * FdLibm.Cos(ToNum(f_3569))))));
-}, 2, "", true);
-P2_3522 = Fn((V _self3377, int _argc3570, V s_3576, V _a3573, V _a3574, V _a3575, V[] _rest3571) => {
-return Call(glob_3512, V.Undef, Add(Add(Add(GetIdx(c_3508, 0D), ((V)((ToNum(GetIdx(s_3576, 0D)) * ToNum(GetIdx(GetIdx(ax_3509, 0D), 0D)))))), ((V)((ToNum(GetIdx(s_3576, 1D)) * ToNum(GetIdx(GetIdx(ax_3509, 1D), 0D)))))), ((V)((ToNum(GetIdx(s_3576, 2D)) * ToNum(GetIdx(GetIdx(ax_3509, 2D), 0D)))))), Add(Add(Add(GetIdx(c_3508, 1D), ((V)((ToNum(GetIdx(s_3576, 0D)) * ToNum(GetIdx(GetIdx(ax_3509, 0D), 1D)))))), ((V)((ToNum(GetIdx(s_3576, 1D)) * ToNum(GetIdx(GetIdx(ax_3509, 1D), 1D)))))), ((V)((ToNum(GetIdx(s_3576, 2D)) * ToNum(GetIdx(GetIdx(ax_3509, 2D), 1D)))))));
-}, 1, "", true);
-NV_3523 = Fn((V _self3377, int _argc3577, V s_3583, V _a3580, V _a3581, V _a3582, V[] _rest3578) => {
-V n_3584 = default;
-V l_3585 = default;
-n_3584 = Arr(((V)(0D)), ((V)(0D)), ((V)(0D)));
-{
-double i_3586 = 0;
-i_3586 = 0D;
-while (true) {
-if (!((i_3586 < 3D))) break;
-double k_3588 = 0;
-k_3588 = (ToNum(GetIdx(s_3583, i_3586)) / ToNum(GetIdx(R_3511, i_3586)));
-{
-double j_3589 = 0;
-j_3589 = 0D;
-while (true) {
-if (!((j_3589 < 3D))) break;
-OpSetK(n_3584, ((V)(j_3589)), 0, ((V)((k_3588 * ToNum(GetIdx(GetIdx(E_3510, i_3586), j_3589))))));
-j_3589++;
-}
-}
-i_3586++;
-}
-}
-l_3585 = (((V)(Hypot(ToNum(GetIdx(n_3584, 0D)), ToNum(GetIdx(n_3584, 1D)), ToNum(GetIdx(n_3584, 2D))))) is var _t3591 && Truthy(_t3591) ? _t3591 : ((V)(1D)));
-return Arr(((V)((ToNum(GetIdx(n_3584, 0D)) / ToNum(l_3585)))), ((V)((ToNum(GetIdx(n_3584, 1D)) / ToNum(l_3585)))), ((V)((ToNum(GetIdx(n_3584, 2D)) / ToNum(l_3585)))));
-return default;
-}, 1, "", true);
-BR_3524 = Fn((V _self3377, int _argc3592, V n_3598, V _a3595, V _a3596, V _a3597, V[] _rest3593) => {
-return ((V)((((ToNum(GetIdx(n_3598, 0D)) * ToNum(GetIdx(LV_27, 0D))) + (ToNum(GetIdx(n_3598, 1D)) * ToNum(GetIdx(LV_27, 1D)))) + (ToNum(GetIdx(n_3598, 2D)) * ToNum(GetIdx(LV_27, 2D))))));
-}, 1, "", true);
-TH_3525 = Array_from(NewObj(1).Put("length", ((V)((NS_3519 + 1D)))).V, Fn((V _self3377, int _argc3599, V __3605, V i_3606, V _a3603, V _a3604, V[] _rest3600) => {
-return ((V)((System.Math.PI * (th0_3517 + (((th1_3518 - th0_3517) * ToNum(i_3606)) / NS_3519)))));
+return Call(circD_19, V.Undef, Call(P3_3493, V.Undef, ((V)((50D + (ToNum(Add(Call(rT_3495, V.Undef, y_3552), ((V)(0.1)))) * FdLibm.Sin(ToNum(f_3550)))))), y_3552, ((V)((ToNum(Add(Call(rT_3495, V.Undef, y_3552), ((V)(0.1)))) * FdLibm.Cos(ToNum(f_3550)))))), ((V)((0.75 * ToNum(Get(D_3492, "kS"))))));
+}, 1, "", true)), "join", ((V)(""))) is var _t3566 && Truthy(_t3566) ? _t3566 : ((V)("M0 0"))));
+rk_3502 = Call(rT_3495, V.Undef, YK_3496);
+CA_3503 = Invoke(Get(SN_43, "h"), "frontArc", D_3492, rk_3502, YK_3496, ((V)(72D)));
+cq_3504 = Invoke(CA_3503, "map", Fn((V _arrowThis3575, int _argc3567, V f_3573, V i_3574, V _a3571, V _a3572, V[] _rest3568) => {
+return Call(P3_3493, V.Undef, ((V)((50D + (ToNum(Add(rk_3502, ((V)(0.1)))) * FdLibm.Sin(ToNum(f_3573)))))), Add(YK_3496, ((V)((NumTruthy((ToNum(i_3574) % 2D)) ? (-1.6) : 1.4)))), ((V)((ToNum(Add(rk_3502, ((V)(0.1)))) * FdLibm.Cos(ToNum(f_3573))))));
 }, 2, "", true));
-dL_3526 = new JsStrBuf("");
-dD_3527 = new JsStrBuf("");
-dG_3528 = new JsStrBuf("");
-{
-double k_3607 = 0;
-k_3607 = 0D;
-while (true) {
-if (!((k_3607 < N_3514))) break;
-double fg_3609 = 0;
-V G3_3610 = default;
-fg_3609 = (ph_3516 + ((k_3607 * 2D) * H_3515));
-G3_3610 = Invoke(TH_3525, "map", Fn((V _self3377, int _argc3611, V th_3617, V _a3614, V _a3615, V _a3616, V[] _rest3612) => {
-return Call(S3_3521, V.Undef, th_3617, ((V)(fg_3609)));
+if (LeN(cap_3497, 0.02)) {
+Call(set_3494, V.Undef, Get(B_3491, "crack"), ((V)("d")), (Call(runs_21, V.Undef, cq_3504, Invoke(cq_3504, "map", Fn((V _arrowThis3582, int _argc3576, V _a3578, V _a3579, V _a3580, V _a3581, V[] _rest3577) => {
+return (true ? V.True : V.False);
+}, 0, "", true))) is var _t3583 && Truthy(_t3583) ? _t3583 : ((V)("M0 0"))));
+Invoke(Arr(((V)("open")), ((V)("yolk")), ((V)("capE")), ((V)("capL"))), "forEach", Fn((V _arrowThis3591, int _argc3584, V k_3590, V _a3587, V _a3588, V _a3589, V[] _rest3585) => {
+return Call(set_3494, V.Undef, GetK(B_3491, k_3590), ((V)("d")), ((V)("M0 0")));
 }, 1, "", true));
-dG_3528.V(Call(runs_21, V.Undef, Invoke(G3_3610, "map", P2_3522), Invoke(G3_3610, "map", Fn((V _self3377, int _argc3618, V s_3624, V _a3621, V _a3622, V _a3623, V[] _rest3619) => {
-return (GtN(GetIdx(Call(NV_3523, V.Undef, s_3624), 2D), 0.03) ? V.True : V.False);
-}, 1, "", true))));
-{
-double side_3625 = 0;
-side_3625 = 0D;
-while (true) {
-if (!((side_3625 < 2D))) break;
-double fa_3627 = 0;
-double fb_3628 = 0;
-double fm_3629 = 0;
-V nm_3630 = default;
-double d_3631 = 0;
-V pd_3632 = default;
-fa_3627 = (fg_3609 + (side_3625 * H_3515));
-fb_3628 = (fa_3627 + H_3515);
-fm_3629 = (fa_3627 + (H_3515 / 2D));
-nm_3630 = Call(NV_3523, V.Undef, Call(S3_3521, V.Undef, ((V)((System.Math.PI / 2D))), ((V)(fm_3629))));
-if (LtN(GetIdx(nm_3630, 2D), 0.05)) {
-goto _cont3626;
-}
-d_3631 = (ToNum(Call(BR_3524, V.Undef, Call(NV_3523, V.Undef, Call(S3_3521, V.Undef, ((V)((System.Math.PI / 2D))), ((V)((fm_3629 + (NumTruthy(side_3625) ? BE_3520 : (-BE_3520))))))))) - ToNum(Call(BR_3524, V.Undef, nm_3630)));
-if ((System.Math.Abs(d_3631) < 0.03)) {
-goto _cont3626;
-}
-pd_3632 = ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Invoke(TH_3525, "map", Fn((V _self3377, int _argc3640, V th_3646, V _a3643, V _a3644, V _a3645, V[] _rest3641) => {
-return Call(P2_3522, V.Undef, Call(S3_3521, V.Undef, th_3646, ((V)(fa_3627))));
-}, 1, "", true)), "concat", Invoke(Invoke(Invoke(TH_3525, "slice"), "reverse"), "map", Fn((V _self3377, int _argc3633, V th_3639, V _a3636, V _a3637, V _a3638, V[] _rest3634) => {
-return Call(P2_3522, V.Undef, Call(S3_3521, V.Undef, th_3639, ((V)(fb_3628))));
-}, 1, "", true))), "map", pt_15), "join", ((V)("L")))).S("Z").End()));
-if ((d_3631 > 0D)) {
-dL_3526.V(pd_3632);
-} else {
-dD_3527.V(pd_3632);
-}
-_cont3626: ;
-side_3625++;
-}
-}
-k_3607++;
-}
-}
-Call(SA_31, V.Undef, Get(q_3506, "dL"), ((V)("d")), (((V)(dL_3526.Str)) is var _t3647 && Truthy(_t3647) ? _t3647 : ((V)("M0 0"))));
-Call(SA_31, V.Undef, Get(q_3506, "dD"), ((V)("d")), (((V)(dD_3527.Str)) is var _t3648 && Truthy(_t3648) ? _t3648 : ((V)("M0 0"))));
-Call(SA_31, V.Undef, Get(q_3506, "dG"), ((V)("d")), (((V)(dG_3528.Str)) is var _t3649 && Truthy(_t3649) ? _t3649 : ((V)("M0 0"))));
 return default;
-}, 7, "", true);
-return NewObj(16).Put("O", O_3386).Put("rT", rT_3387).Put("KN", KN_3388).Put("tw", tw_3393).Put("xw", xw_3394).Put("dep", dep_3395).Put("knob", knob_3398).Put("cone", cone_3402).Put("kp", kp_3403).Put("pep", pep_3401).Put("PE", PE_3404).Put("limb", limb_3406).Put("rx", ((V)(37D))).Put("ya", ((V)(44D))).Put("yb", ((V)(88D))).Put("zE", Fn((V _self3377, int _argc3650, V dx_3656, V dy_3657, V _a3654, V _a3655, V[] _rest3651) => {
-V r_3658 = default;
-r_3658 = Call(rT_3387, V.Undef, Add(Get(S_3384, "HY"), dy_3657));
-return ((V)((System.Math.Sqrt(Max(0D, ((ToNum(r_3658) * ToNum(r_3658)) - (ToNum(dx_3656) * ToNum(dx_3656))))) + 0.3)));
-return default;
-}, 2, "zE", true)).V;
-return default;
-}, 1, "setup", false)).Put("draw", Fn((V _self3659, int _argc3660, V B_3666, V D_3667, V _a3664, V _a3665, V[] _rest3661) => {
-V P3_3668 = default;
-V Z3_3669 = default;
-V set_3670 = default;
-V rT_3671 = default;
-V kt_3672 = default;
-V kq_3673 = default;
-V hp_3674 = default;
-V TW_3675 = default;
-double sw_3676 = 0;
-V KP_3677 = default;
-V KZ_3678 = default;
-V kh_3679 = default;
-if (_self3659.IsNullish) _self3659 = GlobalV;
-{ V _t3680 = D_3667;
-if (_t3680.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t3680));
-{ V _t3681 = Get(_t3680, "P3");
-P3_3668 = _t3681; }
-{ V _t3682 = Get(_t3680, "Z3");
-Z3_3669 = _t3682; }
-{ V _t3683 = Get(_t3680, "set");
-set_3670 = _t3683; } }
-rT_3671 = Get(B_3666, "rT");
-kt_3672 = Call(clamp_12, V.Undef, Invoke(D_3667, "bv", ((V)("kt"))), ((V)((-1.2))), ((V)(1.2)));
-kq_3673 = Call(clamp_12, V.Undef, Invoke(D_3667, "bv", ((V)("knot"))), ((V)((-1.2))), ((V)(1.2)));
-hp_3674 = Arr();
-{
-double i_3684 = 0;
-i_3684 = 0D;
-while (true) {
-if (!((i_3684 <= 20D))) break;
-double y_3686 = 0;
-V r_3687 = default;
-y_3686 = (27.6 + ((62.6 * i_3684) / 20D));
-r_3687 = Call(rT_3671, V.Undef, ((V)(y_3686)));
-{
-double k_3688 = 0;
-k_3688 = 0D;
-while (true) {
-if (!((k_3688 < 24D))) break;
-double f_3690 = 0;
-f_3690 = ((k_3688 / 24D) * TAU_9);
-Invoke(hp_3674, "push", Call(P3_3668, V.Undef, ((V)((50D + (ToNum(r_3687) * FdLibm.Sin(f_3690))))), ((V)(y_3686)), ((V)((ToNum(r_3687) * FdLibm.Cos(f_3690))))));
-k_3688++;
 }
-}
-i_3684++;
-}
-}
-Set(B_3666, "d", Invoke(D_3667, "hull", hp_3674));
-TW_3675 = Fn((V _self3659, int _argc3691, V y_3697, V _a3694, V _a3695, V _a3696, V[] _rest3692) => {
-return Add(Invoke(B_3666, "tw", y_3697), ((V)(((ToNum(kt_3672) * 0.6) * ToNum(Invoke(B_3666, "xw", y_3697))))));
-}, 1, "", true);
-Call(longDraw_33, V.Undef, D_3667, Get(B_3666, "cone"), P3_3668, Z3_3669, TW_3675);
-Call(set_3670, V.Undef, Get(B_3666, "pep"), ((V)("d")), (Invoke(Invoke(Invoke(Get(B_3666, "PE"), "filter", Fn((V _self3659, int _argc3711, V _a3713, V _a3714, V _a3715, V _a3716, V[] _rest3712) => {
-V ff_3722 = default;
-V f_3719 = default;
-V y_3721 = default;
-{ V _t3717 = ListOf(_a3713);
-{ V _t3718 = GetIdx(_t3717, 0D);
-f_3719 = _t3718; }
-{ V _t3720 = GetIdx(_t3717, 1D);
-y_3721 = _t3720; }
-}
-ff_3722 = Add(f_3719, Call(TW_3675, V.Undef, y_3721));
-return (GtN(Invoke(D_3667, "facing", ((V)((50D + (ToNum(Call(rT_3671, V.Undef, y_3721)) * FdLibm.Sin(ToNum(ff_3722)))))), y_3721, ((V)((ToNum(Call(rT_3671, V.Undef, y_3721)) * FdLibm.Cos(ToNum(ff_3722))))), ((V)(FdLibm.Sin(ToNum(ff_3722)))), ((V)(0D)), ((V)(FdLibm.Cos(ToNum(ff_3722))))), 0.08) ? V.True : V.False);
-return default;
-}, 1, "", true)), "map", Fn((V _self3659, int _argc3698, V _a3700, V _a3701, V _a3702, V _a3703, V[] _rest3699) => {
-V ff_3709 = default;
-V r_3710 = default;
-V f_3706 = default;
-V y_3708 = default;
-{ V _t3704 = ListOf(_a3700);
-{ V _t3705 = GetIdx(_t3704, 0D);
-f_3706 = _t3705; }
-{ V _t3707 = GetIdx(_t3704, 1D);
-y_3708 = _t3707; }
-}
-ff_3709 = Add(f_3706, Call(TW_3675, V.Undef, y_3708));
-r_3710 = Add(Call(rT_3671, V.Undef, y_3708), ((V)((ToNum(Invoke(B_3666, "dep", y_3708)) * 0.55))));
-return Call(circD_19, V.Undef, Call(P3_3668, V.Undef, ((V)((50D + (ToNum(r_3710) * FdLibm.Sin(ToNum(ff_3709)))))), y_3708, ((V)((ToNum(r_3710) * FdLibm.Cos(ToNum(ff_3709)))))), ((V)((0.5 * ToNum(Get(D_3667, "kS"))))));
-return default;
-}, 1, "", true)), "join", ((V)(""))) is var _t3723 && Truthy(_t3723) ? _t3723 : ((V)("M0 0"))));
-sw_3676 = (((FdLibm.Sin((ToNum(Get(D_3667, "ts")) * 1.6)) * 0.5) + (ToNum(Get(D_3667, "ox")) * 0.25)) + (ToNum(kq_3673) * 3.5));
-KP_3677 = Fn((V _self3659, int _argc3724, V x_3730, V y_3731, V z_3732, V _a3729, V[] _rest3725) => {
-V u_3733 = default;
-u_3733 = Call(clamp_12, V.Undef, ((V)(((28.8 - ToNum(y_3731)) / 12D))), ((V)(0D)), ((V)(1D)));
-return Call(P3_3668, V.Undef, Add(x_3730, ((V)(((sw_3676 * ToNum(u_3733)) * ToNum(u_3733))))), ((V)((ToNum(y_3731) - ((ToNum(Get(D_3667, "oy")) * 0.25) * ToNum(u_3733))))), z_3732);
+Call(set_3494, V.Undef, Get(B_3491, "crack"), ((V)("d")), ((V)("M0 0")));
+EL_3505 = 0.22;
+PE_3506 = Fn((V _arrowThis3601, int _argc3592, V x_3598, V y_3599, V z_3600, V _a3597, V[] _rest3593) => {
+V p_3602 = default;
+p_3602 = Call(P3_3493, V.Undef, x_3598, y_3599, z_3600);
+return Arr(GetIdx(p_3602, 0D), Add(GetIdx(p_3602, 1D), ((V)((EL_3505 * (ToNum(Invoke(D_3492, "Z3", x_3598, y_3599, z_3600)) - ToNum(rk_3502)))))));
 return default;
 }, 3, "", true);
-KZ_3678 = Fn((V _self3659, int _argc3734, V x_3740, V y_3741, V z_3742, V _a3739, V[] _rest3735) => {
-return Call(Z3_3669, V.Undef, x_3740, y_3741, z_3742);
-}, 3, "", true);
-kh_3679 = Arr();
+Call(set_3494, V.Undef, Get(B_3491, "open"), ((V)("d")), Call(polyW_18, V.Undef, Array_from(NewObj(1).Put("length", ((V)(36D))).V, Fn((V _arrowThis3611, int _argc3603, V __3609, V k_3610, V _a3607, V _a3608, V[] _rest3604) => {
+double f_3612 = 0;
+f_3612 = ((ToNum(k_3610) / 36D) * TAU_9);
+return Call(PE_3506, V.Undef, ((V)((50D + (ToNum(rk_3502) * FdLibm.Sin(f_3612))))), YK_3496, ((V)((ToNum(rk_3502) * FdLibm.Cos(f_3612)))));
+return default;
+}, 2, "", true))));
+yr_3507 = ((ToNum(rk_3502) * 0.62) * (1D + ((ToNum(wob_3498) * 0.06) * FdLibm.Sin((ToNum(Get(D_3492, "ts")) * 15D)))));
+yk_3508 = ((ToNum(YK_3496) - 1.2) - ((ToNum(wob_3498) * 0.6) * FdLibm.Sin((ToNum(Get(D_3492, "ts")) * 17D))));
+Call(set_3494, V.Undef, Get(B_3491, "yolk"), ((V)("d")), Call(polyW_18, V.Undef, Array_from(NewObj(1).Put("length", ((V)(30D))).V, Fn((V _arrowThis3621, int _argc3613, V __3619, V k_3620, V _a3617, V _a3618, V[] _rest3614) => {
+double f_3622 = 0;
+f_3622 = ((ToNum(k_3620) / 30D) * TAU_9);
+return Call(PE_3506, V.Undef, ((V)((50D + (yr_3507 * FdLibm.Sin(f_3622))))), ((V)(yk_3508)), ((V)((yr_3507 * FdLibm.Cos(f_3622)))));
+return default;
+}, 2, "", true))));
+lift_3509 = (ToNum(cap_3497) * 11D);
+tip_3510 = (((ToNum(cap_3497) * 58D) * System.Math.PI) / 180D);
+ct_3511 = FdLibm.Cos(tip_3510);
+st_3512 = FdLibm.Sin(tip_3510);
+pv_3513 = Arr(((V)(50D)), YK_3496, ((V)((-ToNum(rk_3502)))));
+cp_3514 = Arr();
 {
-double i_3743 = 0;
-i_3743 = 0D;
+double i_3623 = 0;
+i_3623 = 0D;
 while (true) {
-if (!((i_3743 <= 12D))) break;
-double y_3745 = 0;
-V r_3746 = default;
-y_3745 = (28.8 - (((28.8 - 16.95) * i_3743) / 12D));
-r_3746 = Invoke(B_3666, "KN", ((V)(y_3745)));
+if (!((i_3623 <= 8D))) break;
+double y_3625 = 0;
+V r_3626 = default;
+y_3625 = (12.2 + (((ToNum(YK_3496) - 12.2) * i_3623) / 8D));
+r_3626 = Call(rT_3495, V.Undef, ((V)(y_3625)));
 {
-double k_3747 = 0;
-k_3747 = 0D;
+double k_3627 = 0;
+k_3627 = 0D;
 while (true) {
-if (!((k_3747 < 16D))) break;
-double f_3749 = 0;
-f_3749 = ((k_3747 / 16D) * TAU_9);
-Invoke(kh_3679, "push", Call(KP_3677, V.Undef, ((V)((50D + (ToNum(r_3746) * FdLibm.Sin(f_3749))))), ((V)(y_3745)), ((V)((ToNum(r_3746) * FdLibm.Cos(f_3749))))));
-k_3747++;
+if (!((k_3627 < 20D))) break;
+double f_3629 = 0;
+double x_3630 = 0;
+double z_3631 = 0;
+double vy_3632 = 0;
+double vz_3633 = 0;
+f_3629 = ((k_3627 / 20D) * TAU_9);
+x_3630 = (50D + (ToNum(r_3626) * FdLibm.Sin(f_3629)));
+z_3631 = (ToNum(r_3626) * FdLibm.Cos(f_3629));
+vy_3632 = (y_3625 - ToNum(GetIdx(pv_3513, 1D)));
+vz_3633 = (z_3631 - ToNum(GetIdx(pv_3513, 2D)));
+Invoke(cp_3514, "push", Call(P3_3493, V.Undef, ((V)(x_3630)), ((V)(((ToNum(Add(GetIdx(pv_3513, 1D), ((V)((vy_3632 * ct_3511))))) - (vz_3633 * st_3512)) - lift_3509))), Add(Add(GetIdx(pv_3513, 2D), ((V)((vy_3632 * st_3512)))), ((V)((vz_3633 * ct_3511))))));
+k_3627++;
 }
 }
-i_3743++;
+i_3623++;
 }
 }
-Call(set_3670, V.Undef, Get(B_3666, "knob"), ((V)("d")), Invoke(D_3667, "hull", kh_3679));
-Call(pleatDraw_30, V.Undef, D_3667, Get(B_3666, "kp"), KP_3677, KZ_3678, ((V)(((ToNum(kt_3672) * 0.4) + (ToNum(kq_3673) * 0.5)))));
+Call(set_3494, V.Undef, Get(B_3491, "capE"), ((V)("d")), Invoke(D_3492, "hull", cp_3514));
+cl_3515 = Arr();
+{
+double k_3634 = 0;
+k_3634 = 0D;
+while (true) {
+if (!((k_3634 <= 24D))) break;
+double f_3636 = 0;
+double x_3637 = 0;
+double z_3638 = 0;
+double vz_3639 = 0;
+f_3636 = (((-System.Math.PI) / 2D) + ((System.Math.PI * k_3634) / 24D));
+x_3637 = (50D + (ToNum(rk_3502) * FdLibm.Sin(f_3636)));
+z_3638 = (ToNum(rk_3502) * FdLibm.Cos(f_3636));
+vz_3639 = (z_3638 - ToNum(GetIdx(pv_3513, 2D)));
+Invoke(cl_3515, "push", Call(P3_3493, V.Undef, ((V)(x_3637)), ((V)(((ToNum(GetIdx(pv_3513, 1D)) - (vz_3639 * st_3512)) - lift_3509))), Add(GetIdx(pv_3513, 2D), ((V)((vz_3639 * ct_3511))))));
+k_3634++;
+}
+}
+Call(set_3494, V.Undef, Get(B_3491, "capL"), ((V)("d")), Call(runs_21, V.Undef, cl_3515, Invoke(cl_3515, "map", Fn((V _arrowThis3646, int _argc3640, V _a3642, V _a3643, V _a3644, V _a3645, V[] _rest3641) => {
+return (true ? V.True : V.False);
+}, 0, "", true))));
 return default;
 }, 2, "draw", false)).V);
-Set(MODELS_42, "maki", NewObj(2).Put("setup", Fn((V _self3750, int _argc3751, V S_3757, V _a3754, V _a3755, V _a3756, V[] _rest3752) => {
-double R0_3758 = 0;
-double YT_3759 = 0;
-double AL_3760 = 0;
-double KF_3761 = 0;
-V rT_3762 = default;
-V ang_3763 = default;
-V face_3764 = default;
-V SG_3765 = default;
-V TG_3766 = default;
-V SS_3767 = default;
-V TS_3768 = default;
-V NR_3769 = default;
-V C_3770 = default;
-V SCc_3771 = default;
-V SM_3772 = default;
-V ringXZ_3773 = default;
-V clip_3774 = default;
-V bed_3775 = default;
-V fr_3776 = default;
-V shr_3777 = default;
-V PC_3778 = default;
-V GSH_3779 = default;
-V GT_3780 = default;
-V ses_3781 = default;
-V top_3782 = default;
-V tgr_3783 = default;
-V tse_3784 = default;
-V nori_3785 = default;
-V bedE_3786 = default;
-V VG_3787 = default;
-V scl_3788 = default;
-V LGR_3789 = default;
-V limb_3790 = default;
-if (_self3750.IsNullish) _self3750 = GlobalV;
-R0_3758 = 29D;
-YT_3759 = 38.6;
-AL_3760 = FdLibm.Asin(0.44);
-KF_3761 = (21.5 / 17.8);
-rT_3762 = Fn((V _self3750, int _argc3791, V y_3797, V _a3794, V _a3795, V _a3796, V[] _rest3792) => {
-return ((V)((GtN(y_3797, 82D) ? ((System.Math.Sqrt(Max(0D, (36D - ((ToNum(y_3797) - 82D) * (ToNum(y_3797) - 82D))))) + R0_3758) - 6D) : R0_3758)));
+Set(MODELS_42, "khinki", NewObj(2).Put("setup", Fn((V _self3647, int _argc3648, V S_3654, V _a3651, V _a3652, V _a3653, V[] _rest3649) => {
+V sk_3655 = default;
+V O_3656 = default;
+V rT_3657 = default;
+V KN_3658 = default;
+V kn_3659 = default;
+V KF_3660 = default;
+double Y0_3661 = 0;
+double Y1_3662 = 0;
+V tw_3663 = default;
+V xw_3664 = default;
+V dep_3665 = default;
+V PG_3666 = default;
+V LN_3667 = default;
+V knob_3668 = default;
+V KG_3669 = default;
+V KL_3670 = default;
+V pep_3671 = default;
+V cone_3672 = default;
+V kp_3673 = default;
+V PE_3674 = default;
+double LC_3675 = 0;
+V limb_3676 = default;
+if (_self3647.IsNullish) _self3647 = GlobalV;
+{ V _t3677 = S_3654;
+if (_t3677.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t3677));
+{ V _t3678 = Get(_t3677, "sk");
+sk_3655 = _t3678; } }
+O_3656 = Invoke(S_3654, "outline", sk_3655, ((V)(80D)));
+rT_3657 = Fn((V _arrowThis3686, int _argc3679, V y_3685, V _a3682, V _a3683, V _a3684, V[] _rest3680) => {
+return Call(halfW_38, V.Undef, O_3656, Call(clamp_12, V.Undef, y_3685, ((V)(27.6)), ((V)(90.2))));
 }, 1, "", true);
-Invoke(S_3757, "hide", Fn((V _self3750, int _argc3798, V q_3804, V _a3801, V _a3802, V _a3803, V[] _rest3799) => {
-return (Get(q_3804, "inBody") is var _t3805 && !Truthy(_t3805) ? _t3805 : Invoke(S_3757, "dk", q_3804));
-}, 1, "", true));
-ang_3763 = Fn((V _self3750, int _argc3806, V f_3812, V _a3809, V _a3810, V _a3811, V[] _rest3807) => {
-return ((V)(FdLibm.Atan2(FdLibm.Sin(ToNum(f_3812)), FdLibm.Cos(ToNum(f_3812)))));
+KN_3658 = Fn((V _arrowThis3694, int _argc3687, V y_3693, V _a3690, V _a3691, V _a3692, V[] _rest3688) => {
+return ((V)((GeN(y_3693, 20.5) ? (6.9 - ((28.5 - ToNum(y_3693)) * 0.16)) : (5.62 * System.Math.Sqrt(Max(0D, (1D - Pow(((20.5 - ToNum(y_3693)) / 3.6), 2D))))))));
 }, 1, "", true);
-face_3764 = Fn((V _self3750, int _argc3813, V f_3819, V y_3820, V _a3817, V _a3818, V[] _rest3814) => {
-return ((((System.Math.Abs(ToNum(Call(ang_3763, V.Undef, f_3819))) < 0.6) && GtN(y_3820, 52D)) && LtN(y_3820, 75D)) ? V.True : V.False);
-}, 2, "", true);
-SG_3765 = Invoke(Array_from(NewObj(1).Put("length", ((V)(300D))).V, Fn((V _self3750, int _argc3828, V __3834, V i_3835, V _a3832, V _a3833, V[] _rest3829) => {
-return Arr(((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3835) * 2.31) + 1D))))) * TAU_9))), ((V)(((YT_3759 + 2D) + (ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3835) * 1.73) + 2D))))) * (84D - YT_3759))))), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3835) * 3.1) + 5D))))) * System.Math.PI))));
-}, 2, "", true)), "filter", Fn((V _self3750, int _argc3821, V g_3827, V _a3824, V _a3825, V _a3826, V[] _rest3822) => {
-return (!(Truthy(Call(face_3764, V.Undef, GetIdx(g_3827, 0D), GetIdx(g_3827, 1D)))) ? V.True : V.False);
+kn_3659 = GetIdx(Invoke(S_3654, "hide", Fn((V _arrowThis3702, int _argc3695, V q_3701, V _a3698, V _a3699, V _a3700, V[] _rest3696) => {
+return (Get(q_3701, "inBody") is var _t3703 && !Truthy(_t3703) ? _t3703 : Invoke(NewRegExp(RX12, "^url\\(#k", ""), "test", Invoke(S_3654, "f", q_3701)));
+}, 1, "", true)), 0D);
+KF_3660 = (Truthy(kn_3659) ? Invoke(S_3654, "f", kn_3659) : ((V)("#e3c895")));
+Invoke(S_3654, "hide", Fn((V _arrowThis3711, int _argc3704, V q_3710, V _a3707, V _a3708, V _a3709, V[] _rest3705) => {
+return (Get(q_3710, "inBody") is var _t3712 && !Truthy(_t3712) ? _t3712 : Invoke(S_3654, "dk", q_3710));
 }, 1, "", true));
-TG_3766 = Array_from(NewObj(1).Put("length", ((V)(52D))).V, Fn((V _self3750, int _argc3836, V __3842, V i_3843, V _a3840, V _a3841, V[] _rest3837) => {
-return Arr(((V)((24.3 + (ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3843) * 1.37) + 7D))))) * 4.2)))), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3843) * 2.9) + 3D))))) * TAU_9))), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3843) * 4.3) + 1D))))) * System.Math.PI))));
-}, 2, "", true));
-SS_3767 = Invoke(Array_from(NewObj(1).Put("length", ((V)(34D))).V, Fn((V _self3750, int _argc3851, V __3857, V i_3858, V _a3855, V _a3856, V[] _rest3852) => {
-return Arr(((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3858) * 5.1) + 11D))))) * TAU_9))), ((V)(((YT_3759 + 4D) + (ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3858) * 2.2) + 9D))))) * (80D - YT_3759))))), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3858) * 1.9) + 4D))))) * System.Math.PI))));
-}, 2, "", true)), "filter", Fn((V _self3750, int _argc3844, V g_3850, V _a3847, V _a3848, V _a3849, V[] _rest3845) => {
-return (!(Truthy(Call(face_3764, V.Undef, GetIdx(g_3850, 0D), GetIdx(g_3850, 1D)))) ? V.True : V.False);
-}, 1, "", true));
-TS_3768 = Array_from(NewObj(1).Put("length", ((V)(10D))).V, Fn((V _self3750, int _argc3859, V __3865, V i_3866, V _a3863, V _a3864, V[] _rest3860) => {
-return Arr(((V)((24.5 + (ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3866) * 3.3) + 2D))))) * 3.8)))), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3866) * 1.1) + 8D))))) * TAU_9))), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3866) * 2.7) + 6D))))) * System.Math.PI))));
-}, 2, "", true));
-NR_3769 = Fn((V _self3750, int _argc3867, V f_3873, V _a3870, V _a3871, V _a3872, V[] _rest3868) => {
-return ((V)((KF_3761 * ((17.8 + (0.8 * FdLibm.Sin(((3D * ToNum(f_3873)) + 1.1)))) + (0.45 * FdLibm.Sin(((5D * ToNum(f_3873)) + 0.3)))))));
+Y0_3661 = 28.2;
+Y1_3662 = 90D;
+tw_3663 = Fn((V _arrowThis3720, int _argc3713, V y_3719, V _a3716, V _a3717, V _a3718, V[] _rest3714) => {
+return ((V)((0.55 * Pow((1D - ToNum(Call(clamp_12, V.Undef, ((V)(((ToNum(y_3719) - Y0_3661) / 30.8))), ((V)(0D)), ((V)(1D))))), 2D))));
 }, 1, "", true);
-C_3770 = Arr(((V)(50.5)), ((V)((-1.2))));
-SCc_3771 = Fn((V _self3750, int _argc3874, V a_3880, V b_3881, V c_3882, V _a3879, V[] _rest3875) => {
-return ((V)((((KF_3761 * ((ToNum(c_3882) - (ToNum(a_3880) * ToNum(GetIdx(C_3770, 0D)))) - (ToNum(b_3881) * ToNum(GetIdx(C_3770, 1D))))) + (ToNum(a_3880) * ToNum(GetIdx(C_3770, 0D)))) + (ToNum(b_3881) * ToNum(GetIdx(C_3770, 1D))))));
+xw_3664 = Fn((V _arrowThis3728, int _argc3721, V y_3727, V _a3724, V _a3725, V _a3726, V[] _rest3722) => {
+return ((V)(Pow((1D - ToNum(Call(clamp_12, V.Undef, ((V)(((ToNum(y_3727) - Y0_3661) / 44D))), ((V)(0D)), ((V)(1D))))), 2D)));
+}, 1, "", true);
+dep_3665 = Fn((V _arrowThis3736, int _argc3729, V y_3735, V _a3732, V _a3733, V _a3734, V[] _rest3730) => {
+return ((V)((LeN(y_3735, 59D) ? (0.8 + (3D * Pow((1D - ToNum(Call(clamp_12, V.Undef, ((V)(((ToNum(y_3735) - Y0_3661) / 30.8))), ((V)(0D)), ((V)(1D))))), 0.8))) : (LeN(y_3735, 81D) ? (0.8 + (0.55 * FdLibm.Sin(((((ToNum(y_3735) - 59D) / 22D) * System.Math.PI) / 2D)))) : (0.4 + (0.95 * FdLibm.Cos(((ToNum(Call(clamp_12, V.Undef, ((V)(((ToNum(y_3735) - 81D) / 9D))), ((V)(0D)), ((V)(1D)))) * System.Math.PI) / 2D))))))));
+}, 1, "", true);
+PG_3666 = Invoke(S_3654, "g");
+LN_3667 = Invoke(S_3654, "g");
+knob_3668 = Invoke(S_3654, "path", NewObj(1).Put("fill", KF_3660).V);
+KG_3669 = Invoke(S_3654, "g");
+KL_3670 = Invoke(S_3654, "g");
+pep_3671 = Invoke(S_3654, "path", NewObj(1).Put("fill", ((V)("#3e3028"))).V);
+cone_3672 = Call(longSet_32, V.Undef, S_3654, NewObj(13).Put("N", ((V)(18D))).Put("ph", ((V)(((-TAU_9) / 36D)))).Put("rT", rT_3657).Put("y0", ((V)(Y0_3661))).Put("y1", ((V)(Y1_3662))).Put("NY", ((V)(24D))).Put("SY", Arr(((V)(28.2)), ((V)(36D)), ((V)(45D)), ((V)(56D)), ((V)(68D)), ((V)(79D)), ((V)(89.6)))).Put("tw", tw_3663).Put("dep", dep_3665).Put("cols", Arr(((V)("#b08c56")), ((V)("#ead6ac")), ((V)("#fdf3dc")))).Put("lc", ((V)("#a68552"))).Put("lw", ((V)(0.6))).Put("LS", Arr(Arr(((V)(0D)), ((V)(0.8))), Arr(((V)(0.45)), ((V)(0.55))), Arr(((V)(0.8)), ((V)(0.34))), Arr(((V)(1D)), ((V)(0.2))))).V, PG_3666, LN_3667);
+kp_3673 = Call(pleatSet_29, V.Undef, NewObj(11).Put("N", ((V)(7D))).Put("rT", KN_3658).Put("y0", ((V)(18.2))).Put("yG", ((V)(28.8))).Put("yR", ((V)(28.8))).Put("ph", ((V)(0.3))).Put("tw", Fn((V _arrowThis3744, int _argc3737, V u_3743, V _a3740, V _a3741, V _a3742, V[] _rest3738) => {
+return ((V)((1.25 * (1D - ToNum(u_3743)))));
+}, 1, "tw", true)).Put("dep", Fn((V _arrowThis3751, int _argc3745, V _a3747, V _a3748, V _a3749, V _a3750, V[] _rest3746) => {
+return ((V)(1D));
+}, 0, "dep", true)).Put("cols", Arr(((V)("#a8844e")), ((V)("#e2c896")), ((V)("#fff6e2")))).Put("lc", ((V)("#9c7a48"))).Put("lw", ((V)(0.55))).V, KG_3669, KL_3670);
+PE_3674 = Invoke(Array_from(NewObj(1).Put("length", ((V)(26D))).V, Fn((V _arrowThis3781, int _argc3773, V __3779, V i_3780, V _a3777, V _a3778, V[] _rest3774) => {
+return Arr(((V)((ToNum(Call(rnd_22, V.Undef, ((V)((ToNum(i_3780) * 4.1))))) * TAU_9))), ((V)((31D + (ToNum(Call(rnd_22, V.Undef, ((V)((ToNum(i_3780) * 2.3))))) * 22D)))));
+}, 2, "", true)), "concat", Invoke(Invoke(Array_from(NewObj(1).Put("length", ((V)(30D))).V, Fn((V _arrowThis3772, int _argc3764, V __3770, V i_3771, V _a3768, V _a3769, V[] _rest3765) => {
+return Arr(((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3771) * 3.7) + 9D))))) * TAU_9))), ((V)((58D + (ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3771) * 1.9) + 4D))))) * 29D)))));
+}, 2, "", true)), "filter", Fn((V _arrowThis3763, int _argc3752, V _a3754, V _a3755, V _a3756, V _a3757, V[] _rest3753) => {
+V f_3760 = default;
+V y_3762 = default;
+{ V _t3758 = ListOf(_a3754);
+{ V _t3759 = GetIdx(_t3758, 0D);
+f_3760 = _t3759; }
+{ V _t3761 = GetIdx(_t3758, 1D);
+y_3762 = _t3761; }
+}
+return (!((LtN(y_3762, 84D) && (System.Math.Abs(FdLibm.Atan2(FdLibm.Sin(ToNum(f_3760)), FdLibm.Cos(ToNum(f_3760)))) < 0.75))) ? V.True : V.False);
+}, 1, "", true)), "slice", ((V)(0D)), ((V)(14D))));
+LC_3675 = 0D;
+limb_3676 = Fn((V _arrowThis3795, int _argc3782, V q_3788, V kind_3789, V c_3790, V ax_3791, V[] _rest3783) => {
+V ar_3796 = default;
+double N_3797 = 0;
+double H_3798 = 0;
+double ph_3799 = 0;
+double th0_3800 = 0;
+double th1_3801 = 0;
+double NS_3802 = 0;
+double BE_3803 = 0;
+V S3_3804 = default;
+V P2_3805 = default;
+V NV_3806 = default;
+V BR_3807 = default;
+V TH_3808 = default;
+JsStrBuf dL_3809 = null;
+JsStrBuf dD_3810 = null;
+JsStrBuf dG_3811 = null;
+V E_3792 = default;
+V R_3793 = default;
+V glob_3794 = default;
+E_3792 = (_argc3782 > 4 ? _rest3783[0] : V.Undef);
+R_3793 = (_argc3782 > 5 ? _rest3783[1] : V.Undef);
+glob_3794 = (_argc3782 > 6 ? _rest3783[2] : V.Undef);
+ar_3796 = (SEqS(kind_3789, "arm") ? V.True : V.False);
+if (!(Truthy(Get(q_3788, "dec")))) {
+V u_3812 = default;
+V gr_3813 = default;
+V fd_3814 = default;
+u_3812 = ((V)(JsStrBuf.Begin().S("kl").N(LC_3675++).V(Get(S_3654, "u")).End()));
+gr_3813 = Fn((V _arrowThis3824, int _argc3815, V n_3821, V col_3822, V st_3823, V _a3820, V[] _rest3816) => {
+V g_3825 = default;
+g_3825 = Call(el_14, V.Undef, ((V)("linearGradient")), NewObj(6).Put("id", Add(n_3821, u_3812)).Put("gradientUnits", ((V)("userSpaceOnUse"))).Put("x1", ((V)(0D))).Put("y1", ((V)(0D))).Put("x2", ((V)(0D))).Put("y2", ((V)(1D))).V, Get(S_3654, "df"));
+Invoke(st_3823, "forEach", Fn((V _arrowThis3837, int _argc3826, V _a3828, V _a3829, V _a3830, V _a3831, V[] _rest3827) => {
+V o_3834 = default;
+V op_3836 = default;
+{ V _t3832 = ListOf(_a3828);
+{ V _t3833 = GetIdx(_t3832, 0D);
+o_3834 = _t3833; }
+{ V _t3835 = GetIdx(_t3832, 1D);
+op_3836 = _t3835; }
+}
+return Call(el_14, V.Undef, ((V)("stop")), NewObj(3).Put("offset", o_3834).Put("stop-color", col_3822).Put("stop-opacity", op_3836).V, g_3825);
+}, 1, "", true));
+return g_3825;
+return default;
 }, 3, "", true);
-SM_3772 = Fn((V _self3750, int _argc3883, V x_3889, V z_3890, V _a3887, V _a3888, V[] _rest3884) => {
-return Arr(Add(GetIdx(C_3770, 0D), ((V)(((ToNum(x_3889) - ToNum(GetIdx(C_3770, 0D))) * KF_3761)))), Add(GetIdx(C_3770, 1D), ((V)(((ToNum(z_3890) - ToNum(GetIdx(C_3770, 1D))) * KF_3761)))));
-}, 2, "", true);
-ringXZ_3773 = Fn((V _self3750, int _argc3891, V rf_3897, V n_3898, V _a3895, V _a3896, V[] _rest3892) => {
-return Array_from(NewObj(1).Put("length", n_3898).V, Fn((V _self3750, int _argc3899, V __3905, V k_3906, V _a3903, V _a3904, V[] _rest3900) => {
-double f_3907 = 0;
-f_3907 = ((ToNum(k_3906) / ToNum(n_3898)) * TAU_9);
-return Arr(Add(GetIdx(C_3770, 0D), ((V)((ToNum(Call(rf_3897, V.Undef, ((V)(f_3907)))) * FdLibm.Sin(f_3907))))), Add(GetIdx(C_3770, 1D), ((V)((ToNum(Call(rf_3897, V.Undef, ((V)(f_3907)))) * FdLibm.Cos(f_3907))))));
-return default;
-}, 2, "", true));
-}, 2, "", true);
-clip_3774 = Fn((V _self3750, int _argc3908, V Q_3914, V a_3915, V b_3916, V c_3917, V[] _rest3909) => {
-V o_3918 = default;
-o_3918 = Arr();
+fd_3814 = (Truthy(ar_3796) ? Arr(Arr(((V)(0D)), ((V)(1D))), Arr(((V)(0.45)), ((V)(0.85))), Arr(((V)(0.92)), ((V)(0D)))) : Arr(Arr(((V)(0D)), ((V)(1D))), Arr(((V)(1D)), ((V)(1D)))));
+Set(q_3788, "dGr", Arr(Call(gr_3813, V.Undef, ((V)("d")), ((V)("#8a6436")), fd_3814), Call(gr_3813, V.Undef, ((V)("l")), ((V)("#fffaf0")), fd_3814), Call(gr_3813, V.Undef, ((V)("g")), ((V)("#a68552")), fd_3814)));
+Set(q_3788, "dec", Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, Get(Get(q_3788, "e"), "parentNode"), Get(Get(q_3788, "e"), "nextSibling")));
+Set(q_3788, "dD", Call(el_14, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#d").V(u_3812).S(")").End()))).Put("opacity", ((V)(0.2))).V, Get(q_3788, "dec")));
+Set(q_3788, "dL", Call(el_14, V.Undef, ((V)("path")), NewObj(2).Put("fill", ((V)(JsStrBuf.Begin().S("url(#l").V(u_3812).S(")").End()))).Put("opacity", ((V)(0.45))).V, Get(q_3788, "dec")));
+Set(q_3788, "dG", Call(el_14, V.Undef, ((V)("path")), NewObj(6).Put("fill", ((V)("none"))).Put("stroke", ((V)(JsStrBuf.Begin().S("url(#g").V(u_3812).S(")").End()))).Put("stroke-width", ((V)(0.42))).Put("stroke-linecap", ((V)("round"))).Put("stroke-linejoin", ((V)("round"))).Put("opacity", ((V)(0.7))).V, Get(q_3788, "dec")));
+}
+N_3797 = (Truthy(ar_3796) ? 8D : 10D);
+H_3798 = (System.Math.PI / N_3797);
+ph_3799 = (Truthy(ar_3796) ? 0D : H_3798);
+th0_3800 = (Truthy(ar_3796) ? 0.04 : 0.14);
+th1_3801 = (Truthy(ar_3796) ? 0.84 : 0.9);
+NS_3802 = 8D;
+BE_3803 = 0.38;
 {
-double i_3919 = 0;
-i_3919 = 0D;
-while (true) {
-if (!(Lt(((V)(i_3919)), Get(Q_3914, "length")))) break;
-V p_3921 = default;
-V q_3922 = default;
-double s1_3923 = 0;
-double s2_3924 = 0;
-p_3921 = GetIdx(Q_3914, i_3919);
-q_3922 = GetIdx(Q_3914, ((i_3919 + 1D) % ToNum(Get(Q_3914, "length"))));
-s1_3923 = (((ToNum(a_3915) * ToNum(GetIdx(p_3921, 0D))) + (ToNum(b_3916) * ToNum(GetIdx(p_3921, 1D)))) - ToNum(c_3917));
-s2_3924 = (((ToNum(a_3915) * ToNum(GetIdx(q_3922, 0D))) + (ToNum(b_3916) * ToNum(GetIdx(q_3922, 1D)))) - ToNum(c_3917));
-if ((s1_3923 <= 0D)) {
-Invoke(o_3918, "push", p_3921);
-}
-if (((s1_3923 * s2_3924) < 0D)) {
-double t_3925 = 0;
-t_3925 = (s1_3923 / (s1_3923 - s2_3924));
-Invoke(o_3918, "push", Arr(Add(GetIdx(p_3921, 0D), ((V)(((ToNum(GetIdx(q_3922, 0D)) - ToNum(GetIdx(p_3921, 0D))) * t_3925)))), Add(GetIdx(p_3921, 1D), ((V)(((ToNum(GetIdx(q_3922, 1D)) - ToNum(GetIdx(p_3921, 1D))) * t_3925))))));
-}
-i_3919++;
-}
-}
-return o_3918;
+V r0_3838 = default;
+V t0_3839 = default;
+r0_3838 = Call(glob_3794, V.Undef, ((V)((ToNum(GetIdx(c_3790, 0D)) - ToNum(GetIdx(GetIdx(ax_3791, 1D), 0D))))), ((V)((ToNum(GetIdx(c_3790, 1D)) - ToNum(GetIdx(GetIdx(ax_3791, 1D), 1D))))));
+t0_3839 = Call(glob_3794, V.Undef, Add(GetIdx(c_3790, 0D), GetIdx(GetIdx(ax_3791, 1D), 0D)), Add(GetIdx(c_3790, 1D), GetIdx(GetIdx(ax_3791, 1D), 1D)));
+Invoke(Get(q_3788, "dGr"), "forEach", Fn((V _arrowThis3847, int _argc3840, V g_3846, V _a3843, V _a3844, V _a3845, V[] _rest3841) => {
+Call(SA_31, V.Undef, g_3846, ((V)("x1")), Call(r2_11, V.Undef, GetIdx(r0_3838, 0D)));
+Call(SA_31, V.Undef, g_3846, ((V)("y1")), Call(r2_11, V.Undef, GetIdx(r0_3838, 1D)));
+Call(SA_31, V.Undef, g_3846, ((V)("x2")), Call(r2_11, V.Undef, GetIdx(t0_3839, 0D)));
+Call(SA_31, V.Undef, g_3846, ((V)("y2")), Call(r2_11, V.Undef, GetIdx(t0_3839, 1D)));
 return default;
-}, 4, "", true);
-bed_3775 = Call(ringXZ_3773, V.Undef, Fn((V _self3750, int _argc3926, V f_3932, V _a3929, V _a3930, V _a3931, V[] _rest3927) => {
-return ((V)((ToNum(Call(NR_3769, V.Undef, f_3932)) - 0.7)));
-}, 1, "", true), ((V)(64D)));
-fr_3776 = Call(clip_3774, V.Undef, bed_3775, ((V)((-0.08))), ((V)((-1D))), Call(SCc_3771, V.Undef, ((V)((-0.08))), ((V)((-1D))), ((V)((-(3.8 + 4D))))));
-shr_3777 = Fn((V _self3750, int _argc3933, V Q_3939, V k_3940, V _a3937, V _a3938, V[] _rest3934) => {
-double cx_3941 = 0;
-double cz_3942 = 0;
-cx_3941 = (ToNum(Invoke(Q_3939, "reduce", Fn((V _self3750, int _argc3943, V s_3949, V p_3950, V _a3947, V _a3948, V[] _rest3944) => {
-return Add(s_3949, GetIdx(p_3950, 0D));
-}, 2, "", true), ((V)(0D)))) / ToNum(Get(Q_3939, "length")));
-cz_3942 = (ToNum(Invoke(Q_3939, "reduce", Fn((V _self3750, int _argc3951, V s_3957, V p_3958, V _a3955, V _a3956, V[] _rest3952) => {
-return Add(s_3957, GetIdx(p_3958, 1D));
-}, 2, "", true), ((V)(0D)))) / ToNum(Get(Q_3939, "length")));
-return Invoke(Q_3939, "map", Fn((V _self3750, int _argc3959, V p_3965, V _a3962, V _a3963, V _a3964, V[] _rest3960) => {
-return Arr(((V)((cx_3941 + ((ToNum(GetIdx(p_3965, 0D)) - cx_3941) * ToNum(k_3940))))), ((V)((cz_3942 + ((ToNum(GetIdx(p_3965, 1D)) - cz_3942) * ToNum(k_3940))))));
 }, 1, "", true));
-return default;
-}, 2, "", true);
-PC_3778 = Arr(NewObj(5).Put("n", ((V)("s"))).Put("Q", Call(clip_3774, V.Undef, bed_3775, ((V)(0.08)), ((V)(1D)), Call(SCc_3771, V.Undef, ((V)(0.08)), ((V)(1D)), ((V)((2.6 + 4D)))))).Put("h", ((V)(2.2))).Put("sd", ((V)("#d9542a"))).Put("top", Invoke(S_3757, "rgrad", ((V)("mks")), Arr(Arr(((V)(0D)), ((V)("#ffb894"))), Arr(((V)(0.6)), ((V)("#ff7c4a"))), Arr(((V)(1D)), ((V)("#e65a2c")))))).V, NewObj(8).Put("n", ((V)("a"))).Put("Q", Call(clip_3774, V.Undef, fr_3776, ((V)(1D)), ((V)((-0.3))), Call(SCc_3771, V.Undef, ((V)(1D)), ((V)((-0.3))), ((V)((54.8 - 2.7)))))).Put("h", ((V)(1.7))).Put("sd", ((V)("#5e8e30"))).Put("top", Invoke(S_3757, "rgrad", ((V)("mka")), Arr(Arr(((V)(0D)), ((V)("#f8f4ba"))), Arr(((V)(0.6)), ((V)("#e6e690"))), Arr(((V)(1D)), ((V)("#b4c862")))))).Put("in", ((V)("#eef0b0"))).Put("ik", ((V)(0.55))).Put("io", ((V)(0.8))).V, NewObj(8).Put("n", ((V)("k"))).Put("Q", Call(clip_3774, V.Undef, fr_3776, ((V)((-1D))), ((V)(0.3)), Call(SCc_3771, V.Undef, ((V)((-1D))), ((V)(0.3)), ((V)((-(56.2 - 2.7))))))).Put("h", ((V)(1.4))).Put("sd", ((V)("#2e6a22"))).Put("top", Invoke(S_3757, "rgrad", ((V)("mkk")), Arr(Arr(((V)(0D)), ((V)("#b6ea80"))), Arr(((V)(0.6)), ((V)("#86cc52"))), Arr(((V)(1D)), ((V)("#4f9a2e")))))).Put("in", ((V)("#e2f6c0"))).Put("ik", ((V)(0.5))).Put("io", ((V)(0.85))).V);
-GSH_3779 = Invoke(S_3757, "path", NewObj(2).Put("fill", ((V)("#d6ccb7"))).Put("opacity", ((V)(0.75))).V);
-GT_3780 = Arr(Invoke(S_3757, "path", NewObj(3).Put("fill", ((V)("#ffffff"))).Put("stroke", ((V)("#cfc5b0"))).Put("stroke-width", ((V)(0.26))).V), Invoke(S_3757, "path", NewObj(3).Put("fill", ((V)("#fbf9f4"))).Put("stroke", ((V)("#cfc5b0"))).Put("stroke-width", ((V)(0.26))).V), Invoke(S_3757, "path", NewObj(3).Put("fill", ((V)("#efeae0"))).Put("stroke", ((V)("#c4b9a2"))).Put("stroke-width", ((V)(0.26))).V));
-ses_3781 = Invoke(S_3757, "path", NewObj(3).Put("fill", ((V)("#e6c682"))).Put("stroke", ((V)("#b48a42"))).Put("stroke-width", ((V)(0.24))).V);
-top_3782 = Invoke(S_3757, "path", NewObj(1).Put("fill", Invoke(S_3757, "rgrad", ((V)("mkt")), Arr(Arr(((V)(0D)), ((V)("#fdfbf7"))), Arr(((V)(0.6)), ((V)("#f3efe6"))), Arr(((V)(1D)), ((V)("#ddd5c4")))), NewObj(3).Put("cx", ((V)("45%"))).Put("cy", ((V)("40%"))).Put("r", ((V)("65%"))).V)).V);
-tgr_3783 = Invoke(S_3757, "path", NewObj(3).Put("fill", ((V)("#ffffff"))).Put("stroke", ((V)("#cfc5b0"))).Put("stroke-width", ((V)(0.26))).V);
-tse_3784 = Invoke(S_3757, "path", NewObj(3).Put("fill", ((V)("#e6c682"))).Put("stroke", ((V)("#b48a42"))).Put("stroke-width", ((V)(0.22))).V);
-nori_3785 = Invoke(S_3757, "path", NewObj(1).Put("fill", ((V)("#1f3326"))).V);
-bedE_3786 = Invoke(S_3757, "path", NewObj(1).Put("fill", ((V)("#f1ece0"))).V);
-VG_3787 = Invoke(S_3757, "g");
-scl_3788 = Invoke(S_3757, "clip", ((V)("mksc")));
-Invoke(PC_3778, "forEach", Fn((V _self3750, int _argc3966, V p_3972, V i_3973, V _a3970, V _a3971, V[] _rest3967) => {
-Set(p_3972, "id", ((V)(JsStrBuf.Begin().S("v").V(i_3973).End())));
-Set(p_3972, "sdE", Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", Get(p_3972, "sd")).V, VG_3787));
-Set(p_3972, "e", Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", Get(p_3972, "top")).V, VG_3787));
-Set(p_3972, "ex", (SEqS(Get(p_3972, "n"), "s") ? Call(Fn((V _self3750, int _argc3974, V _a3976, V _a3977, V _a3978, V _a3979, V[] _rest3975) => {
-V g_3980 = default;
-g_3980 = Call(el_14, V.Undef, ((V)("g")), NewObj(1).Put("clip-path", Get(scl_3788, "url")).V, VG_3787);
-Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffe6d6"))).Put("stroke-width", ((V)(2.1))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.6))).V, g_3980);
-return g_3980;
-return default;
-}, 0, "", true), V.Undef) : Call(el_14, V.Undef, ((V)("path")), NewObj(2).Put("fill", Get(p_3972, "in")).Put("opacity", Get(p_3972, "io")).V, VG_3787)));
-Set(p_3972, "QI", (Truthy(Get(p_3972, "ik")) ? Call(shr_3777, V.Undef, Get(p_3972, "Q"), Get(p_3972, "ik")) : V.Null));
-return default;
-}, 2, "", true));
-LGR_3789 = Array_from(NewObj(1).Put("length", ((V)(9D))).V, Fn((V _self3750, int _argc3981, V __3987, V i_3988, V _a3985, V _a3986, V[] _rest3982) => {
-return Arr(((V)((0.22 + (ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3988) * 2.7) + 1D))))) * 0.62)))), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3988) * 1.9) + 3D))))) * TAU_9))), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_3988) * 3.3) + 2D))))) * System.Math.PI))));
-}, 2, "", true));
-limb_3790 = Fn((V _self3750, int _argc3989, V q_3995, V kind_3996, V c_3997, V ax_3998, V[] _rest3990) => {
-V S3_4002 = default;
-V P2_4003 = default;
-V NZ_4004 = default;
-double RA_4005 = 0;
-JsStrBuf dg_4006 = null;
-JsStrBuf ds_4007 = null;
-V E_3999 = default;
-V R_4000 = default;
-V glob_4001 = default;
-E_3999 = (_argc3989 > 4 ? _rest3990[0] : V.Undef);
-R_4000 = (_argc3989 > 5 ? _rest3990[1] : V.Undef);
-glob_4001 = (_argc3989 > 6 ? _rest3990[2] : V.Undef);
-if (!(Truthy(Get(q_3995, "dec")))) {
-Set(q_3995, "dec", Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, Get(Get(q_3995, "e"), "parentNode"), Get(Get(q_3995, "e"), "nextSibling")));
-Set(q_3995, "dG", Call(el_14, V.Undef, ((V)("path")), NewObj(3).Put("fill", ((V)("#ffffff"))).Put("stroke", ((V)("#cfc5b0"))).Put("stroke-width", ((V)(0.24))).V, Get(q_3995, "dec")));
-Set(q_3995, "dS", Call(el_14, V.Undef, ((V)("path")), NewObj(3).Put("fill", ((V)("#e6c682"))).Put("stroke", ((V)("#b48a42"))).Put("stroke-width", ((V)(0.22))).V, Get(q_3995, "dec")));
 }
-S3_4002 = Fn((V _self3750, int _argc4008, V th_4014, V f_4015, V _a4012, V _a4013, V[] _rest4009) => {
-return Arr(((V)((FdLibm.Sin(ToNum(th_4014)) * FdLibm.Sin(ToNum(f_4015))))), ((V)((-FdLibm.Cos(ToNum(th_4014))))), ((V)((FdLibm.Sin(ToNum(th_4014)) * FdLibm.Cos(ToNum(f_4015))))));
+S3_3804 = Fn((V _arrowThis3856, int _argc3848, V th_3854, V f_3855, V _a3852, V _a3853, V[] _rest3849) => {
+return Arr(((V)((FdLibm.Sin(ToNum(th_3854)) * FdLibm.Sin(ToNum(f_3855))))), ((V)((-FdLibm.Cos(ToNum(th_3854))))), ((V)((FdLibm.Sin(ToNum(th_3854)) * FdLibm.Cos(ToNum(f_3855))))));
 }, 2, "", true);
-P2_4003 = Fn((V _self3750, int _argc4016, V s_4022, V _a4019, V _a4020, V _a4021, V[] _rest4017) => {
-return Call(glob_4001, V.Undef, Add(Add(Add(GetIdx(c_3997, 0D), ((V)((ToNum(GetIdx(s_4022, 0D)) * ToNum(GetIdx(GetIdx(ax_3998, 0D), 0D)))))), ((V)((ToNum(GetIdx(s_4022, 1D)) * ToNum(GetIdx(GetIdx(ax_3998, 1D), 0D)))))), ((V)((ToNum(GetIdx(s_4022, 2D)) * ToNum(GetIdx(GetIdx(ax_3998, 2D), 0D)))))), Add(Add(Add(GetIdx(c_3997, 1D), ((V)((ToNum(GetIdx(s_4022, 0D)) * ToNum(GetIdx(GetIdx(ax_3998, 0D), 1D)))))), ((V)((ToNum(GetIdx(s_4022, 1D)) * ToNum(GetIdx(GetIdx(ax_3998, 1D), 1D)))))), ((V)((ToNum(GetIdx(s_4022, 2D)) * ToNum(GetIdx(GetIdx(ax_3998, 2D), 1D)))))));
+P2_3805 = Fn((V _arrowThis3864, int _argc3857, V s_3863, V _a3860, V _a3861, V _a3862, V[] _rest3858) => {
+return Call(glob_3794, V.Undef, Add(Add(Add(GetIdx(c_3790, 0D), ((V)((ToNum(GetIdx(s_3863, 0D)) * ToNum(GetIdx(GetIdx(ax_3791, 0D), 0D)))))), ((V)((ToNum(GetIdx(s_3863, 1D)) * ToNum(GetIdx(GetIdx(ax_3791, 1D), 0D)))))), ((V)((ToNum(GetIdx(s_3863, 2D)) * ToNum(GetIdx(GetIdx(ax_3791, 2D), 0D)))))), Add(Add(Add(GetIdx(c_3790, 1D), ((V)((ToNum(GetIdx(s_3863, 0D)) * ToNum(GetIdx(GetIdx(ax_3791, 0D), 1D)))))), ((V)((ToNum(GetIdx(s_3863, 1D)) * ToNum(GetIdx(GetIdx(ax_3791, 1D), 1D)))))), ((V)((ToNum(GetIdx(s_3863, 2D)) * ToNum(GetIdx(GetIdx(ax_3791, 2D), 1D)))))));
 }, 1, "", true);
-NZ_4004 = Fn((V _self3750, int _argc4023, V s_4029, V _a4026, V _a4027, V _a4028, V[] _rest4024) => {
-double n0_4030 = 0;
-double n1_4031 = 0;
-double n2_4032 = 0;
-n0_4030 = 0D;
-n1_4031 = 0D;
-n2_4032 = 0D;
+NV_3806 = Fn((V _arrowThis3872, int _argc3865, V s_3871, V _a3868, V _a3869, V _a3870, V[] _rest3866) => {
+V n_3873 = default;
+V l_3874 = default;
+n_3873 = Arr(((V)(0D)), ((V)(0D)), ((V)(0D)));
 {
-double i_4033 = 0;
-i_4033 = 0D;
+double i_3875 = 0;
+i_3875 = 0D;
 while (true) {
-if (!((i_4033 < 3D))) break;
-double k_4035 = 0;
-k_4035 = (ToNum(GetIdx(s_4029, i_4033)) / ToNum(GetIdx(R_4000, i_4033)));
-n0_4030 = (n0_4030 + (k_4035 * ToNum(GetIdx(GetIdx(E_3999, i_4033), 0D))));
-n1_4031 = (n1_4031 + (k_4035 * ToNum(GetIdx(GetIdx(E_3999, i_4033), 1D))));
-n2_4032 = (n2_4032 + (k_4035 * ToNum(GetIdx(GetIdx(E_3999, i_4033), 2D))));
-i_4033++;
+if (!((i_3875 < 3D))) break;
+double k_3877 = 0;
+k_3877 = (ToNum(GetIdx(s_3871, i_3875)) / ToNum(GetIdx(R_3793, i_3875)));
+{
+double j_3878 = 0;
+j_3878 = 0D;
+while (true) {
+if (!((j_3878 < 3D))) break;
+OpSetK(n_3873, ((V)(j_3878)), 0, ((V)((k_3877 * ToNum(GetIdx(GetIdx(E_3792, i_3875), j_3878))))));
+j_3878++;
 }
 }
-return ((V)((n2_4032 / ToNum((((V)(Hypot(n0_4030, n1_4031, n2_4032))) is var _t4036 && Truthy(_t4036) ? _t4036 : ((V)(1D)))))));
+i_3875++;
+}
+}
+l_3874 = (((V)(Hypot(ToNum(GetIdx(n_3873, 0D)), ToNum(GetIdx(n_3873, 1D)), ToNum(GetIdx(n_3873, 2D))))) is var _t3880 && Truthy(_t3880) ? _t3880 : ((V)(1D)));
+return Arr(((V)((ToNum(GetIdx(n_3873, 0D)) / ToNum(l_3874)))), ((V)((ToNum(GetIdx(n_3873, 1D)) / ToNum(l_3874)))), ((V)((ToNum(GetIdx(n_3873, 2D)) / ToNum(l_3874)))));
 return default;
 }, 1, "", true);
-RA_4005 = (ToNum(Add(Add(GetIdx(R_4000, 0D), GetIdx(R_4000, 1D)), GetIdx(R_4000, 2D))) / 3D);
-dg_4006 = new JsStrBuf("");
-ds_4007 = new JsStrBuf("");
-Invoke(LGR_3789, "forEach", Fn((V _self3750, int _argc4037, V _a4039, V i_4043, V _a4041, V _a4042, V[] _rest4038) => {
-double T_4051 = 0;
-V s_4052 = default;
-V e1_4053 = default;
-V e2_4054 = default;
-V sz_4055 = default;
-V Q_4056 = default;
-V th_4046 = default;
-V f_4048 = default;
-V o_4050 = default;
-{ V _t4044 = ListOf(_a4039);
-{ V _t4045 = GetIdx(_t4044, 0D);
-th_4046 = _t4045; }
-{ V _t4047 = GetIdx(_t4044, 1D);
-f_4048 = _t4047; }
-{ V _t4049 = GetIdx(_t4044, 2D);
-o_4050 = _t4049; }
-}
-T_4051 = (ToNum(th_4046) * System.Math.PI);
-s_4052 = Call(S3_4002, V.Undef, ((V)(T_4051)), f_4048);
-if (LtN(Call(NZ_4004, V.Undef, s_4052), 0.15)) {
-return default;
-}
-e1_4053 = Arr(((V)(FdLibm.Cos(ToNum(f_4048)))), ((V)(0D)), ((V)((-FdLibm.Sin(ToNum(f_4048))))));
-e2_4054 = Arr(((V)((FdLibm.Cos(T_4051) * FdLibm.Sin(ToNum(f_4048))))), ((V)(FdLibm.Sin(T_4051))), ((V)((FdLibm.Cos(T_4051) * FdLibm.Cos(ToNum(f_4048))))));
-sz_4055 = (SEqN(i_4043, 4D) ? Arr(((V)(1.1)), ((V)(0.55))) : Arr(((V)(1.5)), ((V)(0.72))));
-Q_4056 = Arr();
+BR_3807 = Fn((V _arrowThis3888, int _argc3881, V n_3887, V _a3884, V _a3885, V _a3886, V[] _rest3882) => {
+return ((V)((((ToNum(GetIdx(n_3887, 0D)) * ToNum(GetIdx(LV_27, 0D))) + (ToNum(GetIdx(n_3887, 1D)) * ToNum(GetIdx(LV_27, 1D)))) + (ToNum(GetIdx(n_3887, 2D)) * ToNum(GetIdx(LV_27, 2D))))));
+}, 1, "", true);
+TH_3808 = Array_from(NewObj(1).Put("length", ((V)((NS_3802 + 1D)))).V, Fn((V _arrowThis3897, int _argc3889, V __3895, V i_3896, V _a3893, V _a3894, V[] _rest3890) => {
+return ((V)((System.Math.PI * (th0_3800 + (((th1_3801 - th0_3800) * ToNum(i_3896)) / NS_3802)))));
+}, 2, "", true));
+dL_3809 = new JsStrBuf("");
+dD_3810 = new JsStrBuf("");
+dG_3811 = new JsStrBuf("");
 {
-double k_4057 = 0;
-k_4057 = 0D;
+double k_3898 = 0;
+k_3898 = 0D;
 while (true) {
-if (!((k_4057 < 8D))) break;
-double t_4059 = 0;
-double a_4060 = 0;
-double b_4061 = 0;
-double ca_4062 = 0;
-double sa_4063 = 0;
-t_4059 = ((k_4057 / 8D) * TAU_9);
-a_4060 = ((ToNum(GetIdx(sz_4055, 0D)) / RA_4005) * FdLibm.Cos(t_4059));
-b_4061 = ((ToNum(GetIdx(sz_4055, 1D)) / RA_4005) * FdLibm.Sin(t_4059));
-ca_4062 = FdLibm.Cos(ToNum(o_4050));
-sa_4063 = FdLibm.Sin(ToNum(o_4050));
-Invoke(Q_4056, "push", Call(P2_4003, V.Undef, Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D))), "map", Fn((V _self3750, int _argc4064, V j_4070, V _a4067, V _a4068, V _a4069, V[] _rest4065) => {
-return ((V)((((ToNum(GetK(s_4052, j_4070)) * 1.04) + (((ToNum(GetK(e1_4053, j_4070)) * ca_4062) + (ToNum(GetK(e2_4054, j_4070)) * sa_4063)) * a_4060)) + ((((-ToNum(GetK(e1_4053, j_4070))) * sa_4063) + (ToNum(GetK(e2_4054, j_4070)) * ca_4062)) * b_4061))));
+if (!((k_3898 < N_3797))) break;
+double fg_3900 = 0;
+V G3_3901 = default;
+fg_3900 = (ph_3799 + ((k_3898 * 2D) * H_3798));
+G3_3901 = Invoke(TH_3808, "map", Fn((V _arrowThis3909, int _argc3902, V th_3908, V _a3905, V _a3906, V _a3907, V[] _rest3903) => {
+return Call(S3_3804, V.Undef, th_3908, ((V)(fg_3900)));
+}, 1, "", true));
+dG_3811.V(Call(runs_21, V.Undef, Invoke(G3_3901, "map", P2_3805), Invoke(G3_3901, "map", Fn((V _arrowThis3917, int _argc3910, V s_3916, V _a3913, V _a3914, V _a3915, V[] _rest3911) => {
+return (GtN(GetIdx(Call(NV_3806, V.Undef, s_3916), 2D), 0.03) ? V.True : V.False);
 }, 1, "", true))));
-k_4057++;
+{
+double side_3918 = 0;
+side_3918 = 0D;
+while (true) {
+if (!((side_3918 < 2D))) break;
+double fa_3920 = 0;
+double fb_3921 = 0;
+double fm_3922 = 0;
+V nm_3923 = default;
+double d_3924 = 0;
+V pd_3925 = default;
+fa_3920 = (fg_3900 + (side_3918 * H_3798));
+fb_3921 = (fa_3920 + H_3798);
+fm_3922 = (fa_3920 + (H_3798 / 2D));
+nm_3923 = Call(NV_3806, V.Undef, Call(S3_3804, V.Undef, ((V)((System.Math.PI / 2D))), ((V)(fm_3922))));
+if (LtN(GetIdx(nm_3923, 2D), 0.05)) {
+goto _cont3919;
 }
+d_3924 = (ToNum(Call(BR_3807, V.Undef, Call(NV_3806, V.Undef, Call(S3_3804, V.Undef, ((V)((System.Math.PI / 2D))), ((V)((fm_3922 + (NumTruthy(side_3918) ? BE_3803 : (-BE_3803))))))))) - ToNum(Call(BR_3807, V.Undef, nm_3923)));
+if ((System.Math.Abs(d_3924) < 0.03)) {
+goto _cont3919;
 }
-if (SEqN(i_4043, 4D)) {
-ds_4007.V(Call(polyW_18, V.Undef, Q_4056));
+pd_3925 = ((V)(JsStrBuf.Begin().S("M").V(Invoke(Invoke(Invoke(Invoke(TH_3808, "map", Fn((V _arrowThis3941, int _argc3934, V th_3940, V _a3937, V _a3938, V _a3939, V[] _rest3935) => {
+return Call(P2_3805, V.Undef, Call(S3_3804, V.Undef, th_3940, ((V)(fa_3920))));
+}, 1, "", true)), "concat", Invoke(Invoke(Invoke(TH_3808, "slice"), "reverse"), "map", Fn((V _arrowThis3933, int _argc3926, V th_3932, V _a3929, V _a3930, V _a3931, V[] _rest3927) => {
+return Call(P2_3805, V.Undef, Call(S3_3804, V.Undef, th_3932, ((V)(fb_3921))));
+}, 1, "", true))), "map", pt_15), "join", ((V)("L")))).S("Z").End()));
+if ((d_3924 > 0D)) {
+dL_3809.V(pd_3925);
 } else {
-dg_4006.V(Call(polyW_18, V.Undef, Q_4056));
+dD_3810.V(pd_3925);
 }
-return default;
-}, 2, "", true));
-Call(SA_31, V.Undef, Get(q_3995, "dG"), ((V)("d")), (((V)(dg_4006.Str)) is var _t4071 && Truthy(_t4071) ? _t4071 : ((V)("M0 0"))));
-Call(SA_31, V.Undef, Get(q_3995, "dS"), ((V)("d")), (((V)(ds_4007.Str)) is var _t4072 && Truthy(_t4072) ? _t4072 : ((V)("M0 0"))));
+_cont3919: ;
+side_3918++;
+}
+}
+k_3898++;
+}
+}
+Call(SA_31, V.Undef, Get(q_3788, "dL"), ((V)("d")), (((V)(dL_3809.Str)) is var _t3942 && Truthy(_t3942) ? _t3942 : ((V)("M0 0"))));
+Call(SA_31, V.Undef, Get(q_3788, "dD"), ((V)("d")), (((V)(dD_3810.Str)) is var _t3943 && Truthy(_t3943) ? _t3943 : ((V)("M0 0"))));
+Call(SA_31, V.Undef, Get(q_3788, "dG"), ((V)("d")), (((V)(dG_3811.Str)) is var _t3944 && Truthy(_t3944) ? _t3944 : ((V)("M0 0"))));
 return default;
 }, 7, "", true);
-return NewObj(27).Put("R0", ((V)(R0_3758))).Put("YT", ((V)(YT_3759))).Put("AL", ((V)(AL_3760))).Put("rT", rT_3762).Put("SM", SM_3772).Put("SG", SG_3765).Put("TG", TG_3766).Put("SS", SS_3767).Put("TS", TS_3768).Put("GT", GT_3780).Put("GSH", GSH_3779).Put("ses", ses_3781).Put("top", top_3782).Put("tgr", tgr_3783).Put("tse", tse_3784).Put("nori", nori_3785).Put("bedE", bedE_3786).Put("VG", VG_3787).Put("PC", PC_3778).Put("scl", scl_3788).Put("NO", Call(ringXZ_3773, V.Undef, Fn((V _self3750, int _argc4073, V f_4079, V _a4076, V _a4077, V _a4078, V[] _rest4074) => {
-return Add(Call(NR_3769, V.Undef, f_4079), ((V)(0.85)));
-}, 1, "", true), ((V)(64D)))).Put("BD", Call(ringXZ_3773, V.Undef, NR_3769, ((V)(64D)))).Put("limb", limb_3790).Put("rx", ((V)(29D))).Put("ya", ((V)(36D))).Put("yb", ((V)(86D))).Put("zE", Fn((V _self3750, int _argc4080, V dx_4086, V dy_4087, V _a4084, V _a4085, V[] _rest4081) => {
-V r_4088 = default;
-r_4088 = Call(rT_3762, V.Undef, Add(Get(S_3757, "HY"), dy_4087));
-return ((V)((System.Math.Sqrt(Max(0D, ((ToNum(r_4088) * ToNum(r_4088)) - (ToNum(dx_4086) * ToNum(dx_4086))))) + 0.3)));
+return NewObj(16).Put("O", O_3656).Put("rT", rT_3657).Put("KN", KN_3658).Put("tw", tw_3663).Put("xw", xw_3664).Put("dep", dep_3665).Put("knob", knob_3668).Put("cone", cone_3672).Put("kp", kp_3673).Put("pep", pep_3671).Put("PE", PE_3674).Put("limb", limb_3676).Put("rx", ((V)(37D))).Put("ya", ((V)(44D))).Put("yb", ((V)(88D))).Put("zE", Fn((V _arrowThis3953, int _argc3945, V dx_3951, V dy_3952, V _a3949, V _a3950, V[] _rest3946) => {
+V r_3954 = default;
+r_3954 = Call(rT_3657, V.Undef, Add(Get(S_3654, "HY"), dy_3952));
+return ((V)((System.Math.Sqrt(Max(0D, ((ToNum(r_3954) * ToNum(r_3954)) - (ToNum(dx_3951) * ToNum(dx_3951))))) + 0.3)));
 return default;
 }, 2, "zE", true)).V;
 return default;
-}, 1, "setup", false)).Put("draw", Fn((V _self4089, int _argc4090, V B_4096, V D_4097, V _a4094, V _a4095, V[] _rest4091) => {
-V set_4098 = default;
-V W_4099 = default;
-V P_4100 = default;
-V rT_4101 = default;
-V veg_4102 = default;
-V YT_4103 = default;
-V hp_4104 = default;
-V ovalQ_4105 = default;
-V oval_4106 = default;
-V g3_4107 = default;
-JsStrBuf gs_4108 = null;
-double dx_4109 = 0;
-double dy_4110 = 0;
-JsStrBuf sd_4111 = null;
-V ring_4112 = default;
-V TP_4113 = default;
-JsStrBuf tg_4114 = null;
-JsStrBuf ts_4115 = null;
-V L_4116 = default;
-V ord_4117 = default;
-if (_self4089.IsNullish) _self4089 = GlobalV;
-{ V _t4118 = D_4097;
-if (_t4118.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t4118));
-{ V _t4119 = Get(_t4118, "set");
-set_4098 = _t4119; } }
-W_4099 = Call(tiltW_49, V.Undef, D_4097, Get(B_4096, "AL"), ((V)(60D)), Get(B_4096, "R0"));
-P_4100 = Get(W_4099, "P");
-rT_4101 = Get(B_4096, "rT");
-veg_4102 = Call(clamp_12, V.Undef, Invoke(D_4097, "bv", ((V)("veg"))), ((V)(0D)), ((V)(1.3)));
-YT_4103 = Get(B_4096, "YT");
-hp_4104 = Arr();
+}, 1, "setup", false)).Put("draw", Fn((V _self3955, int _argc3956, V B_3962, V D_3963, V _a3960, V _a3961, V[] _rest3957) => {
+V P3_3964 = default;
+V Z3_3965 = default;
+V set_3966 = default;
+V rT_3967 = default;
+V kt_3968 = default;
+V kq_3969 = default;
+V hp_3970 = default;
+V TW_3971 = default;
+double sw_3972 = 0;
+V KP_3973 = default;
+V KZ_3974 = default;
+V kh_3975 = default;
+if (_self3955.IsNullish) _self3955 = GlobalV;
+{ V _t3976 = D_3963;
+if (_t3976.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t3976));
+{ V _t3977 = Get(_t3976, "P3");
+P3_3964 = _t3977; }
+{ V _t3978 = Get(_t3976, "Z3");
+Z3_3965 = _t3978; }
+{ V _t3979 = Get(_t3976, "set");
+set_3966 = _t3979; } }
+rT_3967 = Get(B_3962, "rT");
+kt_3968 = Call(clamp_12, V.Undef, Invoke(D_3963, "bv", ((V)("kt"))), ((V)((-1.2))), ((V)(1.2)));
+kq_3969 = Call(clamp_12, V.Undef, Invoke(D_3963, "bv", ((V)("knot"))), ((V)((-1.2))), ((V)(1.2)));
+hp_3970 = Arr();
 {
-double i_4120 = 0;
-i_4120 = 0D;
+double i_3980 = 0;
+i_3980 = 0D;
 while (true) {
-if (!((i_4120 <= 14D))) break;
-V y_4122 = default;
-V r_4123 = default;
-y_4122 = Add(YT_4103, ((V)((((88D - ToNum(YT_4103)) * i_4120) / 14D))));
-r_4123 = Call(rT_4101, V.Undef, y_4122);
+if (!((i_3980 <= 20D))) break;
+double y_3982 = 0;
+V r_3983 = default;
+y_3982 = (27.6 + ((62.6 * i_3980) / 20D));
+r_3983 = Call(rT_3967, V.Undef, ((V)(y_3982)));
 {
-double k_4124 = 0;
-k_4124 = 0D;
+double k_3984 = 0;
+k_3984 = 0D;
 while (true) {
-if (!((k_4124 < 24D))) break;
-double f_4126 = 0;
-f_4126 = ((k_4124 / 24D) * TAU_9);
-Invoke(hp_4104, "push", Call(P_4100, V.Undef, ((V)((50D + (ToNum(r_4123) * FdLibm.Sin(f_4126))))), y_4122, ((V)((ToNum(r_4123) * FdLibm.Cos(f_4126))))));
-k_4124++;
+if (!((k_3984 < 24D))) break;
+double f_3986 = 0;
+f_3986 = ((k_3984 / 24D) * TAU_9);
+Invoke(hp_3970, "push", Call(P3_3964, V.Undef, ((V)((50D + (ToNum(r_3983) * FdLibm.Sin(f_3986))))), ((V)(y_3982)), ((V)((ToNum(r_3983) * FdLibm.Cos(f_3986))))));
+k_3984++;
 }
 }
-i_4120++;
+i_3980++;
 }
 }
-Set(B_4096, "d", Invoke(D_4097, "hull", hp_4104));
-ovalQ_4105 = Fn((V _self4089, int _argc4127, V c_4133, V u_4134, V v_4135, V a_4136, V[] _rest4128) => {
-double ca_4139 = 0;
-double sa_4140 = 0;
-V Q_4141 = default;
-V b_4137 = default;
-V o_4138 = default;
-b_4137 = (_argc4127 > 4 ? _rest4128[0] : V.Undef);
-o_4138 = (_argc4127 > 5 ? _rest4128[1] : V.Undef);
-ca_4139 = FdLibm.Cos(ToNum(o_4138));
-sa_4140 = FdLibm.Sin(ToNum(o_4138));
-Q_4141 = Arr();
+Set(B_3962, "d", Invoke(D_3963, "hull", hp_3970));
+TW_3971 = Fn((V _arrowThis3994, int _argc3987, V y_3993, V _a3990, V _a3991, V _a3992, V[] _rest3988) => {
+return Add(Invoke(B_3962, "tw", y_3993), ((V)(((ToNum(kt_3968) * 0.6) * ToNum(Invoke(B_3962, "xw", y_3993))))));
+}, 1, "", true);
+Call(longDraw_33, V.Undef, D_3963, Get(B_3962, "cone"), P3_3964, Z3_3965, TW_3971);
+Call(set_3966, V.Undef, Get(B_3962, "pep"), ((V)("d")), (Invoke(Invoke(Invoke(Get(B_3962, "PE"), "filter", Fn((V _arrowThis4020, int _argc4009, V _a4011, V _a4012, V _a4013, V _a4014, V[] _rest4010) => {
+V ff_4021 = default;
+V f_4017 = default;
+V y_4019 = default;
+{ V _t4015 = ListOf(_a4011);
+{ V _t4016 = GetIdx(_t4015, 0D);
+f_4017 = _t4016; }
+{ V _t4018 = GetIdx(_t4015, 1D);
+y_4019 = _t4018; }
+}
+ff_4021 = Add(f_4017, Call(TW_3971, V.Undef, y_4019));
+return (GtN(Invoke(D_3963, "facing", ((V)((50D + (ToNum(Call(rT_3967, V.Undef, y_4019)) * FdLibm.Sin(ToNum(ff_4021)))))), y_4019, ((V)((ToNum(Call(rT_3967, V.Undef, y_4019)) * FdLibm.Cos(ToNum(ff_4021))))), ((V)(FdLibm.Sin(ToNum(ff_4021)))), ((V)(0D)), ((V)(FdLibm.Cos(ToNum(ff_4021))))), 0.08) ? V.True : V.False);
+return default;
+}, 1, "", true)), "map", Fn((V _arrowThis4006, int _argc3995, V _a3997, V _a3998, V _a3999, V _a4000, V[] _rest3996) => {
+V ff_4007 = default;
+V r_4008 = default;
+V f_4003 = default;
+V y_4005 = default;
+{ V _t4001 = ListOf(_a3997);
+{ V _t4002 = GetIdx(_t4001, 0D);
+f_4003 = _t4002; }
+{ V _t4004 = GetIdx(_t4001, 1D);
+y_4005 = _t4004; }
+}
+ff_4007 = Add(f_4003, Call(TW_3971, V.Undef, y_4005));
+r_4008 = Add(Call(rT_3967, V.Undef, y_4005), ((V)((ToNum(Invoke(B_3962, "dep", y_4005)) * 0.55))));
+return Call(circD_19, V.Undef, Call(P3_3964, V.Undef, ((V)((50D + (ToNum(r_4008) * FdLibm.Sin(ToNum(ff_4007)))))), y_4005, ((V)((ToNum(r_4008) * FdLibm.Cos(ToNum(ff_4007)))))), ((V)((0.5 * ToNum(Get(D_3963, "kS"))))));
+return default;
+}, 1, "", true)), "join", ((V)(""))) is var _t4022 && Truthy(_t4022) ? _t4022 : ((V)("M0 0"))));
+sw_3972 = (((FdLibm.Sin((ToNum(Get(D_3963, "ts")) * 1.6)) * 0.5) + (ToNum(Get(D_3963, "ox")) * 0.25)) + (ToNum(kq_3969) * 3.5));
+KP_3973 = Fn((V _arrowThis4032, int _argc4023, V x_4029, V y_4030, V z_4031, V _a4028, V[] _rest4024) => {
+V u_4033 = default;
+u_4033 = Call(clamp_12, V.Undef, ((V)(((28.8 - ToNum(y_4030)) / 12D))), ((V)(0D)), ((V)(1D)));
+return Call(P3_3964, V.Undef, Add(x_4029, ((V)(((sw_3972 * ToNum(u_4033)) * ToNum(u_4033))))), ((V)((ToNum(y_4030) - ((ToNum(Get(D_3963, "oy")) * 0.25) * ToNum(u_4033))))), z_4031);
+return default;
+}, 3, "", true);
+KZ_3974 = Fn((V _arrowThis4043, int _argc4034, V x_4040, V y_4041, V z_4042, V _a4039, V[] _rest4035) => {
+return Call(Z3_3965, V.Undef, x_4040, y_4041, z_4042);
+}, 3, "", true);
+kh_3975 = Arr();
 {
-double k_4142 = 0;
-k_4142 = 0D;
+double i_4044 = 0;
+i_4044 = 0D;
 while (true) {
-if (!((k_4142 < 8D))) break;
-double t_4144 = 0;
-double A_4145 = 0;
-double Bb_4146 = 0;
-t_4144 = ((k_4142 / 8D) * TAU_9);
-A_4145 = (ToNum(a_4136) * FdLibm.Cos(t_4144));
-Bb_4146 = (ToNum(b_4137) * FdLibm.Sin(t_4144));
-Invoke(Q_4141, "push", Call(P_4100, V.Undef, Add(Add(GetIdx(c_4133, 0D), ((V)((((ToNum(GetIdx(u_4134, 0D)) * ca_4139) + (ToNum(GetIdx(v_4135, 0D)) * sa_4140)) * A_4145)))), ((V)(((((-ToNum(GetIdx(u_4134, 0D))) * sa_4140) + (ToNum(GetIdx(v_4135, 0D)) * ca_4139)) * Bb_4146)))), Add(Add(GetIdx(c_4133, 1D), ((V)((((ToNum(GetIdx(u_4134, 1D)) * ca_4139) + (ToNum(GetIdx(v_4135, 1D)) * sa_4140)) * A_4145)))), ((V)(((((-ToNum(GetIdx(u_4134, 1D))) * sa_4140) + (ToNum(GetIdx(v_4135, 1D)) * ca_4139)) * Bb_4146)))), Add(Add(GetIdx(c_4133, 2D), ((V)((((ToNum(GetIdx(u_4134, 2D)) * ca_4139) + (ToNum(GetIdx(v_4135, 2D)) * sa_4140)) * A_4145)))), ((V)(((((-ToNum(GetIdx(u_4134, 2D))) * sa_4140) + (ToNum(GetIdx(v_4135, 2D)) * ca_4139)) * Bb_4146))))));
-k_4142++;
+if (!((i_4044 <= 12D))) break;
+double y_4046 = 0;
+V r_4047 = default;
+y_4046 = (28.8 - (((28.8 - 16.95) * i_4044) / 12D));
+r_4047 = Invoke(B_3962, "KN", ((V)(y_4046)));
+{
+double k_4048 = 0;
+k_4048 = 0D;
+while (true) {
+if (!((k_4048 < 16D))) break;
+double f_4050 = 0;
+f_4050 = ((k_4048 / 16D) * TAU_9);
+Invoke(kh_3975, "push", Call(KP_3973, V.Undef, ((V)((50D + (ToNum(r_4047) * FdLibm.Sin(f_4050))))), ((V)(y_4046)), ((V)((ToNum(r_4047) * FdLibm.Cos(f_4050))))));
+k_4048++;
 }
 }
-return Q_4141;
+i_4044++;
+}
+}
+Call(set_3966, V.Undef, Get(B_3962, "knob"), ((V)("d")), Invoke(D_3963, "hull", kh_3975));
+Call(pleatDraw_30, V.Undef, D_3963, Get(B_3962, "kp"), KP_3973, KZ_3974, ((V)(((ToNum(kt_3968) * 0.4) + (ToNum(kq_3969) * 0.5)))));
+return default;
+}, 2, "draw", false)).V);
+Set(MODELS_42, "maki", NewObj(2).Put("setup", Fn((V _self4051, int _argc4052, V S_4058, V _a4055, V _a4056, V _a4057, V[] _rest4053) => {
+double R0_4059 = 0;
+double YT_4060 = 0;
+double AL_4061 = 0;
+double KF_4062 = 0;
+V rT_4063 = default;
+V ang_4064 = default;
+V face_4065 = default;
+V SG_4066 = default;
+V TG_4067 = default;
+V SS_4068 = default;
+V TS_4069 = default;
+V NR_4070 = default;
+V C_4071 = default;
+V SCc_4072 = default;
+V SM_4073 = default;
+V ringXZ_4074 = default;
+V clip_4075 = default;
+V bed_4076 = default;
+V fr_4077 = default;
+V shr_4078 = default;
+V PC_4079 = default;
+V GSH_4080 = default;
+V GT_4081 = default;
+V ses_4082 = default;
+V top_4083 = default;
+V tgr_4084 = default;
+V tse_4085 = default;
+V nori_4086 = default;
+V bedE_4087 = default;
+V VG_4088 = default;
+V scl_4089 = default;
+V LGR_4090 = default;
+V limb_4091 = default;
+if (_self4051.IsNullish) _self4051 = GlobalV;
+R0_4059 = 29D;
+YT_4060 = 38.6;
+AL_4061 = FdLibm.Asin(0.44);
+KF_4062 = (21.5 / 17.8);
+rT_4063 = Fn((V _arrowThis4099, int _argc4092, V y_4098, V _a4095, V _a4096, V _a4097, V[] _rest4093) => {
+return ((V)((GtN(y_4098, 82D) ? ((System.Math.Sqrt(Max(0D, (36D - ((ToNum(y_4098) - 82D) * (ToNum(y_4098) - 82D))))) + R0_4059) - 6D) : R0_4059)));
+}, 1, "", true);
+Invoke(S_4058, "hide", Fn((V _arrowThis4107, int _argc4100, V q_4106, V _a4103, V _a4104, V _a4105, V[] _rest4101) => {
+return (Get(q_4106, "inBody") is var _t4108 && !Truthy(_t4108) ? _t4108 : Invoke(S_4058, "dk", q_4106));
+}, 1, "", true));
+ang_4064 = Fn((V _arrowThis4116, int _argc4109, V f_4115, V _a4112, V _a4113, V _a4114, V[] _rest4110) => {
+return ((V)(FdLibm.Atan2(FdLibm.Sin(ToNum(f_4115)), FdLibm.Cos(ToNum(f_4115)))));
+}, 1, "", true);
+face_4065 = Fn((V _arrowThis4125, int _argc4117, V f_4123, V y_4124, V _a4121, V _a4122, V[] _rest4118) => {
+return ((((System.Math.Abs(ToNum(Call(ang_4064, V.Undef, f_4123))) < 0.6) && GtN(y_4124, 52D)) && LtN(y_4124, 75D)) ? V.True : V.False);
+}, 2, "", true);
+SG_4066 = Invoke(Array_from(NewObj(1).Put("length", ((V)(300D))).V, Fn((V _arrowThis4142, int _argc4134, V __4140, V i_4141, V _a4138, V _a4139, V[] _rest4135) => {
+return Arr(((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_4141) * 2.31) + 1D))))) * TAU_9))), ((V)(((YT_4060 + 2D) + (ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_4141) * 1.73) + 2D))))) * (84D - YT_4060))))), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_4141) * 3.1) + 5D))))) * System.Math.PI))));
+}, 2, "", true)), "filter", Fn((V _arrowThis4133, int _argc4126, V g_4132, V _a4129, V _a4130, V _a4131, V[] _rest4127) => {
+return (!(Truthy(Call(face_4065, V.Undef, GetIdx(g_4132, 0D), GetIdx(g_4132, 1D)))) ? V.True : V.False);
+}, 1, "", true));
+TG_4067 = Array_from(NewObj(1).Put("length", ((V)(52D))).V, Fn((V _arrowThis4151, int _argc4143, V __4149, V i_4150, V _a4147, V _a4148, V[] _rest4144) => {
+return Arr(((V)((24.3 + (ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_4150) * 1.37) + 7D))))) * 4.2)))), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_4150) * 2.9) + 3D))))) * TAU_9))), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_4150) * 4.3) + 1D))))) * System.Math.PI))));
+}, 2, "", true));
+SS_4068 = Invoke(Array_from(NewObj(1).Put("length", ((V)(34D))).V, Fn((V _arrowThis4168, int _argc4160, V __4166, V i_4167, V _a4164, V _a4165, V[] _rest4161) => {
+return Arr(((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_4167) * 5.1) + 11D))))) * TAU_9))), ((V)(((YT_4060 + 4D) + (ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_4167) * 2.2) + 9D))))) * (80D - YT_4060))))), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_4167) * 1.9) + 4D))))) * System.Math.PI))));
+}, 2, "", true)), "filter", Fn((V _arrowThis4159, int _argc4152, V g_4158, V _a4155, V _a4156, V _a4157, V[] _rest4153) => {
+return (!(Truthy(Call(face_4065, V.Undef, GetIdx(g_4158, 0D), GetIdx(g_4158, 1D)))) ? V.True : V.False);
+}, 1, "", true));
+TS_4069 = Array_from(NewObj(1).Put("length", ((V)(10D))).V, Fn((V _arrowThis4177, int _argc4169, V __4175, V i_4176, V _a4173, V _a4174, V[] _rest4170) => {
+return Arr(((V)((24.5 + (ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_4176) * 3.3) + 2D))))) * 3.8)))), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_4176) * 1.1) + 8D))))) * TAU_9))), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_4176) * 2.7) + 6D))))) * System.Math.PI))));
+}, 2, "", true));
+NR_4070 = Fn((V _arrowThis4185, int _argc4178, V f_4184, V _a4181, V _a4182, V _a4183, V[] _rest4179) => {
+return ((V)((KF_4062 * ((17.8 + (0.8 * FdLibm.Sin(((3D * ToNum(f_4184)) + 1.1)))) + (0.45 * FdLibm.Sin(((5D * ToNum(f_4184)) + 0.3)))))));
+}, 1, "", true);
+C_4071 = Arr(((V)(50.5)), ((V)((-1.2))));
+SCc_4072 = Fn((V _arrowThis4195, int _argc4186, V a_4192, V b_4193, V c_4194, V _a4191, V[] _rest4187) => {
+return ((V)((((KF_4062 * ((ToNum(c_4194) - (ToNum(a_4192) * ToNum(GetIdx(C_4071, 0D)))) - (ToNum(b_4193) * ToNum(GetIdx(C_4071, 1D))))) + (ToNum(a_4192) * ToNum(GetIdx(C_4071, 0D)))) + (ToNum(b_4193) * ToNum(GetIdx(C_4071, 1D))))));
+}, 3, "", true);
+SM_4073 = Fn((V _arrowThis4204, int _argc4196, V x_4202, V z_4203, V _a4200, V _a4201, V[] _rest4197) => {
+return Arr(Add(GetIdx(C_4071, 0D), ((V)(((ToNum(x_4202) - ToNum(GetIdx(C_4071, 0D))) * KF_4062)))), Add(GetIdx(C_4071, 1D), ((V)(((ToNum(z_4203) - ToNum(GetIdx(C_4071, 1D))) * KF_4062)))));
+}, 2, "", true);
+ringXZ_4074 = Fn((V _arrowThis4213, int _argc4205, V rf_4211, V n_4212, V _a4209, V _a4210, V[] _rest4206) => {
+return Array_from(NewObj(1).Put("length", n_4212).V, Fn((V _arrowThis4222, int _argc4214, V __4220, V k_4221, V _a4218, V _a4219, V[] _rest4215) => {
+double f_4223 = 0;
+f_4223 = ((ToNum(k_4221) / ToNum(n_4212)) * TAU_9);
+return Arr(Add(GetIdx(C_4071, 0D), ((V)((ToNum(Call(rf_4211, V.Undef, ((V)(f_4223)))) * FdLibm.Sin(f_4223))))), Add(GetIdx(C_4071, 1D), ((V)((ToNum(Call(rf_4211, V.Undef, ((V)(f_4223)))) * FdLibm.Cos(f_4223))))));
+return default;
+}, 2, "", true));
+}, 2, "", true);
+clip_4075 = Fn((V _arrowThis4234, int _argc4224, V Q_4230, V a_4231, V b_4232, V c_4233, V[] _rest4225) => {
+V o_4235 = default;
+o_4235 = Arr();
+{
+double i_4236 = 0;
+i_4236 = 0D;
+while (true) {
+if (!(Lt(((V)(i_4236)), Get(Q_4230, "length")))) break;
+V p_4238 = default;
+V q_4239 = default;
+double s1_4240 = 0;
+double s2_4241 = 0;
+p_4238 = GetIdx(Q_4230, i_4236);
+q_4239 = GetIdx(Q_4230, ((i_4236 + 1D) % ToNum(Get(Q_4230, "length"))));
+s1_4240 = (((ToNum(a_4231) * ToNum(GetIdx(p_4238, 0D))) + (ToNum(b_4232) * ToNum(GetIdx(p_4238, 1D)))) - ToNum(c_4233));
+s2_4241 = (((ToNum(a_4231) * ToNum(GetIdx(q_4239, 0D))) + (ToNum(b_4232) * ToNum(GetIdx(q_4239, 1D)))) - ToNum(c_4233));
+if ((s1_4240 <= 0D)) {
+Invoke(o_4235, "push", p_4238);
+}
+if (((s1_4240 * s2_4241) < 0D)) {
+double t_4242 = 0;
+t_4242 = (s1_4240 / (s1_4240 - s2_4241));
+Invoke(o_4235, "push", Arr(Add(GetIdx(p_4238, 0D), ((V)(((ToNum(GetIdx(q_4239, 0D)) - ToNum(GetIdx(p_4238, 0D))) * t_4242)))), Add(GetIdx(p_4238, 1D), ((V)(((ToNum(GetIdx(q_4239, 1D)) - ToNum(GetIdx(p_4238, 1D))) * t_4242))))));
+}
+i_4236++;
+}
+}
+return o_4235;
+return default;
+}, 4, "", true);
+bed_4076 = Call(ringXZ_4074, V.Undef, Fn((V _arrowThis4250, int _argc4243, V f_4249, V _a4246, V _a4247, V _a4248, V[] _rest4244) => {
+return ((V)((ToNum(Call(NR_4070, V.Undef, f_4249)) - 0.7)));
+}, 1, "", true), ((V)(64D)));
+fr_4077 = Call(clip_4075, V.Undef, bed_4076, ((V)((-0.08))), ((V)((-1D))), Call(SCc_4072, V.Undef, ((V)((-0.08))), ((V)((-1D))), ((V)((-(3.8 + 4D))))));
+shr_4078 = Fn((V _arrowThis4259, int _argc4251, V Q_4257, V k_4258, V _a4255, V _a4256, V[] _rest4252) => {
+double cx_4260 = 0;
+double cz_4261 = 0;
+cx_4260 = (ToNum(Invoke(Q_4257, "reduce", Fn((V _arrowThis4270, int _argc4262, V s_4268, V p_4269, V _a4266, V _a4267, V[] _rest4263) => {
+return Add(s_4268, GetIdx(p_4269, 0D));
+}, 2, "", true), ((V)(0D)))) / ToNum(Get(Q_4257, "length")));
+cz_4261 = (ToNum(Invoke(Q_4257, "reduce", Fn((V _arrowThis4279, int _argc4271, V s_4277, V p_4278, V _a4275, V _a4276, V[] _rest4272) => {
+return Add(s_4277, GetIdx(p_4278, 1D));
+}, 2, "", true), ((V)(0D)))) / ToNum(Get(Q_4257, "length")));
+return Invoke(Q_4257, "map", Fn((V _arrowThis4287, int _argc4280, V p_4286, V _a4283, V _a4284, V _a4285, V[] _rest4281) => {
+return Arr(((V)((cx_4260 + ((ToNum(GetIdx(p_4286, 0D)) - cx_4260) * ToNum(k_4258))))), ((V)((cz_4261 + ((ToNum(GetIdx(p_4286, 1D)) - cz_4261) * ToNum(k_4258))))));
+}, 1, "", true));
+return default;
+}, 2, "", true);
+PC_4079 = Arr(NewObj(5).Put("n", ((V)("s"))).Put("Q", Call(clip_4075, V.Undef, bed_4076, ((V)(0.08)), ((V)(1D)), Call(SCc_4072, V.Undef, ((V)(0.08)), ((V)(1D)), ((V)((2.6 + 4D)))))).Put("h", ((V)(2.2))).Put("sd", ((V)("#d9542a"))).Put("top", Invoke(S_4058, "rgrad", ((V)("mks")), Arr(Arr(((V)(0D)), ((V)("#ffb894"))), Arr(((V)(0.6)), ((V)("#ff7c4a"))), Arr(((V)(1D)), ((V)("#e65a2c")))))).V, NewObj(8).Put("n", ((V)("a"))).Put("Q", Call(clip_4075, V.Undef, fr_4077, ((V)(1D)), ((V)((-0.3))), Call(SCc_4072, V.Undef, ((V)(1D)), ((V)((-0.3))), ((V)((54.8 - 2.7)))))).Put("h", ((V)(1.7))).Put("sd", ((V)("#5e8e30"))).Put("top", Invoke(S_4058, "rgrad", ((V)("mka")), Arr(Arr(((V)(0D)), ((V)("#f8f4ba"))), Arr(((V)(0.6)), ((V)("#e6e690"))), Arr(((V)(1D)), ((V)("#b4c862")))))).Put("in", ((V)("#eef0b0"))).Put("ik", ((V)(0.55))).Put("io", ((V)(0.8))).V, NewObj(8).Put("n", ((V)("k"))).Put("Q", Call(clip_4075, V.Undef, fr_4077, ((V)((-1D))), ((V)(0.3)), Call(SCc_4072, V.Undef, ((V)((-1D))), ((V)(0.3)), ((V)((-(56.2 - 2.7))))))).Put("h", ((V)(1.4))).Put("sd", ((V)("#2e6a22"))).Put("top", Invoke(S_4058, "rgrad", ((V)("mkk")), Arr(Arr(((V)(0D)), ((V)("#b6ea80"))), Arr(((V)(0.6)), ((V)("#86cc52"))), Arr(((V)(1D)), ((V)("#4f9a2e")))))).Put("in", ((V)("#e2f6c0"))).Put("ik", ((V)(0.5))).Put("io", ((V)(0.85))).V);
+GSH_4080 = Invoke(S_4058, "path", NewObj(2).Put("fill", ((V)("#d6ccb7"))).Put("opacity", ((V)(0.75))).V);
+GT_4081 = Arr(Invoke(S_4058, "path", NewObj(3).Put("fill", ((V)("#ffffff"))).Put("stroke", ((V)("#cfc5b0"))).Put("stroke-width", ((V)(0.26))).V), Invoke(S_4058, "path", NewObj(3).Put("fill", ((V)("#fbf9f4"))).Put("stroke", ((V)("#cfc5b0"))).Put("stroke-width", ((V)(0.26))).V), Invoke(S_4058, "path", NewObj(3).Put("fill", ((V)("#efeae0"))).Put("stroke", ((V)("#c4b9a2"))).Put("stroke-width", ((V)(0.26))).V));
+ses_4082 = Invoke(S_4058, "path", NewObj(3).Put("fill", ((V)("#e6c682"))).Put("stroke", ((V)("#b48a42"))).Put("stroke-width", ((V)(0.24))).V);
+top_4083 = Invoke(S_4058, "path", NewObj(1).Put("fill", Invoke(S_4058, "rgrad", ((V)("mkt")), Arr(Arr(((V)(0D)), ((V)("#fdfbf7"))), Arr(((V)(0.6)), ((V)("#f3efe6"))), Arr(((V)(1D)), ((V)("#ddd5c4")))), NewObj(3).Put("cx", ((V)("45%"))).Put("cy", ((V)("40%"))).Put("r", ((V)("65%"))).V)).V);
+tgr_4084 = Invoke(S_4058, "path", NewObj(3).Put("fill", ((V)("#ffffff"))).Put("stroke", ((V)("#cfc5b0"))).Put("stroke-width", ((V)(0.26))).V);
+tse_4085 = Invoke(S_4058, "path", NewObj(3).Put("fill", ((V)("#e6c682"))).Put("stroke", ((V)("#b48a42"))).Put("stroke-width", ((V)(0.22))).V);
+nori_4086 = Invoke(S_4058, "path", NewObj(1).Put("fill", ((V)("#1f3326"))).V);
+bedE_4087 = Invoke(S_4058, "path", NewObj(1).Put("fill", ((V)("#f1ece0"))).V);
+VG_4088 = Invoke(S_4058, "g");
+scl_4089 = Invoke(S_4058, "clip", ((V)("mksc")));
+Invoke(PC_4079, "forEach", Fn((V _arrowThis4296, int _argc4288, V p_4294, V i_4295, V _a4292, V _a4293, V[] _rest4289) => {
+Set(p_4294, "id", ((V)(JsStrBuf.Begin().S("v").V(i_4295).End())));
+Set(p_4294, "sdE", Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", Get(p_4294, "sd")).V, VG_4088));
+Set(p_4294, "e", Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", Get(p_4294, "top")).V, VG_4088));
+Set(p_4294, "ex", (SEqS(Get(p_4294, "n"), "s") ? Call(Fn((V _arrowThis4303, int _argc4297, V _a4299, V _a4300, V _a4301, V _a4302, V[] _rest4298) => {
+V g_4304 = default;
+g_4304 = Call(el_14, V.Undef, ((V)("g")), NewObj(1).Put("clip-path", Get(scl_4089, "url")).V, VG_4088);
+Call(el_14, V.Undef, ((V)("path")), NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffe6d6"))).Put("stroke-width", ((V)(2.1))).Put("stroke-linecap", ((V)("round"))).Put("opacity", ((V)(0.6))).V, g_4304);
+return g_4304;
+return default;
+}, 0, "", true), V.Undef) : Call(el_14, V.Undef, ((V)("path")), NewObj(2).Put("fill", Get(p_4294, "in")).Put("opacity", Get(p_4294, "io")).V, VG_4088)));
+Set(p_4294, "QI", (Truthy(Get(p_4294, "ik")) ? Call(shr_4078, V.Undef, Get(p_4294, "Q"), Get(p_4294, "ik")) : V.Null));
+return default;
+}, 2, "", true));
+LGR_4090 = Array_from(NewObj(1).Put("length", ((V)(9D))).V, Fn((V _arrowThis4313, int _argc4305, V __4311, V i_4312, V _a4309, V _a4310, V[] _rest4306) => {
+return Arr(((V)((0.22 + (ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_4312) * 2.7) + 1D))))) * 0.62)))), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_4312) * 1.9) + 3D))))) * TAU_9))), ((V)((ToNum(Call(rnd_22, V.Undef, ((V)(((ToNum(i_4312) * 3.3) + 2D))))) * System.Math.PI))));
+}, 2, "", true));
+limb_4091 = Fn((V _arrowThis4327, int _argc4314, V q_4320, V kind_4321, V c_4322, V ax_4323, V[] _rest4315) => {
+V S3_4328 = default;
+V P2_4329 = default;
+V NZ_4330 = default;
+double RA_4331 = 0;
+JsStrBuf dg_4332 = null;
+JsStrBuf ds_4333 = null;
+V E_4324 = default;
+V R_4325 = default;
+V glob_4326 = default;
+E_4324 = (_argc4314 > 4 ? _rest4315[0] : V.Undef);
+R_4325 = (_argc4314 > 5 ? _rest4315[1] : V.Undef);
+glob_4326 = (_argc4314 > 6 ? _rest4315[2] : V.Undef);
+if (!(Truthy(Get(q_4320, "dec")))) {
+Set(q_4320, "dec", Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, Get(Get(q_4320, "e"), "parentNode"), Get(Get(q_4320, "e"), "nextSibling")));
+Set(q_4320, "dG", Call(el_14, V.Undef, ((V)("path")), NewObj(3).Put("fill", ((V)("#ffffff"))).Put("stroke", ((V)("#cfc5b0"))).Put("stroke-width", ((V)(0.24))).V, Get(q_4320, "dec")));
+Set(q_4320, "dS", Call(el_14, V.Undef, ((V)("path")), NewObj(3).Put("fill", ((V)("#e6c682"))).Put("stroke", ((V)("#b48a42"))).Put("stroke-width", ((V)(0.22))).V, Get(q_4320, "dec")));
+}
+S3_4328 = Fn((V _arrowThis4342, int _argc4334, V th_4340, V f_4341, V _a4338, V _a4339, V[] _rest4335) => {
+return Arr(((V)((FdLibm.Sin(ToNum(th_4340)) * FdLibm.Sin(ToNum(f_4341))))), ((V)((-FdLibm.Cos(ToNum(th_4340))))), ((V)((FdLibm.Sin(ToNum(th_4340)) * FdLibm.Cos(ToNum(f_4341))))));
+}, 2, "", true);
+P2_4329 = Fn((V _arrowThis4350, int _argc4343, V s_4349, V _a4346, V _a4347, V _a4348, V[] _rest4344) => {
+return Call(glob_4326, V.Undef, Add(Add(Add(GetIdx(c_4322, 0D), ((V)((ToNum(GetIdx(s_4349, 0D)) * ToNum(GetIdx(GetIdx(ax_4323, 0D), 0D)))))), ((V)((ToNum(GetIdx(s_4349, 1D)) * ToNum(GetIdx(GetIdx(ax_4323, 1D), 0D)))))), ((V)((ToNum(GetIdx(s_4349, 2D)) * ToNum(GetIdx(GetIdx(ax_4323, 2D), 0D)))))), Add(Add(Add(GetIdx(c_4322, 1D), ((V)((ToNum(GetIdx(s_4349, 0D)) * ToNum(GetIdx(GetIdx(ax_4323, 0D), 1D)))))), ((V)((ToNum(GetIdx(s_4349, 1D)) * ToNum(GetIdx(GetIdx(ax_4323, 1D), 1D)))))), ((V)((ToNum(GetIdx(s_4349, 2D)) * ToNum(GetIdx(GetIdx(ax_4323, 2D), 1D)))))));
+}, 1, "", true);
+NZ_4330 = Fn((V _arrowThis4358, int _argc4351, V s_4357, V _a4354, V _a4355, V _a4356, V[] _rest4352) => {
+double n0_4359 = 0;
+double n1_4360 = 0;
+double n2_4361 = 0;
+n0_4359 = 0D;
+n1_4360 = 0D;
+n2_4361 = 0D;
+{
+double i_4362 = 0;
+i_4362 = 0D;
+while (true) {
+if (!((i_4362 < 3D))) break;
+double k_4364 = 0;
+k_4364 = (ToNum(GetIdx(s_4357, i_4362)) / ToNum(GetIdx(R_4325, i_4362)));
+n0_4359 = (n0_4359 + (k_4364 * ToNum(GetIdx(GetIdx(E_4324, i_4362), 0D))));
+n1_4360 = (n1_4360 + (k_4364 * ToNum(GetIdx(GetIdx(E_4324, i_4362), 1D))));
+n2_4361 = (n2_4361 + (k_4364 * ToNum(GetIdx(GetIdx(E_4324, i_4362), 2D))));
+i_4362++;
+}
+}
+return ((V)((n2_4361 / ToNum((((V)(Hypot(n0_4359, n1_4360, n2_4361))) is var _t4365 && Truthy(_t4365) ? _t4365 : ((V)(1D)))))));
+return default;
+}, 1, "", true);
+RA_4331 = (ToNum(Add(Add(GetIdx(R_4325, 0D), GetIdx(R_4325, 1D)), GetIdx(R_4325, 2D))) / 3D);
+dg_4332 = new JsStrBuf("");
+ds_4333 = new JsStrBuf("");
+Invoke(LGR_4090, "forEach", Fn((V _arrowThis4380, int _argc4366, V _a4368, V i_4372, V _a4370, V _a4371, V[] _rest4367) => {
+double T_4381 = 0;
+V s_4382 = default;
+V e1_4383 = default;
+V e2_4384 = default;
+V sz_4385 = default;
+V Q_4386 = default;
+V th_4375 = default;
+V f_4377 = default;
+V o_4379 = default;
+{ V _t4373 = ListOf(_a4368);
+{ V _t4374 = GetIdx(_t4373, 0D);
+th_4375 = _t4374; }
+{ V _t4376 = GetIdx(_t4373, 1D);
+f_4377 = _t4376; }
+{ V _t4378 = GetIdx(_t4373, 2D);
+o_4379 = _t4378; }
+}
+T_4381 = (ToNum(th_4375) * System.Math.PI);
+s_4382 = Call(S3_4328, V.Undef, ((V)(T_4381)), f_4377);
+if (LtN(Call(NZ_4330, V.Undef, s_4382), 0.15)) {
+return default;
+}
+e1_4383 = Arr(((V)(FdLibm.Cos(ToNum(f_4377)))), ((V)(0D)), ((V)((-FdLibm.Sin(ToNum(f_4377))))));
+e2_4384 = Arr(((V)((FdLibm.Cos(T_4381) * FdLibm.Sin(ToNum(f_4377))))), ((V)(FdLibm.Sin(T_4381))), ((V)((FdLibm.Cos(T_4381) * FdLibm.Cos(ToNum(f_4377))))));
+sz_4385 = (SEqN(i_4372, 4D) ? Arr(((V)(1.1)), ((V)(0.55))) : Arr(((V)(1.5)), ((V)(0.72))));
+Q_4386 = Arr();
+{
+double k_4387 = 0;
+k_4387 = 0D;
+while (true) {
+if (!((k_4387 < 8D))) break;
+double t_4389 = 0;
+double a_4390 = 0;
+double b_4391 = 0;
+double ca_4392 = 0;
+double sa_4393 = 0;
+t_4389 = ((k_4387 / 8D) * TAU_9);
+a_4390 = ((ToNum(GetIdx(sz_4385, 0D)) / RA_4331) * FdLibm.Cos(t_4389));
+b_4391 = ((ToNum(GetIdx(sz_4385, 1D)) / RA_4331) * FdLibm.Sin(t_4389));
+ca_4392 = FdLibm.Cos(ToNum(o_4379));
+sa_4393 = FdLibm.Sin(ToNum(o_4379));
+Invoke(Q_4386, "push", Call(P2_4329, V.Undef, Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D))), "map", Fn((V _arrowThis4401, int _argc4394, V j_4400, V _a4397, V _a4398, V _a4399, V[] _rest4395) => {
+return ((V)((((ToNum(GetK(s_4382, j_4400)) * 1.04) + (((ToNum(GetK(e1_4383, j_4400)) * ca_4392) + (ToNum(GetK(e2_4384, j_4400)) * sa_4393)) * a_4390)) + ((((-ToNum(GetK(e1_4383, j_4400))) * sa_4393) + (ToNum(GetK(e2_4384, j_4400)) * ca_4392)) * b_4391))));
+}, 1, "", true))));
+k_4387++;
+}
+}
+if (SEqN(i_4372, 4D)) {
+ds_4333.V(Call(polyW_18, V.Undef, Q_4386));
+} else {
+dg_4332.V(Call(polyW_18, V.Undef, Q_4386));
+}
+return default;
+}, 2, "", true));
+Call(SA_31, V.Undef, Get(q_4320, "dG"), ((V)("d")), (((V)(dg_4332.Str)) is var _t4402 && Truthy(_t4402) ? _t4402 : ((V)("M0 0"))));
+Call(SA_31, V.Undef, Get(q_4320, "dS"), ((V)("d")), (((V)(ds_4333.Str)) is var _t4403 && Truthy(_t4403) ? _t4403 : ((V)("M0 0"))));
+return default;
+}, 7, "", true);
+return NewObj(27).Put("R0", ((V)(R0_4059))).Put("YT", ((V)(YT_4060))).Put("AL", ((V)(AL_4061))).Put("rT", rT_4063).Put("SM", SM_4073).Put("SG", SG_4066).Put("TG", TG_4067).Put("SS", SS_4068).Put("TS", TS_4069).Put("GT", GT_4081).Put("GSH", GSH_4080).Put("ses", ses_4082).Put("top", top_4083).Put("tgr", tgr_4084).Put("tse", tse_4085).Put("nori", nori_4086).Put("bedE", bedE_4087).Put("VG", VG_4088).Put("PC", PC_4079).Put("scl", scl_4089).Put("NO", Call(ringXZ_4074, V.Undef, Fn((V _arrowThis4411, int _argc4404, V f_4410, V _a4407, V _a4408, V _a4409, V[] _rest4405) => {
+return Add(Call(NR_4070, V.Undef, f_4410), ((V)(0.85)));
+}, 1, "", true), ((V)(64D)))).Put("BD", Call(ringXZ_4074, V.Undef, NR_4070, ((V)(64D)))).Put("limb", limb_4091).Put("rx", ((V)(29D))).Put("ya", ((V)(36D))).Put("yb", ((V)(86D))).Put("zE", Fn((V _arrowThis4420, int _argc4412, V dx_4418, V dy_4419, V _a4416, V _a4417, V[] _rest4413) => {
+V r_4421 = default;
+r_4421 = Call(rT_4063, V.Undef, Add(Get(S_4058, "HY"), dy_4419));
+return ((V)((System.Math.Sqrt(Max(0D, ((ToNum(r_4421) * ToNum(r_4421)) - (ToNum(dx_4418) * ToNum(dx_4418))))) + 0.3)));
+return default;
+}, 2, "zE", true)).V;
+return default;
+}, 1, "setup", false)).Put("draw", Fn((V _self4422, int _argc4423, V B_4429, V D_4430, V _a4427, V _a4428, V[] _rest4424) => {
+V set_4431 = default;
+V W_4432 = default;
+V P_4433 = default;
+V rT_4434 = default;
+V veg_4435 = default;
+V YT_4436 = default;
+V hp_4437 = default;
+V ovalQ_4438 = default;
+V oval_4439 = default;
+V g3_4440 = default;
+JsStrBuf gs_4441 = null;
+double dx_4442 = 0;
+double dy_4443 = 0;
+JsStrBuf sd_4444 = null;
+V ring_4445 = default;
+V TP_4446 = default;
+JsStrBuf tg_4447 = null;
+JsStrBuf ts_4448 = null;
+V L_4449 = default;
+V ord_4450 = default;
+if (_self4422.IsNullish) _self4422 = GlobalV;
+{ V _t4451 = D_4430;
+if (_t4451.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t4451));
+{ V _t4452 = Get(_t4451, "set");
+set_4431 = _t4452; } }
+W_4432 = Call(tiltW_49, V.Undef, D_4430, Get(B_4429, "AL"), ((V)(60D)), Get(B_4429, "R0"));
+P_4433 = Get(W_4432, "P");
+rT_4434 = Get(B_4429, "rT");
+veg_4435 = Call(clamp_12, V.Undef, Invoke(D_4430, "bv", ((V)("veg"))), ((V)(0D)), ((V)(1.3)));
+YT_4436 = Get(B_4429, "YT");
+hp_4437 = Arr();
+{
+double i_4453 = 0;
+i_4453 = 0D;
+while (true) {
+if (!((i_4453 <= 14D))) break;
+V y_4455 = default;
+V r_4456 = default;
+y_4455 = Add(YT_4436, ((V)((((88D - ToNum(YT_4436)) * i_4453) / 14D))));
+r_4456 = Call(rT_4434, V.Undef, y_4455);
+{
+double k_4457 = 0;
+k_4457 = 0D;
+while (true) {
+if (!((k_4457 < 24D))) break;
+double f_4459 = 0;
+f_4459 = ((k_4457 / 24D) * TAU_9);
+Invoke(hp_4437, "push", Call(P_4433, V.Undef, ((V)((50D + (ToNum(r_4456) * FdLibm.Sin(f_4459))))), y_4455, ((V)((ToNum(r_4456) * FdLibm.Cos(f_4459))))));
+k_4457++;
+}
+}
+i_4453++;
+}
+}
+Set(B_4429, "d", Invoke(D_4430, "hull", hp_4437));
+ovalQ_4438 = Fn((V _arrowThis4472, int _argc4460, V c_4466, V u_4467, V v_4468, V a_4469, V[] _rest4461) => {
+double ca_4473 = 0;
+double sa_4474 = 0;
+V Q_4475 = default;
+V b_4470 = default;
+V o_4471 = default;
+b_4470 = (_argc4460 > 4 ? _rest4461[0] : V.Undef);
+o_4471 = (_argc4460 > 5 ? _rest4461[1] : V.Undef);
+ca_4473 = FdLibm.Cos(ToNum(o_4471));
+sa_4474 = FdLibm.Sin(ToNum(o_4471));
+Q_4475 = Arr();
+{
+double k_4476 = 0;
+k_4476 = 0D;
+while (true) {
+if (!((k_4476 < 8D))) break;
+double t_4478 = 0;
+double A_4479 = 0;
+double Bb_4480 = 0;
+t_4478 = ((k_4476 / 8D) * TAU_9);
+A_4479 = (ToNum(a_4469) * FdLibm.Cos(t_4478));
+Bb_4480 = (ToNum(b_4470) * FdLibm.Sin(t_4478));
+Invoke(Q_4475, "push", Call(P_4433, V.Undef, Add(Add(GetIdx(c_4466, 0D), ((V)((((ToNum(GetIdx(u_4467, 0D)) * ca_4473) + (ToNum(GetIdx(v_4468, 0D)) * sa_4474)) * A_4479)))), ((V)(((((-ToNum(GetIdx(u_4467, 0D))) * sa_4474) + (ToNum(GetIdx(v_4468, 0D)) * ca_4473)) * Bb_4480)))), Add(Add(GetIdx(c_4466, 1D), ((V)((((ToNum(GetIdx(u_4467, 1D)) * ca_4473) + (ToNum(GetIdx(v_4468, 1D)) * sa_4474)) * A_4479)))), ((V)(((((-ToNum(GetIdx(u_4467, 1D))) * sa_4474) + (ToNum(GetIdx(v_4468, 1D)) * ca_4473)) * Bb_4480)))), Add(Add(GetIdx(c_4466, 2D), ((V)((((ToNum(GetIdx(u_4467, 2D)) * ca_4473) + (ToNum(GetIdx(v_4468, 2D)) * sa_4474)) * A_4479)))), ((V)(((((-ToNum(GetIdx(u_4467, 2D))) * sa_4474) + (ToNum(GetIdx(v_4468, 2D)) * ca_4473)) * Bb_4480))))));
+k_4476++;
+}
+}
+return Q_4475;
 return default;
 }, 6, "", true);
-oval_4106 = Fn((V _self4089, int _argc4147, V c_4153, V u_4154, V v_4155, V a_4156, V[] _rest4148) => {
-V b_4157 = default;
-V o_4158 = default;
-b_4157 = (_argc4147 > 4 ? _rest4148[0] : V.Undef);
-o_4158 = (_argc4147 > 5 ? _rest4148[1] : V.Undef);
-return Call(polyW_18, V.Undef, Call(ovalQ_4105, V.Undef, c_4153, u_4154, v_4155, a_4156, b_4157, o_4158));
+oval_4439 = Fn((V _arrowThis4493, int _argc4481, V c_4487, V u_4488, V v_4489, V a_4490, V[] _rest4482) => {
+V b_4491 = default;
+V o_4492 = default;
+b_4491 = (_argc4481 > 4 ? _rest4482[0] : V.Undef);
+o_4492 = (_argc4481 > 5 ? _rest4482[1] : V.Undef);
+return Call(polyW_18, V.Undef, Call(ovalQ_4438, V.Undef, c_4487, u_4488, v_4489, a_4490, b_4491, o_4492));
 }, 6, "", true);
-g3_4107 = Arr(((V)("")), ((V)("")), ((V)("")));
-gs_4108 = new JsStrBuf("");
-dx_4109 = (0.32 * ToNum(Get(D_4097, "kS")));
-dy_4110 = (0.42 * ToNum(Get(D_4097, "kS")));
-Invoke(Get(B_4096, "SG"), "forEach", Fn((V _self4089, int _argc4159, V _a4161, V _a4162, V _a4163, V _a4164, V[] _rest4160) => {
-double sf_4172 = 0;
-double cf_4173 = 0;
-V r_4174 = default;
-V c_4175 = default;
-V fz_4176 = default;
-V p0_4177 = default;
-V p1_4178 = default;
-double b_4179 = 0;
-V Q_4180 = default;
-V f_4167 = default;
-V y_4169 = default;
-V o_4171 = default;
-{ V _t4165 = ListOf(_a4161);
-{ V _t4166 = GetIdx(_t4165, 0D);
-f_4167 = _t4166; }
-{ V _t4168 = GetIdx(_t4165, 1D);
-y_4169 = _t4168; }
-{ V _t4170 = GetIdx(_t4165, 2D);
-o_4171 = _t4170; }
+g3_4440 = Arr(((V)("")), ((V)("")), ((V)("")));
+gs_4441 = new JsStrBuf("");
+dx_4442 = (0.32 * ToNum(Get(D_4430, "kS")));
+dy_4443 = (0.42 * ToNum(Get(D_4430, "kS")));
+Invoke(Get(B_4429, "SG"), "forEach", Fn((V _arrowThis4507, int _argc4494, V _a4496, V _a4497, V _a4498, V _a4499, V[] _rest4495) => {
+double sf_4508 = 0;
+double cf_4509 = 0;
+V r_4510 = default;
+V c_4511 = default;
+V fz_4512 = default;
+V p0_4513 = default;
+V p1_4514 = default;
+double b_4515 = 0;
+V Q_4516 = default;
+V f_4502 = default;
+V y_4504 = default;
+V o_4506 = default;
+{ V _t4500 = ListOf(_a4496);
+{ V _t4501 = GetIdx(_t4500, 0D);
+f_4502 = _t4501; }
+{ V _t4503 = GetIdx(_t4500, 1D);
+y_4504 = _t4503; }
+{ V _t4505 = GetIdx(_t4500, 2D);
+o_4506 = _t4505; }
 }
-sf_4172 = FdLibm.Sin(ToNum(f_4167));
-cf_4173 = FdLibm.Cos(ToNum(f_4167));
-r_4174 = Add(Call(rT_4101, V.Undef, y_4169), ((V)(0.55)));
-c_4175 = Arr(((V)((50D + (ToNum(r_4174) * sf_4172)))), y_4169, ((V)((ToNum(r_4174) * cf_4173))));
-fz_4176 = Invoke(W_4099, "F", GetIdx(c_4175, 0D), GetIdx(c_4175, 1D), GetIdx(c_4175, 2D), ((V)(sf_4172)), ((V)(0D)), ((V)(cf_4173)));
-if (LtN(fz_4176, 0.02)) {
+sf_4508 = FdLibm.Sin(ToNum(f_4502));
+cf_4509 = FdLibm.Cos(ToNum(f_4502));
+r_4510 = Add(Call(rT_4434, V.Undef, y_4504), ((V)(0.55)));
+c_4511 = Arr(((V)((50D + (ToNum(r_4510) * sf_4508)))), y_4504, ((V)((ToNum(r_4510) * cf_4509))));
+fz_4512 = Invoke(W_4432, "F", GetIdx(c_4511, 0D), GetIdx(c_4511, 1D), GetIdx(c_4511, 2D), ((V)(sf_4508)), ((V)(0D)), ((V)(cf_4509)));
+if (LtN(fz_4512, 0.02)) {
 return default;
 }
-p0_4177 = Call(P_4100, V.Undef, GetIdx(c_4175, 0D), GetIdx(c_4175, 1D), GetIdx(c_4175, 2D));
-p1_4178 = Call(P_4100, V.Undef, Add(GetIdx(c_4175, 0D), ((V)(sf_4172))), GetIdx(c_4175, 1D), Add(GetIdx(c_4175, 2D), ((V)(cf_4173))));
-b_4179 = (((((ToNum(GetIdx(p1_4178, 0D)) - ToNum(GetIdx(p0_4177, 0D))) / ToNum(Get(D_4097, "kS"))) * ToNum(GetIdx(LV_27, 0D))) + (((ToNum(GetIdx(p1_4178, 1D)) - ToNum(GetIdx(p0_4177, 1D))) / ToNum(Get(D_4097, "kS"))) * ToNum(GetIdx(LV_27, 1D)))) + (ToNum(fz_4176) * ToNum(GetIdx(LV_27, 2D))));
-Q_4180 = Call(ovalQ_4105, V.Undef, c_4175, Arr(((V)(cf_4173)), ((V)(0D)), ((V)((-sf_4172)))), Arr(((V)(0D)), ((V)(1D)), ((V)(0D))), ((V)(1.85)), ((V)(0.88)), o_4171);
-OpSetK(g3_4107, ((V)(((b_4179 > 0.45) ? 0D : ((b_4179 > 0.12) ? 1D : 2D)))), 0, Call(polyW_18, V.Undef, Q_4180));
-gs_4108.V(Call(polyW_18, V.Undef, Invoke(Q_4180, "map", Fn((V _self4089, int _argc4181, V q_4187, V _a4184, V _a4185, V _a4186, V[] _rest4182) => {
-return Arr(Add(GetIdx(q_4187, 0D), ((V)(dx_4109))), Add(GetIdx(q_4187, 1D), ((V)(dy_4110))));
+p0_4513 = Call(P_4433, V.Undef, GetIdx(c_4511, 0D), GetIdx(c_4511, 1D), GetIdx(c_4511, 2D));
+p1_4514 = Call(P_4433, V.Undef, Add(GetIdx(c_4511, 0D), ((V)(sf_4508))), GetIdx(c_4511, 1D), Add(GetIdx(c_4511, 2D), ((V)(cf_4509))));
+b_4515 = (((((ToNum(GetIdx(p1_4514, 0D)) - ToNum(GetIdx(p0_4513, 0D))) / ToNum(Get(D_4430, "kS"))) * ToNum(GetIdx(LV_27, 0D))) + (((ToNum(GetIdx(p1_4514, 1D)) - ToNum(GetIdx(p0_4513, 1D))) / ToNum(Get(D_4430, "kS"))) * ToNum(GetIdx(LV_27, 1D)))) + (ToNum(fz_4512) * ToNum(GetIdx(LV_27, 2D))));
+Q_4516 = Call(ovalQ_4438, V.Undef, c_4511, Arr(((V)(cf_4509)), ((V)(0D)), ((V)((-sf_4508)))), Arr(((V)(0D)), ((V)(1D)), ((V)(0D))), ((V)(1.85)), ((V)(0.88)), o_4506);
+OpSetK(g3_4440, ((V)(((b_4515 > 0.45) ? 0D : ((b_4515 > 0.12) ? 1D : 2D)))), 0, Call(polyW_18, V.Undef, Q_4516));
+gs_4441.V(Call(polyW_18, V.Undef, Invoke(Q_4516, "map", Fn((V _arrowThis4524, int _argc4517, V q_4523, V _a4520, V _a4521, V _a4522, V[] _rest4518) => {
+return Arr(Add(GetIdx(q_4523, 0D), ((V)(dx_4442))), Add(GetIdx(q_4523, 1D), ((V)(dy_4443))));
 }, 1, "", true))));
 return default;
 }, 1, "", true));
-Invoke(Get(B_4096, "GT"), "forEach", Fn((V _self4089, int _argc4188, V e_4194, V i_4195, V _a4192, V _a4193, V[] _rest4189) => {
-return Call(set_4098, V.Undef, e_4194, ((V)("d")), (GetK(g3_4107, i_4195) is var _t4196 && Truthy(_t4196) ? _t4196 : ((V)("M0 0"))));
+Invoke(Get(B_4429, "GT"), "forEach", Fn((V _arrowThis4533, int _argc4525, V e_4531, V i_4532, V _a4529, V _a4530, V[] _rest4526) => {
+return Call(set_4431, V.Undef, e_4531, ((V)("d")), (GetK(g3_4440, i_4532) is var _t4534 && Truthy(_t4534) ? _t4534 : ((V)("M0 0"))));
 }, 2, "", true));
-Call(set_4098, V.Undef, Get(B_4096, "GSH"), ((V)("d")), (((V)(gs_4108.Str)) is var _t4197 && Truthy(_t4197) ? _t4197 : ((V)("M0 0"))));
-sd_4111 = new JsStrBuf("");
-Invoke(Get(B_4096, "SS"), "forEach", Fn((V _self4089, int _argc4198, V _a4200, V _a4201, V _a4202, V _a4203, V[] _rest4199) => {
-double sf_4211 = 0;
-double cf_4212 = 0;
-V r_4213 = default;
-V c_4214 = default;
-V f_4206 = default;
-V y_4208 = default;
-V o_4210 = default;
-{ V _t4204 = ListOf(_a4200);
-{ V _t4205 = GetIdx(_t4204, 0D);
-f_4206 = _t4205; }
-{ V _t4207 = GetIdx(_t4204, 1D);
-y_4208 = _t4207; }
-{ V _t4209 = GetIdx(_t4204, 2D);
-o_4210 = _t4209; }
+Call(set_4431, V.Undef, Get(B_4429, "GSH"), ((V)("d")), (((V)(gs_4441.Str)) is var _t4535 && Truthy(_t4535) ? _t4535 : ((V)("M0 0"))));
+sd_4444 = new JsStrBuf("");
+Invoke(Get(B_4429, "SS"), "forEach", Fn((V _arrowThis4549, int _argc4536, V _a4538, V _a4539, V _a4540, V _a4541, V[] _rest4537) => {
+double sf_4550 = 0;
+double cf_4551 = 0;
+V r_4552 = default;
+V c_4553 = default;
+V f_4544 = default;
+V y_4546 = default;
+V o_4548 = default;
+{ V _t4542 = ListOf(_a4538);
+{ V _t4543 = GetIdx(_t4542, 0D);
+f_4544 = _t4543; }
+{ V _t4545 = GetIdx(_t4542, 1D);
+y_4546 = _t4545; }
+{ V _t4547 = GetIdx(_t4542, 2D);
+o_4548 = _t4547; }
 }
-sf_4211 = FdLibm.Sin(ToNum(f_4206));
-cf_4212 = FdLibm.Cos(ToNum(f_4206));
-r_4213 = Add(Call(rT_4101, V.Undef, y_4208), ((V)(0.5)));
-c_4214 = Arr(((V)((50D + (ToNum(r_4213) * sf_4211)))), y_4208, ((V)((ToNum(r_4213) * cf_4212))));
-if (LtN(Invoke(W_4099, "F", GetIdx(c_4214, 0D), GetIdx(c_4214, 1D), GetIdx(c_4214, 2D), ((V)(sf_4211)), ((V)(0D)), ((V)(cf_4212))), 0.06)) {
+sf_4550 = FdLibm.Sin(ToNum(f_4544));
+cf_4551 = FdLibm.Cos(ToNum(f_4544));
+r_4552 = Add(Call(rT_4434, V.Undef, y_4546), ((V)(0.5)));
+c_4553 = Arr(((V)((50D + (ToNum(r_4552) * sf_4550)))), y_4546, ((V)((ToNum(r_4552) * cf_4551))));
+if (LtN(Invoke(W_4432, "F", GetIdx(c_4553, 0D), GetIdx(c_4553, 1D), GetIdx(c_4553, 2D), ((V)(sf_4550)), ((V)(0D)), ((V)(cf_4551))), 0.06)) {
 return default;
 }
-sd_4111.V(Call(oval_4106, V.Undef, c_4214, Arr(((V)(cf_4212)), ((V)(0D)), ((V)((-sf_4211)))), Arr(((V)(0D)), ((V)(1D)), ((V)(0D))), ((V)(1.15)), ((V)(0.55)), o_4210));
+sd_4444.V(Call(oval_4439, V.Undef, c_4553, Arr(((V)(cf_4551)), ((V)(0D)), ((V)((-sf_4550)))), Arr(((V)(0D)), ((V)(1D)), ((V)(0D))), ((V)(1.15)), ((V)(0.55)), o_4548));
 return default;
 }, 1, "", true));
-Call(set_4098, V.Undef, Get(B_4096, "ses"), ((V)("d")), (((V)(sd_4111.Str)) is var _t4215 && Truthy(_t4215) ? _t4215 : ((V)("M0 0"))));
-ring_4112 = Fn((V _self4089, int _argc4216, V r_4222, V y_4223, V n_4224, V _a4221, V[] _rest4217) => {
-return Array_from(NewObj(1).Put("length", n_4224).V, Fn((V _self4089, int _argc4225, V __4231, V k_4232, V _a4229, V _a4230, V[] _rest4226) => {
-double f_4233 = 0;
-f_4233 = ((ToNum(k_4232) / ToNum(n_4224)) * TAU_9);
-return Call(P_4100, V.Undef, ((V)((50D + (ToNum(r_4222) * FdLibm.Sin(f_4233))))), y_4223, ((V)((ToNum(r_4222) * FdLibm.Cos(f_4233)))));
+Call(set_4431, V.Undef, Get(B_4429, "ses"), ((V)("d")), (((V)(sd_4444.Str)) is var _t4554 && Truthy(_t4554) ? _t4554 : ((V)("M0 0"))));
+ring_4445 = Fn((V _arrowThis4564, int _argc4555, V r_4561, V y_4562, V n_4563, V _a4560, V[] _rest4556) => {
+return Array_from(NewObj(1).Put("length", n_4563).V, Fn((V _arrowThis4573, int _argc4565, V __4571, V k_4572, V _a4569, V _a4570, V[] _rest4566) => {
+double f_4574 = 0;
+f_4574 = ((ToNum(k_4572) / ToNum(n_4563)) * TAU_9);
+return Call(P_4433, V.Undef, ((V)((50D + (ToNum(r_4561) * FdLibm.Sin(f_4574))))), y_4562, ((V)((ToNum(r_4561) * FdLibm.Cos(f_4574)))));
 return default;
 }, 2, "", true));
 }, 3, "", true);
-Call(set_4098, V.Undef, Get(B_4096, "top"), ((V)("d")), Call(polyW_18, V.Undef, Call(ring_4112, V.Undef, Get(B_4096, "R0"), YT_4103, ((V)(48D)))));
-TP_4113 = Fn((V _self4089, int _argc4234, V x_4240, V z_4241, V h_4242, V _a4239, V[] _rest4235) => {
-return Call(P_4100, V.Undef, x_4240, ((V)((ToNum(YT_4103) - ToNum((h_4242 is var _t4243 && Truthy(_t4243) ? _t4243 : ((V)(0D))))))), z_4241);
+Call(set_4431, V.Undef, Get(B_4429, "top"), ((V)("d")), Call(polyW_18, V.Undef, Call(ring_4445, V.Undef, Get(B_4429, "R0"), YT_4436, ((V)(48D)))));
+TP_4446 = Fn((V _arrowThis4584, int _argc4575, V x_4581, V z_4582, V h_4583, V _a4580, V[] _rest4576) => {
+return Call(P_4433, V.Undef, x_4581, ((V)((ToNum(YT_4436) - ToNum((h_4583 is var _t4585 && Truthy(_t4585) ? _t4585 : ((V)(0D))))))), z_4582);
 }, 3, "", true);
-tg_4114 = new JsStrBuf("");
-ts_4115 = new JsStrBuf("");
-Invoke(Get(B_4096, "TG"), "forEach", Fn((V _self4089, int _argc4244, V _a4246, V _a4247, V _a4248, V _a4249, V[] _rest4245) => {
-V r_4252 = default;
-V f_4254 = default;
-V o_4256 = default;
-{ V _t4250 = ListOf(_a4246);
-{ V _t4251 = GetIdx(_t4250, 0D);
-r_4252 = _t4251; }
-{ V _t4253 = GetIdx(_t4250, 1D);
-f_4254 = _t4253; }
-{ V _t4255 = GetIdx(_t4250, 2D);
-o_4256 = _t4255; }
+tg_4447 = new JsStrBuf("");
+ts_4448 = new JsStrBuf("");
+Invoke(Get(B_4429, "TG"), "forEach", Fn((V _arrowThis4599, int _argc4586, V _a4588, V _a4589, V _a4590, V _a4591, V[] _rest4587) => {
+V r_4594 = default;
+V f_4596 = default;
+V o_4598 = default;
+{ V _t4592 = ListOf(_a4588);
+{ V _t4593 = GetIdx(_t4592, 0D);
+r_4594 = _t4593; }
+{ V _t4595 = GetIdx(_t4592, 1D);
+f_4596 = _t4595; }
+{ V _t4597 = GetIdx(_t4592, 2D);
+o_4598 = _t4597; }
 }
-tg_4114.V(Call(oval_4106, V.Undef, Arr(((V)((50D + (ToNum(r_4252) * FdLibm.Sin(ToNum(f_4254)))))), ((V)((ToNum(YT_4103) - 0.12))), ((V)((ToNum(r_4252) * FdLibm.Cos(ToNum(f_4254)))))), Arr(((V)(1D)), ((V)(0D)), ((V)(0D))), Arr(((V)(0D)), ((V)(0D)), ((V)(1D))), ((V)(1.65)), ((V)(0.8)), o_4256));
+tg_4447.V(Call(oval_4439, V.Undef, Arr(((V)((50D + (ToNum(r_4594) * FdLibm.Sin(ToNum(f_4596)))))), ((V)((ToNum(YT_4436) - 0.12))), ((V)((ToNum(r_4594) * FdLibm.Cos(ToNum(f_4596)))))), Arr(((V)(1D)), ((V)(0D)), ((V)(0D))), Arr(((V)(0D)), ((V)(0D)), ((V)(1D))), ((V)(1.65)), ((V)(0.8)), o_4598));
 return default;
 }, 1, "", true));
-Invoke(Get(B_4096, "TS"), "forEach", Fn((V _self4089, int _argc4257, V _a4259, V _a4260, V _a4261, V _a4262, V[] _rest4258) => {
-V r_4265 = default;
-V f_4267 = default;
-V o_4269 = default;
-{ V _t4263 = ListOf(_a4259);
-{ V _t4264 = GetIdx(_t4263, 0D);
-r_4265 = _t4264; }
-{ V _t4266 = GetIdx(_t4263, 1D);
-f_4267 = _t4266; }
-{ V _t4268 = GetIdx(_t4263, 2D);
-o_4269 = _t4268; }
+Invoke(Get(B_4429, "TS"), "forEach", Fn((V _arrowThis4613, int _argc4600, V _a4602, V _a4603, V _a4604, V _a4605, V[] _rest4601) => {
+V r_4608 = default;
+V f_4610 = default;
+V o_4612 = default;
+{ V _t4606 = ListOf(_a4602);
+{ V _t4607 = GetIdx(_t4606, 0D);
+r_4608 = _t4607; }
+{ V _t4609 = GetIdx(_t4606, 1D);
+f_4610 = _t4609; }
+{ V _t4611 = GetIdx(_t4606, 2D);
+o_4612 = _t4611; }
 }
-ts_4115.V(Call(oval_4106, V.Undef, Arr(((V)((50D + (ToNum(r_4265) * FdLibm.Sin(ToNum(f_4267)))))), ((V)((ToNum(YT_4103) - 0.14))), ((V)((ToNum(r_4265) * FdLibm.Cos(ToNum(f_4267)))))), Arr(((V)(1D)), ((V)(0D)), ((V)(0D))), Arr(((V)(0D)), ((V)(0D)), ((V)(1D))), ((V)(1.15)), ((V)(0.55)), o_4269));
+ts_4448.V(Call(oval_4439, V.Undef, Arr(((V)((50D + (ToNum(r_4608) * FdLibm.Sin(ToNum(f_4610)))))), ((V)((ToNum(YT_4436) - 0.14))), ((V)((ToNum(r_4608) * FdLibm.Cos(ToNum(f_4610)))))), Arr(((V)(1D)), ((V)(0D)), ((V)(0D))), Arr(((V)(0D)), ((V)(0D)), ((V)(1D))), ((V)(1.15)), ((V)(0.55)), o_4612));
 return default;
 }, 1, "", true));
-Call(set_4098, V.Undef, Get(B_4096, "tgr"), ((V)("d")), ((V)(tg_4114.Str)));
-Call(set_4098, V.Undef, Get(B_4096, "tse"), ((V)("d")), ((V)(ts_4115.Str)));
-Call(set_4098, V.Undef, Get(B_4096, "nori"), ((V)("d")), Call(polyW_18, V.Undef, Invoke(Get(B_4096, "NO"), "map", Fn((V _self4089, int _argc4270, V _a4272, V _a4273, V _a4274, V _a4275, V[] _rest4271) => {
-V x_4278 = default;
-V z_4280 = default;
-{ V _t4276 = ListOf(_a4272);
-{ V _t4277 = GetIdx(_t4276, 0D);
-x_4278 = _t4277; }
-{ V _t4279 = GetIdx(_t4276, 1D);
-z_4280 = _t4279; }
+Call(set_4431, V.Undef, Get(B_4429, "tgr"), ((V)("d")), ((V)(tg_4447.Str)));
+Call(set_4431, V.Undef, Get(B_4429, "tse"), ((V)("d")), ((V)(ts_4448.Str)));
+Call(set_4431, V.Undef, Get(B_4429, "nori"), ((V)("d")), Call(polyW_18, V.Undef, Invoke(Get(B_4429, "NO"), "map", Fn((V _arrowThis4625, int _argc4614, V _a4616, V _a4617, V _a4618, V _a4619, V[] _rest4615) => {
+V x_4622 = default;
+V z_4624 = default;
+{ V _t4620 = ListOf(_a4616);
+{ V _t4621 = GetIdx(_t4620, 0D);
+x_4622 = _t4621; }
+{ V _t4623 = GetIdx(_t4620, 1D);
+z_4624 = _t4623; }
 }
-return Call(TP_4113, V.Undef, x_4278, z_4280, ((V)(0.05)));
+return Call(TP_4446, V.Undef, x_4622, z_4624, ((V)(0.05)));
 }, 1, "", true))));
-Call(set_4098, V.Undef, Get(B_4096, "bedE"), ((V)("d")), Call(polyW_18, V.Undef, Invoke(Get(B_4096, "BD"), "map", Fn((V _self4089, int _argc4281, V _a4283, V _a4284, V _a4285, V _a4286, V[] _rest4282) => {
-V x_4289 = default;
-V z_4291 = default;
-{ V _t4287 = ListOf(_a4283);
-{ V _t4288 = GetIdx(_t4287, 0D);
-x_4289 = _t4288; }
-{ V _t4290 = GetIdx(_t4287, 1D);
-z_4291 = _t4290; }
+Call(set_4431, V.Undef, Get(B_4429, "bedE"), ((V)("d")), Call(polyW_18, V.Undef, Invoke(Get(B_4429, "BD"), "map", Fn((V _arrowThis4637, int _argc4626, V _a4628, V _a4629, V _a4630, V _a4631, V[] _rest4627) => {
+V x_4634 = default;
+V z_4636 = default;
+{ V _t4632 = ListOf(_a4628);
+{ V _t4633 = GetIdx(_t4632, 0D);
+x_4634 = _t4633; }
+{ V _t4635 = GetIdx(_t4632, 1D);
+z_4636 = _t4635; }
 }
-return Call(TP_4113, V.Undef, x_4289, z_4291, ((V)(0.08)));
+return Call(TP_4446, V.Undef, x_4634, z_4636, ((V)(0.08)));
 }, 1, "", true))));
-L_4116 = Invoke(Invoke(Get(B_4096, "PC"), "map", Fn((V _self4089, int _argc4300, V p_4306, V i_4307, V _a4304, V _a4305, V[] _rest4301) => {
-double h_4308 = 0;
-double sw_4309 = 0;
-V bot_4310 = default;
-V tp_4311 = default;
-V td_4312 = default;
-double cx_4313 = 0;
-double cz_4314 = 0;
-h_4308 = ((ToNum(Get(p_4306, "h")) * (1D + (ToNum(veg_4102) * 0.6))) + ((ToNum(veg_4102) * 1.2) * Max(0D, FdLibm.Sin(((ToNum(Get(D_4097, "ts")) * 9D) + (ToNum(i_4307) * 1.7))))));
-sw_4309 = ((ToNum(Get(D_4097, "ox")) * 0.06) + ((ToNum(veg_4102) * FdLibm.Sin(ToNum(Add(((V)((ToNum(Get(D_4097, "ts")) * 11D))), i_4307)))) * 0.5));
-bot_4310 = Invoke(Get(p_4306, "Q"), "map", Fn((V _self4089, int _argc4315, V _a4317, V _a4318, V _a4319, V _a4320, V[] _rest4316) => {
-V x_4323 = default;
-V z_4325 = default;
-{ V _t4321 = ListOf(_a4317);
-{ V _t4322 = GetIdx(_t4321, 0D);
-x_4323 = _t4322; }
-{ V _t4324 = GetIdx(_t4321, 1D);
-z_4325 = _t4324; }
+L_4449 = Invoke(Invoke(Get(B_4429, "PC"), "map", Fn((V _arrowThis4655, int _argc4647, V p_4653, V i_4654, V _a4651, V _a4652, V[] _rest4648) => {
+double h_4656 = 0;
+double sw_4657 = 0;
+V bot_4658 = default;
+V tp_4659 = default;
+V td_4660 = default;
+double cx_4661 = 0;
+double cz_4662 = 0;
+h_4656 = ((ToNum(Get(p_4653, "h")) * (1D + (ToNum(veg_4435) * 0.6))) + ((ToNum(veg_4435) * 1.2) * Max(0D, FdLibm.Sin(((ToNum(Get(D_4430, "ts")) * 9D) + (ToNum(i_4654) * 1.7))))));
+sw_4657 = ((ToNum(Get(D_4430, "ox")) * 0.06) + ((ToNum(veg_4435) * FdLibm.Sin(ToNum(Add(((V)((ToNum(Get(D_4430, "ts")) * 11D))), i_4654)))) * 0.5));
+bot_4658 = Invoke(Get(p_4653, "Q"), "map", Fn((V _arrowThis4674, int _argc4663, V _a4665, V _a4666, V _a4667, V _a4668, V[] _rest4664) => {
+V x_4671 = default;
+V z_4673 = default;
+{ V _t4669 = ListOf(_a4665);
+{ V _t4670 = GetIdx(_t4669, 0D);
+x_4671 = _t4670; }
+{ V _t4672 = GetIdx(_t4669, 1D);
+z_4673 = _t4672; }
 }
-return Call(TP_4113, V.Undef, x_4323, z_4325, ((V)(0.1)));
+return Call(TP_4446, V.Undef, x_4671, z_4673, ((V)(0.1)));
 }, 1, "", true));
-tp_4311 = Invoke(Get(p_4306, "Q"), "map", Fn((V _self4089, int _argc4326, V _a4328, V _a4329, V _a4330, V _a4331, V[] _rest4327) => {
-V x_4334 = default;
-V z_4336 = default;
-{ V _t4332 = ListOf(_a4328);
-{ V _t4333 = GetIdx(_t4332, 0D);
-x_4334 = _t4333; }
-{ V _t4335 = GetIdx(_t4332, 1D);
-z_4336 = _t4335; }
+tp_4659 = Invoke(Get(p_4653, "Q"), "map", Fn((V _arrowThis4686, int _argc4675, V _a4677, V _a4678, V _a4679, V _a4680, V[] _rest4676) => {
+V x_4683 = default;
+V z_4685 = default;
+{ V _t4681 = ListOf(_a4677);
+{ V _t4682 = GetIdx(_t4681, 0D);
+x_4683 = _t4682; }
+{ V _t4684 = GetIdx(_t4681, 1D);
+z_4685 = _t4684; }
 }
-return Call(TP_4113, V.Undef, Add(x_4334, ((V)(sw_4309))), z_4336, ((V)(h_4308)));
+return Call(TP_4446, V.Undef, Add(x_4683, ((V)(sw_4657))), z_4685, ((V)(h_4656)));
 }, 1, "", true));
-Call(set_4098, V.Undef, Get(p_4306, "sdE"), ((V)("d")), Invoke(D_4097, "hull", Invoke(bot_4310, "concat", tp_4311)));
-td_4312 = Call(polyW_18, V.Undef, tp_4311);
-Call(set_4098, V.Undef, Get(p_4306, "e"), ((V)("d")), td_4312);
-if (SEqS(Get(p_4306, "n"), "s")) {
-Call(set_4098, V.Undef, Get(Get(B_4096, "scl"), "p"), ((V)("d")), td_4312);
-Call(set_4098, V.Undef, Get(Get(p_4306, "ex"), "firstChild"), ((V)("d")), Invoke(Invoke(Arr(((V)(37.5)), ((V)(46.5))), "map", Fn((V _self4089, int _argc4337, V x0_4343, V _a4340, V _a4341, V _a4342, V[] _rest4338) => {
-return ((V)(JsStrBuf.Begin().S("M").V(Invoke(Array_from(NewObj(1).Put("length", ((V)(12D))).V, Fn((V _self4089, int _argc4344, V __4350, V k_4351, V _a4348, V _a4349, V[] _rest4345) => {
-V q_4352 = default;
-q_4352 = Invoke(B_4096, "SM", Add(x0_4343, ((V)((ToNum(k_4351) * 1.05)))), ((V)(((-14.5) + (ToNum(k_4351) * 1.45)))));
-return Call(pt_15, V.Undef, Call(TP_4113, V.Undef, Add(GetIdx(q_4352, 0D), ((V)(sw_4309))), GetIdx(q_4352, 1D), ((V)((h_4308 + 0.02)))));
+Call(set_4431, V.Undef, Get(p_4653, "sdE"), ((V)("d")), Invoke(D_4430, "hull", Invoke(bot_4658, "concat", tp_4659)));
+td_4660 = Call(polyW_18, V.Undef, tp_4659);
+Call(set_4431, V.Undef, Get(p_4653, "e"), ((V)("d")), td_4660);
+if (SEqS(Get(p_4653, "n"), "s")) {
+Call(set_4431, V.Undef, Get(Get(B_4429, "scl"), "p"), ((V)("d")), td_4660);
+Call(set_4431, V.Undef, Get(Get(p_4653, "ex"), "firstChild"), ((V)("d")), Invoke(Invoke(Arr(((V)(37.5)), ((V)(46.5))), "map", Fn((V _arrowThis4694, int _argc4687, V x0_4693, V _a4690, V _a4691, V _a4692, V[] _rest4688) => {
+return ((V)(JsStrBuf.Begin().S("M").V(Invoke(Array_from(NewObj(1).Put("length", ((V)(12D))).V, Fn((V _arrowThis4703, int _argc4695, V __4701, V k_4702, V _a4699, V _a4700, V[] _rest4696) => {
+V q_4704 = default;
+q_4704 = Invoke(B_4429, "SM", Add(x0_4693, ((V)((ToNum(k_4702) * 1.05)))), ((V)(((-14.5) + (ToNum(k_4702) * 1.45)))));
+return Call(pt_15, V.Undef, Call(TP_4446, V.Undef, Add(GetIdx(q_4704, 0D), ((V)(sw_4657))), GetIdx(q_4704, 1D), ((V)((h_4656 + 0.02)))));
 return default;
 }, 2, "", true)), "join", ((V)("L")))).End()));
 }, 1, "", true)), "join", ((V)(""))));
 } else {
-Call(set_4098, V.Undef, Get(p_4306, "ex"), ((V)("d")), Call(polyW_18, V.Undef, Invoke(Get(p_4306, "QI"), "map", Fn((V _self4089, int _argc4353, V _a4355, V _a4356, V _a4357, V _a4358, V[] _rest4354) => {
-V x_4361 = default;
-V z_4363 = default;
-{ V _t4359 = ListOf(_a4355);
-{ V _t4360 = GetIdx(_t4359, 0D);
-x_4361 = _t4360; }
-{ V _t4362 = GetIdx(_t4359, 1D);
-z_4363 = _t4362; }
+Call(set_4431, V.Undef, Get(p_4653, "ex"), ((V)("d")), Call(polyW_18, V.Undef, Invoke(Get(p_4653, "QI"), "map", Fn((V _arrowThis4716, int _argc4705, V _a4707, V _a4708, V _a4709, V _a4710, V[] _rest4706) => {
+V x_4713 = default;
+V z_4715 = default;
+{ V _t4711 = ListOf(_a4707);
+{ V _t4712 = GetIdx(_t4711, 0D);
+x_4713 = _t4712; }
+{ V _t4714 = GetIdx(_t4711, 1D);
+z_4715 = _t4714; }
 }
-return Call(TP_4113, V.Undef, Add(x_4361, ((V)(sw_4309))), z_4363, ((V)((h_4308 + 0.02))));
+return Call(TP_4446, V.Undef, Add(x_4713, ((V)(sw_4657))), z_4715, ((V)((h_4656 + 0.02))));
 }, 1, "", true))));
 }
-cx_4313 = (ToNum(Invoke(Get(p_4306, "Q"), "reduce", Fn((V _self4089, int _argc4364, V s_4370, V q_4371, V _a4368, V _a4369, V[] _rest4365) => {
-return Add(s_4370, GetIdx(q_4371, 0D));
-}, 2, "", true), ((V)(0D)))) / ToNum(Get(Get(p_4306, "Q"), "length")));
-cz_4314 = (ToNum(Invoke(Get(p_4306, "Q"), "reduce", Fn((V _self4089, int _argc4372, V s_4378, V q_4379, V _a4376, V _a4377, V[] _rest4373) => {
-return Add(s_4378, GetIdx(q_4379, 1D));
-}, 2, "", true), ((V)(0D)))) / ToNum(Get(Get(p_4306, "Q"), "length")));
-return NewObj(4).Put("id", Get(p_4306, "id")).Put("e", Get(p_4306, "sdE")).Put("ex", Arr(Get(p_4306, "e"), Get(p_4306, "ex"))).Put("z", Invoke(W_4099, "Z", ((V)(cx_4313)), ((V)((ToNum(YT_4103) - (h_4308 / 2D)))), ((V)(cz_4314)))).V;
+cx_4661 = (ToNum(Invoke(Get(p_4653, "Q"), "reduce", Fn((V _arrowThis4725, int _argc4717, V s_4723, V q_4724, V _a4721, V _a4722, V[] _rest4718) => {
+return Add(s_4723, GetIdx(q_4724, 0D));
+}, 2, "", true), ((V)(0D)))) / ToNum(Get(Get(p_4653, "Q"), "length")));
+cz_4662 = (ToNum(Invoke(Get(p_4653, "Q"), "reduce", Fn((V _arrowThis4734, int _argc4726, V s_4732, V q_4733, V _a4730, V _a4731, V[] _rest4727) => {
+return Add(s_4732, GetIdx(q_4733, 1D));
+}, 2, "", true), ((V)(0D)))) / ToNum(Get(Get(p_4653, "Q"), "length")));
+return NewObj(4).Put("id", Get(p_4653, "id")).Put("e", Get(p_4653, "sdE")).Put("ex", Arr(Get(p_4653, "e"), Get(p_4653, "ex"))).Put("z", Invoke(W_4432, "Z", ((V)(cx_4661)), ((V)((ToNum(YT_4436) - (h_4656 / 2D)))), ((V)(cz_4662)))).V;
 return default;
-}, 2, "", true)), "sort", Fn((V _self4089, int _argc4292, V a_4298, V b_4299, V _a4296, V _a4297, V[] _rest4293) => {
-return ((V)((ToNum(Get(a_4298, "z")) - ToNum(Get(b_4299, "z")))));
+}, 2, "", true)), "sort", Fn((V _arrowThis4646, int _argc4638, V a_4644, V b_4645, V _a4642, V _a4643, V[] _rest4639) => {
+return ((V)((ToNum(Get(a_4644, "z")) - ToNum(Get(b_4645, "z")))));
 }, 2, "", true));
-ord_4117 = Arr();
-Invoke(L_4116, "forEach", Fn((V _self4089, int _argc4380, V l_4386, V _a4383, V _a4384, V _a4385, V[] _rest4381) => {
-Invoke(ord_4117, "push", l_4386);
-Invoke(Get(l_4386, "ex"), "forEach", Fn((V _self4089, int _argc4387, V e_4393, V j_4394, V _a4391, V _a4392, V[] _rest4388) => {
-return Invoke(ord_4117, "push", NewObj(2).Put("id", ((V)(JsStrBuf.Begin().V(Get(l_4386, "id")).S("x").V(j_4394).End()))).Put("e", e_4393).V);
+ord_4450 = Arr();
+Invoke(L_4449, "forEach", Fn((V _arrowThis4742, int _argc4735, V l_4741, V _a4738, V _a4739, V _a4740, V[] _rest4736) => {
+Invoke(ord_4450, "push", l_4741);
+Invoke(Get(l_4741, "ex"), "forEach", Fn((V _arrowThis4751, int _argc4743, V e_4749, V j_4750, V _a4747, V _a4748, V[] _rest4744) => {
+return Invoke(ord_4450, "push", NewObj(2).Put("id", ((V)(JsStrBuf.Begin().V(Get(l_4741, "id")).S("x").V(j_4750).End()))).Put("e", e_4749).V);
 }, 2, "", true));
 return default;
 }, 1, "", true));
-Invoke(SN_43, "order", Get(B_4096, "VG"), ord_4117);
+Invoke(SN_43, "order", Get(B_4429, "VG"), ord_4450);
 return default;
 }, 2, "draw", false)).V);
-Set(MODELS_42, "noodle", NewObj(2).Put("setup", Fn((V _self4395, int _argc4396, V S_4402, V _a4399, V _a4400, V _a4401, V[] _rest4397) => {
-double EL_4403 = 0;
-V O_4404 = default;
-V sid_4405 = default;
-V PR_4406 = default;
-V Y0_4407 = default;
-V Y1_4408 = default;
-V rT_4409 = default;
-V hid_4410 = default;
-V bro_4411 = default;
-V BF_4412 = default;
-V sk0_4413 = default;
-V CK_4414 = default;
-V sh_4415 = default;
-V bd_4416 = default;
-V rm_4417 = default;
-V rimB_4418 = default;
-V rimI_4419 = default;
-V broth_4420 = default;
-V FG_4421 = default;
-V TG_4422 = default;
-V rimF_4423 = default;
-V rimL_4424 = default;
-V FL_4425 = default;
-V box_4426 = default;
-V SP_4427 = default;
-V hp_4428 = default;
-V NS_4429 = default;
-V SG_4430 = default;
-V hang_4431 = default;
-V hang2_4432 = default;
-V ck_4433 = default;
-V sticks_4434 = default;
-if (_self4395.IsNullish) _self4395 = GlobalV;
-EL_4403 = 0.178;
-O_4404 = Invoke(S_4402, "outline", Get(S_4402, "sk"), ((V)(96D)));
-sid_4405 = Fn((V _self4395, int _argc4435, V q_4441, V _a4438, V _a4439, V _a4440, V[] _rest4436) => {
-V g_4442 = default;
-g_4442 = (Get(Get(q_4441, "e"), "closest") is var _t4443 && !Truthy(_t4443) ? _t4443 : Invoke(Get(q_4441, "e"), "closest", ((V)("[data-s]"))));
-return (Truthy(g_4442) ? Invoke(g_4442, "getAttribute", ((V)("data-s"))) : ((V)("")));
+Set(MODELS_42, "noodle", NewObj(2).Put("setup", Fn((V _self4752, int _argc4753, V S_4759, V _a4756, V _a4757, V _a4758, V[] _rest4754) => {
+double EL_4760 = 0;
+V O_4761 = default;
+V sid_4762 = default;
+V PR_4763 = default;
+V Y0_4764 = default;
+V Y1_4765 = default;
+V rT_4766 = default;
+V hid_4767 = default;
+V bro_4768 = default;
+V BF_4769 = default;
+V sk0_4770 = default;
+V CK_4771 = default;
+V sh_4772 = default;
+V bd_4773 = default;
+V rm_4774 = default;
+V rimB_4775 = default;
+V rimI_4776 = default;
+V broth_4777 = default;
+V FG_4778 = default;
+V TG_4779 = default;
+V rimF_4780 = default;
+V rimL_4781 = default;
+V FL_4782 = default;
+V box_4783 = default;
+V SP_4784 = default;
+V hp_4785 = default;
+V NS_4786 = default;
+V SG_4787 = default;
+V hang_4788 = default;
+V hang2_4789 = default;
+V ck_4790 = default;
+V sticks_4791 = default;
+if (_self4752.IsNullish) _self4752 = GlobalV;
+EL_4760 = 0.178;
+O_4761 = Invoke(S_4759, "outline", Get(S_4759, "sk"), ((V)(96D)));
+sid_4762 = Fn((V _arrowThis4799, int _argc4792, V q_4798, V _a4795, V _a4796, V _a4797, V[] _rest4793) => {
+V g_4800 = default;
+g_4800 = (Get(Get(q_4798, "e"), "closest") is var _t4801 && !Truthy(_t4801) ? _t4801 : Invoke(Get(q_4798, "e"), "closest", ((V)("[data-s]"))));
+return (Truthy(g_4800) ? Invoke(g_4800, "getAttribute", ((V)("data-s"))) : ((V)("")));
 return default;
 }, 1, "", true);
-PR_4406 = Arr();
+PR_4763 = Arr();
 {
-double ys_4444 = 0;
-ys_4444 = 46D;
+double ys_4802 = 0;
+ys_4802 = 46D;
 while (true) {
-if (!((ys_4444 <= 86.6))) break;
-V r_4446 = default;
-r_4446 = Call(halfW_38, V.Undef, O_4404, ((V)(ys_4444)));
-if (GtN(r_4446, 0.5)) {
-Invoke(PR_4406, "push", Arr(((V)((ys_4444 + (EL_4403 * ToNum(r_4446))))), r_4446));
+if (!((ys_4802 <= 86.6))) break;
+V r_4804 = default;
+r_4804 = Call(halfW_38, V.Undef, O_4761, ((V)(ys_4802)));
+if (GtN(r_4804, 0.5)) {
+Invoke(PR_4763, "push", Arr(((V)((ys_4802 + (EL_4760 * ToNum(r_4804))))), r_4804));
 }
-ys_4444 = (ys_4444 + 0.4);
+ys_4802 = (ys_4802 + 0.4);
 }
 }
-Invoke(PR_4406, "sort", Fn((V _self4395, int _argc4447, V p_4453, V q_4454, V _a4451, V _a4452, V[] _rest4448) => {
-return ((V)((ToNum(GetIdx(p_4453, 0D)) - ToNum(GetIdx(q_4454, 0D)))));
+Invoke(PR_4763, "sort", Fn((V _arrowThis4813, int _argc4805, V p_4811, V q_4812, V _a4809, V _a4810, V[] _rest4806) => {
+return ((V)((ToNum(GetIdx(p_4811, 0D)) - ToNum(GetIdx(q_4812, 0D)))));
 }, 2, "", true));
-Y0_4407 = GetIdx(GetIdx(PR_4406, 0D), 0D);
-Y1_4408 = GetIdx(GetIdx(PR_4406, (ToNum(Get(PR_4406, "length")) - 1D)), 0D);
-rT_4409 = Fn((V _self4395, int _argc4455, V y_4461, V _a4458, V _a4459, V _a4460, V[] _rest4456) => {
-double i_4462 = 0;
-V p_4463 = default;
-V q_4464 = default;
-double t_4465 = 0;
-y_4461 = Call(clamp_12, V.Undef, y_4461, Y0_4407, Y1_4408);
-i_4462 = 1D;
-while (((i_4462 < (ToNum(Get(PR_4406, "length")) - 1D)) && Lt(GetIdx(GetIdx(PR_4406, i_4462), 0D), y_4461))) {
-i_4462++;
+Y0_4764 = GetIdx(GetIdx(PR_4763, 0D), 0D);
+Y1_4765 = GetIdx(GetIdx(PR_4763, (ToNum(Get(PR_4763, "length")) - 1D)), 0D);
+rT_4766 = Fn((V _arrowThis4821, int _argc4814, V y_4820, V _a4817, V _a4818, V _a4819, V[] _rest4815) => {
+double i_4822 = 0;
+V p_4823 = default;
+V q_4824 = default;
+double t_4825 = 0;
+y_4820 = Call(clamp_12, V.Undef, y_4820, Y0_4764, Y1_4765);
+i_4822 = 1D;
+while (((i_4822 < (ToNum(Get(PR_4763, "length")) - 1D)) && Lt(GetIdx(GetIdx(PR_4763, i_4822), 0D), y_4820))) {
+i_4822++;
 }
-p_4463 = GetIdx(PR_4406, (i_4462 - 1D));
-q_4464 = GetIdx(PR_4406, i_4462);
-t_4465 = (Gt(GetIdx(q_4464, 0D), GetIdx(p_4463, 0D)) ? ((ToNum(y_4461) - ToNum(GetIdx(p_4463, 0D))) / (ToNum(GetIdx(q_4464, 0D)) - ToNum(GetIdx(p_4463, 0D)))) : 0D);
-return Add(GetIdx(p_4463, 1D), ((V)(((ToNum(GetIdx(q_4464, 1D)) - ToNum(GetIdx(p_4463, 1D))) * t_4465))));
+p_4823 = GetIdx(PR_4763, (i_4822 - 1D));
+q_4824 = GetIdx(PR_4763, i_4822);
+t_4825 = (Gt(GetIdx(q_4824, 0D), GetIdx(p_4823, 0D)) ? ((ToNum(y_4820) - ToNum(GetIdx(p_4823, 0D))) / (ToNum(GetIdx(q_4824, 0D)) - ToNum(GetIdx(p_4823, 0D)))) : 0D);
+return Add(GetIdx(p_4823, 1D), ((V)(((ToNum(GetIdx(q_4824, 1D)) - ToNum(GetIdx(p_4823, 1D))) * t_4825))));
 return default;
 }, 1, "", true);
-hid_4410 = Invoke(S_4402, "hide", Fn((V _self4395, int _argc4466, V q_4472, V _a4469, V _a4470, V _a4471, V[] _rest4467) => {
-return ((Get(q_4472, "inBody") is var _t4473 && !Truthy(_t4473) ? _t4473 : Invoke(S_4402, "dk", q_4472, ((V)("top")))) is var _t4474 && !Truthy(_t4474) ? _t4474 : Invoke(Arr(((V)("rim")), ((V)("broth")), ((V)("lip")), ((V)("sticks"))), "includes", Call(sid_4405, V.Undef, q_4472)));
+hid_4767 = Invoke(S_4759, "hide", Fn((V _arrowThis4833, int _argc4826, V q_4832, V _a4829, V _a4830, V _a4831, V[] _rest4827) => {
+return ((Get(q_4832, "inBody") is var _t4834 && !Truthy(_t4834) ? _t4834 : Invoke(S_4759, "dk", q_4832, ((V)("top")))) is var _t4835 && !Truthy(_t4835) ? _t4835 : Invoke(Arr(((V)("rim")), ((V)("broth")), ((V)("lip")), ((V)("sticks"))), "includes", Call(sid_4762, V.Undef, q_4832)));
 }, 1, "", true));
-bro_4411 = Invoke(hid_4410, "find", Fn((V _self4395, int _argc4475, V q_4481, V _a4478, V _a4479, V _a4480, V[] _rest4476) => {
-return (SEqS(Call(sid_4405, V.Undef, q_4481), "broth") ? V.True : V.False);
+bro_4768 = Invoke(hid_4767, "find", Fn((V _arrowThis4843, int _argc4836, V q_4842, V _a4839, V _a4840, V _a4841, V[] _rest4837) => {
+return (SEqS(Call(sid_4762, V.Undef, q_4842), "broth") ? V.True : V.False);
 }, 1, "", true));
-BF_4412 = (Truthy(bro_4411) ? Invoke(S_4402, "f", bro_4411) : ((V)("#efb35c")));
-sk0_4413 = Invoke(hid_4410, "find", Fn((V _self4395, int _argc4482, V q_4488, V _a4485, V _a4486, V _a4487, V[] _rest4483) => {
-return (SEqS(Call(sid_4405, V.Undef, q_4488), "sticks") ? V.True : V.False);
+BF_4769 = (Truthy(bro_4768) ? Invoke(S_4759, "f", bro_4768) : ((V)("#efb35c")));
+sk0_4770 = Invoke(hid_4767, "find", Fn((V _arrowThis4851, int _argc4844, V q_4850, V _a4847, V _a4848, V _a4849, V[] _rest4845) => {
+return (SEqS(Call(sid_4762, V.Undef, q_4850), "sticks") ? V.True : V.False);
 }, 1, "", true));
-CK_4414 = (Truthy(sk0_4413) ? Invoke(S_4402, "f", sk0_4413) : ((V)("#d9a868")));
-Invoke(S_4402, "hide", Fn((V _self4395, int _argc4489, V q_4495, V _a4492, V _a4493, V _a4494, V[] _rest4490) => {
-return ((Get(q_4495, "inBody") is var _t4496 && !Truthy(_t4496) ? _t4496 : (!(Truthy(Invoke(S_4402, "dk", q_4495))) ? V.True : V.False)) is var _t4497 && !Truthy(_t4497) ? _t4497 : ((SEqS(Invoke(S_4402, "f", q_4495), "#e2402e") || SEqS(Invoke(S_4402, "s", q_4495), "#e2402e")) ? V.True : V.False));
+CK_4771 = (Truthy(sk0_4770) ? Invoke(S_4759, "f", sk0_4770) : ((V)("#d9a868")));
+Invoke(S_4759, "hide", Fn((V _arrowThis4859, int _argc4852, V q_4858, V _a4855, V _a4856, V _a4857, V[] _rest4853) => {
+return ((Get(q_4858, "inBody") is var _t4860 && !Truthy(_t4860) ? _t4860 : (!(Truthy(Invoke(S_4759, "dk", q_4858))) ? V.True : V.False)) is var _t4861 && !Truthy(_t4861) ? _t4861 : ((SEqS(Invoke(S_4759, "f", q_4858), "#e2402e") || SEqS(Invoke(S_4759, "s", q_4858), "#e2402e")) ? V.True : V.False));
 }, 1, "", true));
-sh_4415 = Invoke(S_4402, "path", NewObj(1).Put("fill", Invoke(S_4402, "lgrad", ((V)("ndsh")), Arr(Arr(((V)(0D)), ((V)("#8a7a66")), ((V)(0.3))), Arr(((V)(0.15)), ((V)("#8a7a66")), ((V)(0.06))), Arr(((V)(0.3)), ((V)("#ffffff")), ((V)(0.4))), Arr(((V)(0.46)), ((V)("#ffffff")), ((V)(0D))), Arr(((V)(0.76)), ((V)("#6a5a46")), ((V)(0.05))), Arr(((V)(1D)), ((V)("#6a5a46")), ((V)(0.34)))))).V);
-bd_4416 = Invoke(S_4402, "path", NewObj(1).Put("fill", ((V)("#e2402e"))).V);
-rm_4417 = Invoke(S_4402, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#e2402e"))).Put("stroke-width", ((V)(1D))).Put("stroke-linejoin", ((V)("round"))).Put("stroke-linecap", ((V)("round"))).V);
-rimB_4418 = Invoke(S_4402, "path", NewObj(1).Put("fill", ((V)("#fbf3e6"))).V);
-rimI_4419 = Invoke(S_4402, "path", NewObj(1).Put("fill", ((V)("#efe4d2"))).V);
-broth_4420 = Invoke(S_4402, "path", NewObj(1).Put("fill", BF_4412).V);
-FG_4421 = Invoke(S_4402, "g");
-TG_4422 = Invoke(S_4402, "g");
-rimF_4423 = Invoke(S_4402, "path", NewObj(1).Put("fill", ((V)("#fbf3e6"))).V);
-rimL_4424 = Invoke(S_4402, "path", NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffffff"))).Put("stroke-width", ((V)(0.8))).Put("opacity", ((V)(0.8))).V);
-FL_4425 = Invoke(S_4402, "decals", Fn((V _self4395, int _argc4498, V q_4504, V _a4501, V _a4502, V _a4503, V[] _rest4499) => {
-return (Get(q_4504, "inBody") is var _t4505 && !Truthy(_t4505) ? _t4505 : (SEqS(Call(sid_4405, V.Undef, q_4504), "flat") ? V.True : V.False));
-}, 1, "", true), FG_4421);
-box_4426 = Fn((V _self4395, int _argc4506, V D__4512, V _a4509, V _a4510, V _a4511, V[] _rest4507) => {
-V x0_4513 = default;
-V x1_4514 = default;
-V y0_4515 = default;
-V y1_4516 = default;
-x0_4513 = ((V)(1000000000D));
-x1_4514 = ((V)((-1000000000D)));
-y0_4515 = ((V)(1000000000D));
-y1_4516 = ((V)((-1000000000D)));
-Invoke(D__4512, "forEach", Fn((V _self4395, int _argc4517, V o_4523, V _a4520, V _a4521, V _a4522, V[] _rest4518) => {
-return Invoke(Get(o_4523, "L"), "forEach", Fn((V _self4395, int _argc4524, V L_4530, V _a4527, V _a4528, V _a4529, V[] _rest4525) => {
-return Invoke(L_4530, "forEach", Fn((V _self4395, int _argc4531, V p_4537, V _a4534, V _a4535, V _a4536, V[] _rest4532) => {
-if (Lt(GetIdx(p_4537, 0D), x0_4513)) {
-x0_4513 = GetIdx(p_4537, 0D);
+sh_4772 = Invoke(S_4759, "path", NewObj(1).Put("fill", Invoke(S_4759, "lgrad", ((V)("ndsh")), Arr(Arr(((V)(0D)), ((V)("#8a7a66")), ((V)(0.3))), Arr(((V)(0.15)), ((V)("#8a7a66")), ((V)(0.06))), Arr(((V)(0.3)), ((V)("#ffffff")), ((V)(0.4))), Arr(((V)(0.46)), ((V)("#ffffff")), ((V)(0D))), Arr(((V)(0.76)), ((V)("#6a5a46")), ((V)(0.05))), Arr(((V)(1D)), ((V)("#6a5a46")), ((V)(0.34)))))).V);
+bd_4773 = Invoke(S_4759, "path", NewObj(1).Put("fill", ((V)("#e2402e"))).V);
+rm_4774 = Invoke(S_4759, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#e2402e"))).Put("stroke-width", ((V)(1D))).Put("stroke-linejoin", ((V)("round"))).Put("stroke-linecap", ((V)("round"))).V);
+rimB_4775 = Invoke(S_4759, "path", NewObj(1).Put("fill", ((V)("#fbf3e6"))).V);
+rimI_4776 = Invoke(S_4759, "path", NewObj(1).Put("fill", ((V)("#efe4d2"))).V);
+broth_4777 = Invoke(S_4759, "path", NewObj(1).Put("fill", BF_4769).V);
+FG_4778 = Invoke(S_4759, "g");
+TG_4779 = Invoke(S_4759, "g");
+rimF_4780 = Invoke(S_4759, "path", NewObj(1).Put("fill", ((V)("#fbf3e6"))).V);
+rimL_4781 = Invoke(S_4759, "path", NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffffff"))).Put("stroke-width", ((V)(0.8))).Put("opacity", ((V)(0.8))).V);
+FL_4782 = Invoke(S_4759, "decals", Fn((V _arrowThis4869, int _argc4862, V q_4868, V _a4865, V _a4866, V _a4867, V[] _rest4863) => {
+return (Get(q_4868, "inBody") is var _t4870 && !Truthy(_t4870) ? _t4870 : (SEqS(Call(sid_4762, V.Undef, q_4868), "flat") ? V.True : V.False));
+}, 1, "", true), FG_4778);
+box_4783 = Fn((V _arrowThis4878, int _argc4871, V D__4877, V _a4874, V _a4875, V _a4876, V[] _rest4872) => {
+V x0_4879 = default;
+V x1_4880 = default;
+V y0_4881 = default;
+V y1_4882 = default;
+x0_4879 = ((V)(1000000000D));
+x1_4880 = ((V)((-1000000000D)));
+y0_4881 = ((V)(1000000000D));
+y1_4882 = ((V)((-1000000000D)));
+Invoke(D__4877, "forEach", Fn((V _arrowThis4890, int _argc4883, V o_4889, V _a4886, V _a4887, V _a4888, V[] _rest4884) => {
+return Invoke(Get(o_4889, "L"), "forEach", Fn((V _arrowThis4898, int _argc4891, V L_4897, V _a4894, V _a4895, V _a4896, V[] _rest4892) => {
+return Invoke(L_4897, "forEach", Fn((V _arrowThis4906, int _argc4899, V p_4905, V _a4902, V _a4903, V _a4904, V[] _rest4900) => {
+if (Lt(GetIdx(p_4905, 0D), x0_4879)) {
+x0_4879 = GetIdx(p_4905, 0D);
 }
-if (Gt(GetIdx(p_4537, 0D), x1_4514)) {
-x1_4514 = GetIdx(p_4537, 0D);
+if (Gt(GetIdx(p_4905, 0D), x1_4880)) {
+x1_4880 = GetIdx(p_4905, 0D);
 }
-if (Lt(GetIdx(p_4537, 1D), y0_4515)) {
-y0_4515 = GetIdx(p_4537, 1D);
+if (Lt(GetIdx(p_4905, 1D), y0_4881)) {
+y0_4881 = GetIdx(p_4905, 1D);
 }
-if (Gt(GetIdx(p_4537, 1D), y1_4516)) {
-y1_4516 = GetIdx(p_4537, 1D);
+if (Gt(GetIdx(p_4905, 1D), y1_4882)) {
+y1_4882 = GetIdx(p_4905, 1D);
 }
 return default;
 }, 1, "", true));
 }, 1, "", true));
 }, 1, "", true));
-return NewObj(4).Put("x0", x0_4513).Put("x1", x1_4514).Put("y0", y0_4515).Put("y1", y1_4516).V;
+return NewObj(4).Put("x0", x0_4879).Put("x1", x1_4880).Put("y0", y0_4881).Put("y1", y1_4882).V;
 return default;
 }, 1, "", true);
-SP_4427 = Invoke(Arr(((V)("chashu")), ((V)("heap")), ((V)("egg")), ((V)("nar1")), ((V)("nar2"))), "map", Fn((V _self4395, int _argc4538, V n_4544, V _a4541, V _a4542, V _a4543, V[] _rest4539) => {
-V g_4545 = default;
-V D__4546 = default;
-V b_4547 = default;
-double h_4548 = 0;
-g_4545 = Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, TG_4422);
-D__4546 = Invoke(S_4402, "decals", Fn((V _self4395, int _argc4549, V q_4555, V _a4552, V _a4553, V _a4554, V[] _rest4550) => {
-return (Get(q_4555, "inBody") is var _t4556 && !Truthy(_t4556) ? _t4556 : (SEq(Call(sid_4405, V.Undef, q_4555), n_4544) ? V.True : V.False));
-}, 1, "", true), g_4545);
-b_4547 = Call(box_4426, V.Undef, D__4546);
-h_4548 = (ToNum(Get(b_4547, "y1")) - ToNum(Get(b_4547, "y0")));
-return NewObj(6).Put("n", n_4544).Put("g", g_4545).Put("D", D__4546).Put("ax", ((V)((ToNum(Add(Get(b_4547, "x0"), Get(b_4547, "x1"))) / 2D)))).Put("ay", ((V)((ToNum(Get(b_4547, "y1")) - Min(2.2, (h_4548 * 0.3)))))).Put("lag", ((V)((SEqS(n_4544, "heap") ? 1D : 0.5)))).V;
+SP_4784 = Invoke(Arr(((V)("chashu")), ((V)("heap")), ((V)("egg")), ((V)("nar1")), ((V)("nar2"))), "map", Fn((V _arrowThis4914, int _argc4907, V n_4913, V _a4910, V _a4911, V _a4912, V[] _rest4908) => {
+V g_4915 = default;
+V D__4916 = default;
+V b_4917 = default;
+double h_4918 = 0;
+g_4915 = Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, TG_4779);
+D__4916 = Invoke(S_4759, "decals", Fn((V _arrowThis4926, int _argc4919, V q_4925, V _a4922, V _a4923, V _a4924, V[] _rest4920) => {
+return (Get(q_4925, "inBody") is var _t4927 && !Truthy(_t4927) ? _t4927 : (SEq(Call(sid_4762, V.Undef, q_4925), n_4913) ? V.True : V.False));
+}, 1, "", true), g_4915);
+b_4917 = Call(box_4783, V.Undef, D__4916);
+h_4918 = (ToNum(Get(b_4917, "y1")) - ToNum(Get(b_4917, "y0")));
+return NewObj(6).Put("n", n_4913).Put("g", g_4915).Put("D", D__4916).Put("ax", ((V)((ToNum(Add(Get(b_4917, "x0"), Get(b_4917, "x1"))) / 2D)))).Put("ay", ((V)((ToNum(Get(b_4917, "y1")) - Min(2.2, (h_4918 * 0.3)))))).Put("lag", ((V)((SEqS(n_4913, "heap") ? 1D : 0.5)))).V;
 return default;
 }, 1, "", true));
-hp_4428 = Invoke(SP_4427, "find", Fn((V _self4395, int _argc4557, V o_4563, V _a4560, V _a4561, V _a4562, V[] _rest4558) => {
-return (SEqS(Get(o_4563, "n"), "heap") ? V.True : V.False);
+hp_4785 = Invoke(SP_4784, "find", Fn((V _arrowThis4935, int _argc4928, V o_4934, V _a4931, V _a4932, V _a4933, V[] _rest4929) => {
+return (SEqS(Get(o_4934, "n"), "heap") ? V.True : V.False);
 }, 1, "", true));
-Set(hp_4428, "sl", Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D))), "map", Fn((V _self4395, int _argc4564, V _a4566, V _a4567, V _a4568, V _a4569, V[] _rest4565) => {
-return Call(el_14, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#b07c22"))).Put("stroke-width", ((V)(2.2))).Put("stroke-linecap", ((V)("round"))).V, Get(hp_4428, "g"));
+Set(hp_4785, "sl", Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D))), "map", Fn((V _arrowThis4942, int _argc4936, V _a4938, V _a4939, V _a4940, V _a4941, V[] _rest4937) => {
+return Call(el_14, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#b07c22"))).Put("stroke-width", ((V)(2.2))).Put("stroke-linecap", ((V)("round"))).V, Get(hp_4785, "g"));
 }, 0, "", true)));
-Set(hp_4428, "sl2", Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D))), "map", Fn((V _self4395, int _argc4570, V _a4572, V _a4573, V _a4574, V _a4575, V[] _rest4571) => {
-return Call(el_14, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffd65e"))).Put("stroke-width", ((V)(1.5))).Put("stroke-linecap", ((V)("round"))).V, Get(hp_4428, "g"));
+Set(hp_4785, "sl2", Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D))), "map", Fn((V _arrowThis4949, int _argc4943, V _a4945, V _a4946, V _a4947, V _a4948, V[] _rest4944) => {
+return Call(el_14, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffd65e"))).Put("stroke-width", ((V)(1.5))).Put("stroke-linecap", ((V)("round"))).V, Get(hp_4785, "g"));
 }, 0, "", true)));
-NS_4429 = Invoke(Arr(((V)("nori1")), ((V)("nori2"))), "map", Fn((V _self4395, int _argc4576, V n_4582, V _a4579, V _a4580, V _a4581, V[] _rest4577) => {
-V g_4583 = default;
-V D__4584 = default;
-V b_4585 = default;
-g_4583 = Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, TG_4422);
-D__4584 = Invoke(S_4402, "decals", Fn((V _self4395, int _argc4586, V q_4592, V _a4589, V _a4590, V _a4591, V[] _rest4587) => {
-return (Get(q_4592, "inBody") is var _t4593 && !Truthy(_t4593) ? _t4593 : (SEq(Call(sid_4405, V.Undef, q_4592), n_4582) ? V.True : V.False));
-}, 1, "", true), g_4583);
-b_4585 = Call(box_4426, V.Undef, D__4584);
-return NewObj(5).Put("n", n_4582).Put("g", g_4583).Put("D", D__4584).Put("yb", ((V)((ToNum(Get(b_4585, "y1")) - 0.6)))).Put("cx", ((V)((ToNum(Add(Get(b_4585, "x0"), Get(b_4585, "x1"))) / 2D)))).V;
+NS_4786 = Invoke(Arr(((V)("nori1")), ((V)("nori2"))), "map", Fn((V _arrowThis4957, int _argc4950, V n_4956, V _a4953, V _a4954, V _a4955, V[] _rest4951) => {
+V g_4958 = default;
+V D__4959 = default;
+V b_4960 = default;
+g_4958 = Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, TG_4779);
+D__4959 = Invoke(S_4759, "decals", Fn((V _arrowThis4968, int _argc4961, V q_4967, V _a4964, V _a4965, V _a4966, V[] _rest4962) => {
+return (Get(q_4967, "inBody") is var _t4969 && !Truthy(_t4969) ? _t4969 : (SEq(Call(sid_4762, V.Undef, q_4967), n_4956) ? V.True : V.False));
+}, 1, "", true), g_4958);
+b_4960 = Call(box_4783, V.Undef, D__4959);
+return NewObj(5).Put("n", n_4956).Put("g", g_4958).Put("D", D__4959).Put("yb", ((V)((ToNum(Get(b_4960, "y1")) - 0.6)))).Put("cx", ((V)((ToNum(Add(Get(b_4960, "x0"), Get(b_4960, "x1"))) / 2D)))).V;
 return default;
 }, 1, "", true));
-SG_4430 = Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, TG_4422);
-hang_4431 = Call(el_14, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#b07c22"))).Put("stroke-width", ((V)(2.2))).Put("stroke-linecap", ((V)("round"))).V, SG_4430);
-hang2_4432 = Call(el_14, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffd65e"))).Put("stroke-width", ((V)(1.5))).Put("stroke-linecap", ((V)("round"))).V, SG_4430);
-ck_4433 = Invoke(S_4402, "lgrad", ((V)("ndck")), Arr(Arr(((V)(0D)), ((V)("#f4d6a4"))), Arr(((V)(0.5)), ((V)("#d9a868"))), Arr(((V)(1D)), ((V)("#a87a44")))), NewObj(4).Put("x1", ((V)(0D))).Put("y1", ((V)(0D))).Put("x2", ((V)(0D))).Put("y2", ((V)(1D))).V);
-sticks_4434 = Invoke(Arr(((V)(0D)), ((V)(1D))), "map", Fn((V _self4395, int _argc4594, V _a4596, V _a4597, V _a4598, V _a4599, V[] _rest4595) => {
-return Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", (Truthy(Invoke(CK_4414, "startsWith", ((V)("url")))) ? ck_4433 : CK_4414)).V, SG_4430);
+SG_4787 = Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, TG_4779);
+hang_4788 = Call(el_14, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#b07c22"))).Put("stroke-width", ((V)(2.2))).Put("stroke-linecap", ((V)("round"))).V, SG_4787);
+hang2_4789 = Call(el_14, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffd65e"))).Put("stroke-width", ((V)(1.5))).Put("stroke-linecap", ((V)("round"))).V, SG_4787);
+ck_4790 = Invoke(S_4759, "lgrad", ((V)("ndck")), Arr(Arr(((V)(0D)), ((V)("#f4d6a4"))), Arr(((V)(0.5)), ((V)("#d9a868"))), Arr(((V)(1D)), ((V)("#a87a44")))), NewObj(4).Put("x1", ((V)(0D))).Put("y1", ((V)(0D))).Put("x2", ((V)(0D))).Put("y2", ((V)(1D))).V);
+sticks_4791 = Invoke(Arr(((V)(0D)), ((V)(1D))), "map", Fn((V _arrowThis4976, int _argc4970, V _a4972, V _a4973, V _a4974, V _a4975, V[] _rest4971) => {
+return Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", (Truthy(Invoke(CK_4771, "startsWith", ((V)("url")))) ? ck_4790 : CK_4771)).V, SG_4787);
 }, 0, "", true));
-return NewObj(29).Put("EL", ((V)(EL_4403))).Put("O", O_4404).Put("rT", rT_4409).Put("Y0", Y0_4407).Put("Y1", Y1_4408).Put("YR", Y0_4407).Put("YB", Add(Y0_4407, ((V)(0.3)))).Put("R0", Call(rT_4409, V.Undef, Y0_4407)).Put("sh", sh_4415).Put("bd", bd_4416).Put("rm", rm_4417).Put("rimB", rimB_4418).Put("rimI", rimI_4419).Put("broth", broth_4420).Put("FG", FG_4421).Put("TG", TG_4422).Put("rimF", rimF_4423).Put("rimL", rimL_4424).Put("FL", FL_4425).Put("SP", SP_4427).Put("NS", NS_4429).Put("SG", SG_4430).Put("hang", hang_4431).Put("hang2", hang2_4432).Put("sticks", sticks_4434).Put("rx", ((V)(34D))).Put("ya", ((V)(55D))).Put("yb", ((V)(86D))).Put("zE", Fn((V _self4395, int _argc4600, V dx_4606, V dy_4607, V _a4604, V _a4605, V[] _rest4601) => {
-V r_4608 = default;
-r_4608 = Call(rT_4409, V.Undef, Add(Get(S_4402, "HY"), dy_4607));
-return ((V)((System.Math.Sqrt(Max(0D, ((ToNum(r_4608) * ToNum(r_4608)) - (ToNum(dx_4606) * ToNum(dx_4606))))) + 0.3)));
+return NewObj(29).Put("EL", ((V)(EL_4760))).Put("O", O_4761).Put("rT", rT_4766).Put("Y0", Y0_4764).Put("Y1", Y1_4765).Put("YR", Y0_4764).Put("YB", Add(Y0_4764, ((V)(0.3)))).Put("R0", Call(rT_4766, V.Undef, Y0_4764)).Put("sh", sh_4772).Put("bd", bd_4773).Put("rm", rm_4774).Put("rimB", rimB_4775).Put("rimI", rimI_4776).Put("broth", broth_4777).Put("FG", FG_4778).Put("TG", TG_4779).Put("rimF", rimF_4780).Put("rimL", rimL_4781).Put("FL", FL_4782).Put("SP", SP_4784).Put("NS", NS_4786).Put("SG", SG_4787).Put("hang", hang_4788).Put("hang2", hang2_4789).Put("sticks", sticks_4791).Put("rx", ((V)(34D))).Put("ya", ((V)(55D))).Put("yb", ((V)(86D))).Put("zE", Fn((V _arrowThis4985, int _argc4977, V dx_4983, V dy_4984, V _a4981, V _a4982, V[] _rest4978) => {
+V r_4986 = default;
+r_4986 = Call(rT_4766, V.Undef, Add(Get(S_4759, "HY"), dy_4984));
+return ((V)((System.Math.Sqrt(Max(0D, ((ToNum(r_4986) * ToNum(r_4986)) - (ToNum(dx_4983) * ToNum(dx_4983))))) + 0.3)));
 return default;
 }, 2, "zE", true)).V;
 return default;
-}, 1, "setup", false)).Put("draw", Fn((V _self4609, int _argc4610, V B_4616, V D_4617, V _a4614, V _a4615, V[] _rest4611) => {
-V Z3_4618 = default;
-V set_4619 = default;
-V EL_4620 = default;
-V rT_4621 = default;
-V YR_4622 = default;
-V YB_4623 = default;
-V R0_4624 = default;
-V PE_4625 = default;
-V slurp_4626 = default;
-V lid_4627 = default;
-V ts_4628 = default;
-V RP_4629 = default;
-V ring_4630 = default;
-V hp_4631 = default;
-V A_4632 = default;
-double yS_4633 = 0;
-double hS_4634 = 0;
-V rS_4635 = default;
-double nS_4636 = 0;
-double wS_4637 = 0;
-double q_4638 = 0;
-V SPI_4639 = default;
-JsStrBuf rd_4640 = null;
-V zOf_4641 = default;
-V L_4642 = default;
-V zt_4643 = default;
-double ze_4644 = 0;
-double lf_4645 = 0;
-double dp_4646 = 0;
-V T_4647 = default;
-V E_4648 = default;
-V tips_4649 = default;
-JsStrBuf hd_4650 = null;
-V FA_4651 = default;
-if (_self4609.IsNullish) _self4609 = GlobalV;
-{ V _t4652 = D_4617;
-if (_t4652.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t4652));
-{ V _t4653 = Get(_t4652, "Z3");
-Z3_4618 = _t4653; }
-{ V _t4654 = Get(_t4652, "set");
-set_4619 = _t4654; } }
-{ V _t4655 = B_4616;
-if (_t4655.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t4655));
-{ V _t4656 = Get(_t4655, "EL");
-EL_4620 = _t4656; }
-{ V _t4657 = Get(_t4655, "rT");
-rT_4621 = _t4657; }
-{ V _t4658 = Get(_t4655, "YR");
-YR_4622 = _t4658; }
-{ V _t4659 = Get(_t4655, "YB");
-YB_4623 = _t4659; }
-{ V _t4660 = Get(_t4655, "R0");
-R0_4624 = _t4660; } }
-PE_4625 = Call(PEf_48, V.Undef, D_4617, EL_4620, rT_4621);
-slurp_4626 = Call(clamp_12, V.Undef, Invoke(D_4617, "bv", ((V)("slurp"))), ((V)(0D)), ((V)(1.2)));
-lid_4627 = Call(clamp_12, V.Undef, Invoke(D_4617, "bv", ((V)("lid"))), ((V)((-1D))), ((V)(1.2)));
-ts_4628 = Get(D_4617, "ts");
-RP_4629 = Fn((V _self4609, int _argc4661, V r_4667, V y_4668, V f_4669, V _a4666, V[] _rest4662) => {
-return Call(PE_4625, V.Undef, ((V)((50D + (ToNum(r_4667) * FdLibm.Sin(ToNum(f_4669)))))), y_4668, ((V)((ToNum(r_4667) * FdLibm.Cos(ToNum(f_4669))))));
+}, 1, "setup", false)).Put("draw", Fn((V _self4987, int _argc4988, V B_4994, V D_4995, V _a4992, V _a4993, V[] _rest4989) => {
+V Z3_4996 = default;
+V set_4997 = default;
+V EL_4998 = default;
+V rT_4999 = default;
+V YR_5000 = default;
+V YB_5001 = default;
+V R0_5002 = default;
+V PE_5003 = default;
+V slurp_5004 = default;
+V lid_5005 = default;
+V ts_5006 = default;
+V RP_5007 = default;
+V ring_5008 = default;
+V hp_5009 = default;
+V A_5010 = default;
+double yS_5011 = 0;
+double hS_5012 = 0;
+V rS_5013 = default;
+double nS_5014 = 0;
+double wS_5015 = 0;
+double q_5016 = 0;
+V SPI_5017 = default;
+JsStrBuf rd_5018 = null;
+V zOf_5019 = default;
+V L_5020 = default;
+V zt_5021 = default;
+double ze_5022 = 0;
+double lf_5023 = 0;
+double dp_5024 = 0;
+V T_5025 = default;
+V E_5026 = default;
+V tips_5027 = default;
+JsStrBuf hd_5028 = null;
+V FA_5029 = default;
+if (_self4987.IsNullish) _self4987 = GlobalV;
+{ V _t5030 = D_4995;
+if (_t5030.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t5030));
+{ V _t5031 = Get(_t5030, "Z3");
+Z3_4996 = _t5031; }
+{ V _t5032 = Get(_t5030, "set");
+set_4997 = _t5032; } }
+{ V _t5033 = B_4994;
+if (_t5033.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t5033));
+{ V _t5034 = Get(_t5033, "EL");
+EL_4998 = _t5034; }
+{ V _t5035 = Get(_t5033, "rT");
+rT_4999 = _t5035; }
+{ V _t5036 = Get(_t5033, "YR");
+YR_5000 = _t5036; }
+{ V _t5037 = Get(_t5033, "YB");
+YB_5001 = _t5037; }
+{ V _t5038 = Get(_t5033, "R0");
+R0_5002 = _t5038; } }
+PE_5003 = Call(PEf_48, V.Undef, D_4995, EL_4998, rT_4999);
+slurp_5004 = Call(clamp_12, V.Undef, Invoke(D_4995, "bv", ((V)("slurp"))), ((V)(0D)), ((V)(1.2)));
+lid_5005 = Call(clamp_12, V.Undef, Invoke(D_4995, "bv", ((V)("lid"))), ((V)((-1D))), ((V)(1.2)));
+ts_5006 = Get(D_4995, "ts");
+RP_5007 = Fn((V _arrowThis5048, int _argc5039, V r_5045, V y_5046, V f_5047, V _a5044, V[] _rest5040) => {
+return Call(PE_5003, V.Undef, ((V)((50D + (ToNum(r_5045) * FdLibm.Sin(ToNum(f_5047)))))), y_5046, ((V)((ToNum(r_5045) * FdLibm.Cos(ToNum(f_5047))))));
 }, 3, "", true);
-ring_4630 = Fn((V _self4609, int _argc4670, V r_4676, V y_4677, V n_4678, V _a4675, V[] _rest4671) => {
-return Array_from(NewObj(1).Put("length", n_4678).V, Fn((V _self4609, int _argc4679, V __4685, V i_4686, V _a4683, V _a4684, V[] _rest4680) => {
-return Call(RP_4629, V.Undef, r_4676, y_4677, ((V)(((ToNum(i_4686) / ToNum(n_4678)) * TAU_9))));
+ring_5008 = Fn((V _arrowThis5058, int _argc5049, V r_5055, V y_5056, V n_5057, V _a5054, V[] _rest5050) => {
+return Array_from(NewObj(1).Put("length", n_5057).V, Fn((V _arrowThis5067, int _argc5059, V __5065, V i_5066, V _a5063, V _a5064, V[] _rest5060) => {
+return Call(RP_5007, V.Undef, r_5055, y_5056, ((V)(((ToNum(i_5066) / ToNum(n_5057)) * TAU_9))));
 }, 2, "", true));
 }, 3, "", true);
-hp_4631 = Arr();
+hp_5009 = Arr();
 {
-double i_4687 = 0;
-i_4687 = 0D;
+double i_5068 = 0;
+i_5068 = 0D;
 while (true) {
-if (!((i_4687 <= 16D))) break;
-V y_4689 = default;
-y_4689 = Add(Get(B_4616, "Y0"), ((V)((((ToNum(Get(B_4616, "Y1")) - ToNum(Get(B_4616, "Y0"))) * i_4687) / 16D))));
-Invoke(Call(ring_4630, V.Undef, Call(rT_4621, V.Undef, y_4689), y_4689, ((V)(28D))), "forEach", Fn((V _self4609, int _argc4690, V p_4696, V _a4693, V _a4694, V _a4695, V[] _rest4691) => {
-return Invoke(hp_4631, "push", p_4696);
+if (!((i_5068 <= 16D))) break;
+V y_5070 = default;
+y_5070 = Add(Get(B_4994, "Y0"), ((V)((((ToNum(Get(B_4994, "Y1")) - ToNum(Get(B_4994, "Y0"))) * i_5068) / 16D))));
+Invoke(Call(ring_5008, V.Undef, Call(rT_4999, V.Undef, y_5070), y_5070, ((V)(28D))), "forEach", Fn((V _arrowThis5078, int _argc5071, V p_5077, V _a5074, V _a5075, V _a5076, V[] _rest5072) => {
+return Invoke(hp_5009, "push", p_5077);
 }, 1, "", true));
-i_4687++;
+i_5068++;
 }
 }
-Set(B_4616, "d", Invoke(D_4617, "hull", hp_4631));
-Call(set_4619, V.Undef, Get(B_4616, "sh"), ((V)("d")), Get(B_4616, "d"));
-A_4632 = Invoke(Get(SN_43, "h"), "frontArc", D_4617, ((V)(34D)), ((V)(58D)), ((V)(72D)));
-if (GtN(Get(A_4632, "length"), 1D)) {
-Call(set_4619, V.Undef, Get(B_4616, "bd"), ((V)("d")), Call(polyW_18, V.Undef, Invoke(Invoke(A_4632, "map", Fn((V _self4609, int _argc4704, V f_4710, V _a4707, V _a4708, V _a4709, V[] _rest4705) => {
-return Call(RP_4629, V.Undef, Add(Call(rT_4621, V.Undef, ((V)(55.4))), ((V)(0.05))), ((V)(55.4)), f_4710);
-}, 1, "", true)), "concat", Invoke(Invoke(Invoke(A_4632, "slice"), "reverse"), "map", Fn((V _self4609, int _argc4697, V f_4703, V _a4700, V _a4701, V _a4702, V[] _rest4698) => {
-return Call(RP_4629, V.Undef, Add(Call(rT_4621, V.Undef, ((V)(57.1))), ((V)(0.05))), ((V)(57.1)), f_4703);
+Set(B_4994, "d", Invoke(D_4995, "hull", hp_5009));
+Call(set_4997, V.Undef, Get(B_4994, "sh"), ((V)("d")), Get(B_4994, "d"));
+A_5010 = Invoke(Get(SN_43, "h"), "frontArc", D_4995, ((V)(34D)), ((V)(58D)), ((V)(72D)));
+if (GtN(Get(A_5010, "length"), 1D)) {
+Call(set_4997, V.Undef, Get(B_4994, "bd"), ((V)("d")), Call(polyW_18, V.Undef, Invoke(Invoke(A_5010, "map", Fn((V _arrowThis5094, int _argc5087, V f_5093, V _a5090, V _a5091, V _a5092, V[] _rest5088) => {
+return Call(RP_5007, V.Undef, Add(Call(rT_4999, V.Undef, ((V)(55.4))), ((V)(0.05))), ((V)(55.4)), f_5093);
+}, 1, "", true)), "concat", Invoke(Invoke(Invoke(A_5010, "slice"), "reverse"), "map", Fn((V _arrowThis5086, int _argc5079, V f_5085, V _a5082, V _a5083, V _a5084, V[] _rest5080) => {
+return Call(RP_5007, V.Undef, Add(Call(rT_4999, V.Undef, ((V)(57.1))), ((V)(0.05))), ((V)(57.1)), f_5085);
 }, 1, "", true)))));
 } else {
-Call(set_4619, V.Undef, Get(B_4616, "bd"), ((V)("d")), ((V)("M0 0")));
+Call(set_4997, V.Undef, Get(B_4994, "bd"), ((V)("d")), ((V)("M0 0")));
 }
-yS_4633 = 58.8;
-hS_4634 = 4D;
-rS_4635 = Add(Call(rT_4621, V.Undef, ((V)((yS_4633 + (hS_4634 / 2D))))), ((V)(0.08)));
-nS_4636 = Round(((TAU_9 * ToNum(rS_4635)) / 7.4));
-wS_4637 = (TAU_9 / nS_4636);
-q_4638 = 0.82;
-SPI_4639 = Arr(Arr(((V)(0D)), ((V)(1D))), Arr(((V)(0D)), ((V)(0D))), Arr(((V)(q_4638)), ((V)(0D))), Arr(((V)(q_4638)), ((V)(0.8))), Arr(((V)((q_4638 * 0.25))), ((V)(0.8))), Arr(((V)((q_4638 * 0.25))), ((V)(0.3))), Arr(((V)((q_4638 * 0.62))), ((V)(0.3))), Arr(((V)((q_4638 * 0.62))), ((V)(0.55))));
-rd_4640 = new JsStrBuf("");
+yS_5011 = 58.8;
+hS_5012 = 4D;
+rS_5013 = Add(Call(rT_4999, V.Undef, ((V)((yS_5011 + (hS_5012 / 2D))))), ((V)(0.08)));
+nS_5014 = Round(((TAU_9 * ToNum(rS_5013)) / 7.4));
+wS_5015 = (TAU_9 / nS_5014);
+q_5016 = 0.82;
+SPI_5017 = Arr(Arr(((V)(0D)), ((V)(1D))), Arr(((V)(0D)), ((V)(0D))), Arr(((V)(q_5016)), ((V)(0D))), Arr(((V)(q_5016)), ((V)(0.8))), Arr(((V)((q_5016 * 0.25))), ((V)(0.8))), Arr(((V)((q_5016 * 0.25))), ((V)(0.3))), Arr(((V)((q_5016 * 0.62))), ((V)(0.3))), Arr(((V)((q_5016 * 0.62))), ((V)(0.55))));
+rd_5018 = new JsStrBuf("");
 {
-double i_4711 = 0;
-i_4711 = 0D;
+double i_5095 = 0;
+i_5095 = 0D;
 while (true) {
-if (!((i_4711 < nS_4636))) break;
-double f0_4713 = 0;
-double fm_4714 = 0;
-f0_4713 = ((i_4711 - 0.41) * wS_4637);
-fm_4714 = (f0_4713 + (0.41 * wS_4637));
-if (LtN(Invoke(D_4617, "facing", ((V)((50D + (ToNum(rS_4635) * FdLibm.Sin(fm_4714))))), ((V)(yS_4633)), ((V)((ToNum(rS_4635) * FdLibm.Cos(fm_4714)))), ((V)(FdLibm.Sin(fm_4714))), ((V)(0D)), ((V)(FdLibm.Cos(fm_4714)))), 0.08)) {
-goto _cont4712;
+if (!((i_5095 < nS_5014))) break;
+double f0_5097 = 0;
+double fm_5098 = 0;
+f0_5097 = ((i_5095 - 0.41) * wS_5015);
+fm_5098 = (f0_5097 + (0.41 * wS_5015));
+if (LtN(Invoke(D_4995, "facing", ((V)((50D + (ToNum(rS_5013) * FdLibm.Sin(fm_5098))))), ((V)(yS_5011)), ((V)((ToNum(rS_5013) * FdLibm.Cos(fm_5098)))), ((V)(FdLibm.Sin(fm_5098))), ((V)(0D)), ((V)(FdLibm.Cos(fm_5098)))), 0.08)) {
+goto _cont5096;
 }
-rd_4640.S("M").V(Invoke(Invoke(SPI_4639, "map", Fn((V _self4609, int _argc4715, V _a4717, V _a4718, V _a4719, V _a4720, V[] _rest4716) => {
-double f_4726 = 0;
-double y_4727 = 0;
-V r_4728 = default;
-V u_4723 = default;
-V v_4725 = default;
-{ V _t4721 = ListOf(_a4717);
-{ V _t4722 = GetIdx(_t4721, 0D);
-u_4723 = _t4722; }
-{ V _t4724 = GetIdx(_t4721, 1D);
-v_4725 = _t4724; }
+rd_5018.S("M").V(Invoke(Invoke(SPI_5017, "map", Fn((V _arrowThis5110, int _argc5099, V _a5101, V _a5102, V _a5103, V _a5104, V[] _rest5100) => {
+double f_5111 = 0;
+double y_5112 = 0;
+V r_5113 = default;
+V u_5107 = default;
+V v_5109 = default;
+{ V _t5105 = ListOf(_a5101);
+{ V _t5106 = GetIdx(_t5105, 0D);
+u_5107 = _t5106; }
+{ V _t5108 = GetIdx(_t5105, 1D);
+v_5109 = _t5108; }
 }
-f_4726 = (f0_4713 + (ToNum(u_4723) * wS_4637));
-y_4727 = (yS_4633 + (ToNum(v_4725) * hS_4634));
-r_4728 = Add(Call(rT_4621, V.Undef, ((V)(y_4727))), ((V)(0.08)));
-return Call(pt_15, V.Undef, Call(RP_4629, V.Undef, r_4728, ((V)(y_4727)), ((V)(f_4726))));
+f_5111 = (f0_5097 + (ToNum(u_5107) * wS_5015));
+y_5112 = (yS_5011 + (ToNum(v_5109) * hS_5012));
+r_5113 = Add(Call(rT_4999, V.Undef, ((V)(y_5112))), ((V)(0.08)));
+return Call(pt_15, V.Undef, Call(RP_5007, V.Undef, r_5113, ((V)(y_5112)), ((V)(f_5111))));
 return default;
 }, 1, "", true)), "join", ((V)("L"))));
-_cont4712: ;
-i_4711++;
+_cont5096: ;
+i_5095++;
 }
 }
-Call(set_4619, V.Undef, Get(B_4616, "rm"), ((V)("d")), (((V)(rd_4640.Str)) is var _t4729 && Truthy(_t4729) ? _t4729 : ((V)("M0 0"))));
-Call(set_4619, V.Undef, Get(B_4616, "rimB"), ((V)("d")), Call(polyW_18, V.Undef, Call(ring_4630, V.Undef, ((V)(37D)), YR_4622, ((V)(56D)))));
-Call(set_4619, V.Undef, Get(B_4616, "rimI"), ((V)("d")), Call(polyW_18, V.Undef, Call(ring_4630, V.Undef, ((V)(35.2)), Add(YR_4622, ((V)(0.1))), ((V)(56D)))));
-Call(set_4619, V.Undef, Get(B_4616, "broth"), ((V)("d")), Call(polyW_18, V.Undef, Call(ring_4630, V.Undef, ((V)(33.6)), YB_4623, ((V)(56D)))));
-zOf_4641 = Fn((V _self4609, int _argc4730, V y_4736, V _a4733, V _a4734, V _a4735, V[] _rest4731) => {
-return Add(((V)(((ToNum(y_4736) - ToNum(YB_4623)) / ToNum(EL_4620)))), R0_4624);
+Call(set_4997, V.Undef, Get(B_4994, "rm"), ((V)("d")), (((V)(rd_5018.Str)) is var _t5114 && Truthy(_t5114) ? _t5114 : ((V)("M0 0"))));
+Call(set_4997, V.Undef, Get(B_4994, "rimB"), ((V)("d")), Call(polyW_18, V.Undef, Call(ring_5008, V.Undef, ((V)(37D)), YR_5000, ((V)(56D)))));
+Call(set_4997, V.Undef, Get(B_4994, "rimI"), ((V)("d")), Call(polyW_18, V.Undef, Call(ring_5008, V.Undef, ((V)(35.2)), Add(YR_5000, ((V)(0.1))), ((V)(56D)))));
+Call(set_4997, V.Undef, Get(B_4994, "broth"), ((V)("d")), Call(polyW_18, V.Undef, Call(ring_5008, V.Undef, ((V)(33.6)), YB_5001, ((V)(56D)))));
+zOf_5019 = Fn((V _arrowThis5122, int _argc5115, V y_5121, V _a5118, V _a5119, V _a5120, V[] _rest5116) => {
+return Add(((V)(((ToNum(y_5121) - ToNum(YB_5001)) / ToNum(EL_4998)))), R0_5002);
 }, 1, "", true);
-Invoke(Get(B_4616, "FL"), "forEach", Fn((V _self4609, int _argc4737, V o_4743, V _a4740, V _a4741, V _a4742, V[] _rest4738) => {
-return Call(set_4619, V.Undef, Get(o_4743, "e"), ((V)("d")), Call(decD_26, V.Undef, o_4743, Fn((V _self4609, int _argc4744, V x_4750, V y_4751, V _a4748, V _a4749, V[] _rest4745) => {
-return Call(PE_4625, V.Undef, x_4750, YB_4623, Call(zOf_4641, V.Undef, y_4751));
+Invoke(Get(B_4994, "FL"), "forEach", Fn((V _arrowThis5130, int _argc5123, V o_5129, V _a5126, V _a5127, V _a5128, V[] _rest5124) => {
+return Call(set_4997, V.Undef, Get(o_5129, "e"), ((V)("d")), Call(decD_26, V.Undef, o_5129, Fn((V _arrowThis5139, int _argc5131, V x_5137, V y_5138, V _a5135, V _a5136, V[] _rest5132) => {
+return Call(PE_5003, V.Undef, x_5137, YB_5001, Call(zOf_5019, V.Undef, y_5138));
 }, 2, "", true)));
 }, 1, "", true));
-L_4642 = Arr();
-Invoke(Get(B_4616, "SP"), "forEach", Fn((V _self4609, int _argc4752, V sp_4758, V _a4755, V _a4756, V _a4757, V[] _rest4753) => {
-V A3_4759 = default;
-V C_4760 = default;
-V cy_4761 = default;
-V kx_4762 = default;
-double ky_4763 = 0;
-double sy_4764 = 0;
-double oy_4765 = 0;
-A3_4759 = Arr(Add(Get(sp_4758, "ax"), ((V)(((ToNum(Get(D_4617, "ox")) * 0.05) * ToNum(Get(sp_4758, "lag")))))), YB_4623, Call(zOf_4641, V.Undef, Get(sp_4758, "ay")));
-C_4760 = Call(PE_4625, V.Undef, GetIdx(A3_4759, 0D), GetIdx(A3_4759, 1D), GetIdx(A3_4759, 2D));
-cy_4761 = Call(PE_4625, V.Undef, GetIdx(A3_4759, 0D), Add(GetIdx(A3_4759, 1D), ((V)(1D))), GetIdx(A3_4759, 2D));
-kx_4762 = Get(D_4617, "kS");
-ky_4763 = Hypot((ToNum(GetIdx(cy_4761, 0D)) - ToNum(GetIdx(C_4760, 0D))), (ToNum(GetIdx(cy_4761, 1D)) - ToNum(GetIdx(C_4760, 1D))));
-sy_4764 = (SEqS(Get(sp_4758, "n"), "heap") ? (1D - (0.1 * ToNum(slurp_4626))) : 1D);
-oy_4765 = (((-ToNum(Get(D_4617, "oy"))) * 0.08) * ToNum(Get(sp_4758, "lag")));
-Invoke(Get(sp_4758, "D"), "forEach", Fn((V _self4609, int _argc4766, V o_4772, V _a4769, V _a4770, V _a4771, V[] _rest4767) => {
-return Call(set_4619, V.Undef, Get(o_4772, "e"), ((V)("d")), Call(decD_26, V.Undef, o_4772, Fn((V _self4609, int _argc4773, V x_4779, V y_4780, V _a4777, V _a4778, V[] _rest4774) => {
-return Arr(Add(GetIdx(C_4760, 0D), ((V)(((ToNum(x_4779) - ToNum(Get(sp_4758, "ax"))) * ToNum(kx_4762))))), Add(Add(GetIdx(C_4760, 1D), ((V)((((ToNum(y_4780) - ToNum(Get(sp_4758, "ay"))) * ky_4763) * sy_4764)))), ((V)(oy_4765))));
+L_5020 = Arr();
+Invoke(Get(B_4994, "SP"), "forEach", Fn((V _arrowThis5147, int _argc5140, V sp_5146, V _a5143, V _a5144, V _a5145, V[] _rest5141) => {
+V A3_5148 = default;
+V C_5149 = default;
+V cy_5150 = default;
+V kx_5151 = default;
+double ky_5152 = 0;
+double sy_5153 = 0;
+double oy_5154 = 0;
+A3_5148 = Arr(Add(Get(sp_5146, "ax"), ((V)(((ToNum(Get(D_4995, "ox")) * 0.05) * ToNum(Get(sp_5146, "lag")))))), YB_5001, Call(zOf_5019, V.Undef, Get(sp_5146, "ay")));
+C_5149 = Call(PE_5003, V.Undef, GetIdx(A3_5148, 0D), GetIdx(A3_5148, 1D), GetIdx(A3_5148, 2D));
+cy_5150 = Call(PE_5003, V.Undef, GetIdx(A3_5148, 0D), Add(GetIdx(A3_5148, 1D), ((V)(1D))), GetIdx(A3_5148, 2D));
+kx_5151 = Get(D_4995, "kS");
+ky_5152 = Hypot((ToNum(GetIdx(cy_5150, 0D)) - ToNum(GetIdx(C_5149, 0D))), (ToNum(GetIdx(cy_5150, 1D)) - ToNum(GetIdx(C_5149, 1D))));
+sy_5153 = (SEqS(Get(sp_5146, "n"), "heap") ? (1D - (0.1 * ToNum(slurp_5004))) : 1D);
+oy_5154 = (((-ToNum(Get(D_4995, "oy"))) * 0.08) * ToNum(Get(sp_5146, "lag")));
+Invoke(Get(sp_5146, "D"), "forEach", Fn((V _arrowThis5162, int _argc5155, V o_5161, V _a5158, V _a5159, V _a5160, V[] _rest5156) => {
+return Call(set_4997, V.Undef, Get(o_5161, "e"), ((V)("d")), Call(decD_26, V.Undef, o_5161, Fn((V _arrowThis5171, int _argc5163, V x_5169, V y_5170, V _a5167, V _a5168, V[] _rest5164) => {
+return Arr(Add(GetIdx(C_5149, 0D), ((V)(((ToNum(x_5169) - ToNum(Get(sp_5146, "ax"))) * ToNum(kx_5151))))), Add(Add(GetIdx(C_5149, 1D), ((V)((((ToNum(y_5170) - ToNum(Get(sp_5146, "ay"))) * ky_5152) * sy_5153)))), ((V)(oy_5154))));
 }, 2, "", true)));
 }, 1, "", true));
-if (Truthy(Get(sp_4758, "sl"))) {
-V top_4781 = default;
-top_4781 = Arr(GetIdx(C_4760, 0D), ((V)((ToNum(GetIdx(C_4760, 1D)) - ((9D * ky_4763) * sy_4764)))));
-Invoke(Get(sp_4758, "sl"), "forEach", Fn((V _self4609, int _argc4782, V e_4788, V j_4789, V _a4786, V _a4787, V[] _rest4783) => {
-JsStrBuf d_4790 = null;
-d_4790 = new JsStrBuf("");
-if (GtN(slurp_4626, 0.03)) {
-double h_4791 = 0;
-V x0_4792 = default;
-h_4791 = (13D * ToNum(slurp_4626));
-x0_4792 = Add(GetIdx(top_4781, 0D), ((V)((((ToNum(j_4789) - 1D) * 3.2) * ToNum(kx_4762)))));
+if (Truthy(Get(sp_5146, "sl"))) {
+V top_5172 = default;
+top_5172 = Arr(GetIdx(C_5149, 0D), ((V)((ToNum(GetIdx(C_5149, 1D)) - ((9D * ky_5152) * sy_5153)))));
+Invoke(Get(sp_5146, "sl"), "forEach", Fn((V _arrowThis5181, int _argc5173, V e_5179, V j_5180, V _a5177, V _a5178, V[] _rest5174) => {
+JsStrBuf d_5182 = null;
+d_5182 = new JsStrBuf("");
+if (GtN(slurp_5004, 0.03)) {
+double h_5183 = 0;
+V x0_5184 = default;
+h_5183 = (13D * ToNum(slurp_5004));
+x0_5184 = Add(GetIdx(top_5172, 0D), ((V)((((ToNum(j_5180) - 1D) * 3.2) * ToNum(kx_5151)))));
 {
-double i_4793 = 0;
-i_4793 = 0D;
+double i_5185 = 0;
+i_5185 = 0D;
 while (true) {
-if (!((i_4793 <= 14D))) break;
-double u_4795 = 0;
-u_4795 = (i_4793 / 14D);
-d_4790.S((NumTruthy(i_4793) ? "L" : "M")).V(Call(r2_11, V.Undef, Add(x0_4792, ((V)(((1.1 * ToNum(kx_4762)) * FdLibm.Sin((((u_4795 * 9D) + (ToNum(j_4789) * 2.1)) + (ToNum(ts_4628) * 9D))))))))).S(" ").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(top_4781, 1D)) - ((h_4791 * u_4795) * ky_4763))))));
-i_4793++;
+if (!((i_5185 <= 14D))) break;
+double u_5187 = 0;
+u_5187 = (i_5185 / 14D);
+d_5182.S((NumTruthy(i_5185) ? "L" : "M")).V(Call(r2_11, V.Undef, Add(x0_5184, ((V)(((1.1 * ToNum(kx_5151)) * FdLibm.Sin((((u_5187 * 9D) + (ToNum(j_5180) * 2.1)) + (ToNum(ts_5006) * 9D))))))))).S(" ").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(top_5172, 1D)) - ((h_5183 * u_5187) * ky_5152))))));
+i_5185++;
 }
 }
 }
-Call(set_4619, V.Undef, e_4788, ((V)("d")), (((V)(d_4790.Str)) is var _t4796 && Truthy(_t4796) ? _t4796 : ((V)("M0 0"))));
-Call(set_4619, V.Undef, GetK(Get(sp_4758, "sl2"), j_4789), ((V)("d")), (((V)(d_4790.Str)) is var _t4797 && Truthy(_t4797) ? _t4797 : ((V)("M0 0"))));
+Call(set_4997, V.Undef, e_5179, ((V)("d")), (((V)(d_5182.Str)) is var _t5188 && Truthy(_t5188) ? _t5188 : ((V)("M0 0"))));
+Call(set_4997, V.Undef, GetK(Get(sp_5146, "sl2"), j_5180), ((V)("d")), (((V)(d_5182.Str)) is var _t5189 && Truthy(_t5189) ? _t5189 : ((V)("M0 0"))));
 return default;
 }, 2, "", true));
 }
-Invoke(L_4642, "push", NewObj(3).Put("id", Get(sp_4758, "n")).Put("e", Get(sp_4758, "g")).Put("z", Call(Z3_4618, V.Undef, GetIdx(A3_4759, 0D), GetIdx(A3_4759, 1D), GetIdx(A3_4759, 2D))).V);
+Invoke(L_5020, "push", NewObj(3).Put("id", Get(sp_5146, "n")).Put("e", Get(sp_5146, "g")).Put("z", Call(Z3_4996, V.Undef, GetIdx(A3_5148, 0D), GetIdx(A3_5148, 1D), GetIdx(A3_5148, 2D))).V);
 return default;
 }, 1, "", true));
-Invoke(Get(B_4616, "NS"), "forEach", Fn((V _self4609, int _argc4798, V sh_4804, V _a4801, V _a4802, V _a4803, V[] _rest4799) => {
-V z_4805 = default;
-V sw_4806 = default;
-z_4805 = Call(zOf_4641, V.Undef, Get(sh_4804, "yb"));
-sw_4806 = Call(clamp_12, V.Undef, ((V)(((-ToNum(Get(D_4617, "ox"))) * 0.05))), ((V)((-0.6))), ((V)(0.6)));
-Invoke(Get(sh_4804, "D"), "forEach", Fn((V _self4609, int _argc4807, V o_4813, V _a4810, V _a4811, V _a4812, V[] _rest4808) => {
-return Call(set_4619, V.Undef, Get(o_4813, "e"), ((V)("d")), Call(decD_26, V.Undef, o_4813, Fn((V _self4609, int _argc4814, V x_4820, V y_4821, V _a4818, V _a4819, V[] _rest4815) => {
-double up_4822 = 0;
-up_4822 = (Max(0D, (ToNum(Get(sh_4804, "yb")) - ToNum(y_4821))) / 20D);
-return Call(PE_4625, V.Undef, Add(x_4820, ((V)(((ToNum(sw_4806) * up_4822) * 5D)))), ((V)(((ToNum(y_4821) - (ToNum(EL_4620) * (ToNum(z_4805) - ToNum(R0_4624)))) + ((up_4822 * up_4822) * 0.3)))), ((V)((ToNum(z_4805) - (up_4822 * 1.5)))));
+Invoke(Get(B_4994, "NS"), "forEach", Fn((V _arrowThis5197, int _argc5190, V sh_5196, V _a5193, V _a5194, V _a5195, V[] _rest5191) => {
+V z_5198 = default;
+V sw_5199 = default;
+z_5198 = Call(zOf_5019, V.Undef, Get(sh_5196, "yb"));
+sw_5199 = Call(clamp_12, V.Undef, ((V)(((-ToNum(Get(D_4995, "ox"))) * 0.05))), ((V)((-0.6))), ((V)(0.6)));
+Invoke(Get(sh_5196, "D"), "forEach", Fn((V _arrowThis5207, int _argc5200, V o_5206, V _a5203, V _a5204, V _a5205, V[] _rest5201) => {
+return Call(set_4997, V.Undef, Get(o_5206, "e"), ((V)("d")), Call(decD_26, V.Undef, o_5206, Fn((V _arrowThis5216, int _argc5208, V x_5214, V y_5215, V _a5212, V _a5213, V[] _rest5209) => {
+double up_5217 = 0;
+up_5217 = (Max(0D, (ToNum(Get(sh_5196, "yb")) - ToNum(y_5215))) / 20D);
+return Call(PE_5003, V.Undef, Add(x_5214, ((V)(((ToNum(sw_5199) * up_5217) * 5D)))), ((V)(((ToNum(y_5215) - (ToNum(EL_4998) * (ToNum(z_5198) - ToNum(R0_5002)))) + ((up_5217 * up_5217) * 0.3)))), ((V)((ToNum(z_5198) - (up_5217 * 1.5)))));
 return default;
 }, 2, "", true)));
 }, 1, "", true));
-Invoke(L_4642, "push", NewObj(3).Put("id", Get(sh_4804, "n")).Put("e", Get(sh_4804, "g")).Put("z", ((V)((ToNum(Call(Z3_4618, V.Undef, Get(sh_4804, "cx"), ((V)((ToNum(YB_4623) - 8D))), z_4805)) - 4D)))).V);
+Invoke(L_5020, "push", NewObj(3).Put("id", Get(sh_5196, "n")).Put("e", Get(sh_5196, "g")).Put("z", ((V)((ToNum(Call(Z3_4996, V.Undef, Get(sh_5196, "cx"), ((V)((ToNum(YB_5001) - 8D))), z_5198)) - 4D)))).V);
 return default;
 }, 1, "", true));
-zt_4643 = Call(zOf_4641, V.Undef, ((V)(46.4)));
-ze_4644 = (ToNum(zt_4643) - 9D);
-lf_4645 = Max(0D, ToNum(lid_4627));
-dp_4646 = Min(0D, ToNum(lid_4627));
-T_4647 = Arr(Arr(((V)(53.8)), ((V)(39.6))), Arr(((V)(56.8)), ((V)(41.2))));
-E_4648 = Arr(Arr(((V)(88.6)), ((V)(13.4))), Arr(((V)(92.4)), ((V)(17.4))));
-tips_4649 = Arr();
-Invoke(Get(B_4616, "sticks"), "forEach", Fn((V _self4609, int _argc4823, V e_4829, V i_4830, V _a4827, V _a4828, V[] _rest4824) => {
-V t3_4831 = default;
-V e3_4832 = default;
-V a_4833 = default;
-V b_4834 = default;
-double dx_4835 = 0;
-double dy_4836 = 0;
-V l_4837 = default;
-double nx_4838 = 0;
-double ny_4839 = 0;
-double w0_4840 = 0;
-double w1_4841 = 0;
-t3_4831 = Arr(((V)((ToNum(GetIdx(GetK(T_4647, i_4830), 0D)) - (2D * lf_4645)))), ((V)((((ToNum(GetIdx(GetK(T_4647, i_4830), 1D)) - (ToNum(EL_4620) * (ToNum(zt_4643) - ToNum(R0_4624)))) - (11D * lf_4645)) - (2.5 * dp_4646)))), zt_4643);
-e3_4832 = Arr(((V)(((ToNum(GetIdx(GetK(E_4648, i_4830), 0D)) - (5D * lf_4645)) + (2D * dp_4646)))), ((V)((((ToNum(GetIdx(GetK(E_4648, i_4830), 1D)) - (ToNum(EL_4620) * (ze_4644 - ToNum(R0_4624)))) - (8D * lf_4645)) - (3D * dp_4646)))), ((V)(ze_4644)));
-a_4833 = Call(PE_4625, V.Undef, GetIdx(t3_4831, 0D), GetIdx(t3_4831, 1D), GetIdx(t3_4831, 2D));
-b_4834 = Call(PE_4625, V.Undef, GetIdx(e3_4832, 0D), GetIdx(e3_4832, 1D), GetIdx(e3_4832, 2D));
-dx_4835 = (ToNum(GetIdx(b_4834, 0D)) - ToNum(GetIdx(a_4833, 0D)));
-dy_4836 = (ToNum(GetIdx(b_4834, 1D)) - ToNum(GetIdx(a_4833, 1D)));
-l_4837 = (((V)(Hypot(dx_4835, dy_4836))) is var _t4842 && Truthy(_t4842) ? _t4842 : ((V)(1D)));
-nx_4838 = ((-dy_4836) / ToNum(l_4837));
-ny_4839 = (dx_4835 / ToNum(l_4837));
-w0_4840 = (0.72 * ToNum(Get(D_4617, "kS")));
-w1_4841 = (1.15 * ToNum(Get(D_4617, "kS")));
-Invoke(tips_4649, "push", t3_4831);
-Call(set_4619, V.Undef, e_4829, ((V)("d")), Call(polyD_16, V.Undef, Arr(Arr(Add(GetIdx(a_4833, 0D), ((V)((nx_4838 * w0_4840)))), Add(GetIdx(a_4833, 1D), ((V)((ny_4839 * w0_4840))))), Arr(Add(GetIdx(b_4834, 0D), ((V)((nx_4838 * w1_4841)))), Add(GetIdx(b_4834, 1D), ((V)((ny_4839 * w1_4841))))), Arr(((V)((ToNum(GetIdx(b_4834, 0D)) - (nx_4838 * w1_4841)))), ((V)((ToNum(GetIdx(b_4834, 1D)) - (ny_4839 * w1_4841))))), Arr(((V)((ToNum(GetIdx(a_4833, 0D)) - (nx_4838 * w0_4840)))), ((V)((ToNum(GetIdx(a_4833, 1D)) - (ny_4839 * w0_4840))))))));
+zt_5021 = Call(zOf_5019, V.Undef, ((V)(46.4)));
+ze_5022 = (ToNum(zt_5021) - 9D);
+lf_5023 = Max(0D, ToNum(lid_5005));
+dp_5024 = Min(0D, ToNum(lid_5005));
+T_5025 = Arr(Arr(((V)(53.8)), ((V)(39.6))), Arr(((V)(56.8)), ((V)(41.2))));
+E_5026 = Arr(Arr(((V)(88.6)), ((V)(13.4))), Arr(((V)(92.4)), ((V)(17.4))));
+tips_5027 = Arr();
+Invoke(Get(B_4994, "sticks"), "forEach", Fn((V _arrowThis5226, int _argc5218, V e_5224, V i_5225, V _a5222, V _a5223, V[] _rest5219) => {
+V t3_5227 = default;
+V e3_5228 = default;
+V a_5229 = default;
+V b_5230 = default;
+double dx_5231 = 0;
+double dy_5232 = 0;
+V l_5233 = default;
+double nx_5234 = 0;
+double ny_5235 = 0;
+double w0_5236 = 0;
+double w1_5237 = 0;
+t3_5227 = Arr(((V)((ToNum(GetIdx(GetK(T_5025, i_5225), 0D)) - (2D * lf_5023)))), ((V)((((ToNum(GetIdx(GetK(T_5025, i_5225), 1D)) - (ToNum(EL_4998) * (ToNum(zt_5021) - ToNum(R0_5002)))) - (11D * lf_5023)) - (2.5 * dp_5024)))), zt_5021);
+e3_5228 = Arr(((V)(((ToNum(GetIdx(GetK(E_5026, i_5225), 0D)) - (5D * lf_5023)) + (2D * dp_5024)))), ((V)((((ToNum(GetIdx(GetK(E_5026, i_5225), 1D)) - (ToNum(EL_4998) * (ze_5022 - ToNum(R0_5002)))) - (8D * lf_5023)) - (3D * dp_5024)))), ((V)(ze_5022)));
+a_5229 = Call(PE_5003, V.Undef, GetIdx(t3_5227, 0D), GetIdx(t3_5227, 1D), GetIdx(t3_5227, 2D));
+b_5230 = Call(PE_5003, V.Undef, GetIdx(e3_5228, 0D), GetIdx(e3_5228, 1D), GetIdx(e3_5228, 2D));
+dx_5231 = (ToNum(GetIdx(b_5230, 0D)) - ToNum(GetIdx(a_5229, 0D)));
+dy_5232 = (ToNum(GetIdx(b_5230, 1D)) - ToNum(GetIdx(a_5229, 1D)));
+l_5233 = (((V)(Hypot(dx_5231, dy_5232))) is var _t5238 && Truthy(_t5238) ? _t5238 : ((V)(1D)));
+nx_5234 = ((-dy_5232) / ToNum(l_5233));
+ny_5235 = (dx_5231 / ToNum(l_5233));
+w0_5236 = (0.72 * ToNum(Get(D_4995, "kS")));
+w1_5237 = (1.15 * ToNum(Get(D_4995, "kS")));
+Invoke(tips_5027, "push", t3_5227);
+Call(set_4997, V.Undef, e_5224, ((V)("d")), Call(polyD_16, V.Undef, Arr(Arr(Add(GetIdx(a_5229, 0D), ((V)((nx_5234 * w0_5236)))), Add(GetIdx(a_5229, 1D), ((V)((ny_5235 * w0_5236))))), Arr(Add(GetIdx(b_5230, 0D), ((V)((nx_5234 * w1_5237)))), Add(GetIdx(b_5230, 1D), ((V)((ny_5235 * w1_5237))))), Arr(((V)((ToNum(GetIdx(b_5230, 0D)) - (nx_5234 * w1_5237)))), ((V)((ToNum(GetIdx(b_5230, 1D)) - (ny_5235 * w1_5237))))), Arr(((V)((ToNum(GetIdx(a_5229, 0D)) - (nx_5234 * w0_5236)))), ((V)((ToNum(GetIdx(a_5229, 1D)) - (ny_5235 * w0_5236))))))));
 return default;
 }, 2, "", true));
-hd_4650 = new JsStrBuf("");
-if ((lf_4645 > 0.04)) {
-V m3_4843 = default;
-V b3_4844 = default;
-m3_4843 = Arr(((V)((ToNum(Add(GetIdx(GetIdx(tips_4649, 0D), 0D), GetIdx(GetIdx(tips_4649, 1D), 0D))) / 2D))), ((V)(((ToNum(Add(GetIdx(GetIdx(tips_4649, 0D), 1D), GetIdx(GetIdx(tips_4649, 1D), 1D))) / 2D) + 0.6))), zt_4643);
-b3_4844 = Arr(((V)(48D)), ((V)((ToNum(YB_4623) - 8D))), Add(zt_4643, ((V)(3D))));
+hd_5028 = new JsStrBuf("");
+if ((lf_5023 > 0.04)) {
+V m3_5239 = default;
+V b3_5240 = default;
+m3_5239 = Arr(((V)((ToNum(Add(GetIdx(GetIdx(tips_5027, 0D), 0D), GetIdx(GetIdx(tips_5027, 1D), 0D))) / 2D))), ((V)(((ToNum(Add(GetIdx(GetIdx(tips_5027, 0D), 1D), GetIdx(GetIdx(tips_5027, 1D), 1D))) / 2D) + 0.6))), zt_5021);
+b3_5240 = Arr(((V)(48D)), ((V)((ToNum(YB_5001) - 8D))), Add(zt_5021, ((V)(3D))));
 {
-double j_4845 = 0;
-j_4845 = 0D;
+double j_5241 = 0;
+j_5241 = 0D;
 while (true) {
-if (!((j_4845 < 4D))) break;
-V Q_4847 = default;
-Q_4847 = Arr();
+if (!((j_5241 < 4D))) break;
+V Q_5243 = default;
+Q_5243 = Arr();
 {
-double i_4848 = 0;
-i_4848 = 0D;
+double i_5244 = 0;
+i_5244 = 0D;
 while (true) {
-if (!((i_4848 <= 16D))) break;
-double u_4850 = 0;
-V x_4851 = default;
-V y_4852 = default;
-V z_4853 = default;
-u_4850 = (i_4848 / 16D);
-x_4851 = Add(Add(Add(GetIdx(m3_4843, 0D), ((V)(((ToNum(GetIdx(b3_4844, 0D)) - ToNum(GetIdx(m3_4843, 0D))) * u_4850)))), ((V)((((j_4845 - 1.5) * 1.1) * u_4850)))), ((V)(((1.2 * FdLibm.Sin((((u_4850 * 10D) + (j_4845 * 1.9)) + (ToNum(ts_4628) * 4D)))) * FdLibm.Sin((u_4850 * System.Math.PI))))));
-y_4852 = Add(GetIdx(m3_4843, 1D), ((V)(((ToNum(GetIdx(b3_4844, 1D)) - ToNum(GetIdx(m3_4843, 1D))) * u_4850))));
-z_4853 = Add(GetIdx(m3_4843, 2D), ((V)(((ToNum(GetIdx(b3_4844, 2D)) - ToNum(GetIdx(m3_4843, 2D))) * u_4850))));
-Invoke(Q_4847, "push", Call(PE_4625, V.Undef, x_4851, y_4852, z_4853));
-i_4848++;
+if (!((i_5244 <= 16D))) break;
+double u_5246 = 0;
+V x_5247 = default;
+V y_5248 = default;
+V z_5249 = default;
+u_5246 = (i_5244 / 16D);
+x_5247 = Add(Add(Add(GetIdx(m3_5239, 0D), ((V)(((ToNum(GetIdx(b3_5240, 0D)) - ToNum(GetIdx(m3_5239, 0D))) * u_5246)))), ((V)((((j_5241 - 1.5) * 1.1) * u_5246)))), ((V)(((1.2 * FdLibm.Sin((((u_5246 * 10D) + (j_5241 * 1.9)) + (ToNum(ts_5006) * 4D)))) * FdLibm.Sin((u_5246 * System.Math.PI))))));
+y_5248 = Add(GetIdx(m3_5239, 1D), ((V)(((ToNum(GetIdx(b3_5240, 1D)) - ToNum(GetIdx(m3_5239, 1D))) * u_5246))));
+z_5249 = Add(GetIdx(m3_5239, 2D), ((V)(((ToNum(GetIdx(b3_5240, 2D)) - ToNum(GetIdx(m3_5239, 2D))) * u_5246))));
+Invoke(Q_5243, "push", Call(PE_5003, V.Undef, x_5247, y_5248, z_5249));
+i_5244++;
 }
 }
-hd_4650.V(Call(runs_21, V.Undef, Q_4847, Invoke(Q_4847, "map", Fn((V _self4609, int _argc4854, V _a4856, V _a4857, V _a4858, V _a4859, V[] _rest4855) => {
+hd_5028.V(Call(runs_21, V.Undef, Q_5243, Invoke(Q_5243, "map", Fn((V _arrowThis5256, int _argc5250, V _a5252, V _a5253, V _a5254, V _a5255, V[] _rest5251) => {
 return (true ? V.True : V.False);
 }, 0, "", true))));
-j_4845++;
+j_5241++;
 }
 }
 }
-Call(set_4619, V.Undef, Get(B_4616, "hang"), ((V)("d")), (((V)(hd_4650.Str)) is var _t4860 && Truthy(_t4860) ? _t4860 : ((V)("M0 0"))));
-Call(set_4619, V.Undef, Get(B_4616, "hang2"), ((V)("d")), (((V)(hd_4650.Str)) is var _t4861 && Truthy(_t4861) ? _t4861 : ((V)("M0 0"))));
-Invoke(L_4642, "push", NewObj(3).Put("id", ((V)("st"))).Put("e", Get(B_4616, "SG")).Put("z", Add(Call(Z3_4618, V.Undef, ((V)(70D)), ((V)((ToNum(YB_4623) - 12D))), zt_4643), ((V)(1D)))).V);
-Invoke(L_4642, "sort", Fn((V _self4609, int _argc4862, V a_4868, V b_4869, V _a4866, V _a4867, V[] _rest4863) => {
-return ((V)((ToNum(Get(a_4868, "z")) - ToNum(Get(b_4869, "z")))));
+Call(set_4997, V.Undef, Get(B_4994, "hang"), ((V)("d")), (((V)(hd_5028.Str)) is var _t5257 && Truthy(_t5257) ? _t5257 : ((V)("M0 0"))));
+Call(set_4997, V.Undef, Get(B_4994, "hang2"), ((V)("d")), (((V)(hd_5028.Str)) is var _t5258 && Truthy(_t5258) ? _t5258 : ((V)("M0 0"))));
+Invoke(L_5020, "push", NewObj(3).Put("id", ((V)("st"))).Put("e", Get(B_4994, "SG")).Put("z", Add(Call(Z3_4996, V.Undef, ((V)(70D)), ((V)((ToNum(YB_5001) - 12D))), zt_5021), ((V)(1D)))).V);
+Invoke(L_5020, "sort", Fn((V _arrowThis5267, int _argc5259, V a_5265, V b_5266, V _a5263, V _a5264, V[] _rest5260) => {
+return ((V)((ToNum(Get(a_5265, "z")) - ToNum(Get(b_5266, "z")))));
 }, 2, "", true));
-Invoke(SN_43, "order", Get(B_4616, "TG"), L_4642);
-FA_4651 = Invoke(Get(SN_43, "h"), "frontArc", D_4617, ((V)(37D)), YR_4622, ((V)(72D)));
-Call(set_4619, V.Undef, Get(B_4616, "rimF"), ((V)("d")), (GtN(Get(FA_4651, "length"), 1D) ? Call(polyW_18, V.Undef, Invoke(Invoke(FA_4651, "map", Fn((V _self4609, int _argc4877, V f_4883, V _a4880, V _a4881, V _a4882, V[] _rest4878) => {
-return Call(RP_4629, V.Undef, ((V)(37.2)), YR_4622, f_4883);
-}, 1, "", true)), "concat", Invoke(Invoke(Invoke(FA_4651, "slice"), "reverse"), "map", Fn((V _self4609, int _argc4870, V f_4876, V _a4873, V _a4874, V _a4875, V[] _rest4871) => {
-return Call(RP_4629, V.Undef, ((V)(33.4)), YB_4623, f_4876);
+Invoke(SN_43, "order", Get(B_4994, "TG"), L_5020);
+FA_5029 = Invoke(Get(SN_43, "h"), "frontArc", D_4995, ((V)(37D)), YR_5000, ((V)(72D)));
+Call(set_4997, V.Undef, Get(B_4994, "rimF"), ((V)("d")), (GtN(Get(FA_5029, "length"), 1D) ? Call(polyW_18, V.Undef, Invoke(Invoke(FA_5029, "map", Fn((V _arrowThis5283, int _argc5276, V f_5282, V _a5279, V _a5280, V _a5281, V[] _rest5277) => {
+return Call(RP_5007, V.Undef, ((V)(37.2)), YR_5000, f_5282);
+}, 1, "", true)), "concat", Invoke(Invoke(Invoke(FA_5029, "slice"), "reverse"), "map", Fn((V _arrowThis5275, int _argc5268, V f_5274, V _a5271, V _a5272, V _a5273, V[] _rest5269) => {
+return Call(RP_5007, V.Undef, ((V)(33.4)), YB_5001, f_5274);
 }, 1, "", true)))) : ((V)("M0 0"))));
-Call(set_4619, V.Undef, Get(B_4616, "rimL"), ((V)("d")), (GtN(Get(FA_4651, "length"), 1D) ? Call(runs_21, V.Undef, Invoke(FA_4651, "map", Fn((V _self4609, int _argc4884, V f_4890, V _a4887, V _a4888, V _a4889, V[] _rest4885) => {
-return Call(RP_4629, V.Undef, ((V)(36.3)), ((V)((ToNum(YR_4622) - 0.05))), f_4890);
-}, 1, "", true)), Invoke(FA_4651, "map", Fn((V _self4609, int _argc4891, V _a4893, V _a4894, V _a4895, V _a4896, V[] _rest4892) => {
+Call(set_4997, V.Undef, Get(B_4994, "rimL"), ((V)("d")), (GtN(Get(FA_5029, "length"), 1D) ? Call(runs_21, V.Undef, Invoke(FA_5029, "map", Fn((V _arrowThis5291, int _argc5284, V f_5290, V _a5287, V _a5288, V _a5289, V[] _rest5285) => {
+return Call(RP_5007, V.Undef, ((V)(36.3)), ((V)((ToNum(YR_5000) - 0.05))), f_5290);
+}, 1, "", true)), Invoke(FA_5029, "map", Fn((V _arrowThis5298, int _argc5292, V _a5294, V _a5295, V _a5296, V _a5297, V[] _rest5293) => {
 return (true ? V.True : V.False);
 }, 0, "", true))) : ((V)("M0 0"))));
 return default;
 }, 2, "draw", false)).V);
-Set(MODELS_42, "flossie", NewObj(2).Put("setup", Fn((V _self4897, int _argc4898, V S_4904, V _a4901, V _a4902, V _a4903, V[] _rest4899) => {
-V sk_4905 = default;
-V C_4906 = default;
-double R_4907 = 0;
-V pf_4908 = default;
-V PF_4909 = default;
-V BF_4910 = default;
-V fP_4911 = default;
-V fB_4912 = default;
-V st_4913 = default;
-V stick_4914 = default;
-V sts_4915 = default;
-V BG_4916 = default;
-V FG_4917 = default;
-V sP_4918 = default;
-V sB_4919 = default;
-V PU_4920 = default;
-double n_4921 = 0;
-V wisp_4922 = default;
-V wisp2_4923 = default;
-V spk_4924 = default;
-if (_self4897.IsNullish) _self4897 = GlobalV;
-{ V _t4925 = S_4904;
-if (_t4925.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t4925));
-{ V _t4926 = Get(_t4925, "sk");
-sk_4905 = _t4926; } }
-C_4906 = Arr(((V)(50D)), ((V)(51D)));
-R_4907 = 28D;
-pf_4908 = Invoke(S_4904, "hide", Fn((V _self4897, int _argc4927, V q_4933, V _a4930, V _a4931, V _a4932, V[] _rest4928) => {
-return (((Get(q_4933, "inBody") is var _t4934 && !Truthy(_t4934) ? _t4934 : (SEqS(Get(q_4933, "tag"), "circle") ? V.True : V.False)) is var _t4935 && !Truthy(_t4935) ? _t4935 : (!SEq(q_4933, Get(S_4904, "sk")) ? V.True : V.False)) is var _t4936 && !Truthy(_t4936) ? _t4936 : Invoke(NewRegExp(RX2, "^url", ""), "test", Invoke(S_4904, "f", q_4933)));
+Set(MODELS_42, "flossie", NewObj(2).Put("setup", Fn((V _self5299, int _argc5300, V S_5306, V _a5303, V _a5304, V _a5305, V[] _rest5301) => {
+V sk_5307 = default;
+V C_5308 = default;
+double R_5309 = 0;
+V pf_5310 = default;
+V PF_5311 = default;
+V BF_5312 = default;
+V fP_5313 = default;
+V fB_5314 = default;
+V st_5315 = default;
+V stick_5316 = default;
+V sts_5317 = default;
+V BG_5318 = default;
+V FG_5319 = default;
+V sP_5320 = default;
+V sB_5321 = default;
+V PU_5322 = default;
+double n_5323 = 0;
+V wisp_5324 = default;
+V wisp2_5325 = default;
+V spk_5326 = default;
+if (_self5299.IsNullish) _self5299 = GlobalV;
+{ V _t5327 = S_5306;
+if (_t5327.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t5327));
+{ V _t5328 = Get(_t5327, "sk");
+sk_5307 = _t5328; } }
+C_5308 = Arr(((V)(50D)), ((V)(51D)));
+R_5309 = 28D;
+pf_5310 = Invoke(S_5306, "hide", Fn((V _arrowThis5336, int _argc5329, V q_5335, V _a5332, V _a5333, V _a5334, V[] _rest5330) => {
+return (((Get(q_5335, "inBody") is var _t5337 && !Truthy(_t5337) ? _t5337 : (SEqS(Get(q_5335, "tag"), "circle") ? V.True : V.False)) is var _t5338 && !Truthy(_t5338) ? _t5338 : (!SEq(q_5335, Get(S_5306, "sk")) ? V.True : V.False)) is var _t5339 && !Truthy(_t5339) ? _t5339 : Invoke(NewRegExp(RX2, "^url", ""), "test", Invoke(S_5306, "f", q_5335)));
 }, 1, "", true));
-PF_4909 = (Invoke(pf_4908, "find", Fn((V _self4897, int _argc4937, V q_4943, V _a4940, V _a4941, V _a4942, V[] _rest4938) => {
-return (Invoke(NewRegExp(RX13, "#p_", ""), "test", Invoke(S_4904, "f", q_4943)) is var _t4944 && Truthy(_t4944) ? _t4944 : Invoke(NewRegExp(RX14, "url\\(#p", ""), "test", Invoke(S_4904, "f", q_4943)));
-}, 1, "", true)) is var _t4945 && Truthy(_t4945) ? _t4945 : NewObj(0).V);
-BF_4910 = (Invoke(pf_4908, "find", Fn((V _self4897, int _argc4946, V q_4952, V _a4949, V _a4950, V _a4951, V[] _rest4947) => {
-return Invoke(NewRegExp(RX15, "url\\(#b", ""), "test", Invoke(S_4904, "f", q_4952));
-}, 1, "", true)) is var _t4953 && Truthy(_t4953) ? _t4953 : NewObj(0).V);
-fP_4911 = (Truthy(Get(PF_4909, "e")) ? Invoke(S_4904, "f", PF_4909) : ((V)("#ffbede")));
-fB_4912 = (Truthy(Get(BF_4910, "e")) ? Invoke(S_4904, "f", BF_4910) : ((V)("#b8e0ff")));
-st_4913 = GetIdx(Invoke(S_4904, "hide", Fn((V _self4897, int _argc4954, V q_4960, V _a4957, V _a4958, V _a4959, V[] _rest4955) => {
-return (Get(q_4960, "inBody") is var _t4961 && !Truthy(_t4961) ? _t4961 : Invoke(NewRegExp(RX16, "^M46 74", ""), "test", Invoke(S_4904, "d", q_4960)));
+PF_5311 = (Invoke(pf_5310, "find", Fn((V _arrowThis5347, int _argc5340, V q_5346, V _a5343, V _a5344, V _a5345, V[] _rest5341) => {
+return (Invoke(NewRegExp(RX13, "#p_", ""), "test", Invoke(S_5306, "f", q_5346)) is var _t5348 && Truthy(_t5348) ? _t5348 : Invoke(NewRegExp(RX14, "url\\(#p", ""), "test", Invoke(S_5306, "f", q_5346)));
+}, 1, "", true)) is var _t5349 && Truthy(_t5349) ? _t5349 : NewObj(0).V);
+BF_5312 = (Invoke(pf_5310, "find", Fn((V _arrowThis5357, int _argc5350, V q_5356, V _a5353, V _a5354, V _a5355, V[] _rest5351) => {
+return Invoke(NewRegExp(RX15, "url\\(#b", ""), "test", Invoke(S_5306, "f", q_5356));
+}, 1, "", true)) is var _t5358 && Truthy(_t5358) ? _t5358 : NewObj(0).V);
+fP_5313 = (Truthy(Get(PF_5311, "e")) ? Invoke(S_5306, "f", PF_5311) : ((V)("#ffbede")));
+fB_5314 = (Truthy(Get(BF_5312, "e")) ? Invoke(S_5306, "f", BF_5312) : ((V)("#b8e0ff")));
+st_5315 = GetIdx(Invoke(S_5306, "hide", Fn((V _arrowThis5366, int _argc5359, V q_5365, V _a5362, V _a5363, V _a5364, V[] _rest5360) => {
+return (Get(q_5365, "inBody") is var _t5367 && !Truthy(_t5367) ? _t5367 : Invoke(NewRegExp(RX16, "^M46 74", ""), "test", Invoke(S_5306, "d", q_5365)));
 }, 1, "", true)), 0D);
-Invoke(S_4904, "hide", Fn((V _self4897, int _argc4962, V q_4968, V _a4965, V _a4966, V _a4967, V[] _rest4963) => {
-return (Get(q_4968, "inBody") is var _t4969 && !Truthy(_t4969) ? _t4969 : (((SEqS(Invoke(S_4904, "s", q_4968), "#ff8ac4") || SEqS(Invoke(S_4904, "s", q_4968), "#ffffff")) || SEqS(Invoke(S_4904, "s", q_4968), "#b8e0ff")) ? V.True : V.False));
+Invoke(S_5306, "hide", Fn((V _arrowThis5375, int _argc5368, V q_5374, V _a5371, V _a5372, V _a5373, V[] _rest5369) => {
+return (Get(q_5374, "inBody") is var _t5376 && !Truthy(_t5376) ? _t5376 : (((SEqS(Invoke(S_5306, "s", q_5374), "#ff8ac4") || SEqS(Invoke(S_5306, "s", q_5374), "#ffffff")) || SEqS(Invoke(S_5306, "s", q_5374), "#b8e0ff")) ? V.True : V.False));
 }, 1, "", true));
-Invoke(S_4904, "hide", Fn((V _self4897, int _argc4970, V q_4976, V _a4973, V _a4974, V _a4975, V[] _rest4971) => {
-return ((((!(Truthy(Get(q_4976, "inBody"))) && SEqS(Get(q_4976, "tag"), "path")) && SEqS(Get(q_4976, "role"), "face")) && LtN(Get(q_4976, "cy"), 40D)) ? V.True : V.False);
+Invoke(S_5306, "hide", Fn((V _arrowThis5384, int _argc5377, V q_5383, V _a5380, V _a5381, V _a5382, V[] _rest5378) => {
+return ((((!(Truthy(Get(q_5383, "inBody"))) && SEqS(Get(q_5383, "tag"), "path")) && SEqS(Get(q_5383, "role"), "face")) && LtN(Get(q_5383, "cy"), 40D)) ? V.True : V.False);
 }, 1, "", true));
-stick_4914 = Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", (Truthy(st_4913) ? Invoke(S_4904, "f", st_4913) : ((V)("#ffffff")))).V, Get(S_4904, "gB"));
-sts_4915 = Call(el_14, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ff8ac4"))).Put("stroke-width", ((V)(1.3))).Put("stroke-linecap", ((V)("round"))).V, Get(S_4904, "gB"));
-BG_4916 = Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, Get(S_4904, "gB"));
-FG_4917 = Invoke(S_4904, "g");
-sP_4918 = Invoke(S_4904, "rgrad", ((V)("flp")), Arr(Arr(((V)(0D)), ((V)("#fff3f9"))), Arr(((V)(0.55)), ((V)("#ffcbe5"))), Arr(((V)(1D)), ((V)("#f7afd3")))), NewObj(3).Put("cx", ((V)("42%"))).Put("cy", ((V)("36%"))).Put("r", ((V)("68%"))).V);
-sB_4919 = Invoke(S_4904, "rgrad", ((V)("flb")), Arr(Arr(((V)(0D)), ((V)("#f4fbff"))), Arr(((V)(0.55)), ((V)("#cbe8ff"))), Arr(((V)(1D)), ((V)("#a6d2f6")))), NewObj(3).Put("cx", ((V)("42%"))).Put("cy", ((V)("36%"))).Put("r", ((V)("68%"))).V);
-PU_4920 = Arr();
-n_4921 = 34D;
+stick_5316 = Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", (Truthy(st_5315) ? Invoke(S_5306, "f", st_5315) : ((V)("#ffffff")))).V, Get(S_5306, "gB"));
+sts_5317 = Call(el_14, V.Undef, ((V)("path")), NewObj(4).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ff8ac4"))).Put("stroke-width", ((V)(1.3))).Put("stroke-linecap", ((V)("round"))).V, Get(S_5306, "gB"));
+BG_5318 = Call(el_14, V.Undef, ((V)("g")), NewObj(0).V, Get(S_5306, "gB"));
+FG_5319 = Invoke(S_5306, "g");
+sP_5320 = Invoke(S_5306, "rgrad", ((V)("flp")), Arr(Arr(((V)(0D)), ((V)("#fff3f9"))), Arr(((V)(0.55)), ((V)("#ffcbe5"))), Arr(((V)(1D)), ((V)("#f7afd3")))), NewObj(3).Put("cx", ((V)("42%"))).Put("cy", ((V)("36%"))).Put("r", ((V)("68%"))).V);
+sB_5321 = Invoke(S_5306, "rgrad", ((V)("flb")), Arr(Arr(((V)(0D)), ((V)("#f4fbff"))), Arr(((V)(0.55)), ((V)("#cbe8ff"))), Arr(((V)(1D)), ((V)("#a6d2f6")))), NewObj(3).Put("cx", ((V)("42%"))).Put("cy", ((V)("36%"))).Put("r", ((V)("68%"))).V);
+PU_5322 = Arr();
+n_5323 = 34D;
 {
-double i_4977 = 0;
-i_4977 = 0D;
+double i_5385 = 0;
+i_5385 = 0D;
 while (true) {
-if (!((i_4977 < n_4921))) break;
-double yy_4979 = 0;
-double rr_4980 = 0;
-double a_4981 = 0;
-double dx_4982 = 0;
-double dz_4983 = 0;
-double dy_4984 = 0;
-yy_4979 = (1D - ((2D * (i_4977 + 0.5)) / n_4921));
-rr_4980 = System.Math.Sqrt((1D - (yy_4979 * yy_4979)));
-a_4981 = (i_4977 * 2.39996);
-dx_4982 = (rr_4980 * FdLibm.Cos(a_4981));
-dz_4983 = (rr_4980 * FdLibm.Sin(a_4981));
-dy_4984 = (-yy_4979);
-if (((dz_4983 > 0.3) && (dy_4984 > (-0.55)))) {
-goto _cont4978;
+if (!((i_5385 < n_5323))) break;
+double yy_5387 = 0;
+double rr_5388 = 0;
+double a_5389 = 0;
+double dx_5390 = 0;
+double dz_5391 = 0;
+double dy_5392 = 0;
+yy_5387 = (1D - ((2D * (i_5385 + 0.5)) / n_5323));
+rr_5388 = System.Math.Sqrt((1D - (yy_5387 * yy_5387)));
+a_5389 = (i_5385 * 2.39996);
+dx_5390 = (rr_5388 * FdLibm.Cos(a_5389));
+dz_5391 = (rr_5388 * FdLibm.Sin(a_5389));
+dy_5392 = (-yy_5387);
+if (((dz_5391 > 0.3) && (dy_5392 > (-0.55)))) {
+goto _cont5386;
 }
-if ((dy_4984 > 0.8)) {
-goto _cont4978;
+if ((dy_5392 > 0.8)) {
+goto _cont5386;
 }
-Invoke(PU_4920, "push", NewObj(5).Put("d", Arr(((V)(dx_4982)), ((V)(dy_4984)), ((V)(dz_4983)))).Put("rho", ((V)(((R_4907 - 3D) + (ToNum(Call(rnd_22, V.Undef, ((V)(i_4977)))) * 3D))))).Put("r", ((V)((10D + (ToNum(Call(rnd_22, V.Undef, ((V)((i_4977 * 3D))))) * 4D))))).Put("c", (((i_4977 % 3D) == 1D) ? sB_4919 : sP_4918)).Put("id", ((V)(JsStrBuf.Begin().S("u").N(i_4977).End()))).V);
-_cont4978: ;
-i_4977++;
+Invoke(PU_5322, "push", NewObj(5).Put("d", Arr(((V)(dx_5390)), ((V)(dy_5392)), ((V)(dz_5391)))).Put("rho", ((V)(((R_5309 - 3D) + (ToNum(Call(rnd_22, V.Undef, ((V)(i_5385)))) * 3D))))).Put("r", ((V)((10D + (ToNum(Call(rnd_22, V.Undef, ((V)((i_5385 * 3D))))) * 4D))))).Put("c", (((i_5385 % 3D) == 1D) ? sB_5321 : sP_5320)).Put("id", ((V)(JsStrBuf.Begin().S("u").N(i_5385).End()))).V);
+_cont5386: ;
+i_5385++;
 }
 }
-Invoke(PU_4920, "forEach", Fn((V _self4897, int _argc4985, V o_4991, V _a4988, V _a4989, V _a4990, V[] _rest4986) => {
-Set(o_4991, "e", Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", Get(o_4991, "c")).V, BG_4916));
+Invoke(PU_5322, "forEach", Fn((V _arrowThis5400, int _argc5393, V o_5399, V _a5396, V _a5397, V _a5398, V[] _rest5394) => {
+Set(o_5399, "e", Call(el_14, V.Undef, ((V)("path")), NewObj(1).Put("fill", Get(o_5399, "c")).V, BG_5318));
 return default;
 }, 1, "", true));
-wisp_4922 = Invoke(S_4904, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffffff"))).Put("stroke-width", ((V)(1.4))).Put("opacity", ((V)(0.55))).Put("stroke-linecap", ((V)("round"))).V);
-wisp2_4923 = Invoke(S_4904, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#b8e0ff"))).Put("stroke-width", ((V)(1.8))).Put("opacity", ((V)(0.85))).Put("stroke-linecap", ((V)("round"))).V);
-spk_4924 = Invoke(S_4904, "path", NewObj(2).Put("fill", ((V)("#ffffff"))).Put("opacity", ((V)(0.95))).V);
-return NewObj(15).Put("C", C_4906).Put("R", ((V)(R_4907))).Put("PU", PU_4920).Put("BG", BG_4916).Put("FG", FG_4917).Put("stick", stick_4914).Put("sts", sts_4915).Put("wisp", wisp_4922).Put("wisp2", wisp2_4923).Put("spk", spk_4924).Put("rx", ((V)(28D))).Put("ya", ((V)(30D))).Put("yb", ((V)(76D))).Put("rT", Fn((V _self4897, int _argc4992, V y_4998, V _a4995, V _a4996, V _a4997, V[] _rest4993) => {
-return ((V)(System.Math.Sqrt(Max(0D, ((R_4907 * R_4907) - ((ToNum(y_4998) - ToNum(GetIdx(C_4906, 1D))) * (ToNum(y_4998) - ToNum(GetIdx(C_4906, 1D)))))))));
-}, 1, "rT", true)).Put("zE", Fn((V _self4897, int _argc4999, V dx_5005, V dy_5006, V _a5003, V _a5004, V[] _rest5000) => {
-return ((V)((System.Math.Sqrt(Max(0D, (((R_4907 * R_4907) - (ToNum(dx_5005) * ToNum(dx_5005))) - (ToNum(dy_5006) * ToNum(dy_5006))))) + 0.3)));
+wisp_5324 = Invoke(S_5306, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#ffffff"))).Put("stroke-width", ((V)(1.4))).Put("opacity", ((V)(0.55))).Put("stroke-linecap", ((V)("round"))).V);
+wisp2_5325 = Invoke(S_5306, "path", NewObj(5).Put("fill", ((V)("none"))).Put("stroke", ((V)("#b8e0ff"))).Put("stroke-width", ((V)(1.8))).Put("opacity", ((V)(0.85))).Put("stroke-linecap", ((V)("round"))).V);
+spk_5326 = Invoke(S_5306, "path", NewObj(2).Put("fill", ((V)("#ffffff"))).Put("opacity", ((V)(0.95))).V);
+return NewObj(15).Put("C", C_5308).Put("R", ((V)(R_5309))).Put("PU", PU_5322).Put("BG", BG_5318).Put("FG", FG_5319).Put("stick", stick_5316).Put("sts", sts_5317).Put("wisp", wisp_5324).Put("wisp2", wisp2_5325).Put("spk", spk_5326).Put("rx", ((V)(28D))).Put("ya", ((V)(30D))).Put("yb", ((V)(76D))).Put("rT", Fn((V _arrowThis5408, int _argc5401, V y_5407, V _a5404, V _a5405, V _a5406, V[] _rest5402) => {
+return ((V)(System.Math.Sqrt(Max(0D, ((R_5309 * R_5309) - ((ToNum(y_5407) - ToNum(GetIdx(C_5308, 1D))) * (ToNum(y_5407) - ToNum(GetIdx(C_5308, 1D)))))))));
+}, 1, "rT", true)).Put("zE", Fn((V _arrowThis5417, int _argc5409, V dx_5415, V dy_5416, V _a5413, V _a5414, V[] _rest5410) => {
+return ((V)((System.Math.Sqrt(Max(0D, (((R_5309 * R_5309) - (ToNum(dx_5415) * ToNum(dx_5415))) - (ToNum(dy_5416) * ToNum(dy_5416))))) + 0.3)));
 }, 2, "zE", true)).V;
 return default;
-}, 1, "setup", false)).Put("draw", Fn((V _self5007, int _argc5008, V B_5014, V D_5015, V _a5012, V _a5013, V[] _rest5009) => {
-V P3_5016 = default;
-V Z3_5017 = default;
-V set_5018 = default;
-V C_5019 = default;
-V R_5020 = default;
-V fl_5021 = default;
-double sw_5022 = 0;
-V ts_5023 = default;
-V sp_5024 = default;
-JsStrBuf sd_5025 = null;
-V L_5026 = default;
-V S3_5027 = default;
-V wl_5028 = default;
-JsStrBuf kd_5029 = null;
-if (_self5007.IsNullish) _self5007 = GlobalV;
-{ V _t5030 = D_5015;
-if (_t5030.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t5030));
-{ V _t5031 = Get(_t5030, "P3");
-P3_5016 = _t5031; }
-{ V _t5032 = Get(_t5030, "Z3");
-Z3_5017 = _t5032; }
-{ V _t5033 = Get(_t5030, "set");
-set_5018 = _t5033; } }
-{ V _t5034 = B_5014;
-if (_t5034.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t5034));
-{ V _t5035 = Get(_t5034, "C");
-C_5019 = _t5035; }
-{ V _t5036 = Get(_t5034, "R");
-R_5020 = _t5036; } }
-fl_5021 = Call(clamp_12, V.Undef, Invoke(D_5015, "bv", ((V)("fluff"))), ((V)(0D)), ((V)(1.6)));
-sw_5022 = (ToNum(Invoke(D_5015, "bv", ((V)("swirl")))) * TAU_9);
-ts_5023 = Get(D_5015, "ts");
-sp_5024 = Arr();
+}, 1, "setup", false)).Put("draw", Fn((V _self5418, int _argc5419, V B_5425, V D_5426, V _a5423, V _a5424, V[] _rest5420) => {
+V P3_5427 = default;
+V Z3_5428 = default;
+V set_5429 = default;
+V C_5430 = default;
+V R_5431 = default;
+V fl_5432 = default;
+double sw_5433 = 0;
+V ts_5434 = default;
+V sp_5435 = default;
+JsStrBuf sd_5436 = null;
+V L_5437 = default;
+V S3_5438 = default;
+V wl_5439 = default;
+JsStrBuf kd_5440 = null;
+if (_self5418.IsNullish) _self5418 = GlobalV;
+{ V _t5441 = D_5426;
+if (_t5441.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t5441));
+{ V _t5442 = Get(_t5441, "P3");
+P3_5427 = _t5442; }
+{ V _t5443 = Get(_t5441, "Z3");
+Z3_5428 = _t5443; }
+{ V _t5444 = Get(_t5441, "set");
+set_5429 = _t5444; } }
+{ V _t5445 = B_5425;
+if (_t5445.IsNullish) throw TypeErr("Cannot destructure " + ToStr(_t5445));
+{ V _t5446 = Get(_t5445, "C");
+C_5430 = _t5446; }
+{ V _t5447 = Get(_t5445, "R");
+R_5431 = _t5447; } }
+fl_5432 = Call(clamp_12, V.Undef, Invoke(D_5426, "bv", ((V)("fluff"))), ((V)(0D)), ((V)(1.6)));
+sw_5433 = (ToNum(Invoke(D_5426, "bv", ((V)("swirl")))) * TAU_9);
+ts_5434 = Get(D_5426, "ts");
+sp_5435 = Arr();
 {
-double i_5037 = 0;
-i_5037 = 0D;
+double i_5448 = 0;
+i_5448 = 0D;
 while (true) {
-if (!((i_5037 <= 8D))) break;
-double th_5039 = 0;
-double cr_5040 = 0;
-th_5039 = (((-System.Math.PI) / 2D) + ((System.Math.PI * i_5037) / 8D));
-cr_5040 = FdLibm.Cos(th_5039);
+if (!((i_5448 <= 8D))) break;
+double th_5450 = 0;
+double cr_5451 = 0;
+th_5450 = (((-System.Math.PI) / 2D) + ((System.Math.PI * i_5448) / 8D));
+cr_5451 = FdLibm.Cos(th_5450);
 {
-double k_5041 = 0;
-k_5041 = 0D;
+double k_5452 = 0;
+k_5452 = 0D;
 while (true) {
-if (!((k_5041 < 20D))) break;
-double f_5043 = 0;
-f_5043 = ((k_5041 / 20D) * TAU_9);
-Invoke(sp_5024, "push", Call(P3_5016, V.Undef, Add(GetIdx(C_5019, 0D), ((V)(((ToNum(R_5020) * cr_5040) * FdLibm.Sin(f_5043))))), Add(GetIdx(C_5019, 1D), ((V)((ToNum(R_5020) * FdLibm.Sin(th_5039))))), ((V)(((ToNum(R_5020) * cr_5040) * FdLibm.Cos(f_5043))))));
-k_5041++;
+if (!((k_5452 < 20D))) break;
+double f_5454 = 0;
+f_5454 = ((k_5452 / 20D) * TAU_9);
+Invoke(sp_5435, "push", Call(P3_5427, V.Undef, Add(GetIdx(C_5430, 0D), ((V)(((ToNum(R_5431) * cr_5451) * FdLibm.Sin(f_5454))))), Add(GetIdx(C_5430, 1D), ((V)((ToNum(R_5431) * FdLibm.Sin(th_5450))))), ((V)(((ToNum(R_5431) * cr_5451) * FdLibm.Cos(f_5454))))));
+k_5452++;
 }
 }
-i_5037++;
+i_5448++;
 }
 }
-Set(B_5014, "d", Invoke(D_5015, "hull", sp_5024));
-Call(set_5018, V.Undef, Get(B_5014, "stick"), ((V)("d")), Invoke(Get(SN_43, "h"), "tubeD", D_5015, Arr(Arr(((V)(50D)), ((V)(76D)), ((V)(0D))), Arr(((V)(50D)), ((V)(97.4)), ((V)(0D)))), Arr(((V)(3.7)), ((V)(3.3)))));
-sd_5025 = new JsStrBuf("");
-Invoke(Arr(((V)(80D)), ((V)(85.5)), ((V)(91D)), ((V)(96D))), "forEach", Fn((V _self5007, int _argc5044, V y0_5050, V _a5047, V _a5048, V _a5049, V[] _rest5045) => {
-V Q_5051 = default;
-V ok_5052 = default;
-Q_5051 = Arr();
-ok_5052 = Arr();
+Set(B_5425, "d", Invoke(D_5426, "hull", sp_5435));
+Call(set_5429, V.Undef, Get(B_5425, "stick"), ((V)("d")), Invoke(Get(SN_43, "h"), "tubeD", D_5426, Arr(Arr(((V)(50D)), ((V)(76D)), ((V)(0D))), Arr(((V)(50D)), ((V)(97.4)), ((V)(0D)))), Arr(((V)(3.7)), ((V)(3.3)))));
+sd_5436 = new JsStrBuf("");
+Invoke(Arr(((V)(80D)), ((V)(85.5)), ((V)(91D)), ((V)(96D))), "forEach", Fn((V _arrowThis5462, int _argc5455, V y0_5461, V _a5458, V _a5459, V _a5460, V[] _rest5456) => {
+V Q_5463 = default;
+V ok_5464 = default;
+Q_5463 = Arr();
+ok_5464 = Arr();
 {
-double j_5053 = 0;
-j_5053 = 0D;
+double j_5465 = 0;
+j_5465 = 0D;
 while (true) {
-if (!((j_5053 <= 8D))) break;
-double a_5055 = 0;
-V y_5056 = default;
-double r_5057 = 0;
-a_5055 = ((-1.4) + ((j_5053 / 8D) * 2.8));
-y_5056 = Add(y0_5050, ((V)((j_5053 * 0.42))));
-r_5057 = 3.75;
-Invoke(Q_5051, "push", Call(P3_5016, V.Undef, ((V)((50D + (r_5057 * FdLibm.Sin(a_5055))))), y_5056, ((V)((r_5057 * FdLibm.Cos(a_5055))))));
-Invoke(ok_5052, "push", (GtN(Invoke(D_5015, "facing", ((V)((50D + (r_5057 * FdLibm.Sin(a_5055))))), y_5056, ((V)((r_5057 * FdLibm.Cos(a_5055)))), ((V)(FdLibm.Sin(a_5055))), ((V)(0D)), ((V)(FdLibm.Cos(a_5055)))), 0D) ? V.True : V.False));
-j_5053++;
+if (!((j_5465 <= 8D))) break;
+double a_5467 = 0;
+V y_5468 = default;
+double r_5469 = 0;
+a_5467 = ((-1.4) + ((j_5465 / 8D) * 2.8));
+y_5468 = Add(y0_5461, ((V)((j_5465 * 0.42))));
+r_5469 = 3.75;
+Invoke(Q_5463, "push", Call(P3_5427, V.Undef, ((V)((50D + (r_5469 * FdLibm.Sin(a_5467))))), y_5468, ((V)((r_5469 * FdLibm.Cos(a_5467))))));
+Invoke(ok_5464, "push", (GtN(Invoke(D_5426, "facing", ((V)((50D + (r_5469 * FdLibm.Sin(a_5467))))), y_5468, ((V)((r_5469 * FdLibm.Cos(a_5467)))), ((V)(FdLibm.Sin(a_5467))), ((V)(0D)), ((V)(FdLibm.Cos(a_5467)))), 0D) ? V.True : V.False));
+j_5465++;
 }
 }
-sd_5025.V(Call(runs_21, V.Undef, Q_5051, ok_5052));
+sd_5436.V(Call(runs_21, V.Undef, Q_5463, ok_5464));
 return default;
 }, 1, "", true));
-Call(set_5018, V.Undef, Get(B_5014, "sts"), ((V)("d")), (((V)(sd_5025.Str)) is var _t5058 && Truthy(_t5058) ? _t5058 : ((V)("M0 0"))));
-L_5026 = Invoke(Invoke(Get(B_5014, "PU"), "map", Fn((V _self5007, int _argc5067, V o_5073, V i_5074, V _a5071, V _a5072, V[] _rest5068) => {
-double ca_5075 = 0;
-double sa_5076 = 0;
-double dx_5077 = 0;
-double dz_5078 = 0;
-double rho_5079 = 0;
-V up_5080 = default;
-V x_5081 = default;
-double y_5082 = 0;
-double z_5083 = 0;
-V c_5084 = default;
-V zz_5085 = default;
-ca_5075 = FdLibm.Cos(sw_5022);
-sa_5076 = FdLibm.Sin(sw_5022);
-dx_5077 = ((ToNum(GetIdx(Get(o_5073, "d"), 0D)) * ca_5075) + (ToNum(GetIdx(Get(o_5073, "d"), 2D)) * sa_5076));
-dz_5078 = (((-ToNum(GetIdx(Get(o_5073, "d"), 0D))) * sa_5076) + (ToNum(GetIdx(Get(o_5073, "d"), 2D)) * ca_5075));
-rho_5079 = ((ToNum(Get(o_5073, "rho")) * (1D + (ToNum(fl_5021) * 0.1))) + (FdLibm.Sin(ToNum(Add(((V)((ToNum(ts_5023) * 1.3))), i_5074))) * 0.4));
-up_5080 = Call(clamp_12, V.Undef, ((V)((-ToNum(GetIdx(Get(o_5073, "d"), 1D))))), ((V)(0D)), ((V)(1D)));
-x_5081 = Add(Add(GetIdx(C_5019, 0D), ((V)((rho_5079 * dx_5077)))), ((V)(((ToNum(Get(D_5015, "ox")) * 0.2) * ToNum(up_5080)))));
-y_5082 = (ToNum(Add(GetIdx(C_5019, 1D), ((V)((rho_5079 * ToNum(GetIdx(Get(o_5073, "d"), 1D))))))) - ((ToNum(Get(D_5015, "oy")) * 0.25) * ToNum(up_5080)));
-z_5083 = (rho_5079 * dz_5078);
-c_5084 = Call(P3_5016, V.Undef, x_5081, ((V)(y_5082)), ((V)(z_5083)));
-zz_5085 = Call(Z3_5017, V.Undef, x_5081, ((V)(y_5082)), ((V)(z_5083)));
-Call(set_5018, V.Undef, Get(o_5073, "e"), ((V)("d")), Call(circD_19, V.Undef, c_5084, ((V)(((ToNum(Get(o_5073, "r")) * (1D + (ToNum(fl_5021) * 0.22))) * ToNum(Get(D_5015, "kS")))))));
-return NewObj(3).Put("id", Get(o_5073, "id")).Put("e", Get(o_5073, "e")).Put("z", zz_5085).V;
+Call(set_5429, V.Undef, Get(B_5425, "sts"), ((V)("d")), (((V)(sd_5436.Str)) is var _t5470 && Truthy(_t5470) ? _t5470 : ((V)("M0 0"))));
+L_5437 = Invoke(Invoke(Get(B_5425, "PU"), "map", Fn((V _arrowThis5488, int _argc5480, V o_5486, V i_5487, V _a5484, V _a5485, V[] _rest5481) => {
+double ca_5489 = 0;
+double sa_5490 = 0;
+double dx_5491 = 0;
+double dz_5492 = 0;
+double rho_5493 = 0;
+V up_5494 = default;
+V x_5495 = default;
+double y_5496 = 0;
+double z_5497 = 0;
+V c_5498 = default;
+V zz_5499 = default;
+ca_5489 = FdLibm.Cos(sw_5433);
+sa_5490 = FdLibm.Sin(sw_5433);
+dx_5491 = ((ToNum(GetIdx(Get(o_5486, "d"), 0D)) * ca_5489) + (ToNum(GetIdx(Get(o_5486, "d"), 2D)) * sa_5490));
+dz_5492 = (((-ToNum(GetIdx(Get(o_5486, "d"), 0D))) * sa_5490) + (ToNum(GetIdx(Get(o_5486, "d"), 2D)) * ca_5489));
+rho_5493 = ((ToNum(Get(o_5486, "rho")) * (1D + (ToNum(fl_5432) * 0.1))) + (FdLibm.Sin(ToNum(Add(((V)((ToNum(ts_5434) * 1.3))), i_5487))) * 0.4));
+up_5494 = Call(clamp_12, V.Undef, ((V)((-ToNum(GetIdx(Get(o_5486, "d"), 1D))))), ((V)(0D)), ((V)(1D)));
+x_5495 = Add(Add(GetIdx(C_5430, 0D), ((V)((rho_5493 * dx_5491)))), ((V)(((ToNum(Get(D_5426, "ox")) * 0.2) * ToNum(up_5494)))));
+y_5496 = (ToNum(Add(GetIdx(C_5430, 1D), ((V)((rho_5493 * ToNum(GetIdx(Get(o_5486, "d"), 1D))))))) - ((ToNum(Get(D_5426, "oy")) * 0.25) * ToNum(up_5494)));
+z_5497 = (rho_5493 * dz_5492);
+c_5498 = Call(P3_5427, V.Undef, x_5495, ((V)(y_5496)), ((V)(z_5497)));
+zz_5499 = Call(Z3_5428, V.Undef, x_5495, ((V)(y_5496)), ((V)(z_5497)));
+Call(set_5429, V.Undef, Get(o_5486, "e"), ((V)("d")), Call(circD_19, V.Undef, c_5498, ((V)(((ToNum(Get(o_5486, "r")) * (1D + (ToNum(fl_5432) * 0.22))) * ToNum(Get(D_5426, "kS")))))));
+return NewObj(3).Put("id", Get(o_5486, "id")).Put("e", Get(o_5486, "e")).Put("z", zz_5499).V;
 return default;
-}, 2, "", true)), "sort", Fn((V _self5007, int _argc5059, V a_5065, V b_5066, V _a5063, V _a5064, V[] _rest5060) => {
-return ((V)((ToNum(Get(a_5065, "z")) - ToNum(Get(b_5066, "z")))));
+}, 2, "", true)), "sort", Fn((V _arrowThis5479, int _argc5471, V a_5477, V b_5478, V _a5475, V _a5476, V[] _rest5472) => {
+return ((V)((ToNum(Get(a_5477, "z")) - ToNum(Get(b_5478, "z")))));
 }, 2, "", true));
-Invoke(L_5026, "forEach", Fn((V _self5007, int _argc5086, V l_5092, V _a5089, V _a5090, V _a5091, V[] _rest5087) => {
-V tg_5093 = default;
-tg_5093 = (GtN(Get(l_5092, "z"), 6D) ? Get(B_5014, "FG") : Get(B_5014, "BG"));
-if (!SEq(Get(Get(l_5092, "e"), "parentNode"), tg_5093)) {
-Invoke(tg_5093, "appendChild", Get(l_5092, "e"));
+Invoke(L_5437, "forEach", Fn((V _arrowThis5507, int _argc5500, V l_5506, V _a5503, V _a5504, V _a5505, V[] _rest5501) => {
+V tg_5508 = default;
+tg_5508 = (GtN(Get(l_5506, "z"), 6D) ? Get(B_5425, "FG") : Get(B_5425, "BG"));
+if (!SEq(Get(Get(l_5506, "e"), "parentNode"), tg_5508)) {
+Invoke(tg_5508, "appendChild", Get(l_5506, "e"));
 }
 return default;
 }, 1, "", true));
-Invoke(SN_43, "order", Get(B_5014, "BG"), Invoke(L_5026, "filter", Fn((V _self5007, int _argc5094, V l_5100, V _a5097, V _a5098, V _a5099, V[] _rest5095) => {
-return (LeN(Get(l_5100, "z"), 6D) ? V.True : V.False);
+Invoke(SN_43, "order", Get(B_5425, "BG"), Invoke(L_5437, "filter", Fn((V _arrowThis5516, int _argc5509, V l_5515, V _a5512, V _a5513, V _a5514, V[] _rest5510) => {
+return (LeN(Get(l_5515, "z"), 6D) ? V.True : V.False);
 }, 1, "", true)));
-Invoke(SN_43, "order", Get(B_5014, "FG"), Invoke(L_5026, "filter", Fn((V _self5007, int _argc5101, V l_5107, V _a5104, V _a5105, V _a5106, V[] _rest5102) => {
-return (GtN(Get(l_5107, "z"), 6D) ? V.True : V.False);
+Invoke(SN_43, "order", Get(B_5425, "FG"), Invoke(L_5437, "filter", Fn((V _arrowThis5524, int _argc5517, V l_5523, V _a5520, V _a5521, V _a5522, V[] _rest5518) => {
+return (GtN(Get(l_5523, "z"), 6D) ? V.True : V.False);
 }, 1, "", true)));
-S3_5027 = Fn((V _self5007, int _argc5108, V x_5114, V y_5115, V _a5112, V _a5113, V[] _rest5109) => {
-double dz_5116 = 0;
-dz_5116 = System.Math.Sqrt(Max(0D, (((ToNum(R_5020) * ToNum(R_5020)) - ((ToNum(x_5114) - ToNum(GetIdx(C_5019, 0D))) * (ToNum(x_5114) - ToNum(GetIdx(C_5019, 0D))))) - ((ToNum(y_5115) - ToNum(GetIdx(C_5019, 1D))) * (ToNum(y_5115) - ToNum(GetIdx(C_5019, 1D)))))));
-return Arr(Call(P3_5016, V.Undef, x_5114, y_5115, ((V)((dz_5116 + 0.2)))), (GtN(Invoke(D_5015, "facing", x_5114, y_5115, ((V)(dz_5116)), ((V)((ToNum(x_5114) - ToNum(GetIdx(C_5019, 0D))))), ((V)((ToNum(y_5115) - ToNum(GetIdx(C_5019, 1D))))), ((V)(dz_5116))), 0.5) ? V.True : V.False));
+S3_5438 = Fn((V _arrowThis5533, int _argc5525, V x_5531, V y_5532, V _a5529, V _a5530, V[] _rest5526) => {
+double dz_5534 = 0;
+dz_5534 = System.Math.Sqrt(Max(0D, (((ToNum(R_5431) * ToNum(R_5431)) - ((ToNum(x_5531) - ToNum(GetIdx(C_5430, 0D))) * (ToNum(x_5531) - ToNum(GetIdx(C_5430, 0D))))) - ((ToNum(y_5532) - ToNum(GetIdx(C_5430, 1D))) * (ToNum(y_5532) - ToNum(GetIdx(C_5430, 1D)))))));
+return Arr(Call(P3_5427, V.Undef, x_5531, y_5532, ((V)((dz_5534 + 0.2)))), (GtN(Invoke(D_5426, "facing", x_5531, y_5532, ((V)(dz_5534)), ((V)((ToNum(x_5531) - ToNum(GetIdx(C_5430, 0D))))), ((V)((ToNum(y_5532) - ToNum(GetIdx(C_5430, 1D))))), ((V)(dz_5534))), 0.5) ? V.True : V.False));
 return default;
 }, 2, "", true);
-wl_5028 = Fn((V _self5007, int _argc5117, V pts_5123, V _a5120, V _a5121, V _a5122, V[] _rest5118) => {
-V Q_5124 = default;
-Q_5124 = Invoke(pts_5123, "map", Fn((V _self5007, int _argc5125, V p_5131, V _a5128, V _a5129, V _a5130, V[] _rest5126) => {
-return Call(S3_5027, V.Undef, GetIdx(p_5131, 0D), GetIdx(p_5131, 1D));
+wl_5439 = Fn((V _arrowThis5542, int _argc5535, V pts_5541, V _a5538, V _a5539, V _a5540, V[] _rest5536) => {
+V Q_5543 = default;
+Q_5543 = Invoke(pts_5541, "map", Fn((V _arrowThis5551, int _argc5544, V p_5550, V _a5547, V _a5548, V _a5549, V[] _rest5545) => {
+return Call(S3_5438, V.Undef, GetIdx(p_5550, 0D), GetIdx(p_5550, 1D));
 }, 1, "", true));
-return Call(runs_21, V.Undef, Invoke(Q_5124, "map", Fn((V _self5007, int _argc5132, V q_5138, V _a5135, V _a5136, V _a5137, V[] _rest5133) => {
-return GetIdx(q_5138, 0D);
-}, 1, "", true)), Invoke(Q_5124, "map", Fn((V _self5007, int _argc5139, V q_5145, V _a5142, V _a5143, V _a5144, V[] _rest5140) => {
-return GetIdx(q_5145, 1D);
+return Call(runs_21, V.Undef, Invoke(Q_5543, "map", Fn((V _arrowThis5559, int _argc5552, V q_5558, V _a5555, V _a5556, V _a5557, V[] _rest5553) => {
+return GetIdx(q_5558, 0D);
+}, 1, "", true)), Invoke(Q_5543, "map", Fn((V _arrowThis5567, int _argc5560, V q_5566, V _a5563, V _a5564, V _a5565, V[] _rest5561) => {
+return GetIdx(q_5566, 1D);
 }, 1, "", true)));
 return default;
 }, 1, "", true);
-Call(set_5018, V.Undef, Get(B_5014, "wisp"), ((V)("d")), (Call(wl_5028, V.Undef, Arr(Arr(((V)(33D)), ((V)(40D))), Arr(((V)(38D)), ((V)(36D))), Arr(((V)(44D)), ((V)(34.5))), Arr(((V)(50D)), ((V)(35.5))), Arr(((V)(56D)), ((V)(37.5))), Arr(((V)(61D)), ((V)(37D))), Arr(((V)(66D)), ((V)(34D))))) is var _t5146 && Truthy(_t5146) ? _t5146 : ((V)("M0 0"))));
-Call(set_5018, V.Undef, Get(B_5014, "wisp2"), ((V)("d")), (Call(wl_5028, V.Undef, Arr(Arr(((V)(28D)), ((V)(70D))), Arr(((V)(33D)), ((V)(73D))), Arr(((V)(38D)), ((V)(74.5))), Arr(((V)(43D)), ((V)(73D))), Arr(((V)(47D)), ((V)(71D))))) is var _t5147 && Truthy(_t5147) ? _t5147 : ((V)("M0 0"))));
-kd_5029 = new JsStrBuf("");
-Invoke(Arr(Arr(((V)(24D)), ((V)(20D)), ((V)(0D))), Arr(((V)(78D)), ((V)(16D)), ((V)(1.7))), Arr(((V)(88D)), ((V)(36D)), ((V)(3.1)))), "forEach", Fn((V _self5007, int _argc5148, V _a5150, V _a5151, V _a5152, V _a5153, V[] _rest5149) => {
-double a_5161 = 0;
-double s_5162 = 0;
-V p_5163 = default;
-V x_5156 = default;
-V y_5158 = default;
-V ph_5160 = default;
-{ V _t5154 = ListOf(_a5150);
-{ V _t5155 = GetIdx(_t5154, 0D);
-x_5156 = _t5155; }
-{ V _t5157 = GetIdx(_t5154, 1D);
-y_5158 = _t5157; }
-{ V _t5159 = GetIdx(_t5154, 2D);
-ph_5160 = _t5159; }
+Call(set_5429, V.Undef, Get(B_5425, "wisp"), ((V)("d")), (Call(wl_5439, V.Undef, Arr(Arr(((V)(33D)), ((V)(40D))), Arr(((V)(38D)), ((V)(36D))), Arr(((V)(44D)), ((V)(34.5))), Arr(((V)(50D)), ((V)(35.5))), Arr(((V)(56D)), ((V)(37.5))), Arr(((V)(61D)), ((V)(37D))), Arr(((V)(66D)), ((V)(34D))))) is var _t5568 && Truthy(_t5568) ? _t5568 : ((V)("M0 0"))));
+Call(set_5429, V.Undef, Get(B_5425, "wisp2"), ((V)("d")), (Call(wl_5439, V.Undef, Arr(Arr(((V)(28D)), ((V)(70D))), Arr(((V)(33D)), ((V)(73D))), Arr(((V)(38D)), ((V)(74.5))), Arr(((V)(43D)), ((V)(73D))), Arr(((V)(47D)), ((V)(71D))))) is var _t5569 && Truthy(_t5569) ? _t5569 : ((V)("M0 0"))));
+kd_5440 = new JsStrBuf("");
+Invoke(Arr(Arr(((V)(24D)), ((V)(20D)), ((V)(0D))), Arr(((V)(78D)), ((V)(16D)), ((V)(1.7))), Arr(((V)(88D)), ((V)(36D)), ((V)(3.1)))), "forEach", Fn((V _arrowThis5583, int _argc5570, V _a5572, V _a5573, V _a5574, V _a5575, V[] _rest5571) => {
+double a_5584 = 0;
+double s_5585 = 0;
+V p_5586 = default;
+V x_5578 = default;
+V y_5580 = default;
+V ph_5582 = default;
+{ V _t5576 = ListOf(_a5572);
+{ V _t5577 = GetIdx(_t5576, 0D);
+x_5578 = _t5577; }
+{ V _t5579 = GetIdx(_t5576, 1D);
+y_5580 = _t5579; }
+{ V _t5581 = GetIdx(_t5576, 2D);
+ph_5582 = _t5581; }
 }
-a_5161 = Max(0D, FdLibm.Sin(ToNum(Add(((V)((ToNum(ts_5023) * 2.1))), ph_5160))));
-s_5162 = ((1.2 + (1.4 * a_5161)) * ToNum(Get(D_5015, "kS")));
-p_5163 = Call(P3_5016, V.Undef, x_5156, y_5158, ((V)(0D)));
-if ((a_5161 > 0.05)) {
-kd_5029.S("M").V(Call(r2_11, V.Undef, GetIdx(p_5163, 0D))).S(" ").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(p_5163, 1D)) - s_5162))))).S("L").V(Call(r2_11, V.Undef, Add(GetIdx(p_5163, 0D), ((V)((s_5162 * 0.3)))))).S(" ").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(p_5163, 1D)) - (s_5162 * 0.3)))))).S("L").V(Call(r2_11, V.Undef, Add(GetIdx(p_5163, 0D), ((V)(s_5162))))).S(" ").V(Call(r2_11, V.Undef, GetIdx(p_5163, 1D))).S("L").V(Call(r2_11, V.Undef, Add(GetIdx(p_5163, 0D), ((V)((s_5162 * 0.3)))))).S(" ").V(Call(r2_11, V.Undef, Add(GetIdx(p_5163, 1D), ((V)((s_5162 * 0.3)))))).S("L").V(Call(r2_11, V.Undef, GetIdx(p_5163, 0D))).S(" ").V(Call(r2_11, V.Undef, Add(GetIdx(p_5163, 1D), ((V)(s_5162))))).S("L").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(p_5163, 0D)) - (s_5162 * 0.3)))))).S(" ").V(Call(r2_11, V.Undef, Add(GetIdx(p_5163, 1D), ((V)((s_5162 * 0.3)))))).S("L").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(p_5163, 0D)) - s_5162))))).S(" ").V(Call(r2_11, V.Undef, GetIdx(p_5163, 1D))).S("L").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(p_5163, 0D)) - (s_5162 * 0.3)))))).S(" ").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(p_5163, 1D)) - (s_5162 * 0.3)))))).S("Z");
+a_5584 = Max(0D, FdLibm.Sin(ToNum(Add(((V)((ToNum(ts_5434) * 2.1))), ph_5582))));
+s_5585 = ((1.2 + (1.4 * a_5584)) * ToNum(Get(D_5426, "kS")));
+p_5586 = Call(P3_5427, V.Undef, x_5578, y_5580, ((V)(0D)));
+if ((a_5584 > 0.05)) {
+kd_5440.S("M").V(Call(r2_11, V.Undef, GetIdx(p_5586, 0D))).S(" ").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(p_5586, 1D)) - s_5585))))).S("L").V(Call(r2_11, V.Undef, Add(GetIdx(p_5586, 0D), ((V)((s_5585 * 0.3)))))).S(" ").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(p_5586, 1D)) - (s_5585 * 0.3)))))).S("L").V(Call(r2_11, V.Undef, Add(GetIdx(p_5586, 0D), ((V)(s_5585))))).S(" ").V(Call(r2_11, V.Undef, GetIdx(p_5586, 1D))).S("L").V(Call(r2_11, V.Undef, Add(GetIdx(p_5586, 0D), ((V)((s_5585 * 0.3)))))).S(" ").V(Call(r2_11, V.Undef, Add(GetIdx(p_5586, 1D), ((V)((s_5585 * 0.3)))))).S("L").V(Call(r2_11, V.Undef, GetIdx(p_5586, 0D))).S(" ").V(Call(r2_11, V.Undef, Add(GetIdx(p_5586, 1D), ((V)(s_5585))))).S("L").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(p_5586, 0D)) - (s_5585 * 0.3)))))).S(" ").V(Call(r2_11, V.Undef, Add(GetIdx(p_5586, 1D), ((V)((s_5585 * 0.3)))))).S("L").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(p_5586, 0D)) - s_5585))))).S(" ").V(Call(r2_11, V.Undef, GetIdx(p_5586, 1D))).S("L").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(p_5586, 0D)) - (s_5585 * 0.3)))))).S(" ").V(Call(r2_11, V.Undef, ((V)((ToNum(GetIdx(p_5586, 1D)) - (s_5585 * 0.3)))))).S("Z");
 }
 return default;
 }, 1, "", true));
-Call(set_5018, V.Undef, Get(B_5014, "spk"), ((V)("d")), (((V)(kd_5029.Str)) is var _t5164 && Truthy(_t5164) ? _t5164 : ((V)("M0 0"))));
+Call(set_5429, V.Undef, Get(B_5425, "spk"), ((V)("d")), (((V)(kd_5440.Str)) is var _t5587 && Truthy(_t5587) ? _t5587 : ((V)("M0 0"))));
 return default;
 }, 2, "draw", false)).V);
 return default;
