@@ -9,6 +9,10 @@
 //   dotnet run -c Release --project tools/unity/loading-test -- frames <dir> [fps] [key]
 //       the beat as Unity plays it, frame by frame (prep: the card comes at 900 ms; then the screen it fades to, the
 //       sky): <dir>/frame-NNNN.png, for a video.
+//   dotnet run -c Release --project tools/unity/loading-test -- bones <dir>
+//       the stand-in a game opens under (Games/Shared/ScreenBones.cs on Kit.PageBg / WoodBg, as Menu/MenuScreen.cs shows
+//       it) against the app's ScreenBones.js (<dir>/bones-hub-page.png, bones-hub-wood.png); also writes the two
+//       backgrounds (<dir>/pagebg.svg, woodbg.svg) for maps-test's `bonesframes`.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -33,6 +37,7 @@ static class Program
         UiFont.ParseJson = j => JsonSerializer.Deserialize<UiFontData>(j, opts);
         Roster.ReadText = n => File.Exists(Res(n + ".json")) ? File.ReadAllText(Res(n + ".json")) : null;
         string mode = args.Length > 0 ? args[0] : "shots";
+        if (mode == "bones") return BonesShots(args[1]);
         if (mode == "frames") return Frames(args[1], args.Length > 2 ? int.Parse(args[2]) : 30, args.Length > 3 ? args[3] : "mittens");
         return Shots(args.Length > 1 ? args[1] : "loading-shots");
     }
@@ -68,6 +73,25 @@ static class Program
             sum += pct; n++;
         }
         Console.WriteLine($"mean {sum / Math.Max(1, n):0.00} % over {n} shots");
+        return 0;
+    }
+
+    static int BonesShots(string dir)
+    {
+        var tk = new SquishSquad.Anim.Ticker(0);
+        SquishSquad.Anim.Ticker.Default = tk;
+        SquishSquad.Games.Shared.Bones.Mount();
+        foreach (var bg in new[] { "page", "wood" })
+        {
+            string bgSvg = bg == "wood" ? Kit.WoodBg(W, H) : Kit.PageBg(W, H);
+            File.WriteAllText(Path.Combine(dir, bg + "bg.svg"), bgSvg);
+            var b = new SquishSquad.Games.Shared.ScreenBones("hub", bgSvg, W, H);
+            var pieces = b.Pieces(0).ConvertAll(p => new ScreenPiece { Id = p.Id, Svg = p.Svg, W = p.W, H = p.H, Margin = 0, Opacity = p.Opacity, Transform = p.Transform });
+            var app = Path.Combine(dir, $"bones-hub-{bg}.png");
+            if (!File.Exists(app)) { Console.WriteLine($"no {app}"); continue; }
+            var (pct, _) = Compare(Pieces.Compose(pieces, W, H), app, Path.Combine(dir, $"bones-hub-{bg}.unity.png"), Path.Combine(dir, $"bones-hub-{bg}.diff.png"));
+            Console.WriteLine($"stand-in on the {bg}: {pct:0.00} % of pixels differ visibly");
+        }
         return 0;
     }
 

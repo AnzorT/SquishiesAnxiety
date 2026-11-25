@@ -9,13 +9,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Globalization;
 using System.Text.Json;
 using SquishSquad.Anim;
 using SquishSquad.Games.Shared;
 using SquishSquad.Ui;
 using SquishSquad.Ui.Cards;
 
-static class Program
+static partial class Program
 {
     static string Root => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../../"));
     public static string Res(string p) => Path.Combine(Root, "unity/Assets/Resources", p);
@@ -73,6 +74,7 @@ static class Program
         HubsData.Current = JsonSerializer.Deserialize<HubsData>(File.ReadAllText(Res("Hubs/hubs.json")), new JsonSerializerOptions { IncludeFields = true });
         Fx.LikeWeb = true;
         if (args[0] == "fling") return Fling();
+        if (args[0] == "bonesframes") return BonesFrames(args[1], args.Length > 2 ? args[2] : "game-stack", args.Length > 3 ? double.Parse(args[3], CultureInfo.InvariantCulture) : 500, args.Length > 4 ? double.Parse(args[4], CultureInfo.InvariantCulture) : 2500, args.Length > 5 ? int.Parse(args[5]) : 3);
         string dir = args[0];
         var only = args.Skip(1).ToHashSet();
         var scen = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../scenarios.json"))).RootElement;

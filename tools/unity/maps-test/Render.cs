@@ -139,7 +139,7 @@ static class Render
             }
     }
 
-    public static byte[] Draw(string bg, IReadOnlyList<ScreenLayer> layers, IEnumerable<Card> cards, int W, int H, string svgOut = null)
+    public static byte[] Draw(string bg, IReadOnlyList<ScreenLayer> layers, IEnumerable<Card> cards, int W, int H, string svgOut = null, IEnumerable<ScreenBones.Piece> over = null)
     {
         double k = W / 832.0;
         ReferenceRaster.Buffer acc = null;
@@ -170,15 +170,19 @@ static class Render
                 if (!l.Visible || l.Opacity <= 0 || l.Markup == null) continue;
                 Layer(sb, ref n, l.Markup, null, l.W, l.H, l.Margin, l.Transform, l.Opacity);
             }
+        // the stand-in over the screen (MenuScreen's ScreenBones)
+        if (over != null)
+            foreach (var p in over)
+                if (p.Opacity > 0) Layer(sb, ref n, p.Svg, null, p.W, p.H, 0, p.Transform, p.Opacity);
         Flush();
         if (svgOut != null) File.WriteAllText(svgOut, all.ToString());
         return ReferenceRaster.Resolve(acc, SS, W, H);
     }
 
-    public static (int visible, int total) Compare(string bg, IReadOnlyList<ScreenLayer> layers, IEnumerable<Card> cards, string appPng, string outPng, string diffPng)
+    public static (int visible, int total) Compare(string bg, IReadOnlyList<ScreenLayer> layers, IEnumerable<Card> cards, string appPng, string outPng, string diffPng, IEnumerable<ScreenBones.Piece> over = null)
     {
         var (W, H, reference) = global::Png.Read(appPng);
-        var ours = Draw(bg, layers, cards, W, H, Path.ChangeExtension(outPng, ".svg"));
+        var ours = Draw(bg, layers, cards, W, H, Path.ChangeExtension(outPng, ".svg"), over);
         global::Png.Write(outPng, W, H, ours);
         int visible = 0, total = W * H;
         var diff = new byte[W * H * 4];

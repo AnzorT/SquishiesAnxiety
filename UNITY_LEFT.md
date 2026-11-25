@@ -29,7 +29,7 @@ lists what isn't, so it can be picked up item by item with Claude Code.
      the house loads), a chest upgrade (the glow), Squish Time (the loading beat, the sky) and the intro on a rainy /
      snowy day. Watch for: the rigs' timing, Sort's doors clipping the rigs, the frame rate with many rigs on the
      screen. Fix what's off.
-  2. **Item 5, what's left:** the whole-screen placeholder, the Mittens fallback, sounds (the chest's hit and unlock).
+  2. **Item 5, what's left:** the Mittens fallback, sounds (the chest's hit and unlock).
   3. **Item 4's "Also":** compile `draw-host.js` for `HouseDraw.Eval` the way the stage pages are compiled. After
      that, Renovate's signs (item 3).
   4. **Item 6:** ask the user to decide. **Item 7** is the user's (the A15 test, deploying `functions/`, the release
@@ -142,8 +142,13 @@ lists what isn't, so it can be picked up item by item with Claude Code.
 - [x] **Squish Time sky** (2026-11-25): `Games/Squish/SquishSky.cs`, SkyBackground.js's pieces for the screen's size
   (gradient, the two glows sized from the screen, the puffs solid to 52 %, the dot grid), not the stretched `hud/sky`.
   `loading-test` sky: 0.00 %.
-- [ ] **Whole-screen placeholder:** the warm page / wood with the back orb's and title's spots for screens opened
-  over the menu (`src/components/Skeleton.js` ScreenBones). Unity builds its screens at once, so it never shows one.
+- [x] **Whole-screen placeholder** (2026-11-25): `Games/Shared/ScreenBones.cs` (ScreenBones.js: the background, the
+  back orb's and title's spots, the view's bones with the shine). `Menu/MenuScreen.cs` OpenUnder shows it the frame a
+  game is asked for (Stack and Sort `hub` on the warm page, Hop `map`, Squishdoku `hub` on the wood), builds the game
+  under it the next frame, then fades it out in 160 ms, and logs the build ("[Menu] Squish Stack opened in N ms": read
+  it on the A15). `loading-test bones`: the background, header and bars as the app's; the app's two hub cards are
+  14 dp bars (Bone's default height when `h` is undefined), Unity draws them as full cards like its in-game bones.
+  `maps-test bonesframes` draws a game opening frame by frame. Not seen in the Editor yet.
 - [x] **`tools/unity/saves-test` builds and passes again** (2026-11-25): `SavesTest.csproj` takes `Games/Hop/Blitz.cs`,
   and both sides play develop's games: the endless Blitz (`afterBlitz(profile, { cleared })` / `AfterBlitz(P, cleared)`
   for Stack, Sort and now Hop, paid on every run's end as payOut), Hop's stars by `takebacks`, Sort's fridge only.
