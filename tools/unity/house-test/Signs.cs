@@ -173,3 +173,44 @@ static partial class Program
         return 0;
     }
 }
+
+static partial class Program
+{
+    //   dotnet run -c Release --project tools/unity/house-test -- roompics <out dir> <fixture> [room ...]
+    // A fixture's rooms by day as Unity draws them (RoomModel, the template, RoomCompose; pieces the export lacks drawn
+    // by the house's drawing code compiled to C#): <out>/<fixture>-<room>.png, 1040 x 480 px.
+    static int RoomPics(string outDir, string fixture, string[] rooms)
+    {
+        Directory.CreateDirectory(outDir);
+        var opts = new System.Text.Json.JsonSerializerOptions { IncludeFields = true };
+        UiFont.ReadJson = n => File.ReadAllText(Path.Combine(Repo, "unity/Assets/Resources/Fonts", n + ".json"));
+        UiFont.ParseJson = j => System.Text.Json.JsonSerializer.Deserialize<UiFontData>(j, opts);
+        SvgText.Install();
+        string work = Path.Combine(Repo, "webgame/test/out/unity-webgame");
+        if (!RigHost.Boot(p => { var f = Path.Combine(work, p); return File.Exists(f) ? File.ReadAllText(f) : null; })) return 2;
+        for (int i = 0; i < 20; i++) RigHost.Frame(40);
+        HouseDraw.Eval = RigHost.HouseEval;
+        ReferenceRaster.LoadImage = href => LoadPng(href);
+        const int PW = 1040, PH = 480; int SS = (int)Env("ROOM_SS", 2); double k0 = PW / 852.0;
+        var d = Data(); var tpl = Template();
+        var fx = (JObj)HouseJson.Parse(File.ReadAllText(Path.Combine(Repo, "tools/unity/house/fixtures", fixture + ".json")));
+        var list = rooms.Length > 0 ? rooms : ((List<object>)fx["rooms"]).Select(o => (string)o).ToArray();
+        var hs = new HouseSave(d);
+        hs.Load(fx["house"] as string, (int)fx.Obj("profile").Num("level"), new List<int>(), list[0]);
+        if (Environment.GetEnvironmentVariable("ROOM_DEBUG") == "1")
+            foreach (var key in hs.H.Obj("rooms").Keys) Console.WriteLine($"  {key}: {HouseJson.Stringify(hs.H.Obj("rooms")[key])}");
+        foreach (var rk in list)
+        {
+            if (hs.Cur != rk) hs.EnterRoom(rk);
+            var nk = rk == "beach" ? "bedroom" : rk; hs.H.Obj("night")?.Remove(nk);
+            var vals = new RoomModel(hs).Build(rk);
+            var comp = Composer(d); var files = comp.PicSvg; comp.PicSvg = n => HouseDraw.Pics.TryGetValue(n, out var rt) ? rt : files(n);
+            var root = SvgMarkup.Parse(comp.Compose(tpl.Render(vals), vals.Obj("rt")?.Str("fenceHtml")));
+            PatternExpand.Expand(root);
+            var scene = SvgScene.Compile(root, 852 * k0, 393 * k0, Affine.Identity, href => { var p = LoadPng(href); return p.px == null ? ((int, int)?)null : (p.w, p.h); });
+            Png.Write(Path.Combine(outDir, $"{fixture}-{rk}.png"), PW, PH, ReferenceRaster.Resolve(ReferenceRaster.Render(scene, PW, PH, SS), SS, PW, PH));
+            Console.WriteLine($"{fixture} {rk} drawn");
+        }
+        return 0;
+    }
+}

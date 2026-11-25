@@ -44,6 +44,7 @@ static partial class Program
             case "layers": return LayerCheck.Run(args[1], args[2]);
             case "compose": return ComposeOnly(args[1], args[2]);
             case "rt": return DebugRt(args[1], args[2]);
+            case "roompics": return RoomPics(args[1], args.Length > 2 ? args[2] : "fresh-lv1", args.Skip(3).ToArray());
             case "housepics": return HousePics(args.Length > 1 ? args[1] : Path.Combine(Repo, "tools/unity/house-test/out/pics"));
             case "signframes": return SignFrames(args.Length > 1 ? args[1] : Path.Combine(Repo, "tools/unity/house-test/out/signs"));
             case "pixels": PixRoom = args.Length > 2 && !args[2].StartsWith("--") ? args[2] : null; { int di = Array.IndexOf(args, "--disco"); if (di > 0 && di + 1 < args.Length) DiscoK = int.Parse(args[di + 1]); } return Pixels(only, args.Contains("--keep"));
