@@ -24,7 +24,7 @@ static partial class Program
         Bones.Mount();
         var pbg = Path.Combine(dir, "pagebg.svg");
         string standBg = File.Exists(pbg) ? File.ReadAllText(pbg) : page;
-        var bones = new ScreenBones(card == "game-hop" ? "map" : "hub", standBg, 832, 384);
+        var bones = new ScreenBones("hub", standBg, 832, 384);   // (every game opens on its hub: MenuScreen)
         GameScreen screen = null;
         int f = 0, n = 0;
         for (double ms = 0; ms <= to; ms += 16)

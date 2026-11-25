@@ -144,7 +144,8 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   `loading-test` sky: 0.00 %.
 - [x] **Whole-screen placeholder** (2026-11-25): `Games/Shared/ScreenBones.cs` (ScreenBones.js: the background, the
   back orb's and title's spots, the view's bones with the shine). `Menu/MenuScreen.cs` OpenUnder shows it the frame a
-  game is asked for (Stack and Sort `hub` on the warm page, Hop `map`, Squishdoku `hub` on the wood), builds the game
+  game is asked for (`hub` on the warm page, Squishdoku on the wood; Hop `hub` too, though App.js still asks for
+  `map` from before Hop had a hub), builds the game
   under it the next frame, then fades it out in 160 ms, and logs the build ("[Menu] Squish Stack opened in N ms": read
   it on the A15). `loading-test bones`: the background, header and bars as the app's; the app's two hub cards are
   14 dp bars (Bone's default height when `h` is undefined), Unity draws them as full cards like its in-game bones.

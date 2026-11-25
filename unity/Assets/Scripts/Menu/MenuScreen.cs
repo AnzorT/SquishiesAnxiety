@@ -409,8 +409,9 @@ namespace SquishSquad.Menu
             _game = s;
         }
 
-        // each game opens on its hub (Hop: its map), as the app's game screens do, under the stand-in (App.js: Stack and Sort
-        // `hub` on the warm page, Hop `map`, Squishdoku `hub` on the wood)
+        // each game opens on its hub, as the app's game screens do, under the stand-in (App.js: `hub` on the warm page,
+        // Squishdoku on the wood; Hop's `hub` too: App.js still asks for `map`, from before Hop had a hub, which put a row
+        // of level stones before the hub's cards)
         void OpenStack() => OpenUnder("Squish Stack", "hub", "page", () =>
         {
             var s = SquishSquad.Games.Stack.StackScreen.Create(transform);
@@ -436,7 +437,7 @@ namespace SquishSquad.Menu
             return s;
         });
 
-        void OpenHop() => OpenUnder("Squish Hop", "map", "page", () =>
+        void OpenHop() => OpenUnder("Squish Hop", "hub", "page", () =>
         {
             var s = SquishSquad.Games.Hop.HopScreen.Create(transform);
             s.OnLevel = lv => MenuState.HopLevel = lv;
