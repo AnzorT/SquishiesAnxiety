@@ -1,7 +1,30 @@
-# Unity port: what's left (as of 2026-11-24, `develop` at 1223d6e)
+# Unity port: what's left (as of 2026-11-25)
 
 The goal: the Unity app (`unity/`) matches the React Native app on `develop` exactly. Most of it is done. This file
 lists what isn't, so it can be picked up item by item with Claude Code.
+
+## Where it stopped (2026-11-25): continue from here
+
+- **Done:** items 1–4 below (commits 6a1d8b3, 7705f86, c265b47, a73b319, 5301a53, all pushed). Also pushed: the
+  texture `.meta` files the Editor rewrote when it re-imported the art with `Editor/ProjectSetup.cs`'s import rules
+  (no GUID changes).
+- **Not checked yet:** none of items 1–4 has been seen in the Unity Editor or on a device. They were checked offline
+  only: the pixel tests (numbers in each item) and an offline compile of the scripts with `dotnet`.
+- **Next, in this order:**
+  1. **Press Play in the Editor and go through what changed:** Squish Sort (the map's fridges, a level, the win's
+     doors), Squish Hop (a level: the rigs take over once the page has drawn the cast, then hop, bump, stuck, win),
+     each of the seven yard games (intro poster, how-to sheet, play, result card), and MY HOUSE ("Heading home" while
+     the house loads). Watch for: the rigs' timing, Sort's doors clipping the rigs, the frame rate with many rigs on
+     the screen. Fix what's off.
+  2. **Item 5, the small items.** The quickest is `saves-test` not building. Then the chest smash's additive glow,
+     Squish Time's loading moment and sky, the whole-screen placeholder, the Mittens fallback, and sounds.
+  3. **Item 4's "Also":** compile `draw-host.js` for `HouseDraw.Eval` the way the stage pages are compiled. After
+     that, Renovate's signs (item 3).
+  4. **Item 6:** ask the user to decide. **Item 7** is the user's (the A15 test, deploying `functions/`).
+- **Known failures that are older than this work:** `rig-test --all` stops about 110 runs in with a C# stack
+  overflow, and Bunbun's park walks differ at 0.000 % (item 4, "Found on the way").
+- **This machine has only .NET 10:** run the tests with `DOTNET_ROLL_FORWARD=Major`, or build them with
+  `-p:TargetFramework=net10.0`.
 
 ## Read first
 
