@@ -103,7 +103,7 @@ def export(name, rel):
 # Characters the app's fonts don't have come from a system font in Chrome; on this Linux that's Inter (then DejaVu
 # Sans), as the reference screenshots show (the star's advance matches Inter's to 1/64 px). Fallback.json holds those.
 FALLBACK_FONTS = ['/usr/share/fonts/opentype/inter/Inter-Regular.otf', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf']
-SYMBOLS = '★☆♥←→↑↓✓✔✕✖⏱▶◀⚡✨·•…–—×‹›○●'   # (‹ › ○ ●: the yard games' back orbs and Penalty Kick's marks, 2026-11-24)
+SYMBOLS = '★☆♥←→↑↓✓✔✕✖⏱▶◀⚡✨·•…–—×‹›○●♪♫♬'   # (‹ › ○ ●: the yard games' back orbs and Penalty Kick's marks, 2026-11-24; ♪ ♫ ♬: the house's speakers' notes)
 
 def export_fallback():
     glyphs, chars = [], ''

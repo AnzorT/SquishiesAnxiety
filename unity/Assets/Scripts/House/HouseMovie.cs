@@ -110,6 +110,8 @@ namespace SquishSquad.House
         public void PickMovie(string id) { MenuOn = false; PlayMovie(id); }
         /// <summary>The show's sounds (the view plays them): the projector as a show starts, the whoosh in or out of full screen.</summary>
         public Action ShowStarted; public Action<bool> FocusChanged;
+        /// <summary>The holo screen's cues (the view draws them): a star leaping out (its key, x on the 320 px film), confetti.</summary>
+        public Action<string, double> PopOut; public Action Confetti;
         public void Focus(bool on, double now) { if (on && (Show == null || Th?.ScM == null)) return; if (on == FzOn) return; FzOn = on; FzCtl = now; if (on) MenuOn = false; FocusChanged?.Invoke(on); Bump(); }
         public void FzStep(double now) { double dt = Math.Min(0.1, Math.Max(0, (now - (_fzLast == 0 ? now : _fzLast)) / 1000)); _fzLast = now; FzP = Math.Max(0, Math.Min(1, FzP + (FzOn ? dt : -dt) / 0.75)); }
         /// <summary>The movies the picker lists: each with whether the screen plays it, whether it's on, its line.</summary>
@@ -199,7 +201,14 @@ namespace SquishSquad.House
         void Cues(double m0, double m1)
         {
             var C = Show?.Mv.Arr("cues"); if (C == null || m1 - m0 > 1) return;
-            foreach (List<object> q in C) { double t = (double)q[0]; if (t > m0 && t <= m1) { var k = (string)q[1]; if (k != "confetti" && k != "pop") MvCue(k, _mvNow); } }
+            foreach (List<object> q in C)
+            {
+                double t = (double)q[0]; if (!(t > m0 && t <= m1)) continue;
+                var k = (string)q[1];
+                if (k == "confetti") Confetti?.Invoke();
+                else if (k == "pop") { if (!FzOn) PopOut?.Invoke(q.Count > 2 ? q[2] as string : null, q.Count > 3 && q[3] is double x ? x : 160); }   // (popOut: not in full screen)
+                else MvCue(k, _mvNow);
+            }
         }
         double _mvNow;
 

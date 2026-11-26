@@ -14,7 +14,18 @@ namespace SquishSquad.Ui
         /// <summary>Screen pixels per dp (the screen's height / 384 on phones held sideways).</summary>
         public static float PxPerDp = 2.8125f;
         /// <summary>Pictures an SVG names in &lt;image href&gt; (Resources paths without the extension).</summary>
-        public static System.Func<string, Texture2D> LoadPicture = name => Resources.Load<Texture2D>(name);
+        /// <summary>An &lt;image&gt;'s picture: a Resources texture, or "still:&lt;key&gt;" a creature's cut-out (the Characters
+        /// screen's, Resources/Characters/still/&lt;key&gt;.png.bytes).</summary>
+        public static System.Func<string, Texture2D> LoadPicture = name => name != null && name.StartsWith("still:") ? Still(name.Substring(6)) : Resources.Load<Texture2D>(name);
+        static Texture2D Still(string key)
+        {
+            var b = Resources.Load<TextAsset>("Characters/still/" + key + ".png");
+            if (b == null) return null;
+            var t = new Texture2D(2, 2, TextureFormat.RGBA32, false) { name = "still " + key, wrapMode = TextureWrapMode.Clamp };
+            bool ok = t.LoadImage(b.bytes, true);
+            Resources.UnloadAsset(b);
+            return ok ? t : null;
+        }
 
         float _w, _h, _margin;      // the piece's box and the room drawn around it (shadows, overhangs), dp
         RenderTexture _rt;

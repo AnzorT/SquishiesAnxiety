@@ -11,8 +11,9 @@
 //              which the screen plays, where each was left), full screen (the film zooms off the screen to a 16:9
 //              frame over a darkened view, its controls fading after 2.6 s), the end
 //   the loops  the speakers' groove while they play and no show is on, the TV's channel while a TV is on with speakers
-// Sounds follow the app's sound-effects setting. Not drawn: the film's CSS filters (blur, saturation), the hair on the
-// old film, the speakers' rings and notes, the holo pop-outs and confetti, the 10 s app ad (a screen always has a movie).
+// the filter   the tier's CSS filter on the film (HouseShaders/MovieFilm), tier 1's hair on the gate
+//   the pops     the speakers' rings and notes on each beat (spawn); the holo screen's star leaping out and its confetti
+// Sounds follow the app's sound-effects setting. (The 10 s app ad never shows: a screen always has a movie.)
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -44,6 +45,8 @@ namespace SquishSquad.House.View
             // (movie-night.js's own synthesized sounds: Audio/HouseSounds.cs)
             _sim.ShowStarted = () => SquishSquad.Audio.Snd.Synth(SquishSquad.Audio.HouseSounds.ShowStart);
             _sim.FocusChanged = on => SquishSquad.Audio.Snd.Synth(() => SquishSquad.Audio.HouseSounds.Whoosh(on));
+            _sim.PopOut = (key, x) => PopOut(key, x, _now);
+            _sim.Confetti = () => Confetti(_now);
         }
 
         Affine Frame => Affine.ScaleBy(_k / UiPiece.PxPerDp, _k / UiPiece.PxPerDp);
@@ -72,7 +75,10 @@ namespace SquishSquad.House.View
                 _tvs[kv.Key] = (src, kv.Value);
             }
             _sim.FzStep(now);
+            _now = now;
             Bounce(now);
+            Pops(now);
+            Bursts(now);
             Show(now, sound);
         }
 
@@ -85,12 +91,202 @@ namespace SquishSquad.House.View
             var b = _sim.Beat(now);
             foreach (var p in _room.Pieces)
             {
-                bool spk = p.Id != null && p.Kind != "toy" && b != null && (_sim.Show != null || _sim.Jams.Contains("it:" + p.Id)) && RoleOf(p.Id) == "spk";
-                if (!spk) { p.Bx = p.By = p.Rot = 0; p.Sx = p.Sy = 1; continue; }
-                var (n, ph, amp) = b.Value; double hop = Math.Sin(Math.PI * ph), sq = Math.Exp(-ph * 9), big = n % 4 == 0 ? 1.6 : 1, H = (p.Box ?? p.Region)[3];
+                bool spk = p.Id != null && p.Kind != "toy" && p.Kind != "toyshadow" && b != null && (_sim.Show != null || _sim.Jams.Contains("it:" + p.Id)) && RoleOf(p.Id) == "spk";
+                if (!spk) { p.Bx = p.By = p.Rot = 0; p.Sx = p.Sy = 1; if (p.Id != null) _lastBeat.Remove(p.Id + "|" + p.Kind); continue; }
+                var (n, ph, amp) = b.Value;
+                // a new beat: a ring and a note from it (spawn; once per speaker, not per layer: its front part is the same)
+                if (p.Kind == "item" && (!_lastBeat.TryGetValue(p.Id + "|" + p.Kind, out var lb) || lb != n)) { _lastBeat[p.Id + "|" + p.Kind] = n; Spawn(p.Box ?? p.Region, n, now); } double hop = Math.Sin(Math.PI * ph), sq = Math.Exp(-ph * 9), big = n % 4 == 0 ? 1.6 : 1, H = (p.Box ?? p.Region)[3];
                 p.Bx = Math.Sin(now * 0.11) * 1.5 * amp * (0.35 + sq); p.By = -hop * H * 0.1 * big * amp + Math.Cos(now * 0.137) * 0.9 * amp * (0.35 + sq);
                 p.Sx = 1 + 0.14 * sq * amp - 0.04 * hop; p.Sy = 1 - 0.14 * sq * amp + 0.06 * hop * amp; p.Rot = (n % 2 != 0 ? 1 : -1) * 3 * hop * amp * big;
             }
+        }
+
+        // ---- the speakers' rings and notes (movie-night.js spawn) ----
+        // On each new beat a bouncing speaker sends out a ring (2.5 px, the beat's colour, scale 0.35 -> 1.7 as it fades
+        // from 0.9, 620 ms ease-out) from 45 % down its middle, and a note (♪ ♫ ♬, Fredoka 700, 30 % of its width
+        // within 15-34 px, an ink shadow 2 px under) that rises off to one side, turning, growing and fading (1.3 s).
+        static readonly string[] NC = { "#ffd66b", "#8fe8ff", "#a6f06a", "#ffb36b", "#c9a6ff" }, NOTE = { "\u266A", "\u266B", "\u266C" };
+        const string INK = "#3a1a5c";
+        sealed class Pop { public double T0, Cx, Cy, W, L, T, Sz, Tw, Dx, H; public int N; public UiPiece Ring, Note; }
+        readonly List<Pop> _pops = new List<Pop>();
+        readonly Stack<UiPiece> _freeRings = new Stack<UiPiece>(), _freeNotes = new Stack<UiPiece>();
+        readonly Dictionary<string, int> _lastBeat = new Dictionary<string, int>();
+        const int PopOrder = 29000;   // (over the room and the creatures, under the night)
+
+        void Spawn(double[] B, int n, double now)
+        {
+            double aw = B[2], ah = B[3]; if (aw <= 0) return;
+            string c = NC[n % NC.Length];
+            var q = new Pop { T0 = now, N = n, Cx = B[0] + aw / 2, Cy = B[1] + ah * 0.45, W = Math.Max(24, aw * 0.7), H = ah };
+            q.Sz = Math.Max(15, Math.Min(34, aw * 0.3)); q.Dx = (n % 2 != 0 ? 1 : -1) * (aw * 0.35 + _r.NextDouble() * 10);
+            q.L = q.Cx - q.Sz / 3; q.T = B[1] + ah * 0.2 - q.Sz / 2;
+            q.Ring = _freeRings.Count > 0 ? _freeRings.Pop() : UiPiece.Create(_room.transform, "speaker ring", PopOrder);
+            float w = (float)q.W;
+            q.Ring.SetSvg($"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{w.ToString(System.Globalization.CultureInfo.InvariantCulture)}\" height=\"{w.ToString(System.Globalization.CultureInfo.InvariantCulture)}\"><circle cx=\"{(w / 2).ToString(System.Globalization.CultureInfo.InvariantCulture)}\" cy=\"{(w / 2).ToString(System.Globalization.CultureInfo.InvariantCulture)}\" r=\"{((w - 2.5f) / 2).ToString(System.Globalization.CultureInfo.InvariantCulture)}\" fill=\"none\" stroke=\"{c}\" stroke-width=\"2.5\"/></svg>", w, w, 2);
+            var st = new TextStyle { Font = "Fredoka_700Bold", Size = (float)q.Sz, Color = c, LineHeight = (float)q.Sz };
+            string note = NOTE[n % 3]; float tw = UiSvg.BoxWidth(note, st), th = (float)q.Sz; q.Tw = tw;
+            var u = new UiSvg(tw, th + 2);
+            u.Text(note, 0, 2, new TextStyle { Font = st.Font, Size = st.Size, Color = INK, LineHeight = st.LineHeight });
+            u.Text(note, 0, 0, st);
+            q.Note = _freeNotes.Count > 0 ? _freeNotes.Pop() : UiPiece.Create(_room.transform, "speaker note", PopOrder + 1);
+            q.Note.SetSvg(u.Markup, tw, th + 2, 2);
+            _pops.Add(q);
+        }
+
+        static double EaseOut(double p) => _easeOut(Math.Max(0, Math.Min(1, p)));
+        static readonly Func<double, double> _easeOut = SquishSquad.Anim.Easing.Bezier(0, 0, 0.58, 1);
+
+        void Pops(double now)
+        {
+            double k = _room.CamK;
+            // (g space -> frame px: the camera about (426, 393))
+            var cam = Frame * Affine.Translate(426, 393) * Affine.ScaleBy(k, k) * Affine.Translate(-426, -393);
+            for (int i = _pops.Count - 1; i >= 0; i--)
+            {
+                var q = _pops[i]; double t = now - q.T0;
+                // the ring: scale about its middle, fading
+                if (q.Ring != null)
+                {
+                    if (t >= 620) { q.Ring.Visible = false; _freeRings.Push(q.Ring); q.Ring = null; }
+                    else { double e = EaseOut(t / 620), s = 0.35 + 1.35 * e; q.Ring.Transform = cam * Affine.Translate(q.Cx, q.Cy) * Affine.ScaleBy(s, s) * Affine.Translate(-q.W / 2, -q.W / 2); q.Ring.Opacity = (float)(0.9 * (1 - e)); q.Ring.Visible = true; q.Ring.Order = PopOrder; }
+                }
+                // the note: keyframes at 0, 25 %, 100 % (translate, rotate, scale about its middle; opacity 0, 1, 0)
+                if (q.Note != null)
+                {
+                    if (t >= 1300) { q.Note.Visible = false; _freeNotes.Push(q.Note); q.Note = null; }
+                    else
+                    {
+                        double e = EaseOut(t / 1300), sg = q.Dx > 0 ? 1 : -1, tx, ty, rot, sc, op;
+                        if (e < 0.25) { double f = e / 0.25; tx = q.Dx * 0.4 * f; ty = -q.H * 0.35 * f; rot = 10 * sg * f; sc = 0.6 + 0.5 * f; op = f; }
+                        else { double f = (e - 0.25) / 0.75; tx = q.Dx * 0.4 + q.Dx * 0.6 * f; ty = -q.H * 0.35 + (-q.H * 0.6 - 20) * f; rot = 10 * sg - 22 * sg * f; sc = 1.1 - 0.2 * f; op = 1 - f; }
+                        double mx = q.L + q.Tw / 2, my = q.T + q.Sz / 2;
+                        q.Note.Transform = cam * Affine.Translate(mx + tx, my + ty) * Affine.Rotate(rot) * Affine.ScaleBy(sc, sc) * Affine.Translate(-q.Tw / 2, -q.Sz / 2);
+                        q.Note.Opacity = (float)op; q.Note.Visible = true; q.Note.Order = PopOrder + 1;
+                    }
+                }
+                if (q.Ring == null && q.Note == null) _pops.RemoveAt(i);
+            }
+        }
+
+        // ---- the holo screen's cues (movie-night.js popOut, confetti) ----
+        // popOut: the star (its front picture, a cyan glow and a soft shadow) leaps out of the top of the screen at x of
+        // the film, sz = 80 % of the screen's height (at least 40), flips and dives back in (1650 ms after 380 ms, ease-in-out
+        // over keyframes at 0 / 18 % (then ease-out) / 50 % / 78 % (then ease-in) / 100 %, about 50 % 94 %), two cyan rings
+        // swelling where it leaves and lands (700 ms at 380 and 1880 ms), 14 sparks thrown up (600-900 ms after 400 ms).
+        // confetti: 70 bits from the screen's middle, thrown out and up, then falling past the room's floor, spinning
+        // (2.6-4.8 s, cubic-bezier(.2, .6, .4, 1)).
+        double _now;
+        sealed class Part { public double T0, Delay, Dur, X, Y, W, H, Ex, Ey, Up, Ux, Fall, R, Sc0, Sc1; public Color C; public bool Spark; public Func<double, double> Ease; }
+        sealed class Leap { public UiPiece P; public UiPiece[] Rings; public double T0, Px, Py, Sz, Dx; }
+        readonly List<Part> _parts = new List<Part>();
+        readonly List<Leap> _leaps = new List<Leap>();
+        Mesh _partsMesh; MeshRenderer _partsR;
+        static readonly Func<double, double> EaseIO = SquishSquad.Anim.Easing.Bezier(0.42, 0, 0.58, 1), EaseIn = SquishSquad.Anim.Easing.Bezier(0.42, 0, 1, 1), Confy = SquishSquad.Anim.Easing.Bezier(0.2, 0.6, 0.4, 1);
+        static Color Hex(string h, float a = 1) { ColorUtility.TryParseHtmlString(h, out var c); c.a = a; return c; }
+
+        (double x, double y)[] ScreenQuad()
+        {
+            var th = _sim.Th; if (th?.ScM == null) return null; var m = th.ScM; double w = th.ScW, h = th.ScH;
+            (double, double) P(double x, double y) => (m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]);
+            return new[] { P(0, 0), P(w, 0), P(w, h), P(0, h) };
+        }
+        Affine BoxCam() { double k = _room.CamK; return Frame * Affine.Translate(426, 393) * Affine.ScaleBy(k, k) * Affine.Translate(-426, HouseFrame.BoxTop - 393); }
+
+        void PopOut(string key, double x, double now)
+        {
+            var q = ScreenQuad(); if (q == null || string.IsNullOrEmpty(key)) return;
+            double u = Math.Max(0, Math.Min(1, x / 320)), px = q[0].x + (q[1].x - q[0].x) * u, py = q[0].y + (q[1].y - q[0].y) * u;
+            double hs = Math.Sqrt(Math.Pow(q[3].x - q[0].x, 2) + Math.Pow(q[3].y - q[0].y, 2)), sz = Math.Max(40, hs * 0.8), cx = (q[0].x + q[2].x) / 2, dx = (cx - px) * 0.25;
+            string F(double v) => v.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+            var L = new Leap { T0 = now, Px = px, Py = py, Sz = sz, Dx = dx };
+            L.P = UiPiece.Create(_room.transform, "holo pop", PopOrder + 3);
+            // (drop-shadow(0 0 3px rgba(150, 240, 255, .95)), then drop-shadow(0 8px 6px rgba(0, 0, 0, .35)) of that)
+            L.P.SetSvg($"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{F(sz)}\" height=\"{F(sz)}\" viewBox=\"0 0 {F(sz)} {F(sz)}\"><defs><filter id=\"hg\" x=\"-0.4\" y=\"-0.4\" width=\"1.8\" height=\"1.8\">"
+                + "<feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"1.5\" result=\"b1\"/><feFlood flood-color=\"#96f0ff\" flood-opacity=\"0.95\"/><feComposite in2=\"b1\" operator=\"in\" result=\"g1\"/>"
+                + "<feMerge result=\"r1\"><feMergeNode in=\"g1\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>"
+                + "<feGaussianBlur in=\"r1\" stdDeviation=\"3\" result=\"b2\"/><feOffset in=\"b2\" dy=\"8\" result=\"o2\"/><feFlood flood-color=\"#000000\" flood-opacity=\"0.35\"/><feComposite in2=\"o2\" operator=\"in\" result=\"g2\"/>"
+                + $"<feMerge><feMergeNode in=\"g2\"/><feMergeNode in=\"r1\"/></feMerge></filter></defs><image href=\"still:{key}\" width=\"{F(sz)}\" height=\"{F(sz)}\" filter=\"url(#hg)\"/></svg>", (float)sz, (float)sz, 16);
+            L.P.Visible = false;
+            float rw = (float)(sz * 0.8), rh = (float)(sz * 0.16);
+            L.Rings = new UiPiece[2];
+            for (int i = 0; i < 2; i++)
+            {
+                L.Rings[i] = UiPiece.Create(_room.transform, "holo ring", PopOrder + 2);
+                L.Rings[i].SetSvg($"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{F(rw)}\" height=\"{F(rh)}\"><ellipse cx=\"{F(rw / 2)}\" cy=\"{F(rh / 2)}\" rx=\"{F(rw / 2 - 1)}\" ry=\"{F(rh / 2 - 1)}\" fill=\"none\" stroke=\"rgb(140,230,255)\" stroke-opacity=\"0.35\" stroke-width=\"6\"/><ellipse cx=\"{F(rw / 2)}\" cy=\"{F(rh / 2)}\" rx=\"{F(rw / 2 - 1)}\" ry=\"{F(rh / 2 - 1)}\" fill=\"none\" stroke=\"rgb(160,240,255)\" stroke-opacity=\"0.95\" stroke-width=\"2\"/></svg>", rw, rh, 6);
+                L.Rings[i].Visible = false;
+            }
+            _leaps.Add(L);
+            var C = new[] { "#ffffff", "#a6f4ff", "#ffd66b", "#ff8fb8" };
+            for (int i = 0; i < 14; i++)
+            {
+                double a = Math.PI + _r.NextDouble() * Math.PI, sp = sz * (0.3 + _r.NextDouble() * 0.5);
+                _parts.Add(new Part { T0 = now, Delay = 400, Dur = 600 + _r.NextDouble() * 300, X = px, Y = py, W = 4, H = 4, Ex = Math.Round(Math.Cos(a) * sp), Ey = Math.Round(Math.Sin(a) * sp * 0.8), Sc0 = 1, Sc1 = 0.3, C = Hex(C[i % 4]), Spark = true, Ease = EaseOut });
+            }
+        }
+
+        void Confetti(double now)
+        {
+            var q = ScreenQuad(); if (q == null) return;
+            double cx = Math.Round((q[0].x + q[2].x) / 2), cy = Math.Round((q[0].y + q[2].y) / 2), H = 393;
+            var C = new[] { "#ffd66b", "#ff8fb8", "#8fe8ff", "#a6f06a", "#c9a6ff", "#ffb36b" };
+            for (int i = 0; i < 70; i++)
+            {
+                double w = 4 + _r.NextDouble() * 5, a = _r.NextDouble() * Math.PI * 2, sp = 80 + _r.NextDouble() * 260, dx = Math.Cos(a) * sp, up = -Math.Abs(Math.Sin(a)) * sp * 0.6 - 40;
+                _parts.Add(new Part { T0 = now, Delay = 0, Dur = 2600 + _r.NextDouble() * 2200, X = cx, Y = cy, W = w, H = w * 0.55, Ux = Math.Round(dx * 0.7), Up = Math.Round(up), Ex = Math.Round(dx + Math.Sin(a * 5) * 30), Fall = Math.Round(H - cy + 40), R = (_r.NextDouble() - 0.5) * 1400, C = Hex(C[i % 6]), Ease = Confy });
+            }
+        }
+
+        void Bursts(double now)
+        {
+            var cam = BoxCam();
+            // the leaps: the star, then its two rings
+            for (int i = _leaps.Count - 1; i >= 0; i--)
+            {
+                var L = _leaps[i]; double t = now - L.T0;
+                double p = Math.Max(0, Math.Min(1, (t - 380) / 1650)), e = EaseIO(p);
+                // the keyframes (offset, translate x, y, scale, rotate, opacity), each segment's own easing after the whole's
+                double[][] K = { new[] { 0, 0, Math.Round(L.Sz * 0.55), 0.45, 0, 0 }, new[] { 0.18, Math.Round(L.Dx * 0.3), Math.Round(-L.Sz * 0.2), 1.05, -8, 1 }, new[] { 0.5, Math.Round(L.Dx * 0.7), Math.Round(-L.Sz * 0.42), 1.15, 8, 1 }, new[] { 0.78, Math.Round(L.Dx), Math.Round(-L.Sz * 0.3), 1.08, -3, 1 }, new[] { 1, Math.Round(L.Dx * 0.4), Math.Round(L.Sz * 0.7), 0.5, 0, 0 } };
+                int s = 0; while (s < 3 && e >= K[s + 1][0]) s++;
+                double f = (e - K[s][0]) / (K[s + 1][0] - K[s][0]); f = s == 1 ? EaseOut(f) : s == 3 ? EaseIn(f) : Math.Max(0, Math.Min(1, f));
+                double V(int j) => K[s][j] + (K[s + 1][j] - K[s][j]) * f;
+                L.P.Transform = cam * Affine.Translate(L.Px + V(1), L.Py + V(2)) * Affine.ScaleBy(V(3), V(3)) * Affine.Rotate(V(4)) * Affine.Translate(-L.Sz / 2, -L.Sz * 0.94);
+                L.P.Opacity = (float)V(5); L.P.Visible = t >= 380 && t < 380 + 1650;
+                for (int k = 0; k < 2; k++)
+                {
+                    double d0 = k == 0 ? 380 : 1880, rp = (t - d0) / 700, re = EaseOut(rp), sc = 0.3 + 1.3 * re;
+                    var R = L.Rings[k]; R.Visible = rp >= 0 && rp < 1;
+                    R.Transform = cam * Affine.Translate(L.Px, L.Py) * Affine.ScaleBy(sc, sc) * Affine.Translate(-L.Sz * 0.4, -L.Sz * 0.08); R.Opacity = (float)(0.95 * (1 - re));
+                }
+                if (t >= 1880 + 700) { Object.Destroy(L.P.gameObject); foreach (var R in L.Rings) Object.Destroy(R.gameObject); _leaps.RemoveAt(i); }
+            }
+            // the sparks and the confetti: quads of one mesh (solid bits; soft dots for the sparks' glow)
+            if (_parts.Count == 0) { if (_partsR != null) _partsR.enabled = false; return; }
+            if (_partsMesh == null) { _soft ??= SoftTex(); _partsMesh = MeshOf("movie bursts", _soft, out _partsR); }
+            var Vv = new List<Vector3>(); var UV = new List<Vector2>(); var Cc = new List<Color>(); var T = new List<int>();
+            for (int i = _parts.Count - 1; i >= 0; i--)
+            {
+                var q = _parts[i]; double t = now - q.T0 - q.Delay;
+                if (t >= q.Dur) { _parts.RemoveAt(i); continue; }
+                double p = Math.Max(0, t / q.Dur), e = q.Ease(p), tx, ty, rot, sc, op;
+                if (q.Spark) { tx = q.Ex * e; ty = q.Ey * e; rot = 0; sc = q.Sc0 + (q.Sc1 - q.Sc0) * e; op = 1 - e; }
+                else if (e < 0.25) { double f = e / 0.25; tx = q.Ux * f; ty = q.Up * f; rot = q.R * 0.3 * f; sc = 1; op = 1; }
+                else { double f = (e - 0.25) / 0.75; tx = q.Ux + (q.Ex - q.Ux) * f; ty = q.Up + (q.Fall - q.Up) * f; rot = q.R * 0.3 + q.R * 0.7 * f; sc = 1; op = 1 - 0.15 * f; }
+                double mx = q.X + q.W / 2 + tx, my = q.Y + q.H / 2 + ty, a = rot * Math.PI / 180, ca = Math.Cos(a), sa = Math.Sin(a);
+                // (a spark: its 4 px dot and a glow round it, 3x its size on the soft texture)
+                double hw = q.W / 2 * sc * (q.Spark ? 3 : 1), hh = q.H / 2 * sc * (q.Spark ? 3 : 1);
+                int n = Vv.Count;
+                foreach (var (ux, uy) in new[] { (-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0) })
+                {
+                    double lx = ux * hw, ly = uy * hh, gx = mx + lx * ca - ly * sa, gy = my + lx * sa + ly * ca;
+                    var fp = FrameOf(gx, gy);   // (box px -> frame px, the camera's)
+                    Vv.Add(_room.WorldFrame(fp.X, fp.Y));
+                    UV.Add(q.Spark ? new Vector2((float)(ux + 1) / 2, (float)(uy + 1) / 2) : new Vector2(0.5f, 0.5f));
+                    var c = q.C; c.a = (float)op; Cc.Add(c);
+                }
+                T.AddRange(new[] { n, n + 1, n + 2, n, n + 2, n + 3 });
+            }
+            _partsMesh.Clear(); _partsMesh.SetVertices(Vv); _partsMesh.SetUVs(0, UV); _partsMesh.SetColors(Cc); _partsMesh.SetTriangles(T, 0); _partsMesh.RecalculateBounds();
+            _partsR.enabled = Vv.Count > 0; _partsR.sortingOrder = PopOrder + 4;
         }
 
         // ---- textures ----
@@ -131,7 +327,9 @@ namespace SquishSquad.House.View
                 _rt = new RenderTexture(480, 270, 0); _vp = _go.AddComponent<VideoPlayer>(); _vp.playOnAwake = false; _vp.isLooping = false;
                 _vp.renderMode = VideoRenderMode.RenderTexture; _vp.targetTexture = _rt; _vp.audioOutputMode = VideoAudioOutputMode.Direct;
                 _mesh = new Mesh { name = "movie quad" }; _go.AddComponent<MeshFilter>().sharedMesh = _mesh; _mr = _go.AddComponent<MeshRenderer>();
-                _mat = new Material(Shader.Find("Sprites/Default")) { mainTexture = _rt }; _mr.sharedMaterial = _mat;
+                // (the film with its tier's CSS filter: HouseShaders/MovieFilm)
+                var film = Resources.Load<Shader>("HouseShaders/MovieFilm"); if (film == null) film = Shader.Find("Sprites/Default");
+                _mat = new Material(film) { mainTexture = _rt }; _mr.sharedMaterial = _mat;
                 _soft = SoftTex(); _noise = new Texture2D(96, 54, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point }; _noisePx = new Color32[96 * 54];
                 _fx = MeshOf("movie look", _soft, out _fxR); _grain = MeshOf("movie grain", _noise, out _grainR); _beam = MeshOf("projector beam", _soft, out _beamR);
                 _dark = UiPiece.Create(_room.transform, "movie dim", Order); _spill = UiPiece.Create(_room.transform, "movie light", Order + 1);
@@ -165,13 +363,16 @@ namespace SquishSquad.House.View
             float u0 = (float)(_u0 - wx), u1 = (float)(_u1 - wx), v0 = (float)(_v0 + wy), v1 = (float)(_v1 + wy);
             _mesh.SetUVs(0, new[] { new Vector2(u0, 1 - v0), new Vector2(u1, 1 - v0), new Vector2(u1, 1 - v1), new Vector2(u0, 1 - v1) });
             var col = new Color(1, 1, 1, (float)look.pic); _mesh.SetColors(new[] { col, col, col, col });
+            // the tier's filter on the film (movies.js look; blur in css px of the 320 px stage, 1.5 texels each here)
+            var (fc, fs, fb, fr) = tier <= 1 ? (1.0, 1.0, 1.0, 0.35) : tier == 2 ? (1.0, 1.25, 1.0, 0.3) : tier == 4 ? (1.06, 1.1, 1.0, 0.0) : tier >= 5 ? (1.04, 1.15, 1.03, 0.0) : (1.0, 1.0, 1.0, 0.0);
+            _mat.SetFloat("_Contrast", (float)fc); _mat.SetFloat("_Saturate", (float)fs); _mat.SetFloat("_Bright", (float)fb); _mat.SetFloat("_Blur", (float)(fr * 480 / 320));
             _mesh.SetTriangles(new[] { 0, 1, 2, 0, 2, 3 }, 0); _mesh.RecalculateBounds(); _mr.enabled = look.pic > 0.001; _mr.sortingOrder = ord + 2;
             Look(tier, now, look.pic, ord);
             Dim(look, m, w, h, focus);
             Beam(th, look, focus);
             Bar(now, ord);
         }
-        double _weaveAt, _wx, _wy, _jit, _grainAt, _flick;
+        double _weaveAt, _wx, _wy, _jit, _grainAt, _flick, _hairT; bool _hair;
         readonly double[] _scratch = { -1, -1 };
 
         // ---- the screen tier's look ----
@@ -179,7 +380,9 @@ namespace SquishSquad.House.View
         {
             // the static layers (an SVG in stage px, clipped to what the screen shows of the film)
             double x0 = _u0 * 320, y0 = _v0 * 180, ww = (_u1 - _u0) * 320, hh = (_v1 - _v0) * 180;
-            string key = tier + "|" + Math.Round(x0) + "," + Math.Round(y0) + "," + Math.Round(ww) + "," + Math.Round(hh);
+            // tier 1's hair on the gate: every 3-8 s it's there (35 %) or not
+            if (tier <= 1 && now > _hairT) { _hairT = now + 3000 + _r.NextDouble() * 5000; _hair = _r.NextDouble() < 0.35; }
+            string key = tier + "|" + Math.Round(x0) + "," + Math.Round(y0) + "," + Math.Round(ww) + "," + Math.Round(hh) + (tier <= 1 && _hair ? "|hair" : "");
             _look ??= UiPiece.Create(_room.transform, "movie look", ord + 3);
             if (_lookKey != key)
             {
@@ -188,7 +391,9 @@ namespace SquishSquad.House.View
                 if (tier <= 1)
                     body = "<defs><linearGradient id=\"f1\" gradientTransform=\"rotate(13 0.5 0.5)\"><stop offset=\"0.14\" stop-opacity=\"0\"/><stop offset=\"0.18\" stop-color=\"#000\" stop-opacity=\"0.13\"/><stop offset=\"0.22\" stop-color=\"#fff\" stop-opacity=\"0.07\"/><stop offset=\"0.27\" stop-opacity=\"0\"/><stop offset=\"0.52\" stop-opacity=\"0\"/><stop offset=\"0.57\" stop-color=\"#000\" stop-opacity=\"0.11\"/><stop offset=\"0.61\" stop-color=\"#fff\" stop-opacity=\"0.06\"/><stop offset=\"0.66\" stop-opacity=\"0\"/><stop offset=\"0.8\" stop-opacity=\"0\"/><stop offset=\"0.86\" stop-color=\"#000\" stop-opacity=\"0.09\"/><stop offset=\"0.92\" stop-opacity=\"0\"/></linearGradient>"
                         + "<radialGradient id=\"vg\" cx=\"0.5\" cy=\"0.5\" r=\"0.71\"><stop offset=\"0.52\" stop-color=\"#000\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#000\" stop-opacity=\"0.5\"/></radialGradient></defs>"
-                        + "<rect x=\"-20\" y=\"-20\" width=\"360\" height=\"220\" fill=\"url(#f1)\"/><rect width=\"320\" height=\"180\" fill=\"url(#vg)\"/>";
+                        + "<rect x=\"-20\" y=\"-20\" width=\"360\" height=\"220\" fill=\"url(#f1)\"/>"
+                        + (_hair ? "<path transform=\"translate(250 120)\" d=\"M58 58 C40 50 46 30 30 26 S12 18 6 4\" stroke=\"#1a120a\" stroke-width=\"0.8\" fill=\"none\" opacity=\"0.7\"/>" : "")
+                        + "<rect width=\"320\" height=\"180\" fill=\"url(#vg)\"/>";
                 else if (tier == 2)
                 {
                     body = "<defs><pattern id=\"sl\" width=\"3\" height=\"3\" patternUnits=\"userSpaceOnUse\"><rect width=\"3\" height=\"1\" fill=\"#000\" fill-opacity=\"0.2\"/></pattern><radialGradient id=\"ed\" cx=\"0.5\" cy=\"0.5\" r=\"0.62\"><stop offset=\"0.78\" stop-color=\"#000\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#000\" stop-opacity=\"0.6\"/></radialGradient></defs>"
@@ -465,6 +670,10 @@ namespace SquishSquad.House.View
             foreach (var u in new[] { _dark, _spill, _look, _bar, _menu, _back, _xb }) if (u != null) Object.Destroy(u.gameObject);
             foreach (var r in new Renderer[] { _fxR, _grainR, _beamR }) if (r != null) Object.Destroy(r.gameObject);
             if (_groove != null) Object.Destroy(_groove.gameObject); foreach (var t in _tvs.Values) if (t.src != null) Object.Destroy(t.src.gameObject); _tvs.Clear();
+            foreach (var q in _pops) { if (q.Ring != null) Object.Destroy(q.Ring.gameObject); if (q.Note != null) Object.Destroy(q.Note.gameObject); } _pops.Clear();
+            foreach (var u in _freeRings) if (u != null) Object.Destroy(u.gameObject); _freeRings.Clear(); foreach (var u in _freeNotes) if (u != null) Object.Destroy(u.gameObject); _freeNotes.Clear();
+            foreach (var L in _leaps) { if (L.P != null) Object.Destroy(L.P.gameObject); foreach (var R in L.Rings) if (R != null) Object.Destroy(R.gameObject); } _leaps.Clear(); _parts.Clear();
+            if (_partsR != null) Object.Destroy(_partsR.gameObject);
         }
     }
 }
