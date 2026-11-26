@@ -1,7 +1,30 @@
-# Unity port: what's left (as of 2026-11-25)
+# Unity port: what's left (as of 2026-11-26)
 
 The goal: the Unity app (`unity/`) matches the React Native app on `develop` exactly. Most of it is done. This file
 lists what isn't, so it can be picked up item by item with Claude Code.
+
+## The house (MY HOUSE / the crib): finished in code (2026-11-26)
+
+Every house item in `HOUSE_PORT_PLAN.md` is ported, or confirmed not shown in the shipped app (the swings' sway,
+house4's moving parts, the dev "House level" popup, the 10 s ad). Branch `ccr-5d87b564-vqdyo7`: 25fadc33 (the robot
+vacuum, the kicked toy's spin), 93c53de6 (map faces and frozen weather, bUse, dozing, sounds, piece redraws), 2f388ee3
+(the Movie Room's film filters, hair, speaker notes, holo pop-outs, confetti), e50c25ef (per-layer redraws, the
+toolbar's inset light, the tray's wheel), 4f9d8aca (checks against the app). Checked offline against the app: the house
+map (`map-frozen.mjs` + `house-test mapframe`, 0.8–2.3 % of pixels; Unity's markup is the page's to the pixel), the
+house sounds (`sound-test`, within 0.5 dB).
+
+**Left for the user: see it in the Unity Editor and on the A15** (the user, 2026-11-26: skip it here, commit). Not run
+in Unity yet, so check:
+- MY HOUSE opens, the rooms, the creatures walking and using things (washing, brushing, digging on the beach: their
+  own house states now)
+- the robot vacuum (tap the Robo-Vac's dock: it cleans, a tap again sends it home) and a kicked ball (it spins as it
+  rolls)
+- a fridge opening / a stove turning on changes its picture; the room doesn't stutter when it does
+- the house map: the faces in the room labels, the clouds / rain / snow where the app has them
+- the Movie Room: the film's look per screen tier (the old film's hair), the speakers' rings and notes on the beat, the
+  holo screen's star leaping out and its confetti, the projector's whir and click, the full-screen whoosh, every TV's
+  channel playing, the Dance Club playing the groove
+- the beach and the yard games: how smooth they are on the phone
 
 ## Where it stopped (2026-11-25, second session): continue from here
 
