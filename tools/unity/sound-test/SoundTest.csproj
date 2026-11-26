@@ -9,5 +9,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Audio/WebSynth.cs" />
     <Compile Include="../../../unity/Assets/Scripts/Audio/ChestSounds.cs" />
+    <Compile Include="../../../unity/Assets/Scripts/Audio/HouseSounds.cs" />
   </ItemGroup>
 </Project>

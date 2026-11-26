@@ -8,6 +8,7 @@
 //            rasteriser vs Chrome's screenshot (creatures and HUD hidden); writes out/<fixture>-<room>-<day|night>-*.png
 //   chrome   the stage-2 pieces (camera, doors, drawer, toast) against the page's numbers
 //   signframes <dir>  a sign written in Renovate, frame by frame, for a video (Signs.cs)
+//   mapframe          the house map frozen as the app shows it, against the page (MapFrame.cs; map-frozen.mjs first)
 //   vacframes <dir>   the robot vacuum cleaning and a kicked toy rolling, frame by frame, for a video (Vac.cs)
 // The page's answers: node tools/unity/house/fixtures.mjs && node tools/unity/house/export-house.mjs
 using System;
@@ -50,6 +51,7 @@ static partial class Program
             case "rt": return DebugRt(args[1], args[2]);
             case "roompics": return RoomPics(args[1], args.Length > 2 ? args[2] : "fresh-lv1", args.Skip(3).ToArray());
             case "housepics": return HousePics(args.Length > 1 ? args[1] : Path.Combine(Repo, "tools/unity/house-test/out/pics"));
+            case "mapframe": return MapFrame();
             case "vacframes": return VacFrames(args.Length > 1 ? args[1] : Path.Combine(Repo, "tools/unity/house-test/out/vac"));
             case "signframes": return SignFrames(args.Length > 1 ? args[1] : Path.Combine(Repo, "tools/unity/house-test/out/signs"));
             case "pixels": PixRoom = args.Length > 2 && !args[2].StartsWith("--") ? args[2] : null; { int di = Array.IndexOf(args, "--disco"); if (di > 0 && di + 1 < args.Length) DiscoK = int.Parse(args[di + 1]); } return Pixels(only, args.Contains("--keep"));

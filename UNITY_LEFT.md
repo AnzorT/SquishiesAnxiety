@@ -304,7 +304,12 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   and the full-screen whoosh (`Audio/HouseSounds.cs`); the film's filter per screen tier (`HouseShaders/MovieFilm`),
   the old film's hair, the speakers' rings and notes, the holo pop-outs and confetti; the toolbar's inset light, the
   tray's mouse wheel. Not needed (dead in the app): the swings' sway, house4's moving parts, the dev level popup, the
-  10 s ad. Not seen in the Editor yet.
+  10 s ad. Checked against the app offline: the map (`node tools/unity/house/map-frozen.mjs` then `house-test
+  mapframe`: the page's own map frozen at the app's moment against Unity's, five houses and the three seasons) 0.8-2.3 %
+  of pixels (it was 2.3-4.6 % with the weather unfrozen); Unity's frozen markup drawn by Chrome is the page's to the
+  pixel (0.00 %), so what's left is the offline rasteriser's own difference; `house-test map` (the markup) identical; the
+  house sounds (`sound-test`) within 0.5 dB of movie-night.js's own in Chrome. Not seen in the Editor or on the phone
+  yet (the Movie Room's look, the faces in the labels, the robot and the ball, the beach's and yard games' redraw cost).
 
 ## 6. Decide
 

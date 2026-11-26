@@ -28,6 +28,7 @@ static class Program
         ("charge", () => ChestSounds.Charge(1.2)),
         ("poof3", () => ChestSounds.Poof(3)),
         ("burst4", () => ChestSounds.Burst(4, "fruit", Gem)),
+        ("house-show", HouseSounds.ShowStart), ("house-whoosh-in", () => HouseSounds.Whoosh(true)), ("house-whoosh-out", () => HouseSounds.Whoosh(false)),
         ("card0", () => ChestSounds.Card(0)), ("card6", () => ChestSounds.Card(6)),
         ("fly", ChestSounds.Fly), ("full", ChestSounds.Full), ("gather", () => ChestSounds.Gather(1.43)), ("bam", ChestSounds.Bam), ("land", ChestSounds.Land),
     };

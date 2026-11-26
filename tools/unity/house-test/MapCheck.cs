@@ -27,7 +27,7 @@ static class MapCheck
         {
             var j = (JObj)HouseJson.Parse(File.ReadAllText(f));
             var vals = HouseJson.Parse(HouseDraw.Eval("__house.map(" + HouseJson.Stringify(HouseJson.Stringify(j.Obj("st"))) + ")")) as JObj;
-            string mine = Norm(HouseCreatures.MapSvg(tpl, vals)), theirs = Norm(j.Str("svg"));
+            string mine = Norm(HouseCreatures.MapSvg(tpl, vals, null)), theirs = Norm(j.Str("svg"));   // (the template's markup, its SMIL left in: as the page's DOM has it)
             var name = Path.GetFileNameWithoutExtension(f);
             if (mine == theirs) { Console.WriteLine($"{name}: identical ({theirs.Length} chars)"); continue; }
             bad++; int i = 0; while (i < mine.Length && i < theirs.Length && mine[i] == theirs[i]) i++;

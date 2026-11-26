@@ -92,7 +92,9 @@ namespace SquishSquad.House
         // ---- the picture: the template filled in, as SVG text ----
         static HouseTemplate _mapTpl;
         /// <summary>The map's &lt;svg&gt; for these values (the trees and bushes in their groups; events and hints dropped).</summary>
-        public static string MapSvg(string template, JObj vals)
+        public static string MapSvg(string template, JObj vals) => MapSvg(template, vals, FrozenAt);
+        /// <summary>The map's markup with its SMIL at `at` s (null: as the template writes it, the animations left in).</summary>
+        public static string MapSvg(string template, JObj vals, double? at)
         {
             if (_mapTpl == null)
             {
@@ -103,12 +105,12 @@ namespace SquishSquad.House
             var sb = new StringBuilder();
             foreach (var d in _mapTpl.Render(vals)) Write(sb, d, nat);
             var svg = sb.ToString();
-            if (svg.IndexOf("<animate", StringComparison.Ordinal) < 0) return svg;
+            if (at == null || svg.IndexOf("<animate", StringComparison.Ordinal) < 0) return svg;
             // the app's map stands still: menu.js pauses its SMIL (pauseAnimations) at the first 120 ms tick after it
             // opens, and bakes that frame into a picture. Its animated values at that moment (the clouds and the rain
             // cloud where their translate puts them, the snow, the waves), not the bare attributes the animations move
             var outSb = new StringBuilder();
-            foreach (var n in Smil.Parse(svg)) Smil.Write(n, outSb, FrozenAt);
+            foreach (var n in Smil.Parse(svg)) Smil.Write(n, outSb, at.Value);
             return outSb.ToString();
         }
         /// <summary>The moment the map is frozen at (s after it opens: the pause comes within 120 ms).</summary>
