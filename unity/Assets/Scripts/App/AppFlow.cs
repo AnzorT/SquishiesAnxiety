@@ -40,7 +40,7 @@ namespace SquishSquad.App
         void Awake()
         {
             AuthModel.SkipEmailVerify = Debug.isDebugBuild;   // (the editor and development builds)
-            SquishSquad.Audio.Music.Hold();   // (App.js musicHeld: silent until the game intro's third squish)
+            SquishSquad.Audio.Music.Hold();   // (App.js musicHeld: silent until the game intro's logo drops in)
             // the menu's pages (Characters, the Level Pass) read the signed-in player from here
             SquishSquad.Menu.CharactersPageLink.Source = () =>
                 _offline || _fb == null || _user == null || _profile == null || string.IsNullOrEmpty(_user.Uid)

@@ -25,8 +25,9 @@
 // the page's would be: at the end of the frame that set it off (where Chrome picks up the style change).
 // The server has rolled the chest: Start(group, size, null) puts it up while the answer is on its way (a first tap
 // meanwhile is held), Fill(result) brings the roll; the first tap of a Common or Rare plays its upgrade when the server
-// rolled one. The creature's pictures are its stills in the app's default border look (src/squad/looks.js: Resources/
-// Chests/look, tools/unity/export-chest.mjs; the Stack cut-out for the two creatures with no look). Sounds: the
+// rolled one. The creature's pictures are its stills in its border look (src/squad/looks.js: Resources/Chests/look, in
+// the look tools/unity/export-chest.mjs --look exported, config/roster's: 3 since 2026-11-26; the Stack cut-out for the
+// two creatures with no look). Sounds: the
 // reveal's sparkle and the collect's coin shower (the box's own hit sounds and the unlock's, synthesized in the app's
 // page, aren't ported).
 using System;

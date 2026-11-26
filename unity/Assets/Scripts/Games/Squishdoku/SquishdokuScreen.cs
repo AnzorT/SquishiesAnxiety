@@ -29,6 +29,8 @@ namespace SquishSquad.Games.Squishdoku
         readonly HashSet<SdLayer> _seen = new HashSet<SdLayer>();
         readonly List<SdLayer> _gone = new List<SdLayer>();
         readonly HashSet<string> _heads = new HashSet<string>();
+        // the cards' live characters (the result card's three, the fail card's sad one), as CardPieces draws them
+        readonly Dictionary<SdLayer, CardPieces.ILive> _live = new Dictionary<SdLayer, CardPieces.ILive>();
 
         public static SquishdokuScreen Create(Transform parent, float screenW = 0, float screenH = 0)
         {
@@ -49,17 +51,23 @@ namespace SquishSquad.Games.Squishdoku
             _tk = new Ticker(nowMs);
             Ticker.Default = _tk;
             Card.LoadXml ??= name => Resources.Load<TextAsset>("Cards/" + name)?.text ?? throw new InvalidOperationException("Resources/Cards/" + name + ".xml is missing: run node tools/unity/export-cards.mjs");
+            CardPieces.Init();   // (the cards' live characters: Squishdoku draws its cards itself, not through CardPieces)
             float w = (_screenW > 0 ? _screenW : Screen.width) / UiPiece.PxPerDp, h = (_screenH > 0 ? _screenH : Screen.height) / UiPiece.PxPerDp;
             SeedProfile();
             var art = SdArtList.Load();
-            // (src/squishdoku/roster.js rosterOf: out (config/roster), never the Masked or Elemental Heroes; the player's
-            // own, else any of those; else, should none be, every one)
+            // (src/squishdoku/roster.js rosterOf: out (config/roster), never the Masked or Elemental Heroes; else, should
+            // none be, every one.) The player's own first, then the rest: the app took the player's own alone, so one
+            // owned made every piece that one (only Mittens); since 2026-11-26 (the user) the others fill in (SdCreature.Pick)
             var fit = new Dictionary<string, SdCreature>();
             foreach (var kv in art) if (SquishSquad.Screens.RosterConfig.InGames(kv.Key, pass: true)) fit[kv.Key] = kv.Value;
             if (fit.Count == 0) fit = art;
             var cast = new List<SdCreature>();
-            foreach (var k in SquishdokuGame.Owned) if (fit.TryGetValue(k, out var c)) cast.Add(c);
-            if (cast.Count == 0) cast.AddRange(fit.Values);
+            foreach (var c in fit.Values) c.Mine = false;
+            foreach (var k in SquishdokuGame.Owned) if (fit.TryGetValue(k, out var c) && !c.Mine) { c.Mine = true; cast.Add(c); }
+            foreach (var c in fit.Values) if (!c.Mine) cast.Add(c);
+            // the level map's room cards (Games/Shared/LevelMap, as Squish Hop's: Resources/Maps, Hubs/hubs.json)
+            SquishSquad.Games.Shared.HubsData.LoadXml ??= path => Resources.Load<TextAsset>(path)?.text;
+            SquishSquad.Games.Shared.HubsData.Current ??= JsonUtility.FromJson<SquishSquad.Games.Shared.HubsData>(Resources.Load<TextAsset>("Hubs/hubs")?.text ?? "{}");
             art.TryGetValue(SquishdokuGame.BuddyKey, out var buddy);
             _screen = new SdScreen(w, h, cast.ToArray(), buddy, Xml, HeadOf, _tk) { AdsFree = AdsFree, Save = true };
             _screen.OnExit = Leave;
@@ -117,7 +125,19 @@ namespace SquishSquad.Games.Squishdoku
         /// <summary>The screen itself (CI screenshots: taps, views).</summary>
         public SdScreen Model => _screen;
 
+        // (the time it takes, in the [Perf] log: App/PerfLog)
+
         void Update()
+
+        {
+
+            long perf = SquishSquad.App.PerfLog.Mark();
+
+            try { UpdateHere(); } finally { SquishSquad.App.PerfLog.Add("Squishdoku update", perf); }
+
+        }
+
+        void UpdateHere()
         {
             if (!_started) return;
             Ticker.Default = _tk;
@@ -142,6 +162,13 @@ namespace SquishSquad.Games.Squishdoku
             foreach (var l in _screen.Layers())
             {
                 if (!_seen.Add(l)) continue;
+                if (l.Creature != null)
+                {
+                    if (!_live.TryGetValue(l, out var live)) _live[l] = live = CardPieces.MakeLive?.Invoke(transform, l.Creature);
+                    if (live == null) l.Creature.Failed = true; else live.Sync(l.Transform, l.Visible ? l.Opacity : 0, order);
+                    order++;
+                    continue;
+                }
                 if (!_pieces.TryGetValue(l, out var e)) e = (UiPiece.Create(transform, l.Name, 0), -1);
                 if (e.version != l.Version)
                 {
@@ -164,6 +191,9 @@ namespace SquishSquad.Games.Squishdoku
                 if (Application.isPlaying) Destroy(go); else DestroyImmediate(go);
                 _pieces.Remove(l);
             }
+            _gone.Clear();
+            foreach (var l in _live.Keys) if (!_seen.Contains(l)) _gone.Add(l);
+            foreach (var l in _gone) { _live[l]?.Destroy(); _live.Remove(l); }
         }
 
         // ---- touches (one finger, or the mouse) and Android's back -------------------------------------------------------------

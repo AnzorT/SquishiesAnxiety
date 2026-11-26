@@ -4,7 +4,7 @@
 // "I AM READY!" and the quick fade (~0.6 s); otherwise the dots show at least 600 ms, longer while the card is still
 // coming, never past 8 s.
 //
-// The creature is its still (Roster.Picture, as the app's thumbnails elsewhere in the port) moving as the app's
+// The creature is its still (Roster.Picture: its border-look picture, as the app's thumbnails) moving as the app's
 // CreatureThumbnail mood 'ready' moves it (src/plush/motion.js): a breath, the slow sway, and its little hop at the
 // start. No UnityEngine here: SquishTime shows the pieces, the test harness (tools/unity/squish-test `loading`) draws
 // them with the reference rasteriser.
@@ -29,7 +29,7 @@ namespace SquishSquad.Games.Squish
         const float PIVOT_Y = 0.4f;   // CreatureThumbnail.js PIVOT_Y
 
         readonly string _key, _pic;
-        readonly float _w, _h, _ar;
+        readonly float _w, _h;
         readonly bool _quick;
         readonly double _t0;
         readonly int _hash;
@@ -45,7 +45,6 @@ namespace SquishSquad.Games.Squish
         {
             _key = key; _w = w; _h = h; _quick = quick; _t0 = nowMs; _now = nowMs;
             try { _pic = Roster.Picture(new Creature { Key = key }); } catch (Exception) { _pic = null; }
-            _ar = _pic != null ? Roster.Ar(key) : 1;
             _hash = HashOf(key);
             Stage = quick ? "ready" : "prep";
         }
@@ -112,7 +111,7 @@ namespace SquishSquad.Games.Squish
                 if (_creature == null)
                 {
                     var s = new UiSvg(box, box);
-                    var (fx, fy, fw, fh) = Roster.Frame(_ar);
+                    var (fx, fy, fw, fh) = Roster.PictureFrame(_key);
                     s.Image(_pic, fx * box, fy * box, fw * box, fh * box, "none");
                     _creature = s.Markup;
                 }

@@ -71,7 +71,7 @@ namespace SquishSquad.Vector.Gpu
         {
             if (_disposed) return;
             _w = target.width; _h = target.height;
-            _verts.Clear(); _usedSubs = 0; _tempSeq = 0;
+            _verts.Clear(); _usedSubs = 0; _tempSeq = 0; _propsUsed = 0;
             _rampPaints.Clear(); _rampRow.Clear();
             _cb.Clear();
             // CommandBuffer.DrawMesh checks the submesh index against the mesh as it is while recording ("submeshIndex
@@ -93,6 +93,22 @@ namespace SquishSquad.Vector.Gpu
             UploadRamp();
             Graphics.ExecuteCommandBuffer(_cb);
         }
+
+        // the draws' property blocks, kept and reused frame after frame (a command buffer copies a block's values when the
+        // draw is recorded): a creature's frame had a new one for each of its 50-100 fills, garbage every frame
+        readonly List<MaterialPropertyBlock> _props = new List<MaterialPropertyBlock>();
+        int _propsUsed;
+        MaterialPropertyBlock Props()
+        {
+            MaterialPropertyBlock p;
+            if (_propsUsed < _props.Count) { p = _props[_propsUsed]; p.Clear(); }
+            else { p = new MaterialPropertyBlock(); _props.Add(p); }
+            _propsUsed++;
+            return p;
+        }
+        static readonly int KindId = Shader.PropertyToID("_Kind"), ColorId = Shader.PropertyToID("_Color"), OpacityId = Shader.PropertyToID("_Opacity"),
+            G0Id = Shader.PropertyToID("_G0"), G1Id = Shader.PropertyToID("_G1"), ImgId = Shader.PropertyToID("_Img"), LinId = Shader.PropertyToID("_Lin"),
+            RadId = Shader.PropertyToID("_Rad"), FocId = Shader.PropertyToID("_Foc"), SpreadId = Shader.PropertyToID("_Spread");
 
         void Draw(List<RenderNode> nodes, RenderTargetIdentifier into)
         {
@@ -156,7 +172,7 @@ namespace SquishSquad.Vector.Gpu
             }
 
             _cb.SetRenderTarget(parent);
-            var p = new MaterialPropertyBlock();
+            var p = Props();
             p.SetFloat("_Opacity", l.Opacity);
             p.SetFloat("_UseClip", clip >= 0 ? 1 : 0);
             p.SetFloat("_UseMask", mask >= 0 ? 1 : 0);
@@ -184,7 +200,7 @@ namespace SquishSquad.Vector.Gpu
             foreach (var prim in f.Children)
             {
                 RenderTargetIdentifier outp;
-                var mp = new MaterialPropertyBlock();
+                var mp = Props();
                 switch (prim.Tag)
                 {
                     case "feTurbulence":
@@ -248,7 +264,7 @@ namespace SquishSquad.Vector.Gpu
                         var sd = (prim["stdDeviation"] ?? "0").Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
                         float sx = (float)((sd.Length > 0 ? SvgNum.Parse(sd[0]) : 0) * scale), sy = (float)((sd.Length > 1 ? SvgNum.Parse(sd[1]) : (sd.Length > 0 ? SvgNum.Parse(sd[0]) : 0)) * scale);
                         int a = Temp(false, FilterFormat), b = Temp(false, FilterFormat); temps.Add(a); temps.Add(b);
-                        var mx = new MaterialPropertyBlock(); mx.SetVector("_P", new Vector4(1, 0, sx, 0));
+                        var mx = Props(); mx.SetVector("_P", new Vector4(1, 0, sx, 0));
                         Pass(6, a, In(prim["in"]), null, mx);
                         mp.SetVector("_P", new Vector4(0, 1, sy, 0));
                         Pass(6, b, a, null, mp);
@@ -300,7 +316,7 @@ namespace SquishSquad.Vector.Gpu
             var region = Region(l, f);
             if (region.IsEmpty) return back;
             int clipped = Temp(false, RenderTextureFormat.ARGB32); temps.Add(clipped);
-            var rp = new MaterialPropertyBlock();
+            var rp = Props();
             rp.SetVector("_Rect", new Vector4((float)region.X0, (float)region.Y0, (float)region.X1, (float)region.Y1));
             Pass(11, clipped, back, null, rp);
             return clipped;
@@ -401,10 +417,10 @@ namespace SquishSquad.Vector.Gpu
         // ---- paints -------------------------------------------------------------------------------------------------
         MaterialPropertyBlock SolidProps(RGBA c, float opacity)
         {
-            var p = new MaterialPropertyBlock();
-            p.SetFloat("_Kind", 0);
-            p.SetVector("_Color", new Vector4(c.R, c.G, c.B, c.A));
-            p.SetFloat("_Opacity", opacity);
+            var p = Props();
+            p.SetFloat(KindId, 0);
+            p.SetVector(ColorId, new Vector4(c.R, c.G, c.B, c.A));
+            p.SetFloat(OpacityId, opacity);
             return p;
         }
 
@@ -417,12 +433,12 @@ namespace SquishSquad.Vector.Gpu
                 // px -> user -> the picture's 0..1 square (y down) -> texture uv (y up)
                 if (paint.Image == null || !Images.TryGetValue(paint.Image, out var img) || img.tex == null) return null;
                 var u = Affine.Translate(0, 1) * Affine.ScaleBy(1, -1) * paint.UserToImage * userToPx.Inverse();
-                var ip = new MaterialPropertyBlock();
-                ip.SetFloat("_Kind", 3);
-                ip.SetVector("_G0", new Vector4((float)u.A, (float)u.C, (float)u.E, 0));
-                ip.SetVector("_G1", new Vector4((float)u.B, (float)u.D, (float)u.F, 0));
-                ip.SetTexture("_Img", img.tex);
-                ip.SetFloat("_Opacity", opacity);
+                var ip = Props();
+                ip.SetFloat(KindId, 3);
+                ip.SetVector(G0Id, new Vector4((float)u.A, (float)u.C, (float)u.E, 0));
+                ip.SetVector(G1Id, new Vector4((float)u.B, (float)u.D, (float)u.F, 0));
+                ip.SetTexture(ImgId, img.tex);
+                ip.SetFloat(OpacityId, opacity);
                 return ip;
             }
             // px -> user -> objectBoundingBox -> gradient space
@@ -433,15 +449,15 @@ namespace SquishSquad.Vector.Gpu
                 m = Affine.ScaleBy(1 / userBox.W, 1 / userBox.H) * Affine.Translate(-userBox.X0, -userBox.Y0) * m;
             }
             m = paint.GradientTransform.Inverse() * m;
-            var p = new MaterialPropertyBlock();
-            p.SetFloat("_Kind", paint.Kind == PaintKind.Linear ? 1 : 2);
-            p.SetVector("_G0", new Vector4((float)m.A, (float)m.C, (float)m.E, 0));
-            p.SetVector("_G1", new Vector4((float)m.B, (float)m.D, (float)m.F, 0));
-            p.SetVector("_Lin", new Vector4((float)paint.X1, (float)paint.Y1, (float)paint.X2, (float)paint.Y2));
-            p.SetVector("_Rad", new Vector4((float)paint.Cx, (float)paint.Cy, (float)paint.R, 0));
-            p.SetVector("_Foc", new Vector4((float)paint.Fx, (float)paint.Fy, 0, 0));
-            p.SetFloat("_Spread", paint.Spread);
-            p.SetFloat("_Opacity", opacity);
+            var p = Props();
+            p.SetFloat(KindId, paint.Kind == PaintKind.Linear ? 1 : 2);
+            p.SetVector(G0Id, new Vector4((float)m.A, (float)m.C, (float)m.E, 0));
+            p.SetVector(G1Id, new Vector4((float)m.B, (float)m.D, (float)m.F, 0));
+            p.SetVector(LinId, new Vector4((float)paint.X1, (float)paint.Y1, (float)paint.X2, (float)paint.Y2));
+            p.SetVector(RadId, new Vector4((float)paint.Cx, (float)paint.Cy, (float)paint.R, 0));
+            p.SetVector(FocId, new Vector4((float)paint.Fx, (float)paint.Fy, 0, 0));
+            p.SetFloat(SpreadId, paint.Spread);
+            p.SetFloat(OpacityId, opacity);
             if (!_rampRow.TryGetValue(paint, out int row)) { row = Math.Min(_rampPaints.Count, RampRows - 1); if (_rampPaints.Count < RampRows) _rampPaints.Add(paint); _rampRow[paint] = row; }
             // (a property block is copied into the command buffer as the draw is recorded: the row is final here)
             p.SetFloat("_RampV", (row + 0.5f) / RampRows);

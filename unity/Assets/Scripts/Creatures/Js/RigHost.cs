@@ -1,7 +1,8 @@
 // The compiled rig's host side (Unity-free: Creatures/NativeRig.cs uses it in the app, tools/unity/rig-test off it):
 // runs the compiled scripts once in the page's order (Gen/Scripts.cs), the browser stand-in installed after
 // live-host.js with the creature art it fetches, then drives creatures through live-host.js's __live (mount, play,
-// ext, frame, svg...), as Creatures/LiveRig.cs drove the JS engine. One clock for every creature.
+// ext, frame, svg...), as Creatures/LiveRig.cs drove the JS engine. One clock for every creature. Every call runs on
+// the rig thread (RigThread: the compiled functions' frames need a bigger stack than Unity's main thread has).
 using System;
 using System.Collections.Generic;
 
@@ -15,7 +16,8 @@ namespace SquishSquad.Creatures.Js
         public static readonly List<string> BootErrors = new List<string>();
 
         /// <summary>Runs the scripts (once). readFile: the files the rig fetch()es (a creature's art), null when missing.</summary>
-        public static bool Boot(Func<string, string> readFile)
+        public static bool Boot(Func<string, string> readFile) => RigThread.Run(() => BootHere(readFile));
+        static bool BootHere(Func<string, string> readFile)
         {
             if (_booted) return true;
             if (_failed) return false;
@@ -39,6 +41,8 @@ namespace SquishSquad.Creatures.Js
                     }
                 }
                 _booted = true;
+                // the creatures' border looks as known now (RigLooks: config/roster's, or the last one read)
+                RigLooks.Push();
                 return true;
             }
             catch (Exception e)
@@ -57,7 +61,8 @@ namespace SquishSquad.Creatures.Js
         /// <summary>A house call that threw (the call, the error): Unity logs it.</summary>
         public static Action<string, Exception> HouseError;
 
-        public static string HouseEval(string js)
+        public static string HouseEval(string js) => RigThread.Run(() => HouseEvalHere(js));
+        static string HouseEvalHere(string js)
         {
             if (!_booted || js == null) return null;
             string e = js.Trim();
@@ -81,21 +86,22 @@ namespace SquishSquad.Creatures.Js
         }
 
         public static V Live => _live;
-        public static int Mount(string key) { var id = Rt.Invoke(_live, "mount", key); Rt.RunMicrotasks(); return (int)Rt.ToNum(id); }
-        public static void Play(int id, string move) { Rt.Invoke(_live, "play", id, move); Rt.RunMicrotasks(); }
+        public static int Mount(string key) => RigThread.Run(() => { var id = Rt.Invoke(_live, "mount", key); Rt.RunMicrotasks(); return (int)Rt.ToNum(id); });
+        public static void Play(int id, string move) => RigThread.Run(() => { Rt.Invoke(_live, "play", id, move); Rt.RunMicrotasks(); });
         /// <summary>The one clock: `ms` on (timers due fire in order, then the frame's callbacks), then the promise jobs.</summary>
-        public static void Frame(double ms) { JsStrBuf.ResetCat(); Rt.Invoke(_live, "frame", ms); Rt.RunMicrotasks(); }
-        public static double Now => Rt.ToNum(Rt.Invoke(_live, "now"));
+        public static void Frame(double ms) => RigThread.Run(() => { JsStrBuf.ResetCat(); Rt.Invoke(_live, "frame", ms); Rt.RunMicrotasks(); });
+        public static double Now => RigThread.Run(() => Rt.ToNum(Rt.Invoke(_live, "now")));
         /// <summary>The creature's &lt;svg&gt; element on the stand-in (RigTree reads it), or null.</summary>
-        public static V SvgElement(int id)
+        public static V SvgElement(int id) => RigThread.Run(() =>
         {
             var el = Rt.Invoke(Rt.G("__native"), "host", id);
             return el.IsNullish ? V.Null : Dom.FirstSvg(el);
-        }
+        });
 
         /// <summary>The creature's &lt;svg&gt; markup now, as live-host.js's svg(id) gives it (the fabric tile as
         /// href="grain", one line), written natively (run.mjs checks it against the JS).</summary>
-        public static string Svg(int id)
+        public static string Svg(int id) => RigThread.Run(() => SvgHere(id));
+        static string SvgHere(int id)
         {
             var el = Rt.Invoke(Rt.G("__native"), "host", id);
             if (el.IsNullish) return null;
@@ -106,32 +112,32 @@ namespace SquishSquad.Creatures.Js
             return s.Replace('\n', ' ');
         }
         static readonly System.Text.RegularExpressions.Regex Canvas = new System.Text.RegularExpressions.Regex("href=\"shim-canvas:[^\"]*\"");
-        public static void Unmount(int id) { Rt.Invoke(_live, "unmount", id); Rt.RunMicrotasks(); }
-        public static void Yaw(int id, double deg) => Rt.Invoke(_live, "yaw", id, deg);
-        public static void Fidgets(int id, bool on) => Rt.Invoke(_live, "fidgets", id, on);
-        public static bool InFidget(int id) => Rt.Truthy(Rt.Invoke(_live, "fidg", id));
+        public static void Unmount(int id) => RigThread.Run(() => { Rt.Invoke(_live, "unmount", id); Rt.RunMicrotasks(); });
+        public static void Yaw(int id, double deg) => RigThread.Run(() => { Rt.Invoke(_live, "yaw", id, deg); });
+        public static void Fidgets(int id, bool on) => RigThread.Run(() => { Rt.Invoke(_live, "fidgets", id, on); });
+        public static bool InFidget(int id) => RigThread.Run(() => Rt.Truthy(Rt.Invoke(_live, "fidg", id)));
         /// <summary>The walk's / card's ext channels for this frame (the last ones zeroed first).</summary>
-        public static void Ext(int id, IDictionary<string, double> e)
+        public static void Ext(int id, IDictionary<string, double> e) => RigThread.Run(() =>
         {
             var o = Rt.NewObj(e.Count);
             foreach (var kv in e) o.Put(kv.Key, double.IsNaN(kv.Value) || double.IsInfinity(kv.Value) ? 0 : kv.Value);
             Rt.Invoke(Rt.G("__native"), "ext", id, o.V);
-        }
-        public static string[] Events(int id)
+        });
+        public static string[] Events(int id) => RigThread.Run(() =>
         {
             var l = Rt.Invoke(Rt.G("__native"), "events", id).O as JsArray;
             if (l == null || l.Count == 0) return Array.Empty<string>();
             var o = new string[l.Count]; for (int i = 0; i < l.Count; i++) o[i] = Rt.ToStr(l.At(i)); return o;
-        }
+        });
         /// <summary>The creature's body box at rest [x, y, w, h] (native-host.js restBox), null until it's drawn.</summary>
-        public static double[] RestBox(int id)
+        public static double[] RestBox(int id) => RigThread.Run(() =>
         {
             var b = Rt.Invoke(Rt.G("__native"), "restBox", id).O as JsArray;
             if (b == null) return null;
             return new[] { Rt.ToNum(b.At(0)), Rt.ToNum(b.At(1)), Rt.ToNum(b.At(2)), Rt.ToNum(b.At(3)) };
-        }
+        });
 
         /// <summary>Calls one of native-host.js's helpers (__native.name(args)).</summary>
-        public static V Native(string name, params V[] args) => Rt.InvokeSpread(Rt.G("__native"), name, new JsArray(args).V);
+        public static V Native(string name, params V[] args) => RigThread.Run(() => Rt.InvokeSpread(Rt.G("__native"), name, new JsArray(args).V));
     }
 }

@@ -24,25 +24,30 @@ namespace SquishSquad.Creatures
 
         static V H => Rt.G("__stage");
         /// <summary>Whether the realm has this page (compiled in) and it has booted.</summary>
-        public bool Ready { get { try { return !H.IsNullish && Rt.Truthy(Rt.Invoke(H, "ready", Page)); } catch (Exception) { return false; } } }
+        public bool Ready { get { try { return RigThread.Run(() => !H.IsNullish && Rt.Truthy(Rt.Invoke(H, "ready", Page))); } catch (Exception) { return false; } } }
 
         /// <summary>The play area, dp (the page's innerWidth / innerHeight).</summary>
-        public void Size(double w, double h) { if (!H.IsNullish) Rt.Invoke(H, "size", Page, w, h); }
+        public void Size(double w, double h) => RigThread.Run(() => { if (!H.IsNullish) Rt.Invoke(H, "size", Page, w, h); });
 
         /// <summary>One of the stage's calls, its arguments as the app passes them (numbers, strings, bools, null, lists,
         /// dictionaries). False when the page has no such call (or isn't up).</summary>
         public bool Call(string fn, params object[] args)
         {
-            if (H.IsNullish) return false;
             var json = new StringBuilder();
             Json(json, args);
-            var r = Rt.Invoke(H, "call", Page, fn, json.ToString());
-            Rt.RunMicrotasks();
-            return Rt.Truthy(r);
+            var text = json.ToString();
+            return RigThread.Run(() =>
+            {
+                if (H.IsNullish) return false;
+                var r = Rt.Invoke(H, "call", Page, fn, text);
+                Rt.RunMicrotasks();
+                return Rt.Truthy(r);
+            });
         }
 
         /// <summary>What the page posted since the last call: ("ready" | "cast" | "error", the message's fields).</summary>
-        public List<Dictionary<string, object>> Messages()
+        public List<Dictionary<string, object>> Messages() => RigThread.Run(MessagesHere);
+        List<Dictionary<string, object>> MessagesHere()
         {
             var o = new List<Dictionary<string, object>>();
             if (H.IsNullish) return o;
@@ -80,7 +85,8 @@ namespace SquishSquad.Creatures
         }
 
         /// <summary>Every squishy now, in the order the page added them.</summary>
-        public List<Item> Read()
+        public List<Item> Read() => RigThread.Run(ReadHere);
+        List<Item> ReadHere()
         {
             var o = new List<Item>();
             if (H.IsNullish) return o;
@@ -101,12 +107,12 @@ namespace SquishSquad.Creatures
         }
 
         /// <summary>The board's clip (sort.html's doors shutting over the shelves): the band of x kept, dp; null: none.</summary>
-        public (double left, double right)? Clip()
+        public (double left, double right)? Clip() => RigThread.Run<(double, double)?>(() =>
         {
             if (H.IsNullish) return null;
             if (!(Rt.Invoke(H, "clip", Page).O is JsArray a) || a.Len < 2) return null;
             return (Rt.ToNum(a.At(0)), Rt.ToNum(a.At(1)));
-        }
+        });
 
         // ---- the arguments as JSON ----
         static void Json(StringBuilder sb, object v)
@@ -163,15 +169,15 @@ namespace SquishSquad.Creatures
         readonly double _shadowOpacity;   // 0: hidden
         public bool Dirty { get; set; } = true;
         public StageRig(V host, double shadowOpacity) { _host = host; _shadowOpacity = shadowOpacity; }
-        public string FrameAt(float s) { var svg = Dom.FirstSvg(_host); return svg.IsNullish ? null : Dom.Serialize(svg); }
-        public SvgNode TreeAt(float s)
+        public string FrameAt(float s) => RigThread.Run(() => { var svg = Dom.FirstSvg(_host); return svg.IsNullish ? null : Dom.Serialize(svg); });
+        public SvgNode TreeAt(float s) => RigThread.Run(() =>
         {
             var svg = Dom.FirstSvg(_host);
             if (svg.IsNullish) return null;
             var t = _tree.Build(svg);
             if (t != null) Shadow(t);
             return t;
-        }
+        });
         public void Play(string move) { }
 
         // .ch ellipse[fill="#6a1b9a"] { display: none } (sort) / { opacity: 0.45 } (hop)

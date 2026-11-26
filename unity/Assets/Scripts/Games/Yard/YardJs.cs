@@ -34,10 +34,11 @@ namespace SquishSquad.Games.Yard
     public static class YardJs
     {
         static V Y => Rt.G("__yard");
-        static V Call(string k) { var v = Rt.Invoke(Y, k); Rt.RunMicrotasks(); return v; }
-        static V Call(string k, V a) { var v = Rt.Invoke(Y, k, a); Rt.RunMicrotasks(); return v; }
-        static V Call(string k, V a, V b) { var v = Rt.Invoke(Y, k, a, b); Rt.RunMicrotasks(); return v; }
-        static V Call(string k, V a, V b, V c) { var v = Rt.Invoke(Y, k, a, b, c); Rt.RunMicrotasks(); return v; }
+        // (on the rig thread: Creatures/Js/RigThread)
+        static V Call(string k) => RigThread.Run(() => { var v = Rt.Invoke(Y, k); Rt.RunMicrotasks(); return v; });
+        static V Call(string k, V a) => RigThread.Run(() => { var v = Rt.Invoke(Y, k, a); Rt.RunMicrotasks(); return v; });
+        static V Call(string k, V a, V b) => RigThread.Run(() => { var v = Rt.Invoke(Y, k, a, b); Rt.RunMicrotasks(); return v; });
+        static V Call(string k, V a, V b, V c) => RigThread.Run(() => { var v = Rt.Invoke(Y, k, a, b, c); Rt.RunMicrotasks(); return v; });
 
         /// <summary>Whether the realm has the yard games (yard-host.js and the games compiled in).</summary>
         public static bool Available => !Rt.G("__yard").IsNullish && !Rt.G("YardGames").IsNullish;

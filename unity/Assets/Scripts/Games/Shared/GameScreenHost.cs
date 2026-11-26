@@ -104,7 +104,19 @@ namespace SquishSquad.Games.Shared
         /// <summary>The screen's model (tests, CI screenshots: taps through Down / Up, Back).</summary>
         public GameScreen Model => Screen;
 
+        // (the time it takes, in the [Perf] log: App/PerfLog)
+
         void Update()
+
+        {
+
+            long perf = SquishSquad.App.PerfLog.Mark();
+
+            try { UpdateHere(); } finally { SquishSquad.App.PerfLog.Add("game screen update", perf); }
+
+        }
+
+        void UpdateHere()
         {
             if (!_started) return;
             Ticker.Default = _tk;

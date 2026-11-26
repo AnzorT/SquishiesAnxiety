@@ -31,8 +31,7 @@ namespace SquishSquad.Ui.Cards
         {
             _parent = parent;
             _order = order;
-            TrioItem.LiveFor ??= keys => LiveCharacters && MakeLive != null && CanLive != null && System.Array.TrueForAll(keys, k => CanLive(k));
-            if (!_arsLoaded) LoadArs();
+            Init();
             Card.LoadXml ??= name => Resources.Load<TextAsset>("Cards/" + name)?.text
                 ?? throw new System.InvalidOperationException("Resources/Cards/" + name + ".xml is missing: run node tools/unity/export-cards.mjs");
         }
@@ -62,6 +61,8 @@ namespace SquishSquad.Ui.Cards
                         i++;
                         continue;
                     }
+                    // nothing to draw yet (TrioItem's "trio edge" gets its shine once the colour rises): no piece until then
+                    if (l.Markup == null) { if (_pieces.TryGetValue(l, out var none)) none.piece.Visible = false; continue; }
                     if (!_pieces.TryGetValue(l, out var e)) e = (UiPiece.Create(_parent, "card " + l.Name, 0), -1);
                     if (e.version != l.Version)
                     {
@@ -90,6 +91,28 @@ namespace SquishSquad.Ui.Cards
                 _live[l]?.Destroy();
                 _live.Remove(l);
             }
+        }
+
+        /// <summary>What the cards' characters need (every host calls it: CardPieces itself, Squishdoku's screen): whether
+        /// they can be live, the cut-outs' height / width, a cut-out's creature and body box (the fail card's).</summary>
+        public static void Init()
+        {
+            TrioItem.LiveFor ??= keys => LiveCharacters && MakeLive != null && CanLive != null && System.Array.TrueForAll(keys, k => CanLive(k));
+            if (!_arsLoaded) LoadArs();
+            if (SadBodyItem.OfPicture == null) LoadCast();
+        }
+
+        [System.Serializable] sealed class CastList { public CastEntry[] cast; }
+        [System.Serializable] sealed class CastEntry { public string key, file; public float ar; public float[] box; }
+        // Resources/Hop/hop.json's cast (the app's castOf): each cut-out's creature, its height / width and body box
+        static void LoadCast()
+        {
+            var d = new Dictionary<string, (string, float, float[])>();
+            var text = Resources.Load<TextAsset>("Hop/hop")?.text;
+            if (text != null)
+                foreach (var c in JsonUtility.FromJson<CastList>(text).cast)
+                    if (!string.IsNullOrEmpty(c.file)) d["Stack/art/" + c.file] = (c.key, c.ar, c.box);
+            SadBodyItem.OfPicture = pic => d.TryGetValue(pic, out var v) ? v : ((string, float, float[])?)null;
         }
 
         static bool _arsLoaded;

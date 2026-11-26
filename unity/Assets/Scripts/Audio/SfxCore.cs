@@ -2,7 +2,7 @@
 //
 //   Play("tap")                      one-shot effect (delay ms, rate = speed and pitch together)
 //   var h = Loop("reelLoop")         looping effect -> h.SetRate(r), h.SetVolume(v), h.Stop()
-//   Music("theme")                   fades the track in (null = silence)
+//   Music("theme")                   fades the track in (null = silence); Music(name, ms, power): a longer, eased fade
 //
 // Effects are kept loaded and restarted on each play, at most `budget` of them (8, or what the screen open asks for:
 // SetBudget), the least recently played released first; "tap" and "whoosh" are loaded at the start and never released.
@@ -253,7 +253,8 @@ namespace SquishSquad.Audio
 
         // ---- music -------------------------------------------------------------------------------------------------------
 
-        void Fade(int sound, double from, double to, double ms, Action done)
+        // power 1: sfx.js's straight line; 2 and up: the volume follows progress^power (stays soft longer, then swells)
+        void Fade(int sound, double from, double to, double ms, Action done, double power = 1)
         {
             if (_fading.TryGetValue(sound, out var prev)) _t.Clear(prev);
             int steps = Math.Max(1, (int)Math.Floor(ms / FadeStepMs + 0.5));
@@ -263,7 +264,7 @@ namespace SquishSquad.Audio
             timer = _t.SetInterval(() =>
             {
                 i++;
-                _p.SetVolume(sound, from + ((to - from) * i) / steps);
+                _p.SetVolume(sound, power == 1 ? from + ((to - from) * i) / steps : from + (to - from) * Math.Pow((double)i / steps, power));
                 if (i >= steps)
                 {
                     _t.Clear(timer);
@@ -283,7 +284,7 @@ namespace SquishSquad.Audio
             if (tr.Sound != 0) Fade(tr.Sound, VolumeOf(tr.Name), 0, FadeOutMs, () => _p.Unload(tr.Sound));
         }
 
-        void StartTrack(string name)
+        void StartTrack(string name, double fadeInMs, double fadePower)
         {
             SetMode();
             var tr = new Track { Name = name };
@@ -292,16 +293,17 @@ namespace SquishSquad.Audio
             if (s == 0) return;
             if (tr.Stopped) { _p.Unload(s); return; }
             tr.Sound = s;
-            Fade(s, 0, VolumeOf(name), FadeInMs, null);
+            Fade(s, 0, VolumeOf(name), fadeInMs, null, fadePower);
         }
 
-        /// <summary>sfx.music(name): the track to play (null = none); the one playing keeps playing.</summary>
-        public void Music(string name)
+        /// <summary>sfx.music(name): the track to play (null = none); the one playing keeps playing. A track that starts
+        /// fades in over `fadeInMs` (sfx.js: 1200), its volume following progress^`fadePower` (sfx.js: 1, a straight line).</summary>
+        public void Music(string name, double fadeInMs = FadeInMs, double fadePower = 1)
         {
             _want = name != null && _music.ContainsKey(name) ? name : null;
             if (_track != null && _track.Name == _want && MusicOn) return;
             StopTrack();
-            if (_want != null && MusicOn) StartTrack(_want);
+            if (_want != null && MusicOn) StartTrack(_want, fadeInMs, fadePower);
         }
 
         // ---- switches ----------------------------------------------------------------------------------------------------

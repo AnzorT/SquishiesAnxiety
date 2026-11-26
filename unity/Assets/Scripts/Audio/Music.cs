@@ -25,23 +25,33 @@ namespace SquishSquad.Audio
         public static bool Applies(string stage, bool onGame) => !(stage == "crib" && !onGame);
 
         /// <summary>App.js's music effect, run whenever the stage (or onGame) changes. fontsLoaded: always true in Unity.</summary>
-        public static void Follow(string stage, bool onGame, bool fontsLoaded = true)
+        public static void Follow(string stage, bool onGame, bool fontsLoaded = true) => Follow(stage, onGame, fontsLoaded, SfxCore.FadeInMs, 1);
+
+        static void Follow(string stage, bool onGame, bool fontsLoaded, double fadeInMs, double fadePower)
         {
             _stage = stage; _onGame = onGame;
             if (!Applies(stage, onGame)) return;
-            Sfx.Music(fontsLoaded && !Held ? For(stage, onGame) : null);
+            Sfx.Music(fontsLoaded && !Held ? For(stage, onGame) : null, fadeInMs, fadePower);
         }
 
-        // App.js musicHeld: silent from launch (the sign-in screens too) until the game intro's third squish of Mittens,
-        // or its end (skipped, finished, or never started). AppFlow holds it at launch; the menu lets it go.
+        // App.js musicHeld: silent from launch (the sign-in screens too) until the game intro's SQUISH SQUAD logo starts
+        // dropping in (the user, 2026-11-26; it was the third squish of Mittens), or its end (skipped, finished, or never
+        // started). AppFlow holds it at launch; the menu lets it go.
         static string _stage; static bool _onGame;
         public static bool Held { get; private set; }
         public static void Hold() => Held = true;
-        public static void Release()
+        public static void Release() => Release(SfxCore.FadeInMs, 1);
+
+        /// <summary>The intro's logo drop: the track comes up gradually, over 4 s, eased in (volume ~ progress^2, so the
+        /// first second stays soft) rather than sfx.js's straight 1.2 s.</summary>
+        public const double IntroFadeInMs = 4000, IntroFadePower = 2;
+        public static void ReleaseForIntro() => Release(IntroFadeInMs, IntroFadePower);
+
+        static void Release(double fadeInMs, double fadePower)
         {
             if (!Held) return;
             Held = false;
-            if (_stage != null) Follow(_stage, _onGame);
+            if (_stage != null) Follow(_stage, _onGame, true, fadeInMs, fadePower);
         }
 
         /// <summary>App.js's stage name for an AppFlow stage ("menu" is App.js's "home").</summary>

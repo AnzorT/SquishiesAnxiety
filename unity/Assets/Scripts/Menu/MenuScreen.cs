@@ -324,7 +324,8 @@ namespace SquishSquad.Menu
         bool _dailyChecked;
 
         // The game intro (webgame/app/intro.js, App.js introPending): the first time the menu shows in a launch, before
-        // the daily spin, the streak and the level-up card; the music waits for its third squish of Mittens (Music.Held).
+        // the daily spin, the streak and the level-up card; the music waits for its logo to start dropping in (Music.Held),
+        // then fades in gradually (Music.ReleaseForIntro).
         static bool _introStarted;
         bool _introRunning;
 
@@ -333,7 +334,7 @@ namespace SquishSquad.Menu
             if (_introStarted || _view == null || _game != null || _page != null || _view.Where != MenuView.Place.Home) return;
             _introStarted = true;
             _introRunning = true;
-            _view.StartIntro(NowMs, MenuState.Season, SquishSquad.Audio.Music.Release, IntroEnded);
+            _view.StartIntro(NowMs, MenuState.Season, SquishSquad.Audio.Music.ReleaseForIntro, IntroEnded);
         }
 
         void IntroEnded()
@@ -512,6 +513,9 @@ namespace SquishSquad.Menu
             var c = _view.Carousel;
             if (c == null) return;
             var m = c.Model;
+            // off the carousel and its buttons, on the creature: its rig reacts (MenuView.Touch.cs)
+            if (down && !InPanel(page) && !m.InCarousel(page.x, page.y) && m.HitTest(page.x, page.y, out _) == ParkModel.Hit.None
+                && _view.CreatureDown(page)) return;
             if (down && !InPanel(page))
             {
                 _parkPress = true;
@@ -546,7 +550,19 @@ namespace SquishSquad.Menu
             }
         }
 
+        // (the time it takes, in the [Perf] log: App/PerfLog)
+
         void Update()
+
+        {
+
+            long perf = SquishSquad.App.PerfLog.Mark();
+
+            try { UpdateHere(); } finally { SquishSquad.App.PerfLog.Add("menu update", perf); }
+
+        }
+
+        void UpdateHere()
         {
             StartIntro();
             CheckDaily();
@@ -598,6 +614,14 @@ namespace SquishSquad.Menu
             // a page open over the menu (the Characters page, the Level Pass) takes the touches and Android's back
             if (_page != null) { _page.Input(down, held, up, page, NowMs, Input.GetKeyDown(KeyCode.Escape), Input.mouseScrollDelta.y); return; }
 
+            // a finger on the creature (at home or in the park: MenuView.Touch.cs) is its rig's until it lifts
+            if (_view.CreatureHeld)
+            {
+                if (up || !_view.CreatureTouchable) _view.CreatureUp();
+                else if (held) _view.CreatureMove(page);
+                return;
+            }
+
             // in the Game Park: the games carousel; back (Android's, Escape) walks home like its back orb
             if (_view.Where == MenuView.Place.Park)
             {
@@ -610,6 +634,8 @@ namespace SquishSquad.Menu
             {
                 _down = _view.HitTest(page);
                 _down?.SetPressed(true, dpPx);
+                // not on the HUD: on the creature, its rig reacts (a poke, a squeeze, a turn)
+                if (_down == null && _view.CreatureDown(page)) return;
             }
             if (_down != null && held) _down.SetPressed(_down.Hit.Contains(page), dpPx);
             if (_down != null && up)

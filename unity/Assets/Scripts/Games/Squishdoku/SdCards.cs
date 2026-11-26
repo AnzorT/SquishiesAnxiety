@@ -47,9 +47,9 @@ namespace SquishSquad.Games.Squishdoku
         }
 
         /// <summary>The clock ran out, or (`hearts`, their number) the hearts were all lost. `picture`: the first score
-        /// creature's still.</summary>
+        /// creature's cut-out.</summary>
         public static Card TimeUpCard(float screenW, float screenH, int hearts, string picture, Action onRetry, Action onMap) =>
-            GameCards.FailCard(screenW, screenH, hearts > 0 ? "OUT OF HEARTS!" : "TIME'S UP!", hearts > 0 ? 28 : 32, "pink", picture, "#f3e6d4",
+            GameCards.FailCard(screenW, screenH, hearts > 0 ? "OUT OF HEARTS!" : "TIME'S UP!", hearts > 0 ? 28 : 32, "pink", picture,
                 hearts > 0 ? $"{hearts} mistakes. The same board is waiting: think it through and try again!" : "The same board is waiting. Try it again!", "MAP", onMap, onRetry);
 
         /// <summary>The shared pause card: RESUME / QUIT.</summary>

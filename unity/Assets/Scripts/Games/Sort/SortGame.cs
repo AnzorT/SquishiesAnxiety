@@ -140,7 +140,19 @@ namespace SquishSquad.Games.Sort
             foreach (var p in GetComponentsInChildren<SortDoorPiece>(true)) p.Apply();
         }
 
+        // (the time it takes, in the [Perf] log: App/PerfLog)
+
         void Update()
+
+        {
+
+            long perf = SquishSquad.App.PerfLog.Mark();
+
+            try { UpdateHere(); } finally { SquishSquad.App.PerfLog.Add("Sort update", perf); }
+
+        }
+
+        void UpdateHere()
         {
             if (!_started) return;
             Ticker.Default = _anim;

@@ -22,6 +22,9 @@ namespace SquishSquad.Games.Squishdoku
         public Affine Transform = Affine.Identity;
         public float Opacity = 1;
         public bool Visible = true;
+        /// <summary>A card's live character (the result card's three, the fail card's sad one: CardLayer.Creature): the host
+        /// draws the creature (Transform maps its rig's 0-100 box to the screen) instead of the markup.</summary>
+        public CardCreature Creature;
 
         public SdLayer(string name) { Name = name; }
 
@@ -47,6 +50,7 @@ namespace SquishSquad.Games.Squishdoku
             if (!cache.TryGetValue(c, out var l)) cache[c] = l = new SdLayer(c.Name);
             l.Set(c.Markup, c.W, c.H, c.Margin);
             l.Transform = c.Transform; l.Opacity = c.Opacity; l.Visible = c.Visible;
+            l.Creature = c.Creature;
             return l;
         }
     }
@@ -63,6 +67,23 @@ namespace SquishSquad.Games.Squishdoku
         public string Body => Bodies.ContainsKey(Key) ? "Squishdoku/bodies/" + Key : null;
         public float BodyAr => Bodies.TryGetValue(Key, out var ar) ? ar : Ar;
         public SdCreature(string key, string picture, float ar) { Key = key; Picture = picture; Ar = ar; }
+        /// <summary>The player owns it (a board takes the player's own first).</summary>
+        public bool Mine;
+
+        /// <summary>`k` creatures for a board or the score: the player's own first (at random among them), then the others
+        /// (at random), no repeats while there are more; repeated only when the roster is smaller than `k`. (The app took
+        /// the player's own alone: one owned made every piece that one. Since 2026-11-26, the user: the others fill in.)</summary>
+        public static SdCreature[] Pick(SdCreature[] roster, int k)
+        {
+            var mine = new System.Collections.Generic.List<SdCreature>();
+            var rest = new System.Collections.Generic.List<SdCreature>();
+            foreach (var c in roster) if (c != null) (c.Mine ? mine : rest).Add(c);
+            var o = new System.Collections.Generic.List<SdCreature>();
+            foreach (var pool in new[] { mine, rest })
+                while (o.Count < k && pool.Count > 0) { int i = (int)System.Math.Floor(SdLevel.Random() * pool.Count); o.Add(pool[i]); pool.RemoveAt(i); }
+            while (o.Count < k) o.Add(roster.Length > 0 ? roster[o.Count % roster.Length] : null);
+            return o.ToArray();
+        }
 
         /// <summary>bodies.json's { key: ar } (flat: one number per key).</summary>
         public static System.Collections.Generic.Dictionary<string, float> ParseBodies(string json)

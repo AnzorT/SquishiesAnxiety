@@ -55,6 +55,7 @@ namespace SquishSquad.Ui
         public void SetSvg(string markup, float w, float h, float margin = 6)
         {
             if (markup == _markup && w == _w && h == _h && _rt != null) return;
+            long perf = SquishSquad.App.PerfLog.Mark();
             _markup = markup; _w = w; _h = h; _margin = margin; _straight = false;
             int pw = Mathf.Max(1, Mathf.CeilToInt((w + 2 * margin) * PxPerDp)), ph = Mathf.Max(1, Mathf.CeilToInt((h + 2 * margin) * PxPerDp));
             if (_rt == null || _rt.width != pw || _rt.height != ph)
@@ -62,6 +63,17 @@ namespace SquishSquad.Ui
                 if (_rt != null) { _rt.Release(); Kill(_rt); }
                 _rt = new RenderTexture(pw, ph, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4, name = name, hideFlags = HideFlags.HideAndDontSave };
                 _rt.Create();
+            }
+            if (markup == null)
+            {
+                // nothing to draw yet (the result card's "trio edge" until its shine rises): a clear texture
+                var was = RenderTexture.active;
+                RenderTexture.active = _rt;
+                GL.Clear(true, true, Color.clear);
+                RenderTexture.active = was;
+                _tex = _rt;
+                Quad(-margin, -margin, w + 2 * margin, h + 2 * margin);
+                return;
             }
             _renderer ??= new VectorRenderer();
             var root = SvgMarkup.Parse(markup);
@@ -75,6 +87,7 @@ namespace SquishSquad.Ui
             _renderer.Render(scene, _rt);
             _tex = _rt;
             Quad(-margin, -margin, w + 2 * margin, h + 2 * margin);
+            SquishSquad.App.PerfLog.Add("picture redraw", perf, name, markup?.Length ?? 0);
         }
 
         static bool HasViewBox(SvgNode root)

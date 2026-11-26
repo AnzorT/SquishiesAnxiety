@@ -108,14 +108,15 @@ namespace SquishSquad.Ui.Cards
             return c;
         }
 
-        /// <summary>Time's up / out of hearts / OH NO!: `title` (`size`, `fill`) and the head of `picture` (a Resources path,
-        /// on `headBg`) rocking, `line`, then `backLabel` (white; none: null) and RETRY (gold).</summary>
-        public static Card FailCard(float screenW, float screenH, string title, float size, string fill, string picture, string headBg, string line,
+        /// <summary>The one fail card (Squish Hop's STUCK!, every game's since 2026-11-26): `title` (`size`, `fill`), the
+        /// character of `picture` (its cut-out, a Resources path) whole and sad, live once its rig draws (SadBodyItem),
+        /// `line`, then `backLabel` (white; none: null) and RETRY (gold).</summary>
+        public static Card FailCard(float screenW, float screenH, string title, float size, string fill, string picture, string line,
             string backLabel, Action onBack, Action onRetry)
         {
             var c = new Card(screenW, screenH) { Tint = "rgba(80,0,30,0.5)", RetriggerOnHide = true, Column = true };
             c.Left.Add(new TitleItem(new CardArt.Title(title, size, fill)) { Pop = new PopIn(60) });
-            c.Left.Add(new HeadItem(86, picture, "#ffffff", headBg, true, new Rock(8, 1800)) { Pop = new PopIn(220) });
+            c.Left.Add(new SadBodyItem(picture) { Pop = new PopIn(220) });
             c.Right.Add(new TextItem(line, Body, 6));
             var b = new List<CardButton>();
             if (backLabel != null) b.Add(Pair("white", backLabel, onBack));

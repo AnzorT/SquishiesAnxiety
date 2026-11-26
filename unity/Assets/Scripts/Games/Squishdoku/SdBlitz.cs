@@ -161,14 +161,7 @@ namespace SquishSquad.Games.Squishdoku
             }
         }
 
-        static SdCreature[] Pick(SdCreature[] roster, int k)
-        {
-            var pool = new List<SdCreature>(roster);
-            var o = new List<SdCreature>();
-            while (o.Count < k && pool.Count > 0) { int i = (int)Math.Floor(SdLevel.Random() * pool.Count); o.Add(pool[i]); pool.RemoveAt(i); }
-            while (o.Count < k) o.Add(roster.Length > 0 ? roster[o.Count % roster.Length] : null);
-            return o.ToArray();
-        }
+        static SdCreature[] Pick(SdCreature[] roster, int k) => SdCreature.Pick(roster, k);
 
         void MakeBoard()
         {

@@ -24,6 +24,12 @@ export const PATCHES = [
     replace: 'const FL = window.SquishConfig ? window.SquishConfig.filter(I.ak, (I.hfid && I.key && FIDK[I.key]) || FIDGETS) : ((I.hfid && I.key && FIDK[I.key]) || FIDGETS);',
   },
   {
+    file: 'rive-rig.js',
+    why: 'a tap on a creature pokes it again (2026-11-26): the let-go reaction was added with a // comment on the same line as the tap\'s branch, so "else { poke the spot tapped }" became part of the comment and a tap did nothing; the comment is a block comment now',
+    find: "(RS.em || []).forEach(m => emit(I, m[0], m[1], m[2])); } // own let-go reaction (pet-anims.js) else {",
+    replace: "(RS.em || []).forEach(m => emit(I, m[0], m[1], m[2])); } /* own let-go reaction (pet-anims.js) */ else {",
+  },
+  {
     file: 'rig-shuffle.js',
     why: 'menu / picker showcase: pick only switched-on moves',
     find: 'if (!ctrl) return; let k; do { k = LIST[Math.floor(Math.random() * LIST.length)]; } while (k === last);',

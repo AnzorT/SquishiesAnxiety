@@ -356,7 +356,7 @@ namespace SquishSquad.Screens
                 var pic = Roster.Picture(e.Creature);
                 if (pic != null)
                 {
-                    var (fx, fy, fw, fh) = Roster.Frame(Roster.Ar(e.Creature.Key));
+                    var (fx, fy, fw, fh) = Roster.PictureFrame(e.Creature.Key);
                     s.Image(pic, c - 42 + fx * 84, c - 42 + fy * 84, fw * 84, fh * 84, "none");
                 }
             }

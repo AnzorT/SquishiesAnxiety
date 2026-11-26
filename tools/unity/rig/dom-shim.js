@@ -5,7 +5,8 @@
 // the tree is the same as Chrome's, frame by frame; the Unity app draws it with its own renderer.
 //
 // Plain ES2017, no Node or browser APIs: install(G, { readFile }) adds window / document / navigator / localStorage /
-// fetch / Image / getComputedStyle to the global object G. Timers and requestAnimationFrame come from virtual-clock.js.
+// fetch / Image / getComputedStyle / DOMPoint to the global object G. Timers and requestAnimationFrame come from
+// virtual-clock.js. The geometry the border looks' outline asks for (getCTM, getTotalLength, isPointInFill...) is below.
 (function (root) {
   'use strict';
   var SVG_NS = 'http://www.w3.org/2000/svg';
@@ -511,6 +512,252 @@
     }
     return m;
   }
+
+  // ---------- the border look's outline: computed style, CTM, lengths, points on the edge, fill tests ----------
+  // (2026-11-26, the user: every creature in the look Firestore config/roster picks, 3 = the bold ink line.) The rig
+  // draws the look itself (rive-rig.js applyLook / outlineEls): it finds each part's outer edge with getComputedStyle,
+  // getCTM, getBoundingClientRect, getTotalLength, getPointAtLength and isPointInFill, which the stand-in answers here
+  // as Chrome does, close enough for its tests (which shapes are markings, which get a line): curves flattened, colours
+  // as rgb(). Only the look's code asks for these (and vac-bot.js reads a div's inline left / top, passed through).
+  var CS_INH = { fill: 1, fillOpacity: 1, fillRule: 1, stroke: 1, strokeWidth: 1, strokeOpacity: 1, strokeDasharray: 1, strokeLinecap: 1, strokeLinejoin: 1, visibility: 1, color: 1 };
+  var CS_DEF = { fill: '#000', fillOpacity: '1', fillRule: 'nonzero', stroke: 'none', strokeWidth: '1', strokeOpacity: '1', strokeDasharray: 'none', strokeLinecap: 'butt', strokeLinejoin: 'miter', visibility: 'visible', color: '#000', opacity: '1', display: 'inline', stopColor: '#000', stopOpacity: '1' };
+  var CS_PAINT = { fill: 1, stroke: 1, color: 1, stopColor: 1 }, CS_NUM = { fillOpacity: 1, strokeOpacity: 1, opacity: 1, stopOpacity: 1 };
+  var NAMED = { black: [0, 0, 0], white: [255, 255, 255], red: [255, 0, 0], green: [0, 128, 0], blue: [0, 0, 255], yellow: [255, 255, 0], orange: [255, 165, 0], pink: [255, 192, 203], purple: [128, 0, 128], brown: [165, 42, 42], gray: [128, 128, 128], grey: [128, 128, 128], gold: [255, 215, 0] };
+  // the value an element has for a property (inline style over its attribute), inherited ones from its ancestors
+  function specified(el, k) {
+    var att = kebab(k);
+    for (var e = el; e && e.nodeType === 1; e = e.parentNode) {
+      var v = e.style[k];
+      if (v == null || v === '') v = e.getAttribute(att);
+      if (v != null && v !== '' && v !== 'inherit') return String(v).trim();
+      if (!CS_INH[k] && v !== 'inherit') return null;
+    }
+    return null;
+  }
+  // a CSS colour as Chrome's computed style writes it: rgb(r, g, b) / rgba(r, g, b, a); null if unknown
+  function cssColor(v) {
+    var s = String(v).trim().toLowerCase(), c = null, a = 1, m;
+    if (s === 'transparent') return 'rgba(0, 0, 0, 0)';
+    if (NAMED[s]) c = NAMED[s];
+    else if ((m = /^#([0-9a-f]{3,8})$/.exec(s))) {
+      var h = m[1];
+      if (h.length === 3 || h.length === 4) h = h.replace(/./g, '$&$&');
+      if (h.length !== 6 && h.length !== 8) return null;
+      c = [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+      if (h.length === 8) a = parseInt(h.slice(6, 8), 16) / 255;
+    } else if ((m = /^rgba?\(([^)]*)\)$/.exec(s))) {
+      var p = m[1].split(/[\s,\/]+/).filter(Boolean);
+      c = [0, 1, 2].map(function (i) { var x = p[i] || '0'; return Math.round(x.slice(-1) === '%' ? parseFloat(x) * 2.55 : parseFloat(x)); });
+      if (p[3] != null) a = p[3].slice(-1) === '%' ? parseFloat(p[3]) / 100 : parseFloat(p[3]);
+    } else if ((m = /^hsla?\(([^)]*)\)$/.exec(s))) {
+      var q = m[1].split(/[\s,\/]+/).filter(Boolean), H = (parseFloat(q[0]) % 360 + 360) % 360 / 360, S = parseFloat(q[1]) / 100, L = parseFloat(q[2]) / 100;
+      var hue = function (t) { t = (t + 1) % 1; var Q = L < 0.5 ? L * (1 + S) : L + S - L * S, P = 2 * L - Q; return t < 1 / 6 ? P + (Q - P) * 6 * t : t < 0.5 ? Q : t < 2 / 3 ? P + (Q - P) * (2 / 3 - t) * 6 : P; };
+      c = [hue(H + 1 / 3), hue(H), hue(H - 1 / 3)].map(function (x) { return Math.round(x * 255); });
+      if (q[3] != null) a = q[3].slice(-1) === '%' ? parseFloat(q[3]) / 100 : parseFloat(q[3]);
+    }
+    if (!c || c.some(function (x) { return x !== x; })) return null;
+    c = c.map(function (x) { return Math.max(0, Math.min(255, x)); });
+    return a >= 1 || a !== a ? 'rgb(' + c.join(', ') + ')' : 'rgba(' + c.join(', ') + ', ' + Math.max(0, a) + ')';
+  }
+  function computed(el, k) {
+    var v = specified(el, k);
+    if (k === 'display') return v === 'none' || (root.__cssHidden && root.__cssHidden(el)) ? 'none' : v || 'inline';
+    if (v == null) v = CS_DEF[k];
+    if (CS_PAINT[k]) {
+      if (v.toLowerCase() === 'currentcolor') return computed(el, 'color');
+      var u = /^url\(\s*["']?([^"')]+)["']?\s*\)/.exec(v);
+      if (u) return 'url("' + u[1] + '")';
+      if (v === 'none') return 'none';
+      return cssColor(v) || v;
+    }
+    if (CS_NUM[k]) { var n = v.slice(-1) === '%' ? parseFloat(v) / 100 : parseFloat(v); return String(n !== n ? 1 : Math.max(0, Math.min(1, n))); }
+    if (k === 'strokeWidth') { var w = parseFloat(v); return (w !== w ? 1 : w) + 'px'; }
+    return v;
+  }
+  // getComputedStyle's answer: the look's properties computed (getters), any other one the element's inline style's
+  function CStyle(el) {
+    Object.defineProperty(this, '_el', { value: el, enumerable: false });
+    var st = el && el.style;
+    if (st) for (var k in st) if (Object.prototype.hasOwnProperty.call(st, k) && !Object.prototype.hasOwnProperty.call(CS_DEF, k)) this[k] = st[k];
+  }
+  Object.keys(CS_DEF).forEach(function (k) {
+    Object.defineProperty(CStyle.prototype, k, { get: function () { return this._el && this._el.nodeType === 1 ? computed(this._el, k) : CS_DEF[k]; }, enumerable: true });
+  });
+  CStyle.prototype.getPropertyValue = function (k) { var c = camel(k); return Object.prototype.hasOwnProperty.call(CS_DEF, c) ? this[c] : (this[c] || ''); };
+
+  // DOMMatrix / DOMPoint, the parts the look uses
+  function Mat(a, b, c, d, e, f) { this.a = a; this.b = b; this.c = c; this.d = d; this.e = e; this.f = f; }
+  Mat.prototype.multiply = function (o) { return new Mat(this.a * o.a + this.c * o.b, this.b * o.a + this.d * o.b, this.a * o.c + this.c * o.d, this.b * o.c + this.d * o.d, this.a * o.e + this.c * o.f + this.e, this.b * o.e + this.d * o.f + this.f); };
+  Mat.prototype.inverse = function () {
+    var det = this.a * this.d - this.b * this.c;
+    if (!det) return new Mat(NaN, NaN, NaN, NaN, NaN, NaN);
+    return new Mat(this.d / det, -this.b / det, -this.c / det, this.a / det, (this.c * this.f - this.d * this.e) / det, (this.b * this.e - this.a * this.f) / det);
+  };
+  function Pt(x, y) { this.x = +x || 0; this.y = +y || 0; this.z = 0; this.w = 1; }
+  Pt.prototype.matrixTransform = function (m) { return new Pt(m.a * this.x + m.c * this.y + m.e, m.b * this.x + m.d * this.y + m.f); };
+
+  // getCTM: the element's user space to its nearest <svg>'s (the transform attributes on the way, its own included)
+  Element.prototype.getCTM = function () {
+    if (this.namespaceURI !== SVG_NS) return null;
+    if (this.localName === 'svg') return new Mat(1, 0, 0, 1, 0, 0);
+    var m = null, e = this;
+    while (e && e.nodeType === 1 && e.localName !== 'svg') { var t = parseTransform(e.getAttribute('transform')); if (t) m = mul(t, m); e = e.parentNode; }
+    if (!e || e.nodeType !== 1) return null;
+    m = m || [1, 0, 0, 1, 0, 0];
+    return new Mat(m[0], m[1], m[2], m[3], m[4], m[5]);
+  };
+  Element.prototype.getScreenCTM = Element.prototype.getCTM;
+  // a shape's or group's box inside an <svg>: its getBBox through its CTM (the host's box for anything else, as before)
+  var hostRect = Element.prototype.getBoundingClientRect;
+  Element.prototype.getBoundingClientRect = function () {
+    if (this.namespaceURI === SVG_NS && this.localName !== 'svg' && !this.__rect) {
+      var m = this.getCTM();
+      if (m) {
+        var b = boxOf(this), r = b ? mapRect([m.a, m.b, m.c, m.d, m.e, m.f], b) : { x: 0, y: 0, w: 0, h: 0 };
+        return { left: r.x, top: r.y, x: r.x, y: r.y, width: r.w, height: r.h, right: r.x + r.w, bottom: r.y + r.h };
+      }
+    }
+    return hostRect.call(this);
+  };
+
+  // a shape's outline in its user space, flattened: subpaths [{ p: [x0, y0, x1, y1, ...], closed }], their length and
+  // box; kept on the element until its geometry changes
+  var GEO_ATTRS = { rect: ['x', 'y', 'width', 'height', 'rx', 'ry'], circle: ['cx', 'cy', 'r'], ellipse: ['cx', 'cy', 'rx', 'ry'], line: ['x1', 'y1', 'x2', 'y2'], polygon: ['points'], polyline: ['points'] };
+  function geoOf(el) {
+    var tag = el.localName, key;
+    if (tag === 'path') key = el.getAttribute('d') || '';
+    else if (GEO_ATTRS[tag]) { key = ''; for (var i = 0; i < GEO_ATTRS[tag].length; i++) key += el.getAttribute(GEO_ATTRS[tag][i]) + ','; }
+    else return null;
+    var g = el.__geo;
+    if (g && g.key === key) return g;
+    var subs = tag === 'path' ? pathSubs(key) : shapeSubs(el, tag), len = 0, x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (var s = 0; s < subs.length; s++) {
+      var p = subs[s].p, n = p.length;
+      for (var j = 0; j < n; j += 2) {
+        if (p[j] < x0) x0 = p[j]; if (p[j] > x1) x1 = p[j]; if (p[j + 1] < y0) y0 = p[j + 1]; if (p[j + 1] > y1) y1 = p[j + 1];
+        if (j >= 2) len += Math.hypot(p[j] - p[j - 2], p[j + 1] - p[j - 1]);
+      }
+      if (subs[s].closed && n >= 4) len += Math.hypot(p[0] - p[n - 2], p[1] - p[n - 1]);
+    }
+    g = { key: key, subs: subs, len: len, x0: x0, y0: y0, x1: x1, y1: y1, rule: computed(el, 'fillRule') === 'evenodd' };
+    el.__geo = g;
+    return g;
+  }
+  function shapeSubs(el, tag) {
+    var num = function (k) { return parseFloat(el.getAttribute(k) || '0') || 0; }, p = [], N = 32, i;
+    if (tag === 'circle' || tag === 'ellipse') {
+      var cx = num('cx'), cy = num('cy'), rx = tag === 'circle' ? num('r') : num('rx'), ry = tag === 'circle' ? rx : num('ry');
+      if (!(rx > 0) || !(ry > 0)) return [];
+      for (i = 0; i < N; i++) { var t = 2 * Math.PI * i / N; p.push(cx + rx * Math.cos(t), cy + ry * Math.sin(t)); }
+      return [{ p: p, closed: true }];
+    }
+    if (tag === 'rect') {
+      var x = num('x'), y = num('y'), w = num('width'), h = num('height'), rX = el.getAttribute('rx'), rY = el.getAttribute('ry');
+      if (!(w > 0) || !(h > 0)) return [];
+      var ax = Math.min(w / 2, Math.max(0, parseFloat(rX != null ? rX : rY) || 0)), ay = Math.min(h / 2, Math.max(0, parseFloat(rY != null ? rY : rX) || 0));
+      if (!ax || !ay) return [{ p: [x, y, x + w, y, x + w, y + h, x, y + h], closed: true }];
+      var corner = function (cx2, cy2, a0) { for (var k = 0; k <= 4; k++) { var t2 = a0 + Math.PI / 2 * k / 4; p.push(cx2 + ax * Math.cos(t2), cy2 + ay * Math.sin(t2)); } };
+      corner(x + w - ax, y + ay, -Math.PI / 2); corner(x + w - ax, y + h - ay, 0); corner(x + ax, y + h - ay, Math.PI / 2); corner(x + ax, y + ay, Math.PI);
+      return [{ p: p, closed: true }];
+    }
+    if (tag === 'line') return [{ p: [num('x1'), num('y1'), num('x2'), num('y2')], closed: false }];
+    var v = (el.getAttribute('points') || '').split(/[\s,]+/).filter(Boolean).map(Number);
+    if (v.length % 2) v.pop();
+    return v.length >= 4 ? [{ p: v, closed: tag === 'polygon' }] : [];
+  }
+  // path data flattened (cubics in 8 steps, quadratics in 6, arcs every 22.5 degrees)
+  function pathSubs(d) {
+    var tk = d.match(/[a-zA-Z]|[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?/g) || [], i = 0, cmd = '', subs = [], cur = null;
+    var x = 0, y = 0, sx = 0, sy = 0, lcx = null, lcy = 0, lqx = null, lqy = 0;
+    var n = function () { return +tk[i++]; };
+    var start = function () { cur = { p: [x, y], closed: false }; subs.push(cur); };
+    var to = function (nx, ny) { if (!cur) start(); cur.p.push(nx, ny); };
+    while (i < tk.length) {
+      if (/[a-zA-Z]/.test(tk[i])) cmd = tk[i++];
+      var C = cmd.toUpperCase(), rel = cmd !== C, ox = rel ? x : 0, oy = rel ? y : 0, k;
+      if (C === 'Z') { if (cur) { cur.closed = true; cur = null; } x = sx; y = sy; lcx = lqx = null; if (i < tk.length && !/[a-zA-Z]/.test(tk[i])) i++; continue; }
+      if (i >= tk.length) break;
+      if (C === 'M') { x = ox + n(); y = oy + n(); sx = x; sy = y; start(); cmd = rel ? 'l' : 'L'; lcx = lqx = null; continue; }
+      if (C === 'L') { x = ox + n(); y = oy + n(); to(x, y); lcx = lqx = null; continue; }
+      if (C === 'H') { x = ox + n(); to(x, y); lcx = lqx = null; continue; }
+      if (C === 'V') { y = oy + n(); to(x, y); lcx = lqx = null; continue; }
+      if (C === 'C' || C === 'S') {
+        var c1x, c1y;
+        if (C === 'C') { c1x = ox + n(); c1y = oy + n(); } else { c1x = lcx != null ? 2 * x - lcx : x; c1y = lcx != null ? 2 * y - lcy : y; }
+        var c2x = ox + n(), c2y = oy + n(), ex = ox + n(), ey = oy + n();
+        for (k = 1; k <= 8; k++) { var t = k / 8, u = 1 - t; to(u * u * u * x + 3 * u * u * t * c1x + 3 * u * t * t * c2x + t * t * t * ex, u * u * u * y + 3 * u * u * t * c1y + 3 * u * t * t * c2y + t * t * t * ey); }
+        lcx = c2x; lcy = c2y; lqx = null; x = ex; y = ey; continue;
+      }
+      if (C === 'Q' || C === 'T') {
+        var qx, qy;
+        if (C === 'Q') { qx = ox + n(); qy = oy + n(); } else { qx = lqx != null ? 2 * x - lqx : x; qy = lqx != null ? 2 * y - lqy : y; }
+        var qex = ox + n(), qey = oy + n();
+        for (k = 1; k <= 6; k++) { var t3 = k / 6, u3 = 1 - t3; to(u3 * u3 * x + 2 * u3 * t3 * qx + t3 * t3 * qex, u3 * u3 * y + 2 * u3 * t3 * qy + t3 * t3 * qey); }
+        lqx = qx; lqy = qy; lcx = null; x = qex; y = qey; continue;
+      }
+      if (C === 'A') {
+        var rx = n(), ry = n(), ang = n(), fa = n(), fs = n(), ax = ox + n(), ay = oy + n();
+        if (!cur) start();
+        arcFlat(cur.p, x, y, rx, ry, ang, !!fa, !!fs, ax, ay);
+        x = ax; y = ay; lcx = lqx = null; continue;
+      }
+      i++;
+    }
+    return subs;
+  }
+  // an SVG arc (endpoint form) as points after (x1, y1), its centre found as the spec's F.6.5 does
+  function arcFlat(out, x1, y1, rx, ry, phi, fa, fs, x2, y2) {
+    if (x1 === x2 && y1 === y2) return;
+    rx = Math.abs(rx); ry = Math.abs(ry);
+    if (!rx || !ry) { out.push(x2, y2); return; }
+    var r = phi * Math.PI / 180, cs = Math.cos(r), sn = Math.sin(r);
+    var dx = (x1 - x2) / 2, dy = (y1 - y2) / 2, xp = cs * dx + sn * dy, yp = -sn * dx + cs * dy;
+    var lam = xp * xp / (rx * rx) + yp * yp / (ry * ry);
+    if (lam > 1) { var s = Math.sqrt(lam); rx *= s; ry *= s; }
+    var num = rx * rx * ry * ry - rx * rx * yp * yp - ry * ry * xp * xp, den = rx * rx * yp * yp + ry * ry * xp * xp;
+    var co = (den ? Math.sqrt(Math.max(0, num / den)) : 0) * (fa === fs ? -1 : 1);
+    var cxp = co * rx * yp / ry, cyp = -co * ry * xp / rx;
+    var cx = cs * cxp - sn * cyp + (x1 + x2) / 2, cy = sn * cxp + cs * cyp + (y1 + y2) / 2;
+    var ang = function (ux, uy, vx, vy) { return Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy); };
+    var t1 = ang(1, 0, (xp - cxp) / rx, (yp - cyp) / ry), dt = ang((xp - cxp) / rx, (yp - cyp) / ry, (-xp - cxp) / rx, (-yp - cyp) / ry);
+    if (!fs && dt > 0) dt -= 2 * Math.PI; else if (fs && dt < 0) dt += 2 * Math.PI;
+    var steps = Math.max(2, Math.ceil(Math.abs(dt) / (Math.PI / 8)));
+    for (var i = 1; i < steps; i++) { var t = t1 + dt * i / steps, ex = rx * Math.cos(t), ey = ry * Math.sin(t); out.push(cs * ex - sn * ey + cx, sn * ex + cs * ey + cy); }
+    out.push(x2, y2);
+  }
+  Element.prototype.getTotalLength = function () { var g = geoOf(this); return g ? g.len : 0; };
+  Element.prototype.getPointAtLength = function (L) {
+    var g = geoOf(this); if (!g || !g.subs.length) return new Pt(0, 0);
+    var left = Math.max(0, Math.min(g.len, +L || 0)), last = null;
+    for (var s = 0; s < g.subs.length; s++) {
+      var p = g.subs[s].p, n = p.length, m = g.subs[s].closed ? n + 2 : n;
+      for (var j = 2; j < m; j += 2) {
+        var ax = p[j - 2], ay = p[j - 1], bx = p[j % n], by = p[(j + 1) % n], sl = Math.hypot(bx - ax, by - ay);
+        if (left <= sl && sl > 0) { var f = left / sl; return new Pt(ax + (bx - ax) * f, ay + (by - ay) * f); }
+        left -= sl; last = [bx, by];
+      }
+    }
+    return last ? new Pt(last[0], last[1]) : new Pt(g.subs[0].p[0], g.subs[0].p[1]);
+  };
+  // whether a point (the shape's user space) is inside its fill: every subpath closed, the element's fill-rule
+  Element.prototype.isPointInFill = function (pt) {
+    var g = geoOf(this); if (!g || !pt) return false;
+    var x = +pt.x, y = +pt.y;
+    if (!(x >= g.x0 && x <= g.x1 && y >= g.y0 && y <= g.y1)) return false;
+    var w = 0;
+    for (var s = 0; s < g.subs.length; s++) {
+      var p = g.subs[s].p, n = p.length;
+      if (n < 6) continue;
+      for (var j = 0; j < n; j += 2) {
+        var x1 = p[j], y1 = p[j + 1], x2 = p[(j + 2) % n], y2 = p[(j + 3) % n];
+        if (y1 <= y) { if (y2 > y && (x2 - x1) * (y - y1) - (x - x1) * (y2 - y1) > 0) w++; }
+        else if (y2 <= y && (x2 - x1) * (y - y1) - (x - x1) * (y2 - y1) < 0) w--;
+      }
+    }
+    return g.rule ? (Math.abs(w) % 2) === 1 : w !== 0;
+  };
+  Element.prototype.isPointInStroke = function () { return false; };
+
   // ---------- canvas 2D: just enough for the fabric-grain tile (pixels kept for the host) ----------
   var CANVASES = {};
   function Ctx2D(cv) { this.canvas = cv; this.fillStyle = '#000'; this.globalAlpha = 1; }
@@ -553,7 +800,8 @@
     G.addEventListener = function (t, fn) { (winListeners[t] = winListeners[t] || []).push(fn); };
     G.removeEventListener = function () {};
     G.dispatchEvent = function (ev) { (winListeners[ev.type] || []).slice().forEach(function (f) { f(ev); }); return true; };
-    G.getComputedStyle = function (el) { return el.style; };
+    G.getComputedStyle = function (el) { return new CStyle(el); };
+    G.DOMPoint = G.DOMPointReadOnly = Pt;
     G.matchMedia = function () { return { matches: false, addListener: function () {}, removeListener: function () {}, addEventListener: function () {} }; };
     G.innerWidth = 832; G.innerHeight = 384; G.devicePixelRatio = 2.8125;
     G.Image = function () { var e = new Element('img', 'http://www.w3.org/1999/xhtml'); return e; };

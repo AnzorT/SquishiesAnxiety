@@ -63,10 +63,70 @@ namespace SquishSquad.Audio
         public static string Tone(double f, double dur, string type, double vol)
         {
             string name = "tone-" + f.ToString("0", System.Globalization.CultureInfo.InvariantCulture) + "-" + type;
-            if (!Extra.ContainsKey(name)) Extra[name] = r => r.Tone(f, 0, dur, type, vol);
+            lock (Extra) if (!Extra.ContainsKey(name)) Extra[name] = r => r.Tone(f, 0, dur, type, vol);
             return name;
         }
+        // (locked: Prebuild's thread reads it while the main thread adds tones)
         static readonly Dictionary<string, Action<Render>> Extra = new Dictionary<string, Action<Render>>();
+
+        /// <summary>Whether `name` is a sound here (the table's or a made-up tone).</summary>
+        public static bool Known(string name) { if (Sounds.ContainsKey(name)) return true; lock (Extra) return Extra.ContainsKey(name); }
+
+        /// <summary>Every rendering of a sound (three for the noisy ones, played in turn), or null for an unknown name.</summary>
+        public static float[][] RenderAll(string name)
+        {
+            if (!Known(name)) return null;
+            var all = new float[HasNoise(name) ? 3 : 1][];
+            for (int v = 0; v < all.Length; v++) all[v] = Samples(name, v);
+            return all;
+        }
+
+        // ---- built ahead, off the main thread ----------------------------------------------------------------------------
+        // A sound is rendered the first time it plays, and some take a while: the first triangle wave builds its
+        // normalisation table (NormOf: 8 million partials), 0.4 s on the Editor's Mono, which froze the intro at the first
+        // squish of Mittens. So the intro's sounds are rendered ahead on a worker (Prebuild), and Play takes them from here.
+        static readonly Queue<string> Todo = new Queue<string>();
+        static readonly HashSet<string> Queued = new HashSet<string>();   // waiting or being rendered
+        static readonly Dictionary<string, float[][]> Built = new Dictionary<string, float[][]>();
+        static System.Threading.Thread _worker;
+
+        /// <summary>Renders these sounds on a worker thread, in this order, for Play to take (TakeBuilt).</summary>
+        public static void Prebuild(IEnumerable<string> names)
+        {
+            lock (Todo)
+            {
+                foreach (var n in names) if (!Built.ContainsKey(n) && Queued.Add(n)) Todo.Enqueue(n);
+                if (_worker != null || Todo.Count == 0) return;
+                _worker = new System.Threading.Thread(BuildQueued) { IsBackground = true, Name = "menu sounds", Priority = System.Threading.ThreadPriority.BelowNormal };
+                _worker.Start();
+            }
+        }
+
+        static void BuildQueued()
+        {
+            while (true)
+            {
+                string name;
+                lock (Todo) { if (Todo.Count == 0) { _worker = null; return; } name = Todo.Dequeue(); }
+                float[][] all = null;
+                try { all = RenderAll(name); } catch (Exception) { /* Play renders it itself */ }
+                lock (Todo) { if (all != null) Built[name] = all; Queued.Remove(name); }
+            }
+        }
+
+        /// <summary>A sound Prebuild rendered (handed over once: the caller keeps it), or null if it isn't ready.</summary>
+        public static float[][] TakeBuilt(string name)
+        {
+            lock (Todo) { if (!Built.TryGetValue(name, out var all)) return null; Built.Remove(name); return all; }
+        }
+
+        /// <summary>The table's sounds whose names start with `prefix` (the intro's: "intro-"), in the table's order.</summary>
+        public static List<string> Named(string prefix)
+        {
+            var l = new List<string>();
+            foreach (var k in Sounds.Keys) if (k.StartsWith(prefix, StringComparison.Ordinal)) l.Add(k);
+            return l;
+        }
 
         /// <summary>One sound's samples (mono, Rate), mixed as Web Audio sums its nodes.</summary>
         public sealed class Render
@@ -153,16 +213,20 @@ namespace SquishSquad.Audio
 
         static double NormOf(string type)
         {
-            if (Norm.TryGetValue(type, out var v)) return v;
-            const int N = 4096, K = 2048;
-            double peak = 0;
-            for (int i = 0; i < N; i++)
+            // (locked: Prebuild's thread and the main thread may both want it; the second waits for the first's table)
+            lock (Norm)
             {
-                double x = 0, ph = 2 * Math.PI * i / N;
-                for (int k = 1; k <= K; k++) { double c = Coef(type, k); if (c != 0) x += c * Math.Sin(k * ph); }
-                peak = Math.Max(peak, Math.Abs(x));
+                if (Norm.TryGetValue(type, out var v)) return v;
+                const int N = 4096, K = 2048;
+                double peak = 0;
+                for (int i = 0; i < N; i++)
+                {
+                    double x = 0, ph = 2 * Math.PI * i / N;
+                    for (int k = 1; k <= K; k++) { double c = Coef(type, k); if (c != 0) x += c * Math.Sin(k * ph); }
+                    peak = Math.Max(peak, Math.Abs(x));
+                }
+                return Norm[type] = peak > 0 ? 1 / peak : 1;
             }
-            return Norm[type] = peak > 0 ? 1 / peak : 1;
         }
 
         static Func<double, double, double> Wave(string type)
@@ -194,7 +258,8 @@ namespace SquishSquad.Audio
 
         public static Render Rendered(string name, int variant = 0)
         {
-            if (!Sounds.TryGetValue(name, out var make) && !Extra.TryGetValue(name, out make)) return null;
+            Action<Render> make;
+            if (!Sounds.TryGetValue(name, out make)) lock (Extra) if (!Extra.TryGetValue(name, out make)) return null;
             int seed = 1 + variant * 7919;
             foreach (var ch in name) seed = seed * 31 + ch;
             var r = new Render(seed);

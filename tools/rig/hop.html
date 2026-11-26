@@ -12,8 +12,11 @@
   #board { position: absolute; inset: 0; pointer-events: none; }
   .ch { position: absolute; left: 0; top: 0; width: 100px; height: 100px; transform-origin: 0 0; }
   .ch > div { position: absolute; inset: 0; }
-  /* the rig's own floor shadow: the board draws none of its own under a rig */
-  .ch ellipse[fill="#6a1b9a"] { opacity: 0.45; }
+  /* the page draws the floor shadows (2026-11-26): a character's height off the floor is its box's (so Unity's texture
+     round the rig's box never cuts its head off at the top of a hop), and the rig's own shadow would go up with it */
+  .ch ellipse[fill="#6a1b9a"] { display: none; }
+  .sh { position: absolute; left: 0; top: 0; width: 100px; height: 100px; transform-origin: 0 0; border-radius: 50%;
+        background: radial-gradient(closest-side, rgba(106, 27, 154, 0.34), rgba(106, 27, 154, 0.2) 55%, rgba(106, 27, 154, 0)); }
 </style>
 <script>
 // Same start as host.html: relative fetch() through XHR on file:// pages (Android's WebView), and a pause that holds
@@ -136,6 +139,8 @@
   let castTag = null;
 
   function mount(c) {
+    // its floor shadow first (under it in the page's order too)
+    c.sh = document.createElement('div'); c.sh.className = 'sh'; c.sh.style.opacity = '0'; board.appendChild(c.sh);
     c.el = document.createElement('div'); c.el.className = 'ch'; c.inner = document.createElement('div'); c.el.appendChild(c.inner); board.appendChild(c.el);
     c.el.style.opacity = '0';
     if (window.__rgI) delete window.__rgI[c.key];
@@ -143,6 +148,7 @@
     c.I = c.ctrl._I;
     c.t0 = performance.now();
   }
+  function unmount(c) { if (c.ctrl) c.ctrl.destroy(); if (c.el) c.el.remove(); if (c.sh) c.sh.remove(); clearInterval(c.sweat); }
   // the rig's body box at rest (its floor shadow and particles left out), in its 0-100 units
   function measure(c) {
     const svg = c.inner.querySelector('svg'); if (!svg) return null;
@@ -162,57 +168,75 @@
     return true;
   }
 
-  // where it's drawn: its feet on (x, y) plus the move's offsets, its body W × s wide
+  // where it's drawn: its feet on (x, y) plus the move's offsets, `up` dp off the floor, its body W × s wide
+  const SH_O = 0.6; // the floor shadow's strength
   function draw(c, now) {
     if (!c.bb || !c.el) return;
     const m = c.cur || {};
     const s = c.s * (m.k == null ? 1 : m.k) * (c.k == null ? 1 : c.k);
     const k = (c.W * s) / c.bb.bw;
-    const x = c.x + (m.dx || 0), y = c.y + (m.dy || 0);
-    c.el.style.transform = 'translate(' + (x - c.bb.cx * k).toFixed(2) + 'px,' + (y - c.bb.gy * k).toFixed(2) + 'px) scale(' + k.toFixed(4) + ')';
-    c.el.style.zIndex = String(m.z != null ? m.z : c.z);
+    const x = c.x + (m.dx || 0), y = c.y + (m.dy || 0), up = Math.max(0, m.up || 0);
+    c.el.style.transform = 'translate(' + (x - c.bb.cx * k).toFixed(2) + 'px,' + (y - up - c.bb.gy * k).toFixed(2) + 'px) scale(' + k.toFixed(4) + ')';
+    const z = m.z != null ? m.z : c.z;
+    c.el.style.zIndex = String(z);
     const o = c.o * (m.o == null ? 1 : m.o);
     c.el.style.opacity = String(Math.round(o * 100) / 100);
     c.kNow = k;
+    // its floor shadow, under its feet on the floor (as wide as its body, wider as it squashes), smaller and fainter the
+    // higher it is, as the rig's own was; a move may fade it (`sh`: a friend flying off to the goal card)
+    const bw = c.W * s, hi = up / bw;
+    const w = bw * 0.94 * (1 + clamp(c.sqNow || 0, -0.45, 0.4) * 0.45) * (1 - clamp(hi / 1.2, 0, 0.6)), h = w * 0.2;
+    const f = (1 - clamp(hi / 0.9, 0, 1)) * (m.sh == null ? 1 : m.sh);
+    c.sh.style.transform = 'translate(' + (x - w / 2).toFixed(2) + 'px,' + (y - h * 0.55).toFixed(2) + 'px) scale(' + (w / 100).toFixed(4) + ',' + (h / 100).toFixed(4) + ')';
+    c.sh.style.zIndex = String(z - 1);
+    c.sh.style.opacity = String(Math.round(o * f * SH_O * 100) / 100);
   }
 
   // --- moves: each a function of time (ms) giving the place offsets and the pose added to the rig (ext) -----------
-  // A move: { t0, dur, run(c, t) → { dx, dy, k, o, z, ext }, done() }. Several can run at once (a landing still
-  // settling as the next hop crouches); their pose values add up.
+  // A move: { t0, dur, run(c, t) → { dx, dy, up, k, o, z, sh, ext }, done() }. Several can run at once (a landing
+  // still settling as the next hop crouches); their pose values add up. `up`: how high off the floor it is, dp.
+  // (2026-11-26) The height is the box's (draw), not the rig's: Unity draws each rig into a texture round its 0-100 box
+  // with a quarter of a box to spare, and a hop's height in the rig (up to 0.7 of a box, a drop-in's 1.2, a friend's
+  // flight into the goal card several as it shrinks) took its head out of it: cut off at the top of every hop. The rig
+  // still gets the height (frame(): its springs, the ears trailing and the body stretching with the speed, are as
+  // before) and sinks its drawing back down by as much.
   function start(c, mv) { mv.t0 = performance.now() + (mv.delay || 0); c.moves.push(mv); kick(); return mv; }
   function stopMoves(c, kind) { c.moves = c.moves.filter(m => (kind ? m.kind !== kind : false)); }
 
-  // lift is in the rig's own units (0-100 box); dp → units at the character's current size
+  // dp → the rig's own units (0-100 box) at the character's current size
   const toU = (c, dp) => (c.kNow ? dp / c.kNow : 0);
 
   // one leg of a hop: a crouch (no travel yet), up and over in an arc stretched tall, leaning into it and turned
-  // toward where it's going; `boing` springs off a bubble instead of crouching
-  const CROUCH = 0.24, SPRING = 0.18;
+  // toward where it's going; `boing` springs off a bubble instead of crouching. (2026-11-26, smoother: the squash into
+  // the stretch over a few more frames, every curve starting where the last leg's ended and ending where the landing
+  // starts, so nothing jumps between them.)
+  const CROUCH = 0.24, SPRING = 0.18, END_SQ = -0.1, END_ARMS = 18;
   function leg(c, L, from, dir, onDone) {
     const D = L.ms, hold = L.boing ? SPRING : CROUCH, H = L.h; // H: the arc's height in dp
     const dx = DIRS[dir] ? DIRS[dir][0] : 0, dy = DIRS[dir] ? DIRS[dir][1] : 0;
     const ease = u => (u <= hold * 0.8 ? 0 : SM((u - hold * 0.8) / (1 - hold * 0.8)));
     const crouch = L.boing
-      ? [[0, 0.45], [D * SPRING, 0.4, 'o'], [D * (SPRING + 0.1), -0.42, 'o'], [D * 0.45, -0.18, 'io'], [D * 0.6, 0.12, 'io'], [D * 0.75, -0.12, 'io'], [D * 0.9, 0.06, 'io'], [D, -0.14, 'io']]
-      : [[0, 0], [D * 0.2, 0.24, 'io'], [D * 0.34, -0.3, 'o'], [D * 0.55, -0.1, 'io'], [D * 0.86, -0.2, 'io'], [D, -0.12, 'io']];
-    const arms = L.boing ? [[0, -10], [D * 0.3, 46, 'o'], [D * 0.8, 30, 'io'], [D, 20, 'io']] : [[0, 0], [D * 0.2, -14, 'io'], [D * 0.36, 40, 'o'], [D * 0.75, 28, 'io'], [D, 18, 'io']];
-    const lean = [[0, 0], [D * 0.2, -0.4, 'io'], [D * 0.38, 1, 'o'], [D * 0.7, 0.55, 'io'], [D, 0.15, 'io']];
+      ? [[0, END_SQ], [D * 0.1, 0.42, 'o'], [D * SPRING, 0.36, 'io'], [D * (SPRING + 0.14), -0.38, 'o'], [D * 0.48, -0.16, 'io'], [D * 0.62, 0.1, 'io'], [D * 0.76, -0.1, 'io'], [D * 0.9, 0.04, 'io'], [D, END_SQ, 'io']]
+      : [[0, 0], [D * 0.22, 0.24, 'io'], [D * 0.4, -0.28, 'o'], [D * 0.58, -0.08, 'io'], [D * 0.86, -0.18, 'io'], [D, END_SQ, 'io']];
+    const arms = L.boing ? [[0, END_ARMS], [D * 0.1, -6, 'io'], [D * 0.3, 46, 'o'], [D * 0.8, 30, 'io'], [D, END_ARMS, 'io']] : [[0, 0], [D * 0.22, -14, 'io'], [D * 0.4, 40, 'o'], [D * 0.75, 28, 'io'], [D, END_ARMS, 'io']];
+    const lean = [[0, 0], [D * 0.22, -0.4, 'io'], [D * 0.4, 1, 'o'], [D * 0.7, 0.55, 'io'], [D, 0, 'io']];
     return start(c, { kind: 'hop', dur: D, run(c, t) {
       const u = clamp(t / D, 0, 1), e = ease(u);
       c.x = lerp(from.x, L.x, e); c.y = lerp(from.y, L.y, e); c.s = lerp(from.s, L.s, e);
       const air = parab((u - hold) / (1 - hold)) * (L.boing ? 1.2 : 1);
       const ln = kv(lean, t);
-      return { z: Math.max(from.z, L.z), ext: {
-        lift: toU(c, H * air), sq: kv(crouch, t), armL: kv(arms, t), armR: kv(arms, t),
+      return { z: Math.max(from.z, L.z), up: H * air, ext: {
+        sq: kv(crouch, t), armL: kv(arms, t), armR: kv(arms, t),
         tilt: ln * 11 * dx, lean: ln * 3 * dx, pitch: -ln * 0.55 * dy, ly: ln * 0.7 * dy,
       } };
     }, done: onDone });
   }
-  // the landing: squashed flat, springing back up with a wobble (the rig's springs add the jiggle)
-  function land(c) {
-    const D = 400;
-    const sq = [[0, 0], [40, 0.3, 'o'], [140, -0.14, 'io'], [240, 0.07, 'io'], [330, -0.03, 'io'], [D, 0, 'io']];
-    const arms = [[0, 18], [60, -18, 'o'], [200, 10, 'io'], [D, 0, 'io']];
+  // the landing: squashed flat, springing back up with a wobble (the rig's springs add the jiggle); from the stretch
+  // and the arms it touches down with (a leg's, or the win's last jump's)
+  function land(c, sq0 = END_SQ, arms0 = END_ARMS) {
+    const D = 420;
+    const sq = [[0, sq0], [55, 0.3, 'o'], [160, -0.13, 'io'], [260, 0.06, 'io'], [350, -0.02, 'io'], [D, 0, 'io']];
+    const arms = [[0, arms0], [70, -18, 'o'], [210, 10, 'io'], [D, 0, 'io']];
     stopMoves(c, 'land');
     if (c.I && c.bb) burst(c, 'hopDust', 'feet'); // a puff of dust off the cushion, round its feet
     start(c, { kind: 'land', dur: D, run(c, t) { return { ext: { sq: kv(sq, t), armL: kv(arms, t), armR: kv(arms, t) } }; } });
@@ -234,10 +258,10 @@
     cast(list, tag) {
       castTag = tag;
       const ids = new Set(list.map(c => c.id));
-      for (const [id, c] of C) if (!ids.has(id)) { if (c.ctrl) c.ctrl.destroy(); if (c.el) c.el.remove(); C.delete(id); }
+      for (const [id, c] of C) if (!ids.has(id)) { unmount(c); C.delete(id); }
       for (const it of list) {
         let c = C.get(it.id);
-        if (c && c.key !== it.key) { if (c.ctrl) c.ctrl.destroy(); if (c.el) c.el.remove(); C.delete(it.id); c = null; }
+        if (c && c.key !== it.key) { unmount(c); C.delete(it.id); c = null; }
         if (!c) { c = { id: it.id, key: it.key, moves: [], face: 0, faceNow: 0, o: 1, k: 1 }; C.set(it.id, c); mount(c); }
         Object.assign(c, { W: it.W, x: it.x + origin[0], y: it.y + origin[1], s: it.s, z: it.z, o: it.o == null ? 1 : it.o });
         c.moves = []; c.cur = null;
@@ -256,15 +280,23 @@
       start(c, { kind: 'enter', delay, dur: D, before: { o: 0 }, run(c, t) {
         if (pop) { const u = t / D; return { k: 0.3 + 0.7 * kv([[0, 0], [D * 0.7, 1.12, 'o'], [D, 1, 'io']], t), o: clamp(u * 3, 0, 1), ext: { sq: kv([[0, 0], [D * 0.5, -0.2, 'o'], [D * 0.8, 0.1, 'io'], [D, 0, 'io']], t) } }; }
         const fall = kv([[0, 1], [D * 0.62, 0, 'i'], [D, 0]], t);
-        return { o: clamp(t / 120, 0, 1), ext: { lift: toU(c, 90 * c.s) * fall, sq: kv([[0, -0.2], [D * 0.62, -0.25, 'i'], [D * 0.7, 0.4, 'o'], [D * 0.85, -0.1, 'io'], [D, 0, 'io']], t), armL: kv([[0, 40], [D * 0.62, 40], [D * 0.75, -14, 'o'], [D, 0, 'io']], t), armR: kv([[0, 40], [D * 0.62, 40], [D * 0.75, -14, 'o'], [D, 0, 'io']], t) } };
+        return { o: clamp(t / 120, 0, 1), up: 90 * c.s * fall, ext: { sq: kv([[0, -0.2], [D * 0.62, -0.25, 'i'], [D * 0.7, 0.4, 'o'], [D * 0.85, -0.1, 'io'], [D, 0, 'io']], t), armL: kv([[0, 40], [D * 0.62, 40], [D * 0.75, -14, 'o'], [D, 0, 'io']], t), armR: kv([[0, 40], [D * 0.62, 40], [D * 0.75, -14, 'o'], [D, 0, 'io']], t) } };
       } });
     },
     // a hop: legs [{ x, y, s, z, ms, h, boing }] one after another (a bubble boings it on), toward `dir` (-1: none, an UNDO)
     hop(id, legs, dir) {
       const c = C.get(id); if (!c) return;
+      // the last hop still in the air here (this page's clock runs a frame or two behind the game's, which sends the
+      // next queued hop the moment its own landed): it lands where it was going first, squash and all, and the next
+      // one goes from there (it was cut off just short of the cushion, its landing skipped: a jump in the pose)
+      if (c.hopEnd && c.moves.some(m => m.kind === 'hop')) { Object.assign(c, c.hopEnd); land(c); }
+      c.hopEnd = null;
       c.moves = c.moves.filter(m => m.kind === 'land' || m.keep);
       if (c.ctrl && c.I && c.I.cur.name !== 'idle') c.ctrl.play('idle');
       if (dir >= 0) faceTo(c, dir);
+      if (!legs.length) return;
+      const E = legs[legs.length - 1];
+      c.hopEnd = { x: E.x + origin[0], y: E.y + origin[1], s: E.s, z: E.z };
       let i = 0;
       const next = () => {
         if (i >= legs.length) return;
@@ -272,7 +304,7 @@
         const from = { x: c.x, y: c.y, s: c.s, z: c.z };
         const last = i === legs.length - 1; i++;
         if (L.boing && c.I && c.bb) burst(c, 'hopPop', 'feet'); // the bubble it springs off pops
-        leg(c, L, from, dir, () => { c.x = L.x; c.y = L.y; c.s = L.s; c.z = L.z; if (last) land(c); next(); });
+        leg(c, L, from, dir, () => { c.x = L.x; c.y = L.y; c.s = L.s; c.z = L.z; if (last) { c.hopEnd = null; land(c); } next(); });
       };
       next();
     },
@@ -300,8 +332,9 @@
         const u = t < go ? 0 : SM((t - go) / (D - go));
         c.x = lerp(from.x, to.x, u); c.y = lerp(from.y, to.y, u);
         const hopUp = parab(t / (go * 0.9)) * 26, fly = parab((t - go) / (D - go)) * 60;
-        return { z: t < go ? c.z : 90, k: lerp(1, kEnd, u), o: t < D * 0.8 ? 1 : 1 - (t - D * 0.8) / (D * 0.2), ext: {
-          lift: toU(c, (hopUp + fly) * c.s), sq: kv([[0, 0], [go * 0.15, 0.3, 'io'], [go * 0.32, -0.3, 'o'], [go * 0.8, -0.05, 'io'], [go, 0.25, 'o'], [go * 1.15, -0.3, 'o'], [D, 0, 'io']], t),
+        // (its floor shadow stays on the floor for the happy hop, and fades as it flies off)
+        return { z: t < go ? c.z : 90, k: lerp(1, kEnd, u), o: t < D * 0.8 ? 1 : 1 - (t - D * 0.8) / (D * 0.2), up: (hopUp + fly) * c.s, sh: 1 - SM((t - go) / (D * 0.2)), ext: {
+          sq: kv([[0, 0], [go * 0.15, 0.3, 'io'], [go * 0.32, -0.3, 'o'], [go * 0.8, -0.05, 'io'], [go, 0.25, 'o'], [go * 1.15, -0.3, 'o'], [D, 0, 'io']], t),
           armL: kv([[0, 0], [go * 0.3, 50, 'o'], [D, 40]], t), armR: kv([[0, 0], [go * 0.3, 50, 'o'], [D, 40]], t),
           tilt: kv([[0, 0], [go * 0.3, 8, 'io'], [go * 0.6, -8, 'io'], [go, 0, 'io']], t), spin: kv([[0, 0], [go, 0], [D * 0.9, 360, 'io'], [D, 360]], t) } };
       }, done() { c.o = 0; c.x = to.x; c.y = to.y; } });
@@ -326,8 +359,8 @@
       const tilt = [[0, 0], [D * 0.13, 7, 'io'], [D * 0.27, 0, 'io'], [D * 0.43, -7, 'io'], [D * 0.57, 0, 'io']];
       const spin = [[0, 0], [D * 0.68, 0], [D * 0.92, 360, 'io'], [D, 360]];
       start(c, { kind: 'win', dur: D, run(c, t) {
-        return { ext: { lift: toU(c, kv(lift, t) * c.s), sq: kv(sq, t), armL: kv(arm, t), armR: kv(arm, t), tilt: kv(tilt, t), spin: t < D ? kv(spin, t) : 0 } };
-      }, done() { land(c); } });
+        return { up: kv(lift, t) * c.s, ext: { sq: kv(sq, t), armL: kv(arm, t), armR: kv(arm, t), tilt: kv(tilt, t), spin: t < D ? kv(spin, t) : 0 } };
+      }, done() { land(c, 0.06, 10); } });
       [0.26, 0.56, 0.96].forEach(f => setTimeout(() => { if (c.I && c.bb) burst(c, 'hopSpark', 'feet', 4); }, D * f));
       setTimeout(() => { if (c.I && c.bb) burst(c, 'hopSpark', 'head', 7); }, D * 0.8);
       hearts(c, 4, 260);
@@ -373,6 +406,8 @@
         if (t >= m.dur) { if (m.run) m.run(c, m.dur); if (m.done) m.done(); return false; }
         const r = m.run(c, t) || {};
         if (r.dx) cur.dx += r.dx; if (r.dy) cur.dy += r.dy;
+        if (r.up) cur.up = (cur.up || 0) + r.up;
+        if (r.sh != null) cur.sh = (cur.sh == null ? 1 : cur.sh) * r.sh;
         if (r.k != null) cur.k = (cur.k == null ? 1 : cur.k) * r.k;
         if (r.o != null) cur.o = (cur.o == null ? 1 : cur.o) * r.o;
         if (r.z != null) cur.z = r.z;
@@ -383,6 +418,10 @@
       if (c.moves.length) busy = true;
       ext.turn = (ext.turn || 0) + c.faceNow;
       if (ext.sq != null) ext.sq = clamp(ext.sq, -0.45, 0.4);
+      c.sqNow = ext.sq || 0;
+      // its height off the floor is the box's (draw); the rig feels it all the same (its lift drives its springs) and
+      // sinks its drawing back down by as much (rive-rig takes P.sk off the lift once its springs have stepped)
+      if (cur.up) { const u = toU(c, cur.up); ext.lift = (ext.lift || 0) + u; ext.sk = (ext.sk || 0) + u; }
       c.cur = cur;
       if (c.ctrl) c.ctrl.ext(ext);
       draw(c, now);

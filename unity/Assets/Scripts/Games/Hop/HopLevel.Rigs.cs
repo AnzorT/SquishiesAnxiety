@@ -88,7 +88,7 @@ namespace SquishSquad.Games.Hop
             for (int k = 0; k < m.Cells.Length; k++)
             {
                 int c = m.Cells[k]; bool last = k == m.Cells.Length - 1;
-                legs.Add(With(RigAt(c, 2, last ? nxt.Life[c] : 1), "ms", last ? 190.0 : 170.0, "h", B.T * (k > 0 ? 0.8 : 0.5) * (BoardGeometry.StandOn(B, c).S / B.T), "boing", k > 0));
+                legs.Add(With(RigAt(c, 2, last ? nxt.Life[c] : 1), "ms", last ? LEG_MS : BOING_LEG_MS, "h", B.T * (k > 0 ? 0.8 : 0.5) * (BoardGeometry.StandOn(B, c).S / B.T), "boing", k > 0));
             }
             return legs;
         }

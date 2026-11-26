@@ -50,8 +50,35 @@ namespace SquishSquad.Screens
         }
 
         // ---- pictures ------------------------------------------------------------------------------------------------
-        /// <summary>The cut-out's Resources path, or null.</summary>
-        public static string Picture(Creature c) => c != null && Ar(c.Key) > 0 ? "Stack/art/" + c.Key : null;
+        /// <summary>The creature's still, as the app's thumbnails (src/squad/looks.js withLooks): its border-look
+        /// picture (Resources/Chests/look/&lt;key&gt;, square, in the look tools/unity/export-chest.mjs exported:
+        /// config/roster's, 3 since 2026-11-26), else the cut-out; null when it has neither. (The games' pieces stay
+        /// cut-outs, as in the app.)</summary>
+        public static string Picture(Creature c) => c == null ? null : HasLook(c.Key) ? "Chests/look/" + c.Key : Ar(c.Key) > 0 ? "Stack/art/" + c.Key : null;
+
+        /// <summary>Where Picture's picture of the creature `key` sits in a box of 1 x 1: x, y, w, h.</summary>
+        public static (float x, float y, float w, float h) PictureFrame(string key) => Frame(HasLook(key) ? 1 : Ar(key));
+
+        static HashSet<string> _lookKeys;
+        /// <summary>The creatures with a border-look still (Resources/Chests/cards4.json `looks`: all but Prickle and
+        /// Wisecrack); none when it can't be read.</summary>
+        public static IReadOnlyCollection<string> LookKeys
+        {
+            get
+            {
+                if (_lookKeys != null) return _lookKeys;
+                var set = new HashSet<string>();
+                try
+                {
+                    var t = ReadText?.Invoke("Chests/cards4");
+                    if (t == null) return set;   // (not cached: the host may set ReadText later)
+                    foreach (var k in Prof.List(Prof.Map(Json.Parse(t))["looks"])) set.Add((string)k);
+                }
+                catch (Exception) { }
+                return _lookKeys = set;
+            }
+        }
+        public static bool HasLook(string key) => key != null && LookKeys.Contains(key);
 
         /// <summary>The cut-out's height / width (0: none).</summary>
         public static float Ar(string key)

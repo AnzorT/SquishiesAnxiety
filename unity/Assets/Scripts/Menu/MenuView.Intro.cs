@@ -111,8 +111,8 @@ namespace SquishSquad.Menu
         SpriteRenderer _sceneSr;
         public bool IntroOn => _intro != null;
 
-        /// <summary>Plays the intro over the house (`weather`: today's), `awake` at the third squish (the music may start),
-        /// `done` once it has handed the screen back.</summary>
+        /// <summary>Plays the intro over the house (`weather`: today's), `awake` as the logo's first letter starts to drop
+        /// (the music may start), `done` once it has handed the screen back.</summary>
         public void StartIntro(float nowMs, string weather, Action awake, Action done)
         {
             if (_intro != null) return;
@@ -182,6 +182,12 @@ namespace SquishSquad.Menu
             foreach (var c in it.Caps.Values) c.color = new Color(1, 1, 1, 0);
             it.Tap.color = new Color(1, 1, 1, 0);
             foreach (var l in it.Letters) l.sr.color = new Color(1, 1, 1, 0);
+            // its made-up tones (the peeks', the logo's thuds) rendered ahead on the sounds' worker, as its named sounds
+            // were at launch (MenuSynth.Unity.cs): the first is wanted after the third squish, many seconds from now
+            var tones = new List<string>();
+            for (int i = 0; i < IPEEK.Length; i++) tones.Add(PeekTone(i));
+            for (int j = 0; j < it.Letters.Count; j++) tones.Add(ThudTone(j));
+            MenuSynth.Prebuild(tones);
             _intro = it;
             Fade(0, nowMs);   // the menu's HUD goes (x.fade(false))
             if (Creature != null) { Creature.gameObject.SetActive(false); Creature.SetTint(NightTint(0).c, NightTint(0).sat); }
@@ -241,6 +247,10 @@ namespace SquishSquad.Menu
                 if (up && it.PressAt >= 0) { NativeSquish(false); it.PressAt = -1; it.FlyAt = t; MenuSynth.Play("intro-squish" + it.N); it.Bursts.Add((t, 500, 330, 10, Warm, 120, 600, it.Bursts.Count)); var (cx, cy) = RoomCentre(IORDER[it.N]); it.Spark = (t, 500, 335, cx, cy); }
             }
         }
+
+        // intro.js tone()s: a squad member peeking out (the ord-th to come up), a logo letter landing
+        static string PeekTone(int ord) => MenuSynth.Tone(880 + ord * 90, 0.14, "triangle", 0.025);
+        static string ThudTone(int j) => MenuSynth.Tone(240 + j * 22, 0.16, "triangle", 0.045);
 
         static readonly string[] Warm = { "#fff3c0", "#ffd76a", "#ffffff" };
         static readonly string[] Confetti = { "#ff8fd0", "#ffe27a", "#8fe0ff", "#b8f0a0", "#ffffff" };
@@ -341,7 +351,6 @@ namespace SquishSquad.Menu
                 it.LitAt[n] = t;
                 it.N = n + 1; it.FlyAt = -1; it.Spark = (-1, 0, 0, 0, 0);
                 Say(it, "squish" + it.N, t, true);
-                if (it.N >= 3 && !it.AwakeSent) { it.AwakeSent = true; it.Awake?.Invoke(); }
                 if (it.N == 1) it.RingOnAt = t + 2500;
                 if (it.N >= 3) { it.RingOffAt = t; it.Tr = t + 700; }
             }
@@ -355,6 +364,8 @@ namespace SquishSquad.Menu
             DrawRing(it, t, S);
             DrawFx(it, t, S);
             DrawPeeks(it, t, S);
+            // the music comes in with the logo (the user, 2026-11-26: as the SQUISH letters start dropping)
+            if (it.Tr >= 0 && t >= LogoAt && !it.AwakeSent) { it.AwakeSent = true; it.Awake?.Invoke(); }
             DrawLogo(it, t);
             if (TapToStart(t))
             {
@@ -619,7 +630,7 @@ namespace SquishSquad.Menu
                 var w = IWIN[room][wi]; var bx = WBox(w);
                 int ord = Array.IndexOf(_peekOrder, i);
                 double d = ord * 150, u = Clamp01((t - PeekAt - d) / 700);
-                if (t - PeekAt >= 200 + 150 * ord) Once(it, "peek" + i, () => MenuSynth.PlayTone(880 + ord * 90, 0.14, "triangle", 0.025));
+                if (t - PeekAt >= 200 + 150 * ord) Once(it, "peek" + i, () => MenuSynth.Play(PeekTone(ord)));
                 float sz = Math.Min(bx.w * 1.1f, bx.h * 1.3f), cx = pcx != 0 ? pcx : bx.x + bx.w / 2;
                 double y0 = bx.y + bx.h, y1 = bx.y + bx.h - sz * 0.8, y = y0 + (y1 - y0) * BackOut(u), base_ = bx.y + bx.h + sz * 0.3;
                 double since = t - PeekAt - d, wv = u >= 1 ? Math.Sin(since / 240) * 8 * Math.Min(1, (since - 700) / 400) : 0;
@@ -642,7 +653,7 @@ namespace SquishSquad.Menu
                 var (pivot, sr) = it.Letters[j];
                 double u = Clamp01((now - j * 80) / 720), y = -190 * (1 - BounceOut(u)), land = u > 0.36 && u < 0.62 ? Math.Sin((u - 0.36) / 0.26 * Math.PI) : 0;
                 double idle = u >= 1 ? Math.Sin(now / 380 + j * 0.7) * 2.2 : 0, rot = u >= 1 ? Math.Sin(now / 520 + j) * 2 : 0;
-                if (u > 0.36) Once(it, "thud" + j, () => MenuSynth.PlayTone(240 + j * 22, 0.16, "triangle", 0.045));
+                if (u > 0.36) Once(it, "thud" + j, () => MenuSynth.Play(ThudTone(j)));
                 SetAlpha(sr, now - j * 80 >= 0 ? 1 : 0);
                 if (!_capHome.TryGetValue(sr, out var home)) _capHome[sr] = home = pivot.localPosition;
                 pivot.localPosition = home + new Vector3(0, -(float)((y + idle) * k), 0);

@@ -24,6 +24,9 @@ static partial class Program
     {
         Rt.OnHostError = e => { if (HostErrors.Count < 20) HostErrors.Add(e.ToString()); };
         if (Environment.GetEnvironmentVariable("YARD_CONSOLE") == "1") Rt.OnConsole = s => Console.Error.WriteLine("[console] " + (s.Length > 600 ? s.Substring(0, 600) : s));
+        // the app's page draws its rigs (but the posters' own look 3) without a border look (Unity draws config/roster's: Creatures/Js/RigLooks), so they're
+        // compared without one too (the look itself: tools/unity/rig/dump-frames.mjs --look and vector-test)
+        RigLooks.Set(0, null);
         var sw = Stopwatch.StartNew();
         bool ok = RigHost.Boot(p =>
         {
@@ -34,7 +37,10 @@ static partial class Program
         return ok && YardJs.Available;
     }
 
-    static int Main(string[] args)
+    // on the rig thread, as Unity calls the realm (Creatures/Js/RigThread: the compiled functions' frames need its stack)
+    static int Main(string[] args) => SquishSquad.Creatures.Js.RigThread.Run(() => MainHere(args));
+
+    static int MainHere(string[] args)
     {
         string mode = args.Length > 0 ? args[0] : "smoke";
         if (!Boot()) { Console.Error.WriteLine("the yard games aren't in the realm"); return 2; }

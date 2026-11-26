@@ -134,8 +134,24 @@ namespace SquishSquad.Vector
                     double cross = d0.X * d1.Y - d0.Y * d1.X;
                     if (join == Join.Round)
                     {
-                        // only where the outline turns enough to open a gap between the segment quads
-                        if (Math.Abs(cross) / (l0 * l1) > 1e-4 || (d0.X * d1.X + d0.Y * d1.Y) < 0) s.Polygons.Add(Circle(p));
+                        // only where the outline turns enough to open a gap between the segment quads. The gap is on the
+                        // turn's outer side, between the two quads' corners: the join's disc there is a wedge as wide as
+                        // the turn (the quads hold the rest of it), so the wedge is drawn, not the whole circle (on a
+                        // flattened curve that's a sliver of a few points instead of 12-96 at every vertex; the same
+                        // stroke: anything nearer to the vertex than to either segment lies in that wedge)
+                        double dot = d0.X * d1.X + d0.Y * d1.Y;
+                        if (!(Math.Abs(cross) / (l0 * l1) > 1e-4 || dot < 0)) continue;
+                        double sd = cross > 0 ? -1 : 1, turn = -sd * Math.Abs(Math.Atan2(cross, dot));
+                        double vx = -d0.Y / l0 * hw * sd, vy = d0.X / l0 * hw * sd;   // the outer corner of the first quad
+                        int m = Math.Max(1, (int)Math.Ceiling(Math.Abs(turn) / (Math.PI / steps)));
+                        var w = Vec2Pool.Get(m + 2);
+                        w.Add(p);
+                        for (int k = 0; k <= m; k++)
+                        {
+                            double a = turn * k / m, ca = Math.Cos(a), sa = Math.Sin(a);
+                            w.Add(new Vec2(p.X + vx * ca - vy * sa, p.Y + vx * sa + vy * ca));
+                        }
+                        s.Polygons.Add(w);
                         continue;
                     }
                     if (Math.Abs(cross) < 1e-12) continue;

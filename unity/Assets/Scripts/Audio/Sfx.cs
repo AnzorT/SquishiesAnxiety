@@ -91,7 +91,7 @@ namespace SquishSquad.Audio
         /// <summary>How many effects may stay loaded while a screen is open (0 = back to the app's 8).</summary>
         public static void SetBudget(int n) => Core?.SetBudget(n);
 
-        public static void Music(string name) => Core?.Music(name);
+        public static void Music(string name, double fadeInMs = SfxCore.FadeInMs, double fadePower = 1) => Core?.Music(name, fadeInMs, fadePower);
 
         public static void SetEffectsOn(bool on) => Core?.SetEffectsOn(on);
 

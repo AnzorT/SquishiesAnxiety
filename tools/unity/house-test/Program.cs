@@ -26,7 +26,10 @@ static partial class Program
 
     public static HouseData Data() => HouseData.Load(n => { var f = Path.Combine(Res, n + ".json"); return File.Exists(f) ? File.ReadAllText(f) : null; });
 
-    static int Main(string[] args)
+    // on the rig thread, as Unity calls the realm (Creatures/Js/RigThread: the compiled functions' frames need its stack)
+    static int Main(string[] args) => SquishSquad.Creatures.Js.RigThread.Run(() => MainHere(args));
+
+    static int MainHere(string[] args)
     {
         var cmd = args.Length > 0 ? args[0] : "save";
         var only = args.Length > 1 ? args[1] : null;

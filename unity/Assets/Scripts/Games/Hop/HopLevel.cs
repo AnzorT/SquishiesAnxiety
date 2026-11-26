@@ -55,6 +55,9 @@ namespace SquishSquad.Games.Hop
         public IReadOnlyList<HopLayer> Layers => BoardHidden ? _layers.FindAll(l => l.Order < O_RUG || l.Order >= O_CHIPS + 50) : _layers;
 
         const double PLAYER_W = 0.86, FRIEND_W = 0.72;
+        // one hop's leg: onto the cell it lands on, and on over each bubble it boings off (Game.js: 190 / 170; a little
+        // longer since 2026-11-26, the user: smoother, more frames for the arc)
+        public const double LEG_MS = 220, BOING_LEG_MS = 195;
         const double LAND_MS = 360;    // the landing's squash and wobble
         const double NO_MS = 560;      // a bump's shake of the head
         const double HAP_MS = 760;     // a friend's happy hop and flight to the goal card
@@ -387,7 +390,7 @@ namespace SquishSquad.Games.Hop
                 int c = m.Cells[k];
                 bool last = k == m.Cells.Length - 1;
                 if (k > 0) Snd.Play("st_lift", rate: 1.5);
-                MoveTo(_player, _pw, _ph, c, last ? 190 : 170, last ? nxt.Life[c] : 1, k > 0 ? 0.8 : 0.5, () =>
+                MoveTo(_player, _pw, _ph, c, last ? LEG_MS : BOING_LEG_MS, last ? nxt.Life[c] : 1, k > 0 ? 0.8 : 0.5, () =>
                 {
                     if (!_alive || G.St != nxt) return;
                     if (!last) SetCell(c, nxt.Life[c]);

@@ -1007,6 +1007,72 @@ namespace SquishSquad.Creatures.Js
             }
         }
 
+        // ------------------------------------------------------------------ encodeURI(Component), decodeURI(Component)
+        const string UriMarks = "-_.!~*'()", UriReserved = ";/?:@&=+$,#";
+        const string Hex = "0123456789ABCDEF";
+
+        // the spec's Encode: letters, digits and `keep` as they are; every other code point as its UTF-8 bytes, %XX each
+        static string UriEncode(string s, string keep)
+        {
+            StringBuilder sb = null;
+            var buf = new byte[4];
+            for (int i = 0; i < s.Length; i++)
+            {
+                char ch = s[i];
+                if (ch < 128 && ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || keep.IndexOf(ch) >= 0)) { sb?.Append(ch); continue; }
+                sb ??= new StringBuilder(s.Length + 16).Append(s, 0, i);
+                int cp = ch;
+                if (char.IsHighSurrogate(ch) && i + 1 < s.Length && char.IsLowSurrogate(s[i + 1])) { cp = char.ConvertToUtf32(ch, s[i + 1]); i++; }
+                else if (char.IsSurrogate(ch)) throw new JsThrow(MakeError("URIError", "URI malformed"));
+                int nb;
+                if (cp < 0x80) { buf[0] = (byte)cp; nb = 1; }
+                else if (cp < 0x800) { buf[0] = (byte)(0xC0 | cp >> 6); buf[1] = (byte)(0x80 | cp & 0x3F); nb = 2; }
+                else if (cp < 0x10000) { buf[0] = (byte)(0xE0 | cp >> 12); buf[1] = (byte)(0x80 | cp >> 6 & 0x3F); buf[2] = (byte)(0x80 | cp & 0x3F); nb = 3; }
+                else { buf[0] = (byte)(0xF0 | cp >> 18); buf[1] = (byte)(0x80 | cp >> 12 & 0x3F); buf[2] = (byte)(0x80 | cp >> 6 & 0x3F); buf[3] = (byte)(0x80 | cp & 0x3F); nb = 4; }
+                for (int k = 0; k < nb; k++) sb.Append('%').Append(Hex[buf[k] >> 4]).Append(Hex[buf[k] & 15]);
+            }
+            return sb?.ToString() ?? s;
+        }
+
+        static int HexVal(char c) => c >= '0' && c <= '9' ? c - '0' : c >= 'a' && c <= 'f' ? c - 'a' + 10 : c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1;
+
+        // the spec's Decode: each run of %XX as UTF-8 (a malformed one: URIError); a single byte in `keep` stays escaped
+        static string UriDecode(string s, string keep)
+        {
+            int at = s.IndexOf('%');
+            if (at < 0) return s;
+            var sb = new StringBuilder(s.Length).Append(s, 0, at);
+            var bytes = new List<byte>(4);
+            for (int i = at; i < s.Length; i++)
+            {
+                char ch = s[i];
+                if (ch != '%') { sb.Append(ch); continue; }
+                int B = i + 2 < s.Length ? HexVal(s[i + 1]) * 16 + HexVal(s[i + 2]) : -1;
+                if (i + 2 >= s.Length || HexVal(s[i + 1]) < 0 || HexVal(s[i + 2]) < 0) throw new JsThrow(MakeError("URIError", "URI malformed"));
+                if (B < 0x80)
+                {
+                    char c1 = (char)B;
+                    if (keep.IndexOf(c1) >= 0) sb.Append(s, i, 3); else sb.Append(c1);
+                    i += 2;
+                    continue;
+                }
+                int n = (B & 0xE0) == 0xC0 ? 2 : (B & 0xF0) == 0xE0 ? 3 : (B & 0xF8) == 0xF0 ? 4 : 0;
+                if (n == 0 || i + 3 * n > s.Length) throw new JsThrow(MakeError("URIError", "URI malformed"));
+                bytes.Clear();
+                for (int k = 0; k < n; k++)
+                {
+                    int j = i + 3 * k;
+                    if (s[j] != '%' || HexVal(s[j + 1]) < 0 || HexVal(s[j + 2]) < 0) throw new JsThrow(MakeError("URIError", "URI malformed"));
+                    int v = HexVal(s[j + 1]) * 16 + HexVal(s[j + 2]);
+                    if (k > 0 && (v & 0xC0) != 0x80) throw new JsThrow(MakeError("URIError", "URI malformed"));
+                    bytes.Add((byte)v);
+                }
+                sb.Append(Encoding.UTF8.GetString(bytes.ToArray()));
+                i += 3 * n - 1;
+            }
+            return sb.ToString();
+        }
+
         // ------------------------------------------------------------------ the global functions
         static void InitGlobals()
         {
@@ -1014,10 +1080,12 @@ namespace SquishSquad.Creatures.Js
             Def(Global, "parseInt", 2, (s, n, a, b, c, d, r) => ParseInt(a, b));
             Def(Global, "isNaN", 1, (s, n, a, b, c, d, r) => double.IsNaN(ToNum(a)));
             Def(Global, "isFinite", 1, (s, n, a, b, c, d, r) => IsFiniteV(a));
-            Def(Global, "encodeURIComponent", 1, (s, n, a, b, c, d, r) => Uri.EscapeDataString(ToStr(a)).Replace("%21", "!").Replace("%27", "'").Replace("%28", "(").Replace("%29", ")").Replace("%2A", "*"));
-            Def(Global, "encodeURI", 1, (s, n, a, b, c, d, r) => Uri.EscapeUriString(ToStr(a)));
-            Def(Global, "decodeURIComponent", 1, (s, n, a, b, c, d, r) => Uri.UnescapeDataString(ToStr(a)));
-            Def(Global, "decodeURI", 1, (s, n, a, b, c, d, r) => Uri.UnescapeDataString(ToStr(a)));
+            // (as the spec has them, not System.Uri's: Unity's Mono refuses strings over ~65,000 characters there, and the
+            // house's pictures are data: URIs of whole SVGs)
+            Def(Global, "encodeURIComponent", 1, (s, n, a, b, c, d, r) => UriEncode(ToStr(a), UriMarks));
+            Def(Global, "encodeURI", 1, (s, n, a, b, c, d, r) => UriEncode(ToStr(a), UriMarks + UriReserved));
+            Def(Global, "decodeURIComponent", 1, (s, n, a, b, c, d, r) => UriDecode(ToStr(a), ""));
+            Def(Global, "decodeURI", 1, (s, n, a, b, c, d, r) => UriDecode(ToStr(a), UriReserved));
             var con = NewObj(4);
             JsFn log = (s, n, a, b, c, d, r) => { OnConsole?.Invoke(Args(n, a, b, c, d, r)); return default; };
             foreach (var k in new[] { "log", "warn", "error", "info", "debug" }) Def(con, k, 0, log);

@@ -21,7 +21,10 @@ static class Program
     static readonly Dictionary<int, RigTree> Trees = new Dictionary<int, RigTree>();
     static int TreeChecks, TreeBad;
 
-    static int Main(string[] args)
+    // on the rig thread, as Unity calls the realm (Creatures/Js/RigThread: the compiled functions' frames need its stack)
+    static int Main(string[] args) => SquishSquad.Creatures.Js.RigThread.Run(() => MainHere(args));
+
+    static int MainHere(string[] args)
     {
         var hostErrors = new List<string>();
         Rt.OnHostError = e => { if (hostErrors.Count < 20) hostErrors.Add(e.ToString()); };
@@ -108,10 +111,17 @@ static class Program
         AllocListener al = null;
         if (args.Length > 1 && args[1] == "alloc") { al = new AllocListener(); args = args[1..]; }
         var keys = args.Length > 1 ? args[1..] : new[] { "mittens", "lumi", "biscuit" };
+        // the border look the creatures are drawn in (RIG_LOOK=0..4; the rig's default 4 without it): the outline costs
+        // its search once (the mount's first frames) and a stroke per part every frame
+        var look = Environment.GetEnvironmentVariable("RIG_LOOK");
+        if (look != null) { RigLooks.Set(int.Parse(look), null); Console.WriteLine("look " + look); }
         foreach (var n in new[] { 1, 3 })
         {
             var ids = new List<int>();
+            var mw = Stopwatch.StartNew();
             for (int i = 0; i < n; i++) ids.Add(RigHost.Mount(keys[i % keys.Length]));
+            { var pool0 = new Vec2Pool(); for (int f = 0; f < 3; f++) { RigHost.Frame(16); foreach (var id in ids) { using (Vec2Pool.Lend(pool0)) SvgScene.Compile(new RigTree().Build(RigHost.SvgElement(id)), 300, 300, Affine.Translate(75, 75)); pool0.Recycle(); } } }
+            Console.WriteLine($"   mount + first 3 frames: {mw.Elapsed.TotalMilliseconds:0} ms");
             var trees = new Dictionary<int, RigTree>();
             var pool = new Vec2Pool();
             foreach (var id in ids) { RigHost.Play(id, "dance"); trees[id] = new RigTree(); }

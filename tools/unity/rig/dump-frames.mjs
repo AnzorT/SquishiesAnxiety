@@ -2,7 +2,8 @@
 // frames their SVG is written out next to Chrome's own picture of it, so another renderer (Unity's) can be compared
 // with the browser, pixel for pixel.
 //
-//   node tools/unity/rig/dump-frames.mjs <outDir> [mittens lumi ...] [--size 475] [--every 30] [--frames 240]
+//   node tools/unity/rig/dump-frames.mjs <outDir> [mittens lumi ...] [--size 475] [--every 30] [--frames 240] [--look n]
+//   (--look: the border look the creature is drawn in, 0-4: Creatures/Js/RigLooks; the rig's own default 4 without it)
 //
 // <outDir>/<key>-<frame>.svg   the creature's <svg> (the fabric tile as href="grain.png")
 // <outDir>/<key>-<frame>.png   Chrome's picture of it at size x size on white
@@ -23,7 +24,7 @@ const args = process.argv.slice(2);
 const arg = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : d; };
 const OUT = path.resolve(args[0] || 'frames');
 const KEYS = args.slice(1).filter((a, i, all) => !a.startsWith('--') && !(all[i - 1] || '').startsWith('--'));
-const SIZE = +arg('size', 475), EVERY = +arg('every', 30), FRAMES = +arg('frames', 240);
+const SIZE = +arg('size', 475), EVERY = +arg('every', 30), FRAMES = +arg('frames', 240), LOOK = arg('look', null);
 const RIG = eval(fs.readFileSync(path.join(HERE, 'parity.mjs'), 'utf8').match(/export const RIG_SCRIPTS = (\[[\s\S]*?\]);/)[1]);
 const SCRIPT = [[0, 'idle'], [40, 'dance'], [120, 'hop'], [170, 'squish'], [210, 'happy']];
 
@@ -38,7 +39,7 @@ for (const key of KEYS.length ? KEYS : ['mittens']) {
   run('RigDomShim.install(globalThis, { readFile: __rf })', 'install');
   run(fs.readFileSync(path.join(HERE, 'virtual-clock.js'), 'utf8'), 'virtual-clock.js');
   for (const s of RIG) { try { run(fs.readFileSync(path.join(WORK, s), 'utf8'), s); } catch (e) { /* as in the app */ } }
-  run(`var host = document.createElement('div'); document.body.appendChild(host); var ctl = RiveRig.mount(host, ${JSON.stringify(key)}, {});`, 'mount');
+  run(`var host = document.createElement('div'); document.body.appendChild(host); var ctl = RiveRig.mount(host, ${JSON.stringify(key)}, ${LOOK != null ? `{ look: ${+LOOK} }` : '{}'});`, 'mount');
   await new Promise(r => setTimeout(r, 400));
   // the fabric tile: the 128 x 128 noise canvas, as the 1024 x 1024 pattern the rig asks for
   if (!grainWritten) {

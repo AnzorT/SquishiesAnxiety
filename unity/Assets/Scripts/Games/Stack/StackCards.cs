@@ -41,7 +41,7 @@ namespace SquishSquad.Games.Stack
 
         /// <summary>The clock ran out (Blitz's old clock; develop's Squish Stack has none: see UNITY_SYNC_DEVELOP.md).</summary>
         public static Card FailCard(float screenW, float screenH, string picture, Action onRetry, Action onHub) =>
-            GameCards.FailCard(screenW, screenH, "TIME'S UP!", 32, "gold", picture, "#efe9f5", "The clock ran out before the stack was done. Try again!", "MENU", onHub, onRetry);
+            GameCards.FailCard(screenW, screenH, "TIME'S UP!", 32, "gold", picture, "The clock ran out before the stack was done. Try again!", "MENU", onHub, onRetry);
 
         /// <summary>The shared pause card: RESUME / QUIT.</summary>
         public static Card PauseCard(float screenW, float screenH, Action onResume, Action onQuit) => GameCards.PauseCard(screenW, screenH, onResume, onQuit);

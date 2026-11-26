@@ -7410,6 +7410,19 @@ Invoke(Get(I_4900, "shots"), "push", NewObj(2).Put("S", RS_5800).Put("t0", n_579
 Invoke((Get(RS_5800, "em") is var _t5811 && Truthy(_t5811) ? _t5811 : Arr()), "forEach", Fn((V _arrowThis5810, int _argc5803, V m_5809, V _a5806, V _a5807, V _a5808, V[] _rest5804) => {
 return Call(emit_51, V.Undef, I_4900, GetIdx(m_5809, 0D), GetIdx(m_5809, 1D), GetIdx(m_5809, 2D));
 }, 1, "", true));
+} else {
+V nm_5812 = default;
+nm_5812 = ((V)(JsStrBuf.Begin().S("poke_").V(Call(region_48, V.Undef, I_4900, Get(Get(I_4900, "down"), "x"), Get(Get(I_4900, "down"), "y"))).End()));
+Invoke(Get(I_4900, "shots"), "push", NewObj(4).Put("S", DENT_44).Put("t0", n_5799).Put("x", Get(Get(I_4900, "down"), "x")).Put("y", Get(Get(I_4900, "down"), "y")).V);
+if (Truthy(GetK(STATES_38, nm_5812))) {
+V tp_5813 = default;
+tp_5813 = Get(GetK(STATES_38, nm_5812), "tap");
+Set(GetK(STATES_38, nm_5812), "tap", V.Null);
+Call(setState_45, V.Undef, I_4900, nm_5812, n_5799);
+Set(GetK(STATES_38, nm_5812), "tap", tp_5813);
+} else {
+Call(poke_47, V.Undef, I_4900, Get(Get(I_4900, "down"), "x"), Get(Get(I_4900, "down"), "y"), n_5799);
+}
 }
 }
 Set(I_4900, "down", V.Null);
@@ -7422,32 +7435,32 @@ Invoke(ALL_65, "add", I_4900);
 Call(applyLook_86, V.Undef, I_4900);
 Call(kick_70, V.Undef);
 Call(tick_59, V.Undef, I_4900, now_4899, ((V)(0.016)));
-return Set(Get(G("window"), "RiveRig"), "_last", NewObj(7).Put("play", Fn((V _arrowThis5819, int _argc5812, V n_5818, V _a5815, V _a5816, V _a5817, V[] _rest5813) => {
-return Call(setState_45, V.Undef, I_4900, n_5818, Invoke(G("performance"), "now"));
-}, 1, "play", true)).Put("ext", Fn((V _arrowThis5827, int _argc5820, V o_5826, V _a5823, V _a5824, V _a5825, V[] _rest5821) => {
-Set(I_4900, "ext", o_5826);
+return Set(Get(G("window"), "RiveRig"), "_last", NewObj(7).Put("play", Fn((V _arrowThis5821, int _argc5814, V n_5820, V _a5817, V _a5818, V _a5819, V[] _rest5815) => {
+return Call(setState_45, V.Undef, I_4900, n_5820, Invoke(G("performance"), "now"));
+}, 1, "play", true)).Put("ext", Fn((V _arrowThis5829, int _argc5822, V o_5828, V _a5825, V _a5826, V _a5827, V[] _rest5823) => {
+Set(I_4900, "ext", o_5828);
 return default;
-}, 1, "ext", true)).Put("light", Fn((V _arrowThis5835, int _argc5828, V L_5834, V _a5831, V _a5832, V _a5833, V[] _rest5829) => {
-Set(I_4900, "sceneL", (L_5834 is var _t5836 && Truthy(_t5836) ? _t5836 : V.Null));
+}, 1, "ext", true)).Put("light", Fn((V _arrowThis5837, int _argc5830, V L_5836, V _a5833, V _a5834, V _a5835, V[] _rest5831) => {
+Set(I_4900, "sceneL", (L_5836 is var _t5838 && Truthy(_t5838) ? _t5838 : V.Null));
 Call(applyLook_86, V.Undef, I_4900);
 Call(tick_59, V.Undef, I_4900, Invoke(G("performance"), "now"), ((V)(0.016)));
 return default;
-}, 1, "light", true)).Put("destroy", Fn((V _arrowThis5843, int _argc5837, V _a5839, V _a5840, V _a5841, V _a5842, V[] _rest5838) => {
+}, 1, "light", true)).Put("destroy", Fn((V _arrowThis5845, int _argc5839, V _a5841, V _a5842, V _a5843, V _a5844, V[] _rest5840) => {
 Invoke(ALL_65, "delete", I_4900);
 Call(G("clearTimeout"), V.Undef, Get(I_4900, "ht"));
 Set(host_4893, "innerHTML", ((V)("")));
 return default;
-}, 0, "destroy", true)).Put("_pose", Fn((V _arrowThis5852, int _argc5844, V name_5850, V t_5851, V _a5848, V _a5849, V[] _rest5845) => {
-V n_5853 = default;
-n_5853 = Invoke(G("performance"), "now");
-Set(I_4900, "cur", NewObj(2).Put("name", name_5850).Put("t0", ((V)((ToNum(n_5853) - ToNum(t_5851))))).V);
+}, 0, "destroy", true)).Put("_pose", Fn((V _arrowThis5854, int _argc5846, V name_5852, V t_5853, V _a5850, V _a5851, V[] _rest5847) => {
+V n_5855 = default;
+n_5855 = Invoke(G("performance"), "now");
+Set(I_4900, "cur", NewObj(2).Put("name", name_5852).Put("t0", ((V)((ToNum(n_5855) - ToNum(t_5853))))).V);
 Set(I_4900, "prev", V.Null);
 Set(I_4900, "shots", Arr());
 Set(Get(I_4900, "flw"), "v", ((V)(0D)));
-Call(tick_59, V.Undef, I_4900, n_5853, ((V)(0.016)));
+Call(tick_59, V.Undef, I_4900, n_5855, ((V)(0.016)));
 return default;
-}, 2, "_pose", true)).Getter("state", Fn((V _self5854, int _argc5855, V _a5857, V _a5858, V _a5859, V _a5860, V[] _rest5856) => {
-if (_self5854.IsNullish) _self5854 = GlobalV;
+}, 2, "_pose", true)).Getter("state", Fn((V _self5856, int _argc5857, V _a5859, V _a5860, V _a5861, V _a5862, V[] _rest5858) => {
+if (_self5856.IsNullish) _self5856 = GlobalV;
 return Get(Get(I_4900, "cur"), "name");
 return default;
 }, 0, "state", false)).Put("_I", I_4900).V);
@@ -7460,706 +7473,706 @@ FAB_8 = V.Null;
 NS_10 = ((V)("http://www.w3.org/2000/svg"));
 D2R_11 = (System.Math.PI / 180D);
 TAU_12 = (System.Math.PI * 2D);
-clamp_13 = Fn((V _arrowThis5870, int _argc5861, V v_5867, V a_5868, V b_5869, V _a5866, V[] _rest5862) => {
-return ((V)(Max(ToNum(a_5868), Min(ToNum(b_5869), ToNum(v_5867)))));
+clamp_13 = Fn((V _arrowThis5872, int _argc5863, V v_5869, V a_5870, V b_5871, V _a5868, V[] _rest5864) => {
+return ((V)(Max(ToNum(a_5870), Min(ToNum(b_5871), ToNum(v_5869)))));
 }, 3, "", true);
-r2_14 = Fn((V _arrowThis5878, int _argc5871, V n_5877, V _a5874, V _a5875, V _a5876, V[] _rest5872) => {
-return ((V)((Round((ToNum(n_5877) * 100D)) / 100D)));
+r2_14 = Fn((V _arrowThis5880, int _argc5873, V n_5879, V _a5876, V _a5877, V _a5878, V[] _rest5874) => {
+return ((V)((Round((ToNum(n_5879) * 100D)) / 100D)));
 }, 1, "", true);
-lerp_15 = Fn((V _arrowThis5888, int _argc5879, V a_5885, V b_5886, V t_5887, V _a5884, V[] _rest5880) => {
-return Add(a_5885, ((V)(((ToNum(b_5886) - ToNum(a_5885)) * ToNum(t_5887)))));
+lerp_15 = Fn((V _arrowThis5890, int _argc5881, V a_5887, V b_5888, V t_5889, V _a5886, V[] _rest5882) => {
+return Add(a_5887, ((V)(((ToNum(b_5888) - ToNum(a_5887)) * ToNum(t_5889)))));
 }, 3, "", true);
-SM_16 = Fn((V _arrowThis5896, int _argc5889, V x_5895, V _a5892, V _a5893, V _a5894, V[] _rest5890) => {
-x_5895 = Call(clamp_13, V.Undef, x_5895, ((V)(0D)), ((V)(1D)));
-return ((V)(((ToNum(x_5895) * ToNum(x_5895)) * (3D - (2D * ToNum(x_5895))))));
+SM_16 = Fn((V _arrowThis5898, int _argc5891, V x_5897, V _a5894, V _a5895, V _a5896, V[] _rest5892) => {
+x_5897 = Call(clamp_13, V.Undef, x_5897, ((V)(0D)), ((V)(1D)));
+return ((V)(((ToNum(x_5897) * ToNum(x_5897)) * (3D - (2D * ToNum(x_5897))))));
 return default;
 }, 1, "", true);
-bez_17 = Fn((V _arrowThis5907, int _argc5897, V x1_5903, V y1_5904, V x2_5905, V y2_5906, V[] _rest5898) => {
-double cx_5908 = 0;
-double bx_5909 = 0;
-double ax_5910 = 0;
-double cy_5911 = 0;
-double by_5912 = 0;
-double ay_5913 = 0;
-V X_5914 = default;
-V dX_5915 = default;
-V Y_5916 = default;
-cx_5908 = (3D * ToNum(x1_5903));
-bx_5909 = ((3D * (ToNum(x2_5905) - ToNum(x1_5903))) - cx_5908);
-ax_5910 = ((1D - cx_5908) - bx_5909);
-cy_5911 = (3D * ToNum(y1_5904));
-by_5912 = ((3D * (ToNum(y2_5906) - ToNum(y1_5904))) - cy_5911);
-ay_5913 = ((1D - cy_5911) - by_5912);
-X_5914 = Fn((V _arrowThis5924, int _argc5917, V t_5923, V _a5920, V _a5921, V _a5922, V[] _rest5918) => {
-return ((V)((((((ax_5910 * ToNum(t_5923)) + bx_5909) * ToNum(t_5923)) + cx_5908) * ToNum(t_5923))));
+bez_17 = Fn((V _arrowThis5909, int _argc5899, V x1_5905, V y1_5906, V x2_5907, V y2_5908, V[] _rest5900) => {
+double cx_5910 = 0;
+double bx_5911 = 0;
+double ax_5912 = 0;
+double cy_5913 = 0;
+double by_5914 = 0;
+double ay_5915 = 0;
+V X_5916 = default;
+V dX_5917 = default;
+V Y_5918 = default;
+cx_5910 = (3D * ToNum(x1_5905));
+bx_5911 = ((3D * (ToNum(x2_5907) - ToNum(x1_5905))) - cx_5910);
+ax_5912 = ((1D - cx_5910) - bx_5911);
+cy_5913 = (3D * ToNum(y1_5906));
+by_5914 = ((3D * (ToNum(y2_5908) - ToNum(y1_5906))) - cy_5913);
+ay_5915 = ((1D - cy_5913) - by_5914);
+X_5916 = Fn((V _arrowThis5926, int _argc5919, V t_5925, V _a5922, V _a5923, V _a5924, V[] _rest5920) => {
+return ((V)((((((ax_5912 * ToNum(t_5925)) + bx_5911) * ToNum(t_5925)) + cx_5910) * ToNum(t_5925))));
 }, 1, "", true);
-dX_5915 = Fn((V _arrowThis5932, int _argc5925, V t_5931, V _a5928, V _a5929, V _a5930, V[] _rest5926) => {
-return ((V)((((((3D * ax_5910) * ToNum(t_5931)) + (2D * bx_5909)) * ToNum(t_5931)) + cx_5908)));
+dX_5917 = Fn((V _arrowThis5934, int _argc5927, V t_5933, V _a5930, V _a5931, V _a5932, V[] _rest5928) => {
+return ((V)((((((3D * ax_5912) * ToNum(t_5933)) + (2D * bx_5911)) * ToNum(t_5933)) + cx_5910)));
 }, 1, "", true);
-Y_5916 = Fn((V _arrowThis5940, int _argc5933, V t_5939, V _a5936, V _a5937, V _a5938, V[] _rest5934) => {
-return ((V)((((((ay_5913 * ToNum(t_5939)) + by_5912) * ToNum(t_5939)) + cy_5911) * ToNum(t_5939))));
+Y_5918 = Fn((V _arrowThis5942, int _argc5935, V t_5941, V _a5938, V _a5939, V _a5940, V[] _rest5936) => {
+return ((V)((((((ay_5915 * ToNum(t_5941)) + by_5914) * ToNum(t_5941)) + cy_5913) * ToNum(t_5941))));
 }, 1, "", true);
-return Fn((V _arrowThis5948, int _argc5941, V x_5947, V _a5944, V _a5945, V _a5946, V[] _rest5942) => {
-V t_5949 = default;
-if (LeN(x_5947, 0D)) {
+return Fn((V _arrowThis5950, int _argc5943, V x_5949, V _a5946, V _a5947, V _a5948, V[] _rest5944) => {
+V t_5951 = default;
+if (LeN(x_5949, 0D)) {
 return ((V)(0D));
 }
-if (GeN(x_5947, 1D)) {
+if (GeN(x_5949, 1D)) {
 return ((V)(1D));
 }
-t_5949 = x_5947;
+t_5951 = x_5949;
 {
-double i_5950 = 0;
-i_5950 = 0D;
+double i_5952 = 0;
+i_5952 = 0D;
 while (true) {
-if (!((i_5950 < 8D))) break;
-V d_5952 = default;
-d_5952 = Call(dX_5915, V.Undef, t_5949);
-if ((System.Math.Abs(ToNum(d_5952)) < 0.00001)) {
+if (!((i_5952 < 8D))) break;
+V d_5954 = default;
+d_5954 = Call(dX_5917, V.Undef, t_5951);
+if ((System.Math.Abs(ToNum(d_5954)) < 0.00001)) {
 break;
 }
-t_5949 = Call(clamp_13, V.Undef, ((V)((ToNum(t_5949) - ((ToNum(Call(X_5914, V.Undef, t_5949)) - ToNum(x_5947)) / ToNum(d_5952))))), ((V)(0D)), ((V)(1D)));
-i_5950++;
+t_5951 = Call(clamp_13, V.Undef, ((V)((ToNum(t_5951) - ((ToNum(Call(X_5916, V.Undef, t_5951)) - ToNum(x_5949)) / ToNum(d_5954))))), ((V)(0D)), ((V)(1D)));
+i_5952++;
 }
 }
-return Call(Y_5916, V.Undef, t_5949);
+return Call(Y_5918, V.Undef, t_5951);
 return default;
 }, 1, "", true);
 return default;
 }, 4, "", true);
-EZ_18 = NewObj(6).Put("l", Fn((V _arrowThis5960, int _argc5953, V x_5959, V _a5956, V _a5957, V _a5958, V[] _rest5954) => {
-return x_5959;
-}, 1, "l", true)).Put("io", Call(bez_17, V.Undef, ((V)(0.45)), ((V)(0D)), ((V)(0.55)), ((V)(1D)))).Put("s", Call(bez_17, V.Undef, ((V)(0.37)), ((V)(0D)), ((V)(0.63)), ((V)(1D)))).Put("o", Fn((V _arrowThis5968, int _argc5961, V x_5967, V _a5964, V _a5965, V _a5966, V[] _rest5962) => {
-return ((V)((1D - Pow((1D - ToNum(x_5967)), 2.4))));
-}, 1, "o", true)).Put("i", Fn((V _arrowThis5976, int _argc5969, V x_5975, V _a5972, V _a5973, V _a5974, V[] _rest5970) => {
-return ((V)(Pow(ToNum(x_5975), 2.2)));
+EZ_18 = NewObj(6).Put("l", Fn((V _arrowThis5962, int _argc5955, V x_5961, V _a5958, V _a5959, V _a5960, V[] _rest5956) => {
+return x_5961;
+}, 1, "l", true)).Put("io", Call(bez_17, V.Undef, ((V)(0.45)), ((V)(0D)), ((V)(0.55)), ((V)(1D)))).Put("s", Call(bez_17, V.Undef, ((V)(0.37)), ((V)(0D)), ((V)(0.63)), ((V)(1D)))).Put("o", Fn((V _arrowThis5970, int _argc5963, V x_5969, V _a5966, V _a5967, V _a5968, V[] _rest5964) => {
+return ((V)((1D - Pow((1D - ToNum(x_5969)), 2.4))));
+}, 1, "o", true)).Put("i", Fn((V _arrowThis5978, int _argc5971, V x_5977, V _a5974, V _a5975, V _a5976, V[] _rest5972) => {
+return ((V)(Pow(ToNum(x_5977), 2.2)));
 }, 1, "i", true)).Put("bk", Call(bez_17, V.Undef, ((V)(0.34)), ((V)(1.45)), ((V)(0.64)), ((V)(1D)))).V;
-kv_19 = Fn((V _arrowThis5985, int _argc5977, V K_5983, V t_5984, V _a5981, V _a5982, V[] _rest5978) => {
-if (Le(t_5984, GetIdx(GetIdx(K_5983, 0D), 0D))) {
-return GetIdx(GetIdx(K_5983, 0D), 1D);
+kv_19 = Fn((V _arrowThis5987, int _argc5979, V K_5985, V t_5986, V _a5983, V _a5984, V[] _rest5980) => {
+if (Le(t_5986, GetIdx(GetIdx(K_5985, 0D), 0D))) {
+return GetIdx(GetIdx(K_5985, 0D), 1D);
 }
 {
-double i_5986 = 0;
-i_5986 = 1D;
+double i_5988 = 0;
+i_5988 = 1D;
 while (true) {
-if (!(Lt(((V)(i_5986)), Get(K_5983, "length")))) break;
-V b_5988 = default;
-b_5988 = GetIdx(K_5983, i_5986);
-if (Le(t_5984, GetIdx(b_5988, 0D))) {
-V a_5989 = default;
-a_5989 = GetIdx(K_5983, (i_5986 - 1D));
-return Add(GetIdx(a_5989, 1D), ((V)(((ToNum(GetIdx(b_5988, 1D)) - ToNum(GetIdx(a_5989, 1D))) * ToNum(InvokeK(EZ_18, (GetIdx(b_5988, 2D) is var _t5990 && Truthy(_t5990) ? _t5990 : ((V)("io"))), ((V)(((ToNum(t_5984) - ToNum(GetIdx(a_5989, 0D))) / Max(1D, (ToNum(GetIdx(b_5988, 0D)) - ToNum(GetIdx(a_5989, 0D)))))))))))));
+if (!(Lt(((V)(i_5988)), Get(K_5985, "length")))) break;
+V b_5990 = default;
+b_5990 = GetIdx(K_5985, i_5988);
+if (Le(t_5986, GetIdx(b_5990, 0D))) {
+V a_5991 = default;
+a_5991 = GetIdx(K_5985, (i_5988 - 1D));
+return Add(GetIdx(a_5991, 1D), ((V)(((ToNum(GetIdx(b_5990, 1D)) - ToNum(GetIdx(a_5991, 1D))) * ToNum(InvokeK(EZ_18, (GetIdx(b_5990, 2D) is var _t5992 && Truthy(_t5992) ? _t5992 : ((V)("io"))), ((V)(((ToNum(t_5986) - ToNum(GetIdx(a_5991, 0D))) / Max(1D, (ToNum(GetIdx(b_5990, 0D)) - ToNum(GetIdx(a_5991, 0D)))))))))))));
 }
-i_5986++;
+i_5988++;
 }
 }
-return GetIdx(GetIdx(K_5983, (ToNum(Get(K_5983, "length")) - 1D)), 1D);
+return GetIdx(GetIdx(K_5985, (ToNum(Get(K_5985, "length")) - 1D)), 1D);
 return default;
 }, 2, "", true);
-Fol_20 = ClassOf(Fn((V _self5991, int _argc5992, V v_5998, V w_5999, V z_6000, V _a5997, V[] _rest5993) => {
-if (_self5991.IsNullish) _self5991 = GlobalV;
-Set(_self5991, "v", (v_5998 is var _t6001 && Truthy(_t6001) ? _t6001 : ((V)(0D))));
-Set(_self5991, "d", ((V)(0D)));
-Set(_self5991, "w", w_5999);
-Set(_self5991, "z", (z_6000.IsNullish ? ((V)(1D)) : z_6000));
+Fol_20 = ClassOf(Fn((V _self5993, int _argc5994, V v_6000, V w_6001, V z_6002, V _a5999, V[] _rest5995) => {
+if (_self5993.IsNullish) _self5993 = GlobalV;
+Set(_self5993, "v", (v_6000 is var _t6003 && Truthy(_t6003) ? _t6003 : ((V)(0D))));
+Set(_self5993, "d", ((V)(0D)));
+Set(_self5993, "w", w_6001);
+Set(_self5993, "z", (z_6002.IsNullish ? ((V)(1D)) : z_6002));
 return default;
-}, 3, "Fol", false)).Method("step", Fn((V _self6002, int _argc6003, V t_6009, V dt_6010, V _a6007, V _a6008, V[] _rest6004) => {
-double n_6011 = 0;
-double h_6012 = 0;
-if (_self6002.IsNullish) _self6002 = GlobalV;
-n_6011 = Max(1D, System.Math.Ceiling((ToNum(dt_6010) / 0.006)));
-h_6012 = (ToNum(dt_6010) / n_6011);
+}, 3, "Fol", false)).Method("step", Fn((V _self6004, int _argc6005, V t_6011, V dt_6012, V _a6009, V _a6010, V[] _rest6006) => {
+double n_6013 = 0;
+double h_6014 = 0;
+if (_self6004.IsNullish) _self6004 = GlobalV;
+n_6013 = Max(1D, System.Math.Ceiling((ToNum(dt_6012) / 0.006)));
+h_6014 = (ToNum(dt_6012) / n_6013);
 {
-double i_6013 = 0;
-i_6013 = 0D;
+double i_6015 = 0;
+i_6015 = 0D;
 while (true) {
-if (!((i_6013 < n_6011))) break;
-OpSet(_self6002, "d", 0, ((V)(((((ToNum(Get(_self6002, "w")) * ToNum(Get(_self6002, "w"))) * (ToNum(t_6009) - ToNum(Get(_self6002, "v")))) - (((2D * ToNum(Get(_self6002, "z"))) * ToNum(Get(_self6002, "w"))) * ToNum(Get(_self6002, "d")))) * h_6012))));
-OpSet(_self6002, "v", 0, ((V)((ToNum(Get(_self6002, "d")) * h_6012))));
-i_6013++;
+if (!((i_6015 < n_6013))) break;
+OpSet(_self6004, "d", 0, ((V)(((((ToNum(Get(_self6004, "w")) * ToNum(Get(_self6004, "w"))) * (ToNum(t_6011) - ToNum(Get(_self6004, "v")))) - (((2D * ToNum(Get(_self6004, "z"))) * ToNum(Get(_self6004, "w"))) * ToNum(Get(_self6004, "d")))) * h_6014))));
+OpSet(_self6004, "v", 0, ((V)((ToNum(Get(_self6004, "d")) * h_6014))));
+i_6015++;
 }
 }
-return Get(_self6002, "v");
+return Get(_self6004, "v");
 return default;
 }, 2, "step", false)).V;
-ellS_22 = Fn((V _arrowThis6027, int _argc6015, V cx_6021, V cy_6022, V rx_6023, V ry_6024, V[] _rest6016) => {
-double k_6028 = 0;
-double c_6029 = 0;
-double s_6030 = 0;
-V P_6031 = default;
-V @out_6032 = default;
-V rot_6025 = default;
-V n_6026 = default;
-rot_6025 = (_argc6015 > 4 ? _rest6016[0] : V.Undef);
-n_6026 = (_argc6015 > 5 ? _rest6016[1] : V.Undef);
-n_6026 = (n_6026 is var _t6033 && Truthy(_t6033) ? _t6033 : ((V)(8D)));
-k_6028 = ((4D / 3D) * FdLibm.Tan((System.Math.PI / (2D * ToNum(n_6026)))));
-c_6029 = FdLibm.Cos((ToNum((rot_6025 is var _t6034 && Truthy(_t6034) ? _t6034 : ((V)(0D)))) * D2R_11));
-s_6030 = FdLibm.Sin((ToNum((rot_6025 is var _t6035 && Truthy(_t6035) ? _t6035 : ((V)(0D)))) * D2R_11));
-P_6031 = Fn((V _arrowThis6044, int _argc6036, V x_6042, V y_6043, V _a6040, V _a6041, V[] _rest6037) => {
-return Arr(((V)((ToNum(Add(cx_6021, ((V)((ToNum(x_6042) * c_6029))))) - (ToNum(y_6043) * s_6030)))), Add(Add(cy_6022, ((V)((ToNum(x_6042) * s_6030)))), ((V)((ToNum(y_6043) * c_6029)))));
+ellS_22 = Fn((V _arrowThis6029, int _argc6017, V cx_6023, V cy_6024, V rx_6025, V ry_6026, V[] _rest6018) => {
+double k_6030 = 0;
+double c_6031 = 0;
+double s_6032 = 0;
+V P_6033 = default;
+V @out_6034 = default;
+V rot_6027 = default;
+V n_6028 = default;
+rot_6027 = (_argc6017 > 4 ? _rest6018[0] : V.Undef);
+n_6028 = (_argc6017 > 5 ? _rest6018[1] : V.Undef);
+n_6028 = (n_6028 is var _t6035 && Truthy(_t6035) ? _t6035 : ((V)(8D)));
+k_6030 = ((4D / 3D) * FdLibm.Tan((System.Math.PI / (2D * ToNum(n_6028)))));
+c_6031 = FdLibm.Cos((ToNum((rot_6027 is var _t6036 && Truthy(_t6036) ? _t6036 : ((V)(0D)))) * D2R_11));
+s_6032 = FdLibm.Sin((ToNum((rot_6027 is var _t6037 && Truthy(_t6037) ? _t6037 : ((V)(0D)))) * D2R_11));
+P_6033 = Fn((V _arrowThis6046, int _argc6038, V x_6044, V y_6045, V _a6042, V _a6043, V[] _rest6039) => {
+return Arr(((V)((ToNum(Add(cx_6023, ((V)((ToNum(x_6044) * c_6031))))) - (ToNum(y_6045) * s_6032)))), Add(Add(cy_6024, ((V)((ToNum(x_6044) * s_6032)))), ((V)((ToNum(y_6045) * c_6031)))));
 }, 2, "", true);
-@out_6032 = Arr(NewObj(2).Put("c", ((V)("M"))).Put("p", Arr(Call(P_6031, V.Undef, rx_6023, ((V)(0D))))).V);
+@out_6034 = Arr(NewObj(2).Put("c", ((V)("M"))).Put("p", Arr(Call(P_6033, V.Undef, rx_6025, ((V)(0D))))).V);
 {
-double i_6045 = 0;
-i_6045 = 0D;
+double i_6047 = 0;
+i_6047 = 0D;
 while (true) {
-if (!(Lt(((V)(i_6045)), n_6026))) break;
-double a0_6047 = 0;
-double a1_6048 = 0;
-double c0_6049 = 0;
-double s0_6050 = 0;
-double c1_6051 = 0;
-double s1_6052 = 0;
-a0_6047 = ((i_6045 / ToNum(n_6026)) * TAU_12);
-a1_6048 = (((i_6045 + 1D) / ToNum(n_6026)) * TAU_12);
-c0_6049 = FdLibm.Cos(a0_6047);
-s0_6050 = FdLibm.Sin(a0_6047);
-c1_6051 = FdLibm.Cos(a1_6048);
-s1_6052 = FdLibm.Sin(a1_6048);
-Invoke(@out_6032, "push", NewObj(2).Put("c", ((V)("C"))).Put("p", Arr(Call(P_6031, V.Undef, ((V)((ToNum(rx_6023) * (c0_6049 - (k_6028 * s0_6050))))), ((V)((ToNum(ry_6024) * (s0_6050 + (k_6028 * c0_6049)))))), Call(P_6031, V.Undef, ((V)((ToNum(rx_6023) * (c1_6051 + (k_6028 * s1_6052))))), ((V)((ToNum(ry_6024) * (s1_6052 - (k_6028 * c1_6051)))))), Call(P_6031, V.Undef, ((V)((ToNum(rx_6023) * c1_6051))), ((V)((ToNum(ry_6024) * s1_6052)))))).V);
-i_6045++;
+if (!(Lt(((V)(i_6047)), n_6028))) break;
+double a0_6049 = 0;
+double a1_6050 = 0;
+double c0_6051 = 0;
+double s0_6052 = 0;
+double c1_6053 = 0;
+double s1_6054 = 0;
+a0_6049 = ((i_6047 / ToNum(n_6028)) * TAU_12);
+a1_6050 = (((i_6047 + 1D) / ToNum(n_6028)) * TAU_12);
+c0_6051 = FdLibm.Cos(a0_6049);
+s0_6052 = FdLibm.Sin(a0_6049);
+c1_6053 = FdLibm.Cos(a1_6050);
+s1_6054 = FdLibm.Sin(a1_6050);
+Invoke(@out_6034, "push", NewObj(2).Put("c", ((V)("C"))).Put("p", Arr(Call(P_6033, V.Undef, ((V)((ToNum(rx_6025) * (c0_6051 - (k_6030 * s0_6052))))), ((V)((ToNum(ry_6026) * (s0_6052 + (k_6030 * c0_6051)))))), Call(P_6033, V.Undef, ((V)((ToNum(rx_6025) * (c1_6053 + (k_6030 * s1_6054))))), ((V)((ToNum(ry_6026) * (s1_6054 - (k_6030 * c1_6053)))))), Call(P_6033, V.Undef, ((V)((ToNum(rx_6025) * c1_6053))), ((V)((ToNum(ry_6026) * s1_6054)))))).V);
+i_6047++;
 }
 }
-Invoke(@out_6032, "push", NewObj(1).Put("c", ((V)("Z"))).V);
-return @out_6032;
+Invoke(@out_6034, "push", NewObj(1).Put("c", ((V)("Z"))).V);
+return @out_6034;
 return default;
 }, 6, "", true);
-furRing_23 = Fn((V _arrowThis6061, int _argc6053, V d_6059, V E_6060, V _a6057, V _a6058, V[] _rest6054) => {
-V n_6062 = default;
-V cx_6063 = default;
-V cy_6064 = default;
-V rx_6065 = default;
-V ry0_6066 = default;
-V ry_6067 = default;
-V v_6068 = default;
-V pol_6069 = default;
-V V_6070 = default;
-V Pk_6071 = default;
-V p0_6072 = default;
-V wrap_6073 = default;
-V Vs_6074 = default;
-V vfn_6075 = default;
-V T_6076 = default;
-V T2_6077 = default;
-n_6062 = Get((Invoke(d_6059, "match", NewRegExp(RX8, "Q", "g")) is var _t6078 && Truthy(_t6078) ? _t6078 : Arr()), "length");
-if (Truthy(((LtN(n_6062, 8D) ? V.True : V.False) is var _t6079 && Truthy(_t6079) ? _t6079 : Invoke(NewRegExp(RX10, "[CLAHVS]", "i"), "test", Invoke(d_6059, "replace", NewRegExp(RX9, "[MQZ]", "g"), ((V)(""))))))) {
+furRing_23 = Fn((V _arrowThis6063, int _argc6055, V d_6061, V E_6062, V _a6059, V _a6060, V[] _rest6056) => {
+V n_6064 = default;
+V cx_6065 = default;
+V cy_6066 = default;
+V rx_6067 = default;
+V ry0_6068 = default;
+V ry_6069 = default;
+V v_6070 = default;
+V pol_6071 = default;
+V V_6072 = default;
+V Pk_6073 = default;
+V p0_6074 = default;
+V wrap_6075 = default;
+V Vs_6076 = default;
+V vfn_6077 = default;
+V T_6078 = default;
+V T2_6079 = default;
+n_6064 = Get((Invoke(d_6061, "match", NewRegExp(RX8, "Q", "g")) is var _t6080 && Truthy(_t6080) ? _t6080 : Arr()), "length");
+if (Truthy(((LtN(n_6064, 8D) ? V.True : V.False) is var _t6081 && Truthy(_t6081) ? _t6081 : Invoke(NewRegExp(RX10, "[CLAHVS]", "i"), "test", Invoke(d_6061, "replace", NewRegExp(RX9, "[MQZ]", "g"), ((V)(""))))))) {
 return V.Null;
 }
-{ V _t6080 = E_6060;
-{ V _t6081 = ListOf(_t6080);
-{ V _t6082 = GetIdx(_t6081, 0D);
-cx_6063 = _t6082; }
-{ V _t6083 = GetIdx(_t6081, 1D);
-cy_6064 = _t6083; }
-{ V _t6084 = GetIdx(_t6081, 2D);
-rx_6065 = _t6084; }
-{ V _t6085 = GetIdx(_t6081, 3D);
-ry0_6066 = _t6085; }
+{ V _t6082 = E_6062;
+{ V _t6083 = ListOf(_t6082);
+{ V _t6084 = GetIdx(_t6083, 0D);
+cx_6065 = _t6084; }
+{ V _t6085 = GetIdx(_t6083, 1D);
+cy_6066 = _t6085; }
+{ V _t6086 = GetIdx(_t6083, 2D);
+rx_6067 = _t6086; }
+{ V _t6087 = GetIdx(_t6083, 3D);
+ry0_6068 = _t6087; }
 } }
-ry_6067 = (ry0_6066 is var _t6086 && Truthy(_t6086) ? _t6086 : rx_6065);
-v_6068 = Invoke((Invoke(d_6059, "match", NewRegExp(RX11, "-?\\d+\\.?\\d*", "g")) is var _t6087 && Truthy(_t6087) ? _t6087 : Arr()), "map", G("Number"));
-pol_6069 = Fn((V _arrowThis6096, int _argc6088, V x_6094, V y_6095, V _a6092, V _a6093, V[] _rest6089) => {
-return Arr(((V)(FdLibm.Atan2(((ToNum(x_6094) - ToNum(cx_6063)) / ToNum(rx_6065)), ((-(ToNum(y_6095) - ToNum(cy_6064))) / ToNum(ry_6067))))), ((V)(Hypot(((ToNum(x_6094) - ToNum(cx_6063)) / ToNum(rx_6065)), ((ToNum(y_6095) - ToNum(cy_6064)) / ToNum(ry_6067))))));
+ry_6069 = (ry0_6068 is var _t6088 && Truthy(_t6088) ? _t6088 : rx_6067);
+v_6070 = Invoke((Invoke(d_6061, "match", NewRegExp(RX11, "-?\\d+\\.?\\d*", "g")) is var _t6089 && Truthy(_t6089) ? _t6089 : Arr()), "map", G("Number"));
+pol_6071 = Fn((V _arrowThis6098, int _argc6090, V x_6096, V y_6097, V _a6094, V _a6095, V[] _rest6091) => {
+return Arr(((V)(FdLibm.Atan2(((ToNum(x_6096) - ToNum(cx_6065)) / ToNum(rx_6067)), ((-(ToNum(y_6097) - ToNum(cy_6066))) / ToNum(ry_6069))))), ((V)(Hypot(((ToNum(x_6096) - ToNum(cx_6065)) / ToNum(rx_6067)), ((ToNum(y_6097) - ToNum(cy_6066)) / ToNum(ry_6069))))));
 }, 2, "", true);
-V_6070 = Arr();
-Pk_6071 = Arr();
-p0_6072 = Arr(GetIdx(v_6068, 0D), GetIdx(v_6068, 1D));
+V_6072 = Arr();
+Pk_6073 = Arr();
+p0_6074 = Arr(GetIdx(v_6070, 0D), GetIdx(v_6070, 1D));
 {
-double k_6097 = 0;
-k_6097 = 2D;
+double k_6099 = 0;
+k_6099 = 2D;
 while (true) {
-if (!(Lt(((V)((k_6097 + 3D))), Get(v_6068, "length")))) break;
-V c_6099 = default;
-V p1_6100 = default;
-V best_6101 = default;
-c_6099 = Arr(GetIdx(v_6068, k_6097), GetIdx(v_6068, (k_6097 + 1D)));
-p1_6100 = Arr(GetIdx(v_6068, (k_6097 + 2D)), GetIdx(v_6068, (k_6097 + 3D)));
-Invoke(V_6070, "push", Call(pol_6069, V.Undef, GetIdx(p0_6072, 0D), GetIdx(p0_6072, 1D)));
-best_6101 = V.Null;
+if (!(Lt(((V)((k_6099 + 3D))), Get(v_6070, "length")))) break;
+V c_6101 = default;
+V p1_6102 = default;
+V best_6103 = default;
+c_6101 = Arr(GetIdx(v_6070, k_6099), GetIdx(v_6070, (k_6099 + 1D)));
+p1_6102 = Arr(GetIdx(v_6070, (k_6099 + 2D)), GetIdx(v_6070, (k_6099 + 3D)));
+Invoke(V_6072, "push", Call(pol_6071, V.Undef, GetIdx(p0_6074, 0D), GetIdx(p0_6074, 1D)));
+best_6103 = V.Null;
 {
-double i_6102 = 0;
-i_6102 = 1D;
+double i_6104 = 0;
+i_6104 = 1D;
 while (true) {
-if (!((i_6102 < 20D))) break;
-double t_6104 = 0;
-double u_6105 = 0;
-V q_6106 = default;
-t_6104 = (i_6102 / 20D);
-u_6105 = (1D - t_6104);
-q_6106 = Call(pol_6069, V.Undef, ((V)(((((u_6105 * u_6105) * ToNum(GetIdx(p0_6072, 0D))) + (((2D * u_6105) * t_6104) * ToNum(GetIdx(c_6099, 0D)))) + ((t_6104 * t_6104) * ToNum(GetIdx(p1_6100, 0D)))))), ((V)(((((u_6105 * u_6105) * ToNum(GetIdx(p0_6072, 1D))) + (((2D * u_6105) * t_6104) * ToNum(GetIdx(c_6099, 1D)))) + ((t_6104 * t_6104) * ToNum(GetIdx(p1_6100, 1D)))))));
-if ((!(Truthy(best_6101)) || Gt(GetIdx(q_6106, 1D), GetIdx(best_6101, 1D)))) {
-best_6101 = q_6106;
+if (!((i_6104 < 20D))) break;
+double t_6106 = 0;
+double u_6107 = 0;
+V q_6108 = default;
+t_6106 = (i_6104 / 20D);
+u_6107 = (1D - t_6106);
+q_6108 = Call(pol_6071, V.Undef, ((V)(((((u_6107 * u_6107) * ToNum(GetIdx(p0_6074, 0D))) + (((2D * u_6107) * t_6106) * ToNum(GetIdx(c_6101, 0D)))) + ((t_6106 * t_6106) * ToNum(GetIdx(p1_6102, 0D)))))), ((V)(((((u_6107 * u_6107) * ToNum(GetIdx(p0_6074, 1D))) + (((2D * u_6107) * t_6106) * ToNum(GetIdx(c_6101, 1D)))) + ((t_6106 * t_6106) * ToNum(GetIdx(p1_6102, 1D)))))));
+if ((!(Truthy(best_6103)) || Gt(GetIdx(q_6108, 1D), GetIdx(best_6103, 1D)))) {
+best_6103 = q_6108;
 }
-i_6102++;
-}
-}
-Invoke(Pk_6071, "push", best_6101);
-p0_6072 = p1_6100;
-k_6097 = (k_6097 + 4D);
+i_6104++;
 }
 }
-wrap_6073 = Fn((V _arrowThis6114, int _argc6107, V a_6113, V _a6110, V _a6111, V _a6112, V[] _rest6108) => {
-return ((V)(FdLibm.Atan2(FdLibm.Sin(ToNum(a_6113)), FdLibm.Cos(ToNum(a_6113)))));
+Invoke(Pk_6073, "push", best_6103);
+p0_6074 = p1_6102;
+k_6099 = (k_6099 + 4D);
+}
+}
+wrap_6075 = Fn((V _arrowThis6116, int _argc6109, V a_6115, V _a6112, V _a6113, V _a6114, V[] _rest6110) => {
+return ((V)(FdLibm.Atan2(FdLibm.Sin(ToNum(a_6115)), FdLibm.Cos(ToNum(a_6115)))));
 }, 1, "", true);
-Vs_6074 = Invoke(Invoke(V_6070, "slice"), "sort", Fn((V _arrowThis6123, int _argc6115, V a_6121, V b_6122, V _a6119, V _a6120, V[] _rest6116) => {
-return ((V)((ToNum(GetIdx(a_6121, 0D)) - ToNum(GetIdx(b_6122, 0D)))));
+Vs_6076 = Invoke(Invoke(V_6072, "slice"), "sort", Fn((V _arrowThis6125, int _argc6117, V a_6123, V b_6124, V _a6121, V _a6122, V[] _rest6118) => {
+return ((V)((ToNum(GetIdx(a_6123, 0D)) - ToNum(GetIdx(b_6124, 0D)))));
 }, 2, "", true));
-vfn_6075 = Fn((V _arrowThis6131, int _argc6124, V th_6130, V _a6127, V _a6128, V _a6129, V[] _rest6125) => {
-th_6130 = Call(wrap_6073, V.Undef, th_6130);
+vfn_6077 = Fn((V _arrowThis6133, int _argc6126, V th_6132, V _a6129, V _a6130, V _a6131, V[] _rest6127) => {
+th_6132 = Call(wrap_6075, V.Undef, th_6132);
 {
-double i_6132 = 0;
-i_6132 = 0D;
+double i_6134 = 0;
+i_6134 = 0D;
 while (true) {
-if (!(Lt(((V)(i_6132)), Get(Vs_6074, "length")))) break;
-V a_6134 = default;
-V b_6135 = default;
-V span_6136 = default;
-V o_6137 = default;
-a_6134 = GetIdx(Vs_6074, i_6132);
-b_6135 = GetIdx(Vs_6074, ((i_6132 + 1D) % ToNum(Get(Vs_6074, "length"))));
-span_6136 = Call(wrap_6073, V.Undef, ((V)((ToNum(GetIdx(b_6135, 0D)) - ToNum(GetIdx(a_6134, 0D))))));
-if (LeN(span_6136, 0D)) {
-span_6136 = Add(span_6136, ((V)(TAU_12)));
+if (!(Lt(((V)(i_6134)), Get(Vs_6076, "length")))) break;
+V a_6136 = default;
+V b_6137 = default;
+V span_6138 = default;
+V o_6139 = default;
+a_6136 = GetIdx(Vs_6076, i_6134);
+b_6137 = GetIdx(Vs_6076, ((i_6134 + 1D) % ToNum(Get(Vs_6076, "length"))));
+span_6138 = Call(wrap_6075, V.Undef, ((V)((ToNum(GetIdx(b_6137, 0D)) - ToNum(GetIdx(a_6136, 0D))))));
+if (LeN(span_6138, 0D)) {
+span_6138 = Add(span_6138, ((V)(TAU_12)));
 }
-o_6137 = Call(wrap_6073, V.Undef, ((V)((ToNum(th_6130) - ToNum(GetIdx(a_6134, 0D))))));
-if (LtN(o_6137, 0D)) {
-o_6137 = Add(o_6137, ((V)(TAU_12)));
+o_6139 = Call(wrap_6075, V.Undef, ((V)((ToNum(th_6132) - ToNum(GetIdx(a_6136, 0D))))));
+if (LtN(o_6139, 0D)) {
+o_6139 = Add(o_6139, ((V)(TAU_12)));
 }
-if (Le(o_6137, span_6136)) {
-return Add(GetIdx(a_6134, 1D), ((V)((((ToNum(GetIdx(b_6135, 1D)) - ToNum(GetIdx(a_6134, 1D))) * ToNum(o_6137)) / ToNum(span_6136)))));
+if (Le(o_6139, span_6138)) {
+return Add(GetIdx(a_6136, 1D), ((V)((((ToNum(GetIdx(b_6137, 1D)) - ToNum(GetIdx(a_6136, 1D))) * ToNum(o_6139)) / ToNum(span_6138)))));
 }
-i_6132++;
+i_6134++;
 }
 }
-return GetIdx(GetIdx(Vs_6074, 0D), 1D);
+return GetIdx(GetIdx(Vs_6076, 0D), 1D);
 return default;
 }, 1, "", true);
-T_6076 = Invoke(Pk_6071, "map", Fn((V _arrowThis6146, int _argc6138, V q_6144, V i_6145, V _a6142, V _a6143, V[] _rest6139) => {
-V pv_6147 = default;
-V nx_6148 = default;
-double dl_6149 = 0;
-double vv_6150 = 0;
-double lo_6151 = 0;
-V hi_6152 = default;
-double r_6153 = 0;
-pv_6147 = GetIdx(Pk_6071, (ToNum(Add(((V)((ToNum(i_6145) - 1D))), n_6062)) % ToNum(n_6062)));
-nx_6148 = GetIdx(Pk_6071, (ToNum(Add(i_6145, ((V)(1D)))) % ToNum(n_6062)));
-dl_6149 = ((System.Math.Abs(ToNum(Call(wrap_6073, V.Undef, ((V)((ToNum(GetIdx(q_6144, 0D)) - ToNum(GetIdx(pv_6147, 0D)))))))) + System.Math.Abs(ToNum(Call(wrap_6073, V.Undef, ((V)((ToNum(GetIdx(nx_6148, 0D)) - ToNum(GetIdx(q_6144, 0D))))))))) / 4D);
-vv_6150 = (ToNum(Add(Call(vfn_6075, V.Undef, ((V)((ToNum(GetIdx(q_6144, 0D)) - dl_6149)))), Call(vfn_6075, V.Undef, Add(GetIdx(q_6144, 0D), ((V)(dl_6149)))))) / 2D);
-lo_6151 = 0.001;
-hi_6152 = GetIdx(q_6144, 1D);
+T_6078 = Invoke(Pk_6073, "map", Fn((V _arrowThis6148, int _argc6140, V q_6146, V i_6147, V _a6144, V _a6145, V[] _rest6141) => {
+V pv_6149 = default;
+V nx_6150 = default;
+double dl_6151 = 0;
+double vv_6152 = 0;
+double lo_6153 = 0;
+V hi_6154 = default;
+double r_6155 = 0;
+pv_6149 = GetIdx(Pk_6073, (ToNum(Add(((V)((ToNum(i_6147) - 1D))), n_6064)) % ToNum(n_6064)));
+nx_6150 = GetIdx(Pk_6073, (ToNum(Add(i_6147, ((V)(1D)))) % ToNum(n_6064)));
+dl_6151 = ((System.Math.Abs(ToNum(Call(wrap_6075, V.Undef, ((V)((ToNum(GetIdx(q_6146, 0D)) - ToNum(GetIdx(pv_6149, 0D)))))))) + System.Math.Abs(ToNum(Call(wrap_6075, V.Undef, ((V)((ToNum(GetIdx(nx_6150, 0D)) - ToNum(GetIdx(q_6146, 0D))))))))) / 4D);
+vv_6152 = (ToNum(Add(Call(vfn_6077, V.Undef, ((V)((ToNum(GetIdx(q_6146, 0D)) - dl_6151)))), Call(vfn_6077, V.Undef, Add(GetIdx(q_6146, 0D), ((V)(dl_6151)))))) / 2D);
+lo_6153 = 0.001;
+hi_6154 = GetIdx(q_6146, 1D);
 {
-double it_6154 = 0;
-it_6154 = 0D;
+double it_6156 = 0;
+it_6156 = 0D;
 while (true) {
-if (!((it_6154 < 40D))) break;
-double r_6156 = 0;
-double D0_6157 = 0;
-double f_6158 = 0;
-r_6156 = (ToNum(Add(((V)(lo_6151)), hi_6152)) / 2D);
-D0_6157 = (ToNum(GetIdx(q_6144, 1D)) - r_6156);
-f_6158 = (((D0_6157 * FdLibm.Cos(dl_6149)) + System.Math.Sqrt(Max(0D, ((r_6156 * r_6156) - (((D0_6157 * D0_6157) * FdLibm.Sin(dl_6149)) * FdLibm.Sin(dl_6149)))))) - vv_6150);
-if ((f_6158 > 0D)) {
-hi_6152 = ((V)(r_6156));
+if (!((it_6156 < 40D))) break;
+double r_6158 = 0;
+double D0_6159 = 0;
+double f_6160 = 0;
+r_6158 = (ToNum(Add(((V)(lo_6153)), hi_6154)) / 2D);
+D0_6159 = (ToNum(GetIdx(q_6146, 1D)) - r_6158);
+f_6160 = (((D0_6159 * FdLibm.Cos(dl_6151)) + System.Math.Sqrt(Max(0D, ((r_6158 * r_6158) - (((D0_6159 * D0_6159) * FdLibm.Sin(dl_6151)) * FdLibm.Sin(dl_6151)))))) - vv_6152);
+if ((f_6160 > 0D)) {
+hi_6154 = ((V)(r_6158));
 } else {
-lo_6151 = r_6156;
+lo_6153 = r_6158;
 }
-it_6154++;
+it_6156++;
 }
 }
-r_6153 = (ToNum(Add(((V)(lo_6151)), hi_6152)) / 2D);
-return NewObj(3).Put("th", GetIdx(q_6144, 0D)).Put("D", ((V)((ToNum(GetIdx(q_6144, 1D)) - r_6153)))).Put("r", ((V)(r_6153))).V;
+r_6155 = (ToNum(Add(((V)(lo_6153)), hi_6154)) / 2D);
+return NewObj(3).Put("th", GetIdx(q_6146, 0D)).Put("D", ((V)((ToNum(GetIdx(q_6146, 1D)) - r_6155)))).Put("r", ((V)(r_6155))).V;
 return default;
 }, 2, "", true));
-T2_6077 = Invoke(T_6076, "map", Fn((V _arrowThis6167, int _argc6159, V t_6165, V i_6166, V _a6163, V _a6164, V[] _rest6160) => {
-V u_6168 = default;
-u_6168 = GetIdx(T_6076, (ToNum(Add(i_6166, ((V)(1D)))) % ToNum(n_6062)));
-return NewObj(3).Put("th", Add(Get(t_6165, "th"), ((V)((ToNum(Call(wrap_6073, V.Undef, ((V)((ToNum(Get(u_6168, "th")) - ToNum(Get(t_6165, "th"))))))) / 2D))))).Put("D", ((V)((ToNum(Add(Get(t_6165, "D"), Get(u_6168, "D"))) / 2D)))).Put("r", ((V)((ToNum(Add(Get(t_6165, "r"), Get(u_6168, "r"))) / 2D)))).V;
+T2_6079 = Invoke(T_6078, "map", Fn((V _arrowThis6169, int _argc6161, V t_6167, V i_6168, V _a6165, V _a6166, V[] _rest6162) => {
+V u_6170 = default;
+u_6170 = GetIdx(T_6078, (ToNum(Add(i_6168, ((V)(1D)))) % ToNum(n_6064)));
+return NewObj(3).Put("th", Add(Get(t_6167, "th"), ((V)((ToNum(Call(wrap_6075, V.Undef, ((V)((ToNum(Get(u_6170, "th")) - ToNum(Get(t_6167, "th"))))))) / 2D))))).Put("D", ((V)((ToNum(Add(Get(t_6167, "D"), Get(u_6170, "D"))) / 2D)))).Put("r", ((V)((ToNum(Add(Get(t_6167, "r"), Get(u_6170, "r"))) / 2D)))).V;
 return default;
 }, 2, "", true));
-return NewObj(7).Put("R", Arr(Arr(((V)((System.Math.PI / 2D))), T_6076), Arr(((V)(0D)), T_6076), Arr(((V)((System.Math.PI / 4D))), T2_6077), Arr(((V)(((3D * System.Math.PI) / 4D))), T2_6077))).Put("cx", cx_6063).Put("cy", cy_6064).Put("rx", rx_6065).Put("ry", ry_6067).Put("vfn", vfn_6075).Put("n", n_6062).V;
+return NewObj(7).Put("R", Arr(Arr(((V)((System.Math.PI / 2D))), T_6078), Arr(((V)(0D)), T_6078), Arr(((V)((System.Math.PI / 4D))), T2_6079), Arr(((V)(((3D * System.Math.PI) / 4D))), T2_6079))).Put("cx", cx_6065).Put("cy", cy_6066).Put("rx", rx_6067).Put("ry", ry_6069).Put("vfn", vfn_6077).Put("n", n_6064).V;
 return default;
 }, 2, "", true);
-furPts_24 = Fn((V _arrowThis6177, int _argc6169, V F_6175, V yaw_6176, V _a6173, V _a6174, V[] _rest6170) => {
-double M_6178 = 0;
-V @out_6179 = default;
-V C_6180 = default;
-M_6178 = 168D;
-@out_6179 = Arr();
-C_6180 = Arr();
-Invoke(Get(F_6175, "R"), "forEach", Fn((V _arrowThis6192, int _argc6181, V _a6183, V _a6184, V _a6185, V _a6186, V[] _rest6182) => {
-double xs_6193 = 0;
-V l0_6189 = default;
-V T_6191 = default;
-{ V _t6187 = ListOf(_a6183);
-{ V _t6188 = GetIdx(_t6187, 0D);
-l0_6189 = _t6188; }
-{ V _t6190 = GetIdx(_t6187, 1D);
-T_6191 = _t6190; }
+furPts_24 = Fn((V _arrowThis6179, int _argc6171, V F_6177, V yaw_6178, V _a6175, V _a6176, V[] _rest6172) => {
+double M_6180 = 0;
+V @out_6181 = default;
+V C_6182 = default;
+M_6180 = 168D;
+@out_6181 = Arr();
+C_6182 = Arr();
+Invoke(Get(F_6177, "R"), "forEach", Fn((V _arrowThis6194, int _argc6183, V _a6185, V _a6186, V _a6187, V _a6188, V[] _rest6184) => {
+double xs_6195 = 0;
+V l0_6191 = default;
+V T_6193 = default;
+{ V _t6189 = ListOf(_a6185);
+{ V _t6190 = GetIdx(_t6189, 0D);
+l0_6191 = _t6190; }
+{ V _t6192 = GetIdx(_t6189, 1D);
+T_6193 = _t6192; }
 }
-xs_6193 = FdLibm.Sin(ToNum(Add(l0_6189, yaw_6176)));
-Invoke(T_6191, "forEach", Fn((V _arrowThis6201, int _argc6194, V t_6200, V _a6197, V _a6198, V _a6199, V[] _rest6195) => {
-double x_6202 = 0;
-double y_6203 = 0;
-x_6202 = ((FdLibm.Sin(ToNum(Get(t_6200, "th"))) * ToNum(Get(t_6200, "D"))) * xs_6193);
-y_6203 = (FdLibm.Cos(ToNum(Get(t_6200, "th"))) * ToNum(Get(t_6200, "D")));
-Invoke(C_6180, "push", NewObj(3).Put("s", ((V)(Hypot(x_6202, y_6203)))).Put("ph", ((V)(FdLibm.Atan2(x_6202, y_6203)))).Put("r", Get(t_6200, "r")).V);
+xs_6195 = FdLibm.Sin(ToNum(Add(l0_6191, yaw_6178)));
+Invoke(T_6193, "forEach", Fn((V _arrowThis6203, int _argc6196, V t_6202, V _a6199, V _a6200, V _a6201, V[] _rest6197) => {
+double x_6204 = 0;
+double y_6205 = 0;
+x_6204 = ((FdLibm.Sin(ToNum(Get(t_6202, "th"))) * ToNum(Get(t_6202, "D"))) * xs_6195);
+y_6205 = (FdLibm.Cos(ToNum(Get(t_6202, "th"))) * ToNum(Get(t_6202, "D")));
+Invoke(C_6182, "push", NewObj(3).Put("s", ((V)(Hypot(x_6204, y_6205)))).Put("ph", ((V)(FdLibm.Atan2(x_6204, y_6205)))).Put("r", Get(t_6202, "r")).V);
 return default;
 }, 1, "", true));
 return default;
 }, 1, "", true));
 {
-double i_6204 = 0;
-i_6204 = 0D;
+double i_6206 = 0;
+i_6206 = 0D;
 while (true) {
-if (!((i_6204 < M_6178))) break;
-double th_6206 = 0;
-double rho_6207 = 0;
-th_6206 = ((i_6204 / M_6178) * TAU_12);
-rho_6207 = (ToNum(Invoke(F_6175, "vfn", ((V)(th_6206)))) * 0.995);
+if (!((i_6206 < M_6180))) break;
+double th_6208 = 0;
+double rho_6209 = 0;
+th_6208 = ((i_6206 / M_6180) * TAU_12);
+rho_6209 = (ToNum(Invoke(F_6177, "vfn", ((V)(th_6208)))) * 0.995);
 {
-foreach (V _k6208 in new JsIter(C_6180)) {
-V q_6209 = default;
-q_6209 = _k6208;
-double dl_6210 = 0;
-double sn_6211 = 0;
-dl_6210 = (th_6206 - ToNum(Get(q_6209, "ph")));
-sn_6211 = (ToNum(Get(q_6209, "s")) * FdLibm.Sin(dl_6210));
-if ((Lt(((V)(System.Math.Abs(sn_6211))), Get(q_6209, "r")) && (FdLibm.Cos(dl_6210) > 0D))) {
-double e_6212 = 0;
-e_6212 = ((ToNum(Get(q_6209, "s")) * FdLibm.Cos(dl_6210)) + System.Math.Sqrt(((ToNum(Get(q_6209, "r")) * ToNum(Get(q_6209, "r"))) - (sn_6211 * sn_6211))));
-if ((e_6212 > rho_6207)) {
-rho_6207 = e_6212;
+foreach (V _k6210 in new JsIter(C_6182)) {
+V q_6211 = default;
+q_6211 = _k6210;
+double dl_6212 = 0;
+double sn_6213 = 0;
+dl_6212 = (th_6208 - ToNum(Get(q_6211, "ph")));
+sn_6213 = (ToNum(Get(q_6211, "s")) * FdLibm.Sin(dl_6212));
+if ((Lt(((V)(System.Math.Abs(sn_6213))), Get(q_6211, "r")) && (FdLibm.Cos(dl_6212) > 0D))) {
+double e_6214 = 0;
+e_6214 = ((ToNum(Get(q_6211, "s")) * FdLibm.Cos(dl_6212)) + System.Math.Sqrt(((ToNum(Get(q_6211, "r")) * ToNum(Get(q_6211, "r"))) - (sn_6213 * sn_6213))));
+if ((e_6214 > rho_6209)) {
+rho_6209 = e_6214;
 }
 }
 }
 }
-Invoke(@out_6179, "push", Arr(Add(Get(F_6175, "cx"), ((V)(((ToNum(Get(F_6175, "rx")) * rho_6207) * FdLibm.Sin(th_6206))))), ((V)((ToNum(Get(F_6175, "cy")) - ((ToNum(Get(F_6175, "ry")) * rho_6207) * FdLibm.Cos(th_6206)))))));
-i_6204++;
+Invoke(@out_6181, "push", Arr(Add(Get(F_6177, "cx"), ((V)(((ToNum(Get(F_6177, "rx")) * rho_6209) * FdLibm.Sin(th_6208))))), ((V)((ToNum(Get(F_6177, "cy")) - ((ToNum(Get(F_6177, "ry")) * rho_6209) * FdLibm.Cos(th_6208)))))));
+i_6206++;
 }
 }
-return @out_6179;
+return @out_6181;
 return default;
 }, 2, "", true);
-toD_25 = Fn((V _arrowThis6221, int _argc6213, V segs_6219, V F_6220, V _a6217, V _a6218, V[] _rest6214) => {
-JsStrBuf s_6222 = null;
-s_6222 = new JsStrBuf("");
+toD_25 = Fn((V _arrowThis6223, int _argc6215, V segs_6221, V F_6222, V _a6219, V _a6220, V[] _rest6216) => {
+JsStrBuf s_6224 = null;
+s_6224 = new JsStrBuf("");
 {
-foreach (V _k6223 in new JsIter(segs_6219)) {
-V g_6224 = default;
-g_6224 = _k6223;
-if (SEqS(Get(g_6224, "c"), "Z")) {
-s_6222.S("Z");
+foreach (V _k6225 in new JsIter(segs_6221)) {
+V g_6226 = default;
+g_6226 = _k6225;
+if (SEqS(Get(g_6226, "c"), "Z")) {
+s_6224.S("Z");
 continue;
 }
-s_6222.V(Get(g_6224, "c"));
+s_6224.V(Get(g_6226, "c"));
 {
-foreach (V _k6225 in new JsIter(Get(g_6224, "p"))) {
-V p_6226 = default;
-p_6226 = _k6225;
-V q_6227 = default;
-q_6227 = Call(F_6220, V.Undef, GetIdx(p_6226, 0D), GetIdx(p_6226, 1D));
-s_6222.V(Call(r2_14, V.Undef, GetIdx(q_6227, 0D))).S(" ").V(Call(r2_14, V.Undef, GetIdx(q_6227, 1D))).S(" ");
+foreach (V _k6227 in new JsIter(Get(g_6226, "p"))) {
+V p_6228 = default;
+p_6228 = _k6227;
+V q_6229 = default;
+q_6229 = Call(F_6222, V.Undef, GetIdx(p_6228, 0D), GetIdx(p_6228, 1D));
+s_6224.V(Call(r2_14, V.Undef, GetIdx(q_6229, 0D))).S(" ").V(Call(r2_14, V.Undef, GetIdx(q_6229, 1D))).S(" ");
 }
 }
 }
 }
-return ((V)(s_6222.Str));
+return ((V)(s_6224.Str));
 return default;
 }, 2, "", true);
-smoothD_26 = Fn((V _arrowThis6235, int _argc6228, V P_6234, V _a6231, V _a6232, V _a6233, V[] _rest6229) => {
-JsStrBuf s_6236 = null;
-s_6236 = new JsStrBuf(JsStrBuf.Begin().S("M").V(Call(r2_14, V.Undef, GetIdx(GetIdx(P_6234, 0D), 0D))).S(" ").V(Call(r2_14, V.Undef, GetIdx(GetIdx(P_6234, 0D), 1D))).End());
+smoothD_26 = Fn((V _arrowThis6237, int _argc6230, V P_6236, V _a6233, V _a6234, V _a6235, V[] _rest6231) => {
+JsStrBuf s_6238 = null;
+s_6238 = new JsStrBuf(JsStrBuf.Begin().S("M").V(Call(r2_14, V.Undef, GetIdx(GetIdx(P_6236, 0D), 0D))).S(" ").V(Call(r2_14, V.Undef, GetIdx(GetIdx(P_6236, 0D), 1D))).End());
 {
-double i_6237 = 0;
-i_6237 = 0D;
+double i_6239 = 0;
+i_6239 = 0D;
 while (true) {
-if (!((i_6237 < (ToNum(Get(P_6234, "length")) - 1D)))) break;
-V p0_6239 = default;
-V p1_6240 = default;
-V p2_6241 = default;
-V p3_6242 = default;
-p0_6239 = (GetIdx(P_6234, (i_6237 - 1D)) is var _t6243 && Truthy(_t6243) ? _t6243 : GetIdx(P_6234, i_6237));
-p1_6240 = GetIdx(P_6234, i_6237);
-p2_6241 = GetIdx(P_6234, (i_6237 + 1D));
-p3_6242 = (GetIdx(P_6234, (i_6237 + 2D)) is var _t6244 && Truthy(_t6244) ? _t6244 : p2_6241);
-s_6236.S(" C").V(Call(r2_14, V.Undef, Add(GetIdx(p1_6240, 0D), ((V)(((ToNum(GetIdx(p2_6241, 0D)) - ToNum(GetIdx(p0_6239, 0D))) / 6D)))))).S(" ").V(Call(r2_14, V.Undef, Add(GetIdx(p1_6240, 1D), ((V)(((ToNum(GetIdx(p2_6241, 1D)) - ToNum(GetIdx(p0_6239, 1D))) / 6D)))))).S(" ").V(Call(r2_14, V.Undef, ((V)((ToNum(GetIdx(p2_6241, 0D)) - ((ToNum(GetIdx(p3_6242, 0D)) - ToNum(GetIdx(p1_6240, 0D))) / 6D)))))).S(" ").V(Call(r2_14, V.Undef, ((V)((ToNum(GetIdx(p2_6241, 1D)) - ((ToNum(GetIdx(p3_6242, 1D)) - ToNum(GetIdx(p1_6240, 1D))) / 6D)))))).S(" ").V(Call(r2_14, V.Undef, GetIdx(p2_6241, 0D))).S(" ").V(Call(r2_14, V.Undef, GetIdx(p2_6241, 1D)));
-i_6237++;
+if (!((i_6239 < (ToNum(Get(P_6236, "length")) - 1D)))) break;
+V p0_6241 = default;
+V p1_6242 = default;
+V p2_6243 = default;
+V p3_6244 = default;
+p0_6241 = (GetIdx(P_6236, (i_6239 - 1D)) is var _t6245 && Truthy(_t6245) ? _t6245 : GetIdx(P_6236, i_6239));
+p1_6242 = GetIdx(P_6236, i_6239);
+p2_6243 = GetIdx(P_6236, (i_6239 + 1D));
+p3_6244 = (GetIdx(P_6236, (i_6239 + 2D)) is var _t6246 && Truthy(_t6246) ? _t6246 : p2_6243);
+s_6238.S(" C").V(Call(r2_14, V.Undef, Add(GetIdx(p1_6242, 0D), ((V)(((ToNum(GetIdx(p2_6243, 0D)) - ToNum(GetIdx(p0_6241, 0D))) / 6D)))))).S(" ").V(Call(r2_14, V.Undef, Add(GetIdx(p1_6242, 1D), ((V)(((ToNum(GetIdx(p2_6243, 1D)) - ToNum(GetIdx(p0_6241, 1D))) / 6D)))))).S(" ").V(Call(r2_14, V.Undef, ((V)((ToNum(GetIdx(p2_6243, 0D)) - ((ToNum(GetIdx(p3_6244, 0D)) - ToNum(GetIdx(p1_6242, 0D))) / 6D)))))).S(" ").V(Call(r2_14, V.Undef, ((V)((ToNum(GetIdx(p2_6243, 1D)) - ((ToNum(GetIdx(p3_6244, 1D)) - ToNum(GetIdx(p1_6242, 1D))) / 6D)))))).S(" ").V(Call(r2_14, V.Undef, GetIdx(p2_6243, 0D))).S(" ").V(Call(r2_14, V.Undef, GetIdx(p2_6243, 1D)));
+i_6239++;
 }
 }
-return ((V)(s_6236.Str));
+return ((V)(s_6238.Str));
 return default;
 }, 1, "", true);
-flat_27 = Fn((V _arrowThis6253, int _argc6245, V segs_6251, V n_6252, V _a6249, V _a6250, V[] _rest6246) => {
-V @out_6254 = default;
-V p_6255 = default;
-@out_6254 = Arr();
-p_6255 = V.Null;
+flat_27 = Fn((V _arrowThis6255, int _argc6247, V segs_6253, V n_6254, V _a6251, V _a6252, V[] _rest6248) => {
+V @out_6256 = default;
+V p_6257 = default;
+@out_6256 = Arr();
+p_6257 = V.Null;
 {
-foreach (V _k6256 in new JsIter(segs_6251)) {
-V g_6257 = default;
-g_6257 = _k6256;
-if ((SEqS(Get(g_6257, "c"), "M") || SEqS(Get(g_6257, "c"), "L"))) {
-p_6255 = GetIdx(Get(g_6257, "p"), 0D);
-Invoke(@out_6254, "push", p_6255);
+foreach (V _k6258 in new JsIter(segs_6253)) {
+V g_6259 = default;
+g_6259 = _k6258;
+if ((SEqS(Get(g_6259, "c"), "M") || SEqS(Get(g_6259, "c"), "L"))) {
+p_6257 = GetIdx(Get(g_6259, "p"), 0D);
+Invoke(@out_6256, "push", p_6257);
 } else {
-if (SEqS(Get(g_6257, "c"), "Q")) {
-V a_6258 = default;
-V b_6259 = default;
-{ V _t6260 = Get(g_6257, "p");
-{ V _t6261 = ListOf(_t6260);
-{ V _t6262 = GetIdx(_t6261, 0D);
-a_6258 = _t6262; }
-{ V _t6263 = GetIdx(_t6261, 1D);
-b_6259 = _t6263; }
+if (SEqS(Get(g_6259, "c"), "Q")) {
+V a_6260 = default;
+V b_6261 = default;
+{ V _t6262 = Get(g_6259, "p");
+{ V _t6263 = ListOf(_t6262);
+{ V _t6264 = GetIdx(_t6263, 0D);
+a_6260 = _t6264; }
+{ V _t6265 = GetIdx(_t6263, 1D);
+b_6261 = _t6265; }
 } }
 {
-double i_6264 = 0;
-i_6264 = 1D;
+double i_6266 = 0;
+i_6266 = 1D;
 while (true) {
-if (!(Le(((V)(i_6264)), n_6252))) break;
-double t_6266 = 0;
-double m_6267 = 0;
-t_6266 = (i_6264 / ToNum(n_6252));
-m_6267 = (1D - t_6266);
-Invoke(@out_6254, "push", Arr(((V)(((((m_6267 * m_6267) * ToNum(GetIdx(p_6255, 0D))) + (((2D * m_6267) * t_6266) * ToNum(GetIdx(a_6258, 0D)))) + ((t_6266 * t_6266) * ToNum(GetIdx(b_6259, 0D)))))), ((V)(((((m_6267 * m_6267) * ToNum(GetIdx(p_6255, 1D))) + (((2D * m_6267) * t_6266) * ToNum(GetIdx(a_6258, 1D)))) + ((t_6266 * t_6266) * ToNum(GetIdx(b_6259, 1D))))))));
-i_6264++;
+if (!(Le(((V)(i_6266)), n_6254))) break;
+double t_6268 = 0;
+double m_6269 = 0;
+t_6268 = (i_6266 / ToNum(n_6254));
+m_6269 = (1D - t_6268);
+Invoke(@out_6256, "push", Arr(((V)(((((m_6269 * m_6269) * ToNum(GetIdx(p_6257, 0D))) + (((2D * m_6269) * t_6268) * ToNum(GetIdx(a_6260, 0D)))) + ((t_6268 * t_6268) * ToNum(GetIdx(b_6261, 0D)))))), ((V)(((((m_6269 * m_6269) * ToNum(GetIdx(p_6257, 1D))) + (((2D * m_6269) * t_6268) * ToNum(GetIdx(a_6260, 1D)))) + ((t_6268 * t_6268) * ToNum(GetIdx(b_6261, 1D))))))));
+i_6266++;
 }
 }
-p_6255 = b_6259;
+p_6257 = b_6261;
 } else {
-if (SEqS(Get(g_6257, "c"), "C")) {
-V a_6268 = default;
-V b_6269 = default;
-V c_6270 = default;
-{ V _t6271 = Get(g_6257, "p");
-{ V _t6272 = ListOf(_t6271);
-{ V _t6273 = GetIdx(_t6272, 0D);
-a_6268 = _t6273; }
-{ V _t6274 = GetIdx(_t6272, 1D);
-b_6269 = _t6274; }
-{ V _t6275 = GetIdx(_t6272, 2D);
-c_6270 = _t6275; }
+if (SEqS(Get(g_6259, "c"), "C")) {
+V a_6270 = default;
+V b_6271 = default;
+V c_6272 = default;
+{ V _t6273 = Get(g_6259, "p");
+{ V _t6274 = ListOf(_t6273);
+{ V _t6275 = GetIdx(_t6274, 0D);
+a_6270 = _t6275; }
+{ V _t6276 = GetIdx(_t6274, 1D);
+b_6271 = _t6276; }
+{ V _t6277 = GetIdx(_t6274, 2D);
+c_6272 = _t6277; }
 } }
 {
-double i_6276 = 0;
-i_6276 = 1D;
+double i_6278 = 0;
+i_6278 = 1D;
 while (true) {
-if (!(Le(((V)(i_6276)), n_6252))) break;
-double t_6278 = 0;
-double m_6279 = 0;
-t_6278 = (i_6276 / ToNum(n_6252));
-m_6279 = (1D - t_6278);
-Invoke(@out_6254, "push", Arr(((V)(((((((m_6279 * m_6279) * m_6279) * ToNum(GetIdx(p_6255, 0D))) + ((((3D * m_6279) * m_6279) * t_6278) * ToNum(GetIdx(a_6268, 0D)))) + ((((3D * m_6279) * t_6278) * t_6278) * ToNum(GetIdx(b_6269, 0D)))) + (((t_6278 * t_6278) * t_6278) * ToNum(GetIdx(c_6270, 0D)))))), ((V)(((((((m_6279 * m_6279) * m_6279) * ToNum(GetIdx(p_6255, 1D))) + ((((3D * m_6279) * m_6279) * t_6278) * ToNum(GetIdx(a_6268, 1D)))) + ((((3D * m_6279) * t_6278) * t_6278) * ToNum(GetIdx(b_6269, 1D)))) + (((t_6278 * t_6278) * t_6278) * ToNum(GetIdx(c_6270, 1D))))))));
-i_6276++;
+if (!(Le(((V)(i_6278)), n_6254))) break;
+double t_6280 = 0;
+double m_6281 = 0;
+t_6280 = (i_6278 / ToNum(n_6254));
+m_6281 = (1D - t_6280);
+Invoke(@out_6256, "push", Arr(((V)(((((((m_6281 * m_6281) * m_6281) * ToNum(GetIdx(p_6257, 0D))) + ((((3D * m_6281) * m_6281) * t_6280) * ToNum(GetIdx(a_6270, 0D)))) + ((((3D * m_6281) * t_6280) * t_6280) * ToNum(GetIdx(b_6271, 0D)))) + (((t_6280 * t_6280) * t_6280) * ToNum(GetIdx(c_6272, 0D)))))), ((V)(((((((m_6281 * m_6281) * m_6281) * ToNum(GetIdx(p_6257, 1D))) + ((((3D * m_6281) * m_6281) * t_6280) * ToNum(GetIdx(a_6270, 1D)))) + ((((3D * m_6281) * t_6280) * t_6280) * ToNum(GetIdx(b_6271, 1D)))) + (((t_6280 * t_6280) * t_6280) * ToNum(GetIdx(c_6272, 1D))))))));
+i_6278++;
 }
 }
-p_6255 = c_6270;
+p_6257 = c_6272;
 }
 }
 }
 }
 }
-return @out_6254;
+return @out_6256;
 return default;
 }, 2, "", true);
-hull_28 = Fn((V _arrowThis6287, int _argc6280, V P_6286, V _a6283, V _a6284, V _a6285, V[] _rest6281) => {
-V cr_6288 = default;
-V lo_6289 = default;
-V up_6290 = default;
-P_6286 = Invoke(Invoke(P_6286, "slice"), "sort", Fn((V _arrowThis6299, int _argc6291, V a_6297, V b_6298, V _a6295, V _a6296, V[] _rest6292) => {
-return (((V)((ToNum(GetIdx(a_6297, 0D)) - ToNum(GetIdx(b_6298, 0D))))) is var _t6300 && Truthy(_t6300) ? _t6300 : ((V)((ToNum(GetIdx(a_6297, 1D)) - ToNum(GetIdx(b_6298, 1D))))));
+hull_28 = Fn((V _arrowThis6289, int _argc6282, V P_6288, V _a6285, V _a6286, V _a6287, V[] _rest6283) => {
+V cr_6290 = default;
+V lo_6291 = default;
+V up_6292 = default;
+P_6288 = Invoke(Invoke(P_6288, "slice"), "sort", Fn((V _arrowThis6301, int _argc6293, V a_6299, V b_6300, V _a6297, V _a6298, V[] _rest6294) => {
+return (((V)((ToNum(GetIdx(a_6299, 0D)) - ToNum(GetIdx(b_6300, 0D))))) is var _t6302 && Truthy(_t6302) ? _t6302 : ((V)((ToNum(GetIdx(a_6299, 1D)) - ToNum(GetIdx(b_6300, 1D))))));
 }, 2, "", true));
-cr_6288 = Fn((V _arrowThis6310, int _argc6301, V o_6307, V a_6308, V b_6309, V _a6306, V[] _rest6302) => {
-return ((V)((((ToNum(GetIdx(a_6308, 0D)) - ToNum(GetIdx(o_6307, 0D))) * (ToNum(GetIdx(b_6309, 1D)) - ToNum(GetIdx(o_6307, 1D)))) - ((ToNum(GetIdx(a_6308, 1D)) - ToNum(GetIdx(o_6307, 1D))) * (ToNum(GetIdx(b_6309, 0D)) - ToNum(GetIdx(o_6307, 0D)))))));
+cr_6290 = Fn((V _arrowThis6312, int _argc6303, V o_6309, V a_6310, V b_6311, V _a6308, V[] _rest6304) => {
+return ((V)((((ToNum(GetIdx(a_6310, 0D)) - ToNum(GetIdx(o_6309, 0D))) * (ToNum(GetIdx(b_6311, 1D)) - ToNum(GetIdx(o_6309, 1D)))) - ((ToNum(GetIdx(a_6310, 1D)) - ToNum(GetIdx(o_6309, 1D))) * (ToNum(GetIdx(b_6311, 0D)) - ToNum(GetIdx(o_6309, 0D)))))));
 }, 3, "", true);
-lo_6289 = Arr();
-up_6290 = Arr();
+lo_6291 = Arr();
+up_6292 = Arr();
 {
-foreach (V _k6311 in new JsIter(P_6286)) {
-V p_6312 = default;
-p_6312 = _k6311;
-while ((GeN(Get(lo_6289, "length"), 2D) && LeN(Call(cr_6288, V.Undef, GetIdx(lo_6289, (ToNum(Get(lo_6289, "length")) - 2D)), GetIdx(lo_6289, (ToNum(Get(lo_6289, "length")) - 1D)), p_6312), 0D))) {
-Invoke(lo_6289, "pop");
+foreach (V _k6313 in new JsIter(P_6288)) {
+V p_6314 = default;
+p_6314 = _k6313;
+while ((GeN(Get(lo_6291, "length"), 2D) && LeN(Call(cr_6290, V.Undef, GetIdx(lo_6291, (ToNum(Get(lo_6291, "length")) - 2D)), GetIdx(lo_6291, (ToNum(Get(lo_6291, "length")) - 1D)), p_6314), 0D))) {
+Invoke(lo_6291, "pop");
 }
-Invoke(lo_6289, "push", p_6312);
+Invoke(lo_6291, "push", p_6314);
 }
 }
 {
-double i_6313 = 0;
-i_6313 = (ToNum(Get(P_6286, "length")) - 1D);
+double i_6315 = 0;
+i_6315 = (ToNum(Get(P_6288, "length")) - 1D);
 while (true) {
-if (!((i_6313 >= 0D))) break;
-V p_6315 = default;
-p_6315 = GetIdx(P_6286, i_6313);
-while ((GeN(Get(up_6290, "length"), 2D) && LeN(Call(cr_6288, V.Undef, GetIdx(up_6290, (ToNum(Get(up_6290, "length")) - 2D)), GetIdx(up_6290, (ToNum(Get(up_6290, "length")) - 1D)), p_6315), 0D))) {
-Invoke(up_6290, "pop");
+if (!((i_6315 >= 0D))) break;
+V p_6317 = default;
+p_6317 = GetIdx(P_6288, i_6315);
+while ((GeN(Get(up_6292, "length"), 2D) && LeN(Call(cr_6290, V.Undef, GetIdx(up_6292, (ToNum(Get(up_6292, "length")) - 2D)), GetIdx(up_6292, (ToNum(Get(up_6292, "length")) - 1D)), p_6317), 0D))) {
+Invoke(up_6292, "pop");
 }
-Invoke(up_6290, "push", p_6315);
-i_6313--;
+Invoke(up_6292, "push", p_6317);
+i_6315--;
 }
 }
-Invoke(up_6290, "pop");
-Invoke(lo_6289, "pop");
-return Invoke(lo_6289, "concat", up_6290);
+Invoke(up_6292, "pop");
+Invoke(lo_6291, "pop");
+return Invoke(lo_6291, "concat", up_6292);
 return default;
 }, 1, "", true);
-closedD_29 = Fn((V _arrowThis6323, int _argc6316, V P_6322, V _a6319, V _a6320, V _a6321, V[] _rest6317) => {
-V n_6324 = default;
-JsStrBuf s_6325 = null;
-n_6324 = Get(P_6322, "length");
-if (LtN(n_6324, 3D)) {
+closedD_29 = Fn((V _arrowThis6325, int _argc6318, V P_6324, V _a6321, V _a6322, V _a6323, V[] _rest6319) => {
+V n_6326 = default;
+JsStrBuf s_6327 = null;
+n_6326 = Get(P_6324, "length");
+if (LtN(n_6326, 3D)) {
 return ((V)(""));
 }
-s_6325 = new JsStrBuf(JsStrBuf.Begin().S("M").V(Call(r2_14, V.Undef, GetIdx(GetIdx(P_6322, 0D), 0D))).S(" ").V(Call(r2_14, V.Undef, GetIdx(GetIdx(P_6322, 0D), 1D))).End());
+s_6327 = new JsStrBuf(JsStrBuf.Begin().S("M").V(Call(r2_14, V.Undef, GetIdx(GetIdx(P_6324, 0D), 0D))).S(" ").V(Call(r2_14, V.Undef, GetIdx(GetIdx(P_6324, 0D), 1D))).End());
 {
-double i_6326 = 0;
-i_6326 = 0D;
+double i_6328 = 0;
+i_6328 = 0D;
 while (true) {
-if (!(Lt(((V)(i_6326)), n_6324))) break;
-V p0_6328 = default;
-V p1_6329 = default;
-V p2_6330 = default;
-V p3_6331 = default;
-p0_6328 = GetIdx(P_6322, (ToNum(Add(((V)((i_6326 - 1D))), n_6324)) % ToNum(n_6324)));
-p1_6329 = GetIdx(P_6322, i_6326);
-p2_6330 = GetIdx(P_6322, ((i_6326 + 1D) % ToNum(n_6324)));
-p3_6331 = GetIdx(P_6322, ((i_6326 + 2D) % ToNum(n_6324)));
-s_6325.S(" C").V(Call(r2_14, V.Undef, Add(GetIdx(p1_6329, 0D), ((V)(((ToNum(GetIdx(p2_6330, 0D)) - ToNum(GetIdx(p0_6328, 0D))) / 6D)))))).S(" ").V(Call(r2_14, V.Undef, Add(GetIdx(p1_6329, 1D), ((V)(((ToNum(GetIdx(p2_6330, 1D)) - ToNum(GetIdx(p0_6328, 1D))) / 6D)))))).S(" ").V(Call(r2_14, V.Undef, ((V)((ToNum(GetIdx(p2_6330, 0D)) - ((ToNum(GetIdx(p3_6331, 0D)) - ToNum(GetIdx(p1_6329, 0D))) / 6D)))))).S(" ").V(Call(r2_14, V.Undef, ((V)((ToNum(GetIdx(p2_6330, 1D)) - ((ToNum(GetIdx(p3_6331, 1D)) - ToNum(GetIdx(p1_6329, 1D))) / 6D)))))).S(" ").V(Call(r2_14, V.Undef, GetIdx(p2_6330, 0D))).S(" ").V(Call(r2_14, V.Undef, GetIdx(p2_6330, 1D)));
-i_6326++;
+if (!(Lt(((V)(i_6328)), n_6326))) break;
+V p0_6330 = default;
+V p1_6331 = default;
+V p2_6332 = default;
+V p3_6333 = default;
+p0_6330 = GetIdx(P_6324, (ToNum(Add(((V)((i_6328 - 1D))), n_6326)) % ToNum(n_6326)));
+p1_6331 = GetIdx(P_6324, i_6328);
+p2_6332 = GetIdx(P_6324, ((i_6328 + 1D) % ToNum(n_6326)));
+p3_6333 = GetIdx(P_6324, ((i_6328 + 2D) % ToNum(n_6326)));
+s_6327.S(" C").V(Call(r2_14, V.Undef, Add(GetIdx(p1_6331, 0D), ((V)(((ToNum(GetIdx(p2_6332, 0D)) - ToNum(GetIdx(p0_6330, 0D))) / 6D)))))).S(" ").V(Call(r2_14, V.Undef, Add(GetIdx(p1_6331, 1D), ((V)(((ToNum(GetIdx(p2_6332, 1D)) - ToNum(GetIdx(p0_6330, 1D))) / 6D)))))).S(" ").V(Call(r2_14, V.Undef, ((V)((ToNum(GetIdx(p2_6332, 0D)) - ((ToNum(GetIdx(p3_6333, 0D)) - ToNum(GetIdx(p1_6331, 0D))) / 6D)))))).S(" ").V(Call(r2_14, V.Undef, ((V)((ToNum(GetIdx(p2_6332, 1D)) - ((ToNum(GetIdx(p3_6333, 1D)) - ToNum(GetIdx(p1_6331, 1D))) / 6D)))))).S(" ").V(Call(r2_14, V.Undef, GetIdx(p2_6332, 0D))).S(" ").V(Call(r2_14, V.Undef, GetIdx(p2_6332, 1D)));
+i_6328++;
 }
 }
-return ((V)(string.Concat(s_6325.Str, "Z")));
+return ((V)(string.Concat(s_6327.Str, "Z")));
 return default;
 }, 1, "", true);
-ellAx_30 = Fn((V _arrowThis6341, int _argc6332, V cx_6338, V cy_6339, V A_6340, V _a6337, V[] _rest6333) => {
-double a_6342 = 0;
-double b_6343 = 0;
-double c_6344 = 0;
-double tr_6345 = 0;
-double df_6346 = 0;
-a_6342 = 0D;
-b_6343 = 0D;
-c_6344 = 0D;
+ellAx_30 = Fn((V _arrowThis6343, int _argc6334, V cx_6340, V cy_6341, V A_6342, V _a6339, V[] _rest6335) => {
+double a_6344 = 0;
+double b_6345 = 0;
+double c_6346 = 0;
+double tr_6347 = 0;
+double df_6348 = 0;
+a_6344 = 0D;
+b_6345 = 0D;
+c_6346 = 0D;
 {
-foreach (V _k6347 in new JsIter(A_6340)) {
-V v_6348 = default;
-v_6348 = _k6347;
-a_6342 = (a_6342 + (ToNum(GetIdx(v_6348, 0D)) * ToNum(GetIdx(v_6348, 0D))));
-b_6343 = (b_6343 + (ToNum(GetIdx(v_6348, 0D)) * ToNum(GetIdx(v_6348, 1D))));
-c_6344 = (c_6344 + (ToNum(GetIdx(v_6348, 1D)) * ToNum(GetIdx(v_6348, 1D))));
+foreach (V _k6349 in new JsIter(A_6342)) {
+V v_6350 = default;
+v_6350 = _k6349;
+a_6344 = (a_6344 + (ToNum(GetIdx(v_6350, 0D)) * ToNum(GetIdx(v_6350, 0D))));
+b_6345 = (b_6345 + (ToNum(GetIdx(v_6350, 0D)) * ToNum(GetIdx(v_6350, 1D))));
+c_6346 = (c_6346 + (ToNum(GetIdx(v_6350, 1D)) * ToNum(GetIdx(v_6350, 1D))));
 }
 }
-tr_6345 = ((a_6342 + c_6344) / 2D);
-df_6346 = System.Math.Sqrt(Max(0D, ((((a_6342 - c_6344) * (a_6342 - c_6344)) / 4D) + (b_6343 * b_6343))));
-return Call(ellS_22, V.Undef, cx_6338, cy_6339, ((V)(System.Math.Sqrt((tr_6345 + df_6346)))), ((V)(System.Math.Sqrt(Max(0.01, (tr_6345 - df_6346))))), ((V)(((0.5 * FdLibm.Atan2((2D * b_6343), (a_6342 - c_6344))) / D2R_11))), ((V)(8D)));
+tr_6347 = ((a_6344 + c_6346) / 2D);
+df_6348 = System.Math.Sqrt(Max(0D, ((((a_6344 - c_6346) * (a_6344 - c_6346)) / 4D) + (b_6345 * b_6345))));
+return Call(ellS_22, V.Undef, cx_6340, cy_6341, ((V)(System.Math.Sqrt((tr_6347 + df_6348)))), ((V)(System.Math.Sqrt(Max(0.01, (tr_6347 - df_6348))))), ((V)(((0.5 * FdLibm.Atan2((2D * b_6345), (a_6344 - c_6346))) / D2R_11))), ((V)(8D)));
 return default;
 }, 3, "", true);
-earSec_31 = Fn((V _arrowThis6357, int _argc6349, V e_6355, V poly_6356, V _a6353, V _a6354, V[] _rest6350) => {
-V px_6358 = default;
-V py_6359 = default;
-V ux_6360 = default;
-V uy_6361 = default;
-double nx_6362 = 0;
-V ny_6363 = default;
-V A_6364 = default;
-V amax_6365 = default;
-double amin_6366 = 0;
-V secs_6367 = default;
-{ V _t6368 = Get(e_6355, "pivot");
-{ V _t6369 = ListOf(_t6368);
-{ V _t6370 = GetIdx(_t6369, 0D);
-px_6358 = _t6370; }
-{ V _t6371 = GetIdx(_t6369, 1D);
-py_6359 = _t6371; }
+earSec_31 = Fn((V _arrowThis6359, int _argc6351, V e_6357, V poly_6358, V _a6355, V _a6356, V[] _rest6352) => {
+V px_6360 = default;
+V py_6361 = default;
+V ux_6362 = default;
+V uy_6363 = default;
+double nx_6364 = 0;
+V ny_6365 = default;
+V A_6366 = default;
+V amax_6367 = default;
+double amin_6368 = 0;
+V secs_6369 = default;
+{ V _t6370 = Get(e_6357, "pivot");
+{ V _t6371 = ListOf(_t6370);
+{ V _t6372 = GetIdx(_t6371, 0D);
+px_6360 = _t6372; }
+{ V _t6373 = GetIdx(_t6371, 1D);
+py_6361 = _t6373; }
 } }
-ux_6360 = Get(e_6355, "ux");
-uy_6361 = Get(e_6355, "uy");
-nx_6362 = (-ToNum(uy_6361));
-ny_6363 = ux_6360;
-A_6364 = Invoke(poly_6356, "map", Fn((V _arrowThis6383, int _argc6372, V _a6374, V _a6375, V _a6376, V _a6377, V[] _rest6373) => {
-V x_6380 = default;
-V y_6382 = default;
-{ V _t6378 = ListOf(_a6374);
-{ V _t6379 = GetIdx(_t6378, 0D);
-x_6380 = _t6379; }
-{ V _t6381 = GetIdx(_t6378, 1D);
-y_6382 = _t6381; }
+ux_6362 = Get(e_6357, "ux");
+uy_6363 = Get(e_6357, "uy");
+nx_6364 = (-ToNum(uy_6363));
+ny_6365 = ux_6362;
+A_6366 = Invoke(poly_6358, "map", Fn((V _arrowThis6385, int _argc6374, V _a6376, V _a6377, V _a6378, V _a6379, V[] _rest6375) => {
+V x_6382 = default;
+V y_6384 = default;
+{ V _t6380 = ListOf(_a6376);
+{ V _t6381 = GetIdx(_t6380, 0D);
+x_6382 = _t6381; }
+{ V _t6383 = GetIdx(_t6380, 1D);
+y_6384 = _t6383; }
 }
-return Arr(((V)((((ToNum(x_6380) - ToNum(px_6358)) * ToNum(ux_6360)) + ((ToNum(y_6382) - ToNum(py_6359)) * ToNum(uy_6361))))), ((V)((((ToNum(x_6380) - ToNum(px_6358)) * nx_6362) + ((ToNum(y_6382) - ToNum(py_6359)) * ToNum(ny_6363))))));
+return Arr(((V)((((ToNum(x_6382) - ToNum(px_6360)) * ToNum(ux_6362)) + ((ToNum(y_6384) - ToNum(py_6361)) * ToNum(uy_6363))))), ((V)((((ToNum(x_6382) - ToNum(px_6360)) * nx_6364) + ((ToNum(y_6384) - ToNum(py_6361)) * ToNum(ny_6365))))));
 }, 1, "", true));
-amax_6365 = InvokeSpread(G("Math"), "max", new ArrBuilder().Spread(Invoke(A_6364, "map", Fn((V _arrowThis6391, int _argc6384, V a_6390, V _a6387, V _a6388, V _a6389, V[] _rest6385) => {
-return GetIdx(a_6390, 0D);
+amax_6367 = InvokeSpread(G("Math"), "max", new ArrBuilder().Spread(Invoke(A_6366, "map", Fn((V _arrowThis6393, int _argc6386, V a_6392, V _a6389, V _a6390, V _a6391, V[] _rest6387) => {
+return GetIdx(a_6392, 0D);
 }, 1, "", true))).V);
-amin_6366 = Max(ToNum(InvokeSpread(G("Math"), "min", new ArrBuilder().Spread(Invoke(A_6364, "map", Fn((V _arrowThis6399, int _argc6392, V a_6398, V _a6395, V _a6396, V _a6397, V[] _rest6393) => {
-return GetIdx(a_6398, 0D);
+amin_6368 = Max(ToNum(InvokeSpread(G("Math"), "min", new ArrBuilder().Spread(Invoke(A_6366, "map", Fn((V _arrowThis6401, int _argc6394, V a_6400, V _a6397, V _a6398, V _a6399, V[] _rest6395) => {
+return GetIdx(a_6400, 0D);
 }, 1, "", true))).V)), (-4D));
-secs_6367 = Arr();
+secs_6369 = Arr();
 {
-double i_6400 = 0;
-i_6400 = 0D;
+double i_6402 = 0;
+i_6402 = 0D;
 while (true) {
-if (!((i_6400 <= 13D))) break;
-double a_6402 = 0;
-double lo_6403 = 0;
-double hi_6404 = 0;
-double hw_6405 = 0;
-double tc_6406 = 0;
-V s_6407 = default;
-a_6402 = (amin_6366 + ((((ToNum(amax_6365) - amin_6366) - 0.5) * i_6400) / 13D));
-lo_6403 = 1000000000D;
-hi_6404 = (-1000000000D);
+if (!((i_6402 <= 13D))) break;
+double a_6404 = 0;
+double lo_6405 = 0;
+double hi_6406 = 0;
+double hw_6407 = 0;
+double tc_6408 = 0;
+V s_6409 = default;
+a_6404 = (amin_6368 + ((((ToNum(amax_6367) - amin_6368) - 0.5) * i_6402) / 13D));
+lo_6405 = 1000000000D;
+hi_6406 = (-1000000000D);
 {
-double j_6408 = 0;
-j_6408 = 0D;
+double j_6410 = 0;
+j_6410 = 0D;
 while (true) {
-if (!(Lt(((V)(j_6408)), Get(A_6364, "length")))) break;
-V p_6410 = default;
-V q_6411 = default;
-p_6410 = GetIdx(A_6364, j_6408);
-q_6411 = GetIdx(A_6364, ((j_6408 + 1D) % ToNum(Get(A_6364, "length"))));
-if (((((ToNum(GetIdx(p_6410, 0D)) - a_6402) * (ToNum(GetIdx(q_6411, 0D)) - a_6402)) <= 0D) && !SEq(GetIdx(p_6410, 0D), GetIdx(q_6411, 0D)))) {
-V t_6412 = default;
-t_6412 = Add(GetIdx(p_6410, 1D), ((V)((((ToNum(GetIdx(q_6411, 1D)) - ToNum(GetIdx(p_6410, 1D))) * (a_6402 - ToNum(GetIdx(p_6410, 0D)))) / (ToNum(GetIdx(q_6411, 0D)) - ToNum(GetIdx(p_6410, 0D)))))));
-lo_6403 = Min(lo_6403, ToNum(t_6412));
-hi_6404 = Max(hi_6404, ToNum(t_6412));
+if (!(Lt(((V)(j_6410)), Get(A_6366, "length")))) break;
+V p_6412 = default;
+V q_6413 = default;
+p_6412 = GetIdx(A_6366, j_6410);
+q_6413 = GetIdx(A_6366, ((j_6410 + 1D) % ToNum(Get(A_6366, "length"))));
+if (((((ToNum(GetIdx(p_6412, 0D)) - a_6404) * (ToNum(GetIdx(q_6413, 0D)) - a_6404)) <= 0D) && !SEq(GetIdx(p_6412, 0D), GetIdx(q_6413, 0D)))) {
+V t_6414 = default;
+t_6414 = Add(GetIdx(p_6412, 1D), ((V)((((ToNum(GetIdx(q_6413, 1D)) - ToNum(GetIdx(p_6412, 1D))) * (a_6404 - ToNum(GetIdx(p_6412, 0D)))) / (ToNum(GetIdx(q_6413, 0D)) - ToNum(GetIdx(p_6412, 0D)))))));
+lo_6405 = Min(lo_6405, ToNum(t_6414));
+hi_6406 = Max(hi_6406, ToNum(t_6414));
 }
-j_6408++;
-}
-}
-if ((lo_6403 > hi_6404)) {
-goto _cont6401;
-}
-hw_6405 = Max(0.8, ((hi_6404 - lo_6403) / 2D));
-tc_6406 = ((hi_6404 + lo_6403) / 2D);
-s_6407 = Call(clamp_13, V.Undef, ((V)((a_6402 / ToNum(amax_6365)))), ((V)(0D)), ((V)(1D)));
-Invoke(secs_6367, "push", NewObj(5).Put("s", s_6407).Put("cx", Add(Add(px_6358, ((V)((a_6402 * ToNum(ux_6360))))), ((V)((tc_6406 * nx_6362))))).Put("cy", Add(Add(py_6359, ((V)((a_6402 * ToNum(uy_6361))))), ((V)((tc_6406 * ToNum(ny_6363)))))).Put("hw", ((V)(hw_6405))).Put("hd", ((V)(Max(0.8, ((hw_6405 * 0.55) * (0.3 + (0.7 * ToNum(Call(SM_16, V.Undef, ((V)(((ToNum(s_6407) - 0.1) / 0.4)))))))))))).V);
-_cont6401: ;
-i_6400++;
+j_6410++;
 }
 }
-return NewObj(4).Put("secs", secs_6367).Put("amax", amax_6365).Put("nx", ((V)(nx_6362))).Put("ny", ny_6363).V;
+if ((lo_6405 > hi_6406)) {
+goto _cont6403;
+}
+hw_6407 = Max(0.8, ((hi_6406 - lo_6405) / 2D));
+tc_6408 = ((hi_6406 + lo_6405) / 2D);
+s_6409 = Call(clamp_13, V.Undef, ((V)((a_6404 / ToNum(amax_6367)))), ((V)(0D)), ((V)(1D)));
+Invoke(secs_6369, "push", NewObj(5).Put("s", s_6409).Put("cx", Add(Add(px_6360, ((V)((a_6404 * ToNum(ux_6362))))), ((V)((tc_6408 * nx_6364))))).Put("cy", Add(Add(py_6361, ((V)((a_6404 * ToNum(uy_6363))))), ((V)((tc_6408 * ToNum(ny_6365)))))).Put("hw", ((V)(hw_6407))).Put("hd", ((V)(Max(0.8, ((hw_6407 * 0.55) * (0.3 + (0.7 * ToNum(Call(SM_16, V.Undef, ((V)(((ToNum(s_6409) - 0.1) / 0.4)))))))))))).V);
+_cont6403: ;
+i_6402++;
+}
+}
+return NewObj(4).Put("secs", secs_6369).Put("amax", amax_6367).Put("nx", ((V)(nx_6364))).Put("ny", ny_6365).V;
 return default;
 }, 2, "", true);
-mk_32 = Fn((V _arrowThis6422, int _argc6413, V tag_6419, V at_6420, V par_6421, V _a6418, V[] _rest6414) => {
-V e_6423 = default;
-e_6423 = Invoke(G("document"), "createElementNS", NS_10, tag_6419);
+mk_32 = Fn((V _arrowThis6424, int _argc6415, V tag_6421, V at_6422, V par_6423, V _a6420, V[] _rest6416) => {
+V e_6425 = default;
+e_6425 = Invoke(G("document"), "createElementNS", NS_10, tag_6421);
 {
-foreach (V _k6424 in ForInKeys(at_6420)) {
-V k_6425 = default;
-k_6425 = _k6424;
-Invoke(e_6423, "setAttribute", k_6425, GetK(at_6420, k_6425));
+foreach (V _k6426 in ForInKeys(at_6422)) {
+V k_6427 = default;
+k_6427 = _k6426;
+Invoke(e_6425, "setAttribute", k_6427, GetK(at_6422, k_6427));
 }
 }
-if (Truthy(par_6421)) {
-Invoke(par_6421, "appendChild", e_6423);
+if (Truthy(par_6423)) {
+Invoke(par_6423, "appendChild", e_6425);
 }
-return e_6423;
+return e_6425;
 return default;
 }, 3, "", true);
-star4_33 = Fn((V _arrowThis6435, int _argc6426, V x_6432, V y_6433, V r_6434, V _a6431, V[] _rest6427) => {
-return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14, V.Undef, x_6432)).S(" ").V(Call(r2_14, V.Undef, ((V)((ToNum(y_6433) - ToNum(r_6434)))))).S(" Q").V(Call(r2_14, V.Undef, x_6432)).S(" ").V(Call(r2_14, V.Undef, y_6433)).S(" ").V(Call(r2_14, V.Undef, Add(x_6432, r_6434))).S(" ").V(Call(r2_14, V.Undef, y_6433)).S(" Q").V(Call(r2_14, V.Undef, x_6432)).S(" ").V(Call(r2_14, V.Undef, y_6433)).S(" ").V(Call(r2_14, V.Undef, x_6432)).S(" ").V(Call(r2_14, V.Undef, Add(y_6433, r_6434))).S(" Q").V(Call(r2_14, V.Undef, x_6432)).S(" ").V(Call(r2_14, V.Undef, y_6433)).S(" ").V(Call(r2_14, V.Undef, ((V)((ToNum(x_6432) - ToNum(r_6434)))))).S(" ").V(Call(r2_14, V.Undef, y_6433)).S(" Q").V(Call(r2_14, V.Undef, x_6432)).S(" ").V(Call(r2_14, V.Undef, y_6433)).S(" ").V(Call(r2_14, V.Undef, x_6432)).S(" ").V(Call(r2_14, V.Undef, ((V)((ToNum(y_6433) - ToNum(r_6434)))))).S("Z").End()));
+star4_33 = Fn((V _arrowThis6437, int _argc6428, V x_6434, V y_6435, V r_6436, V _a6433, V[] _rest6429) => {
+return ((V)(JsStrBuf.Begin().S("M").V(Call(r2_14, V.Undef, x_6434)).S(" ").V(Call(r2_14, V.Undef, ((V)((ToNum(y_6435) - ToNum(r_6436)))))).S(" Q").V(Call(r2_14, V.Undef, x_6434)).S(" ").V(Call(r2_14, V.Undef, y_6435)).S(" ").V(Call(r2_14, V.Undef, Add(x_6434, r_6436))).S(" ").V(Call(r2_14, V.Undef, y_6435)).S(" Q").V(Call(r2_14, V.Undef, x_6434)).S(" ").V(Call(r2_14, V.Undef, y_6435)).S(" ").V(Call(r2_14, V.Undef, x_6434)).S(" ").V(Call(r2_14, V.Undef, Add(y_6435, r_6436))).S(" Q").V(Call(r2_14, V.Undef, x_6434)).S(" ").V(Call(r2_14, V.Undef, y_6435)).S(" ").V(Call(r2_14, V.Undef, ((V)((ToNum(x_6434) - ToNum(r_6436)))))).S(" ").V(Call(r2_14, V.Undef, y_6435)).S(" Q").V(Call(r2_14, V.Undef, x_6434)).S(" ").V(Call(r2_14, V.Undef, y_6435)).S(" ").V(Call(r2_14, V.Undef, x_6434)).S(" ").V(Call(r2_14, V.Undef, ((V)((ToNum(y_6435) - ToNum(r_6436)))))).S("Z").End()));
 }, 3, "", true);
 DEFS_34 = NewObj(1).Put("mittens", NewObj(16).Put("G", ((V)(95.5))).Put("top", ((V)(17D))).Put("head", Arr(((V)(50D)), ((V)(46D)), ((V)(29D)))).Put("neck", Arr(((V)(50D)), ((V)(73D)))).Put("c", NewObj(11).Put("tail", ((V)("#e59a58"))).Put("pad", ((V)("#ffb8c6"))).Put("inner", ((V)("#ffb3c1"))).Put("muzzle", ((V)("#fff1e2"))).Put("nose", ((V)("#e8798f"))).Put("cheek", ((V)("#ff8fa3"))).Put("mouth", ((V)("#6a3a3a"))).Put("whisker", ((V)("#a86a3a"))).Put("stripe", ((V)("#e08e48"))).Put("arm", ((V)("#f0aa6a"))).Put("g", Arr(((V)("#ffe4c0")), ((V)("#f8b77a")), ((V)("#d98a4a")))).V).Put("body", Arr(((V)(50D)), ((V)(78D)), ((V)(22D)), ((V)(13D)))).Put("feet", Arr(Arr(((V)(38D)), ((V)(90D))), Arr(((V)(62D)), ((V)(90D))))).Put("ears", Arr(NewObj(5).Put("side", ((V)((-1D)))).Put("pivot", Arr(((V)(34D)), ((V)(30D)))).Put("tip", Arr(((V)(26D)), ((V)(9D)))).Put("d", ((V)("M22 36 Q20 8 30 10 Q38 14 46 24 Z"))).Put("inner", ((V)("M28 28 Q28 16 32 16 Q36 18 40 24 Z"))).V, NewObj(5).Put("side", ((V)(1D))).Put("pivot", Arr(((V)(66D)), ((V)(30D)))).Put("tip", Arr(((V)(74D)), ((V)(9D)))).Put("d", ((V)("M78 36 Q80 8 70 10 Q62 14 54 24 Z"))).Put("inner", ((V)("M72 28 Q72 16 68 16 Q64 18 60 24 Z"))).V)).Put("arms", Arr(NewObj(3).Put("side", ((V)((-1D)))).Put("e", Arr(((V)(30.6)), ((V)(76D)), ((V)(6D)), ((V)(8D)), ((V)(20D)))).Put("pivot", Arr(((V)(33.2)), ((V)(68.6)))).V, NewObj(3).Put("side", ((V)(1D))).Put("e", Arr(((V)(69.4)), ((V)(76D)), ((V)(6D)), ((V)(8D)), ((V)((-20D))))).Put("pivot", Arr(((V)(66.8)), ((V)(68.6)))).V)).Put("tail", Arr(Arr(((V)(52D)), ((V)(86D))), Arr(((V)(74D)), ((V)(92D))), Arr(((V)(92D)), ((V)(82D))), Arr(((V)(88D)), ((V)(66D))))).Put("eyes", Arr(Arr(((V)(38D)), ((V)(47D))), Arr(((V)(62D)), ((V)(47D))))).Put("eyeR", ((V)(5.2))).Put("tail3", Arr(Arr(((V)(50D)), ((V)(81D)), ((V)((-18D)))), Arr(((V)(51D)), ((V)(90D)), ((V)((-35D)))), Arr(((V)(80D)), ((V)(94D)), ((V)((-36D)))), Arr(((V)(90D)), ((V)(71D)), ((V)((-26D)))))).Put("whiskers", Arr(((V)("M36 55 Q27 52.5 18 52")), ((V)("M36 58 Q27 58.5 18 60")), ((V)("M64 55 Q73 52.5 82 52")), ((V)("M64 58 Q73 58.5 82 60")))).Put("stripes", ((V)("M44 18 L45 24 M56 18 L55 24"))).Put("back", ((V)("M43 21 L44 28 M50 19 L50 27 M57 21 L56 28"))).V).V;
 Set(DEFS_34, "biscuit", NewObj(33).Put("G", ((V)(95.5))).Put("top", ((V)(16D))).Put("head", Arr(((V)(50D)), ((V)(44D)), ((V)(28D)))).Put("neck", Arr(((V)(50D)), ((V)(71D)))).Put("c", NewObj(14).Put("tail", ((V)("#e8a45a"))).Put("tailB", ((V)("#e2a056"))).Put("pad", ((V)("#7a4a2a"))).Put("inner", ((V)("#c98a50"))).Put("muzzle", ((V)("#fff1de"))).Put("nose", ((V)("#2a1a30"))).Put("cheek", ((V)("#ff8fa3"))).Put("mouth", ((V)("#6a3a3a"))).Put("whisker", ((V)("none"))).Put("stripe", ((V)("#fff1de"))).Put("arm", ((V)("#efae62"))).Put("g", Arr(((V)("#ffe2b8")), ((V)("#f2b56c")), ((V)("#d48a3e")))).Put("ge", Arr(((V)("#c98a50")), ((V)("#a8693a")), ((V)("#7c4724")))).Put("tailHL", ((V)("#ffe2b8"))).V).Put("body", Arr(((V)(50D)), ((V)(77D)), ((V)(21D)), ((V)(14D)))).Put("belly", Arr(((V)(50D)), ((V)(80D)), ((V)(12D)), ((V)(9D)), ((V)("#fff3e0")))).Put("bellyTurn", (true ? V.True : V.False)).Put("feet", Arr(Arr(((V)(38D)), ((V)(90D))), Arr(((V)(62D)), ((V)(90D))))).Put("pads", Arr(Arr(((V)((-4D))), ((V)(1D)), ((V)(1.6)), ((V)(1.2))), Arr(((V)(0D)), ((V)(2D)), ((V)(1.6)), ((V)(1.2))), Arr(((V)(4D)), ((V)(1D)), ((V)(1.6)), ((V)(1.2))))).Put("ears", Arr(NewObj(6).Put("side", ((V)((-1D)))).Put("flop", (true ? V.True : V.False)).Put("lobe", Arr(((V)(19D)), ((V)(42D)), ((V)(10.5)), ((V)(18D)), ((V)(9D)), ((V)((-2D))), ((V)(14D)))).Put("pivot", Arr(((V)(27D)), ((V)(30D)))).Put("tip", Arr(((V)(15D)), ((V)(58D)))).Put("d", ((V)("M28 26 Q14 22 10 36 Q8 52 18 60 Q24 62 26 54 Q26 40 32 32Z"))).V, NewObj(6).Put("side", ((V)(1D))).Put("flop", (true ? V.True : V.False)).Put("lobe", Arr(((V)(81D)), ((V)(42D)), ((V)(10.5)), ((V)(18D)), ((V)(9D)), ((V)((-2D))), ((V)((-14D))))).Put("pivot", Arr(((V)(73D)), ((V)(30D)))).Put("tip", Arr(((V)(85D)), ((V)(58D)))).Put("d", ((V)("M72 26 Q86 22 90 36 Q92 52 82 60 Q76 62 74 54 Q74 40 68 32Z"))).V)).Put("arms", Arr(NewObj(3).Put("side", ((V)((-1D)))).Put("e", Arr(((V)(30.6)), ((V)(77D)), ((V)(6D)), ((V)(8D)), ((V)(15D)))).Put("pivot", Arr(((V)(32.7)), ((V)(69.3)))).V, NewObj(3).Put("side", ((V)(1D))).Put("e", Arr(((V)(69.4)), ((V)(77D)), ((V)(6D)), ((V)(8D)), ((V)((-15D))))).Put("pivot", Arr(((V)(67.3)), ((V)(69.3)))).V)).Put("tail", Arr(Arr(((V)(72D)), ((V)(78D))), Arr(((V)(86D)), ((V)(77D))), Arr(((V)(89D)), ((V)(65D))), Arr(((V)(84D)), ((V)(57D))))).Put("tailW", ((V)(6D))).Put("tailRoot", Arr(Arr(((V)(62D)), ((V)(86D))), Arr(((V)(67D)), ((V)(83D))))).Put("eyes", Arr(Arr(((V)(38D)), ((V)(45D))), Arr(((V)(62D)), ((V)(45D))))).Put("eyeR", ((V)(5.2))).Put("tail3", Arr(Arr(((V)(50D)), ((V)(80D)), ((V)((-16D)))), Arr(((V)(51D)), ((V)(79D)), ((V)((-31D)))), Arr(((V)(60D)), ((V)(74D)), ((V)((-34D)))), Arr(((V)(71D)), ((V)(62D)), ((V)((-27D)))))).Put("tailWag", ((V)(1.7))).Put("tailK", ((V)(8D))).Put("tailTaper", Arr(((V)(0.86)), ((V)(0.36)))).Put("tailShade", ((V)("#c9873f"))).Put("muzzle", Arr(((V)(50D)), ((V)(56D)), ((V)(15D)), ((V)(11D)))).Put("nose", Arr(((V)(50D)), ((V)(53D)), ((V)(4.4)), ((V)(3.2)))).Put("noseHL", Arr(((V)(48.6)), ((V)(52D)), ((V)(1.4)), ((V)(0.9)))).Put("mouth", Arr(((V)(50D)), ((V)(60D)), ((V)(4.5)))).Put("cheeks", Arr(Arr(((V)(33D)), ((V)(55D))), Arr(((V)(67D)), ((V)(55D))))).Put("faceExtra", Arr(NewObj(3).Put("d", ((V)("M44 20 Q50 16 56 20 Q54 30 50 34 Q46 30 44 20Z"))).Put("fill", ((V)("#fff1de"))).Put("op", ((V)(0.9))).V, NewObj(3).Put("d", ((V)("M50 56 L50 59"))).Put("stroke", ((V)("#6a3a3a"))).Put("sw", ((V)(1.2))).V)).Put("whiskers", Arr()).Put("stripes", ((V)(""))).Put("back", ((V)("M44 22 Q50 18 56 22"))).Put("collar", NewObj(3).Put("d", ((V)("M30 66 Q50 74 70 66 L70 70 Q50 78 30 70Z"))).Put("fill", ((V)("#ff6f86"))).Put("ring", NewObj(8).Put("ys", ((V)(64D))).Put("af", ((V)(4D))).Put("ab", ((V)(1.5))).Put("w", ((V)(4D))).Put("rx", ((V)(20D))).Put("rz", ((V)(20D))).Put("dark", ((V)("#c8445d"))).Put("light", ((V)("#ff9cb0"))).V).V).Put("tag", NewObj(4).Put("x", ((V)(50D))).Put("y", ((V)(74D))).Put("r", ((V)(3.4))).Put("fill", ((V)("#ffd84a"))).V).V);
@@ -8167,143 +8180,143 @@ Set(DEFS_34, "waffles", NewObj(34).Put("G", ((V)(95.5))).Put("top", ((V)(15D))).
 Set(DEFS_34, "truffle", NewObj(29).Put("G", ((V)(95.5))).Put("top", ((V)(21D))).Put("head", Arr(((V)(50D)), ((V)(47D)), ((V)(30D)), ((V)(26D)))).Put("neck", Arr(((V)(50D)), ((V)(72D)))).Put("c", NewObj(12).Put("tail", ((V)("#f095ad"))).Put("tailB", ((V)("#f4a3b8"))).Put("pad", ((V)("#d9718f"))).Put("inner", ((V)("#f59ab2"))).Put("muzzle", ((V)("#ff9fb6"))).Put("nose", ((V)("#b8506e"))).Put("cheek", ((V)("#ff7f9a"))).Put("mouth", ((V)("#6a3a3a"))).Put("whisker", ((V)("none"))).Put("stripe", ((V)("none"))).Put("arm", ((V)("#ffb3c6"))).Put("g", Arr(((V)("#ffe6ec")), ((V)("#ffb8c8")), ((V)("#ee8aa6")))).V).Put("grads", NewObj(1).Put("pcr", Arr(Arr(((V)("0")), ((V)("#fff6f8"))), Arr(((V)("0.6")), ((V)("#ffe2ea"))), Arr(((V)("1")), ((V)("#f7c3d1"))))).V).Put("body", Arr(((V)(50D)), ((V)(77D)), ((V)(23D)), ((V)(15.5)))).Put("belly", Arr(((V)(50D)), ((V)(80D)), ((V)(14D)), ((V)(10D)), ((V)("url(#pcr)")))).Put("bellyTurn", (true ? V.True : V.False)).Put("feet", Arr(Arr(((V)(38D)), ((V)(90D))), Arr(((V)(62D)), ((V)(90D))))).Put("pads", Arr(Arr(((V)(0D)), ((V)(3.2)), ((V)(5.6)), ((V)(1.6))))).Put("ears", Arr(NewObj(5).Put("side", ((V)((-1D)))).Put("pivot", Arr(((V)(32D)), ((V)(30D)))).Put("tip", Arr(((V)(27D)), ((V)(13.5)))).Put("d", ((V)("M25 33 Q16 16 28 13 Q38 16 39 27 Z"))).Put("inner", ((V)("M27 28 Q22 18 29 17 Q35 19 35 26 Z"))).V, NewObj(5).Put("side", ((V)(1D))).Put("pivot", Arr(((V)(68D)), ((V)(30D)))).Put("tip", Arr(((V)(73D)), ((V)(13.5)))).Put("d", ((V)("M75 33 Q84 16 72 13 Q62 16 61 27 Z"))).Put("inner", ((V)("M73 28 Q78 18 71 17 Q65 19 65 26 Z"))).V)).Put("arms", Arr(NewObj(3).Put("side", ((V)((-1D)))).Put("e", Arr(((V)(30.6)), ((V)(77D)), ((V)(6D)), ((V)(8D)), ((V)(15D)))).Put("pivot", Arr(((V)(32.7)), ((V)(69.3)))).V, NewObj(3).Put("side", ((V)(1D))).Put("e", Arr(((V)(69.4)), ((V)(77D)), ((V)(6D)), ((V)(8D)), ((V)((-15D))))).Put("pivot", Arr(((V)(67.3)), ((V)(69.3)))).V)).Put("tail", Arr(Arr(((V)(72D)), ((V)(78D))), Arr(((V)(86D)), ((V)(77D))), Arr(((V)(89D)), ((V)(65D))), Arr(((V)(84D)), ((V)(57D))))).Put("eyes", Arr(Arr(((V)(37D)), ((V)(43.5))), Arr(((V)(63D)), ((V)(43.5))))).Put("eyeR", ((V)(5.2))).Put("tail3", Arr(Arr(((V)(50D)), ((V)(80D)), ((V)((-16D)))), Arr(((V)(51.5)), ((V)(79D)), ((V)((-24D)))), Arr(((V)(58D)), ((V)(77D)), ((V)((-28D)))), Arr(((V)(66D)), ((V)(76D)), ((V)((-27D)))), Arr(((V)(73D)), ((V)(75D)), ((V)((-24D)))), Arr(((V)(78D)), ((V)(72D)), ((V)((-21D)))), Arr(((V)(79.5)), ((V)(68.5)), ((V)((-19.5)))), Arr(((V)(77D)), ((V)(66.5)), ((V)((-19.5)))), Arr(((V)(74.5)), ((V)(68D)), ((V)((-20.5)))), Arr(((V)(75.5)), ((V)(71D)), ((V)((-21.5)))), Arr(((V)(78D)), ((V)(71.5)), ((V)((-21D)))))).Put("tailWag", ((V)(1.3))).Put("tailK", ((V)(2.1))).Put("tailTaper", Arr(((V)(1D)), ((V)(0.78)))).Put("tailShade", ((V)("#d9718f"))).Put("muzzle", Arr(((V)(50D)), ((V)(56D)), ((V)(10D)), ((V)(7D)))).Put("nose", V.Null).Put("mouth", Arr(((V)(50D)), ((V)(64.6)), ((V)(4.6)))).Put("cheeks", Arr(Arr(((V)(27D)), ((V)(54D))), Arr(((V)(73D)), ((V)(54D))))).Put("faceExtra", Arr(NewObj(2).Put("d", ((V)("M44.60 56.00 C44.60 54.62 45.36 53.50 46.30 53.50 C47.24 53.50 48.00 54.62 48.00 56.00 C48.00 57.38 47.24 58.50 46.30 58.50 C45.36 58.50 44.60 57.38 44.60 56.00Z"))).Put("fill", ((V)("#b8506e"))).V, NewObj(2).Put("d", ((V)("M52.00 56.00 C52.00 54.62 52.76 53.50 53.70 53.50 C54.64 53.50 55.40 54.62 55.40 56.00 C55.40 57.38 54.64 58.50 53.70 58.50 C52.76 58.50 52.00 57.38 52.00 56.00Z"))).Put("fill", ((V)("#b8506e"))).V, NewObj(3).Put("d", ((V)("M44.50 52.60 C44.50 51.99 45.84 51.50 47.50 51.50 C49.16 51.50 50.50 51.99 50.50 52.60 C50.50 53.21 49.16 53.70 47.50 53.70 C45.84 53.70 44.50 53.21 44.50 52.60Z"))).Put("fill", ((V)("#ffffff"))).Put("op", ((V)(0.45))).V)).Put("whiskers", Arr()).Put("stripes", ((V)(""))).Put("back", ((V)(""))).V);
 Set(DEFS_34, "ribbit", NewObj(26).Put("G", ((V)(95.5))).Put("top", ((V)(19D))).Put("head", Arr(((V)(50D)), ((V)(46D)), ((V)(34D)), ((V)(27D)))).Put("neck", Arr(((V)(50D)), ((V)(70D)))).Put("c", NewObj(10).Put("pad", ((V)("#b9e88e"))).Put("inner", ((V)("#9fdb66"))).Put("muzzle", ((V)("#fff2b8"))).Put("nose", ((V)("#3f7a26"))).Put("cheek", ((V)("#ff4f86"))).Put("mouth", ((V)("#6a3a3a"))).Put("whisker", ((V)("none"))).Put("stripe", ((V)("none"))).Put("arm", ((V)("#9fdb66"))).Put("g", Arr(((V)("#ecffc6")), ((V)("#9fdb66")), ((V)("#5fa63a")))).V).Put("grads", NewObj(1).Put("fcr", Arr(Arr(((V)("0")), ((V)("#fffbe2"))), Arr(((V)("0.6")), ((V)("#fff2b8"))), Arr(((V)("1")), ((V)("#f2dc8c"))))).V).Put("body", Arr(((V)(50D)), ((V)(78D)), ((V)(23D)), ((V)(15D)))).Put("belly", Arr(((V)(50D)), ((V)(81D)), ((V)(15D)), ((V)(10D)), ((V)("url(#fcr)")))).Put("bellyTurn", (true ? V.True : V.False)).Put("feet", Arr(Arr(((V)(34D)), ((V)(90D))), Arr(((V)(66D)), ((V)(90D))))).Put("footS", Arr(((V)(10.5)), ((V)(5D)), ((V)(8D)))).Put("pads", Arr(Arr(((V)((-5D))), ((V)(3.2)), ((V)(2.3)), ((V)(2.1))), Arr(((V)(0D)), ((V)(4D)), ((V)(2.3)), ((V)(2.1))), Arr(((V)(5D)), ((V)(3.2)), ((V)(2.3)), ((V)(2.1))))).Put("tufts", Arr(NewObj(6).Put("c", Arr(((V)(33D)), ((V)(31D)))).Put("r", ((V)(12D))).Put("lift", ((V)(3D))).Put("white", Arr(((V)(0D)), ((V)(0D)), ((V)(8D)))).Put("d", ((V)("M21.00 31.00 C21.00 24.37 26.37 19.00 33.00 19.00 C39.63 19.00 45.00 24.37 45.00 31.00 C45.00 37.63 39.63 43.00 33.00 43.00 C26.37 43.00 21.00 37.63 21.00 31.00Z"))).Put("fill", ((V)("url(#g)"))).V, NewObj(6).Put("c", Arr(((V)(67D)), ((V)(31D)))).Put("r", ((V)(12D))).Put("lift", ((V)(3D))).Put("white", Arr(((V)(0D)), ((V)(0D)), ((V)(8D)))).Put("d", ((V)("M55.00 31.00 C55.00 24.37 60.37 19.00 67.00 19.00 C73.63 19.00 79.00 24.37 79.00 31.00 C79.00 37.63 73.63 43.00 67.00 43.00 C60.37 43.00 55.00 37.63 55.00 31.00Z"))).Put("fill", ((V)("url(#g)"))).V)).Put("eyeDome", (true ? V.True : V.False)).Put("ears", Arr()).Put("arms", Arr(NewObj(3).Put("side", ((V)((-1D)))).Put("e", Arr(((V)(30.6)), ((V)(77D)), ((V)(5.5)), ((V)(8D)), ((V)(15D)))).Put("pivot", Arr(((V)(33.1)), ((V)(69.5)))).V, NewObj(3).Put("side", ((V)(1D))).Put("e", Arr(((V)(69.4)), ((V)(77D)), ((V)(5.5)), ((V)(8D)), ((V)((-15D))))).Put("pivot", Arr(((V)(66.9)), ((V)(69.5)))).V)).Put("eyes", Arr(Arr(((V)(33.5)), ((V)(32D))), Arr(((V)(66.5)), ((V)(32D))))).Put("eyeR", ((V)(5.6))).Put("muzzle", V.Null).Put("nose", V.Null).Put("mouth", Arr(((V)(50D)), ((V)(52.4)), ((V)(3.8)))).Put("cheeks", Arr(Arr(((V)(26D)), ((V)(56D))), Arr(((V)(74D)), ((V)(56D))))).Put("faceExtra", Arr(NewObj(3).Put("d", ((V)("M41.80 37.00 C41.80 35.78 42.78 34.80 44.00 34.80 C45.22 34.80 46.20 35.78 46.20 37.00 C46.20 38.22 45.22 39.20 44.00 39.20 C42.78 39.20 41.80 38.22 41.80 37.00Z"))).Put("fill", ((V)("#5f9e38"))).Put("op", ((V)(0.45))).V, NewObj(3).Put("d", ((V)("M55.40 38.50 C55.40 37.62 56.12 36.90 57.00 36.90 C57.88 36.90 58.60 37.62 58.60 38.50 C58.60 39.38 57.88 40.10 57.00 40.10 C56.12 40.10 55.40 39.38 55.40 38.50Z"))).Put("fill", ((V)("#5f9e38"))).Put("op", ((V)(0.45))).V, NewObj(3).Put("d", ((V)("M21.20 48.00 C21.20 47.01 22.01 46.20 23.00 46.20 C23.99 46.20 24.80 47.01 24.80 48.00 C24.80 48.99 23.99 49.80 23.00 49.80 C22.01 49.80 21.20 48.99 21.20 48.00Z"))).Put("fill", ((V)("#5f9e38"))).Put("op", ((V)(0.45))).V, NewObj(3).Put("d", ((V)("M75.00 47.00 C75.00 45.90 75.90 45.00 77.00 45.00 C78.10 45.00 79.00 45.90 79.00 47.00 C79.00 48.10 78.10 49.00 77.00 49.00 C75.90 49.00 75.00 48.10 75.00 47.00Z"))).Put("fill", ((V)("#5f9e38"))).Put("op", ((V)(0.45))).V, NewObj(2).Put("d", ((V)("M45.60 47.00 C45.60 46.50 46.00 46.10 46.50 46.10 C47.00 46.10 47.40 46.50 47.40 47.00 C47.40 47.50 47.00 47.90 46.50 47.90 C46.00 47.90 45.60 47.50 45.60 47.00Z"))).Put("fill", ((V)("#3f7a26"))).V, NewObj(2).Put("d", ((V)("M52.60 47.00 C52.60 46.50 53.00 46.10 53.50 46.10 C54.00 46.10 54.40 46.50 54.40 47.00 C54.40 47.50 54.00 47.90 53.50 47.90 C53.00 47.90 52.60 47.50 52.60 47.00Z"))).Put("fill", ((V)("#3f7a26"))).V)).Put("whiskers", Arr()).Put("stripes", ((V)(""))).Put("back", ((V)(""))).V);
 REST_35 = NewObj(53).Put("sblur", ((V)(0D))).Put("x", ((V)(0D))).Put("lift", ((V)(0D))).Put("tilt", ((V)(0D))).Put("sq", ((V)(0D))).Put("lean", ((V)(0D))).Put("bend", ((V)(0D))).Put("spin", ((V)(0D))).Put("turn", ((V)(0D))).Put("hyaw", ((V)(0D))).Put("twist", ((V)(0D))).Put("pitch", ((V)(0D))).Put("htilt", ((V)(0D))).Put("armL", ((V)(0D))).Put("armR", ((V)(0D))).Put("earL", ((V)(0D))).Put("earR", ((V)(0D))).Put("wag", ((V)(0D))).Put("curl", ((V)(0D))).Put("footL", ((V)(0D))).Put("footR", ((V)(0D))).Put("lx", ((V)(0D))).Put("ly", ((V)(0D))).Put("close", ((V)(0D))).Put("sl", ((V)(0D))).Put("winkL", ((V)(0D))).Put("winkR", ((V)(0D))).Put("hap", ((V)(0D))).Put("wide", ((V)(0D))).Put("smile", ((V)(0D))).Put("open", ((V)(0D))).Put("mw", ((V)(1D))).Put("frown", ((V)(0D))).Put("blush", ((V)(0D))).Put("hLx", ((V)(0D))).Put("hLy", ((V)(0D))).Put("hLz", ((V)(0D))).Put("hRx", ((V)(0D))).Put("hRy", ((V)(0D))).Put("hRz", ((V)(0D))).Put("puff", ((V)(0D))).Put("tongue", ((V)(0D))).Put("sqz", ((V)(0D))).Put("cross", ((V)(0D))).Put("teary", ((V)(0D))).Put("red", ((V)(0D))).Put("green", ((V)(0D))).Put("sit", ((V)(0D))).Put("bristle", ((V)(0D))).Put("dbb", ((V)(0D))).Put("dbh", ((V)(0D))).Put("dbs", ((V)(0D))).Put("wsk", ((V)(0D))).V;
-AR_36 = Fn((V _arrowThis6443, int _argc6436, V K_6442, V _a6439, V _a6440, V _a6441, V[] _rest6437) => {
-return NewObj(2).Put("armL", K_6442).Put("armR", K_6442).V;
+AR_36 = Fn((V _arrowThis6445, int _argc6438, V K_6444, V _a6441, V _a6442, V _a6443, V[] _rest6439) => {
+return NewObj(2).Put("armL", K_6444).Put("armR", K_6444).V;
 }, 1, "", true);
-ER_37 = Fn((V _arrowThis6451, int _argc6444, V K_6450, V _a6447, V _a6448, V _a6449, V[] _rest6445) => {
-return NewObj(2).Put("earL", K_6450).Put("earR", K_6450).V;
+ER_37 = Fn((V _arrowThis6453, int _argc6446, V K_6452, V _a6449, V _a6450, V _a6451, V[] _rest6447) => {
+return NewObj(2).Put("earL", K_6452).Put("earR", K_6452).V;
 }, 1, "", true);
 STATES_38 = NewObj(8).Put("idle", NewObj(3).Put("loop", ((V)(8400D))).Put("look", (true ? V.True : V.False)).Put("k", NewObj(5).Put("sq", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(2100D)), ((V)((-0.025))), ((V)("s"))), Arr(((V)(4200D)), ((V)(0.012)), ((V)("s"))), Arr(((V)(6300D)), ((V)((-0.025))), ((V)("s"))), Arr(((V)(8400D)), ((V)(0D)), ((V)("s"))))).Put("lean", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(2100D)), ((V)(0.9)), ((V)("s"))), Arr(((V)(4200D)), ((V)(0D)), ((V)("s"))), Arr(((V)(6300D)), ((V)((-0.9))), ((V)("s"))), Arr(((V)(8400D)), ((V)(0D)), ((V)("s"))))).Put("htilt", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(2100D)), ((V)(1.4)), ((V)("s"))), Arr(((V)(4200D)), ((V)(0D)), ((V)("s"))), Arr(((V)(6300D)), ((V)((-1.4))), ((V)("s"))), Arr(((V)(8400D)), ((V)(0D)), ((V)("s"))))).Put("wag", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(2100D)), ((V)(9D)), ((V)("s"))), Arr(((V)(4200D)), ((V)(0D)), ((V)("s"))), Arr(((V)(6300D)), ((V)((-9D))), ((V)("s"))), Arr(((V)(8400D)), ((V)(0D)), ((V)("s"))))).Put("earR", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(5200D)), ((V)(0D))), Arr(((V)(5280D)), ((V)((-9D))), ((V)("o"))), Arr(((V)(5420D)), ((V)(4D)), ((V)("io"))), Arr(((V)(5600D)), ((V)(0D)), ((V)("io"))))).V).V).Put("look", NewObj(3).Put("dur", ((V)(6000D))).Put("ev", Arr(Arr(((V)(1950D)), ((V)("blink"))), Arr(((V)(4500D)), ((V)("blink"))))).Put("k", NewObj(11).Put("lx", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(200D)), ((V)(0D))), Arr(((V)(380D)), ((V)((-1D))), ((V)("o"))), Arr(((V)(1700D)), ((V)((-1D)))), Arr(((V)(1880D)), ((V)(1D)), ((V)("io"))), Arr(((V)(3200D)), ((V)(1D))), Arr(((V)(3380D)), ((V)(0D)), ((V)("io"))))).Put("ly", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(3400D)), ((V)(0D))), Arr(((V)(3580D)), ((V)((-1D))), ((V)("o"))), Arr(((V)(4400D)), ((V)((-1D)))), Arr(((V)(4580D)), ((V)(0.8)), ((V)("io"))), Arr(((V)(5200D)), ((V)(0.8))), Arr(((V)(5400D)), ((V)(0D)), ((V)("io"))))).Put("turn", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(330D)), ((V)(0D))), Arr(((V)(850D)), ((V)((-0.97))), ((V)("io"))), Arr(((V)(1050D)), ((V)((-0.9))), ((V)("io"))), Arr(((V)(1950D)), ((V)((-0.9)))), Arr(((V)(2550D)), ((V)(0.97)), ((V)("io"))), Arr(((V)(2750D)), ((V)(0.9)), ((V)("io"))), Arr(((V)(3300D)), ((V)(0.9))), Arr(((V)(3750D)), ((V)((-0.05))), ((V)("io"))), Arr(((V)(3950D)), ((V)(0D)), ((V)("io"))))).Put("pitch", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(3450D)), ((V)(0D))), Arr(((V)(3950D)), ((V)(0.7)), ((V)("io"))), Arr(((V)(4450D)), ((V)(0.7))), Arr(((V)(4950D)), ((V)((-0.5))), ((V)("io"))), Arr(((V)(5250D)), ((V)((-0.5)))), Arr(((V)(5800D)), ((V)(0D)), ((V)("io"))))).Put("htilt", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(330D)), ((V)(0D))), Arr(((V)(900D)), ((V)((-4D))), ((V)("io"))), Arr(((V)(1950D)), ((V)((-4D)))), Arr(((V)(2600D)), ((V)(4D)), ((V)("io"))), Arr(((V)(3300D)), ((V)(4D))), Arr(((V)(3800D)), ((V)(0D)), ((V)("io"))))).Put("lean", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(350D)), ((V)(0D))), Arr(((V)(950D)), ((V)((-1.5))), ((V)("io"))), Arr(((V)(1950D)), ((V)((-1.5)))), Arr(((V)(2650D)), ((V)(1.5)), ((V)("io"))), Arr(((V)(3300D)), ((V)(1.5))), Arr(((V)(3800D)), ((V)(0D)), ((V)("io"))))).Put("sq", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(3450D)), ((V)(0D))), Arr(((V)(3950D)), ((V)((-0.04))), ((V)("io"))), Arr(((V)(4450D)), ((V)((-0.04)))), Arr(((V)(4950D)), ((V)(0.03)), ((V)("io"))), Arr(((V)(5250D)), ((V)(0.03))), Arr(((V)(5800D)), ((V)(0D)), ((V)("io"))))).Put("armL", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(330D)), ((V)(0D))), Arr(((V)(850D)), ((V)(10D)), ((V)("io"))), Arr(((V)(1950D)), ((V)(10D))), Arr(((V)(2550D)), ((V)(0D)), ((V)("io"))))).Put("armR", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(1950D)), ((V)(0D))), Arr(((V)(2550D)), ((V)(10D)), ((V)("io"))), Arr(((V)(3300D)), ((V)(10D))), Arr(((V)(3750D)), ((V)(0D)), ((V)("io"))))).Put("footL", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(350D)), ((V)(0D))), Arr(((V)(550D)), ((V)(2.2)), ((V)("o"))), Arr(((V)(750D)), ((V)(0D)), ((V)("io"))), Arr(((V)(2000D)), ((V)(0D))), Arr(((V)(2200D)), ((V)(2.2)), ((V)("o"))), Arr(((V)(2400D)), ((V)(0D)), ((V)("io"))), Arr(((V)(3350D)), ((V)(0D))), Arr(((V)(3550D)), ((V)(1.6)), ((V)("o"))), Arr(((V)(3750D)), ((V)(0D)), ((V)("io"))))).Put("footR", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(500D)), ((V)(0D))), Arr(((V)(700D)), ((V)(2.2)), ((V)("o"))), Arr(((V)(900D)), ((V)(0D)), ((V)("io"))), Arr(((V)(2150D)), ((V)(0D))), Arr(((V)(2350D)), ((V)(2.2)), ((V)("o"))), Arr(((V)(2550D)), ((V)(0D)), ((V)("io"))), Arr(((V)(3500D)), ((V)(0D))), Arr(((V)(3700D)), ((V)(1.6)), ((V)("o"))), Arr(((V)(3900D)), ((V)(0D)), ((V)("io"))))).V).V).Put("squish", NewObj(3).Put("dur", ((V)(5400D))).Put("loop", ((V)(1800D))).Put("k", NewObj(8).Put("sq", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(150D)), ((V)((-0.05))), ((V)("o"))), Arr(((V)(480D)), ((V)(0.38)), ((V)("io"))), Arr(((V)(900D)), ((V)(0.4)), ((V)("l"))), Arr(((V)(1030D)), ((V)((-0.18))), ((V)("o"))), Arr(((V)(1180D)), ((V)(0.08)), ((V)("io"))), Arr(((V)(1340D)), ((V)((-0.03))), ((V)("io"))), Arr(((V)(1520D)), ((V)(0D)), ((V)("io"))))).Put("hap", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(330D)), ((V)(0D))), Arr(((V)(450D)), ((V)(0.85)), ((V)("o"))), Arr(((V)(920D)), ((V)(0.85))), Arr(((V)(1040D)), ((V)(0D)), ((V)("o"))))).Put("smile", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(1000D)), ((V)(0D))), Arr(((V)(1100D)), ((V)(1D)), ((V)("o"))), Arr(((V)(1500D)), ((V)(1D))), Arr(((V)(1800D)), ((V)(0D)), ((V)("io"))))).Put("open", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(1000D)), ((V)(0D))), Arr(((V)(1080D)), ((V)(0.45)), ((V)("o"))), Arr(((V)(1400D)), ((V)(0D)), ((V)("io"))))).Put("lift", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(980D)), ((V)(0D))), Arr(((V)(1110D)), ((V)(3.5)), ((V)("o"))), Arr(((V)(1240D)), ((V)(0D)), ((V)("i"))))).Spread(Call(AR_36, V.Undef, Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(480D)), ((V)(18D)), ((V)("io"))), Arr(((V)(900D)), ((V)(20D))), Arr(((V)(1050D)), ((V)((-4D))), ((V)("o"))), Arr(((V)(1300D)), ((V)(0D)), ((V)("io")))))).Spread(Call(ER_37, V.Undef, Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(480D)), ((V)(12D)), ((V)("io"))), Arr(((V)(900D)), ((V)(14D))), Arr(((V)(1050D)), ((V)((-6D))), ((V)("o"))), Arr(((V)(1300D)), ((V)(0D)), ((V)("io")))))).Put("blush", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(600D)), ((V)(0.6)), ((V)("io"))), Arr(((V)(1000D)), ((V)(0.6))), Arr(((V)(1500D)), ((V)(0D)), ((V)("io"))))).V).V).Put("spin", NewObj(3).Put("dur", ((V)(5400D))).Put("ev", Arr(Arr(((V)(1750D)), ((V)("blink"))), Arr(((V)(4450D)), ((V)("blink"))))).Put("k", NewObj(7).Put("spin", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(200D)), ((V)(0D))), Arr(((V)(500D)), ((V)((-25D))), ((V)("io"))), Arr(((V)(1450D)), ((V)(375D)), ((V)("io"))), Arr(((V)(1700D)), ((V)(360D)), ((V)("io"))), Arr(((V)(2900D)), ((V)(360D))), Arr(((V)(3200D)), ((V)(335D)), ((V)("io"))), Arr(((V)(4150D)), ((V)(735D)), ((V)("io"))), Arr(((V)(4400D)), ((V)(720D)), ((V)("io"))))).Put("turn", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(200D)), ((V)(0D))), Arr(((V)(500D)), ((V)(0.3)), ((V)("io"))), Arr(((V)(900D)), ((V)((-0.5))), ((V)("io"))), Arr(((V)(1450D)), ((V)(0.4)), ((V)("io"))), Arr(((V)(1800D)), ((V)(0D)), ((V)("io"))), Arr(((V)(2900D)), ((V)(0D))), Arr(((V)(3200D)), ((V)(0.3)), ((V)("io"))), Arr(((V)(3600D)), ((V)((-0.5))), ((V)("io"))), Arr(((V)(4150D)), ((V)(0.4)), ((V)("io"))), Arr(((V)(4500D)), ((V)(0D)), ((V)("io"))))).Put("sq", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(200D)), ((V)(0D))), Arr(((V)(500D)), ((V)(0.14)), ((V)("io"))), Arr(((V)(700D)), ((V)((-0.1))), ((V)("o"))), Arr(((V)(1250D)), ((V)((-0.04))), ((V)("io"))), Arr(((V)(1450D)), ((V)(0.14)), ((V)("o"))), Arr(((V)(1600D)), ((V)((-0.04))), ((V)("io"))), Arr(((V)(1800D)), ((V)(0D)), ((V)("io"))), Arr(((V)(2900D)), ((V)(0D))), Arr(((V)(3200D)), ((V)(0.14)), ((V)("io"))), Arr(((V)(3400D)), ((V)((-0.1))), ((V)("o"))), Arr(((V)(3950D)), ((V)((-0.04))), ((V)("io"))), Arr(((V)(4150D)), ((V)(0.14)), ((V)("o"))), Arr(((V)(4300D)), ((V)((-0.04))), ((V)("io"))), Arr(((V)(4500D)), ((V)(0D)), ((V)("io"))))).Put("lift", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(550D)), ((V)(0D))), Arr(((V)(850D)), ((V)(4D)), ((V)("o"))), Arr(((V)(1200D)), ((V)(4D))), Arr(((V)(1450D)), ((V)(0D)), ((V)("i"))), Arr(((V)(3250D)), ((V)(0D))), Arr(((V)(3550D)), ((V)(4D)), ((V)("o"))), Arr(((V)(3900D)), ((V)(4D))), Arr(((V)(4150D)), ((V)(0D)), ((V)("i"))))).Spread(Call(AR_36, V.Undef, Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(500D)), ((V)((-8D))), ((V)("io"))), Arr(((V)(750D)), ((V)(35D)), ((V)("o"))), Arr(((V)(1300D)), ((V)(35D))), Arr(((V)(1500D)), ((V)(0D)), ((V)("io"))), Arr(((V)(2900D)), ((V)(0D))), Arr(((V)(3200D)), ((V)((-8D))), ((V)("io"))), Arr(((V)(3450D)), ((V)(35D)), ((V)("o"))), Arr(((V)(4000D)), ((V)(35D))), Arr(((V)(4200D)), ((V)(0D)), ((V)("io")))))).Put("hap", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(700D)), ((V)(0.7)), ((V)("io"))), Arr(((V)(1700D)), ((V)(0.7))), Arr(((V)(2100D)), ((V)(0D)), ((V)("io"))), Arr(((V)(2900D)), ((V)(0D))), Arr(((V)(3400D)), ((V)(0.7)), ((V)("io"))), Arr(((V)(4400D)), ((V)(0.7))), Arr(((V)(4800D)), ((V)(0D)), ((V)("io"))))).Put("smile", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(700D)), ((V)(1D)), ((V)("io"))), Arr(((V)(1700D)), ((V)(1D))), Arr(((V)(2100D)), ((V)(0D)), ((V)("io"))), Arr(((V)(2900D)), ((V)(0D))), Arr(((V)(3400D)), ((V)(1D)), ((V)("io"))), Arr(((V)(4400D)), ((V)(1D))), Arr(((V)(4800D)), ((V)(0D)), ((V)("io"))))).V).V).Put("hop", NewObj(3).Put("dur", ((V)(5700D))).Put("loop", ((V)(1900D))).Put("k", NewObj(7).Put("sq", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(120D)), ((V)(0D))), Arr(((V)(330D)), ((V)(0.24)), ((V)("io"))), Arr(((V)(410D)), ((V)((-0.2))), ((V)("o"))), Arr(((V)(640D)), ((V)((-0.03))), ((V)("io"))), Arr(((V)(780D)), ((V)((-0.12))), ((V)("i"))), Arr(((V)(820D)), ((V)(0.3)), ((V)("o"))), Arr(((V)(960D)), ((V)((-0.07))), ((V)("io"))), Arr(((V)(1100D)), ((V)(0.035)), ((V)("io"))), Arr(((V)(1260D)), ((V)(0D)), ((V)("io"))))).Put("lift", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(380D)), ((V)(0D))), Arr(((V)(620D)), ((V)(18D)), ((V)("o"))), Arr(((V)(820D)), ((V)(0D)), ((V)("i"))))).Spread(Call(AR_36, V.Undef, Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(330D)), ((V)((-12D))), ((V)("io"))), Arr(((V)(460D)), ((V)(38D)), ((V)("o"))), Arr(((V)(700D)), ((V)(26D)), ((V)("io"))), Arr(((V)(830D)), ((V)((-8D))), ((V)("o"))), Arr(((V)(1050D)), ((V)(0D)), ((V)("io")))))).Spread(Call(ER_37, V.Undef, Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(330D)), ((V)((-6D))), ((V)("io"))), Arr(((V)(450D)), ((V)(10D)), ((V)("o"))), Arr(((V)(650D)), ((V)(2D)), ((V)("io"))), Arr(((V)(830D)), ((V)(12D)), ((V)("o"))), Arr(((V)(1000D)), ((V)((-3D))), ((V)("io"))), Arr(((V)(1200D)), ((V)(0D)), ((V)("io")))))).Put("ly", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(250D)), ((V)(0.4)), ((V)("io"))), Arr(((V)(450D)), ((V)((-0.6))), ((V)("o"))), Arr(((V)(850D)), ((V)(0.2)), ((V)("io"))), Arr(((V)(1200D)), ((V)(0D)), ((V)("io"))))).Put("pitch", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(330D)), ((V)((-0.2))), ((V)("io"))), Arr(((V)(500D)), ((V)(0.3)), ((V)("o"))), Arr(((V)(820D)), ((V)((-0.2))), ((V)("io"))), Arr(((V)(1100D)), ((V)(0D)), ((V)("io"))))).Put("hap", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(300D)), ((V)(0.6)), ((V)("io"))), Arr(((V)(430D)), ((V)(0D)), ((V)("io"))), Arr(((V)(800D)), ((V)(0D))), Arr(((V)(840D)), ((V)(0.6)), ((V)("o"))), Arr(((V)(1100D)), ((V)(0D)), ((V)("io"))))).V).V).Put("happy", NewObj(3).Put("dur", ((V)(7200D))).Put("loop", ((V)(2400D))).Put("k", NewObj(10).Put("sq", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(200D)), ((V)(0.2)), ((V)("io"))), Arr(((V)(270D)), ((V)((-0.16))), ((V)("o"))), Arr(((V)(480D)), ((V)((-0.02))), ((V)("io"))), Arr(((V)(600D)), ((V)((-0.1))), ((V)("i"))), Arr(((V)(640D)), ((V)(0.26)), ((V)("o"))), Arr(((V)(760D)), ((V)((-0.04))), ((V)("io"))), Arr(((V)(860D)), ((V)(0.18)), ((V)("io"))), Arr(((V)(930D)), ((V)((-0.16))), ((V)("o"))), Arr(((V)(1140D)), ((V)((-0.02))), ((V)("io"))), Arr(((V)(1260D)), ((V)((-0.1))), ((V)("i"))), Arr(((V)(1300D)), ((V)(0.26)), ((V)("o"))), Arr(((V)(1440D)), ((V)((-0.06))), ((V)("io"))), Arr(((V)(1600D)), ((V)(0.03)), ((V)("io"))), Arr(((V)(1800D)), ((V)(0D)), ((V)("io"))))).Put("lift", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(240D)), ((V)(0D))), Arr(((V)(440D)), ((V)(13D)), ((V)("o"))), Arr(((V)(640D)), ((V)(0D)), ((V)("i"))), Arr(((V)(900D)), ((V)(0D))), Arr(((V)(1100D)), ((V)(13D)), ((V)("o"))), Arr(((V)(1300D)), ((V)(0D)), ((V)("i"))))).Put("tilt", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(240D)), ((V)(0D))), Arr(((V)(440D)), ((V)((-7D))), ((V)("io"))), Arr(((V)(700D)), ((V)(0D)), ((V)("io"))), Arr(((V)(900D)), ((V)(0D))), Arr(((V)(1100D)), ((V)(7D)), ((V)("io"))), Arr(((V)(1360D)), ((V)(0D)), ((V)("io"))))).Put("htilt", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(440D)), ((V)((-3D))), ((V)("io"))), Arr(((V)(720D)), ((V)(4D)), ((V)("io"))), Arr(((V)(900D)), ((V)(0D)), ((V)("io"))), Arr(((V)(1100D)), ((V)(3D)), ((V)("io"))), Arr(((V)(1380D)), ((V)((-4D))), ((V)("io"))), Arr(((V)(1600D)), ((V)(0D)), ((V)("io"))))).Spread(Call(AR_36, V.Undef, Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(200D)), ((V)((-8D))), ((V)("io"))), Arr(((V)(330D)), ((V)(48D)), ((V)("o"))), Arr(((V)(640D)), ((V)(40D))), Arr(((V)(700D)), ((V)(24D)), ((V)("io"))), Arr(((V)(860D)), ((V)((-6D))), ((V)("io"))), Arr(((V)(990D)), ((V)(48D)), ((V)("o"))), Arr(((V)(1300D)), ((V)(40D))), Arr(((V)(1400D)), ((V)(24D)), ((V)("io"))), Arr(((V)(1800D)), ((V)(0D)), ((V)("io")))))).Put("wag", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(300D)), ((V)(16D)), ((V)("io"))), Arr(((V)(600D)), ((V)((-16D))), ((V)("io"))), Arr(((V)(900D)), ((V)(16D)), ((V)("io"))), Arr(((V)(1200D)), ((V)((-16D))), ((V)("io"))), Arr(((V)(1500D)), ((V)(16D)), ((V)("io"))), Arr(((V)(1800D)), ((V)((-16D))), ((V)("io"))), Arr(((V)(2100D)), ((V)(10D)), ((V)("io"))), Arr(((V)(2400D)), ((V)(0D)), ((V)("io"))))).Put("hap", Arr(Arr(((V)(0D)), ((V)(1D))))).Put("smile", Arr(Arr(((V)(0D)), ((V)(1D))))).Put("open", Arr(Arr(((V)(0D)), ((V)(0.5))))).Put("ly", Arr(Arr(((V)(0D)), ((V)((-0.3)))))).V).V).Put("surprised", NewObj(3).Put("dur", ((V)(5200D))).Put("ev", Arr(Arr(((V)(2400D)), ((V)("blink2"))))).Put("k", NewObj(14).Put("sq", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(200D)), ((V)(0D))), Arr(((V)(280D)), ((V)(0.16)), ((V)("o"))), Arr(((V)(380D)), ((V)((-0.2))), ((V)("o"))), Arr(((V)(700D)), ((V)((-0.12))), ((V)("io"))), Arr(((V)(900D)), ((V)(0.12)), ((V)("o"))), Arr(((V)(1050D)), ((V)((-0.04))), ((V)("io"))), Arr(((V)(1200D)), ((V)(0D)), ((V)("io"))), Arr(((V)(3700D)), ((V)(0D))), Arr(((V)(3800D)), ((V)(0.1)), ((V)("o"))), Arr(((V)(3900D)), ((V)((-0.15))), ((V)("o"))), Arr(((V)(4200D)), ((V)((-0.05))), ((V)("io"))), Arr(((V)(4350D)), ((V)(0.08)), ((V)("o"))), Arr(((V)(4550D)), ((V)(0D)), ((V)("io"))))).Put("lift", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(300D)), ((V)(0D))), Arr(((V)(560D)), ((V)(9D)), ((V)("o"))), Arr(((V)(880D)), ((V)(0D)), ((V)("i"))), Arr(((V)(3820D)), ((V)(0D))), Arr(((V)(4020D)), ((V)(6D)), ((V)("o"))), Arr(((V)(4300D)), ((V)(0D)), ((V)("i"))))).Put("x", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(300D)), ((V)(0D))), Arr(((V)(880D)), ((V)((-7D))), ((V)("o"))), Arr(((V)(2500D)), ((V)((-7D)))), Arr(((V)(3300D)), ((V)(0D)), ((V)("io"))))).Put("lean", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(300D)), ((V)(0D))), Arr(((V)(500D)), ((V)((-5D))), ((V)("o"))), Arr(((V)(880D)), ((V)((-2D))), ((V)("io"))), Arr(((V)(1100D)), ((V)(1.5)), ((V)("io"))), Arr(((V)(1400D)), ((V)(0D)), ((V)("io"))))).Put("tilt", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(300D)), ((V)(0D))), Arr(((V)(500D)), ((V)((-7D))), ((V)("o"))), Arr(((V)(900D)), ((V)((-2D))), ((V)("io"))), Arr(((V)(1300D)), ((V)(0D)), ((V)("io"))))).Put("wide", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(280D)), ((V)(0D))), Arr(((V)(340D)), ((V)(1D)), ((V)("o"))), Arr(((V)(2300D)), ((V)(1D))), Arr(((V)(2700D)), ((V)(0.3)), ((V)("io"))), Arr(((V)(3700D)), ((V)(0.3))), Arr(((V)(3800D)), ((V)(1D)), ((V)("o"))), Arr(((V)(4500D)), ((V)(1D))), Arr(((V)(4900D)), ((V)(0D)), ((V)("io"))))).Put("open", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(280D)), ((V)(0D))), Arr(((V)(360D)), ((V)(0.7)), ((V)("o"))), Arr(((V)(1900D)), ((V)(0.65))), Arr(((V)(2300D)), ((V)(0.15)), ((V)("io"))), Arr(((V)(3700D)), ((V)(0.1))), Arr(((V)(3800D)), ((V)(0.65)), ((V)("o"))), Arr(((V)(4500D)), ((V)(0.55))), Arr(((V)(4900D)), ((V)(0D)), ((V)("io"))))).Put("mw", Arr(Arr(((V)(0D)), ((V)(1D))), Arr(((V)(280D)), ((V)(1D))), Arr(((V)(360D)), ((V)(0.6)), ((V)("o"))), Arr(((V)(2300D)), ((V)(0.6))), Arr(((V)(2700D)), ((V)(1D)), ((V)("io"))), Arr(((V)(3700D)), ((V)(1D))), Arr(((V)(3800D)), ((V)(0.6)), ((V)("o"))), Arr(((V)(4500D)), ((V)(0.6))), Arr(((V)(4900D)), ((V)(1D)), ((V)("io"))))).Spread(Call(AR_36, V.Undef, Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(280D)), ((V)(0D))), Arr(((V)(380D)), ((V)(34D)), ((V)("o"))), Arr(((V)(1900D)), ((V)(30D))), Arr(((V)(2400D)), ((V)(8D)), ((V)("io"))), Arr(((V)(3700D)), ((V)(8D))), Arr(((V)(3800D)), ((V)(34D)), ((V)("o"))), Arr(((V)(4500D)), ((V)(30D))), Arr(((V)(4900D)), ((V)(0D)), ((V)("io")))))).Spread(Call(ER_37, V.Undef, Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(280D)), ((V)(0D))), Arr(((V)(380D)), ((V)((-12D))), ((V)("o"))), Arr(((V)(1700D)), ((V)((-10D)))), Arr(((V)(2100D)), ((V)(0D)), ((V)("io"))), Arr(((V)(3700D)), ((V)(0D))), Arr(((V)(3800D)), ((V)((-10D))), ((V)("o"))), Arr(((V)(4500D)), ((V)((-8D)))), Arr(((V)(4900D)), ((V)(0D)), ((V)("io")))))).Put("lx", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(2500D)), ((V)(0D))), Arr(((V)(2650D)), ((V)((-0.9))), ((V)("o"))), Arr(((V)(3000D)), ((V)((-0.9)))), Arr(((V)(3150D)), ((V)(0.9)), ((V)("io"))), Arr(((V)(3550D)), ((V)(0.9))), Arr(((V)(3700D)), ((V)(0D)), ((V)("io"))))).Put("turn", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(2550D)), ((V)(0D))), Arr(((V)(2900D)), ((V)((-0.35))), ((V)("io"))), Arr(((V)(3100D)), ((V)((-0.35)))), Arr(((V)(3450D)), ((V)(0.35)), ((V)("io"))), Arr(((V)(3600D)), ((V)(0.35))), Arr(((V)(3800D)), ((V)(0D)), ((V)("io"))))).Put("pitch", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(300D)), ((V)(0D))), Arr(((V)(450D)), ((V)(0.25)), ((V)("o"))), Arr(((V)(1500D)), ((V)(0.2))), Arr(((V)(2000D)), ((V)(0D)), ((V)("io"))))).Put("curl", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(350D)), ((V)(0.8)), ((V)("o"))), Arr(((V)(2000D)), ((V)(0.6))), Arr(((V)(2600D)), ((V)(0D)), ((V)("io"))))).V).V).Put("sleep", NewObj(4).Put("dur", ((V)(9000D))).Put("noBlink", (true ? V.True : V.False)).Put("ev", Arr(Arr(((V)(8550D)), ((V)("blink2"))))).Put("k", NewObj(10).Put("open", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(300D)), ((V)(0.9)), ((V)("io"))), Arr(((V)(1100D)), ((V)(0.9))), Arr(((V)(1500D)), ((V)(0D)), ((V)("io"))))).Put("mw", Arr(Arr(((V)(0D)), ((V)(1D))), Arr(((V)(300D)), ((V)(0.75)), ((V)("io"))), Arr(((V)(1100D)), ((V)(0.75))), Arr(((V)(1500D)), ((V)(1D)), ((V)("io"))))).Put("sq", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(300D)), ((V)((-0.08))), ((V)("io"))), Arr(((V)(1100D)), ((V)((-0.08)))), Arr(((V)(1500D)), ((V)(0.05)), ((V)("io"))), Arr(((V)(2800D)), ((V)(0.05))), Arr(((V)(4100D)), ((V)(0.09)), ((V)("s"))), Arr(((V)(5400D)), ((V)(0.03)), ((V)("s"))), Arr(((V)(6700D)), ((V)(0.09)), ((V)("s"))), Arr(((V)(8000D)), ((V)(0.05)), ((V)("s"))), Arr(((V)(8250D)), ((V)((-0.1))), ((V)("o"))), Arr(((V)(8500D)), ((V)(0.04)), ((V)("io"))), Arr(((V)(8800D)), ((V)(0D)), ((V)("io"))))).Spread(Call(AR_36, V.Undef, Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(300D)), ((V)(36D)), ((V)("io"))), Arr(((V)(1100D)), ((V)(36D))), Arr(((V)(1500D)), ((V)(0D)), ((V)("io")))))).Put("close", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(300D)), ((V)(0.75)), ((V)("io"))), Arr(((V)(1100D)), ((V)(0.75))), Arr(((V)(1500D)), ((V)(0.45)), ((V)("io"))), Arr(((V)(2000D)), ((V)(0.7)), ((V)("io"))), Arr(((V)(2300D)), ((V)(0.4)), ((V)("io"))), Arr(((V)(2800D)), ((V)(1D)), ((V)("io"))), Arr(((V)(8200D)), ((V)(1D))), Arr(((V)(8450D)), ((V)(0D)), ((V)("o"))))).Put("pitch", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(300D)), ((V)(0.4)), ((V)("io"))), Arr(((V)(1100D)), ((V)(0.4))), Arr(((V)(1600D)), ((V)(0D)), ((V)("io"))), Arr(((V)(2800D)), ((V)((-0.4))), ((V)("io"))), Arr(((V)(8200D)), ((V)((-0.4)))), Arr(((V)(8450D)), ((V)(0D)), ((V)("io"))))).Put("htilt", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(2800D)), ((V)(0D))), Arr(((V)(3300D)), ((V)(7D)), ((V)("io"))), Arr(((V)(8200D)), ((V)(7D))), Arr(((V)(8450D)), ((V)(0D)), ((V)("io"))))).Spread(Call(ER_37, V.Undef, Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(2800D)), ((V)(8D)), ((V)("io"))), Arr(((V)(8200D)), ((V)(8D))), Arr(((V)(8300D)), ((V)((-6D))), ((V)("o"))), Arr(((V)(8600D)), ((V)(0D)), ((V)("io")))))).Put("smile", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(2800D)), ((V)(0D))), Arr(((V)(3300D)), ((V)(0.3)), ((V)("io"))), Arr(((V)(8200D)), ((V)(0.3))), Arr(((V)(8400D)), ((V)(0D)), ((V)("io"))))).Put("curl", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(2800D)), ((V)(0D))), Arr(((V)(3400D)), ((V)((-0.3))), ((V)("io"))), Arr(((V)(8200D)), ((V)((-0.3)))), Arr(((V)(8600D)), ((V)(0D)), ((V)("io"))))).V).V).V;
 RELEASE_39 = NewObj(2).Put("dur", ((V)(1000D))).Put("k", NewObj(5).Put("sq", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(110D)), ((V)((-0.2))), ((V)("o"))), Arr(((V)(250D)), ((V)(0.1)), ((V)("io"))), Arr(((V)(390D)), ((V)((-0.04))), ((V)("io"))), Arr(((V)(540D)), ((V)(0D)), ((V)("io"))))).Put("lift", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(120D)), ((V)(3D)), ((V)("o"))), Arr(((V)(270D)), ((V)(0D)), ((V)("i"))))).Put("smile", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(150D)), ((V)(0.8)), ((V)("o"))), Arr(((V)(700D)), ((V)(0.8))), Arr(((V)(1000D)), ((V)(0D)), ((V)("io"))))).Put("open", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(120D)), ((V)(0.35)), ((V)("o"))), Arr(((V)(500D)), ((V)(0D)), ((V)("io"))))).Spread(Call(ER_37, V.Undef, Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(120D)), ((V)((-8D))), ((V)("o"))), Arr(((V)(300D)), ((V)(6D)), ((V)("io"))), Arr(((V)(500D)), ((V)(0D)), ((V)("io")))))).V).V;
-POKE_40 = Fn((V _arrowThis6459, int _argc6452, V s_6458, V _a6455, V _a6456, V _a6457, V[] _rest6453) => {
-return NewObj(2).Put("dur", ((V)(1100D))).Put("k", NewObj(7).Put("dent", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(45D)), ((V)(1D)), ((V)("o"))), Arr(((V)(200D)), ((V)(0.3)), ((V)("io"))), Arr(((V)(460D)), ((V)(0D)), ((V)("io"))))).Put("lean", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(70D)), ((V)((4D * ToNum(s_6458)))), ((V)("o"))), Arr(((V)(300D)), ((V)(((-1.6) * ToNum(s_6458)))), ((V)("io"))), Arr(((V)(540D)), ((V)(0D)), ((V)("io"))))).Put("close", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(40D)), ((V)(1D)), ((V)("o"))), Arr(((V)(170D)), ((V)(1D))), Arr(((V)(300D)), ((V)(0D)), ((V)("io"))))).Put("hap", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(280D)), ((V)(0D))), Arr(((V)(360D)), ((V)(1D)), ((V)("o"))), Arr(((V)(850D)), ((V)(1D))), Arr(((V)(1050D)), ((V)(0D)), ((V)("io"))))).Put("smile", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(280D)), ((V)(0D))), Arr(((V)(360D)), ((V)(1D)), ((V)("o"))), Arr(((V)(850D)), ((V)(1D))), Arr(((V)(1050D)), ((V)(0D)), ((V)("io"))))).Put("open", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(280D)), ((V)(0D))), Arr(((V)(360D)), ((V)(0.35)), ((V)("o"))), Arr(((V)(850D)), ((V)(0.3))), Arr(((V)(1050D)), ((V)(0D)), ((V)("io"))))).Put("sq", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(60D)), ((V)(0.06)), ((V)("o"))), Arr(((V)(200D)), ((V)((-0.03))), ((V)("io"))), Arr(((V)(380D)), ((V)(0.05)), ((V)("io"))), Arr(((V)(480D)), ((V)((-0.02))), ((V)("io"))), Arr(((V)(580D)), ((V)(0.04)), ((V)("io"))), Arr(((V)(680D)), ((V)((-0.01))), ((V)("io"))), Arr(((V)(800D)), ((V)(0D)), ((V)("io"))))).V).V;
+POKE_40 = Fn((V _arrowThis6461, int _argc6454, V s_6460, V _a6457, V _a6458, V _a6459, V[] _rest6455) => {
+return NewObj(2).Put("dur", ((V)(1100D))).Put("k", NewObj(7).Put("dent", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(45D)), ((V)(1D)), ((V)("o"))), Arr(((V)(200D)), ((V)(0.3)), ((V)("io"))), Arr(((V)(460D)), ((V)(0D)), ((V)("io"))))).Put("lean", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(70D)), ((V)((4D * ToNum(s_6460)))), ((V)("o"))), Arr(((V)(300D)), ((V)(((-1.6) * ToNum(s_6460)))), ((V)("io"))), Arr(((V)(540D)), ((V)(0D)), ((V)("io"))))).Put("close", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(40D)), ((V)(1D)), ((V)("o"))), Arr(((V)(170D)), ((V)(1D))), Arr(((V)(300D)), ((V)(0D)), ((V)("io"))))).Put("hap", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(280D)), ((V)(0D))), Arr(((V)(360D)), ((V)(1D)), ((V)("o"))), Arr(((V)(850D)), ((V)(1D))), Arr(((V)(1050D)), ((V)(0D)), ((V)("io"))))).Put("smile", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(280D)), ((V)(0D))), Arr(((V)(360D)), ((V)(1D)), ((V)("o"))), Arr(((V)(850D)), ((V)(1D))), Arr(((V)(1050D)), ((V)(0D)), ((V)("io"))))).Put("open", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(280D)), ((V)(0D))), Arr(((V)(360D)), ((V)(0.35)), ((V)("o"))), Arr(((V)(850D)), ((V)(0.3))), Arr(((V)(1050D)), ((V)(0D)), ((V)("io"))))).Put("sq", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(60D)), ((V)(0.06)), ((V)("o"))), Arr(((V)(200D)), ((V)((-0.03))), ((V)("io"))), Arr(((V)(380D)), ((V)(0.05)), ((V)("io"))), Arr(((V)(480D)), ((V)((-0.02))), ((V)("io"))), Arr(((V)(580D)), ((V)(0.04)), ((V)("io"))), Arr(((V)(680D)), ((V)((-0.01))), ((V)("io"))), Arr(((V)(800D)), ((V)(0D)), ((V)("io"))))).V).V;
 }, 1, "", true);
 HYAW_41 = New(G("Set"), Arr());
 SOFT_42 = New(G("Set"), Arr(((V)("mittens")), ((V)("biscuit")), ((V)("prickle")), ((V)("nibbles")), ((V)("quill")), ((V)("poppy")), ((V)("duchess")), ((V)("mamapaws")), ((V)("waffles")), ((V)("truffle")), ((V)("ribbit"))));
 DENT_44 = NewObj(2).Put("dur", ((V)(600D))).Put("k", NewObj(2).Put("dent", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(45D)), ((V)(1D)), ((V)("o"))), Arr(((V)(200D)), ((V)(0.3)), ((V)("io"))), Arr(((V)(460D)), ((V)(0D)), ((V)("io"))))).Put("sq", Arr(Arr(((V)(0D)), ((V)(0D))), Arr(((V)(50D)), ((V)(0.05)), ((V)("o"))), Arr(((V)(200D)), ((V)((-0.02))), ((V)("io"))), Arr(((V)(360D)), ((V)(0D)), ((V)("io"))))).V).V;
 PRE_49 = NewObj(23).Put("crumb", NewObj(8).Put("n", ((V)(3D))).Put("sp", ((V)(9D))).Put("vy", ((V)((-6D)))).Put("g", ((V)(90D))).Put("life", ((V)(650D))).Put("r", Arr(((V)(0.5)), ((V)(0.9)))).Put("col", Arr(((V)("#d9a35a")), ((V)("#b77a3a")), ((V)("#f0c890")))).Put("kind", ((V)("dot"))).V).Put("drop", NewObj(8).Put("n", ((V)(5D))).Put("sp", ((V)(20D))).Put("vy", ((V)((-16D)))).Put("g", ((V)(80D))).Put("life", ((V)(750D))).Put("r", Arr(((V)(0.7)), ((V)(1.2)))).Put("col", Arr(((V)("#8fd3ff")), ((V)("#bfe8ff")))).Put("kind", ((V)("drop"))).V).Put("splash", NewObj(8).Put("n", ((V)(8D))).Put("sp", ((V)(28D))).Put("vy", ((V)((-28D)))).Put("g", ((V)(95D))).Put("life", ((V)(820D))).Put("r", Arr(((V)(0.8)), ((V)(1.4)))).Put("col", Arr(((V)("#8fd3ff")), ((V)("#bfe8ff")))).Put("kind", ((V)("drop"))).V).Put("tear", NewObj(8).Put("n", ((V)(1D))).Put("sp", ((V)(0.6))).Put("vy", ((V)(3D))).Put("g", ((V)(16D))).Put("life", ((V)(1150D))).Put("r", Arr(((V)(1D)), ((V)(1.2)))).Put("col", Arr(((V)("#8fd3ff")))).Put("kind", ((V)("drop"))).V).Put("gush", NewObj(10).Put("n", ((V)(2D))).Put("sp", ((V)(5D))).Put("vx", ((V)(24D))).Put("vy", ((V)((-15D)))).Put("g", ((V)(75D))).Put("life", ((V)(760D))).Put("r", Arr(((V)(0.9)), ((V)(1.4)))).Put("col", Arr(((V)("#8fd3ff")), ((V)("#bfe8ff")))).Put("kind", ((V)("drop"))).Put("out", ((V)(1D))).V).Put("bubble", NewObj(7).Put("n", ((V)(2D))).Put("sp", ((V)(7D))).Put("vy", ((V)((-9D)))).Put("g", ((V)((-3D)))).Put("life", ((V)(1700D))).Put("r", Arr(((V)(1.2)), ((V)(2.6)))).Put("kind", ((V)("bubble"))).V).Put("bigbubble", NewObj(9).Put("n", ((V)(1D))).Put("sp", ((V)(3D))).Put("vx", ((V)(7D))).Put("vy", ((V)((-6D)))).Put("g", ((V)((-1.5)))).Put("life", ((V)(2600D))).Put("r", Arr(((V)(3.6)), ((V)(4.6)))).Put("kind", ((V)("bubble"))).Put("out", ((V)(1D))).V).Put("spark", NewObj(8).Put("n", ((V)(4D))).Put("sp", ((V)(16D))).Put("vy", ((V)((-6D)))).Put("g", ((V)(0D))).Put("life", ((V)(700D))).Put("r", Arr(((V)(1.4)), ((V)(2.4)))).Put("col", Arr(((V)("#fff3a0")), ((V)("#ffffff")))).Put("kind", ((V)("star"))).V).Put("heart", NewObj(7).Put("n", ((V)(1D))).Put("sp", ((V)(7D))).Put("vy", ((V)((-12D)))).Put("g", ((V)((-2D)))).Put("life", ((V)(1300D))).Put("r", Arr(((V)(0.8)), ((V)(1.1)))).Put("kind", ((V)("heart"))).V).Put("stink", NewObj(8).Put("n", ((V)(1D))).Put("sp", ((V)(7D))).Put("vy", ((V)((-7D)))).Put("g", ((V)((-1D)))).Put("life", ((V)(1900D))).Put("r", Arr(((V)(1D)), ((V)(1.3)))).Put("col", Arr(((V)("#8fae55")), ((V)("#a3c266")))).Put("kind", ((V)("wave"))).V).Put("steam", NewObj(8).Put("n", ((V)(2D))).Put("sp", ((V)(3D))).Put("vy", ((V)((-13D)))).Put("g", ((V)((-4D)))).Put("life", ((V)(900D))).Put("r", Arr(((V)(1.6)), ((V)(2.6)))).Put("col", Arr(((V)("#ffffff")))).Put("kind", ((V)("puff"))).V).Put("foam", NewObj(8).Put("n", ((V)(2D))).Put("sp", ((V)(9D))).Put("vy", ((V)((-3D)))).Put("g", ((V)(0D))).Put("life", ((V)(1300D))).Put("r", Arr(((V)(1.6)), ((V)(2.8)))).Put("col", Arr(((V)("#ffffff")))).Put("kind", ((V)("puff"))).V).Put("seed", NewObj(10).Put("n", ((V)(1D))).Put("sp", ((V)(2D))).Put("vx", ((V)(20D))).Put("vy", ((V)((-10D)))).Put("g", ((V)(70D))).Put("life", ((V)(800D))).Put("r", Arr(((V)(0.7)), ((V)(0.8)))).Put("col", Arr(((V)("#2a1a30")))).Put("kind", ((V)("seed"))).Put("out", ((V)(1D))).V).Put("sneeze", NewObj(8).Put("n", ((V)(9D))).Put("sp", ((V)(20D))).Put("vy", ((V)(2D))).Put("g", ((V)(18D))).Put("life", ((V)(620D))).Put("r", Arr(((V)(0.5)), ((V)(1D)))).Put("col", Arr(((V)("#d6f2fc")), ((V)("#ffffff")))).Put("kind", ((V)("dot"))).V).Put("note", NewObj(8).Put("n", ((V)(1D))).Put("sp", ((V)(9D))).Put("vy", ((V)((-11D)))).Put("g", ((V)((-2D)))).Put("life", ((V)(1400D))).Put("r", Arr(((V)(1D)), ((V)(1D)))).Put("col", Arr(((V)("#8f3cf2")), ((V)("#ff5cc6")), ((V)("#2f7fd6")))).Put("kind", ((V)("note"))).V).Put("sweat", NewObj(8).Put("n", ((V)(1D))).Put("sp", ((V)(0D))).Put("vy", ((V)(2D))).Put("g", ((V)(20D))).Put("life", ((V)(900D))).Put("r", Arr(((V)(1.1)), ((V)(1.1)))).Put("col", Arr(((V)("#8fd3ff")))).Put("kind", ((V)("drop"))).V).Put("duck", NewObj(10).Put("n", ((V)(1D))).Put("sp", ((V)(0D))).Put("vx", ((V)(2.2))).Put("vy", ((V)((-24D)))).Put("g", ((V)(120D))).Put("life", ((V)(3600D))).Put("r", Arr(((V)(1D)), ((V)(1.15)))).Put("kind", ((V)("duck"))).Put("out", ((V)(1D))).Put("hop", ((V)(1D))).V).Put("dust", NewObj(8).Put("n", ((V)(3D))).Put("sp", ((V)(8D))).Put("vy", ((V)((-2D)))).Put("g", ((V)(5D))).Put("life", ((V)(1500D))).Put("r", Arr(((V)(0.35)), ((V)(0.75)))).Put("col", Arr(((V)("#fff1d6")), ((V)("#d2b6f4")), ((V)("#ffffff")))).Put("kind", ((V)("dot"))).V).Put("sprinkle", NewObj(8).Put("n", ((V)(4D))).Put("sp", ((V)(22D))).Put("vy", ((V)((-22D)))).Put("g", ((V)(90D))).Put("life", ((V)(950D))).Put("r", Arr(((V)(0.7)), ((V)(0.9)))).Put("col", Arr(((V)("#ffd84a")), ((V)("#7cc8ff")), ((V)("#9be38a")), ((V)("#ffffff")), ((V)("#ff5cc6")))).Put("kind", ((V)("seed"))).V).Put("salt", NewObj(8).Put("n", ((V)(3D))).Put("sp", ((V)(10D))).Put("vy", ((V)(2D))).Put("g", ((V)(70D))).Put("life", ((V)(900D))).Put("r", Arr(((V)(0.45)), ((V)(0.75)))).Put("col", Arr(((V)("#ffffff")), ((V)("#f2f0ff")), ((V)("#fffbe6")))).Put("kind", ((V)("dot"))).V).Put("ketchup", NewObj(8).Put("n", ((V)(3D))).Put("sp", ((V)(14D))).Put("vy", ((V)((-15D)))).Put("g", ((V)(90D))).Put("life", ((V)(800D))).Put("r", Arr(((V)(0.9)), ((V)(1.4)))).Put("col", Arr(((V)("#e8352a")), ((V)("#ff5a4a")), ((V)("#c8241c")))).Put("kind", ((V)("drop"))).V).Put("coffee", NewObj(8).Put("n", ((V)(4D))).Put("sp", ((V)(18D))).Put("vy", ((V)((-20D)))).Put("g", ((V)(90D))).Put("life", ((V)(800D))).Put("r", Arr(((V)(0.8)), ((V)(1.3)))).Put("col", Arr(((V)("#8a5a3a")), ((V)("#b07a52")))).Put("kind", ((V)("drop"))).V).Put("gust", NewObj(10).Put("n", ((V)(1D))).Put("sp", ((V)(3D))).Put("vx", ((V)(26D))).Put("vy", ((V)((-3D)))).Put("g", ((V)(0D))).Put("life", ((V)(1000D))).Put("r", Arr(((V)(0.9)), ((V)(1.4)))).Put("col", Arr(((V)("#9ad8cc")), ((V)("#7cc8ff")))).Put("kind", ((V)("wisp"))).Put("out", ((V)(1D))).V).V;
 DUCK_54 = ((V)("<ellipse cx=\"0.2\" cy=\"-2\" rx=\"3.5\" ry=\"2.3\" fill=\"#e9a512\"/><ellipse cx=\"-0.2\" cy=\"-2.4\" rx=\"3.1\" ry=\"1.9\" fill=\"#ffd43b\"/><path d=\"M-3 -2.6 L-4.5 -4.2 L-2.4 -3.5Z\" fill=\"#ffd43b\"/><path d=\"M-1.6 -2.6 Q0 -1.2 1.4 -2.6\" stroke=\"#e9a512\" stroke-width=\"0.5\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"1.95\" cy=\"-4.85\" r=\"1.85\" fill=\"#e9a512\"/><circle cx=\"1.8\" cy=\"-5\" r=\"1.75\" fill=\"#ffd43b\"/><ellipse cx=\"3.7\" cy=\"-4.6\" rx=\"1.05\" ry=\"0.5\" fill=\"#ff8a2a\"/><circle cx=\"2.4\" cy=\"-5.4\" r=\"0.36\" fill=\"#2a1a30\"/><ellipse cx=\"1.1\" cy=\"-5.8\" rx=\"0.6\" ry=\"0.35\" fill=\"#fff8d0\"/><ellipse cx=\"-1.2\" cy=\"-3.3\" rx=\"1\" ry=\"0.4\" fill=\"#fff8d0\" opacity=\"0.8\"/>"));
-bub_55 = Fn((V _arrowThis6470, int _argc6460, V x_6466, V y_6467, V r_6468, V op_6469, V[] _rest6461) => {
-return ((V)(JsStrBuf.Begin().S("<circle cx=\"").V(Call(r2_14, V.Undef, x_6466)).S("\" cy=\"").V(Call(r2_14, V.Undef, y_6467)).S("\" r=\"").V(Call(r2_14, V.Undef, r_6468)).S("\" fill=\"#ffffff\" stroke=\"#cfe8f4\" stroke-width=\"0.35\" opacity=\"").V(Call(r2_14, V.Undef, op_6469)).S("\"/><circle cx=\"").V(Call(r2_14, V.Undef, ((V)((ToNum(x_6466) - (ToNum(r_6468) * 0.35)))))).S("\" cy=\"").V(Call(r2_14, V.Undef, ((V)((ToNum(y_6467) - (ToNum(r_6468) * 0.38)))))).S("\" r=\"").V(Call(r2_14, V.Undef, ((V)((ToNum(r_6468) * 0.26))))).S("\" fill=\"#eaf7ff\" opacity=\"").V(Call(r2_14, V.Undef, op_6469)).S("\"/>").End()));
+bub_55 = Fn((V _arrowThis6472, int _argc6462, V x_6468, V y_6469, V r_6470, V op_6471, V[] _rest6463) => {
+return ((V)(JsStrBuf.Begin().S("<circle cx=\"").V(Call(r2_14, V.Undef, x_6468)).S("\" cy=\"").V(Call(r2_14, V.Undef, y_6469)).S("\" r=\"").V(Call(r2_14, V.Undef, r_6470)).S("\" fill=\"#ffffff\" stroke=\"#cfe8f4\" stroke-width=\"0.35\" opacity=\"").V(Call(r2_14, V.Undef, op_6471)).S("\"/><circle cx=\"").V(Call(r2_14, V.Undef, ((V)((ToNum(x_6468) - (ToNum(r_6470) * 0.35)))))).S("\" cy=\"").V(Call(r2_14, V.Undef, ((V)((ToNum(y_6469) - (ToNum(r_6470) * 0.38)))))).S("\" r=\"").V(Call(r2_14, V.Undef, ((V)((ToNum(r_6470) * 0.26))))).S("\" fill=\"#eaf7ff\" opacity=\"").V(Call(r2_14, V.Undef, op_6471)).S("\"/>").End()));
 }, 4, "", true);
-blinkC_58 = Fn((V _arrowThis6478, int _argc6471, V t_6477, V _a6474, V _a6475, V _a6476, V[] _rest6472) => {
-return (LtN(t_6477, 0D) ? ((V)(0D)) : (LtN(t_6477, 75D) ? Invoke(EZ_18, "i", ((V)((ToNum(t_6477) / 75D)))) : ((V)((LtN(t_6477, 105D) ? 1D : (LtN(t_6477, 240D) ? (1D - ToNum(Invoke(EZ_18, "o", ((V)(((ToNum(t_6477) - 105D) / 135D)))))) : 0D))))));
+blinkC_58 = Fn((V _arrowThis6480, int _argc6473, V t_6479, V _a6476, V _a6477, V _a6478, V[] _rest6474) => {
+return (LtN(t_6479, 0D) ? ((V)(0D)) : (LtN(t_6479, 75D) ? Invoke(EZ_18, "i", ((V)((ToNum(t_6479) / 75D)))) : ((V)((LtN(t_6479, 105D) ? 1D : (LtN(t_6479, 240D) ? (1D - ToNum(Invoke(EZ_18, "o", ((V)(((ToNum(t_6479) - 105D) / 135D)))))) : 0D))))));
 }, 1, "", true);
-FX_61 = NewObj(3).Put("sleep", Fn((V _self6479, int _argc6480, V I_6486, V t_6487, V _a6484, V _a6485, V[] _rest6481) => {
-JsStrBuf h_6488 = null;
-V x0_6489 = default;
-V y0_6490 = default;
-if (_self6479.IsNullish) _self6479 = GlobalV;
-if ((LtN(t_6487, 2900D) || GtN(t_6487, 8150D))) {
+FX_61 = NewObj(3).Put("sleep", Fn((V _self6481, int _argc6482, V I_6488, V t_6489, V _a6486, V _a6487, V[] _rest6483) => {
+JsStrBuf h_6490 = null;
+V x0_6491 = default;
+V y0_6492 = default;
+if (_self6481.IsNullish) _self6481 = GlobalV;
+if ((LtN(t_6489, 2900D) || GtN(t_6489, 8150D))) {
 return ((V)(""));
 }
-h_6488 = new JsStrBuf("");
-{ V _t6491 = Get(I_6486, "topW");
-{ V _t6492 = ListOf(_t6491);
-{ V _t6493 = GetIdx(_t6492, 0D);
-x0_6489 = _t6493; }
-{ V _t6494 = GetIdx(_t6492, 1D);
-y0_6490 = _t6494; }
+h_6490 = new JsStrBuf("");
+{ V _t6493 = Get(I_6488, "topW");
+{ V _t6494 = ListOf(_t6493);
+{ V _t6495 = GetIdx(_t6494, 0D);
+x0_6491 = _t6495; }
+{ V _t6496 = GetIdx(_t6494, 1D);
+y0_6492 = _t6496; }
 } }
 {
-double i_6495 = 0;
-i_6495 = 0D;
+double i_6497 = 0;
+i_6497 = 0D;
 while (true) {
-if (!((i_6495 < 3D))) break;
-double u_6497 = 0;
-V x_6498 = default;
-double y_6499 = 0;
-u_6497 = ((((ToNum(t_6487) - 2900D) / 2600D) + (i_6495 / 3D)) % 1D);
-x_6498 = Add(Add(Add(x0_6489, ((V)(16D))), ((V)((u_6497 * 14D)))), ((V)((FdLibm.Sin((u_6497 * TAU_12)) * 2D))));
-y_6499 = (ToNum(Add(y0_6490, ((V)(4D)))) - (u_6497 * 22D));
-h_6488.S("<text x=\"").V(Call(r2_14, V.Undef, x_6498)).S("\" y=\"").V(Call(r2_14, V.Undef, ((V)(y_6499)))).S("\" font-family=\"Fredoka,sans-serif\" font-weight=\"700\" font-size=\"").V(Call(r2_14, V.Undef, ((V)((5D + (u_6497 * 5D)))))).S("\" fill=\"#8f3cf2\" stroke=\"#ffffff\" stroke-width=\"0.6\" paint-order=\"stroke\" opacity=\"").V(Call(r2_14, V.Undef, ((V)(FdLibm.Sin((System.Math.PI * u_6497)))))).S("\">z</text>");
-i_6495++;
+if (!((i_6497 < 3D))) break;
+double u_6499 = 0;
+V x_6500 = default;
+double y_6501 = 0;
+u_6499 = ((((ToNum(t_6489) - 2900D) / 2600D) + (i_6497 / 3D)) % 1D);
+x_6500 = Add(Add(Add(x0_6491, ((V)(16D))), ((V)((u_6499 * 14D)))), ((V)((FdLibm.Sin((u_6499 * TAU_12)) * 2D))));
+y_6501 = (ToNum(Add(y0_6492, ((V)(4D)))) - (u_6499 * 22D));
+h_6490.S("<text x=\"").V(Call(r2_14, V.Undef, x_6500)).S("\" y=\"").V(Call(r2_14, V.Undef, ((V)(y_6501)))).S("\" font-family=\"Fredoka,sans-serif\" font-weight=\"700\" font-size=\"").V(Call(r2_14, V.Undef, ((V)((5D + (u_6499 * 5D)))))).S("\" fill=\"#8f3cf2\" stroke=\"#ffffff\" stroke-width=\"0.6\" paint-order=\"stroke\" opacity=\"").V(Call(r2_14, V.Undef, ((V)(FdLibm.Sin((System.Math.PI * u_6499)))))).S("\">z</text>");
+i_6497++;
 }
 }
-return ((V)(h_6488.Str));
+return ((V)(h_6490.Str));
 return default;
-}, 2, "sleep", false)).Put("happy", Fn((V _self6500, int _argc6501, V I_6507, V t_6508, V _a6505, V _a6506, V[] _rest6502) => {
-JsStrBuf h_6509 = null;
-if (_self6500.IsNullish) _self6500 = GlobalV;
-h_6509 = new JsStrBuf("");
+}, 2, "sleep", false)).Put("happy", Fn((V _self6502, int _argc6503, V I_6509, V t_6510, V _a6507, V _a6508, V[] _rest6504) => {
+JsStrBuf h_6511 = null;
+if (_self6502.IsNullish) _self6502 = GlobalV;
+h_6511 = new JsStrBuf("");
 {
-double i_6510 = 0;
-i_6510 = 0D;
+double i_6512 = 0;
+i_6512 = 0D;
 while (true) {
-if (!((i_6510 < 8D))) break;
-double a_6512 = 0;
-double u_6513 = 0;
-double r_6514 = 0;
-a_6512 = (((i_6510 / 8D) * TAU_12) + (i_6510 * 0.7));
-u_6513 = (((ToNum(t_6508) / 900D) + (i_6510 / 8D)) % 1D);
-r_6514 = (36D * (0.55 + (0.45 * u_6513)));
-h_6509.S("<path d=\"").V(Call(star4_33, V.Undef, ((V)((50D + (FdLibm.Cos(a_6512) * r_6514)))), ((V)((52D + ((FdLibm.Sin(a_6512) * r_6514) * 0.8)))), ((V)((1.2 + (2.2 * FdLibm.Sin((System.Math.PI * u_6513)))))))).S("\" fill=\"").S((NumTruthy((i_6510 % 2D)) ? "#fff3a0" : "#ffffff")).S("\" opacity=\"").V(Call(r2_14, V.Undef, ((V)(FdLibm.Sin((System.Math.PI * u_6513)))))).S("\"/>");
-i_6510++;
+if (!((i_6512 < 8D))) break;
+double a_6514 = 0;
+double u_6515 = 0;
+double r_6516 = 0;
+a_6514 = (((i_6512 / 8D) * TAU_12) + (i_6512 * 0.7));
+u_6515 = (((ToNum(t_6510) / 900D) + (i_6512 / 8D)) % 1D);
+r_6516 = (36D * (0.55 + (0.45 * u_6515)));
+h_6511.S("<path d=\"").V(Call(star4_33, V.Undef, ((V)((50D + (FdLibm.Cos(a_6514) * r_6516)))), ((V)((52D + ((FdLibm.Sin(a_6514) * r_6516) * 0.8)))), ((V)((1.2 + (2.2 * FdLibm.Sin((System.Math.PI * u_6515)))))))).S("\" fill=\"").S((NumTruthy((i_6512 % 2D)) ? "#fff3a0" : "#ffffff")).S("\" opacity=\"").V(Call(r2_14, V.Undef, ((V)(FdLibm.Sin((System.Math.PI * u_6515)))))).S("\"/>");
+i_6512++;
 }
 }
-return ((V)(h_6509.Str));
+return ((V)(h_6511.Str));
 return default;
-}, 2, "happy", false)).Put("surprised", Fn((V _self6515, int _argc6516, V I_6522, V t_6523, V _a6520, V _a6521, V[] _rest6517) => {
-V u_6524 = default;
-V x0_6525 = default;
-V y0_6526 = default;
-double a_6527 = 0;
-JsStrBuf h_6528 = null;
-if (_self6515.IsNullish) _self6515 = GlobalV;
-u_6524 = Call(clamp_13, V.Undef, ((V)(((ToNum(t_6523) - 300D) / 700D))), ((V)(0D)), ((V)(1D)));
-if ((LeN(u_6524, 0D) || GeN(u_6524, 1D))) {
+}, 2, "happy", false)).Put("surprised", Fn((V _self6517, int _argc6518, V I_6524, V t_6525, V _a6522, V _a6523, V[] _rest6519) => {
+V u_6526 = default;
+V x0_6527 = default;
+V y0_6528 = default;
+double a_6529 = 0;
+JsStrBuf h_6530 = null;
+if (_self6517.IsNullish) _self6517 = GlobalV;
+u_6526 = Call(clamp_13, V.Undef, ((V)(((ToNum(t_6525) - 300D) / 700D))), ((V)(0D)), ((V)(1D)));
+if ((LeN(u_6526, 0D) || GeN(u_6526, 1D))) {
 return ((V)(""));
 }
-{ V _t6529 = Get(I_6522, "topW");
-{ V _t6530 = ListOf(_t6529);
-{ V _t6531 = GetIdx(_t6530, 0D);
-x0_6525 = _t6531; }
-{ V _t6532 = GetIdx(_t6530, 1D);
-y0_6526 = _t6532; }
+{ V _t6531 = Get(I_6524, "topW");
+{ V _t6532 = ListOf(_t6531);
+{ V _t6533 = GetIdx(_t6532, 0D);
+x0_6527 = _t6533; }
+{ V _t6534 = GetIdx(_t6532, 1D);
+y0_6528 = _t6534; }
 } }
-a_6527 = FdLibm.Sin((System.Math.PI * ToNum(u_6524)));
-h_6528 = new JsStrBuf("");
-Invoke(Arr(((V)((-34D))), ((V)(0D)), ((V)(34D))), "forEach", Fn((V _arrowThis6540, int _argc6533, V d_6539, V _a6536, V _a6537, V _a6538, V[] _rest6534) => {
-double r_6541 = 0;
-double s_6542 = 0;
-V x1_6543 = default;
-double y1_6544 = 0;
-V x2_6545 = default;
-double y2_6546 = 0;
-r_6541 = (ToNum(d_6539) * D2R_11);
-s_6542 = (6D + (ToNum(u_6524) * 4D));
-x1_6543 = Add(x0_6525, ((V)((FdLibm.Sin(r_6541) * s_6542))));
-y1_6544 = ((ToNum(y0_6526) - 3D) - (FdLibm.Cos(r_6541) * s_6542));
-x2_6545 = Add(x0_6525, ((V)((FdLibm.Sin(r_6541) * (s_6542 + 5D)))));
-y2_6546 = ((ToNum(y0_6526) - 3D) - (FdLibm.Cos(r_6541) * (s_6542 + 5D)));
-h_6528.S("<path d=\"M").V(Call(r2_14, V.Undef, x1_6543)).S(" ").V(Call(r2_14, V.Undef, ((V)(y1_6544)))).S(" L").V(Call(r2_14, V.Undef, x2_6545)).S(" ").V(Call(r2_14, V.Undef, ((V)(y2_6546)))).S("\" stroke=\"#8f3cf2\" stroke-width=\"1.6\" stroke-linecap=\"round\" opacity=\"").V(Call(r2_14, V.Undef, ((V)(a_6527)))).S("\"/>");
+a_6529 = FdLibm.Sin((System.Math.PI * ToNum(u_6526)));
+h_6530 = new JsStrBuf("");
+Invoke(Arr(((V)((-34D))), ((V)(0D)), ((V)(34D))), "forEach", Fn((V _arrowThis6542, int _argc6535, V d_6541, V _a6538, V _a6539, V _a6540, V[] _rest6536) => {
+double r_6543 = 0;
+double s_6544 = 0;
+V x1_6545 = default;
+double y1_6546 = 0;
+V x2_6547 = default;
+double y2_6548 = 0;
+r_6543 = (ToNum(d_6541) * D2R_11);
+s_6544 = (6D + (ToNum(u_6526) * 4D));
+x1_6545 = Add(x0_6527, ((V)((FdLibm.Sin(r_6543) * s_6544))));
+y1_6546 = ((ToNum(y0_6528) - 3D) - (FdLibm.Cos(r_6543) * s_6544));
+x2_6547 = Add(x0_6527, ((V)((FdLibm.Sin(r_6543) * (s_6544 + 5D)))));
+y2_6548 = ((ToNum(y0_6528) - 3D) - (FdLibm.Cos(r_6543) * (s_6544 + 5D)));
+h_6530.S("<path d=\"M").V(Call(r2_14, V.Undef, x1_6545)).S(" ").V(Call(r2_14, V.Undef, ((V)(y1_6546)))).S(" L").V(Call(r2_14, V.Undef, x2_6547)).S(" ").V(Call(r2_14, V.Undef, ((V)(y2_6548)))).S("\" stroke=\"#8f3cf2\" stroke-width=\"1.6\" stroke-linecap=\"round\" opacity=\"").V(Call(r2_14, V.Undef, ((V)(a_6529)))).S("\"/>");
 return default;
 }, 1, "", true));
-return ((V)(h_6528.Str));
+return ((V)(h_6530.Str));
 return default;
 }, 2, "surprised", false)).V;
 ALL_65 = New(G("Set"));
 raf_66 = ((V)(0D));
 last_67 = ((V)(0D));
 UID_68 = 0D;
-kick_70 = Fn((V _arrowThis6553, int _argc6547, V _a6549, V _a6550, V _a6551, V _a6552, V[] _rest6548) => {
+kick_70 = Fn((V _arrowThis6555, int _argc6549, V _a6551, V _a6552, V _a6553, V _a6554, V[] _rest6550) => {
 if (!(Truthy(raf_66))) {
 last_67 = ((V)(0D));
 raf_66 = Call(G("requestAnimationFrame"), V.Undef, loop_69);
 }
 return default;
 }, 0, "", true);
-Call(G("setInterval"), V.Undef, Fn((V _arrowThis6570, int _argc6564, V _a6566, V _a6567, V _a6568, V _a6569, V[] _rest6565) => {
-V n_6561 = default;
-n_6561 = Invoke(G("performance"), "now");
-if (Truthy((Get(ALL_65, "size") is var _t6571 && !Truthy(_t6571) ? _t6571 : (((ToNum(n_6561) - ToNum(last_67)) > 80D) ? V.True : V.False)))) {
-V r_6563 = default;
-r_6563 = raf_66;
+Call(G("setInterval"), V.Undef, Fn((V _arrowThis6572, int _argc6566, V _a6568, V _a6569, V _a6570, V _a6571, V[] _rest6567) => {
+V n_6563 = default;
+n_6563 = Invoke(G("performance"), "now");
+if (Truthy((Get(ALL_65, "size") is var _t6573 && !Truthy(_t6573) ? _t6573 : (((ToNum(n_6563) - ToNum(last_67)) > 80D) ? V.True : V.False)))) {
+V r_6565 = default;
+r_6565 = raf_66;
 raf_66 = ((V)(0D));
-if (Truthy(r_6563)) {
-Call(G("cancelAnimationFrame"), V.Undef, r_6563);
+if (Truthy(r_6565)) {
+Call(G("cancelAnimationFrame"), V.Undef, r_6565);
 }
-Call(loop_69, V.Undef, n_6561);
+Call(loop_69, V.Undef, n_6563);
 }
 return default;
 }, 0, "", true), ((V)(50D)));
@@ -8313,70 +8326,70 @@ LRECT_73 = ((V)("M-90 -110H190V210H-90Z "));
 LOOK0_74 = NewObj(7).Put("dir", Arr(((V)(0.75)), ((V)(0.55)))).Put("sh", ((V)(0.5))).Put("rim", ((V)(0.42))).Put("rimC", ((V)("#fff4dc"))).Put("line", ((V)(1.05))).Put("cast", ((V)(0D))).Put("contact", ((V)(1D))).V;
 MODES_75 = NewObj(4).Put("1", NewObj(1).Put("line", ((V)(0D))).V).Put("2", NewObj(2).Put("line", ((V)(0.7))).Put("lineC", ((V)("#4a3a2e"))).V).Put("3", NewObj(2).Put("line", ((V)(1.05))).Put("lineC", ((V)("#4a3a2e"))).V).Put("4", NewObj(2).Put("line", ((V)(1.05))).Put("lineC", V.Null).V).V;
 LOOK_76 = 4D;
-rgbP_77 = Fn((V _arrowThis6579, int _argc6572, V c_6578, V _a6575, V _a6576, V _a6577, V[] _rest6573) => {
-V m_6580 = default;
-V h_6581 = default;
-V x_6582 = default;
-m_6580 = Invoke(((V)(ToStrS((c_6578 is var _t6583 && Truthy(_t6583) ? _t6583 : ((V)("")))))), "match", NewRegExp(RX12, "rgba?\\(([\\d.]+),\\s*([\\d.]+),\\s*([\\d.]+)", ""));
-if (Truthy(m_6580)) {
-return Arr(((V)(ToNum(GetIdx(m_6580, 1D)))), ((V)(ToNum(GetIdx(m_6580, 2D)))), ((V)(ToNum(GetIdx(m_6580, 3D)))));
+rgbP_77 = Fn((V _arrowThis6581, int _argc6574, V c_6580, V _a6577, V _a6578, V _a6579, V[] _rest6575) => {
+V m_6582 = default;
+V h_6583 = default;
+V x_6584 = default;
+m_6582 = Invoke(((V)(ToStrS((c_6580 is var _t6585 && Truthy(_t6585) ? _t6585 : ((V)("")))))), "match", NewRegExp(RX12, "rgba?\\(([\\d.]+),\\s*([\\d.]+),\\s*([\\d.]+)", ""));
+if (Truthy(m_6582)) {
+return Arr(((V)(ToNum(GetIdx(m_6582, 1D)))), ((V)(ToNum(GetIdx(m_6582, 2D)))), ((V)(ToNum(GetIdx(m_6582, 3D)))));
 }
-h_6581 = Invoke(((V)(ToStrS((c_6578 is var _t6584 && Truthy(_t6584) ? _t6584 : ((V)("")))))), "match", NewRegExp(RX13, "^#([\\da-f]{3}|[\\da-f]{6})$", "i"));
-if (!(Truthy(h_6581))) {
+h_6583 = Invoke(((V)(ToStrS((c_6580 is var _t6586 && Truthy(_t6586) ? _t6586 : ((V)("")))))), "match", NewRegExp(RX13, "^#([\\da-f]{3}|[\\da-f]{6})$", "i"));
+if (!(Truthy(h_6583))) {
 return V.Null;
 }
-x_6582 = GetIdx(h_6581, 1D);
-if (SEqN(Get(x_6582, "length"), 3D)) {
-x_6582 = Invoke(x_6582, "replace", NewRegExp(RX14, ".", "g"), ((V)("$&$&")));
+x_6584 = GetIdx(h_6583, 1D);
+if (SEqN(Get(x_6584, "length"), 3D)) {
+x_6584 = Invoke(x_6584, "replace", NewRegExp(RX14, ".", "g"), ((V)("$&$&")));
 }
-return Invoke(Arr(((V)(0D)), ((V)(2D)), ((V)(4D))), "map", Fn((V _arrowThis6592, int _argc6585, V i_6591, V _a6588, V _a6589, V _a6590, V[] _rest6586) => {
-return ((V)(ParseInt(Invoke(x_6582, "slice", i_6591, Add(i_6591, ((V)(2D)))), ((V)(16D)))));
+return Invoke(Arr(((V)(0D)), ((V)(2D)), ((V)(4D))), "map", Fn((V _arrowThis6594, int _argc6587, V i_6593, V _a6590, V _a6591, V _a6592, V[] _rest6588) => {
+return ((V)(ParseInt(Invoke(x_6584, "slice", i_6593, Add(i_6593, ((V)(2D)))), ((V)(16D)))));
 }, 1, "", true));
 return default;
 }, 1, "", true);
-lineOf_81 = Fn((V _arrowThis6600, int _argc6593, V c_6599, V _a6596, V _a6597, V _a6598, V[] _rest6594) => {
-V h_6601 = default;
-V s_6602 = default;
-V l_6603 = default;
-{ V _t6604 = Call(hsl_79, V.Undef, c_6599);
-{ V _t6605 = ListOf(_t6604);
-{ V _t6606 = GetIdx(_t6605, 0D);
-h_6601 = _t6606; }
-{ V _t6607 = GetIdx(_t6605, 1D);
-s_6602 = _t6607; }
-{ V _t6608 = GetIdx(_t6605, 2D);
-l_6603 = _t6608; }
+lineOf_81 = Fn((V _arrowThis6602, int _argc6595, V c_6601, V _a6598, V _a6599, V _a6600, V[] _rest6596) => {
+V h_6603 = default;
+V s_6604 = default;
+V l_6605 = default;
+{ V _t6606 = Call(hsl_79, V.Undef, c_6601);
+{ V _t6607 = ListOf(_t6606);
+{ V _t6608 = GetIdx(_t6607, 0D);
+h_6603 = _t6608; }
+{ V _t6609 = GetIdx(_t6607, 1D);
+s_6604 = _t6609; }
+{ V _t6610 = GetIdx(_t6607, 2D);
+l_6605 = _t6610; }
 } }
-if (LtN(s_6602, 0.1)) {
-h_6601 = (LtN(s_6602, 0.03) ? ((V)(0.08)) : h_6601);
-s_6602 = ((V)(0.22));
+if (LtN(s_6604, 0.1)) {
+h_6603 = (LtN(s_6604, 0.03) ? ((V)(0.08)) : h_6603);
+s_6604 = ((V)(0.22));
 }
-return Call(hex_80, V.Undef, Arr(h_6601, ((V)(Min(1D, ((ToNum(s_6602) * 1.12) + 0.06)))), ((V)(Max(0.1, Min(0.42, (ToNum(l_6603) * 0.42)))))));
+return Call(hex_80, V.Undef, Arr(h_6603, ((V)(Min(1D, ((ToNum(s_6604) * 1.12) + 0.06)))), ((V)(Max(0.1, Min(0.42, (ToNum(l_6605) * 0.42)))))));
 return default;
 }, 1, "", true);
-shadeOf_82 = Fn((V _arrowThis6616, int _argc6609, V c_6615, V _a6612, V _a6613, V _a6614, V[] _rest6610) => {
-V h_6617 = default;
-V s_6618 = default;
-V l_6619 = default;
-{ V _t6620 = Call(hsl_79, V.Undef, c_6615);
-{ V _t6621 = ListOf(_t6620);
-{ V _t6622 = GetIdx(_t6621, 0D);
-h_6617 = _t6622; }
-{ V _t6623 = GetIdx(_t6621, 1D);
-s_6618 = _t6623; }
-{ V _t6624 = GetIdx(_t6621, 2D);
-l_6619 = _t6624; }
+shadeOf_82 = Fn((V _arrowThis6618, int _argc6611, V c_6617, V _a6614, V _a6615, V _a6616, V[] _rest6612) => {
+V h_6619 = default;
+V s_6620 = default;
+V l_6621 = default;
+{ V _t6622 = Call(hsl_79, V.Undef, c_6617);
+{ V _t6623 = ListOf(_t6622);
+{ V _t6624 = GetIdx(_t6623, 0D);
+h_6619 = _t6624; }
+{ V _t6625 = GetIdx(_t6623, 1D);
+s_6620 = _t6625; }
+{ V _t6626 = GetIdx(_t6623, 2D);
+l_6621 = _t6626; }
 } }
-return Call(hex_80, V.Undef, Arr(h_6617, ((V)(Min(1D, ((ToNum(s_6618) * 1.05) + 0.05)))), ((V)((ToNum(l_6619) * 0.55)))));
+return Call(hex_80, V.Undef, Arr(h_6619, ((V)(Min(1D, ((ToNum(s_6620) * 1.05) + 0.05)))), ((V)((ToNum(l_6621) * 0.55)))));
 return default;
 }, 1, "", true);
-mixHex_83 = Fn((V _arrowThis6634, int _argc6625, V a_6631, V b_6632, V t_6633, V _a6630, V[] _rest6626) => {
-V A_6635 = default;
-V B_6636 = default;
-A_6635 = Call(rgbP_77, V.Undef, a_6631);
-B_6636 = Call(rgbP_77, V.Undef, b_6632);
-return Call(hex_80, V.Undef, Call(hsl_79, V.Undef, Invoke(A_6635, "map", Fn((V _arrowThis6645, int _argc6637, V v_6643, V i_6644, V _a6641, V _a6642, V[] _rest6638) => {
-return Add(v_6643, ((V)(((ToNum(GetK(B_6636, i_6644)) - ToNum(v_6643)) * ToNum(t_6633)))));
+mixHex_83 = Fn((V _arrowThis6636, int _argc6627, V a_6633, V b_6634, V t_6635, V _a6632, V[] _rest6628) => {
+V A_6637 = default;
+V B_6638 = default;
+A_6637 = Call(rgbP_77, V.Undef, a_6633);
+B_6638 = Call(rgbP_77, V.Undef, b_6634);
+return Call(hex_80, V.Undef, Call(hsl_79, V.Undef, Invoke(A_6637, "map", Fn((V _arrowThis6647, int _argc6639, V v_6645, V i_6646, V _a6643, V _a6644, V[] _rest6640) => {
+return Add(v_6645, ((V)(((ToNum(GetK(B_6638, i_6646)) - ToNum(v_6645)) * ToNum(t_6635)))));
 }, 2, "", true))));
 return default;
 }, 3, "", true);
@@ -8386,33 +8399,33 @@ FIDGETS_96 = Arr();
 FIDK_97 = NewObj(0).V;
 PRESS_98 = NewObj(0).V;
 REL_99 = NewObj(0).V;
-Set(G("window"), "RiveRig", NewObj(24).Put("v", ((V)(2D))).Put("setLook", Fn((V _arrowThis6653, int _argc6646, V m_6652, V _a6649, V _a6650, V _a6651, V[] _rest6647) => {
-LOOK_76 = (SEq(m_6652, (true ? V.True : V.False)) ? 4D : (SEq(m_6652, (false ? V.True : V.False)) ? 0D : Max(0D, Min(4D, ((double)(ToInt32(ToNum(m_6652)) | ToInt32(0D)))))));
-Invoke(ALL_65, "forEach", Fn((V _arrowThis6661, int _argc6654, V I_6660, V _a6657, V _a6658, V _a6659, V[] _rest6655) => {
-Call(applyLook_86, V.Undef, I_6660);
+Set(G("window"), "RiveRig", NewObj(24).Put("v", ((V)(2D))).Put("setLook", Fn((V _arrowThis6655, int _argc6648, V m_6654, V _a6651, V _a6652, V _a6653, V[] _rest6649) => {
+LOOK_76 = (SEq(m_6654, (true ? V.True : V.False)) ? 4D : (SEq(m_6654, (false ? V.True : V.False)) ? 0D : Max(0D, Min(4D, ((double)(ToInt32(ToNum(m_6654)) | ToInt32(0D)))))));
+Invoke(ALL_65, "forEach", Fn((V _arrowThis6663, int _argc6656, V I_6662, V _a6659, V _a6660, V _a6661, V[] _rest6657) => {
+Call(applyLook_86, V.Undef, I_6662);
 try {
-Call(tick_59, V.Undef, I_6660, Invoke(G("performance"), "now"), ((V)(0.016)));
-} catch (System.Exception _ex6662) {
-V e_6663 = default;
-e_6663 = Caught(_ex6662);
+Call(tick_59, V.Undef, I_6662, Invoke(G("performance"), "now"), ((V)(0.016)));
+} catch (System.Exception _ex6664) {
+V e_6665 = default;
+e_6665 = Caught(_ex6664);
 
 }
 return default;
 }, 1, "", true));
 return default;
-}, 1, "setLook", true)).Put("look", Fn((V _arrowThis6670, int _argc6664, V _a6666, V _a6667, V _a6668, V _a6669, V[] _rest6665) => {
+}, 1, "setLook", true)).Put("look", Fn((V _arrowThis6672, int _argc6666, V _a6668, V _a6669, V _a6670, V _a6671, V[] _rest6667) => {
 return ((V)(LOOK_76));
-}, 0, "look", true)).Put("lineOf", lineOf_81).Put("HYAW", HYAW_41).Put("SOFT", SOFT_42).Put("DEFS", DEFS_34).Put("mount", mount_95).Put("STATES", STATES_38).Put("REST", REST_35).Put("FIDGETS", FIDGETS_96).Put("FIDK", FIDK_97).Put("PRESS", PRESS_98).Put("REL", REL_99).Put("PRE", PRE_49).Put("EZ", EZ_18).Put("kv", kv_19).Put("r2", r2_14).Put("star4", star4_33).Put("clamp", clamp_13).Put("SM", SM_16).Put("add", Fn((V _arrowThis6678, int _argc6671, V o_6677, V _a6674, V _a6675, V _a6676, V[] _rest6672) => {
-return Object_assign(STATES_38, o_6677);
-}, 1, "add", true)).Put("emit", emit_51).Put("tick1", Fn((V _arrowThis6686, int _argc6679, V I_6685, V _a6682, V _a6683, V _a6684, V[] _rest6680) => {
+}, 0, "look", true)).Put("lineOf", lineOf_81).Put("HYAW", HYAW_41).Put("SOFT", SOFT_42).Put("DEFS", DEFS_34).Put("mount", mount_95).Put("STATES", STATES_38).Put("REST", REST_35).Put("FIDGETS", FIDGETS_96).Put("FIDK", FIDK_97).Put("PRESS", PRESS_98).Put("REL", REL_99).Put("PRE", PRE_49).Put("EZ", EZ_18).Put("kv", kv_19).Put("r2", r2_14).Put("star4", star4_33).Put("clamp", clamp_13).Put("SM", SM_16).Put("add", Fn((V _arrowThis6680, int _argc6673, V o_6679, V _a6676, V _a6677, V _a6678, V[] _rest6674) => {
+return Object_assign(STATES_38, o_6679);
+}, 1, "add", true)).Put("emit", emit_51).Put("tick1", Fn((V _arrowThis6688, int _argc6681, V I_6687, V _a6684, V _a6685, V _a6686, V[] _rest6682) => {
 try {
-Call(tick_59, V.Undef, I_6685, Invoke(G("performance"), "now"), ((V)(0.016)));
-} catch (System.Exception _ex6687) {
-V e_6688 = default;
-e_6688 = Caught(_ex6687);
-if (!(Truthy(Get(I_6685, "err")))) {
-Set(I_6685, "err", ((V)(1D)));
-Invoke(G("console"), "error", ((V)("RiveRig")), e_6688);
+Call(tick_59, V.Undef, I_6687, Invoke(G("performance"), "now"), ((V)(0.016)));
+} catch (System.Exception _ex6689) {
+V e_6690 = default;
+e_6690 = Caught(_ex6689);
+if (!(Truthy(Get(I_6687, "err")))) {
+Set(I_6687, "err", ((V)(1D)));
+Invoke(G("console"), "error", ((V)("RiveRig")), e_6690);
 }
 }
 return default;

@@ -18,10 +18,10 @@ namespace SquishSquad.Audio
 
         public static SfxCore.LoopHandle Loop(string name, double volume = 1, double rate = 1) => Core?.Loop(name, volume, rate);
 
-        public static void Music(string name)
+        public static void Music(string name, double fadeInMs = SfxCore.FadeInMs, double fadePower = 1)
         {
             Calls.Add("music " + (name ?? "null"));
-            Core?.Music(name);
+            Core?.Music(name, fadeInMs, fadePower);
         }
     }
 

@@ -94,5 +94,53 @@
     // the rig's state machine and a few of its switches
     state: function (id) { var i = I(id); return i && i.cur ? i.cur.name : null; },
     spinOff: function (id, deg) { var i = I(id); if (i) i.spinOff = deg; },
+    // the border looks (below): `n` everyone's, `over` JSON { key: n } for single creatures, `keys` JSON [the creatures
+    // that have look pictures] (null: every creature)
+    looks: function (n, over, keys) {
+      LOOK.n = n == null ? 4 : Math.max(0, Math.min(4, n | 0));
+      LOOK.over = over ? JSON.parse(over) || {} : {};
+      LOOK.keys = keys ? JSON.parse(keys) : null;
+      auto = auto.filter(alive);
+      auto.forEach(function (r) { r.I.lookM = lookOf(r.key); });
+      // (setLook re-applies every rig's look: its line and shading redrawn on the next frame)
+      if (G.RiveRig && G.RiveRig.setLook) G.RiveRig.setLook(LOOK.n);
+    },
+    lookOf: function (key) { return lookOf(key); },
+    // one creature in a look of its own whatever config/roster says (the yard games' posters: 3, as develop's
+    // yg-intros.js mounts them); its scene light kept
+    look: function (id, n) {
+      var c = ctl[id], i = c && c._I; if (!i) return;
+      auto = auto.filter(function (r) { return r.I !== i; });
+      i.lookM = Math.max(0, Math.min(4, n | 0));
+      if (c.light) c.light(i.sceneL || null);
+    },
   };
+
+  // ---- the creatures' border looks (2026-11-26, the user: "i want all of them to have the number 3") ----
+  // Firestore config/roster's `look` (everyone) and `looks` ({ creature id or key: n }), as src/squad/looks.js reads
+  // them; Unity: Creatures/CreatureLooks.cs hands them over (__native.looks). The rig draws the look itself (rive-rig.js
+  // applyLook, MODES: 1 shading only, 2 thin ink line, 3 bold ink line, 4 bold line in each part's own darker colour;
+  // 0 off), its line round each part as the look pictures have it. Every creature mounted gets its look; a mount that
+  // brings its own (the yard games' posters: look 3) keeps it; a creature without look pictures gets none (as the app's
+  // rigLookOf). The app's own outline (webgame/app/rig-look.js, an outer edge as an SVG filter) isn't used here: it
+  // waits for the app's page (window.SquishApp), which the realm doesn't have.
+  var LOOK = { n: 4, over: {}, keys: null }, auto = [];
+  function lookOf(key) {
+    if (LOOK.keys && LOOK.keys.indexOf(key) < 0) return 0;
+    return LOOK.over[key] != null ? Math.max(0, Math.min(4, LOOK.over[key] | 0)) : LOOK.n;
+  }
+  function alive(r) { var s = r.I.shadow; return !s || s.isConnected; }
+  var R = G.RiveRig;
+  if (R && typeof R.mount === 'function' && !R.__unityLook) {
+    var rmount = R.mount;
+    R.mount = function (host, key, o) {
+      var own = !!(o && o.look != null), oo = o;
+      if (!own) { oo = {}; if (o) for (var k in o) oo[k] = o[k]; oo.look = lookOf(key); }
+      var c = rmount.call(this, host, key, oo);
+      if (!own && c && c._I) { auto = auto.filter(alive); auto.push({ I: c._I, key: key }); }
+      return c;
+    };
+    R.__unityLook = true;
+    if (R.setLook) R.setLook(LOOK.n);
+  }
 })(typeof globalThis !== 'undefined' ? globalThis : this);

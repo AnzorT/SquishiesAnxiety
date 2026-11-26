@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
 using SquishSquad.Audio;
+using SquishSquad.Games.Shared;
 using SquishSquad.Ui;
 using SquishSquad.Ui.Cards;
 using SquishSquad.Vector;
@@ -81,7 +82,11 @@ namespace SquishSquad.Games.Squishdoku
         int _underTimer = -1;
 
         SdHub _hub;
-        SdMap _map;
+        // the level map: the games' own (Games/Shared/LevelMap, as Squish Hop's since 2026-11-26, the user): every level
+        // in one long row through the chapters' rooms, a banner (the room's card, CHAPTER n · ROOM) opening each chapter
+        LevelMap _map;
+        readonly LayerFrame _mapFrame = new LayerFrame();
+        readonly Dictionary<ScreenLayer, SdLayer> _mapLayers = new Dictionary<ScreenLayer, SdLayer>();
         bool _mapKept;
         SdLevel _level;
         SdBlitz _blitz;
@@ -89,7 +94,7 @@ namespace SquishSquad.Games.Squishdoku
         int? _justUnlocked;
 
         public SdHub Hub => _hub;
-        public SdMap Map => _map;
+        public LevelMap Map => _map;
         public SdLevel Level => _level;
         public SdBlitz Blitz => _blitz;
         /// <summary>The view's content is built (its placeholders gone or going).</summary>
@@ -120,7 +125,7 @@ namespace SquishSquad.Games.Squishdoku
             if (next == "map" && _mapKept && _map != null)
             {
                 _ready = true; _built = "map"; _bonesUp = false; _reveal.SetValue(1);
-                _map.Refresh(Levels.Record(SdLevel.Profile), _justUnlocked);
+                RefreshMap(Levels.Record(SdLevel.Profile));
                 return;
             }
             _ready = false;
@@ -140,9 +145,9 @@ namespace SquishSquad.Games.Squishdoku
             {
                 case "hub": _hub = MakeHub(); _hub.Mount(); break;
                 case "map":
-                    _map = new SdMap(W, H, rec, _cast, _justUnlocked, _xml, _tk) { OnPlay = lv => AsInput(() => StartLevel(lv)) };
+                    _map = NewMap(rec);
                     _map.Mount();
-                    SdMap.NodePops();
+                    NodePops();
                     break;
                 case "play":
                     _level = new SdLevel(W, H, _playLv, _head, _cast, _buddy, _xml, _tk);
@@ -170,6 +175,69 @@ namespace SquishSquad.Games.Squishdoku
         };
 
         void StartLevel(int lv) { _playLv = lv; _justUnlocked = null; Go("play"); }
+
+        // ---- the level map (Hop's) ------------------------------------------------------------------------------------------
+        // under the screen's top bar (48 dp)
+        const float MapTop = 48;
+        // the nodes popping in as the map opens (Squishdoku's own sound)
+        static void NodePops() { for (int k = 0; k < 6; k++) Snd.Play("sd_nodePop", delay: 120 + k * 70, rate: 0.9 + k * 0.07); }
+        LevelMap NewMap(SdkRecord rec)
+        {
+            var list = new List<MapLevel>();
+            for (int i = 0; i < Levels.LevelCount; i++) list.Add(new MapLevel(Levels.ChapterOf(i + 1) - 1, Levels.LevelList[i].Tier));
+            var heads = new List<string>();
+            foreach (var c in _cast) if (c?.Picture != null) heads.Add(c.Picture);
+            // the rooms behind the map, the row on their floor (as Hop's: ROW_ON_FLOOR)
+            var map = new LevelMap(list, W, MapTop, H - MapTop, heads, MapBanner, MapRoomCard, roomOf: i => Levels.RoomOfChapter(Levels.ChapterOf(i + 1)), rowAt: 0.75f)
+            {
+                OnPlay = lv => AsInput(() => StartLevel(lv)),
+            };
+            RefreshMap(rec, map);
+            return map;
+        }
+        void RefreshMap(SdkRecord rec, LevelMap map = null)
+        {
+            map ??= _map;
+            map?.SetRecord((int)rec.Lv, lv => (int)Js.OrNumber(rec.Best.TryGetValue(Js.IntKey(lv), out var b) ? b : null, 0));
+        }
+        // a chapter's banner: CHAPTER n · ROOM (`i`: its first level, from 0)
+        static string MapBanner(int i)
+        {
+            int c = Levels.ChapterOf(i + 1);
+            return $"CHAPTER {c} · {Rooms.Of(Levels.RoomOfChapter(c)).Name.ToUpperInvariant()}";
+        }
+        static readonly Dictionary<string, MapIcon> RoomCards = new Dictionary<string, MapIcon>();
+        // the room's card over its banner (hop/Room.js RoomCard, exported: Resources/Maps/room-<room>), as Hop's
+        static MapIcon MapRoomCard(int i)
+        {
+            string room = Levels.RoomOfChapter(Levels.ChapterOf(i + 1));
+            if (HubsData.Current == null || HubsData.LoadXml == null) return null;
+            if (!RoomCards.TryGetValue(room, out var ic))
+            {
+                try
+                {
+                    var (w, h) = HubsData.Current.Size("room-" + room);
+                    var xml = HubsData.LoadXml("Maps/room-" + room);
+                    ic = xml != null ? new MapIcon(room, xml, w, h) : null;
+                }
+                catch (Exception) { ic = null; }   // (no card: the banner alone)
+                RoomCards[room] = ic;
+            }
+            return ic;
+        }
+        // the map's layers (LevelMap draws into a LayerFrame) as the screen's own
+        void MapLayers(List<SdLayer> o, Action<LayerFrame> draw)
+        {
+            _mapFrame.Begin();
+            draw(_mapFrame);
+            foreach (var sl in _mapFrame.List)
+            {
+                if (!_mapLayers.TryGetValue(sl, out var l)) _mapLayers[sl] = l = new SdLayer(sl.Name);
+                if (sl.Picture != null) l.SetPicture(sl.Picture, sl.W, sl.H); else l.Set(sl.Markup, sl.W, sl.H, sl.Margin);
+                l.Transform = sl.Transform; l.Opacity = sl.Opacity; l.Visible = sl.Visible; l.Creature = sl.Creature;
+                o.Add(l);
+            }
+        }
         void LeaveLevel(int? unlocked) { _justUnlocked = unlocked; Snd.Play("sd_boardOut"); Go("map"); }
 
         // ---- HOW TO PLAY ---------------------------------------------------------------------------------------------------
@@ -246,8 +314,6 @@ namespace SquishSquad.Games.Squishdoku
 
         // ---- the top bar (hub and map) ------------------------------------------------------------------------------------
         readonly SdLayer _wood, _world, _orb, _title, _pill, _bonesL;
-        readonly Dictionary<int, SdLayer> _roomTiles = new Dictionary<int, SdLayer>();
-        readonly Dictionary<int, string> _roomKeys = new Dictionary<int, string>();
         static readonly TextStyle TitleText = new TextStyle { Font = SdArt.Display, Size = 22, LetterSpacing = 1.5f, Color = "#ffffff", Shadows = new[] { new Shadow(SdArt.INK, 0, 2.5f, 1) } };
         static readonly TextStyle PillText = new TextStyle { Font = SdArt.Display, Size = 13, Color = "#ffffff" };
         string _pillKey;
@@ -279,6 +345,7 @@ namespace SquishSquad.Games.Squishdoku
             p.Transform = view * src.Transform;
             p.Opacity = src.Opacity * op;
             p.Visible = src.Visible;
+            p.Creature = src.Creature;
             return p;
         }
 
@@ -296,23 +363,10 @@ namespace SquishSquad.Games.Squishdoku
             Cover(_wood, "Squishdoku/wood-bg", 2340, 1080);
             o.Add(_wood);
             bool under = View == "play" && _roomUnder;
-            if ((View == "map" || under) && _map != null)
-            {
-                // develop (2026-11-17): the chapter's room behind the map (royal/WorldBg.js RoomBackdrop: Room.js `full`,
-                // by day, a picture a screen wide repeated along the page), moved by the map's scroll, faded with it
-                float sx = _map.ScrollX;
-                for (int i = 0; i * W < _map.PageW; i++)
-                {
-                    float x = i * W, w = Math.Min(W, _map.PageW - x);
-                    if (x + w < sx - W || x > sx + 2 * W) continue;
-                    if (!_roomTiles.TryGetValue(i, out var t)) _roomTiles[i] = t = new SdLayer("room " + i);
-                    string room = _map.Room;
-                    if (!_roomKeys.TryGetValue(i, out var k) || k != room + w) { _roomKeys[i] = room + w; t.Set(Rooms.Svg(room, "day", W, H, true, w), w, H, 0); }
-                    t.Transform = Affine.Translate(x - sx, 0);
-                    t.Opacity = under ? 1 : viewOp;
-                    o.Add(t);
-                }
-            }
+            // the chapters' rooms behind the map (the games' LevelMap DrawRooms: each chapter's room by day, its door post
+            // between two), moved by the map's scroll; under a level opened from it a moment longer
+            if ((View == "map" || under) && _map != null && _map.HasRooms)
+                MapLayers(o, f => _map.DrawRooms(f, under ? 1 : viewOp, H));
             else if (View == "map")
             {
                 Cover(_world, "Squishdoku/levels-" + Season(Today()), 2340, 1080);
@@ -345,7 +399,7 @@ namespace SquishSquad.Games.Squishdoku
             if (_ready)
             {
                 if (View == "hub" && _hub != null) _hub.Layers(rec, view, viewOp * content, o);
-                else if (View == "map" && _map != null) _map.Layers(view, viewOp * content, o);
+                else if (View == "map" && _map != null) MapLayers(o, f => _map.Draw(f, view, viewOp * content));
                 else if (View == "play" && _level != null) foreach (var l in _level.Layers()) o.Add(Proxy(l, view, viewOp * content));
                 else if (View == "blitz" && _blitz != null) foreach (var l in _blitz.Layers()) o.Add(Proxy(l, view, viewOp * content));
             }
@@ -385,7 +439,7 @@ namespace SquishSquad.Games.Squishdoku
             if (!_ready) return;
             _downOn = 3;
             if (View == "hub") _hub?.Down(x, y);
-            else if (View == "map") _map?.Down(x, y);
+            else if (View == "map") { if (y >= MapTop) _map?.Down(x, y); }
             else if (View == "play") _level?.Down(x, y);
             else _blitz?.Down(x, y);
         });

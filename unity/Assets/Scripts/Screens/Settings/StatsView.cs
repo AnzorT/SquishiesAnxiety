@@ -2,7 +2,7 @@
 // left the favourite creature (the longest squished) and the three most squished with their bars, on the right the
 // totals as eight wood tiles. Everything from the profile (stats, totalEarned, boxOpens, maxMult), the catalog and the
 // achievements (AchievementList). In the design's 393-tall units (royal Stage). Opened from Settings' "Stats".
-// The creatures are their stills (Roster.Picture); the app's thumbnails breathe (CreatureThumbnail 'idle'), not ported.
+// The creatures are their stills (Roster.Picture: their border-look pictures); the app's thumbnails breathe (CreatureThumbnail 'idle'), not ported.
 // Custom creatures (`custom:` ids in playTime) aren't shown: the Unity version has no custom creatures yet.
 using System;
 using System.Collections.Generic;
@@ -161,7 +161,7 @@ namespace SquishSquad.Screens
         {
             var pic = Roster.Picture(c);
             if (pic == null) return;
-            var (fx, fy, fw, fh) = Roster.Frame(Roster.Ar(c.Key));
+            var (fx, fy, fw, fh) = Roster.PictureFrame(c.Key);
             s.Image(pic, x + fx * size, y + fy * size, fw * size, fh * size, "none");
         }
 

@@ -4,7 +4,7 @@
 // against the JS, markup for markup). No JS engine, no recordings.
 //
 // One clock for every creature on screen (the page's virtual clock: performance.now, timers, requestAnimationFrame),
-// moved once per Unity frame in 16 ms steps (as the recordings were made), at most 250 ms after a pause. The creature
+// moved by one step per Unity frame: the time since the last, at least 12 ms and at most 50 ms. The creature
 // art the rig fetches (the Tripo creatures' outlines) comes from Resources/Rig/files.bytes (tools/unity/rig/bundle.mjs).
 // Each frame is the creature's node tree, read straight from the rig's elements (RigTree: no SVG text), which
 // CreatureView compiles and draws; FrameAt still gives the markup (the result card's first measure, the tests).
@@ -77,6 +77,7 @@ namespace SquishSquad.Creatures
                 foreach (var e in RigHost.BootErrors) Debug.LogWarning("[NativeRig] " + e);
                 if (!_bootOk) { _failed = true; Debug.LogWarning("[NativeRig] the rig didn't start: playing the recordings"); return false; }
                 Debug.Log($"[NativeRig] the rig's scripts ran in {_bootMs} ms");
+                FrameDrivers();
             }
             return RigHost.Booted;
         }
@@ -128,7 +129,59 @@ namespace SquishSquad.Creatures
             return true;
         }
 
-        // the one clock: up to now, in 16 ms steps, once per Unity frame
+        // the one clock: one step per Unity frame, as a browser's requestAnimationFrame: the time since the last step, at
+        // least MinStep, at most MaxStep (the rig clamps its own steps at 50 ms too), the rest dropped. It used to catch
+        // up in 16 ms steps (up to 250 ms): once a frame took longer than its steps, the next ran more of them and was
+        // slower still (the Editor, Hop's result card: 15 steps a frame, 4 fps). MinStep 12, not 16: Unity's frame times
+        // wobble about 16.7 ms at 60 Hz, and a frame at 15.9 got no step and the next a double one, a hitch in the
+        // fastest moves (the hopper's jump); at 12 every 60 Hz frame steps, and 90 / 120 / 144 Hz step every other frame
+        // (22 / 16.7 / 13.9 ms, evenly).
+        const double MinStep = 12, MaxStep = 50;
+
+        // In play mode the step runs on the rig thread while Unity draws: early in LateUpdate (RigFrameBegin) every
+        // creature on screen reads its frame, the step is posted, the views draw what they read, and the main thread
+        // waits for the step at the end of LateUpdate (RigFrameEnd), so the realm is idle again for the next frame's
+        // Update (the games' calls, the stage's reads). What's drawn is the frame before the step: one frame behind.
+        static GameObject _frames;
+        static double _due;
+        static long _stepTicks;
+        static void FrameDrivers()
+        {
+            if (_frames != null || !Application.isPlaying) return;
+            _frames = new GameObject("rig frame");
+            UnityEngine.Object.DontDestroyOnLoad(_frames);
+            _frames.AddComponent<RigFrameBegin>();
+            _frames.AddComponent<RigFrameEnd>();
+            RigThread.PostError ??= e => Debug.LogWarning("[NativeRig] frame: " + e.Message);
+        }
+
+        internal static void FrameBegin()
+        {
+            if (_failed || !RigHost.Booted) return;
+            Advance();
+            long t0 = SquishSquad.App.PerfLog.Mark();
+            var views = CreatureView.Live;
+            for (int i = 0; i < views.Count; i++) views[i].Prefetch();
+            SquishSquad.App.PerfLog.Add("creature frames read", t0);
+            if (_due <= 0) return;
+            double step = _due; _due = 0;
+            RigThread.Post(() =>
+            {
+                long a = System.Diagnostics.Stopwatch.GetTimestamp();
+                RigHost.Frame(step);
+                _stepTicks = System.Diagnostics.Stopwatch.GetTimestamp() - a;
+            });
+        }
+
+        internal static void FrameEnd()
+        {
+            if (!RigThread.Pending) return;
+            long t0 = SquishSquad.App.PerfLog.Mark();
+            RigThread.Wait();
+            SquishSquad.App.PerfLog.Add("waiting for the step", t0);
+            SquishSquad.App.PerfLog.AddMs("rig step (its thread)", _stepTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency);
+        }
+
         static void Advance()
         {
             if (Time.frameCount == _lastFrame) return;
@@ -137,13 +190,18 @@ namespace SquishSquad.Creatures
             var sw = System.Diagnostics.Stopwatch.StartNew();
             double now = Time.unscaledTimeAsDouble * 1000;
             if (_t0 < 0) _t0 = now;
-            double target = now - _t0, dt = Math.Min(250, target - _clockMs);
-            try
+            double target = now - _t0, dt = target - _clockMs;
+            if (dt >= MinStep)
             {
-                while (dt >= 16) { RigHost.Frame(16); dt -= 16; _clockMs += 16; }
+                double step = Math.Min(dt, MaxStep);
+                if (_frames != null) _due = Math.Min(MaxStep, _due + step);   // FrameBegin posts it, once the frames are read
+                else
+                {
+                    try { RigThread.Run(() => RigHost.Frame(step)); }
+                    catch (Exception e) { Debug.LogWarning("[NativeRig] frame: " + e.Message); }
+                }
+                _clockMs = step < dt ? target : _clockMs + step;   // (behind: no catching up)
             }
-            catch (Exception e) { Debug.LogWarning("[NativeRig] frame: " + e.Message); }
-            if (target - _clockMs > 250) _clockMs = target - 16;   // (after a pause: no catching up)
             _spent += sw.Elapsed.TotalMilliseconds;
         }
 
@@ -170,7 +228,8 @@ namespace SquishSquad.Creatures
             {
                 Advance();
                 var sw = System.Diagnostics.Stopwatch.StartNew();
-                var t = (_tree ??= new RigTree()).Build(RigHost.SvgElement(_id));
+                var tree = _tree ??= new RigTree();
+                var t = RigThread.Run(() => tree.Build(RigHost.SvgElement(_id)));
                 _spent += sw.Elapsed.TotalMilliseconds;
                 return t;
             }
@@ -209,6 +268,8 @@ namespace SquishSquad.Creatures
         public void Press() { if (!_gone) try { RigHost.Native("press", _id); } catch (Exception) { } }
         /// <summary>The rig's light (rive-rig ctl.light: the scene's, as JSON; null for its own).</summary>
         public void Light(string json) { if (!_gone) try { RigHost.Native("light", _id, json != null ? (V)json : V.Null); } catch (Exception) { } }
+        /// <summary>A border look of its own (0-4) whatever config/roster says (RigLooks): the yard posters' 3.</summary>
+        public void Look(int n) { if (!_gone) try { RigHost.Native("look", _id, n); } catch (Exception) { } }
 
         internal int Id => _id;
 

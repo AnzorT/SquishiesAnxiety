@@ -3,6 +3,7 @@
 // (CharactersPageLink). MenuScreen opens it and passes it the input while it's open.
 using System;
 using System.Collections.Generic;
+using SquishSquad.Creatures;
 using SquishSquad.Ui;
 using UnityEngine;
 
@@ -43,6 +44,8 @@ namespace SquishSquad.Menu
                 MenuScreen.Instance?.ShowToast("The Shop isn't in the Unity version yet", 2f);
             };
             _view = new CharactersPageView(CharactersLayout.Root, parent, order);
+            _parent = parent;
+            _order = order;
             // the row's first cards decoded while the loading screen plays (the app holds it until they've loaded)
             _warm = new Queue<string>();
             foreach (var g in l.groups) foreach (var id in g.ids) { var c = Array.Find(l.roster, x => x.id == id); if (c != null) _warm.Enqueue(c.key); }
@@ -67,8 +70,72 @@ namespace SquishSquad.Menu
                 var set = Array.Find(_m.L.cards, x => x.key == k);
                 if (set != null) { _view.Picture(_m.Owns(k) ? set.card.res : set.locked.res); }
             }
+            TickLive(nowMs);
             _view.Show(_m.Draw(nowMs));
         }
+
+        // ---- the creature on the platform, live (menu.js showRig: the app mounts its rig there, a new one for each
+        // creature picked, popping in; greyed when not owned) and reacting to touches (CreatureTouch) ----
+        readonly Transform _parent;
+        readonly int _order;
+        CreatureView _live;
+        NativeRig _liveRig;
+        string _liveKey;
+        bool _mounted, _greeted;
+        double _liveAt;
+        Vector3 _liveHome;
+        readonly CreatureTouch _touch = new CreatureTouch();
+        static readonly string[] OwnHello = { "happy", "love", "cheer" }, LockedHello = { "look", "surprised" };
+
+        void TickLive(double now)
+        {
+            if (!_mounted || _m.Pick != _liveKey) Mount(_m.Pick, now);
+            if (_live == null) return;
+            var (sc, ty, op) = _m.PopAt(now);
+            // sqPop: scaled about the box's middle after a move ty pu down (world y up)
+            double pu = _m.G.Pu; var b = _m.RigBox;
+            var c = new Vector3((float)((b[0] + b[2] / 2) * pu), -(float)((b[1] + b[3] / 2) * pu), 0);
+            float s = (float)sc;
+            _live.transform.localPosition = c + s * (_liveHome - c + new Vector3(0, -(float)(ty * pu), 0));
+            _live.transform.localScale = new Vector3(s, s, 1);
+            _live.SetOpacity((float)(op * (1 - _m.LoaderOpacity(now))));
+            // .sil: filter saturate(.3) brightness(.78) (its glow left out)
+            bool own = _m.Owns(_liveKey);
+            _live.SetTint(own ? Color.white : new Color(.78f, .78f, .78f, 1), own ? 1 : .3f);
+            // 350 ms after it's mounted: happy / love / cheer, or for one not owned, look / surprised
+            if (!_greeted && now - _liveAt >= 350)
+            {
+                _greeted = true;
+                var l = own ? OwnHello : LockedHello;
+                _live.Play(l[UnityEngine.Random.Range(0, l.Length)]);
+            }
+        }
+
+        void Mount(string key, double now)
+        {
+            _mounted = true;
+            _touch.Drop();
+            if (_live != null) { Kill(_live.gameObject); _live = null; }   // (its rig leaves with it: CreatureView.OnDestroy)
+            _liveRig = null;
+            _liveKey = key;
+            _m.LiveKey = null;
+            if (key == null) return;
+            var rig = NativeRig.Create(key);
+            if (rig == null) return;   // (the rig can't run: the still, as before)
+            double pu = _m.G.Pu; var b = _m.RigBox;
+            _live = CreatureView.Create(_parent, rig, new Rect((float)(b[0] * pu), (float)(b[1] * pu), (float)(b[2] * pu), (float)(b[3] * pu)), _order + 1);
+            _liveHome = _live.transform.localPosition;
+            _live.Failed = _ => { _m.LiveKey = null; };   // (its still instead)
+            _liveRig = rig;
+            _m.LiveKey = key;
+            _liveAt = now;
+            _greeted = false;
+        }
+
+        // a page px (y down) on the creature's 0-100 box
+        Vector2 LiveBox(Vector2 px) => _live.BoxPoint(_parent.TransformPoint(new Vector3(px.x, -px.y, 0)));
+
+        static void Kill(UnityEngine.Object o) { if (o == null) return; if (Application.isPlaying) UnityEngine.Object.Destroy(o); else UnityEngine.Object.DestroyImmediate(o); }
 
         bool _pressing, _inRow;
         CharactersModel.HitKind _downHit;
@@ -81,6 +148,19 @@ namespace SquishSquad.Menu
             double pu = _m.G.Pu;
             bool rowY = px.y / pu >= 284;
             if (wheel != 0 && rowY) _m.Row.Wheel(-wheel * 100);
+            // a finger on the creature is its rig's until it lifts (a poke, a squeeze, a turn)
+            if (_touch.Active)
+            {
+                if (_live == null) _touch.Drop();
+                else if (up) _touch.Up();
+                else if (held) _touch.Move(LiveBox(px));
+                return;
+            }
+            if (down && _live != null && _m.LiveKey == _liveKey && !_m.Loading(nowMs) && _m.HitTest(px.x, px.y, out _) == CharactersModel.HitKind.None)
+            {
+                var b = LiveBox(px);
+                if (CreatureTouch.InBox(b)) { _touch.Down(_liveRig, b); return; }
+            }
             if (down)
             {
                 _pressing = true;
@@ -114,6 +194,11 @@ namespace SquishSquad.Menu
             }
         }
 
-        public void Dispose() => _view.Dispose();
+        public void Dispose()
+        {
+            _touch.Drop();
+            if (_live != null) { Kill(_live.gameObject); _live = null; }
+            _view.Dispose();
+        }
     }
 }

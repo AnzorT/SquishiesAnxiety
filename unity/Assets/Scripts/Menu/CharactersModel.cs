@@ -6,7 +6,7 @@
 //
 // The page (pu): the rays behind the platform turning (60 s a turn, sqSpin); the platform at (326, 190): its gold side,
 // its plate turning (12 s a turn) and its 16 lights riding round its rim (bulbRun: 49 keyframes, linear); the creature
-// over it at (351, 68) 150 x 150 (its still picture: the app's live rig isn't in Unity yet), popping in when another is
+// over it at (351, 68) 150 x 150 (CharactersPage draws its live rig over the page; its still when the rig can't run), popping in when another is
 // picked (sqPop .55s cubic-bezier(.2,1.4,.4,1)), greyed (.sil) when not owned; its tags and name plate in a row at
 // 247 (gaps of 12, centred between 146 and 146 from the edges); CHOOSE (owned, not in use) or "Find it in chests"
 // (not owned) at (565, 118); the row of cards at 284 to the bottom (group by group, a group's label sticking to the
@@ -218,20 +218,12 @@ namespace SquishSquad.Menu
                 var pic = i % 2 == 1 ? L.bulbW : L.bulb;
                 d.Add(g.Pic("bulb" + i, pic, rx + x - 7, ry + y - 7, 1, PageGeom.About(7, 7, Affine.ScaleBy(s, s))));
             }
-            // the creature on it
+            // the creature on it (its still, unless CharactersPage draws its rig live over the page)
             var st = Array.Find(L.stills, q => q.key == Pick);
-            if (st != null)
+            if (st != null && LiveKey != Pick)
             {
-                double pt = now - _popAt, op = 1;
-                Affine css = Affine.Identity;
-                if (pt < 550)
-                {
-                    double k = PopCurve(Math.Max(0, pt) / 550);
-                    double sc = .55 + (1 - .55) * k, ty = 20 * (1 - k);
-                    css = PageGeom.About(75, 75, Affine.ScaleBy(sc, sc) * Affine.Translate(0, ty));
-                    op = k;   // (opacity 0 -> 1 along the same curve, clamped)
-                    op = Math.Max(0, Math.Min(1, op));
-                }
+                var (sc, ty, op) = PopAt(now);
+                var css = sc == 1 && ty == 0 ? Affine.Identity : PageGeom.About(75, 75, Affine.ScaleBy(sc, sc) * Affine.Translate(0, ty));
                 d.Add(g.Pic("rig", Owns(Pick) ? st.still : st.sil, L.rig[0] + sh, L.rig[1], op, css));
             }
             // its tags and name plate
@@ -309,6 +301,32 @@ namespace SquishSquad.Menu
             // the loading screen over it
             if (L.gs != null && t < Away() + 900) d.Add(Loader(t));
             return PageMotion.Layer(g, d, t);
+        }
+
+        /// <summary>The creature drawn live over the page (CharactersPage, the app's rig on the platform): its still isn't
+        /// drawn. Null: the still.</summary>
+        public string LiveKey;
+
+        /// <summary>The creature's box on the platform (.rig: 150 x 150 pu, at the page's middle), pu.</summary>
+        public double[] RigBox => new double[] { L.rig[0] + Mid, L.rig[1], L.rig[2], L.rig[3] };
+
+        /// <summary>The creature popping in when another is picked (sqPop .55s cubic-bezier(.2,1.4,.4,1)): its scale about
+        /// the box's middle after a move `ty` pu down, and its opacity (1, 0, 1 once it's in).</summary>
+        public (double scale, double ty, double opacity) PopAt(double now)
+        {
+            double pt = now - _popAt;
+            if (pt >= 550) return (1, 0, 1);
+            double k = PopCurve(Math.Max(0, pt) / 550);
+            return (.55 + (1 - .55) * k, 20 * (1 - k), Math.Max(0, Math.Min(1, k)));   // (opacity 0 -> 1 along the same curve, clamped)
+        }
+
+        /// <summary>The loading screen's opacity over the page (Loader: 1 until 420 ms after its cards go, then .45s ease
+        /// to 0). The app's rig is hidden under it until it starts leaving and is then covered by it as it fades.</summary>
+        public double LoaderOpacity(double now)
+        {
+            double t = now - OpenedAt, away = Away();
+            if (L.gs == null || t >= away + 900) return 0;
+            return t < away + 420 ? 1 : 1 - Ease(Math.Min(1, (t - away - 420) / 450));
         }
 
         /// <summary>The row's left edge for a sticky label (pu, from the row's scroll position): measured from the app.</summary>

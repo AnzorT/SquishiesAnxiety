@@ -265,7 +265,9 @@ namespace SquishSquad.Vector
         }
 
         // one shape: its fill, then its stroke (with the element's opacity folded in when it's not drawn as a layer;
-        // when both are painted and the opacity is below 1 the caller has made a layer)
+        // when both are painted and the opacity is below 1 the caller has made a layer). `paint-order: stroke` paints the
+        // stroke first, under the fill: the creatures' border looks (rive-rig.js outline) draw their line that way, so
+        // only its outer half shows.
         void Shape(SvgNode n, Affine m, Style st, float opacity, List<RenderNode> into, bool inLayer)
         {
             var fill = Resolve(st.Fill, st.Color);
@@ -273,11 +275,14 @@ namespace SquishSquad.Vector
             if (fill.Kind == PaintKind.None && stroke.Kind == PaintKind.None) return;
             var outline = Geometry.Flatten(n, m, Tolerance, out var box);
             if (outline.IsEmpty) return;
+            FillNode fillNode = null;
             if (fill.Kind != PaintKind.None)
             {
                 var sh = Outline.Fill(outline, st.FillRule == "evenodd");
-                if (!sh.IsEmpty) into.Add(new FillNode { Shape = sh, Paint = fill, Opacity = opacity * st.FillOpacity, UserBox = box, UserToPx = m });
+                if (!sh.IsEmpty) fillNode = new FillNode { Shape = sh, Paint = fill, Opacity = opacity * st.FillOpacity, UserBox = box, UserToPx = m };
             }
+            bool strokeFirst = fillNode != null && stroke.Kind != PaintKind.None && (n.Prop("paint-order") ?? "").Trim().StartsWith("stroke");
+            if (fillNode != null && !strokeFirst) into.Add(fillNode);
             if (stroke.Kind != PaintKind.None && st.StrokeWidth > 0)
             {
                 var join = st.LineJoin == "round" ? Outline.Join.Round : st.LineJoin == "bevel" ? Outline.Join.Bevel : Outline.Join.Miter;
@@ -296,6 +301,7 @@ namespace SquishSquad.Vector
                 var sh = Outline.Stroke(dashed, st.StrokeWidth * m.Scale, join, cap, st.MiterLimit, Tolerance);
                 if (!sh.IsEmpty) into.Add(new FillNode { Shape = sh, Paint = stroke, Opacity = opacity * st.StrokeOpacity, UserBox = box, UserToPx = m });
             }
+            if (fillNode != null && strokeFirst) into.Add(fillNode);
         }
 
         // a picture in its viewport (x, y, width, height), placed by preserveAspectRatio: a rect filled with it, the

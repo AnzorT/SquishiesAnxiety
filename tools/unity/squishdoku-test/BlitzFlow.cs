@@ -134,7 +134,7 @@ static class BlitzFlowTest
         Check(s.View == "map" && !s.Ready, "REGULAR MODE: the map slides in, its placeholders first");
         S(60); Check(s.Ready, "built two frames later");
         S(1000);
-        var p12 = s.Map.NodeAt(12).Value;
+        var p12 = s.Map.NodeCenter(12);   // (the games' LevelMap since 2026-11-26)
         s.Tap(p12.x, p12.y); S(100);
         Check(s.View == "play" && s.Level != null && s.Level.Lv == 12, "a tap on level 12 opens it");
         S(1500);

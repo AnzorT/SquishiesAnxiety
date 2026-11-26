@@ -24,7 +24,10 @@ static class Program
 
     public static string Res(string p) => Path.Combine(Repo, "unity/Assets/Resources", p);
 
-    static int Main(string[] args)
+    // on the rig thread, as Unity calls the realm (Creatures/Js/RigThread: the compiled functions' frames need its stack)
+    static int Main(string[] args) => SquishSquad.Creatures.Js.RigThread.Run(() => MainHere(args));
+
+    static int MainHere(string[] args)
     {
         bool levelCheck = args[0] == "sortlevel", hopCheck = args[0] == "hoplevel";
         string dir = levelCheck ? args[1] : hopCheck ? "." : args[0];
@@ -32,6 +35,9 @@ static class Program
         var errors = new List<string>();
         Rt.OnHostError = e => { if (errors.Count < 20) errors.Add(e.ToString()); };
         if (Environment.GetEnvironmentVariable("STAGE_DEBUG") == "1") Rt.OnConsole = t => Console.Error.WriteLine("[console] " + (t.Length > 800 ? t.Substring(0, 800) : t));
+        // the app's page draws its rigs without a border look (Unity draws config/roster's: Creatures/Js/RigLooks), so they're
+        // compared without one too (the look itself: tools/unity/rig/dump-frames.mjs --look and vector-test)
+        RigLooks.Set(0, null);
         var sw = Stopwatch.StartNew();
         bool ok = RigHost.Boot(p => { var f = Path.Combine(Work, p); return File.Exists(f) ? File.ReadAllText(f) : null; });
         Console.Error.WriteLine($"booted in {sw.ElapsedMilliseconds} ms" + (RigHost.BootErrors.Count > 0 ? "; script errors: " + string.Join("; ", RigHost.BootErrors) : ""));
@@ -116,7 +122,7 @@ static class Program
         foreach (var it in items) { draw.Add((it.Z, it.Index * 2 + 1, it, false)); if (it.HasShadow) draw.Add((it.ShadowZ, it.Index * 2, it, true)); }
         draw.Sort((p, q) => p.z != q.z ? p.z.CompareTo(q.z) : p.dom.CompareTo(q.dom));
         var px = Affine.ScaleBy(dpr, dpr);
-        double rigShadow = page == "hop" ? 0.45 : 0;
+        double rigShadow = 0;   // (the rig's own floor shadow: hidden on both pages; hop.html draws its .sh since 2026-11-26)
         foreach (var (_, _, it, shadow) in draw)
         {
             SvgScene scene; double op;

@@ -59,6 +59,13 @@ apart from `Haptics.Android.cs`' `Handheld` (missing from that package, not from
   rest the path strings it sets, the string buffers and the scene's shapes. Under ~50 KB would take the compiler
   keeping those point pairs out of the heap (escape analysis in `jsc.mjs`), the next step if the A15 shows GC
   pauses. `NativeRig.LastFrameMs` reports the rig's time in the app; its scripts start on a worker thread at launch.
+- **Four compiled functions are too big for the JIT to optimize** (found 2026-11-25, when the Editor's first Play
+  overflowed its main thread's 1 MB stack): rive-generic.js's closures `b__1236` (~370 KB of IL, a 600 KB frame) and
+  `b__68` (341 KB), creatures-v2.js's top level (213 KB) and rive-rig.js's (85 KB), as .NET's JIT prints them
+  (`DOTNET_JitDisasm`: "Tier-0 switched MinOpts"; Mono, IL2CPP not measured). Every call into the realm now runs on
+  `Creatures/Js/RigThread.cs` (64 MB stack), so they fit, but they run unoptimized every frame. Splitting the big
+  functions in `jsc.mjs` (each nested function its own method, its temporaries reused) would shrink the frames and
+  let the JIT optimize them: the next step if the rig is slow on the A15.
 - The native rig against the JS (`tools/unity/rig-test/run.mjs --all`, 118 creatures x 13 scenarios): 62,516 of
   62,540 snapshots the same markup, the rest at most 0.006 % of their pixels apart, and every frame's direct node tree
   the same as its parsed markup (last-bit differences: V8's

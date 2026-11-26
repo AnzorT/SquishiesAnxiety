@@ -271,7 +271,19 @@ namespace SquishSquad.House.View
             _yard.OnExit = () => { _yard = null; if (_camera != null) _camera.enabled = true; };
         }
 
+        // (the time it takes, in the [Perf] log: App/PerfLog)
+
         void Update()
+
+        {
+
+            long perf = SquishSquad.App.PerfLog.Mark();
+
+            try { UpdateHere(); } finally { SquishSquad.App.PerfLog.Add("house update", perf); }
+
+        }
+
+        void UpdateHere()
         {
             if (_room == null) return;
             if (_yard != null) return;   // (the yard games are up: its own Escape leaves them)

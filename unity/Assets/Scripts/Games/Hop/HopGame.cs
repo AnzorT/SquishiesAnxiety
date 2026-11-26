@@ -79,7 +79,8 @@ namespace SquishSquad.Games.Hop
                 _stage = new RigStage("hop");
                 _stage.Messages();
                 _stage.Size(w, h);
-                _stageView = new StageView(transform, _stage, 0.45);
+                // (the rig's own floor shadow hidden: hop.html draws its own, which stays on the floor as it hops)
+                _stageView = new StageView(transform, _stage, 0);
                 rig = (fn, args) => { try { _stage.Call(fn, args); } catch (Exception e) { Debug.LogWarning("[HopGame] rig " + fn + ": " + e.Message); } };
             }
             _level = new HopLevel(w, h, _startLv, cast.Count >= 8 ? cast : _cast, Profile, _anim, _blitz, null, rig) { OnExit = Leave };
@@ -96,7 +97,19 @@ namespace SquishSquad.Games.Hop
         /// <summary>The level (CI screenshots play hops and open cards through it; Lv is the level being played).</summary>
         public HopLevel Level => _level;
 
+        // (the time it takes, in the [Perf] log: App/PerfLog)
+
         void Update()
+
+        {
+
+            long perf = SquishSquad.App.PerfLog.Mark();
+
+            try { UpdateHere(); } finally { SquishSquad.App.PerfLog.Add("Hop update", perf); }
+
+        }
+
+        void UpdateHere()
         {
             if (!_started) return;
             _anim.Tick(Time.unscaledTimeAsDouble * 1000);

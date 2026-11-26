@@ -27,6 +27,72 @@ lists what isn't, so it can be picked up item by item with Claude Code.
 - **Not checked yet:** none of it has been seen in the Unity Editor or on a device. Checked offline only: the pixel
   tests and a compile of every script in `unity/Assets/Scripts` against Unity 2021.3's reference assemblies
   (NuGet `UnityEngine.Modules`, with `UNITY_5_3_OR_NEWER` defined): it builds.
+- **The Editor's first Play (2026-11-25, evening) found two things the offline checks couldn't:**
+  - It didn't compile: the rig runtime is its own assembly (`Creatures/Js/SquishSquad.Rig.asmdef`), and
+    `RigTree`, `RigStage` and `YardJs` use its `internal` members (`JsArray.Len`, `JsObject.N`). A single-project
+    compile doesn't see the line between the two. Fixed: `Creatures/Js/AssemblyInfo.cs` (InternalsVisibleTo
+    `SquishSquad.Runtime`).
+  - Play froze the Editor (no picture, Stop dead): a stack overflow on the first creature mount. Unity's main thread
+    has 1 MB (Unity.exe), and a few compiled functions have huge frames (rive-generic.js's biggest: 600 KB under
+    .NET's JIT; see `UNITY_TODO.md`). Fixed: `Creatures/Js/RigThread.cs`, one thread with a 64 MB stack that every
+    call into the realm runs on (RigHost, RigStage, YardJs, the tree reads), the caller waiting.
+- **Played in the Editor (2026-11-26), and fixed on the way** (uncommitted until the user says so):
+  - **Frame rate.** `App/PerfLog.cs` writes a `[Perf]` line to the log every 2 s under 50 fps (Editor and development
+    builds): the frame, each timed part, each screen's update, "the rest" (Unity's own work and the Editor's), the GCs.
+    - The rig's clock (`NativeRig.Advance`) caught up in 16 ms steps, up to 250 ms; a slow frame asked for more steps
+      next time and never recovered (Hop's result card: 15 steps a frame, 4 fps). Now one step a frame, 12–50 ms, the
+      rest dropped (12, not 16: at 60 Hz a frame at 15.9 ms got no step and the next a double one, a hitch).
+    - The step runs on the rig thread while Unity draws: `RigFrameBegin` (first LateUpdate) has every live creature
+      read its frame (`CreatureView.Prefetch`) and posts the step; `RigFrameEnd` (last LateUpdate) waits for it. What's
+      drawn is one step behind. Each creature's shapes are made on `Vector/ShapeWorkers.cs` threads (not .NET's pool:
+      its jobs waited 10–30 ms for a thread in the Editor). Hop's result card: 4 fps → about 48 in the Editor.
+    - MY HOUSE ran at 1 fps: the house's pictures (data: URIs of whole SVGs) go through `encodeURIComponent`, which
+      called System.Uri, and Unity's Mono refuses strings over ~65,000 characters there. `Rt.Builtins.cs` encodes and
+      decodes as the spec says now (48 / 48 the same as Node, a 300 KB string among them).
+  - **Exceptions.** A card layer with no markup yet (the result card's "trio edge") threw every frame in Hop and
+    Squishdoku; `UiPiece.SetSvg(null)` now draws nothing. `RosterConfig` read config/roster before any screen had set
+    the Resources loader, so the roster wasn't applied; it sets them itself now.
+  - **One set of popups for every game (the user: Squish Hop's, reused).** The win card was already shared
+    (`GameCards.ResultCard`). The fail card is Hop's STUCK! now everywhere (`GameCards.FailCard`, `Ui/Cards/
+    SadBodyItem.cs`: the character whole and sad, its live rig sighing over the cut-out once it draws); each game keeps
+    its title, line and buttons. Squishdoku drew its cards' layers itself and dropped their live characters
+    (`SdLayer.Mirror`), so its win card's three never came alive: `SdLayer.Creature` and `SquishdokuScreen` draw them as
+    `CardPieces` does (`CardPieces.Init` for any host).
+  - **Squishdoku (the user).** Only Mittens: the app's roster.js takes only the player's own creatures (one owned =
+    every piece that one). Now the player's own first, then the others (`SdCreature.Pick`). Its level map is the games'
+    `LevelMap` as Squish Hop's: every level in one row through the chapters' rooms, a banner (the room's card,
+    CHAPTER n · ROOM) opening each chapter; `SdMap.cs` is gone (`squishdoku-test flow` / `blitzflow` pass).
+  - **Squish Hop's jump (another session).** The hops' height was inside the rig, past its texture (the hopper's head
+    cut off in 8–13 % of play frames, friends in ~60 % of pickup frames). `tools/rig/hop.html` now lifts the `.ch` box
+    (the rig still gets `ext.lift` for its springs, `ext.sk` sinks its drawing back) and draws its own `.sh` shadow;
+    the legs' curves are continuous; a hop arriving mid-air lands the last one first. `HopLevel` LEG_MS / BOING_LEG_MS
+    220 / 195; `StageView` gives its views more room on top (`CreatureView.Create(..., marginTop: 0.45)`), no shadow
+    dimming. `Gen/S_hop_stage_js.cs` regenerated. Offline over 7 levels to the win: nothing cut off.
+  - **Still to look at in the Editor:** Squishdoku (the mixed cast, the new map, its win and fail cards), the fail card
+    in Sort and Stack, the Hop jump. In the Editor "the rest" is 10–16 ms a frame (Unity's rendering and the Editor
+    itself); at the start the menu builds the house under it in a coroutine, which isn't timed.
+- **The creatures' border looks (2026-11-26, the user: "i want all of them to have the number 3"; uncommitted, not
+  seen in the Editor yet).** Unity ignored config/roster `look` (it's 3), and only the Pet Shop rigs (Mittens...) had
+  the rig's own built-in look 4 shading (the "border" Mittens alone showed on Hop's PERFECT HOPS! card); no rig had a
+  line: the rig's outline (rive-rig.js outlineEls) needs browser geometry the stand-in didn't have.
+  - `tools/unity/rig/dom-shim.js`: computed style (presentation attributes, inheritance, rgb()), getCTM,
+    getBoundingClientRect for SVG shapes, getTotalLength / getPointAtLength / isPointInFill (curves flattened),
+    DOMPoint. `native-host.js`: every RiveRig.mount gets its creature's look (`__native.looks(n, over, keys)`; a mount
+    with its own look keeps it; no look pictures = none) and a change redraws the creatures on screen;
+    `__native.look(id, n)` for one creature (the yard posters: 3, as develop). The rig draws the look itself (MODES:
+    3 = a bold line in the house ink round each part), so it matches the look pictures, not the app's outer-edge filter.
+  - `Creatures/Js/RigLooks.cs` holds the looks (pushed at boot); `Screens/Common/RosterConfig.cs` reads `look` /
+    `looks` (ids or keys) and keeps the last ones in PlayerPrefs (`squish.looks`) for the next start.
+  - `Vector/SvgScene.cs`: `paint-order: stroke` on shapes. `Vector/Outline.cs`: a round join is the wedge the turn
+    opens, not a whole circle per vertex (same stroke; vector-test against Chrome 5,773 vs 5,778 px without the look).
+  - Stills: `export-chest.mjs --look 3 --looks-only` re-exported Resources/Chests/look in look 3 (one look only: all
+    four as textures would add some 70 MB); `Roster.Picture` uses them (Achievements, Stats, Squish Time's loading),
+    as the app's thumbnails. The games' pieces stay cut-outs, as in the app.
+  - Checked offline: rig-test 435/435 frames the same JS vs C#; every one of the 118 creatures draws its line with
+    no error; Chrome's rig and the stand-in pick the same parts; Unity's vector core vs Chrome on look-3 frames at
+    0.2–0.35 % visible px (the lines' antialiasing). Cost on this PC (rig-test bench): Mittens 1.02 → 1.44 ms a
+    frame, three creatures 3.33 → 4.45 ms; not measured on the A15 (MY HOUSE's squad is the heaviest).
+    stage-test / yard-test pin look 0 (the app's pages draw their rigs without one).
 - **Next, in this order:**
   1. **Press Play in the Editor and go through what changed:** Squish Sort (the map's fridges, a level, the win's
      doors), Squish Hop (a level: the rigs take over once the page has drawn the cast, then hop, bump, stuck, win),
@@ -39,8 +105,10 @@ lists what isn't, so it can be picked up item by item with Claude Code.
      screen. Fix what's off.
   2. **Item 6:** ask the user to decide (Android back over the Catalog, a new player's starter furniture, the tutorial). **Item 7** is the user's (the A15 test, deploying `functions/`, the release
      setup).
-- **Known failures that are older than this work:** `rig-test --all` stops about 110 runs in with a C# stack
-  overflow, and Bunbun's park walks differ at 0.000 % (item 4, "Found on the way").
+- **Known failures that are older than this work:** Bunbun's park walks differ at 0.000 % (item 4, "Found on the
+  way"). `rig-test --all`'s stack overflow about 110 runs in had the same cause as the Editor's freeze; the tests now
+  run on the rig thread, and it got past 550 of 1,652 runs with no overflow (that run was then stopped from outside;
+  a whole run is still to do).
 - **.NET:** the tests target .NET 8 (`apt-get install dotnet-sdk-8.0` on Ubuntu). Where only .NET 10 is installed,
   run them with `DOTNET_ROLL_FORWARD=Major`, or build them with `-p:TargetFramework=net10.0`.
 - **What the tests need running:** the Expo web app (`npx expo start --web --port 8081`), the built web game
@@ -64,6 +132,12 @@ lists what isn't, so it can be picked up item by item with Claude Code.
 - Work and commit on `develop`. Commit only the files you changed (`git commit -- <paths>`), and don't force-push.
 - Every new file under `unity/Assets` needs a `.meta` file with a fresh GUID.
 - Check that it compiles: open the project in the Unity editor (or use the CI workflow `.github/workflows/unity.yml`).
+  Offline, compile the scripts as Unity's four assemblies (the `.asmdef` files: `SquishSquad.Rig` =
+  `Scripts/Creatures/Js/**` with no engine; `SquishSquad.Runtime` = the rest of `Scripts/**`, referencing Rig;
+  `SquishSquad.Editor` = `Assets/Editor/**`; `SquishSquad.Audio.Editor` = `Scripts/Audio/Editor/**`), with
+  `UNITY_EDITOR` defined and again without it. One project for everything misses access across them.
+- Anything that calls into the compiled realm from Unity goes through `RigThread.Run` (RigHost's calls already do).
+  Unity's main thread doesn't have the stack the compiled functions need.
 - Rules tests for the games: `tools/unity/games/<game>` compares Unity's rules with the app's JS. Keep them all
   passing.
 - The creatures are animated by `Creatures/NativeRig.cs` (the app's rig compiled to C# by `tools/unity/rig/jsc.mjs`).
@@ -131,7 +205,9 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   `DOTNET_ROLL_FORWARD=Major` where only .NET 10 is installed) stops about 110 runs in with a stack overflow in the C#
   side (deep in rive-generic.js, from a promise), right after Bunbun's park walks, whose outline point lists differ
   from the JS's at 0.000 % of pixels; both happen the same with the stand-in before this work. Bunbun and Jelli alone
-  run clean.
+  run clean. The overflow is fixed (2026-11-25): the test called the realm on its 1 MB main thread, where
+  rive-generic.js's two biggest closures (600 + 341 KB frames) didn't fit; the tests' Main now runs on
+  `RigThread`.
 - **Also:** ✅ done 2026-11-25. The house's drawings made at runtime run on the compiled realm: the Squad House page's
   drawing scripts (house4.js on) and `tools/unity/house/draw-host.js` are compiled with the rig (`jsc.mjs`
   houseScripts: +13.8 MB of C#, 20.8 MB in all), `RigHost.HouseEval` takes HouseDraw's calls and NativeRig wires it
@@ -186,6 +262,19 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   OfflineAudioContext): every sound within ~0.5 dB of Chrome's over its first 300 ms, the peaks alike; a hit renders
   in ~12 ms, a KO in ~40 ms on the desktop (the room's spectra made ahead as the smash opens: watch the delay on the
   A15). The chest page has no haptics. Not heard in Unity yet.
+- [x] **The creatures react to touch** (2026-11-26, the user: on the main menu, in the Game Park and on the
+  Characters screen): `Creatures/CreatureTouch.cs` hands a finger to the rig's own handlers (native-host.js `pointer`
+  on the 0-100 box, `CreatureView.BoxPoint`): a tap plays that creature's poke for the spot (head, ear, nose, eye,
+  cheek, belly, side, foot, tail, left / right), a 170 ms hold squeezes and lets go, a drag sideways turns it. The menu
+  and the park take it inside the design's `.mm-hit` ellipse when the HUD / carousel didn't (`Menu/MenuView.Touch.cs`,
+  `MenuScreen.HandleInput` / `HandlePark`); the Characters page now draws the picked creature's live rig in place of
+  its still (`CharactersPage` TickLive: sqPop, hidden under the loader, `.sil` as tint .78 / saturation .3 without its
+  glow, happy / love / cheer or look / surprised 350 ms after it mounts, its whole box takes touches). **Found on the
+  way:** the design's rive-rig.js (Nov 13 zip) had swallowed its tap branch in a `//` comment (the let-go reaction
+  added on the same line), so a tap poked nothing anywhere; `webgame/patches.mjs` makes it a block comment and
+  `Gen/S_rive_rig_js.cs` is regenerated (the only Gen file that changed). The phone app's web game gets the same fix
+  the next time it's built. Checked offline: a headless tap / hold / drag on 12 creatures of 10 groups (every tap a
+  `poke_<spot>` state), `rig-test --scn touch,intro` 325/325 equal. Not seen in the Editor yet.
 - [x] **Sounds and haptics** in the other ported screens (see `UNITY_TODO.md`); the stale "Not ported: sounds" notes
   at the top of the game and screen files are corrected. **Left:** the house's own sounds (with the house, item 1).
 

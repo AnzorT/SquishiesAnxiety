@@ -16,7 +16,7 @@
 // No UnityEngine here: SquishdokuGame shows the layers and feeds the touches; tools/unity/squishdoku-test runs it as is.
 // Sounds and haptics through Audio/Snd.cs. Not ported: the buddy's live rig (its still hops and shakes instead). Profile is kept in memory
 // (signed in: a copy of the account's, and each outcome is saved there too: SdSave). Blitz is SdBlitz; the hub and the
-// map SdHub, SdMap (SdScreen hosts them all).
+// map SdHub, the games' LevelMap (SdScreen hosts them all).
 using System;
 using System.Collections.Generic;
 using SquishSquad.Anim;
@@ -86,14 +86,7 @@ namespace SquishSquad.Games.Squishdoku
         void ClearTimers() { foreach (var t in _timers) _tk.ClearTimeout(t); _timers.Clear(); }
 
         // pickCreatures: k creatures from the roster at random (each once while there are any left), then round again
-        SdCreature[] Pick(SdCreature[] roster, int k)
-        {
-            var pool = new List<SdCreature>(roster);
-            var o = new List<SdCreature>();
-            while (o.Count < k && pool.Count > 0) { int i = (int)Math.Floor(Random() * pool.Count); o.Add(pool[i]); pool.RemoveAt(i); }
-            while (o.Count < k) o.Add(roster.Length > 0 ? roster[o.Count % roster.Length] : null);
-            return o.ToArray();
-        }
+        static SdCreature[] Pick(SdCreature[] roster, int k) => SdCreature.Pick(roster, k);
 
         // ---- a new board ---------------------------------------------------------------------------------------------------
         void NewBoard()

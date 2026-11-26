@@ -32,11 +32,11 @@ namespace SquishSquad.Games.Sort
             GameCards.ResultCard(screenW, screenH, new GameCards.Result { Stars = res.Stars, Coins = res.Coins, Xp = res.Xp, Before = res.Before, After = res.After, LevelUps = res.LevelUps },
                 RESULT_TITLES, last, onHub, onReplay, onNext, keys: keys);
 
-        /// <summary>Out of hearts (`reason` "hearts") or of time ("time"); `picture`: the first squishy (its head), or null.</summary>
+        /// <summary>Out of hearts (`reason` "hearts") or of time ("time"); `picture`: the first squishy's cut-out, or null.</summary>
         public static Card FailCard(float screenW, float screenH, string reason, string picture, Action onRetry, Action onHub)
         {
             bool time = reason == "time";
-            return GameCards.FailCard(screenW, screenH, time ? "TIME'S UP!" : "OH NO!", 32, "gold", picture, "#efe9f5",
+            return GameCards.FailCard(screenW, screenH, time ? "TIME'S UP!" : "OH NO!", 32, "gold", picture,
                 time ? "The clock ran out. You saw where they go. Try again!" : $"{Levels.HEARTS} mistakes. You saw where they go. Try again!", "MENU", onHub, onRetry);
         }
 

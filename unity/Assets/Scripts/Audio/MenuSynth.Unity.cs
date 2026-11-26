@@ -24,20 +24,26 @@ namespace SquishSquad.Audio
         /// <summary>intro.js tone(): a made-up tone (Tone), played now.</summary>
         public static void PlayTone(double f, double dur, string type, double vol) => Play(Tone(f, dur, type, vol));
 
+        // the intro's sounds, rendered on a worker as the app starts (MenuSynth.cs Prebuild): its first squish of Mittens
+        // used to wait 0.4 s for its triangle wave. (Its made-up tones, the peeks' and the logo's, go when it starts.)
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void PrebuildIntro() => Prebuild(Named("intro-"));
+
         /// <summary>menu.js sfx(n): plays YardGames.SFX[n] (unknown names: nothing, as the page's try / if).</summary>
         public static void Play(string name)
         {
-            if (Muted || !(Sounds.ContainsKey(name) || Extra.ContainsKey(name))) return;
+            if (Muted || !Known(name)) return;
             if (FollowEffectsSwitch && !Sfx.EffectsOn) return;
             var host = UnityAudio.Instance;
             if (host == null) return;
             if (!Clips.TryGetValue(name, out var clips))
             {
-                int k = HasNoise(name) ? 3 : 1;
-                clips = new AudioClip[k];
-                for (int v = 0; v < k; v++)
+                // built ahead if it was asked for (Prebuild), else rendered now
+                var all = TakeBuilt(name) ?? RenderAll(name);
+                clips = new AudioClip[all.Length];
+                for (int v = 0; v < all.Length; v++)
                 {
-                    var s = Samples(name, v);
+                    var s = all[v];
                     var c = AudioClip.Create("menu-" + name + "-" + v, s.Length, 1, Rate, false);
                     c.SetData(s, 0);
                     clips[v] = c;

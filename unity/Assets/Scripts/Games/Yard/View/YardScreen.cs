@@ -136,8 +136,8 @@ namespace SquishSquad.Games.Yard.View
         {
             readonly V _host; readonly RigTree _tree = new RigTree();
             public HostRig(V host) { _host = host; }
-            public string FrameAt(float s) { var svg = Dom.FirstSvg(_host); return svg.IsNullish ? null : Dom.Serialize(svg); }
-            public SvgNode TreeAt(float s) { var svg = Dom.FirstSvg(_host); return svg.IsNullish ? null : _tree.Build(svg); }
+            public string FrameAt(float s) => RigThread.Run(() => { var svg = Dom.FirstSvg(_host); return svg.IsNullish ? null : Dom.Serialize(svg); });
+            public SvgNode TreeAt(float s) => RigThread.Run(() => { var svg = Dom.FirstSvg(_host); return svg.IsNullish ? null : _tree.Build(svg); });
             public void Play(string move) { }
         }
 
@@ -280,7 +280,13 @@ namespace SquishSquad.Games.Yard.View
         }
 
         // ---------- the loop ----------
+        // (the time it takes, in the [Perf] log: App/PerfLog)
         void Update()
+        {
+            long perf = SquishSquad.App.PerfLog.Mark();
+            try { UpdateHere(); } finally { SquishSquad.App.PerfLog.Add("yard game update", perf); }
+        }
+        void UpdateHere()
         {
             if (_root == null) return;
             double now = Now;
@@ -372,8 +378,8 @@ namespace SquishSquad.Games.Yard.View
         }
 
         // a creature in a poster (yg-intros.js posterRig): the player's rig (the opponent's: one of the yard's pool) posed
-        // as the poster says (its ext channels, its yaw), let settle ~0.9 s and kept as a still. develop draws it in the
-        // rig's look 3 (the bold ink line), which the Unity rigs don't have; nor the ping-pong paddle on its paw.
+        // as the poster says (its ext channels, its yaw), let settle ~0.9 s and kept as a still, in the rig's look 3 (the
+        // bold ink line) whatever config/roster's look, as develop draws it. Not the ping-pong paddle on its paw.
         string PosterCreature(string game, int i, bool grey)
         {
             string ck = game + "|" + i + "|" + grey;
@@ -390,6 +396,7 @@ namespace SquishSquad.Games.Yard.View
             {
                 try
                 {
+                    (rig as NativeRig)?.Look(3);
                     if (rig is IHouseRig hr)
                     {
                         hr.Fidgets(false);

@@ -40,18 +40,12 @@ namespace SquishSquad.Games.Hop
             GameCards.ResultCard(screenW, screenH, new GameCards.Result { Stars = res.Stars, Coins = res.Coins, Xp = res.Xp, Before = res.Before, After = res.After, LevelUps = res.LevelUps },
                 RESULT_TITLES, last, onHub, onReplay, onNext, keys: keys);
 
-        /// <summary>Nowhere left to hop (a column card). `who`: the hopper, shown whole (SadSquishy: its cut-out, the app's
-        /// live rig crying over it once drawn; Unity shows the cut-out, as the app does while the rig loads), or null;
-        /// `shut`: the ★ is next to it but still shut. RETRY only (no UNDO since 2026-11-17, the user).</summary>
-        public static Card StuckCard(float screenW, float screenH, HopSquishy who, bool shut, Action onRetry)
-        {
-            var c = new Card(screenW, screenH) { Tint = "rgba(80,0,30,0.5)", RetriggerOnHide = true, Column = true };
-            c.Left.Add(new TitleItem(new CardArt.Title("STUCK!", 32, "gold")) { Pop = new PopIn(60) });
-            c.Left.Add(new SadBodyItem(who) { Pop = new PopIn(220) });
-            c.Right.Add(new TextItem(shut ? "The ★ stays shut until every other cushion is cleared, and there is nowhere else to hop." : "There is nowhere left to hop.", Body, 6));
-            c.Right.Add(new ButtonsItem(false, GameCards.Pair("gold", "RETRY", onRetry)) { Slide = new SlideIn(380) });
-            return c;
-        }
+        /// <summary>Nowhere left to hop: the shared fail card (GameCards.FailCard: `who`, the hopper, whole and sad, its live
+        /// rig over the cut-out once drawn; or null). `shut`: the ★ is next to it but still shut. RETRY only (no UNDO since
+        /// 2026-11-17, the user).</summary>
+        public static Card StuckCard(float screenW, float screenH, HopSquishy who, bool shut, Action onRetry) =>
+            GameCards.FailCard(screenW, screenH, "STUCK!", 32, "gold", who?.Picture,
+                shut ? "The ★ stays shut until every other cushion is cleared, and there is nowhere else to hop." : "There is nowhere left to hop.", null, null, onRetry);
 
         /// <summary>The shared pause card: RESUME / QUIT.</summary>
         public static Card PauseCard(float screenW, float screenH, Action onResume, Action onQuit) => GameCards.PauseCard(screenW, screenH, onResume, onQuit);
@@ -66,30 +60,6 @@ namespace SquishSquad.Games.Hop
             var watch = new CardButton(new CardArt.ButtonLook("gold", adsFree ? "SHOW ME" : adReady ? "▶ WATCH AD" : "LOADING AD…", 17, 18, 12) { Disabled = !adsFree && !adReady }, onWatch);
             c.Right.Add(new ButtonsItem(true, watch, Wide("white", "NO THANKS", 15, onClose)));
             return c;
-        }
-
-        /// <summary>Cards.js SadSquishy: a 150 x 128 box, the hopper's body 84 wide standing 6 dp above its bottom, centred
-        /// (stack/Pieces.js Squishy: a still's margins hang outside the body).</summary>
-        public sealed class SadBodyItem : CardItem
-        {
-            readonly HopSquishy _who;
-            readonly CardLayer _layer;
-
-            public SadBodyItem(HopSquishy who) { _who = who; _layer = Layer("sad squishy"); }
-            public override bool IsStatic => false;
-            public override void Measure(float colW)
-            {
-                W = 150; H = 128;
-                var s = new UiSvg(W, H);
-                if (_who != null && _who.Picture != null)
-                {
-                    const float w = 84;
-                    float sw = w / (_who.Box[2] - _who.Box[0]), sh = sw * _who.Ar, bh = _who.BodyH(w);
-                    float bx = (W - w) / 2, by = H - 6 - bh;
-                    s.Image(_who.Picture, bx - _who.Box[0] * sw, by - _who.Box[1] * sh, sw, sh, "none");
-                }
-                _layer.Set(s.Markup, W, H, 2);
-            }
         }
     }
 }
