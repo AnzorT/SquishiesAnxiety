@@ -59,7 +59,10 @@ namespace SquishSquad.House.View
 
         /// <summary>A piece of the room drawn on its own (a piece, its front part, a toy): its texture, where it is (frame
         /// px at camK 1) and its CSS z-index among the pieces and the creatures (House/View/HouseScreen sorts by it).</summary>
-        public sealed class Piece { public Mesh Quad; public double[] Region, Box; public double Z; public int Index, Toy; public string Kind, Id; public MeshRenderer Renderer; public double Bx, By, Rot, Sx = 1, Sy = 1; public double Dx, Dy; }
+        public sealed class Piece { public Mesh Quad; public double[] Region, Box; public double Z; public int Index, Toy; public string Kind, Id; public MeshRenderer Renderer; public double Bx, By, Rot, Sx = 1, Sy = 1; public double Dx, Dy;
+            /// <summary>With Lift: Rot turns it about the point Lift px over its bottom centre (a rolling toy's spin), and
+            /// Sx scales it about its bottom centre after (the page's outer scale about 50 % 100 %).</summary>
+            public double Lift; }
         /// <summary>The squad (stage 4-5): the pieces' states its pictures show (rStOf, vars), front parts, drawing data.</summary>
         public HouseCreatures Sim;
         public readonly List<Piece> Pieces = new List<Piece>();
@@ -92,7 +95,8 @@ namespace SquishSquad.House.View
             for (int idx = 0; idx < L.Pieces.Count; idx++)
             {
                 var lp = L.Pieces[idx];
-                var q = Quad("piece " + idx, Render(lp.Svg, lp.Region, k), (float)(lp.Region[2] * k), (float)(lp.Region[3] * k), OrderOf(lp.Z, idx % 2));
+                int sub = lp.Kind == "toyshadow" ? 0 : lp.Kind == "toy" ? 1 : idx % 2;   // (a toy over its own shadow)
+                var q = Quad("piece " + idx, Render(lp.Svg, lp.Region, k), (float)(lp.Region[2] * k), (float)(lp.Region[3] * k), OrderOf(lp.Z, sub));
                 Pieces.Add(new Piece { Quad = q, Region = lp.Region, Box = lp.Box, Z = lp.Z, Index = idx, Toy = lp.Index, Kind = lp.Kind, Id = lp.Id, Renderer = _lastRenderer });
             }
             DiscoFind(L.Base, k);
@@ -236,6 +240,14 @@ namespace SquishSquad.House.View
             {
                 if (p.Quad == null) continue;
                 double x = p.Region[0] + p.Dx, y = p.Region[1] + p.Dy, w = p.Region[2], h = p.Region[3];
+                if (p.Lift != 0)
+                {
+                    // a rolling toy: turned about its spin centre, then scaled about its bottom centre, then moved
+                    var B = p.Box ?? p.Region; double bx = B[0] + B[2] / 2, by = B[1] + B[3], px = bx, py = by - p.Lift, a = p.Rot * Math.PI / 180, ca = Math.Cos(a), sa = Math.Sin(a);
+                    Vector3 T(double gx, double gy) { double u = gx - px, v = gy - py, rx = px + u * ca - v * sa - bx, ry = py + u * sa + v * ca - by; return V(bx + rx * p.Sx + p.Dx + p.Bx, by + ry * p.Sy + p.Dy + p.By); }
+                    p.Quad.SetVertices(new[] { T(x - p.Dx, y - p.Dy), T(x - p.Dx + w, y - p.Dy), T(x - p.Dx + w, y - p.Dy + h), T(x - p.Dx, y - p.Dy + h) });
+                    p.Quad.RecalculateBounds(); continue;
+                }
                 if (p.Rot != 0 || p.Sx != 1 || p.Sy != 1 || p.Bx != 0 || p.By != 0)
                 {
                     // a bounce (the speakers on the beat): translate, rotate, scale about the piece's bottom centre

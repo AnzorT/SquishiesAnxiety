@@ -5,7 +5,7 @@
 // each piece's runtime state (rst) and the state its picture shows (rStOf), rnUse / rnPlayer / rnStop, rnTick (games
 // ending, jams), the yard ball (kick, kickBy, launch, rollStep: rallies). The room redraws a piece when its state
 // changes (RoomChanged). The speakers' music and the fog's look are stage 9's (MovieNight, ClubFog): here their state
-// and messages; the robot vacuum's run is the view's (VacBot).
+// and messages; the robot vacuum's run is HouseVac.cs (VacBot).
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -21,10 +21,6 @@ namespace SquishSquad.House
         public readonly HashSet<string> Jams = new HashSet<string>(), Fogs = new HashSet<string>();
         /// <summary>A piece's drawing data (the room's rnI: k, kx, ky, fl, Dr), from the room model.</summary>
         public Func<string, (double k, double kx, double ky, bool fl, JObj dr)?> RnI = id => null;
-        /// <summary>The robot vacuum: start (true when it set off) / stop / busy, by key 'vac:id' (the view runs it).</summary>
-        public Func<string, JObj, bool> VacStart = (k, it) => false;
-        public Action<string> VacStop = k => { };
-        public Func<string, bool> VacBusy = k => false;
 
         static readonly Dictionary<string, string[]> RPLAY = new Dictionary<string, string[]>
         {

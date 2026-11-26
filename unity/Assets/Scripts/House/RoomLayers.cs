@@ -11,7 +11,8 @@ namespace SquishSquad.House
     public sealed class RoomLayers
     {
         /// <summary>A layer: its SVG, the region it's drawn over (frame px at camK 1), its z-index; what it is (Kind:
-        /// "item", "front" (an item's front part), "toy" (Index: the room's toys in order), "prop"), the piece's id, and
+        /// "item", "front" (an item's front part), "toy" (Index: the room's toys in order; its shadow "toyshadow", the
+        /// layer before it), "prop"), the piece's id, and
         /// the piece's own box without the margin (Box: where a tap on it counts).</summary>
         public sealed class Layer { public string Svg, Kind, Id; public double[] Region, Box; public double Z; public int Index; }
         public string Base, Night;
@@ -41,7 +42,24 @@ namespace SquishSquad.House
                     box.Children.Clear(); box.Children.Add(kid);
                     var saved = new List<List<Dom>>();
                     for (int i = 0; i < path.Count - 1; i++) { saved.Add(new List<Dom>(path[i].Children)); path[i].Children.Clear(); path[i].Children.Add(path[i + 1]); }
-                    L.Pieces.Add(new Layer { Svg = Compose(new List<Dom> { path[0] }, region, false), Region = region, Z = ZOf(kid), Kind = kind, Id = kid["data-u"] ?? kid["data-uf"], Index = kind == "toy" ? toys++ : -1, Box = RegionOf(kid, 0) ?? region });
+                    var bx = RegionOf(kid, 0) ?? region;
+                    if (kind == "toy")
+                    {
+                        // a toy: its shadow and the part that spins as it rolls (the page's inner div, `spin`: turned about 50 %
+                        // 60 % of it while the outer one moves and scales) as two layers, the shadow first (under it)
+                        int ti = toys++;
+                        var all = new List<Dom>(kid.Children);
+                        var shade = all.Find(c => c.Tag == "div" && (c["style"] ?? "").Contains("radial-gradient"));
+                        if (shade != null)
+                        {
+                            kid.Children.Clear(); kid.Children.Add(shade);
+                            L.Pieces.Add(new Layer { Svg = Compose(new List<Dom> { path[0] }, region, false), Region = region, Z = ZOf(kid), Kind = "toyshadow", Index = ti, Box = bx });
+                            kid.Children.Clear(); kid.Children.AddRange(all.FindAll(c => c != shade));
+                        }
+                        L.Pieces.Add(new Layer { Svg = Compose(new List<Dom> { path[0] }, region, false), Region = region, Z = ZOf(kid), Kind = "toy", Index = ti, Box = bx });
+                        kid.Children.Clear(); kid.Children.AddRange(all);
+                    }
+                    else L.Pieces.Add(new Layer { Svg = Compose(new List<Dom> { path[0] }, region, false), Region = region, Z = ZOf(kid), Kind = kind, Id = kid["data-u"] ?? kid["data-uf"], Index = -1, Box = bx });
                     for (int i = 0; i < path.Count - 1; i++) { path[i].Children.Clear(); path[i].Children.AddRange(saved[i]); }
                 }
                 box.Children.Clear(); box.Children.AddRange(kids);

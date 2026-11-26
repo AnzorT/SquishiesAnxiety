@@ -286,6 +286,15 @@ lists what isn't, so it can be picked up item by item with Claude Code.
 - [x] **Sounds and haptics** in the other ported screens (see `UNITY_TODO.md`); the stale "Not ported: sounds" notes
   at the top of the game and screen files are corrected. **Left:** the house's own sounds (with the house, item 1).
 
+- [x] **The house's moving pieces** (2026-11-26): what the app moves and Unity didn't. The robot vacuum (LIV-136): a tap
+  sends it out of its dock to clean for 5 minutes, wandering to free spots with its turn wiggle, jitter and dust
+  sparkles, brushes and lidar turning; a tap again (or the 5 minutes) drives it home; edit mode or leaving the room
+  takes it away (`House/HouseVac.cs`, `House/View/HouseVacView.cs`, `__house.vac` in the draw host). A kicked toy now
+  spins as it rolls and scales for its depth (its shadow a layer of its own). The SMIL sampler is shared
+  (`House/Smil.cs`, the beach's before). `house-test vacframes` draws them frame by frame. The swings, clocks, fish
+  and the pieces' own animations aren't moved in the app either (it strips them for the phone's speed), so they stay
+  still. Not seen in the Editor yet.
+
 ## 6. Decide
 
 - [ ] **Android back over the house's Catalog:** the app leaves the house at once (`webgame/app/bridge.js` clicks

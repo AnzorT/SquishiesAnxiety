@@ -93,6 +93,15 @@ namespace SquishSquad.House
             catch (Exception) { return null; }
         }
 
+        /// <summary>The robot vacuum's sprite for the dock `id` at `rot` in `room` (its scale): { src (SVG text with its
+        /// SMIL), bb ([x, y, w, h] about its floor point), home }, or null.</summary>
+        public static JObj Vac(string id, double? rot, string room)
+        {
+            if (!Ready()) return null;
+            try { Geo(room); return HouseJson.Parse(Eval("__house.vac(" + Q(id) + ", " + (rot == null ? "null" : HouseJson.JsString(rot.Value)) + ")")) as JObj; }
+            catch (Exception) { return null; }
+        }
+
         /// <summary>The room's shell (House3D.shell: walls, floor, ceiling light) for its surfaces `sf` ({ slot: id, lx,
         /// lz }) and its doors' lock levels, or null (stage 6: a moved or resized light, a new surface).</summary>
         public static JObj Shell(string room, JObj sf, JObj locks)

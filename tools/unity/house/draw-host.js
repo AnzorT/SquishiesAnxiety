@@ -7,6 +7,9 @@
 //   __house.geo(room)                       the room's scale (BIGR) and the dance room's round edge
 //   __house.variant(id, st, txt, rot)       a renovation piece's drawing: JSON { src, srcF, whole (SVG text or ''),
 //                                           bb, tb, top } (rot null: the page's default angle)
+//   __house.vac(id, rot)                    the robot vacuum's sprite (the page's Dr.vac, what VacBot drives round the
+//                                           room) for the dock at rot: JSON { src (SVG text, its SMIL kept: the brushes,
+//                                           the lidar, the eyes and the LED move), bb, home }
 //   __house.render(t, r, c, v)              House3D.render's box, paths and gradients: JSON (registers 'R:' pieces)
 //   __house.shell(rk, sf, locks)            House3D.shell: the room's shell (walls, floor, ceiling light) for the room's
 //                                           surfaces sf ({ slot: id, lx, lz }) and its doors' lock levels ({ to: lv })
@@ -86,6 +89,12 @@
         players: Dr.players ? plain(Dr.players) : null, fog: Dr.fog ? plain(Dr.fog) : null, vac: Dr.vac ? { home: plain(Dr.vac.home), bb: Dr.vac.bb } : null,
         // the screen's picture box (stage 9: the movie's quad): { w, h, m: [a, b, c, d, e, f] }
         screen: Dr.screen ? plain(Dr.screen) : null });
+    },
+    vac: function (id, rot) {
+      var r = sh.byId.get(id); if (!r) return 'null';
+      var Dr = sh.rnDraw(r, 0, rot == null ? null : rot, '', '');
+      if (!Dr || !Dr.vac) return 'null';
+      return JSON.stringify({ src: uri(Dr.vac.src), bb: Dr.vac.bb, home: plain(Dr.vac.home) });
     },
     render: function (t, r, c, v) {
       if (String(t).indexOf('R:') === 0) reg(t.slice(2));

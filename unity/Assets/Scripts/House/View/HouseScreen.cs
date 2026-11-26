@@ -34,6 +34,7 @@ namespace SquishSquad.House.View
         HouseMovieView _movie;
         HouseClubView _club;
         HouseBeachView _beach;
+        HouseVacView _vac;
         bool _dirty;
         string _press; double _pressX, _pressY; bool _moved;
         double _saveAt;
@@ -127,6 +128,7 @@ namespace SquishSquad.House.View
             _movie = new HouseMovieView(_room, _sim, _k, mvo?.Obj("icons"));
             _club = new HouseClubView(_room, _sim);
             _beach = new HouseBeachView(_room, _sim, _k); _sim.BeachHooks();
+            _vac = new HouseVacView(_room, _sim, _k);
             // the page's toast is z-index 1100, over the Catalog and the map (1000): a BUY's "Not enough coins" shows over
             // the Catalog (it was drawn under it, so a refused BUY looked like nothing happened)
             _toast = UiPiece.Create(world, "toast", 34000);
@@ -314,7 +316,7 @@ namespace SquishSquad.House.View
             _shop.Update(now);
             _map.Update(now, !_sim.Shop);
             _movie.Update(now);
-            if (!frozen) { _club.Update(now); _beach.Update(now); _squad.Update(k, now); MoveToy(now); }
+            if (!frozen) { _club.Update(now); _beach.Update(now); _vac.Update(now); _squad.Update(k, now); MoveToy(now); }
             Fill(now);
             _wheel.Held = _held != null && _held.StartsWith("wheel:") ? _held.Substring(6) : null;
             _wheel.Update(k, now);
@@ -367,14 +369,19 @@ namespace SquishSquad.House.View
         // the rolling toy (rollStep): its layer follows the roll and its depth (the spin of its inner part isn't drawn)
         void MoveToy(double now)
         {
-            if (_sim.Rolling == null) { foreach (var p in _room.Pieces) if (p.Kind == "toy") { p.Dx = 0; p.Dy = 0; } return; }
+            if (_sim.Rolling == null) { foreach (var p in _room.Pieces) if (p.Kind == "toy" || p.Kind == "toyshadow") { p.Dx = 0; p.Dy = 0; p.Rot = 0; p.Lift = 0; p.Sx = p.Sy = 1; } return; }
             int ix = _sim.Toys().IndexOf(_sim.Rolling.Y);
             foreach (var p in _room.Pieces)
             {
-                if (p.Kind != "toy" || p.Toy != ix) continue;
-                var (x, y, hop, _) = _sim.RollAt(now);
+                if ((p.Kind != "toy" && p.Kind != "toyshadow") || p.Toy != ix) continue;
+                var (x, y, hop, spin) = _sim.RollAt(now);
+                // (rollStep: the box moved and scaled for its depth, sAt(y), about its bottom centre; the inner part turned
+                // about 50 % 60 % of its 38 px (inset 1 px), 16.2 px over the 40 px box's bottom at its scale)
+                var G = _sim.S.Geo; double s0 = G.SAt(_sim.Rolling.Y0), rel = s0 > 0 ? G.SAt(y) / s0 : 1;
                 p.Dx = x - _sim.Rolling.X0; p.Dy = y - _sim.Rolling.Y0 - hop;
-                if (p.Renderer != null) p.Renderer.sortingOrder = HouseRoomView.OrderOf(Math.Round(y));
+                p.Sx = p.Sy = rel;
+                p.Lift = 16.2 * ((p.Box ?? p.Region)[3] / 40);   // (the box's own scale: its 40 px as drawn) p.Rot = p.Kind == "toy" ? spin : 0;
+                if (p.Renderer != null) p.Renderer.sortingOrder = HouseRoomView.OrderOf(Math.Round(y), p.Kind == "toy" ? 1 : 0);
             }
         }
 
@@ -592,6 +599,7 @@ namespace SquishSquad.House.View
             _wheel?.Destroy();
             _edit?.Destroy();
             _beach?.Clear();
+            _vac?.Clear();
             _shop?.Destroy();
             _map?.Destroy();
             _movie?.Destroy();

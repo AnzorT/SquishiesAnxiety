@@ -91,9 +91,16 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    speakers, the house4 TV, jams and fog as states, rnTick, the yard ball's kicks and rallies); the room's pictures
    follow the states (RoomModel.StateOf / VarOf); taps on pieces and toys (their boxes, topmost by z); the rolling toy's
    layer moves. `creature-trace.mjs decorated living ... "tap:i27 ... tap:i23 ..."` + `house-test acts`: TV channels
-   with speakers, tap-to-sit and the sit / lounge cycle replayed exactly (states, plays, toasts). Not yet: the swing /
-   ride seat sway and other animated house4 parts (clock, fish, pulse), SMIL pieces as flipbooks, the robot vacuum's run
-   (VacBot), the disco lights, a piece's own redraw instead of the whole room's, the toy's spin.
+   with speakers, tap-to-sit and the sit / lounge cycle replayed exactly (states, plays, toasts). Done since
+   (2026-11-26): the robot vacuum's run (`House/HouseVac.cs`: vac-bot.js and vacTap; `House/View/HouseVacView.cs` draws
+   its sprite, the dock's Dr.vac from `__house.vac`, its SMIL sampled by `House/Smil.cs` at 12 Hz, and its dust) and the
+   toy's spin (the toy as two layers, its shadow and the part that turns about 50 % 60 %, scaled for its depth);
+   `house-test vacframes` draws both frame by frame. The disco lights were already in (the light-up floors' flipbook,
+   the party's spots). **Not needed, as the app doesn't show them:** the swing / ride seat sway, the house4 parts'
+   clock / fish / tv / pulse, and the renovation pieces' own SMIL (rnReg drops `anim` but for the TV, rnItem draws no
+   `part` group, and SquishStill strips the SMIL from every piece's picture: webgame/app/perf.js, patches.mjs); only
+   the light-up floors (SquishDisco) and the robot's sprite keep theirs. Not yet: a piece's own redraw instead of the
+   whole room's.
 6. Edit mode: drag, wall snap, rotate, resize, store, signs, ceiling lights. Verify: H JSON after each step.
    **Done (logic, UI) except signs.** `House/HouseEdit.cs`: itemDown in Renovate, dragMove / dragFloor / wallPose /
    dragWall / dragSmall (onto hosts' tops) / dragEnd, szFit / minE / szWall, rotSet (the 0..360 slider), editRot,

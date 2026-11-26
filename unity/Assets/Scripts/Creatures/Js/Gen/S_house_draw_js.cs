@@ -1343,7 +1343,7 @@ return (Lt(GetK(Get(c_1134, "N"), k_1142), GetK(Get(c_1134, "N"), a_1141)) ? k_1
 }, 2, "", true), ((V)("h")));
 return default;
 }, 1, "lowest", false)).V;
-Set(G_8, "__house", NewObj(9).Put("init", Fn((V _self1144, int _argc1145, V _a1147, V _a1148, V _a1149, V _a1150, V[] _rest1146) => {
+Set(G_8, "__house", NewObj(10).Put("init", Fn((V _self1144, int _argc1145, V _a1147, V _a1148, V _a1149, V _a1150, V[] _rest1146) => {
 V i_1151 = default;
 V t_1152 = default;
 V rows_1153 = default;
@@ -1424,117 +1424,130 @@ sF_1225 = ((V)((Truthy((Get(Dr_1224, "srcF") is var _t1227 && !Truthy(_t1227) ? 
 A_1226 = Call(reg_23, V.Undef, id_1219);
 return Invoke(G("JSON"), "stringify", NewObj(10).Put("src", Call(uri_20, V.Undef, (Truthy(sF_1225) ? Get(Dr_1224, "srcB") : (Get(Dr_1224, "src") is var _t1228 && Truthy(_t1228) ? _t1228 : ((V)("")))))).Put("srcF", (Truthy(sF_1225) ? Call(uri_20, V.Undef, Get(Dr_1224, "srcF")) : ((V)("")))).Put("whole", Call(uri_20, V.Undef, (Get(Dr_1224, "src") is var _t1229 && Truthy(_t1229) ? _t1229 : ((V)(""))))).Put("bb", (Get(Dr_1224, "bb") is var _t1230 && Truthy(_t1230) ? _t1230 : V.Null)).Put("tb", (Truthy((A_1226 is var _t1231 && !Truthy(_t1231) ? _t1231 : Get(A_1226, "mount"))) ? Invoke(sh_19, "tightBB", Dr_1224, ((V)(1D))) : V.Null)).Put("top", (Get(Dr_1224, "top") is var _t1232 && Truthy(_t1232) ? _t1232 : V.Null)).Put("players", (Truthy(Get(Dr_1224, "players")) ? Call(plain_54, V.Undef, Get(Dr_1224, "players")) : V.Null)).Put("fog", (Truthy(Get(Dr_1224, "fog")) ? Call(plain_54, V.Undef, Get(Dr_1224, "fog")) : V.Null)).Put("vac", (Truthy(Get(Dr_1224, "vac")) ? NewObj(2).Put("home", Call(plain_54, V.Undef, Get(Get(Dr_1224, "vac"), "home"))).Put("bb", Get(Get(Dr_1224, "vac"), "bb")).V : V.Null)).Put("screen", (Truthy(Get(Dr_1224, "screen")) ? Call(plain_54, V.Undef, Get(Dr_1224, "screen")) : V.Null)).V);
 return default;
-}, 4, "variant", false)).Put("render", Fn((V _self1233, int _argc1234, V t_1240, V r_1241, V c_1242, V v_1243, V[] _rest1235) => {
-V R_1244 = default;
-V grads_1245 = default;
-V D_1246 = default;
-if (SEqN(Invoke(((V)(ToStrS(t_1240))), "indexOf", ((V)("R:"))), 0D)) {
-Call(reg_23, V.Undef, Invoke(t_1240, "slice", ((V)(2D))));
-}
-R_1244 = Invoke(X_17, "render", t_1240, r_1241, c_1242, (v_1243 is var _t1247 && Truthy(_t1247) ? _t1247 : ((V)(""))));
-if (!(Truthy(R_1244))) {
+}, 4, "variant", false)).Put("vac", Fn((V _self1233, int _argc1234, V id_1240, V rot_1241, V _a1238, V _a1239, V[] _rest1235) => {
+V r_1242 = default;
+V Dr_1243 = default;
+r_1242 = Invoke(Get(sh_19, "byId"), "get", id_1240);
+if (!(Truthy(r_1242))) {
 return ((V)("null"));
 }
-grads_1245 = NewObj(0).V;
-Invoke((Get(R_1244, "gids") is var _t1258 && Truthy(_t1258) ? _t1258 : Arr()), "forEach", Fn((V _self1248, int _argc1249, V g_1255, V _a1252, V _a1253, V _a1254, V[] _rest1250) => {
-V q_1256 = default;
-q_1256 = (Get(X_17, "_GR") is var _t1257 && !Truthy(_t1257) ? _t1257 : Invoke(Get(X_17, "_GR"), "get", g_1255));
-if (Truthy(q_1256)) {
-SetK(grads_1245, g_1255, Call(plain_54, V.Undef, q_1256));
+Dr_1243 = Invoke(sh_19, "rnDraw", r_1242, ((V)(0D)), (rot_1241.IsNullish ? V.Null : rot_1241), ((V)("")), ((V)("")));
+if ((!(Truthy(Dr_1243)) || !(Truthy(Get(Dr_1243, "vac"))))) {
+return ((V)("null"));
+}
+return Invoke(G("JSON"), "stringify", NewObj(3).Put("src", Call(uri_20, V.Undef, Get(Get(Dr_1243, "vac"), "src"))).Put("bb", Get(Get(Dr_1243, "vac"), "bb")).Put("home", Call(plain_54, V.Undef, Get(Get(Dr_1243, "vac"), "home"))).V);
+return default;
+}, 2, "vac", false)).Put("render", Fn((V _self1244, int _argc1245, V t_1251, V r_1252, V c_1253, V v_1254, V[] _rest1246) => {
+V R_1255 = default;
+V grads_1256 = default;
+V D_1257 = default;
+if (SEqN(Invoke(((V)(ToStrS(t_1251))), "indexOf", ((V)("R:"))), 0D)) {
+Call(reg_23, V.Undef, Invoke(t_1251, "slice", ((V)(2D))));
+}
+R_1255 = Invoke(X_17, "render", t_1251, r_1252, c_1253, (v_1254 is var _t1258 && Truthy(_t1258) ? _t1258 : ((V)(""))));
+if (!(Truthy(R_1255))) {
+return ((V)("null"));
+}
+grads_1256 = NewObj(0).V;
+Invoke((Get(R_1255, "gids") is var _t1269 && Truthy(_t1269) ? _t1269 : Arr()), "forEach", Fn((V _self1259, int _argc1260, V g_1266, V _a1263, V _a1264, V _a1265, V[] _rest1261) => {
+V q_1267 = default;
+q_1267 = (Get(X_17, "_GR") is var _t1268 && !Truthy(_t1268) ? _t1268 : Invoke(Get(X_17, "_GR"), "get", g_1266));
+if (Truthy(q_1267)) {
+SetK(grads_1256, g_1266, Call(plain_54, V.Undef, q_1267));
 }
 return default;
 }, 1, "", false));
-D_1246 = (GetK(Get(X_17, "CAT"), t_1240) is var _t1259 && Truthy(_t1259) ? _t1259 : NewObj(0).V);
-return Invoke(G("JSON"), "stringify", NewObj(12).Put("bb", Get(R_1244, "bb")).Put("vb", Get(R_1244, "vb")).Put("gids", Get(R_1244, "gids")).Put("back", (Truthy(Get(D_1246, "reno")) ? Arr() : Call(plain_54, V.Undef, Get(R_1244, "back")))).Put("part", (Truthy(Get(D_1246, "reno")) ? Arr() : Call(plain_54, V.Undef, Get(R_1244, "part")))).Put("front", (Truthy(Get(D_1246, "reno")) ? Arr() : Call(plain_54, V.Undef, Get(R_1244, "front")))).Put("glow", (Get(R_1244, "glow") is var _t1260 && Truthy(_t1260) ? _t1260 : V.Null)).Put("face", Get(R_1244, "face")).Put("shadow", Get(R_1244, "shadow")).Put("contact", Get(R_1244, "contact")).Put("foot", Get(R_1244, "foot")).Put("grads", grads_1245).V);
+D_1257 = (GetK(Get(X_17, "CAT"), t_1251) is var _t1270 && Truthy(_t1270) ? _t1270 : NewObj(0).V);
+return Invoke(G("JSON"), "stringify", NewObj(12).Put("bb", Get(R_1255, "bb")).Put("vb", Get(R_1255, "vb")).Put("gids", Get(R_1255, "gids")).Put("back", (Truthy(Get(D_1257, "reno")) ? Arr() : Call(plain_54, V.Undef, Get(R_1255, "back")))).Put("part", (Truthy(Get(D_1257, "reno")) ? Arr() : Call(plain_54, V.Undef, Get(R_1255, "part")))).Put("front", (Truthy(Get(D_1257, "reno")) ? Arr() : Call(plain_54, V.Undef, Get(R_1255, "front")))).Put("glow", (Get(R_1255, "glow") is var _t1271 && Truthy(_t1271) ? _t1271 : V.Null)).Put("face", Get(R_1255, "face")).Put("shadow", Get(R_1255, "shadow")).Put("contact", Get(R_1255, "contact")).Put("foot", Get(R_1255, "foot")).Put("grads", grads_1256).V);
 return default;
-}, 4, "render", false)).Put("shell", Fn((V _self1261, int _argc1262, V rk_1268, V sf_1269, V locks_1270, V _a1267, V[] _rest1263) => {
-V L_1271 = default;
-V Sh_1272 = default;
-L_1271 = Invoke(G("JSON"), "parse", (locks_1270 is var _t1273 && Truthy(_t1273) ? _t1273 : ((V)("{}"))));
-Sh_1272 = Invoke(X_17, "shell", rk_1268, Invoke(G("JSON"), "parse", (sf_1269 is var _t1274 && Truthy(_t1274) ? _t1274 : ((V)("{}")))), Fn((V _self1275, int _argc1276, V to_1282, V _a1279, V _a1280, V _a1281, V[] _rest1277) => {
-return (GetK(L_1271, to_1282) is var _t1283 && Truthy(_t1283) ? _t1283 : ((V)(0D)));
+}, 4, "render", false)).Put("shell", Fn((V _self1272, int _argc1273, V rk_1279, V sf_1280, V locks_1281, V _a1278, V[] _rest1274) => {
+V L_1282 = default;
+V Sh_1283 = default;
+L_1282 = Invoke(G("JSON"), "parse", (locks_1281 is var _t1284 && Truthy(_t1284) ? _t1284 : ((V)("{}"))));
+Sh_1283 = Invoke(X_17, "shell", rk_1279, Invoke(G("JSON"), "parse", (sf_1280 is var _t1285 && Truthy(_t1285) ? _t1285 : ((V)("{}")))), Fn((V _self1286, int _argc1287, V to_1293, V _a1290, V _a1291, V _a1292, V[] _rest1288) => {
+return (GetK(L_1282, to_1293) is var _t1294 && Truthy(_t1294) ? _t1294 : ((V)(0D)));
 return default;
 }, 1, "", false));
-return (Truthy(Sh_1272) ? Invoke(G("JSON"), "stringify", Call(plain_54, V.Undef, Sh_1272)) : ((V)("null")));
+return (Truthy(Sh_1283) ? Invoke(G("JSON"), "stringify", Call(plain_54, V.Undef, Sh_1283)) : ((V)("null")));
 return default;
-}, 3, "shell", false)).Put("tex", Fn((V _self1284, int _argc1285, V id_1291, V _a1288, V _a1289, V _a1290, V[] _rest1286) => {
-V r_1292 = default;
-V D0_1293 = default;
-V T_1294 = default;
-r_1292 = Invoke(Get(sh_19, "byId"), "get", id_1291);
-if (!(Truthy(r_1292))) {
+}, 3, "shell", false)).Put("tex", Fn((V _self1295, int _argc1296, V id_1302, V _a1299, V _a1300, V _a1301, V[] _rest1297) => {
+V r_1303 = default;
+V D0_1304 = default;
+V T_1305 = default;
+r_1303 = Invoke(Get(sh_19, "byId"), "get", id_1302);
+if (!(Truthy(r_1303))) {
 return ((V)("null"));
 }
-D0_1293 = (Invoke(sh_19, "rnDraw", r_1292, ((V)(0D))) is var _t1295 && Truthy(_t1295) ? _t1295 : NewObj(0).V);
-T_1294 = Fn((V _self1296, int _argc1297, V k_1303, V _a1300, V _a1301, V _a1302, V[] _rest1298) => {
-return Call(uri_20, V.Undef, Invoke(sh_19, "rnTex", id_1291, k_1303));
+D0_1304 = (Invoke(sh_19, "rnDraw", r_1303, ((V)(0D))) is var _t1306 && Truthy(_t1306) ? _t1306 : NewObj(0).V);
+T_1305 = Fn((V _self1307, int _argc1308, V k_1314, V _a1311, V _a1312, V _a1313, V[] _rest1309) => {
+return Call(uri_20, V.Undef, Invoke(sh_19, "rnTex", id_1302, k_1314));
 return default;
 }, 1, "", false);
-return Invoke(G("JSON"), "stringify", NewObj(24).Put("wall", Call(T_1294, V.Undef, ((V)("wall")))).Put("wallS", Call(T_1294, V.Undef, ((V)("wallS")))).Put("board", Call(T_1294, V.Undef, ((V)("board")))).Put("floor", Call(T_1294, V.Undef, ((V)("floor")))).Put("ceil", Call(T_1294, V.Undef, ((V)("ceil")))).Put("fence", Call(T_1294, V.Undef, ((V)("fence")))).Put("fenceR", Call(T_1294, V.Undef, ((V)("fenceR")))).Put("fW", (Get(D0_1293, "fW") is var _t1304 && Truthy(_t1304) ? _t1304 : ((V)(0D)))).Put("fWR", (Get(D0_1293, "fWR") is var _t1305 && Truthy(_t1305) ? _t1305 : ((V)(0D)))).Put("ceilRoom", (!(!(Truthy(Get(D0_1293, "ceilRoom")))) ? V.True : V.False)).Put("ceilBase", (Get(D0_1293, "ceilBase") is var _t1306 && Truthy(_t1306) ? _t1306 : ((V)("")))).Put("ceilTrim", (Get(D0_1293, "ceilTrim") is var _t1307 && Truthy(_t1307) ? _t1307 : ((V)("")))).Put("wallOne", Call(uri_20, V.Undef, (Get(D0_1293, "wallOne") is var _t1308 && Truthy(_t1308) ? _t1308 : ((V)(""))))).Put("wallOneR", Call(uri_20, V.Undef, (Get(D0_1293, "wallOneR") is var _t1309 && Truthy(_t1309) ? _t1309 : ((V)(""))))).Put("wallOneFull", (!(!(Truthy(Get(D0_1293, "wallOneFull")))) ? V.True : V.False)).Put("wallRnd", Call(uri_20, V.Undef, (Get(D0_1293, "wallRnd") is var _t1310 && Truthy(_t1310) ? _t1310 : ((V)(""))))).Put("floorRoom", (Truthy(Get(D0_1293, "floorRoom")) ? NewObj(2).Put("bg", Get(Get(D0_1293, "floorRoom"), "bg")).Put("layers", Invoke(Get(Get(D0_1293, "floorRoom"), "layers"), "map", Fn((V _self1311, int _argc1312, V l_1318, V _a1315, V _a1316, V _a1317, V[] _rest1313) => {
-return Object_assign(NewObj(0).V, l_1318, NewObj(1).Put("url", Call(uri_20, V.Undef, Get(l_1318, "url"))).V);
+return Invoke(G("JSON"), "stringify", NewObj(24).Put("wall", Call(T_1305, V.Undef, ((V)("wall")))).Put("wallS", Call(T_1305, V.Undef, ((V)("wallS")))).Put("board", Call(T_1305, V.Undef, ((V)("board")))).Put("floor", Call(T_1305, V.Undef, ((V)("floor")))).Put("ceil", Call(T_1305, V.Undef, ((V)("ceil")))).Put("fence", Call(T_1305, V.Undef, ((V)("fence")))).Put("fenceR", Call(T_1305, V.Undef, ((V)("fenceR")))).Put("fW", (Get(D0_1304, "fW") is var _t1315 && Truthy(_t1315) ? _t1315 : ((V)(0D)))).Put("fWR", (Get(D0_1304, "fWR") is var _t1316 && Truthy(_t1316) ? _t1316 : ((V)(0D)))).Put("ceilRoom", (!(!(Truthy(Get(D0_1304, "ceilRoom")))) ? V.True : V.False)).Put("ceilBase", (Get(D0_1304, "ceilBase") is var _t1317 && Truthy(_t1317) ? _t1317 : ((V)("")))).Put("ceilTrim", (Get(D0_1304, "ceilTrim") is var _t1318 && Truthy(_t1318) ? _t1318 : ((V)("")))).Put("wallOne", Call(uri_20, V.Undef, (Get(D0_1304, "wallOne") is var _t1319 && Truthy(_t1319) ? _t1319 : ((V)(""))))).Put("wallOneR", Call(uri_20, V.Undef, (Get(D0_1304, "wallOneR") is var _t1320 && Truthy(_t1320) ? _t1320 : ((V)(""))))).Put("wallOneFull", (!(!(Truthy(Get(D0_1304, "wallOneFull")))) ? V.True : V.False)).Put("wallRnd", Call(uri_20, V.Undef, (Get(D0_1304, "wallRnd") is var _t1321 && Truthy(_t1321) ? _t1321 : ((V)(""))))).Put("floorRoom", (Truthy(Get(D0_1304, "floorRoom")) ? NewObj(2).Put("bg", Get(Get(D0_1304, "floorRoom"), "bg")).Put("layers", Invoke(Get(Get(D0_1304, "floorRoom"), "layers"), "map", Fn((V _self1322, int _argc1323, V l_1329, V _a1326, V _a1327, V _a1328, V[] _rest1324) => {
+return Object_assign(NewObj(0).V, l_1329, NewObj(1).Put("url", Call(uri_20, V.Undef, Get(l_1329, "url"))).V);
 return default;
-}, 1, "", false))).V : V.Null)).Put("ylRoom", Call(uri_20, V.Undef, (Get(D0_1293, "ylRoom") is var _t1319 && Truthy(_t1319) ? _t1319 : ((V)(""))))).Put("win19", (!(!(Truthy(Get(D0_1293, "win19")))) ? V.True : V.False)).Put("src", Call(uri_20, V.Undef, (Get(D0_1293, "src") is var _t1320 && Truthy(_t1320) ? _t1320 : ((V)(""))))).Put("wallL", (Get(D0_1293, "wallL") is var _t1321 && Truthy(_t1321) ? _t1321 : ((V)("")))).Put("wallR", (Get(D0_1293, "wallR") is var _t1322 && Truthy(_t1322) ? _t1322 : ((V)("")))).Put("wallRoom", (Get(D0_1293, "wallRoom") is var _t1323 && Truthy(_t1323) ? _t1323 : ((V)("")))).Put("fH", (Get(D0_1293, "fH") is var _t1324 && Truthy(_t1324) ? _t1324 : ((V)(0D)))).V);
+}, 1, "", false))).V : V.Null)).Put("ylRoom", Call(uri_20, V.Undef, (Get(D0_1304, "ylRoom") is var _t1330 && Truthy(_t1330) ? _t1330 : ((V)(""))))).Put("win19", (!(!(Truthy(Get(D0_1304, "win19")))) ? V.True : V.False)).Put("src", Call(uri_20, V.Undef, (Get(D0_1304, "src") is var _t1331 && Truthy(_t1331) ? _t1331 : ((V)(""))))).Put("wallL", (Get(D0_1304, "wallL") is var _t1332 && Truthy(_t1332) ? _t1332 : ((V)("")))).Put("wallR", (Get(D0_1304, "wallR") is var _t1333 && Truthy(_t1333) ? _t1333 : ((V)("")))).Put("wallRoom", (Get(D0_1304, "wallRoom") is var _t1334 && Truthy(_t1334) ? _t1334 : ((V)("")))).Put("fH", (Get(D0_1304, "fH") is var _t1335 && Truthy(_t1335) ? _t1335 : ((V)(0D)))).V);
 return default;
-}, 1, "tex", false)).Put("beach", Fn((V _self1325, int _argc1326, V oJson_1332, V _a1329, V _a1330, V _a1331, V[] _rest1327) => {
-V BE_1333 = default;
-V o_1334 = default;
-V dec_1335 = default;
-V sc_1336 = default;
-V props_1337 = default;
-BE_1333 = Get(G_8, "Beach");
-if (!(Truthy(BE_1333))) {
+}, 1, "tex", false)).Put("beach", Fn((V _self1336, int _argc1337, V oJson_1343, V _a1340, V _a1341, V _a1342, V[] _rest1338) => {
+V BE_1344 = default;
+V o_1345 = default;
+V dec_1346 = default;
+V sc_1347 = default;
+V props_1348 = default;
+BE_1344 = Get(G_8, "Beach");
+if (!(Truthy(BE_1344))) {
 return ((V)("null"));
 }
-o_1334 = Invoke(G("JSON"), "parse", (oJson_1332 is var _t1338 && Truthy(_t1338) ? _t1338 : ((V)("{}"))));
-Invoke(BE_1333, "setSeason", Get(o_1334, "season"));
-dec_1335 = Fn((V _self1339, int _argc1340, V u_1346, V _a1343, V _a1344, V _a1345, V[] _rest1341) => {
-u_1346 = ((V)(ToStrS((u_1346 is var _t1347 && Truthy(_t1347) ? _t1347 : ((V)(""))))));
-return (SEqN(Invoke(u_1346, "indexOf", ((V)("data:image/svg+xml,"))), 0D) ? Call(G("decodeURIComponent"), V.Undef, Invoke(u_1346, "slice", ((V)(19D)))) : u_1346);
+o_1345 = Invoke(G("JSON"), "parse", (oJson_1343 is var _t1349 && Truthy(_t1349) ? _t1349 : ((V)("{}"))));
+Invoke(BE_1344, "setSeason", Get(o_1345, "season"));
+dec_1346 = Fn((V _self1350, int _argc1351, V u_1357, V _a1354, V _a1355, V _a1356, V[] _rest1352) => {
+u_1357 = ((V)(ToStrS((u_1357 is var _t1358 && Truthy(_t1358) ? _t1358 : ((V)(""))))));
+return (SEqN(Invoke(u_1357, "indexOf", ((V)("data:image/svg+xml,"))), 0D) ? Call(G("decodeURIComponent"), V.Undef, Invoke(u_1357, "slice", ((V)(19D)))) : u_1357);
 return default;
 }, 1, "", false);
-sc_1336 = Invoke(BE_1333, "scene", o_1334);
-props_1337 = Invoke(Invoke(BE_1333, "props", NewObj(1).Put("season", Get(o_1334, "season")).V), "map", Fn((V _self1348, int _argc1349, V q_1355, V _a1352, V _a1353, V _a1354, V[] _rest1350) => {
-return NewObj(8).Put("id", Get(q_1355, "id")).Put("x", Get(q_1355, "x")).Put("y", Get(q_1355, "y")).Put("w", Get(q_1355, "w")).Put("h", Get(q_1355, "h")).Put("ax", Get(q_1355, "ax")).Put("ay", Get(q_1355, "ay")).Put("src", Call(dec_1335, V.Undef, Get(q_1355, "src"))).V;
+sc_1347 = Invoke(BE_1344, "scene", o_1345);
+props_1348 = Invoke(Invoke(BE_1344, "props", NewObj(1).Put("season", Get(o_1345, "season")).V), "map", Fn((V _self1359, int _argc1360, V q_1366, V _a1363, V _a1364, V _a1365, V[] _rest1361) => {
+return NewObj(8).Put("id", Get(q_1366, "id")).Put("x", Get(q_1366, "x")).Put("y", Get(q_1366, "y")).Put("w", Get(q_1366, "w")).Put("h", Get(q_1366, "h")).Put("ax", Get(q_1366, "ax")).Put("ay", Get(q_1366, "ay")).Put("src", Call(dec_1346, V.Undef, Get(q_1366, "src"))).V;
 return default;
 }, 1, "", false));
-return Invoke(G("JSON"), "stringify", NewObj(7).Put("defs", Get(sc_1336, "defs")).Put("body", Get(sc_1336, "body")).Put("props", props_1337).Put("shells", Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D)), ((V)(3D)), ((V)(4D))), "map", Fn((V _self1356, int _argc1357, V k_1363, V _a1360, V _a1361, V _a1362, V[] _rest1358) => {
-return Call(dec_1335, V.Undef, Invoke(BE_1333, "shellSvg", k_1363));
+return Invoke(G("JSON"), "stringify", NewObj(7).Put("defs", Get(sc_1347, "defs")).Put("body", Get(sc_1347, "body")).Put("props", props_1348).Put("shells", Invoke(Arr(((V)(0D)), ((V)(1D)), ((V)(2D)), ((V)(3D)), ((V)(4D))), "map", Fn((V _self1367, int _argc1368, V k_1374, V _a1371, V _a1372, V _a1373, V[] _rest1369) => {
+return Call(dec_1346, V.Undef, Invoke(BE_1344, "shellSvg", k_1374));
 return default;
-}, 1, "", false))).Put("fish", Call(dec_1335, V.Undef, FISHB_30)).Put("board", BOARDH_31).Put("rod", RODH_32).V);
+}, 1, "", false))).Put("fish", Call(dec_1346, V.Undef, FISHB_30)).Put("board", BOARDH_31).Put("rod", RODH_32).V);
 return default;
-}, 1, "beach", false)).Put("map", Fn((V _self1364, int _argc1365, V stJson_1371, V _a1368, V _a1369, V _a1370, V[] _rest1366) => {
-V st_1372 = default;
-V open_1373 = default;
-V me_1374 = default;
-V v_1375 = default;
-st_1372 = Invoke(G("JSON"), "parse", stJson_1371);
-open_1373 = NewObj(0).V;
-Invoke((Get(st_1372, "open") is var _t1384 && Truthy(_t1384) ? _t1384 : Arr()), "forEach", Fn((V _self1376, int _argc1377, V r_1383, V _a1380, V _a1381, V _a1382, V[] _rest1378) => {
-SetK(open_1373, r_1383, ((V)(1D)));
+}, 1, "beach", false)).Put("map", Fn((V _self1375, int _argc1376, V stJson_1382, V _a1379, V _a1380, V _a1381, V[] _rest1377) => {
+V st_1383 = default;
+V open_1384 = default;
+V me_1385 = default;
+V v_1386 = default;
+st_1383 = Invoke(G("JSON"), "parse", stJson_1382);
+open_1384 = NewObj(0).V;
+Invoke((Get(st_1383, "open") is var _t1395 && Truthy(_t1395) ? _t1395 : Arr()), "forEach", Fn((V _self1387, int _argc1388, V r_1394, V _a1391, V _a1392, V _a1393, V[] _rest1389) => {
+SetK(open_1384, r_1394, ((V)(1D)));
 return default;
 }, 1, "", false));
-me_1374 = NewObj(11).Put("X", X_17).Put("props", NewObj(0).V).Put("state", NewObj(4).Put("cur", Get(st_1372, "cur")).Put("mapHov", (Get(st_1372, "mapHov") is var _t1385 && Truthy(_t1385) ? _t1385 : V.Null)).Put("mapGo", (Get(st_1372, "mapGo") is var _t1386 && Truthy(_t1386) ? _t1386 : V.Null)).Put("mapIn", (!(!(Truthy(Get(st_1372, "mapIn")))) ? V.True : V.False)).V).Put("cs", (Get(st_1372, "cs") is var _t1387 && Truthy(_t1387) ? _t1387 : Arr())).Put("_nat", Get(mp_53, "_nat")).Put("lvl", Fn((V _self1388, int _argc1389, V _a1391, V _a1392, V _a1393, V _a1394, V[] _rest1390) => {
-return Get(st_1372, "lvl");
+me_1385 = NewObj(11).Put("X", X_17).Put("props", NewObj(0).V).Put("state", NewObj(4).Put("cur", Get(st_1383, "cur")).Put("mapHov", (Get(st_1383, "mapHov") is var _t1396 && Truthy(_t1396) ? _t1396 : V.Null)).Put("mapGo", (Get(st_1383, "mapGo") is var _t1397 && Truthy(_t1397) ? _t1397 : V.Null)).Put("mapIn", (!(!(Truthy(Get(st_1383, "mapIn")))) ? V.True : V.False)).V).Put("cs", (Get(st_1383, "cs") is var _t1398 && Truthy(_t1398) ? _t1398 : Arr())).Put("_nat", Get(mp_53, "_nat")).Put("lvl", Fn((V _self1399, int _argc1400, V _a1402, V _a1403, V _a1404, V _a1405, V[] _rest1401) => {
+return Get(st_1383, "lvl");
 return default;
-}, 0, "lvl", false)).Put("isOpen", Fn((V _self1395, int _argc1396, V r_1402, V _a1399, V _a1400, V _a1401, V[] _rest1397) => {
-return (!(!(Truthy(GetK(open_1373, r_1402)))) ? V.True : V.False);
+}, 0, "lvl", false)).Put("isOpen", Fn((V _self1406, int _argc1407, V r_1413, V _a1410, V _a1411, V _a1412, V[] _rest1408) => {
+return (!(!(Truthy(GetK(open_1384, r_1413)))) ? V.True : V.False);
 return default;
-}, 1, "isOpen", false)).Put("seasonNow", Fn((V _self1403, int _argc1404, V _a1406, V _a1407, V _a1408, V _a1409, V[] _rest1405) => {
-return Get(st_1372, "season");
+}, 1, "isOpen", false)).Put("seasonNow", Fn((V _self1414, int _argc1415, V _a1417, V _a1418, V _a1419, V _a1420, V[] _rest1416) => {
+return Get(st_1383, "season");
 return default;
-}, 0, "seasonNow", false)).Put("shellOf", Fn((V _self1410, int _argc1411, V r_1417, V _a1414, V _a1415, V _a1416, V[] _rest1412) => {
-return NewObj(1).Put("P", NewObj(1).Put("b0", GetK((Get(st_1372, "b0") is var _t1418 && Truthy(_t1418) ? _t1418 : NewObj(0).V), r_1417)).V).V;
+}, 0, "seasonNow", false)).Put("shellOf", Fn((V _self1421, int _argc1422, V r_1428, V _a1425, V _a1426, V _a1427, V[] _rest1423) => {
+return NewObj(1).Put("P", NewObj(1).Put("b0", GetK((Get(st_1383, "b0") is var _t1429 && Truthy(_t1429) ? _t1429 : NewObj(0).V), r_1428)).V).V;
 return default;
 }, 1, "shellOf", false)).Put("lowest", Get(mp_53, "lowest")).Put("lockVals", Get(mp_53, "lockVals")).V;
-v_1375 = Invoke(Get(mp_53, "mapVals"), "call", me_1374, NewObj(0).V);
-Set(mp_53, "_nat", Get(me_1374, "_nat"));
-Set(Get(v_1375, "mx"), "nat", Get(me_1374, "_nat"));
-return Invoke(G("JSON"), "stringify", Call(plain_54, V.Undef, v_1375));
+v_1386 = Invoke(Get(mp_53, "mapVals"), "call", me_1385, NewObj(0).V);
+Set(mp_53, "_nat", Get(me_1385, "_nat"));
+Set(Get(v_1386, "mx"), "nat", Get(me_1385, "_nat"));
+return Invoke(G("JSON"), "stringify", Call(plain_54, V.Undef, v_1386));
 return default;
-}, 1, "map", false)).Put("piece", Fn((V _self1419, int _argc1420, V id_1426, V _a1423, V _a1424, V _a1425, V[] _rest1421) => {
-V A_1427 = default;
-A_1427 = Call(reg_23, V.Undef, id_1426);
-return (Truthy(A_1427) ? Invoke(G("JSON"), "stringify", Call(plain_54, V.Undef, A_1427)) : ((V)("null")));
+}, 1, "map", false)).Put("piece", Fn((V _self1430, int _argc1431, V id_1437, V _a1434, V _a1435, V _a1436, V[] _rest1432) => {
+V A_1438 = default;
+A_1438 = Call(reg_23, V.Undef, id_1437);
+return (Truthy(A_1438) ? Invoke(G("JSON"), "stringify", Call(plain_54, V.Undef, A_1438)) : ((V)("null")));
 return default;
 }, 1, "piece", false)).V);
 return default;

@@ -109,6 +109,7 @@ namespace SquishSquad.House
         public void Enter(string room, HouseCreature carry, string from, double now)
         {
             foreach (var c0 in Vis) BReset(c0);
+            VacKillAll();   // (rnReset: VacBot.stopAll(true))
             string prevR = S.Cur;
             foreach (var c in Vis) { Leave(c, true, now); c.Moving = false; c.Arrive = null; }
             Party = false; Vars.Clear(); Tv.Clear(); TvAuto.Clear();
@@ -276,6 +277,7 @@ namespace SquishSquad.House
             double dt = Math.Min(0.1, Math.Max(0, (now - Last) / 1000)); Last = now;
             var G = S.Geo; double spd = Speed;
             RunLater(now);
+            VacTick(now);
             _mvNow = now;
             MovieTick(now, (now - _mvLast) / 1000); _mvLast = now;   // (the show's own clock: movie-night.js frame())
             foreach (var c in Vis)
