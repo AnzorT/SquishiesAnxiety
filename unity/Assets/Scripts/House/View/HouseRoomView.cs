@@ -109,6 +109,7 @@ namespace SquishSquad.House.View
                 float x0 = (float)(-HouseFrame.MX * k), y0 = (float)(HouseFrame.MY * k), x1 = (float)((852 + HouseFrame.MX) * k), y1 = (float)(-(393 + HouseFrame.MY) * k);
                 nq.SetVertices(new[] { new Vector3(x0, y0, 0), new Vector3(x1, y0, 0), new Vector3(x1, y1, 0), new Vector3(x0, y1, 0) }); nq.RecalculateBounds();
             }
+            DropUnused();
         }
 
         /// <summary>The furniture layer's opacity (.sq-items: the pieces, toys and props over the bare room; the trip in fades
@@ -126,7 +127,26 @@ namespace SquishSquad.House.View
         public readonly Dictionary<string, bool> Fronts = new Dictionary<string, bool>();
 
         // an SVG layer (RoomLayers) drawn once by the GPU vector renderer, `view` (frame px) at k screen px per px
+        // A piece's own redraw: each layer's texture kept by its markup, region and scale, so drawing the room again after
+        // a change (a fridge opened, a piece moved) renders only the layers whose markup changed and keeps the rest, as
+        // the page re-renders only what changed. The textures the last draw didn't use again are dropped after it.
+        Dictionary<string, RenderTexture> _texNow = new Dictionary<string, RenderTexture>(), _texWas = new Dictionary<string, RenderTexture>();
         RenderTexture Render(string svg, double[] view, float k)
+        {
+            string key = k.ToString("R", System.Globalization.CultureInfo.InvariantCulture) + "|" + string.Join(",", view) + "|" + svg;
+            if (_texNow.TryGetValue(key, out var have) && have != null) return have;
+            if (_texWas.TryGetValue(key, out have) && have != null) { _texWas.Remove(key); _texNow[key] = have; return have; }
+            var tex0 = RenderNew(svg, view, k);
+            _texNow[key] = tex0;
+            return tex0;
+        }
+        void DropUnused()
+        {
+            foreach (var t in _texWas.Values) if (t != null) { t.Release(); Destroy(t); }
+            _texWas.Clear();
+        }
+
+        RenderTexture RenderNew(string svg, double[] view, float k)
         {
             var root = SvgMarkup.Parse(svg);
             PatternExpand.Expand(root);
@@ -156,7 +176,6 @@ namespace SquishSquad.House.View
             tex.Create();
             Graphics.Blit(msaa, tex);
             msaa.Release(); Destroy(msaa);
-            _made.Add(tex);
             foreach (var t in images.Values) if (t != null && !made.Contains(t)) Resources.UnloadAsset(t);
             return tex;
         }
@@ -312,8 +331,11 @@ namespace SquishSquad.House.View
             Pieces.Clear(); _disco.Clear();
             foreach (var o in _made) if (o != null) { if (o is RenderTexture rt) rt.Release(); Destroy(o); }
             _made.Clear();
+            // (the layers' textures wait: the next draw takes the ones it needs again, DropUnused the rest)
+            foreach (var kv in _texNow) _texWas[kv.Key] = kv.Value;
+            _texNow.Clear();
         }
 
-        void OnDestroy() => Clear();
+        void OnDestroy() { Clear(); DropUnused(); }
     }
 }

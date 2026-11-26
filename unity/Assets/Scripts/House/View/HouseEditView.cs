@@ -302,7 +302,11 @@ namespace SquishSquad.House.View
             {
                 var s = new UiSvg((float)bw, (float)bh);
                 s.Box(0, 0, (float)bw, (float)bh, new BoxStyle { Gradient = new[] { "#ffe9a0", "#e2b14a", "#b8862a" }, GradientStops = new[] { 0f, 0.55f, 1f }, Radius = 12, BorderWidth = 2.5f, BorderColor = "#6b4426", Shadows = new[] { new Shadow("#6b4426", 0, 3, 0), new Shadow("rgba(60,30,10,0.3)", 0, 8, 14) } });
-                s.Box(2.5f, 2.5f, (float)bw - 5, 1.5f, new BoxStyle { Background = "rgba(255,255,255,0.6)", Radius = 1 });   // (the inset top light)
+                // the inset top light (box-shadow: inset 0 1.5px 0 rgba(255,255,255,.6)): the padding box (radius 12 - 2.5)
+                // less itself moved down 1.5 px, a band along the top that follows the rounded corners down
+                string RR(double x, double y, double w, double h, double r) { string N(double v) => HouseGeo.N(Math.Round(v * 100) / 100); return $"M{N(x + r)} {N(y)}H{N(x + w - r)}A{N(r)} {N(r)} 0 0 1 {N(x + w)} {N(y + r)}V{N(y + h - r)}A{N(r)} {N(r)} 0 0 1 {N(x + w - r)} {N(y + h)}H{N(x + r)}A{N(r)} {N(r)} 0 0 1 {N(x)} {N(y + h - r)}V{N(y + r)}A{N(r)} {N(r)} 0 0 1 {N(x + r)} {N(y)}Z"; }
+                double px0 = 2.5, pw = bw - 5, ph = bh - 5, pr = 12 - 2.5;
+                s.Raw($"<defs><clipPath id=\"tbin\"><path d=\"{RR(px0, px0, pw, ph, pr)}\"/></clipPath></defs><path clip-path=\"url(#tbin)\" fill-rule=\"evenodd\" fill=\"#ffffff\" fill-opacity=\"0.6\" d=\"M{HouseGeo.N(px0)} 0H{HouseGeo.N(px0 + pw)}V{HouseGeo.N(bh)}H{HouseGeo.N(px0)}Z{RR(px0, px0 + 1.5, pw, ph, pr)}\"/>");
                 return s;
             }, TbL, top, O + 20);
             double y0 = top + 2.5 + 5;

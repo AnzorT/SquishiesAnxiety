@@ -295,6 +295,17 @@ lists what isn't, so it can be picked up item by item with Claude Code.
   and the pieces' own animations aren't moved in the app either (it strips them for the phone's speed), so they stay
   still. Not seen in the Editor yet.
 
+- [x] **The house, finished** (2026-11-26): the last of `HOUSE_PORT_PLAN.md`. The house map's faces
+  (`export-faces.mjs`, the creatures' pictures cropped as the page does) and its weather frozen where the app freezes
+  it (the map's SMIL sampled at its first moment: the clouds, the rain cloud and the snow in place); `bUse` (washing,
+  brushing, digging and the rest play their own house state); a dozing friend's pose at movie night; the room redrawn
+  when a piece's state changes (a fridge open, a stove on), and only the layers that changed; every TV's channel, the
+  groove in the Dance Club (its own track is off in the app: `club.mp3` gone, 4.2 MB), the projector's whir and click
+  and the full-screen whoosh (`Audio/HouseSounds.cs`); the film's filter per screen tier (`HouseShaders/MovieFilm`),
+  the old film's hair, the speakers' rings and notes, the holo pop-outs and confetti; the toolbar's inset light, the
+  tray's mouse wheel. Not needed (dead in the app): the swings' sway, house4's moving parts, the dev level popup, the
+  10 s ad. Not seen in the Editor yet.
+
 ## 6. Decide
 
 - [ ] **Android back over the house's Catalog:** the app leaves the house at once (`webgame/app/bridge.js` clicks

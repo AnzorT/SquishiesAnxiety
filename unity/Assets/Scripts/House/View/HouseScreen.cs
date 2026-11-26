@@ -394,6 +394,9 @@ namespace SquishSquad.House.View
             if (Input.touchCount > 0) { var t = Input.GetTouch(0); pos = t.position; down = t.phase == TouchPhase.Began; up = t.phase == TouchPhase.Ended || t.phase == TouchPhase.Canceled; held = !up; }
             double fx = pos.x / _k - HouseFrame.MX, fy = (_h - pos.y) / _k - HouseFrame.MY, k = _cam.K(now);   // (room px: the room in the frame's middle)
             var b = HouseCamera.ToBox(fx, fy, k);
+            // the tray's mouse wheel (the page's: a wheel's deltaY scrolls it sideways, 100 px a notch; the Editor, desktop)
+            var wheel = Input.mouseScrollDelta;
+            if (_sim.Edit && wheel.y != 0 && Math.Abs(wheel.y) > Math.Abs(wheel.x) && _edit.Press(fx, fy, now) == "tray") _edit.TrayScroll(wheel.y * 100);
             if (down)
             {
                 _down = true; _downAt = pos; _moved = false; _pressX = fx; _pressY = fy; _press = null;

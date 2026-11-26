@@ -12,8 +12,8 @@ apart from `Haptics.Android.cs`' `Handheld` (missing from that package, not from
   code reaches the sound through `Audio/Snd.cs` (no UnityEngine, so the test harnesses still compile). Settings'
   switches now drive `Sfx` (they only saved to PlayerPrefs before), and the music follows the app's stage.
   The chest box's own sounds (synthesized in the app's web pages) are synthesized the same way in Unity
-  (`Audio/WebSynth.cs`, `Audio/ChestSounds.cs`, played by `Audio/SynthPlayer.cs`). Not done: the house's sounds
-  (task 1).
+  (`Audio/WebSynth.cs`, `Audio/ChestSounds.cs`, played by `Audio/SynthPlayer.cs`), and so are the house's
+  (`Audio/HouseSounds.cs`: the projector, the full-screen whoosh; the TVs' channels and the groove as recorded loops).
 - **Effects**: Sort and Stack now have the dust, sparks, poofs, angry puffs and confetti (Hop and Squishdoku had them).
 - **Live creature animations, native**: the app's rig code (rive-rig.js, rive-generic.js, the defs and move files, the
   result page's states, the browser stand-in) compiled to C# by `tools/unity/rig/jsc.mjs` (`Creatures/Js`, its own
@@ -42,8 +42,8 @@ apart from `Haptics.Android.cs`' `Handheld` (missing from that package, not from
 
 ## Left
 
-1. **The house**: stages 2-11 of `HOUSE_PORT_PLAN.md` (camera and doors, creatures walking and acting, item taps, edit
-   mode, the catalog, the house map, the Dance Club and the Movie Room, the beach, the yard games). The biggest piece.
+1. **The house**: ported (2026-11-26), stages 1-11 of `HOUSE_PORT_PLAN.md`. Left: seeing it in the Editor and on the
+   phone (its look against the app, the beach's and the yard games' redraw cost).
 2. **Tutorial**: new players' guided first steps.
 3. **The real AdMob ids** (`App/Ads.cs`, the plugin's manifest, as src/firebase/ads.js) before release.
 

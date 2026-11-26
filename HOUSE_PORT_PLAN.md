@@ -70,9 +70,11 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    (`__live.events`), the house moves' metadata (walk.json `hs`), ext channels and fidgets; `House/View/HouseWheel.cs`
    (the quick-action wheel, pieces from export-hud.mjs). `creature-trace.mjs <fx> <room> <frames> "<script>"` +
    `house-test acts`: kitchen (snack, cook, dance, 1,500 frames) and bedroom (nap, floor tap: wake and climb out, nap
-   again) replayed exactly: every creature's state every frame and every ctrl.play. Not yet: setVar's pictures (5),
-   the swing / ride seat motion (5: item angles), the movie cues (9), the beach acts (10), the old action bar's
-   meters (dead in the current design).
+   again) replayed exactly: every creature's state every frame and every ctrl.play. Since done: setVar's pictures
+   (a fridge open, a stove on: the room redraws on VarChanged), the movie cues and the dozing pose (9), the beach acts
+   (10), bUse (the use modes with their own house state: dishes, grill, toast, sink wash, brush, dig, bounce, blocks,
+   slide, water). Not needed: the swing / ride seat motion (no renovation piece swings or rocks in the app), the old
+   action bar's meters (dead in the current design), the house4 TV / jukebox / DJ pictures (no house4 piece left).
 5. Item interactions and room effects: rnTap kinds, TV, toys, lights / night, party / disco, vacuum, fog, animated
    pieces (SMIL as flipbooks).
    Found (2026-11-23): a piece's picture depends on its runtime state (on / open, TV channel, toaster, dishwasher,
@@ -99,8 +101,8 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    the party's spots). **Not needed, as the app doesn't show them:** the swing / ride seat sway, the house4 parts'
    clock / fish / tv / pulse, and the renovation pieces' own SMIL (rnReg drops `anim` but for the TV, rnItem draws no
    `part` group, and SquishStill strips the SMIL from every piece's picture: webgame/app/perf.js, patches.mjs); only
-   the light-up floors (SquishDisco) and the robot's sprite keep theirs. Not yet: a piece's own redraw instead of the
-   whole room's.
+   the light-up floors (SquishDisco) and the robot's sprite keep theirs. A piece's own redraw: HouseRoomView keeps
+   each layer's texture by its markup, region and scale, so a redraw renders only the layers that changed.
 6. Edit mode: drag, wall snap, rotate, resize, store, signs, ceiling lights. Verify: H JSON after each step.
    **Done (logic, UI) except signs.** `House/HouseEdit.cs`: itemDown in Renovate, dragMove / dragFloor / wallPose /
    dragWall / dragSmall (onto hosts' tops) / dragEnd, szFit / minE / szWall, rotSet (the 0..360 slider), editRot,
@@ -117,8 +119,9 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    `creature-trace.mjs decorated living 340 "...edit, down, move, up, size, rot, turn, store, place, ldown, lmove,
    lsize, lstore, lback, rsurf, done"` and `decorated movie` (side and back wall, width x height) + `house-test acts`
    (the .NET check now draws through `tools/unity/house/draw-server.mjs`, the same host PuerTS runs): the room's items,
-   selection, lx / lz / surf / rtex / lOff / uid, every creature and play equal on every frame. Not yet: writing on
-   signs (Aa: the sign editor), the tray's mouse-wheel scroll, the inset light on the toolbar's box (a flat highlight).
+   selection, lx / lz / surf / rtex / lOff / uid, every creature and play equal on every frame. Since done: writing on
+   signs (Aa: the sign editor), the tray's mouse-wheel scroll, the inset light on the toolbar's box (the padding box
+   less itself moved down 1.5 px).
 7. Catalog and economy: pages, detail, buy / place, level locks, config.
    **Done (logic, UI).** `House/HouseShop.cs`: openCat, rcList, rcVals (12 cards a spread, categories with the yard's
    names, paging on into the next category, the level line), rdVals, buyR (the wallet: Coins / Spend, freeShop),
@@ -130,7 +133,8 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    from the drawer's CATALOG and Renovate's House shop. `HouseScreen.Coins` / `Spend` take the app's wallet (stage 8
    wires them). Verified: `creature-trace.mjs lv12 living 60 "shop, cat, next, prev, card, close, det, buy, placer,
    closeshop ..."` + `house-test acts`: the Catalog's state, coins, owned / rOwn, every card, the categories, the
-   paging and the detail equal on every frame the page had drawn its cards. Not yet: the dev level popup (House level).
+   paging and the detail equal on every frame the page had drawn its cards. The dev level popup (House level) is not needed: the app
+   mounts the house with dev-levels false (App.dc.html), so its Lv chip has no tap.
 8. House map, and the walk home from the Unity menu.
    **Done except the walk.** MY HOUSE (the menu's `home` tap, `Menu/MenuScreen.cs` OpenHouse): the player's save
    (`users/{uid}/crib/house6` as the app's WebView house; offline on the device), level, creatures (keys -> the house
@@ -143,8 +147,9 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    pickRoom (the selected friend comes along) / closeMap; the room labels drawn from the page's styles; the room's
    House map button, Back and the weather chips cut from the page. `export-map.mjs` checks the host's values against
    the page's (all five fixtures equal) and saves the page's drawn map for `house-test map` (the C# markup against
-   it). Not yet: the walk to the door and the "Heading home" loading scene (the house opens at once), the creatures'
-   faces in the map's labels (cream circles), the map's SMIL (clouds, waves, rain and snow stand still).
+   it). Since done: the walk to the door and the "Heading home" loading scene, the creatures' faces in the map's labels
+   (Resources/House/faces, tools/unity/house/export-faces.mjs), the map's SMIL at the moment the app freezes it
+   (menu.js pauses it within 120 ms and bakes that frame: HouseMap.MapSvg samples it with House/Smil.cs).
 9. Dance Club, Movie Room (movies as exported video + audio), TV sound.
    **Done.** `tools/unity/house/export-movies.mjs`: the five Squad
    Movies drawn frame by frame by the page's own movie code and screenshotted, their scores (SquadMovies.record) played
@@ -166,8 +171,10 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    at", time and progress, the picker, full screen, end; the page's own icons), the picker (the five movies, which the
    screen plays, where each was left), full screen (the film eased to a 16:9 frame over the darkened view, controls
    fading after 2.6 s, its close button; Android's back leaves it), positions forgotten when the theater goes (as the
-   page). Not yet: the film's CSS filters (blur, saturation), the hair on the old film, the speakers' rings and notes,
-   the holo pop-outs and confetti cues, the 10 s app ad (a screen always has a movie to show).
+   page). Since done: the film's CSS filters per screen tier (HouseShaders/MovieFilm), the hair on the old film, the
+   speakers' rings and notes, the holo pop-outs and confetti cues; the sounds (every TV's channel, the groove in the
+   Dance Club too, as patches.mjs turns its own track off; the projector's whir and click and the full-screen whoosh,
+   Audio/HouseSounds.cs). Not needed: the 10 s app ad (a screen always has a movie to show).
 10. Beach: done in a first cut. House/HouseBeach.cs: beach.js's geometry (the shore, the pier, the sea; clamp,
    randSand, randSea, itemX, with Renovate's placement hooked) and the page's beach methods: wading and swimming
    (bStep: depth, swimin / swimout, splashes, needs), surfing (bSurf and the 9 s ride), fishing (the two spots, the
@@ -179,7 +186,7 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    animateTransform, animateMotion, splines) redrawn 12 times a second at 0.6 resolution; the shells, snowmen and
    fishing sign as props among the creatures with their taps. HouseSquadView: wading cuts the creature off at the
    water line (CreatureView.ClipBottom) with the water ring and no shadow; the board and the rod. Not yet checked on
-   a device: the scene's look against the page and the redraw cost; the pier sign's text (SVG text isn't drawn).
+   a device: the scene's look against the page and the redraw cost. The gate sign's text (BACKYARD) is drawn.
 11. Yard games: done in a first cut. Games/Yard: the page's yard-games.js as YardKit (a retained SVG DOM the games
    write, the context: creatures, score, clock, hint, toasts, particles, timers, finish; the saved bests) and the seven
    games (Hoop Shot, Penalty Kick, Hopscotch, Bounce Up, Slide & Splash, Cornhole, Ping-Pong) line for line; their
@@ -188,7 +195,8 @@ popup, test bar, size panel, house3d.js v3, SquishDaily.
    (your player live, the strip, the cards, the sound button) or a game (layers redrawn when they change, live rigs
    with yaw and poses, the top bar, pills, the games' own marks / badge / buttons, toasts, the intro and results
    cards); opened by the backyard's Yard Games button (HouseScreen). Not yet checked on a device: the look against
-   the page, the cost of redrawing a layer every frame while particles fly; the hub's star glyph and emoji.
+   the page, the cost of redrawing a layer every frame while particles fly. (The hub's star is in the Fallback font;
+   its emoji were only on yard-games.js's own hub, which the app doesn't use.)
 
 About 75-100 helper-days. Live creatures: run the rig code (the creature engine) at 30 Hz round-robin within a
 frame budget, hot functions ported to C#; a loop cache only if the A15 can't keep up.
