@@ -357,10 +357,35 @@ namespace SquishSquad.House
             if (Ac.Mode == "shower") { c.WSt = HsGet(c, "showerin") != null ? "shower" : null; if (Ac.V != null) SetVar(it.Str("id"), Ac.V); Play(c, c.WSt != null ? "showerin" : "happy"); return; }
             if (Ac.Mode == "cook" && HsGet(c, "cookin") != null) { var a = HsGet(c, "cookin"); var b = HsGet(c, "cook"); c.UseEnd = now + a.Num("dur") + (b?.Num("loop") ?? 0); if (Ac.V != null) SetVar(it.Str("id"), Ac.V); Play(c, "cookin"); return; }
             if (Ac.Mode == "fridge" && Ac.V == "open" && HsGet(c, "fridge") != null) { var f = HsGet(c, "fridge"); c.UseEnd = now + f.Num("dur") - 120; c.TurnAt = now + f.Num("turn"); SetVar(it.Str("id"), Ac.V); Play(c, "fridge"); return; }
+            if (BUse(c, Ac.Mode, it, now)) return;
             c.UseEnd = now + Ac.Dur;
             if (Ac.Mode == "watch" && !Tv.ContainsKey(it.Str("id"))) { Tv[it.Str("id")] = 1; TvAuto.Add(it.Str("id")); }
             if (Ac.V != null) SetVar(it.Str("id"), Ac.V);
             if (Ac.Anim != null) Play(c, Ac.Anim);
+        }
+
+        // [B] the use modes with their own rig state (house-moves.js bBuild): once = plays one time, then the use ends;
+        // loop1 = its `in` then one loop (at most max); the rest hold until moved, with their optional <st>in / <st>out
+        sealed class BUseSpec { public string St; public bool Once, Loop1; public double Max; public System.Text.RegularExpressions.Regex Only; }
+        static readonly Dictionary<string, BUseSpec> BUSE = new Dictionary<string, BUseSpec>
+        {
+            ["dishes"] = new BUseSpec { St = "dishes", Loop1 = true, Max = 9000 }, ["grill"] = new BUseSpec { St = "grill", Loop1 = true, Max = 12000 },
+            ["toastw"] = new BUseSpec { St = "toastwait" }, ["wash"] = new BUseSpec { St = "sinkwash" }, ["brush"] = new BUseSpec { St = "brush" },
+            ["dig"] = new BUseSpec { St = "dig" }, ["bounce"] = new BUseSpec { St = "bounce" },
+            ["play"] = new BUseSpec { St = "blocks", Only = new System.Text.RegularExpressions.Regex("block", System.Text.RegularExpressions.RegexOptions.IgnoreCase) },
+            ["slide"] = new BUseSpec { St = "slide", Once = true }, ["water"] = new BUseSpec { St = "water", Once = true },
+        };
+
+        /// <summary>bUse: a use mode played as the creature's own house state (true: it took the use).</summary>
+        bool BUse(HouseCreature c, string mode, JObj it, double now)
+        {
+            if (mode == null || !BUSE.TryGetValue(mode, out var B)) return false;
+            var D = Cat(it);
+            if (B.Only != null && !B.Only.IsMatch(string.Join(" ", System.Linq.Enumerable.Where(new[] { D?.Str("n"), D?.Str("arch"), it?.Str("t") }, x => !string.IsNullOrEmpty(x))))) return false;
+            var S = HsGet(c, B.St); if (S == null) return false;
+            if (B.Once) { c.UseEnd = now + S.Num("dur"); Play(c, B.St); return true; }
+            if (B.Loop1) { var a = HsGet(c, B.St + "in"); c.UseEnd = now + (a != null ? a.Num("dur") : 0) + Math.Min(S.Num("loop"), B.Max > 0 ? B.Max : 1e9); Play(c, a != null ? B.St + "in" : B.St); return true; }
+            c.UseEnd = 0; c.UseA = null; c.WSt = B.St; Play(c, HsGet(c, B.St + "in") != null ? B.St + "in" : B.St); return true;
         }
 
         void FinishUse(HouseCreature c, double now)

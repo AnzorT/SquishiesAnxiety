@@ -102,8 +102,17 @@ namespace SquishSquad.House
             var nat = vals.Obj("mx")?.Obj("nat");
             var sb = new StringBuilder();
             foreach (var d in _mapTpl.Render(vals)) Write(sb, d, nat);
-            return sb.ToString();
+            var svg = sb.ToString();
+            if (svg.IndexOf("<animate", StringComparison.Ordinal) < 0) return svg;
+            // the app's map stands still: menu.js pauses its SMIL (pauseAnimations) at the first 120 ms tick after it
+            // opens, and bakes that frame into a picture. Its animated values at that moment (the clouds and the rain
+            // cloud where their translate puts them, the snow, the waves), not the bare attributes the animations move
+            var outSb = new StringBuilder();
+            foreach (var n in Smil.Parse(svg)) Smil.Write(n, outSb, FrozenAt);
+            return outSb.ToString();
         }
+        /// <summary>The moment the map is frozen at (s after it opens: the pause comes within 120 ms).</summary>
+        public const double FrozenAt = 0.06;
 
         static readonly HashSet<string> Void = new HashSet<string> { "stop", "path", "rect", "circle", "ellipse", "line", "polyline", "polygon", "use", "image", "animate", "animateTransform", "animateMotion", "set", "feGaussianBlur", "feOffset", "feBlend", "feColorMatrix", "feFlood", "feComposite", "feMerge", "feMergeNode" };
         static void Write(StringBuilder sb, Dom d, JObj nat)

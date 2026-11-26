@@ -33,12 +33,18 @@ namespace SquishSquad.House.View
         GameObject _go; VideoPlayer _vp; RenderTexture _rt; Mesh _mesh; Material _mat; MeshRenderer _mr;
         UiPiece _dark, _spill, _look, _bar, _menu, _back, _xb; string _dimKey, _lookKey, _barKey, _menuKey;
         Mesh _fx, _grain, _beam; MeshRenderer _fxR, _grainR, _beamR; Texture2D _soft, _noise; Color32[] _noisePx;
-        AudioSource _groove, _tv; int _tvCh;
+        AudioSource _groove; readonly Dictionary<string, (AudioSource src, int ch)> _tvs = new Dictionary<string, (AudioSource src, int ch)>();
         string _loaded;
         readonly System.Random _r = new System.Random();
         const int Order = 2000 + 880 * 4, FocusOrder = 31500;
 
-        public HouseMovieView(HouseRoomView room, HouseCreatures sim, float screenK, JObj icons) { _room = room; _sim = sim; _k = screenK; _icons = icons ?? new JObj(); }
+        public HouseMovieView(HouseRoomView room, HouseCreatures sim, float screenK, JObj icons)
+        {
+            _room = room; _sim = sim; _k = screenK; _icons = icons ?? new JObj();
+            // (movie-night.js's own synthesized sounds: Audio/HouseSounds.cs)
+            _sim.ShowStarted = () => SquishSquad.Audio.Snd.Synth(SquishSquad.Audio.HouseSounds.ShowStart);
+            _sim.FocusChanged = on => SquishSquad.Audio.Snd.Synth(() => SquishSquad.Audio.HouseSounds.Whoosh(on));
+        }
 
         Affine Frame => Affine.ScaleBy(_k / UiPiece.PxPerDp, _k / UiPiece.PxPerDp);
         double R(double a, double b) => a + _r.NextDouble() * (b - a);
@@ -52,11 +58,19 @@ namespace SquishSquad.House.View
         public void Update(double now)
         {
             bool sound = SquishSquad.Audio.Sfx.EffectsOn;
-            bool jam = _sim.Jams.Count > 0 && _sim.Show == null && sound && _sim.S.Cur != "dance";   // (musicSync: the Dance Club plays its own track)
+            bool jam = _sim.Jams.Count > 0 && _sim.Show == null && sound;   // (the Dance Club too: its own track is off in the app, patches.mjs)
             _groove ??= Src("groove", "groove");
             if (jam && !_groove.isPlaying) _groove.Play(); else if (!jam && _groove.isPlaying) _groove.Stop();
-            int ch = 0; if (sound && _sim.SpkIn()) foreach (var kv in _sim.Rst) if (kv.Value.Ch > 0 && RoleOf(kv.Key) == "tv") { ch = (int)kv.Value.Ch; break; }
-            if (ch != _tvCh) { _tvCh = ch; _tv ??= Src("tv", "tv1"); _tv.Stop(); if (ch > 0) { _tv.clip = Resources.Load<AudioClip>("House/audio/tv" + ch); _tv.Play(); } }
+            // tvSound: every TV in the room on a channel plays it (each its own loop), while speakers are in the room
+            var want = new Dictionary<string, int>();
+            if (sound && _sim.SpkIn()) foreach (var kv in _sim.Rst) if (kv.Value.Ch > 0 && RoleOf(kv.Key) == "tv") want[kv.Key] = (int)kv.Value.Ch;
+            foreach (var id in new List<string>(_tvs.Keys)) if (!want.ContainsKey(id)) { var t = _tvs[id]; t.src.Stop(); Object.Destroy(t.src.gameObject); _tvs.Remove(id); }
+            foreach (var kv in want)
+            {
+                if (_tvs.TryGetValue(kv.Key, out var t) && t.ch == kv.Value) continue;
+                var src = t.src ?? Src("tv " + kv.Key, "tv1"); src.Stop(); src.clip = Resources.Load<AudioClip>("House/audio/tv" + kv.Value); src.Play();
+                _tvs[kv.Key] = (src, kv.Value);
+            }
             _sim.FzStep(now);
             Bounce(now);
             Show(now, sound);
@@ -450,7 +464,7 @@ namespace SquishSquad.House.View
             if (_go != null) Object.Destroy(_go); if (_rt != null) _rt.Release(); if (_mat != null) Object.Destroy(_mat);
             foreach (var u in new[] { _dark, _spill, _look, _bar, _menu, _back, _xb }) if (u != null) Object.Destroy(u.gameObject);
             foreach (var r in new Renderer[] { _fxR, _grainR, _beamR }) if (r != null) Object.Destroy(r.gameObject);
-            if (_groove != null) Object.Destroy(_groove.gameObject); if (_tv != null) Object.Destroy(_tv.gameObject);
+            if (_groove != null) Object.Destroy(_groove.gameObject); foreach (var t in _tvs.Values) if (t.src != null) Object.Destroy(t.src.gameObject); _tvs.Clear();
         }
     }
 }

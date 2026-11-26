@@ -39,7 +39,7 @@ namespace SquishSquad.House
         public EditHold ReHold;   // (stage 6: held off a piece being edited)
         // watching a movie (stage 9: mvStep): a reaction under way, dozing off, the next munch
         public sealed class MvReact { public string K; public double T0, D; }
-        public MvReact MvR; public bool MvDz; public double MvMn;
+        public MvReact MvR; public bool MvDz; public double MvMn, MvZz;
     }
 
     public sealed class HouseParticle { public string Type, Glyph, Color; public double X, Y, Born, Sx, Size, Ms; }

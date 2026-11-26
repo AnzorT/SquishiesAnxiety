@@ -101,6 +101,7 @@ namespace SquishSquad.House.View
             _sim.HasFront = id => _room.Fronts.TryGetValue(id, out var f) && f;
             _sim.Saved = Save;
             _sim.RoomChanged = () => _dirty = true;   // (drawn once a frame, in Update)
+            _sim.VarChanged = id => _dirty = true;   // (setVar: the page re-renders, a fridge open, a stove on, a TV's picture)
             _room.Sim = _sim;
             _sim.Init(Now, _start);
             _room.Draw(852 * _k, 393 * _k);

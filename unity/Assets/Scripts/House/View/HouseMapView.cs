@@ -3,7 +3,7 @@
 // zoomed 2.6x into a picked room (0.6 s cubic-bezier(.45,0,.3,1)) as the page fades to cream (0.3 s after 0.3 s), each
 // room's label at its spot (You're here, its name, the padlock and level, its chip, the friends in it), the Back button
 // and weather chip (the page's, export-map.mjs), the hint and the level chip; and the room's House map button
-// (top-left in a room). Faces in the labels are the cream circles without the creature's picture (not yet).
+// (top-left in a room). The faces in the labels: the creatures' pictures cropped as the page does (export-faces.mjs).
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -142,6 +142,20 @@ namespace SquishSquad.House.View
         double Sc(double now) { double t = (now - _scT0) / 600; return t >= 1 ? _scTo : t <= 0 ? _scFrom : _scFrom + (_scTo - _scFrom) * Move(t); }
         double Op(double now) { double t = (now - _opT0) / 350; return t >= 1 ? _opTo : t <= 0 ? _opFrom : _opFrom + (_opTo - _opFrom) * Ease(t); }
 
+        // the creatures with a face picture (Resources/House/faces.json)
+        static HashSet<string> _faces;
+        static bool HasFace(string key)
+        {
+            if (key == null) return false;
+            if (_faces == null)
+            {
+                _faces = new HashSet<string>();
+                var j = Resources.Load<TextAsset>("House/faces");
+                if (j != null && HouseJson.Parse(j.text) is JObj o && o.Arr("keys") is List<object> l) foreach (var k in l) if (k is string ks) _faces.Add(ks);
+            }
+            return _faces.Contains(key);
+        }
+
         // each room's label: translate(-50%, -50%) scale(sc) at (lx, ly), under the map's zoom
         void Labels(Affine zoom, float op)
         {
@@ -188,6 +202,9 @@ namespace SquishSquad.House.View
                     foreach (JObj f in faces)
                     {
                         u.Box((float)fx, (float)fy, 24, 24, new BoxStyle { Background = "#fff6e2", Radius = 12, BorderWidth = 2, BorderColor = "#fff6e2", Shadows = new[] { new Shadow("#4a2e1a", 0, 0, 0, 1.5f), new Shadow("rgba(74,46,26,0.3)", 0, 2, 0, 1.5f) } });
+                        // its face: the creature's picture as the page crops it (SquishSquad.src at 140 %, 50 % 20 %), inside the
+                        // 2 px border (Resources/House/faces, tools/unity/house/export-faces.mjs; none: the cream circle)
+                        if (HasFace(f.Str("id"))) u.Raw("<image href=\"House/faces/" + f.Str("id") + "\" x=\"" + (fx + 2).ToString(CultureInfo.InvariantCulture) + "\" y=\"" + (fy + 2).ToString(CultureInfo.InvariantCulture) + "\" width=\"20\" height=\"20\" preserveAspectRatio=\"none\"/>");
                         if (f.Truthy("low")) u.Box((float)fx + 16, (float)fy + 16, 10, 10, new BoxStyle { Background = f.Str("lc") ?? "#f28a1e", Radius = 5, BorderWidth = 1.5f, BorderColor = "#4a2e1a" });
                         fx += 28;
                     }

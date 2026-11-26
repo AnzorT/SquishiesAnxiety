@@ -100,6 +100,7 @@ namespace SquishSquad.House
             MoviePick = mv.Str("id");
             double pos = MoviePos.TryGetValue(mv.Str("id"), out var p) ? p : 0; if (!(pos > 2 && pos < mv.Num("dur") - 3)) pos = 0;
             Show = new MovieShow { Mv = mv, Mt = pos - DIM, Msg = pos > 0 ? "Resuming at " + Fmt(pos) : "", MsgT = 3 };
+            ShowStarted?.Invoke();
             MoviesChanged?.Invoke(); Bump();
         }
         static string Fmt(double s) { int t = (int)Math.Floor(s); return (t / 60) + ":" + (t % 60).ToString("00"); }
@@ -107,7 +108,9 @@ namespace SquishSquad.House
         // the player bar's picker (menu), skip and full screen (focus: FzP eases 0..1 over 0.75 s)
         public bool MenuOn, FzOn; public double FzP, FzCtl; double _fzLast, _jamP0 = -1;
         public void PickMovie(string id) { MenuOn = false; PlayMovie(id); }
-        public void Focus(bool on, double now) { if (on && (Show == null || Th?.ScM == null)) return; if (on == FzOn) return; FzOn = on; FzCtl = now; if (on) MenuOn = false; Bump(); }
+        /// <summary>The show's sounds (the view plays them): the projector as a show starts, the whoosh in or out of full screen.</summary>
+        public Action ShowStarted; public Action<bool> FocusChanged;
+        public void Focus(bool on, double now) { if (on && (Show == null || Th?.ScM == null)) return; if (on == FzOn) return; FzOn = on; FzCtl = now; if (on) MenuOn = false; FocusChanged?.Invoke(on); Bump(); }
         public void FzStep(double now) { double dt = Math.Min(0.1, Math.Max(0, (now - (_fzLast == 0 ? now : _fzLast)) / 1000)); _fzLast = now; FzP = Math.Max(0, Math.Min(1, FzP + (FzOn ? dt : -dt) / 0.75)); }
         /// <summary>The movies the picker lists: each with whether the screen plays it, whether it's on, its line.</summary>
         public List<(JObj mv, bool ok, bool cur, string sub)> MovieMenu()
@@ -240,6 +243,14 @@ namespace SquishSquad.House
             if (on && c.MvR == null && !c.MvDz && now > c.MvMn) { if (c.MvMn != 0) { c.MvR = new HouseCreature.MvReact { K = "munch", T0 = now, D = 1500 }; if (Rand() < 0.4) Say(c, new[] { "Nom!", "Crunch!", "Munch munch" }[(int)Math.Floor(Rand() * 3)], now); } c.MvMn = now + 7000 + Rand() * 8000; }
             var E = c.Ext; void add(string k, double x) => E[k] = (E.TryGetValue(k, out var v) ? v : 0) + x;
             double ks = S.Geo.SAt(c.Y); var R = c.MvR;
+            React(c, now, add, ks);
+            // dozing: eyes shut, head tipped, a slow sway and breath, "Zzz..." every 3.5 s (after any reaction, as the page)
+            if (c.MvDz) { add("close", 1); add("htilt", 10); add("lean", 0.8 * Math.Sin(now * 0.0015)); add("sq", 0.03 * Math.Sin(now * 0.002)); if (now > c.MvZz) { c.MvZz = now + 3500; Say(c, "Zzz...", now); } }
+        }
+
+        void React(HouseCreature c, double now, Action<string, double> add, double ks)
+        {
+            var R = c.MvR;
             if (R == null) return;
             double u = (now - R.T0) / R.D; if (u >= 1) { c.MvR = null; return; } if (u < 0) return;
             double env = Math.Max(0, Math.Min(1, Math.Min(u / 0.15, (1 - u) / 0.25))), w = Math.Abs(Math.Sin(now * 0.028));

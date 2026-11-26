@@ -153,6 +153,7 @@ namespace SquishSquad.House
                 if (o.Eat) { RnEatNow(c, o.Say, Last); o.On?.Invoke(c); return; }
                 c.Mode = o.Mode ?? "rnuse"; c.UseA = new HouseAct { Anim = o.Anim, Say = o.Say, Then = o.Then }; c.UseEnd = o.Dur != 0 ? Last + o.Dur : 0;
                 o.On?.Invoke(c);
+                if (BUse(c, c.Mode, it, Last)) return;
                 if (o.Anim != null) Play(c, o.Anim);
             }, now);
             c.RnGo = id;

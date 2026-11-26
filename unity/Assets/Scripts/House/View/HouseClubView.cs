@@ -38,7 +38,6 @@ namespace SquishSquad.House.View
         readonly Dictionary<string, Job> _jobs = new Dictionary<string, Job>();
         readonly System.Random _r = new System.Random();
         Mesh _mesh, _discoMesh; Material _mat; MeshRenderer _mr, _dmr; GameObject _go, _dgo;
-        AudioSource _club;
         const int Order = 2000 + 880 * 4 - 1, DiscoOrder = 2000 + 830 * 4;
 
         public HouseClubView(HouseRoomView room, HouseCreatures sim) { _room = room; _sim = sim; }
@@ -76,9 +75,8 @@ namespace SquishSquad.House.View
         public void Update(double now)
         {
             Ensure();
-            bool sound = SquishSquad.Audio.Sfx.EffectsOn, club = sound && _sim.S.Cur == "dance" && _sim.Jams.Count > 0;
-            if (_club == null) { var g = new GameObject("club music"); g.transform.SetParent(_room.transform, false); _club = g.AddComponent<AudioSource>(); _club.clip = Resources.Load<AudioClip>("House/audio/club"); _club.loop = true; _club.volume = 0.7f; }
-            if (club && !_club.isPlaying) _club.Play(); else if (!club && _club.isPlaying) _club.Stop();
+            // (no club track of its own: patches.mjs turns the page's rubber-band-hustle.mp3 off, `const want = false`,
+            // so the Dance Club plays the speakers' groove like every room: HouseMovieView)
             // the jobs: one per fog machine switched on (the room's)
             foreach (var key in _sim.Fogs) if (!_jobs.ContainsKey(key)) Start(key, now);
             foreach (var kv in new List<KeyValuePair<string, Job>>(_jobs)) if (kv.Value.Off < 0 && !_sim.Fogs.Contains(kv.Key)) kv.Value.Off = now;
@@ -200,6 +198,6 @@ namespace SquishSquad.House.View
             _discoMesh.Clear(); _discoMesh.SetVertices(_v); _discoMesh.SetUVs(0, _uv); _discoMesh.SetColors(_c); _discoMesh.SetTriangles(_tri, 0); _discoMesh.RecalculateBounds();
         }
 
-        public void Destroy() { if (_go != null) Object.Destroy(_go); if (_dgo != null) Object.Destroy(_dgo); if (_mat != null) Object.Destroy(_mat); if (_club != null) Object.Destroy(_club.gameObject); }
+        public void Destroy() { if (_go != null) Object.Destroy(_go); if (_dgo != null) Object.Destroy(_dgo); if (_mat != null) Object.Destroy(_mat); }
     }
 }
