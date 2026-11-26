@@ -93,6 +93,14 @@ lists what isn't, so it can be picked up item by item with Claude Code.
     0.2–0.35 % visible px (the lines' antialiasing). Cost on this PC (rig-test bench): Mittens 1.02 → 1.44 ms a
     frame, three creatures 3.33 → 4.45 ms; not measured on the A15 (MY HOUSE's squad is the heaviest).
     stage-test / yard-test pin look 0 (the app's pages draw their rigs without one).
+- **The first APK on the phone (2026-11-26) closed at once, a black screen** (logcat: FATAL EXCEPTION main, "Unable to
+  get provider com.google.android.gms.ads.MobileAdsInitProvider: IllegalStateException: Missing application ID",
+  play-services-ads-lite 23.1.0). The AdMob app id was in `Plugins/Android/RewardedAds.androidlib/AndroidManifest.xml`,
+  but an androidlib with its own build.gradle is read by Gradle's standard layout (`src/main/AndroidManifest.xml`), so
+  the root manifest was skipped without a word while the Java (`src/main/java`) and play-services-ads still went in.
+  Fixed: both androidlibs' build.gradle set `sourceSets.main.manifest.srcFile 'AndroidManifest.xml'`, and the
+  manifests lost their `package` attribute (the build.gradle `namespace` names them). Not built yet: the next APK
+  should open; the app id is still Google's test id (item 7).
 - **Next, in this order:**
   1. **Press Play in the Editor and go through what changed:** Squish Sort (the map's fridges, a level, the win's
      doors), Squish Hop (a level: the rigs take over once the page has drawn the cast, then hop, bump, stuck, win),

@@ -3,6 +3,10 @@ apply plugin: 'com.android.library'
 
 android {
     namespace 'com.plushcrush.unity.ads'
+    // the manifest is at this folder's root, not in src/main: without this Gradle never reads it, the AdMob app id
+    // never reaches the app, and Google Mobile Ads' MobileAdsInitProvider closes the app on start ("Missing
+    // application ID")
+    sourceSets { main { manifest.srcFile 'AndroidManifest.xml' } }
     compileSdkVersion 35
     defaultConfig { minSdkVersion 23 }
     compileOptions {

@@ -3,6 +3,8 @@ apply plugin: 'com.android.library'
 
 android {
     namespace 'com.plushcrush.unity.billing'
+    // the manifest is at this folder's root, not in src/main: without this Gradle never reads it
+    sourceSets { main { manifest.srcFile 'AndroidManifest.xml' } }
     compileSdkVersion 35
     defaultConfig { minSdkVersion 23 }
     compileOptions {
